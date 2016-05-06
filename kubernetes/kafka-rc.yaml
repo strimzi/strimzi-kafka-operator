@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ReplicationController
+metadata:
+    name: kafka
+spec:
+    replicas: 1
+    selector:
+        name: kafka
+    template:
+        metadata:
+            labels:
+                name: kafka
+        spec:
+            containers:
+                -
+                    name: kafka
+                    image: "ppatierno/kaas:0.1"
+                    ports:
+                        - containerPort: 9092
+                    command:
+                        - /opt/kafka_2.11-0.9.0.1/kafka_run.sh

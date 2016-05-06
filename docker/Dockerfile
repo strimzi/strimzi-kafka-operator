@@ -18,3 +18,4 @@ RUN tar xvfz kafka_$SCALA_VERSION-$KAFKA_VERSION.tgz -C /opt
 # copy template configuration files
 COPY ./config/ /opt/kafka_$SCALA_VERSION-$KAFKA_VERSION/config
 COPY ./kafka_run.sh /opt/kafka_$SCALA_VERSION-$KAFKA_VERSION
+RUN chmod +x /opt/kafka_$SCALA_VERSION-$KAFKA_VERSION/kafka_run.sh
