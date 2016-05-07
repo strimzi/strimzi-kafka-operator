@@ -6,6 +6,9 @@ MAINTAINER Paolo Patierno
 RUN apt-get update
 RUN apt-get install -y gettext
 
+# install tcpdump for protocol level debugging
+RUN apt-get install -y tcpdump
+
 # set Scala and Kafka version
 ENV SCALA_VERSION=2.11
 ENV KAFKA_VERSION=0.9.0.1
