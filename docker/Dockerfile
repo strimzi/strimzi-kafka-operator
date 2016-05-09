@@ -8,6 +8,8 @@ RUN apt-get install -y gettext
 
 # install tcpdump for protocol level debugging
 RUN apt-get install -y tcpdump
+# install vim for text editing
+RUN apt-get install -y vim
 
 # set Scala and Kafka version
 ENV SCALA_VERSION=2.11
