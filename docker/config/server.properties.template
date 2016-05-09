@@ -17,7 +17,7 @@
 ############################# Server Basics #############################
 
 # The id of the broker. This must be set to a unique integer for each broker.
-broker.id=0
+broker.id=${KAFKA_BROKER_ID}
 
 ############################# Socket Server Settings #############################
 
@@ -32,7 +32,7 @@ listeners=PLAINTEXT://:9092
 # Hostname the broker will advertise to producers and consumers. If not set, it uses the
 # value for "host.name" if configured.  Otherwise, it will use the value returned from
 # java.net.InetAddress.getCanonicalHostName().
-#advertised.host.name=<hostname routable by clients>
+advertised.host.name=${KAFKA_ADVERTISED_HOST}
 
 # The port to publish to ZooKeeper for clients to use. If this is not set,
 # it will publish the same port that the broker binds to.
