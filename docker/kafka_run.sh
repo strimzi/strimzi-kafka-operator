@@ -8,5 +8,8 @@ fi
 if [[ -z "$KAFKA_ADVERTISED_HOST" ]]; then
     export KAFKA_ADVERTISED_HOST=$(hostname -I)
 fi
-envsubst < /opt/kafka_$SCALA_VERSION-$KAFKA_VERSION/config/server.properties.template > /tmp/server.properties
-exec /opt/kafka_$SCALA_VERSION-$KAFKA_VERSION/bin/kafka-server-start.sh /tmp/server.properties
+
+# environment variables substitution in the server configuration template file
+envsubst < $KAFKA_HOME/config/server.properties.template > /tmp/server.properties
+# starting Kafka server with final configuration
+exec $KAFKA_HOME/bin/kafka-server-start.sh /tmp/server.properties
