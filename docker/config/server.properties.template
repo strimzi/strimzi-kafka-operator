@@ -21,7 +21,7 @@ broker.id=${KAFKA_BROKER_ID}
 
 ############################# Socket Server Settings #############################
 
-listeners=PLAINTEXT://:9092
+listeners=PLAINTEXT://:${KAFKA_PORT}
 
 # The port the socket server listens on
 #port=9092
@@ -36,7 +36,7 @@ advertised.host.name=${KAFKA_ADVERTISED_HOST}
 
 # The port to publish to ZooKeeper for clients to use. If this is not set,
 # it will publish the same port that the broker binds to.
-#advertised.port=<port accessible by clients>
+advertised.port=${KAFKA_ADVERTISED_PORT}
 
 # The number of threads handling network requests
 num.network.threads=3
