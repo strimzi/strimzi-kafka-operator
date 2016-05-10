@@ -21,7 +21,7 @@ broker.id=${KAFKA_BROKER_ID}
 
 ############################# Socket Server Settings #############################
 
-listeners=PLAINTEXT://:${KAFKA_PORT}
+listeners=PLAINTEXT://:${KAFKA_SERVICE_PORT}
 
 # The port the socket server listens on
 #port=9092
