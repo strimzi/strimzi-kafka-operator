@@ -25,5 +25,8 @@ ENV KAFKA_HOME=/opt/kafka_$SCALA_VERSION-$KAFKA_VERSION
 
 # copy template configuration files
 COPY ./config/ $KAFKA_HOME/config
+# copy scripts for starting Kafka
 COPY ./kafka_run.sh $KAFKA_HOME
 RUN chmod +x $KAFKA_HOME/kafka_run.sh
+COPY ./kafka_pre_run.py $KAFKA_HOME
+RUN chmod +x $KAFKA_HOME/kafka_pre_run.py
