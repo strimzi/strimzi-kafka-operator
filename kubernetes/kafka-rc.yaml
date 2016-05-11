@@ -3,7 +3,8 @@ kind: ReplicationController
 metadata:
     name: kafka
 spec:
-    replicas: 1
+    # used 3 replicas in order to have alwayas majority for leader election
+    replicas: 3
     selector:
         name: kafka
     template:

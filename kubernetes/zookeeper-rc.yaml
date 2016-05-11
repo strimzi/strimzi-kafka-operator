@@ -20,4 +20,12 @@ spec:
                     command:
                         - /opt/kafka_2.11-0.9.0.1/bin/zookeeper-server-start.sh
                         - /opt/kafka_2.11-0.9.0.1/config/zookeeper.properties
+                    volumeMounts:
+                        - 
+                            name: zookeeper-persistent-storage
+                            mountPath: /tmp/zookeeper
+            volumes:
+                - name: zookeeper-persistent-storage
+                  persistentVolumeClaim:
+                    claimName: zookeeperclaim
                     
