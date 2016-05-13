@@ -25,9 +25,12 @@ export KAFKA_LOGS_BASE_NAME="kafka-logs"
 # the script finds the first available Kafka broker id as a new one
 # or an existing one but with no lock on logs dirs
 BASE=$(dirname $0)
-export KAFKA_BROKER_ID=$($BASE/kafka_pre_run.py $KAFKA_VOLUME $KAFKA_LOGS_BASE_NAME)
+export KAFKA_BROKER_ID=$($BASE/kafka_get_id.py $KAFKA_VOLUME $KAFKA_LOGS_BASE_NAME)
 
 # environment variables substitution in the server configuration template file
 envsubst < $KAFKA_HOME/config/server.properties.template > /tmp/server.properties
+
+$BASE/kafka_pre_run.py /tmp/server.properties
+
 # starting Kafka server with final configuration
 exec $KAFKA_HOME/bin/kafka-server-start.sh /tmp/server.properties

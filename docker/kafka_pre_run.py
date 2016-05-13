@@ -1,44 +1,47 @@
 #! /usr/bin/env python
 
-import sys, os, fcntl, logging
+import os, re, sys, logging
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("kafka_pre_run")
 
-if len(sys.argv) > 1:
-    basedir = sys.argv[1]
-else:
-    basedir = "/tmp/kafka/"
+filename = sys.argv[1]
 
-if len(sys.argv) > 2:
-    basename = sys.argv[2]
-else:
-    basename = "kafka-logs"
-
-brokerid = 1
-done = False
-name = ""
-
-while not done:
-    name = "%s-%i" % (basename, brokerid)
-    datadir = basedir + name
-    lockfile = datadir + "/.lock"
-    logger.info("try with %s", lockfile)
-    if os.path.isdir(datadir) and os.path.isfile(lockfile):
-        try:
-            logger.info("exists try lock on %s", lockfile)
-            # check for the .lock file
-            f = open(lockfile, "w+")
-            fcntl.lockf(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            fcntl.lockf(f, fcntl.LOCK_UN)
-            done = True
-        except Exception as e:
-            logger.error("error " + str(e))
-            brokerid = brokerid + 1
-    else:
-        done = True
+zookeperconnect = ""
+# search for Kubernetes services environment variable with host and port 
+# (<servicename>_SERVICE_HOST and <servicename>_SERVICE_PORT)
+for key in os.environ.keys():
+    matchobj = re.match("ZOOKEEPER([0-9]*)_SERVICE_HOST", key, re.M|re.I)
+    if matchobj:
+        # env variable name ZOOKEEPER<serverid>_SERVICE_HOST
+        envhost = matchobj.group()
+        # get the serverid
+        serverid = matchobj.group(1)
+        # env variable name ZOOKEEPER<serverid>_SERVICE_PORT
+        envport = "ZOOKEEPER{0}_SERVICE_PORT".format(serverid)
         
-logger.info("brokerid %i", brokerid)
-logger.info("folder %s", datadir)
+        logger.info("%s = %s", key, os.environ[key])
+        logger.info("%s = %s", envport, os.environ[envport])
         
-print brokerid
+        # append to zookeeper.connect parameter string for Kafka
+        zookeperconnect += "{0}:{1},".format(os.environ[key], os.environ[envport])        
+        
+# remove last ',' character
+zookeperconnect = zookeperconnect.strip(',')
+
+#f = open(filename, "r+");
+
+#for line in f:
+#    print line
+#    if "${ZOOKEEPER_CONNECT}" in line:
+#        print line
+#        str.replace(line, zookeperconnect)
+#        f.write(line)
+
+#f.close()
+
+f = open(filename, "a");
+f.write("zookeeper.connect={0}".format(zookeperconnect))
+f.close()
+
+print zookeperconnect

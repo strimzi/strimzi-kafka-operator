@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ReplicationController
+metadata:
+    name: zookeeper2
+spec:
+    replicas: 1
+    selector:
+        name: zookeeper2
+    template:
+        metadata:
+            labels:
+                name: zookeeper2
+        spec:
+            containers:
+                -
+                    name: zookeeper2
+                    image: "ppatierno/kaas:0.1"
+                    ports:
+                        - containerPort: 2181
+                    command:
+                        - /opt/kafka_2.11-0.9.0.1/zookeeper_run.sh
+                    env:
+                        - 
+                            name: ZOOKEEPER_ID
+                            value: "2"
+                    volumeMounts:
+                        - 
+                            name: zookeeper-persistent-storage
+                            mountPath: /tmp/zookeeper
+            volumes:
+                - name: zookeeper-persistent-storage
+                  persistentVolumeClaim:
+                    claimName: zookeeperclaim

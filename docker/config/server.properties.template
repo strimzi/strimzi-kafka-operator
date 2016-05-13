@@ -114,7 +114,7 @@ log.retention.check.interval.ms=300000
 # server. e.g. "127.0.0.1:3000,127.0.0.1:3001,127.0.0.1:3002".
 # You can also append an optional chroot string to the urls to specify the
 # root directory for all kafka znodes.
-zookeeper.connect=${ZOOKEEPER_SERVICE_HOST}:${ZOOKEEPER_SERVICE_PORT}
+#zookeeper.connect=${ZOOKEEPER_CONNECT}
 
 # Timeout in ms for connecting to zookeeper
 zookeeper.connection.timeout.ms=6000
