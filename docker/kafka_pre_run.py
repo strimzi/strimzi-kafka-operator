@@ -5,7 +5,10 @@ import os, re, sys, logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("kafka_pre_run")
 
-filename = sys.argv[1]
+if len(sys.argv) > 1:
+    filename = sys.argv[1]
+else:
+    filename = "/tmp/server.properties"
 
 zookeperconnect = ""
 # search for Kubernetes services environment variable with host and port 
@@ -29,17 +32,7 @@ for key in os.environ.keys():
 # remove last ',' character
 zookeperconnect = zookeperconnect.strip(',')
 
-#f = open(filename, "r+");
-
-#for line in f:
-#    print line
-#    if "${ZOOKEEPER_CONNECT}" in line:
-#        print line
-#        str.replace(line, zookeperconnect)
-#        f.write(line)
-
-#f.close()
-
+# append Zookeeper connect paramater at the end of configuration file
 f = open(filename, "a");
 f.write("zookeeper.connect={0}".format(zookeperconnect))
 f.close()
