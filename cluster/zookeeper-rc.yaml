@@ -18,8 +18,8 @@ spec:
                     ports:
                         - containerPort: 2181
                     command:
-                        - /opt/kafka_2.11-0.9.0.1/bin/zookeeper-server-start.sh
-                        - /opt/kafka_2.11-0.9.0.1/config/zookeeper.properties
+                        - /opt/kafka_2.11-0.10.1.1/bin/zookeeper-server-start.sh
+                        - /opt/kafka_2.11-0.10.1.1/config/zookeeper.properties
                     volumeMounts:
                         - 
                             name: zookeeper-persistent-storage

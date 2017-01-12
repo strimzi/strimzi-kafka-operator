@@ -19,7 +19,7 @@ spec:
                     ports:
                         - containerPort: 9092
                     command:
-                        - /opt/kafka_2.11-0.9.0.1/kafka_run.sh
+                        - /opt/kafka_2.11-0.10.1.1/kafka_run.sh
                     volumeMounts:
                         - 
                             name: kafka-persistent-storage
@@ -28,7 +28,7 @@ spec:
                         preStop:
                             exec:
                                 command:
-                                    - /opt/kafka_2.11-0.9.0.1/bin/kafka-server-stop.sh
+                                    - /opt/kafka_2.11-0.10.1.1/bin/kafka-server-stop.sh
             volumes:
                 - name: kafka-persistent-storage
                   persistentVolumeClaim:

@@ -13,7 +13,7 @@ RUN apt-get install -y vim
 
 # set Scala and Kafka version
 ENV SCALA_VERSION=2.11
-ENV KAFKA_VERSION=0.9.0.1
+ENV KAFKA_VERSION=0.10.1.1
 
 # downloading/extracting Apache Kafka
 RUN wget http://www.eu.apache.org/dist/kafka/$KAFKA_VERSION/kafka_$SCALA_VERSION-$KAFKA_VERSION.tgz
