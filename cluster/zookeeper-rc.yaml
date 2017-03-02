@@ -18,14 +18,12 @@ spec:
                     ports:
                         - containerPort: 2181
                     command:
-                        - /opt/kafka_2.11-0.10.1.1/bin/zookeeper-server-start.sh
-                        - /opt/kafka_2.11-0.10.1.1/config/zookeeper.properties
+                        - /opt/kafka_2.11-0.10.1.1/zookeeper_run.sh
                     volumeMounts:
-                        - 
+                        -
                             name: zookeeper-persistent-storage
                             mountPath: /tmp/zookeeper
             volumes:
                 - name: zookeeper-persistent-storage
                   persistentVolumeClaim:
                     claimName: zookeeperclaim
-                    
