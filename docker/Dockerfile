@@ -27,13 +27,8 @@ ENV KAFKA_HOME=/opt/kafka_$SCALA_VERSION-$KAFKA_VERSION
 COPY ./config/ $KAFKA_HOME/config
 # copy scripts for starting Kafka
 COPY ./kafka_run.sh $KAFKA_HOME
-RUN chmod +x $KAFKA_HOME/kafka_run.sh
 COPY ./kafka_get_id.py $KAFKA_HOME
-RUN chmod +x $KAFKA_HOME/kafka_get_id.py
 COPY ./kafka_pre_run.py $KAFKA_HOME
-RUN chmod +x $KAFKA_HOME/kafka_pre_run.py
 # copy scripts for starting Zookeeper (clustered version)
 COPY ./zookeeper_run.sh $KAFKA_HOME
-RUN chmod +x $KAFKA_HOME/zookeeper_run.sh
 COPY ./zookeeper_pre_run.py $KAFKA_HOME
-RUN chmod +x $KAFKA_HOME/zookeeper_pre_run.py

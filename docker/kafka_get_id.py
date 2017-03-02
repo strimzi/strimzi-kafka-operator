@@ -42,3 +42,4 @@ logger.info("brokerid %i", brokerid)
 logger.info("folder %s", datadir)
         
 print brokerid
+

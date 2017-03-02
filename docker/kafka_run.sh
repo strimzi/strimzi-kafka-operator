@@ -34,3 +34,4 @@ $BASE/kafka_pre_run.py /tmp/server.properties
 
 # starting Kafka server with final configuration
 exec $KAFKA_HOME/bin/kafka-server-start.sh /tmp/server.properties
+

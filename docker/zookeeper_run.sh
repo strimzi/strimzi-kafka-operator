@@ -18,3 +18,4 @@ $BASE/zookeeper_pre_run.py /tmp/zookeeper.properties
 
 # starting Zookeeper with final configuration
 exec $KAFKA_HOME/bin/zookeeper-server-start.sh /tmp/zookeeper.properties
+
