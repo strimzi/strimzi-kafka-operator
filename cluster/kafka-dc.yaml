@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
           - name: kafka
-            image: "ppatierno/kaas:0.1"
+            image: "ppatierno/barnabas:0.1"
             ports:
               - containerPort: 9092
                 protocol: TCP

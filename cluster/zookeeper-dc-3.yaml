@@ -13,7 +13,7 @@ spec:
     spec:
       containers:
         - name: zookeeper3
-          image: "ppatierno/kaas:0.1"
+          image: "ppatierno/barnabas:0.1"
           ports:
             - containerPort: 2181
               protocol: TCP
