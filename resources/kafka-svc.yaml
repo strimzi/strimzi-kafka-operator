@@ -5,7 +5,7 @@ metadata:
 spec:
   ports:
     - port: 9092
-      name: "kafka"
+      name: kafka
       targetPort : 9092
   selector:
     name: kafka

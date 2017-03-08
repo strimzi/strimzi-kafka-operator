@@ -1,5 +1,5 @@
 apiVersion: v1
-kind: ReplicationController
+kind: DeploymentConfig
 metadata:
   name: zookeeper1
 spec:
@@ -15,7 +15,8 @@ spec:
         - name: zookeeper1
           image: "ppatierno/barnabas:0.1"
           ports:
-            - containerPort: 2181
+            - name: clientport
+              containerPort: 2181
               protocol: TCP
           command:
             - /opt/kafka_2.11-0.10.1.1/zookeeper_run.sh
@@ -25,6 +26,9 @@ spec:
           volumeMounts:
             - name: zookeeper-persistent-storage
               mountPath: /tmp/zookeeper
+          livenessProbe:
+              tcpSocket:
+                port: clientport
       volumes:
         - name: zookeeper-persistent-storage
           persistentVolumeClaim:

@@ -5,7 +5,7 @@ metadata:
 spec:
   ports:
     - port: 2181
-      name: "zookeeper"
+      name: clientport
       targetPort : 2181
   selector:
     name: zookeeper

@@ -13,21 +13,25 @@ spec:
         name: kafka
     spec:
       containers:
-          - name: kafka
-            image: "ppatierno/barnabas:0.1"
-            ports:
-              - containerPort: 9092
-                protocol: TCP
-            command:
-              - /opt/kafka_2.11-0.10.1.1/kafka_run.sh
-            volumeMounts:
-              - name: kafka-persistent-storage
-                mountPath: /tmp/kafka/
-            lifecycle:
-              preStop:
-                exec:
-                  command:
-                    - /opt/kafka_2.11-0.10.1.1/bin/kafka-server-stop.sh
+        - name: kafka
+          image: "ppatierno/barnabas:0.1"
+          ports:
+            - name: kafka
+              containerPort: 9092
+              protocol: TCP
+          command:
+            - /opt/kafka_2.11-0.10.1.1/kafka_run.sh
+          volumeMounts:
+            - name: kafka-persistent-storage
+              mountPath: /tmp/kafka/
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - /opt/kafka_2.11-0.10.1.1/bin/kafka-server-stop.sh
+          livenessProbe:
+              tcpSocket:
+                port: kafka
       volumes:
         - name: kafka-persistent-storage
           persistentVolumeClaim:

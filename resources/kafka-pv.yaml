@@ -9,4 +9,4 @@ spec:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Recycle
   hostPath:
-    path: /tmp/kubernetes/kafka
+    path: /tmp/kafka

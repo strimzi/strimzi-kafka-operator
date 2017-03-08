@@ -5,13 +5,13 @@ metadata:
 spec:
   ports:
     - port: 2181
-      name: "zookeeper2"
+      name: clientport
       targetPort : 2181
     - port: 2888
-      name: "zookeeper2-follower"
+      name: peerport
       targetPort: 2888
     - port: 3888
-      name: "zookeeper2-leader"
+      name: leaderport
       targetPort: 3888
   selector:
     name: zookeeper2
