@@ -7,5 +7,6 @@ spec:
     - port: 9092
       name: kafka
       targetPort : 9092
+      protocol: TCP
   selector:
     name: kafka

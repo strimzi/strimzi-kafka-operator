@@ -18,6 +18,12 @@ spec:
             - name: clientport
               containerPort: 2181
               protocol: TCP
+            - name: followerport
+              containerPort: 2888
+              protocol: TCP
+            - name: leaderport
+              containerPort: 3888
+              protocol: TCP
           command:
             - /opt/kafka_2.11-0.10.1.1/zookeeper_run.sh
           env:

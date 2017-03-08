@@ -7,11 +7,14 @@ spec:
     - port: 2181
       name: clientport
       targetPort : 2181
+      protocol: TCP
     - port: 2888
-      name: peerport
+      name: followerport
       targetPort: 2888
+      protocol: TCP
     - port: 3888
       name: leaderport
       targetPort: 3888
+      protocol: TCP
   selector:
     name: zookeeper3

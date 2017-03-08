@@ -7,5 +7,6 @@ spec:
     - port: 2181
       name: clientport
       targetPort : 2181
+      protocol: TCP
   selector:
     name: zookeeper
