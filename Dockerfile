@@ -15,6 +15,6 @@ RUN tar xvfz kafka_$SCALA_VERSION-$KAFKA_VERSION.tgz -C /opt
 ENV KAFKA_HOME=/opt/kafka_$SCALA_VERSION-$KAFKA_VERSION
 
 # copy template configuration files
-COPY ./config/ $KAFKA_HOME/config
+COPY ./config/zookeeper.properties.template ./config/server.properties.template $KAFKA_HOME/config/
 # copy scripts for starting Kafka and Zookeeper (clustered version)
 COPY ./scripts/ $KAFKA_HOME
