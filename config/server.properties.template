@@ -58,7 +58,7 @@ socket.request.max.bytes=104857600
 
 # A comma seperated list of directories under which to store log files
 #log.dirs=/tmp/kafka-logs
-log.dirs=${KAFKA_VOLUME}${KAFKA_LOGS_BASE_NAME}-${KAFKA_BROKER_ID}
+log.dirs=${KAFKA_LOG_DIRS}
 
 # The default number of log partitions per topic. More partitions allow greater
 # parallelism for consumption, but this will also result in more files across

@@ -4,8 +4,6 @@ metadata:
   name: zookeeper1
 spec:
   replicas: 1
-  selector:
-    name: zookeeper1
   template:
     metadata:
       labels:

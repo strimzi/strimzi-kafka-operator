@@ -19,13 +19,18 @@ fi
 
 # volume for saving Kafka server logs
 export KAFKA_VOLUME="/tmp/kafka/"
-# base name for Kafka server logs dir
-export KAFKA_LOGS_BASE_NAME="kafka-logs"
+# base name for Kafka server data dir and application logs
+export KAFKA_LOG_BASE_NAME="kafka-log"
+export KAFKA_APP_LOGS_BASE_NAME="logs"
 
 # the script finds the first available Kafka broker id as a new one
 # or an existing one but with no lock on logs dirs
 BASE=$(dirname $0)
-export KAFKA_BROKER_ID=$($BASE/kafka_get_id.py $KAFKA_VOLUME $KAFKA_LOGS_BASE_NAME)
+export KAFKA_BROKER_ID=$($BASE/kafka_get_id.py $KAFKA_VOLUME $KAFKA_LOG_BASE_NAME)
+
+# create data dir
+export KAFKA_LOG_DIRS=$KAFKA_VOLUME$KAFKA_LOG_BASE_NAME$KAFKA_BROKER_ID
+echo "KAFKA_LOG_DIRS=$KAFKA_LOG_DIRS"
 
 # environment variables substitution in the server configuration template file
 envsubst < $KAFKA_HOME/config/server.properties.template > /tmp/server.properties
@@ -33,7 +38,8 @@ envsubst < $KAFKA_HOME/config/server.properties.template > /tmp/server.propertie
 $BASE/kafka_pre_run.py /tmp/server.properties
 
 # dir for saving application logs
-export LOG_DIR=$KAFKA_VOLUME"/logs/"
+export LOG_DIR=$KAFKA_VOLUME$KAFKA_APP_LOGS_BASE_NAME$KAFKA_BROKER_ID
+echo "LOG_DIR=$LOG_DIR"
 
 # starting Kafka server with final configuration
 exec $KAFKA_HOME/bin/kafka-server-start.sh /tmp/server.properties

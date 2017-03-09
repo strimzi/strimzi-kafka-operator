@@ -13,14 +13,14 @@ else:
 if len(sys.argv) > 2:
     basename = sys.argv[2]
 else:
-    basename = "kafka-logs"
+    basename = "kafka-log"
 
 brokerid = 1
 done = False
 name = ""
 
 while not done:
-    name = "%s-%i" % (basename, brokerid)
+    name = "%s%i" % (basename, brokerid)
     datadir = basedir + name
     lockfile = datadir + "/.lock"
     logger.info("try with %s", lockfile)
@@ -37,9 +37,8 @@ while not done:
             brokerid = brokerid + 1
     else:
         done = True
-        
+
 logger.info("brokerid %i", brokerid)
 logger.info("folder %s", datadir)
-        
-print brokerid
 
+print brokerid
