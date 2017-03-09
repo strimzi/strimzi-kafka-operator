@@ -1,5 +1,5 @@
-apiVersion: v1
-kind: DeploymentConfig
+apiVersion: extensions/v1beta1
+kind: Deployment
 metadata:
   name: zookeeper2
 spec:

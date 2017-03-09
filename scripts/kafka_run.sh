@@ -32,6 +32,8 @@ envsubst < $KAFKA_HOME/config/server.properties.template > /tmp/server.propertie
 
 $BASE/kafka_pre_run.py /tmp/server.properties
 
+# dir for saving application logs
+export LOG_DIR=$KAFKA_VOLUME"/logs/"
+
 # starting Kafka server with final configuration
 exec $KAFKA_HOME/bin/kafka-server-start.sh /tmp/server.properties
-

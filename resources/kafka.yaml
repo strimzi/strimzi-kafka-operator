@@ -1,12 +1,10 @@
-apiVersion: v1
-kind: DeploymentConfig
+apiVersion: extensions/v1beta1
+kind: Deployment
 metadata:
   name: kafka
 spec:
   # used 3 replicas in order to have alwayas majority for leader election
   replicas: 3
-  selector:
-    name: kafka
   template:
     metadata:
       labels:

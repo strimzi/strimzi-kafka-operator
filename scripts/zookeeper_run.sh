@@ -16,6 +16,8 @@ envsubst < $KAFKA_HOME/config/zookeeper.properties.template > /tmp/zookeeper.pro
 BASE=$(dirname $0)
 $BASE/zookeeper_pre_run.py /tmp/zookeeper.properties
 
+# dir for saving application logs
+export LOG_DIR=$ZOOKEEPER_VOLUME"/logs/"
+
 # starting Zookeeper with final configuration
 exec $KAFKA_HOME/bin/zookeeper-server-start.sh /tmp/zookeeper.properties
-
