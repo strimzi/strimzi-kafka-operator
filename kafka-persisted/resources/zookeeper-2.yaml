@@ -1,17 +1,17 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: zookeeper1
+  name: zookeeper2
 spec:
   replicas: 1
   template:
     metadata:
       labels:
-        name: zookeeper1
+        name: zookeeper2
     spec:
       containers:
-        - name: zookeeper1
-          image: "enmasseproject/barnabas:latest"
+        - name: zookeeper2
+          image: "enmasseproject/kafka-persisted:latest"
           ports:
             - name: clientport
               containerPort: 2181
@@ -26,7 +26,7 @@ spec:
             - /opt/kafka_2.11-0.10.1.1/zookeeper_run.sh
           env:
             - name: ZOOKEEPER_ID
-              value: "1"
+              value: "2"
           volumeMounts:
             - name: zookeeper-persistent-storage
               mountPath: /tmp/zookeeper

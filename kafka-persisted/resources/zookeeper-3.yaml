@@ -11,7 +11,7 @@ spec:
     spec:
       containers:
         - name: zookeeper3
-          image: "enmasseproject/barnabas:latest"
+          image: "enmasseproject/kafka-persisted:latest"
           ports:
             - name: clientport
               containerPort: 2181
