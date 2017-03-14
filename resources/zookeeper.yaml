@@ -11,7 +11,7 @@ spec:
     spec:
       containers:
         - name: zookeeper
-          image: "ppatierno/barnabas:0.1"
+          image: "enmasseproject/barnabas:latest"
           ports:
             - name: clientport
               containerPort: 2181

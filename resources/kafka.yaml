@@ -12,7 +12,7 @@ spec:
     spec:
       containers:
         - name: kafka
-          image: "ppatierno/barnabas:0.1"
+          image: "enmasseproject/barnabas:latest"
           ports:
             - name: kafka
               containerPort: 9092
