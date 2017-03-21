@@ -1,0 +1,29 @@
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: kafka
+spec:
+  serviceName: "kafka"
+  # used 3 replicas in order to have alwayas majority for leader election
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        name: kafka
+    spec:
+      containers:
+        - name: kafka
+          image: "enmasseproject/kafka-statefulsets:0.1"
+          ports:
+            - name: kafka
+              containerPort: 9092
+              protocol: TCP
+          command:
+            - /opt/kafka_2.11-0.10.1.1/kafka_run.sh
+          volumeMounts:
+            - name: kafka-storage
+              mountPath: /tmp/kafka/
+      volumes:
+        - name: kafka-storage
+          persistentVolumeClaim:
+            claimName: kafkaclaim

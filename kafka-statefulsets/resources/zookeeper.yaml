@@ -1,0 +1,36 @@
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: zookeeper
+spec:
+  serviceName: "zookeeper"
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: zookeeper
+    spec:
+      containers:
+        - name: zookeeper
+          image: "enmasseproject/kafka-statefulsets:0.1"
+          ports:
+            - name: clientport
+              containerPort: 2181
+              protocol: TCP
+          command:
+            - ./zookeeper_run.sh
+          volumeMounts:
+            - name: zookeeper-storage
+              mountPath: /tmp/zookeeper
+      volumes:
+        - name: zookeeper-storage
+          persistentVolumeClaim:
+            claimName: zookeeperclaim
+      #volumeClaimTemplates:
+        #- metadata:
+            #name: zookeeperclaim
+          #spec:
+            #accessModes: [ "ReadWriteOnce" ]
+            #resources:
+              #requests:
+                #storage: 1Gi
