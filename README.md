@@ -13,5 +13,14 @@ This deployment is available under the _kafka-persisted_ folder and provides fol
 * config : configuration file templates for running Kafka and Zookeeper
 * scripts : scripts for starting up Kafka and Zookeeper servers
 * resources : provides all YAML configuration files for setting up services, deployments, volumes and claims
-* kubernetes : contains scripts for provisioning and deprovisiong stuff on Kubernetes
-* openshift : contains scripts for provisioning and deprovisiong stuff on OpenShift
+
+## Kafka in-memory
+
+This deployment is just for development and testing purpose and not for production. The Zookeeper server and the Kafka broker are deployed in different pods. For storing broker information (Zookeeper side) and topics/partitions (Kafka side), an _emptyDir_ is used so it means that its content is strictly related to the pod life cycle (deleted when the pod goes down). Finally, this deployment is not for scaling but just for having one single pod for Kafka broker and one for Zookeeper server.
+
+This deployment is available under the _kafka-inmemory_ folder and provides following artifacts :
+
+* Dockerfile : Docker file for building an image with Kafka and Zookeeper already installed
+* config : configuration file templates for running Zookeeper
+* scripts : scripts for starting up Kafka and Zookeeper servers
+* resources : provides all YAML configuration files for setting up services and deployments

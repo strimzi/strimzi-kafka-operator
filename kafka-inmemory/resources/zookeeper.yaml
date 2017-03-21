@@ -1,0 +1,29 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: zookeeper
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: zookeeper
+    spec:
+      containers:
+        - name: zookeeper
+          image: "enmasseproject/kafka-inmemory:latest"
+          ports:
+            - name: clientport
+              containerPort: 2181
+              protocol: TCP
+          command:
+            - ./zookeeper_run.sh
+          volumeMounts:
+            - name: zookeeper-storage
+              mountPath: /tmp/zookeeper
+          livenessProbe:
+              tcpSocket:
+                port: clientport
+      volumes:
+        - name: zookeeper-storage
+          emptyDir: {}
