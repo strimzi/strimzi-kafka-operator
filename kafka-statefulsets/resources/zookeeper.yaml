@@ -12,7 +12,7 @@ spec:
     spec:
       containers:
         - name: zookeeper
-          image: "enmasseproject/kafka-statefulsets:0.1"
+          image: "enmasseproject/kafka-statefulsets:latest"
           ports:
             - name: clientport
               containerPort: 2181
@@ -22,15 +22,12 @@ spec:
           volumeMounts:
             - name: zookeeper-storage
               mountPath: /tmp/zookeeper
-      volumes:
-        - name: zookeeper-storage
-          persistentVolumeClaim:
-            claimName: zookeeperclaim
-      #volumeClaimTemplates:
-        #- metadata:
-            #name: zookeeperclaim
-          #spec:
-            #accessModes: [ "ReadWriteOnce" ]
-            #resources:
-              #requests:
-                #storage: 1Gi
+  volumeClaimTemplates:
+    - metadata:
+        name: zookeeper-storage
+      spec:
+        resources:
+          requests:
+            storage: 1Gi
+        accessModes:
+          - ReadWriteOnce
