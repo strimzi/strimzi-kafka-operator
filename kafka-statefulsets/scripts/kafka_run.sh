@@ -22,5 +22,6 @@ echo "LOG_DIR=$LOG_DIR"
 # starting Kafka server with final configuration
 exec $KAFKA_HOME/bin/kafka-server-start.sh $KAFKA_HOME/config/server.properties \
 --override broker.id=$KAFKA_BROKER_ID \
+--override advertised.host.name=$(hostname -I) \
 --override zookeeper.connect=zookeeper:2181 \
 --override log.dirs=$KAFKA_LOG_DIRS
