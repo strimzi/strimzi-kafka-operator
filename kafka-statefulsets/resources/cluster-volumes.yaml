@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: List
+items:
+- apiVersion: v1
+  kind: PersistentVolume
+  metadata:
+    name: kafkapv-a
+  spec:
+    capacity:
+      storage: 5Gi
+    accessModes:
+      - ReadWriteOnce
+    persistentVolumeReclaimPolicy: Recycle
+    hostPath:
+      path: /tmp/kafka-a
+- apiVersion: v1
+  kind: PersistentVolume
+  metadata:
+    name: kafkapv-b
+  spec:
+    capacity:
+      storage: 5Gi
+    accessModes:
+      - ReadWriteOnce
+    persistentVolumeReclaimPolicy: Recycle
+    hostPath:
+      path: /tmp/kafka-b
+- apiVersion: v1
+  kind: PersistentVolume
+  metadata:
+    name: kafkapv-c
+  spec:
+    capacity:
+      storage: 5Gi
+    accessModes:
+      - ReadWriteOnce
+    persistentVolumeReclaimPolicy: Recycle
+    hostPath:
+      path: /tmp/kafka-c
+- apiVersion: v1
+  kind: PersistentVolume
+  metadata:
+    name: kafkapv-d
+  spec:
+    capacity:
+      storage: 5Gi
+    accessModes:
+      - ReadWriteOnce
+    persistentVolumeReclaimPolicy: Recycle
+    hostPath:
+      path: /tmp/kafka-d

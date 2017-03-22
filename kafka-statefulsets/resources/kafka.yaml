@@ -13,7 +13,7 @@ spec:
     spec:
       containers:
         - name: kafka
-          image: "enmasseproject/kafka-statefulsets:latest"
+          image: "enmasseproject/kafka-statefulsets:0.1"
           ports:
             - name: kafka
               containerPort: 9092
