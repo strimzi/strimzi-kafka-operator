@@ -1,4 +1,4 @@
-SUBDIRS=kafka-persisted
+SUBDIRS=kafka-persisted kafka-inmemory kafka-statefulsets
 
 all: $(SUBDIRS)
 

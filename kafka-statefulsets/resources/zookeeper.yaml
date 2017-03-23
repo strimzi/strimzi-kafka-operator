@@ -12,7 +12,7 @@ spec:
     spec:
       containers:
         - name: zookeeper
-          image: "enmasseproject/kafka-statefulsets:0.1"
+          image: "enmasseproject/kafka-statefulsets:latest"
           ports:
             - name: clientport
               containerPort: 2181
