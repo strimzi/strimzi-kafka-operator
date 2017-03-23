@@ -24,3 +24,20 @@ This deployment is available under the _kafka-inmemory_ folder and provides foll
 * config : configuration file templates for running Zookeeper
 * scripts : scripts for starting up Kafka and Zookeeper servers
 * resources : provides all YAML configuration files for setting up services and deployments
+
+## Kafka Stateful Sets
+
+This deployment is an improvement of the first one (the "Kafka persisted") but it uses the new Kubernetes/OpenShift feature : the Stateful Sets (previously known as "Pet Sets").
+In this way, the pods receive an unique name and network identity and there is no need for a script (like the "persisted" version) where the Kafka brokers have to use a common
+persisten volume for finding a free ID to get an use for the starting instance. At same time they don't need to use a single persisten volume and store logs in different folders
+(named on the ID base) but they use different persistent volumes and the auto-generated claims.
+
+It's important to say that in this deployment both "regular" and "headless" services are used. The "regular" services are needed for having instances accessible from clients;
+the "headless" services are needed for having the DNS resolving directly the PODs IP addresses for having the Stateful Sets working properly.
+
+This deployment is available under the _kafka-statefulsets_ folder and provides following artifacts :
+
+* Dockerfile : Docker file for building an image with Kafka and Zookeeper already installed
+* config : configuration file templates for running Zookeeper
+* scripts : scripts for starting up Kafka and Zookeeper servers
+* resources : provides all YAML configuration files for setting up volumes, services and deployments
