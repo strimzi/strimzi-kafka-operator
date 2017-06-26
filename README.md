@@ -41,3 +41,7 @@ This deployment is available under the _kafka-statefulsets_ folder and provides 
 * config : configuration file templates for running Zookeeper
 * scripts : scripts for starting up Kafka and Zookeeper servers
 * resources : provides all YAML configuration files for setting up volumes, services and deployments
+
+### Deploying to OpenShift
+
+To conviniently deploy a StatefulSet to OpenShift a [Template is provided](kafka-statefulsets/resources/openshift-template.yaml), this could be used via `oc create -f kafka-statefulsets/resources/openshift-template.yaml` so it is present within your project. To create a whole Kafka StatefulSet use `oc new-app barnabas`.
