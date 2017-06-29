@@ -13,6 +13,14 @@ parameters:
   name: KAFKA_VOLUME_CAPACITY
   required: true
   value: 1Gi
+- description: Image repository name
+  displayName: Repository Name
+  name: IMAGE_REPO_NAME
+  value: enmasseproject 
+- description: Image name
+  displayName: Image Name
+  name: IMAGE_NAME
+  value: kafka-statefulsets
 objects:
 - apiVersion: v1
   kind: Service
@@ -91,7 +99,7 @@ objects:
       spec:
         containers:
         - name: kafka
-          image: enmasseproject/kafka-statefulsets:latest
+          image: ${IMAGE_REPO_NAME}/${IMAGE_NAME}:latest
           imagePullPolicy: Always
           command:
           - /opt/kafka_2.11-0.10.1.1/kafka_run.sh
@@ -135,7 +143,7 @@ objects:
       spec:
         containers:
         - name: zookeeper
-          image: enmasseproject/kafka-statefulsets:latest
+          image: ${IMAGE_REPO_NAME}/${IMAGE_NAME}:latest
           imagePullPolicy: Always
           command:
           - ./zookeeper_run.sh
