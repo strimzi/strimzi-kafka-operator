@@ -21,6 +21,10 @@ parameters:
   displayName: Image Name
   name: IMAGE_NAME
   value: kafka-statefulsets
+- description: Kafka Version
+  displayName: Kafka Version
+  name: KAFKA_VERSION
+  value: "0.11.0.0"
 objects:
 - apiVersion: v1
   kind: Service
@@ -102,7 +106,7 @@ objects:
           image: ${IMAGE_REPO_NAME}/${IMAGE_NAME}:latest
           imagePullPolicy: Always
           command:
-          - /opt/kafka_2.11-0.10.1.1/kafka_run.sh
+          - /opt/kafka_2.11-${KAFKA_VERSION}/kafka_run.sh
           ports:
           - containerPort: 9092
             name: kafka
