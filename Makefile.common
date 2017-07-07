@@ -5,3 +5,4 @@ COMMIT ?= latest
 all: build
 	echo "Running docker build"
 	curl -s https://raw.githubusercontent.com/EnMasseProject/travis-scripts/master/docker-build.sh | bash /dev/stdin $(REPO) $(DOCKERFILE_DIR)
+	curl -s https://raw.githubusercontent.com/EnMasseProject/travis-scripts/master/docker-push.sh | bash /dev/stdin $(REPO)
