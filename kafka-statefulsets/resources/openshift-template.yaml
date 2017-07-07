@@ -1,0 +1,171 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: barnabas
+parameters:
+- description: Volume space available for Zookeeper data, e.g. 512Mi, 2Gi.
+  displayName: Zookeeper Volume Capacity
+  name: ZOOKEEPER_VOLUME_CAPACITY
+  required: true
+  value: 1Gi
+- description: Volume space available for Kafka data, e.g. 512Mi, 2Gi.
+  displayName: Kafka Volume Capacity
+  name: KAFKA_VOLUME_CAPACITY
+  required: true
+  value: 1Gi
+- description: Image repository name
+  displayName: Repository Name
+  name: IMAGE_REPO_NAME
+  value: enmasseproject 
+- description: Image name
+  displayName: Image Name
+  name: IMAGE_NAME
+  value: kafka-statefulsets
+- description: Kafka Version
+  displayName: Kafka Version
+  name: KAFKA_VERSION
+  value: "0.11.0.0"
+objects:
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: kafka
+  spec:
+    ports:
+    - name: kafka
+      port: 9092
+      protocol: TCP
+      targetPort: 9092
+    selector:
+      name: kafka
+    sessionAffinity: None
+    type: ClusterIP
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: kafka-headless
+  spec:
+    clusterIP: None
+    ports:
+    - name: kafka
+      port: 9092
+      protocol: TCP
+      targetPort: 9092
+    selector:
+      name: kafka
+    sessionAffinity: None
+    type: ClusterIP
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: zookeeper
+  spec:
+    ports:
+    - name: clientport
+      port: 2181
+      protocol: TCP
+      targetPort: 2181
+    selector:
+      name: zookeeper
+    sessionAffinity: None
+    type: ClusterIP
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: zookeeper-headless
+  spec:
+    clusterIP: None
+    ports:
+    - name: clientport
+      port: 2181
+      protocol: TCP
+      targetPort: 2181
+    selector:
+      name: zookeeper
+    sessionAffinity: None
+    type: ClusterIP
+- apiVersion: apps/v1beta1
+  kind: StatefulSet
+  metadata:
+    labels:
+      name: kafka
+    name: kafka
+  spec:
+    replicas: 3
+    selector:
+      matchLabels:
+        name: kafka
+    serviceName: kafka
+    template:
+      metadata:
+        labels:
+          name: kafka
+      spec:
+        containers:
+        - name: kafka
+          image: ${IMAGE_REPO_NAME}/${IMAGE_NAME}:latest
+          imagePullPolicy: Always
+          command:
+          - /opt/kafka_2.11-${KAFKA_VERSION}/kafka_run.sh
+          ports:
+          - containerPort: 9092
+            name: kafka
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /tmp/kafka/
+            name: kafka-storage
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+    volumeClaimTemplates:
+    - metadata:
+        name: kafka-storage
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: "${KAFKA_VOLUME_CAPACITY}"
+- apiVersion: apps/v1beta1
+  kind: StatefulSet
+  metadata:
+    labels:
+      name: zookeeper
+    name: zookeeper
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        name: zookeeper
+    serviceName: zookeeper
+    template:
+      metadata:
+        labels:
+          name: zookeeper
+      spec:
+        containers:
+        - name: zookeeper
+          image: ${IMAGE_REPO_NAME}/${IMAGE_NAME}:latest
+          imagePullPolicy: Always
+          command:
+          - ./zookeeper_run.sh
+          ports:
+          - containerPort: 2181
+            name: clientport
+            protocol: TCP
+          volumeMounts:
+          - mountPath: /tmp/zookeeper
+            name: zookeeper-storage
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+    volumeClaimTemplates:
+    - metadata:
+        name: zookeeper-storage
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: "${ZOOKEEPER_VOLUME_CAPACITY}"
