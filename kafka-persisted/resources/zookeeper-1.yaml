@@ -23,7 +23,7 @@ spec:
               containerPort: 3888
               protocol: TCP
           command:
-            - /opt/kafka_2.11-0.10.1.1/zookeeper_run.sh
+            - /opt/kafka_2.11-0.11.0.0/zookeeper_run.sh
           env:
             - name: ZOOKEEPER_ID
               value: "1"
