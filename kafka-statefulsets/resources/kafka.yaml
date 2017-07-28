@@ -19,7 +19,7 @@ spec:
               containerPort: 9092
               protocol: TCP
           command:
-            - /opt/kafka_2.11-0.11.0.0/kafka_run.sh
+            - /opt/kafka/kafka_run.sh
           volumeMounts:
             - name: kafka-storage
               mountPath: /tmp/kafka/

@@ -5,6 +5,8 @@ RUN dnf -y install which java-1.8.0-openjdk libaio python gettext hostname iputi
 # set Scala and Kafka version
 ENV SCALA_VERSION=2.11
 ENV KAFKA_VERSION=0.11.0.0
+# set Kafka home folder
+ENV KAFKA_HOME=/opt/kafka
 
 # Set from build args
 ARG version=latest
@@ -13,10 +15,10 @@ ENV VERSION ${version}
 # downloading/extracting Apache Kafka
 RUN wget http://www.eu.apache.org/dist/kafka/$KAFKA_VERSION/kafka_$SCALA_VERSION-$KAFKA_VERSION.tgz
 
-RUN tar xvfz kafka_$SCALA_VERSION-$KAFKA_VERSION.tgz -C /opt
+RUN mkdir $KAFKA_HOME \
+    && tar xvfz kafka_$SCALA_VERSION-$KAFKA_VERSION.tgz -C $KAFKA_HOME --strip-components=1
 
-# set Kakfa home folder
-ENV KAFKA_HOME=/opt/kafka_$SCALA_VERSION-$KAFKA_VERSION
+WORKDIR $KAFKA_HOME
 
 # copy template configuration files
 COPY ./config/zookeeper.properties.template ./config/server.properties.template $KAFKA_HOME/config/
