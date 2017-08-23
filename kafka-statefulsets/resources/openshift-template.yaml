@@ -106,7 +106,7 @@ objects:
           image: ${IMAGE_REPO_NAME}/${IMAGE_NAME}:latest
           imagePullPolicy: Always
           command:
-          - /opt/kafka_2.11-${KAFKA_VERSION}/kafka_run.sh
+          - /opt/kafka/kafka_run.sh
           ports:
           - containerPort: 9092
             name: kafka
