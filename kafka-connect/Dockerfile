@@ -21,5 +21,7 @@ RUN mkdir $KAFKA_HOME \
 
 WORKDIR $KAFKA_HOME
 
+EXPOSE 8083
+
 # copy scripts for starting Kafka
 COPY ./scripts/ $KAFKA_HOME
