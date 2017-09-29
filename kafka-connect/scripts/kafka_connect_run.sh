@@ -1,39 +1,44 @@
 #!/bin/bash
+set -e
 
-if [ -z "$KAFKA_CONNECT_BOOTSTRAP_SERVERS" ]; then
-  KAFKA_CONNECT_BOOTSTRAP_SERVERS="kafka:9092"
-fi
+# if command starts with an option, prepend qdrouterd
+if [ "$1" = 'bash' ]; then
+    exec "$@"
+else
+  if [ -z "$KAFKA_CONNECT_BOOTSTRAP_SERVERS" ]; then
+    KAFKA_CONNECT_BOOTSTRAP_SERVERS="kafka:9092"
+  fi
 
-if [ -z "$KAFKA_CONNECT_GROUP_ID" ]; then
-  KAFKA_CONNECT_GROUP_ID="connect-cluster"
-fi
+  if [ -z "$KAFKA_CONNECT_GROUP_ID" ]; then
+    KAFKA_CONNECT_GROUP_ID="connect-cluster"
+  fi
 
-if [ -z "$KAFKA_CONNECT_OFFSET_STORAGE_TOPIC" ]; then
-  KAFKA_CONNECT_OFFSET_STORAGE_TOPIC="${KAFKA_CONNECT_GROUP_ID}-offsets"
-fi
+  if [ -z "$KAFKA_CONNECT_OFFSET_STORAGE_TOPIC" ]; then
+    KAFKA_CONNECT_OFFSET_STORAGE_TOPIC="${KAFKA_CONNECT_GROUP_ID}-offsets"
+  fi
 
-if [ -z "$KAFKA_CONNECT_CONFIG_STORAGE_TOPIC" ]; then
-  KAFKA_CONNECT_CONFIG_STORAGE_TOPIC="${KAFKA_CONNECT_GROUP_ID}-configs"
-fi
+  if [ -z "$KAFKA_CONNECT_CONFIG_STORAGE_TOPIC" ]; then
+    KAFKA_CONNECT_CONFIG_STORAGE_TOPIC="${KAFKA_CONNECT_GROUP_ID}-configs"
+  fi
 
-if [ -z "$KAFKA_CONNECT_STATUS_STORAGE_TOPIC" ]; then
-  KAFKA_CONNECT_STATUS_STORAGE_TOPIC="${KAFKA_CONNECT_GROUP_ID}-status"
-fi
+  if [ -z "$KAFKA_CONNECT_STATUS_STORAGE_TOPIC" ]; then
+    KAFKA_CONNECT_STATUS_STORAGE_TOPIC="${KAFKA_CONNECT_GROUP_ID}-status"
+  fi
 
-if [ -z "$KAFKA_CONNECT_KEY_CONVERTER" ]; then
-  KAFKA_CONNECT_KEY_CONVERTER="org.apache.kafka.connect.json.JsonConverter"
-fi
+  if [ -z "$KAFKA_CONNECT_KEY_CONVERTER" ]; then
+    KAFKA_CONNECT_KEY_CONVERTER="org.apache.kafka.connect.json.JsonConverter"
+  fi
 
-if [ -z "$KAFKA_CONNECT_VALUE_CONVERTER" ]; then
-  KAFKA_CONNECT_VALUE_CONVERTER="org.apache.kafka.connect.json.JsonConverter"
-fi
+  if [ -z "$KAFKA_CONNECT_VALUE_CONVERTER" ]; then
+    KAFKA_CONNECT_VALUE_CONVERTER="org.apache.kafka.connect.json.JsonConverter"
+  fi
 
-if [ -z "$KAFKA_CONNECT_PLUGIN_PATH" ]; then
-  KAFKA_CONNECT_PLUGIN_PATH="${KAFKA_HOME}/plugins"
-fi
+  if [ -z "$KAFKA_CONNECT_PLUGIN_PATH" ]; then
+    KAFKA_CONNECT_PLUGIN_PATH="${KAFKA_HOME}/plugins"
+  fi
 
-# Write the config file
-cat > /tmp/barnabas-connect.properties <<EOF
+  # Write the config file
+  cat > /tmp/barnabas-connect.properties <<EOF
 bootstrap.servers=${KAFKA_CONNECT_BOOTSTRAP_SERVERS}
 group.id=${KAFKA_CONNECT_GROUP_ID}
 offset.storage.topic=${KAFKA_CONNECT_OFFSET_STORAGE_TOPIC}
@@ -50,9 +55,12 @@ internal.value.converter.schemas.enable=false
 plugin.path=${KAFKA_CONNECT_PLUGIN_PATH}
 EOF
 
-echo "Starting Kafka connect with configuration:"
-cat /tmp/barnabas-connect.properties
-echo ""
+  echo "Starting Kafka connect with configuration:"
+  cat /tmp/barnabas-connect.properties
+  echo ""
 
-# starting Kafka server with final configuration
-exec $KAFKA_HOME/bin/connect-distributed.sh /tmp/barnabas-connect.properties
+  # starting Kafka server with final configuration
+  exec $KAFKA_HOME/bin/connect-distributed.sh /tmp/barnabas-connect.properties
+fi
+
+

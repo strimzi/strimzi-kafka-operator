@@ -67,8 +67,6 @@ objects:
               - name: rest-api
                 containerPort: 8083
                 protocol: TCP
-            command:
-              - /opt/kafka/kafka_connect_run.sh
             env:
               - name: KAFKA_CONNECT_BOOTSTRAP_SERVERS
                 value: "${KAFKA_CONNECT_BOOTSTRAP_SERVERS}"
