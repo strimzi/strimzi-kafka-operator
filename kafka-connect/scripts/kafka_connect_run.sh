@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# if command starts with an option, prepend qdrouterd
+# Start bash if requested. Otherwise start Kafka Connect
 if [ "$1" = 'bash' ]; then
     exec "$@"
 else
@@ -62,5 +62,3 @@ EOF
   # starting Kafka server with final configuration
   exec $KAFKA_HOME/bin/connect-distributed.sh /tmp/barnabas-connect.properties
 fi
-
-
