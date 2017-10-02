@@ -57,11 +57,11 @@ This deployment is available under the _kafka-statefulsets_ folder and provides 
 
 ### Deploying to OpenShift
 
-To conviniently deploy a StatefulSet to OpenShift a [Template is provided](kafka-statefulsets/resources/openshift-template.yaml), this could be used via `oc create -f kafka-statefulsets/resources/openshift-template.yaml` so it is present within your project. To create a whole Kafka StatefulSet use `oc new-app barnabas`.
+To conveniently deploy a StatefulSet to OpenShift a [Template is provided](kafka-statefulsets/resources/openshift-template.yaml), this could be used via `oc create -f kafka-statefulsets/resources/openshift-template.yaml` so it is present within your project. To create a whole Kafka StatefulSet use `oc new-app barnabas`.
 
 ## Kafka Connect
 
-This deployment adds Kafka Connect cluster which can be used with the Kafka deployments above. It is implemented as deployment with a configurable number of workers. The default image currently contains only the Connectors which are part of Apache Kafka project - `FileStreamSinkConnector` and `FileStreamSourceConnector`. The REST interface for managing the Kafka Connect cluster is exposed internally withing the Kubernetes / OpenShift cluster as service `kafka-connect` on port `8083`.
+This deployment adds Kafka Connect cluster which can be used with the Kafka deployments above. It is implemented as deployment with a configurable number of workers. The default image currently contains only the Connectors which are part of Apache Kafka project - `FileStreamSinkConnector` and `FileStreamSourceConnector`. The REST interface for managing the Kafka Connect cluster is exposed internally within the Kubernetes / OpenShift cluster as service `kafka-connect` on port `8083`.
 
 If you want to use other connectors, you can:
 * Mount a volume containing the plugins to path `/opt/kafka/plugins/`
@@ -69,8 +69,8 @@ If you want to use other connectors, you can:
 
 ### Deploying to OpenShift
 
-To conviniently deploy Kafka Connect to OpenShift a [Template is provided](kafka-connect/resources/openshift-template.yaml), this could be used via `oc create -f kafka-connect/resources/openshift-template.yaml` so it is present within your project. To create a whole Kafka StatefulSet use `oc new-app barnabas-connect`.
+To conveniently deploy Kafka Connect to OpenShift a [Template is provided](kafka-connect/resources/openshift-template.yaml), this could be used via `oc create -f kafka-connect/resources/openshift-template.yaml` so it is present within your project. To create a whole Kafka StatefulSet use `oc new-app barnabas-connect`.
 
 ### Deploying to Kubernetes
 
-To conviniently deploy Kafka Connect to Kubernetes use the provided yaml files with the Kafka Connect [deployment](kafka-connect/resources/kafka-connect.yaml) and [service](kafka-connect/resources/kafka-connect-service.yaml). This could be sone suing `kubectl apply -f kafka-connect/resources/kafka-connect.yaml` and `kubectl apply -f kafka-connect/resources/kafka-connect-service.yaml`.
+To conveniently deploy Kafka Connect to Kubernetes use the provided yaml files with the Kafka Connect [deployment](kafka-connect/resources/kafka-connect.yaml) and [service](kafka-connect/resources/kafka-connect-service.yaml). This could be done using `kubectl apply -f kafka-connect/resources/kafka-connect.yaml` and `kubectl apply -f kafka-connect/resources/kafka-connect-service.yaml`.
