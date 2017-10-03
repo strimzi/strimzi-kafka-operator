@@ -56,7 +56,7 @@ If you want to use other connectors, you can:
 
 ### Deploying to OpenShift
 
-To conveniently deploy Kafka Connect to OpenShift a [Template is provided](kafka-connect/resources/openshift-template.yaml), this could be used via `oc create -f kafka-connect/resources/openshift-template.yaml` so it is present within your project. To create a whole Kafka StatefulSet use `oc new-app barnabas-connect`.
+To conveniently deploy Kafka Connect to OpenShift a [Template is provided](kafka-connect/resources/openshift-template.yaml), this could be used via `oc create -f kafka-connect/resources/openshift-template.yaml` so it is present within your project. To create a whole Kafka Connect cluster use `oc new-app barnabas-connect` *(make sure you have already deployed a Kafka broker)*.
 
 ### Deploying to Kubernetes
 
