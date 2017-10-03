@@ -11,7 +11,6 @@ all: build
 	docker run                                                              \
 	    -ti                                                                 \
 	    --rm                                                                \
-	    -u $$(id -u):$$(id -g)                                              \
 		-v "$$(pwd)/.go:/go"                                                \
 	    -v "$$(pwd):/go/src/$(PROJECT_NAME)"                                \
 	    -v "$$(pwd)/bin:/go/bin"                                            \
@@ -19,6 +18,10 @@ all: build
 	    -w /go/src/$(PROJECT_NAME)                                          \
 	    $(BUILD_IMAGE)                                                      \
 	    /bin/sh -c "                                                        \
+			apk update;                                                     \
+			apk add git;                                                    \
+			go get github.com/tools/godep;                                  \
+			godep restore;                                                  \
 			export CGO_ENABLED=0;                                           \
 	        export GOARCH=amd64;                                            \
 			ARCH=amd64;                                                     \
