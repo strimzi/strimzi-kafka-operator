@@ -53,11 +53,30 @@ This deployment adds Kafka Connect cluster which can be used with the Kafka depl
 If you want to use other connectors, you can:
 * Mount a volume containing the plugins to path `/opt/kafka/plugins/`
 * Use the `enmasseproject/kafka-connect` image as Docker base image, add your connectors to the `/opt/kafka/plugins/` directory and use this new image instead of `enmasseproject/kafka-connect`
+* Create a ConfigMap named `kafka-connect-plugins` which contains a list of plugins. The plugins will be automatically downloaded when starting the Kafka Connect cluster. The config map should be in following format:
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kafka-connect-plugins
+data:
+  myConnector1: |
+          {
+            "myConnector1.jar" : "https://...",
+            "dependency1.jar"  : "https://...",
+            "dependency2.jar"  : "https://..."
+          }
+  myConnector2: |
+          {
+            "myConnector2.jar" : "https://...",
+            "dependency2.jar"  : "https://..."
+          }
+```
 
 ### Deploying to OpenShift
 
-To conveniently deploy Kafka Connect to OpenShift a [Template is provided](kafka-connect/resources/openshift-template.yaml), this could be used via `oc create -f kafka-connect/resources/openshift-template.yaml` so it is present within your project. To create a whole Kafka Connect cluster use `oc new-app barnabas-connect` *(make sure you have already deployed a Kafka broker)*.
+To deploy Kafka Connect to OpenShift you can use the [deploy-openshift.sh](kafka-connect/deploy-openshift.sh) script which will create all needed roles and deploy the application into your OpenShift cluster. *Before deploying Kafka Connect make sure you have already deployed the Kafka broker.*
 
 ### Deploying to Kubernetes
 
-To conveniently deploy Kafka Connect to Kubernetes use the provided yaml files with the Kafka Connect [deployment](kafka-connect/resources/kafka-connect.yaml) and [service](kafka-connect/resources/kafka-connect-service.yaml). This could be done using `kubectl apply -f kafka-connect/resources/kafka-connect.yaml` and `kubectl apply -f kafka-connect/resources/kafka-connect-service.yaml`.
+To deploy Kafka Connect to Kubernetes use the provided yaml file with the Kafka Connect [deployment and service](kafka-connect/resources/kafka-connect.yaml). This could be done using `kubectl apply -f kafka-connect/resources/kafka-connect.yaml`. In case your Kubernetes cluster is using Role Based Access Control (RBAC), apply additionally the provided yaml file with [roles and bindings](kafka-connect/resources/kafka-connect-rbac.yaml). This could be done using `kubectl apply -f kafka-connect/resources/kafka-connect-rbac.yaml`.

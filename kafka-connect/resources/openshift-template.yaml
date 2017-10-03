@@ -53,6 +53,8 @@ objects:
   kind: Deployment
   metadata:
     name: kafka-connect
+    labels:
+      name: kafka-connect
   spec:
     replicas: ${INSTANCES}
     template:
@@ -60,6 +62,7 @@ objects:
         labels:
           name: kafka-connect
       spec:
+        serviceAccount: kafka-connect
         containers:
           - name: kafka-connect
             image: ${IMAGE_REPO_NAME}/${IMAGE_NAME}:latest
@@ -76,8 +79,29 @@ objects:
                 value: "${KAFKA_CONNECT_KEY_CONVERTER}"
               - name: KAFKA_CONNECT_VALUE_CONVERTER
                 value: "${KAFKA_CONNECT_VALUE_CONVERTER}"
+            volumeMounts:
+              - mountPath: /opt/kafka/plugins-ext
+                name: plugin-volume
             livenessProbe:
               httpGet:
                 path: /
                 port: rest-api
               initialDelaySeconds: 60
+        initContainers:
+          - name: plugin-loader
+            image: ${IMAGE_REPO_NAME}/${IMAGE_NAME}-init-loader:latest
+            env:
+              - name: NAMESPACE
+                valueFrom:
+                  fieldRef:
+                    fieldPath: metadata.namespace
+              - name: CONFIG_MAP
+                value: "kafka-connect-plugins"
+              - name: PLUGIN_PATH
+                value: "/opt/kafka/plugins-ext"
+            volumeMounts:
+              - mountPath: /opt/kafka/plugins-ext
+                name: plugin-volume
+        volumes:
+          - name: plugin-volume
+            emptyDir: {}
