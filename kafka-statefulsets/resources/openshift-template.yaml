@@ -17,10 +17,14 @@ parameters:
   displayName: Repository Name
   name: IMAGE_REPO_NAME
   value: enmasseproject 
-- description: Image name
-  displayName: Image Name
-  name: IMAGE_NAME
+- description: Kafka image name
+  displayName: Kafka image Name
+  name: KAFKA_IMAGE_NAME
   value: kafka-statefulsets
+- description: Zookeeper image name
+  displayName: Zookeeper image Name
+  name: ZOOKEEPER_IMAGE_NAME
+  value: zookeeper
 - description: Kafka Version
   displayName: Kafka Version
   name: KAFKA_VERSION
@@ -103,10 +107,8 @@ objects:
       spec:
         containers:
         - name: kafka
-          image: ${IMAGE_REPO_NAME}/${IMAGE_NAME}:latest
+          image: ${IMAGE_REPO_NAME}/${KAFKA_IMAGE_NAME}:latest
           imagePullPolicy: Always
-          command:
-          - /opt/kafka/kafka_run.sh
           ports:
           - containerPort: 9092
             name: kafka
@@ -147,10 +149,8 @@ objects:
       spec:
         containers:
         - name: zookeeper
-          image: ${IMAGE_REPO_NAME}/${IMAGE_NAME}:latest
+          image: ${IMAGE_REPO_NAME}/${ZOOKEEPER_IMAGE_NAME}:latest
           imagePullPolicy: Always
-          command:
-          - ./zookeeper_run.sh
           ports:
           - containerPort: 2181
             name: clientport

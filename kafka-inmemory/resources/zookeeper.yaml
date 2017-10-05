@@ -11,13 +11,11 @@ spec:
     spec:
       containers:
         - name: zookeeper
-          image: "enmasseproject/kafka-inmemory:latest"
+          image: "enmasseproject/zookeeper:latest"
           ports:
             - name: clientport
               containerPort: 2181
               protocol: TCP
-          command:
-            - ./zookeeper_run.sh
           volumeMounts:
             - name: zookeeper-storage
               mountPath: /tmp/zookeeper

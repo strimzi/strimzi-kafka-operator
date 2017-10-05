@@ -1,4 +1,4 @@
-SUBDIRS=kafka-inmemory kafka-statefulsets kafka-connect
+SUBDIRS=kafka-base zookeeper kafka-inmemory kafka-statefulsets kafka-connect
 
 all: $(SUBDIRS)
 
