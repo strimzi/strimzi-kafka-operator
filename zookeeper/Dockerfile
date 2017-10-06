@@ -27,7 +27,7 @@ RUN curl -O http://www.eu.apache.org/dist/zookeeper/zookeeper-$ZOOKEEPER_VERSION
     && tar xvfz zookeeper-$ZOOKEEPER_VERSION.tar.gz -C $ZOOKEEPER_HOME --strip-components=1             \
     && rm -f zookeeper-$ZOOKEEPER_VERSION.tar.gz*
 
-EXPOSE 2181
+EXPOSE 2181 2888 3888
 
 # copy template configuration files
 COPY ./config/zookeeper.properties.template $ZOOKEEPER_HOME/config/
