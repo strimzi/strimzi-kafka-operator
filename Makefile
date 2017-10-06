@@ -1,4 +1,4 @@
-SUBDIRS=kafka-inmemory kafka-statefulsets kafka-connect
+SUBDIRS=kafka-inmemory kafka-statefulsets kafka-connect/init-loader kafka-connect
 
 all: $(SUBDIRS)
 

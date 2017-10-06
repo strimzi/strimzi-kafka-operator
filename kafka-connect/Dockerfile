@@ -17,7 +17,9 @@ RUN wget http://www.eu.apache.org/dist/kafka/$KAFKA_VERSION/kafka_$SCALA_VERSION
 
 RUN mkdir $KAFKA_HOME \
     && tar xvfz kafka_$SCALA_VERSION-$KAFKA_VERSION.tgz -C $KAFKA_HOME --strip-components=1 \
-    && mkdir $KAFKA_HOME/plugins
+    && mkdir $KAFKA_HOME/plugins && mkdir $KAFKA_HOME/plugins-ext
+
+VOLUME $KAFKA_HOME/plugins-ext
 
 WORKDIR $KAFKA_HOME
 

@@ -1,0 +1,29 @@
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: Role
+metadata:
+  name: kafka-connect
+  labels:
+    name: kafka-connect
+rules:
+- apiGroups:
+    - ""
+  resources:
+    - configmaps
+  resourceNames:
+    - kafka-connect-plugins
+  verbs:
+    - get
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: RoleBinding
+metadata:
+  name: kafka-connect
+  labels:
+    name: kafka-connect
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: kafka-connect
+subjects:
+  - kind: ServiceAccount
+    name: kafka-connect

@@ -34,7 +34,7 @@ else
   fi
 
   if [ -z "$KAFKA_CONNECT_PLUGIN_PATH" ]; then
-    KAFKA_CONNECT_PLUGIN_PATH="${KAFKA_HOME}/plugins"
+    KAFKA_CONNECT_PLUGIN_PATH="${KAFKA_HOME}/plugins,${KAFKA_HOME}/plugins-ext"
   fi
 
   # Write the config file
