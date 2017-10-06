@@ -5,12 +5,8 @@ RUN dnf -y install java-1.8.0-openjdk gettext hostname && dnf clean all -y
 # set Kafka home folder
 ENV KAFKA_HOME=/opt/kafka
 
-# Add qpidd group / user
-RUN groupadd -g 1000050000 -r kafka && useradd -r -u 1000050000 -d $KAFKA_HOME  -m -g kafka kafka
-
-# Use kafka user
-USER kafka:kafka
-WORKDIR $KAFKA_HOME
+# Add kafka group / user
+RUN groupadd -r kafka && useradd -r -m -g kafka kafka
 
 # Set Scala and Kafka version
 ENV SCALA_VERSION=2.11
@@ -22,6 +18,8 @@ ENV CHECKSUM="C8FD6521EC8D414687C7471524009A8A  kafka_2.11-0.11.0.1.tgz"
 # Set from build args
 ARG version=latest
 ENV VERSION ${version}
+
+WORKDIR $KAFKA_HOME
 
 # downloading/extracting Apache Kafka
 RUN curl -O http://www.eu.apache.org/dist/kafka/$KAFKA_VERSION/kafka_$SCALA_VERSION-$KAFKA_VERSION.tgz  \

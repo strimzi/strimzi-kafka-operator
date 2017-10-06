@@ -11,6 +11,8 @@ spec:
       labels:
         name: kafka
     spec:
+      securityContext:
+        fsGroup: 996
       containers:
         - name: kafka
           image: "enmasseproject/kafka-statefulsets:latest"
@@ -18,8 +20,6 @@ spec:
             - name: kafka
               containerPort: 9092
               protocol: TCP
-          command:
-            - /opt/kafka/kafka_run.sh
           volumeMounts:
             - name: kafka-storage
               mountPath: /tmp/kafka/

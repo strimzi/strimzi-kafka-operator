@@ -1,4 +1,4 @@
-REPO=scholzj/$(PROJECT_NAME)
+REPO=enmasseproject/$(PROJECT_NAME)
 DOCKERFILE_DIR ?= .
 COMMIT ?= latest
 

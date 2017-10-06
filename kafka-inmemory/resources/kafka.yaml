@@ -9,6 +9,8 @@ spec:
       labels:
         name: kafka
     spec:
+      securityContext:
+        fsGroup: 996
       containers:
         - name: kafka
           image: "enmasseproject/kafka-inmemory:latest"

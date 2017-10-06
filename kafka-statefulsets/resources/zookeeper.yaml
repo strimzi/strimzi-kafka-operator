@@ -10,6 +10,8 @@ spec:
       labels:
         name: zookeeper
     spec:
+      securityContext:
+        fsGroup: 996
       containers:
         - name: zookeeper
           image: "enmasseproject/zookeeper:latest"
