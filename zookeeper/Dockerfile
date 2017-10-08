@@ -6,7 +6,7 @@ RUN dnf -y install java-1.8.0-openjdk gettext hostname && dnf clean all -y
 ENV ZOOKEEPER_HOME=/opt/zookeeper
 
 # Add zookeeper group / user
-RUN groupadd -r zookeeper && useradd -r -m -g zookeeper zookeeper
+RUN groupadd -r -g 1001 zookeeper && useradd -r -m -u 1001 -g zookeeper zookeeper
 
 # Set Zookeeper version
 ENV ZOOKEEPER_VERSION=3.4.10

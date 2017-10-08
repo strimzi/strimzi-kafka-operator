@@ -6,7 +6,7 @@ RUN dnf -y install java-1.8.0-openjdk gettext hostname && dnf clean all -y
 ENV KAFKA_HOME=/opt/kafka
 
 # Add kafka group / user
-RUN groupadd -r kafka && useradd -r -m -g kafka kafka
+RUN groupadd -r -g 1001 kafka && useradd -r -m -u 1001 -g kafka kafka
 
 # Set Scala and Kafka version
 ENV SCALA_VERSION=2.11

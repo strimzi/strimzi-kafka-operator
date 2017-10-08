@@ -11,11 +11,11 @@ spec:
         name: zookeeper
     spec:
       securityContext:
-        fsGroup: 996
+        fsGroup: 1001
       initContainers:
         - name: volume-mount-hack
           image: busybox
-          command: ["sh", "-c", "chown -R 997:996 /tmp/zookeeper/"]
+          command: ["sh", "-c", "chown -R 1001:1001 /tmp/zookeeper/"]
           volumeMounts:
             - name: zookeeper-storage
               mountPath: /tmp/zookeeper
