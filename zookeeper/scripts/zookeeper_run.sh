@@ -8,9 +8,7 @@ export ZOOKEEPER_LOG_BASE_NAME="logs"
 # Disable JMX until we need it
 export JMXDISABLE=true
 
-# TODO: Zookeeper cluster support. 
-# Taking ID from hostname makes no sense if we don't generate config properly
-#export ZOOKEEPER_ID=$(hostname | awk -F'-' '{print $2}')
+# Until we run Zookeeper clusters we can hardcode the ID
 export ZOOKEEPER_ID=1
 echo "ZOOKEEPER_ID=$ZOOKEEPER_ID"
 
