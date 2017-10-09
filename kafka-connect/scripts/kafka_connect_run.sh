@@ -6,35 +6,35 @@ if [ "$1" = 'bash' ]; then
     exec "$@"
 else
   if [ -z "$KAFKA_CONNECT_BOOTSTRAP_SERVERS" ]; then
-    KAFKA_CONNECT_BOOTSTRAP_SERVERS="kafka:9092"
+    export KAFKA_CONNECT_BOOTSTRAP_SERVERS="kafka:9092"
   fi
 
   if [ -z "$KAFKA_CONNECT_GROUP_ID" ]; then
-    KAFKA_CONNECT_GROUP_ID="connect-cluster"
+    export KAFKA_CONNECT_GROUP_ID="connect-cluster"
   fi
 
   if [ -z "$KAFKA_CONNECT_OFFSET_STORAGE_TOPIC" ]; then
-    KAFKA_CONNECT_OFFSET_STORAGE_TOPIC="${KAFKA_CONNECT_GROUP_ID}-offsets"
+    export KAFKA_CONNECT_OFFSET_STORAGE_TOPIC="${KAFKA_CONNECT_GROUP_ID}-offsets"
   fi
 
   if [ -z "$KAFKA_CONNECT_CONFIG_STORAGE_TOPIC" ]; then
-    KAFKA_CONNECT_CONFIG_STORAGE_TOPIC="${KAFKA_CONNECT_GROUP_ID}-configs"
+    export KAFKA_CONNECT_CONFIG_STORAGE_TOPIC="${KAFKA_CONNECT_GROUP_ID}-configs"
   fi
 
   if [ -z "$KAFKA_CONNECT_STATUS_STORAGE_TOPIC" ]; then
-    KAFKA_CONNECT_STATUS_STORAGE_TOPIC="${KAFKA_CONNECT_GROUP_ID}-status"
+    export KAFKA_CONNECT_STATUS_STORAGE_TOPIC="${KAFKA_CONNECT_GROUP_ID}-status"
   fi
 
   if [ -z "$KAFKA_CONNECT_KEY_CONVERTER" ]; then
-    KAFKA_CONNECT_KEY_CONVERTER="org.apache.kafka.connect.json.JsonConverter"
+    export KAFKA_CONNECT_KEY_CONVERTER="org.apache.kafka.connect.json.JsonConverter"
   fi
 
   if [ -z "$KAFKA_CONNECT_VALUE_CONVERTER" ]; then
-    KAFKA_CONNECT_VALUE_CONVERTER="org.apache.kafka.connect.json.JsonConverter"
+    export KAFKA_CONNECT_VALUE_CONVERTER="org.apache.kafka.connect.json.JsonConverter"
   fi
 
   if [ -z "$KAFKA_CONNECT_PLUGIN_PATH" ]; then
-    KAFKA_CONNECT_PLUGIN_PATH="${KAFKA_HOME}/plugins"
+    export KAFKA_CONNECT_PLUGIN_PATH="${KAFKA_HOME}/plugins"
   fi
 
   # Write the config file
@@ -58,6 +58,9 @@ EOF
   echo "Starting Kafka connect with configuration:"
   cat /tmp/barnabas-connect.properties
   echo ""
+
+  # dir for saving application logs
+  export LOG_DIR=/tmp/logs
 
   # starting Kafka server with final configuration
   exec $KAFKA_HOME/bin/connect-distributed.sh /tmp/barnabas-connect.properties

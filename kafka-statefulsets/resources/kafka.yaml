@@ -11,6 +11,15 @@ spec:
       labels:
         name: kafka
     spec:
+      securityContext:
+        fsGroup: 1001
+      initContainers:
+       - name: volume-mount-hack
+         image: busybox
+         command: ["sh", "-c", "chown -R 1001:1001 /var/lib/kafka/"]
+         volumeMounts:
+           - name: kafka-storage
+             mountPath: /var/lib/kafka/
       containers:
         - name: kafka
           image: "enmasseproject/kafka-statefulsets:latest"
@@ -18,11 +27,9 @@ spec:
             - name: kafka
               containerPort: 9092
               protocol: TCP
-          command:
-            - /opt/kafka/kafka_run.sh
           volumeMounts:
             - name: kafka-storage
-              mountPath: /tmp/kafka/
+              mountPath: /var/lib/kafka/
   volumeClaimTemplates:
     - metadata:
         name: kafka-storage

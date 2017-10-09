@@ -1,12 +1,15 @@
 #!/bin/bash
 
-# volume for saving Kafka server logs
-export ZOOKEEPER_VOLUME="/tmp/zookeeper/"
-# base name for Kafka server data dir and application logs
+# volume for saving Zookeeper server logs
+export ZOOKEEPER_VOLUME="/var/lib/zookeeper/"
+# base name for Zookeeper server data dir and application logs
 export ZOOKEEPER_DATA_BASE_NAME="data"
 export ZOOKEEPER_LOG_BASE_NAME="logs"
+# Disable JMX until we need it
+export JMXDISABLE=true
 
-export ZOOKEEPER_ID=$(hostname | awk -F'-' '{print $2}')
+# Until we run Zookeeper clusters we can hardcode the ID
+export ZOOKEEPER_ID=1
 echo "ZOOKEEPER_ID=$ZOOKEEPER_ID"
 
 # create data dir
@@ -18,7 +21,7 @@ export LOG_DIR=$ZOOKEEPER_VOLUME$ZOOKEEPER_LOG_BASE_NAME$ZOOKEEPER_ID
 echo "LOG_DIR=$LOG_DIR"
 
 # environment variables substitution in the server configuration template file
-envsubst < $KAFKA_HOME/config/zookeeper.properties.template > /tmp/zookeeper.properties
+envsubst < $ZOOKEEPER_HOME/config/zookeeper.properties.template > /tmp/zookeeper.properties
 
 # starting Zookeeper with final configuration
-exec $KAFKA_HOME/bin/zookeeper-server-start.sh /tmp/zookeeper.properties
+exec $ZOOKEEPER_HOME/bin/zkServer.sh start-foreground /tmp/zookeeper.properties
