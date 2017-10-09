@@ -21,10 +21,10 @@ ENV VERSION ${version}
 WORKDIR $ZOOKEEPER_HOME
 
 # downloading/extracting Apache Zookeeper
-RUN curl -O https://www.apache.org/dist/zookeeper/zookeeper-$ZOOKEEPER_VERSION/zookeeper-$ZOOKEEPER_VERSION.tar.gz  \
-    && echo $CHECKSUM > zookeeper-$ZOOKEEPER_VERSION.tar.gz.md5                                     \
-    && sha1sum --check zookeeper-$ZOOKEEPER_VERSION.tar.gz.md5                                       \
-    && tar xvfz zookeeper-$ZOOKEEPER_VERSION.tar.gz -C $ZOOKEEPER_HOME --strip-components=1             \
+RUN curl -O https://www.apache.org/dist/zookeeper/zookeeper-$ZOOKEEPER_VERSION/zookeeper-$ZOOKEEPER_VERSION.tar.gz \
+    && echo $CHECKSUM > zookeeper-$ZOOKEEPER_VERSION.tar.gz.md5 \
+    && sha1sum --check zookeeper-$ZOOKEEPER_VERSION.tar.gz.md5 \
+    && tar xvfz zookeeper-$ZOOKEEPER_VERSION.tar.gz -C $ZOOKEEPER_HOME --strip-components=1 \
     && rm -f zookeeper-$ZOOKEEPER_VERSION.tar.gz*
 
 EXPOSE 2181 2888 3888

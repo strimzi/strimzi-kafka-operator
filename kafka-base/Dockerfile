@@ -22,8 +22,8 @@ ENV VERSION ${version}
 WORKDIR $KAFKA_HOME
 
 # downloading/extracting Apache Kafka
-RUN curl -O https://www.apache.org/dist/kafka/$KAFKA_VERSION/kafka_$SCALA_VERSION-$KAFKA_VERSION.tgz  \
-    && echo $CHECKSUM > kafka_$SCALA_VERSION-$KAFKA_VERSION.tgz.md5                                     \
-    && sha512sum --check kafka_$SCALA_VERSION-$KAFKA_VERSION.tgz.md5                                       \
-    && tar xvfz kafka_$SCALA_VERSION-$KAFKA_VERSION.tgz -C $KAFKA_HOME --strip-components=1             \
+RUN curl -O https://www.apache.org/dist/kafka/$KAFKA_VERSION/kafka_$SCALA_VERSION-$KAFKA_VERSION.tgz \
+    && echo $CHECKSUM > kafka_$SCALA_VERSION-$KAFKA_VERSION.tgz.md5 \
+    && sha512sum --check kafka_$SCALA_VERSION-$KAFKA_VERSION.tgz.md5 \
+    && tar xvfz kafka_$SCALA_VERSION-$KAFKA_VERSION.tgz -C $KAFKA_HOME --strip-components=1 \
     && rm -f kafka_$SCALA_VERSION-$KAFKA_VERSION.tgz*
