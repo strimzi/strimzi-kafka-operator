@@ -12,7 +12,7 @@ RUN groupadd -r -g 1001 zookeeper && useradd -r -m -u 1001 -g zookeeper zookeepe
 ENV ZOOKEEPER_VERSION=3.4.10
 
 # Set MD5checksum
-ENV CHECKSUM="e4cf1b1593ca870bf1c7a75188f09678  zookeeper-3.4.10.tar.gz"
+ENV CHECKSUM="eb2145498c5f7a0d23650d3e0102318363206fba  zookeeper-3.4.10.tar.gz"
 
 # Set from build args
 ARG version=latest
@@ -21,9 +21,9 @@ ENV VERSION ${version}
 WORKDIR $ZOOKEEPER_HOME
 
 # downloading/extracting Apache Zookeeper
-RUN curl -O http://www.eu.apache.org/dist/zookeeper/zookeeper-$ZOOKEEPER_VERSION/zookeeper-$ZOOKEEPER_VERSION.tar.gz  \
+RUN curl -O https://www.apache.org/dist/zookeeper/zookeeper-$ZOOKEEPER_VERSION/zookeeper-$ZOOKEEPER_VERSION.tar.gz  \
     && echo $CHECKSUM > zookeeper-$ZOOKEEPER_VERSION.tar.gz.md5                                     \
-    && md5sum --check zookeeper-$ZOOKEEPER_VERSION.tar.gz.md5                                       \
+    && sha1sum --check zookeeper-$ZOOKEEPER_VERSION.tar.gz.md5                                       \
     && tar xvfz zookeeper-$ZOOKEEPER_VERSION.tar.gz -C $ZOOKEEPER_HOME --strip-components=1             \
     && rm -f zookeeper-$ZOOKEEPER_VERSION.tar.gz*
 
