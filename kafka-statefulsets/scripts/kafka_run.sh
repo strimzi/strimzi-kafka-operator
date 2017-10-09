@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # volume for saving Kafka server logs
-export KAFKA_VOLUME="/var/kafka/"
+export KAFKA_VOLUME="/var/lib/kafka/"
 # base name for Kafka server data dir and application logs
 export KAFKA_LOG_BASE_NAME="kafka-log"
 export KAFKA_APP_LOGS_BASE_NAME="logs"

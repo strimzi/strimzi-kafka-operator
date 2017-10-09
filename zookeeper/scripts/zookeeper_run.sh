@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # volume for saving Zookeeper server logs
-export ZOOKEEPER_VOLUME="/var/zookeeper/"
+export ZOOKEEPER_VOLUME="/var/lib/zookeeper/"
 # base name for Zookeeper server data dir and application logs
 export ZOOKEEPER_DATA_BASE_NAME="data"
 export ZOOKEEPER_LOG_BASE_NAME="logs"
