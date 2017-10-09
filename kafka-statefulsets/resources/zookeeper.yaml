@@ -15,10 +15,10 @@ spec:
       initContainers:
         - name: volume-mount-hack
           image: busybox
-          command: ["sh", "-c", "chown -R 1001:1001 /tmp/zookeeper/"]
+          command: ["sh", "-c", "chown -R 1001:1001 /var/zookeeper/"]
           volumeMounts:
             - name: zookeeper-storage
-              mountPath: /tmp/zookeeper
+              mountPath: /var/zookeeper
       containers:
         - name: zookeeper
           image: "enmasseproject/zookeeper:latest"
@@ -28,7 +28,7 @@ spec:
               protocol: TCP
           volumeMounts:
             - name: zookeeper-storage
-              mountPath: /tmp/zookeeper
+              mountPath: /var/zookeeper
   volumeClaimTemplates:
     - metadata:
         name: zookeeper-storage

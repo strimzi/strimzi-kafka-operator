@@ -16,10 +16,10 @@ spec:
       initContainers:
        - name: volume-mount-hack
          image: busybox
-         command: ["sh", "-c", "chown -R 1001:1001 /tmp/kafka/"]
+         command: ["sh", "-c", "chown -R 1001:1001 /var/kafka/"]
          volumeMounts:
            - name: kafka-storage
-             mountPath: /tmp/kafka/
+             mountPath: /var/kafka/
       containers:
         - name: kafka
           image: "enmasseproject/kafka-statefulsets:latest"
@@ -29,7 +29,7 @@ spec:
               protocol: TCP
           volumeMounts:
             - name: kafka-storage
-              mountPath: /tmp/kafka/
+              mountPath: /var/kafka/
   volumeClaimTemplates:
     - metadata:
         name: kafka-storage

@@ -117,7 +117,7 @@ objects:
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
           volumeMounts:
-          - mountPath: /tmp/kafka/
+          - mountPath: /var/kafka/
             name: kafka-storage
         dnsPolicy: ClusterFirst
         restartPolicy: Always
@@ -156,7 +156,7 @@ objects:
             name: clientport
             protocol: TCP
           volumeMounts:
-          - mountPath: /tmp/zookeeper
+          - mountPath: /var/zookeeper
             name: zookeeper-storage
         dnsPolicy: ClusterFirst
         restartPolicy: Always

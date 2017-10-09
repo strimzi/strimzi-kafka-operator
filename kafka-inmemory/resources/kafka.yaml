@@ -20,7 +20,7 @@ spec:
               protocol: TCP
           volumeMounts:
             - name: kafka-storage
-              mountPath: /tmp/kafka/
+              mountPath: /var/kafka/
           lifecycle:
             preStop:
               exec:

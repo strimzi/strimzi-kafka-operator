@@ -20,7 +20,7 @@ spec:
               protocol: TCP
           volumeMounts:
             - name: zookeeper-storage
-              mountPath: /tmp/zookeeper
+              mountPath: /var/zookeeper
           livenessProbe:
               tcpSocket:
                 port: clientport
