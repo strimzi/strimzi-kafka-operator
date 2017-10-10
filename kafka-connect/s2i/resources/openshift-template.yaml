@@ -3,12 +3,12 @@ kind: Template
 metadata:
   name: barnabas-connect-s2i
 parameters:
-- description: Specifies the of the Build which will be created by this template
+- description: Specifies the name of the Build which will be created by this template
   displayName: Name of the Build
   name: BUILD_NAME
   required: true
   value: "kafka-connect"
-- description: Specifies the of the new Kafka Connect Docker image which will be generated
+- description: Specifies the name of the new Kafka Connect Docker image which will be generated
   displayName: Name of the newly generated Docker image
   name: TARGET_IMAGE_NAME
   required: true
