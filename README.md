@@ -11,6 +11,10 @@ This project provides a way to run an Apache Kafka cluster on Kubernetes and Ope
     - [Kafka Connect](#kafka-connect)
         - [Deploying to OpenShift](#deploying-to-openshift-1)
         - [Deploying to Kubernetes](#deploying-to-kubernetes)
+        - [Using Kafka Connect with additional plugins](#using-kafka-connect-with-additional-plugins)
+            - [Mount a volume containing the plugins](#mount-a-volume-containing-the-plugins)
+            - [Create a new image based on `enmasseproject/kafka-connect`](#create-a-new-image-based-on-enmasseprojectkafka-connect)
+            - [Using Openshift build and S2I image](#using-openshift-build-and-s2i-image)
 
 <!-- /TOC -->
 
@@ -50,10 +54,6 @@ To conveniently deploy a StatefulSet to OpenShift a [Template is provided](kafka
 
 This deployment adds Kafka Connect cluster which can be used with the Kafka deployments above. It is implemented as deployment with a configurable number of workers. The default image currently contains only the Connectors which are part of Apache Kafka project - `FileStreamSinkConnector` and `FileStreamSourceConnector`. The REST interface for managing the Kafka Connect cluster is exposed internally within the Kubernetes / OpenShift cluster as service `kafka-connect` on port `8083`.
 
-If you want to use other connectors, you can:
-* Mount a volume containing the plugins to path `/opt/kafka/plugins/`
-* Use the `enmasseproject/kafka-connect` image as Docker base image, add your connectors to the `/opt/kafka/plugins/` directory and use this new image instead of `enmasseproject/kafka-connect`
-
 ### Deploying to OpenShift
 
 To conveniently deploy Kafka Connect to OpenShift a [Template is provided](kafka-connect/resources/openshift-template.yaml), this could be used via `oc create -f kafka-connect/resources/openshift-template.yaml` so it is present within your project. To create a whole Kafka Connect cluster use `oc new-app barnabas-connect` *(make sure you have already deployed a Kafka broker)*.
@@ -61,3 +61,52 @@ To conveniently deploy Kafka Connect to OpenShift a [Template is provided](kafka
 ### Deploying to Kubernetes
 
 To conveniently deploy Kafka Connect to Kubernetes use the provided yaml files with the Kafka Connect [deployment](kafka-connect/resources/kafka-connect.yaml) and [service](kafka-connect/resources/kafka-connect-service.yaml). This could be done using `kubectl apply -f kafka-connect/resources/kafka-connect.yaml` and `kubectl apply -f kafka-connect/resources/kafka-connect-service.yaml`.
+
+### Using Kafka Connect with additional plugins
+
+Our Kafka Connect images contain by default only the `FileStreamSinkConnector` and `FileStreamSourceConnector` connectors.
+If you want to use other connectors, you can:
+* Mount a volume containing the plugins to path `/opt/kafka/plugins/`
+* Use the `enmasseproject/kafka-connect` image as Docker base image, add your connectors to the `/opt/kafka/plugins/` directory and use this new image instead of `enmasseproject/kafka-connect`
+* Use OpenShift build system and our S2I image
+
+#### Mount a volume containing the plugins
+
+* Prepare a persistent volume which contains a directory with your plugin(s).
+* Mount the volume into your Pod
+
+#### Create a new image based on `enmasseproject/kafka-connect`
+
+* Create new `Dockerfile` which uses `enmasseproject/kafka-connect`
+```Dockerfile
+FROM enmasseproject/kafka-connect:latest
+USER root:root
+COPY ./my-plugin/ /opt/kafka/plugins/
+USER kafka:kafka
+```
+* Build the Docker image and upload it to your Docker repository of choice
+* Use your new Docker image in your Kafka Connect deployment
+
+#### Using Openshift build and S2I image
+
+* Create OpenShift build configuration using our OpenShift template
+```
+oc apply -f kafka-connect/s2i/resources/openshift-template.yaml
+oc new-app barnabas-connect-s2i
+```
+* Prepare a directory with Kafka Connect plugins which you want to use
+* Start new image build using the prepared directory
+```
+oc start-build kafka-connect --from-dir ./my-plugins/
+```
+* Find out the address of your local Docker image repository (for example from the build logs `oc logs -f bc/kafka-connect`)
+* Use your new image in the Kafka Connect deployment
+```
+oc create -f kafka-connect/resources/openshift-template.yaml
+oc new-app -p IMAGE_REPO_NAME=172.30.1.1:5000/myproject barnabas-connect
+```
+
+
+
+
+

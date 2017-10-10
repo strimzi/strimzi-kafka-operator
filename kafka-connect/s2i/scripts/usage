@@ -1,0 +1,7 @@
+#!/bin/bash
+set -e
+
+cat <<EOF
+This is S2I image for extending the enmasseproject/kafka-connect image with additional Kafka Connect plugins.
+For more information please go to https://github.com/EnMasseProject/barnabas#kafka-connect
+EOF
