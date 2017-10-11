@@ -1,8 +1,9 @@
-apiVersion: extensions/v1beta1
-kind: Deployment
+apiVersion: apps/v1beta1
+kind: StatefulSet
 metadata:
   name: zookeeper
 spec:
+  serviceName: "zookeeper"
   replicas: 1
   template:
     metadata:
@@ -11,6 +12,13 @@ spec:
     spec:
       securityContext:
         fsGroup: 1001
+      initContainers:
+        - name: volume-mount-hack
+          image: busybox
+          command: ["sh", "-c", "chown -R 1001:1001 /var/lib/zookeeper/"]
+          volumeMounts:
+            - name: zookeeper-storage
+              mountPath: /var/lib/zookeeper
       containers:
         - name: zookeeper
           image: "enmasseproject/zookeeper:latest"
@@ -21,9 +29,6 @@ spec:
           volumeMounts:
             - name: zookeeper-storage
               mountPath: /var/lib/zookeeper
-          livenessProbe:
-              tcpSocket:
-                port: clientport
       volumes:
         - name: zookeeper-storage
           emptyDir: {}
