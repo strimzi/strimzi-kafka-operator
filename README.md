@@ -5,32 +5,19 @@ This project provides a way to run an Apache Kafka cluster on Kubernetes and Ope
 <!-- TOC -->
 
 - [Kafka as a Service](#kafka-as-a-service)
-    - [Kafka in-memory](#kafka-in-memory)
     - [Kafka Stateful Sets](#kafka-stateful-sets)
         - [Deploying to OpenShift](#deploying-to-openshift)
-    - [Kafka Connect](#kafka-connect)
+    - [Kafka in-memory](#kafka-in-memory)
         - [Deploying to OpenShift](#deploying-to-openshift-1)
+    - [Kafka Connect](#kafka-connect)
+        - [Deploying to OpenShift](#deploying-to-openshift-2)
         - [Deploying to Kubernetes](#deploying-to-kubernetes)
 
 <!-- /TOC -->
 
-## Kafka in-memory
-
-This deployment is just for development and testing purpose and not for production. The Zookeeper server and the Kafka broker are deployed in different pods. For storing broker information (Zookeeper side) and topics/partitions (Kafka side), an _emptyDir_ is used so it means that its content is strictly related to the pod life cycle (deleted when the pod goes down). Finally, this deployment is not for scaling but just for having one single pod for Kafka broker and one for Zookeeper server.
-
-This deployment is available under the _kafka-inmemory_ folder and provides following artifacts :
-
-* Dockerfile : Docker file for building an image with Kafka and Zookeeper already installed
-* config : configuration file templates for running Zookeeper
-* scripts : scripts for starting up Kafka and Zookeeper servers
-* resources : provides all YAML configuration files for setting up services and deployments
-
 ## Kafka Stateful Sets
 
-This deployment is an improvement of the first one (the "Kafka persisted") but it uses the new Kubernetes/OpenShift feature : the Stateful Sets (previously known as "Pet Sets").
-In this way, the pods receive an unique name and network identity and there is no need for a script (like the "persisted" version) where the Kafka brokers have to use a common
-persisten volume for finding a free ID to get an use for the starting instance. At same time they don't need to use a single persisten volume and store logs in different folders
-(named on the ID base) but they use different persistent volumes and the auto-generated claims.
+This deployment uses the Stateful Sets (previously known as "Pet Sets") feature of Kubernetes / OpenShift. With Stateful Sets, the pods receive unique name and network identity and that makes it easier to identify the individual Kafka broker pods and set their identity (broker ID). Each Kafka broker pod is using its own Persistent Volume. The Persistent Volume is acquired using Persistent Volume Claim - that makes it independent on the actual type of the Persistent Volume. It can use HostPath volumes on Minikube or Amazon EBS disks in public cloud deployments.
 
 It's important to say that in this deployment both "regular" and "headless" services are used. The "regular" services are needed for having instances accessible from clients;
 the "headless" services are needed for having the DNS resolving directly the PODs IP addresses for having the Stateful Sets working properly.
@@ -45,6 +32,18 @@ This deployment is available under the _kafka-statefulsets_ folder and provides 
 ### Deploying to OpenShift
 
 To conveniently deploy a StatefulSet to OpenShift a [Template is provided](kafka-statefulsets/resources/openshift-template.yaml), this could be used via `oc create -f kafka-statefulsets/resources/openshift-template.yaml` so it is present within your project. To create a whole Kafka StatefulSet use `oc new-app barnabas`.
+
+## Kafka in-memory
+
+Kafka in-memory deployment is just for development and testing purpose and not for production. It is designed the same way as the Kafka Stateful Sets deployment. The only difference is that for storing broker information (Zookeeper side) and topics/partitions (Kafka side), an _emptyDir_ is used instead of Persistent Volume Claims. This means that its content is strictly related to the pod life cycle (deleted when the pod goes down). However for development and testing it might be easier to use the in-memory deployment because it doesn't need to provision the persistent volumes needed for the stateful set deployment.
+
+This deployment is available under the _kafka-inmemory_ folder and provides following artifacts :
+
+* resources : provides all YAML configuration files for setting up services and deployments
+
+### Deploying to OpenShift
+
+To conveniently deploy a StatefulSet to OpenShift a [Template is provided](kafka-inmemory/resources/openshift-template.yaml), this could be used via `oc create -f kafka-inmemory/resources/openshift-template.yaml` so it is present within your project. To create a whole Kafka in-memory cluster use `oc new-app barnabas`.
 
 ## Kafka Connect
 
