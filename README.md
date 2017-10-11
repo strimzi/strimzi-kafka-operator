@@ -17,7 +17,7 @@ This project provides a way to run an Apache Kafka cluster on Kubernetes and Ope
 
 ## Kafka Stateful Sets
 
-This deployment uses the Stateful Sets (previously known as "Pet Sets") feature of Kubernetes / OpenShift. With Stateful Sets, the pods receive unique name and network identity and that makes it easier to identify the individual Kafka broker pods and set their identity (broker ID). Each Kafka broker pod is using its own Persistent Volume. The Persistent Volume is acquired using Persistent Volume Claim - that makes it independent on the actual type of the Persistent Volume. It can use HostPath volumes on Minikube or Amazon EBS disks in public cloud deployments.
+This deployment uses the Stateful Sets (previously known as "Pet Sets") feature of Kubernetes / OpenShift. With Stateful Sets, the pods receive unique name and network identity and that makes it easier to identify the individual Kafka broker pods and set their identity (broker ID). Each Kafka broker pod is using its own Persistent Volume. The Persistent Volume is acquired using Persistent Volume Claim - that makes it independent on the actual type of the Persistent Volume. For example it can use HostPath volumes on Minikube or Amazon EBS volumes in Amazon AWS deployments without any changes in the YAML files.
 
 It's important to say that in this deployment both "regular" and "headless" services are used. The "regular" services are needed for having instances accessible from clients;
 the "headless" services are needed for having the DNS resolving directly the PODs IP addresses for having the Stateful Sets working properly.
