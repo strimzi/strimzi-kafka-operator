@@ -42,7 +42,7 @@ This deployment is available under the _kafka-statefulsets_ folder and provides 
 To conveniently deploy a StatefulSet to OpenShift a [Template is provided](kafka-statefulsets/resources/openshift-template.yaml). 
 To use the template, follow these steps: 
 1. Load the template into your OpenShift cluster: `oc create -f kafka-statefulsets/resources/openshift-template.yaml`
-2. Deploy Kafka and Zookeeper: `oc new-app barnabas`
+2. Deploy Kafka and Zookeeper: `oc new-app barnabas`.
 
 ## Kafka in-memory
 
@@ -58,7 +58,7 @@ This deployment is available under the _kafka-inmemory_ folder and provides foll
 
 ### Deploying to OpenShift
 
-To conveniently deploy a StatefulSet to OpenShift a [Template is provided](kafka-inmemory/resources/openshift-template.yaml).
+To conveniently deploy a Kakfa in-memory to OpenShift a [Template is provided](kafka-inmemory/resources/openshift-template.yaml).
 To use the template, follow these steps: 
 1. Load the template into your OpenShift cluster: `oc create -f kafka-inmemory/resources/openshift-template.yaml`
 2. Deploy Kafka and Zookeeper: `oc new-app barnabas`
