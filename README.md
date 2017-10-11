@@ -14,7 +14,7 @@ This project provides a way to run an Apache Kafka cluster on Kubernetes and Ope
         - [Using Kafka Connect with additional plugins](#using-kafka-connect-with-additional-plugins)
             - [Mount a volume containing the plugins](#mount-a-volume-containing-the-plugins)
             - [Create a new image based on `enmasseproject/kafka-connect`](#create-a-new-image-based-on-enmasseprojectkafka-connect)
-            - [Using Openshift build and S2I image](#using-openshift-build-and-s2i-image)
+            - [Using Openshift Build and S2I image](#using-openshift-build-and-s2i-image)
 
 <!-- /TOC -->
 
@@ -87,26 +87,33 @@ USER kafka:kafka
 * Build the Docker image and upload it to your Docker repository of choice
 * Use your new Docker image in your Kafka Connect deployment
 
-#### Using Openshift build and S2I image
+#### Using Openshift Build and S2I image
+
+OpenShift supports [Builds](https://docs.openshift.org/3.6/dev_guide/builds/index.html) which can be used together with [Source-to-Image (S2I)](https://docs.openshift.org/3.6/creating_images/s2i.html#creating-images-s2i) framework to create new Docker images. OpenShift Build takes a builder image with the S2I support and source codes or binaries provided by the user and will use them to build a new Docker image. The newly created docker Image will be stored in OpenShift's local Docker repository and can be used in deployments. Barnabas project provides Kafka Connect S2I builder image [`enmasseproject/kafka-connect-s2i`](https://hub.docker.com/r/enmasseproject/kafka-connect-s2i/) which takes user provided binaries (with plugins and connectors) and creates a new Kafka Connect image. This enhanced Kafka Connect image can be used with our [Kafka Connect deployment](#kafka-connect).
+
+To configure the OpenShift Build and create new Kafka Connect image, follow these steps:
 
 * Create OpenShift build configuration using our OpenShift template
 ```
 oc apply -f kafka-connect/s2i/resources/openshift-template.yaml
 oc new-app barnabas-connect-s2i
 ```
-* Prepare a directory with Kafka Connect plugins which you want to use
+* Prepare a directory with Kafka Connect plugins which you want to use. For example:
+```
+$ tree ./my-plugins/
+./my-plugins/
+└── kafka-connect-jdbc
+    ├── kafka-connect-jdbc-3.3.0.jar
+    ├── postgresql-9.4-1206-jdbc41.jar
+    └── sqlite-jdbc-3.8.11.2.jar
+```
 * Start new image build using the prepared directory
 ```
 oc start-build kafka-connect --from-dir ./my-plugins/
 ```
-* Find out the address of your local Docker image repository (for example from the build logs `oc logs -f bc/kafka-connect`)
+* You can find out the address of your local Docker repository (for example using `oc get imagestreams kafka-connect`)
 * Use your new image in the Kafka Connect deployment
 ```
 oc create -f kafka-connect/resources/openshift-template.yaml
-oc new-app -p IMAGE_REPO_NAME=172.30.1.1:5000/myproject barnabas-connect
+oc new-app -p IMAGE_REPO_NAME=$(oc get is kafka-connect -o=jsonpath={.status.dockerImageRepository} | sed 's/\(.*\)\/.*/\1/') barnabas-connect
 ```
-
-
-
-
-
