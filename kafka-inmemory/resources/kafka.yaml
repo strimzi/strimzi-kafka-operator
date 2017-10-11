@@ -1,9 +1,11 @@
-apiVersion: extensions/v1beta1
-kind: Deployment
+apiVersion: apps/v1beta1
+kind: StatefulSet
 metadata:
   name: kafka
 spec:
-  replicas: 1
+  serviceName: "kafka"
+  # used 3 replicas in order to have alwayas majority for leader election
+  replicas: 3
   template:
     metadata:
       labels:
@@ -13,7 +15,7 @@ spec:
         fsGroup: 1001
       containers:
         - name: kafka
-          image: "enmasseproject/kafka-inmemory:latest"
+          image: "enmasseproject/kafka-statefulsets:latest"
           ports:
             - name: kafka
               containerPort: 9092
@@ -21,14 +23,6 @@ spec:
           volumeMounts:
             - name: kafka-storage
               mountPath: /var/lib/kafka/
-          lifecycle:
-            preStop:
-              exec:
-                command:
-                  - ./bin/kafka-server-stop.sh
-          livenessProbe:
-              tcpSocket:
-                port: kafka
       volumes:
         - name: kafka-storage
           emptyDir: {}

@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: zookeeper-headless
+spec:
+  ports:
+    - port: 2181
+      name: clientport
+      targetPort : 2181
+      protocol: TCP
+  clusterIP: None
+  selector:
+    name: zookeeper
