@@ -13,13 +13,6 @@ spec:
     spec:
       securityContext:
         fsGroup: 1001
-      initContainers:
-       - name: volume-mount-hack
-         image: busybox
-         command: ["sh", "-c", "chown -R 1001:1001 /var/lib/kafka/"]
-         volumeMounts:
-           - name: kafka-storage
-             mountPath: /var/lib/kafka/
       containers:
         - name: kafka
           image: "enmasseproject/kafka-statefulsets:latest"
