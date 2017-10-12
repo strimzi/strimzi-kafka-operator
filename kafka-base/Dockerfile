@@ -27,3 +27,5 @@ RUN curl -O https://www.apache.org/dist/kafka/$KAFKA_VERSION/kafka_$SCALA_VERSIO
     && sha512sum --check kafka_$SCALA_VERSION-$KAFKA_VERSION.tgz.sha512 \
     && tar xvfz kafka_$SCALA_VERSION-$KAFKA_VERSION.tgz -C $KAFKA_HOME --strip-components=1 \
     && rm -f kafka_$SCALA_VERSION-$KAFKA_VERSION.tgz*
+
+COPY ./config/ $KAFKA_HOME/config/
