@@ -31,8 +31,8 @@ For example, it can use HostPath volumes on Minikube or Amazon EBS volumes in Am
 
 It's important to say that in this deployment both _regular_ and _headless_ services are used:
 
-* regular services are needed for having instances accessible from clients outside the Kubernetes/OpenShift cluster;
-* headless services are needed to have DNS resolve the pods IP addresses directly, so that the StatefulSets work properly.
+* regular services can be used as bootstrap servers for Kafka clients;
+* headless services are needed to have DNS resolve the pods IP addresses directly.
 
 This deployment is available under the _kafka-statefulsets_ folder and provides following artifacts:
 
@@ -41,9 +41,9 @@ This deployment is available under the _kafka-statefulsets_ folder and provides 
 * scripts : scripts for starting up Kafka and Zookeeper servers
 * resources : provides all YAML configuration files for setting up volumes, services and deployments
 
-### Deploying to OpenShift Origin
+### Deploying to OpenShift
 
-1. With the [Openshift Origin client tools][origin] installed and having logged into your cluster, 
+1. With the [Openshift client tools][origin] installed and having logged into your cluster, 
    create the [provided "barnabas" template](kafka-statefulsets/resources/openshift-template.yaml) 
    by running
 
@@ -58,9 +58,12 @@ This deployment is available under the _kafka-statefulsets_ folder and provides 
 ### Deploying to Kubernetes
 
 1. If you don't have a cluster running, start one (e.g. by executing `minikube start`)
-2. Create the services by running:
+2. If your cluster doesn't have any default storage class, create the persistent volumes manually
 
-        kubectl apply -f kafka-statefulsets/resources/cluster-volumes.yaml && \
+        kubectl apply -f kafka-statefulsets/resources/cluster-volumes.yaml
+
+3. Create the services by running:
+
         kubectl apply -f kafka-statefulsets/resources/zookeeper.yaml && \
         kubectl apply -f kafka-statefulsets/resources/zookeeper-headless-service.yaml && \
         kubectl apply -f kafka-statefulsets/resources/zookeeper-service.yaml && \
@@ -68,19 +71,22 @@ This deployment is available under the _kafka-statefulsets_ folder and provides 
         kubectl apply -f kafka-statefulsets/resources/kafka-headless-service.yaml && \
         kubectl apply -f kafka-statefulsets/resources/kafka-service.yaml
 
-3. You can then verify that the services started using
+4. You can then verify that the services started using
 
         kubectl describe all
 
-4. You can tear down the services by running
+5. You can tear down the services by running
 
-        kubectl delete -f kafka-statefulsets/resources/cluster-volumes.yaml && \
         kubectl delete -f kafka-statefulsets/resources/zookeeper.yaml && \
         kubectl delete -f kafka-statefulsets/resources/zookeeper-headless-service.yaml && \
         kubectl delete -f kafka-statefulsets/resources/zookeeper-service.yaml && \
         kubectl delete -f kafka-statefulsets/resources/kafka.yaml && \
         kubectl delete -f kafka-statefulsets/resources/kafka-headless-service.yaml && \
         kubectl delete -f kafka-statefulsets/resources/kafka-service.yaml
+
+    and, if you created the persistent volumes manually:
+
+        kubectl delete -f kafka-statefulsets/resources/cluster-volumes.yaml && \
 
 ## Kafka in-memory
 
@@ -96,7 +102,7 @@ This deployment is available under the _kafka-inmemory_ folder and provides foll
 
 ### Deploying to OpenShift
 
-1. With the [Openshift Origin client tools][origin] installed and having logged into your cluster, 
+1. With the [Openshift client tools][origin] installed and having logged into your cluster, 
    create a pod using the [provided template](kafka-inmemory/resources/openshift-template.yaml) by running
 
         oc create -f kafka-inmemory/resources/openshift-template.yaml
@@ -115,8 +121,10 @@ This deployment is available under the _kafka-inmemory_ folder and provides foll
 
         kubectl apply -f kafka-inmemory/resources/zookeeper.yaml && \
         kubectl apply -f kafka-inmemory/resources/zookeeper-service.yaml && \
+        kubectl apply -f kafka-inmemory/resources/zookeeper-headless-service.yaml && \
         kubectl apply -f kafka-inmemory/resources/kafka.yaml && \
-        kubectl apply -f kafka-inmemory/resources/kafka-service.yaml
+        kubectl apply -f kafka-inmemory/resources/kafka-service.yaml && \
+        kubectl apply -f kafka-inmemory/resources/kafka-headless-service.yaml
 
 3. You can then verify that the services started using
 
@@ -133,7 +141,7 @@ The REST interface for managing the Kafka Connect cluster is exposed internally 
 cluster as service `kafka-connect` on port `8083`.
 
 
-### Deploying to OpenShift Origin
+### Deploying to OpenShift
 
 1. Deploy a Kafka broker to your OpenShift cluster using either of the [in-memory](#kafka-in-memory) or 
    [statefulsets deployments](#kafka-stateful-sets) above.
@@ -180,7 +188,8 @@ If you want to use other connectors, you can:
 
 #### Mount a volume containing the plugins
 
-1. Prepare a persistent volume which contains a directory with your plugin(s).
+1. Prepare a PersistentVolume which contains a directory with your plugin(s) and their dependencies and ensure 
+   these files are world-readable (`chmod -R a+r /path/to/your/directory`).
 2. Mount the volume into your Pod at the path `/opt/kafka/plugins/`
 
 #### Create a new image based on `enmasseproject/kafka-connect`
@@ -201,7 +210,7 @@ OpenShift supports [Builds](https://docs.openshift.org/3.6/dev_guide/builds/inde
 with [Source-to-Image (S2I)](https://docs.openshift.org/3.6/creating_images/s2i.html#creating-images-s2i) framework to 
 create new Docker images. OpenShift Build takes a builder image with the S2I support together with source code 
 and/or binaries provided by the user and uses them to build a new Docker image. 
-The newly created docker Image will be stored in OpenShift's local Docker repository and can be used in deployments. 
+The newly created Docker Image will be stored in OpenShift's local Docker repository and can be used in deployments. 
 The Barnabas project provides a Kafka Connect S2I builder image [`enmasseproject/kafka-connect-s2i`](https://hub.docker.com/r/enmasseproject/kafka-connect-s2i/) 
 which takes user-provided binaries (with plugins and connectors) and creates a new Kafka Connect image. 
 This enhanced Kafka Connect image can be used with our [Kafka Connect deployment](#kafka-connect).
@@ -226,8 +235,8 @@ $ tree ./my-plugins/
 ```
 oc start-build kafka-connect --from-dir ./my-plugins/
 ```
-4. You can find out the address of your local Docker repository (for example using `oc get imagestreams kafka-connect`)
-5. Use your new image in the Kafka Connect deployment
+4. You can find out the address of your local Docker repository using `oc get is kafka-connect`. So 
+   to use your new image in the Kafka Connect deployment
 ```
 oc create -f kafka-connect/resources/openshift-template.yaml
 oc new-app -p IMAGE_REPO_NAME=$(oc get is kafka-connect -o=jsonpath={.status.dockerImageRepository} | sed 's/\(.*\)\/.*/\1/') barnabas-connect
