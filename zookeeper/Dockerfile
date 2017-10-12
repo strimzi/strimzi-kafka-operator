@@ -1,6 +1,6 @@
 FROM fedora:26
 
-RUN dnf -y install java-1.8.0-openjdk-headless gettext hostname && dnf clean all -y
+RUN dnf -y install java-1.8.0-openjdk-headless gettext hostname nmap-ncat && dnf clean all -y
 
 # set Kafka home folder
 ENV ZOOKEEPER_HOME=/opt/zookeeper
@@ -32,7 +32,7 @@ EXPOSE 2181 2888 3888
 # copy template configuration files
 COPY ./config/zookeeper.properties.template $ZOOKEEPER_HOME/config/
 # copy scripts for starting Kafka and Zookeeper
-COPY ./scripts/zookeeper_run.sh $ZOOKEEPER_HOME
+COPY ./scripts/ $ZOOKEEPER_HOME
 
 USER zookeeper:zookeeper
 

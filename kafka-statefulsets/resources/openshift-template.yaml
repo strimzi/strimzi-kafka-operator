@@ -158,6 +158,18 @@ objects:
           volumeMounts:
           - mountPath: /var/lib/zookeeper
             name: zookeeper-storage
+          livenessProbe:
+            exec:
+              command:
+              - "/opt/zookeeper/zookeeper_healthcheck.sh"
+            initialDelaySeconds: 15
+            timeoutSeconds: 5
+          readinessProbe:
+            exec:
+              command:
+              - "/opt/zookeeper/zookeeper_healthcheck.sh"
+            initialDelaySeconds: 15
+            timeoutSeconds: 5
         dnsPolicy: ClusterFirst
         restartPolicy: Always
     volumeClaimTemplates:

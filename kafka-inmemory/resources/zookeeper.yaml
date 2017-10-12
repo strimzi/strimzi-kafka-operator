@@ -22,6 +22,18 @@ spec:
           volumeMounts:
             - name: zookeeper-storage
               mountPath: /var/lib/zookeeper
+          livenessProbe:
+            exec:
+              command:
+              - "/opt/zookeeper/zookeeper_healthcheck.sh"
+            initialDelaySeconds: 15
+            timeoutSeconds: 5
+          readinessProbe:
+            exec:
+              command:
+              - "/opt/zookeeper/zookeeper_healthcheck.sh"
+            initialDelaySeconds: 15
+            timeoutSeconds: 5
       volumes:
         - name: zookeeper-storage
           emptyDir: {}
