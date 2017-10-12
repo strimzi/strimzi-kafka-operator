@@ -13,6 +13,10 @@ parameters:
   name: TARGET_IMAGE_NAME
   required: true
   value: "kafka-connect"
+- description: Specifies the tag of the new Kafka Connect Docker image which will be generated
+  displayName: Tag of the newly generated Docker image
+  name: TARGET_IMAGE_TAG
+  value: latest
 - description: Image repository name of the source S2I Docker image
   displayName: Repository Name of the S2I image
   name: S2I_IMAGE_REPO_NAME
@@ -21,6 +25,10 @@ parameters:
   displayName: Name of the S2I image
   name: S2I_IMAGE_NAME
   value: kafka-connect-s2i
+- description: S2I image tag
+  displayName: S2I image tag
+  name: S2I_IMAGE_TAG
+  value: latest
 objects:
 - apiVersion: v1
   kind: ImageStream
@@ -54,7 +62,7 @@ objects:
     output:
       to:
         kind: ImageStreamTag
-        name: ${TARGET_IMAGE_NAME}:latest
+        name: ${TARGET_IMAGE_NAME}:${TARGET_IMAGE_TAG}
     postCommit: {}
     resources: {}
     runPolicy: Serial
@@ -65,7 +73,7 @@ objects:
       sourceStrategy:
         from:
           kind: ImageStreamTag
-          name: ${S2I_IMAGE_NAME}:latest
+          name: ${S2I_IMAGE_NAME}:${S2I_IMAGE_TAG}
       type: Source
     triggers:
     - type: ConfigChange

@@ -21,14 +21,18 @@ parameters:
   displayName: Kafka image Name
   name: KAFKA_IMAGE_NAME
   value: kafka-statefulsets
+- description: Kafka image tag
+  displayName: Kafka image tag
+  name: KAFKA_IMAGE_TAG
+  value: latest
 - description: Zookeeper image name
   displayName: Zookeeper image Name
   name: ZOOKEEPER_IMAGE_NAME
   value: zookeeper
-- description: Kafka Version
-  displayName: Kafka Version
-  name: KAFKA_VERSION
-  value: "0.11.0.0"
+- description: Zookeeper image tag
+  displayName: Zookeeper image tag
+  name: ZOOKEEPER_IMAGE_TAG
+  value: latest
 objects:
 - apiVersion: v1
   kind: Service
@@ -107,7 +111,7 @@ objects:
       spec:
         containers:
         - name: kafka
-          image: ${IMAGE_REPO_NAME}/${KAFKA_IMAGE_NAME}:latest
+          image: ${IMAGE_REPO_NAME}/${KAFKA_IMAGE_NAME}:${KAFKA_IMAGE_TAG}
           imagePullPolicy: Always
           ports:
           - containerPort: 9092
@@ -149,7 +153,7 @@ objects:
       spec:
         containers:
         - name: zookeeper
-          image: ${IMAGE_REPO_NAME}/${ZOOKEEPER_IMAGE_NAME}:latest
+          image: ${IMAGE_REPO_NAME}/${ZOOKEEPER_IMAGE_NAME}:${ZOOKEEPER_IMAGE_TAG}
           imagePullPolicy: Always
           ports:
           - containerPort: 2181
