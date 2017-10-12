@@ -36,6 +36,10 @@ parameters:
   displayName: Image Name
   name: IMAGE_NAME
   value: kafka-connect
+- description: Image tag
+  displayName: Image tag
+  name: IMAGE_TAG
+  value: latest
 objects:
 - apiVersion: v1
   kind: Service
@@ -62,7 +66,7 @@ objects:
       spec:
         containers:
           - name: kafka-connect
-            image: ${IMAGE_REPO_NAME}/${IMAGE_NAME}:latest
+            image: ${IMAGE_REPO_NAME}/${IMAGE_NAME}:${IMAGE_TAG}
             ports:
               - name: rest-api
                 containerPort: 8083
