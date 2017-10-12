@@ -75,18 +75,6 @@ This deployment is available under the _kafka-statefulsets_ folder and provides 
 
         kubectl describe all
 
-5. You can tear down the services by running
-
-        kubectl delete -f kafka-statefulsets/resources/zookeeper.yaml && \
-        kubectl delete -f kafka-statefulsets/resources/zookeeper-headless-service.yaml && \
-        kubectl delete -f kafka-statefulsets/resources/zookeeper-service.yaml && \
-        kubectl delete -f kafka-statefulsets/resources/kafka.yaml && \
-        kubectl delete -f kafka-statefulsets/resources/kafka-headless-service.yaml && \
-        kubectl delete -f kafka-statefulsets/resources/kafka-service.yaml
-
-    and, if you created the persistent volumes manually:
-
-        kubectl delete -f kafka-statefulsets/resources/cluster-volumes.yaml && \
 
 ## Kafka in-memory
 
@@ -169,11 +157,6 @@ cluster as service `kafka-connect` on port `8083`.
         kubectl apply -f kafka-connect/resources/kafka-connect-service.yaml
 
    in your terminal.
-
-4. Top tear down the services run:
-
-        kubectl delete -f kafka-connect/resources/kafka-connect-service.yaml && \
-        kubectl delete -f kafka-connect/resources/kafka-connect.yaml
 
 
 ### Using Kafka Connect with additional plugins
