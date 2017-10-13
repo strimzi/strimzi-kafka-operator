@@ -6,7 +6,7 @@ export KAFKA_VOLUME="/var/lib/kafka/"
 export KAFKA_LOG_BASE_NAME="kafka-log"
 export KAFKA_APP_LOGS_BASE_NAME="logs"
 
-export KAFKA_BROKER_ID=$(hostname | awk -F'-' '{print $2}')
+export KAFKA_BROKER_ID=$(hostname | awk -F'-' '{print $NF}')
 echo "KAFKA_BROKER_ID=$KAFKA_BROKER_ID"
 
 # create data dir
