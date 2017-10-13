@@ -27,7 +27,7 @@ spec:
               protocol: TCP
           env:
             - name: ZOOKEEPER_NODE_COUNT
-              value: "3"
+              value: "1"
           volumeMounts:
             - name: zookeeper-storage
               mountPath: /var/lib/zookeeper
