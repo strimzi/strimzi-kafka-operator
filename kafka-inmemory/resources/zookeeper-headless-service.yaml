@@ -8,6 +8,14 @@ spec:
       name: clientport
       targetPort : 2181
       protocol: TCP
+    - port: 2888
+      name: clustering
+      targetPort : 2888
+      protocol: TCP
+    - port: 3888
+      name: leaderelection
+      targetPort : 3888
+      protocol: TCP
   clusterIP: None
   selector:
     name: zookeeper
