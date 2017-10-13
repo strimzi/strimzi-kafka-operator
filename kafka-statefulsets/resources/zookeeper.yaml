@@ -3,8 +3,8 @@ kind: StatefulSet
 metadata:
   name: zookeeper
 spec:
-  serviceName: "zookeeper"
-  replicas: 1
+  serviceName: "zookeeper-headless"
+  replicas: 3
   template:
     metadata:
       labels:
@@ -26,6 +26,15 @@ spec:
             - name: clientport
               containerPort: 2181
               protocol: TCP
+            - containerPort: 2888
+              name: clustering
+              protocol: TCP
+            - containerPort: 3888
+              name: leaderelection
+              protocol: TCP
+           env:
+            - name: ZOOKEEPER_NODE_COUNT
+              value: "3"
           volumeMounts:
             - name: zookeeper-storage
               mountPath: /var/lib/zookeeper

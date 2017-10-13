@@ -3,6 +3,11 @@ kind: Template
 metadata:
   name: barnabas
 parameters:
+- description: Number of Zookeper cluster nodes which will be deployed
+  displayName: Number of Zookeper cluster nodes
+  name: ZOOKEEPER_NODE_COUNT
+  required: true
+  value: "3"
 - description: Volume space available for Zookeeper data, e.g. 512Mi, 2Gi.
   displayName: Zookeeper Volume Capacity
   name: ZOOKEEPER_VOLUME_CAPACITY
@@ -88,6 +93,14 @@ objects:
       port: 2181
       protocol: TCP
       targetPort: 2181
+    - port: 2888
+      name: clustering
+      targetPort : 2888
+      protocol: TCP
+    - port: 3888
+      name: leaderelection
+      targetPort : 3888
+      protocol: TCP
     selector:
       name: zookeeper
     sessionAffinity: None
@@ -141,11 +154,11 @@ objects:
       name: zookeeper
     name: zookeeper
   spec:
-    replicas: 1
+    replicas: ${ZOOKEEPER_NODE_COUNT}
     selector:
       matchLabels:
         name: zookeeper
-    serviceName: zookeeper
+    serviceName: zookeeper-headless
     template:
       metadata:
         labels:
@@ -159,6 +172,15 @@ objects:
           - containerPort: 2181
             name: clientport
             protocol: TCP
+          - containerPort: 2888
+            name: clustering
+            protocol: TCP
+          - containerPort: 3888
+            name: leaderelection
+            protocol: TCP
+          env:
+          - name: ZOOKEEPER_NODE_COUNT
+            value: ${ZOOKEEPER_NODE_COUNT}
           volumeMounts:
           - mountPath: /var/lib/zookeeper
             name: zookeeper-storage
