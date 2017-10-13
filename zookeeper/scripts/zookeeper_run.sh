@@ -55,4 +55,3 @@ echo ""
 
 # starting Zookeeper with final configuration
 exec $ZOOKEEPER_HOME/bin/zkServer.sh start-foreground /tmp/zookeeper.properties
-exec java -cp zookeeper-3.4.10.jar:lib/slf4j-api-1.6.1.jar:lib/slf4j-log4j12-1.6.1.jar:lib/log4j-1.2.16.jar:conf -D org.apache.zookeeper.server.quorum.QuorumPeerMain
