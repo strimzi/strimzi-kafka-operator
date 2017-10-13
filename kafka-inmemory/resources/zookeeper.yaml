@@ -4,7 +4,7 @@ metadata:
   name: zookeeper
 spec:
   serviceName: "zookeeper-headless"
-  replicas: 3
+  replicas: 1
   template:
     metadata:
       labels:
