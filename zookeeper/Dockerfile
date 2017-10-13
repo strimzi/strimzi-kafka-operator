@@ -29,8 +29,6 @@ RUN curl -O https://www.apache.org/dist/zookeeper/zookeeper-$ZOOKEEPER_VERSION/z
 
 EXPOSE 2181 2888 3888
 
-# copy template configuration files
-COPY ./config/zookeeper.properties.template $ZOOKEEPER_HOME/config/
 # copy scripts for starting Kafka and Zookeeper
 COPY ./scripts/ $ZOOKEEPER_HOME
 
