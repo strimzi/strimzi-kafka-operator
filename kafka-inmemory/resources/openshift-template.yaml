@@ -3,11 +3,11 @@ kind: Template
 metadata:
   name: barnabas
 parameters:
-- description: Number of Zookeper cluster nodes which will be deployed
-  displayName: Number of Zookeper cluster nodes
+- description: Number of Zookeper cluster nodes which will be deployed (odd number of nodes is recomended)
+  displayName: Number of Zookeper cluster nodes (odd number of nodes is recomended)
   name: ZOOKEEPER_NODE_COUNT
   required: true
-  value: "3"
+  value: "1"
 - description: Image repository name
   displayName: Repository Name
   name: IMAGE_REPO_NAME
