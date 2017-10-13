@@ -8,6 +8,11 @@ parameters:
   name: ZOOKEEPER_NODE_COUNT
   required: true
   value: "3"
+- description: Number of Kafka cluster nodes which will be deployed
+  displayName: Number of Kafka cluster nodes
+  name: KAFKA_NODE_COUNT
+  required: true
+  value: "3"
 - description: Volume space available for Zookeeper data, e.g. 512Mi, 2Gi.
   displayName: Zookeeper Volume Capacity
   name: ZOOKEEPER_VOLUME_CAPACITY
@@ -112,7 +117,7 @@ objects:
       name: kafka
     name: kafka
   spec:
-    replicas: 3
+    replicas: ${KAFKA_NODE_COUNT}
     selector:
       matchLabels:
         name: kafka
