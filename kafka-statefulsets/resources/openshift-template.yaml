@@ -141,6 +141,18 @@ objects:
           volumeMounts:
           - mountPath: /var/lib/kafka/
             name: kafka-storage
+          livenessProbe:
+            exec:
+              command:
+              - "/opt/kafka/kafka_healthcheck.sh"
+            initialDelaySeconds: 15
+            timeoutSeconds: 5
+          readinessProbe:
+            exec:
+              command:
+              - "/opt/kafka/kafka_healthcheck.sh"
+            initialDelaySeconds: 15
+            timeoutSeconds: 5
         dnsPolicy: ClusterFirst
         restartPolicy: Always
     volumeClaimTemplates:
