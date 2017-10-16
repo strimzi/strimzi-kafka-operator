@@ -8,6 +8,7 @@ export ZOOKEEPER_LOG_BASE_NAME="logs"
 # Disable JMX until we need it
 export JMXDISABLE=true
 export BASE_HOSTNAME=$(hostname | rev | cut -d "-" -f2- | rev)
+export BASE_FQDN=$(hostname -f | cut -d "." -f2-)
 
 # Detect the server ID based on the hostname.
 # StatefulSets are numbered from 0 so we have to always increment by 1
@@ -45,7 +46,7 @@ EOF
 
 NODE=1
 while [ $NODE -le $ZOOKEEPER_NODE_COUNT ]; do
-    echo "server.${NODE}=${BASE_HOSTNAME}-$((NODE-1)).zookeeper-headless:2888:3888" >> /tmp/zookeeper.properties
+    echo "server.${NODE}=${BASE_HOSTNAME}-$((NODE-1)).${BASE_FQDN}:2888:3888" >> /tmp/zookeeper.properties
     let NODE=NODE+1 
 done
 
