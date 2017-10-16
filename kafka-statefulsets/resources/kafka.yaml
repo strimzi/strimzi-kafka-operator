@@ -3,7 +3,7 @@ kind: StatefulSet
 metadata:
   name: kafka
 spec:
-  serviceName: "kafka"
+  serviceName: "kafka-headless"
   # used 3 replicas in order to have alwayas majority for leader election
   replicas: 3
   template:

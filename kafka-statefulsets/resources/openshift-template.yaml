@@ -137,7 +137,7 @@ objects:
     selector:
       matchLabels:
         name: kafka
-    serviceName: kafka
+    serviceName: kafka-headless
     template:
       metadata:
         labels:
