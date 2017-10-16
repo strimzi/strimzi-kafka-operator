@@ -23,6 +23,18 @@ spec:
           volumeMounts:
             - name: kafka-storage
               mountPath: /var/lib/kafka/
+          livenessProbe:
+            exec:
+              command:
+              - "/opt/kafka/kafka_healthcheck.sh"
+            initialDelaySeconds: 15
+            timeoutSeconds: 5
+          readinessProbe:
+            exec:
+              command:
+              - "/opt/kafka/kafka_healthcheck.sh"
+            initialDelaySeconds: 15
+            timeoutSeconds: 5
       volumes:
         - name: kafka-storage
           emptyDir: {}

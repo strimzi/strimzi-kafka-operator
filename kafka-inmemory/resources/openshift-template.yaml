@@ -33,6 +33,22 @@ parameters:
   displayName: Zookeeper image tag
   name: ZOOKEEPER_IMAGE_TAG
   value: latest
+- description: Number of seconds after the container has started before healthcheck probes are initiated.
+  displayName: Zookeeper healthcheck initial delay
+  name: ZOOKEEPER_HEALTHCHECK_DELAY
+  value: "15"
+- description: Number of seconds after which the probe times out.
+  displayName: Zookeeper healthcheck timeout
+  name: ZOOKEEPER_HEALTHCHECK_TIMEOUT
+  value: "5"
+- description: Number of seconds after the container has started before healthcheck probes are initiated.
+  displayName: Kafka healthcheck initial delay
+  name: KAFKA_HEALTHCHECK_DELAY
+  value: "15"
+- description: Number of seconds after which the probe times out.
+  displayName: Kafka healthcheck timeout
+  name: KAFKA_HEALTHCHECK_TIMEOUT
+  value: "5"
 objects:
 - apiVersion: v1
   kind: Service
@@ -131,6 +147,18 @@ objects:
           volumeMounts:
           - mountPath: /var/lib/kafka/
             name: kafka-storage
+          livenessProbe:
+            exec:
+              command:
+              - "/opt/kafka/kafka_healthcheck.sh"
+            initialDelaySeconds: ${ZOOKEEPER_HEALTHCHECK_DELAY}
+            timeoutSeconds: ${ZOOKEEPER_HEALTHCHECK_TIMEOUT}
+          readinessProbe:
+            exec:
+              command:
+              - "/opt/kafka/kafka_healthcheck.sh"
+            initialDelaySeconds: ${ZOOKEEPER_HEALTHCHECK_DELAY}
+            timeoutSeconds: ${ZOOKEEPER_HEALTHCHECK_TIMEOUT}
         dnsPolicy: ClusterFirst
         restartPolicy: Always
         volumes:
@@ -177,14 +205,14 @@ objects:
             exec:
               command:
               - "/opt/zookeeper/zookeeper_healthcheck.sh"
-            initialDelaySeconds: 15
-            timeoutSeconds: 5
+            initialDelaySeconds: ${KAFKA_HEALTHCHECK_DELAY}
+            timeoutSeconds: ${KAFKA_HEALTHCHECK_TIMEOUT}
           readinessProbe:
             exec:
               command:
               - "/opt/zookeeper/zookeeper_healthcheck.sh"
-            initialDelaySeconds: 15
-            timeoutSeconds: 5
+            initialDelaySeconds: ${KAFKA_HEALTHCHECK_DELAY}
+            timeoutSeconds: ${KAFKA_HEALTHCHECK_TIMEOUT}
         dnsPolicy: ClusterFirst
         restartPolicy: Always
         volumes:
