@@ -78,6 +78,8 @@ objects:
   kind: Service
   metadata:
     name: kafka-headless
+    annotations:
+      service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
   spec:
     clusterIP: None
     ports:
