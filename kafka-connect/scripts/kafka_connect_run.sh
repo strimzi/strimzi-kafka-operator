@@ -39,6 +39,9 @@ else
 
   # Write the config file
   cat > /tmp/barnabas-connect.properties <<EOF
+rest.port=8083
+rest.advertised.host.name=$(hostname -I)
+rest.advertised.port=8083
 bootstrap.servers=${KAFKA_CONNECT_BOOTSTRAP_SERVERS}
 group.id=${KAFKA_CONNECT_GROUP_ID}
 offset.storage.topic=${KAFKA_CONNECT_OFFSET_STORAGE_TOPIC}
