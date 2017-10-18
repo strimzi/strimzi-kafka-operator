@@ -29,7 +29,7 @@ RUN curl -O https://www.apache.org/dist/zookeeper/zookeeper-$ZOOKEEPER_VERSION/z
 
 EXPOSE 2181 2888 3888
 
-# copy scripts for starting Kafka and Zookeeper
+# copy scripts for starting Zookeeper
 COPY ./scripts/ $ZOOKEEPER_HOME
 
 USER zookeeper:zookeeper
