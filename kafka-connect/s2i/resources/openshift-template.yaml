@@ -3,6 +3,31 @@ kind: Template
 metadata:
   name: barnabas-connect-s2i
 parameters:
+- description: Specifies the number of Kafka Connect instances to be started by default.
+  displayName: Number of Kafka connect instances
+  name: INSTANCES
+  required: true
+  value: "3"
+- description: A list of host:port pairs to use for establishing the initial connection to the Kafka cluster.
+  displayName: Kafka bootstrap servers
+  name: KAFKA_CONNECT_BOOTSTRAP_SERVERS
+  required: true
+  value: kafka:9092
+- description: A unique string that identifies the Connect cluster group this worker belongs to. Note this must not conflict with any consumer group IDs.
+  displayName: Group ID
+  name: KAFKA_CONNECT_GROUP_ID
+  required: true
+  value: connect-cluster
+- description: Converter class used to convert between Kafka Connect format and the serialized form that is written to Kafka.
+  displayName: Key Converter
+  name: KAFKA_CONNECT_KEY_CONVERTER
+  required: true
+  value: org.apache.kafka.connect.json.JsonConverter
+- description: Converter class used to convert between Kafka Connect format and the serialized form that is written to Kafka.
+  displayName: Value Converter
+  name: KAFKA_CONNECT_VALUE_CONVERTER
+  required: true
+  value: org.apache.kafka.connect.json.JsonConverter
 - description: Name of the Build which will be created by this template
   displayName: Build name
   name: BUILD_NAME
@@ -36,6 +61,9 @@ objects:
     labels:
       build: ${BUILD_NAME}
     name: ${TARGET_IMAGE_NAME}
+  spec:
+    lookupPolicy:
+      local: true
 - apiVersion: v1
   kind: ImageStream
   metadata:
@@ -79,3 +107,57 @@ objects:
     - type: ConfigChange
     - imageChange: {}
       type: ImageChange
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: kafka-connect
+  spec:
+    ports:
+      - port: 8083
+        name: rest-api
+        targetPort : 8083
+        protocol: TCP
+    selector:
+      name: kafka-connect
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    name: kafka-connect
+  spec:
+    replicas: ${INSTANCES}
+    template:
+      metadata:
+        labels:
+          name: kafka-connect
+      spec:
+        containers:
+          - name: kafka-connect
+            image: ${TARGET_IMAGE_NAME}:${TARGET_IMAGE_TAG}
+            ports:
+              - name: rest-api
+                containerPort: 8083
+                protocol: TCP
+            env:
+              - name: KAFKA_CONNECT_BOOTSTRAP_SERVERS
+                value: "${KAFKA_CONNECT_BOOTSTRAP_SERVERS}"
+              - name: KAFKA_CONNECT_GROUP_ID
+                value: "${KAFKA_CONNECT_GROUP_ID}"
+              - name: KAFKA_CONNECT_KEY_CONVERTER
+                value: "${KAFKA_CONNECT_KEY_CONVERTER}"
+              - name: KAFKA_CONNECT_VALUE_CONVERTER
+                value: "${KAFKA_CONNECT_VALUE_CONVERTER}"
+            livenessProbe:
+              httpGet:
+                path: /
+                port: rest-api
+              initialDelaySeconds: 60
+    triggers:
+      - type: ConfigChange
+      - type: ImageChange"
+        imageChangeParams:
+          automatic: true
+          containerNames:
+            - kafka-connect
+          from:
+            kind: ImageStreamTag
+            name: ${TARGET_IMAGE_NAME}:${TARGET_IMAGE_TAG}
