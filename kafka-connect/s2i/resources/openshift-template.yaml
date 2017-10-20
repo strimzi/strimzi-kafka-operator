@@ -7,13 +7,15 @@ parameters:
   displayName: Number of Kafka connect instances
   name: INSTANCES
   required: true
-  value: "3"
+  value: "1"
 - description: A list of host:port pairs to use for establishing the initial connection to the Kafka cluster.
   displayName: Kafka bootstrap servers
   name: KAFKA_CONNECT_BOOTSTRAP_SERVERS
   required: true
   value: kafka:9092
-- description: A unique string that identifies the Connect cluster group this worker belongs to. Note this must not conflict with any consumer group IDs.
+- description: |
+        A unique string that identifies the Connect cluster group this worker belongs to. 
+        This must not conflict with any consumer group IDs.
   displayName: Group ID
   name: KAFKA_CONNECT_GROUP_ID
   required: true
