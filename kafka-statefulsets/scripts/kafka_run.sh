@@ -22,4 +22,7 @@ exec $KAFKA_HOME/bin/kafka-server-start.sh $KAFKA_HOME/config/server.properties 
 --override broker.id=$KAFKA_BROKER_ID \
 --override advertised.host.name=$(hostname -I) \
 --override zookeeper.connect=$ZOOKEEPER_SERVICE_HOST:$ZOOKEEPER_SERVICE_PORT \
---override log.dirs=$KAFKA_LOG_DIRS
+--override log.dirs=$KAFKA_LOG_DIRS \
+--override default.replication.factor=${KAFKA_DEFAULT_REPLICATION_FACTOR:-1} \
+--override offsets.topic.replication.factor=${KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR:-3} \
+--override transaction.state.log.replication.factor=${KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR:-3}
