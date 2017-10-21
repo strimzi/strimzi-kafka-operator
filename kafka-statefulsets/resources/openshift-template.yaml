@@ -59,6 +59,18 @@ parameters:
   displayName: Kafka healthcheck timeout
   name: KAFKA_HEALTHCHECK_TIMEOUT
   value: "5"
+- description: Default replication factor for newly created topics
+  displayName: Default replication factor
+  name: KAFKA_DEFAULT_REPLICATION_FACTOR
+  value: "1"
+- description: Replication factor for offsets topic
+  displayName: Offsets replication factor
+  name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+  value: "3"
+- description: Replication factor for transactions state log topic
+  displayName: Transaction state replication factor
+  name: KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR
+  value: "3"
 objects:
 - apiVersion: v1
   kind: Service
@@ -151,6 +163,13 @@ objects:
           - containerPort: 9092
             name: kafka
             protocol: TCP
+          env:
+          - name: KAFKA_DEFAULT_REPLICATION_FACTOR
+            value: "${KAFKA_DEFAULT_REPLICATION_FACTOR}"
+          - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+            value: "${KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR}"
+          - name: KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR
+            value: "${KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR}"
           resources: {}
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File

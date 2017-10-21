@@ -56,6 +56,9 @@ internal.value.converter=org.apache.kafka.connect.json.JsonConverter
 internal.key.converter.schemas.enable=false
 internal.value.converter.schemas.enable=false
 plugin.path=${KAFKA_CONNECT_PLUGIN_PATH}
+config.storage.replication.factor=${KAFKA_CONFIG_STORAGE_REPLICATION_FACTOR:-3}
+offset.storage.replication.factor=${KAFKA_OFFSET_STORAGE_REPLICATION_FACTOR:-3}
+status.storage.replication.factor=${KAFKA_STATUS_STORAGE_REPLICATION_FACTOR:-3}
 EOF
 
   echo "Starting Kafka connect with configuration:"
