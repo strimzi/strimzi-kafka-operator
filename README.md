@@ -5,6 +5,9 @@ Barnabas provides a way to run an [Apache Kafka][kafka] cluster on
 
 <!-- TOC depthFrom:2 -->
 
+- [Deploying a Kubernetes/OpenShift cluster](#deploying-a-kubernetesopenshift-cluster)
+    - [Kubernetes](#kubernetes)
+    - [OpenShift](#openshift)
 - [Kafka Stateful Sets](#kafka-stateful-sets)
     - [Deploying to OpenShift](#deploying-to-openshift)
     - [Deploying to Kubernetes](#deploying-to-kubernetes)
@@ -20,6 +23,38 @@ Barnabas provides a way to run an [Apache Kafka][kafka] cluster on
         - [Using Openshift Build and S2I image](#using-openshift-build-and-s2i-image)
 
 <!-- /TOC -->
+
+## Deploying a Kubernetes/OpenShift cluster
+
+You will need a Kubernetes or OpenShift cluster to deploy Barnabas.
+
+### Kubernetes
+
+In order to interact with a Kubernetes cluster, be sure to have [the kubectl tool][kubectl] installed.
+If you don't have a Kubernetes cluster up and running, the easiest way to deploy one, for development purposes, is to use the [Minikube][minikube] project which provides a single-node cluster in a VM. In order to do that you can just follow the installation guide which describes all the prerequisites and how to get the Minikube binaries.
+Finally, the cluster can be deployed by running
+
+```
+minikube start
+```
+
+### OpenShift
+
+In order to interact with an OpenShift cluster, be sure to have the [OpenShift client tools][origin] installed.
+If you don't have an OpenShift cluster up and running, the easiest way to deploy one, for development purposes, is to use the [Minishift][minishift] project which provides a single-node cluster in a VM. In order to do that you can just follow the installation guide which describes all the prerequisites and how to get the Minishift binaries.
+Finally, the cluster can be deployed by running
+
+```
+minishift start
+```
+
+Another way is to use the OpenShift client tools directly to spin-up a single-node cluster. It will run OpenShift as a Docker container on the local machine.
+
+```
+oc cluster up
+```
+
+More information about this way can be found [here][occlusterup].
 
 ## Kafka Stateful Sets
 
@@ -44,8 +79,7 @@ This deployment is available under the _kafka-statefulsets_ folder and provides 
 
 ### Deploying to OpenShift
 
-1. With the [Openshift client tools][origin] installed and having logged into your cluster, 
-   create the [provided "barnabas" template](kafka-statefulsets/resources/openshift-template.yaml) 
+1. Create the [provided "barnabas" template](kafka-statefulsets/resources/openshift-template.yaml) 
    by running
 
         oc create -f kafka-statefulsets/resources/openshift-template.yaml
@@ -58,12 +92,11 @@ This deployment is available under the _kafka-statefulsets_ folder and provides 
 
 ### Deploying to Kubernetes
 
-1. If you don't have a cluster running, start one (e.g. by executing `minikube start`)
-2. If your cluster doesn't have any default storage class, create the persistent volumes manually
+1. If your cluster doesn't have any default storage class, create the persistent volumes manually
 
         kubectl apply -f kafka-statefulsets/resources/cluster-volumes.yaml
 
-3. Create the services by running:
+2. Create the services by running:
 
         kubectl apply -f kafka-statefulsets/resources/zookeeper.yaml && \
         kubectl apply -f kafka-statefulsets/resources/zookeeper-headless-service.yaml && \
@@ -72,7 +105,7 @@ This deployment is available under the _kafka-statefulsets_ folder and provides 
         kubectl apply -f kafka-statefulsets/resources/kafka-headless-service.yaml && \
         kubectl apply -f kafka-statefulsets/resources/kafka-service.yaml
 
-4. You can then verify that the services started using
+3. You can then verify that the services started using
 
         kubectl describe all
 
@@ -91,8 +124,7 @@ This deployment is available under the _kafka-inmemory_ folder and provides foll
 
 ### Deploying to OpenShift
 
-1. With the [Openshift client tools][origin] installed and having logged into your cluster, 
-   create a pod using the [provided template](kafka-inmemory/resources/openshift-template.yaml) by running
+1. Create a pod using the [provided template](kafka-inmemory/resources/openshift-template.yaml) by running
 
         oc create -f kafka-inmemory/resources/openshift-template.yaml
 
@@ -105,8 +137,7 @@ This deployment is available under the _kafka-inmemory_ folder and provides foll
 
 ### Deploying to Kubernetes
 
-1. If you don't have a cluster running, start one (e.g. by executing `minikube start`)
-2. Create the deployments and services by running:
+1. Create the deployments and services by running:
 
         kubectl apply -f kafka-inmemory/resources/zookeeper.yaml && \
         kubectl apply -f kafka-inmemory/resources/zookeeper-service.yaml && \
@@ -115,7 +146,7 @@ This deployment is available under the _kafka-inmemory_ folder and provides foll
         kubectl apply -f kafka-inmemory/resources/kafka-service.yaml && \
         kubectl apply -f kafka-inmemory/resources/kafka-headless-service.yaml
 
-3. You can then verify that the services started using
+2. You can then verify that the services started using
 
         kubectl describe all
 
@@ -227,6 +258,7 @@ oc start-build kafka-connect --from-dir ./my-plugins/
 [os]: https://www.openshift.com/ "OpenShift"
 [statefulset]: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/ "Kubernetes StatefulSets"
 [origin]: https://github.com/openshift/origin/releases "OpenShift Origin releases"
-
-
-
+[minikube]: https://kubernetes.io/docs/getting-started-guides/minikube/ "Minikube"
+[minishift]: https://docs.openshift.org/latest/minishift/index.html "Minishift"
+[kubectl]: https://kubernetes.io/docs/tasks/tools/install-kubectl/ "Kubectl"
+[occlusterup]: https://github.com/openshift/origin/blob/master/docs/cluster_up_down.md "Local Cluster Management"
