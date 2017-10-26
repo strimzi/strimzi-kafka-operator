@@ -3,22 +3,21 @@
 Barnabas provides a way to run an [Apache Kafka][kafka] cluster on 
 [Kubernetes][k8s] or [OpenShift][os] in various deployment configurations.
 
-<!-- TOC -->
+<!-- TOC depthFrom:2 -->
 
-- [Kafka as a Service](#kafka-as-a-service)
-    - [Kafka Stateful Sets](#kafka-stateful-sets)
-        - [Deploying to OpenShift](#deploying-to-openshift)
-        - [Deploying to Kubernetes](#deploying-to-kubernetes)
-    - [Kafka in-memory](#kafka-in-memory)
-        - [Deploying to OpenShift](#deploying-to-openshift-1)
-        - [Deploying to Kubernetes](#deploying-to-kubernetes-1)
-    - [Kafka Connect](#kafka-connect)
-        - [Deploying to OpenShift](#deploying-to-openshift-2)
-        - [Deploying to Kubernetes](#deploying-to-kubernetes-2)
-        - [Using Kafka Connect with additional plugins](#using-kafka-connect-with-additional-plugins)
-            - [Mount a volume containing the plugins](#mount-a-volume-containing-the-plugins)
-            - [Create a new image based on `enmasseproject/kafka-connect`](#create-a-new-image-based-on-enmasseprojectkafka-connect)
-            - [Using Openshift Build and S2I image](#using-openshift-build-and-s2i-image)
+- [Kafka Stateful Sets](#kafka-stateful-sets)
+    - [Deploying to OpenShift](#deploying-to-openshift)
+    - [Deploying to Kubernetes](#deploying-to-kubernetes)
+- [Kafka in-memory](#kafka-in-memory)
+    - [Deploying to OpenShift](#deploying-to-openshift-1)
+    - [Deploying to Kubernetes](#deploying-to-kubernetes-1)
+- [Kafka Connect](#kafka-connect)
+    - [Deploying to OpenShift](#deploying-to-openshift-2)
+    - [Deploying to Kubernetes](#deploying-to-kubernetes-2)
+    - [Using Kafka Connect with additional plugins](#using-kafka-connect-with-additional-plugins)
+        - [Mount a volume containing the plugins](#mount-a-volume-containing-the-plugins)
+        - [Create a new image based on `enmasseproject/kafka-connect`](#create-a-new-image-based-on-enmasseprojectkafka-connect)
+        - [Using Openshift Build and S2I image](#using-openshift-build-and-s2i-image)
 
 <!-- /TOC -->
 
