@@ -11,8 +11,6 @@ spec:
       labels:
         name: kafka
     spec:
-      securityContext:
-        fsGroup: 1001
       containers:
         - name: kafka
           image: "enmasseproject/kafka-statefulsets:latest"
