@@ -157,7 +157,7 @@ This deployment adds a [Kafka Connect][connect] cluster which can be used with e
 It is implemented as a deployment with a configurable number of workers. 
 The default image currently contains only the Connectors distributed with Apache Kafka Connect - 
 `FileStreamSinkConnector` and `FileStreamSourceConnector`. 
-The REST interface for managing the Kafka Connect cluster is exposed internally within the Kubernetes / OpenShift 
+The REST interface for managing the Kafka Connect cluster is exposed internally within the Kubernetes/OpenShift 
 cluster as service `kafka-connect` on port `8083`.
 
 
@@ -193,8 +193,11 @@ cluster as service `kafka-connect` on port `8083`.
 
 ### Using Kafka Connect with additional plugins
 
-Our Kafka Connect images contain by default only the `FileStreamSinkConnector` and `FileStreamSourceConnector` connectors.
-If you want to use other connectors, you can:
+Our Kafka Connect Docker images contain by default only the `FileStreamSinkConnector` and 
+`FileStreamSourceConnector` connectors which are part of the Apache Kafka project.
+
+Kafka Connect will automatically load all plugins/connectors which are present in the `/opt/kafka/plugins` 
+directory during startup. You can use several different methods how to add the plugins into this directory:
 
 * Mount a volume containing the plugins to path `/opt/kafka/plugins/`
 * Use the `enmasseproject/kafka-connect` image as Docker base image, add your connectors to the `/opt/kafka/plugins/` 
@@ -203,9 +206,69 @@ If you want to use other connectors, you can:
 
 #### Mount a volume containing the plugins
 
-1. Prepare a PersistentVolume which contains a directory with your plugin(s) and their dependencies and ensure 
-   these files are world-readable (`chmod -R a+r /path/to/your/directory`).
-2. Mount the volume into your Pod at the path `/opt/kafka/plugins/`
+You can distribute your plugins to all your cluster nodes into the same path, make them 
+world-readable (`chmod -R a+r /path/to/your/directory`) and use the hostPath volume to mount them into 
+your Kafka Connect deployment. To use the volume, you have to edit the deployment YAML files:
+
+1. Open the [OpenShift template](kafka-connect/resources/openshift-template.yaml) 
+or [Kubernetes deployment](kafka-connect/resources/kafka-connect.yaml)
+2. add the `volumeMounts` and `volumes` sections in the same way as in the example below
+3. Redeploy Kafka Connect for the changes to take effect (If you have Kafka Connect already deployed, you have to apply 
+the changes to the deployment and afterwards make sure all pods are restarted. If you haven't yet deployed Kakfa Connect, 
+just follow the guide above and use your modified YAML files.)
+
+```yaml
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: kafka-connect
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: kafka-connect
+    spec:
+      containers:
+        - name: kafka-connect
+          image: enmasseproject/kafka-connect:latest
+          ports:
+            - name: rest-api
+              containerPort: 8083
+              protocol: TCP
+          env:
+            - name: KAFKA_CONNECT_BOOTSTRAP_SERVERS
+              value: "kafka:9092"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: rest-api
+            initialDelaySeconds: 60
+          volumeMounts:
+            - mountPath: /opt/kafka/plugins
+              name: pluginsvol
+      volumes:
+        - name: pluginsvol
+          hostPath:
+            path: /path/to/my/plugins
+            type: Directory
+```
+
+Alternatively, you can create Kubernetes/OpenShift persistent volume which contains additional plugins and modify the 
+Kafka Connect deployment to use this volume. Since distributed Kafka Connect cluster can run on multiple nodes you need 
+to make sure that the volume can be mounted as read only into multiple pods at the same time. Which volume types 
+can be mounted read only on several pods can be found in [Kubernetes documentation][k8srwomany]. Once you have 
+such volume, you can edit the deployment YAML file as described above and just use your persistent volume instead of 
+the hostPath volume. For example for GlusterFS, you can use:
+
+```yaml
+volumes:
+  - name: pluginsvol
+    glusterfs: 
+      endpoints: glusterfs-cluster
+      path: kube_vol
+      readOnly: true
+```
 
 #### Create a new image based on `enmasseproject/kafka-connect`
 
@@ -262,3 +325,4 @@ oc start-build kafka-connect --from-dir ./my-plugins/
 [minishift]: https://docs.openshift.org/latest/minishift/index.html "Minishift"
 [kubectl]: https://kubernetes.io/docs/tasks/tools/install-kubectl/ "Kubectl"
 [occlusterup]: https://github.com/openshift/origin/blob/master/docs/cluster_up_down.md "Local Cluster Management"
+[k8srwomany]: https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes
