@@ -4,7 +4,7 @@ items:
 - apiVersion: v1
   kind: PersistentVolume
   metadata:
-    name: kafkapv-a
+    name: pv0001
   spec:
     capacity:
       storage: 5Gi
@@ -12,11 +12,11 @@ items:
       - ReadWriteOnce
     persistentVolumeReclaimPolicy: Recycle
     hostPath:
-      path: /tmp/kafka-a
+      path: /tmp/pv0001
 - apiVersion: v1
   kind: PersistentVolume
   metadata:
-    name: kafkapv-b
+    name: pv0002
   spec:
     capacity:
       storage: 5Gi
@@ -24,11 +24,11 @@ items:
       - ReadWriteOnce
     persistentVolumeReclaimPolicy: Recycle
     hostPath:
-      path: /tmp/kafka-b
+      path: /tmp/pv0002
 - apiVersion: v1
   kind: PersistentVolume
   metadata:
-    name: kafkapv-c
+    name: pv0003
   spec:
     capacity:
       storage: 5Gi
@@ -36,11 +36,11 @@ items:
       - ReadWriteOnce
     persistentVolumeReclaimPolicy: Recycle
     hostPath:
-      path: /tmp/kafka-c
+      path: /tmp/pv0003
 - apiVersion: v1
   kind: PersistentVolume
   metadata:
-    name: kafkapv-d
+    name: pv0004
   spec:
     capacity:
       storage: 5Gi
@@ -48,4 +48,24 @@ items:
       - ReadWriteOnce
     persistentVolumeReclaimPolicy: Recycle
     hostPath:
-      path: /tmp/kafka-d
+      path: /tmp/pv0004
+- apiVersion: v1
+  kind: PersistentVolume
+  metadata:
+    name: pv0005
+  spec:
+    capacity:
+      storage: 5Gi
+    persistentVolumeReclaimPolicy: Recycle
+    hostPath:
+      path: /tmp/pv0005
+- apiVersion: v1
+  kind: PersistentVolume
+  metadata:
+    name: pv0006
+  spec:
+    capacity:
+      storage: 5Gi
+    persistentVolumeReclaimPolicy: Recycle
+    hostPath:
+      path: /tmp/pv0006
