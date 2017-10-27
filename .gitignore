@@ -1,5 +1,7 @@
 # IntelliJ IDEA specific
 .idea/
 *.iml
+
+# Python-related
 **/*.pyc
 **/.cache
