@@ -65,6 +65,7 @@ objects:
         protocol: TCP
     selector:
       name: kafka-connect
+    type: ClusterIP
 - apiVersion: extensions/v1beta1
   kind: Deployment
   metadata:

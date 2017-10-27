@@ -8,6 +8,7 @@ spec:
       name: kafka
       targetPort : 9092
       protocol: TCP
-  clusterIP: None
   selector:
     name: kafka
+  type: ClusterIP
+  clusterIP: None

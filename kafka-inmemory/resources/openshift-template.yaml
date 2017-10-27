@@ -74,14 +74,12 @@ objects:
       targetPort: 9092
     selector:
       name: kafka
-    sessionAffinity: None
     type: ClusterIP
 - apiVersion: v1
   kind: Service
   metadata:
     name: kafka-headless
   spec:
-    clusterIP: None
     ports:
     - name: kafka
       port: 9092
@@ -89,8 +87,8 @@ objects:
       targetPort: 9092
     selector:
       name: kafka
-    sessionAffinity: None
     type: ClusterIP
+    clusterIP: None
 - apiVersion: v1
   kind: Service
   metadata:
@@ -103,14 +101,12 @@ objects:
       targetPort: 2181
     selector:
       name: zookeeper
-    sessionAffinity: None
     type: ClusterIP
 - apiVersion: v1
   kind: Service
   metadata:
     name: zookeeper-headless
   spec:
-    clusterIP: None
     ports:
     - name: clientport
       port: 2181
@@ -126,8 +122,8 @@ objects:
       protocol: TCP
     selector:
       name: zookeeper
-    sessionAffinity: None
     type: ClusterIP
+    clusterIP: None
 - apiVersion: apps/v1beta1
   kind: StatefulSet
   metadata:
