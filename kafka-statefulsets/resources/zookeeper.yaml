@@ -32,7 +32,7 @@ spec:
             - containerPort: 3888
               name: leaderelection
               protocol: TCP
-           env:
+          env:
             - name: ZOOKEEPER_NODE_COUNT
               value: "3"
           volumeMounts:
