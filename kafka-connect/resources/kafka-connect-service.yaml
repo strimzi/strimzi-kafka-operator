@@ -4,9 +4,9 @@ metadata:
   name: kafka-connect
 spec:
   ports:
-    - port: 8083
-      name: rest-api
-      targetPort : 8083
+    - name: rest-api
+      port: 8083
+      targetPort: 8083
       protocol: TCP
   selector:
     name: kafka-connect
