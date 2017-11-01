@@ -25,22 +25,30 @@ parameters:
   name: KAFKA_CONNECT_KEY_CONVERTER
   required: true
   value: org.apache.kafka.connect.json.JsonConverter
+- description: Set to false to use schemaless format
+  displayName: Enable schemas for key converters
+  name: KAFKA_CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE
+  value: "true"
 - description: Converter class used to convert between Kafka Connect format and the serialized form that is written to Kafka.
   displayName: Value Converter
   name: KAFKA_CONNECT_VALUE_CONVERTER
   required: true
   value: org.apache.kafka.connect.json.JsonConverter
+- description: Set to false to use schemaless format
+  displayName: Enable schemas for value converters
+  name: KAFKA_CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE
+  value: "true"
 - description: Replication factor for config storage topic
   displayName: Config replication factor
-  name: KAFKA_CONFIG_STORAGE_REPLICATION_FACTOR
+  name: KAFKA_CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR
   value: "3"
 - description: Replication factor for offset storage topic
   displayName: Offset replication factor
-  name: KAFKA_OFFSET_STORAGE_REPLICATION_FACTOR
+  name: KAFKA_CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR
   value: "3"
 - description: Replication factor for status storage topic
   displayName: Status replication factor
-  name: KAFKA_STATUS_STORAGE_REPLICATION_FACTOR
+  name: KAFKA_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR
   value: "3"
 - description: Name of the Build which will be created by this template
   displayName: Build name
@@ -158,14 +166,18 @@ objects:
                 value: "${KAFKA_CONNECT_GROUP_ID}"
               - name: KAFKA_CONNECT_KEY_CONVERTER
                 value: "${KAFKA_CONNECT_KEY_CONVERTER}"
+              - name: KAFKA_CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE
+                value: "${KAFKA_CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE}"
               - name: KAFKA_CONNECT_VALUE_CONVERTER
                 value: "${KAFKA_CONNECT_VALUE_CONVERTER}"
-              - name: KAFKA_CONFIG_STORAGE_REPLICATION_FACTOR
-                value: "${KAFKA_CONFIG_STORAGE_REPLICATION_FACTOR}"
-              - name: KAFKA_OFFSET_STORAGE_REPLICATION_FACTOR
-                value: "${KAFKA_OFFSET_STORAGE_REPLICATION_FACTOR}"
-              - name: KAFKA_STATUS_STORAGE_REPLICATION_FACTOR
-                value: "${KAFKA_STATUS_STORAGE_REPLICATION_FACTOR}"
+              - name: KAFKA_CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE
+                value: "${KAFKA_CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE}"
+              - name: KAFKA_CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR
+                value: "${KAFKA_CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR}"
+              - name: KAFKA_CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR
+                value: "${KAFKA_CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR}"
+              - name: KAFKA_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR
+                value: "${KAFKA_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR}"
             livenessProbe:
               httpGet:
                 path: /
