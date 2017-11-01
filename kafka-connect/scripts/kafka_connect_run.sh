@@ -49,16 +49,16 @@ config.storage.topic=${KAFKA_CONNECT_CONFIG_STORAGE_TOPIC}
 status.storage.topic=${KAFKA_CONNECT_STATUS_STORAGE_TOPIC}
 key.converter=${KAFKA_CONNECT_KEY_CONVERTER}
 value.converter=${KAFKA_CONNECT_VALUE_CONVERTER}
-key.converter.schemas.enable=false
-value.converter.schemas.enable=false
+key.converter.schemas.enable=${KAFKA_CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE:-true}
+value.converter.schemas.enable=${KAFKA_CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE:-true}
 internal.key.converter=org.apache.kafka.connect.json.JsonConverter
 internal.value.converter=org.apache.kafka.connect.json.JsonConverter
-internal.key.converter.schemas.enable=false
-internal.value.converter.schemas.enable=false
+internal.key.converter.schemas.enable=${KAFKA_CONNECT_INTERNAL_KEY_CONVERTER_SCHEMAS_ENABLE:-false}
+internal.value.converter.schemas.enable=${KAFKA_CONNECT_INTERNAL_VALUE_CONVERTER_SCHEMAS_ENABLE:-false}
 plugin.path=${KAFKA_CONNECT_PLUGIN_PATH}
-config.storage.replication.factor=${KAFKA_CONFIG_STORAGE_REPLICATION_FACTOR:-3}
-offset.storage.replication.factor=${KAFKA_OFFSET_STORAGE_REPLICATION_FACTOR:-3}
-status.storage.replication.factor=${KAFKA_STATUS_STORAGE_REPLICATION_FACTOR:-3}
+config.storage.replication.factor=${KAFKA_CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR:-3}
+offset.storage.replication.factor=${KAFKA_CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR:-3}
+status.storage.replication.factor=${KAFKA_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR:-3}
 EOF
 
   echo "Starting Kafka connect with configuration:"
