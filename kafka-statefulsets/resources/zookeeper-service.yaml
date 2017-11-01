@@ -4,9 +4,9 @@ metadata:
   name: zookeeper
 spec:
   ports:
-    - port: 2181
-      name: clientport
-      targetPort : 2181
+    - name: clientport
+      port: 2181
+      targetPort: 2181
       protocol: TCP
   selector:
     name: zookeeper

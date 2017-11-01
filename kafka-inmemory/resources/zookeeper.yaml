@@ -17,11 +17,11 @@ spec:
             - name: clientport
               containerPort: 2181
               protocol: TCP
-            - containerPort: 2888
-              name: clustering
+            - name: clustering
+              containerPort: 2888
               protocol: TCP
-            - containerPort: 3888
-              name: leaderelection
+            - name: leaderelection
+              containerPort: 3888
               protocol: TCP
           env:
             - name: ZOOKEEPER_NODE_COUNT

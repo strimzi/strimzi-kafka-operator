@@ -80,8 +80,8 @@ objects:
     ports:
     - name: kafka
       port: 9092
-      protocol: TCP
       targetPort: 9092
+      protocol: TCP
     selector:
       name: kafka
     type: ClusterIP
@@ -93,8 +93,8 @@ objects:
     ports:
     - name: kafka
       port: 9092
-      protocol: TCP
       targetPort: 9092
+      protocol: TCP
     selector:
       name: kafka
     type: ClusterIP
@@ -107,8 +107,8 @@ objects:
     ports:
     - name: clientport
       port: 2181
-      protocol: TCP
       targetPort: 2181
+      protocol: TCP
     selector:
       name: zookeeper
     type: ClusterIP
@@ -120,15 +120,15 @@ objects:
     ports:
     - name: clientport
       port: 2181
-      protocol: TCP
       targetPort: 2181
-    - port: 2888
-      name: clustering
-      targetPort : 2888
       protocol: TCP
-    - port: 3888
-      name: leaderelection
-      targetPort : 3888
+    - name: clustering
+      port: 2888
+      targetPort: 2888
+      protocol: TCP
+    - name: leaderelection
+      port: 3888
+      targetPort: 3888
       protocol: TCP
     selector:
       name: zookeeper
@@ -156,8 +156,8 @@ objects:
           image: ${IMAGE_REPO_NAME}/${KAFKA_IMAGE_NAME}:${KAFKA_IMAGE_TAG}
           imagePullPolicy: Always
           ports:
-          - containerPort: 9092
-            name: kafka
+          - name: kafka
+            containerPort: 9092
             protocol: TCP
           env:
           - name: KAFKA_DEFAULT_REPLICATION_FACTOR
@@ -217,14 +217,14 @@ objects:
           image: ${IMAGE_REPO_NAME}/${ZOOKEEPER_IMAGE_NAME}:${ZOOKEEPER_IMAGE_TAG}
           imagePullPolicy: Always
           ports:
-          - containerPort: 2181
-            name: clientport
+          - name: clientport
+            containerPort: 2181
             protocol: TCP
-          - containerPort: 2888
-            name: clustering
+          - name: clustering
+            containerPort: 2888
             protocol: TCP
-          - containerPort: 3888
-            name: leaderelection
+          - name: leaderelection
+            containerPort: 3888
             protocol: TCP
           env:
           - name: ZOOKEEPER_NODE_COUNT
