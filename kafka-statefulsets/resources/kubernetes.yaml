@@ -1,0 +1,181 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: zookeeper
+spec:
+  ports:
+    - name: clientport
+      port: 2181
+      targetPort: 2181
+      protocol: TCP
+  selector:
+    name: zookeeper
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zookeeper-headless
+spec:
+  ports:
+    - name: clientport
+      port: 2181
+      targetPort: 2181
+      protocol: TCP
+    - name: clustering
+      port: 2888
+      targetPort: 2888
+      protocol: TCP
+    - name: leaderelection
+      port: 3888
+      targetPort: 3888
+      protocol: TCP
+  selector:
+    name: zookeeper
+  type: ClusterIP
+  clusterIP: None
+---
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: zookeeper
+spec:
+  serviceName: "zookeeper-headless"
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        name: zookeeper
+    spec:
+      securityContext:
+        fsGroup: 1001
+      initContainers:
+        - name: volume-mount-hack
+          image: busybox
+          command: ["sh", "-c", "chown -R 1001:1001 /var/lib/zookeeper/"]
+          volumeMounts:
+            - name: zookeeper-storage
+              mountPath: /var/lib/zookeeper
+      containers:
+        - name: zookeeper
+          image: "enmasseproject/zookeeper:latest"
+          ports:
+            - name: clientport
+              containerPort: 2181
+              protocol: TCP
+            - name: clustering
+              containerPort: 2888
+              protocol: TCP
+            - name: leaderelection
+              containerPort: 3888
+              protocol: TCP
+          env:
+            - name: ZOOKEEPER_NODE_COUNT
+              value: "3"
+          volumeMounts:
+            - name: zookeeper-storage
+              mountPath: /var/lib/zookeeper
+          livenessProbe:
+            exec:
+              command:
+              - "/opt/zookeeper/zookeeper_healthcheck.sh"
+            initialDelaySeconds: 15
+            timeoutSeconds: 5
+          readinessProbe:
+            exec:
+              command:
+              - "/opt/zookeeper/zookeeper_healthcheck.sh"
+            initialDelaySeconds: 15
+            timeoutSeconds: 5
+  volumeClaimTemplates:
+    - metadata:
+        name: zookeeper-storage
+      spec:
+        resources:
+          requests:
+            storage: 1Gi
+        accessModes:
+          - ReadWriteOnce
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka
+spec:
+  ports:
+    - name: kafka
+      port: 9092
+      targetPort: 9092
+      protocol: TCP
+  selector:
+    name: kafka
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-headless
+spec:
+  ports:
+    - name: kafka
+      port: 9092
+      targetPort: 9092
+      protocol: TCP
+  selector:
+    name: kafka
+  type: ClusterIP
+  clusterIP: None
+---
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: kafka
+spec:
+  serviceName: "kafka-headless"
+  # used 3 replicas in order to have alwayas majority for leader election
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        name: kafka
+    spec:
+      securityContext:
+        fsGroup: 1001
+      initContainers:
+       - name: volume-mount-hack
+         image: busybox
+         command: ["sh", "-c", "chown -R 1001:1001 /var/lib/kafka/"]
+         volumeMounts:
+           - name: kafka-storage
+             mountPath: /var/lib/kafka/
+      containers:
+        - name: kafka
+          image: "enmasseproject/kafka-statefulsets:latest"
+          ports:
+            - name: kafka
+              containerPort: 9092
+              protocol: TCP
+          volumeMounts:
+            - name: kafka-storage
+              mountPath: /var/lib/kafka/
+          livenessProbe:
+            exec:
+              command:
+              - "/opt/kafka/kafka_healthcheck.sh"
+            initialDelaySeconds: 15
+            timeoutSeconds: 5
+          readinessProbe:
+            exec:
+              command:
+              - "/opt/kafka/kafka_healthcheck.sh"
+            initialDelaySeconds: 15
+            timeoutSeconds: 5
+  volumeClaimTemplates:
+    - metadata:
+        name: kafka-storage
+      spec:
+        resources:
+          requests:
+            storage: 1Gi
+        accessModes:
+          - ReadWriteOnce
