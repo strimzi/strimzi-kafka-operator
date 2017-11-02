@@ -98,12 +98,7 @@ This deployment is available under the _kafka-statefulsets_ folder and provides 
 
 2. Create the services by running:
 
-        kubectl apply -f kafka-statefulsets/resources/zookeeper.yaml && \
-        kubectl apply -f kafka-statefulsets/resources/zookeeper-headless-service.yaml && \
-        kubectl apply -f kafka-statefulsets/resources/zookeeper-service.yaml && \
-        kubectl apply -f kafka-statefulsets/resources/kafka.yaml && \
-        kubectl apply -f kafka-statefulsets/resources/kafka-headless-service.yaml && \
-        kubectl apply -f kafka-statefulsets/resources/kafka-service.yaml
+        kubectl apply -f kafka-statefulsets/resources/kubernetes.yaml
 
 3. You can then verify that the services started using
 
@@ -139,12 +134,7 @@ This deployment is available under the _kafka-inmemory_ folder and provides foll
 
 1. Create the deployments and services by running:
 
-        kubectl apply -f kafka-inmemory/resources/zookeeper.yaml && \
-        kubectl apply -f kafka-inmemory/resources/zookeeper-service.yaml && \
-        kubectl apply -f kafka-inmemory/resources/zookeeper-headless-service.yaml && \
-        kubectl apply -f kafka-inmemory/resources/kafka.yaml && \
-        kubectl apply -f kafka-inmemory/resources/kafka-service.yaml && \
-        kubectl apply -f kafka-inmemory/resources/kafka-headless-service.yaml
+        kubectl apply -f kafka-inmemory/resources/kubernetes.yaml
 
 2. You can then verify that the services started using
 
@@ -181,12 +171,7 @@ cluster as service `kafka-connect` on port `8083`.
    [statefulsets deployments](#kafka-stateful-sets) above.
 2. Start the deployment by running 
 
-        kubectl apply -f kafka-connect/resources/kafka-connect.yaml
-
-   in your terminal.
-3. Start the Connect service by running
-
-        kubectl apply -f kafka-connect/resources/kafka-connect-service.yaml
+        kubectl apply -f kafka-connect/resources/kubernetes.yaml
 
    in your terminal.
 

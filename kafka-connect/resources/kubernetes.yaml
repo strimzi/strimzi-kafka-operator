@@ -1,3 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-connect
+spec:
+  ports:
+    - name: rest-api
+      port: 8083
+      targetPort: 8083
+      protocol: TCP
+  selector:
+    name: kafka-connect
+  type: ClusterIP
+---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
