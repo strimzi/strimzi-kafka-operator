@@ -31,7 +31,7 @@ public class AsyncResult<T> {
         return new AsyncResult(result, null);
     }
 
-    public static <T> AsyncResult<T> failure(Throwable error) {
+    public static AsyncResult failure(Throwable error) {
         if (error == null) {
             throw new NullPointerException();
         }

@@ -17,5 +17,23 @@
 
 package io.enmasse.barnabas.operator.topic;
 
+import org.apache.kafka.clients.admin.Config;
+import org.apache.kafka.clients.admin.TopicDescription;
+
 public class TopicMetadata {
+    private final Config config;
+    private final TopicDescription description;
+
+    public TopicMetadata(TopicDescription description, Config config) {
+        this.config = config;
+        this.description = description;
+    }
+
+    public Config getConfig() {
+        return config;
+    }
+
+    public TopicDescription getDescription() {
+        return description;
+    }
 }

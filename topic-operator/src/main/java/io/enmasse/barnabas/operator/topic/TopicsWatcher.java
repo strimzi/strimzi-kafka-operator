@@ -29,8 +29,8 @@ import java.util.Set;
 
 /**
  * ZooKeeper watcher for child znodes of {@code /brokers/topics},
- * calling {@link #onTopicCreated(TopicName)} for new children and
- * {@link #onTopicDeleted(TopicName)} for deleted children.
+ * calling {@link Operator#onTopicCreated(TopicName)} for new children and
+ * {@link Operator#onTopicDeleted(TopicName)} for deleted children.
  */
 class TopicsWatcher implements org.apache.zookeeper.Watcher {
 

@@ -18,51 +18,41 @@ package io.enmasse.barnabas.operator.topic;/*
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.impl.NoStackTraceThrowable;
 import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
-import org.apache.kafka.common.internals.KafkaFutureImpl;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiFunction;
 
 
-public class Operator extends AbstractVerticle {
+public class Operator {
 
     private final static Logger logger = LoggerFactory.getLogger(Operator.class);
     private final String kubernetesMasterUrl;
     private final String kafkaBootstrapServers;
     private final String zookeeperConnect;
-
 
     private KubernetesClient client;
     private AdminClient adminClient;
@@ -79,20 +69,12 @@ public class Operator extends AbstractVerticle {
     private final Set<TopicName> pendingTopicUpdates = new HashSet<>();
 
     /** Executor for processing {@link OperatorEvent}s. */
+    // TODO Do we really need this as well as the futureDispatcher?
     private final Executor executor = Executors.newSingleThreadExecutor(new ThreadFactory() {
         @Override
         public Thread newThread(Runnable r) {
             Thread t = Executors.defaultThreadFactory().newThread(r);
-            t.setName("topic-controller-executor");
-            return t;
-        }
-    });
-
-    private final Executor admin = Executors.newSingleThreadExecutor(new ThreadFactory() {
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread t = Executors.defaultThreadFactory().newThread(r);
-            t.setName("topic-controller-executor");
+            t.setName("topic-operator-executor");
             return t;
         }
     });
@@ -101,15 +83,12 @@ public class Operator extends AbstractVerticle {
         this.kubernetesMasterUrl = kubernetesMasterUrl;
         this.kafkaBootstrapServers = kafkaBootstrapServers;
         this.zookeeperConnect = zookeeperConnect;
-    }
 
-    @Override
-    public void start() {
         Properties props = new Properties();
         props.setProperty("bootstrap.servers", kafkaBootstrapServers);
         adminClient = AdminClient.create(props);
 
-        final Config config = new ConfigBuilder().withMasterUrl(kubernetesMasterUrl).build();
+        final io.fabric8.kubernetes.client.Config config = new ConfigBuilder().withMasterUrl(kubernetesMasterUrl).build();
         client = new DefaultKubernetesClient(config);
 
         logger.info("Connecting to ZooKeeper");
@@ -151,8 +130,6 @@ public class Operator extends AbstractVerticle {
         configMapThread.setName("cm-watcher");
         logger.debug("Starting {}", configMapThread);
         configMapThread.start();
-        logger.debug("Starting {}", futureDispatcher);
-        futureDispatcher.start();
     }
 
 
@@ -201,65 +178,27 @@ public class Operator extends AbstractVerticle {
         if (selfCreated) {
             logger.info("Topic {} was created by me, so no need to reconcile", topicName);
         } else {
-            // Fetch topic description and topic config and enqueue the TopicCreated event only when we have both
-            // TODO This is wrong. Can't use two atomic refs like this.
-            AtomicReference<AsyncResult<? extends TopicDescription>> topicDescriptionFuture = new AtomicReference<>(null);
-            AtomicReference<AsyncResult<? extends org.apache.kafka.clients.admin.Config>> topicConfigFuture = new AtomicReference<>(null);
-            // TODO use getAndUpdate
-            logger.info("Describing topic async {}", topicName);
-            ResultHandler<TopicDescription> descriptionHandler = new ResultHandler<TopicDescription>() {
-
+            ResultHandler<TopicMetadata> handler = new ResultHandler<TopicMetadata>() {
                 @Override
-                public void handleResult(AsyncResult<? extends TopicDescription> result) throws OperatorException {
+                public void handleResult(AsyncResult<? extends TopicMetadata> result) throws OperatorException {
                     if (result.isSuccess()) {
-                        logger.debug("Got success for describing topic {}", topicName);
-                        AsyncResult<? extends org.apache.kafka.clients.admin.Config> topicConfig = topicConfigFuture.get();
-                        if (topicConfig != null) {
-                            enqueue(new OperatorEvent.TopicCreated(Operator.this, topicName, result.result(), topicConfig.result()));
-                        } else {
-                            topicDescriptionFuture.set(result);
-                        }
+                        TopicMetadata metadata = result.result();
+                        enqueue(new OperatorEvent.TopicCreated(Operator.this, topicName, metadata.getDescription(), metadata.getConfig()));
                     } else {
-                        logger.debug("Got error for describing topic {}", topicName, result.exception());
+
                         if (result.exception() instanceof UnknownTopicOrPartitionException) {
-                            // retry: It's possible the KafkaController, although it's created the path in ZK
+                            // retry: It's possible the KafkaController, although it's created the path in ZK,
                             // hasn't finished creating the topic yet.
-                            describeTopic(topicName, this);
+                            topicMetadata(topicName, this);
                             // TODO timeout the retry: create an error event in k8s
                         } else {
+                            logger.debug("Got error for describing topic and/or getting topic config for topic {}", topicName, result.exception());
                             // TODO what? We need to create an event in k8s
                         }
                     }
                 }
             };
-            describeTopic(topicName, descriptionHandler);
-            logger.info("Topic config async {}", topicName);
-            ResultHandler<org.apache.kafka.clients.admin.Config> configHandler = new ResultHandler<org.apache.kafka.clients.admin.Config>() {
-
-                @Override
-                public void handleResult(AsyncResult<? extends org.apache.kafka.clients.admin.Config> result) throws OperatorException {
-                    if (result.isSuccess()) {
-                        logger.debug("Got success for topic config {}", topicName);
-                        AsyncResult<? extends TopicDescription> topicDescription = topicDescriptionFuture.get();
-                        if (topicDescription != null) {
-                            enqueue(new OperatorEvent.TopicCreated(Operator.this, topicName, topicDescription.result(), result.result()));
-                        } else {
-                            topicConfigFuture.set(result);
-                        }
-                    } else {
-                        logger.debug("Got error for topic config {}", topicName, result.exception());
-                        if (result.exception() instanceof UnknownTopicOrPartitionException) {
-                            // TODO It's possible the KafkaController, although it's created the path in ZK,
-                            // hasn't finished creating the topic yet.
-                            topicConfig(topicName, this);
-                            // TODO timeout the retry: create an error event in k8s
-                        } else {
-                            // TODO what? We need to create an event in k8s
-                        }
-                    }
-                }
-            };
-            topicConfig(topicName, configHandler);
+            topicMetadata(topicName, handler);
         }
     }
 
@@ -306,8 +245,6 @@ public class Operator extends AbstractVerticle {
         }
     }
 
-
-
     /**
      * Create the given k8s event
      */
@@ -319,50 +256,25 @@ public class Operator extends AbstractVerticle {
             logger.error("Error creating event {}", event, e);
         }
     }
-}
 
 
-class AdminClientVerticle extends AbstractVerticle {
-
-    private AdminClient adminClient;
-
-    private final static Logger logger = LoggerFactory.getLogger(AdminClientVerticle.class);
-
-    private Queue<FutureAndHandler<?>> futureQueue = new LinkedBlockingQueue<>();
-    private Thread futureDispatcher = new Thread() {
-        {
-            setName("future-dispatcher");
-        }
+    abstract class Work implements Runnable {
+        @Override
         public void run() {
-            while(true) {
-                FutureAndHandler<?> work = futureQueue.poll();
-                if (work == null) {
-                    try {
-                        Thread.sleep(5000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    continue;
-                } else {
-                    try {
-                        logger.debug("Executing work {}", work);
-                        if (!work.complete()) {
-                            logger.debug("Requeuing work {}", work);
-                            futureQueue.offer(work);
-                        }
-                    } catch (Throwable t) {
-                        t.printStackTrace();
-                    }
-                }
+            if (!complete()) {
+                executor.execute(this);
             }
         }
-    };
 
-    class FutureAndHandler<T> {
-        KafkaFuture<T> future;
-        ResultHandler<T> handler;
+        protected abstract boolean complete();
+    }
 
-        public FutureAndHandler(KafkaFuture<T> future, ResultHandler<T> handler) {
+    /** Some work that depends on a single future */
+    class UniWork<T> extends Work {
+        private final KafkaFuture<T> future;
+        private final ResultHandler<T> handler;
+
+        public UniWork(KafkaFuture<T> future, ResultHandler<T> handler) {
             if (future == null) {
                 throw new NullPointerException();
             }
@@ -373,7 +285,8 @@ class AdminClientVerticle extends AbstractVerticle {
             this.handler = handler;
         }
 
-        public boolean complete() {
+        @Override
+        protected boolean complete() {
             if (this.future.isDone()) {
                 logger.debug("Future {} of work {} is done", future, this);
                 try {
@@ -402,13 +315,91 @@ class AdminClientVerticle extends AbstractVerticle {
         }
     }
 
+    /** Some work that depends on two futures */
+    class BiWork<T, U, R> extends Work {
+        private final KafkaFuture<T> futureT;
+        private final KafkaFuture<U> futureU;
+        private final BiFunction<T, U, R> combiner;
+        private final ResultHandler<R> handler;
+
+        public BiWork(KafkaFuture<T> futureT, KafkaFuture<U> futureU, BiFunction<T, U, R> combiner, ResultHandler<R> handler) {
+            if (futureT == null) {
+                throw new NullPointerException();
+            }
+            if (futureU == null) {
+                throw new NullPointerException();
+            }
+            if (combiner == null) {
+                throw new NullPointerException();
+            }
+            if (handler == null) {
+                throw new NullPointerException();
+            }
+            this.futureT = futureT;
+            this.futureU = futureU;
+            this.combiner = combiner;
+            this.handler = handler;
+        }
+
+        @Override
+        protected boolean complete() {
+            if (this.futureT.isDone()
+                    && this.futureU.isDone()) {
+                try {
+                    final T resultT;
+                    try {
+                        resultT = this.futureT.get();
+                        logger.debug("Future {} has result {}", futureT, resultT);
+                    } catch (ExecutionException e) {
+                        logger.debug("Future {} threw {}", futureT, e.toString());
+                        this.handler.handleResult(AsyncResult.failure(e.getCause()));
+                        return true;
+                    } catch (InterruptedException e) {
+                        logger.debug("Future {} threw {}", futureT, e.toString());
+                        this.handler.handleResult(AsyncResult.failure(e));
+                        return true;
+                    }
+                    final U resultU;
+                    try {
+                        resultU = this.futureU.get();
+                        logger.debug("Future {} has result {}", futureU, resultU);
+                    } catch (ExecutionException e) {
+                        logger.debug("Future {} threw {}", futureT, e.toString());
+                        this.handler.handleResult(AsyncResult.failure(e.getCause()));
+                        return true;
+                    } catch (InterruptedException e) {
+                        logger.debug("Future {} threw {}", futureT, e.toString());
+                        this.handler.handleResult(AsyncResult.failure(e));
+                        return true;
+                    }
+
+                    this.handler.handleResult(AsyncResult.success(combiner.apply(resultT, resultU)));
+                    logger.debug("Handler for work {} executed ok", this);
+                } catch (OperatorException e) {
+                    // TODO handler threw, but I have no context for creating a k8s error event
+                    logger.debug("Handler for work {} threw {}", this, e.toString());
+                    e.printStackTrace();
+                }
+
+                return true;
+            } else {
+                if (!this.futureT.isDone())
+                    logger.debug("Future {} is not done", futureT);
+                if (!this.futureU.isDone())
+                    logger.debug("Future {} is not done", futureU);
+                return false;
+            }
+        }
+    }
+
     /**
      * Queue a future and callback. The callback will be invoked (on a separate thread)
      * when the future is ready.
      */
-    private void queueWork(FutureAndHandler<?> work) {
+    private void queueWork(Work work) {
         logger.debug("Queuing work {}", work);
-        futureQueue.offer(work);
+        //futureQueue.offer(work);
+        executor.execute(work);
     }
 
     /**
@@ -421,7 +412,7 @@ class AdminClientVerticle extends AbstractVerticle {
         }
         logger.debug("Creating topic {}", newTopic);
         KafkaFuture<Void> future = adminClient.createTopics(Collections.singleton(newTopic)).values().get(newTopic.name());
-        queueWork(new FutureAndHandler<>(future, handler));
+        queueWork(new UniWork<>(future, handler));
     }
 
     /**
@@ -434,7 +425,7 @@ class AdminClientVerticle extends AbstractVerticle {
         }
         logger.debug("Deleting topic {}", topicName);
         KafkaFuture<Void> future = adminClient.deleteTopics(Collections.singleton(topicName.toString())).values().get(topicName);
-        queueWork(new FutureAndHandler<>(future, handler));
+        queueWork(new UniWork<>(future, handler));
     }
 
     /**
@@ -444,7 +435,7 @@ class AdminClientVerticle extends AbstractVerticle {
     void describeTopic(TopicName topicName, ResultHandler<TopicDescription> handler) {
         logger.debug("Describing topic {}", topicName);
         KafkaFuture<TopicDescription> future = adminClient.describeTopics(Collections.singleton(topicName.toString())).values().get(topicName);
-        queueWork(new FutureAndHandler<>(future, handler));
+        queueWork(new UniWork<>(future, handler));
     }
 
     /**
@@ -454,7 +445,25 @@ class AdminClientVerticle extends AbstractVerticle {
     void topicConfig(TopicName topicName, ResultHandler<org.apache.kafka.clients.admin.Config> handler) {
         logger.debug("Getting config for topic {}", topicName);
         ConfigResource resource = new ConfigResource(ConfigResource.Type.TOPIC, topicName.toString());
-        KafkaFuture<org.apache.kafka.clients.admin.Config> future = adminClient.describeConfigs(Collections.singleton(resource)).values().get(resource);
-        queueWork(new FutureAndHandler<>(future, handler));
+        KafkaFuture<org.apache.kafka.clients.admin.Config> future = adminClient.describeConfigs(
+                Collections.singleton(resource)).values().get(resource);
+        queueWork(new UniWork<>(future, handler));
+    }
+
+    /**
+     * Get a topic config via the Kafka AdminClient API, calling the given handler
+     * (in a different thread) with the result.
+     */
+    void topicMetadata(TopicName topicName, ResultHandler<TopicMetadata> handler) {
+        logger.debug("Getting metadata for topic {}", topicName);
+        ConfigResource resource = new ConfigResource(ConfigResource.Type.TOPIC, topicName.toString());
+        KafkaFuture<Config> configFuture = adminClient.describeConfigs(
+                Collections.singleton(resource)).values().get(resource);
+        KafkaFuture<TopicDescription> descriptionFuture = adminClient.describeTopics(
+                Collections.singleton(topicName.toString())).values().get(topicName);
+        queueWork(new BiWork<>(descriptionFuture, configFuture,
+                (desc, conf) -> new TopicMetadata(desc, conf),
+                handler));
     }
 }
+
