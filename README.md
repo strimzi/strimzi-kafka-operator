@@ -196,7 +196,7 @@ world-readable (`chmod -R a+r /path/to/your/directory`) and use the hostPath vol
 your Kafka Connect deployment. To use the volume, you have to edit the deployment YAML files:
 
 1. Open the [OpenShift template](kafka-connect/resources/openshift-template.yaml) 
-or [Kubernetes deployment](kafka-connect/resources/kafka-connect.yaml)
+or [Kubernetes deployment](kafka-connect/resources/kubernetes.yaml)
 2. add the `volumeMounts` and `volumes` sections in the same way as in the example below
 3. Redeploy Kafka Connect for the changes to take effect (If you have Kafka Connect already deployed, you have to apply 
 the changes to the deployment and afterwards make sure all pods are restarted. If you haven't yet deployed Kakfa Connect, 
