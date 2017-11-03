@@ -96,7 +96,7 @@ objects:
     lookupPolicy:
       local: false
     tags:
-    - name: latest
+    - name: ${S2I_IMAGE_TAG}
       from:
         kind: DockerImage
         name: ${S2I_IMAGE_REPO_NAME}/${S2I_IMAGE_NAME}
