@@ -1,0 +1,10 @@
+# Makefile.release contains the shared tasks for creating a release archive. 
+# This file is included into the Makefile files which have some YAML files for the relese artifact (E.g. 
+# kafka-inmemory, kafka-statefulsets etc.).
+
+RELEASE_VERSION ?= latest
+RELEASE_PATH ?= ../barnabas-$(RELEASE_VERSION)/$(PROJECT_NAME)
+
+release:
+	mkdir -p $(RELEASE_PATH)
+	cp -r ./resources $(RELEASE_PATH)/

@@ -11,7 +11,7 @@ script:
 env:
   global:
     - PULL_REQUEST=${TRAVIS_PULL_REQUEST}
-    - VERSION=${TRAVIS_COMMIT::8}
+    - COMMIT=${TRAVIS_COMMIT::8}
     - TAG=${TRAVIS_TAG:-latest}
     - BRANCH=${TRAVIS_BRANCH:-master}
     - DOCKER_ORG=enmasseproject

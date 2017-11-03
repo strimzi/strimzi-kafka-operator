@@ -1,5 +1,7 @@
 PROJECT_NAME=kafka-statefulsets
 
-include ../Makefile.common
+include ../Makefile.docker
+
+include ../Makefile.release
 
 .PHONY: build clean

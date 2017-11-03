@@ -1,0 +1,28 @@
+# Makefile.docker contains the shared tasks for building, tagging and pushing Docker images. 
+# This file is included into the Makefile files which contain the Dockerfile files (E.g. 
+# kafka-base, kafka-statefulsets etc.).
+#
+# The DOCKER_ORG (default is name of the current user) and DOCKER_TAG (based on Git Tag, 
+# default latest) variables are used to name the Docker image. DOCKER_REGISTRY identifies 
+# the registry where the image will be pushed (default is Docker Hub). DOCKER_VERSION_ARG 
+# is passed to the image build (based on Git commit, default latest)
+
+DOCKERFILE_DIR     ?= ./
+DOCKER_REGISTRY    ?= docker.io
+DOCKER_ORG         ?= $(USER)
+DOCKER_TAG         ?= latest
+DOCKER_VERSION_ARG ?= latest
+
+all: docker_build docker_push
+
+docker_build:
+	echo "Building Docker image ..."
+	docker build --build-arg version=$(DOCKER_VERSION_ARG) -t enmasseproject/$(PROJECT_NAME):$(DOCKER_TAG) $(DOCKERFILE_DIR)
+
+docker_tag:
+	echo "Tagging enmasseproject/$(PROJECT_NAME):$(DOCKER_TAG) to $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG) ..."
+	docker tag enmasseproject/$(PROJECT_NAME):$(DOCKER_TAG) $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG)
+
+docker_push: docker_tag
+	echo "Pushing $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG) ..."
+	docker push $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG)

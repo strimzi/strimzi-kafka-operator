@@ -1,12 +1,12 @@
 #!/bin/sh
 set -e
 
-export VERSION=${COMMIT:-latest}
 export PULL_REQUEST=${PULL_REQUEST:-true}
-export TAG=${TAG:-latest}
-export BRANCH=${TRAVIS_BRANCH:-master}
+export BRANCH=${BRANCH:-master}
 export DOCKER_ORG=${DOCKER_ORG:-$USER}
 export DOCKER_REGISTRY=${DOCKER_REGISTRY:-docker.io}
+export DOCKER_TAG=${TAG:-latest}
+export DOCKER_VERSION_ARG=${COMMIT:-latest}
 
 make docker_build
 
