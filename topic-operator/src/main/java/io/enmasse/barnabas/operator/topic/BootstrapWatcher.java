@@ -55,6 +55,7 @@ class BootstrapWatcher implements org.apache.zookeeper.Watcher {
                 || state == Event.KeeperState.ConnectedReadOnly) {
             logger.info("{} setting topic watcher", this);
             // TODO we need watches on topic config changes and partition changes too
+
             new TopicsWatcher(operator, zk0).setWatch();
         } else if (state == Event.KeeperState.Disconnected) {
             connect();

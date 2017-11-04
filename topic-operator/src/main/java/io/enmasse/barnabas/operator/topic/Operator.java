@@ -34,43 +34,41 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 
 
 public class Operator {
 
     private final static Logger logger = LoggerFactory.getLogger(Operator.class);
-    private final String kubernetesMasterUrl;
-    private final String kafkaBootstrapServers;
-    private final String zookeeperConnect;
 
     private KubernetesClient client;
     private AdminClient adminClient;
 
-    // these sets are to track changes we caused, so we don't try to update zk for a cm change we
+    enum State {
+        CM_CREATE,
+        CM_DELETE,
+        CM_UPDATE,
+        TOPIC_CREATE,
+        TOPIC_DELETE,
+        TOPIC_UPDATE
+    }
+    // track changes we caused, so we don't try to update zk for a cm change we
     // make because of a zk change... They're accessed by the both the
-    // cm-watcher and topic-controller-executor threads
-    private final Set<MapName> pendingCmCreations = new HashSet<>();
-    private final Set<TopicName> pendingCmDeletions = new HashSet<>();
-    private final Set<MapName> pendingCmUpdates = new HashSet<>();
-
-    private final Set<TopicName> pendingTopicCreations = new HashSet<>();
-    private final Set<TopicName> pendingTopicDeletions = new HashSet<>();
-    private final Set<TopicName> pendingTopicUpdates = new HashSet<>();
+    // ZK and topic-controller-executor threads
+    private final Map<TopicName, State> pending = Collections.synchronizedMap(new HashMap());
 
     /** Executor for processing {@link OperatorEvent}s. */
-    // TODO Do we really need this as well as the futureDispatcher?
-    private final Executor executor = Executors.newSingleThreadExecutor(new ThreadFactory() {
+    private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1, new ThreadFactory() {
         @Override
         public Thread newThread(Runnable r) {
             Thread t = Executors.defaultThreadFactory().newThread(r);
@@ -80,9 +78,6 @@ public class Operator {
     });
 
     public Operator(String kubernetesMasterUrl, String kafkaBootstrapServers, String zookeeperConnect) {
-        this.kubernetesMasterUrl = kubernetesMasterUrl;
-        this.kafkaBootstrapServers = kafkaBootstrapServers;
-        this.zookeeperConnect = zookeeperConnect;
 
         Properties props = new Properties();
         props.setProperty("bootstrap.servers", kafkaBootstrapServers);
@@ -134,19 +129,20 @@ public class Operator {
 
 
     void createConfigMap(ConfigMap cm) {
-        synchronized(pendingCmCreations) {
-            pendingCmCreations.add(new MapName(cm));
-        }
+        // TODO assert no existing mapping
+        pending.put(new TopicName(cm), State.CM_CREATE);
         client.configMaps().create(cm);
     }
 
     void updateConfigMap(ConfigMap cm) {
-        pendingCmUpdates.add(new MapName(cm));
+        // TODO assert no existing mapping
+        pending.put(new TopicName(cm), State.CM_UPDATE);
         client.configMaps().createOrReplace(cm);
     }
 
     void deleteConfigMap(TopicName topicName) {
-        pendingCmDeletions.add(topicName);
+        // TODO assert no existing mapping
+        pending.put(topicName, State.CM_DELETE);
         // Delete the CM by the topic name, because neither ZK nor Kafka know the CM name
         client.configMaps().withField("name", topicName.toString()).delete();
     }
@@ -158,12 +154,16 @@ public class Operator {
 
     /** Called when a topic znode is deleted in ZK */
     void onTopicDeleted(TopicName topicName) {
-        boolean selfDeleted;
-        synchronized(pendingTopicDeletions) {
-            selfDeleted = pendingTopicDeletions.remove(topicName);
-        }
-        if (selfDeleted) {
-            logger.info("Topic {} was deleted by me, so no need to reconcile", topicName);
+        // XXX currently runs on the ZK thread, requiring a synchronized `pending`
+        // is it better to put this check in the topic deleted event?
+        // that would require exposing an API to remove()
+        State pendingState = pending.remove(topicName);
+        if (pendingState != null) {
+            if (pendingState != State.TOPIC_DELETE) {
+                logger.error("This shouldn't happen", topicName);
+            } else {
+                logger.info("Topic {} was deleted by me, so no need to reconcile", topicName);
+            }
         } else {
             enqueue(new OperatorEvent.TopicDeleted(this, topicName));
         }
@@ -171,14 +171,20 @@ public class Operator {
 
     /** Called when a topic znode is created in ZK */
     void onTopicCreated(TopicName topicName) {
-        boolean selfCreated;
-        synchronized(pendingTopicCreations) {
-            selfCreated = pendingTopicCreations.remove(topicName);
-        }
-        if (selfCreated) {
-            logger.info("Topic {} was created by me, so no need to reconcile", topicName);
+        // XXX currently runs on the ZK thread, requiring a synchronized pending
+        // is it better to put this check in the topic deleted event?
+        State pendingState = pending.remove(topicName);
+        if (pendingState != null) {
+            if (pendingState != State.TOPIC_CREATE) {
+                logger.error("This shouldn't happen", topicName);
+            } else {
+                logger.info("Topic {} was created by me, so no need to reconcile", topicName);
+            }
         } else {
             ResultHandler<TopicMetadata> handler = new ResultHandler<TopicMetadata>() {
+
+                final BackOff backoff = new BackOff();
+
                 @Override
                 public void handleResult(AsyncResult<? extends TopicMetadata> result) throws OperatorException {
                     if (result.isSuccess()) {
@@ -189,8 +195,7 @@ public class Operator {
                         if (result.exception() instanceof UnknownTopicOrPartitionException) {
                             // retry: It's possible the KafkaController, although it's created the path in ZK,
                             // hasn't finished creating the topic yet.
-                            topicMetadata(topicName, this);
-                            // TODO timeout the retry: create an error event in k8s
+                            topicMetadata(topicName, this, backoff.delayMs(), TimeUnit.MILLISECONDS);
                         } else {
                             logger.debug("Got error for describing topic and/or getting topic config for topic {}", topicName, result.exception());
                             // TODO what? We need to create an event in k8s
@@ -198,35 +203,39 @@ public class Operator {
                     }
                 }
             };
-            topicMetadata(topicName, handler);
+            topicMetadata(topicName, handler, 0, TimeUnit.MILLISECONDS);
         }
     }
 
     /** Called when a ConfigMap is added in k8s */
     private void onConfigMapAdded(ConfigMap configMap) {
         MapName mapName = new MapName(configMap);
-        boolean selfCreated;
-        synchronized(pendingCmCreations) {
-            selfCreated = pendingCmCreations.remove(mapName);
-        }
-        if (!selfCreated) {
-            enqueue(new OperatorEvent.ConfigMapCreated(this, configMap));
+        TopicName topicName = new TopicName(configMap);
+        State pendingState = pending.remove(topicName);
+        if (pendingState != null) {
+            if (pendingState != State.CM_CREATE) {
+                logger.error("This shouldn't happen", topicName);
+            } else {
+                logger.info("ConfigMap {} was created by me, so no need to reconcile", mapName);
+            }
         } else {
-            logger.info("ConfigMap {} was created by me, so no need to reconcile", mapName);
+            enqueue(new OperatorEvent.ConfigMapCreated(this, configMap));
         }
     }
 
     /** Called when a ConfigMap is modified in k8s */
     private void onConfigMapModified(ConfigMap configMap) {
         MapName mapName = new MapName(configMap);
-        boolean selfModified;
-        synchronized(pendingCmUpdates) {
-            selfModified = pendingCmUpdates.remove(mapName);
-        }
-        if (!selfModified) {
-            enqueue(new OperatorEvent.ConfigMapModified(this, configMap));
+        TopicName topicName = new TopicName(configMap);
+        State pendingState = pending.remove(topicName);
+        if (pendingState != null) {
+            if (pendingState != State.CM_UPDATE) {
+                logger.error("This shouldn't happen", topicName);
+            } else {
+                logger.info("ConfigMap {} was modified by me, so no need to reconcile", mapName);
+            }
         } else {
-            logger.info("ConfigMap {} was modified by me, so no need to reconcile", mapName);
+            enqueue(new OperatorEvent.ConfigMapModified(this, configMap));
         }
     }
 
@@ -234,14 +243,15 @@ public class Operator {
     private void onConfigMapDeleted(ConfigMap configMap) {
         MapName mapName = new MapName(configMap);
         TopicName topicName = new TopicName(configMap);
-        boolean selfDeleted;
-        synchronized(pendingCmDeletions) {
-            selfDeleted = pendingCmDeletions.remove(topicName);
-        }
-        if (!selfDeleted) {
-            enqueue(new OperatorEvent.ConfigMapDeleted(this, configMap));
+        State pendingState = pending.remove(topicName);
+        if (pendingState != null) {
+            if (pendingState != State.CM_DELETE) {
+                logger.error("This shouldn't happen", topicName);
+            } else {
+                logger.info("ConfigMap {} was deleted by me, so no need to reconcile", mapName);
+            }
         } else {
-            logger.info("ConfigMap {} was deleted by me, so no need to reconcile", mapName);
+            enqueue(new OperatorEvent.ConfigMapDeleted(this, configMap));
         }
     }
 
@@ -397,9 +407,16 @@ public class Operator {
      * when the future is ready.
      */
     private void queueWork(Work work) {
-        logger.debug("Queuing work {}", work);
-        //futureQueue.offer(work);
-        executor.execute(work);
+        queueWork(work, 0, TimeUnit.MILLISECONDS);
+    }
+    private void queueWork(Work work, long delay, TimeUnit unit) {
+        if (delay != 0) {
+            logger.debug("Queuing work {} for execution in {} {}", work, delay, unit);
+            executor.schedule(work, delay, unit);
+        } else {
+            logger.debug("Queuing work {} for immediate execution", work);
+            executor.execute(work);
+        }
     }
 
     /**
@@ -407,11 +424,11 @@ public class Operator {
      * (in a different thread) with the result.
      */
     void createTopic(NewTopic newTopic, ResultHandler<Void> handler) {
-        synchronized(pendingTopicCreations) {
-            pendingTopicCreations.add(new TopicName(newTopic.name()));
-        }
+        // TODO assert no existing mapping
+        pending.put(new TopicName(newTopic.name()), State.TOPIC_CREATE);
         logger.debug("Creating topic {}", newTopic);
-        KafkaFuture<Void> future = adminClient.createTopics(Collections.singleton(newTopic)).values().get(newTopic.name());
+        KafkaFuture<Void> future = adminClient.createTopics(
+                Collections.singleton(newTopic)).values().get(newTopic.name());
         queueWork(new UniWork<>(future, handler));
     }
 
@@ -420,11 +437,11 @@ public class Operator {
      * (in a different thread) with the result.
      */
     void deleteTopic(TopicName topicName, ResultHandler<Void> handler) {
-        synchronized(pendingTopicCreations) {
-            pendingTopicCreations.add(topicName);
-        }
+        // TODO assert no existing mapping
+        pending.put(topicName, State.TOPIC_DELETE);
         logger.debug("Deleting topic {}", topicName);
-        KafkaFuture<Void> future = adminClient.deleteTopics(Collections.singleton(topicName.toString())).values().get(topicName);
+        KafkaFuture<Void> future = adminClient.deleteTopics(
+                Collections.singleton(topicName.toString())).values().get(topicName);
         queueWork(new UniWork<>(future, handler));
     }
 
@@ -434,7 +451,8 @@ public class Operator {
      */
     void describeTopic(TopicName topicName, ResultHandler<TopicDescription> handler) {
         logger.debug("Describing topic {}", topicName);
-        KafkaFuture<TopicDescription> future = adminClient.describeTopics(Collections.singleton(topicName.toString())).values().get(topicName);
+        KafkaFuture<TopicDescription> future = adminClient.describeTopics(
+                Collections.singleton(topicName.toString())).values().get(topicName);
         queueWork(new UniWork<>(future, handler));
     }
 
@@ -454,7 +472,7 @@ public class Operator {
      * Get a topic config via the Kafka AdminClient API, calling the given handler
      * (in a different thread) with the result.
      */
-    void topicMetadata(TopicName topicName, ResultHandler<TopicMetadata> handler) {
+    void topicMetadata(TopicName topicName, ResultHandler<TopicMetadata> handler, long delay, TimeUnit unit) {
         logger.debug("Getting metadata for topic {}", topicName);
         ConfigResource resource = new ConfigResource(ConfigResource.Type.TOPIC, topicName.toString());
         KafkaFuture<Config> configFuture = adminClient.describeConfigs(
@@ -463,7 +481,23 @@ public class Operator {
                 Collections.singleton(topicName.toString())).values().get(topicName);
         queueWork(new BiWork<>(descriptionFuture, configFuture,
                 (desc, conf) -> new TopicMetadata(desc, conf),
-                handler));
+                handler), delay, unit);
+    }
+
+    /**
+     * Stop the operator, waiting up to the given timeout
+     * @throws InterruptedException if interrupted while waiting.
+     */
+    public void stop(long timeout, TimeUnit unit) throws InterruptedException {
+        long initiated = System.currentTimeMillis();
+        long timeoutMillis = unit.convert(timeout, TimeUnit.MILLISECONDS);
+        logger.info("Stopping with timeout {}ms", timeoutMillis);
+        client.close();
+        executor.shutdown();
+        executor.awaitTermination(timeout, unit);
+        long timeoutLeft = timeoutMillis - (System.currentTimeMillis() - initiated);
+        adminClient.close(timeoutLeft, TimeUnit.MILLISECONDS);
+        logger.info("Stopped");
     }
 }
 
