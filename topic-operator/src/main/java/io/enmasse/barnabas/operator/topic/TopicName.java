@@ -26,6 +26,7 @@ class TopicName {
     private final String name;
 
     public TopicName(String name) {
+        assert(name != null && !name.isEmpty());
         this.name = name;
     }
 
