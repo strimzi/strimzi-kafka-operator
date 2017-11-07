@@ -127,7 +127,7 @@ This deployment is available under the _kafka-inmemory_ folder and provides foll
    "zookeeper-service" and "kafka-service" services. 
 2. Create a new app:
 
-        oc new-app barnabas-inmemory
+        oc new-app barnabas
 
 
 ### Deploying to Kubernetes
