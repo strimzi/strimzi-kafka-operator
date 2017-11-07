@@ -19,7 +19,7 @@ release_version:
 	find ./barnabas-$(RELEASE_VERSION)/ -name '*.yaml' -type f -exec sed -i '/name: [a-zA-Z0-9_-]*IMAGE_TAG/{n;s/latest/$(RELEASE_VERSION)/}' {} \;
 
 release_pkg:
-	tar -z -cf ./barnabas-$(RELEASE_VERSION).tar.gz ./barnabas-$(RELEASE_VERSION)/
+	tar -z -cf ./barnabas-$(RELEASE_VERSION).tar.gz barnabas-$(RELEASE_VERSION)/
 	rm -rf ./barnabas-$(RELEASE_VERSION)
 
 $(SUBDIRS):
