@@ -1,10 +1,10 @@
-# Makefile.docker contains the shared tasks for building, tagging and pushing Docker images. 
-# This file is included into the Makefile files which contain the Dockerfile files (E.g. 
+# Makefile.docker contains the shared tasks for building, tagging and pushing Docker images.
+# This file is included into the Makefile files which contain the Dockerfile files (E.g.
 # kafka-base, kafka-statefulsets etc.).
 #
-# The DOCKER_ORG (default is name of the current user) and DOCKER_TAG (based on Git Tag, 
-# default latest) variables are used to name the Docker image. DOCKER_REGISTRY identifies 
-# the registry where the image will be pushed (default is Docker Hub). DOCKER_VERSION_ARG 
+# The DOCKER_ORG (default is name of the current user) and DOCKER_TAG (based on Git Tag,
+# default latest) variables are used to name the Docker image. DOCKER_REGISTRY identifies
+# the registry where the image will be pushed (default is Docker Hub). DOCKER_VERSION_ARG
 # is passed to the image build (based on Git commit, default latest)
 
 DOCKERFILE_DIR     ?= ./

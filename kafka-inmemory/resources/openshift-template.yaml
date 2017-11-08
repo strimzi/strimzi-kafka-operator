@@ -83,223 +83,27 @@ parameters:
   name: ZOOKEEPER_METRICS_ENABLED
   value: "true"
 objects:
-- apiVersion: v1
-  kind: Service
+- apiVersion: extensions/v1beta1
+  kind: Deployment
   metadata:
-    name: kafka
+    name: barnabas-cluster-controller
   spec:
-    ports:
-    - name: kafka
-      port: 9092
-      targetPort: 9092
-      protocol: TCP
-    selector:
-      name: kafka
-    type: ClusterIP
-- apiVersion: v1
-  kind: Service
-  metadata:
-    name: kafka-headless
-  spec:
-    ports:
-    - name: kafka
-      port: 9092
-      targetPort: 9092
-      protocol: TCP
-    selector:
-      name: kafka
-    type: ClusterIP
-    clusterIP: None
-- apiVersion: v1
-  kind: Service
-  metadata:
-    name: zookeeper
-  spec:
-    ports:
-    - name: clientport
-      port: 2181
-      targetPort: 2181
-      protocol: TCP
-    selector:
-      name: zookeeper
-    type: ClusterIP
-- apiVersion: v1
-  kind: Service
-  metadata:
-    name: zookeeper-headless
-  spec:
-    ports:
-    - name: clientport
-      port: 2181
-      targetPort: 2181
-      protocol: TCP
-    - name: clustering
-      port: 2888
-      targetPort: 2888
-      protocol: TCP
-    - name: leaderelection
-      port: 3888
-      targetPort: 3888
-      protocol: TCP
-    selector:
-      name: zookeeper
-    type: ClusterIP
-    clusterIP: None
-- apiVersion: v1
-  kind: ConfigMap
-  metadata:
-    name: kafka-metrics-config
-  data:
-    config.yml: |
-      lowercaseOutputName: true
-    rules:
-      - pattern: kafka.server<type=(.+), name=(.+)PerSec\w*><>Count
-        name: kafka_server_$1_$2_total
-      - pattern : kafka.server<type=(.+), name=(.+)PerSec\w*, topic=(.+)><>Count
-        name: kafka_server_$1_$2_total
-        labels:
-          topic: "$3"
-- apiVersion: apps/v1beta1
-  kind: StatefulSet
-  metadata:
-    labels:
-      name: kafka
-    name: kafka
-  spec:
-    replicas: ${KAFKA_NODE_COUNT}
-    selector:
-      matchLabels:
-        name: kafka
-    serviceName: kafka-headless
+    replicas: 1
     template:
       metadata:
         labels:
-          name: kafka
-        annotations:
-          prometheus.io/scrape: "true"
-          prometheus.io/path: "/metrics"
-          prometheus.io/port: "9404"
+          name: barnabas-cluster-controller
       spec:
         containers:
-        - name: kafka
-          image: ${IMAGE_REPO_NAME}/${KAFKA_IMAGE_NAME}:${KAFKA_IMAGE_TAG}
-          imagePullPolicy: Always
-          ports:
-          - name: kafka
-            containerPort: 9092
-            protocol: TCP
-          - name: kafkametrics
-            containerPort: 9404
-            protocol: TCP
-          env:
-          - name: KAFKA_DEFAULT_REPLICATION_FACTOR
-            value: "${KAFKA_DEFAULT_REPLICATION_FACTOR}"
-          - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
-            value: "${KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR}"
-          - name: KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR
-            value: "${KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR}"
-          - name: KAFKA_METRICS_ENABLED
-            value: "${KAFKA_METRICS_ENABLED}"
-          resources: {}
-          terminationMessagePath: /dev/termination-log
-          terminationMessagePolicy: File
-          volumeMounts:
-          - mountPath: /var/lib/kafka/
-            name: kafka-storage
-          - mountPath: /opt/prometheus/config/
-            name: kafka-metrics-config
-          livenessProbe:
-            exec:
-              command:
-              - "/opt/kafka/kafka_healthcheck.sh"
-            initialDelaySeconds: ${ZOOKEEPER_HEALTHCHECK_DELAY}
-            timeoutSeconds: ${ZOOKEEPER_HEALTHCHECK_TIMEOUT}
-          readinessProbe:
-            exec:
-              command:
-              - "/opt/kafka/kafka_healthcheck.sh"
-            initialDelaySeconds: ${ZOOKEEPER_HEALTHCHECK_DELAY}
-            timeoutSeconds: ${ZOOKEEPER_HEALTHCHECK_TIMEOUT}
-        dnsPolicy: ClusterFirst
-        restartPolicy: Always
-        volumes:
-          - name: kafka-storage
-            emptyDir: {}
-          - name: kafka-metrics-config
-            configMap:
-              name: kafka-metrics-config
+          - name: barnabas-cluster-controller
+            image: scholzj/barnabas-cluster-controller:latest
 - apiVersion: v1
   kind: ConfigMap
   metadata:
-    name: zookeeper-metrics-config
-  data:
-    config.yml: |
-      lowercaseOutputName: true
-- apiVersion: apps/v1beta1
-  kind: StatefulSet
-  metadata:
+    name: kafka
     labels:
-      name: zookeeper
-    name: zookeeper
+      app: barnabas
+      type: deployment
+      kind: kafka
   spec:
-    replicas: ${ZOOKEEPER_NODE_COUNT}
-    selector:
-      matchLabels:
-        name: zookeeper
-    serviceName: zookeeper-headless
-    template:
-      metadata:
-        labels:
-          name: zookeeper
-        annotations:
-          prometheus.io/scrape: "true"
-          prometheus.io/path: "/metrics"
-          prometheus.io/port: "9404"
-      spec:
-        containers:
-        - name: zookeeper
-          image: ${IMAGE_REPO_NAME}/${ZOOKEEPER_IMAGE_NAME}:${ZOOKEEPER_IMAGE_TAG}
-          imagePullPolicy: Always
-          ports:
-          - name: clientport
-            containerPort: 2181
-            protocol: TCP
-          - name: clustering
-            containerPort: 2888
-            protocol: TCP
-          - name: leaderelection
-            containerPort: 3888
-            protocol: TCP
-          - name: kafkametrics
-            containerPort: 9404
-            protocol: TCP
-          env:
-          - name: ZOOKEEPER_NODE_COUNT
-            value: ${ZOOKEEPER_NODE_COUNT}
-          - name: ZOOKEEPER_METRICS_ENABLED
-            value: "${ZOOKEEPER_METRICS_ENABLED}"
-          volumeMounts:
-          - mountPath: /var/lib/zookeeper
-            name: zookeeper-storage
-          - mountPath: /opt/prometheus/config/
-            name: zookeeper-metrics-config
-          livenessProbe:
-            exec:
-              command:
-              - "/opt/zookeeper/zookeeper_healthcheck.sh"
-            initialDelaySeconds: ${KAFKA_HEALTHCHECK_DELAY}
-            timeoutSeconds: ${KAFKA_HEALTHCHECK_TIMEOUT}
-          readinessProbe:
-            exec:
-              command:
-              - "/opt/zookeeper/zookeeper_healthcheck.sh"
-            initialDelaySeconds: ${KAFKA_HEALTHCHECK_DELAY}
-            timeoutSeconds: ${KAFKA_HEALTHCHECK_TIMEOUT}
-        dnsPolicy: ClusterFirst
-        restartPolicy: Always
-        volumes:
-          - name: zookeeper-storage
-            emptyDir: {}
-          - name: zookeeper-metrics-config
-            configMap:
-              name: zookeeper-metrics-config
+    aaa: bbb

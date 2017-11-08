@@ -1,9 +1,10 @@
 RELEASE_VERSION ?= latest
 
-SUBDIRS=kafka-base zookeeper kafka-statefulsets kafka-inmemory kafka-connect kafka-connect/s2i
+SUBDIRS=kafka-base zookeeper kafka-statefulsets kafka-inmemory kafka-connect kafka-connect/s2i cluster-controller
 DOCKER_TARGETS=docker_build docker_push docker_tag
 
 all: $(SUBDIRS)
+clean: $(SUBDIRS)
 $(DOCKER_TARGETS): $(SUBDIRS)
 release: release_prepare $(SUBDIRS) release_version release_pkg
 
