@@ -24,52 +24,78 @@ import java.util.Map;
 public class Topic {
 
     public static class Builder {
-        private TopicName name;
+        private TopicName topicName;
         private int numPartitions;
+        private short numReplicas = -1;
         private Map<String, String> config = new HashMap<>();
+        private MapName mapName;
 
         public Builder() {
 
         }
 
-        public Builder(String name, int numPartitions) {
-            this(new TopicName(name), numPartitions, null);
+        public Builder(String topicName, int numPartitions) {
+            this(new TopicName(topicName), numPartitions, (short)-1, null);
         }
 
-        public Builder(TopicName name, int numPartitions) {
-            this(name, numPartitions, null);
+        public Builder(TopicName topicName, int numPartitions) {
+            this(topicName, numPartitions, (short)-1, null);
         }
 
-        public Builder(String name, int numPartitions, Map<String, String> config) {
-            this(new TopicName(name), numPartitions, config);
+        public Builder(String topicName, int numPartitions, Map<String, String> config) {
+            this(new TopicName(topicName), numPartitions, (short)-1, config);
         }
 
-        public Builder(TopicName name, int numPartitions, Map<String, String> config) {
-            this.name = name;
+        public Builder(TopicName topicName, int numPartitions, Map<String, String> config) {
+            this(topicName, numPartitions, (short)-1, config);
+        }
+
+        public Builder(String topicName, int numPartitions, short numReplicas, Map<String, String> config) {
+            this(new TopicName(topicName), numPartitions, numReplicas, config);
+        }
+
+        public Builder(TopicName topicName, int numPartitions, short numReplicas, Map<String, String> config) {
+            this.topicName = topicName;
             this.numPartitions = numPartitions;
+            this.numReplicas = numReplicas;
             if (config != null) {
                 this.config.putAll(config);
             }
         }
 
         public Builder(Topic topic) {
-            this.name = topic.name;
+            this.topicName = topic.topicName;
             this.numPartitions = topic.numPartitions;
             this.config.putAll(topic.config);
         }
 
-        public Builder withName(TopicName name) {
-            this.name = name;
+        public Builder withTopicName(TopicName name) {
+            this.topicName = name;
             return this;
         }
 
-        public Builder withName(String name) {
-            this.name = new TopicName(name);
+        public Builder withTopicName(String name) {
+            this.topicName = new TopicName(name);
+            return this;
+        }
+
+        public Builder withMapName(MapName name) {
+            this.mapName = name;
+            return this;
+        }
+
+        public Builder withMapName(String name) {
+            this.mapName = new MapName(name);
             return this;
         }
 
         public Builder withNumPartitions(int numPartitions) {
             this.numPartitions = numPartitions;
+            return this;
+        }
+
+        public Builder withNumReplicas(short numReplicas) {
+            this.numReplicas = numReplicas;
             return this;
         }
 
@@ -90,40 +116,54 @@ public class Topic {
         }
 
         public Topic build() {
-            return new Topic(name, numPartitions, config);
+            return new Topic(topicName, mapName, numPartitions, numReplicas, config);
         }
     }
 
-    private final TopicName name;
+    private final TopicName topicName;
+
+    private final MapName mapName;
 
     private final int numPartitions;
 
     private final Map<String, String> config;
 
-    public TopicName getName() {
-        return name;
+    private final short numReplicas;
+
+    public TopicName getTopicName() {
+        return topicName;
+    }
+
+    public MapName getMapName() {
+        return mapName;
     }
 
     public int getNumPartitions() {
         return numPartitions;
     }
 
+    public short getNumReplicas() {
+        return numReplicas;
+    }
+
     public Map<String, String> getConfig() {
         return config;
     }
 
-    private Topic(TopicName name, int numPartitions, Map<String, String> config) {
-
-        this.name = name;
+    private Topic(TopicName topicName, MapName mapName, int numPartitions, short numReplicas, Map<String, String> config) {
+        this.topicName = topicName;
+        this.mapName = mapName;
         this.numPartitions = numPartitions;
+        this.numReplicas = numReplicas;
         this.config = Collections.unmodifiableMap(config);
     }
 
     @Override
     public String toString() {
         return "Topic{" +
-                "name=" + name +
+                "name=" + topicName +
                 ", numPartitions=" + numPartitions +
+                ", numReplicas=" + numReplicas +
                 ", config=" + config +
                 '}';
     }
@@ -136,14 +176,16 @@ public class Topic {
         Topic topic = (Topic) o;
 
         if (numPartitions != topic.numPartitions) return false;
-        if (!name.equals(topic.name)) return false;
+        if (numReplicas != topic.numReplicas) return false;
+        if (!topicName.equals(topic.topicName)) return false;
         return config.equals(topic.config);
     }
 
     @Override
     public int hashCode() {
-        int result = name.hashCode();
+        int result = topicName.hashCode();
         result = 31 * result + numPartitions;
+        result = 31 * result + numReplicas;
         result = 31 * result + config.hashCode();
         return result;
     }

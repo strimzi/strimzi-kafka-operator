@@ -19,21 +19,21 @@ package io.enmasse.barnabas.operator.topic;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 
-public class OperatorException extends Exception {
+public class OperatorException extends RuntimeException {
 
-    private final HasMetadata metadata;
+    private final HasMetadata involvedObject;
 
-    public OperatorException(HasMetadata metadata, String message) {
+    public OperatorException(HasMetadata involvedObject, String message) {
         super(message);
-        this.metadata = metadata;
+        this.involvedObject = involvedObject;
     }
 
-    public OperatorException(HasMetadata metadata, Throwable cause) {
+    public OperatorException(HasMetadata involvedObject, Throwable cause) {
         super(cause);
-        this.metadata = metadata;
+        this.involvedObject = involvedObject;
     }
 
-    public HasMetadata getMetadata() {
-        return metadata;
+    public HasMetadata getInvolvedObject() {
+        return involvedObject;
     }
 }

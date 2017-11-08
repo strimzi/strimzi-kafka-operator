@@ -1,0 +1,230 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements. See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.enmasse.barnabas.operator.topic;
+
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SequenceWriter;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import org.apache.kafka.clients.admin.Config;
+import org.apache.kafka.clients.admin.ConfigEntry;
+import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.common.config.ConfigResource;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+public class TopicSerialization {
+
+    // These are the keys in the ConfigMap data
+    public static final String CM_KEY_PARTITIONS = "partitions";
+    public static final String CM_KEY_REPLICAS = "replicas";
+    public static final String CM_KEY_NAME = "name";
+    public static final String CM_KEY_CONFIG = "config";
+    public static final String CM_KEY_REPLICA = "replica.";
+
+    // These are the keys in the JSON we store in ZK
+    public static final String JSON_KEY_TOPIC_NAME = "topic-name";
+    public static final String JSON_KEY_PARTITIONS = "partitions";
+    public static final String JSON_KEY_REPLICAS = "replicas";
+    public static final String JSON_KEY_CONFIG = "config";
+
+    private static String configToYaml(Config config) {
+        YAMLFactory yf = new YAMLFactory();
+        ObjectMapper mapper = new ObjectMapper(yf);
+        ObjectNode root = mapper.createObjectNode();
+        for (ConfigEntry entry : config.entries()) {
+            root.put(entry.name(), entry.value());
+        }
+        StringWriter sw = new StringWriter();
+        try {
+            SequenceWriter seqw = mapper.writerWithDefaultPrettyPrinter().writeValues(sw);
+            seqw.write(root);
+            return sw.toString();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static Map<String, String> topicConfigFromConfigMapString(Map<String, String> mapData) throws IOException {
+        String value = mapData.get(CM_KEY_CONFIG);
+        YAMLFactory yf = new YAMLFactory();
+        ObjectMapper mapper = new ObjectMapper(yf);
+        Map<String, String> result = mapper.readValue(new StringReader(value), Map.class);
+        return result;
+    }
+
+    private static String topicConfigToConfigMapString(Map<String, String> config) throws IOException {
+        YAMLFactory yf = new YAMLFactory();
+        ObjectMapper mapper = new ObjectMapper(yf);
+        StringWriter sw = new StringWriter();
+        mapper.writeValue(sw, config);
+        return sw.toString();
+    }
+
+    /**
+     * Create a Topic to reflect the given ConfigMap.
+     */
+    public static Topic fromConfigMap(ConfigMap cm) {
+        Map<String, String> mapData = cm.getData();
+        String name = cm.getMetadata().getName();
+        Topic.Builder builder = new Topic.Builder()
+                .withMapName(cm.getMetadata().getName())
+                .withTopicName(mapData.getOrDefault(CM_KEY_NAME, name))
+                .withNumPartitions(Integer.parseInt(mapData.get(CM_KEY_PARTITIONS)))
+                .withNumReplicas(Short.parseShort(mapData.get(CM_KEY_REPLICAS)));
+        try {
+            builder.withConfig(topicConfigFromConfigMapString(mapData));
+        } catch (IOException e) {
+            throw new RuntimeException("Error parsing key '"+ CM_KEY_CONFIG +"' of ConfigMap '"+ name +"'", e);
+        }
+        return builder.build();
+    }
+
+    private static final Map<String, String> LABELS;
+    static {
+        Map<String, String> labels = new HashMap<>(3);
+        labels.put("app", "barnabas");
+        labels.put("type", "runtime");
+        labels.put("kind", "topic");
+        LABELS = Collections.unmodifiableMap(labels);
+    }
+
+    /**
+     * Create a ConfigMap to reflect the given Topic.
+     */
+    public static ConfigMap toConfigMap(Topic topic) {
+        Map<String, String> mapData = new HashMap<>();
+        mapData.put(CM_KEY_NAME, topic.getTopicName().toString());
+        mapData.put(CM_KEY_PARTITIONS, Integer.toString(topic.getNumPartitions()));
+        mapData.put(CM_KEY_REPLICAS, Short.toString(topic.getNumReplicas()));
+        try {
+            mapData.put(CM_KEY_CONFIG, topicConfigToConfigMapString(topic.getConfig()));
+        } catch (IOException e) {
+            throw new RuntimeException("Error converting topic config to a string, for topic '"+topic.getTopicName()+"'", e);
+        }
+        MapName mapName = topic.getMapName();
+        if (mapName == null) {
+            mapName = topic.getTopicName().asMapName();
+        }
+        return new ConfigMapBuilder().withApiVersion("v1")
+                .withNewMetadata()
+                    .withName(mapName.toString())
+                    .withLabels(LABELS)
+                    // TODO .withUid()
+                .endMetadata()
+                .withData(mapData)
+                .build();
+    }
+
+
+    /**
+     * Create a NewTopic to reflect the given Topic.
+     */
+    public static NewTopic toNewTopic(Topic topic) {
+        return new NewTopic(topic.getTopicName().toString(), topic.getNumPartitions(), topic.getNumReplicas());
+    }
+
+    public static Map<ConfigResource, Config> toTopicConfig(Topic topic) {
+        Set<ConfigEntry> configEntries = new HashSet<>();
+        for (Map.Entry<String, String> entry : topic.getConfig().entrySet()) {
+            configEntries.add(new ConfigEntry(entry.getKey(), entry.getValue()));
+        }
+        return Collections.singletonMap(
+                new ConfigResource(ConfigResource.Type.TOPIC, topic.getTopicName().toString()),
+                new Config(configEntries));
+    }
+
+    /**
+     * Create a Topic to reflect the given TopicMetadata.
+     */
+    public static Topic fromTopicMetadata(TopicMetadata meta) {
+        Topic.Builder builder = new Topic.Builder()
+                .withTopicName(meta.getDescription().name())
+                .withNumPartitions(meta.getDescription().partitions().size())
+                .withNumReplicas((short)meta.getDescription().partitions().get(0).replicas().size());
+        for (ConfigEntry entry: meta.getConfig().entries()) {
+            builder.withConfigEntry(entry.name(), entry.value());
+        }
+        return builder.build();
+    }
+
+    /**
+     * Returns the UTF-8 encoded JSON to reflect the given Topic.
+     * This is what is stored in our znodes.
+     */
+    public static byte[] toJson(Topic topic) {
+        JsonFactory yf = new JsonFactory();
+        ObjectMapper mapper = new ObjectMapper(yf);
+        ObjectNode root = mapper.createObjectNode();
+        // TODO Do we store the k8s name here too?
+        // TODO Do we store the k9s uid here?
+        // If so, both of those need to be properties of the Topic class
+        root.put(JSON_KEY_TOPIC_NAME, topic.getTopicName().toString());
+        root.put(JSON_KEY_PARTITIONS, topic.getNumPartitions());
+        root.put(JSON_KEY_REPLICAS, topic.getNumReplicas());
+
+        ObjectNode config = mapper.createObjectNode();
+        for (Map.Entry<String, String> entry : topic.getConfig().entrySet()) {
+            config.put(entry.getKey(), entry.getValue());
+        }
+        root.set(JSON_KEY_CONFIG, config);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try {
+            mapper.writeValue(baos, root);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return baos.toByteArray();
+    }
+
+    /**
+     * Returns the Topic represented by the given UTF-8 encoded JSON.
+     * The given JSON is what is stored in our znodes.
+     */
+    public static Topic fromJson(byte[] json) {
+        JsonFactory yf = new JsonFactory();
+        ObjectMapper mapper = new ObjectMapper(yf);
+        Map<String, Object> root = null;
+        try {
+            root = mapper.readValue(json, Map.class);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        Topic.Builder builder = new Topic.Builder();
+        builder.withTopicName((String)root.get(JSON_KEY_TOPIC_NAME))
+        .withNumPartitions((Integer)root.get(JSON_KEY_PARTITIONS))
+        .withNumReplicas(((Integer)root.get(JSON_KEY_REPLICAS)).shortValue());
+        Map<String, String> config = (Map)root.get(JSON_KEY_CONFIG);
+        for (Map.Entry<String, String> entry : config.entrySet()) {
+            builder.withConfigEntry(entry.getKey(), entry.getValue());
+        }
+        return builder.build();
+    }
+
+}

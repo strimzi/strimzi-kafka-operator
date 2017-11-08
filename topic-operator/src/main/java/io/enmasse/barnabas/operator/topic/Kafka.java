@@ -18,28 +18,26 @@
 package io.enmasse.barnabas.operator.topic;
 
 import org.apache.kafka.clients.admin.Config;
+import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.admin.TopicDescription;
 
-/**
- * Pairs a {@code TopicDescription} with a topic {@code Config}, to capture
- * complete information about a Kafka topic.
- * This is necessary because the Kafka AdminClient doesn't have an API for
- * getting this information in one go.
- */
-public class TopicMetadata {
-    private final Config config;
-    private final TopicDescription description;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
-    public TopicMetadata(TopicDescription description, Config config) {
-        this.config = config;
-        this.description = description;
-    }
+public interface Kafka {
+    void createTopic(NewTopic newTopic, ResultHandler<Void> handler);
 
-    public Config getConfig() {
-        return config;
-    }
+    void deleteTopic(TopicName topicName, ResultHandler<Void> handler);
 
-    public TopicDescription getDescription() {
-        return description;
-    }
+    void updateTopicConfig(Topic topic, ResultHandler<Void> handler);
+
+    void increasePartitions(Topic topic, ResultHandler<Void> handler);
+
+    CompletableFuture<TopicMetadata> topicMetadata(TopicName topicName, long delay, TimeUnit unit);
+
+    void listTopics(ResultHandler<Set<String>> handler);
+    CompletableFuture<Set<TopicName>> listTopicsFuture();
+
 }
+

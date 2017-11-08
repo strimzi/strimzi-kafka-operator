@@ -34,7 +34,7 @@ public class BackOffTest {
         try {
             b.delayMs();
             fail("Should throw");
-        } catch (ExceededRetriesException e) {
+        } catch (MaxAttemptsExceededException e) {
 
         }
     }
@@ -50,7 +50,7 @@ public class BackOffTest {
         try {
             b.delayMs();
             fail("Should throw");
-        } catch (ExceededRetriesException e) {
+        } catch (MaxAttemptsExceededException e) {
 
         }
     }

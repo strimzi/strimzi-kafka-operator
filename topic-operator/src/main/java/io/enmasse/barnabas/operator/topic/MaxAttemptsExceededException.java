@@ -17,29 +17,8 @@
 
 package io.enmasse.barnabas.operator.topic;
 
-import org.apache.kafka.clients.admin.Config;
-import org.apache.kafka.clients.admin.TopicDescription;
-
 /**
- * Pairs a {@code TopicDescription} with a topic {@code Config}, to capture
- * complete information about a Kafka topic.
- * This is necessary because the Kafka AdminClient doesn't have an API for
- * getting this information in one go.
+ * Thrown to indicate a {@link BackOff} has exceeded its maximum number of attempts.
  */
-public class TopicMetadata {
-    private final Config config;
-    private final TopicDescription description;
-
-    public TopicMetadata(TopicDescription description, Config config) {
-        this.config = config;
-        this.description = description;
-    }
-
-    public Config getConfig() {
-        return config;
-    }
-
-    public TopicDescription getDescription() {
-        return description;
-    }
+public class MaxAttemptsExceededException extends RuntimeException {
 }

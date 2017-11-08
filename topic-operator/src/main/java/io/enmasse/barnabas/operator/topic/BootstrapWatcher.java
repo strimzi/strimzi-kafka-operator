@@ -30,7 +30,7 @@ class BootstrapWatcher implements org.apache.zookeeper.Watcher {
     private final static Logger logger = LoggerFactory.getLogger(BootstrapWatcher.class);
 
     private final Operator operator;
-    ZooKeeper zk0;
+    private ZooKeeper zk0;
     private final String zookeeperConnect;
 
     public BootstrapWatcher(Operator operator, String zookeeperConnect){
@@ -60,7 +60,7 @@ class BootstrapWatcher implements org.apache.zookeeper.Watcher {
         } else if (state == Event.KeeperState.Disconnected) {
             connect();
         } else {
-            logger.error("Not connected!");
+            logger.error("Not connected! In state {}", state);
         }
     }
 }

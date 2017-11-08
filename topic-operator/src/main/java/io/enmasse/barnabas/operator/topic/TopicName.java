@@ -18,6 +18,7 @@
 package io.enmasse.barnabas.operator.topic;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import org.apache.kafka.common.internals.Topic;
 
 /**
  * Typesafe representation of the name of a topic.
@@ -27,6 +28,8 @@ class TopicName {
 
     public TopicName(String name) {
         assert(name != null && !name.isEmpty());
+        // TODO Shame we can't validate a topic name without relying on an internal class
+        Topic.validate(name);
         this.name = name;
     }
 
@@ -45,12 +48,12 @@ class TopicName {
 
         TopicName topicName = (TopicName) o;
 
-        return name != null ? name.equals(topicName.name) : topicName.name == null;
+        return name.equals(topicName.name);
     }
 
     @Override
     public int hashCode() {
-        return name != null ? name.hashCode() : 0;
+        return name.hashCode();
     }
 
     public MapName asMapName() {

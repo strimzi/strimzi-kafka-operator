@@ -72,12 +72,12 @@ public class TopicDiffTest {
         assertFalse(diffAB.conflicts(diffABAgain));
         assertFalse(diffABAgain.conflicts(diffAB));
 
-        Topic topicC = new Topic.Builder(topicA.getName(), 4, topicA.getConfig()).build();
+        Topic topicC = new Topic.Builder(topicA.getTopicName(), 4, topicA.getConfig()).build();
         TopicDiff diffAC = TopicDiff.diff(topicA, topicC);
         assertTrue(diffAB.conflicts(diffAC));
         assertTrue(diffAC.conflicts(diffAB));
 
-        Topic topicD = new Topic.Builder(topicA.getName(), topicA.getNumPartitions(), topicB.getConfig()).build();
+        Topic topicD = new Topic.Builder(topicA.getTopicName(), topicA.getNumPartitions(), topicB.getConfig()).build();
         TopicDiff diffAD = TopicDiff.diff(topicA, topicD);
         assertFalse(diffAB.conflicts(diffAD));
         assertFalse(diffAD.conflicts(diffAB));
@@ -85,7 +85,7 @@ public class TopicDiffTest {
         // Both change the same config
         Map<String, String> conflictingConfig = new HashMap(topicB.getConfig());
         conflictingConfig.put("b", "deux");
-        Topic topicE = new Topic.Builder(topicA.getName(), topicA.getNumPartitions(), conflictingConfig).build();
+        Topic topicE = new Topic.Builder(topicA.getTopicName(), topicA.getNumPartitions(), conflictingConfig).build();
         TopicDiff diffAE = TopicDiff.diff(topicA, topicE);
         assertTrue(diffAD.conflicts(diffAE));
         assertTrue(diffAE.conflicts(diffAD));
@@ -94,7 +94,7 @@ public class TopicDiffTest {
         // One changes and one removes
         conflictingConfig = new HashMap(topicB.getConfig());
         conflictingConfig.remove("b");
-        Topic topicF = new Topic.Builder(topicA.getName(), topicA.getNumPartitions(), conflictingConfig).build();
+        Topic topicF = new Topic.Builder(topicA.getTopicName(), topicA.getNumPartitions(), conflictingConfig).build();
         TopicDiff diffAF = TopicDiff.diff(topicA, topicF);
         assertTrue(diffAD.conflicts(diffAF));
         assertTrue(diffAF.conflicts(diffAD));
@@ -103,7 +103,7 @@ public class TopicDiffTest {
         // Both add, different values
         conflictingConfig = new HashMap(topicB.getConfig());
         conflictingConfig.put("d", "5");
-        Topic topicG = new Topic.Builder(topicA.getName(), topicA.getNumPartitions(), conflictingConfig).build();
+        Topic topicG = new Topic.Builder(topicA.getTopicName(), topicA.getNumPartitions(), conflictingConfig).build();
         TopicDiff diffAG = TopicDiff.diff(topicA, topicG);
         assertTrue(diffAD.conflicts(diffAG));
         assertTrue(diffAG.conflicts(diffAD));
@@ -116,18 +116,18 @@ public class TopicDiffTest {
         TopicDiff diffABAgain = TopicDiff.diff(topicA, topicB);
         assertEquals(diffAB, diffAB.merge(diffABAgain));
 
-        Topic topicD = new Topic.Builder(topicA.getName(), topicA.getNumPartitions(), topicB.getConfig()).build();
+        Topic topicD = new Topic.Builder(topicA.getTopicName(), topicA.getNumPartitions(), topicB.getConfig()).build();
         TopicDiff diffAD = TopicDiff.diff(topicA, topicD);
         TopicDiff merged = diffAB.merge(diffAD);
         Topic end = merged.apply(topicA);
-        assertEquals(end, new Topic.Builder(topicA.getName(), topicB.getNumPartitions(), topicB.getConfig()).build());
+        assertEquals(end, new Topic.Builder(topicA.getTopicName(), topicB.getNumPartitions(), topicB.getConfig()).build());
 
         Map<String, String> configX = new HashMap<>();
         configX.put("x", "24");
         configX.put("b", "2");
         configX.put("c", "tres");
 
-        Topic topicX = new Topic.Builder(topicA.getName(), topicA.getNumPartitions(), configX).build();
+        Topic topicX = new Topic.Builder(topicA.getTopicName(), topicA.getNumPartitions(), configX).build();
         TopicDiff diffAX = TopicDiff.diff(topicA, topicX);
         merged = diffAB.merge(diffAX);
         end = merged.apply(topicA);
@@ -137,6 +137,6 @@ public class TopicDiffTest {
         configEnd.put("c", "tres");
         configEnd.put("d", "4");
         configEnd.put("x", "24");
-        assertEquals(end, new Topic.Builder(topicA.getName(), topicB.getNumPartitions(), configEnd).build());
+        assertEquals(end, new Topic.Builder(topicA.getTopicName(), topicB.getNumPartitions(), configEnd).build());
     }
 }

@@ -17,8 +17,22 @@
 
 package io.enmasse.barnabas.operator.topic;
 
-/**
- * Thrown to indicate a {@link BackOff} has exceeded its maximum number of attempts.
- */
-public class ExceededRetriesException extends RuntimeException {
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.Event;
+
+import java.util.List;
+import java.util.Optional;
+
+public interface K8s {
+    void createConfigMap(ConfigMap cm);
+
+    void updateConfigMap(ConfigMap cm);
+
+    void deleteConfigMap(TopicName topicName);
+
+    List<ConfigMap> listMaps();
+
+    ConfigMap getFromName(MapName mapName);
+
+    void createEvent(Event event);
 }

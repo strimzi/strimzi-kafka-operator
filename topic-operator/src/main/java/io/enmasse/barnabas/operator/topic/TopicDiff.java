@@ -35,12 +35,13 @@ public class TopicDiff {
     private static abstract class Difference {
         private Difference() {}
 
-        protected abstract Object address();
+        protected abstract String address();
 
         protected abstract void apply(Topic.Builder builder);
     }
 
     private static class NumPartitionsDifference extends Difference {
+        public static final String ADDRESS = "numPartitions";
         private int newNumPartitions;
 
         public NumPartitionsDifference(int newNumPartitions) {
@@ -48,8 +49,8 @@ public class TopicDiff {
         }
 
         @Override
-        public Object address() {
-            return "numPartitions";
+        public String address() {
+            return ADDRESS;
         }
 
         @Override
@@ -78,7 +79,47 @@ public class TopicDiff {
         }
     }
 
+    private static class NumReplicasDifference extends Difference {
+        public static final String ADDRESS = "numReplicas";
+        private short newNumReplicas;
+
+        public NumReplicasDifference (short newNumReplicas) {
+            this.newNumReplicas = newNumReplicas;
+        }
+
+        @Override
+        public String address() {
+            return ADDRESS;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            NumReplicasDifference that = (NumReplicasDifference) o;
+
+            return newNumReplicas == that.newNumReplicas;
+        }
+
+        @Override
+        public int hashCode() {
+            return newNumReplicas;
+        }
+
+        @Override
+        public String toString() {
+            return "newNumReplicas=" + newNumReplicas;
+        }
+
+        @Override
+        protected void apply(Topic.Builder builder) {
+            builder.withNumPartitions(this.newNumReplicas);
+        }
+    }
+
     private static class AddedConfigEntry extends Difference {
+        public static final String ADDRESS_PREFIX = "config:";
         private final String configKey;
         private final String configValue;
 
@@ -89,8 +130,8 @@ public class TopicDiff {
         }
 
         @Override
-        public Object address() {
-            return "config:"+configKey;
+        public String address() {
+            return ADDRESS_PREFIX +configKey;
         }
 
         @Override
@@ -124,6 +165,7 @@ public class TopicDiff {
     }
 
     private static class RemovedConfigEntry extends Difference {
+        public static final String ADDRESS_PREFIX = "config:";
         private String configKey;
 
         public RemovedConfigEntry(String configKey) {
@@ -131,8 +173,8 @@ public class TopicDiff {
         }
 
         @Override
-        public Object address() {
-            return "config:"+configKey;
+        public String address() {
+            return ADDRESS_PREFIX +configKey;
         }
 
         @Override
@@ -161,9 +203,9 @@ public class TopicDiff {
         }
     }
 
-    private final Map<Object, Difference> differences;
+    private final Map<String, Difference> differences;
 
-    private TopicDiff(Map<Object, Difference> differences) {
+    private TopicDiff(Map<String, Difference> differences) {
         this.differences = differences;
     }
 
@@ -174,13 +216,17 @@ public class TopicDiff {
      * @return The difference between the source and target.
      */
     public static TopicDiff diff(Topic source, Topic target) {
-        if (!source.getName().equals(target.getName())) {
+        if (!source.getTopicName().equals(target.getTopicName())) {
             throw new IllegalArgumentException();
         }
-        Map<Object, Difference> differences = new HashMap<>();
+        Map<String, Difference> differences = new HashMap<>();
         if (source.getNumPartitions() != target.getNumPartitions()) {
             NumPartitionsDifference numPartitionsDifference = new NumPartitionsDifference(target.getNumPartitions());
             differences.put(numPartitionsDifference.address(), numPartitionsDifference);
+        }
+        if (source.getNumReplicas() != target.getNumReplicas()) {
+            NumReplicasDifference numReplicasDifference = new NumReplicasDifference(target.getNumReplicas());
+            differences.put(numReplicasDifference.address(), numReplicasDifference);
         }
         if (!source.getConfig().equals(target.getConfig())) {
             //Removed keys
@@ -233,6 +279,31 @@ public class TopicDiff {
     }
 
     /**
+     * Whether the diff is empty. Applying an empty diff is a noop.
+     */
+    public boolean isEmpty() {
+        return this.differences.isEmpty();
+    }
+
+    public boolean changesNumPartitions() {
+        return this.differences.containsKey(NumPartitionsDifference.ADDRESS);
+    }
+
+    public boolean changesConfig() {
+        for (String address : differences.keySet()) {
+            if (address.startsWith(AddedConfigEntry.ADDRESS_PREFIX)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean changesReplicationFactor() {
+        return this.differences.containsKey(NumReplicasDifference.ADDRESS);
+    }
+
+
+    /**
      * Apply this diff to this given topic, returning a new topic.
      * @param topic
      * @return
@@ -279,31 +350,9 @@ public class TopicDiff {
         if (confict != null) {
             throw new IllegalArgumentException("Conflict: " + confict);
         }
-        Map<Object, Difference> union = new HashMap(this.differences);
+        Map<String, Difference> union = new HashMap(this.differences);
         union.putAll(other.differences);
         return new TopicDiff(union);
     }
 }
-/*
-0. Set up some persistent ZK nodes for us
-1. When updating CM, we also update our ZK nodes
-2. When updating Kafka, we also update our ZK nodes
-3. When reconciling we get all three versions of the Topic, k8s, kafka and ours
-   - If ours doesn't exist:
-     - If k8s doesn't exist, we reason it's been created in kafka and we create it k8s from kafka
-     - If kafka doesn't exist, we reason it's been created in k8s, and we create it in kafka from k8s
-     - If both exist, and are the same: That's fine
-     - If both exist, and are different: We use whichever has the most recent mtime.
-     - In all above cases we create ours
-   - If ours does exist:
-     - If k8s doesn't exist, we reason it was deleted, and delete kafka
-     - If kafka doesn't exist, we reason it was delete and we delete k8s
-     - If neither exists, we delete ours.
-     - If both exist then all three exist, and we need to reconcile:
-       - We compute diff ours->k8s and ours->kafka and we merge the two
-         - If there are conflicts we're fucked
-         - Otherwise we apply the apply the merged diff to ours, and use that for both k8s and kafka
-     - In all above cases we update ours
 
-Topic identification should be by uid/cxid, not by name.
-*/

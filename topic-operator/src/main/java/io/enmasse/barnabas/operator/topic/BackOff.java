@@ -18,7 +18,7 @@
 package io.enmasse.barnabas.operator.topic;
 
 /**
- * Encapsulates computing delays for an exponential backoff.
+ * Encapsulates computing delays for an exponential back-off.
  */
 public class BackOff {
     private final long scaleMs;
@@ -42,7 +42,7 @@ public class BackOff {
     /**
      * Return the next delay to use, in milliseconds.
      * The first delay is always zero, the 2nd delay is scaleMs, and the delay increases exponentially from there.
-     * @throws ExceededRetriesException if the next attempt would exceed the configured number of attempts.
+     * @throws MaxAttemptsExceededException if the next attempt would exceed the configured number of attempts.
      */
     public long delayMs() {
         int n = attempt++;
@@ -50,19 +50,12 @@ public class BackOff {
             return 0L;
         }
         if (n >= maxAttempts) {
-            throw new ExceededRetriesException();
+            throw new MaxAttemptsExceededException();
         }
         int pow = 1;
         while (n-- > 1) {
             pow *= base;
         }
         return scaleMs*pow;
-    }
-
-    public static void main(String[] args) {
-        BackOff bo = new BackOff();
-        while (true) {
-            System.out.println(bo.delayMs());
-        }
     }
 }
