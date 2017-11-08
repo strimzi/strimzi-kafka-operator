@@ -21,7 +21,7 @@ echo "LOG_DIR=$LOG_DIR"
 exec $KAFKA_HOME/bin/kafka-server-start.sh $KAFKA_HOME/config/server.properties \
 --override broker.id=$KAFKA_BROKER_ID \
 --override advertised.host.name=$(hostname -I) \
---override zookeeper.connect=$ZOOKEEPER_SERVICE_HOST:$ZOOKEEPER_SERVICE_PORT \
+--override zookeeper.connect=${KAFKA_ZOOKEEPER_CONNECT:-zookeeper:2181}  \
 --override log.dirs=$KAFKA_LOG_DIRS \
 --override default.replication.factor=${KAFKA_DEFAULT_REPLICATION_FACTOR:-1} \
 --override offsets.topic.replication.factor=${KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR:-3} \
