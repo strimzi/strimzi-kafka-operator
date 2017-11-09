@@ -1,7 +1,7 @@
 # Building barnabas
 
 Barnabas is using `make` as its main build system. Our make build supports 
-several different targets mainly for building and pushing docker images.
+several different targets mainly for building and pushing Docker images.
 
 <!-- TOC depthFrom:2 -->
 
@@ -26,19 +26,15 @@ subdirectories with their respective Dockerfiles - e.g. `kafka_base`,
 
 The `docker_build` target will always build the images under the 
 `enmasseproject` organization. This is necessary in order to be able to reuse 
-the base image you might have just built without modifying all Dockerfiles.
-
-To configure the `docker_build` target you can set environment variables:
-* `DOCKER_ORG` should contain the Docker organization for tagging/pushing 
-  the images (default is your username)
-* `DOCKER_TAG` configured Docker tag (default is `latest`)
+the base image you might have just built without modifying all Dockerfiles. 
+The `DOCKER_TAG` environment variable configures the Docker tag 
+to use (default is `latest`).
 
 ### Tagging and pushing Docker images
 
 Target `docker_tag` can be used to tag the Docker images built by the 
 `docker_build` target. This target is automatically called by the `docker_push` 
-target and doesn't have to be called separately. The `docker_push` target will 
-login to the configured container repository and push the images.
+target and doesn't have to be called separately. 
 
 To configure the `docker_tag` and `docker_push` targets you can set following 
 environment variables:
@@ -59,6 +55,9 @@ When developing locally you might want to push the docker images to the docker
 repository running in your local OpenShift cluster. This can be quicker than
 pushing to dockerhub and works even without a network connection.
 
+Assuming your OpenShift login is `developer` and project is `myproject` 
+you can push the images to OpenShift's Docker repo like this:
+
 1. Make sure your cluster is running,
 
         oc cluster up
@@ -75,16 +74,16 @@ pushing to dockerhub and works even without a network connection.
 
         docker login -u myproject -p `oc whoami -t` 172.30.1.1:5000
         
-   `172.30.1.1:5000` happens to be the IP and port of the docker registry
+   `172.30.1.1:5000` happens to be the IP and port of the Docker registry
    running in the cluster (see `oc get svc -n default`). 
         
-3. Now run `make` to push the development images to that docker repo:
+3. Now run `make` to push the development images to that Docker repo:
 
         DOCKER_REGISTRY=172.30.1.1:5000 DOCKER_ORG=myproject make all
         
 4. Finally, when creating the new app from the template you need to
    specify the Docker repo, otherwise OpenShift will still try to pull 
-   the image from dockerhub:
+   the image from docker.io:
    
         oc new-app barnabas -p IMAGE_REPO_NAME=172.30.1.1:5000/myproject
 
