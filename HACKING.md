@@ -62,24 +62,21 @@ you can push the images to OpenShift's Docker repo like this:
 
         oc cluster up
 
-   and that you're logged in as `developer`,
-
-        oc whoami
-    
-   If you're not logged in as `developer`, then do so:
-   
-        oc login -u developer
+   By default, you should be logged in as `developer` (you can check this 
+   with `oc whoami`)
         
 2. Log in to the Docker repo running in the local cluster:
 
-        docker login -u myproject -p `oc whoami -t` 172.30.1.1:5000
+        docker login -u `oc project -q` -p `oc whoami -t` 172.30.1.1:5000
         
    `172.30.1.1:5000` happens to be the IP and port of the Docker registry
-   running in the cluster (see `oc get svc -n default`). 
+   running in the cluster (see `oc get svc -n default`). Note that the 
+   Docker user is the OpenShift *project*, not the OpenShift user, and we're 
+   using the token for the current (`developer`) login as the password. 
         
 3. Now run `make` to push the development images to that Docker repo:
 
-        DOCKER_REGISTRY=172.30.1.1:5000 DOCKER_ORG=myproject make all
+        DOCKER_REGISTRY=172.30.1.1:5000 DOCKER_ORG=`oc project -q` make all
         
 4. Finally, when creating the new app from the template you need to
    specify the Docker repo, otherwise OpenShift will still try to pull 
