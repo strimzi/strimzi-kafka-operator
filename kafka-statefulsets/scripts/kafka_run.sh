@@ -2,7 +2,7 @@
 
 # volume for saving Kafka server logs
 export KAFKA_VOLUME="/var/lib/kafka/"
-# base name for Kafka server data dir and application logs
+# base name for Kafka server data dir
 export KAFKA_LOG_BASE_NAME="kafka-log"
 export KAFKA_APP_LOGS_BASE_NAME="logs"
 
@@ -17,6 +17,14 @@ echo "KAFKA_LOG_DIRS=$KAFKA_LOG_DIRS"
 export GC_LOG_ENABLED="false"
 # ... but enable equivalent GC logging to stdout
 export KAFKA_GC_LOG_OPTS="-verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps"
+
+if [ -z "$KAFKA_LOG4J_OPTS" ]; then
+  export KAFKA_LOG4J_OPTS="-Dlog4j.configuration=file:$KAFKA_HOME/config/log4j.properties -Dkafka.root.logger=INFO,CONSOLE"
+fi
+
+# We don't need LOG_DIR because we write no log files, but setting it to a
+# directory avoids trying to create it (and logging a permission denied error)
+export LOG_DIR="$KAFKA_HOME"
 
 # starting Kafka server with final configuration
 exec $KAFKA_HOME/bin/kafka-server-start.sh $KAFKA_HOME/config/server.properties \
