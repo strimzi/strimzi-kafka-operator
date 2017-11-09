@@ -17,6 +17,11 @@ echo "KAFKA_LOG_DIRS=$KAFKA_LOG_DIRS"
 export LOG_DIR=$KAFKA_VOLUME$KAFKA_APP_LOGS_BASE_NAME$KAFKA_BROKER_ID
 echo "LOG_DIR=$LOG_DIR"
 
+# Disable Kafka's GC logging (which logs to a file)...
+export GC_LOG_ENABLED="false"
+# ... but enable equivalent GC logging to stdout
+export KAFKA_GC_LOG_OPTS="-verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps"
+
 # starting Kafka server with final configuration
 exec $KAFKA_HOME/bin/kafka-server-start.sh $KAFKA_HOME/config/server.properties \
 --override broker.id=$KAFKA_BROKER_ID \
