@@ -1,10 +1,9 @@
 package io.enmasse.barnabas.controller.cluster;
 
-import io.enmasse.barnabas.controller.cluster.model.Zookeeper;
+import io.enmasse.barnabas.controller.cluster.model.KafkaResource;
+import io.enmasse.barnabas.controller.cluster.model.ZookeeperResource;
 import io.fabric8.kubernetes.api.model.*;
-import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
-import io.fabric8.kubernetes.api.model.extensions.StatefulSetBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
@@ -12,13 +11,9 @@ import io.fabric8.kubernetes.client.Watcher;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class ClusterController extends AbstractVerticle {
     private final KubernetesClient kubernetesClient;
@@ -104,96 +99,8 @@ public class ClusterController extends AbstractVerticle {
     }
 
     private void addCluster(ConfigMap add)   {
-        Zookeeper.fromConfigMap(add, kubernetesClient).create();
-        createKafka(add);
-    }
-
-    private void createKafka(ConfigMap add)   {
-        String name = add.getMetadata().getName();
-
-        Service svc = new ServiceBuilder()
-                .withNewMetadata()
-                .withName(name)
-                .withLabels(labels)
-                .endMetadata()
-                .withNewSpec()
-                .withType("ClusterIP")
-                .withSelector(new HashMap<String, String>(){{put("name", name);}})
-                .addNewPort()
-                .withPort(9092)
-                .withNewTargetPort(9092)
-                .withProtocol("TCP")
-                .withName("kafka")
-                .endPort()
-                .endSpec()
-                .build();
-        kubernetesClient.services().inNamespace(namespace).create(svc);
-
-        Service headlessSvc = new ServiceBuilder()
-                .withNewMetadata()
-                .withName(name + "-headless")
-                .withLabels(labels)
-                .endMetadata()
-                .withNewSpec()
-                .withType("ClusterIP")
-                .withClusterIP("None")
-                .withSelector(new HashMap<String, String>(){{put("name", name);}})
-                .addNewPort()
-                .withPort(9092)
-                .withNewTargetPort(9092)
-                .withProtocol("TCP")
-                .withName("kafka")
-                .endPort()
-                .endSpec()
-                .build();
-        kubernetesClient.services().inNamespace(namespace).create(headlessSvc);
-
-        Container container = new ContainerBuilder()
-                .withName(name)
-                .withImage("enmasseproject/kafka-statefulsets:latest")
-                .withVolumeMounts(new VolumeMountBuilder().withName("kafka-storage").withMountPath("/var/lib/kafka/").build())
-                .withPorts(new ContainerPortBuilder().withName("kafka").withProtocol("TCP").withContainerPort(9092).build())
-                .withNewLivenessProbe()
-                .withNewExec()
-                .withCommand("/opt/kafka/kafka_healthcheck.sh")
-                .endExec()
-                .withInitialDelaySeconds(15)
-                .withTimeoutSeconds(5)
-                .endLivenessProbe()
-                .withNewReadinessProbe()
-                .withNewExec()
-                .withCommand("/opt/kafka/kafka_healthcheck.sh")
-                .endExec()
-                .withInitialDelaySeconds(15)
-                .withTimeoutSeconds(5)
-                .endReadinessProbe()
-                .build();
-        Volume volume = new VolumeBuilder()
-                .withName(container.getVolumeMounts().get(0).getName())
-                .withNewEmptyDir()
-                .endEmptyDir()
-                .build();
-        StatefulSet statefulSet = new StatefulSetBuilder()
-                .withNewMetadata()
-                .withName(name)
-                .withLabels(labels)
-                .endMetadata()
-                .withNewSpec()
-                .withServiceName(headlessSvc.getMetadata().getName())
-                .withReplicas(1)
-                .withNewTemplate()
-                .withNewMetadata()
-                .withName(name)
-                .withLabels(labels)
-                .endMetadata()
-                .withNewSpec()
-                .withContainers(container)
-                .withVolumes(volume)
-                .endSpec()
-                .endTemplate()
-                .endSpec()
-                .build();
-        kubernetesClient.apps().statefulSets().inNamespace(namespace).create(statefulSet);
+        ZookeeperResource.fromConfigMap(add, kubernetesClient).create();
+        KafkaResource.fromConfigMap(add, kubernetesClient).create();
     }
 
     private void updateClusters(List<ConfigMap> update)   {
@@ -208,18 +115,7 @@ public class ClusterController extends AbstractVerticle {
     }
 
     private void deleteCluster(StatefulSet ss)   {
-        deleteZoo(ss);
-        deleteKafka(ss);
-    }
-
-    private void deleteZoo(StatefulSet ss) {
-        Zookeeper.fromStatefulSet(ss, kubernetesClient).delete();
-    }
-
-    private void deleteKafka(StatefulSet ss) {
-        String name = ss.getMetadata().getName();
-        kubernetesClient.apps().statefulSets().inNamespace(namespace).withName(name).delete();
-        kubernetesClient.services().inNamespace(namespace).withName(name).delete();
-        kubernetesClient.services().inNamespace(namespace).withName(name + "-headless").delete();
+        ZookeeperResource.fromStatefulSet(ss, kubernetesClient).delete();
+        KafkaResource.fromStatefulSet(ss, kubernetesClient).delete();
     }
 }

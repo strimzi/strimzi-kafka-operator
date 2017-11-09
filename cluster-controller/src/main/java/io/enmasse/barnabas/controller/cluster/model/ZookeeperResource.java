@@ -8,27 +8,29 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Kafka {
+public class ZookeeperResource extends AbstractResource {
     private final KubernetesClient client;
     private final String name;
     private final String namespace;
     private final String headlessName;
 
-    private final int clientPort = 9092;
-    private final String mounthPath = "/var/lib/kafka";
-    private final String volumeName = "kafka-storage";
+    private final int clientPort = 2181;
+    private final int clusteringPort = 2888;
+    private final int leaderElectionPort = 3888;
+    private final String mounthPath = "/var/lib/zookeeper";
+    private final String volumeName = "zookeeper-storage";
 
     private Map<String, String> labels = new HashMap<>();
-    private int replicas = 3;
-    private String image = "enmasseproject/kafka-statefulsets:latest";
-    private String livenessProbeScript = "/opt/kafka/kafka_healthcheck.sh";
+    private int replicas = 1;
+    private String image = "enmasseproject/zookeeper:latest";
+    private String livenessProbeScript = "/opt/zookeeper/zookeeper_healthcheck.sh";
     private int livenessProbeTimeout = 5;
     private int livenessProbeInitialDelay = 15;
-    private String readinessProbeScript = "/opt/kafka/kafka_healthcheck.sh";
+    private String readinessProbeScript = "/opt/zookeeper/zookeeper_healthcheck.sh";
     private int readinessProbeTimeout = 5;
     private int readinessProbeInitialDelay = 15;
 
-    private Kafka(String name, String namespace, KubernetesClient client) {
+    private ZookeeperResource(String name, String namespace, KubernetesClient client) {
         this.name = name;
         this.headlessName = name + "-headless";
         this.namespace = namespace;
@@ -40,19 +42,25 @@ public class Kafka {
     }
 
     public void setLabels(Map<String, String> labels) {
+        if (labels.containsKey("kind") && labels.get("kind").equals("kafka")) {
+            labels.put("kind", "zookeeper");
+        }
+
         this.labels = labels;
     }
 
-    public static Kafka fromConfigMap(ConfigMap cm, KubernetesClient client) {
-        Kafka kafka = new Kafka(cm.getMetadata().getName(), cm.getMetadata().getNamespace(), client);
-        kafka.setLabels(cm.getMetadata().getLabels());
-        return kafka;
+    public static ZookeeperResource fromConfigMap(ConfigMap cm, KubernetesClient client) {
+        String name = cm.getMetadata().getName() + "-zookeeper";
+        ZookeeperResource zk = new ZookeeperResource(name, cm.getMetadata().getNamespace(), client);
+        zk.setLabels(cm.getMetadata().getLabels());
+        return zk;
     }
 
-    public static Kafka fromStatefulSet(StatefulSet ss, KubernetesClient client) {
-        Kafka kafka =  new Kafka(ss.getMetadata().getName(), ss.getMetadata().getNamespace(), client);
-        kafka.setLabels(ss.getMetadata().getLabels());
-        return kafka;
+    public static ZookeeperResource fromStatefulSet(StatefulSet ss, KubernetesClient client) {
+        String name = ss.getMetadata().getName() + "-zookeeper";
+        ZookeeperResource zk =  new ZookeeperResource(name, ss.getMetadata().getNamespace(), client);
+        zk.setLabels(ss.getMetadata().getLabels());
+        return zk;
     }
 
     private boolean statefulSetExists() {
@@ -82,12 +90,7 @@ public class Kafka {
                 .withNewSpec()
                 .withType("ClusterIP")
                 .withSelector(new HashMap<String, String>(){{put("name", name);}})
-                .addNewPort()
-                .withPort(clientPort)
-                .withNewTargetPort(clientPort)
-                .withProtocol("TCP")
-                .withName("kafka")
-                .endPort()
+                .withPorts(createServicePort("clientport", clientPort, clientPort))
                 .endSpec()
                 .build();
         client.services().inNamespace(namespace).createOrReplace(svc);
@@ -103,12 +106,9 @@ public class Kafka {
                 .withType("ClusterIP")
                 .withClusterIP("None")
                 .withSelector(new HashMap<String, String>(){{put("name", name);}})
-                .addNewPort()
-                .withPort(clientPort)
-                .withNewTargetPort(clientPort)
-                .withProtocol("TCP")
-                .withName("kafka")
-                .endPort()
+                .withPorts(createServicePort("clientport", clientPort, clientPort))
+                .withPorts(createServicePort("clustering", clusteringPort, clusteringPort))
+                .withPorts(createServicePort("leaderelection", leaderElectionPort, leaderElectionPort))
                 .endSpec()
                 .build();
         client.services().inNamespace(namespace).createOrReplace(svc);
@@ -118,28 +118,15 @@ public class Kafka {
         Container container = new ContainerBuilder()
                 .withName(name)
                 .withImage(image)
-                .withVolumeMounts(new VolumeMountBuilder().withName(volumeName).withMountPath(mounthPath).build())
-                .withPorts(new ContainerPortBuilder().withName("clientport").withProtocol("TCP").withContainerPort(clientPort).build())
-                .withNewLivenessProbe()
-                .withNewExec()
-                .withCommand(livenessProbeScript)
-                .endExec()
-                .withInitialDelaySeconds(livenessProbeInitialDelay)
-                .withTimeoutSeconds(livenessProbeTimeout)
-                .endLivenessProbe()
-                .withNewReadinessProbe()
-                .withNewExec()
-                .withCommand(readinessProbeScript)
-                .endExec()
-                .withInitialDelaySeconds(readinessProbeInitialDelay)
-                .withTimeoutSeconds(readinessProbeTimeout)
-                .endReadinessProbe()
+                .withEnv(new EnvVarBuilder().withName("ZOOKEEPER_NODE_COUNT").withValue(Integer.toString(replicas)).build())
+                .withVolumeMounts(createVolumeMount(volumeName, mounthPath))
+                .withPorts(createContainerPort("clientport", clientPort),
+                        createContainerPort("clustering", clusteringPort),
+                        createContainerPort("leaderelection", leaderElectionPort))
+                .withLivenessProbe(createExecProbe(livenessProbeScript, livenessProbeInitialDelay, livenessProbeTimeout))
+                .withReadinessProbe(createExecProbe(readinessProbeScript, readinessProbeInitialDelay, readinessProbeTimeout))
                 .build();
-        Volume volume = new VolumeBuilder()
-                .withName(volumeName)
-                .withNewEmptyDir()
-                .endEmptyDir()
-                .build();
+
         StatefulSet statefulSet = new StatefulSetBuilder()
                 .withNewMetadata()
                 .withName(name)
@@ -155,7 +142,7 @@ public class Kafka {
                 .endMetadata()
                 .withNewSpec()
                 .withContainers(container)
-                .withVolumes(volume)
+                .withVolumes(createEmptyDirVolume(volumeName))
                 .endSpec()
                 .endTemplate()
                 .endSpec()
