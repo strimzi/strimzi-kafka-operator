@@ -1,5 +1,6 @@
 package io.enmasse.barnabas.controller.cluster;
 
+import io.enmasse.barnabas.controller.cluster.model.Zookeeper;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
@@ -103,113 +104,8 @@ public class ClusterController extends AbstractVerticle {
     }
 
     private void addCluster(ConfigMap add)   {
-        createZoo(add);
+        Zookeeper.fromConfigMap(add, kubernetesClient).create();
         createKafka(add);
-    }
-
-    private void createZoo(ConfigMap add)   {
-        String name = add.getMetadata().getName() + "-zookeeper";
-        Map<String, String> labels = new HashMap<>(this.labels);
-        labels.put("kind", "zookeeper");
-
-        Service svc = new ServiceBuilder()
-                .withNewMetadata()
-                .withName(name)
-                .withLabels(labels)
-                .endMetadata()
-                .withNewSpec()
-                .withType("ClusterIP")
-                .withSelector(new HashMap<String, String>(){{put("name", name);}})
-                .addNewPort()
-                .withPort(2181)
-                .withNewTargetPort(2181)
-                .withProtocol("TCP")
-                .withName("clientport")
-                .endPort()
-                .endSpec()
-                .build();
-        kubernetesClient.services().inNamespace(namespace).create(svc);
-
-        Service headlessSvc = new ServiceBuilder()
-                .withNewMetadata()
-                .withName(name + "-headless")
-                .withLabels(labels)
-                .endMetadata()
-                .withNewSpec()
-                .withType("ClusterIP")
-                .withClusterIP("None")
-                .withSelector(new HashMap<String, String>(){{put("name", name);}})
-                .addNewPort()
-                .withPort(2181)
-                .withNewTargetPort(2181)
-                .withProtocol("TCP")
-                .withName("clientport")
-                .endPort()
-                .addNewPort()
-                .withPort(2888)
-                .withNewTargetPort(2888)
-                .withProtocol("TCP")
-                .withName("clustering")
-                .endPort()
-                .addNewPort()
-                .withPort(3888)
-                .withNewTargetPort(3888)
-                .withProtocol("TCP")
-                .withName("leaderelection")
-                .endPort()
-                .endSpec()
-                .build();
-        kubernetesClient.services().inNamespace(namespace).create(headlessSvc);
-
-        Container container = new ContainerBuilder()
-                .withName(name)
-                .withImage("enmasseproject/zookeeper:latest")
-                .withEnv(new EnvVarBuilder().withName("ZOOKEEPER_NODE_COUNT").withValue("1").build())
-                .withVolumeMounts(new VolumeMountBuilder().withName("zookeeper-storage").withMountPath("/var/lib/zookeeper").build())
-                .withPorts(new ContainerPortBuilder().withName("clientport").withProtocol("TCP").withContainerPort(2181).build(),
-                        new ContainerPortBuilder().withName("clustering").withProtocol("TCP").withContainerPort(2888).build(),
-                        new ContainerPortBuilder().withName("leaderelection").withProtocol("TCP").withContainerPort(3888).build())
-                .withNewLivenessProbe()
-                .withNewExec()
-                .withCommand("/opt/zookeeper/zookeeper_healthcheck.sh")
-                .endExec()
-                .withInitialDelaySeconds(15)
-                .withTimeoutSeconds(5)
-                .endLivenessProbe()
-                .withNewReadinessProbe()
-                .withNewExec()
-                .withCommand("/opt/zookeeper/zookeeper_healthcheck.sh")
-                .endExec()
-                .withInitialDelaySeconds(15)
-                .withTimeoutSeconds(5)
-                .endReadinessProbe()
-                .build();
-        Volume volume = new VolumeBuilder()
-                .withName(container.getVolumeMounts().get(0).getName())
-                .withNewEmptyDir()
-                .endEmptyDir()
-                .build();
-        StatefulSet statefulSet = new StatefulSetBuilder()
-                .withNewMetadata()
-                .withName(name)
-                .withLabels(labels)
-                .endMetadata()
-                .withNewSpec()
-                .withServiceName(headlessSvc.getMetadata().getName())
-                .withReplicas(1)
-                .withNewTemplate()
-                .withNewMetadata()
-                .withName(name)
-                .withLabels(labels)
-                .endMetadata()
-                .withNewSpec()
-                .withContainers(container)
-                .withVolumes(volume)
-                .endSpec()
-                .endTemplate()
-                .endSpec()
-                .build();
-        kubernetesClient.apps().statefulSets().inNamespace(namespace).create(statefulSet);
     }
 
     private void createKafka(ConfigMap add)   {
@@ -317,10 +213,7 @@ public class ClusterController extends AbstractVerticle {
     }
 
     private void deleteZoo(StatefulSet ss) {
-        String name = ss.getMetadata().getName() + "-zookeeper";
-        kubernetesClient.apps().statefulSets().inNamespace(namespace).withName(name).delete();
-        kubernetesClient.services().inNamespace(namespace).withName(name).delete();
-        kubernetesClient.services().inNamespace(namespace).withName(name + "-headless").delete();
+        Zookeeper.fromStatefulSet(ss, kubernetesClient).delete();
     }
 
     private void deleteKafka(StatefulSet ss) {
