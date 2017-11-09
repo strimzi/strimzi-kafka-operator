@@ -1,34 +1,39 @@
-package io.enmasse.barnabas.controller.cluster.model;
+package io.enmasse.barnabas.controller.cluster.resources;
 
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSetBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class KafkaResource extends AbstractResource {
+public class ZookeeperResource extends AbstractResource {
+    private static final Logger log = LoggerFactory.getLogger(ZookeeperResource.class.getName());
+
     private final KubernetesClient client;
     private final String name;
     private final String namespace;
     private final String headlessName;
 
-    private final int clientPort = 9092;
-    private final String mounthPath = "/var/lib/kafka";
-    private final String volumeName = "kafka-storage";
+    private final int clientPort = 2181;
+    private final int clusteringPort = 2888;
+    private final int leaderElectionPort = 3888;
+    private final String mounthPath = "/var/lib/zookeeper";
+    private final String volumeName = "zookeeper-storage";
 
-    private Map<String, String> labels = new HashMap<>();
-    private int replicas = 3;
-    private String image = "enmasseproject/kafka-statefulsets:latest";
-    private String livenessProbeScript = "/opt/kafka/kafka_healthcheck.sh";
+    private int replicas = 1;
+    private String image = "enmasseproject/zookeeper:latest";
+    private String livenessProbeScript = "/opt/zookeeper/zookeeper_healthcheck.sh";
     private int livenessProbeTimeout = 5;
     private int livenessProbeInitialDelay = 15;
-    private String readinessProbeScript = "/opt/kafka/kafka_healthcheck.sh";
+    private String readinessProbeScript = "/opt/zookeeper/zookeeper_healthcheck.sh";
     private int readinessProbeTimeout = 5;
     private int readinessProbeInitialDelay = 15;
 
-    private KafkaResource(String name, String namespace, KubernetesClient client) {
+    private ZookeeperResource(String name, String namespace, KubernetesClient client) {
         this.name = name;
         this.headlessName = name + "-headless";
         this.namespace = namespace;
@@ -39,20 +44,28 @@ public class KafkaResource extends AbstractResource {
         return labels;
     }
 
-    public void setLabels(Map<String, String> labels) {
+    public void setLabels(Map<String, String> newLabels) {
+        this.labels = new HashMap<String, String>(newLabels);
+
+        if (labels.containsKey("kind") && labels.get("kind").equals("kafka")) {
+            labels.put("kind", "zookeeper");
+        }
+
         this.labels = labels;
     }
 
-    public static KafkaResource fromConfigMap(ConfigMap cm, KubernetesClient client) {
-        KafkaResource kafka = new KafkaResource(cm.getMetadata().getName(), cm.getMetadata().getNamespace(), client);
-        kafka.setLabels(cm.getMetadata().getLabels());
-        return kafka;
+    public static ZookeeperResource fromConfigMap(ConfigMap cm, KubernetesClient client) {
+        String name = cm.getMetadata().getName() + "-zookeeper";
+        ZookeeperResource zk = new ZookeeperResource(name, cm.getMetadata().getNamespace(), client);
+        zk.setLabels(cm.getMetadata().getLabels());
+        return zk;
     }
 
-    public static KafkaResource fromStatefulSet(StatefulSet ss, KubernetesClient client) {
-        KafkaResource kafka =  new KafkaResource(ss.getMetadata().getName(), ss.getMetadata().getNamespace(), client);
-        kafka.setLabels(ss.getMetadata().getLabels());
-        return kafka;
+    public static ZookeeperResource fromStatefulSet(StatefulSet ss, KubernetesClient client) {
+        String name = ss.getMetadata().getName() + "-zookeeper";
+        ZookeeperResource zk =  new ZookeeperResource(name, ss.getMetadata().getNamespace(), client);
+        zk.setLabels(ss.getMetadata().getLabels());
+        return zk;
     }
 
     private boolean statefulSetExists() {
@@ -68,48 +81,61 @@ public class KafkaResource extends AbstractResource {
     }
 
     public void create() {
+        log.info("Creating Zookeeper {}", name);
+
         createService();
         createHeadlessService();
         createStatefulSet();
     }
 
     private void createService() {
+        log.debug("Creating Zookeeper service {}", name);
+
         Service svc = new ServiceBuilder()
                 .withNewMetadata()
                 .withName(name)
-                .withLabels(labels)
+                .withLabels(labelsWithName(name))
                 .endMetadata()
                 .withNewSpec()
                 .withType("ClusterIP")
                 .withSelector(new HashMap<String, String>(){{put("name", name);}})
-                .withPorts(createServicePort("kafka", clientPort, clientPort))
+                .withPorts(createServicePort("clientport", clientPort, clientPort))
                 .endSpec()
                 .build();
         client.services().inNamespace(namespace).createOrReplace(svc);
     }
 
     private void createHeadlessService() {
+        log.debug("Creating Zookeeper headless service {}", headlessName);
+
         Service svc = new ServiceBuilder()
                 .withNewMetadata()
                 .withName(headlessName)
-                .withLabels(labels)
+                .withLabels(labelsWithName(headlessName))
                 .endMetadata()
                 .withNewSpec()
                 .withType("ClusterIP")
                 .withClusterIP("None")
                 .withSelector(new HashMap<String, String>(){{put("name", name);}})
-                .withPorts(createServicePort("kafka", clientPort, clientPort))
+                .withPorts(createServicePort("clientport", clientPort, clientPort))
+                .withPorts(createServicePort("clustering", clusteringPort, clusteringPort))
+                .withPorts(createServicePort("leaderelection", leaderElectionPort, leaderElectionPort))
                 .endSpec()
                 .build();
         client.services().inNamespace(namespace).createOrReplace(svc);
     }
 
     private void createStatefulSet() {
+        log.debug("Creating Zookeeper stateful set {}", name);
+
         Container container = new ContainerBuilder()
                 .withName(name)
                 .withImage(image)
+                .withEnv(new EnvVarBuilder().withName("ZOOKEEPER_NODE_COUNT").withValue(Integer.toString(replicas)).build())
                 .withVolumeMounts(createVolumeMount(volumeName, mounthPath))
-                .withPorts(createContainerPort("clientport", clientPort))
+                .withPorts(createContainerPort("clientport", clientPort),
+                        createContainerPort("clustering", clusteringPort),
+                        createContainerPort("leaderelection", leaderElectionPort))
                 .withLivenessProbe(createExecProbe(livenessProbeScript, livenessProbeInitialDelay, livenessProbeTimeout))
                 .withReadinessProbe(createExecProbe(readinessProbeScript, readinessProbeInitialDelay, readinessProbeTimeout))
                 .build();
@@ -117,7 +143,7 @@ public class KafkaResource extends AbstractResource {
         StatefulSet statefulSet = new StatefulSetBuilder()
                 .withNewMetadata()
                 .withName(name)
-                .withLabels(labels)
+                .withLabels(labelsWithName(name))
                 .endMetadata()
                 .withNewSpec()
                 .withServiceName(headlessName)
@@ -125,7 +151,7 @@ public class KafkaResource extends AbstractResource {
                 .withNewTemplate()
                 .withNewMetadata()
                 .withName(name)
-                .withLabels(labels)
+                .withLabels(labelsWithName(name))
                 .endMetadata()
                 .withNewSpec()
                 .withContainers(container)
@@ -138,6 +164,8 @@ public class KafkaResource extends AbstractResource {
     }
 
     public void delete() {
+        log.info("Deleting Zookeeper {}", name);
+
         deleteService();
         deleteStatefulSet();
         deleteHeadlessService();
@@ -145,18 +173,21 @@ public class KafkaResource extends AbstractResource {
 
     private void deleteService() {
         if (serviceExists()) {
+            log.debug("Deleting Zookeeper service {}", name);
             client.services().inNamespace(namespace).withName(name).delete();
         }
     }
 
     private void deleteHeadlessService() {
         if (headlessServiceExists()) {
+            log.debug("Deleting Zookeeper headless service {}", headlessName);
             client.services().inNamespace(namespace).withName(headlessName).delete();
         }
     }
 
     private void deleteStatefulSet() {
         if (statefulSetExists()) {
+            log.debug("Deleting Zookeeper stateful set {}", name);
             client.apps().statefulSets().inNamespace(namespace).withName(name).delete();
         }
     }

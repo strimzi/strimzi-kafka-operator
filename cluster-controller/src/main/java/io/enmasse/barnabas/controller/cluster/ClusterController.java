@@ -1,7 +1,7 @@
 package io.enmasse.barnabas.controller.cluster;
 
-import io.enmasse.barnabas.controller.cluster.model.KafkaResource;
-import io.enmasse.barnabas.controller.cluster.model.ZookeeperResource;
+import io.enmasse.barnabas.controller.cluster.resources.KafkaResource;
+import io.enmasse.barnabas.controller.cluster.resources.ZookeeperResource;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
@@ -10,71 +10,71 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class ClusterController extends AbstractVerticle {
+    private static final Logger log = LoggerFactory.getLogger(ClusterController.class.getName());
+
     private final KubernetesClient kubernetesClient;
-    private final HashMap<String, String> labels;
+    private final Map<String, String> labels;
     private final String namespace;
 
-    public ClusterController() throws Exception {
-        System.out.println("Creating ClusterController");
+    public ClusterController(ClusterControlerConfig config) throws Exception {
+        log.info("Creating ClusterController");
 
-        this.labels = new HashMap<>();
-        labels.put("app", "barnabas");
-        labels.put("type", "deployment");
-        labels.put("kind", "kafka");
-
-        this.namespace = "myproject";
-
+        this.namespace = config.getNamespace();
+        this.labels = config.getLabels();
         this.kubernetesClient = new DefaultKubernetesClient();
     }
 
     @Override
     public void start(Future<Void> start) {
-        System.out.println("Starting ClusterController");
+        log.info("Starting ClusterController");
 
         kubernetesClient.configMaps().inNamespace(namespace).withLabels(labels).watch(new Watcher<ConfigMap>() {
             @Override
             public void eventReceived(Action action, ConfigMap cm) {
                 switch (action) {
                     case ADDED:
-                        System.out.println("New cm: " + cm.getMetadata().getName());
+                        log.info("New ConfigMap {}", cm.getMetadata().getName());
                         reconcile();
                         break;
                     case DELETED:
-                        System.out.println("Deleted cm: " + cm.getMetadata().getName());
+                        log.info("Deleted ConfigMap {}", cm.getMetadata().getName());
                         reconcile();
                         break;
                     case MODIFIED:
-                        System.out.println("Modified cm: " + cm.getMetadata().getName());
+                        log.info("Modified ConfigMap {}", cm.getMetadata().getName());
                         reconcile();
                         break;
                     case ERROR:
-                        System.out.println("Failed cm: " + cm.getMetadata().getName());
+                        log.info("Failed ConfigMap {}", cm.getMetadata().getName());
                         reconcile();
                         break;
                     default:
-                        System.out.println("Unknown action: " + cm.getMetadata().getName());
+                        log.info("Unknown action: {}", cm.getMetadata().getName());
                         reconcile();
                 }
             }
 
             @Override
             public void onClose(KubernetesClientException e) {
-                System.out.println("Watcher closed: " + e);
+                log.info("Watcher closed", e);
             }
         });
 
         start.complete();
-        System.out.println("Start complete");
+        log.info("ClusterController up and running");
     }
 
     private void reconcile()    {
-        System.out.println("Reconciling ...");
+        log.info("Reconciling ...");
 
         List<ConfigMap> cms = kubernetesClient.configMaps().inNamespace(namespace).withLabels(labels).list().getItems();
         List<StatefulSet> sss = kubernetesClient.apps().statefulSets().inNamespace(namespace).withLabels(labels).list().getItems();
@@ -93,23 +93,26 @@ public class ClusterController extends AbstractVerticle {
 
     private void addClusters(List<ConfigMap> add)   {
         for (ConfigMap cm : add) {
-            System.out.println("Adding cluster " + cm.getMetadata().getName());
+            log.info("Cluster {} should be added", cm.getMetadata().getName());
             addCluster(cm);
         }
     }
 
     private void addCluster(ConfigMap add)   {
-        ZookeeperResource.fromConfigMap(add, kubernetesClient).create();
         KafkaResource.fromConfigMap(add, kubernetesClient).create();
+        ZookeeperResource.fromConfigMap(add, kubernetesClient).create();
     }
 
     private void updateClusters(List<ConfigMap> update)   {
-        // No configuration => nothing to update
+        for (ConfigMap cm : update) {
+            log.info("Cluster {} should be checked for updates -> NOT IMPLEMENTED YET", cm.getMetadata().getName());
+            // No configuration => nothing to update
+        }
     }
 
     private void deleteClusters(List<StatefulSet> delete)   {
         for (StatefulSet ss : delete) {
-            System.out.println("Deleting cluster " + ss.getMetadata().getName());
+            log.info("Cluster {} should be deleted", ss.getMetadata().getName());
             deleteCluster(ss);
         }
     }
