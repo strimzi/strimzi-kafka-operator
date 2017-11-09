@@ -65,8 +65,10 @@ EOF
   cat /tmp/barnabas-connect.properties
   echo ""
 
-  # dir for saving application logs
-  export LOG_DIR=/tmp/logs
+  # Disable Kafka's GC logging (which logs to a file)...
+  export GC_LOG_ENABLED="false"
+  # ... but enable equivalent GC logging to stdout
+  export KAFKA_GC_LOG_OPTS="-verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps"
 
   # starting Kafka server with final configuration
   exec $KAFKA_HOME/bin/connect-distributed.sh /tmp/barnabas-connect.properties
