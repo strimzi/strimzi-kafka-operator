@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
+import io.vertx.core.WorkerExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,6 +26,8 @@ public class ClusterController extends AbstractVerticle {
     private final Map<String, String> labels;
     private final String namespace;
 
+    private WorkerExecutor executor;
+
     public ClusterController(ClusterControlerConfig config) throws Exception {
         log.info("Creating ClusterController");
 
@@ -37,40 +40,53 @@ public class ClusterController extends AbstractVerticle {
     public void start(Future<Void> start) {
         log.info("Starting ClusterController");
 
-        kubernetesClient.configMaps().inNamespace(namespace).withLabels(labels).watch(new Watcher<ConfigMap>() {
-            @Override
-            public void eventReceived(Action action, ConfigMap cm) {
-                switch (action) {
-                    case ADDED:
-                        log.info("New ConfigMap {}", cm.getMetadata().getName());
-                        reconcile();
-                        break;
-                    case DELETED:
-                        log.info("Deleted ConfigMap {}", cm.getMetadata().getName());
-                        reconcile();
-                        break;
-                    case MODIFIED:
-                        log.info("Modified ConfigMap {}", cm.getMetadata().getName());
-                        reconcile();
-                        break;
-                    case ERROR:
-                        log.info("Failed ConfigMap {}", cm.getMetadata().getName());
-                        reconcile();
-                        break;
-                    default:
-                        log.info("Unknown action: {}", cm.getMetadata().getName());
-                        reconcile();
+        this.executor = getVertx().createSharedWorkerExecutor("kubernetes-ops-pool", 5, 60000000000l); // time is in ns!
+
+        getVertx().executeBlocking(
+                future -> {
+                    kubernetesClient.configMaps().inNamespace(namespace).withLabels(labels).watch(new Watcher<ConfigMap>() {
+                        @Override
+                        public void eventReceived(Action action, ConfigMap cm) {
+                            switch (action) {
+                                case ADDED:
+                                    log.info("New ConfigMap {}", cm.getMetadata().getName());
+                                    reconcile();
+                                    break;
+                                case DELETED:
+                                    log.info("Deleted ConfigMap {}", cm.getMetadata().getName());
+                                    reconcile();
+                                    break;
+                                case MODIFIED:
+                                    log.info("Modified ConfigMap {}", cm.getMetadata().getName());
+                                    reconcile();
+                                    break;
+                                case ERROR:
+                                    log.info("Failed ConfigMap {}", cm.getMetadata().getName());
+                                    reconcile();
+                                    break;
+                                default:
+                                    log.info("Unknown action: {}", cm.getMetadata().getName());
+                                    reconcile();
+                            }
+                        }
+
+                        @Override
+                        public void onClose(KubernetesClientException e) {
+                            log.info("Watcher closed", e);
+                        }
+                    });
+                    future.complete();
+                }, res -> {
+                    if (res.succeeded())    {
+                        log.info("ClusterController up and running");
+                        start.complete();
+                    }
+                    else {
+                        log.info("ClusterController startup failed");
+                        start.fail("ClusterController startup failed");
+                    }
                 }
-            }
-
-            @Override
-            public void onClose(KubernetesClientException e) {
-                log.info("Watcher closed", e);
-            }
-        });
-
-        start.complete();
-        log.info("ClusterController up and running");
+        );
     }
 
     private void reconcile()    {
@@ -99,8 +115,20 @@ public class ClusterController extends AbstractVerticle {
     }
 
     private void addCluster(ConfigMap add)   {
-        KafkaResource.fromConfigMap(add, kubernetesClient).create();
-        ZookeeperResource.fromConfigMap(add, kubernetesClient).create();
+        executor.executeBlocking(
+            future -> {
+                log.info("Adding cluster {}", add.getMetadata().getName());
+                ZookeeperResource.fromConfigMap(add, kubernetesClient).create();
+                KafkaResource.fromConfigMap(add, kubernetesClient).create();
+                future.complete();
+            }, false, res -> {
+                if (res.succeeded()) {
+                    log.info("Cluster added {}", add.getMetadata().getName());
+                }
+                else {
+                    log.error("Failed to add cluster {}", add.getMetadata().getName());
+                }
+            });
     }
 
     private void updateClusters(List<ConfigMap> update)   {
@@ -118,7 +146,19 @@ public class ClusterController extends AbstractVerticle {
     }
 
     private void deleteCluster(StatefulSet ss)   {
-        ZookeeperResource.fromStatefulSet(ss, kubernetesClient).delete();
-        KafkaResource.fromStatefulSet(ss, kubernetesClient).delete();
+        executor.executeBlocking(
+            future -> {
+                log.info("Deleting cluster {}", ss.getMetadata().getName());
+                KafkaResource.fromStatefulSet(ss, kubernetesClient).delete();
+                ZookeeperResource.fromStatefulSet(ss, kubernetesClient).delete();
+                future.complete();
+            }, false, res -> {
+                if (res.succeeded()) {
+                    log.info("Cluster deleted {}", ss.getMetadata().getName());
+                }
+                else {
+                    log.error("Failed to delete cluster {}", ss.getMetadata().getName());
+                }
+            });
     }
 }
