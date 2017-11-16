@@ -70,6 +70,17 @@ EOF
   # ... but enable equivalent GC logging to stdout
   export KAFKA_GC_LOG_OPTS="-verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps"
 
+  if [ -z "$KAFKA_CONNECT_LOG_LEVEL" ]; then
+    KAFKA_CONNECT_LOG_LEVEL="INFO"
+  fi
+  if [ -z "$KAFKA_LOG4J_OPTS" ]; then
+    export KAFKA_LOG4J_OPTS="-Dlog4j.configuration=file:$KAFKA_HOME/config/connect-log4j.properties -Dconnect.root.logger.level=$KAFKA_CONNECT_LOG_LEVEL,CONSOLE"
+  fi
+
+  # We don't need LOG_DIR because we write no log files, but setting it to a
+  # directory avoids trying to create it (and logging a permission denied error)
+  export LOG_DIR="$KAFKA_HOME"
+
   # starting Kafka server with final configuration
   exec $KAFKA_HOME/bin/connect-distributed.sh /tmp/barnabas-connect.properties
 fi

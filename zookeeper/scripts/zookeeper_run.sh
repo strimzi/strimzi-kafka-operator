@@ -54,5 +54,12 @@ echo "Starting Zookeeper with configuration:"
 cat /tmp/zookeeper.properties
 echo ""
 
+if [ -z "$ZOOKEEPER_LOG_LEVEL" ]; then
+  ZOOKEEPER_LOG_LEVEL="DEBUG"
+fi
+if [ -z "$ZOO_LOG4J_PROP" ]; then
+  export ZOO_LOG4J_PROP="$ZOOKEEPER_LOG_LEVEL,CONSOLE"
+fi
+
 # starting Zookeeper with final configuration
 exec $ZOOKEEPER_HOME/bin/zkServer.sh start-foreground /tmp/zookeeper.properties
