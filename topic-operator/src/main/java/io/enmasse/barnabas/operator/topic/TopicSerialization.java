@@ -46,7 +46,6 @@ public class TopicSerialization {
     public static final String CM_KEY_REPLICAS = "replicas";
     public static final String CM_KEY_NAME = "name";
     public static final String CM_KEY_CONFIG = "config";
-    public static final String CM_KEY_REPLICA = "replica.";
 
     // These are the keys in the JSON we store in ZK
     public static final String JSON_KEY_TOPIC_NAME = "topic-name";
@@ -73,10 +72,14 @@ public class TopicSerialization {
 
     private static Map<String, String> topicConfigFromConfigMapString(Map<String, String> mapData) throws IOException {
         String value = mapData.get(CM_KEY_CONFIG);
-        YAMLFactory yf = new YAMLFactory();
-        ObjectMapper mapper = new ObjectMapper(yf);
-        Map<String, String> result = mapper.readValue(new StringReader(value), Map.class);
-        return result;
+        if (value == null || value.isEmpty()) {
+            return Collections.emptyMap();
+        } else {
+            YAMLFactory yf = new YAMLFactory();
+            ObjectMapper mapper = new ObjectMapper(yf);
+            Map<String, String> result = mapper.readValue(new StringReader(value), Map.class);
+            return result;
+        }
     }
 
     private static String topicConfigToConfigMapString(Map<String, String> config) throws IOException {
@@ -106,19 +109,10 @@ public class TopicSerialization {
         return builder.build();
     }
 
-    private static final Map<String, String> LABELS;
-    static {
-        Map<String, String> labels = new HashMap<>(3);
-        labels.put("app", "barnabas");
-        labels.put("type", "runtime");
-        labels.put("kind", "topic");
-        LABELS = Collections.unmodifiableMap(labels);
-    }
-
     /**
      * Create a ConfigMap to reflect the given Topic.
      */
-    public static ConfigMap toConfigMap(Topic topic) {
+    public static ConfigMap toConfigMap(Topic topic, CmPredicate cmPredicate) {
         Map<String, String> mapData = new HashMap<>();
         mapData.put(CM_KEY_NAME, topic.getTopicName().toString());
         mapData.put(CM_KEY_PARTITIONS, Integer.toString(topic.getNumPartitions()));
@@ -135,7 +129,7 @@ public class TopicSerialization {
         return new ConfigMapBuilder().withApiVersion("v1")
                 .withNewMetadata()
                     .withName(mapName.toString())
-                    .withLabels(LABELS)
+                    .withLabels(cmPredicate.labels())
                     // TODO .withUid()
                 .endMetadata()
                 .withData(mapData)
@@ -147,7 +141,9 @@ public class TopicSerialization {
      * Create a NewTopic to reflect the given Topic.
      */
     public static NewTopic toNewTopic(Topic topic) {
-        return new NewTopic(topic.getTopicName().toString(), topic.getNumPartitions(), topic.getNumReplicas());
+        NewTopic newTopic = new NewTopic(topic.getTopicName().toString(), topic.getNumPartitions(), topic.getNumReplicas());
+        newTopic.configs(topic.getConfig());
+        return newTopic;
     }
 
     public static Map<ConfigResource, Config> toTopicConfig(Topic topic) {

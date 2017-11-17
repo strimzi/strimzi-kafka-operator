@@ -21,7 +21,6 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Event;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface K8s {
     void createConfigMap(ConfigMap cm);

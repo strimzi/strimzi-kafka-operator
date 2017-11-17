@@ -32,46 +32,34 @@ public class K8sImpl implements K8s {
 
     private final static Logger logger = LoggerFactory.getLogger(Operator.class);
 
-    private final Map<String, String> map;
+    private final CmPredicate cmPredicate;
 
     private KubernetesClient client;
 
-    private final InFlight inFlight;
-
-    public K8sImpl(KubernetesClient client, InFlight inFlight) {
+    public K8sImpl(KubernetesClient client, CmPredicate cmPredicate) {
         this.client = client;
-        this.map = new HashMap<>();
-        map.put("app", "barnabas");
-        map.put("type", "runtime");
-        map.put("kind", "topic");
-        this.inFlight = inFlight;
+        this.cmPredicate = cmPredicate;
     }
 
     @Override
     public void createConfigMap(ConfigMap cm) {
-        // TODO assert no existing mapping
-        inFlight.startCreatingConfigMap(cm);
         client.configMaps().create(cm);
     }
 
     @Override
     public void updateConfigMap(ConfigMap cm) {
-        // TODO assert no existing mapping
-        inFlight.startUpdatingConfigMap(cm);
         client.configMaps().createOrReplace(cm);
     }
 
     @Override
     public void deleteConfigMap(TopicName topicName) {
-        // TODO assert no existing mapping
-        inFlight.startDeletingConfigMap(topicName);
         // Delete the CM by the topic name, because neither ZK nor Kafka know the CM name
         client.configMaps().withField("name", topicName.toString()).delete();
     }
 
     @Override
     public List<ConfigMap> listMaps() {
-        return client.configMaps().withLabels(map).list().getItems();
+        return client.configMaps().withLabels(cmPredicate.labels()).list().getItems();
     }
 
     @Override

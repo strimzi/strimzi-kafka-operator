@@ -21,7 +21,8 @@ import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.TopicDescription;
 
 /**
- * Pairs a {@code TopicDescription} with a topic {@code Config}, to capture
+ * Pairs a {@code org.apache.kafka.clients.admin.TopicDescription} with a
+ * topic {@code org.apache.kafka.clients.admin.Config}, to capture
  * complete information about a Kafka topic.
  * This is necessary because the Kafka AdminClient doesn't have an API for
  * getting this information in one go.

@@ -316,6 +316,12 @@ public class TopicDiff {
         return builder.build();
     }
 
+    // TODO we actually need a higher level apply, that basically decomposes the differences into
+    // a sequence of operations to be performed when updating one or both ends
+    // this can be quite subtle. For example, if increasing the min.insync.replicas
+    // and also increasing the number of replicas, we might be necessary to do
+    // the partition reassignment before updating the config.
+
     /**
      * Return true if this TopicDiff conflicts with the given other TopicDiff
      */

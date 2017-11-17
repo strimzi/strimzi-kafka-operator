@@ -17,9 +17,7 @@
 
 package io.enmasse.barnabas.operator.topic;
 
-import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.NewTopic;
-import org.apache.kafka.clients.admin.TopicDescription;
 
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;

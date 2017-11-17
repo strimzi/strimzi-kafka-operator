@@ -29,6 +29,12 @@ import java.util.Map;
  * Keeps track of all the in-flight changes so we don't respond to changes we ourselves initiated.
  */
 public class InFlight {
+
+    // TODO Could this actually check that the states of the topics match?
+    // Because right now there can be a race if both ends get changed at about
+    // the same time. In practice this is unlikely to be a problem, but it
+    // would be good to eliminiate it
+
     private final static Logger logger = LoggerFactory.getLogger(InFlight.class);
 
     public void startCreatingTopic(TopicName topicName) {

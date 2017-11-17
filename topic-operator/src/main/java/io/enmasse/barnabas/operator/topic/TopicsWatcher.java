@@ -19,8 +19,8 @@ package io.enmasse.barnabas.operator.topic;
 
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,11 +33,11 @@ import java.util.Set;
  * calling {@link Operator#onTopicCreated(TopicName)} for new children and
  * {@link Operator#onTopicDeleted(TopicName)} for deleted children.
  */
-class TopicsWatcher implements org.apache.zookeeper.Watcher {
+class TopicsWatcher implements Watcher {
 
-    private final static Logger logger = LoggerFactory.getLogger(Operator.class);
+    private final static Logger logger = LoggerFactory.getLogger(TopicsWatcher.class);
 
-    private static final String znode = "/brokers/topics";
+    private static final String TOPICS_ZNODE = "/brokers/topics";
 
     private final Operator operator;
 
@@ -59,9 +59,9 @@ class TopicsWatcher implements org.apache.zookeeper.Watcher {
 
     void setWatch() {
         try {
-            List<String> result = zookeeper.getChildren(znode, this);
+            List<String> result = zookeeper.getChildren(TOPICS_ZNODE, this);
 
-            logger.info("znode {} has children {}", znode, result);
+            logger.info("znode {} has children {}", TOPICS_ZNODE, result);
             if (this.children == null) {
                 this.children = result;
             } else {
@@ -81,10 +81,8 @@ class TopicsWatcher implements org.apache.zookeeper.Watcher {
                 logger.info("Setting current children {}", result);
                 this.children = result;
             }
-        } catch (KeeperException e1) {
-            e1.printStackTrace();
-        } catch (InterruptedException e1) {
-            e1.printStackTrace();
+        } catch (Exception e1) {
+            logger.error("Error setting/resetting/processing watch on {}", TOPICS_ZNODE, e1);
         }
     }
 }

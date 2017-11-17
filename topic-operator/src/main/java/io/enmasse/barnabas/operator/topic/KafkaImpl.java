@@ -18,7 +18,6 @@
 package io.enmasse.barnabas.operator.topic;
 
 import org.apache.kafka.clients.admin.AdminClient;
-import org.apache.kafka.clients.admin.AlterConfigsResult;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ListTopicsResult;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -28,7 +27,6 @@ import org.apache.kafka.common.config.ConfigResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -47,12 +45,9 @@ public class KafkaImpl implements Kafka {
 
     private final ScheduledExecutorService executor;
 
-    private final InFlight inFlight;
-
-    public KafkaImpl(AdminClient adminClient, ScheduledExecutorService executor, InFlight inFlight) {
+    public KafkaImpl(AdminClient adminClient, ScheduledExecutorService executor) {
         this.adminClient = adminClient;
         this.executor = executor;
-        this.inFlight = inFlight;
     }
 
     abstract class Work implements Runnable {
@@ -212,7 +207,7 @@ public class KafkaImpl implements Kafka {
      */
     @Override
     public void createTopic(NewTopic newTopic, ResultHandler<Void> handler) {
-        inFlight.startCreatingTopic(new TopicName(newTopic.name()));
+
         logger.debug("Creating topic {}", newTopic);
         KafkaFuture<Void> future = adminClient.createTopics(
                 Collections.singleton(newTopic)).values().get(newTopic.name());
@@ -225,8 +220,6 @@ public class KafkaImpl implements Kafka {
      */
     @Override
     public void deleteTopic(TopicName topicName, ResultHandler<Void> handler) {
-        // TODO assert no existing mapping
-        inFlight.startDeletingTopic(topicName);
         logger.debug("Deleting topic {}", topicName);
         KafkaFuture<Void> future = adminClient.deleteTopics(
                 Collections.singleton(topicName.toString())).values().get(topicName);
