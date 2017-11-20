@@ -21,6 +21,8 @@ import io.fabric8.kubernetes.api.model.EventBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
 import org.apache.kafka.common.errors.TopicExistsException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,7 +94,7 @@ public class Operator {
                     .withComponent(Operator.class.getName())
                     .endSource();
             Event event = evtb.build();
-            k8s.createEvent(event);
+            k8s.createEvent(event, ar -> {});
         }
 
         public String toString() {
@@ -104,9 +106,11 @@ public class Operator {
     /** Topic created in ZK */
     public class CreateConfigMap extends OperatorEvent {
         private final Topic topic;
+        private final Handler<io.vertx.core.AsyncResult<Void>> handler;
 
-        public CreateConfigMap(Topic topic) {
+        public CreateConfigMap(Topic topic, Handler<io.vertx.core.AsyncResult<Void>> handler) {
             this.topic = topic;
+            this.handler = handler;
         }
 
         @Override
@@ -114,7 +118,7 @@ public class Operator {
             ConfigMap cm = TopicSerialization.toConfigMap(topic, cmPredicate);
             // TODO assert no existing mapping
             inFlight.startCreatingConfigMap(cm);
-            k8s.createConfigMap(cm);
+            k8s.createConfigMap(cm, handler);
         }
 
         @Override
@@ -127,16 +131,18 @@ public class Operator {
     public class DeleteConfigMap extends OperatorEvent {
 
         private final TopicName topicName;
+        private final Handler<io.vertx.core.AsyncResult<Void>> handler;
 
-        public DeleteConfigMap(TopicName topicName) {
+        public DeleteConfigMap(TopicName topicName, Handler<io.vertx.core.AsyncResult<Void>> handler) {
             this.topicName = topicName;
+            this.handler = handler;
         }
 
         @Override
         public void process() {
             // TODO assert no existing mapping
             inFlight.startDeletingConfigMap(topicName);
-            k8s.deleteConfigMap(topicName);
+            k8s.deleteConfigMap(topicName, handler);
         }
 
         @Override
@@ -149,10 +155,12 @@ public class Operator {
     public class UpdateConfigMap extends OperatorEvent {
 
         private final Topic topic;
+        private final Handler<io.vertx.core.AsyncResult<Void>> handler;
         private final HasMetadata involvedObject;
 
-        public UpdateConfigMap(Topic topic, HasMetadata involvedObject) {
+        public UpdateConfigMap(Topic topic, Handler<io.vertx.core.AsyncResult<Void>> handler, HasMetadata involvedObject) {
             this.topic = topic;
+            this.handler = handler;
             this.involvedObject = involvedObject;
         }
 
@@ -166,7 +174,7 @@ public class Operator {
             ConfigMap cm = TopicSerialization.toConfigMap(topic, cmPredicate);
             // TODO assert no existing mapping
             inFlight.startUpdatingConfigMap(cm);
-            k8s.updateConfigMap(cm);
+            k8s.updateConfigMap(cm, handler);
         }
 
         @Override
@@ -181,9 +189,11 @@ public class Operator {
         private final Topic topic;
 
         private final HasMetadata involvedObject;
+        private final Handler<AsyncResult<Void>> handler;
 
-        public CreateKafkaTopic(Topic topic, HasMetadata involvedObject) {
+        public CreateKafkaTopic(Topic topic, Handler<AsyncResult<Void>> handler, HasMetadata involvedObject) {
             this.topic = topic;
+            this.handler = handler;
             this.involvedObject = involvedObject;
         }
 
@@ -193,6 +203,7 @@ public class Operator {
             kafka.createTopic(TopicSerialization.toNewTopic(topic), (ar) -> {
                 if (ar.isSuccess()) {
                     logger.info("Created topic '{}' for ConfigMap '{}'", topic.getTopicName(), topic.getMapName());
+                    handler.handle(ar);
                 } else {
                     if (ar.exception() instanceof TopicExistsException) {
                         // TODO reconcile
@@ -357,7 +368,22 @@ public class Operator {
      */
     void reconcile(TopicStore topicStore, HasMetadata involvedObject, Topic k8sTopic, Topic kafkaTopic, Topic privateTopic) {
         if (privateTopic == null) {
-            final Topic source;
+            class CreateInTopicStoreHandler implements Handler<AsyncResult<Void>>  {
+
+                private final Topic source;
+
+                CreateInTopicStoreHandler(Topic source) {
+                    this.source = source;
+                }
+
+                @Override
+                public void handle(AsyncResult<Void> ar) {
+                    // In all cases, create in privateState
+                    if (ar.succeeded()) {
+                        enqueue(new CreateInTopicStore(topicStore, source, involvedObject));
+                    }
+                }
+            }
             if (k8sTopic == null) {
                 if (kafkaTopic == null) {
                     // All three null? This shouldn't be possible
@@ -365,24 +391,20 @@ public class Operator {
                     return;
                 } else {
                     // it's been created in Kafka => create in k8s and privateState
-                    enqueue(new CreateConfigMap(kafkaTopic));
-                    source = kafkaTopic;
+                    enqueue(new CreateConfigMap(kafkaTopic, new CreateInTopicStoreHandler(kafkaTopic)));
+
                 }
             } else if (kafkaTopic == null) {
                 // it's been created in k8s => create in Kafka and privateState
-                enqueue(new CreateKafkaTopic(k8sTopic, involvedObject));
-                source = k8sTopic;
+                enqueue(new CreateKafkaTopic(k8sTopic, new CreateInTopicStoreHandler(k8sTopic), involvedObject));
             } else if (TopicDiff.diff(kafkaTopic, k8sTopic).isEmpty()) {
                 // they're the same => do nothing
                 logger.debug("k8s and kafka versions of topic '{}' are the same", kafkaTopic.getTopicName());
-                source = kafkaTopic;
+                enqueue(new CreateInTopicStore(topicStore, kafkaTopic, involvedObject));
             } else {
                 // TODO use whichever has the most recent mtime
                 throw new RuntimeException("Not implemented");
             }
-
-            // In all cases, create in privateState
-            enqueue(new CreateInTopicStore(topicStore, source, involvedObject));
         } else {
             if (k8sTopic == null) {
                 if (kafkaTopic == null) {
@@ -395,8 +417,11 @@ public class Operator {
                 }
             } else if (kafkaTopic == null) {
                 // it was deleted in kafka so delete in k8s and privateState
-                enqueue(new DeleteConfigMap(k8sTopic.getTopicName()));
-                enqueue(new DeleteFromTopicStore(topicStore, k8sTopic, involvedObject));
+                enqueue(new DeleteConfigMap(k8sTopic.getTopicName(), ar -> {
+                    if (ar.succeeded()) {
+                        enqueue(new DeleteFromTopicStore(topicStore, k8sTopic, involvedObject));
+                    }
+                }));
             } else {
                 // all three exist
                 TopicDiff oursKafka = TopicDiff.diff(privateTopic, kafkaTopic);
@@ -410,14 +435,16 @@ public class Operator {
                     if (merged.changesReplicationFactor()) {
                         enqueue(new ErrorEvent(involvedObject, "Topic Replication Factor cannot be changed"));
                     } else {
-                        enqueue(new UpdateConfigMap(result, involvedObject));
-                        if (merged.changesConfig()) {
-                            enqueue(new UpdateKafkaConfig(result, involvedObject));
-                        }
-                        if (merged.changesNumPartitions()) {
-                            enqueue(new UpdateKafkaPartitions(result, involvedObject));
-                        }
-                        enqueue(new UpdateInTopicStore(topicStore, result, involvedObject));
+                        enqueue(new UpdateConfigMap(result, ar -> {
+                            if (merged.changesConfig()) {
+                                enqueue(new UpdateKafkaConfig(result, involvedObject));
+                            }
+                            if (merged.changesNumPartitions()) {
+                                enqueue(new UpdateKafkaPartitions(result, involvedObject));
+                            }
+                            enqueue(new UpdateInTopicStore(topicStore, result, involvedObject));
+                        }, involvedObject));
+
                     }
                 }
             }
@@ -435,7 +462,11 @@ public class Operator {
         // is it better to put this check in the topic deleted event?
         // that would require exposing an API to remove()
         if (inFlight.shouldProcessDelete(topicName)) {
-            enqueue(new DeleteConfigMap(topicName));
+            enqueue(new DeleteConfigMap(topicName, ar -> {
+                if (ar.succeeded()) {
+                    enqueue(new DeleteFromTopicStore(topicStore, topic, involvedObject));
+                }
+            }));
         }
     }
 
@@ -453,7 +484,11 @@ public class Operator {
                         kafka.topicMetadata(topicName, backOff.delayMs(), TimeUnit.MILLISECONDS).whenComplete(this);
                     } else {
                         Topic topic = TopicSerialization.fromTopicMetadata(metadata);
-                        enqueue(new CreateConfigMap(topic));
+                        enqueue(new CreateConfigMap(topic, ar -> {
+                            if (ar.succeeded()) {
+                                enqueue(new CreateInTopicStore(topicStore, topic, involvedObject));
+                            }
+                        }));
                     }
                 }
             };
@@ -467,7 +502,9 @@ public class Operator {
             TopicName topicName = new TopicName(configMap);
             if (inFlight.shouldProcessConfigMapAdded(topicName)) {
                 Topic topic = TopicSerialization.fromConfigMap(configMap);
-                enqueue(new CreateKafkaTopic(topic, configMap));
+                enqueue(new CreateKafkaTopic(topic, configMap, ar -> {
+                    enqueue(new CreateInTopicStore(topicStore, topic, configMap));
+                }));
             }
         }
     }

@@ -146,23 +146,29 @@ public class Main {
                 for (TopicName topicName : kafkaTopics) {
                     // TODO need to check inflight
                     // Reconciliation
-                    ConfigMap cm = k8s.getFromName(topicName.asMapName());
-                    operator.reconcile(topicStore, cm, topicName);
+                    k8s.getFromName(topicName.asMapName(), ar -> {
+                        ConfigMap cm = ar.result();
+                        operator.reconcile(topicStore, cm, topicName);
+                    });
+
                 }
 
                 // Then those in k8s which aren't in kafka
-                List<ConfigMap> configMaps = k8s.listMaps();
-                Map<String, ConfigMap> configMapsMap = configMaps.stream().collect(Collectors.toMap(
-                        cm -> cm.getMetadata().getName(),
-                        cm -> cm));
-                configMapsMap.keySet().removeAll(kafkaTopics);
-                for (ConfigMap cm : configMapsMap.values()) {
-                    TopicName topicName = new TopicName(cm);
-                    operator.reconcile(topicStore, cm, topicName);
-                }
+                 k8s.listMaps(ar -> {
+                     List<ConfigMap> configMaps = ar.result();
+                     Map<String, ConfigMap> configMapsMap = configMaps.stream().collect(Collectors.toMap(
+                             cm -> cm.getMetadata().getName(),
+                             cm -> cm));
+                     configMapsMap.keySet().removeAll(kafkaTopics);
+                     for (ConfigMap cm : configMapsMap.values()) {
+                         TopicName topicName = new TopicName(cm);
+                         operator.reconcile(topicStore, cm, topicName);
+                     }
 
-                // Finally those in private store which we've not dealt with so far...
-                // TODO ^^
+                     // Finally those in private store which we've not dealt with so far...
+                     // TODO ^^
+                });
+
             }, executor);
         }, 0, 15, TimeUnit.MINUTES);
     }

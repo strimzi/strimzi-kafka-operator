@@ -19,19 +19,22 @@ package io.enmasse.barnabas.operator.topic;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Event;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
 
 import java.util.List;
 
 public interface K8s {
-    void createConfigMap(ConfigMap cm);
 
-    void updateConfigMap(ConfigMap cm);
+    void createConfigMap(ConfigMap cm, Handler<AsyncResult<Void>> handler);
 
-    void deleteConfigMap(TopicName topicName);
+    void updateConfigMap(ConfigMap cm, Handler<AsyncResult<Void>> handler);
 
-    List<ConfigMap> listMaps();
+    void deleteConfigMap(TopicName topicName, Handler<AsyncResult<Void>> handler);
 
-    ConfigMap getFromName(MapName mapName);
+    void listMaps(Handler<AsyncResult<List<ConfigMap>>> handler);
 
-    void createEvent(Event event);
+    void getFromName(MapName mapName, Handler<AsyncResult<ConfigMap>> handler);
+
+    void createEvent(Event event, Handler<AsyncResult<Void>> handler);
 }

@@ -21,6 +21,9 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,47 +39,91 @@ public class K8sImpl implements K8s {
 
     private KubernetesClient client;
 
+    private Vertx vertx;
+
     public K8sImpl(KubernetesClient client, CmPredicate cmPredicate) {
         this.client = client;
         this.cmPredicate = cmPredicate;
     }
 
     @Override
-    public void createConfigMap(ConfigMap cm) {
-        client.configMaps().create(cm);
+    public void createConfigMap(ConfigMap cm, Handler<AsyncResult<Void>> handler) {
+        vertx.executeBlocking(future -> {
+            try {
+                client.configMaps().create(cm);
+                future.complete();
+            } catch (Exception e) {
+                future.fail(e);
+            }
+        }, handler);
+
     }
 
     @Override
-    public void updateConfigMap(ConfigMap cm) {
-        client.configMaps().createOrReplace(cm);
+    public void updateConfigMap(ConfigMap cm, Handler<AsyncResult<Void>> handler) {
+        vertx.executeBlocking(future -> {
+            try {
+                client.configMaps().createOrReplace(cm);
+                future.complete();
+            } catch (Exception e) {
+                future.fail(e);
+            }
+        }, handler);
     }
 
     @Override
-    public void deleteConfigMap(TopicName topicName) {
-        // Delete the CM by the topic name, because neither ZK nor Kafka know the CM name
-        client.configMaps().withField("name", topicName.toString()).delete();
+    public void deleteConfigMap(TopicName topicName, Handler<AsyncResult<Void>> handler) {
+        vertx.executeBlocking(future -> {
+            try {
+                // Delete the CM by the topic name, because neither ZK nor Kafka know the CM name
+                client.configMaps().withField("name", topicName.toString()).delete();
+                future.complete();
+            } catch (Exception e) {
+                future.fail(e);
+            }
+        }, handler);
     }
 
     @Override
-    public List<ConfigMap> listMaps() {
-        return client.configMaps().withLabels(cmPredicate.labels()).list().getItems();
+    public void listMaps(Handler<AsyncResult<List<ConfigMap> >> handler) {
+        vertx.executeBlocking(future -> {
+            try {
+                future.complete(client.configMaps().withLabels(cmPredicate.labels()).list().getItems());
+            } catch (Exception e) {
+                future.fail(e);
+            }
+        }, handler);
     }
 
     @Override
-    public ConfigMap getFromName(MapName mapName) {
-        return client.configMaps().withName(mapName.toString()).get();
+    public void getFromName(MapName mapName, Handler<AsyncResult<ConfigMap >> handler) {
+        vertx.executeBlocking(future -> {
+            try {
+                future.complete(client.configMaps().withName(mapName.toString()).get());
+            } catch (Exception e) {
+                future.fail(e);
+            }
+        }, handler);
+
     }
 
     /**
      * Create the given k8s event
      */
     @Override
-    public void createEvent(Event event) {
-        try {
-            //logger.debug("Creating event {}", event);
-            //client.events().create(outcomeEvent);
-        } catch (KubernetesClientException e) {
-            logger.error("Error creating event {}", event, e);
-        }
+    public void createEvent(Event event, Handler<AsyncResult<Void>> handler) {
+        vertx.executeBlocking(future -> {
+            try {
+                try {
+                    //logger.debug("Creating event {}", event);
+                    //client.events().create(outcomeEvent);
+                } catch (KubernetesClientException e) {
+                    logger.error("Error creating event {}", event, e);
+                }
+                future.complete();
+            } catch (Exception e) {
+                future.fail(e);
+            }
+        }, handler);
     }
 }
