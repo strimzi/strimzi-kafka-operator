@@ -18,42 +18,57 @@
 package io.enmasse.barnabas.operator.topic;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapList;
 import io.fabric8.kubernetes.api.model.ConfigMapListBuilder;
-import io.fabric8.kubernetes.client.mock.KubernetesMockClient;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import io.fabric8.kubernetes.api.model.DoneableConfigMap;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.Resource;
+import io.vertx.core.Vertx;
+import io.vertx.ext.unit.Async;
+import io.vertx.ext.unit.TestContext;
+import io.vertx.ext.unit.junit.VertxUnitRunner;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-;
-
+@RunWith(VertxUnitRunner.class)
 public class K8sImplTest {
-    
-    private KubernetesMockClient mockClient = new KubernetesMockClient();
-    
-    @BeforeEach
-    public void startServer() {
-        mockClient = new KubernetesMockClient();
-    }
+
+    private Vertx vertx = Vertx.vertx();
 
     
     @Test
-    public void testList() {
-        mockClient.configMaps().list().andReturn(new ConfigMapListBuilder()
+    public void testList(TestContext context) {
+        Async async = context.async();
+
+        KubernetesClient mockClient = mock(KubernetesClient.class);
+        MixedOperation<ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> mockConfigMaps = mock(MixedOperation.class);
+        when(mockClient.configMaps()).thenReturn(mockConfigMaps);
+        when(mockConfigMaps.withLabels(any())).thenReturn(mockConfigMaps);
+        when(mockConfigMaps.list()).thenReturn(new ConfigMapListBuilder()
                 .addNewItem().withKind("ConfigMap")
-                    .withNewMetadata()
-                        .withName("unrelated")
-                        .withLabels(Collections.singletonMap("foo", "bar"))
-                    .endMetadata().withData(Collections.singletonMap("foo", "bar")).endItem()
+                .withNewMetadata()
+                .withName("unrelated")
+                .withLabels(Collections.singletonMap("foo", "bar"))
+                .endMetadata().withData(Collections.singletonMap("foo", "bar")).endItem()
                 .addNewItem().endItem()
                 .build());
 
-        K8sImpl k8s = new K8sImpl(mockClient.replay(), null);
+        K8sImpl k8s = new K8sImpl(vertx, mockClient, new CmPredicate("foo", "bar"));
 
-        List<ConfigMap> list = k8s.listMaps();
-        assertTrue(list.isEmpty());
+        k8s.listMaps(ar -> {
+            List<ConfigMap> list = ar.result();
+            context.assertFalse(list.isEmpty());
+            async.complete();
+        });
     }
 }

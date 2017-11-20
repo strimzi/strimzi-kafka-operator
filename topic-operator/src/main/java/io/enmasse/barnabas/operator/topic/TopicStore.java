@@ -17,12 +17,6 @@
 
 package io.enmasse.barnabas.operator.topic;
 
-import org.apache.zookeeper.AsyncCallback;
-import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.data.Stat;
-
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -56,6 +50,6 @@ public interface TopicStore {
      * @param topic The topic to delete.
      * @return A future for the success or failure of the operation.
      */
-    CompletableFuture<Void> delete(Topic topic);
+    CompletableFuture<Void> delete(TopicName topic);
 }
 

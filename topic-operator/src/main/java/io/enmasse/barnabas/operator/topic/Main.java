@@ -96,7 +96,7 @@ public class Main {
                 "kind", "topic",
                 "app", "barnabas");
 
-        this.k8s = new K8sImpl(kubeClient, cmPredicate);
+        this.k8s = new K8sImpl(null, kubeClient, cmPredicate);
 
         this.operator = new Operator(kubeClient, kafka, k8s, executor, cmPredicate);
 
@@ -148,7 +148,7 @@ public class Main {
                     // Reconciliation
                     k8s.getFromName(topicName.asMapName(), ar -> {
                         ConfigMap cm = ar.result();
-                        operator.reconcile(topicStore, cm, topicName);
+                        operator.reconcile(cm, topicName);
                     });
 
                 }
@@ -162,7 +162,7 @@ public class Main {
                      configMapsMap.keySet().removeAll(kafkaTopics);
                      for (ConfigMap cm : configMapsMap.values()) {
                          TopicName topicName = new TopicName(cm);
-                         operator.reconcile(topicStore, cm, topicName);
+                         operator.reconcile(cm, topicName);
                      }
 
                      // Finally those in private store which we've not dealt with so far...

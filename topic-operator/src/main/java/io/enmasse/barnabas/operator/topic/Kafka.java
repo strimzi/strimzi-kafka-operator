@@ -17,6 +17,8 @@
 
 package io.enmasse.barnabas.operator.topic;
 
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
 import org.apache.kafka.clients.admin.NewTopic;
 
 import java.util.Set;
@@ -24,17 +26,17 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 public interface Kafka {
-    void createTopic(NewTopic newTopic, ResultHandler<AsyncResult<Void>> handler);
+    void createTopic(NewTopic newTopic, Handler<AsyncResult<Void>> handler);
 
-    void deleteTopic(TopicName topicName, ResultHandler<AsyncResult<Void>> handler);
+    void deleteTopic(TopicName topicName, Handler<AsyncResult<Void>> handler);
 
-    void updateTopicConfig(Topic topic, ResultHandler<AsyncResult<Void>> handler);
+    void updateTopicConfig(Topic topic, Handler<AsyncResult<Void>> handler);
 
-    void increasePartitions(Topic topic, ResultHandler<AsyncResult<Void>> handler);
+    void increasePartitions(Topic topic, Handler<AsyncResult<Void>> handler);
 
     CompletableFuture<TopicMetadata> topicMetadata(TopicName topicName, long delay, TimeUnit unit);
 
-    void listTopics(ResultHandler<AsyncResult<Set<String>>> handler);
+    void listTopics(Handler<AsyncResult<Set<String>>> handler);
     CompletableFuture<Set<TopicName>> listTopicsFuture();
 
 }

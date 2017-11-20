@@ -30,9 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 /**
@@ -144,10 +142,10 @@ public class ZkTopicStore implements TopicStore {
     }
 
     @Override
-    public CompletableFuture<Void> delete(Topic topic) {
+    public CompletableFuture<Void> delete(TopicName topicName) {
         CompletableFuture<Void> result = new CompletableFuture<>();
         // TODO pass a non-zero version
-        getZookeeper().delete(getTopicPath(topic.getTopicName()), -1, new AsyncCallback.VoidCallback() {
+        getZookeeper().delete(getTopicPath(topicName), -1, new AsyncCallback.VoidCallback() {
             @Override
             public void processResult(int rc, String path, Object ctx) {
                 if (rc == KeeperException.Code.OK.intValue()) {

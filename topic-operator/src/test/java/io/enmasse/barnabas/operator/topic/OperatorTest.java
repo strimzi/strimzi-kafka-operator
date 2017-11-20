@@ -19,6 +19,9 @@ package io.enmasse.barnabas.operator.topic;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.admin.TopicDescription;
@@ -26,7 +29,8 @@ import org.apache.kafka.common.Node;
 import org.apache.kafka.common.TopicPartitionInfo;
 import org.apache.kafka.common.errors.ClusterAuthorizationException;
 import org.apache.kafka.common.errors.TopicExistsException;
-import org.junit.jupiter.api.Test;
+
+import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.util.Collections;
@@ -37,8 +41,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 
 import static java.util.Arrays.asList;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
@@ -81,10 +85,10 @@ public class OperatorTest {
      * kubernetes, in the successful case. */
     @Test
     public void testProcessableConfigMapCreated() {
-        ArgumentCaptor<ResultHandler<AsyncResult<Void>>> handler = processConfigMapCreated();
+        ArgumentCaptor<Handler<AsyncResult<Void>>> handler = processConfigMapCreated();
 
         // Simulate successful topic creation
-        handler.getValue().handleResult(AsyncResult.success(null));
+        handler.getValue().handle(Future.succeededFuture());
 
         // TODO assert storeTopic created
     }
@@ -94,10 +98,10 @@ public class OperatorTest {
      * kubernetes, in the case where AdminClient returns error */
     @Test
     public void testProcessableConfigMapCreated_TopicExistsException() {
-        ArgumentCaptor<ResultHandler<AsyncResult<Void>>> handler = processConfigMapCreated();
+        ArgumentCaptor<Handler<AsyncResult<Void>>> handler = processConfigMapCreated();
 
         // Simulate error
-        handler.getValue().handleResult(AsyncResult.failure(new TopicExistsException("")));
+        handler.getValue().handle(Future.failedFuture(new TopicExistsException("")));
         fail("TODO should either either throw or cause some reconciliation");
     }
 
@@ -106,18 +110,18 @@ public class OperatorTest {
      * kubernetes, in the case where AdminClient returns error */
     @Test
     public void testProcessableConfigMapCreated_ClusterAuthorizationException() {
-        ArgumentCaptor<ResultHandler<AsyncResult<Void>>> handler = processConfigMapCreated();
+        ArgumentCaptor<Handler<AsyncResult<Void>>> handler = processConfigMapCreated();
 
         // Simulate error
         try {
-            handler.getValue().handleResult(AsyncResult.failure(new ClusterAuthorizationException("")));
+            handler.getValue().handle(Future.failedFuture(new ClusterAuthorizationException("")));
             fail("Should throw");
         } catch (OperatorException e) {
             // This would normally propagate via the executor's uncaught exception handler
         }
     }
 
-    private ArgumentCaptor<ResultHandler<AsyncResult<Void>>> processConfigMapCreated() {
+    private ArgumentCaptor<Handler<AsyncResult<Void>>> processConfigMapCreated() {
         ScheduledExecutorService mockedExecutor = mock(ScheduledExecutorService.class);
         Kafka mockKafka = mock(Kafka.class);
 
@@ -137,7 +141,7 @@ public class OperatorTest {
 
         // Simulate processing the work
         ArgumentCaptor<NewTopic> newTopic = ArgumentCaptor.forClass(NewTopic.class);
-        ArgumentCaptor<ResultHandler<AsyncResult<Void>>> handler = ArgumentCaptor.forClass(ResultHandler.class);
+        ArgumentCaptor<Handler<AsyncResult<Void>>> handler = ArgumentCaptor.forClass(Handler.class);
         verify(mockKafka).createTopic(newTopic.capture(), handler.capture());
 
         // Check the NewTopic is correct
@@ -175,7 +179,7 @@ public class OperatorTest {
         argument.getValue().process();
 
         ArgumentCaptor<ConfigMap> configMap = ArgumentCaptor.forClass(ConfigMap.class);
-        verify(mockK8s).createConfigMap(configMap.capture());
+        verify(mockK8s).createConfigMap(configMap.capture(), ar -> {});
         ConfigMap cm = configMap.getValue();
         assertEquals("my-topic", cm.getMetadata().getName());
         assertEquals(cmPredicate.labels(), cm.getMetadata().getLabels());
@@ -203,11 +207,11 @@ public class OperatorTest {
         when(mockStore.create(storeTopic.capture())).thenReturn(CompletableFuture.completedFuture(null));
 
         Operator op = new Operator(null, mockKafka, null, mockedExecutor, cmPredicate);
-
+        op.setTopicStore(mockStore);
         Topic kubeTopic = new Topic.Builder("my-topic", 10, (short)2, map("foo", "bar")).build();
         Topic kafkaTopic = null;
         Topic privateTopic = null;
-        op.reconcile(mockStore, null, kubeTopic, kafkaTopic, privateTopic);
+        op.reconcile(null, kubeTopic, kafkaTopic, privateTopic);
 
         ArgumentCaptor<Operator.OperatorEvent> kafkaCreate = ArgumentCaptor.forClass(Operator.OperatorEvent.class);
         verify(mockedExecutor, times(2)).execute(kafkaCreate.capture());
@@ -216,7 +220,7 @@ public class OperatorTest {
         // simulate execution of the topic creation task
         c.process();
         ArgumentCaptor<NewTopic> newTopic = ArgumentCaptor.forClass(NewTopic.class);
-        ArgumentCaptor<ResultHandler> handler = ArgumentCaptor.forClass(ResultHandler.class);
+        ArgumentCaptor<Handler> handler = ArgumentCaptor.forClass(Handler.class);
         verify(mockKafka).createTopic(newTopic.capture(), handler.capture());
 
         // TODO assert on the New Topic and call the handler
@@ -246,11 +250,11 @@ public class OperatorTest {
         when(mockStore.create(storeTopic.capture())).thenReturn(CompletableFuture.completedFuture(null));
 
         Operator op = new Operator(null, mockKafka, null, mockedExecutor, cmPredicate);
-
+        op.setTopicStore(mockStore);
         Topic kubeTopic = new Topic.Builder("my-topic", 10, (short)2, map("foo", "bar")).build();
         Topic kafkaTopic = null;
         Topic privateTopic = kubeTopic;
-        op.reconcile(mockStore, null, kubeTopic, kafkaTopic, privateTopic);
+        op.reconcile(null, kubeTopic, kafkaTopic, privateTopic);
 
         ArgumentCaptor<Operator.OperatorEvent> kafkaCreate = ArgumentCaptor.forClass(Operator.OperatorEvent.class);
         verify(mockedExecutor, times(2)).execute(kafkaCreate.capture());
@@ -259,7 +263,7 @@ public class OperatorTest {
         // simulate execution of the topic creation task
         c.process();
         ArgumentCaptor<NewTopic> newTopic = ArgumentCaptor.forClass(NewTopic.class);
-        ArgumentCaptor<ResultHandler> handler = ArgumentCaptor.forClass(ResultHandler.class);
+        ArgumentCaptor<Handler> handler = ArgumentCaptor.forClass(Handler.class);
         verify(mockKafka).createTopic(newTopic.capture(), handler.capture());
 
         // TODO assert on the New Topic and call the handler

@@ -21,9 +21,9 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -34,8 +34,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
 
 public class ZkTopicStoreTest {
 
@@ -43,7 +44,7 @@ public class ZkTopicStoreTest {
 
     private ZkTopicStore store;
 
-    @BeforeEach
+    @Before
     public void setupZooKeeper()
             throws IOException, InterruptedException,
             TimeoutException, ExecutionException {
@@ -67,7 +68,7 @@ public class ZkTopicStoreTest {
         });
     }
 
-    @AfterEach
+    @After
     public void shutdownZooKeeper() {
         if (this.zkServer != null) {
             this.zkServer.close();
@@ -117,7 +118,7 @@ public class ZkTopicStoreTest {
         assertEquals(updated.getConfig(), rereadTopic.getConfig());
 
         // delete it
-        store.delete(updated).get();
+        store.delete(updated.getTopicName()).get();
 
         // assert we can't read it again
         try {
@@ -131,7 +132,7 @@ public class ZkTopicStoreTest {
 
         // delete it again: assert an error
         try {
-            store.delete(updated).get();
+            store.delete(updated.getTopicName()).get();
             fail("Should throw");
         } catch (ExecutionException e) {
             if (!(e.getCause() instanceof KeeperException.NoNodeException)) {

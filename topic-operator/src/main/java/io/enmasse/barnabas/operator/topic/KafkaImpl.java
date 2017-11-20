@@ -17,6 +17,9 @@
 
 package io.enmasse.barnabas.operator.topic;
 
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ListTopicsResult;
@@ -64,9 +67,9 @@ public class KafkaImpl implements Kafka {
     /** Some work that depends on a single future */
     class UniWork<T> extends Work {
         private final KafkaFuture<T> future;
-        private final ResultHandler<AsyncResult<T>> handler;
+        private final Handler<AsyncResult<T>> handler;
 
-        public UniWork(KafkaFuture<T> future, ResultHandler<AsyncResult<T>> handler) {
+        public UniWork(KafkaFuture<T> future, Handler<AsyncResult<T>> handler) {
             if (future == null) {
                 throw new NullPointerException();
             }
@@ -85,14 +88,14 @@ public class KafkaImpl implements Kafka {
                     try {
                         T result = this.future.get();
                         logger.debug("Future {} has result {}", future, result);
-                        this.handler.handleResult(AsyncResult.success(result));
+                        this.handler.handle(Future.succeededFuture(result));
                         logger.debug("Handler for work {} executed ok", this);
                     } catch (ExecutionException e) {
                         logger.debug("Future {} threw {}", future, e.toString());
-                        this.handler.handleResult(AsyncResult.failure(e.getCause()));
+                        this.handler.handle(Future.failedFuture(e.getCause()));
                     } catch (InterruptedException e) {
                         logger.debug("Future {} threw {}", future, e.toString());
-                        this.handler.handleResult(AsyncResult.failure(e));
+                        this.handler.handle(Future.failedFuture(e));
                     }
                 } catch (OperatorException e) {
                     // TODO handler threw, but I have no context for creating a k8s error event
@@ -112,9 +115,9 @@ public class KafkaImpl implements Kafka {
         private final KafkaFuture<T> futureT;
         private final KafkaFuture<U> futureU;
         private final BiFunction<T, U, R> combiner;
-        private final ResultHandler<AsyncResult<R>> handler;
+        private final Handler<AsyncResult<R>> handler;
 
-        public BiWork(KafkaFuture<T> futureT, KafkaFuture<U> futureU, BiFunction<T, U, R> combiner, ResultHandler<AsyncResult<R>> handler) {
+        public BiWork(KafkaFuture<T> futureT, KafkaFuture<U> futureU, BiFunction<T, U, R> combiner, Handler<AsyncResult<R>> handler) {
             if (futureT == null) {
                 throw new NullPointerException();
             }
@@ -144,11 +147,11 @@ public class KafkaImpl implements Kafka {
                         logger.debug("Future {} has result {}", futureT, resultT);
                     } catch (ExecutionException e) {
                         logger.debug("Future {} threw {}", futureT, e.toString());
-                        this.handler.handleResult(AsyncResult.failure(e.getCause()));
+                        this.handler.handle(Future.failedFuture(e.getCause()));
                         return true;
                     } catch (InterruptedException e) {
                         logger.debug("Future {} threw {}", futureT, e.toString());
-                        this.handler.handleResult(AsyncResult.failure(e));
+                        this.handler.handle(Future.failedFuture(e));
                         return true;
                     }
                     final U resultU;
@@ -157,15 +160,15 @@ public class KafkaImpl implements Kafka {
                         logger.debug("Future {} has result {}", futureU, resultU);
                     } catch (ExecutionException e) {
                         logger.debug("Future {} threw {}", futureT, e.toString());
-                        this.handler.handleResult(AsyncResult.failure(e.getCause()));
+                        this.handler.handle(Future.failedFuture(e.getCause()));
                         return true;
                     } catch (InterruptedException e) {
                         logger.debug("Future {} threw {}", futureT, e.toString());
-                        this.handler.handleResult(AsyncResult.failure(e));
+                        this.handler.handle(Future.failedFuture(e));
                         return true;
                     }
 
-                    this.handler.handleResult(AsyncResult.success(combiner.apply(resultT, resultU)));
+                    this.handler.handle(Future.succeededFuture(combiner.apply(resultT, resultU)));
                     logger.debug("Handler for work {} executed ok", this);
                 } catch (OperatorException e) {
                     // TODO handler threw, but I have no context for creating a k8s error event
@@ -206,7 +209,7 @@ public class KafkaImpl implements Kafka {
      * (in a different thread) with the result.
      */
     @Override
-    public void createTopic(NewTopic newTopic, ResultHandler<AsyncResult<Void>> handler) {
+    public void createTopic(NewTopic newTopic, Handler<AsyncResult<Void>> handler) {
 
         logger.debug("Creating topic {}", newTopic);
         KafkaFuture<Void> future = adminClient.createTopics(
@@ -219,7 +222,7 @@ public class KafkaImpl implements Kafka {
      * (in a different thread) with the result.
      */
     @Override
-    public void deleteTopic(TopicName topicName, ResultHandler<AsyncResult<Void>> handler) {
+    public void deleteTopic(TopicName topicName, Handler<AsyncResult<Void>> handler) {
         logger.debug("Deleting topic {}", topicName);
         KafkaFuture<Void> future = adminClient.deleteTopics(
                 Collections.singleton(topicName.toString())).values().get(topicName);
@@ -227,14 +230,14 @@ public class KafkaImpl implements Kafka {
     }
 
     @Override
-    public void updateTopicConfig(Topic topic, ResultHandler<AsyncResult<Void>> handler) {
+    public void updateTopicConfig(Topic topic, Handler<AsyncResult<Void>> handler) {
         Map<ConfigResource, Config> configs = TopicSerialization.toTopicConfig(topic);
         KafkaFuture<Void> future = adminClient.alterConfigs(configs).values().get(configs.keySet().iterator().next());
         queueWork(new UniWork<>(future, handler));
     }
 
     @Override
-    public void increasePartitions(Topic topic, ResultHandler<AsyncResult<Void>> handler) {
+    public void increasePartitions(Topic topic, Handler<AsyncResult<Void>> handler) {
 
     }
 
@@ -253,12 +256,22 @@ public class KafkaImpl implements Kafka {
                 Collections.singleton(topicName.toString())).values().get(topicName);
         queueWork(new BiWork<>(descriptionFuture, configFuture,
                 (desc, conf) -> new TopicMetadata(desc, conf),
-                ResultHandler.futureCompleter(result)), delay, unit);
+                futureCompleter(result)), delay, unit);
         return result;
     }
 
+    private <T> Handler<AsyncResult<T>> futureCompleter(CompletableFuture<T> result) {
+        return ar -> {
+            if (ar.succeeded()) {
+                result.complete(ar.result());
+            } else {
+                result.completeExceptionally(ar.cause());
+            }
+        };
+    }
+
     @Override
-    public void listTopics(ResultHandler<AsyncResult<Set<String>>> handler) {
+    public void listTopics(Handler<AsyncResult<Set<String>>> handler) {
         ListTopicsResult future = adminClient.listTopics();
         queueWork(new UniWork<>(future.names(), handler));
     }
@@ -266,7 +279,7 @@ public class KafkaImpl implements Kafka {
     @Override
     public CompletableFuture<Set<TopicName>> listTopicsFuture() {
         CompletableFuture<Set<String>> result = new CompletableFuture<>();
-        listTopics(ResultHandler.<Set<String>>futureCompleter(result));
+        listTopics(futureCompleter(result));
         return result.thenApply(stringNames ->
                 stringNames.stream().map(name -> new TopicName(name)).collect(Collectors.toSet())
         );

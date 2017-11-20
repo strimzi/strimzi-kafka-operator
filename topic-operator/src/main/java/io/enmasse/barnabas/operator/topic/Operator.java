@@ -1,4 +1,4 @@
-package io.enmasse.barnabas.operator.topic;/*
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -14,6 +14,8 @@ package io.enmasse.barnabas.operator.topic;/*
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+package io.enmasse.barnabas.operator.topic;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Event;
@@ -42,6 +44,7 @@ public class Operator {
     private final KubernetesClient client;
     private final ScheduledExecutorService executor;
     private final CmPredicate cmPredicate;
+    private TopicStore topicStore;
 
     private final InFlight inFlight = new InFlight();
 
@@ -201,14 +204,14 @@ public class Operator {
         public void process() throws OperatorException {
             inFlight.startCreatingTopic(topic.getTopicName());
             kafka.createTopic(TopicSerialization.toNewTopic(topic), (ar) -> {
-                if (ar.isSuccess()) {
+                if (ar.succeeded()) {
                     logger.info("Created topic '{}' for ConfigMap '{}'", topic.getTopicName(), topic.getMapName());
                     handler.handle(ar);
                 } else {
-                    if (ar.exception() instanceof TopicExistsException) {
+                    if (ar.cause() instanceof TopicExistsException) {
                         // TODO reconcile
                     } else {
-                        throw new OperatorException(involvedObject, ar.exception());
+                        throw new OperatorException(involvedObject, ar.cause());
                     }
                 }
             });
@@ -235,8 +238,8 @@ public class Operator {
         @Override
         public void process() throws OperatorException {
             kafka.updateTopicConfig(topic, ar-> {
-                if (!ar.isSuccess()) {
-                    enqueue(new ErrorEvent(involvedObject, ar.exception().toString()));
+                if (ar.failed()) {
+                    enqueue(new ErrorEvent(involvedObject, ar.cause().toString()));
                 }
             });
 
@@ -263,8 +266,8 @@ public class Operator {
         @Override
         public void process() throws OperatorException {
             kafka.increasePartitions(topic, ar-> {
-                if (!ar.isSuccess()) {
-                    enqueue(new ErrorEvent(involvedObject, ar.exception().toString()));
+                if (ar.failed()) {
+                    enqueue(new ErrorEvent(involvedObject, ar.cause().toString()));
                 }
             });
 
@@ -280,12 +283,13 @@ public class Operator {
     public class DeleteKafkaTopic extends OperatorEvent {
 
         public final TopicName topicName;
-
         private final HasMetadata involvedObject;
+        private final Handler<AsyncResult<Void>> handler;
 
-        public DeleteKafkaTopic(TopicName topicName, HasMetadata involvedObject) {
+        public DeleteKafkaTopic(TopicName topicName, HasMetadata involvedObject, Handler<AsyncResult<Void>> handler) {
             this.topicName = topicName;
             this.involvedObject = involvedObject;
+            this.handler = handler;
         }
 
         @Override
@@ -294,10 +298,11 @@ public class Operator {
             // TODO assert no existing mapping
             inFlight.startDeletingTopic(topicName);
             kafka.deleteTopic(topicName, (result) -> {
-                if (result.isSuccess()) {
+                if (result.succeeded()) {
                     logger.info("Deleted topic '{}' for ConfigMap", topicName);
+                    handler.handle(result);
                 } else {
-                    throw new OperatorException(involvedObject, result.exception());
+                    throw new OperatorException(involvedObject, result.cause());
                 }
             });
 
@@ -324,8 +329,12 @@ public class Operator {
         this.cmPredicate = cmPredicate;
     }
 
+    public void setTopicStore(TopicStore topicStore) {
+        this.topicStore = topicStore;
+    }
 
-    void reconcile(TopicStore topicStore, ConfigMap cm, TopicName topicName) {
+
+    void reconcile(ConfigMap cm, TopicName topicName) {
         Topic k8sTopic = TopicSerialization.fromConfigMap(cm);
         CompletableFuture<TopicMetadata> kafkaTopicMeta = kafka.topicMetadata(topicName, 0, TimeUnit.MILLISECONDS);
         CompletableFuture<Topic> privateState = topicStore.read(topicName);
@@ -334,7 +343,7 @@ public class Operator {
             try {
                 kafkaTopic = TopicSerialization.fromTopicMetadata(kafkaTopicMeta.get());
                 Topic privateTopic = privateState.get();
-                reconcile(topicStore, cm, k8sTopic, kafkaTopic, privateTopic);
+                reconcile(cm, k8sTopic, kafkaTopic, privateTopic);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             } catch (ExecutionException e) {
@@ -366,7 +375,7 @@ public class Operator {
      * Topic identification should be by uid/cxid, not by name.
      * Topic identification should be by uid/cxid, not by name.
      */
-    void reconcile(TopicStore topicStore, HasMetadata involvedObject, Topic k8sTopic, Topic kafkaTopic, Topic privateTopic) {
+    void reconcile(HasMetadata involvedObject, Topic k8sTopic, Topic kafkaTopic, Topic privateTopic) {
         if (privateTopic == null) {
             class CreateInTopicStoreHandler implements Handler<AsyncResult<Void>>  {
 
@@ -409,17 +418,21 @@ public class Operator {
             if (k8sTopic == null) {
                 if (kafkaTopic == null) {
                     // delete privateState
-                    enqueue(new DeleteFromTopicStore(topicStore, privateTopic, involvedObject));
+                    enqueue(new DeleteFromTopicStore(topicStore, privateTopic.getTopicName(), involvedObject));
                 } else {
                     // it was deleted in k8s so delete in kafka and privateState
-                    enqueue(new DeleteKafkaTopic(kafkaTopic.getTopicName(), involvedObject));
-                    enqueue(new DeleteFromTopicStore(topicStore, kafkaTopic, involvedObject));
+                    enqueue(new DeleteKafkaTopic(kafkaTopic.getTopicName(), involvedObject, ar -> {
+                        if (ar.succeeded()) {
+                            enqueue(new DeleteFromTopicStore(topicStore, kafkaTopic.getTopicName(), involvedObject));
+                        }
+                    }));
+
                 }
             } else if (kafkaTopic == null) {
                 // it was deleted in kafka so delete in k8s and privateState
                 enqueue(new DeleteConfigMap(k8sTopic.getTopicName(), ar -> {
                     if (ar.succeeded()) {
-                        enqueue(new DeleteFromTopicStore(topicStore, k8sTopic, involvedObject));
+                        enqueue(new DeleteFromTopicStore(topicStore, k8sTopic.getTopicName(), involvedObject));
                     }
                 }));
             } else {
@@ -458,13 +471,13 @@ public class Operator {
 
     /** Called when a topic znode is deleted in ZK */
     void onTopicDeleted(TopicName topicName) {
-        // XXX currently runs on the ZK thread, requiring a synchronized `pending`
+        // XXX currently runs on the ZK thread, requiring a synchronized `inFlight`
         // is it better to put this check in the topic deleted event?
         // that would require exposing an API to remove()
         if (inFlight.shouldProcessDelete(topicName)) {
             enqueue(new DeleteConfigMap(topicName, ar -> {
                 if (ar.succeeded()) {
-                    enqueue(new DeleteFromTopicStore(topicStore, topic, involvedObject));
+                    enqueue(new DeleteFromTopicStore(topicStore, topicName, null));
                 }
             }));
         }
@@ -472,7 +485,7 @@ public class Operator {
 
     /** Called when a topic znode is created in ZK */
     void onTopicCreated(TopicName topicName) {
-        // XXX currently runs on the ZK thread, requiring a synchronized pending
+        // XXX currently runs on the ZK thread, requiring a synchronized inFlight
         // is it better to put this check in the topic deleted event?
         if (inFlight.shouldProcessTopicCreate(topicName)) {
             BiConsumer<TopicMetadata, Throwable> handler = new BiConsumer<TopicMetadata, Throwable>() {
@@ -486,7 +499,7 @@ public class Operator {
                         Topic topic = TopicSerialization.fromTopicMetadata(metadata);
                         enqueue(new CreateConfigMap(topic, ar -> {
                             if (ar.succeeded()) {
-                                enqueue(new CreateInTopicStore(topicStore, topic, involvedObject));
+                                enqueue(new CreateInTopicStore(topicStore, topic, null));
                             }
                         }));
                     }
@@ -502,9 +515,11 @@ public class Operator {
             TopicName topicName = new TopicName(configMap);
             if (inFlight.shouldProcessConfigMapAdded(topicName)) {
                 Topic topic = TopicSerialization.fromConfigMap(configMap);
-                enqueue(new CreateKafkaTopic(topic, configMap, ar -> {
-                    enqueue(new CreateInTopicStore(topicStore, topic, configMap));
-                }));
+                enqueue(new CreateKafkaTopic(topic, ar -> {
+                    if (ar.succeeded()) {
+                        enqueue(new CreateInTopicStore(topicStore, topic, configMap));
+                    }
+                }, configMap));
             }
         }
     }
@@ -517,7 +532,7 @@ public class Operator {
                 // We don't know what's changed in the ConfigMap
                 // it could be #partitions and/or config and/or replication factor
                 // So call reconcile, rather than enqueuing a UpdateKafkaTopic directly
-                reconcile(topicStore, configMap, topicName);
+                reconcile(configMap, topicName);
                 //enqueue(new UpdateKafkaTopic(topic, configMap));
             }
         }
@@ -528,12 +543,14 @@ public class Operator {
         if (cmPredicate.test(configMap)) {
             TopicName topicName = new TopicName(configMap);
             if (inFlight.shouldProcessConfigMapDeleted(topicName)) {
-                enqueue(new DeleteKafkaTopic(topicName, configMap));
+                enqueue(new DeleteKafkaTopic(topicName, configMap, ar -> {
+                    if (ar.succeeded()) {
+                        enqueue(new DeleteFromTopicStore(topicStore, topicName, configMap));
+                    }
+                }));
             }
         }
     }
-
-
 
     private class UpdateInTopicStore extends OperatorEvent {
         private final TopicStore topicStore;
@@ -590,18 +607,18 @@ public class Operator {
 
     class DeleteFromTopicStore extends OperatorEvent {
         private final TopicStore topicStore;
-        private final Topic topic;
+        private final TopicName topicName;
         private final HasMetadata involvedObject;
 
-        private DeleteFromTopicStore(TopicStore topicStore, Topic topic, HasMetadata involvedObject) {
+        private DeleteFromTopicStore(TopicStore topicStore, TopicName topicName, HasMetadata involvedObject) {
             this.topicStore = topicStore;
-            this.topic = topic;
+            this.topicName = topicName;
             this.involvedObject = involvedObject;
         }
 
         @Override
         public void process() throws OperatorException {
-            CompletableFuture<Void> fut = topicStore.delete(topic);
+            CompletableFuture<Void> fut = topicStore.delete(topicName);
             fut.whenCompleteAsync((vr, throwable) -> {
                 if (throwable != null) {
                     enqueue(new ErrorEvent(involvedObject, throwable.toString()));
@@ -611,7 +628,7 @@ public class Operator {
 
         @Override
         public String toString() {
-            return "DeleteFromTopicStore(topicName="+topic.getTopicName()+")";
+            return "DeleteFromTopicStore(topicName="+topicName+")";
         }
     }
 }

@@ -27,9 +27,7 @@ import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class K8sImpl implements K8s {
 
@@ -41,7 +39,8 @@ public class K8sImpl implements K8s {
 
     private Vertx vertx;
 
-    public K8sImpl(KubernetesClient client, CmPredicate cmPredicate) {
+    public K8sImpl(Vertx vertx, KubernetesClient client, CmPredicate cmPredicate) {
+        this.vertx = vertx;
         this.client = client;
         this.cmPredicate = cmPredicate;
     }
