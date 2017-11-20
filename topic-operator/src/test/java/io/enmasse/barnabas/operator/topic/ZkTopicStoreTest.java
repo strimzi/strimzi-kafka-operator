@@ -59,7 +59,6 @@ public class ZkTopicStoreTest {
             }
         });
 
-        ;
         this.store = new ZkTopicStore(new Supplier<Future<ZooKeeper>>() {
             @Override
             public Future<ZooKeeper> get() {

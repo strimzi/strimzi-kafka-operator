@@ -20,7 +20,7 @@ package io.enmasse.barnabas.operator.topic;
 import java.util.concurrent.CompletableFuture;
 
 public interface ResultHandler<T> {
-    public static <T> ResultHandler<T> futureCompleter(CompletableFuture<T> future) {
+    public static <T> ResultHandler<AsyncResult<T>> futureCompleter(CompletableFuture<T> future) {
         return result -> {
             if (result.isSuccess()) {
                 future.complete(result.result());
@@ -29,5 +29,5 @@ public interface ResultHandler<T> {
             }
         };
     }
-    void handleResult(AsyncResult<? extends T> result) throws OperatorException;
+    void handleResult(T result) throws OperatorException;
 }

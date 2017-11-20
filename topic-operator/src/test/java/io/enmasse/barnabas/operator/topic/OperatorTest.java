@@ -81,7 +81,7 @@ public class OperatorTest {
      * kubernetes, in the successful case. */
     @Test
     public void testProcessableConfigMapCreated() {
-        ArgumentCaptor<ResultHandler<Void>> handler = processConfigMapCreated();
+        ArgumentCaptor<ResultHandler<AsyncResult<Void>>> handler = processConfigMapCreated();
 
         // Simulate successful topic creation
         handler.getValue().handleResult(AsyncResult.success(null));
@@ -94,7 +94,7 @@ public class OperatorTest {
      * kubernetes, in the case where AdminClient returns error */
     @Test
     public void testProcessableConfigMapCreated_TopicExistsException() {
-        ArgumentCaptor<ResultHandler<Void>> handler = processConfigMapCreated();
+        ArgumentCaptor<ResultHandler<AsyncResult<Void>>> handler = processConfigMapCreated();
 
         // Simulate error
         handler.getValue().handleResult(AsyncResult.failure(new TopicExistsException("")));
@@ -106,7 +106,7 @@ public class OperatorTest {
      * kubernetes, in the case where AdminClient returns error */
     @Test
     public void testProcessableConfigMapCreated_ClusterAuthorizationException() {
-        ArgumentCaptor<ResultHandler<Void>> handler = processConfigMapCreated();
+        ArgumentCaptor<ResultHandler<AsyncResult<Void>>> handler = processConfigMapCreated();
 
         // Simulate error
         try {
@@ -117,7 +117,7 @@ public class OperatorTest {
         }
     }
 
-    private ArgumentCaptor<ResultHandler<Void>> processConfigMapCreated() {
+    private ArgumentCaptor<ResultHandler<AsyncResult<Void>>> processConfigMapCreated() {
         ScheduledExecutorService mockedExecutor = mock(ScheduledExecutorService.class);
         Kafka mockKafka = mock(Kafka.class);
 
@@ -137,7 +137,7 @@ public class OperatorTest {
 
         // Simulate processing the work
         ArgumentCaptor<NewTopic> newTopic = ArgumentCaptor.forClass(NewTopic.class);
-        ArgumentCaptor<ResultHandler<Void>> handler = ArgumentCaptor.forClass(ResultHandler.class);
+        ArgumentCaptor<ResultHandler<AsyncResult<Void>>> handler = ArgumentCaptor.forClass(ResultHandler.class);
         verify(mockKafka).createTopic(newTopic.capture(), handler.capture());
 
         // Check the NewTopic is correct

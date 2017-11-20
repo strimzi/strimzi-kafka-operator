@@ -64,9 +64,9 @@ public class KafkaImpl implements Kafka {
     /** Some work that depends on a single future */
     class UniWork<T> extends Work {
         private final KafkaFuture<T> future;
-        private final ResultHandler<T> handler;
+        private final ResultHandler<AsyncResult<T>> handler;
 
-        public UniWork(KafkaFuture<T> future, ResultHandler<T> handler) {
+        public UniWork(KafkaFuture<T> future, ResultHandler<AsyncResult<T>> handler) {
             if (future == null) {
                 throw new NullPointerException();
             }
@@ -112,9 +112,9 @@ public class KafkaImpl implements Kafka {
         private final KafkaFuture<T> futureT;
         private final KafkaFuture<U> futureU;
         private final BiFunction<T, U, R> combiner;
-        private final ResultHandler<R> handler;
+        private final ResultHandler<AsyncResult<R>> handler;
 
-        public BiWork(KafkaFuture<T> futureT, KafkaFuture<U> futureU, BiFunction<T, U, R> combiner, ResultHandler<R> handler) {
+        public BiWork(KafkaFuture<T> futureT, KafkaFuture<U> futureU, BiFunction<T, U, R> combiner, ResultHandler<AsyncResult<R>> handler) {
             if (futureT == null) {
                 throw new NullPointerException();
             }
@@ -206,7 +206,7 @@ public class KafkaImpl implements Kafka {
      * (in a different thread) with the result.
      */
     @Override
-    public void createTopic(NewTopic newTopic, ResultHandler<Void> handler) {
+    public void createTopic(NewTopic newTopic, ResultHandler<AsyncResult<Void>> handler) {
 
         logger.debug("Creating topic {}", newTopic);
         KafkaFuture<Void> future = adminClient.createTopics(
@@ -219,7 +219,7 @@ public class KafkaImpl implements Kafka {
      * (in a different thread) with the result.
      */
     @Override
-    public void deleteTopic(TopicName topicName, ResultHandler<Void> handler) {
+    public void deleteTopic(TopicName topicName, ResultHandler<AsyncResult<Void>> handler) {
         logger.debug("Deleting topic {}", topicName);
         KafkaFuture<Void> future = adminClient.deleteTopics(
                 Collections.singleton(topicName.toString())).values().get(topicName);
@@ -227,14 +227,14 @@ public class KafkaImpl implements Kafka {
     }
 
     @Override
-    public void updateTopicConfig(Topic topic, ResultHandler<Void> handler) {
+    public void updateTopicConfig(Topic topic, ResultHandler<AsyncResult<Void>> handler) {
         Map<ConfigResource, Config> configs = TopicSerialization.toTopicConfig(topic);
         KafkaFuture<Void> future = adminClient.alterConfigs(configs).values().get(configs.keySet().iterator().next());
         queueWork(new UniWork<>(future, handler));
     }
 
     @Override
-    public void increasePartitions(Topic topic, ResultHandler<Void> handler) {
+    public void increasePartitions(Topic topic, ResultHandler<AsyncResult<Void>> handler) {
 
     }
 
@@ -258,7 +258,7 @@ public class KafkaImpl implements Kafka {
     }
 
     @Override
-    public void listTopics(ResultHandler<Set<String>> handler) {
+    public void listTopics(ResultHandler<AsyncResult<Set<String>>> handler) {
         ListTopicsResult future = adminClient.listTopics();
         queueWork(new UniWork<>(future.names(), handler));
     }
@@ -266,7 +266,7 @@ public class KafkaImpl implements Kafka {
     @Override
     public CompletableFuture<Set<TopicName>> listTopicsFuture() {
         CompletableFuture<Set<String>> result = new CompletableFuture<>();
-        listTopics(ResultHandler.futureCompleter(result));
+        listTopics(ResultHandler.<Set<String>>futureCompleter(result));
         return result.thenApply(stringNames ->
                 stringNames.stream().map(name -> new TopicName(name)).collect(Collectors.toSet())
         );
