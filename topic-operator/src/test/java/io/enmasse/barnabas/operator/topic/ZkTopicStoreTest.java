@@ -17,6 +17,11 @@
 
 package io.enmasse.barnabas.operator.topic;
 
+import io.vertx.core.Future;
+import io.vertx.core.Vertx;
+import io.vertx.ext.unit.Async;
+import io.vertx.ext.unit.TestContext;
+import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
@@ -24,28 +29,29 @@ import org.apache.zookeeper.ZooKeeper;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-
+@RunWith(VertxUnitRunner.class)
 public class ZkTopicStoreTest {
 
     private EmbeddedZooKeeper zkServer;
 
+    private Vertx vertx = Vertx.vertx();
+
     private ZkTopicStore store;
 
     @Before
-    public void setupZooKeeper()
+    public void setup()
             throws IOException, InterruptedException,
             TimeoutException, ExecutionException {
         this.zkServer = new EmbeddedZooKeeper();
@@ -60,31 +66,44 @@ public class ZkTopicStoreTest {
             }
         });
 
-        this.store = new ZkTopicStore(new Supplier<Future<ZooKeeper>>() {
-            @Override
-            public Future<ZooKeeper> get() {
-                return future.thenApply((v) -> zk);
-            }
-        });
+        this.store = new ZkTopicStore(vertx);
+        future.get();
+        this.store.handle(Future.succeededFuture(zk));
+
     }
 
     @After
-    public void shutdownZooKeeper() {
+    public void teardown() {
         if (this.zkServer != null) {
             this.zkServer.close();
         }
+        vertx.close();
     }
 
     @Test
-    public void testCrud() throws ExecutionException, InterruptedException {
+    public void testCrud(TestContext context) throws ExecutionException, InterruptedException {
         Topic topic = new Topic.Builder("my_topic", 2,
                 (short)3, Collections.singletonMap("foo", "bar")).build();
 
+
+
         // Create the topic
-        store.create(topic).get();
+        Async async0 = context.async();
+        store.create(topic, ar -> {
+            async0.complete();
+        });
+        async0.await();
 
         // Read the topic
-        Topic readTopic = store.read(new TopicName("my_topic")).get();
+        Async async1 = context.async();
+        Future<Topic> topicFuture = Future.future();
+        store.read(new TopicName("my_topic"), ar -> {
+            topicFuture.complete(ar.result());
+            async1.complete();
+
+        });
+        async1.await();
+        Topic readTopic = topicFuture.result();
 
         // assert topics equal
         assertEquals(topic.getTopicName(), readTopic.getTopicName());
@@ -93,23 +112,33 @@ public class ZkTopicStoreTest {
         assertEquals(topic.getConfig(), readTopic.getConfig());
 
         // try to create it again: assert an error
-        try {
-            store.create(topic).get();
-            fail("Should throw");
-        } catch (ExecutionException e) {
-            if (!(e.getCause() instanceof KeeperException.NodeExistsException)) {
-                throw e;
+        store.create(topic, ar-> {
+            if (ar.succeeded()) {
+                context.fail("Should throw");
+            } else {
+                if (!(ar.cause() instanceof TopicStore.EntityExistsException)) {
+                    context.fail(ar.cause().toString());
+                }
             }
-        }
+        });
 
         // update my_topic
+        Async async2 = context.async();
         Topic updated = new Topic.Builder(topic)
                 .withNumPartitions(3)
                 .withConfigEntry("fruit", "apple").build();
-        store.update(updated);
+        store.update(updated, ar->async2.complete());
+        async2.await();
 
         // re-read it and assert equal
-        Topic rereadTopic = store.read(new TopicName("my_topic")).get();
+        Async async3 = context.async();
+        Future<Topic> fut = Future.future();
+        store.read(new TopicName("my_topic"), ar -> {
+            fut.complete(ar.result());
+            async3.complete();
+        });
+        async3.await();
+        Topic rereadTopic = fut.result();
 
         // assert topics equal
         assertEquals(updated.getTopicName(), rereadTopic.getTopicName());
@@ -118,27 +147,37 @@ public class ZkTopicStoreTest {
         assertEquals(updated.getConfig(), rereadTopic.getConfig());
 
         // delete it
-        store.delete(updated.getTopicName()).get();
+        Async async4 = context.async();
+        store.delete(updated.getTopicName(), ar-> async4.complete());
+        async4.await();
 
         // assert we can't read it again
-        try {
-            store.read(new TopicName("my_topic")).get();
-            fail("Should throw");
-        } catch (ExecutionException e) {
-            if (!(e.getCause() instanceof KeeperException.NoNodeException)) {
-                throw e;
+        Async async5 = context.async();
+        store.read(new TopicName("my_topic"), ar-> {
+            async5.complete();
+            if (ar.succeeded()) {
+                context.fail("Should throw");
+            } else {
+                if (!(ar.cause() instanceof TopicStore.NoSuchEntityExistsException)) {
+                    context.fail("Unexpected exception "+ar.cause());
+                }
             }
-        }
+        });
+        async5.await();
 
         // delete it again: assert an error
-        try {
-            store.delete(updated.getTopicName()).get();
-            fail("Should throw");
-        } catch (ExecutionException e) {
-            if (!(e.getCause() instanceof KeeperException.NoNodeException)) {
-                throw e;
+        Async async6 = context.async();
+        store.delete(updated.getTopicName(), ar-> {
+            async6.complete();
+            if (ar.succeeded()) {
+                context.fail("Should throw");
+            } else {
+                if (!(ar.cause() instanceof TopicStore.NoSuchEntityExistsException)) {
+                    context.fail("Unexpected exception "+ar.cause());
+                }
             }
-        }
+        });
+        async6.await();
     }
 
 }

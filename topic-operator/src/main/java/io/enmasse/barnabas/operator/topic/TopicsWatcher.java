@@ -75,7 +75,7 @@ class TopicsWatcher implements Watcher {
                 created.removeAll(this.children);
                 logger.info("Created topics: {}", created);
                 for (String topicName : created) {
-                    operator.onTopicCreated(new TopicName(topicName));
+                    operator.onTopicCreated(new TopicName(topicName), ar -> {});
                 }
                 logger.info("Setting current children {}", result);
                 this.children = result;

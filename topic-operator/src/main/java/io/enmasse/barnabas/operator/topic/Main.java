@@ -23,6 +23,8 @@ import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Vertx;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,11 +40,14 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-public class Main {
+public class Main extends AbstractVerticle {
 
     // TODO document lifecycle
 
     private final static Logger logger = LoggerFactory.getLogger(Main.class);
+    private final String kafkaBootstrapServers;
+    private final String kubernetesMasterUrl;
+    private final String zookeeperConnect;
     private KafkaImpl kafka;
     private AdminClient adminClient;
     private DefaultKubernetesClient kubeClient;
@@ -50,6 +55,7 @@ public class Main {
     private Operator operator;
 
     /** Executor for processing {@link Operator.OperatorEvent}s. */
+    /*
     private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1, new ThreadFactory() {
         @Override
         public Thread newThread(Runnable r) {
@@ -65,29 +71,32 @@ public class Main {
             return t;
         }
     });
+    */
 
+
+    public Main(String kafkaBootstrapServers, String kubernetesMasterUrl, String zookeeperConnect) {
+        this.kafkaBootstrapServers = kafkaBootstrapServers;
+        this.kubernetesMasterUrl = kubernetesMasterUrl;
+        this.zookeeperConnect = zookeeperConnect;
+    }
 
     /**
      * Stop the operator, waiting up to the given timeout
      * @throws InterruptedException if interrupted while waiting.
      */
-    public void stop(long timeout, TimeUnit unit) throws InterruptedException {
-        long initiated = System.currentTimeMillis();
-        long timeoutMillis = unit.convert(timeout, TimeUnit.MILLISECONDS);
-        logger.info("Stopping with timeout {}ms", timeoutMillis);
+    public void stop() {
+        logger.info("Stopping");
         kubeClient.close();
-        executor.shutdown();
-        executor.awaitTermination(timeout, unit);
-        long timeoutLeft = timeoutMillis - (System.currentTimeMillis() - initiated);
-        adminClient.close(timeoutLeft, TimeUnit.MILLISECONDS);
+        adminClient.close(1, TimeUnit.MINUTES);
         logger.info("Stopped");
     }
 
-    private void start(String kafkaBootstrapServers, String kubernetesMasterUrl, String zookeeperConnect) {
+    @Override
+    public void start() {
         Properties props = new Properties();
         props.setProperty("bootstrap.servers", kafkaBootstrapServers);
         this.adminClient = AdminClient.create(props);
-        this.kafka = new KafkaImpl(adminClient, executor);
+        this.kafka = new KafkaImpl(adminClient, vertx);
 
         final io.fabric8.kubernetes.client.Config config = new ConfigBuilder().withMasterUrl(kubernetesMasterUrl).build();
         this.kubeClient = new DefaultKubernetesClient(config);
@@ -98,10 +107,12 @@ public class Main {
 
         this.k8s = new K8sImpl(null, kubeClient, cmPredicate);
 
-        this.operator = new Operator(kubeClient, kafka, k8s, executor, cmPredicate);
+        this.operator = new Operator(kubeClient, kafka, k8s, vertx, cmPredicate);
 
-        BootstrapWatcher bootstrap = new BootstrapWatcher(operator, zookeeperConnect);
-        TopicStore topicStore = new ZkTopicStore(bootstrap);
+        ZkTopicStore topicStore = new ZkTopicStore(vertx);
+
+        BootstrapWatcher bootstrap = new BootstrapWatcher(vertx, operator, zookeeperConnect, topicStore, null);
+
         Thread configMapThread = new Thread(() -> {
             kubeClient.configMaps().watch(new Watcher<ConfigMap>() {
                 public void eventReceived(Action action, ConfigMap configMap) {
@@ -114,7 +125,7 @@ public class Main {
                     if (cmPredicate.test(configMap)) {
                         switch (action) {
                             case ADDED:
-                                operator.onConfigMapAdded(configMap);
+                                operator.onConfigMapAdded(configMap, ar -> {});
                                 break;
                             case MODIFIED:
                                 operator.onConfigMapModified(topicStore, configMap);
@@ -137,40 +148,41 @@ public class Main {
         configMapThread.start();
 
 
-        executor.scheduleAtFixedRate(() -> {
-            CompletableFuture<Set<TopicName>> kafkaTopicsFuture = kafka.listTopicsFuture();
+        vertx.setPeriodic(TimeUnit.MILLISECONDS.convert(15, TimeUnit.MINUTES),
+                (timerId) -> {
 
-            kafkaTopicsFuture.whenCompleteAsync((kafkaTopics, exception) -> {
+            kafka.listTopics(arx -> {
+                if (arx.succeeded()) {
+                    Set<String> kafkaTopics = arx.result();
+                    // First reconcile the topics in kafka
+                    for (String name : kafkaTopics) {
+                        TopicName topicName = new TopicName(name);
+                        // TODO need to check inflight
+                        // Reconciliation
+                        k8s.getFromName(topicName.asMapName(), ar -> {
+                            ConfigMap cm = ar.result();
+                            operator.reconcile(cm, topicName);
+                        });
+                    }
 
-                // First reconcile the topics in kafka
-                for (TopicName topicName : kafkaTopics) {
-                    // TODO need to check inflight
-                    // Reconciliation
-                    k8s.getFromName(topicName.asMapName(), ar -> {
-                        ConfigMap cm = ar.result();
-                        operator.reconcile(cm, topicName);
+                    // Then those in k8s which aren't in kafka
+                    k8s.listMaps(ar -> {
+                        List<ConfigMap> configMaps = ar.result();
+                        Map<String, ConfigMap> configMapsMap = configMaps.stream().collect(Collectors.toMap(
+                                cm -> cm.getMetadata().getName(),
+                                cm -> cm));
+                        configMapsMap.keySet().removeAll(kafkaTopics);
+                        for (ConfigMap cm : configMapsMap.values()) {
+                            TopicName topicName = new TopicName(cm);
+                            operator.reconcile(cm, topicName);
+                        }
+
+                        // Finally those in private store which we've not dealt with so far...
+                        // TODO ^^
                     });
-
                 }
-
-                // Then those in k8s which aren't in kafka
-                 k8s.listMaps(ar -> {
-                     List<ConfigMap> configMaps = ar.result();
-                     Map<String, ConfigMap> configMapsMap = configMaps.stream().collect(Collectors.toMap(
-                             cm -> cm.getMetadata().getName(),
-                             cm -> cm));
-                     configMapsMap.keySet().removeAll(kafkaTopics);
-                     for (ConfigMap cm : configMapsMap.values()) {
-                         TopicName topicName = new TopicName(cm);
-                         operator.reconcile(cm, topicName);
-                     }
-
-                     // Finally those in private store which we've not dealt with so far...
-                     // TODO ^^
-                });
-
-            }, executor);
-        }, 0, 15, TimeUnit.MINUTES);
+            });
+        });
     }
 
     public static void main(String[] args) {
@@ -178,7 +190,12 @@ public class Main {
         String kafkaBootstrapServers = System.getProperty("OPERATOR_KAFKA_HOST", "localhost") + ":" + System.getProperty("OPERATOR_KAFKA_PORT", "9092;");
         String zookeeperConnect = System.getProperty("OPERATOR_ZK_HOST", "localhost") + ":" + System.getProperty("OPERATOR_ZK_PORT", "2181;");
 
-        Main main = new Main();
+        Main main = new Main(kafkaBootstrapServers, kubernetesMasterUrl, zookeeperConnect);
+
+        Vertx vertx = Vertx.vertx();
+        vertx.deployVerticle(main);
+
+        /*
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             try {
                 main.stop(1, TimeUnit.MINUTES);
@@ -188,6 +205,6 @@ public class Main {
             }
         }));
         main.start(kafkaBootstrapServers, kubernetesMasterUrl, zookeeperConnect);
-
+        */
     }
 }

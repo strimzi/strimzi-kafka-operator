@@ -17,6 +17,10 @@
 
 package io.enmasse.barnabas.operator.topic;
 
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -29,40 +33,36 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
-import java.util.function.Supplier;
 
 /**
  * Implementation of {@link TopicStore} that stores the topic state in ZooKeeper.
  */
-public class ZkTopicStore implements TopicStore {
+public class ZkTopicStore implements TopicStore, Handler<AsyncResult<ZooKeeper>> {
 
     private final static Logger logger = LoggerFactory.getLogger(ZkTopicStore.class);
+    private final Vertx vertx;
 
-    private final Supplier<Future<ZooKeeper>> zookeeper;
+    private volatile ZooKeeper zookeeper = null;
 
     private final ACL acl;
 
-    public ZkTopicStore(Supplier<Future<ZooKeeper>> zookeeper) {
-        this.zookeeper = zookeeper;
+    public ZkTopicStore(Vertx vertx) {
+        this.vertx = vertx;
         acl = new ACL();
         String scheme = "world";
         String id = "anyone";
         int perm = ZooDefs.Perms.READ | ZooDefs.Perms.WRITE |ZooDefs.Perms.CREATE | ZooDefs.Perms.DELETE;
         acl.setId(new Id(scheme, id));
         acl.setPerms(perm);
-        createParent("/barnabas");
-        createParent("/barnabas/topics");
+
     }
 
     private ZooKeeper getZookeeper() {
         try {
-            // TODO Can we improve this?
-            // It blocks indefinitely waiting for a zookeeper connection
-            // Since all the other methods return futures, we could let the
-            // error propagate via their futures
-            return this.zookeeper.get().get();
+            // TODO this is the wrong way to do it: Rather than consuming
+            // a ZooKeeper we should register a handler with the bootstrap
+            // watcher which will be called when it has a viable session
+            return zookeeper;
         } catch (Exception e) {
             logger.error("Error waiting for a ZooKeeper instance", e);
             if (e instanceof RuntimeException) {
@@ -90,71 +90,87 @@ public class ZkTopicStore implements TopicStore {
     }
 
     @Override
-    public CompletableFuture<Topic> read(TopicName topicName) {
-        CompletableFuture<Topic> result = new CompletableFuture<>();
+    public void read(TopicName topicName, Handler<AsyncResult<Topic>> handler) {
         getZookeeper().getData(getTopicPath(topicName), null, new AsyncCallback.DataCallback() {
             @Override
             public void processResult(int rc, String path, Object ctx, byte[] data, Stat stat) {
-                if (rc == KeeperException.Code.OK.intValue()) {
-                    result.complete(TopicSerialization.fromJson(data));
+                Exception exception = mapExceptions(rc);
+                if (exception == null) {
+                    Topic topic = TopicSerialization.fromJson(data);
+                    vertx.runOnContext(ar ->
+                        handler.handle(Future.succeededFuture(topic))
+                    );
                 } else {
-                    result.completeExceptionally(KeeperException.create(rc));
+                    vertx.runOnContext(ar ->
+                        handler.handle(Future.failedFuture(exception))
+                    );
                 }
             }
         }, null);
-        return result;
     }
 
-
     @Override
-    public CompletableFuture<Void> create(Topic topic) {
-        CompletableFuture<Void> result = new CompletableFuture<>();
+    public void create(Topic topic, Handler<AsyncResult<Void>> handler) {
         byte[] data = TopicSerialization.toJson(topic);
-        getZookeeper().create(getTopicPath(topic.getTopicName()), data, Collections.singletonList(acl), CreateMode.PERSISTENT, new AsyncCallback.StringCallback() {
-            @Override
-            public void processResult(int rc, String path, Object ctx, String name) {
-                if (rc == KeeperException.Code.OK.intValue()) {
-                    result.complete(null);
-                } else {
-                    result.completeExceptionally(KeeperException.create(rc));
-                }
-            }
-        }, null);
-        return result;
+        getZookeeper().create(getTopicPath(topic.getTopicName()), data,
+                Collections.singletonList(acl),
+                CreateMode.PERSISTENT,
+                (rc, path, ctx, name) -> handleOnContext(rc, handler), null);
     }
 
     @Override
-    public CompletableFuture<Void> update(Topic topic) {
-        CompletableFuture<Void> result = new CompletableFuture<>();
+    public void update(Topic topic, Handler<AsyncResult<Void>> handler) {
         byte[] data = TopicSerialization.toJson(topic);
         // TODO pass a non-zero version
-        getZookeeper().setData(getTopicPath(topic.getTopicName()), data, -1, new AsyncCallback.StatCallback() {
-            @Override
-            public void processResult(int rc, String path, Object ctx, Stat stat) {
-                if (rc == KeeperException.Code.OK.intValue()) {
-                    result.complete(null);
-                } else {
-                    result.completeExceptionally(KeeperException.create(rc));
-                }
-            }
-        }, null);
-        return result;
+        getZookeeper().setData(getTopicPath(topic.getTopicName()), data, -1,
+                (rc, path, ctx, stat) -> handleOnContext(rc, handler), null);
     }
 
     @Override
-    public CompletableFuture<Void> delete(TopicName topicName) {
-        CompletableFuture<Void> result = new CompletableFuture<>();
+    public void delete(TopicName topicName, Handler<AsyncResult<Void>> handler) {
         // TODO pass a non-zero version
-        getZookeeper().delete(getTopicPath(topicName), -1, new AsyncCallback.VoidCallback() {
-            @Override
-            public void processResult(int rc, String path, Object ctx) {
-                if (rc == KeeperException.Code.OK.intValue()) {
-                    result.complete(null);
-                } else {
-                    result.completeExceptionally(KeeperException.create(rc));
-                }
-            }
-        }, null);
-        return result;
+        getZookeeper().delete(getTopicPath(topicName), -1,
+                (rc, path, ctx) -> handleOnContext(rc, handler), null);
+    }
+
+    /** Run the handler on the vertx context */
+    private void handleOnContext(int rc, Handler<AsyncResult<Void>> handler) {
+        Exception exception = mapExceptions(rc);
+        if (exception == null) {
+            vertx.runOnContext(ar ->
+                    handler.handle(Future.succeededFuture())
+            );
+        } else {
+            vertx.runOnContext(ar -> {
+                handler.handle(Future.failedFuture(exception));
+            });
+        }
+    }
+
+    private Exception mapExceptions(int rc) {
+        Exception exception;
+        KeeperException.Code code = KeeperException.Code.get(rc);
+        switch (code) {
+            case OK:
+                exception = null;
+                break;
+            case NODEEXISTS:
+                exception = new EntityExistsException();
+                break;
+            case NONODE:
+                exception = new NoSuchEntityExistsException();
+                break;
+            default:
+                exception = KeeperException.create(code);
+
+        }
+        return exception;
+    }
+
+    @Override
+    public void handle(AsyncResult<ZooKeeper> event) {
+        this.zookeeper = event.result();
+        createParent("/barnabas");
+        createParent("/barnabas/topics");
     }
 }

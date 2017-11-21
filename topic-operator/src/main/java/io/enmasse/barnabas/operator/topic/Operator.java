@@ -24,8 +24,12 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.CompositeFuture;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 import org.apache.kafka.common.errors.TopicExistsException;
+import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,13 +46,14 @@ public class Operator {
     private final Kafka kafka;
     private final K8s k8s;
     private final KubernetesClient client;
-    private final ScheduledExecutorService executor;
+    //private final ScheduledExecutorService executor;
+    private final Vertx vertx;
     private final CmPredicate cmPredicate;
     private TopicStore topicStore;
 
     private final InFlight inFlight = new InFlight();
 
-    static abstract class OperatorEvent implements Runnable {
+    static abstract class OperatorEvent implements Runnable, Handler<Void> {
 
         public abstract void process() throws OperatorException;
 
@@ -56,6 +61,10 @@ public class Operator {
             logger.info("Processing event {}", this);
             this.process();
             logger.info("Event {} processed successfully", this);
+        }
+
+        public void handle(Void v) {
+            run();
         }
 
         public abstract String toString();
@@ -203,11 +212,12 @@ public class Operator {
         @Override
         public void process() throws OperatorException {
             inFlight.startCreatingTopic(topic.getTopicName());
-            kafka.createTopic(TopicSerialization.toNewTopic(topic), (ar) -> {
+            kafka.createTopic(TopicSerialization.toNewTopic(topic), ar -> {
                 if (ar.succeeded()) {
                     logger.info("Created topic '{}' for ConfigMap '{}'", topic.getTopicName(), topic.getMapName());
                     handler.handle(ar);
                 } else {
+                    handler.handle(ar);
                     if (ar.cause() instanceof TopicExistsException) {
                         // TODO reconcile
                     } else {
@@ -320,12 +330,12 @@ public class Operator {
     }
 
     public Operator(DefaultKubernetesClient kubeClient, Kafka kafka,
-                    K8s k8s, ScheduledExecutorService executor,
+                    K8s k8s, Vertx vertx,
                     CmPredicate cmPredicate) {
         this.kafka = kafka;
         this.client = kubeClient;
         this.k8s = k8s;
-        this.executor = executor;
+        this.vertx = vertx;
         this.cmPredicate = cmPredicate;
     }
 
@@ -336,20 +346,16 @@ public class Operator {
 
     void reconcile(ConfigMap cm, TopicName topicName) {
         Topic k8sTopic = TopicSerialization.fromConfigMap(cm);
-        CompletableFuture<TopicMetadata> kafkaTopicMeta = kafka.topicMetadata(topicName, 0, TimeUnit.MILLISECONDS);
-        CompletableFuture<Topic> privateState = topicStore.read(topicName);
-        kafkaTopicMeta.runAfterBothAsync(privateState, ()-> {
-            Topic kafkaTopic = null;
-            try {
-                kafkaTopic = TopicSerialization.fromTopicMetadata(kafkaTopicMeta.get());
-                Topic privateTopic = privateState.get();
-                reconcile(cm, k8sTopic, kafkaTopic, privateTopic);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            }
-        }, executor);
+        Future<Topic> topicResult = Future.future();
+        Future<TopicMetadata> metadataResult = Future.future();
+        kafka.topicMetadata(topicName, metadataResult.completer());
+        topicStore.read(topicName, topicResult.completer());
+        CompositeFuture.all(topicResult, metadataResult).setHandler(ar -> {
+            Topic privateTopic = ar.result().resultAt(0);
+            TopicMetadata kafkaTopicMeta = ar.result().resultAt(1);
+            Topic kafkaTopic = TopicSerialization.fromTopicMetadata(kafkaTopicMeta);
+            reconcile(cm, k8sTopic, kafkaTopic, privateTopic, reconcileResult -> {});
+        });
     }
 
     /**
@@ -375,7 +381,8 @@ public class Operator {
      * Topic identification should be by uid/cxid, not by name.
      * Topic identification should be by uid/cxid, not by name.
      */
-    void reconcile(HasMetadata involvedObject, Topic k8sTopic, Topic kafkaTopic, Topic privateTopic) {
+    void reconcile(HasMetadata involvedObject,
+                   Topic k8sTopic, Topic kafkaTopic, Topic privateTopic, Handler<AsyncResult<Void>> reconciliationResultHandler) {
         if (privateTopic == null) {
             class CreateInTopicStoreHandler implements Handler<AsyncResult<Void>>  {
 
@@ -389,7 +396,9 @@ public class Operator {
                 public void handle(AsyncResult<Void> ar) {
                     // In all cases, create in privateState
                     if (ar.succeeded()) {
-                        enqueue(new CreateInTopicStore(topicStore, source, involvedObject));
+                        enqueue(new CreateInTopicStore(topicStore, source, involvedObject, reconciliationResultHandler));
+                    } else {
+                        reconciliationResultHandler.handle(ar);
                     }
                 }
             }
@@ -409,7 +418,7 @@ public class Operator {
             } else if (TopicDiff.diff(kafkaTopic, k8sTopic).isEmpty()) {
                 // they're the same => do nothing
                 logger.debug("k8s and kafka versions of topic '{}' are the same", kafkaTopic.getTopicName());
-                enqueue(new CreateInTopicStore(topicStore, kafkaTopic, involvedObject));
+                enqueue(new CreateInTopicStore(topicStore, kafkaTopic, involvedObject, reconciliationResultHandler));
             } else {
                 // TODO use whichever has the most recent mtime
                 throw new RuntimeException("Not implemented");
@@ -418,12 +427,14 @@ public class Operator {
             if (k8sTopic == null) {
                 if (kafkaTopic == null) {
                     // delete privateState
-                    enqueue(new DeleteFromTopicStore(topicStore, privateTopic.getTopicName(), involvedObject));
+                    enqueue(new DeleteFromTopicStore(topicStore, privateTopic.getTopicName(), involvedObject, reconciliationResultHandler));
                 } else {
                     // it was deleted in k8s so delete in kafka and privateState
                     enqueue(new DeleteKafkaTopic(kafkaTopic.getTopicName(), involvedObject, ar -> {
                         if (ar.succeeded()) {
-                            enqueue(new DeleteFromTopicStore(topicStore, kafkaTopic.getTopicName(), involvedObject));
+                            enqueue(new DeleteFromTopicStore(topicStore, kafkaTopic.getTopicName(), involvedObject, reconciliationResultHandler));
+                        } else {
+                            reconciliationResultHandler.handle(ar);
                         }
                     }));
 
@@ -432,7 +443,9 @@ public class Operator {
                 // it was deleted in kafka so delete in k8s and privateState
                 enqueue(new DeleteConfigMap(k8sTopic.getTopicName(), ar -> {
                     if (ar.succeeded()) {
-                        enqueue(new DeleteFromTopicStore(topicStore, k8sTopic.getTopicName(), involvedObject));
+                        enqueue(new DeleteFromTopicStore(topicStore, k8sTopic.getTopicName(), involvedObject, reconciliationResultHandler));
+                    } else {
+                        reconciliationResultHandler.handle(ar);
                     }
                 }));
             } else {
@@ -442,13 +455,16 @@ public class Operator {
                 String conflict = oursKafka.conflict(oursK8s);
                 if (conflict != null) {
                     enqueue(new ErrorEvent(involvedObject, "ConfigMap and Topic both changed in a conflicting way: " + conflict));
+                    // TODO called reconciliationResultHandler, or push error handling into reconciliationResultHandler
                 } else {
                     TopicDiff merged = oursKafka.merge(oursK8s);
                     Topic result = merged.apply(privateTopic);
                     if (merged.changesReplicationFactor()) {
                         enqueue(new ErrorEvent(involvedObject, "Topic Replication Factor cannot be changed"));
+                        // TODO called reconciliationResultHandler, or push error handling into reconciliationResultHandler
                     } else {
                         enqueue(new UpdateConfigMap(result, ar -> {
+                            // TODO chain these properly
                             if (merged.changesConfig()) {
                                 enqueue(new UpdateKafkaConfig(result, involvedObject));
                             }
@@ -456,6 +472,7 @@ public class Operator {
                                 enqueue(new UpdateKafkaPartitions(result, involvedObject));
                             }
                             enqueue(new UpdateInTopicStore(topicStore, result, involvedObject));
+                            reconciliationResultHandler.handle(ar);
                         }, involvedObject));
 
                     }
@@ -466,7 +483,7 @@ public class Operator {
 
     void enqueue(OperatorEvent event) {
         logger.info("Enqueuing event {}", event);
-        executor.execute(event);
+        vertx.runOnContext(event);
     }
 
     /** Called when a topic znode is deleted in ZK */
@@ -477,50 +494,78 @@ public class Operator {
         if (inFlight.shouldProcessDelete(topicName)) {
             enqueue(new DeleteConfigMap(topicName, ar -> {
                 if (ar.succeeded()) {
-                    enqueue(new DeleteFromTopicStore(topicStore, topicName, null));
+                    enqueue(new DeleteFromTopicStore(topicStore, topicName, null, ar2 -> {}));
                 }
             }));
         }
     }
 
     /** Called when a topic znode is created in ZK */
-    void onTopicCreated(TopicName topicName) {
+    void onTopicCreated(TopicName topicName, Handler<AsyncResult<Void>> resultHandler) {
         // XXX currently runs on the ZK thread, requiring a synchronized inFlight
         // is it better to put this check in the topic deleted event?
         if (inFlight.shouldProcessTopicCreate(topicName)) {
-            BiConsumer<TopicMetadata, Throwable> handler = new BiConsumer<TopicMetadata, Throwable>() {
+            Handler<AsyncResult<TopicMetadata>> handler = new Handler<AsyncResult<TopicMetadata>>() {
                 BackOff backOff = new BackOff();
 
                 @Override
-                public void accept(TopicMetadata metadata, Throwable throwable) {
-                    if (throwable != null) {
-                        kafka.topicMetadata(topicName, backOff.delayMs(), TimeUnit.MILLISECONDS).whenComplete(this);
+                public void handle(AsyncResult<TopicMetadata> metadataResult) {
+                    if (metadataResult.failed()) {
+                        if (metadataResult.cause() instanceof UnknownTopicOrPartitionException) {
+                            // In this case it is most likely that we've been notified by ZK
+                            // before Kafka has finished creating the topic, so we retry
+                            // with exponential backoff.
+                            long delay;
+                            try {
+                                delay = backOff.delayMs();
+                            } catch (MaxAttemptsExceededException e) {
+                                resultHandler.handle(Future.failedFuture(e));
+                                return;
+                            }
+                            if (delay < 1) {
+                                // vertx won't tolerate a zero delay
+                                vertx.runOnContext(timerId -> kafka.topicMetadata(topicName, this));
+                            } else {
+                                vertx.setTimer(TimeUnit.MILLISECONDS.convert(delay, TimeUnit.MILLISECONDS),
+                                        timerId -> kafka.topicMetadata(topicName, this));
+                            }
+                        } else {
+                            resultHandler.handle(Future.failedFuture(metadataResult.cause()));
+                        }
                     } else {
-                        Topic topic = TopicSerialization.fromTopicMetadata(metadata);
-                        enqueue(new CreateConfigMap(topic, ar -> {
-                            if (ar.succeeded()) {
-                                enqueue(new CreateInTopicStore(topicStore, topic, null));
+                        // We now have the metadata we need to create the
+                        // ConfigMap...
+                        Topic topic = TopicSerialization.fromTopicMetadata(metadataResult.result());
+                        enqueue(new CreateConfigMap(topic, kubeResult -> {
+                            if (kubeResult.succeeded()) {
+                                enqueue(new CreateInTopicStore(topicStore, topic, null, resultHandler));
                             }
                         }));
                     }
                 }
             };
-            kafka.topicMetadata(topicName, 0, TimeUnit.MILLISECONDS).whenComplete(handler);
+            kafka.topicMetadata(topicName, handler);
         }
     }
 
     /** Called when a ConfigMap is added in k8s */
-    void onConfigMapAdded(ConfigMap configMap) {
+    void onConfigMapAdded(ConfigMap configMap, Handler<AsyncResult<Void>> resultHandler) {
         if (cmPredicate.test(configMap)) {
             TopicName topicName = new TopicName(configMap);
             if (inFlight.shouldProcessConfigMapAdded(topicName)) {
                 Topic topic = TopicSerialization.fromConfigMap(configMap);
                 enqueue(new CreateKafkaTopic(topic, ar -> {
                     if (ar.succeeded()) {
-                        enqueue(new CreateInTopicStore(topicStore, topic, configMap));
+                        enqueue(new CreateInTopicStore(topicStore, topic, configMap, resultHandler));
+                    } else {
+                        resultHandler.handle(Future.failedFuture(ar.cause()));
                     }
                 }, configMap));
+            } else {
+                resultHandler.handle(Future.succeededFuture());
             }
+        } else {
+            resultHandler.handle(Future.succeededFuture());
         }
     }
 
@@ -545,7 +590,7 @@ public class Operator {
             if (inFlight.shouldProcessConfigMapDeleted(topicName)) {
                 enqueue(new DeleteKafkaTopic(topicName, configMap, ar -> {
                     if (ar.succeeded()) {
-                        enqueue(new DeleteFromTopicStore(topicStore, topicName, configMap));
+                        enqueue(new DeleteFromTopicStore(topicStore, topicName, configMap, storeResult -> {}));
                     }
                 }));
             }
@@ -565,11 +610,11 @@ public class Operator {
 
         @Override
         public void process() throws OperatorException {
-            topicStore.update(topic).whenCompleteAsync((vr, throwable) -> {
-                if (throwable != null) {
-                    enqueue(new ErrorEvent(involvedObject, throwable.toString()));
+            topicStore.update(topic, ar-> {
+                if (ar.failed()) {
+                    enqueue(new ErrorEvent(involvedObject, ar.cause().toString()));
                 }
-            }, executor);
+            });
         }
 
         @Override
@@ -582,21 +627,24 @@ public class Operator {
         private final TopicStore topicStore;
         private final Topic topic;
         private final HasMetadata involvedObject;
+        private final Handler<AsyncResult<Void>> handler;
 
-        private CreateInTopicStore(TopicStore topicStore, Topic topic, HasMetadata involvedObject) {
+        private CreateInTopicStore(TopicStore topicStore, Topic topic, HasMetadata involvedObject,
+                                   Handler<AsyncResult<Void>> handler) {
             this.topicStore = topicStore;
             this.topic = topic;
             this.involvedObject = involvedObject;
+            this.handler = handler;
         }
 
         @Override
         public void process() throws OperatorException {
-            CompletableFuture<Void> fut = topicStore.create(topic);
-            fut.whenCompleteAsync((vr, throwable) -> {
-                if (throwable != null) {
-                    enqueue(new ErrorEvent(involvedObject, throwable.toString()));
+            topicStore.create(topic, ar-> {
+                if (ar.failed()) {
+                    enqueue(new ErrorEvent(involvedObject, ar.cause().toString()));
                 }
-            }, executor);
+                handler.handle(ar);
+            });
         }
 
         @Override
@@ -609,21 +657,24 @@ public class Operator {
         private final TopicStore topicStore;
         private final TopicName topicName;
         private final HasMetadata involvedObject;
+        private final Handler<AsyncResult<Void>> handler;
 
-        private DeleteFromTopicStore(TopicStore topicStore, TopicName topicName, HasMetadata involvedObject) {
+        private DeleteFromTopicStore(TopicStore topicStore, TopicName topicName, HasMetadata involvedObject, 
+                                     Handler<AsyncResult<Void>> handler) {
             this.topicStore = topicStore;
             this.topicName = topicName;
             this.involvedObject = involvedObject;
+            this.handler = handler;
         }
 
         @Override
         public void process() throws OperatorException {
-            CompletableFuture<Void> fut = topicStore.delete(topicName);
-            fut.whenCompleteAsync((vr, throwable) -> {
-                if (throwable != null) {
-                    enqueue(new ErrorEvent(involvedObject, throwable.toString()));
+            topicStore.delete(topicName, ar-> {
+                if (ar.failed()) {
+                    enqueue(new ErrorEvent(involvedObject, ar.cause().toString()));
                 }
-            }, executor);
+                handler.handle(ar);
+            });
         }
 
         @Override

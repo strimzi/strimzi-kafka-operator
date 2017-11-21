@@ -17,6 +17,9 @@
 
 package io.enmasse.barnabas.operator.topic;
 
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
+
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -24,32 +27,49 @@ import java.util.concurrent.CompletableFuture;
  * topic state that won't be modified by either K8S or Kafka.
  */
 public interface TopicStore {
-    /**
-     * Get the topic with the given name.
-     * @param name The name of the topic to get.
-     * @return A future for the stored topic, which will return null if the topic didn't exist.
-     */
-    CompletableFuture<Topic> read(TopicName name);
+
+    public static class EntityExistsException extends Exception {
+
+    }
+
+    public static class NoSuchEntityExistsException extends Exception {
+
+    }
 
     /**
-     * Persist the given topic in the store.
-     * @param topic The topic to persist.
-     * @return A future for the success or failure of the operation.
+     * Asynchronously get the topic with the given name
+     * and run the given handler on the context with the resulting Topic.
+     * If no topic with the given name exists, the handler wiil be called with
+     * a failed result whose {@code cause()} is
+     * {@link NoSuchEntityExistsException}.
      */
-    CompletableFuture<Void> create(Topic topic);
+    void read(TopicName name, Handler<AsyncResult<Topic>> handler);
 
     /**
-     * Update the given topic in the store.
-     * @param topic The topic to update.
-     * @return A future for the success or failure of the operation.
+     * Asynchronously persist the given topic in the store
+     * and run the given handler on the context when done.
+     * If a topic with the given name already exists, the handler wiil be called with
+     * a failed result whose {@code cause()} is
+     * {@link EntityExistsException}.
      */
-    CompletableFuture<Void> update(Topic topic);
+    void create(Topic topic, Handler<AsyncResult<Void>> handler);
 
     /**
-     * Delete the given topic from the store.
-     * @param topic The topic to delete.
-     * @return A future for the success or failure of the operation.
+     * Asynchronously update the given topic in the store
+     * and run the given handler on the context when done.
+     * If no topic with the given name exists, the handler wiil be called with
+     * a failed result whose {@code cause()} is
+     * {@link NoSuchEntityExistsException}.
      */
-    CompletableFuture<Void> delete(TopicName topic);
+    void update(Topic topic, Handler<AsyncResult<Void>> handler);
+
+    /**
+     * Asynchronously delete the given topic from the store
+     * and run the given handler on the context when done.
+     * If no topic with the given name exists, the handler wiil be called with
+     * a failed result whose {@code cause()} is
+     * {@link NoSuchEntityExistsException}.
+     */
+    void delete(TopicName topic, Handler<AsyncResult<Void>> handler);
 }
 

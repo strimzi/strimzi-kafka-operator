@@ -20,6 +20,7 @@ package io.enmasse.barnabas.operator.topic;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ListTopicsResult;
@@ -46,19 +47,24 @@ public class KafkaImpl implements Kafka {
 
     private final AdminClient adminClient;
 
-    private final ScheduledExecutorService executor;
+    private final Vertx vertx;
 
-    public KafkaImpl(AdminClient adminClient, ScheduledExecutorService executor) {
+    public KafkaImpl(AdminClient adminClient, Vertx vertx) {
         this.adminClient = adminClient;
-        this.executor = executor;
+        this.vertx = vertx;
     }
 
-    abstract class Work implements Runnable {
+    abstract class Work implements Runnable, Handler<Void> {
         @Override
         public void run() {
             if (!complete()) {
-                executor.execute(this);
+                vertx.runOnContext(this);
             }
+        }
+
+        @Override
+        public void handle(Void v) {
+            run();
         }
 
         protected abstract boolean complete();
@@ -192,16 +198,8 @@ public class KafkaImpl implements Kafka {
      * when the future is ready.
      */
     private void queueWork(Work work) {
-        queueWork(work, 0, TimeUnit.MILLISECONDS);
-    }
-    private void queueWork(Work work, long delay, TimeUnit unit) {
-        if (delay != 0) {
-            logger.debug("Queuing work {} for execution in {} {}", work, delay, unit);
-            executor.schedule(work, delay, unit);
-        } else {
-            logger.debug("Queuing work {} for immediate execution", work);
-            executor.execute(work);
-        }
+        logger.debug("Queuing work {} for immediate execution", work);
+        vertx.runOnContext(work);
     }
 
     /**
@@ -246,9 +244,8 @@ public class KafkaImpl implements Kafka {
      * (in a different thread) with the result.
      */
     @Override
-    public CompletableFuture<TopicMetadata> topicMetadata(TopicName topicName, long delay, TimeUnit unit) {
+    public void topicMetadata(TopicName topicName, Handler<AsyncResult<TopicMetadata>> handler) {
         logger.debug("Getting metadata for topic {}", topicName);
-        CompletableFuture<TopicMetadata> result = new CompletableFuture<>();
         ConfigResource resource = new ConfigResource(ConfigResource.Type.TOPIC, topicName.toString());
         KafkaFuture<Config> configFuture = adminClient.describeConfigs(
                 Collections.singleton(resource)).values().get(resource);
@@ -256,18 +253,7 @@ public class KafkaImpl implements Kafka {
                 Collections.singleton(topicName.toString())).values().get(topicName);
         queueWork(new BiWork<>(descriptionFuture, configFuture,
                 (desc, conf) -> new TopicMetadata(desc, conf),
-                futureCompleter(result)), delay, unit);
-        return result;
-    }
-
-    private <T> Handler<AsyncResult<T>> futureCompleter(CompletableFuture<T> result) {
-        return ar -> {
-            if (ar.succeeded()) {
-                result.complete(ar.result());
-            } else {
-                result.completeExceptionally(ar.cause());
-            }
-        };
+                result -> handler.handle(result)));
     }
 
     @Override
@@ -276,12 +262,5 @@ public class KafkaImpl implements Kafka {
         queueWork(new UniWork<>(future.names(), handler));
     }
 
-    @Override
-    public CompletableFuture<Set<TopicName>> listTopicsFuture() {
-        CompletableFuture<Set<String>> result = new CompletableFuture<>();
-        listTopics(futureCompleter(result));
-        return result.thenApply(stringNames ->
-                stringNames.stream().map(name -> new TopicName(name)).collect(Collectors.toSet())
-        );
-    }
+
 }
