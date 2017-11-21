@@ -21,8 +21,6 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.EventBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -33,11 +31,7 @@ import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiConsumer;
 
 
 public class Operator {
@@ -45,7 +39,6 @@ public class Operator {
     private final static Logger logger = LoggerFactory.getLogger(Operator.class);
     private final Kafka kafka;
     private final K8s k8s;
-    private final KubernetesClient client;
     //private final ScheduledExecutorService executor;
     private final Vertx vertx;
     private final CmPredicate cmPredicate;
@@ -307,20 +300,7 @@ public class Operator {
             logger.info("Deleting topic '{}'", topicName);
             // TODO assert no existing mapping
             inFlight.startDeletingTopic(topicName);
-            kafka.deleteTopic(topicName, (result) -> {
-                if (result.succeeded()) {
-                    logger.info("Deleted topic '{}' for ConfigMap", topicName);
-                    handler.handle(result);
-                } else {
-                    throw new OperatorException(involvedObject, result.cause());
-                }
-            });
-
-            // TODO we need to do better than simply logging on error
-            // -- can we produce some kind of error event in k8s?
-
-            // -- really we want an error to propagate out of the Kubernetes API for deleting the config map
-            //    but that's only really an option with a CRD and customer operator
+            kafka.deleteTopic(topicName, handler);
         }
 
         @Override
@@ -329,11 +309,10 @@ public class Operator {
         }
     }
 
-    public Operator(DefaultKubernetesClient kubeClient, Kafka kafka,
-                    K8s k8s, Vertx vertx,
+    public Operator(Vertx vertx, Kafka kafka,
+                    K8s k8s,
                     CmPredicate cmPredicate) {
         this.kafka = kafka;
-        this.client = kubeClient;
         this.k8s = k8s;
         this.vertx = vertx;
         this.cmPredicate = cmPredicate;
@@ -487,16 +466,20 @@ public class Operator {
     }
 
     /** Called when a topic znode is deleted in ZK */
-    void onTopicDeleted(TopicName topicName) {
+    void onTopicDeleted(TopicName topicName, Handler<AsyncResult<Void>> handler) {
         // XXX currently runs on the ZK thread, requiring a synchronized `inFlight`
         // is it better to put this check in the topic deleted event?
         // that would require exposing an API to remove()
         if (inFlight.shouldProcessDelete(topicName)) {
             enqueue(new DeleteConfigMap(topicName, ar -> {
                 if (ar.succeeded()) {
-                    enqueue(new DeleteFromTopicStore(topicStore, topicName, null, ar2 -> {}));
+                    enqueue(new DeleteFromTopicStore(topicStore, topicName, null, handler));
+                } else {
+                    handler.handle(ar);
                 }
             }));
+        } else {
+            handler.handle(Future.succeededFuture());
         }
     }
 
@@ -539,12 +522,16 @@ public class Operator {
                         enqueue(new CreateConfigMap(topic, kubeResult -> {
                             if (kubeResult.succeeded()) {
                                 enqueue(new CreateInTopicStore(topicStore, topic, null, resultHandler));
+                            } else {
+                                resultHandler.handle(kubeResult);
                             }
                         }));
                     }
                 }
             };
             kafka.topicMetadata(topicName, handler);
+        } else {
+            resultHandler.handle(Future.succeededFuture());
         }
     }
 
@@ -570,7 +557,7 @@ public class Operator {
     }
 
     /** Called when a ConfigMap is modified in k8s */
-    void onConfigMapModified(TopicStore topicStore, ConfigMap configMap) {
+    void onConfigMapModified(TopicStore topicStore, ConfigMap configMap, Handler<AsyncResult<Void>> handler) {
         if (cmPredicate.test(configMap)) {
             TopicName topicName = new TopicName(configMap);
             if (inFlight.shouldProcessConfigMapModified(topicName)) {
@@ -579,21 +566,31 @@ public class Operator {
                 // So call reconcile, rather than enqueuing a UpdateKafkaTopic directly
                 reconcile(configMap, topicName);
                 //enqueue(new UpdateKafkaTopic(topic, configMap));
+            } else {
+                handler.handle(Future.succeededFuture());
             }
+        } else {
+            handler.handle(Future.succeededFuture());
         }
     }
 
     /** Called when a ConfigMap is deleted in k8s */
-    void onConfigMapDeleted(ConfigMap configMap) {
+    void onConfigMapDeleted(ConfigMap configMap, Handler<AsyncResult<Void>> handler) {
         if (cmPredicate.test(configMap)) {
             TopicName topicName = new TopicName(configMap);
             if (inFlight.shouldProcessConfigMapDeleted(topicName)) {
                 enqueue(new DeleteKafkaTopic(topicName, configMap, ar -> {
                     if (ar.succeeded()) {
-                        enqueue(new DeleteFromTopicStore(topicStore, topicName, configMap, storeResult -> {}));
+                        enqueue(new DeleteFromTopicStore(topicStore, topicName, configMap, handler));
+                    } else {
+                        handler.handle(ar);
                     }
                 }));
+            } else {
+                handler.handle(Future.succeededFuture());
             }
+        } else {
+            handler.handle(Future.succeededFuture());
         }
     }
 

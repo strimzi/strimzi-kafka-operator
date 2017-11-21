@@ -29,7 +29,8 @@ import java.util.function.Function;
 public class MockTopicStore implements TopicStore {
 
     private Map<TopicName, Topic> topics = new HashMap<>();
-    private Function<TopicName, AsyncResult<Void>> createTopicResponse = t -> Future.succeededFuture();
+    private Function<TopicName, AsyncResult<Void>> createTopicResponse = t -> Future.failedFuture("Unexpected. Your test's MockTopicStore probably nees a createTopicResponse configured.");
+    private Function<TopicName, AsyncResult<Void>> deleteTopicResponse = t -> Future.failedFuture("Unexpected. Your test's MockTopicStore probably nees a deleteTopicResponse configured.");
 
     @Override
     public void read(TopicName name, Handler<AsyncResult<Topic>> handler) {
@@ -46,14 +47,11 @@ public class MockTopicStore implements TopicStore {
         AsyncResult<Void> response = createTopicResponse.apply(topic.getTopicName());
         if (response.succeeded()) {
             Topic old = topics.put(topic.getTopicName(), topic);
-            if (old == null) {
-                handler.handle(Future.succeededFuture());
-            } else {
+            if (old != null) {
                 handler.handle(Future.failedFuture(new TopicStore.EntityExistsException()));
             }
-        } else {
-            handler.handle(response);
         }
+        handler.handle(response);
     }
 
     @Override
@@ -68,12 +66,14 @@ public class MockTopicStore implements TopicStore {
 
     @Override
     public void delete(TopicName topicName, Handler<AsyncResult<Void>> handler) {
-        Topic topic = topics.remove(topicName);
-        if (topic != null) {
-            handler.handle(Future.succeededFuture());
-        } else {
-            handler.handle(Future.failedFuture(new TopicStore.NoSuchEntityExistsException()));
+        AsyncResult<Void> response = deleteTopicResponse.apply(topicName);
+        if (response.succeeded()) {
+            Topic topic = topics.remove(topicName);
+            if (topic == null) {
+                handler.handle(Future.failedFuture(new TopicStore.NoSuchEntityExistsException()));
+            }
         }
+        handler.handle(response);
     }
 
     public void assertExists(TestContext context, TopicName topicName) {
@@ -102,5 +102,25 @@ public class MockTopicStore implements TopicStore {
             }
         };
         return this;
+    }
+
+    public MockTopicStore setDeleteTopicResponse(TopicName createTopic, Exception exception) {
+        Function<TopicName, AsyncResult<Void>> old = this.deleteTopicResponse;
+        this.deleteTopicResponse = t -> {
+            if (t.equals(createTopic)) {
+                if (exception != null) {
+                    return Future.failedFuture(exception);
+                } else {
+                    return Future.succeededFuture();
+                }
+            } else {
+                return old.apply(t);
+            }
+        };
+        return this;
+    }
+
+    public void assertEmpty(TestContext context) {
+        context.assertTrue(this.topics.isEmpty());
     }
 }

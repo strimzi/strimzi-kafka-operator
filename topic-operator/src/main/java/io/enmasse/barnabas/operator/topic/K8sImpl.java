@@ -114,8 +114,8 @@ public class K8sImpl implements K8s {
         vertx.executeBlocking(future -> {
             try {
                 try {
-                    //logger.debug("Creating event {}", event);
-                    //client.events().create(outcomeEvent);
+                    logger.debug("Creating event {}", event);
+                    //client.events().create(event);
                 } catch (KubernetesClientException e) {
                     logger.error("Error creating event {}", event, e);
                 }

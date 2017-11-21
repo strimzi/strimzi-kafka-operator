@@ -28,43 +28,100 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 public class MockK8s implements K8s {
 
     private Map<MapName, ConfigMap> byName = new HashMap<>();
     private Map<TopicName, ConfigMap> byTopicName = new HashMap<>();
+    private List<Event> events = new ArrayList<>();
+    private Function<MapName, AsyncResult<Void>> createResponse = n -> Future.failedFuture("Unexpected. ");
+    private Function<MapName, AsyncResult<Void>> modifyResponse = n -> Future.failedFuture("Unexpected. ");
+    private Function<TopicName, AsyncResult<Void>> deleteResponse = n -> Future.failedFuture("Unexpected. ");
+
+    public MockK8s setCreateResponse(MapName mapName, Exception exception) {
+        Function<MapName, AsyncResult<Void>> old = createResponse;
+        createResponse = n -> {
+            if (mapName.equals(n)) {
+                if (exception == null) {
+                    return Future.succeededFuture();
+                } else {
+                    return Future.failedFuture(exception);
+                }
+            }
+            return old.apply(n);
+        };
+        return this;
+    }
+
+    public MockK8s setModifyResponse(MapName mapName, Exception exception) {
+        Function<MapName, AsyncResult<Void>> old = modifyResponse;
+        modifyResponse = n -> {
+            if (mapName.equals(n)) {
+                if (exception == null) {
+                    return Future.succeededFuture();
+                } else {
+                    return Future.failedFuture(exception);
+                }
+            }
+            return old.apply(n);
+        };
+        return this;
+    }
+
+    public MockK8s setDeleteResponse(TopicName mapName, Exception exception) {
+        Function<TopicName, AsyncResult<Void>> old = deleteResponse;
+        deleteResponse = n -> {
+            if (mapName.equals(n)) {
+                if (exception == null) {
+                    return Future.succeededFuture();
+                } else {
+                    return Future.failedFuture(exception);
+                }
+            }
+            return old.apply(n);
+        };
+        return this;
+    }
 
     @Override
     public void createConfigMap(ConfigMap cm, Handler<AsyncResult<Void>> handler) {
+        AsyncResult<Void> response = createResponse.apply(new MapName(cm.getMetadata().getName()));
         ConfigMap old = byName.put(new MapName(cm.getMetadata().getName()), cm);
         if (old == null) {
             byTopicName.put(new TopicName(cm.getData().getOrDefault(TopicSerialization.CM_KEY_NAME, cm.getMetadata().getName())), cm);
-            handler.handle(Future.succeededFuture());
         } else {
             handler.handle(Future.failedFuture("configmap already existed: " + cm.getMetadata().getName()));
+            return;
         }
+        handler.handle(response);
     }
 
     @Override
     public void updateConfigMap(ConfigMap cm, Handler<AsyncResult<Void>> handler) {
+        AsyncResult<Void> respose = modifyResponse.apply(new MapName(cm.getMetadata().getName()));
         ConfigMap old = byName.put(new MapName(cm.getMetadata().getName()), cm);
         if (old == null) {
             handler.handle(Future.failedFuture("configmap does not exists, cannot be updated: " + cm.getMetadata().getName()));
+            return;
         } else {
             byTopicName.put(new TopicName(cm.getData().getOrDefault(TopicSerialization.CM_KEY_NAME, cm.getMetadata().getName())), cm);
-            handler.handle(Future.succeededFuture());
         }
+        handler.handle(respose);
     }
 
     @Override
     public void deleteConfigMap(TopicName topicName, Handler<AsyncResult<Void>> handler) {
+        AsyncResult<Void> response = deleteResponse.apply(topicName);
         ConfigMap cm = byTopicName.remove(topicName);
         if (cm == null) {
             handler.handle(Future.failedFuture("No such configmap, with topic name " + topicName));
+            return;
         } else {
             byName.remove(new MapName(cm.getMetadata().getName()));
-            handler.handle(Future.succeededFuture());
         }
+        handler.handle(response);
     }
 
     @Override
@@ -84,7 +141,8 @@ public class MockK8s implements K8s {
 
     @Override
     public void createEvent(Event event, Handler<AsyncResult<Void>> handler) {
-        throw new RuntimeException("Implement this mock!");
+        events.add(event);
+        handler.handle(Future.succeededFuture());
     }
 
     public void assertExists(TestContext context, MapName topicName) {
@@ -98,5 +156,18 @@ public class MockK8s implements K8s {
 
     public void assertNotExists(TestContext context, MapName topicName) {
         context.assertFalse(byName.containsKey(topicName));
+    }
+
+    public void assertContainsEvent(TestContext context, Predicate<Event> test) {
+        for (Event event : events) {
+            if (test.test(event)) {
+                return;
+            }
+        }
+        context.fail("Missing event");
+    }
+
+    public void assertNoEvents(TestContext context) {
+        context.assertTrue(events.isEmpty());
     }
 }

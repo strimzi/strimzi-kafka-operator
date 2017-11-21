@@ -33,10 +33,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -81,10 +77,12 @@ public class Main extends AbstractVerticle {
     }
 
     /**
-     * Stop the operator, waiting up to the given timeout
-     * @throws InterruptedException if interrupted while waiting.
+     * Stop the operator.
      */
     public void stop() {
+        // We should:
+        // 1. Stop passing on notifications from ZK and K8s
+        // 2. Wait for in-flight work to cease
         logger.info("Stopping");
         kubeClient.close();
         adminClient.close(1, TimeUnit.MINUTES);
@@ -107,7 +105,7 @@ public class Main extends AbstractVerticle {
 
         this.k8s = new K8sImpl(null, kubeClient, cmPredicate);
 
-        this.operator = new Operator(kubeClient, kafka, k8s, vertx, cmPredicate);
+        this.operator = new Operator(vertx, kafka, k8s, cmPredicate);
 
         ZkTopicStore topicStore = new ZkTopicStore(vertx);
 
@@ -128,10 +126,10 @@ public class Main extends AbstractVerticle {
                                 operator.onConfigMapAdded(configMap, ar -> {});
                                 break;
                             case MODIFIED:
-                                operator.onConfigMapModified(topicStore, configMap);
+                                operator.onConfigMapModified(topicStore, configMap, ar -> {});
                                 break;
                             case DELETED:
-                                operator.onConfigMapDeleted(configMap);
+                                operator.onConfigMapDeleted(configMap, ar -> {});
                                 break;
                             case ERROR:
                                 logger.error("Watch received action=ERROR for ConfigMap " + name);

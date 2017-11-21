@@ -17,11 +17,14 @@
 
 package io.enmasse.barnabas.operator.topic;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
@@ -32,6 +35,9 @@ import org.apache.kafka.common.TopicPartitionInfo;
 import org.apache.kafka.common.errors.ClusterAuthorizationException;
 import org.apache.kafka.common.errors.TopicExistsException;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -50,7 +56,31 @@ public class OperatorTest {
             "kind", "topic",
             "app", "barnabas");
 
-    Vertx vertx = Vertx.vertx();
+    private final TopicName topicName = new TopicName("my-topic");
+    private final MapName mapName = topicName.asMapName();
+    private Vertx vertx = Vertx.vertx();
+    private MockKafka mockKafka = new MockKafka();
+    private MockTopicStore mockTopicStore = new MockTopicStore();
+    private MockK8s mockK8s = new MockK8s();
+    private Operator op;
+
+    @Before
+    public void setup() {
+        mockKafka = new MockKafka();
+        mockTopicStore = new MockTopicStore();
+        mockK8s = new MockK8s();
+        op = new Operator(vertx, mockKafka, mockK8s, cmPredicate);
+        op.setTopicStore(mockTopicStore);
+    }
+
+    @After
+    public void teardown() {
+        vertx.close();
+        mockKafka = null;
+        mockTopicStore = null;
+        mockK8s = null;
+        op = null;
+    }
 
     private Map<String, String> map(String... pairs) {
         if (pairs.length % 2 != 0) {
@@ -63,17 +93,31 @@ public class OperatorTest {
         return result;
     }
 
+    private TopicMetadata getTopicMetadata() {
+        Node node0 = new Node(0, "host0", 1234);
+        Node node1 = new Node(1, "host1", 1234);
+        Node node2 = new Node(2, "host2", 1234);
+        List<Node> nodes02 = asList(node0, node1, node2);
+        TopicDescription desc = new TopicDescription(topicName.toString(), false, asList(
+                new TopicPartitionInfo(0, node0, nodes02, nodes02),
+                new TopicPartitionInfo(1, node0, nodes02, nodes02)
+        ));
+        Config config = new Config(Collections.emptyList());
+        return new TopicMetadata(desc, config);
+    }
+
     /** Test what happens when a non-topic config map gets created in kubernetes */
     @Test
-    public void testIgnorableConfigMapCreated(TestContext context) {
+    public void testOnConfigMapAdded_ignorable(TestContext context) {
         ConfigMap cm = new ConfigMapBuilder().withNewMetadata().withName("non-topic").endMetadata().build();
-
-        Operator op = new Operator(null, null, null, vertx, cmPredicate);
 
         Async async = context.async();
         op.onConfigMapAdded(cm, ar -> {
-            context.assertTrue(ar.succeeded());
+            assertSucceeded(context, ar);
+            mockKafka.assertEmpty(context);
+            mockTopicStore.assertEmpty(context);
             async.complete();
+
         });
     }
 
@@ -81,24 +125,22 @@ public class OperatorTest {
      * Trigger {@link Operator#onConfigMapAdded(ConfigMap, Handler)}
      * and have the Kafka and TopicStore respond with the given exceptions.
      */
-    private void processableConfigMapCreatedWithError(TestContext context, Exception createException, Exception storeException) {
-        MockKafka mockKafka = new MockKafka().setCreateTopicResponse("my-topic", createException);
-        MockTopicStore mockTopicStore = new MockTopicStore().setCreateTopicResponse(new TopicName("my-topic"), storeException);
+    private Operator configMapAdded(TestContext context, Exception createException, Exception storeException) {
+        mockKafka.setCreateTopicResponse(topicName.toString(), createException);
+        mockTopicStore.setCreateTopicResponse(topicName, storeException);
 
         ConfigMap cm = new ConfigMapBuilder().withNewMetadata()
-                .withName("my-topic")
+                .withName(topicName.toString())
                 .withLabels(cmPredicate.labels()).endMetadata()
                 .withData(map(TopicSerialization.CM_KEY_PARTITIONS, "10",
                         TopicSerialization.CM_KEY_REPLICAS, "2")).build();
 
-        Operator op = new Operator(null, mockKafka, null, vertx, cmPredicate);
-        op.setTopicStore(mockTopicStore);
         Async async = context.async();
 
         op.onConfigMapAdded(cm, ar -> {
             if (createException != null
                     || storeException != null) {
-                context.assertFalse(ar.succeeded());
+                assertFailed(context, ar);
                 Class<? extends Exception> expectedExceptionType;
                 if (createException != null) {
                     expectedExceptionType = createException.getClass();
@@ -113,14 +155,18 @@ public class OperatorTest {
                     mockKafka.assertExists(context, topicName);
                 }
                 mockTopicStore.assertNotExists(context, topicName);
+                //TODO mockK8s.assertContainsEvent(context, e -> "Error".equals(e.getKind()));
             } else {
-                context.assertTrue(ar.succeeded());
+                assertSucceeded(context, ar);
                 Topic expectedTopic = TopicSerialization.fromConfigMap(cm);
                 mockKafka.assertContains(context, expectedTopic);
                 mockTopicStore.assertContains(context, expectedTopic);
+                mockK8s.assertNoEvents(context);
             }
             async.complete();
         });
+
+        return op;
     }
 
     /**
@@ -129,8 +175,8 @@ public class OperatorTest {
      * 3. operator successfully creates in topic store
      */
     @Test
-    public void testProcessableConfigMapCreated(TestContext context) {
-        processableConfigMapCreatedWithError(context, null, null);
+    public void testOnConfigMapAdded(TestContext context) {
+        configMapAdded(context, null, null);
     }
 
     /**
@@ -138,9 +184,9 @@ public class OperatorTest {
      * 2. error when creating topic in kafka
      */
     @Test
-    public void testProcessableConfigMapCreated_TopicExistsException(TestContext context) {
+    public void testOnConfigMapAdded_TopicExistsException(TestContext context) {
         Exception createException = new TopicExistsException("");
-        processableConfigMapCreatedWithError(context, createException, null);
+        configMapAdded(context, createException, null);
         // TODO check a k8s event got created
         // TODO what happens when we subsequently reconcile?
     }
@@ -150,9 +196,9 @@ public class OperatorTest {
      * 2. error when creating topic in kafka
      */
     @Test
-    public void testProcessableConfigMapCreated_ClusterAuthorizationException(TestContext context) {
+    public void testOnConfigMapAdded_ClusterAuthorizationException(TestContext context) {
         Exception createException = new ClusterAuthorizationException("");
-        processableConfigMapCreatedWithError(context, createException, null);
+        Operator op = configMapAdded(context, createException, null);
         // TODO check a k8s event got created
         // TODO what happens when we subsequently reconcile?
     }
@@ -163,8 +209,8 @@ public class OperatorTest {
      * 3. error when creating in topic store
      */
     @Test
-    public void testProcessableConfigMapCreated_EntityExistsException(TestContext context) {
-        processableConfigMapCreatedWithError(context,
+    public void testOnConfigMapAdded_EntityExistsException(TestContext context) {
+        configMapAdded(context,
                 null,
                 new TopicStore.EntityExistsException());
         // TODO what happens when we subsequently reconcile?
@@ -180,30 +226,16 @@ public class OperatorTest {
      */
     @Test
     public void testProcessableTopicCreated(TestContext context) {
-        Node node0 = new Node(0, "host0", 1234);
-        Node node1 = new Node(1, "host1", 1234);
-        Node node2 = new Node(2, "host2", 1234);
-        List<Node> nodes02 = asList(node0, node1, node2);
-        TopicDescription desc = new TopicDescription("my-topic", false, asList(
-                new TopicPartitionInfo(0, node0, nodes02, nodes02),
-                new TopicPartitionInfo(1, node0, nodes02, nodes02)
-        ));
-        Config config = new Config(Collections.emptyList());
-        TopicMetadata topicMetadata = new TopicMetadata(desc, config);
+        TopicMetadata topicMetadata = getTopicMetadata();
 
-        MockKafka mockKafka = new MockKafka();
-        MockK8s mockK8s = new MockK8s();
-        MockTopicStore mockTopicStore = new MockTopicStore();
-        TopicName topicName = new TopicName("my-topic");
+        mockTopicStore.setCreateTopicResponse(topicName, null);
         mockKafka.setTopicMetadataResponse(topicName, topicMetadata, null);
-
-        Operator op = new Operator(null, mockKafka, mockK8s, vertx, cmPredicate);
-        op.setTopicStore(mockTopicStore);
+        mockK8s.setCreateResponse(mapName, null);
 
         Async async = context.async();
         op.onTopicCreated(topicName, ar -> {
-            context.assertTrue(ar.succeeded());
-            mockK8s.assertExists(context, topicName.asMapName());
+            assertSucceeded(context, ar);
+            mockK8s.assertExists(context, mapName);
             mockTopicStore.assertContains(context, TopicSerialization.fromTopicMetadata(topicMetadata));
             async.complete();
         });
@@ -218,21 +250,9 @@ public class OperatorTest {
      */
     @Test
     public void testProcessableTopicCreated_retry(TestContext context) {
-        Node node0 = new Node(0, "host0", 1234);
-        Node node1 = new Node(1, "host1", 1234);
-        Node node2 = new Node(2, "host2", 1234);
-        List<Node> nodes02 = asList(node0, node1, node2);
-        TopicDescription desc = new TopicDescription("my-topic", false, asList(
-                new TopicPartitionInfo(0, node0, nodes02, nodes02),
-                new TopicPartitionInfo(1, node0, nodes02, nodes02)
-        ));
-        Config config = new Config(Collections.emptyList());
-        TopicMetadata topicMetadata = new TopicMetadata(desc, config);
+        TopicMetadata topicMetadata = getTopicMetadata();
 
-        MockKafka mockKafka = new MockKafka();
-        MockK8s mockK8s = new MockK8s();
-        MockTopicStore mockTopicStore = new MockTopicStore();
-        TopicName topicName = new TopicName("my-topic");
+        mockTopicStore.setCreateTopicResponse(topicName, null);
         AtomicInteger counter = new AtomicInteger();
         mockKafka.setTopicMetadataResponse(t -> {
             int count = counter.getAndIncrement();
@@ -244,83 +264,70 @@ public class OperatorTest {
             context.fail("This should never happen");
             return Future.failedFuture("This should never happen");
         });
-
-        Operator op = new Operator(null, mockKafka, mockK8s, vertx, cmPredicate);
-        op.setTopicStore(mockTopicStore);
+        mockK8s.setCreateResponse(mapName, null);
 
         Async async = context.async();
         op.onTopicCreated(topicName, ar -> {
-            context.assertTrue(ar.succeeded());
+            assertSucceeded(context, ar);
             context.assertEquals(4, counter.get());
-            mockK8s.assertExists(context, topicName.asMapName());
+            mockK8s.assertExists(context, mapName);
             mockTopicStore.assertContains(context, TopicSerialization.fromTopicMetadata(topicMetadata));
             async.complete();
         });
     }
+
+    private void assertSucceeded(TestContext context, AsyncResult<Void> ar) {
+        context.assertTrue(ar.succeeded(), ar.cause() != null ? ar.cause().toString(): "");
+    }
+
+    private void assertFailed(TestContext context, AsyncResult<Void> ar) {
+        context.assertFalse(ar.succeeded(), ar.failed() ? "" : ar.result().toString());
+    }
+
 
     /**
      * 1. operator is notified that a topic is created
      * 2. operator times out getting metadata
      */
     @Test
-    public void testProcessableTopicCreated_timeout(TestContext context) {
-        Node node0 = new Node(0, "host0", 1234);
-        Node node1 = new Node(1, "host1", 1234);
-        Node node2 = new Node(2, "host2", 1234);
-        List<Node> nodes02 = asList(node0, node1, node2);
-        TopicDescription desc = new TopicDescription("my-topic", false, asList(
-                new TopicPartitionInfo(0, node0, nodes02, nodes02),
-                new TopicPartitionInfo(1, node0, nodes02, nodes02)
-        ));
-        Config config = new Config(Collections.emptyList());
-        TopicMetadata topicMetadata = new TopicMetadata(desc, config);
+    public void testProcessableTopicCreated_retryTimeout(TestContext context) {
+        TopicMetadata topicMetadata = getTopicMetadata();
 
-        MockKafka mockKafka = new MockKafka();
-        MockK8s mockK8s = new MockK8s();
-        MockTopicStore mockTopicStore = new MockTopicStore();
-        TopicName topicName = new TopicName("my-topic");
         mockKafka.setTopicMetadataResponse(topicName, null, new UnknownTopicOrPartitionException());
-
-        Operator op = new Operator(null, mockKafka, mockK8s, vertx, cmPredicate);
-        op.setTopicStore(mockTopicStore);
 
         Async async = context.async();
         op.onTopicCreated(topicName, ar -> {
-            context.assertFalse(ar.succeeded());
+            assertFailed(context, ar);
             context.assertEquals(ar.cause().getClass(), MaxAttemptsExceededException.class);
-            mockK8s.assertNotExists(context, topicName.asMapName());
+            mockK8s.assertNotExists(context, mapName);
             mockTopicStore.assertNotExists(context, topicName);
             async.complete();
         });
     }
 
-    // TODO error getting full topic data
-    // TODO error creating config map (exists)
-
-
+    // TODO error getting full topic metadata, and then reconciliation
+    // TODO error creating config map (exists), and then reconciliation
 
     /**
      * Test reconciliation when a configmap has been created while the operator wasn't running
      */
     @Test
-    public void testReconciliation_withCm_noKafka_noPrivate(TestContext context) {
-        MockKafka mockKafka = new MockKafka().setCreateTopicResponse("my-topic", null);
-        MockTopicStore mockStore = new MockTopicStore();
+    public void testReconcile_withCm_noKafka_noPrivate(TestContext context) {
+        mockKafka.setCreateTopicResponse(topicName.toString(), null);
 
-        Operator op = new Operator(null, mockKafka, null, vertx, cmPredicate);
-        op.setTopicStore(mockStore);
+        mockTopicStore.setCreateTopicResponse(topicName, null);
 
-        Topic kubeTopic = new Topic.Builder("my-topic", 10, (short)2, map("foo", "bar")).build();
+        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short)2, map("foo", "bar")).build();
         Topic kafkaTopic = null;
         Topic privateTopic = null;
         Async async = context.async();
         op.reconcile(null, kubeTopic, kafkaTopic, privateTopic, reconcileResult -> {
-            context.assertTrue(reconcileResult.succeeded());
+            assertSucceeded(context, reconcileResult);
             mockKafka.assertExists(context, kubeTopic.getTopicName());
-            mockStore.assertExists(context, kubeTopic.getTopicName());
+            mockTopicStore.assertExists(context, kubeTopic.getTopicName());
+            mockK8s.assertNoEvents(context);
             async.complete();
         });
-        async.await();
     }
 
     /**
@@ -328,36 +335,113 @@ public class OperatorTest {
      * wasn't running
      */
     @Test
-    public void testReconciliation_withCm_noKafka_withPrivate(TestContext context) {
+    public void testReconcile_withCm_noKafka_withPrivate(TestContext context) {
 
-        Topic kubeTopic = new Topic.Builder("my-topic", 10, (short)2, map("foo", "bar")).build();
+        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short)2, map("foo", "bar")).build();
         Topic kafkaTopic = null;
-        Topic privateTopic = new Topic.Builder(kubeTopic).withNumPartitions(5).build();
+        Topic privateTopic = kubeTopic;
 
-        MockKafka mockKafka = new MockKafka();
-        MockTopicStore mockStore = new MockTopicStore();
-        MockK8s mockK8s = new MockK8s();
-        mockK8s.createConfigMap(TopicSerialization.toConfigMap(kubeTopic, cmPredicate), ar -> {});
-        mockStore.create(privateTopic, ar-> {});
+        mockK8s.setCreateResponse(mapName, null)
+                .createConfigMap(TopicSerialization.toConfigMap(kubeTopic, cmPredicate), ar -> {});
+        mockK8s.setDeleteResponse(topicName, null);
+        mockTopicStore.setCreateTopicResponse(topicName, null)
+                .create(privateTopic, ar-> {});
+        mockTopicStore.setDeleteTopicResponse(topicName, null);
 
-        Operator op = new Operator(null, mockKafka, mockK8s, vertx, cmPredicate);
-        op.setTopicStore(mockStore);
 
         Async async = context.async();
 
         op.reconcile(null, kubeTopic, kafkaTopic, privateTopic, reconcileResult -> {
-            context.assertTrue(reconcileResult.succeeded());
+            assertSucceeded(context, reconcileResult);
             mockKafka.assertNotExists(context, kubeTopic.getTopicName());
-            mockStore.assertNotExists(context, kubeTopic.getTopicName());
+            mockTopicStore.assertNotExists(context, kubeTopic.getTopicName());
             mockK8s.assertNotExists(context, kubeTopic.getMapName());
             async.complete();
         });
-
-
-
     }
 
     // TODO tests for the other reconciliation cases
+
+    private void configMapRemoved(TestContext context, Exception deleteTopicException, Exception storeException) {
+        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short)2, map("foo", "bar")).build();
+        Topic kafkaTopic = kubeTopic;
+        Topic privateTopic = kubeTopic;
+
+        mockKafka.setCreateTopicResponse(topicName.toString(), null)
+                .createTopic(TopicSerialization.toNewTopic(kafkaTopic), ar -> {});
+        mockKafka.setDeleteTopicResponse(topicName, deleteTopicException);
+
+        mockTopicStore.setCreateTopicResponse(topicName, null)
+                .create(privateTopic, ar -> {});
+        mockTopicStore.setDeleteTopicResponse(topicName, storeException);
+
+        ConfigMap cm = TopicSerialization.toConfigMap(kubeTopic, cmPredicate);
+
+        Async async = context.async();
+        op.onConfigMapDeleted(cm, ar -> {
+            if (deleteTopicException != null
+                    || storeException != null) {
+                assertFailed(context, ar);
+                if (deleteTopicException != null) {
+                    // should still exist
+                    mockKafka.assertExists(context, kafkaTopic.getTopicName());
+                } else {
+                    mockKafka.assertNotExists(context, kafkaTopic.getTopicName());
+                }
+                mockTopicStore.assertExists(context, kafkaTopic.getTopicName());
+            } else {
+                assertSucceeded(context, ar);
+                mockKafka.assertNotExists(context, kafkaTopic.getTopicName());
+                mockTopicStore.assertNotExists(context, kafkaTopic.getTopicName());
+            }
+            async.complete();
+        });
+    }
+
+    @Test
+    public void testOnConfigMapRemoved(TestContext context) {
+        Exception deleteTopicException = null;
+        Exception storeException = null;
+        configMapRemoved(context, deleteTopicException, storeException);
+    }
+
+    @Test
+    public void testOnConfigMapRemoved_UnknownTopicOrPartitionException(TestContext context) {
+        Exception deleteTopicException = new UnknownTopicOrPartitionException();
+        Exception storeException = null;
+        configMapRemoved(context, deleteTopicException, storeException);
+    }
+
+    @Test
+    public void testOnConfigMapRemoved_NoSuchEntityExistsException(TestContext context) {
+        Exception deleteTopicException = null;
+        Exception storeException = new TopicStore.NoSuchEntityExistsException();
+        configMapRemoved(context, deleteTopicException, storeException);
+    }
+
+    @Test
+    public void testOnTopicDeleted(TestContext context) {
+        Exception storeException = null;
+        Exception k8sException = null;
+        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short)2, map("foo", "bar")).build();
+        Topic kafkaTopic = kubeTopic;
+        Topic privateTopic = kubeTopic;
+
+        mockK8s.setCreateResponse(mapName, null)
+                .createConfigMap(TopicSerialization.toConfigMap(kubeTopic, cmPredicate), ar -> {});
+        mockK8s.setDeleteResponse(topicName, k8sException);
+
+        mockTopicStore.setCreateTopicResponse(topicName, null)
+                .create(privateTopic, ar -> {});
+        mockTopicStore.setDeleteTopicResponse(topicName, storeException);
+
+        Async async = context.async();
+        op.onTopicDeleted(topicName, ar -> {
+            context.assertTrue(ar.succeeded());
+            async.complete();
+        });
+    }
+
     // TODO tests for nasty races (e.g. create on both ends, update on one end and delete on the other)
     // I think in these cases we should seek to detect the concurrent modification
     // and perform a full reconciliation, possibly after a backoff time

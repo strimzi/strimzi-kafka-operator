@@ -45,7 +45,6 @@ public class K8sImplTest {
 
     private Vertx vertx = Vertx.vertx();
 
-    
     @Test
     public void testList(TestContext context) {
         Async async = context.async();

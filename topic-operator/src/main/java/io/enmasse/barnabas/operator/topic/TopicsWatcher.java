@@ -29,7 +29,7 @@ import java.util.Set;
 
 /**
  * ZooKeeper watcher for child znodes of {@code /brokers/topics},
- * calling {@link Operator#onTopicCreated(TopicName)} for new children and
+ * calling {@link Operator#onTopicCreated(TopicName, io.vertx.core.Handler)} for new children and
  * {@link Operator#onTopicDeleted(TopicName)} for deleted children.
  */
 class TopicsWatcher implements Watcher {
@@ -44,14 +44,22 @@ class TopicsWatcher implements Watcher {
 
     private List<String> children;
 
+    private volatile boolean shutdown = false;
+
     TopicsWatcher(Operator operator, ZooKeeper zookeeper) {
         this.operator = operator;
         this.zookeeper = zookeeper;
     }
 
+    public void startShutdown() {
+        shutdown = true;
+    }
 
     @Override
     public void process(WatchedEvent watchedEvent) {
+        if (shutdown) {
+            return;
+        }
         logger.info("{} received {}", this, watchedEvent);
         setWatch();
     }
@@ -69,7 +77,7 @@ class TopicsWatcher implements Watcher {
                 deleted.removeAll(result);
                 logger.info("Deleted topics: {}", deleted);
                 for (String topicName : deleted) {
-                    operator.onTopicDeleted(new TopicName(topicName));
+                    operator.onTopicDeleted(new TopicName(topicName), ar -> {});
                 }
                 Set<String> created = new HashSet(result);
                 created.removeAll(this.children);

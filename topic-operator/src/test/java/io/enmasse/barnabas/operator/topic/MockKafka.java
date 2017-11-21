@@ -29,14 +29,19 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
+import static io.vertx.core.Future.*;
+
 public class MockKafka implements Kafka {
 
     private Map<TopicName, Topic> topics = new HashMap<>();
 
     private AsyncResult<Set<String>> topicsListResponse = Future.succeededFuture(Collections.emptySet());
-    private Function<TopicName, AsyncResult<TopicMetadata>> topicMetadataRespose = t -> Future.failedFuture("Unexpected");
-    private Function<String, AsyncResult<Void>> createTopicResponse = t -> Future.failedFuture("Unexpected");
-    private Function<TopicName, AsyncResult<Void>> deleteTopicResponse = t -> Future.failedFuture("Unexpected");
+    private Function<TopicName, AsyncResult<TopicMetadata>> topicMetadataRespose =
+            t -> failedFuture("Unexpected. Your test probably need to configure the MockKafka with a topicMetadataResponse.");
+    private Function<String, AsyncResult<Void>> createTopicResponse =
+            t -> failedFuture("Unexpected. Your test probably need to configure the MockKafka with a createTopicResponse.");
+    private Function<TopicName, AsyncResult<Void>> deleteTopicResponse =
+            t -> failedFuture("Unexpected. Your test probably need to configure the MockKafka with a deleteTopicResponse.");
 
     public MockKafka setTopicsListResponse(AsyncResult<Set<String>> topicsListResponse) {
         this.topicsListResponse = topicsListResponse;
@@ -58,9 +63,9 @@ public class MockKafka implements Kafka {
         this.topicMetadataRespose = t -> {
             if (t.equals(topic)) {
                 if (exception != null) {
-                    return Future.failedFuture(exception);
+                    return failedFuture(exception);
                 } else {
-                    return Future.succeededFuture(topicMetadata);
+                    return succeededFuture(topicMetadata);
                 }
             } else {
                 return old.apply(t);
@@ -79,9 +84,9 @@ public class MockKafka implements Kafka {
         this.createTopicResponse = t -> {
             if (t.equals(createTopic)) {
                 if (exception != null) {
-                    return Future.failedFuture(exception);
+                    return failedFuture(exception);
                 } else {
-                    return Future.succeededFuture();
+                    return succeededFuture();
                 }
             } else {
                 return old.apply(t);
@@ -98,11 +103,11 @@ public class MockKafka implements Kafka {
     public MockKafka setDeleteTopicResponse(TopicName topic, Exception exception) {
         Function<TopicName, AsyncResult<Void>> old = this.deleteTopicResponse;
         this.deleteTopicResponse = t -> {
-            if (t.equals(deleteTopicResponse)) {
+            if (t.equals(topic)) {
                 if (exception != null) {
-                    return Future.failedFuture(exception);
+                    return failedFuture(exception);
                 } else {
-                    return Future.succeededFuture();
+                    return succeededFuture();
                 }
             } else {
                 return old.apply(t);
@@ -161,6 +166,10 @@ public class MockKafka implements Kafka {
 
     public void assertNotExists(TestContext context, TopicName topicName) {
         context.assertFalse(topics.containsKey(topicName));
+    }
+
+    public void assertEmpty(TestContext context) {
+        context.assertTrue(topics.isEmpty());
     }
 
     public void assertContains(TestContext context, Topic topic) {
