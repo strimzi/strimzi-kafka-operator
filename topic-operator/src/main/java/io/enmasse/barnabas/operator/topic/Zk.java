@@ -40,18 +40,42 @@ import java.util.List;
 
 public interface Zk {
 
+    public static Zk create(Vertx vertx, String zkConnectionString, int sessionTimeout) {
+        return new ZkImpl(vertx, zkConnectionString, sessionTimeout);
+    }
+
     Zk connect(Handler<AsyncResult<Zk>> handler);
 
+    /**
+     * Register a handler to be called when the client gets disconnected from
+     * the zookeeper server/cluster. If the disconnection was caused explicitly
+     * via {@link #disconnect(Handler)} the {@code handler}'s result will be
+     * null, otherwise if the connection was lost for any other reason the
+     * {@code handler}'s result will be the Zk instance.
+     *
+     * The disconnection handler can be used to automatically reconnect
+     * to the server if the connection gets lost.
+     */
     Zk disconnectionHandler(Handler<AsyncResult<Zk>> handler);
 
     /**
-     * Asynchronously create the node with the given path.
-     * @param path
-     * @param data
-     * @param handler
-     * @return
+     * Explicitly disconnect from the connected zookeeper.
+     * Any configured {@link #disconnectionHandler(Handler)} will be
+     * invoked with a null result and then the given handler will be invoked.
+     */
+    Zk disconnect(Handler<AsyncResult<Void>> handler);
+
+    /**
+     * Asynchronously create the node with the given path and data,
+     * invoking the given handler with the result.
      */
     Zk create(String path, byte[] data, Handler<AsyncResult<Void>> handler);
+
+    /**
+     * Asynchronously set the data in the znode at the given path to the
+     * given data, invoking the given handler with the result.
+     */
+    Zk setData(String path, byte[] data, Handler<AsyncResult<Void>> handler);
 
     /**
      * Register a handler to be called with the children of the given path,
@@ -72,7 +96,6 @@ public interface Zk {
      */
     Zk data(String path, boolean watch, Handler<AsyncResult<byte[]>> handler);
 
-    Zk setData(String path, byte[] data, Handler<AsyncResult<Void>> handler);
 }
 
 class ZkImpl implements Zk {
@@ -86,7 +109,7 @@ class ZkImpl implements Zk {
     private ZooKeeper zk;
     private Handler<AsyncResult<Zk>> disconnectionHandler;
 
-    public ZkImpl(Vertx vertx, String zkConnectionString, int sessionTimeout) {
+    ZkImpl(Vertx vertx, String zkConnectionString, int sessionTimeout) {
         this.vertx = vertx;
         this.zkConnectionString = zkConnectionString;
         this.sessionTimeout = sessionTimeout;
@@ -126,7 +149,7 @@ class ZkImpl implements Zk {
                         case Disconnected:
                             // To get to these states we must have been connected
                             zk = null;
-                            future = Future.succeededFuture();
+                            future = Future.succeededFuture(this);
                             handler = disconnectionHandler;
                             break;
                         default:
@@ -197,8 +220,8 @@ class ZkImpl implements Zk {
         return this;
     }
 
-
-    public void disconnect(Handler<AsyncResult<Void>> handler) {
+    @Override
+    public Zk disconnect(Handler<AsyncResult<Void>> handler) {
 
         vertx.<Void>executeBlocking((f) -> {
             logger.error("Disconnecting");
@@ -221,7 +244,7 @@ class ZkImpl implements Zk {
             }
             handler.handle(ar);
         });
-
+        return this;
     }
 
     @Override

@@ -35,7 +35,7 @@ import java.util.Set;
  * calling {@link Operator#onTopicConfigChanged(TopicName, Handler)}
  * for changed children.
  */
-class TopicConfigsWatcher implements Watcher {
+class TopicConfigsWatcher {
 
     private final static Logger logger = LoggerFactory.getLogger(TopicConfigsWatcher.class);
 
@@ -43,75 +43,27 @@ class TopicConfigsWatcher implements Watcher {
 
     private final Operator operator;
 
-    private final ZooKeeper zookeeper;
 
-    private volatile boolean shutdown = false;
+    private Set<String> children;
 
-    TopicConfigsWatcher(Operator operator, ZooKeeper zookeeper) {
+    TopicConfigsWatcher(Operator operator) {
         this.operator = operator;
-        this.zookeeper = zookeeper;
     }
 
-    public void startShutdown() {
-        shutdown = true;
-    }
-
-    @Override
-    public void process(WatchedEvent watchedEvent) {
-        if (shutdown) {
-            return;
-        }
-        logger.debug("{} received {}", this, watchedEvent);
-        String path = watchedEvent.getPath();
-        Event.EventType type = watchedEvent.getType();
-
-        if (type != Event.EventType.NodeDeleted) {
-            logger.debug("Resetting watch on znode {}", path);
-            setWatch(path, type == Event.EventType.NodeDataChanged);
-        }
-    }
-
-    private void setWatch(String path, boolean dataChanged) {
-        zookeeper.getData(path, this, new AsyncCallback.DataCallback() {
-            @Override
-            public void processResult(int rc, String path, Object ctx, byte[] data, Stat stat) {
-                if (dataChanged) {
-                    String subpath = path.substring(CONFIGS_ZNODE.length()+1);
-                    operator.onTopicConfigChanged(new TopicName(subpath), ar -> {});
+    public void start(Zk zk) {
+        children = new HashSet<>();
+        zk.children(CONFIGS_ZNODE, true, ar -> {
+            if (ar.succeeded()) {
+                for (String child : ar.result()) {
+                    zk.data(CONFIGS_ZNODE + "/" + child, true, dataResult -> {
+                        if (!this.children.add(child)) {
+                            operator.onTopicConfigChanged(new TopicName(child), ar2 -> {
+                            });
+                        }
+                    });
                 }
             }
-        }, null);
-    }
-
-    void start() {
-        try {
-            final AsyncCallback.ChildrenCallback cb = new AsyncCallback.ChildrenCallback() {
-                private Set<String> currentChildren = new HashSet<>();
-                @Override
-                public void processResult(int rc, String path, Object ctx, List<String> children) {
-                    Set<String> newChildren = new HashSet<>(children);
-                    newChildren.removeAll(currentChildren);
-                    for (String child : newChildren) {
-                        setWatch(child, false);
-                    }
-                    currentChildren = new HashSet<>(children);
-                }
-            };
-            final Watcher watcher = new Watcher() {
-                @Override
-                public void process(WatchedEvent event) {
-                    if (shutdown) {
-                        return;
-                    }
-                    // reset the watch, so we know about future (new) children
-                    zookeeper.getChildren(CONFIGS_ZNODE, this, cb, null);
-                }
-            };
-
-            zookeeper.getChildren(CONFIGS_ZNODE, watcher, cb, null);
-
-        } catch (Exception e1) {
-            logger.error("Error setting watch on {}", CONFIGS_ZNODE, e1);
-        }
+        });
+        // TODO Do I need to cope with znode removal?
     }
 }

@@ -33,8 +33,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.TimeUnit;
 
-
-public class Operator {
+public class Operator implements Op {
 
     private final static Logger logger = LoggerFactory.getLogger(Operator.class);
     private final Kafka kafka;
@@ -476,7 +475,7 @@ public class Operator {
     }
 
     /** Called when a topic znode is deleted in ZK */
-    void onTopicDeleted(TopicName topicName, Handler<AsyncResult<Void>> handler) {
+    public void onTopicDeleted(TopicName topicName, Handler<AsyncResult<Void>> handler) {
         // XXX currently runs on the ZK thread, requiring a synchronized `inFlight`
         // is it better to put this check in the topic deleted event?
         // that would require exposing an API to remove()
@@ -493,7 +492,7 @@ public class Operator {
         }
     }
 
-    void onTopicConfigChanged(TopicName topicName, Handler<AsyncResult<Void>> resultHandler) {
+    public void onTopicConfigChanged(TopicName topicName, Handler<AsyncResult<Void>> resultHandler) {
         if (inFlight.shouldProcessTopicConfigChange(topicName)) {
             kafka.topicMetadata(topicName, metadataResult -> {
                 if (metadataResult.succeeded()) {
@@ -516,7 +515,7 @@ public class Operator {
     }
 
     /** Called when a topic znode is created in ZK */
-    void onTopicCreated(TopicName topicName, Handler<AsyncResult<Void>> resultHandler) {
+    public void onTopicCreated(TopicName topicName, Handler<AsyncResult<Void>> resultHandler) {
         // XXX currently runs on the ZK thread, requiring a synchronized inFlight
         // is it better to put this check in the topic deleted event?
         if (inFlight.shouldProcessTopicCreate(topicName)) {
@@ -568,7 +567,7 @@ public class Operator {
     }
 
     /** Called when a ConfigMap is added in k8s */
-    void onConfigMapAdded(ConfigMap configMap, Handler<AsyncResult<Void>> resultHandler) {
+    public void onConfigMapAdded(ConfigMap configMap, Handler<AsyncResult<Void>> resultHandler) {
         if (cmPredicate.test(configMap)) {
             TopicName topicName = new TopicName(configMap);
             if (inFlight.shouldProcessConfigMapAdded(topicName)) {
@@ -589,7 +588,7 @@ public class Operator {
     }
 
     /** Called when a ConfigMap is modified in k8s */
-    void onConfigMapModified(TopicStore topicStore, ConfigMap configMap, Handler<AsyncResult<Void>> handler) {
+    public void onConfigMapModified(ConfigMap configMap, Handler<AsyncResult<Void>> handler) {
         if (cmPredicate.test(configMap)) {
             TopicName topicName = new TopicName(configMap);
             if (inFlight.shouldProcessConfigMapModified(topicName)) {
@@ -607,7 +606,7 @@ public class Operator {
     }
 
     /** Called when a ConfigMap is deleted in k8s */
-    void onConfigMapDeleted(ConfigMap configMap, Handler<AsyncResult<Void>> handler) {
+    public void onConfigMapDeleted(ConfigMap configMap, Handler<AsyncResult<Void>> handler) {
         if (cmPredicate.test(configMap)) {
             TopicName topicName = new TopicName(configMap);
             if (inFlight.shouldProcessConfigMapDeleted(topicName)) {

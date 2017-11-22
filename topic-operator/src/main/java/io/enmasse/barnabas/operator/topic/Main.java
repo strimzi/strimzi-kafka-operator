@@ -24,6 +24,8 @@ import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.zookeeper.ZooKeeper;
@@ -110,14 +112,19 @@ public class Main extends AbstractVerticle {
 
         ZkTopicStore topicStore = new ZkTopicStore(vertx);
 
-        BootstrapWatcher bootstrap = new BootstrapWatcher(vertx, zookeeperConnect, connection -> {
-            if (connection.succeeded()) {
-                ZooKeeper zk0 = connection.result();
-                new TopicsWatcher(operator, zk0).setWatch();
-                new TopicConfigsWatcher(operator, zk0).start();
+        TopicsWatcher tw = new TopicsWatcher(operator);
+        TopicConfigsWatcher tcw = new TopicConfigsWatcher(operator);
+        Zk zk = Zk.create(vertx, zookeeperConnect, 60_000);
+        final Handler<AsyncResult<Zk>> zkConnectHandler = ar -> {
+            tw.start(ar.result());
+            tcw.start(ar.result());
+        };
+        zk.disconnectionHandler(ar -> {
+            // reconnect if we got disconnected
+            if (ar.result() != null) {
+                zk.connect(zkConnectHandler);
             }
-            topicStore.handle(connection);
-        }, null);
+        }).connect(zkConnectHandler);
 
         Thread configMapThread = new Thread(() -> {
             kubeClient.configMaps().watch(new Watcher<ConfigMap>() {
@@ -134,7 +141,7 @@ public class Main extends AbstractVerticle {
                                 operator.onConfigMapAdded(configMap, ar -> {});
                                 break;
                             case MODIFIED:
-                                operator.onConfigMapModified(topicStore, configMap, ar -> {});
+                                operator.onConfigMapModified(configMap, ar -> {});
                                 break;
                             case DELETED:
                                 operator.onConfigMapDeleted(configMap, ar -> {});

@@ -32,64 +32,61 @@ import java.util.Set;
  * calling {@link Operator#onTopicCreated(TopicName, io.vertx.core.Handler)} for new children and
  * {@link Operator#onTopicDeleted(TopicName, io.vertx.core.Handler)} for deleted children.
  */
-class TopicsWatcher implements Watcher {
+class TopicsWatcher {
 
     private final static Logger logger = LoggerFactory.getLogger(TopicsWatcher.class);
 
     private static final String TOPICS_ZNODE = "/brokers/topics";
 
-    private final Operator operator;
-
-    private final ZooKeeper zookeeper;
+    private final Op operator;
 
     private List<String> children;
 
-    private volatile boolean shutdown = false;
-
-    TopicsWatcher(Operator operator, ZooKeeper zookeeper) {
+    TopicsWatcher(Op operator) {
         this.operator = operator;
-        this.zookeeper = zookeeper;
     }
 
-    public void startShutdown() {
-        shutdown = true;
-    }
-
-    @Override
-    public void process(WatchedEvent watchedEvent) {
-        if (shutdown) {
-            return;
-        }
-        logger.info("{} received {}", this, watchedEvent);
-        setWatch();
-    }
-
-    void setWatch() {
-        try {
-            List<String> result = zookeeper.getChildren(TOPICS_ZNODE, this);
-
-            logger.info("znode {} has children {}", TOPICS_ZNODE, result);
-            if (this.children == null) {
-                this.children = result;
-            } else {
-                logger.info("Current children {}", this.children);
+    void start(Zk zk) {
+        children = null;
+        zk.children(TOPICS_ZNODE, true, childResult -> {
+            if (childResult.failed()) {
+                throw new RuntimeException(childResult.cause());
+            }
+            List<String> result = childResult.result();
+            logger.debug("znode {} has children {}", TOPICS_ZNODE, result);
+            if (this.children != null) {
+                logger.debug("Current children {}", this.children);
                 Set<String> deleted = new HashSet(this.children);
                 deleted.removeAll(result);
-                logger.info("Deleted topics: {}", deleted);
-                for (String topicName : deleted) {
-                    operator.onTopicDeleted(new TopicName(topicName), ar -> {});
+                if (!deleted.isEmpty()) {
+                    logger.info("Deleted topics: {}", deleted);
+                    for (String topicName : deleted) {
+                        operator.onTopicDeleted(new TopicName(topicName), ar -> {
+                            if (ar.succeeded()) {
+                                logger.debug("Success responding to deletion of topic {}", topicName);
+                            } else {
+                                logger.warn("Error responding to deletion of topic {}", topicName, ar.cause());
+                            }
+                        });
+                    }
                 }
                 Set<String> created = new HashSet(result);
                 created.removeAll(this.children);
-                logger.info("Created topics: {}", created);
-                for (String topicName : created) {
-                    operator.onTopicCreated(new TopicName(topicName), ar -> {});
+                if (!created.isEmpty()) {
+                    logger.info("Created topics: {}", created);
+                    for (String topicName : created) {
+                        operator.onTopicCreated(new TopicName(topicName), ar -> {
+                            if (ar.succeeded()) {
+                                logger.debug("Success responding to creation of topic {}", topicName);
+                            } else {
+                                logger.warn("Error responding to creation of topic {}", topicName, ar.cause());
+                            }
+                        });
+                    }
                 }
-                logger.info("Setting current children {}", result);
-                this.children = result;
             }
-        } catch (Exception e1) {
-            logger.error("Error setting/resetting/processing watch on {}", TOPICS_ZNODE, e1);
-        }
+            logger.debug("Setting current children {}", result);
+            this.children = result;
+        });
     }
 }
