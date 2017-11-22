@@ -17,8 +17,11 @@
 
 package io.enmasse.barnabas.operator.topic;
 
+import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+@RunWith(VertxUnitRunner.class)
 public class TopicsWatcherTest {
 
     @Test

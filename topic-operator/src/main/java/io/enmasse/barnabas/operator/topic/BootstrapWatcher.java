@@ -32,22 +32,21 @@ import java.util.function.Supplier;
 import java.util.concurrent.CompletableFuture;
 
 /** Session watcher for ZooKeeper, sets up the {@link TopicsWatcher} when a session is established. */
-class BootstrapWatcher implements Watcher {
+class BootstrapWatcher {
 
     private final static Logger logger = LoggerFactory.getLogger(BootstrapWatcher.class);
 
-    private final Operator operator;
     private final Vertx vertx;
     private ZooKeeper zk0;
     private final String zookeeperConnect;
     private Handler<AsyncResult<ZooKeeper>> connectionHandler;
     private Handler<AsyncResult<Void>> disconnectionHandler;
+    private volatile boolean shutdown = false;
 
-    public BootstrapWatcher(Vertx vertx, Operator operator, String zookeeperConnect,
+    public BootstrapWatcher(Vertx vertx, String zookeeperConnect,
                             Handler<AsyncResult<ZooKeeper>> connectionHandler,
                             Handler<AsyncResult<Void>> disconnectionHandler){
         this.vertx = vertx;
-        this.operator = operator;
         this.zookeeperConnect = zookeeperConnect;
         this.connectionHandler = connectionHandler;
         this.disconnectionHandler = disconnectionHandler;
@@ -55,28 +54,43 @@ class BootstrapWatcher implements Watcher {
     }
 
     private void connect() {
+        if (shutdown) {
+            return;
+        }
+        Watcher watcher = new Watcher() {
+            @Override
+            public void process(WatchedEvent watchedEvent) {
+                logger.info("{} received {}", this, watchedEvent);
+                Event.KeeperState state = watchedEvent.getState();
+                if (state == Event.KeeperState.SyncConnected
+                        || state == Event.KeeperState.ConnectedReadOnly) {
+                    logger.info("{} invoking connectionHandler {}", this, connectionHandler);
+                    // TODO we need watches on partition changes too
+                    vertx.runOnContext(ar -> connectionHandler.handle(Future.succeededFuture(zk0)));
+                } else if (state == Event.KeeperState.Expired ||
+                        state == Event.KeeperState.Disconnected) {
+                    logger.info("{} invoking disconnectionHandler {}", this, disconnectionHandler);
+                    vertx.runOnContext(ar -> disconnectionHandler.handle(Future.succeededFuture()));
+                    connect();
+                } else {
+                    logger.error("Not connected! In state {}", state);
+                }
+            }
+        };
         try {
-            zk0 = new ZooKeeper(zookeeperConnect, 6000, this);
+            logger.info("Openning ZK connection to", zookeeperConnect);
+            zk0 = new ZooKeeper(zookeeperConnect, 6000, watcher);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    @Override
-    public void process(WatchedEvent watchedEvent) {
-        logger.info("{} received {}", this, watchedEvent);
-        Event.KeeperState state = watchedEvent.getState();
-        if (state == Event.KeeperState.SyncConnected
-                || state == Event.KeeperState.ConnectedReadOnly) {
-            logger.info("{} setting topic watcher", this);
-            // TODO we need watches on topic config changes and partition changes too
-            vertx.runOnContext(ar -> connectionHandler.handle(Future.succeededFuture(zk0)));
-            new TopicsWatcher(operator, zk0).setWatch();
-        } else if (state == Event.KeeperState.Disconnected) {
-            vertx.runOnContext(ar -> disconnectionHandler.handle(Future.succeededFuture()));
-            connect();
-        } else {
-            logger.error("Not connected! In state {}", state);
+    void close() {
+        shutdown = true;
+        try {
+            zk0.close();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 

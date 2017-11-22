@@ -115,13 +115,27 @@ public class InFlight {
         }
     }
 
+    public boolean shouldProcessTopicConfigChange(TopicName topicName) {
+        State pendingState = pending.remove(topicName);
+        if (pendingState != null) {
+            if (pendingState != State.TOPIC_UPDATE_CONFIG) {
+                logger.error("This shouldn't happen", topicName);
+            } else {
+                logger.info("Config change for topic {} was initiated by me, so no need to reconcile", topicName);
+            }
+            return false;
+        } else {
+            return true;
+        }
+    }
+
     enum State {
         CM_CREATE,
         CM_DELETE,
         CM_UPDATE,
         TOPIC_CREATE,
         TOPIC_DELETE,
-        TOPIC_UPDATE
+        TOPIC_UPDATE_CONFIG
     }
     // track changes we caused, so we don't try to update zk for a cm change we
     // make because of a zk change... They're accessed by the both the

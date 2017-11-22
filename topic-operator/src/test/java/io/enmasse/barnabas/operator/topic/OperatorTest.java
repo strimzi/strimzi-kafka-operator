@@ -17,14 +17,14 @@
 
 package io.enmasse.barnabas.operator.topic;
 
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.sun.org.apache.xerces.internal.util.Status;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
@@ -37,7 +37,6 @@ import org.apache.kafka.common.errors.TopicExistsException;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -225,7 +224,7 @@ public class OperatorTest {
      * 4. operator successfully creates in topic store
      */
     @Test
-    public void testProcessableTopicCreated(TestContext context) {
+    public void testOnTopicCreated(TestContext context) {
         TopicMetadata topicMetadata = getTopicMetadata();
 
         mockTopicStore.setCreateTopicResponse(topicName, null);
@@ -249,7 +248,7 @@ public class OperatorTest {
      * 5. operator successfully creates in topic store
      */
     @Test
-    public void testProcessableTopicCreated_retry(TestContext context) {
+    public void testOnTopicCreated_retry(TestContext context) {
         TopicMetadata topicMetadata = getTopicMetadata();
 
         mockTopicStore.setCreateTopicResponse(topicName, null);
@@ -290,7 +289,7 @@ public class OperatorTest {
      * 2. operator times out getting metadata
      */
     @Test
-    public void testProcessableTopicCreated_retryTimeout(TestContext context) {
+    public void testOnTopicCreated_retryTimeout(TestContext context) {
         TopicMetadata topicMetadata = getTopicMetadata();
 
         mockKafka.setTopicMetadataResponse(topicName, null, new UnknownTopicOrPartitionException());
@@ -419,10 +418,7 @@ public class OperatorTest {
         configMapRemoved(context, deleteTopicException, storeException);
     }
 
-    @Test
-    public void testOnTopicDeleted(TestContext context) {
-        Exception storeException = null;
-        Exception k8sException = null;
+    private void topicDeleted(TestContext context, Exception storeException, Exception k8sException) {
         Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short)2, map("foo", "bar")).build();
         Topic kafkaTopic = kubeTopic;
         Topic privateTopic = kubeTopic;
@@ -437,9 +433,43 @@ public class OperatorTest {
 
         Async async = context.async();
         op.onTopicDeleted(topicName, ar -> {
-            context.assertTrue(ar.succeeded());
+            if (k8sException != null
+                    || storeException != null) {
+                assertFailed(context, ar);
+                if (k8sException == null) {
+                    mockK8s.assertNotExists(context, mapName);
+                } else {
+                    mockK8s.assertExists(context, mapName);
+                }
+                mockTopicStore.assertExists(context, topicName);
+            } else {
+                assertSucceeded(context, ar);
+                mockK8s.assertNotExists(context, mapName);
+                mockTopicStore.assertNotExists(context, topicName);
+            }
             async.complete();
         });
+    }
+
+    @Test
+    public void testOnTopicDeleted(TestContext context) {
+        Exception storeException = null;
+        Exception k8sException = null;
+        topicDeleted(context, storeException, k8sException);
+    }
+
+    @Test
+    public void testOnTopicDeleted_NoSuchEntityExistsException(TestContext context) {
+        Exception k8sException = null;
+        Exception storeException = new TopicStore.NoSuchEntityExistsException();
+        topicDeleted(context, storeException, k8sException);
+    }
+
+    @Test
+    public void testOnTopicDeleted_KubernetesClientException(TestContext context) {
+        Exception k8sException = new KubernetesClientException("");
+        Exception storeException = null;
+        topicDeleted(context, storeException, k8sException);
     }
 
     // TODO tests for nasty races (e.g. create on both ends, update on one end and delete on the other)

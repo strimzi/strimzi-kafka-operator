@@ -26,6 +26,7 @@ import io.fabric8.kubernetes.client.Watcher;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Vertx;
 import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -109,7 +110,14 @@ public class Main extends AbstractVerticle {
 
         ZkTopicStore topicStore = new ZkTopicStore(vertx);
 
-        BootstrapWatcher bootstrap = new BootstrapWatcher(vertx, operator, zookeeperConnect, topicStore, null);
+        BootstrapWatcher bootstrap = new BootstrapWatcher(vertx, zookeeperConnect, connection -> {
+            if (connection.succeeded()) {
+                ZooKeeper zk0 = connection.result();
+                new TopicsWatcher(operator, zk0).setWatch();
+                new TopicConfigsWatcher(operator, zk0).start();
+            }
+            topicStore.handle(connection);
+        }, null);
 
         Thread configMapThread = new Thread(() -> {
             kubeClient.configMaps().watch(new Watcher<ConfigMap>() {

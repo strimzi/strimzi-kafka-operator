@@ -88,38 +88,44 @@ public class MockK8s implements K8s {
     @Override
     public void createConfigMap(ConfigMap cm, Handler<AsyncResult<Void>> handler) {
         AsyncResult<Void> response = createResponse.apply(new MapName(cm.getMetadata().getName()));
-        ConfigMap old = byName.put(new MapName(cm.getMetadata().getName()), cm);
-        if (old == null) {
-            byTopicName.put(new TopicName(cm.getData().getOrDefault(TopicSerialization.CM_KEY_NAME, cm.getMetadata().getName())), cm);
-        } else {
-            handler.handle(Future.failedFuture("configmap already existed: " + cm.getMetadata().getName()));
-            return;
+        if (response.succeeded()) {
+            ConfigMap old = byName.put(new MapName(cm.getMetadata().getName()), cm);
+            if (old == null) {
+                byTopicName.put(new TopicName(cm.getData().getOrDefault(TopicSerialization.CM_KEY_NAME, cm.getMetadata().getName())), cm);
+            } else {
+                handler.handle(Future.failedFuture("configmap already existed: " + cm.getMetadata().getName()));
+                return;
+            }
         }
         handler.handle(response);
     }
 
     @Override
     public void updateConfigMap(ConfigMap cm, Handler<AsyncResult<Void>> handler) {
-        AsyncResult<Void> respose = modifyResponse.apply(new MapName(cm.getMetadata().getName()));
-        ConfigMap old = byName.put(new MapName(cm.getMetadata().getName()), cm);
-        if (old == null) {
-            handler.handle(Future.failedFuture("configmap does not exists, cannot be updated: " + cm.getMetadata().getName()));
-            return;
-        } else {
-            byTopicName.put(new TopicName(cm.getData().getOrDefault(TopicSerialization.CM_KEY_NAME, cm.getMetadata().getName())), cm);
+        AsyncResult<Void> response = modifyResponse.apply(new MapName(cm.getMetadata().getName()));
+        if (response.succeeded()) {
+            ConfigMap old = byName.put(new MapName(cm.getMetadata().getName()), cm);
+            if (old == null) {
+                handler.handle(Future.failedFuture("configmap does not exists, cannot be updated: " + cm.getMetadata().getName()));
+                return;
+            } else {
+                byTopicName.put(new TopicName(cm.getData().getOrDefault(TopicSerialization.CM_KEY_NAME, cm.getMetadata().getName())), cm);
+            }
         }
-        handler.handle(respose);
+        handler.handle(response);
     }
 
     @Override
     public void deleteConfigMap(TopicName topicName, Handler<AsyncResult<Void>> handler) {
         AsyncResult<Void> response = deleteResponse.apply(topicName);
-        ConfigMap cm = byTopicName.remove(topicName);
-        if (cm == null) {
-            handler.handle(Future.failedFuture("No such configmap, with topic name " + topicName));
-            return;
-        } else {
-            byName.remove(new MapName(cm.getMetadata().getName()));
+        if (response.succeeded()) {
+            ConfigMap cm = byTopicName.remove(topicName);
+            if (cm == null) {
+                handler.handle(Future.failedFuture("No such configmap, with topic name " + topicName));
+                return;
+            } else {
+                byName.remove(new MapName(cm.getMetadata().getName()));
+            }
         }
         handler.handle(response);
     }

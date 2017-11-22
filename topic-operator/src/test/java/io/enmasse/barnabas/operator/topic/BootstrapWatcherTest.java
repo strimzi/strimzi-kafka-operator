@@ -17,12 +17,61 @@
 
 package io.enmasse.barnabas.operator.topic;
 
+import io.vertx.core.Future;
+import io.vertx.core.Vertx;
+import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
+import io.vertx.ext.unit.junit.VertxUnitRunner;
+import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.Watcher;
+import org.apache.zookeeper.ZooKeeper;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
+
+@RunWith(VertxUnitRunner.class)
 public class BootstrapWatcherTest {
+
+    private EmbeddedZooKeeper zkServer;
+
+    private Vertx vertx = Vertx.vertx();
+
+
+    @Before
+    public void setup()
+            throws IOException, InterruptedException,
+            TimeoutException, ExecutionException {
+        this.zkServer = new EmbeddedZooKeeper();
+
+    }
+
+    @After
+    public void teardown() {
+        if (this.zkServer != null) {
+            this.zkServer.close();
+        }
+        vertx.close();
+    }
+
     @Test
-    public void test1(TestContext context) {
-        context.fail("Write some tests");
+    public void testConnectDisconnect(TestContext context) {
+        Async async = context.async();
+        Async disAsync = context.async();
+        BootstrapWatcher watcher = new BootstrapWatcher(vertx,
+                zkServer.getZkConnectString(),
+                connected-> {
+                    async.complete();
+                }, disconnected-> {
+                    disAsync.complete();
+        });
+
+        watcher.close();
+
     }
 }

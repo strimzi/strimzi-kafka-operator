@@ -30,7 +30,7 @@ import java.util.Set;
 /**
  * ZooKeeper watcher for child znodes of {@code /brokers/topics},
  * calling {@link Operator#onTopicCreated(TopicName, io.vertx.core.Handler)} for new children and
- * {@link Operator#onTopicDeleted(TopicName)} for deleted children.
+ * {@link Operator#onTopicDeleted(TopicName, io.vertx.core.Handler)} for deleted children.
  */
 class TopicsWatcher implements Watcher {
 

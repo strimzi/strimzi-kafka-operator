@@ -163,7 +163,7 @@ public class Operator {
         private final Handler<io.vertx.core.AsyncResult<Void>> handler;
         private final HasMetadata involvedObject;
 
-        public UpdateConfigMap(Topic topic, Handler<io.vertx.core.AsyncResult<Void>> handler, HasMetadata involvedObject) {
+        public UpdateConfigMap(Topic topic, HasMetadata involvedObject, Handler<AsyncResult<Void>> handler) {
             this.topic = topic;
             this.handler = handler;
             this.involvedObject = involvedObject;
@@ -196,7 +196,7 @@ public class Operator {
         private final HasMetadata involvedObject;
         private final Handler<AsyncResult<Void>> handler;
 
-        public CreateKafkaTopic(Topic topic, Handler<AsyncResult<Void>> handler, HasMetadata involvedObject) {
+        public CreateKafkaTopic(Topic topic, HasMetadata involvedObject, Handler<AsyncResult<Void>> handler) {
             this.topic = topic;
             this.handler = handler;
             this.involvedObject = involvedObject;
@@ -232,10 +232,12 @@ public class Operator {
         private final HasMetadata involvedObject;
 
         private final Topic topic;
+        private final Handler<AsyncResult<Void>> handler;
 
-        public UpdateKafkaConfig(Topic topic, HasMetadata involvedObject) {
+        public UpdateKafkaConfig(Topic topic, HasMetadata involvedObject, Handler<AsyncResult<Void>> handler) {
             this.topic = topic;
             this.involvedObject = involvedObject;
+            this.handler = handler;
         }
 
         @Override
@@ -244,6 +246,7 @@ public class Operator {
                 if (ar.failed()) {
                     enqueue(new ErrorEvent(involvedObject, ar.cause().toString()));
                 }
+                handler.handle(ar);
             });
 
         }
@@ -260,10 +263,12 @@ public class Operator {
         private final HasMetadata involvedObject;
 
         private final Topic topic;
+        private final Handler<AsyncResult<Void>> handler;
 
-        public UpdateKafkaPartitions(Topic topic, HasMetadata involvedObject) {
+        public UpdateKafkaPartitions(Topic topic, HasMetadata involvedObject, Handler<AsyncResult<Void>> handler) {
             this.topic = topic;
             this.involvedObject = involvedObject;
+            this.handler = handler;
         }
 
         @Override
@@ -272,6 +277,7 @@ public class Operator {
                 if (ar.failed()) {
                     enqueue(new ErrorEvent(involvedObject, ar.cause().toString()));
                 }
+                handler.handle(ar);
             });
 
         }
@@ -375,7 +381,7 @@ public class Operator {
                 public void handle(AsyncResult<Void> ar) {
                     // In all cases, create in privateState
                     if (ar.succeeded()) {
-                        enqueue(new CreateInTopicStore(topicStore, source, involvedObject, reconciliationResultHandler));
+                        enqueue(new CreateInTopicStore(source, involvedObject, reconciliationResultHandler));
                     } else {
                         reconciliationResultHandler.handle(ar);
                     }
@@ -393,11 +399,11 @@ public class Operator {
                 }
             } else if (kafkaTopic == null) {
                 // it's been created in k8s => create in Kafka and privateState
-                enqueue(new CreateKafkaTopic(k8sTopic, new CreateInTopicStoreHandler(k8sTopic), involvedObject));
+                enqueue(new CreateKafkaTopic(k8sTopic, involvedObject, new CreateInTopicStoreHandler(k8sTopic)));
             } else if (TopicDiff.diff(kafkaTopic, k8sTopic).isEmpty()) {
                 // they're the same => do nothing
                 logger.debug("k8s and kafka versions of topic '{}' are the same", kafkaTopic.getTopicName());
-                enqueue(new CreateInTopicStore(topicStore, kafkaTopic, involvedObject, reconciliationResultHandler));
+                enqueue(new CreateInTopicStore(kafkaTopic, involvedObject, reconciliationResultHandler));
             } else {
                 // TODO use whichever has the most recent mtime
                 throw new RuntimeException("Not implemented");
@@ -406,12 +412,12 @@ public class Operator {
             if (k8sTopic == null) {
                 if (kafkaTopic == null) {
                     // delete privateState
-                    enqueue(new DeleteFromTopicStore(topicStore, privateTopic.getTopicName(), involvedObject, reconciliationResultHandler));
+                    enqueue(new DeleteFromTopicStore(privateTopic.getTopicName(), involvedObject, reconciliationResultHandler));
                 } else {
                     // it was deleted in k8s so delete in kafka and privateState
                     enqueue(new DeleteKafkaTopic(kafkaTopic.getTopicName(), involvedObject, ar -> {
                         if (ar.succeeded()) {
-                            enqueue(new DeleteFromTopicStore(topicStore, kafkaTopic.getTopicName(), involvedObject, reconciliationResultHandler));
+                            enqueue(new DeleteFromTopicStore(kafkaTopic.getTopicName(), involvedObject, reconciliationResultHandler));
                         } else {
                             reconciliationResultHandler.handle(ar);
                         }
@@ -422,7 +428,7 @@ public class Operator {
                 // it was deleted in kafka so delete in k8s and privateState
                 enqueue(new DeleteConfigMap(k8sTopic.getTopicName(), ar -> {
                     if (ar.succeeded()) {
-                        enqueue(new DeleteFromTopicStore(topicStore, k8sTopic.getTopicName(), involvedObject, reconciliationResultHandler));
+                        enqueue(new DeleteFromTopicStore(k8sTopic.getTopicName(), involvedObject, reconciliationResultHandler));
                     } else {
                         reconciliationResultHandler.handle(ar);
                     }
@@ -442,25 +448,29 @@ public class Operator {
                         enqueue(new ErrorEvent(involvedObject, "Topic Replication Factor cannot be changed"));
                         // TODO called reconciliationResultHandler, or push error handling into reconciliationResultHandler
                     } else {
-                        enqueue(new UpdateConfigMap(result, ar -> {
-                            // TODO chain these properly
-                            if (merged.changesConfig()) {
-                                enqueue(new UpdateKafkaConfig(result, involvedObject));
-                            }
+                        enqueue(new UpdateConfigMap(result, involvedObject, ar -> {
+                            Handler<Void> topicStoreHandler =
+                                    ignored -> enqueue(new UpdateInTopicStore(
+                                            result, involvedObject, reconciliationResultHandler));
+                            Handler<Void> partitionsHandler;
                             if (merged.changesNumPartitions()) {
-                                enqueue(new UpdateKafkaPartitions(result, involvedObject));
+                                partitionsHandler = ar4 -> enqueue(new UpdateKafkaPartitions(result, involvedObject, ar2 -> topicStoreHandler.handle(null)));
+                            } else {
+                                partitionsHandler = topicStoreHandler;
                             }
-                            enqueue(new UpdateInTopicStore(topicStore, result, involvedObject));
-                            reconciliationResultHandler.handle(ar);
-                        }, involvedObject));
-
+                            if (merged.changesConfig()) {
+                                enqueue(new UpdateKafkaConfig(result, involvedObject, ar2 -> partitionsHandler.handle(null)));
+                            } else {
+                                enqueue(partitionsHandler);
+                            }
+                        }));
                     }
                 }
             }
         }
     }
 
-    void enqueue(OperatorEvent event) {
+    void enqueue(Handler<Void> event) {
         logger.info("Enqueuing event {}", event);
         vertx.runOnContext(event);
     }
@@ -473,13 +483,35 @@ public class Operator {
         if (inFlight.shouldProcessDelete(topicName)) {
             enqueue(new DeleteConfigMap(topicName, ar -> {
                 if (ar.succeeded()) {
-                    enqueue(new DeleteFromTopicStore(topicStore, topicName, null, handler));
+                    enqueue(new DeleteFromTopicStore(topicName, null, handler));
                 } else {
                     handler.handle(ar);
                 }
             }));
         } else {
             handler.handle(Future.succeededFuture());
+        }
+    }
+
+    void onTopicConfigChanged(TopicName topicName, Handler<AsyncResult<Void>> resultHandler) {
+        if (inFlight.shouldProcessTopicConfigChange(topicName)) {
+            kafka.topicMetadata(topicName, metadataResult -> {
+                if (metadataResult.succeeded()) {
+                    Topic topic = TopicSerialization.fromTopicMetadata(metadataResult.result());
+                    enqueue(new UpdateConfigMap(topic, null, ar -> {
+                        if (ar.succeeded()) {
+                            enqueue(new UpdateInTopicStore(
+                                    topic, null, resultHandler));
+                        } else {
+                            resultHandler.handle(ar);
+                        }
+                    }));
+                } else {
+                    resultHandler.handle(Future.failedFuture(metadataResult.cause()));
+                }
+            });
+        } else {
+            resultHandler.handle(Future.succeededFuture());
         }
     }
 
@@ -521,7 +553,7 @@ public class Operator {
                         Topic topic = TopicSerialization.fromTopicMetadata(metadataResult.result());
                         enqueue(new CreateConfigMap(topic, kubeResult -> {
                             if (kubeResult.succeeded()) {
-                                enqueue(new CreateInTopicStore(topicStore, topic, null, resultHandler));
+                                enqueue(new CreateInTopicStore(topic, null, resultHandler));
                             } else {
                                 resultHandler.handle(kubeResult);
                             }
@@ -541,13 +573,13 @@ public class Operator {
             TopicName topicName = new TopicName(configMap);
             if (inFlight.shouldProcessConfigMapAdded(topicName)) {
                 Topic topic = TopicSerialization.fromConfigMap(configMap);
-                enqueue(new CreateKafkaTopic(topic, ar -> {
+                enqueue(new CreateKafkaTopic(topic, configMap, ar -> {
                     if (ar.succeeded()) {
-                        enqueue(new CreateInTopicStore(topicStore, topic, configMap, resultHandler));
+                        enqueue(new CreateInTopicStore(topic, configMap, resultHandler));
                     } else {
                         resultHandler.handle(Future.failedFuture(ar.cause()));
                     }
-                }, configMap));
+                }));
             } else {
                 resultHandler.handle(Future.succeededFuture());
             }
@@ -581,7 +613,7 @@ public class Operator {
             if (inFlight.shouldProcessConfigMapDeleted(topicName)) {
                 enqueue(new DeleteKafkaTopic(topicName, configMap, ar -> {
                     if (ar.succeeded()) {
-                        enqueue(new DeleteFromTopicStore(topicStore, topicName, configMap, handler));
+                        enqueue(new DeleteFromTopicStore(topicName, configMap, handler));
                     } else {
                         handler.handle(ar);
                     }
@@ -595,14 +627,14 @@ public class Operator {
     }
 
     private class UpdateInTopicStore extends OperatorEvent {
-        private final TopicStore topicStore;
         private final Topic topic;
         private final HasMetadata involvedObject;
+        private final Handler<AsyncResult<Void>> handler;
 
-        public UpdateInTopicStore(TopicStore topicStore, Topic topic, HasMetadata involvedObject) {
-            this.topicStore = topicStore;
+        public UpdateInTopicStore(Topic topic, HasMetadata involvedObject, Handler<AsyncResult<Void>> handler) {
             this.topic = topic;
             this.involvedObject = involvedObject;
+            this.handler = handler;
         }
 
         @Override
@@ -611,6 +643,7 @@ public class Operator {
                 if (ar.failed()) {
                     enqueue(new ErrorEvent(involvedObject, ar.cause().toString()));
                 }
+                handler.handle(ar);
             });
         }
 
@@ -621,14 +654,12 @@ public class Operator {
     }
 
     class CreateInTopicStore extends OperatorEvent {
-        private final TopicStore topicStore;
         private final Topic topic;
         private final HasMetadata involvedObject;
         private final Handler<AsyncResult<Void>> handler;
 
-        private CreateInTopicStore(TopicStore topicStore, Topic topic, HasMetadata involvedObject,
+        private CreateInTopicStore(Topic topic, HasMetadata involvedObject,
                                    Handler<AsyncResult<Void>> handler) {
-            this.topicStore = topicStore;
             this.topic = topic;
             this.involvedObject = involvedObject;
             this.handler = handler;
@@ -651,14 +682,12 @@ public class Operator {
     }
 
     class DeleteFromTopicStore extends OperatorEvent {
-        private final TopicStore topicStore;
         private final TopicName topicName;
         private final HasMetadata involvedObject;
         private final Handler<AsyncResult<Void>> handler;
 
-        private DeleteFromTopicStore(TopicStore topicStore, TopicName topicName, HasMetadata involvedObject, 
+        private DeleteFromTopicStore(TopicName topicName, HasMetadata involvedObject,
                                      Handler<AsyncResult<Void>> handler) {
-            this.topicStore = topicStore;
             this.topicName = topicName;
             this.involvedObject = involvedObject;
             this.handler = handler;

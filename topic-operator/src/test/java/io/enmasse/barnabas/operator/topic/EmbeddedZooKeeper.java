@@ -18,7 +18,9 @@
 package io.enmasse.barnabas.operator.topic;
 
 import org.apache.zookeeper.server.NIOServerCnxnFactory;
+import org.apache.zookeeper.server.ZKDatabase;
 import org.apache.zookeeper.server.ZooKeeperServer;
+import org.apache.zookeeper.server.persistence.FileTxnSnapLog;
 
 import java.io.File;
 import java.io.IOException;
@@ -37,10 +39,24 @@ public class EmbeddedZooKeeper {
         dir = Files.createTempDirectory("barnabas").toFile();
         dir.mkdirs();
         zk = new ZooKeeperServer(dir, dir, 1000);
-        InetSocketAddress addr = new InetSocketAddress(0);
+        start(new InetSocketAddress(0));
+    }
+
+    private void start(InetSocketAddress addr) throws IOException, InterruptedException {
         factory = new NIOServerCnxnFactory();
         factory.configure(addr, 10);
         factory.startup(zk);
+    }
+
+    public void restart() throws IOException, InterruptedException {
+        if (zk != null) {
+            zk.shutdown(false);
+        }
+        // Reuse the existing port
+        InetSocketAddress addr = factory.getLocalAddress();
+        factory.shutdown();
+        zk = new ZooKeeperServer(dir, dir, 1000);
+        start(addr);
     }
 
     public void close() {
