@@ -124,14 +124,9 @@ public class ZkImplTest {
         connection.await();
     }
 
-    /**
-     * Register a watch of /foo, check it is notified when we add /foo/bar
-     * and again when we add /foo/baz.
-     */
-    @Test
-    public void testWatchChildren(TestContext context) {
+    private Zk connect(TestContext context) {
         Async async = context.async();
-        Zk zk = new ZkImpl(vertx, zkServer.getZkConnectString(), 60_000).connect(ar-> {
+        Zk zk = new ZkImpl(vertx, zkServer.getZkConnectString(), 60_000).connect(ar -> {
             if (ar.failed()) {
                 context.fail(ar.cause());
                 return;
@@ -140,6 +135,16 @@ public class ZkImplTest {
         });
 
         async.await();
+        return zk;
+    }
+
+    /**
+     * Register a watch of /foo, check it is notified when we add /foo/bar
+     * and again when we add /foo/baz.
+     */
+    @Test
+    public void testWatchChildren(TestContext context) {
+        Zk zk = connect(context);
         Async async2 = context.async(3);
         zk.create("/foo", null, ar-> {
             context.assertTrue(ar.succeeded());
@@ -173,16 +178,7 @@ public class ZkImplTest {
      */
     @Test
     public void testGetChildren(TestContext context) {
-        Async async = context.async();
-        Zk zk = new ZkImpl(vertx, zkServer.getZkConnectString(), 60_000).connect(ar-> {
-            if (ar.failed()) {
-                context.fail(ar.cause());
-                return;
-            }
-            async.complete();
-        });
-
-        async.await();
+        Zk zk = connect(context);
         Async async2 = context.async();
         zk.create("/foo", null, ar-> {
             context.assertTrue(ar.succeeded());
@@ -223,16 +219,7 @@ public class ZkImplTest {
      */
     @Test
     public void testWatchData(TestContext context) {
-        Async async = context.async();
-        Zk zk = new ZkImpl(vertx, zkServer.getZkConnectString(), 60_000).connect(ar -> {
-            if (ar.failed()) {
-                context.fail(ar.cause());
-                return;
-            }
-            async.complete();
-        });
-
-        async.await();
+        Zk zk = connect(context);
         Async async2 = context.async(3);
         zk.create("/foo", null, ar -> {
             context.assertTrue(ar.succeeded());
@@ -259,5 +246,7 @@ public class ZkImplTest {
             });
         });
     }
+
+
 
 }
