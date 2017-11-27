@@ -84,7 +84,7 @@ This deployment is available under the _kafka-statefulsets_ folder and provides 
 
         oc create -f kafka-statefulsets/resources/openshift-template.yaml
 
-   in your terminal. This template provides the "zookeeper" StatefulSet with a single replica, the "kafka" StatefulSet with 3 replicas,
+   in your terminal. This template provides the "zookeeper" StatefulSet  with 3 replicas, the "kafka" StatefulSet with 3 replicas,
    and the "zookeeper", "zookeeper-headless", "kafka" and "kafka-headless" Services.
 2. Create a new app using the "barnabas" template:
 
