@@ -61,5 +61,10 @@ if [ -z "$ZOO_LOG4J_PROP" ]; then
   export ZOO_LOG4J_PROP="$ZOOKEEPER_LOG_LEVEL,CONSOLE"
 fi
 
+# enabling Prometheus JMX exporter as Java agent
+if [ "$ZOOKEEPER_METRICS_ENABLED" = "true" ]; then
+  export JVMFLAGS="-javaagent:/opt/prometheus/jmx_prometheus_javaagent.jar=9404:/opt/prometheus/config/config.yml"
+fi
+
 # starting Zookeeper with final configuration
 exec $ZOOKEEPER_HOME/bin/zkServer.sh start-foreground /tmp/zookeeper.properties
