@@ -35,6 +35,14 @@ spec:
   type: ClusterIP
   clusterIP: None
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: zookeeper-metrics-config
+data:
+  config.yml: |
+    lowercaseOutputName: true
+---
 apiVersion: apps/v1beta1
 kind: StatefulSet
 metadata:
@@ -69,12 +77,19 @@ spec:
             - name: leaderelection
               containerPort: 3888
               protocol: TCP
+            - name: prometheus
+              containerPort: 9404
+              protocol: TCP
           env:
             - name: ZOOKEEPER_NODE_COUNT
               value: "3"
+            - name: ZOOKEEPER_METRICS_ENABLED
+              value: "true"
           volumeMounts:
             - name: zookeeper-storage
               mountPath: /var/lib/zookeeper
+            - name: zookeeper-metrics-config
+              mountPath: /opt/prometheus/config/
           livenessProbe:
             exec:
               command:
@@ -87,6 +102,10 @@ spec:
               - "/opt/zookeeper/zookeeper_healthcheck.sh"
             initialDelaySeconds: 15
             timeoutSeconds: 5
+        volumes:
+          - name: zookeeper-metrics-config
+            configMap:
+              name: zookeeper-metrics-config
   volumeClaimTemplates:
     - metadata:
         name: zookeeper-storage
@@ -126,6 +145,14 @@ spec:
   type: ClusterIP
   clusterIP: None
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kafka-metrics-config
+data:
+  config.yml: |
+    lowercaseOutputName: true
+---
 apiVersion: apps/v1beta1
 kind: StatefulSet
 metadata:
@@ -155,9 +182,17 @@ spec:
             - name: kafka
               containerPort: 9092
               protocol: TCP
+            - name: prometheus
+              containerPort: 9404
+              protocol: TCP
+          env:
+            - name: KAFKA_METRICS_ENABLED
+              value: "true"
           volumeMounts:
             - name: kafka-storage
               mountPath: /var/lib/kafka/
+            - name: kafka-metrics-config
+              mountPath: /opt/prometheus/config/
           livenessProbe:
             exec:
               command:
@@ -170,6 +205,10 @@ spec:
               - "/opt/kafka/kafka_healthcheck.sh"
             initialDelaySeconds: 15
             timeoutSeconds: 5
+        volumes:
+          - name: kafka-metrics-config
+            configMap:
+              name: kafka-metrics-config
   volumeClaimTemplates:
     - metadata:
         name: kafka-storage
