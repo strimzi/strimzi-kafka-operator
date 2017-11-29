@@ -71,6 +71,7 @@ public class ClusterController extends AbstractVerticle {
 
                         @Override
                         public void onClose(KubernetesClientException e) {
+                            //TODO: Restart or reconnect?
                             log.info("Watcher closed", e);
                         }
                     });
