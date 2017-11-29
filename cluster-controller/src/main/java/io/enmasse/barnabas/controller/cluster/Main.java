@@ -19,7 +19,7 @@ public class Main {
 
         try {
             Vertx vertx = Vertx.vertx();
-            vertx.deployVerticle(new ClusterController(new ClusterControlerConfig(namespace, labels)));
+            vertx.deployVerticle(new ClusterController(new ClusterControllerConfig(namespace, labels)));
         } catch (IllegalArgumentException e) {
             log.error("Unable to parse arguments", e);
             System.exit(1);

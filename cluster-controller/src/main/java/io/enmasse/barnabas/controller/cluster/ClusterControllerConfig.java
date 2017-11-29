@@ -3,16 +3,16 @@ package io.enmasse.barnabas.controller.cluster;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ClusterControlerConfig {
+public class ClusterControllerConfig {
     private Map<String, String> labels;
     private String namespace;
 
-    public ClusterControlerConfig(String namespace, Map<String, String> labels) {
+    public ClusterControllerConfig(String namespace, Map<String, String> labels) {
         this.namespace = namespace;
         this.labels = labels;
     }
 
-    public static ClusterControlerConfig fromEnv() {
+    public static ClusterControllerConfig fromEnv() {
         String namespace = System.getenv("BARNABAS_CONTROLLER_NAMESPACE");
         String stringLabels = System.getenv("BARNABAS_CONTROLLER_LABELS");
 
@@ -24,7 +24,7 @@ public class ClusterControlerConfig {
             labelsMap.put(fields[0].trim(), fields[1].trim());
         }
 
-        return new ClusterControlerConfig(namespace, labelsMap);
+        return new ClusterControllerConfig(namespace, labelsMap);
     }
 
     public Map<String, String> getLabels() {

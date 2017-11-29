@@ -14,7 +14,6 @@ import io.vertx.core.WorkerExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -28,7 +27,7 @@ public class ClusterController extends AbstractVerticle {
 
     private WorkerExecutor executor;
 
-    public ClusterController(ClusterControlerConfig config) throws Exception {
+    public ClusterController(ClusterControllerConfig config) throws Exception {
         log.info("Creating ClusterController");
 
         this.namespace = config.getNamespace();
