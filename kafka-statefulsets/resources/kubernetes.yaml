@@ -102,10 +102,10 @@ spec:
               - "/opt/zookeeper/zookeeper_healthcheck.sh"
             initialDelaySeconds: 15
             timeoutSeconds: 5
-        volumes:
-          - name: zookeeper-metrics-config
-            configMap:
-              name: zookeeper-metrics-config
+      volumes:
+        - name: zookeeper-metrics-config
+          configMap:
+            name: zookeeper-metrics-config
   volumeClaimTemplates:
     - metadata:
         name: zookeeper-storage
@@ -205,10 +205,10 @@ spec:
               - "/opt/kafka/kafka_healthcheck.sh"
             initialDelaySeconds: 15
             timeoutSeconds: 5
-        volumes:
-          - name: kafka-metrics-config
-            configMap:
-              name: kafka-metrics-config
+      volumes:
+        - name: kafka-metrics-config
+          configMap:
+            name: kafka-metrics-config
   volumeClaimTemplates:
     - metadata:
         name: kafka-storage

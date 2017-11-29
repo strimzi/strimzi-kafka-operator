@@ -80,12 +80,12 @@ parameters:
   displayName: Transaction state replication factor
   name: KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR
   value: "3"
-- description: If getting metrics from Kafka instance is enabled or not
-  displayName: Metrics enabled
+- description: true to enable metric collection from Kafka
+  displayName: Kafka metrics enabled
   name: KAFKA_METRICS_ENABLED
   value: "true"
-- description: If getting metrics from Zookeeper instance is enabled or not
-  displayName: Metrics enabled
+- description: true to enable metric collection from Zookeeper
+  displayName: Zookeeper metrics enabled
   name: ZOOKEEPER_METRICS_ENABLED
   value: "true"
 objects:
