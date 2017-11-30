@@ -35,6 +35,14 @@ spec:
   type: ClusterIP
   clusterIP: None
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: zookeeper-metrics-config
+data:
+  config.yml: |
+    lowercaseOutputName: true
+---
 apiVersion: apps/v1beta1
 kind: StatefulSet
 metadata:
@@ -60,12 +68,19 @@ spec:
             - name: leaderelection
               containerPort: 3888
               protocol: TCP
+            - name: prometheus
+              containerPort: 9404
+              protocol: TCP
           env:
             - name: ZOOKEEPER_NODE_COUNT
               value: "1"
+            - name: ZOOKEEPER_METRICS_ENABLED
+              value: "true"
           volumeMounts:
             - name: zookeeper-storage
               mountPath: /var/lib/zookeeper
+            - name: zookeeper-metrics-config
+              mountPath: /opt/prometheus/config/
           livenessProbe:
             exec:
               command:
@@ -81,6 +96,9 @@ spec:
       volumes:
         - name: zookeeper-storage
           emptyDir: {}
+        - name: zookeeper-metrics-config
+          configMap:
+            name: zookeeper-metrics-config
 ---
 apiVersion: v1
 kind: Service
@@ -111,6 +129,14 @@ spec:
   type: ClusterIP
   clusterIP: None
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kafka-metrics-config
+data:
+  config.yml: |
+    lowercaseOutputName: true
+---
 apiVersion: apps/v1beta1
 kind: StatefulSet
 metadata:
@@ -131,9 +157,17 @@ spec:
             - name: kafka
               containerPort: 9092
               protocol: TCP
+            - name: prometheus
+              containerPort: 9404
+              protocol: TCP
+          env:
+            - name: KAFKA_METRICS_ENABLED
+              value: "true"
           volumeMounts:
             - name: kafka-storage
               mountPath: /var/lib/kafka/
+            - name: kafka-metrics-config
+              mountPath: /opt/prometheus/config/
           livenessProbe:
             exec:
               command:
@@ -149,3 +183,6 @@ spec:
       volumes:
         - name: kafka-storage
           emptyDir: {}
+        - name: kafka-metrics-config
+          configMap:
+            name: kafka-metrics-config
