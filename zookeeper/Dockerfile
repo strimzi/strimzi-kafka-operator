@@ -33,6 +33,7 @@ RUN curl -O https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_java
     && echo $JMX_EXPORTER_CHECKSUM > jmx_prometheus_javaagent-$JMX_EXPORTER_VERSION.jar.sha1 \
     && sha1sum --check jmx_prometheus_javaagent-$JMX_EXPORTER_VERSION.jar.sha1 \
     && mkdir /opt/prometheus \
+    && mkdir /opt/prometheus/config \
     && mv jmx_prometheus_javaagent-$JMX_EXPORTER_VERSION.jar /opt/prometheus/jmx_prometheus_javaagent.jar \
     && rm -rf jmx_prometheus_javaagent-$JMX_EXPORTER_VERSION.*
 
