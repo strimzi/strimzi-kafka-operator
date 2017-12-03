@@ -1,6 +1,8 @@
 package io.enmasse.barnabas.controller.cluster;
 
 import io.enmasse.barnabas.controller.cluster.resources.KafkaResource;
+import io.enmasse.barnabas.controller.cluster.resources.Resource;
+import io.enmasse.barnabas.controller.cluster.resources.ResourceId;
 import io.enmasse.barnabas.controller.cluster.resources.ZookeeperResource;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
@@ -14,6 +16,7 @@ import io.vertx.core.WorkerExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -21,9 +24,11 @@ import java.util.stream.Collectors;
 public class ClusterController extends AbstractVerticle {
     private static final Logger log = LoggerFactory.getLogger(ClusterController.class.getName());
 
-    private final KubernetesClient kubernetesClient;
+    private final K8SUtils k8s;
     private final Map<String, String> labels;
     private final String namespace;
+
+    //private Map<ResourceId, Resource> resources = new HashMap<ResourceId, Resource<S, ServiceFluentImpl<DoneableService>>>();
 
     private WorkerExecutor executor;
 
@@ -32,7 +37,7 @@ public class ClusterController extends AbstractVerticle {
 
         this.namespace = config.getNamespace();
         this.labels = config.getLabels();
-        this.kubernetesClient = new DefaultKubernetesClient();
+        this.k8s = new K8SUtils(new DefaultKubernetesClient());
     }
 
     @Override
@@ -43,28 +48,28 @@ public class ClusterController extends AbstractVerticle {
 
         getVertx().executeBlocking(
                 future -> {
-                    kubernetesClient.configMaps().inNamespace(namespace).withLabels(labels).watch(new Watcher<ConfigMap>() {
+                    k8s.getKubernetesClient().configMaps().inNamespace(namespace).withLabels(labels).watch(new Watcher<ConfigMap>() {
                         @Override
                         public void eventReceived(Action action, ConfigMap cm) {
                             switch (action) {
                                 case ADDED:
                                     log.info("New ConfigMap {}", cm.getMetadata().getName());
-                                    reconcile();
+                                    addCluster(cm);
                                     break;
                                 case DELETED:
                                     log.info("Deleted ConfigMap {}", cm.getMetadata().getName());
-                                    reconcile();
+                                    deleteCluster(cm);
                                     break;
                                 case MODIFIED:
                                     log.info("Modified ConfigMap {}", cm.getMetadata().getName());
-                                    reconcile();
+                                    updateCluster(cm);
                                     break;
                                 case ERROR:
-                                    log.info("Failed ConfigMap {}", cm.getMetadata().getName());
+                                    log.error("Failed ConfigMap {}", cm.getMetadata().getName());
                                     reconcile();
                                     break;
                                 default:
-                                    log.info("Unknown action: {}", cm.getMetadata().getName());
+                                    log.error("Unknown action: {}", cm.getMetadata().getName());
                                     reconcile();
                             }
                         }
@@ -79,7 +84,15 @@ public class ClusterController extends AbstractVerticle {
                 }, res -> {
                     if (res.succeeded())    {
                         log.info("ClusterController up and running");
+
+                        log.info("Setting up periodical reconciliation");
+                        vertx.setPeriodic(60000, res2 -> {
+                            log.info("Triggering periodic reconciliation ...");
+                            reconcile();
+                        });
+
                         start.complete();
+                        reconcile();
                     }
                     else {
                         log.info("ClusterController startup failed");
@@ -92,8 +105,8 @@ public class ClusterController extends AbstractVerticle {
     private void reconcile()    {
         log.info("Reconciling ...");
 
-        List<ConfigMap> cms = kubernetesClient.configMaps().inNamespace(namespace).withLabels(labels).list().getItems();
-        List<StatefulSet> sss = kubernetesClient.apps().statefulSets().inNamespace(namespace).withLabels(labels).list().getItems();
+        List<ConfigMap> cms = k8s.getConfigmaps(namespace, labels);
+        List<StatefulSet> sss = k8s.getStatefulSets(namespace, labels);
 
         List<String> cmsNames = cms.stream().map(cm -> cm.getMetadata().getName()).collect(Collectors.toList());
         List<String> sssNames = sss.stream().map(cm -> cm.getMetadata().getName()).collect(Collectors.toList());
@@ -115,27 +128,46 @@ public class ClusterController extends AbstractVerticle {
     }
 
     private void addCluster(ConfigMap add)   {
-        executor.executeBlocking(
-            future -> {
-                log.info("Adding cluster {}", add.getMetadata().getName());
-                ZookeeperResource.fromConfigMap(add, kubernetesClient).create();
-                KafkaResource.fromConfigMap(add, kubernetesClient).create();
-                future.complete();
-            }, false, res -> {
-                if (res.succeeded()) {
-                    log.info("Cluster added {}", add.getMetadata().getName());
-                }
-                else {
-                    log.error("Failed to add cluster {}", add.getMetadata().getName());
-                }
-            });
+        String name = add.getMetadata().getName();
+        log.info("Adding cluster {}", name);
+
+        ZookeeperResource.fromConfigMap(add, vertx, k8s).create(res -> {
+            if (res.succeeded()) {
+                log.info("Zookeeper cluster added {}", name);
+                KafkaResource.fromConfigMap(add, vertx, k8s).create(res2 -> {
+                    if (res2.succeeded()) {
+                        log.info("Kafka cluster added {}", name);
+                    }
+                    else {
+                        log.error("Failed to add Kafka cluster {}.", name);
+                    }
+                });
+            }
+            else {
+                log.error("Failed to add Zookeeper cluster {}. SKipping Kafka cluster creation.", name);
+            }
+        });
     }
 
     private void updateClusters(List<ConfigMap> update)   {
         for (ConfigMap cm : update) {
             log.info("Cluster {} should be checked for updates -> NOT IMPLEMENTED YET", cm.getMetadata().getName());
-            // No configuration => nothing to update
+            updateCluster(cm);
         }
+    }
+
+    private void updateCluster(ConfigMap cm)   {
+        String name = cm.getMetadata().getName();
+        log.info("Checking for updates in cluster {} -> NOT IMPLEMENTED YET", cm.getMetadata().getName());
+
+        KafkaResource.fromConfigMap(cm, vertx, k8s).update(res2 -> {
+            if (res2.succeeded()) {
+                log.info("Kafka cluster updated {}", name);
+            }
+            else {
+                log.error("Failed to update Kafka cluster {}.", name);
+            }
+        });
     }
 
     private void deleteClusters(List<StatefulSet> delete)   {
@@ -146,19 +178,46 @@ public class ClusterController extends AbstractVerticle {
     }
 
     private void deleteCluster(StatefulSet ss)   {
-        executor.executeBlocking(
-            future -> {
-                log.info("Deleting cluster {}", ss.getMetadata().getName());
-                KafkaResource.fromStatefulSet(ss, kubernetesClient).delete();
-                ZookeeperResource.fromStatefulSet(ss, kubernetesClient).delete();
-                future.complete();
-            }, false, res -> {
-                if (res.succeeded()) {
-                    log.info("Cluster deleted {}", ss.getMetadata().getName());
-                }
-                else {
-                    log.error("Failed to delete cluster {}", ss.getMetadata().getName());
-                }
-            });
+        String name = ss.getMetadata().getName();
+        log.info("Deleting cluster {}", name);
+
+        KafkaResource.fromStatefulSet(ss, vertx, k8s).delete(res -> {
+            if (res.succeeded()) {
+                log.info("Kafka cluster deleted {}", name);
+                ZookeeperResource.fromStatefulSet(ss, vertx, k8s).delete(res2 -> {
+                    if (res2.succeeded()) {
+                        log.info("Zookeeper cluster deleted {}", name);
+                    }
+                    else {
+                        log.error("Failed to delete Zookeeper cluster {}.", name);
+                    }
+                });
+            }
+            else {
+                log.error("Failed to delete Kafka cluster {}. SKipping Zookeeper cluster deletion.", name);
+            }
+        });
+    }
+
+    private void deleteCluster(ConfigMap cm)   {
+        String name = cm.getMetadata().getName();
+        log.info("Deleting cluster {}", name);
+
+        KafkaResource.fromConfigMap(cm, vertx, k8s).delete(res -> {
+            if (res.succeeded()) {
+                log.info("Kafka cluster deleted {}", name);
+                ZookeeperResource.fromConfigMap(cm, vertx, k8s).delete(res2 -> {
+                    if (res2.succeeded()) {
+                        log.info("Zookeeper cluster deleted {}", name);
+                    }
+                    else {
+                        log.error("Failed to delete Zookeeper cluster {}.", name);
+                    }
+                });
+            }
+            else {
+                log.error("Failed to delete Kafka cluster {}. SKipping Zookeeper cluster deletion.", name);
+            }
+        });
     }
 }
