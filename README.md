@@ -21,6 +21,7 @@ Barnabas provides a way to run an [Apache Kafka][kafka] cluster on
         - [Mount a volume containing the plugins](#mount-a-volume-containing-the-plugins)
         - [Create a new image based on `enmasseproject/kafka-connect`](#create-a-new-image-based-on-enmasseprojectkafka-connect)
         - [Using Openshift Build and S2I image](#using-openshift-build-and-s2i-image)
+- [Metrics](#metrics)
 
 <!-- /TOC -->
 
@@ -300,6 +301,12 @@ oc start-build kafka-connect --from-dir ./my-plugins/
 ```
 4. Once the build is finished, the new image will be automatically used with your Kafka Connect deployment.
 
+## Metrics
+
+Each Kafka broker and Zookeeper server pod exposes metrics by means of a [Prometheus][prometheus] endpoint. A JMX exporter, running as a Java agent, is in charge of getting metrics from the pod (both JVM metrics and metrics strictly related to the broker) and exposing them as such an endpoint.
+
+The [Metrics](/metrics/METRICS.md) page details all the information for deploying a Prometheus server in the cluster in order to scrape the pods and obtain metrics. The same page describes how to set up a [Grafana][grafana] instance to have a dashboard showing the main configured metrics.
+
 [kafka]: https://kafka.apache.org "Apache Kafka"
 [connect]: https://kafka.apache.org/documentation/#connect "Apache Kafka Connect"
 [k8s]: https://kubernetes.io/ "Kubernetes"
@@ -311,3 +318,5 @@ oc start-build kafka-connect --from-dir ./my-plugins/
 [kubectl]: https://kubernetes.io/docs/tasks/tools/install-kubectl/ "Kubectl"
 [occlusterup]: https://github.com/openshift/origin/blob/master/docs/cluster_up_down.md "Local Cluster Management"
 [k8srwomany]: https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes
+[prometheus]: https://prometheus.io/ "Prometheus"
+[grafana]: https://grafana.com/ "Grafana"
