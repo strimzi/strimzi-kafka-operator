@@ -54,6 +54,10 @@ spec:
     metadata:
       labels:
         name: zookeeper
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "9404"
     spec:
       containers:
         - name: zookeeper
@@ -68,7 +72,7 @@ spec:
             - name: leaderelection
               containerPort: 3888
               protocol: TCP
-            - name: prometheus
+            - name: kafkametrics
               containerPort: 9404
               protocol: TCP
           env:
@@ -136,6 +140,13 @@ metadata:
 data:
   config.yml: |
     lowercaseOutputName: true
+    rules:
+      - pattern: kafka.server<type=(.+), name=(.+)PerSec\w*><>Count
+        name: kafka_server_$1_$2_total
+      - pattern : kafka.server<type=(.+), name=(.+)PerSec\w*, topic=(.+)><>Count
+        name: kafka_server_$1_$2_total
+        labels:
+          topic: "$3"
 ---
 apiVersion: apps/v1beta1
 kind: StatefulSet
@@ -149,6 +160,10 @@ spec:
     metadata:
       labels:
         name: kafka
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "9404"
     spec:
       containers:
         - name: kafka
@@ -157,7 +172,7 @@ spec:
             - name: kafka
               containerPort: 9092
               protocol: TCP
-            - name: prometheus
+            - name: kafkametrics
               containerPort: 9404
               protocol: TCP
           env:
