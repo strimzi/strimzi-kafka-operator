@@ -15,7 +15,7 @@ public class Main {
         Map<String, String> labels = new HashMap<>();
         labels.put("app", "barnabas");
         labels.put("type", "deployment");
-        labels.put("kind", "kafka");
+        //labels.put("kind", "kafka");
 
         try {
             Vertx vertx = Vertx.vertx();

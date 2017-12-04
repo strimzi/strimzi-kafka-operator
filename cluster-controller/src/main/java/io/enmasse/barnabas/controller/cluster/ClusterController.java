@@ -1,13 +1,12 @@
 package io.enmasse.barnabas.controller.cluster;
 
+import io.enmasse.barnabas.controller.cluster.resources.KafkaConnectResource;
 import io.enmasse.barnabas.controller.cluster.resources.KafkaResource;
-import io.enmasse.barnabas.controller.cluster.resources.Resource;
-import io.enmasse.barnabas.controller.cluster.resources.ResourceId;
 import io.enmasse.barnabas.controller.cluster.resources.ZookeeperResource;
 import io.fabric8.kubernetes.api.model.*;
+import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
 import io.vertx.core.AbstractVerticle;
@@ -16,7 +15,6 @@ import io.vertx.core.WorkerExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -51,18 +49,48 @@ public class ClusterController extends AbstractVerticle {
                     k8s.getKubernetesClient().configMaps().inNamespace(namespace).withLabels(labels).watch(new Watcher<ConfigMap>() {
                         @Override
                         public void eventReceived(Action action, ConfigMap cm) {
+                            Map<String, String> labels = cm.getMetadata().getLabels();
+                            String kind;
+
+                            if (!labels.containsKey("kind")) {
+                                log.warn("Missing kind in Config Map {}", cm.getMetadata().getName());
+                                return;
+                            }
+                            else if (!labels.get("kind").equals("kafka") && !labels.get("kind").equals("kafka-connect")) {
+                                log.warn("Unknown kind {} received in Config Map {}", labels.get("kind"), cm.getMetadata().getName());
+                                return;
+                            }
+                            else {
+                                kind = labels.get("kind");
+                            }
+
                             switch (action) {
                                 case ADDED:
                                     log.info("New ConfigMap {}", cm.getMetadata().getName());
-                                    addCluster(cm);
+                                    if (kind.equals("kafka")) {
+                                        addKafkaCluster(cm);
+                                    }
+                                    else if (kind.equals("kafka-connect")) {
+                                        addKafkaConnectCluster(cm);
+                                    }
                                     break;
                                 case DELETED:
                                     log.info("Deleted ConfigMap {}", cm.getMetadata().getName());
-                                    deleteCluster(cm);
+                                    if (kind.equals("kafka")) {
+                                        deleteKafkaCluster(cm);
+                                    }
+                                    else if (kind.equals("kafka-connect")) {
+                                        deleteKafkaConnectCluster(cm);
+                                    }
                                     break;
                                 case MODIFIED:
                                     log.info("Modified ConfigMap {}", cm.getMetadata().getName());
-                                    updateCluster(cm);
+                                    if (kind.equals("kafka")) {
+                                        updateKafkaCluster(cm);
+                                    }
+                                    else if (kind.equals("kafka-connect")) {
+                                        updateKafkaConnectCluster(cm);
+                                    }
                                     break;
                                 case ERROR:
                                     log.error("Failed ConfigMap {}", cm.getMetadata().getName());
@@ -86,13 +114,13 @@ public class ClusterController extends AbstractVerticle {
                         log.info("ClusterController up and running");
 
                         log.info("Setting up periodical reconciliation");
-                        vertx.setPeriodic(60000, res2 -> {
+                        /*vertx.setPeriodic(60000, res2 -> {
                             log.info("Triggering periodic reconciliation ...");
                             reconcile();
                         });
 
                         start.complete();
-                        reconcile();
+                        reconcile();*/
                     }
                     else {
                         log.info("ClusterController startup failed");
@@ -123,11 +151,30 @@ public class ClusterController extends AbstractVerticle {
     private void addClusters(List<ConfigMap> add)   {
         for (ConfigMap cm : add) {
             log.info("Cluster {} should be added", cm.getMetadata().getName());
-            addCluster(cm);
+            addKafkaCluster(cm);
         }
     }
 
-    private void addCluster(ConfigMap add)   {
+    private void updateClusters(List<ConfigMap> update)   {
+        for (ConfigMap cm : update) {
+            log.info("Cluster {} should be checked for updates -> NOT IMPLEMENTED YET", cm.getMetadata().getName());
+            updateKafkaCluster(cm);
+        }
+    }
+
+    private void deleteClusters(List<StatefulSet> delete)   {
+        for (StatefulSet ss : delete) {
+            log.info("Cluster {} should be deleted", ss.getMetadata().getName());
+            deleteKafkaCluster(ss);
+        }
+    }
+
+    /*
+      Kafka / Zookeeper cluster control
+     */
+
+
+    private void addKafkaCluster(ConfigMap add)   {
         String name = add.getMetadata().getName();
         log.info("Adding cluster {}", name);
 
@@ -149,14 +196,7 @@ public class ClusterController extends AbstractVerticle {
         });
     }
 
-    private void updateClusters(List<ConfigMap> update)   {
-        for (ConfigMap cm : update) {
-            log.info("Cluster {} should be checked for updates -> NOT IMPLEMENTED YET", cm.getMetadata().getName());
-            updateCluster(cm);
-        }
-    }
-
-    private void updateCluster(ConfigMap cm)   {
+    private void updateKafkaCluster(ConfigMap cm)   {
         String name = cm.getMetadata().getName();
         log.info("Checking for updates in cluster {} -> NOT IMPLEMENTED YET", cm.getMetadata().getName());
 
@@ -170,14 +210,7 @@ public class ClusterController extends AbstractVerticle {
         });
     }
 
-    private void deleteClusters(List<StatefulSet> delete)   {
-        for (StatefulSet ss : delete) {
-            log.info("Cluster {} should be deleted", ss.getMetadata().getName());
-            deleteCluster(ss);
-        }
-    }
-
-    private void deleteCluster(StatefulSet ss)   {
+    private void deleteKafkaCluster(StatefulSet ss)   {
         String name = ss.getMetadata().getName();
         log.info("Deleting cluster {}", name);
 
@@ -199,7 +232,7 @@ public class ClusterController extends AbstractVerticle {
         });
     }
 
-    private void deleteCluster(ConfigMap cm)   {
+    private void deleteKafkaCluster(ConfigMap cm)   {
         String name = cm.getMetadata().getName();
         log.info("Deleting cluster {}", name);
 
@@ -217,6 +250,65 @@ public class ClusterController extends AbstractVerticle {
             }
             else {
                 log.error("Failed to delete Kafka cluster {}. SKipping Zookeeper cluster deletion.", name);
+            }
+        });
+    }
+
+    /*
+      Kafka Connect cluster control
+     */
+    private void addKafkaConnectCluster(ConfigMap add)   {
+        String name = add.getMetadata().getName();
+        log.info("Adding Kafka Connect cluster {}", name);
+
+        KafkaConnectResource.fromConfigMap(add, vertx, k8s).create(res -> {
+            if (res.succeeded()) {
+                log.info("Kafka Connect cluster added {}", name);
+            }
+            else {
+                log.error("Failed to add Kafka Connect cluster {}.", name);
+            }
+        });
+    }
+
+    private void updateKafkaConnectCluster(ConfigMap cm)   {
+        String name = cm.getMetadata().getName();
+        log.info("Checking for updates in Kafka Connect cluster {} -> NOT IMPLEMENTED YET", cm.getMetadata().getName());
+
+        KafkaConnectResource.fromConfigMap(cm, vertx, k8s).update(res2 -> {
+            if (res2.succeeded()) {
+                log.info("Kafka Connect cluster updated {}", name);
+            }
+            else {
+                log.error("Failed to update Kafka Connect cluster {}.", name);
+            }
+        });
+    }
+
+    private void deleteKafkaConnectCluster(Deployment dep)   {
+        String name = dep.getMetadata().getName();
+        log.info("Deleting cluster {}", name);
+
+        KafkaConnectResource.fromDeployment(dep, vertx, k8s).delete(res -> {
+            if (res.succeeded()) {
+                log.info("Kafka Connect cluster deleted {}", name);
+            }
+            else {
+                log.error("Failed to delete Kafka Connect cluster {}.", name);
+            }
+        });
+    }
+
+    private void deleteKafkaConnectCluster(ConfigMap cm)   {
+        String name = cm.getMetadata().getName();
+        log.info("Deleting cluster {}", name);
+
+        KafkaConnectResource.fromConfigMap(cm, vertx, k8s).delete(res -> {
+            if (res.succeeded()) {
+                log.info("Kafka Connect cluster deleted {}", name);
+            }
+            else {
+                log.error("Failed to delete Kafka Connect cluster {}.", name);
             }
         });
     }

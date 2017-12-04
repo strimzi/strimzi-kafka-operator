@@ -1,11 +1,14 @@
 package io.enmasse.barnabas.controller.cluster;
 
 import io.fabric8.kubernetes.api.model.*;
+import io.fabric8.kubernetes.api.model.extensions.Deployment;
+import io.fabric8.kubernetes.api.model.extensions.DoneableDeployment;
 import io.fabric8.kubernetes.api.model.extensions.DoneableStatefulSet;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
+import io.fabric8.kubernetes.client.dsl.ScalableResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,19 +77,36 @@ public class K8SUtils {
                 .build();
     }
 
+    public Probe createHttpProbe(String path, String port, int initialDelay, int timeout) {
+        log.trace("Creating http probe with path {}, port {}, initial delay {} and timeout {}", path, port, initialDelay, timeout);
+        return new ProbeBuilder().withNewHttpGet()
+                .withPath(path)
+                .withNewPort(port)
+                .endHttpGet()
+                .withInitialDelaySeconds(initialDelay)
+                .withTimeoutSeconds(timeout)
+                .build();
+    }
+
     /*
       CREATE functions
      */
 
     public void createService(String namespace, Service svc) {
-        log.debug("Creating service {}", svc.getMetadata().getName());
+        log.info("Creating service {}", svc.getMetadata().getName());
         client.services().inNamespace(namespace).createOrReplace(svc);
     }
 
     public void createStatefulSet(String namespace, StatefulSet ss) {
-        log.debug("Creating stateful set {}", ss.getMetadata().getName());
+        log.info("Creating stateful set {}", ss.getMetadata().getName());
         client.apps().statefulSets().inNamespace(namespace).createOrReplace(ss);
     }
+
+    public void createDeployment(String namespace, Deployment dep) {
+        log.info("Creating deployment {}", dep.getMetadata().getName());
+        client.extensions().deployments().inNamespace(namespace).createOrReplace(dep);
+    }
+
 
     /*
       GET functions
@@ -101,6 +121,18 @@ public class K8SUtils {
 
     public List<StatefulSet> getStatefulSets(String namespace, Map<String, String> labels) {
         return client.apps().statefulSets().inNamespace(namespace).withLabels(labels).list().getItems();
+    }
+
+    public Deployment getDeployment(String namespace, String name)    {
+        return getDeploymentResource(namespace, name).get();
+    }
+
+    public ScalableResource<Deployment, DoneableDeployment> getDeploymentResource(String namespace, String name)    {
+        return client.extensions().deployments().inNamespace(namespace).withName(name);
+    }
+
+    public List<Deployment> getDeployment(String namespace, Map<String, String> labels) {
+        return client.extensions().deployments().inNamespace(namespace).withLabels(labels).list().getItems();
     }
 
     public Service getService(String namespace, String name)    {
@@ -120,15 +152,22 @@ public class K8SUtils {
      */
     public void deleteService(String namespace, String name) {
         if (serviceExists(namespace, name)) {
-            log.debug("Deleting Zookeeper service {}", name);
+            log.debug("Deleting service {}", name);
             getServiceResource(namespace, name).delete();
         }
     }
 
     public void deleteStatefulSet(String namespace, String name) {
         if (statefulSetExists(namespace, name)) {
-            log.debug("Deleting Zookeeper stateful set {}", name);
+            log.debug("Deleting stateful set {}", name);
             getStatefulSetResource(namespace, name).delete();
+        }
+    }
+
+    public void deleteDeployment(String namespace, String name) {
+        if (deploymentExists(namespace, name)) {
+            log.debug("Deleting deployment {}", name);
+            getDeploymentResource(namespace, name).delete();
         }
     }
 
@@ -137,6 +176,10 @@ public class K8SUtils {
      */
     public boolean statefulSetExists(String namespace, String name) {
         return getStatefulSet(namespace, name) == null ? false : true;
+    }
+
+    public boolean deploymentExists(String namespace, String name) {
+        return getDeployment(namespace, name) == null ? false : true;
     }
 
     public boolean serviceExists(String namespace, String name) {

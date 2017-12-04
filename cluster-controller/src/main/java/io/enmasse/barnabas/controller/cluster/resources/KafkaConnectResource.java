@@ -2,10 +2,7 @@ package io.enmasse.barnabas.controller.cluster.resources;
 
 import io.enmasse.barnabas.controller.cluster.K8SUtils;
 import io.fabric8.kubernetes.api.model.*;
-import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
-import io.fabric8.kubernetes.api.model.extensions.StatefulSetBuilder;
-import io.fabric8.kubernetes.api.model.extensions.StatefulSetUpdateStrategy;
-import io.fabric8.kubernetes.api.model.extensions.StatefulSetUpdateStrategyBuilder;
+import io.fabric8.kubernetes.api.model.extensions.*;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -15,63 +12,56 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-public class KafkaResource extends AbstractResource {
-    private static final Logger log = LoggerFactory.getLogger(KafkaResource.class.getName());
+public class KafkaConnectResource extends AbstractResource {
+    private static final Logger log = LoggerFactory.getLogger(KafkaConnectResource.class.getName());
 
     private final String name;
-    private final String headlessName;
-    private final String zookeeper;
 
-    private final int clientPort = 9092;
-    private final String mounthPath = "/var/lib/kafka";
-    private final String volumeName = "kafka-storage";
+    private final int restApiPort = 8083;
 
     private int replicas = DEFAULT_REPLICAS;
-    private String image = "scholzj/kafka-statefulsets:latest";
-    private String livenessProbeScript = "/opt/kafka/kafka_healthcheck.sh";
+    private String image = "enmasseproject/kafka-connect:latest";
+    private String livenessProbePath = "/";
     private int livenessProbeTimeout = 5;
-    private int livenessProbeInitialDelay = 15;
-    private String readinessProbeScript = "/opt/kafka/kafka_healthcheck.sh";
+    private int livenessProbeInitialDelay = 60;
+    private String readinessProbePath = "/";
     private int readinessProbeTimeout = 5;
-    private int readinessProbeInitialDelay = 15;
+    private int readinessProbeInitialDelay = 60;
+
+    private String kafkaBootstrapServers = "kafka:9092";
 
     private static int DEFAULT_REPLICAS = 3;
 
-    private KafkaResource(String name, String namespace, Vertx vertx, K8SUtils k8s) {
-        super(namespace, new ResourceId("zookeeper", name), vertx, k8s);
+    private KafkaConnectResource(String name, String namespace, Vertx vertx, K8SUtils k8s) {
+        super(namespace, new ResourceId("kafkaBootstrapServers-connect", name), vertx, k8s);
         this.name = name;
-        this.headlessName = name + "-headless";
-        this.zookeeper = name + "-zookeeper" + ":2181";
     }
 
-    public Map<String, String> getLabels() {
-        return labels;
-    }
+    public static KafkaConnectResource fromConfigMap(ConfigMap cm, Vertx vertx, K8SUtils k8s) {
+        KafkaConnectResource kafkaConnect = new KafkaConnectResource(cm.getMetadata().getName(), cm.getMetadata().getNamespace(), vertx, k8s);
+        kafkaConnect.setLabels(cm.getMetadata().getLabels());
 
-    public void setLabels(Map<String, String> labels) {
-        this.labels = labels;
-    }
-
-    public static KafkaResource fromConfigMap(ConfigMap cm, Vertx vertx, K8SUtils k8s) {
-        KafkaResource kafka = new KafkaResource(cm.getMetadata().getName(), cm.getMetadata().getNamespace(), vertx, k8s);
-        kafka.setLabels(cm.getMetadata().getLabels());
-
-        if (cm.getData().containsKey("kafka-nodes")) {
-            kafka.setReplicas(Integer.parseInt(cm.getData().get("kafka-nodes")));
+        if (cm.getData().containsKey("nodes")) {
+            kafkaConnect.setReplicas(Integer.parseInt(cm.getData().get("nodes")));
         }
 
-        return kafka;
+        if (cm.getData().containsKey("kafka-bootstrap-servers")) {
+            kafkaConnect.setKafkaBootstrapServers(cm.getData().get("kafka-bootstrap-servers"));
+        }
+
+        return kafkaConnect;
     }
 
-    public static KafkaResource fromStatefulSet(StatefulSet ss, Vertx vertx, K8SUtils k8s) {
-        KafkaResource kafka =  new KafkaResource(ss.getMetadata().getName(), ss.getMetadata().getNamespace(), vertx, k8s);
+    public static KafkaConnectResource fromDeployment(Deployment dep, Vertx vertx, K8SUtils k8s) {
+        KafkaConnectResource kafkaConnect =  new KafkaConnectResource(dep.getMetadata().getName(), dep.getMetadata().getNamespace(), vertx, k8s);
 
-        kafka.setLabels(ss.getMetadata().getLabels());
-        kafka.setReplicas(ss.getSpec().getReplicas());
-        return kafka;
+        kafkaConnect.setLabels(dep.getMetadata().getLabels());
+        kafkaConnect.setReplicas(dep.getSpec().getReplicas());
+        kafkaConnect.setKafkaBootstrapServers(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream().filter(env -> env.getName().equals("KAFKA_CONNECT_BOOTSTRAP_SERVERS")).collect(Collectors.toList()).get(0).getValue());
+        return kafkaConnect;
     }
 
     public void create(Handler<AsyncResult<Void>> handler) {
@@ -81,31 +71,36 @@ public class KafkaResource extends AbstractResource {
                 if (!exists()) {
                     vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                             future -> {
-                                log.info("Creating Kafka {}", name);
-                                k8s.createService(namespace, generateService());
-                                k8s.createService(namespace, generateHeadlessService());
-                                k8s.createStatefulSet(namespace, generateStatefulSet());
-                                future.complete();
+                                log.info("Creating Kafka Connect {}", name);
+                                try {
+                                    k8s.createService(namespace, generateService());
+                                    k8s.createDeployment(namespace, generateDeployment());
+                                    future.complete();
+                                }
+                                catch (Exception e) {
+                                    log.error("Caught exceptoion: {}", e.toString());
+                                    future.fail(e);
+                                }
                             }, false, res2 -> {
                                 if (res2.succeeded()) {
-                                    log.info("Kafka cluster created {}", name);
+                                    log.info("Kafka Connect cluster created {}", name);
                                     lock.release();
                                     handler.handle(Future.succeededFuture());
                                 } else {
-                                    log.error("Failed to create Kafka cluster {}", name);
+                                    log.error("Failed to create Kafka Connect cluster {}", name);
                                     lock.release();
                                     handler.handle(Future.failedFuture("Failed to create Kafka cluster"));
                                 }
                             });
                 }
                 else {
-                    log.info("Kafka cluster {} seems to already exist", name);
+                    log.info("Kafka Connect cluster {} seems to already exist", name);
                     lock.release();
                     handler.handle(Future.succeededFuture());
                 }
             } else {
-                log.error("Failed to acquire lock to create Kafka cluster {}", name);
-                handler.handle(Future.failedFuture("Failed to acquire lock to create Kafka cluster"));
+                log.error("Failed to acquire lock to create Kafka Connect cluster {}", name);
+                handler.handle(Future.failedFuture("Failed to acquire lock to create Kafka Connect cluster"));
             }
         });
     }
@@ -117,20 +112,19 @@ public class KafkaResource extends AbstractResource {
                 if (atLeastOneExists()) {
                     vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                             future -> {
-                                log.info("Deleting Kafka {}", name);
+                                log.info("Deleting Kafka Connect {}", name);
                                 k8s.deleteService(namespace, name);
-                                k8s.deleteStatefulSet(namespace, name);
-                                k8s.deleteService(namespace, headlessName);
+                                k8s.deleteDeployment(namespace, name);
                                 future.complete();
                             }, false, res2 -> {
                                 if (res2.succeeded()) {
-                                    log.info("Kafka cluster {} delete", name);
+                                    log.info("Kafka Connect cluster {} delete", name);
                                     lock.release();
                                     handler.handle(Future.succeededFuture());
                                 } else {
-                                    log.error("Failed to delete Kafka cluster {}", name);
+                                    log.error("Failed to delete Kafka Connect cluster {}", name);
                                     lock.release();
-                                    handler.handle(Future.failedFuture("Failed to delete Kafka cluster"));
+                                    handler.handle(Future.failedFuture("Failed to delete Kafka Connect cluster"));
                                 }
                             });
                 }
@@ -148,19 +142,19 @@ public class KafkaResource extends AbstractResource {
 
     public ResourceDiffResult diff()  {
         ResourceDiffResult diff = new ResourceDiffResult();
-        StatefulSet ss = k8s.getStatefulSet(namespace, name);
+        Deployment dep = k8s.getDeployment(namespace, name);
 
-        if (replicas > ss.getSpec().getReplicas()) {
-            log.info("Diff: Expected replicas {}, actual replicas {}", replicas, ss.getSpec().getReplicas());
+        if (replicas > dep.getSpec().getReplicas()) {
+            log.info("Diff: Expected replicas {}, actual replicas {}", replicas, dep.getSpec().getReplicas());
             diff.setScaleUp(true);
         }
-        else if (replicas < ss.getSpec().getReplicas()) {
-            log.info("Diff: Expected replicas {}, actual replicas {}", replicas, ss.getSpec().getReplicas());
+        else if (replicas < dep.getSpec().getReplicas()) {
+            log.info("Diff: Expected replicas {}, actual replicas {}", replicas, dep.getSpec().getReplicas());
             diff.setScaleDown(true);
         }
 
-        if (!getLabelsWithName(name).equals(ss.getMetadata().getLabels()))    {
-            log.info("Diff: Expected labels {}, actual labels {}", getLabelsWithName(name), ss.getMetadata().getLabels());
+        if (!getLabelsWithName(name).equals(dep.getMetadata().getLabels()))    {
+            log.info("Diff: Expected labels {}, actual labels {}", getLabelsWithName(name), dep.getMetadata().getLabels());
             diff.setDifferent(true);
         }
 
@@ -175,31 +169,32 @@ public class KafkaResource extends AbstractResource {
                 if (exists() && diff.getDifferent()) {
                     vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                             future -> {
-                                log.info("Updating Kafka {}", name);
+                                log.info("Updating Kafka Connect {}", name);
 
                                 if (diff.getScaleDown() || diff.getScaleUp()) {
-                                    log.info("Scaling to {} replicas", replicas);
-                                    k8s.getStatefulSetResource(namespace, name).scale(replicas, true);
+                                    log.info("Scaling Kafka Connect to {} replicas", replicas);
+                                    k8s.getDeploymentResource(namespace, name).scale(replicas, true);
                                 }
 
                                 try {
-                                    StatefulSet s = k8s.getStatefulSetResource(namespace, name).cascading(false).replace(generateStatefulSet());
-                                            //rolling().edit().editMetadata().withLabels(getLabelsWithName(name)).endMetadata().done();
+                                    log.info("Patching deployment");
+
+                                    //k8s.getDeploymentResource(namespace, name).edit().editMetadata().withLabels(getLabelsWithName(name)).endMetadata().done();
+                                    k8s.getDeploymentResource(namespace, name).replace(generateDeployment());
+
                                     future.complete();
                                 }
                                 catch (Exception e) {
                                     log.error("Caught exceptoion: {}", e.toString());
-                                    e.printStackTrace();
                                     future.fail(e);
                                 }
-
-                                //log.info("Patching stateful set to {} with {} replicas", generateStatefulSet(), generateStatefulSet().getSpec().getReplicas());
+                                //log.info("Patching stateful set to {} with {} replicas", generateDeployment(), generateDeployment().getSpec().getReplicas());
                                 //StatefulSet s = k8s.getStatefulSetResource(namespace, name).edit().editMetadata().withLabels(getLabelsWithName(name)).endMetadata().done();
-                                //StatefulSet s = k8s.getKubernetesClient().apps().statefulSets().inNamespace(namespace).createOrReplace(generateStatefulSet());
+                                //StatefulSet s = k8s.getKubernetesClient().apps().statefulSets().inNamespace(namespace).createOrReplace(generateDeployment());
 
                                 /*StatefulSet src = k8s.getStatefulSet(namespace, name);
                                 src.getMetadata().setLabels(getLabelsWithName(name));*/
-                                //log.info("Updating stateful set to {} with {} replicas", src, generateStatefulSet().getSpec().getReplicas());
+                                //log.info("Updating stateful set to {} with {} replicas", src, generateDeployment().getSpec().getReplicas());
                                 //StatefulSet s = k8s.getKubernetesClient().apps().statefulSets().inNamespace(namespace).createOrReplace(src);
                                 //StatefulSet s = k8s.getStatefulSetResource(namespace, name).edit().editMetadata().withLabels(getLabelsWithName(name)).endMetadata().done();
 
@@ -211,7 +206,7 @@ public class KafkaResource extends AbstractResource {
                                 k8s.getStatefulSetResource(namespace, name).edit().editSpec().withSelector(new LabelSelectorBuilder().withMatchLabels(getLabels()).build()).endSpec().done();*/
 
                                 /*StatefulSet src = k8s.getStatefulSet(namespace, name);
-                                src.getSpec().getTemplate().getSpec().getContainers().get(0).setImage("enmasseproject/kafka-statefulsets:latest");
+                                src.getSpec().getTemplate().getSpec().getContainers().get(0).setImage("enmasseproject/kafkaBootstrapServers-statefulsets:latest");
                                 k8s.getStatefulSetResource(namespace, name).replace(src);*/
 
 
@@ -223,29 +218,29 @@ public class KafkaResource extends AbstractResource {
 
                             }, false, res2 -> {
                                 if (res2.succeeded()) {
-                                    log.info("Kafka cluster updated {}", name);
+                                    log.info("Kafka Connect cluster updated {}", name);
                                     lock.release();
                                     handler.handle(Future.succeededFuture());
                                 } else {
-                                    log.error("Failed to update Kafka cluster {}", name);
+                                    log.error("Failed to update Kafka Connect cluster {}", name);
                                     lock.release();
-                                    handler.handle(Future.failedFuture("Failed to update Kafka cluster"));
+                                    handler.handle(Future.failedFuture("Failed to update Kafka Connect cluster"));
                                 }
                             });
                 }
                 else if (!diff.getDifferent()) {
-                    log.info("Kafka cluster {} is up to date", name);
+                    log.info("Kafka Connect cluster {} is up to date", name);
                     lock.release();
                     handler.handle(Future.succeededFuture());
                 }
                 else {
-                    log.info("Kafka cluster {} seems to not exist", name);
+                    log.info("Kafka Connect cluster {} seems to not exist", name);
                     lock.release();
                     handler.handle(Future.succeededFuture());
                 }
             } else {
-                log.error("Failed to acquire lock to create Kafka cluster {}", name);
-                handler.handle(Future.failedFuture("Failed to acquire lock to create Kafka cluster"));
+                log.error("Failed to acquire lock to create Kafka Connect cluster {}", name);
+                handler.handle(Future.failedFuture("Failed to acquire lock to create Kafka Connect cluster"));
             }
         });
     }
@@ -259,69 +254,46 @@ public class KafkaResource extends AbstractResource {
                 .withNewSpec()
                 .withType("ClusterIP")
                 .withSelector(new HashMap<String, String>(){{put("name", name);}})
-                .withPorts(k8s.createServicePort("kafka", clientPort, clientPort))
+                .withPorts(k8s.createServicePort("rest-api", restApiPort, restApiPort))
                 .endSpec()
                 .build();
 
         return svc;
     }
 
-    private Service generateHeadlessService() {
-        Service svc = new ServiceBuilder()
-                .withNewMetadata()
-                .withName(headlessName)
-                .withLabels(getLabelsWithName(headlessName))
-                .endMetadata()
-                .withNewSpec()
-                .withType("ClusterIP")
-                .withClusterIP("None")
-                .withSelector(new HashMap<String, String>(){{put("name", name);}})
-                .withPorts(k8s.createServicePort("kafka", clientPort, clientPort))
-                .endSpec()
-                .build();
-
-        return svc;
-    }
-
-    private StatefulSet generateStatefulSet() {
+    private Deployment generateDeployment() {
         Container container = new ContainerBuilder()
                 .withName(name)
                 .withImage(image)
-                .withEnv(new EnvVarBuilder().withName("KAFKA_ZOOKEEPER_CONNECT").withValue(zookeeper).build())
-                .withVolumeMounts(k8s.createVolumeMount(volumeName, mounthPath))
-                .withPorts(k8s.createContainerPort("clientport", clientPort))
-                .withLivenessProbe(k8s.createExecProbe(livenessProbeScript, livenessProbeInitialDelay, livenessProbeTimeout))
-                .withReadinessProbe(k8s.createExecProbe(readinessProbeScript, readinessProbeInitialDelay, readinessProbeTimeout))
+                .withEnv(new EnvVarBuilder().withName("KAFKA_CONNECT_BOOTSTRAP_SERVERS").withValue(kafkaBootstrapServers).build())
+                .withPorts(k8s.createContainerPort("rest-api", restApiPort))
+                .withLivenessProbe(k8s.createHttpProbe(livenessProbePath, "rest-api", livenessProbeInitialDelay, livenessProbeTimeout))
+                .withReadinessProbe(k8s.createHttpProbe(readinessProbePath, "rest-api", readinessProbeInitialDelay, readinessProbeTimeout))
                 .build();
 
-        StatefulSet statefulSet = new StatefulSetBuilder()
+        Deployment dep = new DeploymentBuilder()
                 .withNewMetadata()
                 .withName(name)
                 .withLabels(getLabelsWithName(name))
                 .endMetadata()
                 .withNewSpec()
-                .withSelector(new LabelSelectorBuilder().withMatchLabels(getLabels()).build())
-                .withServiceName(headlessName)
                 .withReplicas(replicas)
                 .withNewTemplate()
                 .withNewMetadata()
-                .withName(name)
                 .withLabels(getLabels())
                 .endMetadata()
                 .withNewSpec()
                 .withContainers(container)
-                .withVolumes(k8s.createEmptyDirVolume(volumeName))
                 .endSpec()
                 .endTemplate()
-                .withUpdateStrategy(new StatefulSetUpdateStrategyBuilder().withType("OnDelete").build())
                 .endSpec()
                 .build();
 
-        return statefulSet;
+        return dep;
     }
 
     private String getLockName() {
-        return "kafka::lock::" + name;
+        return "kafkaBootstrapServers-connect::lock::" + name;
     }
 
     public void setReplicas(int replicas) {
@@ -329,10 +301,22 @@ public class KafkaResource extends AbstractResource {
     }
 
     public boolean exists() {
-        return k8s.statefulSetExists(namespace, name) && k8s.serviceExists(namespace, name) && k8s.serviceExists(namespace, headlessName);
+        return k8s.deploymentExists(namespace, name) && k8s.serviceExists(namespace, name);
     }
 
     public boolean atLeastOneExists() {
-        return k8s.statefulSetExists(namespace, name) || k8s.serviceExists(namespace, name) || k8s.serviceExists(namespace, headlessName);
+        return k8s.deploymentExists(namespace, name) || k8s.serviceExists(namespace, name);
+    }
+
+    public Map<String, String> getLabels() {
+        return labels;
+    }
+
+    public void setLabels(Map<String, String> labels) {
+        this.labels = labels;
+    }
+
+    public void setKafkaBootstrapServers(String kafkaBootstrapServers) {
+        this.kafkaBootstrapServers = kafkaBootstrapServers;
     }
 }
