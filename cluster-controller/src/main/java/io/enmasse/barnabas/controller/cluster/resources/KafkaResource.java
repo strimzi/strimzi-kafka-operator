@@ -183,7 +183,12 @@ public class KafkaResource extends AbstractResource {
                                 }
 
                                 try {
-                                    StatefulSet s = k8s.getStatefulSetResource(namespace, name).cascading(false).replace(generateStatefulSet());
+                                    StatefulSet src = k8s.getStatefulSet(namespace, name);
+                                    src.getMetadata().setLabels(getLabelsWithName(name));
+                                    //k8s.getStatefulSetResource(namespace, name).cascading(true).replace(src);
+                                    k8s.getStatefulSetResource(namespace, name).cascading(false).patch(src);
+
+                                    //StatefulSet s = k8s.getStatefulSetResource(namespace, name).cascading(false).replace(generateStatefulSet());
                                             //rolling().edit().editMetadata().withLabels(getLabelsWithName(name)).endMetadata().done();
                                     future.complete();
                                 }
