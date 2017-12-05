@@ -157,7 +157,7 @@ public class ClusterController extends AbstractVerticle {
 
     private void updateClusters(List<ConfigMap> update)   {
         for (ConfigMap cm : update) {
-            log.info("Cluster {} should be checked for updates -> NOT IMPLEMENTED YET", cm.getMetadata().getName());
+            log.info("Cluster {} should be checked for updates", cm.getMetadata().getName());
             updateKafkaCluster(cm);
         }
     }
@@ -198,7 +198,7 @@ public class ClusterController extends AbstractVerticle {
 
     private void updateKafkaCluster(ConfigMap cm)   {
         String name = cm.getMetadata().getName();
-        log.info("Checking for updates in cluster {} -> NOT IMPLEMENTED YET", cm.getMetadata().getName());
+        log.info("Checking for updates in cluster {}", cm.getMetadata().getName());
 
         KafkaResource.fromConfigMap(cm, vertx, k8s).update(res2 -> {
             if (res2.succeeded()) {
@@ -273,7 +273,7 @@ public class ClusterController extends AbstractVerticle {
 
     private void updateKafkaConnectCluster(ConfigMap cm)   {
         String name = cm.getMetadata().getName();
-        log.info("Checking for updates in Kafka Connect cluster {} -> NOT IMPLEMENTED YET", cm.getMetadata().getName());
+        log.info("Checking for updates in Kafka Connect cluster {}", cm.getMetadata().getName());
 
         KafkaConnectResource.fromConfigMap(cm, vertx, k8s).update(res2 -> {
             if (res2.succeeded()) {

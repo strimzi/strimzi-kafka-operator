@@ -15,6 +15,8 @@ public abstract class AbstractResource implements Resource {
     private static final Logger log = LoggerFactory.getLogger(AbstractResource.class.getName());
 
     private final ResourceId id;
+    protected final String name;
+
     protected final K8SUtils k8s;
     protected final Vertx vertx;
 
@@ -23,12 +25,26 @@ public abstract class AbstractResource implements Resource {
 
     protected final int LOCK_TIMEOUT = 60000;
 
-    protected AbstractResource(String namespace, ResourceId id, Vertx vertx, K8SUtils k8s) {
+    protected AbstractResource(String namespace, String name, ResourceId id, Vertx vertx, K8SUtils k8s) {
         this.id = id;
+        this.name = name;
         this.vertx = vertx;
         this.k8s = k8s;
 
         this.namespace = namespace;
+    }
+
+    public Map<String, String> getLabels() {
+        return labels;
+    }
+
+    public void setLabels(Map<String, String> newLabels) {
+        newLabels.put("cluster-name", name);
+        this.labels = new HashMap<String, String>(newLabels);
+    }
+
+    protected Map<String, String> getLabelsWithName() {
+        return getLabelsWithName(name);
     }
 
     protected Map<String, String> getLabelsWithName(String name) {

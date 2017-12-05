@@ -11,56 +11,121 @@ import io.vertx.core.shareddata.Lock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 public class KafkaConnectResource extends AbstractResource {
     private static final Logger log = LoggerFactory.getLogger(KafkaConnectResource.class.getName());
 
-    private final String name;
-
+    // Port configuration
     private final int restApiPort = 8083;
+    private final String restApiPortName = "rest-api";
 
+    // Number of replicas
     private int replicas = DEFAULT_REPLICAS;
-    private String image = "enmasseproject/kafka-connect:latest";
-    private String livenessProbePath = "/";
-    private int livenessProbeTimeout = 5;
-    private int livenessProbeInitialDelay = 60;
-    private String readinessProbePath = "/";
-    private int readinessProbeTimeout = 5;
-    private int readinessProbeInitialDelay = 60;
 
-    private String kafkaBootstrapServers = "kafka:9092";
+    // Docker image configuration
+    private String image = DEFAULT_IMAGE;
 
+    // Probe configuration
+    private String healthCheckPath = "/";
+    private int healthCheckTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
+    private int healthCheckInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
+
+    // Kafka Connect configuration
+    private String bootstrapServers = DEFAULT_BOOTSTRAP_SERVERS;
+    private String groupId = DEFAULT_GROUP_ID;
+    private String keyConverter = DEFAULT_KEY_CONVERTER;
+    private Boolean keyConverterSchemasEnable = DEFAULT_KEY_CONVERTER_SCHEMAS_EXAMPLE;
+    private String valueConverter = DEFAULT_VALUE_CONVERTER;
+    private Boolean valueConverterSchemasEnable = DEFAULT_VALUE_CONVERTER_SCHEMAS_EXAMPLE;
+    private int configStorageReplicationFactor = DEFAULT_CONFIG_STORAGE_REPLICATION_FACTOR;
+    private int offsetStorageReplicationFactor = DEFAULT_OFFSET_STORAGE_REPLICATION_FACTOR;
+    private int statusStorageReplicationFactor = DEFAULT_STATUS_STORAGE_REPLICATION_FACTOR;
+
+    // Configuration defaults
+    private static String DEFAULT_IMAGE = "enmasseproject/kafka-connect:latest";
     private static int DEFAULT_REPLICAS = 3;
+    private static int DEFAULT_HEALTHCHECK_DELAY = 60;
+    private static int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
+
+    // Kafka Connect configuration defaults
+    private static String DEFAULT_BOOTSTRAP_SERVERS = "kafka:9092";
+    private static String DEFAULT_GROUP_ID = "connect-cluster";
+    private static String DEFAULT_KEY_CONVERTER = "org.apache.kafka.connect.json.JsonConverter";
+    private static Boolean DEFAULT_KEY_CONVERTER_SCHEMAS_EXAMPLE = true;
+    private static String DEFAULT_VALUE_CONVERTER = "org.apache.kafka.connect.json.JsonConverter";
+    private static Boolean DEFAULT_VALUE_CONVERTER_SCHEMAS_EXAMPLE = true;
+    private static int DEFAULT_CONFIG_STORAGE_REPLICATION_FACTOR = 3;
+    private static int DEFAULT_OFFSET_STORAGE_REPLICATION_FACTOR = 3;
+    private static int DEFAULT_STATUS_STORAGE_REPLICATION_FACTOR = 3;
+
+    // Configuration keys
+    private static String KEY_IMAGE = "image";
+    private static String KEY_REPLICAS = "nodes";
+    private static String KEY_HEALTHCHECK_DELAY = "healthcheck-delay";
+    private static String KEY_HEALTHCHECK_TIMEOUT = "healthcheck-timeout";
+
+    // Kafka Connect configuration keys
+    private static String KEY_BOOTSTRAP_SERVERS = "KAFKA_CONNECT_BOOTSTRAP_SERVERS";
+    private static String KEY_GROUP_ID = "KAFKA_CONNECT_GROUP_ID";
+    private static String KEY_KEY_CONVERTER = "KAFKA_CONNECT_KEY_CONVERTER";
+    private static String KEY_KEY_CONVERTER_SCHEMAS_EXAMPLE = "KAFKA_CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE";
+    private static String KEY_VALUE_CONVERTER = "KAFKA_CONNECT_VALUE_CONVERTER";
+    private static String KEY_VALUE_CONVERTER_SCHEMAS_EXAMPLE = "KAFKA_CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE";
+    private static String KEY_CONFIG_STORAGE_REPLICATION_FACTOR = "KAFKA_CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR";
+    private static String KEY_OFFSET_STORAGE_REPLICATION_FACTOR = "KAFKA_CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR";
+    private static String KEY_STATUS_STORAGE_REPLICATION_FACTOR = "KAFKA_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR";
 
     private KafkaConnectResource(String name, String namespace, Vertx vertx, K8SUtils k8s) {
-        super(namespace, new ResourceId("kafkaBootstrapServers-connect", name), vertx, k8s);
-        this.name = name;
+        super(namespace, name, new ResourceId("bootstrapServers-connect", name), vertx, k8s);
     }
 
     public static KafkaConnectResource fromConfigMap(ConfigMap cm, Vertx vertx, K8SUtils k8s) {
         KafkaConnectResource kafkaConnect = new KafkaConnectResource(cm.getMetadata().getName(), cm.getMetadata().getNamespace(), vertx, k8s);
         kafkaConnect.setLabels(cm.getMetadata().getLabels());
 
-        if (cm.getData().containsKey("nodes")) {
-            kafkaConnect.setReplicas(Integer.parseInt(cm.getData().get("nodes")));
-        }
+        kafkaConnect.setReplicas(Integer.parseInt(cm.getData().getOrDefault(KEY_REPLICAS, String.valueOf(DEFAULT_REPLICAS))));
+        kafkaConnect.setImage(cm.getData().getOrDefault(KEY_IMAGE, DEFAULT_IMAGE));
+        kafkaConnect.setHealthCheckInitialDelay(Integer.parseInt(cm.getData().getOrDefault(KEY_HEALTHCHECK_DELAY, String.valueOf(DEFAULT_HEALTHCHECK_DELAY))));
+        kafkaConnect.setHealthCheckTimeout(Integer.parseInt(cm.getData().getOrDefault(KEY_HEALTHCHECK_TIMEOUT, String.valueOf(DEFAULT_HEALTHCHECK_TIMEOUT))));
 
-        if (cm.getData().containsKey("kafka-bootstrap-servers")) {
-            kafkaConnect.setKafkaBootstrapServers(cm.getData().get("kafka-bootstrap-servers"));
-        }
+        kafkaConnect.setBootstrapServers(cm.getData().getOrDefault(KEY_BOOTSTRAP_SERVERS, DEFAULT_BOOTSTRAP_SERVERS));
+        kafkaConnect.setGroupId(cm.getData().getOrDefault(KEY_GROUP_ID, DEFAULT_GROUP_ID));
+        kafkaConnect.setKeyConverter(cm.getData().getOrDefault(KEY_KEY_CONVERTER, DEFAULT_KEY_CONVERTER));
+        kafkaConnect.setKeyConverterSchemasEnable(Boolean.parseBoolean(cm.getData().getOrDefault(KEY_KEY_CONVERTER_SCHEMAS_EXAMPLE, String.valueOf(DEFAULT_KEY_CONVERTER_SCHEMAS_EXAMPLE))));
+        kafkaConnect.setValueConverter(cm.getData().getOrDefault(KEY_VALUE_CONVERTER, DEFAULT_VALUE_CONVERTER));
+        kafkaConnect.setValueConverterSchemasEnable(Boolean.parseBoolean(cm.getData().getOrDefault(KEY_VALUE_CONVERTER_SCHEMAS_EXAMPLE, String.valueOf(DEFAULT_VALUE_CONVERTER_SCHEMAS_EXAMPLE))));
+        kafkaConnect.setConfigStorageReplicationFactor(Integer.parseInt(cm.getData().getOrDefault(KEY_CONFIG_STORAGE_REPLICATION_FACTOR, String.valueOf(DEFAULT_CONFIG_STORAGE_REPLICATION_FACTOR))));
+        kafkaConnect.setOffsetStorageReplicationFactor(Integer.parseInt(cm.getData().getOrDefault(KEY_OFFSET_STORAGE_REPLICATION_FACTOR, String.valueOf(DEFAULT_OFFSET_STORAGE_REPLICATION_FACTOR))));
+        kafkaConnect.setStatusStorageReplicationFactor(Integer.parseInt(cm.getData().getOrDefault(KEY_STATUS_STORAGE_REPLICATION_FACTOR, String.valueOf(DEFAULT_STATUS_STORAGE_REPLICATION_FACTOR))));
 
         return kafkaConnect;
     }
 
+    // Constructing KafkaConnect from Deployment should be used only to delete the deployment
     public static KafkaConnectResource fromDeployment(Deployment dep, Vertx vertx, K8SUtils k8s) {
         KafkaConnectResource kafkaConnect =  new KafkaConnectResource(dep.getMetadata().getName(), dep.getMetadata().getNamespace(), vertx, k8s);
 
         kafkaConnect.setLabels(dep.getMetadata().getLabels());
         kafkaConnect.setReplicas(dep.getSpec().getReplicas());
-        kafkaConnect.setKafkaBootstrapServers(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream().filter(env -> env.getName().equals("KAFKA_CONNECT_BOOTSTRAP_SERVERS")).collect(Collectors.toList()).get(0).getValue());
+        kafkaConnect.setImage(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
+        kafkaConnect.setHealthCheckInitialDelay(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds());
+        kafkaConnect.setHealthCheckInitialDelay(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds());
+
+        Map<String, String> vars = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream().collect(
+                Collectors.toMap(EnvVar::getName, EnvVar::getValue));
+
+        kafkaConnect.setBootstrapServers(vars.getOrDefault(KEY_BOOTSTRAP_SERVERS, DEFAULT_BOOTSTRAP_SERVERS));
+        kafkaConnect.setGroupId(vars.getOrDefault(KEY_GROUP_ID, DEFAULT_GROUP_ID));
+        kafkaConnect.setKeyConverter(vars.getOrDefault(KEY_KEY_CONVERTER, DEFAULT_KEY_CONVERTER));
+        kafkaConnect.setKeyConverterSchemasEnable(Boolean.parseBoolean(vars.getOrDefault(KEY_KEY_CONVERTER_SCHEMAS_EXAMPLE, String.valueOf(DEFAULT_KEY_CONVERTER_SCHEMAS_EXAMPLE))));
+        kafkaConnect.setValueConverter(vars.getOrDefault(KEY_VALUE_CONVERTER, DEFAULT_VALUE_CONVERTER));
+        kafkaConnect.setValueConverterSchemasEnable(Boolean.parseBoolean(vars.getOrDefault(KEY_VALUE_CONVERTER_SCHEMAS_EXAMPLE, String.valueOf(DEFAULT_VALUE_CONVERTER_SCHEMAS_EXAMPLE))));
+        kafkaConnect.setConfigStorageReplicationFactor(Integer.parseInt(vars.getOrDefault(KEY_CONFIG_STORAGE_REPLICATION_FACTOR, String.valueOf(DEFAULT_CONFIG_STORAGE_REPLICATION_FACTOR))));
+        kafkaConnect.setOffsetStorageReplicationFactor(Integer.parseInt(vars.getOrDefault(KEY_OFFSET_STORAGE_REPLICATION_FACTOR, String.valueOf(DEFAULT_OFFSET_STORAGE_REPLICATION_FACTOR))));
+        kafkaConnect.setStatusStorageReplicationFactor(Integer.parseInt(vars.getOrDefault(KEY_STATUS_STORAGE_REPLICATION_FACTOR, String.valueOf(DEFAULT_STATUS_STORAGE_REPLICATION_FACTOR))));
+
         return kafkaConnect;
     }
 
@@ -113,9 +178,15 @@ public class KafkaConnectResource extends AbstractResource {
                     vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                             future -> {
                                 log.info("Deleting Kafka Connect {}", name);
-                                k8s.deleteService(namespace, name);
-                                k8s.deleteDeployment(namespace, name);
-                                future.complete();
+                                try {
+                                    k8s.deleteService(namespace, name);
+                                    k8s.deleteDeployment(namespace, name);
+                                    future.complete();
+                                }
+                                catch (Exception e) {
+                                    log.error("Caught exceptoion: {}", e.toString());
+                                    future.fail(e);
+                                }
                             }, false, res2 -> {
                                 if (res2.succeeded()) {
                                     log.info("Kafka Connect cluster {} delete", name);
@@ -153,9 +224,40 @@ public class KafkaConnectResource extends AbstractResource {
             diff.setScaleDown(true);
         }
 
-        if (!getLabelsWithName(name).equals(dep.getMetadata().getLabels()))    {
-            log.info("Diff: Expected labels {}, actual labels {}", getLabelsWithName(name), dep.getMetadata().getLabels());
+        if (!getLabelsWithName().equals(dep.getMetadata().getLabels()))    {
+            log.info("Diff: Expected labels {}, actual labels {}", getLabelsWithName(), dep.getMetadata().getLabels());
             diff.setDifferent(true);
+        }
+
+        if (!image.equals(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage())) {
+            log.info("Diff: Expected image {}, actual image {}", image, dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
+            diff.setDifferent(true);
+            diff.setRollingUpdate(true);
+        }
+
+        Map<String, String> vars = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream().collect(
+                Collectors.toMap(EnvVar::getName, EnvVar::getValue));
+
+        if (!bootstrapServers.equals(vars.getOrDefault(KEY_BOOTSTRAP_SERVERS, DEFAULT_BOOTSTRAP_SERVERS))
+                || !groupId.equals(vars.getOrDefault(KEY_GROUP_ID, DEFAULT_GROUP_ID))
+                || !keyConverter.equals(vars.getOrDefault(KEY_KEY_CONVERTER, DEFAULT_KEY_CONVERTER))
+                || keyConverterSchemasEnable != Boolean.parseBoolean(vars.getOrDefault(KEY_KEY_CONVERTER_SCHEMAS_EXAMPLE, String.valueOf(DEFAULT_KEY_CONVERTER_SCHEMAS_EXAMPLE)))
+                || !valueConverter.equals(vars.getOrDefault(KEY_VALUE_CONVERTER, DEFAULT_VALUE_CONVERTER))
+                || keyConverterSchemasEnable != Boolean.parseBoolean(vars.getOrDefault(KEY_VALUE_CONVERTER_SCHEMAS_EXAMPLE, String.valueOf(DEFAULT_VALUE_CONVERTER_SCHEMAS_EXAMPLE)))
+                || configStorageReplicationFactor != Integer.parseInt(vars.getOrDefault(KEY_CONFIG_STORAGE_REPLICATION_FACTOR, String.valueOf(DEFAULT_CONFIG_STORAGE_REPLICATION_FACTOR)))
+                || offsetStorageReplicationFactor != Integer.parseInt(vars.getOrDefault(KEY_OFFSET_STORAGE_REPLICATION_FACTOR, String.valueOf(DEFAULT_OFFSET_STORAGE_REPLICATION_FACTOR)))
+                || statusStorageReplicationFactor != Integer.parseInt(vars.getOrDefault(KEY_STATUS_STORAGE_REPLICATION_FACTOR, String.valueOf(DEFAULT_STATUS_STORAGE_REPLICATION_FACTOR)))
+                ) {
+            log.info("Diff: Kafka Connect options changed");
+            diff.setDifferent(true);
+            diff.setRollingUpdate(true);
+        }
+
+        if (healthCheckInitialDelay != dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds()
+                || healthCheckTimeout != dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds()) {
+            log.info("Diff: Kafka Connect healthcheck timing changed");
+            diff.setDifferent(true);
+            diff.setRollingUpdate(true);
         }
 
         return diff;
@@ -170,17 +272,21 @@ public class KafkaConnectResource extends AbstractResource {
                     vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                             future -> {
                                 log.info("Updating Kafka Connect {}", name);
-
-                                if (diff.getScaleDown() || diff.getScaleUp()) {
-                                    log.info("Scaling Kafka Connect to {} replicas", replicas);
-                                    k8s.getDeploymentResource(namespace, name).scale(replicas, true);
-                                }
-
                                 try {
+                                    if (diff.getScaleDown() || diff.getScaleUp()) {
+                                        log.info("Scaling Kafka Connect to {} replicas", replicas);
+                                        k8s.getDeploymentResource(namespace, name).scale(replicas, true);
+                                    }
+
                                     log.info("Patching deployment");
 
-                                    //k8s.getDeploymentResource(namespace, name).edit().editMetadata().withLabels(getLabelsWithName(name)).endMetadata().done();
+                                    // TODO: If labels are changed, we should relabel also all replica sets and pods???\
+                                    // TODO: Run separate diff for the service
+
                                     k8s.getDeploymentResource(namespace, name).replace(generateDeployment());
+                                    k8s.getServiceResource(namespace, name).replace(generateService());
+
+                                    // TODO: Wait until the rolling update is finished before completing this future
 
                                     future.complete();
                                 }
@@ -188,34 +294,6 @@ public class KafkaConnectResource extends AbstractResource {
                                     log.error("Caught exceptoion: {}", e.toString());
                                     future.fail(e);
                                 }
-                                //log.info("Patching stateful set to {} with {} replicas", generateDeployment(), generateDeployment().getSpec().getReplicas());
-                                //StatefulSet s = k8s.getStatefulSetResource(namespace, name).edit().editMetadata().withLabels(getLabelsWithName(name)).endMetadata().done();
-                                //StatefulSet s = k8s.getKubernetesClient().apps().statefulSets().inNamespace(namespace).createOrReplace(generateDeployment());
-
-                                /*StatefulSet src = k8s.getStatefulSet(namespace, name);
-                                src.getMetadata().setLabels(getLabelsWithName(name));*/
-                                //log.info("Updating stateful set to {} with {} replicas", src, generateDeployment().getSpec().getReplicas());
-                                //StatefulSet s = k8s.getKubernetesClient().apps().statefulSets().inNamespace(namespace).createOrReplace(src);
-                                //StatefulSet s = k8s.getStatefulSetResource(namespace, name).edit().editMetadata().withLabels(getLabelsWithName(name)).endMetadata().done();
-
-
-                                /*for (int i = 0; i < replicas; i++) {
-                                    k8s.getKubernetesClient().pods().inNamespace(namespace).withName(name + "-" + Integer.toString(i)).edit().editMetadata().addToLabels(getLabels()).endMetadata().done();
-                                }
-
-                                k8s.getStatefulSetResource(namespace, name).edit().editSpec().withSelector(new LabelSelectorBuilder().withMatchLabels(getLabels()).build()).endSpec().done();*/
-
-                                /*StatefulSet src = k8s.getStatefulSet(namespace, name);
-                                src.getSpec().getTemplate().getSpec().getContainers().get(0).setImage("enmasseproject/kafkaBootstrapServers-statefulsets:latest");
-                                k8s.getStatefulSetResource(namespace, name).replace(src);*/
-
-
-
-                                //log.info("Update complete: {}", s);
-                                //k8s.getServiceResource(namespace, name).createOrReplace(generateService());
-                                //k8s.getServiceResource(namespace, headlessName).createOrReplace(generateHeadlessService());
-
-
                             }, false, res2 -> {
                                 if (res2.succeeded()) {
                                     log.info("Kafka Connect cluster updated {}", name);
@@ -249,12 +327,12 @@ public class KafkaConnectResource extends AbstractResource {
         Service svc = new ServiceBuilder()
                 .withNewMetadata()
                 .withName(name)
-                .withLabels(getLabelsWithName(name))
+                .withLabels(getLabelsWithName())
                 .endMetadata()
                 .withNewSpec()
                 .withType("ClusterIP")
-                .withSelector(new HashMap<String, String>(){{put("name", name);}})
-                .withPorts(k8s.createServicePort("rest-api", restApiPort, restApiPort))
+                .withSelector(getLabelsWithName())
+                .withPorts(k8s.createServicePort(restApiPortName, restApiPort, restApiPort))
                 .endSpec()
                 .build();
 
@@ -265,16 +343,24 @@ public class KafkaConnectResource extends AbstractResource {
         Container container = new ContainerBuilder()
                 .withName(name)
                 .withImage(image)
-                .withEnv(new EnvVarBuilder().withName("KAFKA_CONNECT_BOOTSTRAP_SERVERS").withValue(kafkaBootstrapServers).build())
-                .withPorts(k8s.createContainerPort("rest-api", restApiPort))
-                .withLivenessProbe(k8s.createHttpProbe(livenessProbePath, "rest-api", livenessProbeInitialDelay, livenessProbeTimeout))
-                .withReadinessProbe(k8s.createHttpProbe(readinessProbePath, "rest-api", readinessProbeInitialDelay, readinessProbeTimeout))
+                .withEnv(new EnvVarBuilder().withName(KEY_BOOTSTRAP_SERVERS).withValue(bootstrapServers).build(),
+                        new EnvVarBuilder().withName(KEY_GROUP_ID).withValue(groupId).build(),
+                        new EnvVarBuilder().withName(KEY_KEY_CONVERTER).withValue(keyConverter).build(),
+                        new EnvVarBuilder().withName(KEY_KEY_CONVERTER_SCHEMAS_EXAMPLE).withValue(String.valueOf(keyConverterSchemasEnable)).build(),
+                        new EnvVarBuilder().withName(KEY_VALUE_CONVERTER).withValue(valueConverter).build(),
+                        new EnvVarBuilder().withName(KEY_VALUE_CONVERTER_SCHEMAS_EXAMPLE).withValue(String.valueOf(valueConverterSchemasEnable)).build(),
+                        new EnvVarBuilder().withName(KEY_CONFIG_STORAGE_REPLICATION_FACTOR).withValue(String.valueOf(configStorageReplicationFactor)).build(),
+                        new EnvVarBuilder().withName(KEY_OFFSET_STORAGE_REPLICATION_FACTOR).withValue(String.valueOf(offsetStorageReplicationFactor)).build(),
+                        new EnvVarBuilder().withName(KEY_STATUS_STORAGE_REPLICATION_FACTOR).withValue(String.valueOf(statusStorageReplicationFactor)).build())
+                .withPorts(k8s.createContainerPort(restApiPortName, restApiPort))
+                .withLivenessProbe(k8s.createHttpProbe(healthCheckPath, restApiPortName, healthCheckInitialDelay, healthCheckTimeout))
+                .withReadinessProbe(k8s.createHttpProbe(healthCheckPath, restApiPortName, healthCheckInitialDelay, healthCheckTimeout))
                 .build();
 
         Deployment dep = new DeploymentBuilder()
                 .withNewMetadata()
                 .withName(name)
-                .withLabels(getLabelsWithName(name))
+                .withLabels(getLabelsWithName())
                 .endMetadata()
                 .withNewSpec()
                 .withReplicas(replicas)
@@ -293,7 +379,7 @@ public class KafkaConnectResource extends AbstractResource {
     }
 
     private String getLockName() {
-        return "kafkaBootstrapServers-connect::lock::" + name;
+        return "kafka-connect::lock::" + name;
     }
 
     public void setReplicas(int replicas) {
@@ -308,15 +394,51 @@ public class KafkaConnectResource extends AbstractResource {
         return k8s.deploymentExists(namespace, name) || k8s.serviceExists(namespace, name);
     }
 
-    public Map<String, String> getLabels() {
-        return labels;
+    public void setBootstrapServers(String bootstrapServers) {
+        this.bootstrapServers = bootstrapServers;
     }
 
-    public void setLabels(Map<String, String> labels) {
-        this.labels = labels;
+    public void setImage(String image) {
+        this.image = image;
     }
 
-    public void setKafkaBootstrapServers(String kafkaBootstrapServers) {
-        this.kafkaBootstrapServers = kafkaBootstrapServers;
+    public void setGroupId(String groupId) {
+        this.groupId = groupId;
+    }
+
+    public void setKeyConverter(String keyConverter) {
+        this.keyConverter = keyConverter;
+    }
+
+    public void setKeyConverterSchemasEnable(Boolean keyConverterSchemasEnable) {
+        this.keyConverterSchemasEnable = keyConverterSchemasEnable;
+    }
+
+    public void setValueConverter(String valueConverter) {
+        this.valueConverter = valueConverter;
+    }
+
+    public void setValueConverterSchemasEnable(Boolean valueConverterSchemasEnable) {
+        this.valueConverterSchemasEnable = valueConverterSchemasEnable;
+    }
+
+    public void setConfigStorageReplicationFactor(int configStorageReplicationFactor) {
+        this.configStorageReplicationFactor = configStorageReplicationFactor;
+    }
+
+    public void setOffsetStorageReplicationFactor(int offsetStorageReplicationFactor) {
+        this.offsetStorageReplicationFactor = offsetStorageReplicationFactor;
+    }
+
+    public void setStatusStorageReplicationFactor(int statusStorageReplicationFactor) {
+        this.statusStorageReplicationFactor = statusStorageReplicationFactor;
+    }
+
+    public void setHealthCheckTimeout(int timeout) {
+        this.healthCheckTimeout = timeout;
+    }
+
+    public void setHealthCheckInitialDelay(int delay) {
+        this.healthCheckInitialDelay = delay;
     }
 }
