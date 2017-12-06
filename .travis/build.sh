@@ -13,7 +13,7 @@ make docker_build
 
 if [ "$PULL_REQUEST" != "false" ]; then
     echo "Building Pull Request - nothing to push"
-elif [ "$TAG" == "latest" ] && [ "$BRANCH" != "master" ]; then
+elif [ "$TAG" = "latest" ] && [ "$BRANCH" != "master" ]; then
     echo "Not in master branch and not in release tag - nothing to push"
 else
     echo "Login into Docker Hub ..."
