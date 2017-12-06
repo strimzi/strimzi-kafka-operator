@@ -9,7 +9,7 @@ export DOCKER_REGISTRY=${DOCKER_REGISTRY:-docker.io}
 export DOCKER_TAG=$TAG
 export DOCKER_VERSION_ARG=${COMMIT:-latest}
 
-#make docker_build
+make docker_build
 
 if [ "$PULL_REQUEST" != "false" ] ; then
     echo "Building Pull Request - nothing to push"
