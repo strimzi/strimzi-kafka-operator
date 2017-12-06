@@ -13,6 +13,8 @@ import io.vertx.core.shareddata.Lock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -250,19 +252,20 @@ public class KafkaResource extends AbstractResource {
                                 log.info("Updating Kafka {}", name);
 
                                 try {
+                                    // TODO: Order of things? Should we do first update of stateful set, rolling update and scale at the end?
                                     if (diff.getScaleDown() || diff.getScaleUp()) {
                                         log.info("Scaling to {} replicas", replicas);
                                         k8s.getStatefulSetResource(namespace, name).scale(replicas, true);
                                     }
 
-                                    StatefulSet src = k8s.getStatefulSet(namespace, name);
+                                    /*StatefulSet src = k8s.getStatefulSet(namespace, name);
                                     src.getMetadata().setLabels(getLabelsWithName());
                                     src.getSpec().getTemplate().getSpec().getContainers().get(0).setLivenessProbe(k8s.createExecProbe(healthCheckScript, healthCheckInitialDelay, healthCheckTimeout));
-                                    src.getSpec().getTemplate().getSpec().getContainers().get(0).setReadinessProbe(k8s.createExecProbe(healthCheckScript, healthCheckInitialDelay, healthCheckTimeout));
-                                    k8s.getStatefulSetResource(namespace, name).cascading(false).patch(src);
+                                    src.getSpec().getTemplate().getSpec().getContainers().get(0).setReadinessProbe(k8s.createExecProbe(healthCheckScript, healthCheckInitialDelay, healthCheckTimeout));*/
+                                    k8s.getStatefulSetResource(namespace, name).cascading(false).patch(patchStatefulSet(k8s.getStatefulSet(namespace, name)));
                                     //k8s.getStatefulSetResource(namespace, name).cascading(false).patch(generateStatefulSet());
-                                    k8s.getServiceResource(namespace, name).replace(generateService());
-                                    k8s.getServiceResource(namespace, headlessName).replace(generateHeadlessService());
+                                    k8s.getServiceResource(namespace, name).replace(patchService(k8s.getService(namespace, name)));
+                                    k8s.getServiceResource(namespace, headlessName).replace(patchHeadlessService(k8s.getService(namespace, headlessName)));
 
                                     if (diff.getRollingUpdate()) {
                                         // TODO: Do rolling update
@@ -320,6 +323,13 @@ public class KafkaResource extends AbstractResource {
         return svc;
     }
 
+    private Service patchService(Service svc) {
+        svc.getMetadata().setLabels(getLabelsWithName());
+        svc.getSpec().setSelector(getLabelsWithName());
+
+        return svc;
+    }
+
     private Service generateHeadlessService() {
         Service svc = new ServiceBuilder()
                 .withNewMetadata()
@@ -337,18 +347,22 @@ public class KafkaResource extends AbstractResource {
         return svc;
     }
 
+    private Service patchHeadlessService(Service svc) {
+        svc.getMetadata().setLabels(getLabelsWithName(headlessName));
+        svc.getSpec().setSelector(getLabelsWithName());
+
+        return svc;
+    }
+
     private StatefulSet generateStatefulSet() {
         Container container = new ContainerBuilder()
                 .withName(name)
                 .withImage(image)
-                .withEnv(new EnvVarBuilder().withName(KEY_KAFKA_ZOOKEEPER_CONNECT).withValue(zookeeperConnect).build(),
-                        new EnvVarBuilder().withName(KEY_KAFKA_DEFAULT_REPLICATION_FACTOR).withValue(String.valueOf(defaultReplicationFactor)).build(),
-                        new EnvVarBuilder().withName(KEY_KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR).withValue(String.valueOf(offsetsTopicReplicationFactor)).build(),
-                        new EnvVarBuilder().withName(KEY_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR).withValue(String.valueOf(transactionStateLogReplicationFactor)).build())
+                .withEnv(getEnvList())
                 .withVolumeMounts(k8s.createVolumeMount(volumeName, mounthPath))
                 .withPorts(k8s.createContainerPort(clientPortName, clientPort))
-                .withLivenessProbe(k8s.createExecProbe(healthCheckScript, healthCheckInitialDelay, healthCheckTimeout))
-                .withReadinessProbe(k8s.createExecProbe(healthCheckScript, healthCheckInitialDelay, healthCheckTimeout))
+                .withLivenessProbe(getHealthCheck())
+                .withReadinessProbe(getHealthCheck())
                 .build();
 
         StatefulSet statefulSet = new StatefulSetBuilder()
@@ -375,6 +389,33 @@ public class KafkaResource extends AbstractResource {
                 .build();
 
         return statefulSet;
+    }
+
+    private StatefulSet patchStatefulSet(StatefulSet statefulSet) {
+        statefulSet.getMetadata().setLabels(getLabelsWithName());
+        statefulSet.getSpec().setSelector(new LabelSelectorBuilder().withMatchLabels(getLabelsWithName()).build());
+        statefulSet.getSpec().setReplicas(replicas);
+        statefulSet.getSpec().getTemplate().getMetadata().setLabels(getLabelsWithName());
+        statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(image);
+        statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).setLivenessProbe(getHealthCheck());
+        statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).setReadinessProbe(getHealthCheck());
+        statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(getEnvList());
+
+        return statefulSet;
+    }
+
+    private List<EnvVar> getEnvList() {
+        List<EnvVar> varList = new ArrayList<>();
+        varList.add(new EnvVarBuilder().withName(KEY_KAFKA_ZOOKEEPER_CONNECT).withValue(zookeeperConnect).build());
+        varList.add(new EnvVarBuilder().withName(KEY_KAFKA_DEFAULT_REPLICATION_FACTOR).withValue(String.valueOf(defaultReplicationFactor)).build());
+        varList.add(new EnvVarBuilder().withName(KEY_KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR).withValue(String.valueOf(offsetsTopicReplicationFactor)).build());
+        varList.add(new EnvVarBuilder().withName(KEY_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR).withValue(String.valueOf(transactionStateLogReplicationFactor)).build());
+
+        return varList;
+    }
+
+    private Probe getHealthCheck() {
+        return k8s.createExecProbe(healthCheckScript, healthCheckInitialDelay, healthCheckTimeout);
     }
 
     private String getLockName() {
