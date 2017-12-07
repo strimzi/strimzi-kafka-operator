@@ -91,7 +91,6 @@ public class K8SUtils {
     /*
       CREATE functions
      */
-
     public void createService(String namespace, Service svc) {
         log.info("Creating service {}", svc.getMetadata().getName());
         client.services().inNamespace(namespace).createOrReplace(svc);
@@ -106,7 +105,6 @@ public class K8SUtils {
         log.info("Creating deployment {}", dep.getMetadata().getName());
         client.extensions().deployments().inNamespace(namespace).createOrReplace(dep);
     }
-
 
     /*
       GET functions

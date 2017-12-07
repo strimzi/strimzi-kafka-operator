@@ -5,6 +5,9 @@ import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSetUpdateStrategyBuilder;
+import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.fabric8.kubernetes.client.Watch;
+import io.fabric8.kubernetes.client.Watcher;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -210,6 +213,7 @@ public class KafkaResource extends AbstractResource {
         if (!getLabelsWithName().equals(ss.getMetadata().getLabels()))    {
             log.info("Diff: Expected labels {}, actual labels {}", getLabelsWithName(), ss.getMetadata().getLabels());
             diff.setDifferent(true);
+            diff.setRollingUpdate(true);
         }
 
         if (!image.equals(ss.getSpec().getTemplate().getSpec().getContainers().get(0).getImage())) {
@@ -252,30 +256,60 @@ public class KafkaResource extends AbstractResource {
                                 log.info("Updating Kafka {}", name);
 
                                 try {
-                                    // TODO: Order of things? Should we do first update of stateful set, rolling update and scale at the end?
-                                    if (diff.getScaleDown() || diff.getScaleUp()) {
-                                        log.info("Scaling to {} replicas", replicas);
-                                        k8s.getStatefulSetResource(namespace, name).scale(replicas, true);
+                                    if (diff.getScaleDown()) {
+                                        log.info("Scaling down to {} replicas", replicas);
+
+                                        int actualReplicas = k8s.getStatefulSet(namespace, name).getSpec().getReplicas();
+                                        while (actualReplicas > replicas) {
+                                            actualReplicas--;
+                                            log.info("Scaling down from {} to {}", actualReplicas+1, actualReplicas);
+                                            k8s.getStatefulSetResource(namespace, name).scale(actualReplicas, true);
+                                        }
+
+                                        log.info("Scaling down complete");
                                     }
 
-                                    /*StatefulSet src = k8s.getStatefulSet(namespace, name);
-                                    src.getMetadata().setLabels(getLabelsWithName());
-                                    src.getSpec().getTemplate().getSpec().getContainers().get(0).setLivenessProbe(k8s.createExecProbe(healthCheckScript, healthCheckInitialDelay, healthCheckTimeout));
-                                    src.getSpec().getTemplate().getSpec().getContainers().get(0).setReadinessProbe(k8s.createExecProbe(healthCheckScript, healthCheckInitialDelay, healthCheckTimeout));*/
                                     k8s.getStatefulSetResource(namespace, name).cascading(false).patch(patchStatefulSet(k8s.getStatefulSet(namespace, name)));
-                                    //k8s.getStatefulSetResource(namespace, name).cascading(false).patch(generateStatefulSet());
                                     k8s.getServiceResource(namespace, name).replace(patchService(k8s.getService(namespace, name)));
                                     k8s.getServiceResource(namespace, headlessName).replace(patchHeadlessService(k8s.getService(namespace, headlessName)));
 
                                     if (diff.getRollingUpdate()) {
-                                        // TODO: Do rolling update
-                                        //k8s.getStatefulSetResource(namespace, name).rolling().replace(generateStatefulSet());
+                                        log.info("Doing rolling update");
+                                        for (int i = 0; i < replicas; i++) {
+                                            String podName = name + "-" + i;
+                                            log.info("Rolling pod {}", podName);
+                                            Future deleted = Future.future();
+                                            Watcher<Pod> watcher = new RollingUpdateWatcher<Pod>(deleted);
+
+                                            Watch watch = k8s.getKubernetesClient().pods().inNamespace(namespace).withName(podName).watch(watcher);
+                                            k8s.getKubernetesClient().pods().inNamespace(namespace).withName(podName).delete();
+
+                                            while (!deleted.isComplete()) {
+                                                log.info("Waiting for pod {} to be deleted", podName);
+                                                Thread.sleep(1000);
+                                            }
+
+                                            watch.close();
+
+                                            while (!k8s.getKubernetesClient().pods().inNamespace(namespace).withName(podName).isReady()) {
+                                                log.info("Waiting for pod {} to get ready", podName);
+                                                Thread.sleep(1000);
+                                            };
+
+                                            log.info("Pod {} rolling update complete", podName);
+                                        }
+                                        log.info("Rolling update complete");
+                                    }
+
+                                    if (diff.getScaleUp()) {
+                                        log.info("Scaling up to {} replicas", replicas);
+                                        k8s.getStatefulSetResource(namespace, name).scale(replicas, true);
                                     }
 
                                     future.complete();
                                 }
                                 catch (Exception e) {
-                                    log.error("Caught exceptoion: {}", e.toString());
+                                    log.error("Caught exception: {}", e.toString());
                                     future.fail(e);
                                 }
                             }, false, res2 -> {
@@ -371,6 +405,8 @@ public class KafkaResource extends AbstractResource {
                 .withLabels(getLabelsWithName())
                 .endMetadata()
                 .withNewSpec()
+                .withPodManagementPolicy("Parallel")
+                .withUpdateStrategy(new StatefulSetUpdateStrategyBuilder().withType("OnDelete").build())
                 .withSelector(new LabelSelectorBuilder().withMatchLabels(getLabelsWithName()).build())
                 .withServiceName(headlessName)
                 .withReplicas(replicas)
@@ -384,7 +420,6 @@ public class KafkaResource extends AbstractResource {
                 .withVolumes(k8s.createEmptyDirVolume(volumeName))
                 .endSpec()
                 .endTemplate()
-                .withUpdateStrategy(new StatefulSetUpdateStrategyBuilder().withType("OnDelete").build())
                 .endSpec()
                 .build();
 
@@ -394,7 +429,6 @@ public class KafkaResource extends AbstractResource {
     private StatefulSet patchStatefulSet(StatefulSet statefulSet) {
         statefulSet.getMetadata().setLabels(getLabelsWithName());
         statefulSet.getSpec().setSelector(new LabelSelectorBuilder().withMatchLabels(getLabelsWithName()).build());
-        statefulSet.getSpec().setReplicas(replicas);
         statefulSet.getSpec().getTemplate().getMetadata().setLabels(getLabelsWithName());
         statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(image);
         statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).setLivenessProbe(getHealthCheck());
@@ -460,5 +494,44 @@ public class KafkaResource extends AbstractResource {
 
     public void setTransactionStateLogReplicationFactor(int transactionStateLogReplicationFactor) {
         this.transactionStateLogReplicationFactor = transactionStateLogReplicationFactor;
+    }
+}
+
+class RollingUpdateWatcher<T> implements Watcher<T> {
+    private static final Logger log = LoggerFactory.getLogger(RollingUpdateWatcher.class.getName());
+    private final Future deleted;
+
+    public RollingUpdateWatcher(Future deleted) {
+        this.deleted = deleted;
+    }
+
+    @Override
+    public void eventReceived(Action action, T pod) {
+        switch (action) {
+            case DELETED:
+                log.info("Pod has been deleted");
+                deleted.complete();
+                break;
+            case ADDED:
+            case MODIFIED:
+                log.info("Ignored action {} while waiting for Pod deletion", action);
+                break;
+            case ERROR:
+                log.error("Error while waiting for Pod deletion");
+                break;
+            default:
+                log.error("Unknown action {} while waiting for pod deletion", action);
+        }
+    }
+
+    @Override
+    public void onClose(KubernetesClientException e) {
+        if (e != null && !deleted.isComplete()) {
+            log.error("Kubernetes watcher has been closed with exception!", e);
+            deleted.fail(e);
+        }
+        else {
+            log.info("Kubernetes watcher has been closed!");
+        }
     }
 }
