@@ -102,3 +102,33 @@ Finally you can execute the actual deployment by running
 ```
 kubectl apply -f metrics/grafana/kubernetes.yaml
 ```
+
+# Grafana dashboard
+
+As an example and in order to visualize the exported metrics in Grafana, the simple dashboard `kafka-dashboard.json` JSON file is provided.
+Following these steps you'll be able to set up the Prometheus data source in Grafana and adding the above dashboard.
+
+> If your cluster is running using `minikube` or `minishift`, you can use the `port-forward` command for forwarding traffic from the Grafana pod to the host. For example, running `oc port-forward grafana-1-fbl7s 3000:3000` (or using `kubectl` instead of `oc`) you can access the Grafana UI opening your browser and pointing to the `http://localhost:3000`.
+
+1. Access to the Grafana UI using `admin/admin` credentials.
+
+![Grafana login](grafana/images/grafana_login.png)
+
+2. Click on the "Add data source" button from the Grafana home in order to add Prometheus as data source.
+
+![Grafana home](grafana/images/grafana_home.png)
+
+3. Fill in the information about the Prometheus data source, specifying a name and "Prometheus" as type. In the URL field you have to specify the connection string to the Prometheus server (i.e. `http://prometheus:9090`). Click on "Add" and after that, Grafana will test the connection with the data source.
+
+![Add Prometheus data source](grafana/images/grafana_prometheus_data_source.png)
+
+4. From the top left menu, click on "Dashboards" and then "Import" for opening the "Import Dashboard" window where you can import the provided dashboard uploading the JSON file or copying/pastying its content.
+
+![Add Grafana dashboard](grafana/images/grafana_import_dashboard.png)
+
+5. After importing the dashboard you should see it in your Grafan home with first metrics about CPU and JVM memory usage. You can start to use the Kafka cluster, creating topics and exchanging messages in order to see the other metrics like messages in, bytes in/out per topic.
+
+![Kafka dashboard](grafana/images/grafana_kafka_dashboard.png)
+
+
+
