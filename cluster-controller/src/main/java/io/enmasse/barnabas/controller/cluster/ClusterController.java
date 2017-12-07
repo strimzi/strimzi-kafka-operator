@@ -42,7 +42,7 @@ public class ClusterController extends AbstractVerticle {
     public void start(Future<Void> start) {
         log.info("Starting ClusterController");
 
-        this.executor = getVertx().createSharedWorkerExecutor("kubernetes-ops-pool", 5, 60000000000l); // time is in ns!
+        this.executor = getVertx().createSharedWorkerExecutor("kubernetes-ops-pool", 5, 120000000000l); // time is in ns!
 
         getVertx().executeBlocking(
                 future -> {
@@ -200,13 +200,22 @@ public class ClusterController extends AbstractVerticle {
         String name = cm.getMetadata().getName();
         log.info("Checking for updates in cluster {}", cm.getMetadata().getName());
 
-        KafkaResource.fromConfigMap(cm, vertx, k8s).update(res2 -> {
-            if (res2.succeeded()) {
-                log.info("Kafka cluster updated {}", name);
+        ZookeeperResource.fromConfigMap(cm, vertx, k8s).update(res -> {
+            if (res.succeeded()) {
+                log.info("Zookeeper cluster updated {}", name);
             }
             else {
-                log.error("Failed to update Kafka cluster {}.", name);
+                log.error("Failed to update Zookeeper cluster {}.", name);
             }
+
+            KafkaResource.fromConfigMap(cm, vertx, k8s).update(res2 -> {
+                if (res2.succeeded()) {
+                    log.info("Kafka cluster updated {}", name);
+                }
+                else {
+                    log.error("Failed to update Kafka cluster {}.", name);
+                }
+            });
         });
     }
 

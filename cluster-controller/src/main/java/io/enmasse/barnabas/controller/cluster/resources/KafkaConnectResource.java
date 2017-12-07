@@ -273,8 +273,8 @@ public class KafkaConnectResource extends AbstractResource {
                             future -> {
                                 log.info("Updating Kafka Connect {}", name);
                                 try {
-                                    if (diff.getScaleDown() || diff.getScaleUp()) {
-                                        log.info("Scaling Kafka Connect to {} replicas", replicas);
+                                    if (diff.getScaleDown()) {
+                                        log.info("Scaling Kafka Connect down to {} replicas", replicas);
                                         k8s.getDeploymentResource(namespace, name).scale(replicas, true);
                                     }
 
@@ -286,7 +286,13 @@ public class KafkaConnectResource extends AbstractResource {
                                     k8s.getDeploymentResource(namespace, name).replace(generateDeployment());
                                     k8s.getServiceResource(namespace, name).replace(generateService());
 
-                                    // TODO: Wait until the rolling update is finished before completing this future
+
+                                    if (diff.getScaleUp()) {
+                                        log.info("Scaling Kafka Connect up to {} replicas", replicas);
+                                        k8s.getDeploymentResource(namespace, name).scale(replicas, true);
+                                    }
+
+                                    // No need for rolling update - deployment will do it automatically?
 
                                     future.complete();
                                 }
@@ -363,6 +369,7 @@ public class KafkaConnectResource extends AbstractResource {
                 .withLabels(getLabelsWithName())
                 .endMetadata()
                 .withNewSpec()
+                .withStrategy(new DeploymentStrategyBuilder().withType("RollingUpdate").withRollingUpdate(new RollingUpdateDeploymentBuilder().withMaxSurge(new IntOrString(1)).withMaxUnavailable(new IntOrString(0)).build()).build())
                 .withReplicas(replicas)
                 .withNewTemplate()
                 .withNewMetadata()
