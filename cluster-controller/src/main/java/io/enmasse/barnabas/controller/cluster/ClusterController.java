@@ -8,13 +8,14 @@ import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.Future;
-import io.vertx.core.WorkerExecutor;
+import io.vertx.core.*;
+import io.vertx.core.Handler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -25,6 +26,8 @@ public class ClusterController extends AbstractVerticle {
     private final K8SUtils k8s;
     private final Map<String, String> labels;
     private final String namespace;
+
+    private Watch configMapWatch;
 
     //private Map<ResourceId, Resource> resources = new HashMap<ResourceId, Resource<S, ServiceFluentImpl<DoneableService>>>();
 
@@ -44,9 +47,30 @@ public class ClusterController extends AbstractVerticle {
 
         this.executor = getVertx().createSharedWorkerExecutor("kubernetes-ops-pool", 5, 120000000000l); // time is in ns!
 
+        createConfigMapWatch(res -> {
+            if (res.succeeded())    {
+                configMapWatch = res.result();
+
+                log.info("Setting up periodical reconciliation");
+                vertx.setPeriodic(120000, res2 -> {
+                    log.info("Triggering periodic reconciliation ...");
+                    reconcile();
+                });
+
+                log.info("ClusterController up and running");
+                start.complete();
+            }
+            else {
+                log.error("ClusterController startup failed");
+                start.fail("ClusterController startup failed");
+            }
+        });
+    }
+
+    private void createConfigMapWatch(Handler<AsyncResult<Watch>> handler) {
         getVertx().executeBlocking(
                 future -> {
-                    k8s.getKubernetesClient().configMaps().inNamespace(namespace).withLabels(labels).watch(new Watcher<ConfigMap>() {
+                    Watch watch = k8s.getKubernetesClient().configMaps().inNamespace(namespace).withLabels(labels).watch(new Watcher<ConfigMap>() {
                         @Override
                         public void eventReceived(Action action, ConfigMap cm) {
                             Map<String, String> labels = cm.getMetadata().getLabels();
@@ -104,37 +128,60 @@ public class ClusterController extends AbstractVerticle {
 
                         @Override
                         public void onClose(KubernetesClientException e) {
-                            //TODO: Restart or reconnect?
-                            log.info("Watcher closed", e);
+                            if (e != null) {
+                                log.error("Watcher closed with exception", e);
+                            }
+                            else {
+                                log.error("Watcher closed with exception", e);
+                            }
+
+                            recreateConfigMapWatch();
                         }
                     });
-                    future.complete();
+                    future.complete(watch);
                 }, res -> {
                     if (res.succeeded())    {
-                        log.info("ClusterController up and running");
-
-                        log.info("Setting up periodical reconciliation");
-                        /*vertx.setPeriodic(60000, res2 -> {
-                            log.info("Triggering periodic reconciliation ...");
-                            reconcile();
-                        });
-
-                        start.complete();
-                        reconcile();*/
+                        log.info("ConfigMap watcher up and running for lables {}", labels);
+                        handler.handle(Future.succeededFuture((Watch)res.result()));
                     }
                     else {
-                        log.info("ClusterController startup failed");
-                        start.fail("ClusterController startup failed");
+                        log.info("ConfigMap watcher failed to start");
+                        handler.handle(Future.failedFuture("ConfigMap watcher failed to start"));
                     }
                 }
         );
     }
 
-    private void reconcile()    {
-        log.info("Reconciling ...");
+    private void recreateConfigMapWatch() {
+        configMapWatch.close();
 
-        List<ConfigMap> cms = k8s.getConfigmaps(namespace, labels);
-        List<StatefulSet> sss = k8s.getStatefulSets(namespace, labels);
+        createConfigMapWatch(res -> {
+            if (res.succeeded())    {
+                log.info("ConfigMap watch recreated");
+                configMapWatch = res.result();
+            }
+            else {
+                log.error("Failed to recreate ConfigMap watch");
+            }
+        });
+    }
+
+    /*
+      Periodical reconciliation (in case we lost some event)
+     */
+    private void reconcile() {
+        reconcileKafka();
+        reconcileKafkaConnect();
+    }
+
+    private void reconcileKafka() {
+        log.info("Reconciling Kafka clusters ...");
+
+        Map<String, String> kafkaLabels = new HashMap(labels);
+        kafkaLabels.put("kind", "kafka");
+
+        List<ConfigMap> cms = k8s.getConfigmaps(namespace, kafkaLabels);
+        List<StatefulSet> sss = k8s.getStatefulSets(namespace, kafkaLabels);
 
         List<String> cmsNames = cms.stream().map(cm -> cm.getMetadata().getName()).collect(Collectors.toList());
         List<String> sssNames = sss.stream().map(cm -> cm.getMetadata().getName()).collect(Collectors.toList());
@@ -143,37 +190,77 @@ public class ClusterController extends AbstractVerticle {
         List<ConfigMap> updateList = cms.stream().filter(cm -> sssNames.contains(cm.getMetadata().getName())).collect(Collectors.toList());
         List<StatefulSet> deletionList = sss.stream().filter(ss -> !cmsNames.contains(ss.getMetadata().getName())).collect(Collectors.toList());
 
-        addClusters(addList);
-        deleteClusters(deletionList);
-        updateClusters(updateList);
+        addKafkaClusters(addList);
+        deleteKafkaClusters(deletionList);
+        updateKafkaClusters(updateList);
     }
 
-    private void addClusters(List<ConfigMap> add)   {
+    private void addKafkaClusters(List<ConfigMap> add)   {
         for (ConfigMap cm : add) {
-            log.info("Cluster {} should be added", cm.getMetadata().getName());
+            log.info("Reconciliation: Kafka cluster {} should be added", cm.getMetadata().getName());
             addKafkaCluster(cm);
         }
     }
 
-    private void updateClusters(List<ConfigMap> update)   {
+    private void updateKafkaClusters(List<ConfigMap> update)   {
         for (ConfigMap cm : update) {
-            log.info("Cluster {} should be checked for updates", cm.getMetadata().getName());
+            log.info("Reconciliation: Kafka cluster {} should be checked for updates", cm.getMetadata().getName());
             updateKafkaCluster(cm);
         }
     }
 
-    private void deleteClusters(List<StatefulSet> delete)   {
+    private void deleteKafkaClusters(List<StatefulSet> delete)   {
         for (StatefulSet ss : delete) {
-            log.info("Cluster {} should be deleted", ss.getMetadata().getName());
+            log.info("Reconciliation: Kafka cluster {} should be deleted", ss.getMetadata().getName());
             deleteKafkaCluster(ss);
+        }
+    }
+
+    private void reconcileKafkaConnect() {
+        log.info("Reconciling Kafka Connect clusters ...");
+
+        Map<String, String> kafkaLabels = new HashMap(labels);
+        kafkaLabels.put("kind", "kafka-connect");
+
+        List<ConfigMap> cms = k8s.getConfigmaps(namespace, kafkaLabels);
+        List<Deployment> deps = k8s.getDeployments(namespace, kafkaLabels);
+
+        List<String> cmsNames = cms.stream().map(cm -> cm.getMetadata().getName()).collect(Collectors.toList());
+        List<String> sssNames = deps.stream().map(cm -> cm.getMetadata().getName()).collect(Collectors.toList());
+
+        List<ConfigMap> addList = cms.stream().filter(cm -> !sssNames.contains(cm.getMetadata().getName())).collect(Collectors.toList());
+        List<ConfigMap> updateList = cms.stream().filter(cm -> sssNames.contains(cm.getMetadata().getName())).collect(Collectors.toList());
+        List<Deployment> deletionList = deps.stream().filter(dep -> !cmsNames.contains(dep.getMetadata().getName())).collect(Collectors.toList());
+
+        addKafkaConnectClusters(addList);
+        deleteConnectConnectClusters(deletionList);
+        updateKafkaConnectClusters(updateList);
+    }
+
+    private void addKafkaConnectClusters(List<ConfigMap> add)   {
+        for (ConfigMap cm : add) {
+            log.info("Reconciliation: Kafka Connect cluster {} should be added", cm.getMetadata().getName());
+            addKafkaCluster(cm);
+        }
+    }
+
+    private void updateKafkaConnectClusters(List<ConfigMap> update)   {
+        for (ConfigMap cm : update) {
+            log.info("Reconciliation: Kafka Connect cluster {} should be checked for updates", cm.getMetadata().getName());
+            updateKafkaConnectCluster(cm);
+        }
+    }
+
+    private void deleteConnectConnectClusters(List<Deployment> delete)   {
+        for (Deployment dep : delete) {
+            log.info("Reconciliation: Kafka Connect cluster {} should be deleted", dep.getMetadata().getName());
+            deleteKafkaConnectCluster(dep);
         }
     }
 
     /*
       Kafka / Zookeeper cluster control
      */
-
-
     private void addKafkaCluster(ConfigMap add)   {
         String name = add.getMetadata().getName();
         log.info("Adding cluster {}", name);

@@ -275,7 +275,7 @@ public class KafkaResource extends AbstractResource {
 
                                     if (diff.getRollingUpdate()) {
                                         log.info("Doing rolling update");
-                                        for (int i = 0; i < replicas; i++) {
+                                        for (int i = 0; i < k8s.getStatefulSet(namespace, name).getSpec().getReplicas(); i++) {
                                             String podName = name + "-" + i;
                                             log.info("Rolling pod {}", podName);
                                             Future deleted = Future.future();

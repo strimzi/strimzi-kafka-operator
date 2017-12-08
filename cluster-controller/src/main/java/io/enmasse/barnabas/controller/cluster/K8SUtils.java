@@ -129,7 +129,7 @@ public class K8SUtils {
         return client.extensions().deployments().inNamespace(namespace).withName(name);
     }
 
-    public List<Deployment> getDeployment(String namespace, Map<String, String> labels) {
+    public List<Deployment> getDeployments(String namespace, Map<String, String> labels) {
         return client.extensions().deployments().inNamespace(namespace).withLabels(labels).list().getItems();
     }
 
