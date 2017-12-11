@@ -38,12 +38,10 @@ public class ScaleDownOperation extends K8sOperation {
                             return;
                         }
 
-                        nextReplicas--;
-
                         while (nextReplicas > scaleTo) {
-                            log.info("Scaling down from {} to {}", nextReplicas + 1, nextReplicas);
-                            k8s.scale(res, nextReplicas, true);
                             nextReplicas--;
+                            log.info("Scaling down from {} to {}", nextReplicas+1, nextReplicas);
+                            k8s.scale(res, nextReplicas, true);
                         }
 
                         future.complete();

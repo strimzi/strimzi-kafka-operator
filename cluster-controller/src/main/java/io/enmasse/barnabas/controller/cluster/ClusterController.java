@@ -2,9 +2,7 @@ package io.enmasse.barnabas.controller.cluster;
 
 import io.enmasse.barnabas.controller.cluster.operations.Operation;
 import io.enmasse.barnabas.controller.cluster.operations.OperationExecutor;
-import io.enmasse.barnabas.controller.cluster.operations.cluster.CreateZookeeperClusterOperation;
-import io.enmasse.barnabas.controller.cluster.operations.cluster.DeleteZookeeperClusterOperation;
-import io.enmasse.barnabas.controller.cluster.operations.cluster.UpdateZookeeperClusterOperation;
+import io.enmasse.barnabas.controller.cluster.operations.cluster.*;
 import io.enmasse.barnabas.controller.cluster.resources.KafkaConnectResource;
 import io.enmasse.barnabas.controller.cluster.resources.KafkaResource;
 import io.enmasse.barnabas.controller.cluster.resources.ZookeeperResource;
@@ -273,7 +271,7 @@ public class ClusterController extends AbstractVerticle {
         opExec.execute(new CreateZookeeperClusterOperation(namespace, name), res -> {
             if (res.succeeded()) {
                 log.info("Zookeeper cluster added {}", name);
-                KafkaResource.fromConfigMap(add, vertx, k8s).create(res2 -> {
+                opExec.execute(new CreateKafkaClusterOperation(namespace, name), res2 -> {
                     if (res2.succeeded()) {
                         log.info("Kafka cluster added {}", name);
                     }
@@ -300,7 +298,7 @@ public class ClusterController extends AbstractVerticle {
                 log.error("Failed to update Zookeeper cluster {}.", name);
             }
 
-            KafkaResource.fromConfigMap(cm, vertx, k8s).update(res2 -> {
+            opExec.execute(new UpdateKafkaClusterOperation(namespace, name), res2 -> {
                 if (res2.succeeded()) {
                     log.info("Kafka cluster updated {}", name);
                 }
@@ -314,30 +312,17 @@ public class ClusterController extends AbstractVerticle {
     private void deleteKafkaCluster(StatefulSet ss)   {
         String name = ss.getMetadata().getName();
         log.info("Deleting cluster {}", name);
-
-        KafkaResource.fromStatefulSet(ss, vertx, k8s).delete(res -> {
-            if (res.succeeded()) {
-                log.info("Kafka cluster deleted {}", name);
-                opExec.execute(new DeleteZookeeperClusterOperation(namespace, name), res2 -> {
-                    if (res2.succeeded()) {
-                        log.info("Zookeeper cluster deleted {}", name);
-                    }
-                    else {
-                        log.error("Failed to delete Zookeeper cluster {}.", name);
-                    }
-                });
-            }
-            else {
-                log.error("Failed to delete Kafka cluster {}. SKipping Zookeeper cluster deletion.", name);
-            }
-        });
+        deleteKafkaCluster(namespace, name);
     }
 
     private void deleteKafkaCluster(ConfigMap cm)   {
         String name = cm.getMetadata().getName();
         log.info("Deleting cluster {}", name);
+        deleteKafkaCluster(namespace, name);
+    }
 
-        KafkaResource.fromConfigMap(cm, vertx, k8s).delete(res -> {
+    private void deleteKafkaCluster(String namespace, String name)   {
+        opExec.execute(new DeleteKafkaClusterOperation(namespace, name), res -> {
             if (res.succeeded()) {
                 log.info("Kafka cluster deleted {}", name);
                 opExec.execute(new DeleteZookeeperClusterOperation(namespace, name), res2 -> {
