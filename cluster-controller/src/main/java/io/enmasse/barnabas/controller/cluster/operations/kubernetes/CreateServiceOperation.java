@@ -1,4 +1,4 @@
-package io.enmasse.barnabas.controller.cluster.operations;
+package io.enmasse.barnabas.controller.cluster.operations.kubernetes;
 
 import io.enmasse.barnabas.controller.cluster.K8SUtils;
 import io.fabric8.kubernetes.api.model.Service;
@@ -13,13 +13,12 @@ public class CreateServiceOperation extends K8sOperation {
     private static final Logger log = LoggerFactory.getLogger(CreateServiceOperation.class.getName());
     private final Service svc;
 
-    public CreateServiceOperation(Vertx vertx, K8SUtils k8s, Service svc) {
-        super(vertx, k8s);
+    public CreateServiceOperation(Service svc) {
         this.svc = svc;
     }
 
     @Override
-    public void execute(Handler<AsyncResult<Void>> handler) {
+    public void execute(Vertx vertx, K8SUtils k8s, Handler<AsyncResult<Void>> handler) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
                     if (!k8s.serviceExists(svc.getMetadata().getNamespace(), svc.getMetadata().getName())) {

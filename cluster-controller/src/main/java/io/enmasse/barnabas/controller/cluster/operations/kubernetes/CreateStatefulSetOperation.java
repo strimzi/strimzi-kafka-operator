@@ -1,4 +1,4 @@
-package io.enmasse.barnabas.controller.cluster.operations;
+package io.enmasse.barnabas.controller.cluster.operations.kubernetes;
 
 import io.enmasse.barnabas.controller.cluster.K8SUtils;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
@@ -13,13 +13,12 @@ public class CreateStatefulSetOperation extends K8sOperation {
     private static final Logger log = LoggerFactory.getLogger(CreateStatefulSetOperation.class.getName());
     private final StatefulSet sfs;
 
-    public CreateStatefulSetOperation(Vertx vertx, K8SUtils k8s, StatefulSet sfs) {
-        super(vertx, k8s);
+    public CreateStatefulSetOperation(StatefulSet sfs) {
         this.sfs = sfs;
     }
 
     @Override
-    public void execute(Handler<AsyncResult<Void>> handler) {
+    public void execute(Vertx vertx, K8SUtils k8s, Handler<AsyncResult<Void>> handler) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
                     if (!k8s.statefulSetExists(sfs.getMetadata().getNamespace(), sfs.getMetadata().getName())) {

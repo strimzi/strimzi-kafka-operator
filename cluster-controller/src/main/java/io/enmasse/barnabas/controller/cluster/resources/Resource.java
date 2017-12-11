@@ -6,9 +6,9 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 
 public interface Resource {
-    void create(Handler<AsyncResult<Void>> handler);
+    /*void create(Handler<AsyncResult<Void>> handler);
     void delete(Handler<AsyncResult<Void>> handler);
     void update(Handler<AsyncResult<Void>> handler);
     boolean exists();
-    boolean isReady();
+    boolean isReady();*/
 }

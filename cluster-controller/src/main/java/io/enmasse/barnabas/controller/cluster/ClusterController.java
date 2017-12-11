@@ -1,7 +1,10 @@
 package io.enmasse.barnabas.controller.cluster;
 
-import io.enmasse.barnabas.controller.cluster.operations.CreateZookeeperClusterOperation;
-import io.enmasse.barnabas.controller.cluster.operations.DeleteZookeeperClusterOperation;
+import io.enmasse.barnabas.controller.cluster.operations.Operation;
+import io.enmasse.barnabas.controller.cluster.operations.OperationExecutor;
+import io.enmasse.barnabas.controller.cluster.operations.cluster.CreateZookeeperClusterOperation;
+import io.enmasse.barnabas.controller.cluster.operations.cluster.DeleteZookeeperClusterOperation;
+import io.enmasse.barnabas.controller.cluster.operations.cluster.UpdateZookeeperClusterOperation;
 import io.enmasse.barnabas.controller.cluster.resources.KafkaConnectResource;
 import io.enmasse.barnabas.controller.cluster.resources.KafkaResource;
 import io.enmasse.barnabas.controller.cluster.resources.ZookeeperResource;
@@ -31,6 +34,8 @@ public class ClusterController extends AbstractVerticle {
 
     private Watch configMapWatch;
 
+    private OperationExecutor opExec = null;
+
     public ClusterController(ClusterControllerConfig config) throws Exception {
         log.info("Creating ClusterController");
 
@@ -44,7 +49,8 @@ public class ClusterController extends AbstractVerticle {
         log.info("Starting ClusterController");
 
         // Configure the executor here, but it is used only in other places
-        getVertx().createSharedWorkerExecutor("kubernetes-ops-pool", 5, 120000000000l); // time is in ns!
+        getVertx().createSharedWorkerExecutor("kubernetes-ops-pool", 5, 120000000000L); // time is in ns!
+        this.opExec = OperationExecutor.getInstance(vertx, k8s);
 
         createConfigMapWatch(res -> {
             if (res.succeeded())    {
@@ -264,7 +270,7 @@ public class ClusterController extends AbstractVerticle {
         String name = add.getMetadata().getName();
         log.info("Adding cluster {}", name);
 
-        new CreateZookeeperClusterOperation(vertx, k8s, namespace, name).execute(res -> {
+        opExec.execute(new CreateZookeeperClusterOperation(namespace, name), res -> {
             if (res.succeeded()) {
                 log.info("Zookeeper cluster added {}", name);
                 KafkaResource.fromConfigMap(add, vertx, k8s).create(res2 -> {
@@ -286,7 +292,7 @@ public class ClusterController extends AbstractVerticle {
         String name = cm.getMetadata().getName();
         log.info("Checking for updates in cluster {}", cm.getMetadata().getName());
 
-        ZookeeperResource.fromConfigMap(cm, vertx, k8s).update(res -> {
+        opExec.execute(new UpdateZookeeperClusterOperation(namespace, name), res -> {
             if (res.succeeded()) {
                 log.info("Zookeeper cluster updated {}", name);
             }
@@ -312,7 +318,7 @@ public class ClusterController extends AbstractVerticle {
         KafkaResource.fromStatefulSet(ss, vertx, k8s).delete(res -> {
             if (res.succeeded()) {
                 log.info("Kafka cluster deleted {}", name);
-                new DeleteZookeeperClusterOperation(vertx, k8s, namespace, name).execute(res2 -> {
+                opExec.execute(new DeleteZookeeperClusterOperation(namespace, name), res2 -> {
                     if (res2.succeeded()) {
                         log.info("Zookeeper cluster deleted {}", name);
                     }
@@ -334,7 +340,7 @@ public class ClusterController extends AbstractVerticle {
         KafkaResource.fromConfigMap(cm, vertx, k8s).delete(res -> {
             if (res.succeeded()) {
                 log.info("Kafka cluster deleted {}", name);
-                new DeleteZookeeperClusterOperation(vertx, k8s, namespace, name).execute(res2 -> {
+                opExec.execute(new DeleteZookeeperClusterOperation(namespace, name), res2 -> {
                     if (res2.succeeded()) {
                         log.info("Zookeeper cluster deleted {}", name);
                     }

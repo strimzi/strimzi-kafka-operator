@@ -98,92 +98,6 @@ public class ZookeeperResource extends AbstractResource {
         return zk;
     }
 
-    public void create(Handler<AsyncResult<Void>> handler) {
-        vertx.sharedData().getLockWithTimeout(getLockName(), LOCK_TIMEOUT, res -> {
-            if (res.succeeded()) {
-                Lock lock = res.result();
-                if (!exists()) {
-                    vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
-                            future -> {
-                                log.info("Creating Zookeeper {}", name);
-
-                                try {
-                                    k8s.createService(namespace, generateService());
-                                    k8s.createService(namespace, generateHeadlessService());
-                                    k8s.createStatefulSet(namespace, generateStatefulSet());
-                                    future.complete();
-                                }
-                                catch (Exception e) {
-                                    log.error("Caught exceptoion: {}", e.toString());
-                                    future.fail(e);
-                                }
-                            }, false, res2 -> {
-                                if (res2.succeeded()) {
-                                    log.info("Zookeeper cluster created {}", name);
-                                    lock.release();
-                                    handler.handle(Future.succeededFuture());
-                                } else {
-                                    log.error("Failed to create Zookeeper cluster {}", name);
-                                    lock.release();
-                                    handler.handle(Future.failedFuture("Failed to create Zookeeper cluster"));
-                                }
-                            });
-                }
-                else {
-                    log.info("Zookeeper cluster {} seems to already exist", name);
-                    lock.release();
-                    handler.handle(Future.succeededFuture());
-                }
-            } else {
-                log.error("Failed to acquire lock to create Zookeeper cluster {}", name);
-                handler.handle(Future.failedFuture("Failed to acquire lock to create Zookeeper cluster"));
-            }
-        });
-    }
-
-    public void delete(Handler<AsyncResult<Void>> handler) {
-        vertx.sharedData().getLockWithTimeout(getLockName(), LOCK_TIMEOUT, res -> {
-            if (res.succeeded()) {
-                Lock lock = res.result();
-                if (atLeastOneExists()) {
-                    vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
-                            future -> {
-                                log.info("Deleting Zookeeper {}", name);
-
-                                try {
-                                    k8s.deleteService(namespace, name);
-                                    k8s.deleteStatefulSet(namespace, name);
-                                    k8s.deleteService(namespace, headlessName);
-                                }
-                                catch (Exception e) {
-                                    log.error("Caught exceptoion: {}", e.toString());
-                                    future.fail(e);
-                                }
-                                future.complete();
-                            }, false, res2 -> {
-                                if (res2.succeeded()) {
-                                    log.info("Zookeeper cluster {} delete", name);
-                                    lock.release();
-                                    handler.handle(Future.succeededFuture());
-                                } else {
-                                    log.error("Failed to delete Zookeeper cluster {}", name);
-                                    lock.release();
-                                    handler.handle(Future.failedFuture("Failed to delete Zookeeper cluster"));
-                                }
-                            });
-                }
-                else {
-                    log.info("Zookeeper cluster {} seems to not exist anymore", name);
-                    lock.release();
-                    handler.handle(Future.succeededFuture());
-                }
-            } else {
-                log.error("Failed to acquire lock to delete Zookeeper cluster {}", name);
-                handler.handle(Future.failedFuture("Failed to acquire lock to delete Zookeeper cluster"));
-            }
-        });
-    }
-
     public ResourceDiffResult diff()  {
         ResourceDiffResult diff = new ResourceDiffResult();
         StatefulSet ss = k8s.getStatefulSet(namespace, name);
@@ -221,102 +135,6 @@ public class ZookeeperResource extends AbstractResource {
         return diff;
     }
 
-    public void update(Handler<AsyncResult<Void>> handler) {
-        vertx.sharedData().getLockWithTimeout(getLockName(), LOCK_TIMEOUT, res -> {
-            if (res.succeeded()) {
-                Lock lock = res.result();
-                ResourceDiffResult diff = diff();
-                if (exists() && diff.getDifferent()) {
-                    vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
-                            future -> {
-                                log.info("Updating Zookeeper {}", name);
-
-                                try {
-                                    if (diff.getScaleDown()) {
-                                        log.info("Scaling down to {} replicas", replicas);
-
-                                        int actualReplicas = k8s.getStatefulSet(namespace, name).getSpec().getReplicas();
-                                        while (actualReplicas > replicas) {
-                                            actualReplicas--;
-                                            log.info("Scaling down from {} to {}", actualReplicas+1, actualReplicas);
-                                            k8s.getStatefulSetResource(namespace, name).scale(actualReplicas, true);
-                                        }
-
-                                        log.info("Scaling down complete");
-                                    }
-
-                                    k8s.getStatefulSetResource(namespace, name).cascading(false).patch(patchStatefulSet(k8s.getStatefulSet(namespace, name)));
-                                    k8s.getServiceResource(namespace, name).replace(patchService(k8s.getService(namespace, name)));
-                                    k8s.getServiceResource(namespace, headlessName).replace(patchHeadlessService(k8s.getService(namespace, headlessName)));
-
-                                    if (diff.getRollingUpdate()) {
-                                        log.info("Doing rolling update");
-                                        for (int i = 0; i < k8s.getStatefulSet(namespace, name).getSpec().getReplicas(); i++) {
-                                            String podName = name + "-" + i;
-                                            log.info("Rolling pod {}", podName);
-                                            Future deleted = Future.future();
-                                            Watcher<Pod> watcher = new RollingUpdateWatcher<Pod>(deleted);
-
-                                            Watch watch = k8s.getKubernetesClient().pods().inNamespace(namespace).withName(podName).watch(watcher);
-                                            k8s.getKubernetesClient().pods().inNamespace(namespace).withName(podName).delete();
-
-                                            while (!deleted.isComplete()) {
-                                                log.info("Waiting for pod {} to be deleted", podName);
-                                                Thread.sleep(1000);
-                                            }
-
-                                            watch.close();
-
-                                            while (!k8s.getKubernetesClient().pods().inNamespace(namespace).withName(podName).isReady()) {
-                                                log.info("Waiting for pod {} to get ready", podName);
-                                                Thread.sleep(1000);
-                                            };
-
-                                            log.info("Pod {} rolling update complete", podName);
-                                        }
-                                        log.info("Rolling update complete");
-                                    }
-
-                                    if (diff.getScaleUp()) {
-                                        log.info("Scaling up to {} replicas", replicas);
-                                        k8s.getStatefulSetResource(namespace, name).scale(replicas, true);
-                                    }
-
-                                    future.complete();
-                                }
-                                catch (Exception e) {
-                                    log.error("Caught exception: {}", e.toString());
-                                    future.fail(e);
-                                }
-                            }, false, res2 -> {
-                                if (res2.succeeded()) {
-                                    log.info("Zookeeper cluster updated {}", name);
-                                    lock.release();
-                                    handler.handle(Future.succeededFuture());
-                                } else {
-                                    log.error("Failed to update Zookeeper cluster {}", name);
-                                    lock.release();
-                                    handler.handle(Future.failedFuture("Failed to update Zookeeper cluster"));
-                                }
-                            });
-                }
-                else if (!diff.getDifferent()) {
-                    log.info("Kafka cluster {} is up to date", name);
-                    lock.release();
-                    handler.handle(Future.succeededFuture());
-                }
-                else {
-                    log.info("Kafka cluster {} seems to not exist", name);
-                    lock.release();
-                    handler.handle(Future.succeededFuture());
-                }
-            } else {
-                log.error("Failed to acquire lock to create Kafka cluster {}", name);
-                handler.handle(Future.failedFuture("Failed to acquire lock to create Kafka cluster"));
-            }
-        });
-    }
-
     public Service generateService() {
         Service svc = new ServiceBuilder()
                 .withNewMetadata()
@@ -334,7 +152,7 @@ public class ZookeeperResource extends AbstractResource {
         return svc;
     }
 
-    private Service patchService(Service svc) {
+    public Service patchService(Service svc) {
         svc.getMetadata().setLabels(getLabelsWithName());
         svc.getSpec().setSelector(getLabelsWithName());
 
@@ -361,7 +179,7 @@ public class ZookeeperResource extends AbstractResource {
         return svc;
     }
 
-    private Service patchHeadlessService(Service svc) {
+    public Service patchHeadlessService(Service svc) {
         svc.getMetadata().setLabels(getLabelsWithName(headlessName));
         svc.getSpec().setSelector(getLabelsWithName());
 
@@ -409,7 +227,7 @@ public class ZookeeperResource extends AbstractResource {
         return statefulSet;
     }
 
-    private StatefulSet patchStatefulSet(StatefulSet statefulSet) {
+    public StatefulSet patchStatefulSet(StatefulSet statefulSet) {
         statefulSet.getMetadata().setLabels(getLabelsWithName());
         statefulSet.getSpec().setSelector(new LabelSelectorBuilder().withMatchLabels(getLabelsWithName()).build());
         statefulSet.getSpec().getTemplate().getMetadata().setLabels(getLabelsWithName());
@@ -476,5 +294,13 @@ public class ZookeeperResource extends AbstractResource {
 
     public boolean isReady() {
         return exists() && k8s.getStatefulSetResource(namespace, name).isReady();
+    }
+
+    public int getReplicas() {
+        return replicas;
+    }
+
+    public String getHeadlessName() {
+        return headlessName;
     }
 }
