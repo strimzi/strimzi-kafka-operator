@@ -27,7 +27,7 @@ public class CreateKafkaConnectClusterOperation extends KafkaConnectClusterOpera
 
                 log.info("Creating Kafka Connect cluster {} in namespace {}", name, namespace);
 
-                KafkaConnectResource connect = KafkaConnectResource.fromConfigMap(k8s.getConfigmap(namespace, name), vertx, k8s);
+                KafkaConnectResource connect = KafkaConnectResource.fromConfigMap(k8s.getConfigmap(namespace, name));
 
                 Future<Void> futureService = Future.future();
                 OperationExecutor.getInstance().execute(new CreateServiceOperation(connect.generateService()), futureService.completer());

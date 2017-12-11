@@ -25,7 +25,7 @@ public class CreateZookeeperClusterOperation extends ZookeeperClusterOperation {
 
                 log.info("Creating Zookeeper cluster {} in namespace {}", name + "-zookeeper", namespace);
 
-                ZookeeperResource zk = ZookeeperResource.fromConfigMap(k8s.getConfigmap(namespace, name), vertx, k8s);
+                ZookeeperResource zk = ZookeeperResource.fromConfigMap(k8s.getConfigmap(namespace, name));
 
                 Future<Void> futureService = Future.future();
                 OperationExecutor.getInstance().execute(new CreateServiceOperation(zk.generateService()), futureService.completer());

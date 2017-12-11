@@ -71,13 +71,13 @@ public class KafkaResource extends AbstractResource {
     private static String KEY_KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR = "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR";
     private static String KEY_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR = "KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR";
 
-    private KafkaResource(String name, String namespace, Vertx vertx, K8SUtils k8s) {
-        super(namespace, name, new ResourceId("kafka", name), vertx, k8s);
+    private KafkaResource(String name, String namespace) {
+        super(namespace, name);
         this.headlessName = name + "-headless";
     }
 
-    public static KafkaResource fromConfigMap(ConfigMap cm, Vertx vertx, K8SUtils k8s) {
-        KafkaResource kafka = new KafkaResource(cm.getMetadata().getName(), cm.getMetadata().getNamespace(), vertx, k8s);
+    public static KafkaResource fromConfigMap(ConfigMap cm) {
+        KafkaResource kafka = new KafkaResource(cm.getMetadata().getName(), cm.getMetadata().getNamespace());
         kafka.setLabels(cm.getMetadata().getLabels());
 
         kafka.setReplicas(Integer.parseInt(cm.getData().getOrDefault(KEY_REPLICAS, String.valueOf(DEFAULT_REPLICAS))));
@@ -93,8 +93,11 @@ public class KafkaResource extends AbstractResource {
         return kafka;
     }
 
-    public static KafkaResource fromStatefulSet(StatefulSet ss, Vertx vertx, K8SUtils k8s) {
-        KafkaResource kafka =  new KafkaResource(ss.getMetadata().getName(), ss.getMetadata().getNamespace(), vertx, k8s);
+    // This is currently needed only to delete the headless service. All other deletions can be done just using namespace
+    // and name. Do we need this as it is? Or would it be enough to create just and empty shell from name and namespace
+    // which would generate the headless name?
+    public static KafkaResource fromStatefulSet(StatefulSet ss) {
+        KafkaResource kafka =  new KafkaResource(ss.getMetadata().getName(), ss.getMetadata().getNamespace());
 
         kafka.setLabels(ss.getMetadata().getLabels());
         kafka.setReplicas(ss.getSpec().getReplicas());
@@ -113,9 +116,8 @@ public class KafkaResource extends AbstractResource {
         return kafka;
     }
 
-    public ResourceDiffResult diff()  {
+    public ResourceDiffResult diff(StatefulSet ss)  {
         ResourceDiffResult diff = new ResourceDiffResult();
-        StatefulSet ss = k8s.getStatefulSet(namespace, name);
 
         if (replicas > ss.getSpec().getReplicas()) {
             log.info("Diff: Expected replicas {}, actual replicas {}", replicas, ss.getSpec().getReplicas());
@@ -171,7 +173,7 @@ public class KafkaResource extends AbstractResource {
                 .withNewSpec()
                 .withType("ClusterIP")
                 .withSelector(getLabelsWithName())
-                .withPorts(k8s.createServicePort(clientPortName, clientPort, clientPort))
+                .withPorts(createServicePort(clientPortName, clientPort, clientPort))
                 .endSpec()
                 .build();
 
@@ -196,7 +198,7 @@ public class KafkaResource extends AbstractResource {
                 .withType("ClusterIP")
                 .withClusterIP("None")
                 .withSelector(getLabelsWithName())
-                .withPorts(k8s.createServicePort(clientPortName, clientPort, clientPort))
+                .withPorts(createServicePort(clientPortName, clientPort, clientPort))
                 .endSpec()
                 .build();
 
@@ -215,10 +217,10 @@ public class KafkaResource extends AbstractResource {
                 .withName(name)
                 .withImage(image)
                 .withEnv(getEnvList())
-                .withVolumeMounts(k8s.createVolumeMount(volumeName, mounthPath))
-                .withPorts(k8s.createContainerPort(clientPortName, clientPort))
-                .withLivenessProbe(getHealthCheck())
-                .withReadinessProbe(getHealthCheck())
+                .withVolumeMounts(createVolumeMount(volumeName, mounthPath))
+                .withPorts(createContainerPort(clientPortName, clientPort))
+                .withLivenessProbe(createExecProbe(healthCheckScript, healthCheckInitialDelay, healthCheckTimeout))
+                .withReadinessProbe(createExecProbe(healthCheckScript, healthCheckInitialDelay, healthCheckTimeout))
                 .build();
 
         StatefulSet statefulSet = new StatefulSetBuilder()
@@ -240,7 +242,7 @@ public class KafkaResource extends AbstractResource {
                 .endMetadata()
                 .withNewSpec()
                 .withContainers(container)
-                .withVolumes(k8s.createEmptyDirVolume(volumeName))
+                .withVolumes(createEmptyDirVolume(volumeName))
                 .endSpec()
                 .endTemplate()
                 .endSpec()
@@ -254,8 +256,8 @@ public class KafkaResource extends AbstractResource {
         statefulSet.getSpec().setSelector(new LabelSelectorBuilder().withMatchLabels(getLabelsWithName()).build());
         statefulSet.getSpec().getTemplate().getMetadata().setLabels(getLabelsWithName());
         statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(image);
-        statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).setLivenessProbe(getHealthCheck());
-        statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).setReadinessProbe(getHealthCheck());
+        statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).setLivenessProbe(createExecProbe(healthCheckScript, healthCheckInitialDelay, healthCheckTimeout));
+        statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).setReadinessProbe(createExecProbe(healthCheckScript, healthCheckInitialDelay, healthCheckTimeout));
         statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(getEnvList());
 
         return statefulSet;
@@ -271,24 +273,8 @@ public class KafkaResource extends AbstractResource {
         return varList;
     }
 
-    private Probe getHealthCheck() {
-        return k8s.createExecProbe(healthCheckScript, healthCheckInitialDelay, healthCheckTimeout);
-    }
-
-    private String getLockName() {
-        return "kafka::lock::" + name;
-    }
-
     public void setReplicas(int replicas) {
         this.replicas = replicas;
-    }
-
-    public boolean exists() {
-        return k8s.statefulSetExists(namespace, name) && k8s.serviceExists(namespace, name) && k8s.serviceExists(namespace, headlessName);
-    }
-
-    public boolean atLeastOneExists() {
-        return k8s.statefulSetExists(namespace, name) || k8s.serviceExists(namespace, name) || k8s.serviceExists(namespace, headlessName);
     }
 
     public void setImage(String image) {
@@ -317,10 +303,6 @@ public class KafkaResource extends AbstractResource {
 
     public void setTransactionStateLogReplicationFactor(int transactionStateLogReplicationFactor) {
         this.transactionStateLogReplicationFactor = transactionStateLogReplicationFactor;
-    }
-
-    public boolean isReady() {
-        return exists() && k8s.getStatefulSetResource(namespace, name).isReady();
     }
 
     public int getReplicas() {

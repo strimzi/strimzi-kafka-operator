@@ -79,12 +79,12 @@ public class KafkaConnectResource extends AbstractResource {
     private static String KEY_OFFSET_STORAGE_REPLICATION_FACTOR = "KAFKA_CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR";
     private static String KEY_STATUS_STORAGE_REPLICATION_FACTOR = "KAFKA_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR";
 
-    private KafkaConnectResource(String name, String namespace, Vertx vertx, K8SUtils k8s) {
-        super(namespace, name, new ResourceId("bootstrapServers-connect", name), vertx, k8s);
+    private KafkaConnectResource(String name, String namespace) {
+        super(namespace, name);
     }
 
-    public static KafkaConnectResource fromConfigMap(ConfigMap cm, Vertx vertx, K8SUtils k8s) {
-        KafkaConnectResource kafkaConnect = new KafkaConnectResource(cm.getMetadata().getName(), cm.getMetadata().getNamespace(), vertx, k8s);
+    public static KafkaConnectResource fromConfigMap(ConfigMap cm) {
+        KafkaConnectResource kafkaConnect = new KafkaConnectResource(cm.getMetadata().getName(), cm.getMetadata().getNamespace());
         kafkaConnect.setLabels(cm.getMetadata().getLabels());
 
         kafkaConnect.setReplicas(Integer.parseInt(cm.getData().getOrDefault(KEY_REPLICAS, String.valueOf(DEFAULT_REPLICAS))));
@@ -105,9 +105,10 @@ public class KafkaConnectResource extends AbstractResource {
         return kafkaConnect;
     }
 
-    // Constructing KafkaConnect from Deployment should be used only to delete the deployment
-    public static KafkaConnectResource fromDeployment(Deployment dep, Vertx vertx, K8SUtils k8s) {
-        KafkaConnectResource kafkaConnect =  new KafkaConnectResource(dep.getMetadata().getName(), dep.getMetadata().getNamespace(), vertx, k8s);
+    // This is currently not needed. But the similar function for statefulsets is used partially. Should we remove this?
+    // Or might we need to use it in the future?
+    public static KafkaConnectResource fromDeployment(Deployment dep) {
+        KafkaConnectResource kafkaConnect =  new KafkaConnectResource(dep.getMetadata().getName(), dep.getMetadata().getNamespace());
 
         kafkaConnect.setLabels(dep.getMetadata().getLabels());
         kafkaConnect.setReplicas(dep.getSpec().getReplicas());
@@ -131,9 +132,8 @@ public class KafkaConnectResource extends AbstractResource {
         return kafkaConnect;
     }
 
-    public ResourceDiffResult diff()  {
+    public ResourceDiffResult diff(Deployment dep)  {
         ResourceDiffResult diff = new ResourceDiffResult();
-        Deployment dep = k8s.getDeployment(namespace, name);
 
         if (replicas > dep.getSpec().getReplicas()) {
             log.info("Diff: Expected replicas {}, actual replicas {}", replicas, dep.getSpec().getReplicas());
@@ -193,7 +193,7 @@ public class KafkaConnectResource extends AbstractResource {
                 .withNewSpec()
                 .withType("ClusterIP")
                 .withSelector(getLabelsWithName())
-                .withPorts(k8s.createServicePort(restApiPortName, restApiPort, restApiPort))
+                .withPorts(createServicePort(restApiPortName, restApiPort, restApiPort))
                 .endSpec()
                 .build();
 
@@ -212,9 +212,9 @@ public class KafkaConnectResource extends AbstractResource {
                 .withName(name)
                 .withImage(image)
                 .withEnv(getEnvList())
-                .withPorts(k8s.createContainerPort(restApiPortName, restApiPort))
-                .withLivenessProbe(getHealthCheck())
-                .withReadinessProbe(getHealthCheck())
+                .withPorts(createContainerPort(restApiPortName, restApiPort))
+                .withLivenessProbe(createHttpProbe(healthCheckPath, restApiPortName, healthCheckInitialDelay, healthCheckTimeout))
+                .withReadinessProbe(createHttpProbe(healthCheckPath, restApiPortName, healthCheckInitialDelay, healthCheckTimeout))
                 .build();
 
         Deployment dep = new DeploymentBuilder()
@@ -244,8 +244,8 @@ public class KafkaConnectResource extends AbstractResource {
         dep.getMetadata().setLabels(getLabelsWithName());
         dep.getSpec().getTemplate().getMetadata().setLabels(getLabelsWithName());
         dep.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(image);
-        dep.getSpec().getTemplate().getSpec().getContainers().get(0).setLivenessProbe(getHealthCheck());
-        dep.getSpec().getTemplate().getSpec().getContainers().get(0).setReadinessProbe(getHealthCheck());
+        dep.getSpec().getTemplate().getSpec().getContainers().get(0).setLivenessProbe(createHttpProbe(healthCheckPath, restApiPortName, healthCheckInitialDelay, healthCheckTimeout));
+        dep.getSpec().getTemplate().getSpec().getContainers().get(0).setReadinessProbe(createHttpProbe(healthCheckPath, restApiPortName, healthCheckInitialDelay, healthCheckTimeout));
         dep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(getEnvList());
 
         return dep;
@@ -266,24 +266,8 @@ public class KafkaConnectResource extends AbstractResource {
         return varList;
     }
 
-    private Probe getHealthCheck() {
-        return k8s.createHttpProbe(healthCheckPath, restApiPortName, healthCheckInitialDelay, healthCheckTimeout);
-    }
-
-    private String getLockName() {
-        return "kafka-connect::lock::" + name;
-    }
-
     public void setReplicas(int replicas) {
         this.replicas = replicas;
-    }
-
-    public boolean exists() {
-        return k8s.deploymentExists(namespace, name) && k8s.serviceExists(namespace, name);
-    }
-
-    public boolean atLeastOneExists() {
-        return k8s.deploymentExists(namespace, name) || k8s.serviceExists(namespace, name);
     }
 
     public void setBootstrapServers(String bootstrapServers) {
@@ -332,10 +316,6 @@ public class KafkaConnectResource extends AbstractResource {
 
     public void setHealthCheckInitialDelay(int delay) {
         this.healthCheckInitialDelay = delay;
-    }
-
-    public boolean isReady() {
-        return exists() && k8s.getDeploymentResource(namespace, name).isReady();
     }
 
     public int getReplicas() {

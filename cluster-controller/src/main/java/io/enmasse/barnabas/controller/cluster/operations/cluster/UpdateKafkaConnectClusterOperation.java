@@ -35,8 +35,8 @@ public class UpdateKafkaConnectClusterOperation extends KafkaConnectClusterOpera
 
                 log.info("Updating Kafka Connect cluster {} in namespace {}", name, namespace);
 
-                KafkaConnectResource connect = KafkaConnectResource.fromConfigMap(k8s.getConfigmap(namespace, name), vertx, k8s);
-                ResourceDiffResult diff = connect.diff();
+                KafkaConnectResource connect = KafkaConnectResource.fromConfigMap(k8s.getConfigmap(namespace, name));
+                ResourceDiffResult diff = connect.diff(k8s.getDeployment(namespace, name));
 
                 Future<Void> chainFuture = Future.future();
 

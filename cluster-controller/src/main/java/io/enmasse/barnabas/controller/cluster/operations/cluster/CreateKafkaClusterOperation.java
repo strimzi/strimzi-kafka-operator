@@ -26,7 +26,7 @@ public class CreateKafkaClusterOperation extends KafkaClusterOperation {
 
                 log.info("Creating Kafka cluster {} in namespace {}", name, namespace);
 
-                KafkaResource kafka = KafkaResource.fromConfigMap(k8s.getConfigmap(namespace, name), vertx, k8s);
+                KafkaResource kafka = KafkaResource.fromConfigMap(k8s.getConfigmap(namespace, name));
 
                 Future<Void> futureService = Future.future();
                 OperationExecutor.getInstance().execute(new CreateServiceOperation(kafka.generateService()), futureService.completer());

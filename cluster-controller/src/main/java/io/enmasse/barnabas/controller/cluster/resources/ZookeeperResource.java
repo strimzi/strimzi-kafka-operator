@@ -66,14 +66,14 @@ public class ZookeeperResource extends AbstractResource {
     // Zookeeper configuration keys
     private static String KEY_ZOOKEEPER_NODE_COUNT = "ZOOKEEPER_NODE_COUNT";
 
-    private ZookeeperResource(String name, String namespace, Vertx vertx, K8SUtils k8s) {
-        super(namespace, name, new ResourceId("zookeeper", name), vertx, k8s);
+    private ZookeeperResource(String name, String namespace) {
+        super(namespace, name);
         this.headlessName = name + "-headless";
     }
 
-    public static ZookeeperResource fromConfigMap(ConfigMap cm, Vertx vertx, K8SUtils k8s) {
+    public static ZookeeperResource fromConfigMap(ConfigMap cm) {
         String name = cm.getMetadata().getName() + "-zookeeper";
-        ZookeeperResource zk = new ZookeeperResource(name, cm.getMetadata().getNamespace(), vertx, k8s);
+        ZookeeperResource zk = new ZookeeperResource(name, cm.getMetadata().getNamespace());
 
         zk.setLabels(cm.getMetadata().getLabels());
 
@@ -85,9 +85,12 @@ public class ZookeeperResource extends AbstractResource {
         return zk;
     }
 
-    public static ZookeeperResource fromStatefulSet(StatefulSet ss, Vertx vertx, K8SUtils k8s) {
+    // This is currently needed only to delete the headless service. All other deletions can be done just using namespace
+    // and name. Do we need this as it is? Or would it be enough to create just and empty shell from name and namespace
+    // which would generate the headless name?
+    public static ZookeeperResource fromStatefulSet(StatefulSet ss) {
         String name = ss.getMetadata().getName() + "-zookeeper";
-        ZookeeperResource zk =  new ZookeeperResource(name, ss.getMetadata().getNamespace(), vertx, k8s);
+        ZookeeperResource zk =  new ZookeeperResource(name, ss.getMetadata().getNamespace());
 
         zk.setLabels(ss.getMetadata().getLabels());
         zk.setReplicas(ss.getSpec().getReplicas());
@@ -98,9 +101,8 @@ public class ZookeeperResource extends AbstractResource {
         return zk;
     }
 
-    public ResourceDiffResult diff()  {
+    public ResourceDiffResult diff(StatefulSet ss)  {
         ResourceDiffResult diff = new ResourceDiffResult();
-        StatefulSet ss = k8s.getStatefulSet(namespace, name);
 
         if (replicas > ss.getSpec().getReplicas()) {
             log.info("Diff: Expected replicas {}, actual replicas {}", replicas, ss.getSpec().getReplicas());
@@ -145,7 +147,7 @@ public class ZookeeperResource extends AbstractResource {
                 .withNewSpec()
                 .withType("ClusterIP")
                 .withSelector(getLabelsWithName())
-                .withPorts(k8s.createServicePort(clientPortName, clientPort, clientPort))
+                .withPorts(createServicePort(clientPortName, clientPort, clientPort))
                 .endSpec()
                 .build();
 
@@ -170,9 +172,7 @@ public class ZookeeperResource extends AbstractResource {
                 .withType("ClusterIP")
                 .withClusterIP("None")
                 .withSelector(getLabelsWithName())
-                .withPorts(k8s.createServicePort(clientPortName, clientPort, clientPort))
-                .withPorts(k8s.createServicePort(clusteringPortName, clusteringPort, clusteringPort))
-                .withPorts(k8s.createServicePort(leaderElectionPortName, leaderElectionPort, leaderElectionPort))
+                .withPorts(getServicePortList())
                 .endSpec()
                 .build();
 
@@ -191,12 +191,10 @@ public class ZookeeperResource extends AbstractResource {
                 .withName(name)
                 .withImage(image)
                 .withEnv(getEnvList())
-                .withVolumeMounts(k8s.createVolumeMount(volumeName, mounthPath))
-                .withPorts(k8s.createContainerPort(clientPortName, clientPort),
-                        k8s.createContainerPort(clusteringPortName, clusteringPort),
-                        k8s.createContainerPort(leaderElectionPortName, leaderElectionPort))
-                .withLivenessProbe(getHealthCheck())
-                .withReadinessProbe(getHealthCheck())
+                .withVolumeMounts(createVolumeMount(volumeName, mounthPath))
+                .withPorts(getContainerPortList())
+                .withLivenessProbe(createExecProbe(healthCheckScript, healthCheckInitialDelay, healthCheckTimeout))
+                .withReadinessProbe(createExecProbe(healthCheckScript, healthCheckInitialDelay, healthCheckTimeout))
                 .build();
 
         StatefulSet statefulSet = new StatefulSetBuilder()
@@ -218,7 +216,7 @@ public class ZookeeperResource extends AbstractResource {
                 .endMetadata()
                 .withNewSpec()
                 .withContainers(container)
-                .withVolumes(k8s.createEmptyDirVolume(volumeName))
+                .withVolumes(createEmptyDirVolume(volumeName))
                 .endSpec()
                 .endTemplate()
                 .endSpec()
@@ -232,8 +230,8 @@ public class ZookeeperResource extends AbstractResource {
         statefulSet.getSpec().setSelector(new LabelSelectorBuilder().withMatchLabels(getLabelsWithName()).build());
         statefulSet.getSpec().getTemplate().getMetadata().setLabels(getLabelsWithName());
         statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(image);
-        statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).setLivenessProbe(getHealthCheck());
-        statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).setReadinessProbe(getHealthCheck());
+        statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).setLivenessProbe(createExecProbe(healthCheckScript, healthCheckInitialDelay, healthCheckTimeout));
+        statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).setReadinessProbe(createExecProbe(healthCheckScript, healthCheckInitialDelay, healthCheckTimeout));
         statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(getEnvList());
 
         return statefulSet;
@@ -246,12 +244,22 @@ public class ZookeeperResource extends AbstractResource {
         return varList;
     }
 
-    private Probe getHealthCheck() {
-        return k8s.createExecProbe(healthCheckScript, healthCheckInitialDelay, healthCheckTimeout);
+    private List<ServicePort> getServicePortList() {
+        List<ServicePort> portList = new ArrayList<>();
+        portList.add(createServicePort(clientPortName, clientPort, clientPort));
+        portList.add(createServicePort(clusteringPortName, clusteringPort, clusteringPort));
+        portList.add(createServicePort(leaderElectionPortName, leaderElectionPort, leaderElectionPort));
+
+        return portList;
     }
 
-    private String getLockName() {
-        return "zookeeper::lock::" + name;
+    private List<ContainerPort> getContainerPortList() {
+        List<ContainerPort> portList = new ArrayList<>();
+        portList.add(createContainerPort(clientPortName, clientPort));
+        portList.add(createContainerPort(clusteringPortName, clusteringPort));
+        portList.add(createContainerPort(leaderElectionPortName, leaderElectionPort));
+
+        return portList;
     }
 
     public void setLabels(Map<String, String> labels) {
@@ -268,14 +276,6 @@ public class ZookeeperResource extends AbstractResource {
         this.replicas = replicas;
     }
 
-    public boolean exists() {
-        return k8s.statefulSetExists(namespace, name) && k8s.serviceExists(namespace, name) && k8s.serviceExists(namespace, headlessName);
-    }
-
-    public boolean atLeastOneExists() {
-        return k8s.statefulSetExists(namespace, name) || k8s.serviceExists(namespace, name) || k8s.serviceExists(namespace, headlessName);
-    }
-
     public void setImage(String image) {
         this.image = image;
     }
@@ -290,10 +290,6 @@ public class ZookeeperResource extends AbstractResource {
 
     public void setHealthCheckInitialDelay(int healthCheckInitialDelay) {
         this.healthCheckInitialDelay = healthCheckInitialDelay;
-    }
-
-    public boolean isReady() {
-        return exists() && k8s.getStatefulSetResource(namespace, name).isReady();
     }
 
     public int getReplicas() {

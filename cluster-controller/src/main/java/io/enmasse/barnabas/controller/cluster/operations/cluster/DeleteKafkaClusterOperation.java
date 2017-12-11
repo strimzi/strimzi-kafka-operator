@@ -4,6 +4,7 @@ import io.enmasse.barnabas.controller.cluster.K8SUtils;
 import io.enmasse.barnabas.controller.cluster.operations.OperationExecutor;
 import io.enmasse.barnabas.controller.cluster.operations.kubernetes.DeleteServiceOperation;
 import io.enmasse.barnabas.controller.cluster.operations.kubernetes.DeleteStatefulSetOperation;
+import io.enmasse.barnabas.controller.cluster.resources.KafkaResource;
 import io.vertx.core.*;
 import io.vertx.core.shareddata.Lock;
 import org.slf4j.Logger;
@@ -24,11 +25,13 @@ public class DeleteKafkaClusterOperation extends KafkaClusterOperation {
 
                 log.info("Deleting Kafka cluster {} from namespace {}", name, namespace);
 
+                KafkaResource kafka = KafkaResource.fromStatefulSet(k8s.getStatefulSet(namespace, name));
+
                 Future<Void> futureService = Future.future();
                 OperationExecutor.getInstance().execute(new DeleteServiceOperation(namespace, name), futureService.completer());
 
                 Future<Void> futureHeadlessService = Future.future();
-                OperationExecutor.getInstance().execute(new DeleteServiceOperation(namespace, name), futureHeadlessService.completer());
+                OperationExecutor.getInstance().execute(new DeleteServiceOperation(namespace, kafka.getHeadlessName()), futureHeadlessService.completer());
 
                 Future<Void> futureStatefulSet = Future.future();
                 OperationExecutor.getInstance().execute(new DeleteStatefulSetOperation(namespace, name), futureStatefulSet.completer());

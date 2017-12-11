@@ -29,66 +29,6 @@ public class K8SUtils {
     }
 
     /*
-      CREATE sub-blocks
-     */
-    public VolumeMount createVolumeMount(String name, String path) {
-        log.trace("Creating volume mount {} with path {}", name, path);
-        return new VolumeMountBuilder()
-                .withName(name)
-                .withMountPath(path)
-                .build();
-    }
-
-    public ContainerPort createContainerPort(String name, int port) {
-        log.trace("Creating container port {} named {}", port, name);
-        return new ContainerPortBuilder()
-                .withName(name)
-                .withProtocol("TCP")
-                .withContainerPort(port)
-                .build();
-    }
-
-    public ServicePort createServicePort(String name, int port, int targetPort) {
-        log.trace("Creating service port {} with target port {} named {}", port, targetPort, name);
-        return new ServicePortBuilder()
-                .withName(name)
-                .withProtocol("TCP")
-                .withPort(port)
-                .withNewTargetPort(targetPort)
-                .build();
-    }
-
-    public Volume createEmptyDirVolume(String name) {
-        log.trace("Creating emptyDir volume named {}", name);
-        return new VolumeBuilder()
-                .withName(name)
-                .withNewEmptyDir()
-                .endEmptyDir()
-                .build();
-    }
-
-    public Probe createExecProbe(String command, int initialDelay, int timeout) {
-        log.trace("Creating exec probe with command {}, initial delay {} and timeout {}", command, initialDelay, timeout);
-        return new ProbeBuilder().withNewExec()
-                .withCommand(command)
-                .endExec()
-                .withInitialDelaySeconds(initialDelay)
-                .withTimeoutSeconds(timeout)
-                .build();
-    }
-
-    public Probe createHttpProbe(String path, String port, int initialDelay, int timeout) {
-        log.trace("Creating http probe with path {}, port {}, initial delay {} and timeout {}", path, port, initialDelay, timeout);
-        return new ProbeBuilder().withNewHttpGet()
-                .withPath(path)
-                .withNewPort(port)
-                .endHttpGet()
-                .withInitialDelaySeconds(initialDelay)
-                .withTimeoutSeconds(timeout)
-                .build();
-    }
-
-    /*
       CREATE methods
      */
     public void createService(String namespace, Service svc) {

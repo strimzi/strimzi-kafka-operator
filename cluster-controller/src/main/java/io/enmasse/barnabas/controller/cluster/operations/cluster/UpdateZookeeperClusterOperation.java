@@ -32,8 +32,8 @@ public class UpdateZookeeperClusterOperation extends ZookeeperClusterOperation {
 
                 log.info("Updating Zookeeper cluster {} in namespace {}", name + "-zookeeper", namespace);
 
-                ZookeeperResource zk = ZookeeperResource.fromConfigMap(k8s.getConfigmap(namespace, name), vertx, k8s);
-                ResourceDiffResult diff = zk.diff();
+                ZookeeperResource zk = ZookeeperResource.fromConfigMap(k8s.getConfigmap(namespace, name));
+                ResourceDiffResult diff = zk.diff(k8s.getStatefulSet(namespace, name + "-zookeeper"));
 
                 Future<Void> chainFuture = Future.future();
 
