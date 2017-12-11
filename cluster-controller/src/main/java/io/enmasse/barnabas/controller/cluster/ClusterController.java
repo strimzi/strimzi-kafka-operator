@@ -347,7 +347,7 @@ public class ClusterController extends AbstractVerticle {
         String name = add.getMetadata().getName();
         log.info("Adding Kafka Connect cluster {}", name);
 
-        KafkaConnectResource.fromConfigMap(add, vertx, k8s).create(res -> {
+        opExec.execute(new CreateKafkaConnectClusterOperation(namespace, name), res -> {
             if (res.succeeded()) {
                 log.info("Kafka Connect cluster added {}", name);
             }
@@ -361,8 +361,8 @@ public class ClusterController extends AbstractVerticle {
         String name = cm.getMetadata().getName();
         log.info("Checking for updates in Kafka Connect cluster {}", cm.getMetadata().getName());
 
-        KafkaConnectResource.fromConfigMap(cm, vertx, k8s).update(res2 -> {
-            if (res2.succeeded()) {
+        opExec.execute(new UpdateKafkaConnectClusterOperation(namespace, name), res -> {
+            if (res.succeeded()) {
                 log.info("Kafka Connect cluster updated {}", name);
             }
             else {
@@ -374,22 +374,17 @@ public class ClusterController extends AbstractVerticle {
     private void deleteKafkaConnectCluster(Deployment dep)   {
         String name = dep.getMetadata().getName();
         log.info("Deleting cluster {}", name);
-
-        KafkaConnectResource.fromDeployment(dep, vertx, k8s).delete(res -> {
-            if (res.succeeded()) {
-                log.info("Kafka Connect cluster deleted {}", name);
-            }
-            else {
-                log.error("Failed to delete Kafka Connect cluster {}.", name);
-            }
-        });
+        deleteKafkaConnectCluster(namespace, name);
     }
 
     private void deleteKafkaConnectCluster(ConfigMap cm)   {
         String name = cm.getMetadata().getName();
         log.info("Deleting cluster {}", name);
+        deleteKafkaConnectCluster(namespace, name);
+    }
 
-        KafkaConnectResource.fromConfigMap(cm, vertx, k8s).delete(res -> {
+    private void deleteKafkaConnectCluster(String namespace, String name)   {
+        opExec.execute(new DeleteKafkaConnectClusterOperation(namespace, name), res -> {
             if (res.succeeded()) {
                 log.info("Kafka Connect cluster deleted {}", name);
             }

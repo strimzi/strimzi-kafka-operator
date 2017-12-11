@@ -11,6 +11,8 @@ import io.vertx.core.shareddata.Lock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -129,88 +131,6 @@ public class KafkaConnectResource extends AbstractResource {
         return kafkaConnect;
     }
 
-    public void create(Handler<AsyncResult<Void>> handler) {
-        vertx.sharedData().getLockWithTimeout(getLockName(), LOCK_TIMEOUT, res -> {
-            if (res.succeeded()) {
-                Lock lock = res.result();
-                if (!exists()) {
-                    vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
-                            future -> {
-                                log.info("Creating Kafka Connect {}", name);
-                                try {
-                                    k8s.createService(namespace, generateService());
-                                    k8s.createDeployment(namespace, generateDeployment());
-                                    future.complete();
-                                }
-                                catch (Exception e) {
-                                    log.error("Caught exceptoion: {}", e.toString());
-                                    future.fail(e);
-                                }
-                            }, false, res2 -> {
-                                if (res2.succeeded()) {
-                                    log.info("Kafka Connect cluster created {}", name);
-                                    lock.release();
-                                    handler.handle(Future.succeededFuture());
-                                } else {
-                                    log.error("Failed to create Kafka Connect cluster {}", name);
-                                    lock.release();
-                                    handler.handle(Future.failedFuture("Failed to create Kafka cluster"));
-                                }
-                            });
-                }
-                else {
-                    log.info("Kafka Connect cluster {} seems to already exist", name);
-                    lock.release();
-                    handler.handle(Future.succeededFuture());
-                }
-            } else {
-                log.error("Failed to acquire lock to create Kafka Connect cluster {}", name);
-                handler.handle(Future.failedFuture("Failed to acquire lock to create Kafka Connect cluster"));
-            }
-        });
-    }
-
-    public void delete(Handler<AsyncResult<Void>> handler) {
-        vertx.sharedData().getLockWithTimeout(getLockName(), LOCK_TIMEOUT, res -> {
-            if (res.succeeded()) {
-                Lock lock = res.result();
-                if (atLeastOneExists()) {
-                    vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
-                            future -> {
-                                log.info("Deleting Kafka Connect {}", name);
-                                try {
-                                    k8s.deleteService(namespace, name);
-                                    k8s.deleteDeployment(namespace, name);
-                                    future.complete();
-                                }
-                                catch (Exception e) {
-                                    log.error("Caught exceptoion: {}", e.toString());
-                                    future.fail(e);
-                                }
-                            }, false, res2 -> {
-                                if (res2.succeeded()) {
-                                    log.info("Kafka Connect cluster {} delete", name);
-                                    lock.release();
-                                    handler.handle(Future.succeededFuture());
-                                } else {
-                                    log.error("Failed to delete Kafka Connect cluster {}", name);
-                                    lock.release();
-                                    handler.handle(Future.failedFuture("Failed to delete Kafka Connect cluster"));
-                                }
-                            });
-                }
-                else {
-                    log.info("Kafka cluster {} seems to not exist anymore", name);
-                    lock.release();
-                    handler.handle(Future.succeededFuture());
-                }
-            } else {
-                log.error("Failed to acquire lock to delete Kafka cluster {}", name);
-                handler.handle(Future.failedFuture("Failed to acquire lock to delete Kafka cluster"));
-            }
-        });
-    }
-
     public ResourceDiffResult diff()  {
         ResourceDiffResult diff = new ResourceDiffResult();
         Deployment dep = k8s.getDeployment(namespace, name);
@@ -263,77 +183,12 @@ public class KafkaConnectResource extends AbstractResource {
         return diff;
     }
 
-    public void update(Handler<AsyncResult<Void>> handler) {
-        vertx.sharedData().getLockWithTimeout(getLockName(), LOCK_TIMEOUT, res -> {
-            if (res.succeeded()) {
-                Lock lock = res.result();
-                ResourceDiffResult diff = diff();
-                if (exists() && diff.getDifferent()) {
-                    vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
-                            future -> {
-                                log.info("Updating Kafka Connect {}", name);
-                                try {
-                                    if (diff.getScaleDown()) {
-                                        log.info("Scaling Kafka Connect down to {} replicas", replicas);
-                                        k8s.getDeploymentResource(namespace, name).scale(replicas, true);
-                                    }
-
-                                    log.info("Patching deployment");
-
-                                    // TODO: If labels are changed, we should relabel also all replica sets and pods???\
-                                    // TODO: Run separate diff for the service
-
-                                    k8s.getDeploymentResource(namespace, name).replace(generateDeployment());
-                                    k8s.getServiceResource(namespace, name).replace(generateService());
-
-
-                                    if (diff.getScaleUp()) {
-                                        log.info("Scaling Kafka Connect up to {} replicas", replicas);
-                                        k8s.getDeploymentResource(namespace, name).scale(replicas, true);
-                                    }
-
-                                    // No need for rolling update - deployment will do it automatically?
-
-                                    future.complete();
-                                }
-                                catch (Exception e) {
-                                    log.error("Caught exceptoion: {}", e.toString());
-                                    future.fail(e);
-                                }
-                            }, false, res2 -> {
-                                if (res2.succeeded()) {
-                                    log.info("Kafka Connect cluster updated {}", name);
-                                    lock.release();
-                                    handler.handle(Future.succeededFuture());
-                                } else {
-                                    log.error("Failed to update Kafka Connect cluster {}", name);
-                                    lock.release();
-                                    handler.handle(Future.failedFuture("Failed to update Kafka Connect cluster"));
-                                }
-                            });
-                }
-                else if (!diff.getDifferent()) {
-                    log.info("Kafka Connect cluster {} is up to date", name);
-                    lock.release();
-                    handler.handle(Future.succeededFuture());
-                }
-                else {
-                    log.info("Kafka Connect cluster {} seems to not exist", name);
-                    lock.release();
-                    handler.handle(Future.succeededFuture());
-                }
-            } else {
-                log.error("Failed to acquire lock to create Kafka Connect cluster {}", name);
-                handler.handle(Future.failedFuture("Failed to acquire lock to create Kafka Connect cluster"));
-            }
-        });
-    }
-
-    private Service generateService() {
+    public Service generateService() {
         Service svc = new ServiceBuilder()
                 .withNewMetadata()
                 .withName(name)
                 .withLabels(getLabelsWithName())
+                .withNamespace(namespace)
                 .endMetadata()
                 .withNewSpec()
                 .withType("ClusterIP")
@@ -345,28 +200,28 @@ public class KafkaConnectResource extends AbstractResource {
         return svc;
     }
 
-    private Deployment generateDeployment() {
+    public Service patchService(Service svc) {
+        svc.getMetadata().setLabels(getLabelsWithName());
+        svc.getSpec().setSelector(getLabelsWithName());
+
+        return svc;
+    }
+
+    public Deployment generateDeployment() {
         Container container = new ContainerBuilder()
                 .withName(name)
                 .withImage(image)
-                .withEnv(new EnvVarBuilder().withName(KEY_BOOTSTRAP_SERVERS).withValue(bootstrapServers).build(),
-                        new EnvVarBuilder().withName(KEY_GROUP_ID).withValue(groupId).build(),
-                        new EnvVarBuilder().withName(KEY_KEY_CONVERTER).withValue(keyConverter).build(),
-                        new EnvVarBuilder().withName(KEY_KEY_CONVERTER_SCHEMAS_EXAMPLE).withValue(String.valueOf(keyConverterSchemasEnable)).build(),
-                        new EnvVarBuilder().withName(KEY_VALUE_CONVERTER).withValue(valueConverter).build(),
-                        new EnvVarBuilder().withName(KEY_VALUE_CONVERTER_SCHEMAS_EXAMPLE).withValue(String.valueOf(valueConverterSchemasEnable)).build(),
-                        new EnvVarBuilder().withName(KEY_CONFIG_STORAGE_REPLICATION_FACTOR).withValue(String.valueOf(configStorageReplicationFactor)).build(),
-                        new EnvVarBuilder().withName(KEY_OFFSET_STORAGE_REPLICATION_FACTOR).withValue(String.valueOf(offsetStorageReplicationFactor)).build(),
-                        new EnvVarBuilder().withName(KEY_STATUS_STORAGE_REPLICATION_FACTOR).withValue(String.valueOf(statusStorageReplicationFactor)).build())
+                .withEnv(getEnvList())
                 .withPorts(k8s.createContainerPort(restApiPortName, restApiPort))
-                .withLivenessProbe(k8s.createHttpProbe(healthCheckPath, restApiPortName, healthCheckInitialDelay, healthCheckTimeout))
-                .withReadinessProbe(k8s.createHttpProbe(healthCheckPath, restApiPortName, healthCheckInitialDelay, healthCheckTimeout))
+                .withLivenessProbe(getHealthCheck())
+                .withReadinessProbe(getHealthCheck())
                 .build();
 
         Deployment dep = new DeploymentBuilder()
                 .withNewMetadata()
                 .withName(name)
                 .withLabels(getLabelsWithName())
+                .withNamespace(namespace)
                 .endMetadata()
                 .withNewSpec()
                 .withStrategy(new DeploymentStrategyBuilder().withType("RollingUpdate").withRollingUpdate(new RollingUpdateDeploymentBuilder().withMaxSurge(new IntOrString(1)).withMaxUnavailable(new IntOrString(0)).build()).build())
@@ -383,6 +238,36 @@ public class KafkaConnectResource extends AbstractResource {
                 .build();
 
         return dep;
+    }
+
+    public Deployment patchDeployment(Deployment dep) {
+        dep.getMetadata().setLabels(getLabelsWithName());
+        dep.getSpec().getTemplate().getMetadata().setLabels(getLabelsWithName());
+        dep.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(image);
+        dep.getSpec().getTemplate().getSpec().getContainers().get(0).setLivenessProbe(getHealthCheck());
+        dep.getSpec().getTemplate().getSpec().getContainers().get(0).setReadinessProbe(getHealthCheck());
+        dep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(getEnvList());
+
+        return dep;
+    }
+
+    private List<EnvVar> getEnvList() {
+        List<EnvVar> varList = new ArrayList<>();
+        varList.add(new EnvVarBuilder().withName(KEY_BOOTSTRAP_SERVERS).withValue(bootstrapServers).build());
+        varList.add(new EnvVarBuilder().withName(KEY_GROUP_ID).withValue(groupId).build());
+        varList.add(new EnvVarBuilder().withName(KEY_KEY_CONVERTER).withValue(keyConverter).build());
+        varList.add(new EnvVarBuilder().withName(KEY_KEY_CONVERTER_SCHEMAS_EXAMPLE).withValue(String.valueOf(keyConverterSchemasEnable)).build());
+        varList.add(new EnvVarBuilder().withName(KEY_VALUE_CONVERTER).withValue(valueConverter).build());
+        varList.add(new EnvVarBuilder().withName(KEY_VALUE_CONVERTER_SCHEMAS_EXAMPLE).withValue(String.valueOf(valueConverterSchemasEnable)).build());
+        varList.add(new EnvVarBuilder().withName(KEY_CONFIG_STORAGE_REPLICATION_FACTOR).withValue(String.valueOf(configStorageReplicationFactor)).build());
+        varList.add(new EnvVarBuilder().withName(KEY_OFFSET_STORAGE_REPLICATION_FACTOR).withValue(String.valueOf(offsetStorageReplicationFactor)).build());
+        varList.add(new EnvVarBuilder().withName(KEY_STATUS_STORAGE_REPLICATION_FACTOR).withValue(String.valueOf(statusStorageReplicationFactor)).build());
+
+        return varList;
+    }
+
+    private Probe getHealthCheck() {
+        return k8s.createHttpProbe(healthCheckPath, restApiPortName, healthCheckInitialDelay, healthCheckTimeout);
     }
 
     private String getLockName() {
@@ -451,5 +336,9 @@ public class KafkaConnectResource extends AbstractResource {
 
     public boolean isReady() {
         return exists() && k8s.getDeploymentResource(namespace, name).isReady();
+    }
+
+    public int getReplicas() {
+        return replicas;
     }
 }

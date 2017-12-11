@@ -9,7 +9,7 @@ import io.vertx.core.shareddata.Lock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DeleteKafkaClusterOperation extends ZookeeperClusterOperation {
+public class DeleteKafkaClusterOperation extends KafkaClusterOperation {
     private static final Logger log = LoggerFactory.getLogger(DeleteKafkaClusterOperation.class.getName());
 
     public DeleteKafkaClusterOperation(String namespace, String name) {

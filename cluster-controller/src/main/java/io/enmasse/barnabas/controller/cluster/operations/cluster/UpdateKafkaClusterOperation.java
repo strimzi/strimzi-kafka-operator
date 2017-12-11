@@ -17,7 +17,7 @@ import io.vertx.core.shareddata.Lock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class UpdateKafkaClusterOperation extends ZookeeperClusterOperation {
+public class UpdateKafkaClusterOperation extends KafkaClusterOperation {
     private static final Logger log = LoggerFactory.getLogger(UpdateKafkaClusterOperation.class.getName());
 
     private K8SUtils k8s;

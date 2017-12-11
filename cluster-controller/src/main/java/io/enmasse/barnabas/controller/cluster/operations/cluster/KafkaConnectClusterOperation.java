@@ -1,0 +1,11 @@
+package io.enmasse.barnabas.controller.cluster.operations.cluster;
+
+public abstract class KafkaConnectClusterOperation extends ClusterOperation {
+    protected KafkaConnectClusterOperation(String namespace, String name) {
+        super(namespace, name);
+    }
+
+    protected String getLockName() {
+        return "lock::kafka-connect::" + namespace + "::" + name;
+    }
+}

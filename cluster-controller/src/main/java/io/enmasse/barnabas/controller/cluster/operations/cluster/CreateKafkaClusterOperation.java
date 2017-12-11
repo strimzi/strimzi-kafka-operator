@@ -11,7 +11,7 @@ import io.vertx.core.shareddata.Lock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CreateKafkaClusterOperation extends ZookeeperClusterOperation {
+public class CreateKafkaClusterOperation extends KafkaClusterOperation {
     private static final Logger log = LoggerFactory.getLogger(CreateKafkaClusterOperation.class.getName());
 
     public CreateKafkaClusterOperation(String namespace, String name) {
@@ -44,7 +44,7 @@ public class CreateKafkaClusterOperation extends ZookeeperClusterOperation {
                         lock.release();
                     } else {
                         log.error("Kafka cluster {} failed to create in namespace {}", name, namespace);
-                        handler.handle(Future.failedFuture("Failed to create Zookeeper cluster"));
+                        handler.handle(Future.failedFuture("Failed to create Kafka cluster"));
                         lock.release();
                     }
                 });
