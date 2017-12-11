@@ -89,7 +89,7 @@ public class ZookeeperResource extends AbstractResource {
     // and name. Do we need this as it is? Or would it be enough to create just and empty shell from name and namespace
     // which would generate the headless name?
     public static ZookeeperResource fromStatefulSet(StatefulSet ss) {
-        String name = ss.getMetadata().getName() + "-zookeeper";
+        String name = ss.getMetadata().getName();
         ZookeeperResource zk =  new ZookeeperResource(name, ss.getMetadata().getNamespace());
 
         zk.setLabels(ss.getMetadata().getLabels());
