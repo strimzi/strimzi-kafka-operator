@@ -31,10 +31,6 @@ public class ClusterController extends AbstractVerticle {
 
     private Watch configMapWatch;
 
-    //private Map<ResourceId, Resource> resources = new HashMap<ResourceId, Resource<S, ServiceFluentImpl<DoneableService>>>();
-
-    private WorkerExecutor executor;
-
     public ClusterController(ClusterControllerConfig config) throws Exception {
         log.info("Creating ClusterController");
 
@@ -47,7 +43,8 @@ public class ClusterController extends AbstractVerticle {
     public void start(Future<Void> start) {
         log.info("Starting ClusterController");
 
-        this.executor = getVertx().createSharedWorkerExecutor("kubernetes-ops-pool", 5, 120000000000l); // time is in ns!
+        // Configure the executor here, but it is used only in other places
+        getVertx().createSharedWorkerExecutor("kubernetes-ops-pool", 5, 120000000000l); // time is in ns!
 
         createConfigMapWatch(res -> {
             if (res.succeeded())    {
