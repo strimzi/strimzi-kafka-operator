@@ -495,6 +495,10 @@ public class KafkaResource extends AbstractResource {
     public void setTransactionStateLogReplicationFactor(int transactionStateLogReplicationFactor) {
         this.transactionStateLogReplicationFactor = transactionStateLogReplicationFactor;
     }
+
+    public boolean isReady() {
+        return exists() && k8s.getStatefulSetResource(namespace, name).isReady();
+    }
 }
 
 class RollingUpdateWatcher<T> implements Watcher<T> {

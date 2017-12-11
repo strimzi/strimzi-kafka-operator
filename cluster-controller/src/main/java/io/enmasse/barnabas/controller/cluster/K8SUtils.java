@@ -96,14 +96,29 @@ public class K8SUtils {
         client.services().inNamespace(namespace).createOrReplace(svc);
     }
 
+    public void createService(Service svc) {
+        log.info("Creating service {}", svc.getMetadata().getName());
+        client.services().createOrReplace(svc);
+    }
+
     public void createStatefulSet(String namespace, StatefulSet ss) {
         log.info("Creating stateful set {}", ss.getMetadata().getName());
         client.apps().statefulSets().inNamespace(namespace).createOrReplace(ss);
     }
 
+    public void createStatefulSet(StatefulSet ss) {
+        log.info("Creating stateful set {}", ss.getMetadata().getName());
+        client.apps().statefulSets().createOrReplace(ss);
+    }
+
     public void createDeployment(String namespace, Deployment dep) {
         log.info("Creating deployment {}", dep.getMetadata().getName());
         client.extensions().deployments().inNamespace(namespace).createOrReplace(dep);
+    }
+
+    public void createDeployment(Deployment dep) {
+        log.info("Creating deployment {}", dep.getMetadata().getName());
+        client.extensions().deployments().createOrReplace(dep);
     }
 
     /*
@@ -139,6 +154,10 @@ public class K8SUtils {
 
     public Resource<Service, DoneableService> getServiceResource(String namespace, String name)    {
         return client.services().inNamespace(namespace).withName(name);
+    }
+
+    public ConfigMap getConfigmap(String namespace, String name) {
+        return client.configMaps().inNamespace(namespace).withName(name).get();
     }
 
     public List<ConfigMap> getConfigmaps(String namespace, Map<String, String> labels) {

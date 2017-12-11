@@ -317,11 +317,12 @@ public class ZookeeperResource extends AbstractResource {
         });
     }
 
-    private Service generateService() {
+    public Service generateService() {
         Service svc = new ServiceBuilder()
                 .withNewMetadata()
                 .withName(name)
                 .withLabels(getLabelsWithName())
+                .withNamespace(namespace)
                 .endMetadata()
                 .withNewSpec()
                 .withType("ClusterIP")
@@ -340,11 +341,12 @@ public class ZookeeperResource extends AbstractResource {
         return svc;
     }
 
-    private Service generateHeadlessService() {
+    public Service generateHeadlessService() {
         Service svc = new ServiceBuilder()
                 .withNewMetadata()
                 .withName(headlessName)
                 .withLabels(getLabelsWithName(headlessName))
+                .withNamespace(namespace)
                 .endMetadata()
                 .withNewSpec()
                 .withType("ClusterIP")
@@ -366,7 +368,7 @@ public class ZookeeperResource extends AbstractResource {
         return svc;
     }
 
-    private StatefulSet generateStatefulSet() {
+    public StatefulSet generateStatefulSet() {
         Container container = new ContainerBuilder()
                 .withName(name)
                 .withImage(image)
@@ -383,6 +385,7 @@ public class ZookeeperResource extends AbstractResource {
                 .withNewMetadata()
                 .withName(name)
                 .withLabels(getLabelsWithName())
+                .withNamespace(namespace)
                 .endMetadata()
                 .withNewSpec()
                 .withPodManagementPolicy("Parallel")
@@ -469,5 +472,9 @@ public class ZookeeperResource extends AbstractResource {
 
     public void setHealthCheckInitialDelay(int healthCheckInitialDelay) {
         this.healthCheckInitialDelay = healthCheckInitialDelay;
+    }
+
+    public boolean isReady() {
+        return exists() && k8s.getStatefulSetResource(namespace, name).isReady();
     }
 }

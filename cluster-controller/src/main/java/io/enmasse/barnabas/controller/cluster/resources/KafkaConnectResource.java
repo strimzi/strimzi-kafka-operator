@@ -448,4 +448,8 @@ public class KafkaConnectResource extends AbstractResource {
     public void setHealthCheckInitialDelay(int delay) {
         this.healthCheckInitialDelay = delay;
     }
+
+    public boolean isReady() {
+        return exists() && k8s.getDeploymentResource(namespace, name).isReady();
+    }
 }

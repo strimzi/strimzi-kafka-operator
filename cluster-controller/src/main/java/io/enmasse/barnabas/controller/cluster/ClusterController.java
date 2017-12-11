@@ -1,5 +1,7 @@
 package io.enmasse.barnabas.controller.cluster;
 
+import io.enmasse.barnabas.controller.cluster.operations.CreateZookeeperClusterOperation;
+import io.enmasse.barnabas.controller.cluster.operations.DeleteZookeeperClusterOperation;
 import io.enmasse.barnabas.controller.cluster.resources.KafkaConnectResource;
 import io.enmasse.barnabas.controller.cluster.resources.KafkaResource;
 import io.enmasse.barnabas.controller.cluster.resources.ZookeeperResource;
@@ -265,7 +267,7 @@ public class ClusterController extends AbstractVerticle {
         String name = add.getMetadata().getName();
         log.info("Adding cluster {}", name);
 
-        ZookeeperResource.fromConfigMap(add, vertx, k8s).create(res -> {
+        new CreateZookeeperClusterOperation(vertx, k8s, namespace, name).execute(res -> {
             if (res.succeeded()) {
                 log.info("Zookeeper cluster added {}", name);
                 KafkaResource.fromConfigMap(add, vertx, k8s).create(res2 -> {
@@ -313,7 +315,7 @@ public class ClusterController extends AbstractVerticle {
         KafkaResource.fromStatefulSet(ss, vertx, k8s).delete(res -> {
             if (res.succeeded()) {
                 log.info("Kafka cluster deleted {}", name);
-                ZookeeperResource.fromStatefulSet(ss, vertx, k8s).delete(res2 -> {
+                new DeleteZookeeperClusterOperation(vertx, k8s, namespace, name).execute(res2 -> {
                     if (res2.succeeded()) {
                         log.info("Zookeeper cluster deleted {}", name);
                     }
@@ -335,7 +337,7 @@ public class ClusterController extends AbstractVerticle {
         KafkaResource.fromConfigMap(cm, vertx, k8s).delete(res -> {
             if (res.succeeded()) {
                 log.info("Kafka cluster deleted {}", name);
-                ZookeeperResource.fromConfigMap(cm, vertx, k8s).delete(res2 -> {
+                new DeleteZookeeperClusterOperation(vertx, k8s, namespace, name).execute(res2 -> {
                     if (res2.succeeded()) {
                         log.info("Zookeeper cluster deleted {}", name);
                     }
