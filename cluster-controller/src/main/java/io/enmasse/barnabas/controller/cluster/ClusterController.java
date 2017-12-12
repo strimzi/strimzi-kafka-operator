@@ -1,11 +1,7 @@
 package io.enmasse.barnabas.controller.cluster;
 
-import io.enmasse.barnabas.controller.cluster.operations.Operation;
 import io.enmasse.barnabas.controller.cluster.operations.OperationExecutor;
 import io.enmasse.barnabas.controller.cluster.operations.cluster.*;
-import io.enmasse.barnabas.controller.cluster.resources.KafkaConnectResource;
-import io.enmasse.barnabas.controller.cluster.resources.KafkaResource;
-import io.enmasse.barnabas.controller.cluster.resources.ZookeeperResource;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;

@@ -2,7 +2,6 @@ package io.enmasse.barnabas.controller.cluster.operations.cluster;
 
 import io.enmasse.barnabas.controller.cluster.K8SUtils;
 import io.enmasse.barnabas.controller.cluster.operations.OperationExecutor;
-import io.enmasse.barnabas.controller.cluster.operations.kubernetes.ManualRollingUpdateOperation;
 import io.enmasse.barnabas.controller.cluster.operations.kubernetes.PatchOperation;
 import io.enmasse.barnabas.controller.cluster.operations.kubernetes.ScaleDownOperation;
 import io.enmasse.barnabas.controller.cluster.operations.kubernetes.ScaleUpOperation;

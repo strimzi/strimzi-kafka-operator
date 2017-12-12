@@ -4,7 +4,6 @@ import io.enmasse.barnabas.controller.cluster.K8SUtils;
 import io.enmasse.barnabas.controller.cluster.operations.OperationExecutor;
 import io.enmasse.barnabas.controller.cluster.operations.kubernetes.DeleteDeploymentOperation;
 import io.enmasse.barnabas.controller.cluster.operations.kubernetes.DeleteServiceOperation;
-import io.enmasse.barnabas.controller.cluster.operations.kubernetes.DeleteStatefulSetOperation;
 import io.vertx.core.*;
 import io.vertx.core.shareddata.Lock;
 import org.slf4j.Logger;
