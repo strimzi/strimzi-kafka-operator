@@ -45,7 +45,7 @@ public abstract class AbstractResource implements Resource {
                 .withName(name)
                 .withMountPath(path)
                 .build();
-        log.trace("Creating volume mount {}", volumeMount);
+        log.trace("Created volume mount {}", volumeMount);
         return volumeMount;
     }
 
@@ -55,7 +55,7 @@ public abstract class AbstractResource implements Resource {
                 .withProtocol(protocol)
                 .withContainerPort(port)
                 .build();
-        log.trace("Creating container port {}", containerPort);
+        log.trace("Created container port {}", containerPort);
         return containerPort;
     }
 
@@ -66,7 +66,7 @@ public abstract class AbstractResource implements Resource {
                 .withPort(port)
                 .withNewTargetPort(targetPort)
                 .build();
-        log.trace("Creating service port {}", servicePort);
+        log.trace("Created service port {}", servicePort);
         return servicePort;
     }
 
@@ -76,7 +76,7 @@ public abstract class AbstractResource implements Resource {
                 .withNewEmptyDir()
                 .endEmptyDir()
                 .build();
-        log.trace("Creating emptyDir volume named {}", volume);
+        log.trace("Created emptyDir volume named {}", volume);
         return volume;
     }
 
@@ -87,7 +87,7 @@ public abstract class AbstractResource implements Resource {
                 .withInitialDelaySeconds(initialDelay)
                 .withTimeoutSeconds(timeout)
                 .build();
-        log.trace("Creating exec probe {}", probe);
+        log.trace("Created exec probe {}", probe);
         return probe;
     }
 
@@ -99,7 +99,7 @@ public abstract class AbstractResource implements Resource {
                 .withInitialDelaySeconds(initialDelay)
                 .withTimeoutSeconds(timeout)
                 .build();
-        log.trace("Creating http probe {}", probe);
+        log.trace("Created http probe {}", probe);
         return probe;
     }
 
@@ -116,7 +116,7 @@ public abstract class AbstractResource implements Resource {
                 .withPorts(ports)
                 .endSpec()
                 .build();
-        log.trace("Creating service {}", service);
+        log.trace("Created service {}", service);
         return service;
     }
 
@@ -134,7 +134,7 @@ public abstract class AbstractResource implements Resource {
                 .withPorts(ports)
                 .endSpec()
                 .build();
-        log.trace("Creating headless service {}", service);
+        log.trace("Created headless service {}", service);
         return service;
     }
 }
