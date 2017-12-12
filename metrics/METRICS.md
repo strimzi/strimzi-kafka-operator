@@ -1,5 +1,18 @@
 This section describes how it's possible to deploy a Prometheus server for scraping metrics from the Kafka cluster and showing them using a Grafana dashboard. The provided resources for deploying can't be considered production grade; they are used just as an example to show how it's possible to use the metrics feature provided in this project.
 
+If you are going to use `minikube` or `minishift` for your Apache Kafka deployment adding Prometheus and Grafana servers, it would be better to increase the default amount of memory available to the virtual machine (i.e. not using the default 2 GB of RAM but 4 GB instead).
+For doing that, you can start the OpenShift cluster by running
+
+```
+minishift start --memory 4GB
+```
+
+In case you want to use Kubernetes instead, you can run
+
+```
+minikube start --memory 4096
+```
+
 # Deploying on OpenShift
 
 ## Prometheus
