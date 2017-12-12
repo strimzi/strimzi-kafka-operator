@@ -85,7 +85,7 @@
               {
                 "expr": "rate(process_cpu_seconds_total{job=\"kafka_job\"}[1m])",
                 "intervalFactor": 2,
-                "legendFormat": "{{instance}}",
+                "legendFormat": "{{kubernetes_pod_name}}",
                 "metric": "process_cpu_seconds_total",
                 "refId": "A",
                 "step": 4
@@ -165,7 +165,7 @@
               {
                 "expr": "sum without(area)(jvm_memory_bytes_used{job=\"kafka_job\"})",
                 "intervalFactor": 2,
-                "legendFormat": "{{instance}}",
+                "legendFormat": "{{kubernetes_pod_name}}",
                 "metric": "jvm_memory_bytes_used",
                 "refId": "A",
                 "step": 4
@@ -245,7 +245,7 @@
               {
                 "expr": "sum without(gc)(rate(jvm_gc_collection_seconds_sum{job=\"kafka_job\"}[5m]))",
                 "intervalFactor": 2,
-                "legendFormat": "{{instance}}",
+                "legendFormat": "{{kubernetes_pod_name}}",
                 "metric": "jvm_gc_collection_seconds_sum",
                 "refId": "A",
                 "step": 4

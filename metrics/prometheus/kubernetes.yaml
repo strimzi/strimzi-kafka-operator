@@ -47,6 +47,9 @@ data:
           - source_labels: [__meta_kubernetes_pod_container_port_name]
             action: keep
             regex: kafkametrics.*
+          - source_labels: [__meta_kubernetes_pod_name]
+            action: replace
+            target_label: kubernetes_pod_name
 ---
 apiVersion: v1
 kind: Service
