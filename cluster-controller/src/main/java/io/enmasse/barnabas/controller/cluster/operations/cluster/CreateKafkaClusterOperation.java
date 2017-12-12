@@ -5,7 +5,6 @@ import io.enmasse.barnabas.controller.cluster.operations.OperationExecutor;
 import io.enmasse.barnabas.controller.cluster.operations.kubernetes.CreateServiceOperation;
 import io.enmasse.barnabas.controller.cluster.operations.kubernetes.CreateStatefulSetOperation;
 import io.enmasse.barnabas.controller.cluster.resources.KafkaResource;
-import io.enmasse.barnabas.controller.cluster.resources.ZookeeperResource;
 import io.vertx.core.*;
 import io.vertx.core.shareddata.Lock;
 import org.slf4j.Logger;

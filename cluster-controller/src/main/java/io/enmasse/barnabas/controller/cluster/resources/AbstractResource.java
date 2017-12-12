@@ -1,10 +1,6 @@
 package io.enmasse.barnabas.controller.cluster.resources;
 
-import io.enmasse.barnabas.controller.cluster.K8SUtils;
 import io.fabric8.kubernetes.api.model.*;
-import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

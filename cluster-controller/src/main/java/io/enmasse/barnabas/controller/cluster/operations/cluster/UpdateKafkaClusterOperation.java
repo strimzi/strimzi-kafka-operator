@@ -8,7 +8,6 @@ import io.enmasse.barnabas.controller.cluster.operations.kubernetes.ScaleDownOpe
 import io.enmasse.barnabas.controller.cluster.operations.kubernetes.ScaleUpOperation;
 import io.enmasse.barnabas.controller.cluster.resources.KafkaResource;
 import io.enmasse.barnabas.controller.cluster.resources.ResourceDiffResult;
-import io.enmasse.barnabas.controller.cluster.resources.ZookeeperResource;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
