@@ -32,8 +32,17 @@ public class UpdateZookeeperClusterOperation extends ZookeeperClusterOperation {
 
                 log.info("Updating Zookeeper cluster {} in namespace {}", name + "-zookeeper", namespace);
 
-                ZookeeperResource zk = ZookeeperResource.fromConfigMap(k8s.getConfigmap(namespace, name));
-                ResourceDiffResult diff = zk.diff(k8s.getStatefulSet(namespace, name + "-zookeeper"));
+                ResourceDiffResult diff;
+                ZookeeperResource zk;
+                try {
+                    zk = ZookeeperResource.fromConfigMap(k8s.getConfigmap(namespace, name));
+                    diff = zk.diff(k8s.getStatefulSet(namespace, name + "-zookeeper"));
+                } catch (Exception e) {
+                    log.error("Caught exception while updating Zookeeper cluster", e);
+                    handler.handle(Future.failedFuture(e));
+                    lock.release();
+                    return;
+                }
 
                 Future<Void> chainFuture = Future.future();
 

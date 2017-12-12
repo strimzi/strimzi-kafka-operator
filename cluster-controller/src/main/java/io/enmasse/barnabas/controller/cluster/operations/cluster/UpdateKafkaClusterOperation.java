@@ -35,8 +35,17 @@ public class UpdateKafkaClusterOperation extends KafkaClusterOperation {
 
                 log.info("Updating Kafka cluster {} in namespace {}", name, namespace);
 
-                KafkaResource kafka = KafkaResource.fromConfigMap(k8s.getConfigmap(namespace, name));
-                ResourceDiffResult diff = kafka.diff(k8s.getStatefulSet(namespace, name));
+                ResourceDiffResult diff;
+                KafkaResource kafka;
+                try {
+                    kafka = KafkaResource.fromConfigMap(k8s.getConfigmap(namespace, name));
+                    diff = kafka.diff(k8s.getStatefulSet(namespace, name));
+                } catch (Exception e) {
+                    log.error("Caught exception while updating Kafka cluster", e);
+                    handler.handle(Future.failedFuture(e));
+                    lock.release();
+                    return;
+                }
 
                 Future<Void> chainFuture = Future.future();
 
