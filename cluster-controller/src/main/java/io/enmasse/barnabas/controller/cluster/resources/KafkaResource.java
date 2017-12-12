@@ -158,13 +158,6 @@ public class KafkaResource extends AbstractResource {
                 Collections.singletonList(createServicePort(clientPortName, clientPort, clientPort, "TCP")));
     }
 
-    public Service patchService(Service svc) {
-        svc.getMetadata().setLabels(getLabelsWithName());
-        svc.getSpec().setSelector(getLabelsWithName());
-
-        return svc;
-    }
-
     public Service generateHeadlessService() {
 
         return createHeadlessService(headlessName,
@@ -172,10 +165,8 @@ public class KafkaResource extends AbstractResource {
     }
 
     public Service patchHeadlessService(Service svc) {
-        svc.getMetadata().setLabels(getLabelsWithName(headlessName));
-        svc.getSpec().setSelector(getLabelsWithName());
 
-        return svc;
+        return patchHeadlessService(headlessName, svc);
     }
 
     public StatefulSet generateStatefulSet() {

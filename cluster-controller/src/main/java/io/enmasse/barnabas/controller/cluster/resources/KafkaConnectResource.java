@@ -181,13 +181,6 @@ public class KafkaConnectResource extends AbstractResource {
                 Collections.singletonList(createServicePort(restApiPortName, restApiPort, restApiPort, "TCP")));
     }
 
-    public Service patchService(Service svc) {
-        svc.getMetadata().setLabels(getLabelsWithName());
-        svc.getSpec().setSelector(getLabelsWithName());
-
-        return svc;
-    }
-
     public Deployment generateDeployment() {
         Container container = new ContainerBuilder()
                 .withName(name)
