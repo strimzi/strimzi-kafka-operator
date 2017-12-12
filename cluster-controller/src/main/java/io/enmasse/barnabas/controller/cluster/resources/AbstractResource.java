@@ -137,4 +137,18 @@ public abstract class AbstractResource implements Resource {
         log.trace("Created headless service {}", service);
         return service;
     }
+
+    public Service patchService(Service svc) {
+        svc.getMetadata().setLabels(getLabelsWithName());
+        svc.getSpec().setSelector(getLabelsWithName());
+        log.trace("Patched service {}", svc);
+        return svc;
+    }
+
+    protected Service patchHeadlessService(String name, Service svc) {
+        svc.getMetadata().setLabels(getLabelsWithName(name));
+        svc.getSpec().setSelector(getLabelsWithName());
+        log.trace("Patched headless service {}", svc);
+        return svc;
+    }
 }

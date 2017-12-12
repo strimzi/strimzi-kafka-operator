@@ -95,7 +95,7 @@ public class UpdateKafkaClusterOperation extends KafkaClusterOperation {
     private Future<Void> patchHeadlessService(KafkaResource kafka, ResourceDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchService = Future.future();
-            OperationExecutor.getInstance().execute(new PatchOperation(k8s.getServiceResource(namespace, kafka.getHeadlessName()), kafka.patchService(k8s.getService(namespace, kafka.getHeadlessName()))), patchService.completer());
+            OperationExecutor.getInstance().execute(new PatchOperation(k8s.getServiceResource(namespace, kafka.getHeadlessName()), kafka.patchHeadlessService(k8s.getService(namespace, kafka.getHeadlessName()))), patchService.completer());
             return patchService;
         }
             else

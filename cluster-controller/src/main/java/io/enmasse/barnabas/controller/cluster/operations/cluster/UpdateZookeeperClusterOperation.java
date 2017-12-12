@@ -92,7 +92,7 @@ public class UpdateZookeeperClusterOperation extends ZookeeperClusterOperation {
     private Future<Void> patchHeadlessService(ZookeeperResource zk, ResourceDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchService = Future.future();
-            OperationExecutor.getInstance().execute(new PatchOperation(k8s.getServiceResource(namespace, zk.getHeadlessName()), zk.patchService(k8s.getService(namespace, zk.getHeadlessName()))), patchService.completer());
+            OperationExecutor.getInstance().execute(new PatchOperation(k8s.getServiceResource(namespace, zk.getHeadlessName()), zk.patchHeadlessService(k8s.getService(namespace, zk.getHeadlessName()))), patchService.completer());
             return patchService;
         }
             else
