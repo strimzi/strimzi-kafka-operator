@@ -4,6 +4,7 @@ import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.extensions.*;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -177,7 +178,7 @@ public class KafkaConnectResource extends AbstractResource {
     public Service generateService() {
 
         return createService("ClusterIP",
-                createServicePort(restApiPortName, restApiPort, restApiPort, "TCP"));
+                Collections.singletonList(createServicePort(restApiPortName, restApiPort, restApiPort, "TCP")));
     }
 
     public Service patchService(Service svc) {

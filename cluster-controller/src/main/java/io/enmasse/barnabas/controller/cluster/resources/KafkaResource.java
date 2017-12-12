@@ -155,7 +155,7 @@ public class KafkaResource extends AbstractResource {
     public Service generateService() {
 
         return createService("ClusterIP",
-                createServicePort(clientPortName, clientPort, clientPort, "TCP"));
+                Collections.singletonList(createServicePort(clientPortName, clientPort, clientPort, "TCP")));
     }
 
     public Service patchService(Service svc) {

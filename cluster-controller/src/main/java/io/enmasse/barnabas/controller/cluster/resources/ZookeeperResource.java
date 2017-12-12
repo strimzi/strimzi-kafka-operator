@@ -6,6 +6,7 @@ import io.fabric8.kubernetes.api.model.extensions.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSetUpdateStrategyBuilder;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -128,7 +129,7 @@ public class ZookeeperResource extends AbstractResource {
     public Service generateService() {
 
         return createService("ClusterIP",
-                createServicePort(clientPortName, clientPort, clientPort, "TCP"));
+                Collections.singletonList(createServicePort(clientPortName, clientPort, clientPort, "TCP")));
     }
 
     public Service patchService(Service svc) {

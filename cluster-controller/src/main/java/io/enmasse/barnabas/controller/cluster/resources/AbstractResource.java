@@ -103,7 +103,7 @@ public abstract class AbstractResource implements Resource {
         return probe;
     }
 
-    protected Service createService(String type, ServicePort... ports) {
+    protected Service createService(String type, List<ServicePort> ports) {
         Service service = new ServiceBuilder()
                 .withNewMetadata()
                 .withName(name)
