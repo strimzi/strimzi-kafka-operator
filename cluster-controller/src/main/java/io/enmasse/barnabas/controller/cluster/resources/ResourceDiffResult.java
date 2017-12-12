@@ -48,7 +48,6 @@ public class ResourceDiffResult {
     }
 
     public void setScaleUp(Boolean scaleUp) {
-        setDifferent(true);
         this.scaleUp = scaleUp;
     }
 
@@ -57,7 +56,6 @@ public class ResourceDiffResult {
     }
 
     public void setScaleDown(Boolean scaleDown) {
-        setDifferent(true);
         this.scaleDown = scaleDown;
     }
 }
