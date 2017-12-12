@@ -105,5 +105,15 @@ objects:
       app: barnabas
       type: deployment
       kind: kafka
-  spec:
-    aaa: bbb
+  data:
+    kafka-nodes: "${KAFKA_NODE_COUNT}"
+    kafka-image: "${IMAGE_REPO_NAME}/${KAFKA_IMAGE_NAME}:{KAFKA_IMAGE_TAG}"
+    kafka-healthcheck-delay: "{KAFKA_HEALTHCHECK_DELAY}"
+    kafka-healthcheck-timeout: "${KAFKA_HEALTHCHECK_TIMEOUT}"
+    zookeeper-nodes: "${ZOOKEEPER_NODE_COUNT}"
+    zookeeper-image: "${IMAGE_REPO_NAME}/${ZOOKEEPER_IMAGE_NAME}:${ZOOKEEPER_IMAGE_TAG}"
+    zookeeper-healthcheck-delay: "${ZOOKEEPER_HEALTHCHECK_DELAY}"
+    zookeeper-healthcheck-timeout: "${ZOOKEEPER_HEALTHCHECK_TIMEOUT}"
+    KAFKA_DEFAULT_REPLICATION_FACTOR: "${KAFKA_DEFAULT_REPLICATION_FACTOR}"
+    KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "${KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR}"
+    KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "${KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR}"

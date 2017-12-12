@@ -1,40 +1,22 @@
 apiVersion: v1
-kind: Service
+kind: ConfigMap
 metadata:
   name: kafka-connect
-spec:
-  ports:
-    - name: rest-api
-      port: 8083
-      targetPort: 8083
-      protocol: TCP
-  selector:
-    name: kafka-connect
-  type: ClusterIP
----
-apiVersion: extensions/v1beta1
-kind: Deployment
-metadata:
-  name: kafka-connect
-spec:
-  replicas: 1
-  template:
-    metadata:
-      labels:
-        name: kafka-connect
-    spec:
-      containers:
-        - name: kafka-connect
-          image: enmasseproject/kafka-connect:latest
-          ports:
-            - name: rest-api
-              containerPort: 8083
-              protocol: TCP
-          env:
-            - name: KAFKA_CONNECT_BOOTSTRAP_SERVERS
-              value: "kafka:9092"
-          livenessProbe:
-            httpGet:
-              path: /
-              port: rest-api
-            initialDelaySeconds: 60
+  labels:
+    app: barnabas
+    type: deployment
+    kind: kafka-connect
+data:
+  nodes: "3"
+  image: "enmasseproject/kafka-connect:latest"
+  healthcheck-delay: "60"
+  healthcheck-timeout: "5"
+  KAFKA_CONNECT_BOOTSTRAP_SERVERS: "my-kafka:9092"
+  KAFKA_CONNECT_GROUP_ID: "my-connect-cluster"
+  KAFKA_CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+  KAFKA_CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE: "true"
+  KAFKA_CONNECT_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+  KAFKA_CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "true"
+  KAFKA_CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "3"
+  KAFKA_CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "3"
+  KAFKA_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "3"

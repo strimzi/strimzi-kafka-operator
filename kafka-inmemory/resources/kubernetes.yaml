@@ -20,5 +20,15 @@ metadata:
     app: barnabas
     type: deployment
     kind: kafka
-spec:
-  aaa: bbb
+data:
+  kafka-nodes: "3"
+  kafka-image: "enmasseproject/kafka-statefulsets:latest"
+  kafka-healthcheck-delay: "15"
+  kafka-healthcheck-timeout: "5"
+  zookeeper-nodes: "3"
+  zookeeper-image: "enmasseproject/zookeeper:latest"
+  zookeeper-healthcheck-delay: "15"
+  zookeeper-healthcheck-timeout: "5"
+  KAFKA_DEFAULT_REPLICATION_FACTOR: "3"
+  KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "3"
+  KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "3"
