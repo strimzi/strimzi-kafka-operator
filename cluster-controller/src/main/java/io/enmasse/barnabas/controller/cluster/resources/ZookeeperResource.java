@@ -126,20 +126,9 @@ public class ZookeeperResource extends AbstractResource {
     }
 
     public Service generateService() {
-        Service svc = new ServiceBuilder()
-                .withNewMetadata()
-                .withName(name)
-                .withLabels(getLabelsWithName())
-                .withNamespace(namespace)
-                .endMetadata()
-                .withNewSpec()
-                .withType("ClusterIP")
-                .withSelector(getLabelsWithName())
-                .withPorts(createServicePort(clientPortName, clientPort, clientPort))
-                .endSpec()
-                .build();
 
-        return svc;
+        return createService("ClusterIP",
+                createServicePort(clientPortName, clientPort, clientPort, "TCP"));
     }
 
     public Service patchService(Service svc) {
@@ -150,21 +139,8 @@ public class ZookeeperResource extends AbstractResource {
     }
 
     public Service generateHeadlessService() {
-        Service svc = new ServiceBuilder()
-                .withNewMetadata()
-                .withName(headlessName)
-                .withLabels(getLabelsWithName(headlessName))
-                .withNamespace(namespace)
-                .endMetadata()
-                .withNewSpec()
-                .withType("ClusterIP")
-                .withClusterIP("None")
-                .withSelector(getLabelsWithName())
-                .withPorts(getServicePortList())
-                .endSpec()
-                .build();
 
-        return svc;
+        return createHeadlessService(headlessName, getServicePortList());
     }
 
     public Service patchHeadlessService(Service svc) {
@@ -234,18 +210,18 @@ public class ZookeeperResource extends AbstractResource {
 
     private List<ServicePort> getServicePortList() {
         List<ServicePort> portList = new ArrayList<>();
-        portList.add(createServicePort(clientPortName, clientPort, clientPort));
-        portList.add(createServicePort(clusteringPortName, clusteringPort, clusteringPort));
-        portList.add(createServicePort(leaderElectionPortName, leaderElectionPort, leaderElectionPort));
+        portList.add(createServicePort(clientPortName, clientPort, clientPort, "TCP"));
+        portList.add(createServicePort(clusteringPortName, clusteringPort, clusteringPort, "TCP"));
+        portList.add(createServicePort(leaderElectionPortName, leaderElectionPort, leaderElectionPort, "TCP"));
 
         return portList;
     }
 
     private List<ContainerPort> getContainerPortList() {
         List<ContainerPort> portList = new ArrayList<>();
-        portList.add(createContainerPort(clientPortName, clientPort));
-        portList.add(createContainerPort(clusteringPortName, clusteringPort));
-        portList.add(createContainerPort(leaderElectionPortName, leaderElectionPort));
+        portList.add(createContainerPort(clientPortName, clientPort, "TCP"));
+        portList.add(createContainerPort(clusteringPortName, clusteringPort, "TCP"));
+        portList.add(createContainerPort(leaderElectionPortName, leaderElectionPort,"TCP"));
 
         return portList;
     }

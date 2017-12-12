@@ -175,20 +175,9 @@ public class KafkaConnectResource extends AbstractResource {
     }
 
     public Service generateService() {
-        Service svc = new ServiceBuilder()
-                .withNewMetadata()
-                .withName(name)
-                .withLabels(getLabelsWithName())
-                .withNamespace(namespace)
-                .endMetadata()
-                .withNewSpec()
-                .withType("ClusterIP")
-                .withSelector(getLabelsWithName())
-                .withPorts(createServicePort(restApiPortName, restApiPort, restApiPort))
-                .endSpec()
-                .build();
 
-        return svc;
+        return createService("ClusterIP",
+                createServicePort(restApiPortName, restApiPort, restApiPort, "TCP"));
     }
 
     public Service patchService(Service svc) {
@@ -203,7 +192,7 @@ public class KafkaConnectResource extends AbstractResource {
                 .withName(name)
                 .withImage(image)
                 .withEnv(getEnvList())
-                .withPorts(createContainerPort(restApiPortName, restApiPort))
+                .withPorts(createContainerPort(restApiPortName, restApiPort, "TCP"))
                 .withLivenessProbe(createHttpProbe(healthCheckPath, restApiPortName, healthCheckInitialDelay, healthCheckTimeout))
                 .withReadinessProbe(createHttpProbe(healthCheckPath, restApiPortName, healthCheckInitialDelay, healthCheckTimeout))
                 .build();

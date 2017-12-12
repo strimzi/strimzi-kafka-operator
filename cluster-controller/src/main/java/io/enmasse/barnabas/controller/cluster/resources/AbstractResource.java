@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public abstract class AbstractResource implements Resource {
@@ -40,59 +41,100 @@ public abstract class AbstractResource implements Resource {
     }
 
     protected VolumeMount createVolumeMount(String name, String path) {
-        log.trace("Creating volume mount {} with path {}", name, path);
-        return new VolumeMountBuilder()
+        VolumeMount volumeMount = new VolumeMountBuilder()
                 .withName(name)
                 .withMountPath(path)
                 .build();
+        log.trace("Creating volume mount {}", volumeMount);
+        return volumeMount;
     }
 
-    protected ContainerPort createContainerPort(String name, int port) {
-        log.trace("Creating container port {} named {}", port, name);
-        return new ContainerPortBuilder()
+    protected ContainerPort createContainerPort(String name, int port, String protocol) {
+        ContainerPort containerPort = new ContainerPortBuilder()
                 .withName(name)
-                .withProtocol("TCP")
+                .withProtocol(protocol)
                 .withContainerPort(port)
                 .build();
+        log.trace("Creating container port {}", containerPort);
+        return containerPort;
     }
 
-    protected ServicePort createServicePort(String name, int port, int targetPort) {
-        log.trace("Creating service port {} with target port {} named {}", port, targetPort, name);
-        return new ServicePortBuilder()
+    protected ServicePort createServicePort(String name, int port, int targetPort, String protocol) {
+        ServicePort servicePort = new ServicePortBuilder()
                 .withName(name)
-                .withProtocol("TCP")
+                .withProtocol(protocol)
                 .withPort(port)
                 .withNewTargetPort(targetPort)
                 .build();
+        log.trace("Creating service port {}", servicePort);
+        return servicePort;
     }
 
     protected Volume createEmptyDirVolume(String name) {
-        log.trace("Creating emptyDir volume named {}", name);
-        return new VolumeBuilder()
+        Volume volume = new VolumeBuilder()
                 .withName(name)
                 .withNewEmptyDir()
                 .endEmptyDir()
                 .build();
+        log.trace("Creating emptyDir volume named {}", volume);
+        return volume;
     }
 
     protected Probe createExecProbe(String command, int initialDelay, int timeout) {
-        log.trace("Creating exec probe with command {}, initial delay {} and timeout {}", command, initialDelay, timeout);
-        return new ProbeBuilder().withNewExec()
+        Probe probe = new ProbeBuilder().withNewExec()
                 .withCommand(command)
                 .endExec()
                 .withInitialDelaySeconds(initialDelay)
                 .withTimeoutSeconds(timeout)
                 .build();
+        log.trace("Creating exec probe {}", probe);
+        return probe;
     }
 
     protected Probe createHttpProbe(String path, String port, int initialDelay, int timeout) {
-        log.trace("Creating http probe with path {}, port {}, initial delay {} and timeout {}", path, port, initialDelay, timeout);
-        return new ProbeBuilder().withNewHttpGet()
+        Probe probe = new ProbeBuilder().withNewHttpGet()
                 .withPath(path)
                 .withNewPort(port)
                 .endHttpGet()
                 .withInitialDelaySeconds(initialDelay)
                 .withTimeoutSeconds(timeout)
                 .build();
+        log.trace("Creating http probe {}", probe);
+        return probe;
+    }
+
+    protected Service createService(String type, ServicePort... ports) {
+        Service service = new ServiceBuilder()
+                .withNewMetadata()
+                .withName(name)
+                .withLabels(getLabelsWithName())
+                .withNamespace(namespace)
+                .endMetadata()
+                .withNewSpec()
+                .withType(type)
+                .withSelector(getLabelsWithName())
+                .withPorts(ports)
+                .endSpec()
+                .build();
+        log.trace("Creating service {}", service);
+        return service;
+    }
+
+    protected Service createHeadlessService(String name, List<ServicePort> ports) {
+        Service service = new ServiceBuilder()
+                .withNewMetadata()
+                .withName(name)
+                .withLabels(getLabelsWithName(name))
+                .withNamespace(namespace)
+                .endMetadata()
+                .withNewSpec()
+                .withType("ClusterIP")
+                .withClusterIP("None")
+                .withSelector(getLabelsWithName())
+                .withPorts(ports)
+                .endSpec()
+                .build();
+        log.trace("Creating headless service {}", service);
+        return service;
     }
 }
