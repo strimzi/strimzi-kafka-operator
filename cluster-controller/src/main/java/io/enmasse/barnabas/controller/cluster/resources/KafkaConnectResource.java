@@ -2,8 +2,6 @@ package io.enmasse.barnabas.controller.cluster.resources;
 
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.extensions.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,7 +9,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class KafkaConnectResource extends AbstractResource {
-    private static final Logger log = LoggerFactory.getLogger(KafkaConnectResource.class.getName());
 
     // Port configuration
     private final int restApiPort = 8083;

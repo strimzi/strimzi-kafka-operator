@@ -4,8 +4,6 @@ import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSetUpdateStrategyBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,7 +11,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class KafkaResource extends AbstractResource {
-    private static final Logger log = LoggerFactory.getLogger(KafkaResource.class.getName());
 
     private final String headlessName;
 
