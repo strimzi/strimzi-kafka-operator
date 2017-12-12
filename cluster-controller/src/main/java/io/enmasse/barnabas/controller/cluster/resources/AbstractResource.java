@@ -8,13 +8,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 public abstract class AbstractResource implements Resource {
-    private static final Logger log = LoggerFactory.getLogger(AbstractResource.class.getName());
+
+    protected final Logger log = LoggerFactory.getLogger(getClass());
 
     protected final String name;
     protected final String namespace;
     protected Map<String, String> labels = new HashMap<>();
-
-    protected final int LOCK_TIMEOUT = 60000;
 
     protected AbstractResource(String namespace, String name) {
         this.name = name;

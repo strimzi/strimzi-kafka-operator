@@ -27,7 +27,7 @@ public class OperationExecutor {
         return instance;
     }
 
-    public OperationExecutor(Vertx vertx, K8SUtils k8s) {
+    private OperationExecutor(Vertx vertx, K8SUtils k8s) {
         this.vertx = vertx;
         this.k8s = k8s;
     }
