@@ -6,8 +6,8 @@ metadata:
   labels:
     app: barnabas
 ---
-apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: Role
+apiVersion: v1
+kind: ClusterRole
 metadata:
   name: barnabas-cluster-controller-role
   labels:
@@ -72,7 +72,7 @@ rules:
   - patch
   - update
 ---
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: v1
 kind: RoleBinding
 metadata:
   name: barnabas-cluster-controller-binding
@@ -82,9 +82,9 @@ subjects:
   - kind: ServiceAccount
     name: barnabas-cluster-controller
 roleRef:
-  kind: Role
+  kind: ClusterRole
   name: barnabas-cluster-controller-role
-  apiGroup: rbac.authorization.k8s.io
+  apiGroup: v1
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
