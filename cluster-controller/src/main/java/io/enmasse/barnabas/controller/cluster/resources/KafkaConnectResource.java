@@ -71,12 +71,12 @@ public class KafkaConnectResource extends AbstractResource {
     private static String KEY_OFFSET_STORAGE_REPLICATION_FACTOR = "KAFKA_CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR";
     private static String KEY_STATUS_STORAGE_REPLICATION_FACTOR = "KAFKA_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR";
 
-    private KafkaConnectResource(String name, String namespace) {
+    private KafkaConnectResource(String namespace, String name) {
         super(namespace, name);
     }
 
     public static KafkaConnectResource fromConfigMap(ConfigMap cm) {
-        KafkaConnectResource kafkaConnect = new KafkaConnectResource(cm.getMetadata().getName(), cm.getMetadata().getNamespace());
+        KafkaConnectResource kafkaConnect = new KafkaConnectResource(cm.getMetadata().getNamespace(), cm.getMetadata().getName());
         kafkaConnect.setLabels(cm.getMetadata().getLabels());
 
         kafkaConnect.setReplicas(Integer.parseInt(cm.getData().getOrDefault(KEY_REPLICAS, String.valueOf(DEFAULT_REPLICAS))));
@@ -100,7 +100,7 @@ public class KafkaConnectResource extends AbstractResource {
     // This is currently not needed. But the similar function for statefulsets is used partially. Should we remove this?
     // Or might we need to use it in the future?
     public static KafkaConnectResource fromDeployment(Deployment dep) {
-        KafkaConnectResource kafkaConnect =  new KafkaConnectResource(dep.getMetadata().getName(), dep.getMetadata().getNamespace());
+        KafkaConnectResource kafkaConnect =  new KafkaConnectResource(dep.getMetadata().getNamespace(), dep.getMetadata().getName());
 
         kafkaConnect.setLabels(dep.getMetadata().getLabels());
         kafkaConnect.setReplicas(dep.getSpec().getReplicas());
