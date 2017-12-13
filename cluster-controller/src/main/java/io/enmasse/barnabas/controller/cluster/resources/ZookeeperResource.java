@@ -55,14 +55,14 @@ public class ZookeeperResource extends AbstractResource {
     // Zookeeper configuration keys
     private static String KEY_ZOOKEEPER_NODE_COUNT = "ZOOKEEPER_NODE_COUNT";
 
-    private ZookeeperResource(String name, String namespace) {
+    private ZookeeperResource(String namespace, String name) {
         super(namespace, name);
         this.headlessName = name + "-headless";
     }
 
     public static ZookeeperResource fromConfigMap(ConfigMap cm) {
         String name = cm.getMetadata().getName() + "-zookeeper";
-        ZookeeperResource zk = new ZookeeperResource(name, cm.getMetadata().getNamespace());
+        ZookeeperResource zk = new ZookeeperResource(cm.getMetadata().getNamespace(), name);
 
         zk.setLabels(cm.getMetadata().getLabels());
 
@@ -79,7 +79,7 @@ public class ZookeeperResource extends AbstractResource {
     // which would generate the headless name?
     public static ZookeeperResource fromStatefulSet(StatefulSet ss) {
         String name = ss.getMetadata().getName();
-        ZookeeperResource zk =  new ZookeeperResource(name, ss.getMetadata().getNamespace());
+        ZookeeperResource zk =  new ZookeeperResource(ss.getMetadata().getNamespace(), name);
 
         zk.setLabels(ss.getMetadata().getLabels());
         zk.setReplicas(ss.getSpec().getReplicas());

@@ -60,13 +60,13 @@ public class KafkaResource extends AbstractResource {
     private static String KEY_KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR = "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR";
     private static String KEY_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR = "KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR";
 
-    private KafkaResource(String name, String namespace) {
+    private KafkaResource(String namespace, String name) {
         super(namespace, name);
         this.headlessName = name + "-headless";
     }
 
     public static KafkaResource fromConfigMap(ConfigMap cm) {
-        KafkaResource kafka = new KafkaResource(cm.getMetadata().getName(), cm.getMetadata().getNamespace());
+        KafkaResource kafka = new KafkaResource(cm.getMetadata().getNamespace(), cm.getMetadata().getName());
         kafka.setLabels(cm.getMetadata().getLabels());
 
         kafka.setReplicas(Integer.parseInt(cm.getData().getOrDefault(KEY_REPLICAS, String.valueOf(DEFAULT_REPLICAS))));
@@ -86,7 +86,7 @@ public class KafkaResource extends AbstractResource {
     // and name. Do we need this as it is? Or would it be enough to create just and empty shell from name and namespace
     // which would generate the headless name?
     public static KafkaResource fromStatefulSet(StatefulSet ss) {
-        KafkaResource kafka =  new KafkaResource(ss.getMetadata().getName(), ss.getMetadata().getNamespace());
+        KafkaResource kafka =  new KafkaResource(ss.getMetadata().getNamespace(), ss.getMetadata().getName());
 
         kafka.setLabels(ss.getMetadata().getLabels());
         kafka.setReplicas(ss.getSpec().getReplicas());
