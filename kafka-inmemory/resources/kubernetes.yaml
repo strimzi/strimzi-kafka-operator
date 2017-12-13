@@ -1,3 +1,91 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: barnabas-cluster-controller
+  labels:
+    app: barnabas
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: barnabas-cluster-controller-role
+  labels:
+    app: barnabas
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - services
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+  - patch
+  - update
+- apiGroups:
+  - "extensions"
+  resources:
+  - deployments
+  - deployments/scale
+  - replicasets
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+  - patch
+  - update
+- apiGroups:
+  - "apps"
+  resources:
+  - deployments
+  - deployments/scale
+  - deployments/status
+  - statefulsets
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+  - patch
+  - update
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: barnabas-cluster-controller-binding
+  labels:
+    app: barnabas
+subjects:
+  - kind: ServiceAccount
+    name: barnabas-cluster-controller
+roleRef:
+  kind: Role
+  name: barnabas-cluster-controller-role
+  apiGroup: rbac.authorization.k8s.io
+---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
@@ -9,9 +97,11 @@ spec:
       labels:
         name: barnabas-cluster-controller
     spec:
+      serviceAccountName: barnabas-cluster-controller
       containers:
         - name: barnabas-cluster-controller
-          image: scholzj/barnabas-cluster-controller:latest
+          image: enmasseproject/barnabas-cluster-controller:latest
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -25,7 +115,7 @@ data:
   kafka-image: "enmasseproject/kafka-statefulsets:latest"
   kafka-healthcheck-delay: "15"
   kafka-healthcheck-timeout: "5"
-  zookeeper-nodes: "3"
+  zookeeper-nodes: "1"
   zookeeper-image: "enmasseproject/zookeeper:latest"
   zookeeper-healthcheck-delay: "15"
   zookeeper-healthcheck-timeout: "5"

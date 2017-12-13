@@ -1,3 +1,107 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: barnabas-cluster-controller
+  labels:
+    app: barnabas
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: barnabas-cluster-controller-role
+  labels:
+    app: barnabas
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - services
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+  - patch
+  - update
+- apiGroups:
+  - "extensions"
+  resources:
+  - deployments
+  - deployments/scale
+  - replicasets
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+  - patch
+  - update
+- apiGroups:
+  - "apps"
+  resources:
+  - deployments
+  - deployments/scale
+  - deployments/status
+  - statefulsets
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+  - patch
+  - update
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: barnabas-cluster-controller-binding
+  labels:
+    app: barnabas
+subjects:
+  - kind: ServiceAccount
+    name: barnabas-cluster-controller
+roleRef:
+  kind: Role
+  name: barnabas-cluster-controller-role
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: barnabas-cluster-controller
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: barnabas-cluster-controller
+    spec:
+      serviceAccountName: barnabas-cluster-controller
+      containers:
+        - name: barnabas-cluster-controller
+          image: enmasseproject/barnabas-cluster-controller:latest
+---
 apiVersion: v1
 kind: Template
 metadata:
@@ -83,20 +187,6 @@ parameters:
   name: ZOOKEEPER_METRICS_ENABLED
   value: "true"
 objects:
-- apiVersion: extensions/v1beta1
-  kind: Deployment
-  metadata:
-    name: barnabas-cluster-controller
-  spec:
-    replicas: 1
-    template:
-      metadata:
-        labels:
-          name: barnabas-cluster-controller
-      spec:
-        containers:
-          - name: barnabas-cluster-controller
-            image: scholzj/barnabas-cluster-controller:latest
 - apiVersion: v1
   kind: ConfigMap
   metadata:
@@ -107,8 +197,8 @@ objects:
       kind: kafka
   data:
     kafka-nodes: "${KAFKA_NODE_COUNT}"
-    kafka-image: "${IMAGE_REPO_NAME}/${KAFKA_IMAGE_NAME}:{KAFKA_IMAGE_TAG}"
-    kafka-healthcheck-delay: "{KAFKA_HEALTHCHECK_DELAY}"
+    kafka-image: "${IMAGE_REPO_NAME}/${KAFKA_IMAGE_NAME}:${KAFKA_IMAGE_TAG}"
+    kafka-healthcheck-delay: "${KAFKA_HEALTHCHECK_DELAY}"
     kafka-healthcheck-timeout: "${KAFKA_HEALTHCHECK_TIMEOUT}"
     zookeeper-nodes: "${ZOOKEEPER_NODE_COUNT}"
     zookeeper-image: "${IMAGE_REPO_NAME}/${ZOOKEEPER_IMAGE_NAME}:${ZOOKEEPER_IMAGE_TAG}"
