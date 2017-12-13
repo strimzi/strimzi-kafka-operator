@@ -7,6 +7,7 @@ import io.enmasse.barnabas.controller.cluster.operations.kubernetes.ScaleDownOpe
 import io.enmasse.barnabas.controller.cluster.operations.kubernetes.ScaleUpOperation;
 import io.enmasse.barnabas.controller.cluster.resources.KafkaConnectResource;
 import io.enmasse.barnabas.controller.cluster.resources.ResourceDiffResult;
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -34,8 +35,19 @@ public class UpdateKafkaConnectClusterOperation extends KafkaConnectClusterOpera
 
                 log.info("Updating Kafka Connect cluster {} in namespace {}", name, namespace);
 
-                KafkaConnectResource connect = KafkaConnectResource.fromConfigMap(k8s.getConfigmap(namespace, name));
-                ResourceDiffResult diff = connect.diff(k8s.getDeployment(namespace, name));
+                ResourceDiffResult diff;
+                KafkaConnectResource connect;
+                ConfigMap connectConfigMap = k8s.getConfigmap(namespace, name);
+
+                if (connectConfigMap != null)    {
+                    connect = KafkaConnectResource.fromConfigMap(connectConfigMap);
+                    diff = connect.diff(k8s.getDeployment(namespace, name));
+                } else  {
+                    log.error("ConfigMap {} doesn't exist anymore in namespace {}", name, namespace);
+                    handler.handle(Future.failedFuture("ConfigMap doesn't exist anymore"));
+                    lock.release();
+                    return;
+                }
 
                 Future<Void> chainFuture = Future.future();
 
