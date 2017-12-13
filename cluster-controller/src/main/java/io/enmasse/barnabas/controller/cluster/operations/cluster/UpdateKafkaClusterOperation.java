@@ -8,6 +8,7 @@ import io.enmasse.barnabas.controller.cluster.operations.kubernetes.ScaleDownOpe
 import io.enmasse.barnabas.controller.cluster.operations.kubernetes.ScaleUpOperation;
 import io.enmasse.barnabas.controller.cluster.resources.KafkaResource;
 import io.enmasse.barnabas.controller.cluster.resources.ResourceDiffResult;
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -37,12 +38,14 @@ public class UpdateKafkaClusterOperation extends KafkaClusterOperation {
 
                 ResourceDiffResult diff;
                 KafkaResource kafka;
-                try {
-                    kafka = KafkaResource.fromConfigMap(k8s.getConfigmap(namespace, name));
+                ConfigMap kafkaConfigMap = k8s.getConfigmap(namespace, name);
+
+                if (kafkaConfigMap != null)    {
+                    kafka = KafkaResource.fromConfigMap(kafkaConfigMap);
                     diff = kafka.diff(k8s.getStatefulSet(namespace, name));
-                } catch (Exception e) {
-                    log.error("Caught exception while updating Kafka cluster", e);
-                    handler.handle(Future.failedFuture(e));
+                } else {
+                    log.error("ConfigMap {} doesn't exist anymore in namespace {}", name, namespace);
+                    handler.handle(Future.failedFuture("ConfigMap doesn't exist anymore"));
                     lock.release();
                     return;
                 }

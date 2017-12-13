@@ -8,6 +8,7 @@ import io.enmasse.barnabas.controller.cluster.operations.kubernetes.ScaleDownOpe
 import io.enmasse.barnabas.controller.cluster.operations.kubernetes.ScaleUpOperation;
 import io.enmasse.barnabas.controller.cluster.resources.ResourceDiffResult;
 import io.enmasse.barnabas.controller.cluster.resources.ZookeeperResource;
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.vertx.core.*;
 import io.vertx.core.shareddata.Lock;
 import org.slf4j.Logger;
@@ -34,12 +35,14 @@ public class UpdateZookeeperClusterOperation extends ZookeeperClusterOperation {
 
                 ResourceDiffResult diff;
                 ZookeeperResource zk;
-                try {
-                    zk = ZookeeperResource.fromConfigMap(k8s.getConfigmap(namespace, name));
+                ConfigMap zkConfigMap = k8s.getConfigmap(namespace, name);
+
+                if (zkConfigMap != null)    {
+                    zk = ZookeeperResource.fromConfigMap(zkConfigMap);
                     diff = zk.diff(k8s.getStatefulSet(namespace, name + "-zookeeper"));
-                } catch (Exception e) {
-                    log.error("Caught exception while updating Zookeeper cluster", e);
-                    handler.handle(Future.failedFuture(e));
+                } else {
+                    log.error("ConfigMap {} doesn't exist anymore in namespace {}", name, namespace);
+                    handler.handle(Future.failedFuture("ConfigMap doesn't exist anymore"));
                     lock.release();
                     return;
                 }
