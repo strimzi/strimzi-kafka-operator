@@ -178,8 +178,8 @@ public class ZookeeperCluster extends AbstractCluster {
     protected void setLabels(Map<String, String> labels) {
         Map<String, String> newLabels = new HashMap<>(labels);
 
-        if (newLabels.containsKey("kind") && newLabels.get("kind").equals("kafka")) {
-            newLabels.put("kind", "zookeeper");
+        if (newLabels.containsKey("type") && newLabels.get("type").equals("kafka")) {
+            newLabels.put("type", "zookeeper");
         }
 
         super.setLabels(newLabels);

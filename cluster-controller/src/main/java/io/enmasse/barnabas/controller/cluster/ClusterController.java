@@ -81,45 +81,45 @@ public class ClusterController extends AbstractVerticle {
                         @Override
                         public void eventReceived(Action action, ConfigMap cm) {
                             Map<String, String> labels = cm.getMetadata().getLabels();
-                            String kind;
+                            String type;
 
-                            if (!labels.containsKey("kind")) {
-                                log.warn("Missing kind in Config Map {}", cm.getMetadata().getName());
+                            if (!labels.containsKey("type")) {
+                                log.warn("Missing type in Config Map {}", cm.getMetadata().getName());
                                 return;
                             }
-                            else if (!labels.get("kind").equals("kafka") && !labels.get("kind").equals("kafka-connect")) {
-                                log.warn("Unknown kind {} received in Config Map {}", labels.get("kind"), cm.getMetadata().getName());
+                            else if (!labels.get("type").equals("kafka") && !labels.get("type").equals("kafka-connect")) {
+                                log.warn("Unknown type {} received in Config Map {}", labels.get("type"), cm.getMetadata().getName());
                                 return;
                             }
                             else {
-                                kind = labels.get("kind");
+                                type = labels.get("type");
                             }
 
                             switch (action) {
                                 case ADDED:
                                     log.info("New ConfigMap {}", cm.getMetadata().getName());
-                                    if (kind.equals("kafka")) {
+                                    if (type.equals("kafka")) {
                                         addKafkaCluster(cm);
                                     }
-                                    else if (kind.equals("kafka-connect")) {
+                                    else if (type.equals("kafka-connect")) {
                                         addKafkaConnectCluster(cm);
                                     }
                                     break;
                                 case DELETED:
                                     log.info("Deleted ConfigMap {}", cm.getMetadata().getName());
-                                    if (kind.equals("kafka")) {
+                                    if (type.equals("kafka")) {
                                         deleteKafkaCluster(cm);
                                     }
-                                    else if (kind.equals("kafka-connect")) {
+                                    else if (type.equals("kafka-connect")) {
                                         deleteKafkaConnectCluster(cm);
                                     }
                                     break;
                                 case MODIFIED:
                                     log.info("Modified ConfigMap {}", cm.getMetadata().getName());
-                                    if (kind.equals("kafka")) {
+                                    if (type.equals("kafka")) {
                                         updateKafkaCluster(cm);
                                     }
-                                    else if (kind.equals("kafka-connect")) {
+                                    else if (type.equals("kafka-connect")) {
                                         updateKafkaConnectCluster(cm);
                                     }
                                     break;
@@ -185,7 +185,7 @@ public class ClusterController extends AbstractVerticle {
         log.info("Reconciling Kafka clusters ...");
 
         Map<String, String> kafkaLabels = new HashMap(labels);
-        kafkaLabels.put("kind", "kafka");
+        kafkaLabels.put("type", "kafka");
 
         List<ConfigMap> cms = k8s.getConfigmaps(namespace, kafkaLabels);
         List<StatefulSet> sss = k8s.getStatefulSets(namespace, kafkaLabels);
@@ -227,7 +227,7 @@ public class ClusterController extends AbstractVerticle {
         log.info("Reconciling Kafka Connect clusters ...");
 
         Map<String, String> kafkaLabels = new HashMap(labels);
-        kafkaLabels.put("kind", "kafka-connect");
+        kafkaLabels.put("type", "kafka-connect");
 
         List<ConfigMap> cms = k8s.getConfigmaps(namespace, kafkaLabels);
         List<Deployment> deps = k8s.getDeployments(namespace, kafkaLabels);
