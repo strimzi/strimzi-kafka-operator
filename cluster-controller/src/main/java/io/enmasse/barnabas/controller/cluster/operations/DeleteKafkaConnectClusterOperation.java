@@ -1,7 +1,6 @@
-package io.enmasse.barnabas.controller.cluster.operations.cluster;
+package io.enmasse.barnabas.controller.cluster.operations;
 
 import io.enmasse.barnabas.controller.cluster.K8SUtils;
-import io.enmasse.barnabas.controller.cluster.operations.OperationExecutor;
 import io.enmasse.barnabas.controller.cluster.operations.kubernetes.DeleteDeploymentOperation;
 import io.enmasse.barnabas.controller.cluster.operations.kubernetes.DeleteServiceOperation;
 import io.vertx.core.*;

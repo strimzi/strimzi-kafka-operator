@@ -2,8 +2,6 @@ package io.enmasse.barnabas.controller.cluster.resources;
 
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
-import io.fabric8.kubernetes.api.model.extensions.StatefulSetBuilder;
-import io.fabric8.kubernetes.api.model.extensions.StatefulSetUpdateStrategyBuilder;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -11,9 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ZookeeperResource extends AbstractResource {
-
-    private final String headlessName;
+public class ZookeeperCluster extends AbstractCluster {
 
     private final int clientPort = 2181;
     private final String clientPortName = "clients";
@@ -23,16 +19,6 @@ public class ZookeeperResource extends AbstractResource {
     private final String leaderElectionPortName = "leader-election";
     private final String mounthPath = "/var/lib/zookeeper";
     private final String volumeName = "zookeeper-storage";
-
-    // Number of replicas
-    private int replicas = DEFAULT_REPLICAS;
-
-    // Docker image configuration
-    private String image = DEFAULT_IMAGE;
-
-    private String healthCheckScript = "/opt/zookeeper/zookeeper_healthcheck.sh";
-    private int healthCheckTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
-    private int healthCheckInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
 
     // Zookeeper configuration
     // N/A
@@ -55,14 +41,19 @@ public class ZookeeperResource extends AbstractResource {
     // Zookeeper configuration keys
     private static String KEY_ZOOKEEPER_NODE_COUNT = "ZOOKEEPER_NODE_COUNT";
 
-    private ZookeeperResource(String namespace, String name) {
+    private ZookeeperCluster(String namespace, String name) {
         super(namespace, name);
         this.headlessName = name + "-headless";
+        this.image = DEFAULT_IMAGE;
+        this.replicas = DEFAULT_REPLICAS;
+        this.healthCheckPath = "/opt/zookeeper/zookeeper_healthcheck.sh";
+        this.healthCheckTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
+        this.healthCheckInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
     }
 
-    public static ZookeeperResource fromConfigMap(ConfigMap cm) {
+    public static ZookeeperCluster fromConfigMap(ConfigMap cm) {
         String name = cm.getMetadata().getName() + "-zookeeper";
-        ZookeeperResource zk = new ZookeeperResource(cm.getMetadata().getNamespace(), name);
+        ZookeeperCluster zk = new ZookeeperCluster(cm.getMetadata().getNamespace(), name);
 
         zk.setLabels(cm.getMetadata().getLabels());
 
@@ -77,9 +68,9 @@ public class ZookeeperResource extends AbstractResource {
     // This is currently needed only to delete the headless service. All other deletions can be done just using namespace
     // and name. Do we need this as it is? Or would it be enough to create just and empty shell from name and namespace
     // which would generate the headless name?
-    public static ZookeeperResource fromStatefulSet(StatefulSet ss) {
+    public static ZookeeperCluster fromStatefulSet(StatefulSet ss) {
         String name = ss.getMetadata().getName();
-        ZookeeperResource zk =  new ZookeeperResource(ss.getMetadata().getNamespace(), name);
+        ZookeeperCluster zk =  new ZookeeperCluster(ss.getMetadata().getNamespace(), name);
 
         zk.setLabels(ss.getMetadata().getLabels());
         zk.setReplicas(ss.getSpec().getReplicas());
@@ -90,8 +81,8 @@ public class ZookeeperResource extends AbstractResource {
         return zk;
     }
 
-    public ResourceDiffResult diff(StatefulSet ss)  {
-        ResourceDiffResult diff = new ResourceDiffResult();
+    public ClusterDiffResult diff(StatefulSet ss)  {
+        ClusterDiffResult diff = new ClusterDiffResult();
 
         if (replicas > ss.getSpec().getReplicas()) {
             log.info("Diff: Expected replicas {}, actual replicas {}", replicas, ss.getSpec().getReplicas());
@@ -143,57 +134,23 @@ public class ZookeeperResource extends AbstractResource {
     }
 
     public StatefulSet generateStatefulSet() {
-        Container container = new ContainerBuilder()
-                .withName(name)
-                .withImage(image)
-                .withEnv(getEnvList())
-                .withVolumeMounts(createVolumeMount(volumeName, mounthPath))
-                .withPorts(getContainerPortList())
-                .withLivenessProbe(createExecProbe(healthCheckScript, healthCheckInitialDelay, healthCheckTimeout))
-                .withReadinessProbe(createExecProbe(healthCheckScript, healthCheckInitialDelay, healthCheckTimeout))
-                .build();
 
-        StatefulSet statefulSet = new StatefulSetBuilder()
-                .withNewMetadata()
-                .withName(name)
-                .withLabels(getLabelsWithName())
-                .withNamespace(namespace)
-                .endMetadata()
-                .withNewSpec()
-                .withPodManagementPolicy("Parallel")
-                .withUpdateStrategy(new StatefulSetUpdateStrategyBuilder().withType("OnDelete").build())
-                .withServiceName(headlessName)
-                .withReplicas(replicas)
-                .withSelector(new LabelSelectorBuilder().withMatchLabels(getLabelsWithName()).build())
-                .withNewTemplate()
-                .withNewMetadata()
-                .withName(name)
-                .withLabels(getLabelsWithName())
-                .endMetadata()
-                .withNewSpec()
-                .withContainers(container)
-                .withVolumes(createEmptyDirVolume(volumeName))
-                .endSpec()
-                .endTemplate()
-                .endSpec()
-                .build();
-
-        return statefulSet;
+        return createStatefulSet(
+                getContainerPortList(),
+                Collections.singletonList(createEmptyDirVolume(volumeName)),
+                Collections.singletonList(createVolumeMount(volumeName, mounthPath)),
+                createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout),
+                createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout));
     }
 
     public StatefulSet patchStatefulSet(StatefulSet statefulSet) {
-        statefulSet.getMetadata().setLabels(getLabelsWithName());
-        statefulSet.getSpec().setSelector(new LabelSelectorBuilder().withMatchLabels(getLabelsWithName()).build());
-        statefulSet.getSpec().getTemplate().getMetadata().setLabels(getLabelsWithName());
-        statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(image);
-        statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).setLivenessProbe(createExecProbe(healthCheckScript, healthCheckInitialDelay, healthCheckTimeout));
-        statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).setReadinessProbe(createExecProbe(healthCheckScript, healthCheckInitialDelay, healthCheckTimeout));
-        statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(getEnvList());
 
-        return statefulSet;
+        return patchStatefulSet(statefulSet,
+                createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout),
+                createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout));
     }
 
-    private List<EnvVar> getEnvList() {
+    protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(new EnvVarBuilder().withName(KEY_ZOOKEEPER_NODE_COUNT).withValue(Integer.toString(replicas)).build());
 
@@ -218,7 +175,7 @@ public class ZookeeperResource extends AbstractResource {
         return portList;
     }
 
-    public void setLabels(Map<String, String> labels) {
+    protected void setLabels(Map<String, String> labels) {
         Map<String, String> newLabels = new HashMap<>(labels);
 
         if (newLabels.containsKey("kind") && newLabels.get("kind").equals("kafka")) {
@@ -226,33 +183,5 @@ public class ZookeeperResource extends AbstractResource {
         }
 
         super.setLabels(newLabels);
-    }
-
-    public void setReplicas(int replicas) {
-        this.replicas = replicas;
-    }
-
-    public void setImage(String image) {
-        this.image = image;
-    }
-
-    public void setHealthCheckScript(String healthCheckScript) {
-        this.healthCheckScript = healthCheckScript;
-    }
-
-    public void setHealthCheckTimeout(int healthCheckTimeout) {
-        this.healthCheckTimeout = healthCheckTimeout;
-    }
-
-    public void setHealthCheckInitialDelay(int healthCheckInitialDelay) {
-        this.healthCheckInitialDelay = healthCheckInitialDelay;
-    }
-
-    public int getReplicas() {
-        return replicas;
-    }
-
-    public String getHeadlessName() {
-        return headlessName;
     }
 }

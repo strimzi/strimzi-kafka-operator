@@ -1,4 +1,4 @@
-package io.enmasse.barnabas.controller.cluster.operations.cluster;
+package io.enmasse.barnabas.controller.cluster.operations;
 
 public abstract class KafkaClusterOperation extends ClusterOperation {
     protected KafkaClusterOperation(String namespace, String name) {

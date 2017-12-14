@@ -1,7 +1,15 @@
 package io.enmasse.barnabas.controller.cluster;
 
+import io.enmasse.barnabas.controller.cluster.operations.CreateKafkaClusterOperation;
+import io.enmasse.barnabas.controller.cluster.operations.CreateKafkaConnectClusterOperation;
+import io.enmasse.barnabas.controller.cluster.operations.CreateZookeeperClusterOperation;
+import io.enmasse.barnabas.controller.cluster.operations.DeleteKafkaClusterOperation;
+import io.enmasse.barnabas.controller.cluster.operations.DeleteKafkaConnectClusterOperation;
+import io.enmasse.barnabas.controller.cluster.operations.DeleteZookeeperClusterOperation;
 import io.enmasse.barnabas.controller.cluster.operations.OperationExecutor;
-import io.enmasse.barnabas.controller.cluster.operations.cluster.*;
+import io.enmasse.barnabas.controller.cluster.operations.UpdateKafkaClusterOperation;
+import io.enmasse.barnabas.controller.cluster.operations.UpdateKafkaConnectClusterOperation;
+import io.enmasse.barnabas.controller.cluster.operations.UpdateZookeeperClusterOperation;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;

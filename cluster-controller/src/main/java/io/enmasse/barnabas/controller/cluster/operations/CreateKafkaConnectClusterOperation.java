@@ -1,10 +1,9 @@
-package io.enmasse.barnabas.controller.cluster.operations.cluster;
+package io.enmasse.barnabas.controller.cluster.operations;
 
 import io.enmasse.barnabas.controller.cluster.K8SUtils;
-import io.enmasse.barnabas.controller.cluster.operations.OperationExecutor;
 import io.enmasse.barnabas.controller.cluster.operations.kubernetes.CreateDeploymentOperation;
 import io.enmasse.barnabas.controller.cluster.operations.kubernetes.CreateServiceOperation;
-import io.enmasse.barnabas.controller.cluster.resources.KafkaConnectResource;
+import io.enmasse.barnabas.controller.cluster.resources.KafkaConnectCluster;
 import io.vertx.core.*;
 import io.vertx.core.shareddata.Lock;
 import org.slf4j.Logger;
@@ -25,7 +24,7 @@ public class CreateKafkaConnectClusterOperation extends KafkaConnectClusterOpera
 
                 log.info("Creating Kafka Connect cluster {} in namespace {}", name, namespace);
 
-                KafkaConnectResource connect = KafkaConnectResource.fromConfigMap(k8s.getConfigmap(namespace, name));
+                KafkaConnectCluster connect = KafkaConnectCluster.fromConfigMap(k8s.getConfigmap(namespace, name));
 
                 Future<Void> futureService = Future.future();
                 OperationExecutor.getInstance().execute(new CreateServiceOperation(connect.generateService()), futureService.completer());

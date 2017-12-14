@@ -1,25 +1,25 @@
 package io.enmasse.barnabas.controller.cluster.resources;
 
-public class ResourceDiffResult {
+public class ClusterDiffResult {
     private Boolean different = false;
     private Boolean rollingUpdate = false;
     private Boolean scaleUp = false;
     private Boolean scaleDown = false;
 
-    public ResourceDiffResult() {
+    public ClusterDiffResult() {
         // Nothing to do
     }
 
-    public ResourceDiffResult(Boolean isDifferent) {
+    public ClusterDiffResult(Boolean isDifferent) {
         this.different = isDifferent;
     }
 
-    public ResourceDiffResult(Boolean isDifferent, Boolean needsRollingUpdate) {
+    public ClusterDiffResult(Boolean isDifferent, Boolean needsRollingUpdate) {
         this.different = isDifferent;
         this.rollingUpdate = needsRollingUpdate;
     }
 
-    public ResourceDiffResult(Boolean isDifferent, Boolean needsRollingUpdate, Boolean isScaleUp, Boolean isScaleDown) {
+    public ClusterDiffResult(Boolean isDifferent, Boolean needsRollingUpdate, Boolean isScaleUp, Boolean isScaleDown) {
         this.different = isDifferent;
         this.rollingUpdate = needsRollingUpdate;
         this.scaleUp = isScaleUp;

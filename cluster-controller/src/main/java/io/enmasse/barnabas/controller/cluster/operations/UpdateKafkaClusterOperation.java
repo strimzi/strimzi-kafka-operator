@@ -1,13 +1,12 @@
-package io.enmasse.barnabas.controller.cluster.operations.cluster;
+package io.enmasse.barnabas.controller.cluster.operations;
 
 import io.enmasse.barnabas.controller.cluster.K8SUtils;
-import io.enmasse.barnabas.controller.cluster.operations.OperationExecutor;
 import io.enmasse.barnabas.controller.cluster.operations.kubernetes.ManualRollingUpdateOperation;
 import io.enmasse.barnabas.controller.cluster.operations.kubernetes.PatchOperation;
 import io.enmasse.barnabas.controller.cluster.operations.kubernetes.ScaleDownOperation;
 import io.enmasse.barnabas.controller.cluster.operations.kubernetes.ScaleUpOperation;
-import io.enmasse.barnabas.controller.cluster.resources.KafkaResource;
-import io.enmasse.barnabas.controller.cluster.resources.ResourceDiffResult;
+import io.enmasse.barnabas.controller.cluster.resources.KafkaCluster;
+import io.enmasse.barnabas.controller.cluster.resources.ClusterDiffResult;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -36,12 +35,12 @@ public class UpdateKafkaClusterOperation extends KafkaClusterOperation {
 
                 log.info("Updating Kafka cluster {} in namespace {}", name, namespace);
 
-                ResourceDiffResult diff;
-                KafkaResource kafka;
+                ClusterDiffResult diff;
+                KafkaCluster kafka;
                 ConfigMap kafkaConfigMap = k8s.getConfigmap(namespace, name);
 
                 if (kafkaConfigMap != null)    {
-                    kafka = KafkaResource.fromConfigMap(kafkaConfigMap);
+                    kafka = KafkaCluster.fromConfigMap(kafkaConfigMap);
                     diff = kafka.diff(k8s.getStatefulSet(namespace, name));
                 } else {
                     log.error("ConfigMap {} doesn't exist anymore in namespace {}", name, namespace);
@@ -78,7 +77,7 @@ public class UpdateKafkaClusterOperation extends KafkaClusterOperation {
         });
     }
 
-    private Future<Void> scaleDown(KafkaResource kafka, ResourceDiffResult diff) {
+    private Future<Void> scaleDown(KafkaCluster kafka, ClusterDiffResult diff) {
         Future<Void> scaleDown = Future.future();
 
         if (diff.getScaleDown())    {
@@ -92,7 +91,7 @@ public class UpdateKafkaClusterOperation extends KafkaClusterOperation {
         return scaleDown;
     }
 
-    private Future<Void> patchService(KafkaResource kafka, ResourceDiffResult diff) {
+    private Future<Void> patchService(KafkaCluster kafka, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchService = Future.future();
             OperationExecutor.getInstance().execute(new PatchOperation(k8s.getServiceResource(namespace, name), kafka.patchService(k8s.getService(namespace, name))), patchService.completer());
@@ -104,7 +103,7 @@ public class UpdateKafkaClusterOperation extends KafkaClusterOperation {
         }
     }
 
-    private Future<Void> patchHeadlessService(KafkaResource kafka, ResourceDiffResult diff) {
+    private Future<Void> patchHeadlessService(KafkaCluster kafka, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchService = Future.future();
             OperationExecutor.getInstance().execute(new PatchOperation(k8s.getServiceResource(namespace, kafka.getHeadlessName()), kafka.patchHeadlessService(k8s.getService(namespace, kafka.getHeadlessName()))), patchService.completer());
@@ -116,7 +115,7 @@ public class UpdateKafkaClusterOperation extends KafkaClusterOperation {
         }
     }
 
-    private Future<Void> patchStatefulSet(KafkaResource kafka, ResourceDiffResult diff) {
+    private Future<Void> patchStatefulSet(KafkaCluster kafka, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchStatefulSet = Future.future();
             OperationExecutor.getInstance().execute(new PatchOperation(k8s.getStatefulSetResource(namespace, name).cascading(false), kafka.patchStatefulSet(k8s.getStatefulSet(namespace, name))), patchStatefulSet.completer());
@@ -128,7 +127,7 @@ public class UpdateKafkaClusterOperation extends KafkaClusterOperation {
         }
     }
 
-    private Future<Void> rollingUpdate(ResourceDiffResult diff) {
+    private Future<Void> rollingUpdate(ClusterDiffResult diff) {
         Future<Void> rollingUpdate = Future.future();
 
         if (diff.getRollingUpdate()) {
@@ -141,7 +140,7 @@ public class UpdateKafkaClusterOperation extends KafkaClusterOperation {
         return rollingUpdate;
     }
 
-    private Future<Void> scaleUp(KafkaResource kafka, ResourceDiffResult diff) {
+    private Future<Void> scaleUp(KafkaCluster kafka, ClusterDiffResult diff) {
         Future<Void> scaleUp = Future.future();
 
         if (diff.getScaleUp()) {
