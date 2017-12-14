@@ -1,6 +1,4 @@
-package io.enmasse.barnabas.controller.cluster.operations.cluster;
-
-import io.enmasse.barnabas.controller.cluster.operations.Operation;
+package io.enmasse.barnabas.controller.cluster.operations;
 
 public abstract class ClusterOperation implements Operation {
     protected final String namespace;

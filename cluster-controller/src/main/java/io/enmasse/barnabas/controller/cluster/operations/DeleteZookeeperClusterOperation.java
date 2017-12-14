@@ -1,10 +1,9 @@
-package io.enmasse.barnabas.controller.cluster.operations.cluster;
+package io.enmasse.barnabas.controller.cluster.operations;
 
 import io.enmasse.barnabas.controller.cluster.K8SUtils;
-import io.enmasse.barnabas.controller.cluster.operations.OperationExecutor;
 import io.enmasse.barnabas.controller.cluster.operations.kubernetes.DeleteServiceOperation;
 import io.enmasse.barnabas.controller.cluster.operations.kubernetes.DeleteStatefulSetOperation;
-import io.enmasse.barnabas.controller.cluster.resources.ZookeeperResource;
+import io.enmasse.barnabas.controller.cluster.resources.ZookeeperCluster;
 import io.vertx.core.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +24,7 @@ public class DeleteZookeeperClusterOperation extends ZookeeperClusterOperation {
 
                 log.info("Deleting Zookeeper cluster {} from namespace {}", name + "-zookeeper", namespace);
 
-                ZookeeperResource zk = ZookeeperResource.fromStatefulSet(k8s.getStatefulSet(namespace, name + "-zookeeper"));
+                ZookeeperCluster zk = ZookeeperCluster.fromStatefulSet(k8s.getStatefulSet(namespace, name + "-zookeeper"));
 
                 Future<Void> futureService = Future.future();
                 OperationExecutor.getInstance().execute(new DeleteServiceOperation(namespace, name + "-zookeeper"), futureService.completer());

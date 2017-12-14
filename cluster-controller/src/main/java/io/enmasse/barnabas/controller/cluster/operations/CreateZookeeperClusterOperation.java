@@ -1,10 +1,9 @@
-package io.enmasse.barnabas.controller.cluster.operations.cluster;
+package io.enmasse.barnabas.controller.cluster.operations;
 
 import io.enmasse.barnabas.controller.cluster.K8SUtils;
-import io.enmasse.barnabas.controller.cluster.operations.OperationExecutor;
 import io.enmasse.barnabas.controller.cluster.operations.kubernetes.CreateServiceOperation;
 import io.enmasse.barnabas.controller.cluster.operations.kubernetes.CreateStatefulSetOperation;
-import io.enmasse.barnabas.controller.cluster.resources.ZookeeperResource;
+import io.enmasse.barnabas.controller.cluster.resources.ZookeeperCluster;
 import io.vertx.core.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +24,7 @@ public class CreateZookeeperClusterOperation extends ZookeeperClusterOperation {
 
                 log.info("Creating Zookeeper cluster {} in namespace {}", name + "-zookeeper", namespace);
 
-                ZookeeperResource zk = ZookeeperResource.fromConfigMap(k8s.getConfigmap(namespace, name));
+                ZookeeperCluster zk = ZookeeperCluster.fromConfigMap(k8s.getConfigmap(namespace, name));
 
                 Future<Void> futureService = Future.future();
                 OperationExecutor.getInstance().execute(new CreateServiceOperation(zk.generateService()), futureService.completer());

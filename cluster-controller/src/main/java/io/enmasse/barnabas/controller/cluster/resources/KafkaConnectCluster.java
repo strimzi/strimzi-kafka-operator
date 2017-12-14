@@ -9,22 +9,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class KafkaConnectResource extends AbstractResource {
+public class KafkaConnectCluster extends AbstractCluster {
 
     // Port configuration
     private final int restApiPort = 8083;
     private final String restApiPortName = "rest-api";
-
-    // Number of replicas
-    private int replicas = DEFAULT_REPLICAS;
-
-    // Docker image configuration
-    private String image = DEFAULT_IMAGE;
-
-    // Probe configuration
-    private String healthCheckPath = "/";
-    private int healthCheckTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
-    private int healthCheckInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
 
     // Kafka Connect configuration
     private String bootstrapServers = DEFAULT_BOOTSTRAP_SERVERS;
@@ -71,12 +60,17 @@ public class KafkaConnectResource extends AbstractResource {
     private static String KEY_OFFSET_STORAGE_REPLICATION_FACTOR = "KAFKA_CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR";
     private static String KEY_STATUS_STORAGE_REPLICATION_FACTOR = "KAFKA_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR";
 
-    private KafkaConnectResource(String namespace, String name) {
+    private KafkaConnectCluster(String namespace, String name) {
         super(namespace, name);
+        this.image = DEFAULT_IMAGE;
+        this.replicas = DEFAULT_REPLICAS;
+        this.healthCheckPath = "/";
+        this.healthCheckTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
+        this.healthCheckInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
     }
 
-    public static KafkaConnectResource fromConfigMap(ConfigMap cm) {
-        KafkaConnectResource kafkaConnect = new KafkaConnectResource(cm.getMetadata().getNamespace(), cm.getMetadata().getName());
+    public static KafkaConnectCluster fromConfigMap(ConfigMap cm) {
+        KafkaConnectCluster kafkaConnect = new KafkaConnectCluster(cm.getMetadata().getNamespace(), cm.getMetadata().getName());
         kafkaConnect.setLabels(cm.getMetadata().getLabels());
 
         kafkaConnect.setReplicas(Integer.parseInt(cm.getData().getOrDefault(KEY_REPLICAS, String.valueOf(DEFAULT_REPLICAS))));
@@ -99,8 +93,8 @@ public class KafkaConnectResource extends AbstractResource {
 
     // This is currently not needed. But the similar function for statefulsets is used partially. Should we remove this?
     // Or might we need to use it in the future?
-    public static KafkaConnectResource fromDeployment(Deployment dep) {
-        KafkaConnectResource kafkaConnect =  new KafkaConnectResource(dep.getMetadata().getNamespace(), dep.getMetadata().getName());
+    public static KafkaConnectCluster fromDeployment(Deployment dep) {
+        KafkaConnectCluster kafkaConnect =  new KafkaConnectCluster(dep.getMetadata().getNamespace(), dep.getMetadata().getName());
 
         kafkaConnect.setLabels(dep.getMetadata().getLabels());
         kafkaConnect.setReplicas(dep.getSpec().getReplicas());
@@ -124,8 +118,8 @@ public class KafkaConnectResource extends AbstractResource {
         return kafkaConnect;
     }
 
-    public ResourceDiffResult diff(Deployment dep)  {
-        ResourceDiffResult diff = new ResourceDiffResult();
+    public ClusterDiffResult diff(Deployment dep)  {
+        ClusterDiffResult diff = new ClusterDiffResult();
 
         if (replicas > dep.getSpec().getReplicas()) {
             log.info("Diff: Expected replicas {}, actual replicas {}", replicas, dep.getSpec().getReplicas());
@@ -182,50 +176,21 @@ public class KafkaConnectResource extends AbstractResource {
     }
 
     public Deployment generateDeployment() {
-        Container container = new ContainerBuilder()
-                .withName(name)
-                .withImage(image)
-                .withEnv(getEnvList())
-                .withPorts(createContainerPort(restApiPortName, restApiPort, "TCP"))
-                .withLivenessProbe(createHttpProbe(healthCheckPath, restApiPortName, healthCheckInitialDelay, healthCheckTimeout))
-                .withReadinessProbe(createHttpProbe(healthCheckPath, restApiPortName, healthCheckInitialDelay, healthCheckTimeout))
-                .build();
 
-        Deployment dep = new DeploymentBuilder()
-                .withNewMetadata()
-                .withName(name)
-                .withLabels(getLabelsWithName())
-                .withNamespace(namespace)
-                .endMetadata()
-                .withNewSpec()
-                .withStrategy(new DeploymentStrategyBuilder().withType("RollingUpdate").withRollingUpdate(new RollingUpdateDeploymentBuilder().withMaxSurge(new IntOrString(1)).withMaxUnavailable(new IntOrString(0)).build()).build())
-                .withReplicas(replicas)
-                .withNewTemplate()
-                .withNewMetadata()
-                .withLabels(getLabels())
-                .endMetadata()
-                .withNewSpec()
-                .withContainers(container)
-                .endSpec()
-                .endTemplate()
-                .endSpec()
-                .build();
-
-        return dep;
+        return createDeployment(
+                Collections.singletonList(createContainerPort(restApiPortName, restApiPort, "TCP")),
+                createHttpProbe(healthCheckPath, restApiPortName, healthCheckInitialDelay, healthCheckTimeout),
+                createHttpProbe(healthCheckPath, restApiPortName, healthCheckInitialDelay, healthCheckTimeout));
     }
 
     public Deployment patchDeployment(Deployment dep) {
-        dep.getMetadata().setLabels(getLabelsWithName());
-        dep.getSpec().getTemplate().getMetadata().setLabels(getLabelsWithName());
-        dep.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(image);
-        dep.getSpec().getTemplate().getSpec().getContainers().get(0).setLivenessProbe(createHttpProbe(healthCheckPath, restApiPortName, healthCheckInitialDelay, healthCheckTimeout));
-        dep.getSpec().getTemplate().getSpec().getContainers().get(0).setReadinessProbe(createHttpProbe(healthCheckPath, restApiPortName, healthCheckInitialDelay, healthCheckTimeout));
-        dep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(getEnvList());
 
-        return dep;
+        return patchDeployment(dep,
+                createHttpProbe(healthCheckPath, restApiPortName, healthCheckInitialDelay, healthCheckTimeout),
+                createHttpProbe(healthCheckPath, restApiPortName, healthCheckInitialDelay, healthCheckTimeout));
     }
 
-    private List<EnvVar> getEnvList() {
+    protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(new EnvVarBuilder().withName(KEY_BOOTSTRAP_SERVERS).withValue(bootstrapServers).build());
         varList.add(new EnvVarBuilder().withName(KEY_GROUP_ID).withValue(groupId).build());
@@ -240,59 +205,39 @@ public class KafkaConnectResource extends AbstractResource {
         return varList;
     }
 
-    public void setReplicas(int replicas) {
-        this.replicas = replicas;
-    }
-
-    public void setBootstrapServers(String bootstrapServers) {
+    protected void setBootstrapServers(String bootstrapServers) {
         this.bootstrapServers = bootstrapServers;
     }
 
-    public void setImage(String image) {
-        this.image = image;
-    }
-
-    public void setGroupId(String groupId) {
+    protected void setGroupId(String groupId) {
         this.groupId = groupId;
     }
 
-    public void setKeyConverter(String keyConverter) {
+    protected void setKeyConverter(String keyConverter) {
         this.keyConverter = keyConverter;
     }
 
-    public void setKeyConverterSchemasEnable(Boolean keyConverterSchemasEnable) {
+    protected void setKeyConverterSchemasEnable(Boolean keyConverterSchemasEnable) {
         this.keyConverterSchemasEnable = keyConverterSchemasEnable;
     }
 
-    public void setValueConverter(String valueConverter) {
+    protected void setValueConverter(String valueConverter) {
         this.valueConverter = valueConverter;
     }
 
-    public void setValueConverterSchemasEnable(Boolean valueConverterSchemasEnable) {
+    protected void setValueConverterSchemasEnable(Boolean valueConverterSchemasEnable) {
         this.valueConverterSchemasEnable = valueConverterSchemasEnable;
     }
 
-    public void setConfigStorageReplicationFactor(int configStorageReplicationFactor) {
+    protected void setConfigStorageReplicationFactor(int configStorageReplicationFactor) {
         this.configStorageReplicationFactor = configStorageReplicationFactor;
     }
 
-    public void setOffsetStorageReplicationFactor(int offsetStorageReplicationFactor) {
+    protected void setOffsetStorageReplicationFactor(int offsetStorageReplicationFactor) {
         this.offsetStorageReplicationFactor = offsetStorageReplicationFactor;
     }
 
-    public void setStatusStorageReplicationFactor(int statusStorageReplicationFactor) {
+    protected void setStatusStorageReplicationFactor(int statusStorageReplicationFactor) {
         this.statusStorageReplicationFactor = statusStorageReplicationFactor;
-    }
-
-    public void setHealthCheckTimeout(int timeout) {
-        this.healthCheckTimeout = timeout;
-    }
-
-    public void setHealthCheckInitialDelay(int delay) {
-        this.healthCheckInitialDelay = delay;
-    }
-
-    public int getReplicas() {
-        return replicas;
     }
 }
