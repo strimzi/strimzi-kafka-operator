@@ -14,8 +14,7 @@ public class Main {
         String namespace = "myproject";
         Map<String, String> labels = new HashMap<>();
         labels.put("app", "barnabas");
-        labels.put("type", "deployment");
-        //labels.put("kind", "kafka");
+        labels.put("type", "cluster");
 
         try {
             Vertx vertx = Vertx.vertx();
