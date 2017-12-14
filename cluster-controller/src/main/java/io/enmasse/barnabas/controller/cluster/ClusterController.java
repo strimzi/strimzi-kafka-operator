@@ -10,6 +10,8 @@ import io.enmasse.barnabas.controller.cluster.operations.OperationExecutor;
 import io.enmasse.barnabas.controller.cluster.operations.UpdateKafkaClusterOperation;
 import io.enmasse.barnabas.controller.cluster.operations.UpdateKafkaConnectClusterOperation;
 import io.enmasse.barnabas.controller.cluster.operations.UpdateZookeeperClusterOperation;
+import io.enmasse.barnabas.controller.cluster.resources.KafkaCluster;
+import io.enmasse.barnabas.controller.cluster.resources.KafkaConnectCluster;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
@@ -25,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class ClusterController extends AbstractVerticle {
@@ -37,6 +40,8 @@ public class ClusterController extends AbstractVerticle {
     private Watch configMapWatch;
 
     private OperationExecutor opExec = null;
+
+    private long reconcileTimer;
 
     public ClusterController(ClusterControllerConfig config) throws Exception {
         log.info("Creating ClusterController");
@@ -51,7 +56,7 @@ public class ClusterController extends AbstractVerticle {
         log.info("Starting ClusterController");
 
         // Configure the executor here, but it is used only in other places
-        getVertx().createSharedWorkerExecutor("kubernetes-ops-pool", 5, 120000000000L); // time is in ns!
+        getVertx().createSharedWorkerExecutor("kubernetes-ops-pool", 5, TimeUnit.SECONDS.toNanos(120));
         this.opExec = OperationExecutor.getInstance(vertx, k8s);
 
         createConfigMapWatch(res -> {
@@ -59,7 +64,7 @@ public class ClusterController extends AbstractVerticle {
                 configMapWatch = res.result();
 
                 log.info("Setting up periodical reconciliation");
-                vertx.setPeriodic(120000, res2 -> {
+                this.reconcileTimer = vertx.setPeriodic(120000, res2 -> {
                     log.info("Triggering periodic reconciliation ...");
                     reconcile();
                 });
@@ -72,6 +77,16 @@ public class ClusterController extends AbstractVerticle {
                 start.fail("ClusterController startup failed");
             }
         });
+    }
+
+    @Override
+    public void stop(Future<Void> stop) throws Exception {
+
+        vertx.cancelTimer(reconcileTimer);
+        configMapWatch.close();
+        k8s.getKubernetesClient().close();
+
+        stop.complete();
     }
 
     private void createConfigMapWatch(Handler<AsyncResult<Watch>> handler) {
@@ -87,7 +102,8 @@ public class ClusterController extends AbstractVerticle {
                                 log.warn("Missing type in Config Map {}", cm.getMetadata().getName());
                                 return;
                             }
-                            else if (!labels.get("type").equals("kafka") && !labels.get("type").equals("kafka-connect")) {
+                            else if (!labels.get("type").equals(KafkaCluster.TYPE) &&
+                                     !labels.get("type").equals(KafkaConnectCluster.TYPE)) {
                                 log.warn("Unknown type {} received in Config Map {}", labels.get("type"), cm.getMetadata().getName());
                                 return;
                             }
@@ -98,28 +114,28 @@ public class ClusterController extends AbstractVerticle {
                             switch (action) {
                                 case ADDED:
                                     log.info("New ConfigMap {}", cm.getMetadata().getName());
-                                    if (type.equals("kafka")) {
+                                    if (type.equals(KafkaCluster.TYPE)) {
                                         addKafkaCluster(cm);
                                     }
-                                    else if (type.equals("kafka-connect")) {
+                                    else if (type.equals(KafkaConnectCluster.TYPE)) {
                                         addKafkaConnectCluster(cm);
                                     }
                                     break;
                                 case DELETED:
                                     log.info("Deleted ConfigMap {}", cm.getMetadata().getName());
-                                    if (type.equals("kafka")) {
+                                    if (type.equals(KafkaCluster.TYPE)) {
                                         deleteKafkaCluster(cm);
                                     }
-                                    else if (type.equals("kafka-connect")) {
+                                    else if (type.equals(KafkaConnectCluster.TYPE)) {
                                         deleteKafkaConnectCluster(cm);
                                     }
                                     break;
                                 case MODIFIED:
                                     log.info("Modified ConfigMap {}", cm.getMetadata().getName());
-                                    if (type.equals("kafka")) {
+                                    if (type.equals(KafkaCluster.TYPE)) {
                                         updateKafkaCluster(cm);
                                     }
-                                    else if (type.equals("kafka-connect")) {
+                                    else if (type.equals(KafkaConnectCluster.TYPE)) {
                                         updateKafkaConnectCluster(cm);
                                     }
                                     break;
@@ -148,7 +164,7 @@ public class ClusterController extends AbstractVerticle {
                     future.complete(watch);
                 }, res -> {
                     if (res.succeeded())    {
-                        log.info("ConfigMap watcher up and running for lables {}", labels);
+                        log.info("ConfigMap watcher up and running for labels {}", labels);
                         handler.handle(Future.succeededFuture((Watch)res.result()));
                     }
                     else {
@@ -185,7 +201,7 @@ public class ClusterController extends AbstractVerticle {
         log.info("Reconciling Kafka clusters ...");
 
         Map<String, String> kafkaLabels = new HashMap(labels);
-        kafkaLabels.put("type", "kafka");
+        kafkaLabels.put("type", KafkaCluster.TYPE);
 
         List<ConfigMap> cms = k8s.getConfigmaps(namespace, kafkaLabels);
         List<StatefulSet> sss = k8s.getStatefulSets(namespace, kafkaLabels);
@@ -227,7 +243,7 @@ public class ClusterController extends AbstractVerticle {
         log.info("Reconciling Kafka Connect clusters ...");
 
         Map<String, String> kafkaLabels = new HashMap(labels);
-        kafkaLabels.put("type", "kafka-connect");
+        kafkaLabels.put("type", KafkaConnectCluster.TYPE);
 
         List<ConfigMap> cms = k8s.getConfigmaps(namespace, kafkaLabels);
         List<Deployment> deps = k8s.getDeployments(namespace, kafkaLabels);

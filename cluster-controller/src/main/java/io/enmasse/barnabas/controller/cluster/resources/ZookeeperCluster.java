@@ -11,6 +11,8 @@ import java.util.Map;
 
 public class ZookeeperCluster extends AbstractCluster {
 
+    public static final String TYPE = "zookeeper";
+
     private final int clientPort = 2181;
     private final String clientPortName = "clients";
     private final int clusteringPort = 2888;
@@ -178,8 +180,8 @@ public class ZookeeperCluster extends AbstractCluster {
     protected void setLabels(Map<String, String> labels) {
         Map<String, String> newLabels = new HashMap<>(labels);
 
-        if (newLabels.containsKey("type") && newLabels.get("type").equals("kafka")) {
-            newLabels.put("type", "zookeeper");
+        if (newLabels.containsKey("type") && newLabels.get("type").equals(KafkaCluster.TYPE)) {
+            newLabels.put("type", TYPE);
         }
 
         super.setLabels(newLabels);

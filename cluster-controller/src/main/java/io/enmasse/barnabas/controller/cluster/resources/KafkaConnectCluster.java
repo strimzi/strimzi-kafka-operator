@@ -11,6 +11,8 @@ import java.util.stream.Collectors;
 
 public class KafkaConnectCluster extends AbstractCluster {
 
+    public static final String TYPE = "kafka-connect";
+
     // Port configuration
     private final int restApiPort = 8083;
     private final String restApiPortName = "rest-api";

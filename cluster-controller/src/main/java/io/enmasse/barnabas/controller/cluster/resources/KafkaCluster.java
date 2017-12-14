@@ -11,6 +11,8 @@ import java.util.stream.Collectors;
 
 public class KafkaCluster extends AbstractCluster {
 
+    public static final String TYPE = "kafka";
+
     private final int clientPort = 9092;
     private final String clientPortName = "clients";
     private final String mounthPath = "/var/lib/kafka";
