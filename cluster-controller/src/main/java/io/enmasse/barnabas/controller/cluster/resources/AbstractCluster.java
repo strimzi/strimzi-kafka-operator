@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.extensions.RollingUpdateDeploymentBuilder
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSetUpdateStrategyBuilder;
+import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +34,12 @@ public abstract class AbstractCluster {
     protected int healthCheckInitialDelay;
 
     protected String headlessName;
+
+    protected final int metricsPort = 9404;
+    protected final String metricsPortName = "kafkametrics";
+    protected boolean isMetricsEnabled;
+
+    protected JsonObject metricsConfig;
 
     protected AbstractCluster(String namespace, String name) {
         this.name = name;
@@ -82,6 +89,22 @@ public abstract class AbstractCluster {
         return labelsWithName;
     }
 
+    protected boolean isMetricsEnabled() {
+        return isMetricsEnabled;
+    }
+
+    protected void setMetricsEnabled(boolean isMetricsEnabled) {
+        this.isMetricsEnabled = isMetricsEnabled;
+    }
+
+    protected JsonObject getMetricsConfig() {
+        return metricsConfig;
+    }
+
+    protected void setMetricsConfig(JsonObject metricsConfig) {
+        this.metricsConfig = metricsConfig;
+    }
+
     protected List<EnvVar> getEnvVars() {
         return null;
     }
@@ -124,6 +147,33 @@ public abstract class AbstractCluster {
                 .build();
         log.trace("Created emptyDir volume named {}", volume);
         return volume;
+    }
+
+    protected Volume createConfigMapVolume(String name) {
+
+        ConfigMapVolumeSource configMapVolumeSource = new ConfigMapVolumeSourceBuilder()
+                .withName(name)
+                .build();
+
+        Volume volume = new VolumeBuilder()
+                .withName(name)
+                .withConfigMap(configMapVolumeSource)
+                .build();
+        log.info("Created configMap volume {}", volume);
+        return volume;
+    }
+
+    protected ConfigMap createConfigMap(String name, Map<String, String> data) {
+
+        ConfigMap metricsCm = new ConfigMapBuilder()
+                .withNewMetadata()
+                .withName(name)
+                .withNamespace(namespace)
+                .endMetadata()
+                .withData(data)
+                .build();
+
+        return metricsCm;
     }
 
     protected Probe createExecProbe(String command, int initialDelay, int timeout) {

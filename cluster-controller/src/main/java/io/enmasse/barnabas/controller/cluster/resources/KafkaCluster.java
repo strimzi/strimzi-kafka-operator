@@ -2,9 +2,11 @@ package io.enmasse.barnabas.controller.cluster.resources;
 
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
+import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -17,6 +19,8 @@ public class KafkaCluster extends AbstractCluster {
     private final String clientPortName = "clients";
     private final String mounthPath = "/var/lib/kafka";
     private final String volumeName = "kafka-storage";
+    private final String metricsConfigVolumeName = "kafka-metrics-config";
+    private final String metricsConfigMountPath = "/opt/prometheus/config/";
 
     // Kafka configuration
     private String zookeeperConnect = DEFAULT_KAFKA_ZOOKEEPER_CONNECT;
@@ -29,6 +33,7 @@ public class KafkaCluster extends AbstractCluster {
     private static int DEFAULT_REPLICAS = 3;
     private static int DEFAULT_HEALTHCHECK_DELAY = 15;
     private static int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
+    private static boolean DEFAULT_KAFKA_METRICS_ENABLED = true;
 
     // Kafka configuration defaults
     private static String DEFAULT_KAFKA_ZOOKEEPER_CONNECT = "zookeeper:2181";
@@ -41,6 +46,8 @@ public class KafkaCluster extends AbstractCluster {
     private static String KEY_REPLICAS = "kafka-nodes";
     private static String KEY_HEALTHCHECK_DELAY = "kafka-healthcheck-delay";
     private static String KEY_HEALTHCHECK_TIMEOUT = "kafka-healthcheck-timeout";
+    private static String KEY_METRICS_CONFIG = "kafka-metrics-config";
+    private static String KEY_KAFKA_METRICS_ENABLED = "KAFKA_METRICS_ENABLED";
 
     // Kafka configuration keys
     private static String KEY_KAFKA_ZOOKEEPER_CONNECT = "KAFKA_ZOOKEEPER_CONNECT";
@@ -56,6 +63,7 @@ public class KafkaCluster extends AbstractCluster {
         this.healthCheckPath = "/opt/kafka/kafka_healthcheck.sh";
         this.healthCheckTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
         this.healthCheckInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
+        this.isMetricsEnabled = DEFAULT_KAFKA_METRICS_ENABLED;
     }
 
     public static KafkaCluster fromConfigMap(ConfigMap cm) {
@@ -71,6 +79,10 @@ public class KafkaCluster extends AbstractCluster {
         kafka.setDefaultReplicationFactor(Integer.parseInt(cm.getData().getOrDefault(KEY_KAFKA_DEFAULT_REPLICATION_FACTOR, String.valueOf(DEFAULT_KAFKA_DEFAULT_REPLICATION_FACTOR))));
         kafka.setOffsetsTopicReplicationFactor(Integer.parseInt(cm.getData().getOrDefault(KEY_KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR, String.valueOf(DEFAULT_KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR))));
         kafka.setTransactionStateLogReplicationFactor(Integer.parseInt(cm.getData().getOrDefault(KEY_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR, String.valueOf(DEFAULT_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR))));
+
+        // TODO : making more checks for exception on JSON ?
+        kafka.setMetricsEnabled(Boolean.parseBoolean(cm.getData().getOrDefault(KEY_KAFKA_METRICS_ENABLED, String.valueOf(DEFAULT_KAFKA_METRICS_ENABLED))));
+        kafka.setMetricsConfig(new JsonObject(cm.getData().get(KEY_METRICS_CONFIG)));
 
         return kafka;
     }
@@ -165,11 +177,20 @@ public class KafkaCluster extends AbstractCluster {
     public StatefulSet generateStatefulSet() {
 
         return createStatefulSet(
-                Collections.singletonList(createContainerPort(clientPortName, clientPort, "TCP")),
-                Collections.singletonList(createEmptyDirVolume(volumeName)),
-                Collections.singletonList(createVolumeMount(volumeName, mounthPath)),
+                getContainerPortList(),
+                getVolumes(),
+                getVolumeMounts(),
                 createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout),
                 createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout));
+    }
+
+    public ConfigMap generateMetricsConfigMap() {
+
+        // TODO: making data field and configMap name constants ?
+        Map<String, String> data = new HashMap<>();
+        data.put("config.yml", this.metricsConfig.toString());
+
+        return createConfigMap("kafka-metrics-config", data);
     }
 
     public StatefulSet patchStatefulSet(StatefulSet statefulSet) {
@@ -179,12 +200,40 @@ public class KafkaCluster extends AbstractCluster {
                 createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout));
     }
 
+    private List<ContainerPort> getContainerPortList() {
+        List<ContainerPort> portList = new ArrayList<>();
+        portList.add(createContainerPort(clientPortName, clientPort, "TCP"));
+        // TODO : adding metrics port only if metrics are enabled
+        portList.add(createContainerPort(metricsPortName, metricsPort, "TCP"));
+
+        return portList;
+    }
+
+    private List<Volume> getVolumes() {
+        List<Volume> volumeList = new ArrayList<>();
+        volumeList.add(createEmptyDirVolume(volumeName));
+        // TODO : creating metrics volume only if metrics are enabled
+        volumeList.add(createConfigMapVolume(metricsConfigVolumeName));
+
+        return volumeList;
+    }
+
+    private List<VolumeMount> getVolumeMounts() {
+        List<VolumeMount> volumeMountList = new ArrayList<>();
+        volumeMountList.add(createVolumeMount(volumeName, mounthPath));
+        // TODO : creating metrics volume mount only if metrics are enabled
+        volumeMountList.add(createVolumeMount(metricsConfigVolumeName, metricsConfigMountPath));
+
+        return volumeMountList;
+    }
+
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(new EnvVarBuilder().withName(KEY_KAFKA_ZOOKEEPER_CONNECT).withValue(zookeeperConnect).build());
         varList.add(new EnvVarBuilder().withName(KEY_KAFKA_DEFAULT_REPLICATION_FACTOR).withValue(String.valueOf(defaultReplicationFactor)).build());
         varList.add(new EnvVarBuilder().withName(KEY_KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR).withValue(String.valueOf(offsetsTopicReplicationFactor)).build());
         varList.add(new EnvVarBuilder().withName(KEY_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR).withValue(String.valueOf(transactionStateLogReplicationFactor)).build());
+        varList.add(new EnvVarBuilder().withName(KEY_KAFKA_METRICS_ENABLED).withValue(String.valueOf(isMetricsEnabled)).build());
 
         return varList;
     }

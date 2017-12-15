@@ -1,6 +1,7 @@
 package io.enmasse.barnabas.controller.cluster.operations;
 
 import io.enmasse.barnabas.controller.cluster.K8SUtils;
+import io.enmasse.barnabas.controller.cluster.operations.kubernetes.CreateConfigMapOperation;
 import io.enmasse.barnabas.controller.cluster.operations.kubernetes.CreateServiceOperation;
 import io.enmasse.barnabas.controller.cluster.operations.kubernetes.CreateStatefulSetOperation;
 import io.enmasse.barnabas.controller.cluster.resources.KafkaCluster;
@@ -26,6 +27,10 @@ public class CreateKafkaClusterOperation extends KafkaClusterOperation {
 
                 KafkaCluster kafka = KafkaCluster.fromConfigMap(k8s.getConfigmap(namespace, name));
 
+                // TODO : create configMap only if metrics are enabled
+                Future<Void> futureConfigMap = Future.future();
+                OperationExecutor.getInstance().execute(new CreateConfigMapOperation(kafka.generateMetricsConfigMap()), futureConfigMap.completer());
+
                 Future<Void> futureService = Future.future();
                 OperationExecutor.getInstance().execute(new CreateServiceOperation(kafka.generateService()), futureService.completer());
 
@@ -35,7 +40,7 @@ public class CreateKafkaClusterOperation extends KafkaClusterOperation {
                 Future<Void> futureStatefulSet = Future.future();
                 OperationExecutor.getInstance().execute(new CreateStatefulSetOperation(kafka.generateStatefulSet()), futureStatefulSet.completer());
 
-                CompositeFuture.join(futureService, futureHeadlessService, futureStatefulSet).setHandler(ar -> {
+                CompositeFuture.join(futureConfigMap, futureService, futureHeadlessService, futureStatefulSet).setHandler(ar -> {
                     if (ar.succeeded()) {
                         log.info("Kafka cluster {} successfully created in namespace {}", name, namespace);
                         handler.handle(Future.succeededFuture());
