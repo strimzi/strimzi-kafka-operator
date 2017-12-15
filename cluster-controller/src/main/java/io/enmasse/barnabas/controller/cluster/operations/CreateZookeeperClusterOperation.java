@@ -1,6 +1,7 @@
 package io.enmasse.barnabas.controller.cluster.operations;
 
 import io.enmasse.barnabas.controller.cluster.K8SUtils;
+import io.enmasse.barnabas.controller.cluster.operations.kubernetes.CreateConfigMapOperation;
 import io.enmasse.barnabas.controller.cluster.operations.kubernetes.CreateServiceOperation;
 import io.enmasse.barnabas.controller.cluster.operations.kubernetes.CreateStatefulSetOperation;
 import io.enmasse.barnabas.controller.cluster.resources.ZookeeperCluster;
@@ -26,6 +27,10 @@ public class CreateZookeeperClusterOperation extends ZookeeperClusterOperation {
 
                 ZookeeperCluster zk = ZookeeperCluster.fromConfigMap(k8s.getConfigmap(namespace, name));
 
+                // TODO : create configMap only if metrics are enabled
+                Future<Void> futureConfigMap = Future.future();
+                OperationExecutor.getInstance().execute(new CreateConfigMapOperation(zk.generateMetricsConfigMap()), futureConfigMap.completer());
+
                 Future<Void> futureService = Future.future();
                 OperationExecutor.getInstance().execute(new CreateServiceOperation(zk.generateService()), futureService.completer());
 
@@ -35,7 +40,7 @@ public class CreateZookeeperClusterOperation extends ZookeeperClusterOperation {
                 Future<Void> futureStatefulSet = Future.future();
                 OperationExecutor.getInstance().execute(new CreateStatefulSetOperation(zk.generateStatefulSet()), futureStatefulSet.completer());
 
-                CompositeFuture.join(futureService, futureHeadlessService, futureStatefulSet).setHandler(ar -> {
+                CompositeFuture.join(futureConfigMap, futureService, futureHeadlessService, futureStatefulSet).setHandler(ar -> {
                     if (ar.succeeded()) {
                         log.info("Zookeeper cluster {} successfully created in namespace {}", name + "-zookeeper", namespace);
                         handler.handle(Future.succeededFuture());

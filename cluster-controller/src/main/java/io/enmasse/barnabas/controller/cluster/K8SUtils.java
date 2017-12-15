@@ -61,6 +61,11 @@ public class K8SUtils {
         client.extensions().deployments().createOrReplace(dep);
     }
 
+    public void createConfigMap(ConfigMap cm) {
+        log.info("Creating configmap {}", cm.getMetadata().getName());
+        client.configMaps().createOrReplace(cm);
+    }
+
     /*
       GET methods
      */
@@ -182,6 +187,10 @@ public class K8SUtils {
 
     public boolean podExists(String namespace, String name) {
         return getPod(namespace, name) == null ? false : true;
+    }
+
+    public boolean configMapExists(String namespace, String name) {
+        return getConfigmap(namespace, name) == null ? false : true;
     }
 
     /*
