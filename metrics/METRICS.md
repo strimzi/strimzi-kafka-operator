@@ -107,7 +107,7 @@ eval $(minikube docker-env)
 After that it's possible to build the image by running
 
 ```
-docker build -t enmasseproject/grafana:latest .
+docker build -t barnabas/grafana:latest .
 ```
 
 Finally you can execute the actual deployment by running

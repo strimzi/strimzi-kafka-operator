@@ -11,7 +11,7 @@ spec:
     spec:
       containers:
       - name: grafana
-        image: enmasseproject/grafana:latest
+        image: barnabas/grafana:latest
         imagePullPolicy: IfNotPresent
         ports:
         - name: grafana
