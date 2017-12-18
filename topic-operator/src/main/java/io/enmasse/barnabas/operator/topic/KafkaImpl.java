@@ -24,6 +24,7 @@ import io.vertx.core.Vertx;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ListTopicsResult;
+import org.apache.kafka.clients.admin.NewPartitions;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.common.KafkaFuture;
@@ -34,12 +35,8 @@ import org.slf4j.LoggerFactory;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
-import java.util.stream.Collectors;
 
 public class KafkaImpl implements Kafka {
 
@@ -236,7 +233,9 @@ public class KafkaImpl implements Kafka {
 
     @Override
     public void increasePartitions(Topic topic, Handler<AsyncResult<Void>> handler) {
-
+        topic.getNumPartitions();
+        KafkaFuture<Void> future = adminClient.createPartitions(Collections.singletonMap(topic.getTopicName().toString(), NewPartitions.increaseTo(topic.getNumPartitions()))).values().get(topic.getTopicName());
+        queueWork(new UniWork<>(future, handler));
     }
 
     /**

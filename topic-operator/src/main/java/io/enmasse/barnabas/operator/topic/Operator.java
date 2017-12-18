@@ -444,7 +444,10 @@ public class Operator implements Op {
                     TopicDiff merged = oursKafka.merge(oursK8s);
                     Topic result = merged.apply(privateTopic);
                     if (merged.changesReplicationFactor()) {
-                        enqueue(new ErrorEvent(involvedObject, "Topic Replication Factor cannot be changed"));
+                        enqueue(new ErrorEvent(involvedObject, "Topic replication factor cannot be changed"));
+                        // TODO called reconciliationResultHandler, or push error handling into reconciliationResultHandler
+                    } else if (merged.decreasesNumPartitions()) {
+                        enqueue(new ErrorEvent(involvedObject, "Number of partitions cannot be decreased"));
                         // TODO called reconciliationResultHandler, or push error handling into reconciliationResultHandler
                     } else {
                         enqueue(new UpdateConfigMap(result, involvedObject, ar -> {

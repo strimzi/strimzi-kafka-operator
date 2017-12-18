@@ -140,4 +140,40 @@ public class TopicDiffTest {
         configEnd.put("x", "24");
         assertEquals(end, new Topic.Builder(topicA.getTopicName(), topicB.getNumPartitions(), configEnd).build());
     }
+
+    @Test
+    public void testChangesNumPartitions() {
+        Topic topicC = new Topic.Builder(topicB.getTopicName() , topicB.getNumPartitions(), topicB.getConfig()).build();
+        assertTrue(TopicDiff.diff(topicB, topicA).changesNumPartitions());
+        assertTrue(TopicDiff.diff(topicB, topicA).decreasesNumPartitions());
+        assertTrue(TopicDiff.diff(topicA, topicB).changesNumPartitions());
+        assertFalse(TopicDiff.diff(topicA, topicB).decreasesNumPartitions());
+        assertFalse(TopicDiff.diff(topicB, topicC).changesNumPartitions());
+        assertFalse(TopicDiff.diff(topicB, topicC).decreasesNumPartitions());
+    }
+
+    @Test
+    public void testEmptyDiff() {
+        assertTrue(TopicDiff.diff(topicA, topicA).isEmpty());
+        assertFalse(TopicDiff.diff(topicA, topicB).isEmpty());
+        assertFalse(TopicDiff.diff(topicB, topicA).isEmpty());
+    }
+
+    @Test
+    public void testChangesConfig() {
+        Topic topicC = new Topic.Builder(topicB.getTopicName() , topicB.getNumPartitions(), topicB.getConfig()).build();
+        assertTrue(TopicDiff.diff(topicB, topicA).changesConfig());
+        assertTrue(TopicDiff.diff(topicA, topicB).changesConfig());
+        assertFalse(TopicDiff.diff(topicB, topicC).changesConfig());
+    }
+
+    @Test
+    public void testChangesReplicationFactor() {
+        Topic topicC = new Topic.Builder(topicB.getTopicName() , topicB.getNumPartitions(), (short) 2, topicB.getConfig()).build();
+        Topic topicD = new Topic.Builder(topicB.getTopicName() , topicC.getNumPartitions()+1, (short) 2, topicB.getConfig()).build();
+        Topic topicE = new Topic.Builder(topicB.getTopicName() , topicB.getNumPartitions(), (short) 3, topicB.getConfig()).build();
+        assertFalse(TopicDiff.diff(topicC, topicD).changesReplicationFactor());
+        assertTrue(TopicDiff.diff(topicD, topicE).changesReplicationFactor());
+        assertTrue(TopicDiff.diff(topicC, topicE).changesReplicationFactor());
+    }
 }

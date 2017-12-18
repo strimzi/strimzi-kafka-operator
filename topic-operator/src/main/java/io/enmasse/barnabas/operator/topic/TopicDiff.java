@@ -42,9 +42,11 @@ public class TopicDiff {
 
     private static class NumPartitionsDifference extends Difference {
         public static final String ADDRESS = "numPartitions";
-        private int newNumPartitions;
+        private final int oldNumPartitions;
+        private final int newNumPartitions;
 
-        public NumPartitionsDifference(int newNumPartitions) {
+        public NumPartitionsDifference(int oldNumPartitions, int newNumPartitions) {
+            this.oldNumPartitions = oldNumPartitions;
             this.newNumPartitions = newNumPartitions;
         }
 
@@ -76,6 +78,11 @@ public class TopicDiff {
         @Override
         protected void apply(Topic.Builder builder) {
             builder.withNumPartitions(this.newNumPartitions);
+        }
+
+        int numPartitionsCmp() {
+            // strictly speaking there's an issue here with when the - overflows
+            return newNumPartitions - oldNumPartitions;
         }
     }
 
@@ -221,7 +228,7 @@ public class TopicDiff {
         }
         Map<String, Difference> differences = new HashMap<>();
         if (source.getNumPartitions() != target.getNumPartitions()) {
-            NumPartitionsDifference numPartitionsDifference = new NumPartitionsDifference(target.getNumPartitions());
+            NumPartitionsDifference numPartitionsDifference = new NumPartitionsDifference(source.getNumPartitions(), target.getNumPartitions());
             differences.put(numPartitionsDifference.address(), numPartitionsDifference);
         }
         if (source.getNumReplicas() != target.getNumReplicas()) {
@@ -287,6 +294,12 @@ public class TopicDiff {
 
     public boolean changesNumPartitions() {
         return this.differences.containsKey(NumPartitionsDifference.ADDRESS);
+    }
+
+    public boolean decreasesNumPartitions() {
+        NumPartitionsDifference newP = (NumPartitionsDifference)this.differences.get(NumPartitionsDifference.ADDRESS);
+        return newP != null && newP.numPartitionsCmp() < 0;
+
     }
 
     public boolean changesConfig() {

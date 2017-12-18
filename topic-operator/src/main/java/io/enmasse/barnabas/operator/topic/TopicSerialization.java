@@ -56,7 +56,7 @@ public class TopicSerialization {
     public static final String JSON_KEY_REPLICAS = "replicas";
     public static final String JSON_KEY_CONFIG = "config";
 
-    private static String configToYaml(Config config) {
+    /*private static String configToYaml(Config config) {
         YAMLFactory yf = new YAMLFactory();
         ObjectMapper mapper = new ObjectMapper(yf);
         ObjectNode root = mapper.createObjectNode();
@@ -71,7 +71,7 @@ public class TopicSerialization {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
+    }*/
 
     private static Map<String, String> topicConfigFromConfigMapString(Map<String, String> mapData) throws IOException {
         String value = mapData.get(CM_KEY_CONFIG);
