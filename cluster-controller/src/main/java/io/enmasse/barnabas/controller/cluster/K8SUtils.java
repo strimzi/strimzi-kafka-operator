@@ -110,7 +110,11 @@ public class K8SUtils {
     }
 
     public ConfigMap getConfigmap(String namespace, String name) {
-        return client.configMaps().inNamespace(namespace).withName(name).get();
+        return getConfigmapResource(namespace, name).get();
+    }
+
+    public Resource<ConfigMap, DoneableConfigMap> getConfigmapResource(String namespace, String name) {
+        return client.configMaps().inNamespace(namespace).withName(name);
     }
 
     public List<ConfigMap> getConfigmaps(String namespace, Map<String, String> labels) {
@@ -145,6 +149,13 @@ public class K8SUtils {
         if (podExists(namespace, name)) {
             log.debug("Deleting pod {}", name);
             getPodResource(namespace, name).delete();
+        }
+    }
+
+    public void deleteConfigMap(String namespace, String name) {
+        if (configMapExists(namespace, name)) {
+            log.debug("Deleting configmap {}", name);
+            getConfigmapResource(namespace, name).delete();
         }
     }
 

@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class ZookeeperCluster extends AbstractCluster {
 
@@ -76,6 +77,7 @@ public class ZookeeperCluster extends AbstractCluster {
         zk.setMetricsEnabled(metricsConfig != null);
         if (zk.isMetricsEnabled()) {
             zk.setMetricsConfig(new JsonObject(metricsConfig));
+            zk.setMetricsConfigName(cm.getMetadata().getName() + "-zookeeper-metrics-config");
         }
 
         return zk;
@@ -85,14 +87,21 @@ public class ZookeeperCluster extends AbstractCluster {
     // and name. Do we need this as it is? Or would it be enough to create just and empty shell from name and namespace
     // which would generate the headless name?
     public static ZookeeperCluster fromStatefulSet(StatefulSet ss) {
-        String name = ss.getMetadata().getName();
-        ZookeeperCluster zk =  new ZookeeperCluster(ss.getMetadata().getNamespace(), name);
+        ZookeeperCluster zk =  new ZookeeperCluster(ss.getMetadata().getNamespace(), ss.getMetadata().getName());
 
         zk.setLabels(ss.getMetadata().getLabels());
         zk.setReplicas(ss.getSpec().getReplicas());
         zk.setImage(ss.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
         zk.setHealthCheckInitialDelay(ss.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds());
         zk.setHealthCheckInitialDelay(ss.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds());
+
+        Map<String, String> vars = ss.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream().collect(
+                Collectors.toMap(EnvVar::getName, EnvVar::getValue));
+
+        zk.setMetricsEnabled(Boolean.parseBoolean(vars.getOrDefault(KEY_ZOOKEEPER_METRICS_ENABLED, String.valueOf(DEFAULT_ZOOKEEPER_METRICS_ENABLED))));
+        if (zk.isMetricsEnabled()) {
+            zk.setMetricsConfigName(ss.getMetadata().getName() + "-metrics-config");
+        }
 
         return zk;
     }
@@ -163,9 +172,9 @@ public class ZookeeperCluster extends AbstractCluster {
 
         // TODO: making data field and configMap name constants ?
         Map<String, String> data = new HashMap<>();
-        data.put("config.yml", this.metricsConfig.toString());
+        data.put("config.yml", metricsConfig.toString());
 
-        return createConfigMap("zookeeper-metrics-config", data);
+        return createConfigMap(metricsConfigName, data);
     }
 
     public StatefulSet patchStatefulSet(StatefulSet statefulSet) {
@@ -208,7 +217,7 @@ public class ZookeeperCluster extends AbstractCluster {
         List<Volume> volumeList = new ArrayList<>();
         volumeList.add(createEmptyDirVolume(volumeName));
         if (isMetricsEnabled) {
-            volumeList.add(createConfigMapVolume(metricsConfigVolumeName));
+            volumeList.add(createConfigMapVolume(metricsConfigVolumeName, metricsConfigName));
         }
 
         return volumeList;

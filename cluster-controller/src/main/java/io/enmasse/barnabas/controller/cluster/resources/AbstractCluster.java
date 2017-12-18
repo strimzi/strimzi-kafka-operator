@@ -40,6 +40,7 @@ public abstract class AbstractCluster {
     protected boolean isMetricsEnabled;
 
     protected JsonObject metricsConfig;
+    protected String metricsConfigName;
 
     protected AbstractCluster(String namespace, String name) {
         this.name = name;
@@ -105,6 +106,14 @@ public abstract class AbstractCluster {
         this.metricsConfig = metricsConfig;
     }
 
+    public String getMetricsConfigName() {
+        return metricsConfigName;
+    }
+
+    protected void setMetricsConfigName(String metricsConfigName) {
+        this.metricsConfigName = metricsConfigName;
+    }
+
     protected List<EnvVar> getEnvVars() {
         return null;
     }
@@ -149,10 +158,10 @@ public abstract class AbstractCluster {
         return volume;
     }
 
-    protected Volume createConfigMapVolume(String name) {
+    protected Volume createConfigMapVolume(String name, String configMapName) {
 
         ConfigMapVolumeSource configMapVolumeSource = new ConfigMapVolumeSourceBuilder()
-                .withName(name)
+                .withName(configMapName)
                 .build();
 
         Volume volume = new VolumeBuilder()
