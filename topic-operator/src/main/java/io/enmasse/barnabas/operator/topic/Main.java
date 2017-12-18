@@ -28,7 +28,6 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import org.apache.kafka.clients.admin.AdminClient;
-import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -102,7 +101,7 @@ public class Main extends AbstractVerticle {
         final io.fabric8.kubernetes.client.Config config = new ConfigBuilder().withMasterUrl(kubernetesMasterUrl).build();
         this.kubeClient = new DefaultKubernetesClient(config);
 
-        CmPredicate cmPredicate = new CmPredicate("type", "runtime",
+        LabelPredicate cmPredicate = new LabelPredicate("type", "runtime",
                 "kind", "topic",
                 "app", "barnabas");
 

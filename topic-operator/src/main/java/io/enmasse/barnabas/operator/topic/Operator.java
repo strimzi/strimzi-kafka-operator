@@ -40,7 +40,7 @@ public class Operator implements Op {
     private final K8s k8s;
     //private final ScheduledExecutorService executor;
     private final Vertx vertx;
-    private final CmPredicate cmPredicate;
+    private final LabelPredicate cmPredicate;
     private TopicStore topicStore;
 
     private final InFlight inFlight = new InFlight();
@@ -316,7 +316,7 @@ public class Operator implements Op {
 
     public Operator(Vertx vertx, Kafka kafka,
                     K8s k8s,
-                    CmPredicate cmPredicate) {
+                    LabelPredicate cmPredicate) {
         this.kafka = kafka;
         this.k8s = k8s;
         this.vertx = vertx;

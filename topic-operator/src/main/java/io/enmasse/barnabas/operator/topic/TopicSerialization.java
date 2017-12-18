@@ -39,6 +39,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Serialization of a {@link }Topic} to and from various other representations.
+ */
 public class TopicSerialization {
 
     // These are the keys in the ConfigMap data
@@ -112,7 +115,7 @@ public class TopicSerialization {
     /**
      * Create a ConfigMap to reflect the given Topic.
      */
-    public static ConfigMap toConfigMap(Topic topic, CmPredicate cmPredicate) {
+    public static ConfigMap toConfigMap(Topic topic, LabelPredicate cmPredicate) {
         Map<String, String> mapData = new HashMap<>();
         mapData.put(CM_KEY_NAME, topic.getTopicName().toString());
         mapData.put(CM_KEY_PARTITIONS, Integer.toString(topic.getNumPartitions()));
@@ -146,6 +149,10 @@ public class TopicSerialization {
         return newTopic;
     }
 
+    /**
+     * Return a singleton map from the topic {@link ConfigResource} for the given topic,
+     * to the {@link Config} of the given topic.
+     */
     public static Map<ConfigResource, Config> toTopicConfig(Topic topic) {
         Set<ConfigEntry> configEntries = new HashSet<>();
         for (Map.Entry<String, String> entry : topic.getConfig().entrySet()) {
@@ -172,7 +179,7 @@ public class TopicSerialization {
 
     /**
      * Returns the UTF-8 encoded JSON to reflect the given Topic.
-     * This is what is stored in our znodes.
+     * This is what is stored in the znodes owned by the {@link ZkTopicStore}.
      */
     public static byte[] toJson(Topic topic) {
         JsonFactory yf = new JsonFactory();
@@ -201,7 +208,7 @@ public class TopicSerialization {
 
     /**
      * Returns the Topic represented by the given UTF-8 encoded JSON.
-     * The given JSON is what is stored in our znodes.
+     * This is what is stored in the znodes owned by the {@link ZkTopicStore}.
      */
     public static Topic fromJson(byte[] json) {
         JsonFactory yf = new JsonFactory();

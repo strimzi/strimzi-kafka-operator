@@ -18,20 +18,24 @@
 package io.enmasse.barnabas.operator.topic;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Predicate;
 
-public class CmPredicate implements Predicate<ConfigMap> {
+/**
+ * A predicate on the labels of some object held in K8s.
+ */
+public class LabelPredicate implements Predicate<HasMetadata> {
 
     private final Map<String, String> labels;
 
-    public CmPredicate(Map<String, String> labels) {
+    public LabelPredicate(Map<String, String> labels) {
         this.labels = labels;
     }
 
-    public CmPredicate(String... labels) {
+    public LabelPredicate(String... labels) {
         if (labels.length % 2 != 0) {
             throw new IllegalArgumentException();
         }
@@ -46,7 +50,7 @@ public class CmPredicate implements Predicate<ConfigMap> {
     }
 
     @Override
-    public boolean test(ConfigMap configMap) {
+    public boolean test(HasMetadata configMap) {
         Map<String, String> mapLabels = configMap.getMetadata().getLabels();
         for (Map.Entry<String,String> entry : labels.entrySet()) {
             if (!entry.getValue().equals(mapLabels.get(entry.getKey()))) {

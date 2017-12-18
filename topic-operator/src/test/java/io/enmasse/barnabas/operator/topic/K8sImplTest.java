@@ -28,7 +28,6 @@ import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -62,7 +61,7 @@ public class K8sImplTest {
                 .addNewItem().endItem()
                 .build());
 
-        K8sImpl k8s = new K8sImpl(vertx, mockClient, new CmPredicate("foo", "bar"));
+        K8sImpl k8s = new K8sImpl(vertx, mockClient, new LabelPredicate("foo", "bar"));
 
         k8s.listMaps(ar -> {
             List<ConfigMap> list = ar.result();

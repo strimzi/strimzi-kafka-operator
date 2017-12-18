@@ -20,8 +20,6 @@ package io.enmasse.barnabas.operator.topic;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 
-import java.util.concurrent.CompletableFuture;
-
 /**
  * Represents a persistent data store where the operator can store its copy of the
  * topic state that won't be modified by either K8S or Kafka.

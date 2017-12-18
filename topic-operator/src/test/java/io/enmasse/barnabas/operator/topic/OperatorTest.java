@@ -17,7 +17,6 @@
 
 package io.enmasse.barnabas.operator.topic;
 
-import com.sun.org.apache.xerces.internal.util.Status;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
@@ -51,7 +50,7 @@ import static java.util.Arrays.asList;
 @RunWith(VertxUnitRunner.class)
 public class OperatorTest {
 
-    private final CmPredicate cmPredicate = new CmPredicate("type", "runtime",
+    private final LabelPredicate cmPredicate = new LabelPredicate("type", "runtime",
             "kind", "topic",
             "app", "barnabas");
 

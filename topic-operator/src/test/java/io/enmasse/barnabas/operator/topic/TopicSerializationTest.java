@@ -42,7 +42,7 @@ import static org.junit.Assert.assertNull;
 
 public class TopicSerializationTest {
 
-    private final CmPredicate cmPredicate = new CmPredicate("type", "runtime",
+    private final LabelPredicate cmPredicate = new LabelPredicate("type", "runtime",
             "kind", "topic",
             "app", "barnabas");
 

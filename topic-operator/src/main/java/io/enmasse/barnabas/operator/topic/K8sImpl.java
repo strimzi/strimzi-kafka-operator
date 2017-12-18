@@ -33,13 +33,13 @@ public class K8sImpl implements K8s {
 
     private final static Logger logger = LoggerFactory.getLogger(Operator.class);
 
-    private final CmPredicate cmPredicate;
+    private final LabelPredicate cmPredicate;
 
     private KubernetesClient client;
 
     private Vertx vertx;
 
-    public K8sImpl(Vertx vertx, KubernetesClient client, CmPredicate cmPredicate) {
+    public K8sImpl(Vertx vertx, KubernetesClient client, LabelPredicate cmPredicate) {
         this.vertx = vertx;
         this.client = client;
         this.cmPredicate = cmPredicate;
