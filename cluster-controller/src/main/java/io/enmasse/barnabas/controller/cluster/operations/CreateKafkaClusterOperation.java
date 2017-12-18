@@ -27,9 +27,14 @@ public class CreateKafkaClusterOperation extends KafkaClusterOperation {
 
                 KafkaCluster kafka = KafkaCluster.fromConfigMap(k8s.getConfigmap(namespace, name));
 
-                // TODO : create configMap only if metrics are enabled
+                // start creating configMap operation only if metrics are enabled,
+                // otherwise the future is already complete (for the "join")
                 Future<Void> futureConfigMap = Future.future();
-                OperationExecutor.getInstance().execute(new CreateConfigMapOperation(kafka.generateMetricsConfigMap()), futureConfigMap.completer());
+                if (kafka.isMetricsEnabled()) {
+                    OperationExecutor.getInstance().execute(new CreateConfigMapOperation(kafka.generateMetricsConfigMap()), futureConfigMap.completer());
+                } else {
+                    futureConfigMap.complete();
+                }
 
                 Future<Void> futureService = Future.future();
                 OperationExecutor.getInstance().execute(new CreateServiceOperation(kafka.generateService()), futureService.completer());

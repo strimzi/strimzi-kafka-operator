@@ -27,9 +27,14 @@ public class CreateZookeeperClusterOperation extends ZookeeperClusterOperation {
 
                 ZookeeperCluster zk = ZookeeperCluster.fromConfigMap(k8s.getConfigmap(namespace, name));
 
-                // TODO : create configMap only if metrics are enabled
+                // start creating configMap operation only if metrics are enabled,
+                // otherwise the future is already complete (for the "join")
                 Future<Void> futureConfigMap = Future.future();
-                OperationExecutor.getInstance().execute(new CreateConfigMapOperation(zk.generateMetricsConfigMap()), futureConfigMap.completer());
+                if (zk.isMetricsEnabled()) {
+                    OperationExecutor.getInstance().execute(new CreateConfigMapOperation(zk.generateMetricsConfigMap()), futureConfigMap.completer());
+                } else {
+                    futureConfigMap.complete();
+                }
 
                 Future<Void> futureService = Future.future();
                 OperationExecutor.getInstance().execute(new CreateServiceOperation(zk.generateService()), futureService.completer());

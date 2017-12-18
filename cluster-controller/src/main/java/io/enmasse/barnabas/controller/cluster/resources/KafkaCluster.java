@@ -33,7 +33,7 @@ public class KafkaCluster extends AbstractCluster {
     private static int DEFAULT_REPLICAS = 3;
     private static int DEFAULT_HEALTHCHECK_DELAY = 15;
     private static int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
-    private static boolean DEFAULT_KAFKA_METRICS_ENABLED = true;
+    private static boolean DEFAULT_KAFKA_METRICS_ENABLED = false;
 
     // Kafka configuration defaults
     private static String DEFAULT_KAFKA_ZOOKEEPER_CONNECT = "zookeeper:2181";
@@ -47,13 +47,13 @@ public class KafkaCluster extends AbstractCluster {
     private static String KEY_HEALTHCHECK_DELAY = "kafka-healthcheck-delay";
     private static String KEY_HEALTHCHECK_TIMEOUT = "kafka-healthcheck-timeout";
     private static String KEY_METRICS_CONFIG = "kafka-metrics-config";
-    private static String KEY_KAFKA_METRICS_ENABLED = "KAFKA_METRICS_ENABLED";
 
     // Kafka configuration keys
     private static String KEY_KAFKA_ZOOKEEPER_CONNECT = "KAFKA_ZOOKEEPER_CONNECT";
     private static String KEY_KAFKA_DEFAULT_REPLICATION_FACTOR = "KAFKA_DEFAULT_REPLICATION_FACTOR";
     private static String KEY_KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR = "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR";
     private static String KEY_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR = "KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR";
+    private static String KEY_KAFKA_METRICS_ENABLED = "KAFKA_METRICS_ENABLED";
 
     private KafkaCluster(String namespace, String name) {
         super(namespace, name);
@@ -81,8 +81,11 @@ public class KafkaCluster extends AbstractCluster {
         kafka.setTransactionStateLogReplicationFactor(Integer.parseInt(cm.getData().getOrDefault(KEY_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR, String.valueOf(DEFAULT_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR))));
 
         // TODO : making more checks for exception on JSON ?
-        kafka.setMetricsEnabled(Boolean.parseBoolean(cm.getData().getOrDefault(KEY_KAFKA_METRICS_ENABLED, String.valueOf(DEFAULT_KAFKA_METRICS_ENABLED))));
-        kafka.setMetricsConfig(new JsonObject(cm.getData().get(KEY_METRICS_CONFIG)));
+        String metricsConfig = cm.getData().get(KEY_METRICS_CONFIG);
+        kafka.setMetricsEnabled(metricsConfig != null);
+        if (kafka.isMetricsEnabled()) {
+            kafka.setMetricsConfig(new JsonObject(metricsConfig));
+        }
 
         return kafka;
     }
@@ -203,8 +206,9 @@ public class KafkaCluster extends AbstractCluster {
     private List<ContainerPort> getContainerPortList() {
         List<ContainerPort> portList = new ArrayList<>();
         portList.add(createContainerPort(clientPortName, clientPort, "TCP"));
-        // TODO : adding metrics port only if metrics are enabled
-        portList.add(createContainerPort(metricsPortName, metricsPort, "TCP"));
+        if (isMetricsEnabled) {
+            portList.add(createContainerPort(metricsPortName, metricsPort, "TCP"));
+        }
 
         return portList;
     }
@@ -212,8 +216,9 @@ public class KafkaCluster extends AbstractCluster {
     private List<Volume> getVolumes() {
         List<Volume> volumeList = new ArrayList<>();
         volumeList.add(createEmptyDirVolume(volumeName));
-        // TODO : creating metrics volume only if metrics are enabled
-        volumeList.add(createConfigMapVolume(metricsConfigVolumeName));
+        if (isMetricsEnabled) {
+            volumeList.add(createConfigMapVolume(metricsConfigVolumeName));
+        }
 
         return volumeList;
     }
@@ -221,8 +226,9 @@ public class KafkaCluster extends AbstractCluster {
     private List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> volumeMountList = new ArrayList<>();
         volumeMountList.add(createVolumeMount(volumeName, mounthPath));
-        // TODO : creating metrics volume mount only if metrics are enabled
-        volumeMountList.add(createVolumeMount(metricsConfigVolumeName, metricsConfigMountPath));
+        if (isMetricsEnabled) {
+            volumeMountList.add(createVolumeMount(metricsConfigVolumeName, metricsConfigMountPath));
+        }
 
         return volumeMountList;
     }

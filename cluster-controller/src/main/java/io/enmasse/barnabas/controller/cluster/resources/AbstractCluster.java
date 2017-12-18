@@ -89,7 +89,7 @@ public abstract class AbstractCluster {
         return labelsWithName;
     }
 
-    protected boolean isMetricsEnabled() {
+    public boolean isMetricsEnabled() {
         return isMetricsEnabled;
     }
 

@@ -33,7 +33,7 @@ public class ZookeeperCluster extends AbstractCluster {
     private static int DEFAULT_REPLICAS = 3;
     private static int DEFAULT_HEALTHCHECK_DELAY = 15;
     private static int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
-    private static boolean DEFAULT_ZOOKEEPER_METRICS_ENABLED = true;
+    private static boolean DEFAULT_ZOOKEEPER_METRICS_ENABLED = false;
 
     // Zookeeper configuration defaults
     // N/A
@@ -44,10 +44,10 @@ public class ZookeeperCluster extends AbstractCluster {
     private static String KEY_HEALTHCHECK_DELAY = "zookeeper-healthcheck-delay";
     private static String KEY_HEALTHCHECK_TIMEOUT = "zookeeper-healthcheck-timeout";
     private static String KEY_METRICS_CONFIG = "zookeeper-metrics-config";
-    private static String KEY_ZOOKEEPER_METRICS_ENABLED = "ZOOKEEPER_METRICS_ENABLED";
 
     // Zookeeper configuration keys
     private static String KEY_ZOOKEEPER_NODE_COUNT = "ZOOKEEPER_NODE_COUNT";
+    private static String KEY_ZOOKEEPER_METRICS_ENABLED = "ZOOKEEPER_METRICS_ENABLED";
 
     private ZookeeperCluster(String namespace, String name) {
         super(namespace, name);
@@ -71,11 +71,12 @@ public class ZookeeperCluster extends AbstractCluster {
         zk.setHealthCheckInitialDelay(Integer.parseInt(cm.getData().getOrDefault(KEY_HEALTHCHECK_DELAY, String.valueOf(DEFAULT_HEALTHCHECK_DELAY))));
         zk.setHealthCheckTimeout(Integer.parseInt(cm.getData().getOrDefault(KEY_HEALTHCHECK_TIMEOUT, String.valueOf(DEFAULT_HEALTHCHECK_TIMEOUT))));
 
-        zk.setMetricsEnabled(Boolean.parseBoolean(cm.getData().getOrDefault(KEY_ZOOKEEPER_METRICS_ENABLED, String.valueOf(DEFAULT_ZOOKEEPER_METRICS_ENABLED))));
-
         // TODO : making more checks for exception on JSON ?
-        zk.setMetricsEnabled(Boolean.parseBoolean(cm.getData().getOrDefault(KEY_ZOOKEEPER_METRICS_ENABLED, String.valueOf(DEFAULT_ZOOKEEPER_METRICS_ENABLED))));
-        zk.setMetricsConfig(new JsonObject(cm.getData().get(KEY_METRICS_CONFIG)));
+        String metricsConfig = cm.getData().get(KEY_METRICS_CONFIG);
+        zk.setMetricsEnabled(metricsConfig != null);
+        if (zk.isMetricsEnabled()) {
+            zk.setMetricsConfig(new JsonObject(metricsConfig));
+        }
 
         return zk;
     }
@@ -196,8 +197,9 @@ public class ZookeeperCluster extends AbstractCluster {
         portList.add(createContainerPort(clientPortName, clientPort, "TCP"));
         portList.add(createContainerPort(clusteringPortName, clusteringPort, "TCP"));
         portList.add(createContainerPort(leaderElectionPortName, leaderElectionPort,"TCP"));
-        // TODO : adding metrics port only if metrics are enabled
-        portList.add(createContainerPort(metricsPortName, metricsPort,"TCP"));
+        if (isMetricsEnabled) {
+            portList.add(createContainerPort(metricsPortName, metricsPort, "TCP"));
+        }
 
         return portList;
     }
@@ -205,8 +207,9 @@ public class ZookeeperCluster extends AbstractCluster {
     private List<Volume> getVolumes() {
         List<Volume> volumeList = new ArrayList<>();
         volumeList.add(createEmptyDirVolume(volumeName));
-        // TODO : creating metrics volume only if metrics are enabled
-        volumeList.add(createConfigMapVolume(metricsConfigVolumeName));
+        if (isMetricsEnabled) {
+            volumeList.add(createConfigMapVolume(metricsConfigVolumeName));
+        }
 
         return volumeList;
     }
@@ -214,8 +217,9 @@ public class ZookeeperCluster extends AbstractCluster {
     private List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> volumeMountList = new ArrayList<>();
         volumeMountList.add(createVolumeMount(volumeName, mounthPath));
-        // TODO : creating metrics volume mount only if metrics are enabled
-        volumeMountList.add(createVolumeMount(metricsConfigVolumeName, metricsConfigMountPath));
+        if (isMetricsEnabled) {
+            volumeMountList.add(createVolumeMount(metricsConfigVolumeName, metricsConfigMountPath));
+        }
 
         return volumeMountList;
     }
