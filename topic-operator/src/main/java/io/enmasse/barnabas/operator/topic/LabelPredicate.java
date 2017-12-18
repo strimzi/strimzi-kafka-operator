@@ -31,10 +31,6 @@ public class LabelPredicate implements Predicate<HasMetadata> {
 
     private final Map<String, String> labels;
 
-    public LabelPredicate(Map<String, String> labels) {
-        this.labels = labels;
-    }
-
     public LabelPredicate(String... labels) {
         if (labels.length % 2 != 0) {
             throw new IllegalArgumentException();
