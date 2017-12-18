@@ -85,6 +85,7 @@ public class KafkaCluster extends AbstractCluster {
         kafka.setMetricsEnabled(metricsConfig != null);
         if (kafka.isMetricsEnabled()) {
             kafka.setMetricsConfig(new JsonObject(metricsConfig));
+            kafka.setMetricsConfigName(cm.getMetadata().getName() + "-metrics-config");
         }
 
         return kafka;
@@ -109,6 +110,11 @@ public class KafkaCluster extends AbstractCluster {
         kafka.setDefaultReplicationFactor(Integer.parseInt(vars.getOrDefault(KEY_KAFKA_DEFAULT_REPLICATION_FACTOR, String.valueOf(DEFAULT_KAFKA_DEFAULT_REPLICATION_FACTOR))));
         kafka.setOffsetsTopicReplicationFactor(Integer.parseInt(vars.getOrDefault(KEY_KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR, String.valueOf(DEFAULT_KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR))));
         kafka.setTransactionStateLogReplicationFactor(Integer.parseInt(vars.getOrDefault(KEY_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR, String.valueOf(DEFAULT_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR))));
+
+        kafka.setMetricsEnabled(Boolean.parseBoolean(vars.getOrDefault(KEY_KAFKA_METRICS_ENABLED, String.valueOf(DEFAULT_KAFKA_METRICS_ENABLED))));
+        if (kafka.isMetricsEnabled()) {
+            kafka.setMetricsConfigName(ss.getMetadata().getName() + "-metrics-config");
+        }
 
         return kafka;
     }
@@ -191,9 +197,9 @@ public class KafkaCluster extends AbstractCluster {
 
         // TODO: making data field and configMap name constants ?
         Map<String, String> data = new HashMap<>();
-        data.put("config.yml", this.metricsConfig.toString());
+        data.put("config.yml", metricsConfig.toString());
 
-        return createConfigMap("kafka-metrics-config", data);
+        return createConfigMap(metricsConfigName, data);
     }
 
     public StatefulSet patchStatefulSet(StatefulSet statefulSet) {
@@ -217,7 +223,7 @@ public class KafkaCluster extends AbstractCluster {
         List<Volume> volumeList = new ArrayList<>();
         volumeList.add(createEmptyDirVolume(volumeName));
         if (isMetricsEnabled) {
-            volumeList.add(createConfigMapVolume(metricsConfigVolumeName));
+            volumeList.add(createConfigMapVolume(metricsConfigVolumeName, metricsConfigName));
         }
 
         return volumeList;

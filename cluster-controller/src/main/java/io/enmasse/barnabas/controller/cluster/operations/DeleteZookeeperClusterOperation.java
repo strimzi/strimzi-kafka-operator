@@ -1,6 +1,7 @@
 package io.enmasse.barnabas.controller.cluster.operations;
 
 import io.enmasse.barnabas.controller.cluster.K8SUtils;
+import io.enmasse.barnabas.controller.cluster.operations.kubernetes.DeleteConfigMapOperation;
 import io.enmasse.barnabas.controller.cluster.operations.kubernetes.DeleteServiceOperation;
 import io.enmasse.barnabas.controller.cluster.operations.kubernetes.DeleteStatefulSetOperation;
 import io.enmasse.barnabas.controller.cluster.resources.ZookeeperCluster;
@@ -26,6 +27,15 @@ public class DeleteZookeeperClusterOperation extends ZookeeperClusterOperation {
 
                 ZookeeperCluster zk = ZookeeperCluster.fromStatefulSet(k8s.getStatefulSet(namespace, name + "-zookeeper"));
 
+                // start deleting configMap operation only if metrics are enabled,
+                // otherwise the future is already complete (for the "join")
+                Future<Void> futureConfigMap = Future.future();
+                if (zk.isMetricsEnabled()) {
+                    OperationExecutor.getInstance().execute(new DeleteConfigMapOperation(namespace, zk.getMetricsConfigName()), futureConfigMap.completer());
+                } else {
+                    futureConfigMap.complete();
+                }
+
                 Future<Void> futureService = Future.future();
                 OperationExecutor.getInstance().execute(new DeleteServiceOperation(namespace, name + "-zookeeper"), futureService.completer());
 
@@ -35,7 +45,7 @@ public class DeleteZookeeperClusterOperation extends ZookeeperClusterOperation {
                 Future<Void> futureStatefulSet = Future.future();
                 OperationExecutor.getInstance().execute(new DeleteStatefulSetOperation(namespace, name + "-zookeeper"), futureStatefulSet.completer());
 
-                CompositeFuture.join(futureService, futureHeadlessService, futureStatefulSet).setHandler(ar -> {
+                CompositeFuture.join(futureConfigMap, futureService, futureHeadlessService, futureStatefulSet).setHandler(ar -> {
                     if (ar.succeeded()) {
                         log.info("Zookeeper cluster {} successfully deleted from namespace {}", name + "-zookeeper", namespace);
                         handler.handle(Future.succeededFuture());
