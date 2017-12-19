@@ -36,8 +36,11 @@ import java.io.StringWriter;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static java.lang.String.format;
 
 /**
  * Serialization of a {@link }Topic} to and from various other representations.
@@ -143,8 +146,29 @@ public class TopicSerialization {
     /**
      * Create a NewTopic to reflect the given Topic.
      */
-    public static NewTopic toNewTopic(Topic topic) {
-        NewTopic newTopic = new NewTopic(topic.getTopicName().toString(), topic.getNumPartitions(), topic.getNumReplicas());
+    public static NewTopic toNewTopic(Topic topic, Map<Integer, List<Integer>> assignment) {
+        NewTopic newTopic;
+        if (assignment != null) {
+            if (topic.getNumPartitions() != assignment.size()) {
+                throw new IllegalArgumentException(
+                        format("Topic %s has %d partitions supplied, but the number of partitions " +
+                                        "configured in ConfigMap %s is %d",
+                                topic.getTopicName(), assignment.size(), topic.getMapName(), topic.getNumPartitions()));
+            }
+            for (int partition = 0; partition < assignment.size(); partition++) {
+                final List<Integer> value = assignment.get(partition);
+                if (topic.getNumReplicas() != value.size()) {
+                    throw new IllegalArgumentException(
+                            format("Partition %d of topic %s has %d assigned replicas, " +
+                                    "but the number of replicas configured in ConfigMap %s for the topic is %d",
+                                    partition, topic.getTopicName(), value.size(), topic.getMapName(), topic.getNumReplicas()));
+                }
+            }
+            newTopic = new NewTopic(topic.getTopicName().toString(), assignment);
+        } else {
+            newTopic = new NewTopic(topic.getTopicName().toString(), topic.getNumPartitions(), topic.getNumReplicas());
+        }
+
         newTopic.configs(topic.getConfig());
         return newTopic;
     }

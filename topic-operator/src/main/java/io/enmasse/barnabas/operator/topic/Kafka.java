@@ -21,6 +21,8 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import org.apache.kafka.clients.admin.NewTopic;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -59,7 +61,15 @@ public interface Kafka {
      * will be called with a failed AsyncResult whose {@code cause()} is the
      * KafkaException (not an ExecutionException).
      */
-    void increasePartitions(Topic topic, Handler<AsyncResult<Void>> handler);
+    void increasePartitions(Topic topic, List<List<Integer>> newAssignments, Handler<AsyncResult<Void>> handler);
+
+    /**
+     * Asynchronously change the topic's replication factor in Kafka. Invoke the given
+     * handler with the result. If the operation fails the given handler
+     * will be called with a failed AsyncResult whose {@code cause()} is the
+     * KafkaException (not an ExecutionException).
+     */
+    void changeReplicationFactor(Topic topic, Map<Integer, List<Integer>> newAssignments, Handler<AsyncResult<Void>> handler);
 
     /**
      * Asynchronously fetch the topic metadata in Kafka. Invoke the given

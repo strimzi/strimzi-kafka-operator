@@ -102,7 +102,7 @@ public class TopicSerializationTest {
                 .withNumReplicas((short)2)
                 .withMapName("gee")
                 .build();
-        NewTopic newTopic = TopicSerialization.toNewTopic(topic);
+        NewTopic newTopic = TopicSerialization.toNewTopic(topic, null);
         assertEquals("test-topic", newTopic.name());
         assertEquals(3, newTopic.numPartitions());
         assertEquals(2, newTopic.replicationFactor());

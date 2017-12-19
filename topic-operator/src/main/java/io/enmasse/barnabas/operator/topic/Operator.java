@@ -31,6 +31,8 @@ import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class Operator implements Op {
@@ -42,8 +44,9 @@ public class Operator implements Op {
     private final Vertx vertx;
     private final LabelPredicate cmPredicate;
     private TopicStore topicStore;
-
+    private PartitionAssignment partitionAssignment;
     private final InFlight inFlight = new InFlight();
+
 
     static abstract class OperatorEvent implements Runnable, Handler<Void> {
 
@@ -191,12 +194,14 @@ public class Operator implements Op {
     public class CreateKafkaTopic extends OperatorEvent {
 
         private final Topic topic;
-
+        private final Map<Integer, List<Integer>> assignment;
         private final HasMetadata involvedObject;
         private final Handler<AsyncResult<Void>> handler;
 
-        public CreateKafkaTopic(Topic topic, HasMetadata involvedObject, Handler<AsyncResult<Void>> handler) {
+        public CreateKafkaTopic(Topic topic, Map<Integer, List<Integer>> assignment,
+                                HasMetadata involvedObject, Handler<AsyncResult<Void>> handler) {
             this.topic = topic;
+            this.assignment = assignment;
             this.handler = handler;
             this.involvedObject = involvedObject;
         }
@@ -204,7 +209,7 @@ public class Operator implements Op {
         @Override
         public void process() throws OperatorException {
             inFlight.startCreatingTopic(topic.getTopicName());
-            kafka.createTopic(TopicSerialization.toNewTopic(topic), ar -> {
+            kafka.createTopic(TopicSerialization.toNewTopic(topic, assignment), ar -> {
                 if (ar.succeeded()) {
                     logger.info("Created topic '{}' for ConfigMap '{}'", topic.getTopicName(), topic.getMapName());
                     handler.handle(ar);
@@ -257,22 +262,24 @@ public class Operator implements Op {
     }
 
     /** ConfigMap modified in k8s */
-    public class UpdateKafkaPartitions extends OperatorEvent {
+    public class IncreaseKafkaPartitions extends OperatorEvent {
 
         private final HasMetadata involvedObject;
 
         private final Topic topic;
         private final Handler<AsyncResult<Void>> handler;
+        private final List<List<Integer>> newPartitions;
 
-        public UpdateKafkaPartitions(Topic topic, HasMetadata involvedObject, Handler<AsyncResult<Void>> handler) {
+        public IncreaseKafkaPartitions(Topic topic, List<List<Integer>>  newPartitions, HasMetadata involvedObject, Handler<AsyncResult<Void>> handler) {
             this.topic = topic;
+            this.newPartitions = newPartitions;
             this.involvedObject = involvedObject;
             this.handler = handler;
         }
 
         @Override
         public void process() throws OperatorException {
-            kafka.increasePartitions(topic, ar-> {
+            kafka.increasePartitions(topic, newPartitions, ar-> {
                 if (ar.failed()) {
                     enqueue(new ErrorEvent(involvedObject, ar.cause().toString()));
                 }
@@ -284,6 +291,39 @@ public class Operator implements Op {
         @Override
         public String toString() {
             return "UpdateKafkaPartitions(topicName="+topic.getTopicName()+")";
+        }
+    }
+
+    /** ConfigMap modified in k8s */
+    public class ChangeReplicationFactor extends OperatorEvent {
+
+        private final HasMetadata involvedObject;
+
+        private final Topic topic;
+        private final Handler<AsyncResult<Void>> handler;
+        private final Map<Integer, List<Integer>> newAssignment;
+
+        public ChangeReplicationFactor(Topic topic, Map<Integer, List<Integer>>  newAssignment, HasMetadata involvedObject, Handler<AsyncResult<Void>> handler) {
+            this.topic = topic;
+            this.newAssignment = newAssignment;
+            this.involvedObject = involvedObject;
+            this.handler = handler;
+        }
+
+        @Override
+        public void process() throws OperatorException {
+            kafka.changeReplicationFactor(topic, newAssignment, ar-> {
+                if (ar.failed()) {
+                    enqueue(new ErrorEvent(involvedObject, ar.cause().toString()));
+                }
+                handler.handle(ar);
+            });
+
+        }
+
+        @Override
+        public String toString() {
+            return "ChangeReplicationFactor(topicName="+topic.getTopicName()+")";
         }
     }
 
@@ -398,7 +438,8 @@ public class Operator implements Op {
                 }
             } else if (kafkaTopic == null) {
                 // it's been created in k8s => create in Kafka and privateState
-                enqueue(new CreateKafkaTopic(k8sTopic, involvedObject, new CreateInTopicStoreHandler(k8sTopic)));
+                Map<Integer, List<Integer>> assignment = partitionAssignment.newTopic(k8sTopic);
+                enqueue(new CreateKafkaTopic(k8sTopic, assignment, involvedObject, new CreateInTopicStoreHandler(k8sTopic)));
             } else if (TopicDiff.diff(kafkaTopic, k8sTopic).isEmpty()) {
                 // they're the same => do nothing
                 logger.debug("k8s and kafka versions of topic '{}' are the same", kafkaTopic.getTopicName());
@@ -434,40 +475,54 @@ public class Operator implements Op {
                 }));
             } else {
                 // all three exist
-                TopicDiff oursKafka = TopicDiff.diff(privateTopic, kafkaTopic);
-                TopicDiff oursK8s = TopicDiff.diff(privateTopic, k8sTopic);
-                String conflict = oursKafka.conflict(oursK8s);
-                if (conflict != null) {
-                    enqueue(new ErrorEvent(involvedObject, "ConfigMap and Topic both changed in a conflicting way: " + conflict));
-                    // TODO called reconciliationResultHandler, or push error handling into reconciliationResultHandler
-                } else {
-                    TopicDiff merged = oursKafka.merge(oursK8s);
-                    Topic result = merged.apply(privateTopic);
-                    if (merged.changesReplicationFactor()) {
-                        enqueue(new ErrorEvent(involvedObject, "Topic replication factor cannot be changed"));
-                        // TODO called reconciliationResultHandler, or push error handling into reconciliationResultHandler
-                    } else if (merged.decreasesNumPartitions()) {
-                        enqueue(new ErrorEvent(involvedObject, "Number of partitions cannot be decreased"));
-                        // TODO called reconciliationResultHandler, or push error handling into reconciliationResultHandler
-                    } else {
-                        enqueue(new UpdateConfigMap(result, involvedObject, ar -> {
-                            Handler<Void> topicStoreHandler =
-                                    ignored -> enqueue(new UpdateInTopicStore(
-                                            result, involvedObject, reconciliationResultHandler));
-                            Handler<Void> partitionsHandler;
-                            if (merged.changesNumPartitions()) {
-                                partitionsHandler = ar4 -> enqueue(new UpdateKafkaPartitions(result, involvedObject, ar2 -> topicStoreHandler.handle(null)));
-                            } else {
-                                partitionsHandler = topicStoreHandler;
-                            }
-                            if (merged.changesConfig()) {
-                                enqueue(new UpdateKafkaConfig(result, involvedObject, ar2 -> partitionsHandler.handle(null)));
-                            } else {
-                                enqueue(partitionsHandler);
-                            }
-                        }));
-                    }
+                update3Way(involvedObject, k8sTopic, kafkaTopic, privateTopic, reconciliationResultHandler);
+            }
+        }
+    }
+
+    private void update3Way(HasMetadata involvedObject, Topic k8sTopic, Topic kafkaTopic, Topic privateTopic, Handler<AsyncResult<Void>> reconciliationResultHandler) {
+        TopicDiff oursKafka = TopicDiff.diff(privateTopic, kafkaTopic);
+        TopicDiff oursK8s = TopicDiff.diff(privateTopic, k8sTopic);
+        String conflict = oursKafka.conflict(oursK8s);
+        if (conflict != null) {
+            final String message = "ConfigMap and Topic both changed in a conflicting way: " + conflict;
+            enqueue(new ErrorEvent(involvedObject, message));
+            reconciliationResultHandler.handle(Future.failedFuture(new Exception(message)));
+        } else {
+            TopicDiff merged = oursKafka.merge(oursK8s);
+            Topic result = merged.apply(privateTopic);
+            int partitionsDelta = merged.numPartitionsDelta();
+            if (partitionsDelta < 0) {
+                final String message = "Number of partitions cannot be decreased";
+                enqueue(new ErrorEvent(involvedObject, message));
+                reconciliationResultHandler.handle(Future.failedFuture(new Exception(message)));
+            } else {
+
+                if (merged.changesReplicationFactor()) {
+                    Map<Integer, List<Integer>> assignment = partitionAssignment.changeReplicationFactor(result);
+                    enqueue(new ChangeReplicationFactor(result, assignment, involvedObject, null));
                 }
+                // TODO What if we increase min.in.sync.replicas and the number of replicas,
+                // such that the old number of replicas < the new min isr? But likewise
+                // we could decrease, so order of tasks in the queue will need to change
+                // depending on what the diffs are.
+                enqueue(new UpdateConfigMap(result, involvedObject, ar -> {
+                    Handler<Void> topicStoreHandler =
+                            ignored -> enqueue(new UpdateInTopicStore(
+                                    result, involvedObject, reconciliationResultHandler));
+                    Handler<Void> partitionsHandler;
+                    if (partitionsDelta > 0) {
+                        List<List<Integer>> assignment = partitionAssignment.newPartitions(result, partitionsDelta);
+                        partitionsHandler = ar4 -> enqueue(new IncreaseKafkaPartitions(result, assignment, involvedObject, ar2 -> topicStoreHandler.handle(null)));
+                    } else {
+                        partitionsHandler = topicStoreHandler;
+                    }
+                    if (merged.changesConfig()) {
+                        enqueue(new UpdateKafkaConfig(result, involvedObject, ar2 -> partitionsHandler.handle(null)));
+                    } else {
+                        enqueue(partitionsHandler);
+                    }
+                }));
             }
         }
     }
@@ -575,7 +630,8 @@ public class Operator implements Op {
             TopicName topicName = new TopicName(configMap);
             if (inFlight.shouldProcessConfigMapAdded(topicName)) {
                 Topic topic = TopicSerialization.fromConfigMap(configMap);
-                enqueue(new CreateKafkaTopic(topic, configMap, ar -> {
+                Map<Integer, List<Integer>> assignment = partitionAssignment.newTopic(topic);
+                enqueue(new CreateKafkaTopic(topic, assignment, configMap, ar -> {
                     if (ar.succeeded()) {
                         enqueue(new CreateInTopicStore(topic, configMap, resultHandler));
                     } else {

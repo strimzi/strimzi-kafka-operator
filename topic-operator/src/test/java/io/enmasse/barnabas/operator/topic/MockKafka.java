@@ -25,6 +25,7 @@ import org.apache.kafka.clients.admin.NewTopic;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
@@ -146,8 +147,13 @@ public class MockKafka implements Kafka {
     }
 
     @Override
-    public void increasePartitions(Topic topic, Handler<AsyncResult<Void>> handler) {
+    public void increasePartitions(Topic topic, List<List<Integer>> newAssignments, Handler<AsyncResult<Void>> handler) {
         throw new RuntimeException("Implement this in the mock!");
+    }
+
+    @Override
+    public void changeReplicationFactor(Topic topic, Map<Integer, List<Integer>> newAssignments, Handler<AsyncResult<Void>> handler) {
+
     }
 
     @Override

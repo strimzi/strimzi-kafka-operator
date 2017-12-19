@@ -80,7 +80,7 @@ public class TopicDiff {
             builder.withNumPartitions(this.newNumPartitions);
         }
 
-        int numPartitionsCmp() {
+        int numPartitionsChange() {
             // strictly speaking there's an issue here with when the - overflows
             return newNumPartitions - oldNumPartitions;
         }
@@ -296,10 +296,9 @@ public class TopicDiff {
         return this.differences.containsKey(NumPartitionsDifference.ADDRESS);
     }
 
-    public boolean decreasesNumPartitions() {
+    public int numPartitionsDelta() {
         NumPartitionsDifference newP = (NumPartitionsDifference)this.differences.get(NumPartitionsDifference.ADDRESS);
-        return newP != null && newP.numPartitionsCmp() < 0;
-
+        return newP == null ? 0 : newP.numPartitionsChange();
     }
 
     public boolean changesConfig() {

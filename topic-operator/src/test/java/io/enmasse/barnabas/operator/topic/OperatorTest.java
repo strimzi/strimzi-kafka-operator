@@ -366,7 +366,7 @@ public class OperatorTest {
         Topic privateTopic = kubeTopic;
 
         mockKafka.setCreateTopicResponse(topicName.toString(), null)
-                .createTopic(TopicSerialization.toNewTopic(kafkaTopic), ar -> {});
+                .createTopic(TopicSerialization.toNewTopic(kafkaTopic, null), ar -> {});
         mockKafka.setDeleteTopicResponse(topicName, deleteTopicException);
 
         mockTopicStore.setCreateTopicResponse(topicName, null)

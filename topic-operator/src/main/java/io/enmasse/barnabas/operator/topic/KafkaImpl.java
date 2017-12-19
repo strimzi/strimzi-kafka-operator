@@ -21,6 +21,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import kafka.admin.ReassignPartitionsCommand;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ListTopicsResult;
@@ -32,7 +33,10 @@ import org.apache.kafka.common.config.ConfigResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -232,10 +236,16 @@ public class KafkaImpl implements Kafka {
     }
 
     @Override
-    public void increasePartitions(Topic topic, Handler<AsyncResult<Void>> handler) {
-        topic.getNumPartitions();
-        KafkaFuture<Void> future = adminClient.createPartitions(Collections.singletonMap(topic.getTopicName().toString(), NewPartitions.increaseTo(topic.getNumPartitions()))).values().get(topic.getTopicName());
+    public void increasePartitions(Topic topic, List<List<Integer>> newAssignments, Handler<AsyncResult<Void>> handler) {
+        final NewPartitions newPartitions = NewPartitions.increaseTo(topic.getNumPartitions(), newAssignments);
+        final Map<String, NewPartitions> request = Collections.singletonMap(topic.getTopicName().toString(), newPartitions);
+        KafkaFuture<Void> future = adminClient.createPartitions(request).values().get(topic.getTopicName());
         queueWork(new UniWork<>(future, handler));
+    }
+
+    @Override
+    public void changeReplicationFactor(Topic topic, Map<Integer, List<Integer>> newAssignments, Handler<AsyncResult<Void>> handler) {
+        throw new RuntimeException("Not implemented yet");// TODO
     }
 
     /**

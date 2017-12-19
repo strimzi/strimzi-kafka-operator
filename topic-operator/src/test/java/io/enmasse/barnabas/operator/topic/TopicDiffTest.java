@@ -145,11 +145,11 @@ public class TopicDiffTest {
     public void testChangesNumPartitions() {
         Topic topicC = new Topic.Builder(topicB.getTopicName() , topicB.getNumPartitions(), topicB.getConfig()).build();
         assertTrue(TopicDiff.diff(topicB, topicA).changesNumPartitions());
-        assertTrue(TopicDiff.diff(topicB, topicA).decreasesNumPartitions());
+        assertEquals(-1, TopicDiff.diff(topicB, topicA).numPartitionsDelta());
         assertTrue(TopicDiff.diff(topicA, topicB).changesNumPartitions());
-        assertFalse(TopicDiff.diff(topicA, topicB).decreasesNumPartitions());
+        assertEquals(1, TopicDiff.diff(topicA, topicB).numPartitionsDelta());
         assertFalse(TopicDiff.diff(topicB, topicC).changesNumPartitions());
-        assertFalse(TopicDiff.diff(topicB, topicC).decreasesNumPartitions());
+        assertEquals(0, TopicDiff.diff(topicB, topicC).numPartitionsDelta());
     }
 
     @Test
