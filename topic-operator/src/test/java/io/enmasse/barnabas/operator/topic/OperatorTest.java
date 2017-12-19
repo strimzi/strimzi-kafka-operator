@@ -50,7 +50,7 @@ import static java.util.Arrays.asList;
 @RunWith(VertxUnitRunner.class)
 public class OperatorTest {
 
-    private final LabelPredicate cmPredicate = new LabelPredicate("type", "runtime",
+    private final LabelPredicate cmPredicate = new LabelPredicate(
             "kind", "topic",
             "app", "barnabas");
 

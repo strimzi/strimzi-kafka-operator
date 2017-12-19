@@ -42,8 +42,7 @@ import static org.junit.Assert.assertNull;
 
 public class TopicSerializationTest {
 
-    private final LabelPredicate cmPredicate = new LabelPredicate("type", "runtime",
-            "kind", "topic",
+    private final LabelPredicate cmPredicate = new LabelPredicate("kind", "topic",
             "app", "barnabas");
 
     @Test
@@ -58,10 +57,9 @@ public class TopicSerializationTest {
         ConfigMap cm = TopicSerialization.toConfigMap(wroteTopic, cmPredicate);
 
         assertEquals(wroteTopic.getTopicName().toString(), cm.getMetadata().getName());
-        assertEquals(3, cm.getMetadata().getLabels().size());
+        assertEquals(2, cm.getMetadata().getLabels().size());
         assertEquals("barnabas", cm.getMetadata().getLabels().get("app"));
         assertEquals("topic", cm.getMetadata().getLabels().get("kind"));
-        assertEquals("runtime", cm.getMetadata().getLabels().get("type"));
         assertEquals(wroteTopic.getTopicName().toString(), cm.getData().get(TopicSerialization.CM_KEY_NAME));
         assertEquals("2", cm.getData().get(TopicSerialization.CM_KEY_PARTITIONS));
         assertEquals("1", cm.getData().get(TopicSerialization.CM_KEY_REPLICAS));

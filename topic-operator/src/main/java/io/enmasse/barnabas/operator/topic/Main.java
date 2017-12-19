@@ -28,6 +28,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -94,15 +95,16 @@ public class Main extends AbstractVerticle {
     @Override
     public void start() {
         Properties props = new Properties();
-        props.setProperty("bootstrap.servers", kafkaBootstrapServers);
+        props.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaBootstrapServers);
         this.adminClient = AdminClient.create(props);
         this.kafka = new ControllerAssignedKafkaImpl(adminClient, vertx);
 
         final io.fabric8.kubernetes.client.Config config = new ConfigBuilder().withMasterUrl(kubernetesMasterUrl).build();
         this.kubeClient = new DefaultKubernetesClient(config);
 
-        LabelPredicate cmPredicate = new LabelPredicate("type", "runtime",
-                "kind", "topic",
+        // app=barnabas and kind=topic
+        // or app=barnabas, kind=topic, cluster=my-cluster if we need to scope it to a cluster
+        LabelPredicate cmPredicate = new LabelPredicate("kind", "topic",
                 "app", "barnabas");
 
         this.k8s = new K8sImpl(null, kubeClient, cmPredicate);
@@ -199,7 +201,7 @@ public class Main extends AbstractVerticle {
 
     public static void main(String[] args) {
         String kubernetesMasterUrl = System.getProperty("OPERATOR_K8S_URL", "https://localhost:8443");
-        String kafkaBootstrapServers = System.getProperty("OPERATOR_KAFKA_HOST", "localhost") + ":" + System.getProperty("OPERATOR_KAFKA_PORT", "9092;");
+        String kafkaBootstrapServers = System.getProperty("OPERATOR_KAFKA_HOST", "localhost") + ":" + System.getProperty("OPERATOR_KAFKA_PORT", "9092");
         String zookeeperConnect = System.getProperty("OPERATOR_ZK_HOST", "localhost") + ":" + System.getProperty("OPERATOR_ZK_PORT", "2181;");
 
         Main main = new Main(kafkaBootstrapServers, kubernetesMasterUrl, zookeeperConnect);
