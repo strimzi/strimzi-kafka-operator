@@ -38,7 +38,7 @@ public class UpdateZookeeperClusterOperation extends ZookeeperClusterOperation {
 
                 if (zkConfigMap != null)    {
                     zk = ZookeeperCluster.fromConfigMap(zkConfigMap);
-                    diff = zk.diff(k8s.getStatefulSet(namespace, name + "-zookeeper"));
+                    diff = zk.diff(k8s.getStatefulSet(namespace, name + "-zookeeper"), k8s.getConfigmap(namespace, name + "-zookeeper-metrics-config"));
                 } else {
                     log.error("ConfigMap {} doesn't exist anymore in namespace {}", name, namespace);
                     handler.handle(Future.failedFuture("ConfigMap doesn't exist anymore"));
@@ -52,6 +52,7 @@ public class UpdateZookeeperClusterOperation extends ZookeeperClusterOperation {
                         .compose(i -> patchService(zk, diff))
                         .compose(i -> patchHeadlessService(zk, diff))
                         .compose(i -> patchStatefulSet(zk, diff))
+                        .compose(i -> patchMetricsConfigMap(zk, diff))
                         .compose(i -> rollingUpdate(diff))
                         .compose(i -> scaleUp(zk, diff))
                         .compose(chainFuture::complete, chainFuture);
@@ -120,6 +121,19 @@ public class UpdateZookeeperClusterOperation extends ZookeeperClusterOperation {
         }
         else
         {
+            return Future.succeededFuture();
+        }
+    }
+
+    private Future<Void> patchMetricsConfigMap(ZookeeperCluster zk, ClusterDiffResult diff) {
+        if (diff.getDifferent()) {
+            Future<Void> patchConfigMap = Future.future();
+            if (zk.isMetricsEnabled()) {
+                OperationExecutor.getInstance().execute(new PatchOperation(k8s.getConfigmapResource(namespace, zk.getMetricsConfigName()), zk.patchMetricsConfigMap(k8s.getConfigmap(namespace, name + "-zookeeper-metrics-config"))), patchConfigMap.completer());
+                return patchConfigMap;
+            } else
+                return Future.succeededFuture();
+        } else {
             return Future.succeededFuture();
         }
     }
