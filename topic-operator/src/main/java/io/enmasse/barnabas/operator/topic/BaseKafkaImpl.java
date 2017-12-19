@@ -21,36 +21,37 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import kafka.admin.ReassignPartitionsCommand;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ListTopicsResult;
 import org.apache.kafka.clients.admin.NewPartitions;
-import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.config.ConfigResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiFunction;
 
-public class KafkaImpl implements Kafka {
+/**
+ * Partial implementation of {@link Kafka} omitting those methods which imply a partition assignment.
+ * Subclasses will need to implement those method according to their own semantics.
+ * For example it is anticipated that one subclass will delegate to a "cluster balancer" so that cluster-wide,
+ * traffic-aware assignments can be done.
+ */
+public abstract class BaseKafkaImpl implements Kafka {
 
-    private final static Logger logger = LoggerFactory.getLogger(KafkaImpl.class);
+    private final static Logger logger = LoggerFactory.getLogger(BaseKafkaImpl.class);
 
-    private final AdminClient adminClient;
+    protected final AdminClient adminClient;
 
-    private final Vertx vertx;
+    protected final Vertx vertx;
 
-    public KafkaImpl(AdminClient adminClient, Vertx vertx) {
+    public BaseKafkaImpl(AdminClient adminClient, Vertx vertx) {
         this.adminClient = adminClient;
         this.vertx = vertx;
     }
@@ -198,22 +199,9 @@ public class KafkaImpl implements Kafka {
      * Queue a future and callback. The callback will be invoked (on a separate thread)
      * when the future is ready.
      */
-    private void queueWork(Work work) {
+    protected void queueWork(Work work) {
         logger.debug("Queuing work {} for immediate execution", work);
         vertx.runOnContext(work);
-    }
-
-    /**
-     * Create a new topic via the Kafka AdminClient API, calling the given handler
-     * (in a different thread) with the result.
-     */
-    @Override
-    public void createTopic(NewTopic newTopic, Handler<AsyncResult<Void>> handler) {
-
-        logger.debug("Creating topic {}", newTopic);
-        KafkaFuture<Void> future = adminClient.createTopics(
-                Collections.singleton(newTopic)).values().get(newTopic.name());
-        queueWork(new UniWork<>(future, handler));
     }
 
     /**
@@ -233,19 +221,6 @@ public class KafkaImpl implements Kafka {
         Map<ConfigResource, Config> configs = TopicSerialization.toTopicConfig(topic);
         KafkaFuture<Void> future = adminClient.alterConfigs(configs).values().get(configs.keySet().iterator().next());
         queueWork(new UniWork<>(future, handler));
-    }
-
-    @Override
-    public void increasePartitions(Topic topic, List<List<Integer>> newAssignments, Handler<AsyncResult<Void>> handler) {
-        final NewPartitions newPartitions = NewPartitions.increaseTo(topic.getNumPartitions(), newAssignments);
-        final Map<String, NewPartitions> request = Collections.singletonMap(topic.getTopicName().toString(), newPartitions);
-        KafkaFuture<Void> future = adminClient.createPartitions(request).values().get(topic.getTopicName());
-        queueWork(new UniWork<>(future, handler));
-    }
-
-    @Override
-    public void changeReplicationFactor(Topic topic, Map<Integer, List<Integer>> newAssignments, Handler<AsyncResult<Void>> handler) {
-        throw new RuntimeException("Not implemented yet");// TODO
     }
 
     /**

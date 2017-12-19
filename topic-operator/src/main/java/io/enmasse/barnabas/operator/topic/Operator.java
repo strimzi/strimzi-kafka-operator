@@ -44,7 +44,6 @@ public class Operator implements Op {
     private final Vertx vertx;
     private final LabelPredicate cmPredicate;
     private TopicStore topicStore;
-    private PartitionAssignment partitionAssignment;
     private final InFlight inFlight = new InFlight();
 
 
@@ -194,14 +193,12 @@ public class Operator implements Op {
     public class CreateKafkaTopic extends OperatorEvent {
 
         private final Topic topic;
-        private final Map<Integer, List<Integer>> assignment;
         private final HasMetadata involvedObject;
         private final Handler<AsyncResult<Void>> handler;
 
-        public CreateKafkaTopic(Topic topic, Map<Integer, List<Integer>> assignment,
+        public CreateKafkaTopic(Topic topic,
                                 HasMetadata involvedObject, Handler<AsyncResult<Void>> handler) {
             this.topic = topic;
-            this.assignment = assignment;
             this.handler = handler;
             this.involvedObject = involvedObject;
         }
@@ -209,7 +206,7 @@ public class Operator implements Op {
         @Override
         public void process() throws OperatorException {
             inFlight.startCreatingTopic(topic.getTopicName());
-            kafka.createTopic(TopicSerialization.toNewTopic(topic, assignment), ar -> {
+            kafka.createTopic(topic, ar -> {
                 if (ar.succeeded()) {
                     logger.info("Created topic '{}' for ConfigMap '{}'", topic.getTopicName(), topic.getMapName());
                     handler.handle(ar);
@@ -268,18 +265,16 @@ public class Operator implements Op {
 
         private final Topic topic;
         private final Handler<AsyncResult<Void>> handler;
-        private final List<List<Integer>> newPartitions;
 
-        public IncreaseKafkaPartitions(Topic topic, List<List<Integer>>  newPartitions, HasMetadata involvedObject, Handler<AsyncResult<Void>> handler) {
+        public IncreaseKafkaPartitions(Topic topic, HasMetadata involvedObject, Handler<AsyncResult<Void>> handler) {
             this.topic = topic;
-            this.newPartitions = newPartitions;
             this.involvedObject = involvedObject;
             this.handler = handler;
         }
 
         @Override
         public void process() throws OperatorException {
-            kafka.increasePartitions(topic, newPartitions, ar-> {
+            kafka.increasePartitions(topic, ar-> {
                 if (ar.failed()) {
                     enqueue(new ErrorEvent(involvedObject, ar.cause().toString()));
                 }
@@ -301,18 +296,16 @@ public class Operator implements Op {
 
         private final Topic topic;
         private final Handler<AsyncResult<Void>> handler;
-        private final Map<Integer, List<Integer>> newAssignment;
 
-        public ChangeReplicationFactor(Topic topic, Map<Integer, List<Integer>>  newAssignment, HasMetadata involvedObject, Handler<AsyncResult<Void>> handler) {
+        public ChangeReplicationFactor(Topic topic, HasMetadata involvedObject, Handler<AsyncResult<Void>> handler) {
             this.topic = topic;
-            this.newAssignment = newAssignment;
             this.involvedObject = involvedObject;
             this.handler = handler;
         }
 
         @Override
         public void process() throws OperatorException {
-            kafka.changeReplicationFactor(topic, newAssignment, ar-> {
+            kafka.changeReplicationFactor(topic, ar-> {
                 if (ar.failed()) {
                     enqueue(new ErrorEvent(involvedObject, ar.cause().toString()));
                 }
@@ -438,8 +431,7 @@ public class Operator implements Op {
                 }
             } else if (kafkaTopic == null) {
                 // it's been created in k8s => create in Kafka and privateState
-                Map<Integer, List<Integer>> assignment = partitionAssignment.newTopic(k8sTopic);
-                enqueue(new CreateKafkaTopic(k8sTopic, assignment, involvedObject, new CreateInTopicStoreHandler(k8sTopic)));
+                enqueue(new CreateKafkaTopic(k8sTopic, involvedObject, new CreateInTopicStoreHandler(k8sTopic)));
             } else if (TopicDiff.diff(kafkaTopic, k8sTopic).isEmpty()) {
                 // they're the same => do nothing
                 logger.debug("k8s and kafka versions of topic '{}' are the same", kafkaTopic.getTopicName());
@@ -499,8 +491,7 @@ public class Operator implements Op {
             } else {
 
                 if (merged.changesReplicationFactor()) {
-                    Map<Integer, List<Integer>> assignment = partitionAssignment.changeReplicationFactor(result);
-                    enqueue(new ChangeReplicationFactor(result, assignment, involvedObject, null));
+                    enqueue(new ChangeReplicationFactor(result, involvedObject, null));
                 }
                 // TODO What if we increase min.in.sync.replicas and the number of replicas,
                 // such that the old number of replicas < the new min isr? But likewise
@@ -512,8 +503,7 @@ public class Operator implements Op {
                                     result, involvedObject, reconciliationResultHandler));
                     Handler<Void> partitionsHandler;
                     if (partitionsDelta > 0) {
-                        List<List<Integer>> assignment = partitionAssignment.newPartitions(result, partitionsDelta);
-                        partitionsHandler = ar4 -> enqueue(new IncreaseKafkaPartitions(result, assignment, involvedObject, ar2 -> topicStoreHandler.handle(null)));
+                        partitionsHandler = ar4 -> enqueue(new IncreaseKafkaPartitions(result, involvedObject, ar2 -> topicStoreHandler.handle(null)));
                     } else {
                         partitionsHandler = topicStoreHandler;
                     }
@@ -630,8 +620,7 @@ public class Operator implements Op {
             TopicName topicName = new TopicName(configMap);
             if (inFlight.shouldProcessConfigMapAdded(topicName)) {
                 Topic topic = TopicSerialization.fromConfigMap(configMap);
-                Map<Integer, List<Integer>> assignment = partitionAssignment.newTopic(topic);
-                enqueue(new CreateKafkaTopic(topic, assignment, configMap, ar -> {
+                enqueue(new CreateKafkaTopic(topic, configMap, ar -> {
                     if (ar.succeeded()) {
                         enqueue(new CreateInTopicStore(topic, configMap, resultHandler));
                     } else {

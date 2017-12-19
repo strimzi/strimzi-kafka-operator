@@ -46,7 +46,7 @@ public class Main extends AbstractVerticle {
     private final String kafkaBootstrapServers;
     private final String kubernetesMasterUrl;
     private final String zookeeperConnect;
-    private KafkaImpl kafka;
+    private ControllerAssignedKafkaImpl kafka;
     private AdminClient adminClient;
     private DefaultKubernetesClient kubeClient;
     private K8sImpl k8s;
@@ -96,7 +96,7 @@ public class Main extends AbstractVerticle {
         Properties props = new Properties();
         props.setProperty("bootstrap.servers", kafkaBootstrapServers);
         this.adminClient = AdminClient.create(props);
-        this.kafka = new KafkaImpl(adminClient, vertx);
+        this.kafka = new ControllerAssignedKafkaImpl(adminClient, vertx);
 
         final io.fabric8.kubernetes.client.Config config = new ConfigBuilder().withMasterUrl(kubernetesMasterUrl).build();
         this.kubeClient = new DefaultKubernetesClient(config);

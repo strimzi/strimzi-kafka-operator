@@ -37,7 +37,7 @@ public interface Kafka {
      * will be called with a failed AsyncResult whose {@code cause()} is the
      * KafkaException (not an ExecutionException).
      */
-    void createTopic(NewTopic newTopic, Handler<AsyncResult<Void>> handler);
+    void createTopic(Topic newTopic, Handler<AsyncResult<Void>> handler);
 
     /**
      * Asynchronously delete the given topic in Kafka. Invoke the given
@@ -61,7 +61,7 @@ public interface Kafka {
      * will be called with a failed AsyncResult whose {@code cause()} is the
      * KafkaException (not an ExecutionException).
      */
-    void increasePartitions(Topic topic, List<List<Integer>> newAssignments, Handler<AsyncResult<Void>> handler);
+    void increasePartitions(Topic topic, Handler<AsyncResult<Void>> handler);
 
     /**
      * Asynchronously change the topic's replication factor in Kafka. Invoke the given
@@ -69,7 +69,7 @@ public interface Kafka {
      * will be called with a failed AsyncResult whose {@code cause()} is the
      * KafkaException (not an ExecutionException).
      */
-    void changeReplicationFactor(Topic topic, Map<Integer, List<Integer>> newAssignments, Handler<AsyncResult<Void>> handler);
+    void changeReplicationFactor(Topic topic, Handler<AsyncResult<Void>> handler);
 
     /**
      * Asynchronously fetch the topic metadata in Kafka. Invoke the given

@@ -118,7 +118,8 @@ public class MockKafka implements Kafka {
     }
 
     @Override
-    public void createTopic(NewTopic newTopic, Handler<AsyncResult<Void>> handler) {
+    public void createTopic(Topic t, Handler<AsyncResult<Void>> handler) {
+        NewTopic newTopic = TopicSerialization.toNewTopic(t, null);
         AsyncResult<Void> event = createTopicResponse.apply(newTopic.name());
         if (event.succeeded()) {
             Topic topic = new Topic.Builder()
@@ -147,13 +148,13 @@ public class MockKafka implements Kafka {
     }
 
     @Override
-    public void increasePartitions(Topic topic, List<List<Integer>> newAssignments, Handler<AsyncResult<Void>> handler) {
+    public void increasePartitions(Topic topic, Handler<AsyncResult<Void>> handler) {
         throw new RuntimeException("Implement this in the mock!");
     }
 
     @Override
-    public void changeReplicationFactor(Topic topic, Map<Integer, List<Integer>> newAssignments, Handler<AsyncResult<Void>> handler) {
-
+    public void changeReplicationFactor(Topic topic, Handler<AsyncResult<Void>> handler) {
+        throw new RuntimeException("Implement this in the mock!");
     }
 
     @Override
