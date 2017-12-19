@@ -367,4 +367,11 @@ public abstract class AbstractCluster {
 
         return dep;
     }
+
+    public ConfigMap patchConfigMap(ConfigMap cm, Map<String, String> data) {
+
+        cm.setData(data);
+
+        return cm;
+    }
 }

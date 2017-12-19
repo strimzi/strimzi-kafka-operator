@@ -41,7 +41,7 @@ public class UpdateKafkaClusterOperation extends KafkaClusterOperation {
 
                 if (kafkaConfigMap != null)    {
                     kafka = KafkaCluster.fromConfigMap(kafkaConfigMap);
-                    diff = kafka.diff(k8s.getStatefulSet(namespace, name));
+                    diff = kafka.diff(k8s.getStatefulSet(namespace, name), k8s.getConfigmap(namespace, name + "-metrics-config"));
                 } else {
                     log.error("ConfigMap {} doesn't exist anymore in namespace {}", name, namespace);
                     handler.handle(Future.failedFuture("ConfigMap doesn't exist anymore"));
@@ -55,6 +55,7 @@ public class UpdateKafkaClusterOperation extends KafkaClusterOperation {
                         .compose(i -> patchService(kafka, diff))
                         .compose(i -> patchHeadlessService(kafka, diff))
                         .compose(i -> patchStatefulSet(kafka, diff))
+                        .compose(i -> patchMetricsConfigMap(kafka, diff))
                         .compose(i -> rollingUpdate(diff))
                         .compose(i -> scaleUp(kafka, diff))
                         .compose(chainFuture::complete, chainFuture);
@@ -123,6 +124,16 @@ public class UpdateKafkaClusterOperation extends KafkaClusterOperation {
         }
         else
         {
+            return Future.succeededFuture();
+        }
+    }
+
+    private Future<Void> patchMetricsConfigMap(KafkaCluster kafka, ClusterDiffResult diff) {
+        if (diff.getDifferent()) {
+            Future<Void> patchConfigMap = Future.future();
+            OperationExecutor.getInstance().execute(new PatchOperation(k8s.getConfigmapResource(namespace, kafka.getMetricsConfigName()), kafka.patchMetricsConfigMap(k8s.getConfigmap(namespace, name + "-metrics-config"))), patchConfigMap.completer());
+            return patchConfigMap;
+        } else {
             return Future.succeededFuture();
         }
     }

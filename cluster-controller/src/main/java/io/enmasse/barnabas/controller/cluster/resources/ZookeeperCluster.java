@@ -106,7 +106,7 @@ public class ZookeeperCluster extends AbstractCluster {
         return zk;
     }
 
-    public ClusterDiffResult diff(StatefulSet ss)  {
+    public ClusterDiffResult diff(StatefulSet ss, ConfigMap metricsConfigMap)  {
         ClusterDiffResult diff = new ClusterDiffResult();
 
         if (replicas > ss.getSpec().getReplicas()) {
@@ -137,6 +137,23 @@ public class ZookeeperCluster extends AbstractCluster {
             log.info("Diff: Zookeeper healthcheck timing changed");
             diff.setDifferent(true);
             diff.setRollingUpdate(true);
+        }
+
+        Map<String, String> vars = ss.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream().collect(
+                Collectors.toMap(EnvVar::getName, EnvVar::getValue));
+
+        if (isMetricsEnabled != Boolean.parseBoolean(vars.getOrDefault(KEY_ZOOKEEPER_METRICS_ENABLED, String.valueOf(DEFAULT_ZOOKEEPER_METRICS_ENABLED)))) {
+            log.info("Diff: Zookeeper metrics enabled/disabled");
+            diff.setDifferent(true);
+            diff.setRollingUpdate(true);
+        } else {
+
+            if (isMetricsEnabled) {
+                JsonObject metricsConfig = new JsonObject(metricsConfigMap.getData().get("config.yml"));
+                if (!this.metricsConfig.equals(metricsConfig)) {
+                    diff.setDifferent(true);
+                }
+            }
         }
 
         return diff;
@@ -175,6 +192,14 @@ public class ZookeeperCluster extends AbstractCluster {
         data.put("config.yml", metricsConfig.toString());
 
         return createConfigMap(metricsConfigName, data);
+    }
+
+    public ConfigMap patchMetricsConfigMap(ConfigMap cm) {
+
+        Map<String, String> data = new HashMap<>();
+        data.put("config.yml", metricsConfig.toString());
+
+        return patchConfigMap(cm, data);
     }
 
     public StatefulSet patchStatefulSet(StatefulSet statefulSet) {

@@ -119,7 +119,7 @@ public class KafkaCluster extends AbstractCluster {
         return kafka;
     }
 
-    public ClusterDiffResult diff(StatefulSet ss)  {
+    public ClusterDiffResult diff(StatefulSet ss, ConfigMap metricsConfigMap)  {
         ClusterDiffResult diff = new ClusterDiffResult();
 
         if (replicas > ss.getSpec().getReplicas()) {
@@ -163,6 +163,20 @@ public class KafkaCluster extends AbstractCluster {
             diff.setRollingUpdate(true);
         }
 
+        if (isMetricsEnabled != Boolean.parseBoolean(vars.getOrDefault(KEY_KAFKA_METRICS_ENABLED, String.valueOf(DEFAULT_KAFKA_METRICS_ENABLED)))) {
+            log.info("Diff: Kafka metrics enabled/disabled");
+            diff.setDifferent(true);
+            diff.setRollingUpdate(true);
+        } else {
+
+            if (isMetricsEnabled) {
+                JsonObject metricsConfig = new JsonObject(metricsConfigMap.getData().get("config.yml"));
+                if (!this.metricsConfig.equals(metricsConfig)) {
+                    diff.setDifferent(true);
+                }
+            }
+        }
+
         return diff;
     }
 
@@ -200,6 +214,14 @@ public class KafkaCluster extends AbstractCluster {
         data.put("config.yml", metricsConfig.toString());
 
         return createConfigMap(metricsConfigName, data);
+    }
+
+    public ConfigMap patchMetricsConfigMap(ConfigMap cm) {
+
+        Map<String, String> data = new HashMap<>();
+        data.put("config.yml", metricsConfig.toString());
+
+        return patchConfigMap(cm, data);
     }
 
     public StatefulSet patchStatefulSet(StatefulSet statefulSet) {
