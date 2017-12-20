@@ -5,6 +5,7 @@ public class ClusterDiffResult {
     private Boolean rollingUpdate = false;
     private Boolean scaleUp = false;
     private Boolean scaleDown = false;
+    private boolean isMetricsChanged = false;
 
     public ClusterDiffResult() {
         // Nothing to do
@@ -57,5 +58,13 @@ public class ClusterDiffResult {
 
     public void setScaleDown(Boolean scaleDown) {
         this.scaleDown = scaleDown;
+    }
+
+    public boolean isMetricsChanged() {
+        return isMetricsChanged;
+    }
+
+    public void setMetricsChanged(boolean metricsChanged) {
+        isMetricsChanged = metricsChanged;
     }
 }

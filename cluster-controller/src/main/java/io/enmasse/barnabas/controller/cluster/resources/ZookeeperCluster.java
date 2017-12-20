@@ -144,14 +144,14 @@ public class ZookeeperCluster extends AbstractCluster {
 
         if (isMetricsEnabled != Boolean.parseBoolean(vars.getOrDefault(KEY_ZOOKEEPER_METRICS_ENABLED, String.valueOf(DEFAULT_ZOOKEEPER_METRICS_ENABLED)))) {
             log.info("Diff: Zookeeper metrics enabled/disabled");
-            diff.setDifferent(true);
+            diff.setMetricsChanged(true);
             diff.setRollingUpdate(true);
         } else {
 
             if (isMetricsEnabled) {
                 JsonObject metricsConfig = new JsonObject(metricsConfigMap.getData().get("config.yml"));
                 if (!this.metricsConfig.equals(metricsConfig)) {
-                    diff.setDifferent(true);
+                    diff.setMetricsChanged(true);
                 }
             }
         }
