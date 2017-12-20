@@ -174,7 +174,7 @@ public abstract class AbstractCluster {
 
     protected ConfigMap createConfigMap(String name, Map<String, String> data) {
 
-        ConfigMap metricsCm = new ConfigMapBuilder()
+        ConfigMap cm = new ConfigMapBuilder()
                 .withNewMetadata()
                 .withName(name)
                 .withNamespace(namespace)
@@ -182,7 +182,7 @@ public abstract class AbstractCluster {
                 .withData(data)
                 .build();
 
-        return metricsCm;
+        return cm;
     }
 
     protected Probe createExecProbe(String command, int initialDelay, int timeout) {

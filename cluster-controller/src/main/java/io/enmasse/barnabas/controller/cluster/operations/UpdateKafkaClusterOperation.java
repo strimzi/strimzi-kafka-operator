@@ -129,10 +129,13 @@ public class UpdateKafkaClusterOperation extends KafkaClusterOperation {
     }
 
     private Future<Void> patchMetricsConfigMap(KafkaCluster kafka, ClusterDiffResult diff) {
-        if (diff.getDifferent()) {
-            Future<Void> patchConfigMap = Future.future();
-            OperationExecutor.getInstance().execute(new PatchOperation(k8s.getConfigmapResource(namespace, kafka.getMetricsConfigName()), kafka.patchMetricsConfigMap(k8s.getConfigmap(namespace, name + "-metrics-config"))), patchConfigMap.completer());
-            return patchConfigMap;
+        if (diff.isMetricsChanged()) {
+            if (kafka.isMetricsEnabled()) {
+                Future<Void> patchConfigMap = Future.future();
+                OperationExecutor.getInstance().execute(new PatchOperation(k8s.getConfigmapResource(namespace, kafka.getMetricsConfigName()), kafka.patchMetricsConfigMap(k8s.getConfigmap(namespace, name + "-metrics-config"))), patchConfigMap.completer());
+                return patchConfigMap;
+            } else
+                return Future.succeededFuture();
         } else {
             return Future.succeededFuture();
         }

@@ -165,14 +165,14 @@ public class KafkaCluster extends AbstractCluster {
 
         if (isMetricsEnabled != Boolean.parseBoolean(vars.getOrDefault(KEY_KAFKA_METRICS_ENABLED, String.valueOf(DEFAULT_KAFKA_METRICS_ENABLED)))) {
             log.info("Diff: Kafka metrics enabled/disabled");
-            diff.setDifferent(true);
+            diff.setMetricsChanged(true);
             diff.setRollingUpdate(true);
         } else {
 
             if (isMetricsEnabled) {
                 JsonObject metricsConfig = new JsonObject(metricsConfigMap.getData().get("config.yml"));
                 if (!this.metricsConfig.equals(metricsConfig)) {
-                    diff.setDifferent(true);
+                    diff.setMetricsChanged(true);
                 }
             }
         }
