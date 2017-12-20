@@ -32,6 +32,7 @@ import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -44,39 +45,17 @@ public class Main extends AbstractVerticle {
     // TODO document lifecycle
 
     private final static Logger logger = LoggerFactory.getLogger(Main.class);
-    private final String kafkaBootstrapServers;
-    private final String kubernetesMasterUrl;
-    private final String zookeeperConnect;
+    public static final String OPERATOR_CM_NAME = "topic-operator";
+
+    private Config config;
     private ControllerAssignedKafkaImpl kafka;
     private AdminClient adminClient;
     private DefaultKubernetesClient kubeClient;
     private K8sImpl k8s;
     private Operator operator;
 
-    /** Executor for processing {@link Operator.OperatorEvent}s. */
-    /*
-    private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1, new ThreadFactory() {
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread t = Executors.defaultThreadFactory().newThread(r);
-            t.setUncaughtExceptionHandler((thread, exception) -> {
-                if (exception instanceof OperatorException) {
-                    operator.enqueue(operator.new ErrorEvent((OperatorException)exception));
-                } else {
-                    logger.error("Uncaught exception when processing events", exception);
-                }
-            });
-            t.setName("topic-operator-executor");
-            return t;
-        }
-    });
-    */
-
-
-    public Main(String kafkaBootstrapServers, String kubernetesMasterUrl, String zookeeperConnect) {
-        this.kafkaBootstrapServers = kafkaBootstrapServers;
-        this.kubernetesMasterUrl = kubernetesMasterUrl;
-        this.zookeeperConnect = zookeeperConnect;
+    public Main(@NotNull Config config) {
+        this.config = config;
     }
 
     /**
@@ -94,13 +73,16 @@ public class Main extends AbstractVerticle {
 
     @Override
     public void start() {
-        Properties props = new Properties();
-        props.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaBootstrapServers);
-        this.adminClient = AdminClient.create(props);
-        this.kafka = new ControllerAssignedKafkaImpl(adminClient, vertx);
 
-        final io.fabric8.kubernetes.client.Config config = new ConfigBuilder().withMasterUrl(kubernetesMasterUrl).build();
-        this.kubeClient = new DefaultKubernetesClient(config);
+        final io.fabric8.kubernetes.client.Config kubeConfig = new ConfigBuilder().withMasterUrl(this.config.get(Config.KUBERNETES_MASTER_URL)).build();
+        this.kubeClient = new DefaultKubernetesClient(kubeConfig);
+
+        // TODO watch a configmap for this operator and redeploy the verticle on changes to that CM
+
+        Properties adminClientProps = new Properties();
+        adminClientProps.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, config.get(Config.KAFKA_BOOTSTRAP_SERVERS));
+        this.adminClient = AdminClient.create(adminClientProps);
+        this.kafka = new ControllerAssignedKafkaImpl(adminClient, vertx, config);
 
         // app=barnabas and kind=topic
         // or app=barnabas, kind=topic, cluster=my-cluster if we need to scope it to a cluster
@@ -115,7 +97,7 @@ public class Main extends AbstractVerticle {
 
         TopicsWatcher tw = new TopicsWatcher(operator);
         TopicConfigsWatcher tcw = new TopicConfigsWatcher(operator);
-        Zk zk = Zk.create(vertx, zookeeperConnect, 60_000);
+        Zk zk = Zk.create(vertx, config.get(Config.ZOOKEEPER_CONNECT), this.config.get(Config.ZOOKEEPER_SESSION_TIMEOUT_MS).intValue());
         final Handler<AsyncResult<Zk>> zkConnectHandler = ar -> {
             tw.start(ar.result());
             tcw.start(ar.result());
@@ -161,8 +143,7 @@ public class Main extends AbstractVerticle {
         logger.debug("Starting {}", configMapThread);
         configMapThread.start();
 
-
-        vertx.setPeriodic(TimeUnit.MILLISECONDS.convert(15, TimeUnit.MINUTES),
+        vertx.setPeriodic(this.config.get(Config.FULL_RECONCILIATION_INTERVAL_MS),
                 (timerId) -> {
 
             kafka.listTopics(arx -> {
@@ -200,25 +181,13 @@ public class Main extends AbstractVerticle {
     }
 
     public static void main(String[] args) {
-        String kubernetesMasterUrl = System.getProperty("OPERATOR_K8S_URL", "https://localhost:8443");
-        String kafkaBootstrapServers = System.getProperty("OPERATOR_KAFKA_HOST", "localhost") + ":" + System.getProperty("OPERATOR_KAFKA_PORT", "9092");
-        String zookeeperConnect = System.getProperty("OPERATOR_ZK_HOST", "localhost") + ":" + System.getProperty("OPERATOR_ZK_PORT", "2181;");
-
-        Main main = new Main(kafkaBootstrapServers, kubernetesMasterUrl, zookeeperConnect);
-
+        HashMap<String, String> c = new HashMap<>();
+        c.put(Config.KUBERNETES_MASTER_URL.key, System.getProperty("OPERATOR_K8S_URL", "https://localhost:8443"));
+        c.put(Config.KAFKA_BOOTSTRAP_SERVERS.key, System.getProperty("OPERATOR_KAFKA_HOST", "localhost") + ":" + System.getProperty("OPERATOR_KAFKA_PORT", "9092"));
+        c.put(Config.ZOOKEEPER_CONNECT.key, System.getProperty("OPERATOR_ZK_HOST", "localhost") + ":" + System.getProperty("OPERATOR_ZK_PORT", "2181;"));
+        Main main = new Main(new Config(c));
         Vertx vertx = Vertx.vertx();
         vertx.deployVerticle(main);
 
-        /*
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            try {
-                main.stop(1, TimeUnit.MINUTES);
-            } catch (InterruptedException e) {
-                logger.error("Interrupted while shutting down", e);
-                // And otherwise ignore it, since we're shutting down anyway
-            }
-        }));
-        main.start(kafkaBootstrapServers, kubernetesMasterUrl, zookeeperConnect);
-        */
     }
 }

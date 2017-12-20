@@ -17,18 +17,47 @@
 
 package io.enmasse.barnabas.operator.topic;
 
+import com.fasterxml.jackson.core.JsonEncoding;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.JsonNode;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.CompositeFuture;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.NewPartitions;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.KafkaFuture;
+import org.apache.kafka.common.Node;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.StringJoiner;
+import java.util.concurrent.ExecutionException;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * An implementation of {@link Kafka} which leave partition assignment decisions to the Kafka controller.
@@ -38,9 +67,11 @@ import java.util.Map;
 public class ControllerAssignedKafkaImpl extends BaseKafkaImpl {
 
     private final static Logger logger = LoggerFactory.getLogger(ControllerAssignedKafkaImpl.class);
+    private final Config config;
 
-    public ControllerAssignedKafkaImpl(AdminClient adminClient, Vertx vertx) {
+    public ControllerAssignedKafkaImpl(AdminClient adminClient, Vertx vertx, Config config) {
         super(adminClient, vertx);
+        this.config = config;
     }
 
     @Override
@@ -68,6 +99,311 @@ public class ControllerAssignedKafkaImpl extends BaseKafkaImpl {
     @Override
     public void changeReplicationFactor(Topic topic, Handler<AsyncResult<Void>> handler) {
 
+        logger.info("Changing replication factor of topic {} to {}", topic.getTopicName(), topic.getNumReplicas());
+
+        final String zookeeper = config.get(Config.ZOOKEEPER_CONNECT);
+        Future<File> f2 = Future.future();
+
+        // generate a reassignment
+        vertx.executeBlocking((fut) -> {
+            try {
+                logger.debug("Generating reassignment json for topic {}", topic.getTopicName());
+                String reassignment = generateReassignment(topic, zookeeper);
+                logger.debug("Reassignment json for topic {}: {}", topic.getTopicName(), reassignment);
+                File reassignmentJsonFile = createTmpFile("-reassignment.json");
+                try (Writer w = new OutputStreamWriter(new FileOutputStream(reassignmentJsonFile), StandardCharsets.UTF_8)) {
+                    w.write(reassignment);
+                }
+                fut.complete(reassignmentJsonFile);
+            } catch (Exception e) {
+                fut.fail(e);
+            }
+        },
+        f2.completer());
+
+        Future<File> f3 = Future.future();
+
+        f2.compose(reassignmentJsonFile-> {
+            // execute the reassignment
+            vertx.executeBlocking((fut) -> {
+                final Long throttle = config.get(Config.REASSIGN_THROTTLE);
+                try {
+                    logger.debug("Starting reassignment for topic {} with throttle {}", topic.getTopicName(), throttle);
+                    executeReassignment(reassignmentJsonFile, zookeeper, throttle);
+                    fut.complete(reassignmentJsonFile);
+                } catch (IOException | InterruptedException e) {
+                    fut.fail(e);
+                }
+            },
+            f3.completer());
+        }, f3);
+
+        Future<Void> f4 = Future.future();
+        Future<Void> f5 = Future.future();
+
+        f3.compose(reassignmentJsonFile-> {
+            // Poll repeatedly, calling --verify to remove the throttle
+            long timeout = 10_000;
+            long first = System.currentTimeMillis();
+            vertx.setPeriodic(config.get(Config.REASSIGN_VERIFY_INTERVAL_MS), (timerId) ->
+                vertx.executeBlocking(fut -> {
+                    logger.debug(String.format("Verifying reassignment for topic {} (timer id=%s)", topic.getTopicName(), timerId));
+
+                    final Long throttle = config.get(Config.REASSIGN_THROTTLE);
+                    final boolean reassignmentComplete;
+                    try {
+                        reassignmentComplete = verifyReassignment(reassignmentJsonFile, zookeeper, throttle);
+                    } catch (Exception e) {
+                        fut.fail(e);
+                        return;
+                    }
+                    if (reassignmentComplete) {
+                        logger.info("Reassignment complete");
+                        delete(reassignmentJsonFile);
+                        logger.debug("Cancelling timer " + timerId);
+                        vertx.cancelTimer(timerId);
+                        f5.complete();
+                    } else if (System.currentTimeMillis() - first > timeout) {
+                        logger.info("Reassignment timed out");
+                        delete(reassignmentJsonFile);
+                        logger.debug("Cancelling timer " + timerId);
+                        vertx.cancelTimer(timerId);
+                        f5.fail("Timeout");
+                    }
+                    fut.complete();
+                }, f4.completer())
+            );
+            },
+        f4);
+
+        CompositeFuture.join(f4, f5).<Void>map(null).setHandler(handler);
+
+
+        // TODO If a reassignment is already happening, we should wait until we can progress
+        // Sadly, in general this means we just pile more jobs on vertx to manage, and it's all held in memory.
     }
+
+    private static void delete(File file) {
+        if (!file.delete()) {
+            logger.warn("Unable to delete temporary file {}", file);
+        }
+    }
+
+    private static File createTmpFile(String suffix) throws IOException {
+        File tmpFile = File.createTempFile(ControllerAssignedKafkaImpl.class.getName(), suffix);
+        if (logger.isTraceEnabled()) {
+            logger.trace("Created temporary file {}", tmpFile);
+        }
+        tmpFile.deleteOnExit();
+        return tmpFile;
+    }
+
+    private boolean verifyReassignment(File reassignmentJsonFile, String zookeeper, Long throttle) throws IOException, InterruptedException {
+        List<String> verifyArgs = new ArrayList<>();
+        addJavaArgs(verifyArgs);
+        // command args
+        verifyArgs.add("--zookeeper");
+        verifyArgs.add(zookeeper);
+        if (throttle != null) {
+            verifyArgs.add("--throttle");
+            verifyArgs.add(Long.toString(throttle));
+        }
+        verifyArgs.add("--reassignment-json-file");
+        verifyArgs.add(reassignmentJsonFile.toString());
+        verifyArgs.add("--verify");
+
+        class Progress implements Function<String, Boolean> {
+            int complete = 0;
+            int inProgress = 0;
+
+            @Override
+            public Boolean apply(String line) {
+                if (line.contains("Partitions reassignment failed due to")
+                        || Pattern.matches("Reassignment of partition .* failed", line)) {
+                    throw new RuntimeException("Reassigment failed: " + line);
+                } else if (Pattern.matches("Reassignment of partition .* completed successfully", line)) {
+                    complete++;
+                } else if (Pattern.matches("Reassignment of partition .* is still in progress", line)) {
+                    inProgress++;
+                }
+                return null;
+            }
+        }
+        Progress progress = new Progress();
+        executeSubprocess(verifyArgs).forEachLineStdout(progress);
+        return progress.inProgress == 0;
+    }
+
+    private void executeReassignment(File reassignmentJsonFile, String zookeeper, Long throttle) throws IOException, InterruptedException {
+        List<String> executeArgs = new ArrayList<>();
+        addJavaArgs(executeArgs);
+        executeArgs.add("--zookeeper");
+        executeArgs.add(zookeeper);
+        if (throttle != null) {
+            executeArgs.add("--throttle");
+            executeArgs.add(Long.toString(throttle));
+        }
+        executeArgs.add("--reassignment-json-file");
+        executeArgs.add(reassignmentJsonFile.toString());
+        executeArgs.add("--execute");
+
+        if (!executeSubprocess(executeArgs).forEachLineStdout(line -> {
+            if (line.contains("Partitions reassignment failed due to")
+                    || line.contains("There is an existing assignment running")
+                    || line.contains("Failed to reassign partitions")) {
+                throw new RuntimeException("Reassigment failed: " + line);
+            } else if (line.contains("Successfully started reassignment of partitions.")) {
+                return true;
+            } else {
+                return null;
+            }
+        })) {
+            throw new RuntimeException("Reassignment execution neither failed nor finished");
+        }
+    }
+
+    private String generateReassignment(Topic topic, String zookeeper) throws IOException, InterruptedException, ExecutionException {
+        JsonFactory factory = new JsonFactory();
+
+        File topicsToMove = createTmpFile("-topics-to-move.json");
+
+        try (JsonGenerator gen = factory.createGenerator(topicsToMove, JsonEncoding.UTF8)){
+            gen.writeStartObject();
+            gen.writeNumberField("version", 1);
+            gen.writeArrayFieldStart("topics");
+            gen.writeStartObject();
+            gen.writeStringField("topic", topic.getTopicName().toString());
+            gen.writeEndObject();
+            gen.writeEndArray();
+            gen.writeEndObject();
+            gen.flush();
+        }
+        List<String> executeArgs = new ArrayList<>();
+        addJavaArgs(executeArgs);
+        executeArgs.add("--zookeeper");
+        executeArgs.add(zookeeper);
+        executeArgs.add("--topics-to-move-json-file");
+        executeArgs.add(topicsToMove.toString());
+        executeArgs.add("--broker-list");
+        executeArgs.add(brokerList());
+        executeArgs.add("--generate");
+
+        final ProcessResult processResult = executeSubprocess(executeArgs);
+        delete(topicsToMove);
+        String json = processResult.forEachLineStdout(new Function<String, String>() {
+            boolean returnLine = false;
+            @Override
+            public String apply(String line) {
+                if (line.contains("Partitions reassignment failed due to")) {
+                    throw new RuntimeException("Reassignment failed: " + line);
+                }
+                if (returnLine) {
+                    return line;
+                }
+                if (line.contains("Proposed partition reassignment configuration")) {
+                    // Return the line following this one, since that's the JSON representation of the reassignment
+                    returnLine = true;
+                }
+                return null;
+            }
+        });
+        return json;
+
+    }
+
+    /** Use the AdminClient to get a comma-separated list of the broker ids in the Kafka cluster */
+    private String brokerList() throws InterruptedException, ExecutionException {
+        StringBuilder sb = new StringBuilder();
+        for (Node node: adminClient.describeCluster().nodes().get()) {
+            if (sb.length() != 0) {
+                sb.append(",");
+            }
+            sb.append(node.id());
+        }
+        return sb.toString();
+    }
+
+    protected void addJavaArgs(List<String> verifyArgs) {
+        // protected access only for testing purposes
+
+        // use the same java executable that's executing this code
+        verifyArgs.add(System.getProperty("java.home")+"/bin/java");
+        // use the same classpath as we have
+        verifyArgs.add("-cp");
+        verifyArgs.add(System.getProperty("java.class.path"));
+        // main
+        verifyArgs.add("kafka.admin.ReassignPartitionsCommand");
+    }
+
+    private ProcessResult executeSubprocess(List<String> verifyArgs) throws IOException, InterruptedException {
+        // We choose to run the reassignment as an external process because the Scala class:
+        //  a) doesn't throw on errors, but
+        //  b) writes them to stdout
+        // so we need to parse its output, but we can't do that in an isolated way if we run it in our process
+        // (System.setOut being global to the VM).
+
+        ProcessBuilder pb = new ProcessBuilder(verifyArgs);
+        // If we redirect stderr to stdout we could break the predicates because the
+        // characters will be jumbled.
+        // Reading two pipes without deadlocking on the blocking is difficult, so let's just write stderr to a file.
+        File stdout = createTmpFile(".out");
+        File stderr = createTmpFile(".err");
+        pb.redirectError(stderr);
+        pb.redirectOutput(stdout);
+        Process p = pb.start();
+        logger.info("Started process {} with command line {}", p, verifyArgs);
+        p.getOutputStream().close();
+        int exitCode = p.waitFor();
+        // TODO timeout on wait
+        logger.info("Process {}: exited with status {}", p, exitCode);
+        return new ProcessResult(p, exitCode, stdout, stderr);
+    }
+
+
+
+    private static class ProcessResult implements AutoCloseable {
+        private final File stdout;
+        private final File stderr;
+        private final int exitCode;
+        private final Object pid;
+
+        ProcessResult(Object pid, int exitCode, File stdout, File stderr) {
+            this.pid = pid;
+            this.exitCode = exitCode;
+            this.stdout = stdout;
+            this.stderr = stderr;
+        }
+
+        public <T> T forEachLineStdout(Function<String, T> fn) throws IOException {
+            return forEachLine(this.stdout, fn);
+        }
+
+        private <T> T forEachLine(File file, Function<String, T> fn) throws IOException {
+            try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                String line = reader.readLine();
+                while (line != null) {
+
+                    if (logger.isTraceEnabled()) {
+                        logger.trace("Process {}: stdout: ", line);
+                    }
+
+                    T result = fn.apply(line);
+                    if (result != null) {
+                        return result;
+                    }
+
+                    line = reader.readLine();
+                }
+                return null;
+            }
+        }
+
+        @Override
+        public void close() throws Exception {
+            delete(stdout);
+            delete(stderr);
+        }
+    }
+
 }
 
