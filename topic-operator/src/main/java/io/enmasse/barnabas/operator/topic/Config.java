@@ -105,6 +105,8 @@ public class Config {
         addConfigValue(configValues, ZOOKEEPER_CONNECT);
         addConfigValue(configValues, ZOOKEEPER_SESSION_TIMEOUT_MS);
         addConfigValue(configValues, FULL_RECONCILIATION_INTERVAL_MS);
+        addConfigValue(configValues, REASSIGN_THROTTLE);
+        addConfigValue(configValues, REASSIGN_VERIFY_INTERVAL_MS);
         CONFIG_VALUES = Collections.unmodifiableMap(configValues);
     }
 

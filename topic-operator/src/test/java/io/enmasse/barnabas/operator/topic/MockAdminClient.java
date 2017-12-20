@@ -49,14 +49,22 @@ import org.apache.kafka.clients.admin.ListTopicsOptions;
 import org.apache.kafka.clients.admin.ListTopicsResult;
 import org.apache.kafka.clients.admin.NewPartitions;
 import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.common.KafkaFuture;
+import org.apache.kafka.common.Node;
 import org.apache.kafka.common.TopicPartitionReplica;
 import org.apache.kafka.common.acl.AclBinding;
 import org.apache.kafka.common.acl.AclBindingFilter;
 import org.apache.kafka.common.config.ConfigResource;
+import org.apache.kafka.common.internals.KafkaFutureImpl;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
+import static java.util.Arrays.asList;
 
 class MockAdminClient extends AdminClient {
 
@@ -87,7 +95,19 @@ class MockAdminClient extends AdminClient {
 
     @Override
     public DescribeClusterResult describeCluster(DescribeClusterOptions describeClusterOptions) {
-        return null;
+        try {
+            Constructor<DescribeClusterResult> ctor = DescribeClusterResult.class.getDeclaredConstructor(KafkaFuture.class, KafkaFuture.class, KafkaFuture.class);
+            ctor.setAccessible(true);
+            final List<Node> nodes = asList(new Node(0, "localhost", -2),
+                    new Node(1, "localhost", -2),
+                    new Node(2, "localhost", -2));
+            KafkaFuture<Collection<Node>> nodesFuture = KafkaFutureImpl.completedFuture(nodes);
+            KafkaFuture<Node> controllerFuture = KafkaFutureImpl.completedFuture(nodes.get(0));
+            KafkaFuture<String> clusterIdFuture = KafkaFutureImpl.completedFuture("mock-cluster");
+            return ctor.newInstance(nodesFuture, controllerFuture, clusterIdFuture);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

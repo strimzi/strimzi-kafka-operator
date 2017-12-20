@@ -31,6 +31,7 @@ import java.util.List;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.singletonMap;
 
 @RunWith(VertxUnitRunner.class)
 public class ControllerAssignedKafkaImplTest {
@@ -41,6 +42,10 @@ public class ControllerAssignedKafkaImplTest {
      * various scenarios without needing ZK+Kafka clusters deployed.
      */
     static class Subclass extends ControllerAssignedKafkaImpl {
+
+        static List<String> fail(String message) {
+            return asList("--fail", message);
+        }
 
         static List<String> generate(String current, String propose) {
             return asList("--generate-current", current, "--generate-propose", propose);
@@ -68,6 +73,18 @@ public class ControllerAssignedKafkaImplTest {
             return result;
         }
 
+        static List<String> verifyFail(String message) {
+            return asList("--verify-fail", message);
+        }
+
+        static List<String> executeFail(String message) {
+            return asList("--execute-fail", message);
+        }
+
+        static List<String> executeInProgress() {
+            return asList("--execute-running");
+        }
+
         public static final String SCRIPT = "src/test/scripts/reassign.sh";
         private final List<List<String>> args;
         private final String script;
@@ -90,18 +107,141 @@ public class ControllerAssignedKafkaImplTest {
         }
     }
 
-    // TODO Test executable not found, or not executable
+    @Test
+    public void changeReplicationFactor_missingExecutable(TestContext context) {
+        MockAdminClient adminClient = new MockAdminClient();
+        Vertx vertx = Vertx.vertx();
+        Config config = new Config(singletonMap(Config.REASSIGN_VERIFY_INTERVAL_MS.key, "1 seconds"));
+        Topic topic = new Topic.Builder("changeReplicationFactor", 2, (short) 2, emptyMap()).build();
+        String[] partitions = new String[]{"changeReplicationFactor-0", "changeReplicationFactor-1"};
+        Subclass sub = new Subclass(adminClient, vertx, config, "/some/executable/that/does/not/exist", asList(
+                Subclass.generate("{\"version\":1,\"partitions\":[{\"topic\":\"test-topic\",\"partition\":0,\"replicas\":[0],\"log_dirs\":[\"any\"]},{\"topic\":\"test-topic\",\"partition\":1,\"replicas\":[0],\"log_dirs\":[\"any\"]}]}",
+                        "{\"version\":1,\"partitions\":[{\"topic\":\"test-topic\",\"partition\":0,\"replicas\":[0],\"log_dirs\":[\"any\"]},{\"topic\":\"test-topic\",\"partition\":1,\"replicas\":[0],\"log_dirs\":[\"any\"]}]}"),
+                Subclass.executeStarted(),
+                Subclass.verifyInProgress(partitions),
+                Subclass.verifySuccess(partitions)));
+        Async async = context.async();
+        sub.changeReplicationFactor(topic, ar -> {
+            context.assertTrue(ar.succeeded());
+            async.complete();
+        });
+    }
+
+    @Test
+    public void changeReplicationFactor_notExecutable(TestContext context) {
+        MockAdminClient adminClient = new MockAdminClient();
+        Vertx vertx = Vertx.vertx();
+        Config config = new Config(singletonMap(Config.REASSIGN_VERIFY_INTERVAL_MS.key, "1 seconds"));
+        Topic topic = new Topic.Builder("changeReplicationFactor", 2, (short) 2, emptyMap()).build();
+        String[] partitions = new String[]{"changeReplicationFactor-0", "changeReplicationFactor-1"};
+        Subclass sub = new Subclass(adminClient, vertx, config, "pom.xml", asList(
+                Subclass.generate("{\"version\":1,\"partitions\":[{\"topic\":\"test-topic\",\"partition\":0,\"replicas\":[0],\"log_dirs\":[\"any\"]},{\"topic\":\"test-topic\",\"partition\":1,\"replicas\":[0],\"log_dirs\":[\"any\"]}]}",
+                        "{\"version\":1,\"partitions\":[{\"topic\":\"test-topic\",\"partition\":0,\"replicas\":[0],\"log_dirs\":[\"any\"]},{\"topic\":\"test-topic\",\"partition\":1,\"replicas\":[0],\"log_dirs\":[\"any\"]}]}"),
+                Subclass.executeStarted(),
+                Subclass.verifyInProgress(partitions),
+                Subclass.verifySuccess(partitions)));
+        Async async = context.async();
+        sub.changeReplicationFactor(topic, ar -> {
+            context.assertTrue(ar.succeeded());
+            async.complete();
+        });
+    }
 
     @Test
     public void changeReplicationFactor(TestContext context) {
         MockAdminClient adminClient = new MockAdminClient();
         Vertx vertx = Vertx.vertx();
-        Config config = new Config(emptyMap());
+        Config config = new Config(singletonMap(Config.REASSIGN_VERIFY_INTERVAL_MS.key, "1 seconds"));
         Topic topic = new Topic.Builder("changeReplicationFactor", 2, (short) 2, emptyMap()).build();
         String[] partitions = new String[]{"changeReplicationFactor-0", "changeReplicationFactor-1"};
         Subclass sub = new Subclass(adminClient, vertx, config, asList(
                 Subclass.generate("{\"version\":1,\"partitions\":[{\"topic\":\"test-topic\",\"partition\":0,\"replicas\":[0],\"log_dirs\":[\"any\"]},{\"topic\":\"test-topic\",\"partition\":1,\"replicas\":[0],\"log_dirs\":[\"any\"]}]}",
                         "{\"version\":1,\"partitions\":[{\"topic\":\"test-topic\",\"partition\":0,\"replicas\":[0],\"log_dirs\":[\"any\"]},{\"topic\":\"test-topic\",\"partition\":1,\"replicas\":[0],\"log_dirs\":[\"any\"]}]}"),
+                Subclass.executeStarted(),
+                Subclass.verifyInProgress(partitions),
+                Subclass.verifySuccess(partitions)));
+        Async async = context.async();
+        sub.changeReplicationFactor(topic, ar -> {
+            context.assertTrue(ar.succeeded());
+            async.complete();
+        });
+    }
+
+    @Test
+    public void changeReplicationFactor_TransientErrorInVerify(TestContext context) {
+        MockAdminClient adminClient = new MockAdminClient();
+        Vertx vertx = Vertx.vertx();
+        Config config = new Config(singletonMap(Config.REASSIGN_VERIFY_INTERVAL_MS.key, "1 seconds"));
+        Topic topic = new Topic.Builder("changeReplicationFactor", 2, (short) 2, emptyMap()).build();
+        String[] partitions = new String[]{"changeReplicationFactor-0", "changeReplicationFactor-1"};
+        Subclass sub = new Subclass(adminClient, vertx, config, asList(
+                Subclass.generate("{\"version\":1,\"partitions\":[{\"topic\":\"test-topic\",\"partition\":0,\"replicas\":[0],\"log_dirs\":[\"any\"]},{\"topic\":\"test-topic\",\"partition\":1,\"replicas\":[0],\"log_dirs\":[\"any\"]}]}",
+                        "{\"version\":1,\"partitions\":[{\"topic\":\"test-topic\",\"partition\":0,\"replicas\":[0],\"log_dirs\":[\"any\"]},{\"topic\":\"test-topic\",\"partition\":1,\"replicas\":[0],\"log_dirs\":[\"any\"]}]}"),
+                Subclass.executeStarted(),
+                Subclass.verifyInProgress(partitions),
+                Subclass.fail("Bang!"),
+                Subclass.verifySuccess(partitions)));
+        Async async = context.async();
+        sub.changeReplicationFactor(topic, ar -> {
+            // We should retry anf ultimately succeed
+            context.assertTrue(ar.succeeded());
+            async.complete();
+        });
+    }
+
+    @Test
+    public void changeReplicationFactor_ErrorInVerify(TestContext context) {
+        MockAdminClient adminClient = new MockAdminClient();
+        Vertx vertx = Vertx.vertx();
+        Config config = new Config(singletonMap(Config.REASSIGN_VERIFY_INTERVAL_MS.key, "1 seconds"));
+        Topic topic = new Topic.Builder("changeReplicationFactor", 2, (short) 2, emptyMap()).build();
+        String[] partitions = new String[]{"changeReplicationFactor-0", "changeReplicationFactor-1"};
+        Subclass sub = new Subclass(adminClient, vertx, config, asList(
+                Subclass.generate("{\"version\":1,\"partitions\":[{\"topic\":\"test-topic\",\"partition\":0,\"replicas\":[0],\"log_dirs\":[\"any\"]},{\"topic\":\"test-topic\",\"partition\":1,\"replicas\":[0],\"log_dirs\":[\"any\"]}]}",
+                        "{\"version\":1,\"partitions\":[{\"topic\":\"test-topic\",\"partition\":0,\"replicas\":[0],\"log_dirs\":[\"any\"]},{\"topic\":\"test-topic\",\"partition\":1,\"replicas\":[0],\"log_dirs\":[\"any\"]}]}"),
+                Subclass.executeStarted(),
+                Subclass.verifyInProgress(partitions),
+                Subclass.verifyFail("Bang!"),
+                Subclass.verifySuccess(partitions)));
+        Async async = context.async();
+        sub.changeReplicationFactor(topic, ar -> {
+            // We should retry anf ultimately succeed
+            context.assertTrue(ar.succeeded());
+            async.complete();
+        });
+    }
+
+    @Test
+    public void changeReplicationFactor_ExecuteInProgress(TestContext context) {
+        MockAdminClient adminClient = new MockAdminClient();
+        Vertx vertx = Vertx.vertx();
+        Config config = new Config(singletonMap(Config.REASSIGN_VERIFY_INTERVAL_MS.key, "1 seconds"));
+        Topic topic = new Topic.Builder("changeReplicationFactor", 2, (short) 2, emptyMap()).build();
+        String[] partitions = new String[]{"changeReplicationFactor-0", "changeReplicationFactor-1"};
+        Subclass sub = new Subclass(adminClient, vertx, config, asList(
+                Subclass.generate("{\"version\":1,\"partitions\":[{\"topic\":\"test-topic\",\"partition\":0,\"replicas\":[0],\"log_dirs\":[\"any\"]},{\"topic\":\"test-topic\",\"partition\":1,\"replicas\":[0],\"log_dirs\":[\"any\"]}]}",
+                        "{\"version\":1,\"partitions\":[{\"topic\":\"test-topic\",\"partition\":0,\"replicas\":[0],\"log_dirs\":[\"any\"]},{\"topic\":\"test-topic\",\"partition\":1,\"replicas\":[0],\"log_dirs\":[\"any\"]}]}"),
+                Subclass.executeInProgress(),
+                Subclass.verifyInProgress(partitions),
+                Subclass.verifySuccess(partitions)));
+        Async async = context.async();
+        sub.changeReplicationFactor(topic, ar -> {
+            context.assertTrue(ar.succeeded());
+            async.complete();
+        });
+    }
+
+    @Test
+    public void changeReplicationFactor_ExecuteFail(TestContext context) {
+        MockAdminClient adminClient = new MockAdminClient();
+        Vertx vertx = Vertx.vertx();
+        Config config = new Config(singletonMap(Config.REASSIGN_VERIFY_INTERVAL_MS.key, "1 seconds"));
+        Topic topic = new Topic.Builder("changeReplicationFactor", 2, (short) 2, emptyMap()).build();
+        String[] partitions = new String[]{"changeReplicationFactor-0", "changeReplicationFactor-1"};
+        Subclass sub = new Subclass(adminClient, vertx, config, asList(
+                Subclass.generate("{\"version\":1,\"partitions\":[{\"topic\":\"test-topic\",\"partition\":0,\"replicas\":[0],\"log_dirs\":[\"any\"]},{\"topic\":\"test-topic\",\"partition\":1,\"replicas\":[0],\"log_dirs\":[\"any\"]}]}",
+                        "{\"version\":1,\"partitions\":[{\"topic\":\"test-topic\",\"partition\":0,\"replicas\":[0],\"log_dirs\":[\"any\"]},{\"topic\":\"test-topic\",\"partition\":1,\"replicas\":[0],\"log_dirs\":[\"any\"]}]}"),
+                Subclass.executeFail("Bang!"),
                 Subclass.executeStarted(),
                 Subclass.verifyInProgress(partitions),
                 Subclass.verifySuccess(partitions)));

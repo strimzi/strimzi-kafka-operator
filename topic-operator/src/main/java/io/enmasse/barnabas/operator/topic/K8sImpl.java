@@ -55,7 +55,6 @@ public class K8sImpl implements K8s {
                 future.fail(e);
             }
         }, handler);
-
     }
 
     @Override

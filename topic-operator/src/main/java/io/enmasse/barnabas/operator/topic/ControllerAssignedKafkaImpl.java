@@ -54,6 +54,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
@@ -102,10 +103,10 @@ public class ControllerAssignedKafkaImpl extends BaseKafkaImpl {
         logger.info("Changing replication factor of topic {} to {}", topic.getTopicName(), topic.getNumReplicas());
 
         final String zookeeper = config.get(Config.ZOOKEEPER_CONNECT);
-        Future<File> f2 = Future.future();
+        Future<File> generateFuture = Future.future();
 
         // generate a reassignment
-        vertx.executeBlocking((fut) -> {
+        vertx.executeBlocking(fut -> {
             try {
                 logger.debug("Generating reassignment json for topic {}", topic.getTopicName());
                 String reassignment = generateReassignment(topic, zookeeper);
@@ -116,14 +117,15 @@ public class ControllerAssignedKafkaImpl extends BaseKafkaImpl {
                 }
                 fut.complete(reassignmentJsonFile);
             } catch (Exception e) {
+                e.printStackTrace();
                 fut.fail(e);
             }
         },
-        f2.completer());
+        generateFuture.completer());
 
-        Future<File> f3 = Future.future();
+        Future<File> executeFuture = Future.future();
 
-        f2.compose(reassignmentJsonFile-> {
+        generateFuture.compose(reassignmentJsonFile-> {
             // execute the reassignment
             vertx.executeBlocking((fut) -> {
                 final Long throttle = config.get(Config.REASSIGN_THROTTLE);
@@ -131,22 +133,25 @@ public class ControllerAssignedKafkaImpl extends BaseKafkaImpl {
                     logger.debug("Starting reassignment for topic {} with throttle {}", topic.getTopicName(), throttle);
                     executeReassignment(reassignmentJsonFile, zookeeper, throttle);
                     fut.complete(reassignmentJsonFile);
-                } catch (IOException | InterruptedException e) {
+                } catch (Exception e) {
+                    e.printStackTrace();
                     fut.fail(e);
                 }
             },
-            f3.completer());
-        }, f3);
+            executeFuture.completer());
+        }, executeFuture);
 
-        Future<Void> f4 = Future.future();
-        Future<Void> f5 = Future.future();
+        Future<Void> periodicFuture = Future.future();
+        Future<Void> reassignmentFinishedFuture = Future.future();
 
-        f3.compose(reassignmentJsonFile-> {
+        executeFuture.compose(reassignmentJsonFile-> {
             // Poll repeatedly, calling --verify to remove the throttle
             long timeout = 10_000;
             long first = System.currentTimeMillis();
-            vertx.setPeriodic(config.get(Config.REASSIGN_VERIFY_INTERVAL_MS), (timerId) ->
-                vertx.executeBlocking(fut -> {
+            final Long periodMs = config.get(Config.REASSIGN_VERIFY_INTERVAL_MS);
+            logger.debug("Verifying reassignment every {} seconds", TimeUnit.SECONDS.convert(periodMs, TimeUnit.MILLISECONDS));
+            vertx.setPeriodic(periodMs, (timerId) ->
+                vertx.<Boolean>executeBlocking(fut -> {
                     logger.debug(String.format("Verifying reassignment for topic {} (timer id=%s)", topic.getTopicName(), timerId));
 
                     final Long throttle = config.get(Config.REASSIGN_THROTTLE);
@@ -157,36 +162,51 @@ public class ControllerAssignedKafkaImpl extends BaseKafkaImpl {
                         fut.fail(e);
                         return;
                     }
-                    if (reassignmentComplete) {
-                        logger.info("Reassignment complete");
-                        delete(reassignmentJsonFile);
-                        logger.debug("Cancelling timer " + timerId);
-                        vertx.cancelTimer(timerId);
-                        f5.complete();
-                    } else if (System.currentTimeMillis() - first > timeout) {
-                        logger.info("Reassignment timed out");
-                        delete(reassignmentJsonFile);
-                        logger.debug("Cancelling timer " + timerId);
-                        vertx.cancelTimer(timerId);
-                        f5.fail("Timeout");
+                    fut.complete(reassignmentComplete);
+                }, ar -> {
+                    if (ar.succeeded()) {
+                        if (ar.result()) {
+                            logger.info("Reassignment complete");
+                            delete(reassignmentJsonFile);
+                            logger.debug("Cancelling timer " + timerId);
+                            vertx.cancelTimer(timerId);
+                            reassignmentFinishedFuture.complete();
+                        } else if (System.currentTimeMillis() - first > timeout) {
+                            logger.info("Reassignment timed out");
+                            delete(reassignmentJsonFile);
+                            logger.debug("Cancelling timer " + timerId);
+                            vertx.cancelTimer(timerId);
+                            reassignmentFinishedFuture.fail("Timeout");
+                        }
+                    } else {
+                        //reassignmentFinishedFuture.fail(ar.cause());
+                        logger.error("Error while verifying reassignment", ar.cause());
                     }
-                    fut.complete();
-                }, f4.completer())
+                })
             );
-            },
-        f4);
+            periodicFuture.complete();
+        },
+        periodicFuture);
 
-        CompositeFuture.join(f4, f5).<Void>map(null).setHandler(handler);
 
+        CompositeFuture.join(periodicFuture, reassignmentFinishedFuture).map((Void)null).setHandler(handler);
 
-        // TODO If a reassignment is already happening, we should wait until we can progress
-        // Sadly, in general this means we just pile more jobs on vertx to manage, and it's all held in memory.
+        // TODO The algorithm should really be more like this:
+        // 1. Use the cmdline tool to generate an assignment
+        // 2. Set the throttles
+        // 3. Update the reassign_partitions znode
+        // 4. Watch for changes or deletion of reassign_partitions
+        //    a. Update the throttles
+        //    b. complete the handler
+        // Doing this is much better because means we don't have to batch reassignments
+        // and also means we need less state for reassignment
+        // though we aren't relieved of the statefullness wrt removing throttles :-(
     }
 
     private static void delete(File file) {
-        if (!file.delete()) {
+        /*if (!file.delete()) {
             logger.warn("Unable to delete temporary file {}", file);
-        }
+        }*/
     }
 
     private static File createTmpFile(String suffix) throws IOException {
@@ -194,7 +214,7 @@ public class ControllerAssignedKafkaImpl extends BaseKafkaImpl {
         if (logger.isTraceEnabled()) {
             logger.trace("Created temporary file {}", tmpFile);
         }
-        tmpFile.deleteOnExit();
+        /*tmpFile.deleteOnExit();*/
         return tmpFile;
     }
 
@@ -382,16 +402,11 @@ public class ControllerAssignedKafkaImpl extends BaseKafkaImpl {
             try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
                 String line = reader.readLine();
                 while (line != null) {
-
-                    if (logger.isTraceEnabled()) {
-                        logger.trace("Process {}: stdout: ", line);
-                    }
-
+                    logger.debug("Process {}: stdout: {}", pid, line);
                     T result = fn.apply(line);
                     if (result != null) {
                         return result;
                     }
-
                     line = reader.readLine();
                 }
                 return null;
