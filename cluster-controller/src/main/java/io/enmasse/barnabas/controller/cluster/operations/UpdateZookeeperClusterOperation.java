@@ -127,13 +127,9 @@ public class UpdateZookeeperClusterOperation extends ZookeeperClusterOperation {
 
     private Future<Void> patchMetricsConfigMap(ZookeeperCluster zk, ClusterDiffResult diff) {
         if (diff.isMetricsChanged()) {
-
-            if (zk.isMetricsEnabled()) {
-                Future<Void> patchConfigMap = Future.future();
-                OperationExecutor.getInstance().execute(new PatchOperation(k8s.getConfigmapResource(namespace, zk.getMetricsConfigName()), zk.patchMetricsConfigMap(k8s.getConfigmap(namespace, name + "-zookeeper-metrics-config"))), patchConfigMap.completer());
-                return patchConfigMap;
-            } else
-                return Future.succeededFuture();
+            Future<Void> patchConfigMap = Future.future();
+            OperationExecutor.getInstance().execute(new PatchOperation(k8s.getConfigmapResource(namespace, zk.getMetricsConfigName()), zk.patchMetricsConfigMap(k8s.getConfigmap(namespace, name + "-zookeeper-metrics-config"))), patchConfigMap.completer());
+            return patchConfigMap;
         } else {
             return Future.succeededFuture();
         }
