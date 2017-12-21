@@ -42,6 +42,7 @@ public class InFlight {
     }
 
     public void startDeletingTopic(TopicName topicName) {
+        // TODO assert no existing mapping
         pending.put(topicName, State.TOPIC_DELETE);
     }
 
@@ -143,17 +144,17 @@ public class InFlight {
     private final Map<TopicName, State> pending = Collections.synchronizedMap(new HashMap());
 
     public void startUpdatingConfigMap(ConfigMap cm) {
-        // Assert no existing mapping
+        // TODO Assert no existing mapping
         pending.put(new TopicName(cm), State.CM_UPDATE);
     }
 
     public void startCreatingConfigMap(ConfigMap cm) {
-        // Assert no existing mapping
+        // TODO Assert no existing mapping
         pending.put(new TopicName(cm), State.CM_CREATE);
     }
 
     public void startDeletingConfigMap(TopicName topicName) {
-        // Assert no existing mapping
+        // TODO Assert no existing mapping
         pending.put(topicName, State.CM_DELETE);
     }
 }

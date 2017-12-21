@@ -122,7 +122,6 @@ public class Operator implements Op {
         @Override
         public void process() throws OperatorException {
             ConfigMap cm = TopicSerialization.toConfigMap(topic, cmPredicate);
-            // TODO assert no existing mapping
             inFlight.startCreatingConfigMap(cm);
             k8s.createConfigMap(cm, handler);
         }
@@ -146,7 +145,6 @@ public class Operator implements Op {
 
         @Override
         public void process() {
-            // TODO assert no existing mapping
             inFlight.startDeletingConfigMap(topicName);
             k8s.deleteConfigMap(topicName, handler);
         }
@@ -172,13 +170,7 @@ public class Operator implements Op {
 
         @Override
         public void process() {
-            // TODO get topic data from AdminClient
-            // How do we avoid a race here, where the topic exists in ZK, but not yet visible from AC?
-            // Record that it's us who is creating to the config map
-            // create ConfigMap in k8s
-            // ignore the watch for the configmap creation
             ConfigMap cm = TopicSerialization.toConfigMap(topic, cmPredicate);
-            // TODO assert no existing mapping
             inFlight.startUpdatingConfigMap(cm);
             k8s.updateConfigMap(cm, handler);
         }
@@ -336,7 +328,6 @@ public class Operator implements Op {
         @Override
         public void process() throws OperatorException {
             logger.info("Deleting topic '{}'", topicName);
-            // TODO assert no existing mapping
             inFlight.startDeletingTopic(topicName);
             kafka.deleteTopic(topicName, handler);
         }
@@ -497,6 +488,8 @@ public class Operator implements Op {
                 // such that the old number of replicas < the new min isr? But likewise
                 // we could decrease, so order of tasks in the queue will need to change
                 // depending on what the diffs are.
+
+                // TODO replace this with compose
                 enqueue(new UpdateConfigMap(result, involvedObject, ar -> {
                     Handler<Void> topicStoreHandler =
                             ignored -> enqueue(new UpdateInTopicStore(
