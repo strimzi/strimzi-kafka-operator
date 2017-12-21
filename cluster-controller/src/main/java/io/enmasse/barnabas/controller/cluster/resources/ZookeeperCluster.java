@@ -74,10 +74,10 @@ public class ZookeeperCluster extends AbstractCluster {
 
         // TODO : making more checks for exception on JSON ?
         String metricsConfig = cm.getData().get(KEY_METRICS_CONFIG);
+        zk.setMetricsConfigName(cm.getMetadata().getName() + "-zookeeper-metrics-config");
         zk.setMetricsEnabled(metricsConfig != null);
         if (zk.isMetricsEnabled()) {
             zk.setMetricsConfig(new JsonObject(metricsConfig));
-            zk.setMetricsConfigName(cm.getMetadata().getName() + "-zookeeper-metrics-config");
         }
 
         return zk;
@@ -197,7 +197,7 @@ public class ZookeeperCluster extends AbstractCluster {
     public ConfigMap patchMetricsConfigMap(ConfigMap cm) {
 
         Map<String, String> data = new HashMap<>();
-        data.put("config.yml", metricsConfig.toString());
+        data.put("config.yml", metricsConfig != null ? metricsConfig.toString() : null);
 
         return patchConfigMap(cm, data);
     }

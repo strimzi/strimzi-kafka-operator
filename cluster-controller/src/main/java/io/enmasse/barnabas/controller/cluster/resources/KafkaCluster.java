@@ -82,10 +82,10 @@ public class KafkaCluster extends AbstractCluster {
 
         // TODO : making more checks for exception on JSON ?
         String metricsConfig = cm.getData().get(KEY_METRICS_CONFIG);
+        kafka.setMetricsConfigName(cm.getMetadata().getName() + "-metrics-config");
         kafka.setMetricsEnabled(metricsConfig != null);
         if (kafka.isMetricsEnabled()) {
             kafka.setMetricsConfig(new JsonObject(metricsConfig));
-            kafka.setMetricsConfigName(cm.getMetadata().getName() + "-metrics-config");
         }
 
         return kafka;
@@ -219,7 +219,7 @@ public class KafkaCluster extends AbstractCluster {
     public ConfigMap patchMetricsConfigMap(ConfigMap cm) {
 
         Map<String, String> data = new HashMap<>();
-        data.put("config.yml", metricsConfig.toString());
+        data.put("config.yml", metricsConfig != null ? metricsConfig.toString() : null);
 
         return patchConfigMap(cm, data);
     }
