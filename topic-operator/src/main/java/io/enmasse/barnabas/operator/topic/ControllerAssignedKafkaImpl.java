@@ -117,7 +117,6 @@ public class ControllerAssignedKafkaImpl extends BaseKafkaImpl {
                 }
                 fut.complete(reassignmentJsonFile);
             } catch (Exception e) {
-                e.printStackTrace();
                 fut.fail(e);
             }
         },
@@ -134,7 +133,6 @@ public class ControllerAssignedKafkaImpl extends BaseKafkaImpl {
                     executeReassignment(reassignmentJsonFile, zookeeper, throttle);
                     fut.complete(reassignmentJsonFile);
                 } catch (Exception e) {
-                    e.printStackTrace();
                     fut.fail(e);
                 }
             },
@@ -172,7 +170,7 @@ public class ControllerAssignedKafkaImpl extends BaseKafkaImpl {
                             vertx.cancelTimer(timerId);
                             reassignmentFinishedFuture.complete();
                         } else if (System.currentTimeMillis() - first > timeout) {
-                            logger.info("Reassignment timed out");
+                            logger.error("Reassignment timed out");
                             delete(reassignmentJsonFile);
                             logger.debug("Cancelling timer " + timerId);
                             vertx.cancelTimer(timerId);
@@ -240,7 +238,7 @@ public class ControllerAssignedKafkaImpl extends BaseKafkaImpl {
             public Boolean apply(String line) {
                 if (line.contains("Partitions reassignment failed due to")
                         || Pattern.matches("Reassignment of partition .* failed", line)) {
-                    throw new RuntimeException("Reassigment failed: " + line);
+                    throw new OperatorException("Reassigment failed: " + line);
                 } else if (Pattern.matches("Reassignment of partition .* completed successfully", line)) {
                     complete++;
                 } else if (Pattern.matches("Reassignment of partition .* is still in progress", line)) {
@@ -271,14 +269,14 @@ public class ControllerAssignedKafkaImpl extends BaseKafkaImpl {
             if (line.contains("Partitions reassignment failed due to")
                     || line.contains("There is an existing assignment running")
                     || line.contains("Failed to reassign partitions")) {
-                throw new RuntimeException("Reassigment failed: " + line);
+                throw new TransientOperatorException("Reassigment failed: " + line);
             } else if (line.contains("Successfully started reassignment of partitions.")) {
                 return true;
             } else {
                 return null;
             }
         })) {
-            throw new RuntimeException("Reassignment execution neither failed nor finished");
+            throw new TransientOperatorException("Reassignment execution neither failed nor finished");
         }
     }
 
@@ -315,7 +313,7 @@ public class ControllerAssignedKafkaImpl extends BaseKafkaImpl {
             @Override
             public String apply(String line) {
                 if (line.contains("Partitions reassignment failed due to")) {
-                    throw new RuntimeException("Reassignment failed: " + line);
+                    throw new TransientOperatorException("Reassignment failed: " + line);
                 }
                 if (returnLine) {
                     return line;
@@ -361,6 +359,10 @@ public class ControllerAssignedKafkaImpl extends BaseKafkaImpl {
         //  b) writes them to stdout
         // so we need to parse its output, but we can't do that in an isolated way if we run it in our process
         // (System.setOut being global to the VM).
+
+        if(verifyArgs.isEmpty() || !new File(verifyArgs.get(0)).canExecute()) {
+            throw new OperatorException("Command " + verifyArgs + " lacks an executable arg[0]");
+        }
 
         ProcessBuilder pb = new ProcessBuilder(verifyArgs);
         // If we redirect stderr to stdout we could break the predicates because the

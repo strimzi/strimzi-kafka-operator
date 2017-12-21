@@ -124,7 +124,9 @@ public class ControllerAssignedKafkaImplTest {
         Async async = context.async();
         sub.changeReplicationFactor(topic, ar -> {
             context.assertFalse(ar.succeeded());
-            context.assertTrue(ar.cause().getMessage().contains("Cannot run program \"" + doesNotExist + "\""));
+            final String message = ar.cause().getMessage();
+            context.assertTrue(message.contains("lacks an executable arg[0]")
+                    && message.contains("/some/executable/that/does/not/exist"));
             async.complete();
         });
     }
@@ -145,7 +147,9 @@ public class ControllerAssignedKafkaImplTest {
         Async async = context.async();
         sub.changeReplicationFactor(topic, ar -> {
             context.assertFalse(ar.succeeded());
-            context.assertTrue(ar.cause().getMessage().contains("Cannot run program \"pom.xml\""));
+            final String message = ar.cause().getMessage();
+            context.assertTrue(message.contains("lacks an executable arg[0]")
+                && message.contains("pom.xml"));
             async.complete();
         });
     }

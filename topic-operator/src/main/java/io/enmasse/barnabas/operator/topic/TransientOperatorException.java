@@ -20,34 +20,28 @@ package io.enmasse.barnabas.operator.topic;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 
 /**
- * An exception possibly with an attached K8S resource (e.g. a ConfigMap).
+ * A transient exception is one where we cannot <em>currently</em> complete the work required for reconciliation
+ * but the problem should have gone away if we retry later.
  */
-public class OperatorException extends RuntimeException {
+public class TransientOperatorException extends OperatorException {
 
-    private final HasMetadata involvedObject;
-
-    public OperatorException(HasMetadata involvedObject, String message) {
-        this(involvedObject, message, null);
+    public TransientOperatorException(HasMetadata involvedObject, String message) {
+        super(involvedObject, message);
     }
 
-    public OperatorException(HasMetadata involvedObject, Throwable cause) {
-        this(involvedObject, null, cause);
+    public TransientOperatorException(HasMetadata involvedObject, Throwable cause) {
+        super(involvedObject, cause);
     }
 
-    public OperatorException(HasMetadata involvedObject, String message, Throwable cause) {
-        super(message, cause);
-        this.involvedObject = involvedObject;
+    public TransientOperatorException(HasMetadata involvedObject, String message, Throwable cause) {
+        super(involvedObject, message, cause);
     }
 
-    public OperatorException(Throwable cause) {
-        this(null, null, cause);
+    public TransientOperatorException(Throwable cause) {
+        super(cause);
     }
 
-    public OperatorException(String message) {
-        this(null, message, null);
-    }
-
-    public HasMetadata getInvolvedObject() {
-        return involvedObject;
+    public TransientOperatorException(String message) {
+        super(message);
     }
 }
