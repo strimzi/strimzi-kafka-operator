@@ -189,7 +189,7 @@ public class ControllerAssignedKafkaImpl extends BaseKafkaImpl {
         periodicFuture);
 
 
-        CompositeFuture.join(periodicFuture, reassignmentFinishedFuture).map((Void)null).setHandler(handler);
+        CompositeFuture.all(periodicFuture, reassignmentFinishedFuture).map((Void)null).setHandler(handler);
 
         // TODO The algorithm should really be more like this:
         // 1. Use the cmdline tool to generate an assignment

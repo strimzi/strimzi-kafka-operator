@@ -114,7 +114,8 @@ public class ControllerAssignedKafkaImplTest {
         Config config = new Config(singletonMap(Config.REASSIGN_VERIFY_INTERVAL_MS.key, "1 seconds"));
         Topic topic = new Topic.Builder("changeReplicationFactor", 2, (short) 2, emptyMap()).build();
         String[] partitions = new String[]{"changeReplicationFactor-0", "changeReplicationFactor-1"};
-        Subclass sub = new Subclass(adminClient, vertx, config, "/some/executable/that/does/not/exist", asList(
+        final String doesNotExist = "/some/executable/that/does/not/exist";
+        Subclass sub = new Subclass(adminClient, vertx, config, doesNotExist, asList(
                 Subclass.generate("{\"version\":1,\"partitions\":[{\"topic\":\"test-topic\",\"partition\":0,\"replicas\":[0],\"log_dirs\":[\"any\"]},{\"topic\":\"test-topic\",\"partition\":1,\"replicas\":[0],\"log_dirs\":[\"any\"]}]}",
                         "{\"version\":1,\"partitions\":[{\"topic\":\"test-topic\",\"partition\":0,\"replicas\":[0],\"log_dirs\":[\"any\"]},{\"topic\":\"test-topic\",\"partition\":1,\"replicas\":[0],\"log_dirs\":[\"any\"]}]}"),
                 Subclass.executeStarted(),
@@ -122,7 +123,8 @@ public class ControllerAssignedKafkaImplTest {
                 Subclass.verifySuccess(partitions)));
         Async async = context.async();
         sub.changeReplicationFactor(topic, ar -> {
-            context.assertTrue(ar.succeeded());
+            context.assertFalse(ar.succeeded());
+            context.assertTrue(ar.cause().getMessage().contains("Cannot run program \"" + doesNotExist + "\""));
             async.complete();
         });
     }
@@ -142,7 +144,8 @@ public class ControllerAssignedKafkaImplTest {
                 Subclass.verifySuccess(partitions)));
         Async async = context.async();
         sub.changeReplicationFactor(topic, ar -> {
-            context.assertTrue(ar.succeeded());
+            context.assertFalse(ar.succeeded());
+            context.assertTrue(ar.cause().getMessage().contains("Cannot run program \"pom.xml\""));
             async.complete();
         });
     }
@@ -167,6 +170,11 @@ public class ControllerAssignedKafkaImplTest {
         });
     }
 
+    /**
+     * Test the case where an error happens during --verify execution.
+     * We should retry until we succeed (or (TODO) a timeout happens).
+     * We handle this differently from case of error in --execute because we need to ensure throttles get removed.
+     */
     @Test
     public void changeReplicationFactor_TransientErrorInVerify(TestContext context) {
         MockAdminClient adminClient = new MockAdminClient();
@@ -211,6 +219,11 @@ public class ControllerAssignedKafkaImplTest {
         });
     }
 
+    /**
+     * Test the case where the --gexecute execution fails because a reassignment is currently running.
+     * We should give up and fail the handler, on the basis that we will retry later as a result of
+     * periodic reconciliation.
+     */
     @Test
     public void changeReplicationFactor_ExecuteInProgress(TestContext context) {
         MockAdminClient adminClient = new MockAdminClient();
@@ -226,11 +239,17 @@ public class ControllerAssignedKafkaImplTest {
                 Subclass.verifySuccess(partitions)));
         Async async = context.async();
         sub.changeReplicationFactor(topic, ar -> {
-            context.assertTrue(ar.succeeded());
+            context.assertFalse(ar.succeeded());
+            context.assertEquals("Reassigment failed: There is an existing assignment running.", ar.cause().getMessage());
             async.complete();
         });
     }
 
+    /**
+     * Test the case where something goes wrong with the initial --generate execution.
+     * We should give up and fail the handler, on the basis that we will retry later as a result of
+     * periodic reconciliation.
+     */
     @Test
     public void changeReplicationFactor_ExecuteFail(TestContext context) {
         MockAdminClient adminClient = new MockAdminClient();
@@ -247,7 +266,8 @@ public class ControllerAssignedKafkaImplTest {
                 Subclass.verifySuccess(partitions)));
         Async async = context.async();
         sub.changeReplicationFactor(topic, ar -> {
-            context.assertTrue(ar.succeeded());
+            context.assertFalse(ar.succeeded());
+            context.assertTrue(ar.cause().getMessage().contains("Failed to reassign partitions"));
             async.complete();
         });
     }
