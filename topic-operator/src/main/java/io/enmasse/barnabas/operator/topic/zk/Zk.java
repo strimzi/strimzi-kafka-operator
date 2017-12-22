@@ -15,11 +15,14 @@
  * limitations under the License.
  */
 
-package io.enmasse.barnabas.operator.topic;
+package io.enmasse.barnabas.operator.topic.zk;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.data.ACL;
+import org.apache.zookeeper.data.Stat;
 
 import java.util.List;
 
@@ -54,16 +57,17 @@ public interface Zk {
     Zk disconnect(Handler<AsyncResult<Void>> handler);
 
     /**
-     * Asynchronously create the node with the given path and data,
-     * invoking the given handler with the result.
+     * Asynchronously create the node at the given path and with the given data and ACL, using the
+     * given createMode, then invoke the given handler with the result.
      */
-    Zk create(String path, byte[] data, Handler<AsyncResult<Void>> handler);
+    Zk create(String path, byte[] data, List<ACL> acls, CreateMode createMode, Handler<AsyncResult<Void>> handler);
 
     /**
      * Asynchronously set the data in the znode at the given path to the
-     * given data, invoking the given handler with the result.
+     * given data iff the given version is -1, or matches the version of the znode,
+     * then invoke the given handler with the result.
      */
-    Zk setData(String path, byte[] data, Handler<AsyncResult<Void>> handler);
+    Zk setData(String path, byte[] data, int version, Handler<AsyncResult<Void>> handler);
 
     /**
      * Register a handler to be called with the children of the given path,
@@ -82,7 +86,33 @@ public interface Zk {
      * Register a handler to be called with the data of the given path,
      * and, if watch is true, whenever that data subsequently changes.
      */
-    Zk data(String path, boolean watch, Handler<AsyncResult<byte[]>> handler);
+    Zk setData(String path, boolean watch, Handler<AsyncResult<byte[]>> handler);
+
+    /**
+     * Delete the znode at the given path, iff the given version is -1 or matches the version of the znode,
+     * then invoke the given handler with the result.
+     */
+    Zk delete(String path, int version, Handler<AsyncResult<Void>> handler);
+
+    /**
+     * Add the given watcher to watch for changes to the given path.
+     * The watcher will be called initially upon registration and
+     * whenever a znode at the path is created or deleted.
+     */
+    Zk watchExists(String path, Handler<AsyncResult<Stat>> watcher, Handler<AsyncResult<Stat>> complete);
+
+    /**
+     * Remove the given watcher that was previously added for watching existence changes to the given path.
+     * It is not an error if the given watcher was not actually watching the given path.
+     */
+    Zk unwatchExists(String path, Handler<AsyncResult<Stat>> watcher, Handler<AsyncResult<Void>> complete);
+
+    /**
+     * Check whether a znode exists at the given path.
+     */
+    Zk exists(String path, Handler<AsyncResult<Stat>> handler);
+
+    // TODO getAcl(), setAcl(), multi()
 
 }
 

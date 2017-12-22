@@ -17,17 +17,12 @@
 
 package io.enmasse.barnabas.operator.topic;
 
+import io.enmasse.barnabas.operator.topic.zk.Zk;
 import io.vertx.core.Handler;
-import org.apache.zookeeper.AsyncCallback;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -60,7 +55,7 @@ class TopicConfigsWatcher {
             }
             if (ar.succeeded()) {
                 for (String child : ar.result()) {
-                    zk.data(CONFIGS_ZNODE + "/" + child, true, dataResult -> {
+                    zk.setData(CONFIGS_ZNODE + "/" + child, true, dataResult -> {
                         if (!this.children.add(child)) {
                             operator.onTopicConfigChanged(new TopicName(child), ar2 -> {
                             });

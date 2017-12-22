@@ -17,6 +17,7 @@
 
 package io.enmasse.barnabas.operator.topic;
 
+import io.enmasse.barnabas.operator.topic.zk.Zk;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
@@ -26,7 +27,6 @@ import io.fabric8.kubernetes.client.Watcher;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.slf4j.Logger;

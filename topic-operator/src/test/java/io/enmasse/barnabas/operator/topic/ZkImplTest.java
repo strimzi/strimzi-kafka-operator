@@ -17,15 +17,18 @@
 
 package io.enmasse.barnabas.operator.topic;
 
+import io.enmasse.barnabas.operator.topic.zk.AclBuilder;
+import io.enmasse.barnabas.operator.topic.zk.Zk;
+import io.enmasse.barnabas.operator.topic.zk.ZkImpl;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
+import org.apache.zookeeper.CreateMode;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -146,20 +149,20 @@ public class ZkImplTest {
     public void testWatchChildren(TestContext context) {
         Zk zk = connect(context);
         Async async2 = context.async(3);
-        zk.create("/foo", null, ar-> {
+        zk.create("/foo", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, ar-> {
             context.assertTrue(ar.succeeded());
             zk.children("/foo", true, childResult -> {
                 context.assertTrue(childResult.succeeded());
                 if (async2.count() == 3) {
                     // first time
                     context.assertTrue(childResult.result().isEmpty());
-                    zk.create("/foo/bar", null, createResult -> {
+                    zk.create("/foo/bar", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, createResult -> {
                         context.assertTrue(createResult.succeeded());
                     });
                     async2.countDown();
                 } else if (async2.count() == 2) {
                     context.assertEquals(singletonList("bar"), childResult.result());
-                    zk.create("/foo/baz", null, createResult -> {
+                    zk.create("/foo/baz", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, createResult -> {
                         context.assertTrue(createResult.succeeded());
                     });
                     async2.countDown();
@@ -180,14 +183,14 @@ public class ZkImplTest {
     public void testGetChildren(TestContext context) {
         Zk zk = connect(context);
         Async async2 = context.async();
-        zk.create("/foo", null, ar-> {
+        zk.create("/foo", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, ar-> {
             context.assertTrue(ar.succeeded());
             zk.children("/foo", false, childResult -> {
                 context.assertTrue(childResult.succeeded());
                 if (async2.count() == 1) {
                     // first time
                     context.assertTrue(childResult.result().isEmpty());
-                    zk.create("/foo/bar", null, createResult -> {
+                    zk.create("/foo/bar", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, createResult -> {
                         context.assertTrue(createResult.succeeded());
                     });
                     async2.complete();
@@ -204,7 +207,7 @@ public class ZkImplTest {
             if (async3.count() == 1) {
                 // first time
                 context.assertEquals(singletonList("bar"), childResult.result());
-                zk.create("/foo/baz", null, createResult -> {
+                zk.create("/foo/baz", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, createResult -> {
                     context.assertTrue(createResult.succeeded());
                 });
                 async3.complete();
@@ -221,19 +224,19 @@ public class ZkImplTest {
     public void testWatchData(TestContext context) {
         Zk zk = connect(context);
         Async async2 = context.async(3);
-        zk.create("/foo", null, ar -> {
+        zk.create("/foo", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT,  ar -> {
             context.assertTrue(ar.succeeded());
-            zk.data("/foo", true, dataResult -> {
+            zk.setData("/foo", true, dataResult -> {
                 context.assertTrue(dataResult.succeeded());
                 if (async2.count() == 3) {
                     context.assertTrue(dataResult.result().length == 0);
-                    zk.setData("/foo", new byte[]{(byte) 1}, setResult -> {
+                    zk.setData("/foo", new byte[]{(byte) 1}, -1, setResult -> {
                         context.assertTrue(setResult.succeeded());
                     });
                     async2.countDown();
                 } else if (async2.count() == 2) {
                     context.assertTrue(Arrays.equals(new byte[]{1}, dataResult.result()));
-                    zk.setData("/foo", new byte[]{(byte) 2}, setResult -> {
+                    zk.setData("/foo", new byte[]{(byte) 2}, -1, setResult -> {
                         context.assertTrue(setResult.succeeded());
                     });
                     async2.countDown();

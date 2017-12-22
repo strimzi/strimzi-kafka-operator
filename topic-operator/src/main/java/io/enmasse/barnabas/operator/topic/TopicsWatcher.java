@@ -17,6 +17,7 @@
 
 package io.enmasse.barnabas.operator.topic;
 
+import io.enmasse.barnabas.operator.topic.zk.Zk;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
