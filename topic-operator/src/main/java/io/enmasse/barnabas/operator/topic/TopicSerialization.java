@@ -59,23 +59,6 @@ public class TopicSerialization {
     public static final String JSON_KEY_REPLICAS = "replicas";
     public static final String JSON_KEY_CONFIG = "config";
 
-    /*private static String configToYaml(Config config) {
-        YAMLFactory yf = new YAMLFactory();
-        ObjectMapper mapper = new ObjectMapper(yf);
-        ObjectNode root = mapper.createObjectNode();
-        for (ConfigEntry entry : config.entries()) {
-            root.put(entry.name(), entry.value());
-        }
-        StringWriter sw = new StringWriter();
-        try {
-            SequenceWriter seqw = mapper.writerWithDefaultPrettyPrinter().writeValues(sw);
-            seqw.write(root);
-            return sw.toString();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }*/
-
     private static Map<String, String> topicConfigFromConfigMapString(Map<String, String> mapData) throws IOException {
         String value = mapData.get(CM_KEY_CONFIG);
         if (value == null || value.isEmpty()) {

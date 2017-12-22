@@ -70,7 +70,7 @@ public class ZkImpl implements Zk {
             try {
                 zk = new ZooKeeper(zkConnectionString, sessionTimeout, watchedEvent -> {
                     Watcher.Event.KeeperState state = watchedEvent.getState();
-                    logger.error("In state {}", state);
+                    logger.debug("In state {}", state);
                     final Future<Zk> future;
                     final Handler<AsyncResult<Zk>> handler;
                     switch (state) {

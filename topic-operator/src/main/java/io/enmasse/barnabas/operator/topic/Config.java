@@ -17,38 +17,52 @@
 
 package io.enmasse.barnabas.operator.topic;
 
+import org.slf4j.Logger;
+
+import java.io.IOException;
+import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Config {
-    // TODO Get this to fall back on env vars
-    private interface Type<T> {
-        T parse(@NotNull String s);
+
+    private static abstract class Type<T> {
+        final String name;
+        final String doc;
+        Type(String name, String doc) {
+            this.name = name;
+            this.doc = doc;
+        }
+        abstract T parse(@NotNull String s);
     }
 
-    private static Type<? extends String> STRING = new Type<String>() {
+    private static Type<? extends String> STRING = new Type<String>("string", "A Java string.") {
         @Override
         public String parse(@NotNull String s) {
             return s;
         }
     };
 
-    private static Type<? extends Long> LONG = new Type<Long>() {
+    private static Type<? extends Long> LONG = new Type<Long>("long", "A Java long.") {
         @Override
         public Long parse(@NotNull String s) {
             return Long.parseLong(s);
         }
     };
 
-    private static Type<? extends Long> DURATION = new Type<Long>() {
+    private static Type<? extends Long> DURATION = new Type<Long>("duration",
+            "A time duration composed of a non-negative integer quantity and time unit taken from " + Arrays.toString(TimeUnit.values()) + ". For example '5 seconds'.") {
 
         private final Pattern pattern = Pattern.compile("([0-9]+) *([a-z]+)", Pattern.CASE_INSENSITIVE);
 
@@ -70,8 +84,9 @@ public class Config {
         public final String key;
         public final String defaultValue;
         public final boolean required;
+        public final String doc;
         private final Type<? extends T> type;
-        private Value(String key, Type<? extends T> type, String defaultValue) {
+        private Value(String key, Type<? extends T> type, String defaultValue, String doc) {
             this.key = key;
             this.type = type;
             if (defaultValue != null) {
@@ -79,27 +94,37 @@ public class Config {
             }
             this.defaultValue = defaultValue;
             this.required = false;
+            this.doc = doc;
         }
-        private Value(String key, Type type, boolean required) {
+        private Value(String key, Type type, boolean required, String doc) {
             this.key = key;
             this.type = type;
             this.defaultValue = null;
             this.required = required;
+            this.doc = doc;
         }
     }
 
-    private static final Map<String, Value> CONFIG_VALUES;
+    private static final Map<String, Value> CONFIG_VALUES = new HashMap<>();
+    private static final Set<Type> TYPES = new HashSet<>();
 
-    public static final Value<String> KUBERNETES_MASTER_URL = new Value("kubernetesMasterUrl", STRING,"localhost:8443");
-    public static final Value<String> KAFKA_BOOTSTRAP_SERVERS = new Value("kafkaBootstrapServers", STRING,"localhost:9093");
-    public static final Value<String> ZOOKEEPER_CONNECT = new Value("zookeeperConnect", STRING, "localhost:2021");
-    public static final Value<Long> ZOOKEEPER_SESSION_TIMEOUT_MS = new Value("zookeeperSessionTimeout", DURATION, "2 seconds");
-    public static final Value<Long> FULL_RECONCILIATION_INTERVAL_MS = new Value("fullReconciliationInterval", DURATION, "15 minutes");
-    public static final Value<Long> REASSIGN_THROTTLE = new Value("reassignThrottle", LONG, Long.toString(Long.MAX_VALUE));
-    public static final Value<Long> REASSIGN_VERIFY_INTERVAL_MS = new Value("reassignVerifyInterval", DURATION, "2 minutes");
+    public static final Value<String> KUBERNETES_MASTER_URL = new Value("kubernetesMasterUrl", STRING, Main.DEFAULT_MASTER_URL,
+            "The URL of the kubernetes master apiserver.");
+    public static final Value<String> KAFKA_BOOTSTRAP_SERVERS = new Value("kafkaBootstrapServers", STRING,"localhost:9092",
+            "A comma-separated list of kafka bootstrap servers.");
+    public static final Value<String> ZOOKEEPER_CONNECT = new Value("zookeeperConnect", STRING, "localhost:2181",
+            "The zookeeper connection string.");
+    public static final Value<Long> ZOOKEEPER_SESSION_TIMEOUT_MS = new Value("zookeeperSessionTimeout", DURATION, "2 seconds",
+            "The ZooKeeper session timeout.");
+    public static final Value<Long> FULL_RECONCILIATION_INTERVAL_MS = new Value("fullReconciliationInterval", DURATION, "15 minutes",
+            "The period between full reconciliations.");
+    public static final Value<Long> REASSIGN_THROTTLE = new Value("reassignThrottle", LONG, Long.toString(Long.MAX_VALUE),
+            "The interbroker throttled rate to use when a topic change requires partition reassignment.");
+    public static final Value<Long> REASSIGN_VERIFY_INTERVAL_MS = new Value("reassignVerifyInterval", DURATION, "2 minutes",
+            "The interval between verification executions (as in kafka-reassign-partitions.sh --verify ...) when a topic change requires partition reassignment.");
 
     static {
-        Map<String, Value> configValues = new HashMap<>();
+        Map<String, Value> configValues = CONFIG_VALUES;
         addConfigValue(configValues, KUBERNETES_MASTER_URL);
         addConfigValue(configValues, KAFKA_BOOTSTRAP_SERVERS);
         addConfigValue(configValues, ZOOKEEPER_CONNECT);
@@ -107,13 +132,13 @@ public class Config {
         addConfigValue(configValues, FULL_RECONCILIATION_INTERVAL_MS);
         addConfigValue(configValues, REASSIGN_THROTTLE);
         addConfigValue(configValues, REASSIGN_VERIFY_INTERVAL_MS);
-        CONFIG_VALUES = Collections.unmodifiableMap(configValues);
     }
 
     static void addConfigValue(Map<String, Value> configValues, Value cv) {
         if (configValues.put(cv.key, cv) != null) {
             throw new RuntimeException();
         }
+        TYPES.add(cv.type);
     }
 
     private final Map<String, Object> map;
@@ -133,6 +158,10 @@ public class Config {
         for (Value value : x.values()) {
             this.map.put(value.key, get(map, value));
         }
+    }
+
+    public Iterable<Value> keys() {
+        return Collections.unmodifiableCollection(CONFIG_VALUES.values());
     }
 
     @Nullable
@@ -156,4 +185,53 @@ public class Config {
         return (T)this.map.get(value.key);
     }
 
+    public static void help(Appendable out) throws IOException {
+        out.append("The following keys are supported:");
+        out.append(System.lineSeparator());
+        out.append(System.lineSeparator());
+
+        final ArrayList<Value> values = new ArrayList<>(CONFIG_VALUES.values());
+        Collections.sort(values, Comparator.comparing(a -> a.key));
+        for (Value v: values) {
+            out./*append("  Key: ").*/append(v.key).append(", Type: ").append(v.type.name);
+            if (v.required) {
+                out.append(", Required");
+            } else {
+                out.append(", Default value: ").append(v.defaultValue);
+            }
+            out.append(System.lineSeparator());
+            out.append("  ").append(v.doc);
+            out.append(System.lineSeparator());
+            out.append(System.lineSeparator());
+        }
+
+        out.append(System.lineSeparator());
+        out.append("Where types are defined thus:");
+        out.append(System.lineSeparator());
+        out.append(System.lineSeparator());
+
+        final ArrayList<Type> types = new ArrayList<>(TYPES);
+        Collections.sort(types, Comparator.comparing(t -> t.name));
+        for (Type t: types) {
+            out./*append("  Type: ").*/append(t.name);
+            out.append(System.lineSeparator());
+            out.append("  ").append(t.doc);
+            out.append(System.lineSeparator());
+            out.append(System.lineSeparator());
+        }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Config config = (Config) o;
+        return Objects.equals(map, config.map);
+    }
+
+    @Override
+    public int hashCode() {
+
+        return Objects.hash(map);
+    }
 }

@@ -48,11 +48,17 @@ public class LabelPredicate implements Predicate<HasMetadata> {
     @Override
     public boolean test(HasMetadata configMap) {
         Map<String, String> mapLabels = configMap.getMetadata().getLabels();
-        for (Map.Entry<String,String> entry : labels.entrySet()) {
-            if (!entry.getValue().equals(mapLabels.get(entry.getKey()))) {
-                return false;
+        if (mapLabels == null) {
+            return false;
+        } else {
+            for (Map.Entry<String, String> entry : labels.entrySet()) {
+                final String label = entry.getKey();
+                final String value = entry.getValue();
+                if (!value.equals(mapLabels.get(label))) {
+                    return false;
+                }
             }
+            return true;
         }
-        return true;
     }
 }

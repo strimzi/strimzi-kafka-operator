@@ -39,13 +39,23 @@ class TopicsWatcher {
 
     private List<String> children;
 
+    private volatile boolean stopped = false;
+
     TopicsWatcher(Op operator) {
         this.operator = operator;
+    }
+
+    void stop() {
+        this.stopped = true;
     }
 
     void start(Zk zk) {
         children = null;
         zk.children(TOPICS_ZNODE, true, childResult -> {
+            if (stopped) {
+                // TODO not ideal as the Zk instance will continue watching
+                return;
+            }
             if (childResult.failed()) {
                 throw new RuntimeException(childResult.cause());
             }

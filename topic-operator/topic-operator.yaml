@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: topic-operator
+  namespace: default
+data:
+  kubernetesMasterUrl: https://192.168.42.185:8443
+  kafkaBootstrapServers: localhost:9092
+  zookeeperConnect: localhost:2181
+  zookeeperSessionTimeout: 2 seconds
+  fullReconciliationInterval: 20 seconds
+  reassignVerifyInterval: 30 seconds
+

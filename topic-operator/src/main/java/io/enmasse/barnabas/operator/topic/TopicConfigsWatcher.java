@@ -45,6 +45,7 @@ class TopicConfigsWatcher {
 
 
     private Set<String> children;
+    private volatile boolean stopped;
 
     TopicConfigsWatcher(Operator operator) {
         this.operator = operator;
@@ -53,6 +54,10 @@ class TopicConfigsWatcher {
     public void start(Zk zk) {
         children = new HashSet<>();
         zk.children(CONFIGS_ZNODE, true, ar -> {
+            if (stopped) {
+                // TODO not ideal as the Zk instance will continue watching
+                return;
+            }
             if (ar.succeeded()) {
                 for (String child : ar.result()) {
                     zk.data(CONFIGS_ZNODE + "/" + child, true, dataResult -> {
@@ -65,5 +70,9 @@ class TopicConfigsWatcher {
             }
         });
         // TODO Do I need to cope with znode removal?
+    }
+
+    public void stop() {
+        this.stopped = true;
     }
 }

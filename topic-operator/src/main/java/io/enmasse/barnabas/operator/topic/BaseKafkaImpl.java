@@ -28,6 +28,7 @@ import org.apache.kafka.clients.admin.NewPartitions;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.config.ConfigResource;
+import org.apache.kafka.common.internals.KafkaFutureImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -235,6 +236,9 @@ public abstract class BaseKafkaImpl implements Kafka {
                 Collections.singleton(resource)).values().get(resource);
         KafkaFuture<TopicDescription> descriptionFuture = adminClient.describeTopics(
                 Collections.singleton(topicName.toString())).values().get(topicName);
+        if (descriptionFuture == null) {
+            descriptionFuture = KafkaFutureImpl.completedFuture(null);
+        }
         queueWork(new BiWork<>(descriptionFuture, configFuture,
                 (desc, conf) -> new TopicMetadata(desc, conf),
                 result -> handler.handle(result)));

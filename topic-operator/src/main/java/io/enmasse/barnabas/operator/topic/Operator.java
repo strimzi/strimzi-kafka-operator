@@ -40,7 +40,6 @@ public class Operator implements Op {
     private final static Logger logger = LoggerFactory.getLogger(Operator.class);
     private final Kafka kafka;
     private final K8s k8s;
-    //private final ScheduledExecutorService executor;
     private final Vertx vertx;
     private final LabelPredicate cmPredicate;
     private TopicStore topicStore;
@@ -353,7 +352,7 @@ public class Operator implements Op {
 
 
     void reconcile(ConfigMap cm, TopicName topicName) {
-        Topic k8sTopic = TopicSerialization.fromConfigMap(cm);
+        Topic k8sTopic = cm != null ? TopicSerialization.fromConfigMap(cm) : null;
         Future<Topic> topicResult = Future.future();
         Future<TopicMetadata> metadataResult = Future.future();
         kafka.topicMetadata(topicName, metadataResult.completer());
