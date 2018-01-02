@@ -1,16 +1,16 @@
 apiVersion: v1
 kind: Template
 metadata:
-  name: barnabas-connect-s2i
+  name: strimzi-connect-s2i
   annotations:
     openshift.io/display-name: "Apache Kafka Connect (with S2I build pipeline)"
     description: >-
       This template installes Apache Kafka Connect in distributed mode together with build pipeline
       for new Kafka Connect images with additional plugins. For more information about using this 
-      template see https://github.com/EnMasseProject/barnabas
+      template see https://github.com/strimzi/strimzi
     tags: "messaging"
     iconClass: "fa pficon-topology"
-    template.openshift.io/documentation-url: "https://github.com/EnMasseProject/barnabas"
+    template.openshift.io/documentation-url: "https://github.com/strimzi/strimzi"
 message: "Use 'kafka-connect:8083' to access Kafka Connect REST API."
 parameters:
 - description: Specifies the number of Kafka Connect instances to be started by default.
@@ -77,7 +77,7 @@ parameters:
 - description: Image repository name of the S2I Docker image
   displayName: S2I image repository
   name: S2I_IMAGE_REPO_NAME
-  value: enmasseproject 
+  value: strimzi 
 - description: Name of the S2I Docker image
   displayName: S2I image name
   name: S2I_IMAGE_NAME

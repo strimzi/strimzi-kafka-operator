@@ -1,6 +1,6 @@
 # Kafka as a Service
 
-Barnabas provides a way to run an [Apache Kafka][kafka] cluster on 
+Strimzi provides a way to run an [Apache Kafka][kafka] cluster on 
 [Kubernetes][k8s] or [OpenShift][os] in various deployment configurations.
 
 <!-- TOC depthFrom:2 -->
@@ -19,7 +19,7 @@ Barnabas provides a way to run an [Apache Kafka][kafka] cluster on
     - [Deploying to Kubernetes](#deploying-to-kubernetes-2)
     - [Using Kafka Connect with additional plugins](#using-kafka-connect-with-additional-plugins)
         - [Mount a volume containing the plugins](#mount-a-volume-containing-the-plugins)
-        - [Create a new image based on `enmasseproject/kafka-connect`](#create-a-new-image-based-on-enmasseprojectkafka-connect)
+        - [Create a new image based on `strimzi/kafka-connect`](#create-a-new-image-based-on-strimzikafka-connect)
         - [Using Openshift Build and S2I image](#using-openshift-build-and-s2i-image)
 - [Metrics](#metrics)
 
@@ -27,7 +27,7 @@ Barnabas provides a way to run an [Apache Kafka][kafka] cluster on
 
 ## Deploying a Kubernetes/OpenShift cluster
 
-You will need a Kubernetes or OpenShift cluster to deploy Barnabas.
+You will need a Kubernetes or OpenShift cluster to deploy Strimzi.
 
 ### Kubernetes
 
@@ -80,16 +80,16 @@ This deployment is available under the _kafka-statefulsets_ folder and provides 
 
 ### Deploying to OpenShift
 
-1. Create the [provided "barnabas" template](kafka-statefulsets/resources/openshift-template.yaml) 
+1. Create the [provided "strimzi" template](kafka-statefulsets/resources/openshift-template.yaml) 
    by running
 
         oc create -f kafka-statefulsets/resources/openshift-template.yaml
 
    in your terminal. This template provides the "zookeeper" StatefulSet  with 3 replicas, the "kafka" StatefulSet with 3 replicas,
    and the "zookeeper", "zookeeper-headless", "kafka" and "kafka-headless" Services.
-2. Create a new app using the "barnabas" template:
+2. Create a new app using the "strimzi" template:
 
-        oc new-app barnabas
+        oc new-app strimzi
 
 ### Deploying to Kubernetes
 
@@ -128,7 +128,7 @@ This deployment is available under the _kafka-inmemory_ folder and provides foll
    "zookeeper-service" and "kafka-service" services. 
 2. Create a new app:
 
-        oc new-app barnabas
+        oc new-app strimzi
 
 
 ### Deploying to Kubernetes
@@ -163,7 +163,7 @@ cluster as service `kafka-connect` on port `8083`.
    in your terminal.
 3. Create a new app:
 
-        oc new-app barnabas-connect
+        oc new-app strimzi-connect
 
 
 ### Deploying to Kubernetes
@@ -186,8 +186,8 @@ Kafka Connect will automatically load all plugins/connectors which are present i
 directory during startup. You can use several different methods how to add the plugins into this directory:
 
 * Mount a volume containing the plugins to path `/opt/kafka/plugins/`
-* Use the `enmasseproject/kafka-connect` image as Docker base image, add your connectors to the `/opt/kafka/plugins/` 
-  directory and use this new image instead of `enmasseproject/kafka-connect`
+* Use the `strimzi/kafka-connect` image as Docker base image, add your connectors to the `/opt/kafka/plugins/` 
+  directory and use this new image instead of `strimzi/kafka-connect`
 * Use OpenShift build system and our S2I image
 
 #### Mount a volume containing the plugins
@@ -217,7 +217,7 @@ spec:
     spec:
       containers:
         - name: kafka-connect
-          image: enmasseproject/kafka-connect:latest
+          image: strimzi/kafka-connect:latest
           ports:
             - name: rest-api
               containerPort: 8083
@@ -256,11 +256,11 @@ volumes:
       readOnly: true
 ```
 
-#### Create a new image based on `enmasseproject/kafka-connect`
+#### Create a new image based on `strimzi/kafka-connect`
 
-1. Create a new `Dockerfile` which uses `enmasseproject/kafka-connect`
+1. Create a new `Dockerfile` which uses `strimzi/kafka-connect`
 ```Dockerfile
-FROM enmasseproject/kafka-connect:latest
+FROM strimzi/kafka-connect:latest
 USER root:root
 COPY ./my-plugin/ /opt/kafka/plugins/
 USER kafka:kafka
@@ -275,7 +275,7 @@ with [Source-to-Image (S2I)](https://docs.openshift.org/3.6/creating_images/s2i.
 create new Docker images. OpenShift Build takes a builder image with the S2I support together with source code 
 and/or binaries provided by the user and uses them to build a new Docker image. 
 The newly created Docker Image will be stored in OpenShift's local Docker repository and can be used in deployments. 
-The Barnabas project provides a Kafka Connect S2I builder image [`enmasseproject/kafka-connect-s2i`](https://hub.docker.com/r/enmasseproject/kafka-connect-s2i/) 
+The Strimzi project provides a Kafka Connect S2I builder image [`strimzi/kafka-connect-s2i`](https://hub.docker.com/r/strimzi/kafka-connect-s2i/) 
 which takes user-provided binaries (with plugins and connectors) and creates a new Kafka Connect image. 
 This enhanced Kafka Connect image can be used with our Kafka Connect deployment.
 
@@ -284,7 +284,7 @@ To configure the OpenShift Build and create a new Kafka Connect image, follow th
 1. Create OpenShift build configuration and Kafka Connect deployment using our OpenShift template
 ```
 oc apply -f kafka-connect/s2i/resources/openshift-template.yaml
-oc new-app barnabas-connect-s2i
+oc new-app strimzi-connect-s2i
 ```
 2. Prepare a directory with Kafka Connect plugins which you want to use. For example:
 ```
