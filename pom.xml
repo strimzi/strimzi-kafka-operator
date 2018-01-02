@@ -27,6 +27,7 @@
 
 
     <modules>
+        <module>topic-controller</module>
         <module>cluster-controller</module>
     </modules>
 
