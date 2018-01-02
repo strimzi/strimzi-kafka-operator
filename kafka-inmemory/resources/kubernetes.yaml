@@ -101,15 +101,22 @@ spec:
       containers:
         - name: strimzi-cluster-controller
           image: strimzi/cluster-controller:latest
+          env:
+            - name: STRIMZI_CONTROLLER_LABELS
+              value: "app=strimzi,kind=cluster"
+            - name: STRIMZI_CONTROLLER_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: kafka
   labels:
-    app: barnabas
-    type: deployment
-    kind: kafka
+    app: strimzi
+    kind: cluster
+    type: kafka
 data:
   kafka-nodes: "3"
   kafka-image: "strimzi/kafka-statefulsets:latest"

@@ -11,14 +11,9 @@ public class Main {
     private static final Logger log = LoggerFactory.getLogger(Main.class.getName());
 
     public static void main(String args[]) {
-        String namespace = "myproject";
-        Map<String, String> labels = new HashMap<>();
-        labels.put("app", "barnabas");
-        labels.put("kind", "cluster");
-
         try {
             Vertx vertx = Vertx.vertx();
-            vertx.deployVerticle(new ClusterController(new ClusterControllerConfig(namespace, labels)), res -> {
+            vertx.deployVerticle(new ClusterController(ClusterControllerConfig.fromEnv()), res -> {
                 if (res.succeeded())    {
                     log.info("Cluster Controller verticle started");
                 }
