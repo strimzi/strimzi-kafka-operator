@@ -2,26 +2,18 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
                       http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <groupId>io.strimzi</groupId>
+        <artifactId>strimzi</artifactId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
     <modelVersion>4.0.0</modelVersion>
-    <groupId>io.strimzi</groupId>
     <artifactId>topic-controller</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
-    <packaging>jar</packaging>
-    <properties>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
-        <version.io.fabric8>3.1.0</version.io.fabric8>
-        <version.io.vertx>3.5.0</version.io.vertx>
-        <version.com.fasterxml.jackson>2.7.7</version.com.fasterxml.jackson>
-        <version.org.apache.kafka>1.0.0</version.org.apache.kafka>
-        <version.org.apache.zookeeper>3.4.10</version.org.apache.zookeeper>
-        <version.org.slf4j>1.7.25</version.org.slf4j>
-    </properties>
     <dependencies>
         <dependency>
             <groupId>io.fabric8</groupId>
             <artifactId>kubernetes-client</artifactId>
-            <version>${version.io.fabric8}</version>
+            <version>${fabric8.kubernetes-client.version}</version>
         </dependency>
         <dependency>
             <groupId>io.fabric8</groupId>
@@ -31,47 +23,47 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>${version.org.slf4j}</version>
+            <version>${slf4j.version}</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
-            <version>${version.org.slf4j}</version>
+            <version>${slf4j.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
-            <version>${version.org.apache.kafka}</version>
+            <version>${kafka.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka_2.12</artifactId>
-            <version>${version.org.apache.kafka}</version>
+            <version>${kafka.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.zookeeper</groupId>
             <artifactId>zookeeper</artifactId>
-            <version>${version.org.apache.zookeeper}</version>
+            <version>${zookeeper.version}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
-            <version>${version.com.fasterxml.jackson}</version>
+            <version>${fasterxml.jackson.version}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-yaml</artifactId>
-            <version>${version.com.fasterxml.jackson}</version>
+            <version>${fasterxml.jackson.version}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>${version.com.fasterxml.jackson}</version>
+            <version>${fasterxml.jackson.version}</version>
         </dependency>
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-core</artifactId>
-            <version>${version.io.vertx}</version>
+            <version>${vertx.version}</version>
         </dependency>
         <dependency>
             <groupId>io.airlift</groupId>
@@ -81,7 +73,7 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.12</version>
+            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
         <!--<dependency>
@@ -99,7 +91,7 @@
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-unit</artifactId>
-            <version>${version.io.vertx}</version>
+            <version>${vertx.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -109,7 +101,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>2.4.3</version>
+                <version>${maven.shade.version}</version>
                 <executions>
                     <execution>
                         <phase>package</phase>
@@ -119,6 +111,7 @@
                         <configuration>
                             <finalName>topic-controller</finalName>
                             <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass>io.strimzi.controller.topic.Main</mainClass>
                                 </transformer>
