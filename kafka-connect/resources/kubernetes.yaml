@@ -8,7 +8,7 @@ metadata:
     kind: kafka-connect
 data:
   nodes: "1"
-  image: "enmasseproject/kafka-connect:latest"
+  image: "strimzi/kafka-connect:latest"
   healthcheck-delay: "60"
   healthcheck-timeout: "5"
   KAFKA_CONNECT_BOOTSTRAP_SERVERS: "kafka:9092"

@@ -1,6 +1,6 @@
-# Building barnabas
+# Building Strimzi
 
-Barnabas is using `make` as its main build system. Our make build supports 
+Strimzi is using `make` as its main build system. Our make build supports 
 several different targets mainly for building and pushing Docker images.
 
 <!-- TOC depthFrom:2 -->
@@ -19,8 +19,8 @@ several different targets mainly for building and pushing Docker images.
 ### Building Docker images
 
 The `docker_build` target will build the Docker images provided by the 
-Barnabas project. You can build all Barnabas Docker images by calling 
-`make docker_build` from the root of the Barnabas repository. Or you can build 
+Strimzi project. You can build all Strimzi Docker images by calling 
+`make docker_build` from the root of the Strimzi repository. Or you can build 
 an individual Docker image by running `make docker_build` from the 
 subdirectories with their respective Dockerfiles - e.g. `kafka_base`, 
 `kafka_statefulsets` etc.
@@ -83,7 +83,7 @@ you can push the images to OpenShift's Docker repo like this:
    specify the Docker repo, otherwise OpenShift will still try to pull 
    the image from docker.io:
    
-        oc new-app barnabas -p IMAGE_REPO_NAME=172.30.1.1:5000/myproject
+        oc new-app strimzi -p IMAGE_REPO_NAME=172.30.1.1:5000/myproject
 
 
 ## Release
