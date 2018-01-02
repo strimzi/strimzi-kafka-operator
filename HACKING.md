@@ -9,6 +9,7 @@ several different targets mainly for building and pushing Docker images.
     - [Building Docker images](#building-docker-images)
     - [Tagging and pushing Docker images](#tagging-and-pushing-docker-images)
 - [Building everything](#building-everything)
+- [Pushing images to the cluster's Docker repo](#pushing-images-to-the-clusters-docker-repo)
 - [Release](#release)
 
 <!-- /TOC -->
@@ -25,7 +26,7 @@ subdirectories with their respective Dockerfiles - e.g. `kafka_base`,
 `kafka_statefulsets` etc.
 
 The `docker_build` target will always build the images under the 
-`enmasseproject` organization. This is necessary in order to be able to reuse 
+`strimzi` organization. This is necessary in order to be able to reuse 
 the base image you might have just built without modifying all Dockerfiles. 
 The `DOCKER_TAG` environment variable configures the Docker tag 
 to use (default is `latest`).

@@ -17,11 +17,11 @@ all: docker_build docker_push
 
 docker_build:
 	echo "Building Docker image ..."
-	docker build --build-arg version=$(DOCKER_VERSION_ARG) -t enmasseproject/$(PROJECT_NAME):$(DOCKER_TAG) $(DOCKERFILE_DIR)
+	docker build --build-arg version=$(DOCKER_VERSION_ARG) -t strimzi/$(PROJECT_NAME):$(DOCKER_TAG) $(DOCKERFILE_DIR)
 
 docker_tag:
-	echo "Tagging enmasseproject/$(PROJECT_NAME):$(DOCKER_TAG) to $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG) ..."
-	docker tag enmasseproject/$(PROJECT_NAME):$(DOCKER_TAG) $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG)
+	echo "Tagging strimzi/$(PROJECT_NAME):$(DOCKER_TAG) to $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG) ..."
+	docker tag strimzi/$(PROJECT_NAME):$(DOCKER_TAG) $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG)
 
 docker_push: docker_tag
 	echo "Pushing $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG) ..."

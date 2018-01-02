@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# S2I assemble script for extending the enmasseproject/kafka-connect image with additional Kafka Connect plugins
+# S2I assemble script for extending the strimzi/kafka-connect image with additional Kafka Connect plugins
 # This script is reponsible for assembling distributed Kafka Connect worker with custom plugins directory
 
 if [ "$1" = "-h" ]
