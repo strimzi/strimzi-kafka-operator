@@ -1,4 +1,4 @@
-FROM enmasseproject/kafka-base:latest
+FROM strimzi/kafka-base:latest
 
 EXPOSE 8083
 

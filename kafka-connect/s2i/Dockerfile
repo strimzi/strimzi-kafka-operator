@@ -1,4 +1,4 @@
-FROM enmasseproject/kafka-connect:latest
+FROM strimzi/kafka-connect:latest
 
 USER root:root
 

@@ -9,19 +9,19 @@ $(DOCKER_TARGETS): $(SUBDIRS)
 release: release_prepare $(SUBDIRS) release_version release_pkg
 
 release_prepare:
-	rm -rf ./barnabas-$(RELEASE_VERSION)
-	rm -f ./barnabas-$(RELEASE_VERSION).tar.gz
-	mkdir ./barnabas-$(RELEASE_VERSION)
-	cp README.md ./barnabas-$(RELEASE_VERSION)
+	rm -rf ./strimzi-$(RELEASE_VERSION)
+	rm -f ./strimzi-$(RELEASE_VERSION).tar.gz
+	mkdir ./strimzi-$(RELEASE_VERSION)
+	cp README.md ./strimzi-$(RELEASE_VERSION)
 
 release_version:
 	echo "Changing Docker image tags from :latest to :$(RELEASE_VERSION)"
-	find ./barnabas-$(RELEASE_VERSION)/ -name '*.yaml' -type f -exec sed -i '/image: "*enmasseproject\/[a-zA-Z0-9_-]*:latest"*/s/:latest/:$(RELEASE_VERSION)/g' {} \;
-	find ./barnabas-$(RELEASE_VERSION)/ -name '*.yaml' -type f -exec sed -i '/name: [a-zA-Z0-9_-]*IMAGE_TAG/{n;s/latest/$(RELEASE_VERSION)/}' {} \;
+	find ./strimzi-$(RELEASE_VERSION)/ -name '*.yaml' -type f -exec sed -i '/image: "*strimzi\/[a-zA-Z0-9_-]*:latest"*/s/:latest/:$(RELEASE_VERSION)/g' {} \;
+	find ./strimzi-$(RELEASE_VERSION)/ -name '*.yaml' -type f -exec sed -i '/name: [a-zA-Z0-9_-]*IMAGE_TAG/{n;s/latest/$(RELEASE_VERSION)/}' {} \;
 
 release_pkg:
-	tar -z -cf ./barnabas-$(RELEASE_VERSION).tar.gz barnabas-$(RELEASE_VERSION)/
-	rm -rf ./barnabas-$(RELEASE_VERSION)
+	tar -z -cf ./strimzi-$(RELEASE_VERSION).tar.gz strimzi-$(RELEASE_VERSION)/
+	rm -rf ./strimzi-$(RELEASE_VERSION)
 
 $(SUBDIRS):
 	$(MAKE) -C $@ $(MAKECMDGOALS)
