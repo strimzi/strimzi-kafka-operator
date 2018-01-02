@@ -11,5 +11,3 @@
 # IntelliJ IDEA specific
 .idea/
 *.iml
-
-topic-operator/target/
