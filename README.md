@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/strimzi/strimzi?branch=master)](https://travis-ci.org/strimzi/strimzi)
+[![Build Status](https://travis-ci.org/strimzi/strimzi.svg?branch=master)](https://travis-ci.org/strimzi/strimzi)
 
 # Kafka as a Service
 
