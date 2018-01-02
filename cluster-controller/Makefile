@@ -5,7 +5,7 @@ clean: java_clean
 
 include ../Makefile.docker
 
-include ../Makefile.java
+include ../Makefile.maven
 
 include ../Makefile.release
 
