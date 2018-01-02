@@ -1,4 +1,4 @@
-# Makefile.java contains the shared tasks for building Java applications. This file is
+# Makefile.maven contains the shared tasks for building Java applications. This file is
 # included into the Makefile files which contain some Java sources which should be build
 # (E.g. cluster-controller etc.).
 #
