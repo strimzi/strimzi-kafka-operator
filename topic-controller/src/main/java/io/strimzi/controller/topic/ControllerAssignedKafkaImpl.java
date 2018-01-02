@@ -228,7 +228,7 @@ public class ControllerAssignedKafkaImpl extends BaseKafkaImpl {
             public Boolean apply(String line) {
                 if (line.contains("Partitions reassignment failed due to")
                         || Pattern.matches("Reassignment of partition .* failed", line)) {
-                    throw new OperatorException("Reassigment failed: " + line);
+                    throw new ControllerException("Reassigment failed: " + line);
                 } else if (Pattern.matches("Reassignment of partition .* completed successfully", line)) {
                     complete++;
                 } else if (Pattern.matches("Reassignment of partition .* is still in progress", line)) {
@@ -259,14 +259,14 @@ public class ControllerAssignedKafkaImpl extends BaseKafkaImpl {
             if (line.contains("Partitions reassignment failed due to")
                     || line.contains("There is an existing assignment running")
                     || line.contains("Failed to reassign partitions")) {
-                throw new TransientOperatorException("Reassigment failed: " + line);
+                throw new TransientControllerException("Reassigment failed: " + line);
             } else if (line.contains("Successfully started reassignment of partitions.")) {
                 return true;
             } else {
                 return null;
             }
         })) {
-            throw new TransientOperatorException("Reassignment execution neither failed nor finished");
+            throw new TransientControllerException("Reassignment execution neither failed nor finished");
         }
     }
 
@@ -303,7 +303,7 @@ public class ControllerAssignedKafkaImpl extends BaseKafkaImpl {
             @Override
             public String apply(String line) {
                 if (line.contains("Partitions reassignment failed due to")) {
-                    throw new TransientOperatorException("Reassignment failed: " + line);
+                    throw new TransientControllerException("Reassignment failed: " + line);
                 }
                 if (returnLine) {
                     return line;
@@ -351,7 +351,7 @@ public class ControllerAssignedKafkaImpl extends BaseKafkaImpl {
         // (System.setOut being global to the VM).
 
         if(verifyArgs.isEmpty() || !new File(verifyArgs.get(0)).canExecute()) {
-            throw new OperatorException("Command " + verifyArgs + " lacks an executable arg[0]");
+            throw new ControllerException("Command " + verifyArgs + " lacks an executable arg[0]");
         }
 
         ProcessBuilder pb = new ProcessBuilder(verifyArgs);

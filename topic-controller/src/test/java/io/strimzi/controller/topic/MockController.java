@@ -25,7 +25,7 @@ import io.vertx.core.Handler;
 import java.util.ArrayList;
 import java.util.List;
 
-class MockOperator implements Op {
+class MockController implements ControllerOp {
 
     static class Event {
         private final Event.Type type;

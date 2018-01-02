@@ -20,28 +20,34 @@ package io.strimzi.controller.topic;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 
 /**
- * A transient exception is one where we cannot <em>currently</em> complete the work required for reconciliation
- * but the problem should have gone away if we retry later.
+ * An exception possibly with an attached K8S resource (e.g. a ConfigMap).
  */
-public class TransientOperatorException extends OperatorException {
+public class ControllerException extends RuntimeException {
 
-    public TransientOperatorException(HasMetadata involvedObject, String message) {
-        super(involvedObject, message);
+    private final HasMetadata involvedObject;
+
+    public ControllerException(HasMetadata involvedObject, String message) {
+        this(involvedObject, message, null);
     }
 
-    public TransientOperatorException(HasMetadata involvedObject, Throwable cause) {
-        super(involvedObject, cause);
+    public ControllerException(HasMetadata involvedObject, Throwable cause) {
+        this(involvedObject, null, cause);
     }
 
-    public TransientOperatorException(HasMetadata involvedObject, String message, Throwable cause) {
-        super(involvedObject, message, cause);
+    public ControllerException(HasMetadata involvedObject, String message, Throwable cause) {
+        super(message, cause);
+        this.involvedObject = involvedObject;
     }
 
-    public TransientOperatorException(Throwable cause) {
-        super(cause);
+    public ControllerException(Throwable cause) {
+        this(null, null, cause);
     }
 
-    public TransientOperatorException(String message) {
-        super(message);
+    public ControllerException(String message) {
+        this(null, message, null);
+    }
+
+    public HasMetadata getInvolvedObject() {
+        return involvedObject;
     }
 }

@@ -33,9 +33,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.TimeUnit;
 
-public class Operator implements Op {
+public class Controller implements ControllerOp {
 
-    private final static Logger logger = LoggerFactory.getLogger(Operator.class);
+    private final static Logger logger = LoggerFactory.getLogger(Controller.class);
     private final Kafka kafka;
     private final K8s k8s;
     private final Vertx vertx;
@@ -44,9 +44,9 @@ public class Operator implements Op {
     private final InFlight inFlight = new InFlight();
 
 
-    static abstract class OperatorEvent implements Runnable, Handler<Void> {
+    static abstract class ControllerEvent implements Runnable, Handler<Void> {
 
-        public abstract void process() throws OperatorException;
+        public abstract void process() throws ControllerException;
 
         public void run() {
             logger.info("Processing event {}", this);
@@ -61,12 +61,12 @@ public class Operator implements Op {
         public abstract String toString();
     }
 
-    public class ErrorEvent extends OperatorEvent {
+    public class ErrorEvent extends ControllerEvent {
 
         private final String message;
         private final HasMetadata involvedObject;
 
-        public ErrorEvent(OperatorException exception) {
+        public ErrorEvent(ControllerException exception) {
             this.involvedObject = exception.getInvolvedObject();
             this.message = exception.getMessage();
         }
@@ -94,7 +94,7 @@ public class Operator implements Op {
                     //.withReason("")
                     .withNewSource()
                     .withHost(myHost)
-                    .withComponent(Operator.class.getName())
+                    .withComponent(Controller.class.getName())
                     .endSource();
             Event event = evtb.build();
             k8s.createEvent(event, ar -> {});
@@ -107,7 +107,7 @@ public class Operator implements Op {
 
 
     /** Topic created in ZK */
-    public class CreateConfigMap extends OperatorEvent {
+    public class CreateConfigMap extends ControllerEvent {
         private final Topic topic;
         private final Handler<io.vertx.core.AsyncResult<Void>> handler;
 
@@ -117,7 +117,7 @@ public class Operator implements Op {
         }
 
         @Override
-        public void process() throws OperatorException {
+        public void process() throws ControllerException {
             ConfigMap cm = TopicSerialization.toConfigMap(topic, cmPredicate);
             inFlight.startCreatingConfigMap(cm);
             k8s.createConfigMap(cm, handler);
@@ -130,7 +130,7 @@ public class Operator implements Op {
     }
 
     /** Topic deleted in ZK */
-    public class DeleteConfigMap extends OperatorEvent {
+    public class DeleteConfigMap extends ControllerEvent {
 
         private final TopicName topicName;
         private final Handler<io.vertx.core.AsyncResult<Void>> handler;
@@ -153,7 +153,7 @@ public class Operator implements Op {
     }
 
     /** Topic config modified in ZK */
-    public class UpdateConfigMap extends OperatorEvent {
+    public class UpdateConfigMap extends ControllerEvent {
 
         private final Topic topic;
         private final Handler<io.vertx.core.AsyncResult<Void>> handler;
@@ -179,7 +179,7 @@ public class Operator implements Op {
     }
 
     /** ConfigMap created in k8s */
-    public class CreateKafkaTopic extends OperatorEvent {
+    public class CreateKafkaTopic extends ControllerEvent {
 
         private final Topic topic;
         private final HasMetadata involvedObject;
@@ -193,7 +193,7 @@ public class Operator implements Op {
         }
 
         @Override
-        public void process() throws OperatorException {
+        public void process() throws ControllerException {
             inFlight.startCreatingTopic(topic.getTopicName());
             kafka.createTopic(topic, ar -> {
                 if (ar.succeeded()) {
@@ -204,7 +204,7 @@ public class Operator implements Op {
                     if (ar.cause() instanceof TopicExistsException) {
                         // TODO reconcile
                     } else {
-                        throw new OperatorException(involvedObject, ar.cause());
+                        throw new ControllerException(involvedObject, ar.cause());
                     }
                 }
             });
@@ -217,7 +217,7 @@ public class Operator implements Op {
     }
 
     /** ConfigMap modified in k8s */
-    public class UpdateKafkaConfig extends OperatorEvent {
+    public class UpdateKafkaConfig extends ControllerEvent {
 
         private final HasMetadata involvedObject;
 
@@ -231,7 +231,7 @@ public class Operator implements Op {
         }
 
         @Override
-        public void process() throws OperatorException {
+        public void process() throws ControllerException {
             kafka.updateTopicConfig(topic, ar-> {
                 if (ar.failed()) {
                     enqueue(new ErrorEvent(involvedObject, ar.cause().toString()));
@@ -248,7 +248,7 @@ public class Operator implements Op {
     }
 
     /** ConfigMap modified in k8s */
-    public class IncreaseKafkaPartitions extends OperatorEvent {
+    public class IncreaseKafkaPartitions extends ControllerEvent {
 
         private final HasMetadata involvedObject;
 
@@ -262,7 +262,7 @@ public class Operator implements Op {
         }
 
         @Override
-        public void process() throws OperatorException {
+        public void process() throws ControllerException {
             kafka.increasePartitions(topic, ar-> {
                 if (ar.failed()) {
                     enqueue(new ErrorEvent(involvedObject, ar.cause().toString()));
@@ -279,7 +279,7 @@ public class Operator implements Op {
     }
 
     /** ConfigMap modified in k8s */
-    public class ChangeReplicationFactor extends OperatorEvent {
+    public class ChangeReplicationFactor extends ControllerEvent {
 
         private final HasMetadata involvedObject;
 
@@ -293,7 +293,7 @@ public class Operator implements Op {
         }
 
         @Override
-        public void process() throws OperatorException {
+        public void process() throws ControllerException {
             kafka.changeReplicationFactor(topic, ar-> {
                 if (ar.failed()) {
                     enqueue(new ErrorEvent(involvedObject, ar.cause().toString()));
@@ -310,7 +310,7 @@ public class Operator implements Op {
     }
 
     /** ConfigMap deleted in k8s */
-    public class DeleteKafkaTopic extends OperatorEvent {
+    public class DeleteKafkaTopic extends ControllerEvent {
 
         public final TopicName topicName;
         private final HasMetadata involvedObject;
@@ -323,7 +323,7 @@ public class Operator implements Op {
         }
 
         @Override
-        public void process() throws OperatorException {
+        public void process() throws ControllerException {
             logger.info("Deleting topic '{}'", topicName);
             inFlight.startDeletingTopic(topicName);
             kafka.deleteTopic(topicName, handler);
@@ -335,9 +335,9 @@ public class Operator implements Op {
         }
     }
 
-    public Operator(Vertx vertx, Kafka kafka,
-                    K8s k8s,
-                    LabelPredicate cmPredicate) {
+    public Controller(Vertx vertx, Kafka kafka,
+                      K8s k8s,
+                      LabelPredicate cmPredicate) {
         this.kafka = kafka;
         this.k8s = k8s;
         this.vertx = vertx;
@@ -663,7 +663,7 @@ public class Operator implements Op {
         }
     }
 
-    private class UpdateInTopicStore extends OperatorEvent {
+    private class UpdateInTopicStore extends ControllerEvent {
         private final Topic topic;
         private final HasMetadata involvedObject;
         private final Handler<AsyncResult<Void>> handler;
@@ -675,7 +675,7 @@ public class Operator implements Op {
         }
 
         @Override
-        public void process() throws OperatorException {
+        public void process() throws ControllerException {
             topicStore.update(topic, ar-> {
                 if (ar.failed()) {
                     enqueue(new ErrorEvent(involvedObject, ar.cause().toString()));
@@ -690,7 +690,7 @@ public class Operator implements Op {
         }
     }
 
-    class CreateInTopicStore extends OperatorEvent {
+    class CreateInTopicStore extends ControllerEvent {
         private final Topic topic;
         private final HasMetadata involvedObject;
         private final Handler<AsyncResult<Void>> handler;
@@ -703,7 +703,7 @@ public class Operator implements Op {
         }
 
         @Override
-        public void process() throws OperatorException {
+        public void process() throws ControllerException {
             topicStore.create(topic, ar-> {
                 if (ar.failed()) {
                     enqueue(new ErrorEvent(involvedObject, ar.cause().toString()));
@@ -718,7 +718,7 @@ public class Operator implements Op {
         }
     }
 
-    class DeleteFromTopicStore extends OperatorEvent {
+    class DeleteFromTopicStore extends ControllerEvent {
         private final TopicName topicName;
         private final HasMetadata involvedObject;
         private final Handler<AsyncResult<Void>> handler;
@@ -731,7 +731,7 @@ public class Operator implements Op {
         }
 
         @Override
-        public void process() throws OperatorException {
+        public void process() throws ControllerException {
             topicStore.delete(topicName, ar-> {
                 if (ar.failed()) {
                     enqueue(new ErrorEvent(involvedObject, ar.cause().toString()));

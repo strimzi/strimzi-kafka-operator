@@ -36,21 +36,21 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 
 /**
- * The entry-point to the topic operator.
+ * The entry-point to the topic controller.
  * Main responsibility is to deploy a {@link Session} with an appropriate Config and KubeClient,
  * redeploying if the config changes.
  */
-@Command(name="topic-operator", description = "Keeps Kubernetes ConfigMaps and Kafka topics in sync")
+@Command(name="topic-controller", description = "Keeps Kubernetes ConfigMaps and Kafka topics in sync")
 public class Main {
 
     private final static Logger logger = LoggerFactory.getLogger(Main.class);
 
-    public static final String ENV_VAR_MASTER_URL = "OPERATOR_K8S_URL";
-    public static final String ENV_VAR_CONFIG_NS = "OPERATOR_K8S_NS";
-    public static final String ENV_VAR_CONFIG_NAME = "OPERATOR_K8S_NAME";
+    public static final String ENV_VAR_MASTER_URL = "CONTROLLER_K8S_URL";
+    public static final String ENV_VAR_CONFIG_NS = "CONTROLLER_K8S_NS";
+    public static final String ENV_VAR_CONFIG_NAME = "CONTROLLER_K8S_NAME";
     public static final String DEFAULT_MASTER_URL = "https://localhost:8443";
-    public static final String DEFAULT_CONFIG_NS = "barnabas";
-    public static final String DEFAULT_CONFIG_NAME = "topic-operator";
+    public static final String DEFAULT_CONFIG_NS = "strimzi";
+    public static final String DEFAULT_CONFIG_NAME = "topic-controller";
 
     private Config config;
     private DefaultKubernetesClient kubeClient;
@@ -60,7 +60,7 @@ public class Main {
     @Inject
     public HelpOption helpOption;
 
-    @Option(name={"--help:config"}, description="Show information about how the ConfigMap the topic operator is configured with, then exit.")
+    @Option(name={"--help:config"}, description="Show information about how the ConfigMap the topic controller is configured with, then exit.")
     public boolean helpConfig = false;
 
     @Option(name={"--master-url"}, description="The URL of the kubernetes master apiserver. " +
@@ -68,17 +68,17 @@ public class Main {
             "otherwise the value " + DEFAULT_MASTER_URL + " is used.")
     public String masterUrl;
 
-    @Option(name={"--config-namespace"}, description="The name of the kubernetes namespace containing the topic operator's configuration. " +
+    @Option(name={"--config-namespace"}, description="The name of the kubernetes namespace containing the topic controller's configuration. " +
             "If absent from the command line options, the " + ENV_VAR_CONFIG_NS + " environment variable is used, if set, " +
             "otherwise the value '" + DEFAULT_CONFIG_NS + "' is used.")
     public String configNamespace;
 
-    @Option(name={"--config-name"}, description="The name of the ConfigMap (in the --config-namespace) containing the topic operator's configuration. " +
+    @Option(name={"--config-name"}, description="The name of the ConfigMap (in the --config-namespace) containing the topic controller's configuration. " +
             "If absent from the command line options, the " + ENV_VAR_CONFIG_NAME + " environment variable is used, if set, " +
             "otherwise the value '" + DEFAULT_CONFIG_NAME + "' is used.")
     public String configName;
 
-    private Watch operatorConfigWatch;
+    private Watch controllerConfigWatch;
 
     public static void main(String[] args) throws Exception {
         Main main = SingleCommand.singleCommand(Main.class).parse(args);
@@ -89,7 +89,7 @@ public class Main {
         main.configNamespace = getOption(main.configNamespace, ENV_VAR_CONFIG_NS, DEFAULT_CONFIG_NS);
         main.configName = getOption(main.configName, ENV_VAR_CONFIG_NAME, DEFAULT_CONFIG_NAME);
         if (main.helpConfig) {
-            System.out.append("The topic operator will be configured via the ConfigMap '").append(main.configName)
+            System.out.append("The topic controller will be configured via the ConfigMap '").append(main.configName)
                     .append("' in namespace '").append(main.configNamespace).append("' accessible from the apiserver at ")
                     .append(main.masterUrl).println();
             System.out.println();
@@ -153,7 +153,7 @@ public class Main {
     private void setWatch(final BootstrapResult bootstrapResult, Handler<AsyncResult<Void>> handler) {
         vertx.executeBlocking(fut -> {
             logger.debug("Setting watch on ConfigMap '{}' in namespace '{}' of apiserver {}", configName, configNamespace, bootstrapResult.masterUrl);
-            this.operatorConfigWatch = kubeClient.configMaps().inNamespace(configNamespace).withName(configName).watch(new Watcher<ConfigMap>() {
+            this.controllerConfigWatch = kubeClient.configMaps().inNamespace(configNamespace).withName(configName).watch(new Watcher<ConfigMap>() {
 
                 @Override
                 public void eventReceived(Action action, ConfigMap cm) {
@@ -195,7 +195,7 @@ public class Main {
             // Get a local ref to the kubeClient while on the context thread...
             DefaultKubernetesClient kubeClient = this.kubeClient;
             vertx.<BootstrapResult>executeBlocking(fut -> {
-                operatorConfigWatch.close();
+                controllerConfigWatch.close();
                 // ...but close the kubeClient on the blocking thread
                 logger.debug("Stopping kube client");
                 kubeClient.close();

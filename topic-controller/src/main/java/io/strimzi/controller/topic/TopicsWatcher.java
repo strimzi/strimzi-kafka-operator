@@ -27,8 +27,8 @@ import java.util.Set;
 
 /**
  * ZooKeeper watcher for child znodes of {@code /brokers/topics},
- * calling {@link Operator#onTopicCreated(TopicName, io.vertx.core.Handler)} for new children and
- * {@link Operator#onTopicDeleted(TopicName, io.vertx.core.Handler)} for deleted children.
+ * calling {@link Controller#onTopicCreated(TopicName, io.vertx.core.Handler)} for new children and
+ * {@link Controller#onTopicDeleted(TopicName, io.vertx.core.Handler)} for deleted children.
  */
 class TopicsWatcher {
 
@@ -36,14 +36,14 @@ class TopicsWatcher {
 
     private static final String TOPICS_ZNODE = "/brokers/topics";
 
-    private final Op operator;
+    private final ControllerOp controller;
 
     private List<String> children;
 
     private volatile boolean stopped = false;
 
-    TopicsWatcher(Op operator) {
-        this.operator = operator;
+    TopicsWatcher(ControllerOp controller) {
+        this.controller = controller;
     }
 
     void stop() {
@@ -69,7 +69,7 @@ class TopicsWatcher {
                 if (!deleted.isEmpty()) {
                     logger.info("Deleted topics: {}", deleted);
                     for (String topicName : deleted) {
-                        operator.onTopicDeleted(new TopicName(topicName), ar -> {
+                        controller.onTopicDeleted(new TopicName(topicName), ar -> {
                             if (ar.succeeded()) {
                                 logger.debug("Success responding to deletion of topic {}", topicName);
                             } else {
@@ -83,7 +83,7 @@ class TopicsWatcher {
                 if (!created.isEmpty()) {
                     logger.info("Created topics: {}", created);
                     for (String topicName : created) {
-                        operator.onTopicCreated(new TopicName(topicName), ar -> {
+                        controller.onTopicCreated(new TopicName(topicName), ar -> {
                             if (ar.succeeded()) {
                                 logger.debug("Success responding to creation of topic {}", topicName);
                             } else {

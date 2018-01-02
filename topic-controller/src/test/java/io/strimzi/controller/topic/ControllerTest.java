@@ -48,7 +48,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static java.util.Arrays.asList;
 
 @RunWith(VertxUnitRunner.class)
-public class OperatorTest {
+public class ControllerTest {
 
     private final LabelPredicate cmPredicate = new LabelPredicate(
             "kind", "topic",
@@ -60,14 +60,14 @@ public class OperatorTest {
     private MockKafka mockKafka = new MockKafka();
     private MockTopicStore mockTopicStore = new MockTopicStore();
     private MockK8s mockK8s = new MockK8s();
-    private Operator op;
+    private Controller op;
 
     @Before
     public void setup() {
         mockKafka = new MockKafka();
         mockTopicStore = new MockTopicStore();
         mockK8s = new MockK8s();
-        op = new Operator(vertx, mockKafka, mockK8s, cmPredicate);
+        op = new Controller(vertx, mockKafka, mockK8s, cmPredicate);
         op.setTopicStore(mockTopicStore);
     }
 
@@ -120,10 +120,10 @@ public class OperatorTest {
     }
 
     /**
-     * Trigger {@link Operator#onConfigMapAdded(ConfigMap, Handler)}
+     * Trigger {@link Controller#onConfigMapAdded(ConfigMap, Handler)}
      * and have the Kafka and TopicStore respond with the given exceptions.
      */
-    private Operator configMapAdded(TestContext context, Exception createException, Exception storeException) {
+    private Controller configMapAdded(TestContext context, Exception createException, Exception storeException) {
         mockKafka.setCreateTopicResponse(topicName.toString(), createException);
         mockTopicStore.setCreateTopicResponse(topicName, storeException);
 
@@ -168,9 +168,9 @@ public class OperatorTest {
     }
 
     /**
-     * 1. operator is notified that a ConfigMap is created
-     * 2. operator successfully creates topic in kafka
-     * 3. operator successfully creates in topic store
+     * 1. controller is notified that a ConfigMap is created
+     * 2. controller successfully creates topic in kafka
+     * 3. controller successfully creates in topic store
      */
     @Test
     public void testOnConfigMapAdded(TestContext context) {
@@ -178,7 +178,7 @@ public class OperatorTest {
     }
 
     /**
-     * 1. operator is notified that a ConfigMap is created
+     * 1. controller is notified that a ConfigMap is created
      * 2. error when creating topic in kafka
      */
     @Test
@@ -190,20 +190,20 @@ public class OperatorTest {
     }
 
     /**
-     * 1. operator is notified that a ConfigMap is created
+     * 1. controller is notified that a ConfigMap is created
      * 2. error when creating topic in kafka
      */
     @Test
     public void testOnConfigMapAdded_ClusterAuthorizationException(TestContext context) {
         Exception createException = new ClusterAuthorizationException("");
-        Operator op = configMapAdded(context, createException, null);
+        Controller op = configMapAdded(context, createException, null);
         // TODO check a k8s event got created
         // TODO what happens when we subsequently reconcile?
     }
 
     /**
-     * 1. operator is notified that a ConfigMap is created
-     * 2. operator successfully creates topic in kafka
+     * 1. controller is notified that a ConfigMap is created
+     * 2. controller successfully creates topic in kafka
      * 3. error when creating in topic store
      */
     @Test
@@ -217,10 +217,10 @@ public class OperatorTest {
     // TODO ^^ but a disconnected/loss of session error
 
     /**
-     * 1. operator is notified that a topic is created
-     * 2. operator successfully queries kafka to get topic metadata
-     * 3. operator successfully creates config map
-     * 4. operator successfully creates in topic store
+     * 1. controller is notified that a topic is created
+     * 2. controller successfully queries kafka to get topic metadata
+     * 3. controller successfully creates config map
+     * 4. controller successfully creates in topic store
      */
     @Test
     public void testOnTopicCreated(TestContext context) {
@@ -240,11 +240,11 @@ public class OperatorTest {
     }
 
     /**
-     * 1. operator is notified that a topic is created
-     * 2. operator initially failed querying kafka to get topic metadata
-     * 3. operator is subsequently successful in querying kafka to get topic metadata
-     * 4. operator successfully creates config map
-     * 5. operator successfully creates in topic store
+     * 1. controller is notified that a topic is created
+     * 2. controller initially failed querying kafka to get topic metadata
+     * 3. controller is subsequently successful in querying kafka to get topic metadata
+     * 4. controller successfully creates config map
+     * 5. controller successfully creates in topic store
      */
     @Test
     public void testOnTopicCreated_retry(TestContext context) {
@@ -284,8 +284,8 @@ public class OperatorTest {
 
 
     /**
-     * 1. operator is notified that a topic is created
-     * 2. operator times out getting metadata
+     * 1. controller is notified that a topic is created
+     * 2. controller times out getting metadata
      */
     @Test
     public void testOnTopicCreated_retryTimeout(TestContext context) {
@@ -307,7 +307,7 @@ public class OperatorTest {
     // TODO error creating config map (exists), and then reconciliation
 
     /**
-     * Test reconciliation when a configmap has been created while the operator wasn't running
+     * Test reconciliation when a configmap has been created while the controller wasn't running
      */
     @Test
     public void testReconcile_withCm_noKafka_noPrivate(TestContext context) {
@@ -329,7 +329,7 @@ public class OperatorTest {
     }
 
     /**
-     * Test reconciliation when a topic has been deleted while the operator
+     * Test reconciliation when a topic has been deleted while the controller
      * wasn't running
      */
     @Test

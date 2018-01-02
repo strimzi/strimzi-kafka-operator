@@ -27,7 +27,7 @@ import java.util.Set;
 
 /**
  * ZooKeeper watcher for child znodes of {@code /configs/topics},
- * calling {@link Operator#onTopicConfigChanged(TopicName, Handler)}
+ * calling {@link Controller#onTopicConfigChanged(TopicName, Handler)}
  * for changed children.
  */
 class TopicConfigsWatcher {
@@ -36,14 +36,14 @@ class TopicConfigsWatcher {
 
     private static final String CONFIGS_ZNODE = "/configs/topics";
 
-    private final Operator operator;
+    private final Controller controller;
 
 
     private Set<String> children;
     private volatile boolean stopped;
 
-    TopicConfigsWatcher(Operator operator) {
-        this.operator = operator;
+    TopicConfigsWatcher(Controller controller) {
+        this.controller = controller;
     }
 
     public void start(Zk zk) {
@@ -57,7 +57,7 @@ class TopicConfigsWatcher {
                 for (String child : ar.result()) {
                     zk.setData(CONFIGS_ZNODE + "/" + child, true, dataResult -> {
                         if (!this.children.add(child)) {
-                            operator.onTopicConfigChanged(new TopicName(child), ar2 -> {
+                            controller.onTopicConfigChanged(new TopicName(child), ar2 -> {
                             });
                         }
                     });

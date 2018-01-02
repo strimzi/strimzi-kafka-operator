@@ -105,7 +105,7 @@ public abstract class BaseKafkaImpl implements Kafka {
                         logger.debug("Future {} threw {}", future, e.toString());
                         this.handler.handle(Future.failedFuture(e));
                     }
-                } catch (OperatorException e) {
+                } catch (ControllerException e) {
                     // TODO handler threw, but I have no context for creating a k8s error event
                     logger.debug("Handler for work {} threw {}", this, e.toString());
                     e.printStackTrace();
@@ -178,7 +178,7 @@ public abstract class BaseKafkaImpl implements Kafka {
 
                     this.handler.handle(Future.succeededFuture(combiner.apply(resultT, resultU)));
                     logger.debug("Handler for work {} executed ok", this);
-                } catch (OperatorException e) {
+                } catch (ControllerException e) {
                     // TODO handler threw, but I have no context for creating a k8s error event
                     logger.debug("Handler for work {} threw {}", this, e.toString());
                     e.printStackTrace();

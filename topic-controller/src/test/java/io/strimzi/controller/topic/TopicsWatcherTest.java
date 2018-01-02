@@ -30,27 +30,27 @@ public class TopicsWatcherTest {
 
     @Test
     public void testTopicAdd() {
-        MockOperator op = new MockOperator();
-        op.topicCreatedResult = Future.succeededFuture();
+        MockController controller = new MockController();
+        controller.topicCreatedResult = Future.succeededFuture();
         MockZk mockZk = new MockZk();
         mockZk.childrenResult = Future.succeededFuture(asList("foo", "bar"));
-        TopicsWatcher tw = new TopicsWatcher(op);
+        TopicsWatcher tw = new TopicsWatcher(controller);
         tw.start(mockZk);
         mockZk.triggerChildren(Future.succeededFuture(asList("foo", "bar", "baz")));
-        Assert.assertEquals(asList(new MockOperator.Event(
-                MockOperator.Event.Type.CREATE, new TopicName("baz"))), op.getEvents());
+        Assert.assertEquals(asList(new MockController.Event(
+                MockController.Event.Type.CREATE, new TopicName("baz"))), controller.getEvents());
     }
 
     @Test
     public void testTopicDelete() {
-        MockOperator op = new MockOperator();
-        op.topicDeletedResult = Future.succeededFuture();
+        MockController controller = new MockController();
+        controller.topicDeletedResult = Future.succeededFuture();
         MockZk mockZk = new MockZk();
         mockZk.childrenResult = Future.succeededFuture(asList("foo", "bar"));
-        TopicsWatcher tw = new TopicsWatcher(op);
+        TopicsWatcher tw = new TopicsWatcher(controller);
         tw.start(mockZk);
         mockZk.triggerChildren(Future.succeededFuture(asList("foo")));
-        Assert.assertEquals(asList(new MockOperator.Event(
-                MockOperator.Event.Type.DELETE, new TopicName("bar"))), op.getEvents());
+        Assert.assertEquals(asList(new MockController.Event(
+                MockController.Event.Type.DELETE, new TopicName("bar"))), controller.getEvents());
     }
 }

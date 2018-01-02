@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: topic-operator
+  name: topic-controller
   namespace: default
 data:
   kubernetesMasterUrl: https://192.168.42.185:8443

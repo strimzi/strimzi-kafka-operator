@@ -49,7 +49,7 @@ public class Session extends AbstractVerticle {
     private ControllerAssignedKafkaImpl kafka;
     private AdminClient adminClient;
     private K8sImpl k8s;
-    private Operator operator;
+    private Controller controller;
     private Watch topicCmWatch;
     private TopicsWatcher tw;
     private TopicConfigsWatcher tcw;
@@ -61,7 +61,7 @@ public class Session extends AbstractVerticle {
     }
 
     /**
-     * Stop the operator.
+     * Stop the controller.
      */
     public void stop() {
         this.stopped = true;
@@ -90,14 +90,14 @@ public class Session extends AbstractVerticle {
 
         this.k8s = new K8sImpl(vertx, kubeClient, cmPredicate);
 
-        this.operator = new Operator(vertx, kafka, k8s, cmPredicate);
+        this.controller = new Controller(vertx, kafka, k8s, cmPredicate);
 
         ZkTopicStore topicStore = new ZkTopicStore(vertx);
 
-        this.operator.setTopicStore(topicStore);
+        this.controller.setTopicStore(topicStore);
 
-        this.tw = new TopicsWatcher(operator);
-        this.tcw = new TopicConfigsWatcher(operator);
+        this.tw = new TopicsWatcher(controller);
+        this.tcw = new TopicConfigsWatcher(controller);
         Zk zk = Zk.create(vertx, config.get(Config.ZOOKEEPER_CONNECT), this.config.get(Config.ZOOKEEPER_SESSION_TIMEOUT_MS).intValue());
         final Handler<AsyncResult<Zk>> zkConnectHandler = ar -> {
             tw.start(ar.result());
@@ -124,13 +124,13 @@ public class Session extends AbstractVerticle {
                         logger.info("ConfigMap {} was created {}", name, metadata.getCreationTimestamp());
                         switch (action) {
                             case ADDED:
-                                operator.onConfigMapAdded(configMap, ar -> {});
+                                controller.onConfigMapAdded(configMap, ar -> {});
                                 break;
                             case MODIFIED:
-                                operator.onConfigMapModified(configMap, ar -> {});
+                                controller.onConfigMapModified(configMap, ar -> {});
                                 break;
                             case DELETED:
-                                operator.onConfigMapDeleted(configMap, ar -> {});
+                                controller.onConfigMapDeleted(configMap, ar -> {});
                                 break;
                             case ERROR:
                                 logger.error("Watch received action=ERROR for ConfigMap " + name);
@@ -170,7 +170,7 @@ public class Session extends AbstractVerticle {
                     // Reconciliation
                     k8s.getFromName(topicName.asMapName(), ar -> {
                         ConfigMap cm = ar.result();
-                        operator.reconcile(cm, topicName);
+                        controller.reconcile(cm, topicName);
                     });
                 }
 
@@ -183,7 +183,7 @@ public class Session extends AbstractVerticle {
                     configMapsMap.keySet().removeAll(kafkaTopics);
                     for (ConfigMap cm : configMapsMap.values()) {
                         TopicName topicName = new TopicName(cm);
-                        operator.reconcile(cm, topicName);
+                        controller.reconcile(cm, topicName);
                     }
 
                     // Finally those in private store which we've not dealt with so far...

@@ -21,7 +21,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 
 /**
- * Represents a persistent data store where the operator can store its copy of the
+ * Represents a persistent data store where the controller can store its copy of the
  * topic state that won't be modified by either K8S or Kafka.
  */
 public interface TopicStore {

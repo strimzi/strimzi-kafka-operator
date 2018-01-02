@@ -21,7 +21,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 
-public interface Op {
+public interface ControllerOp {
     void onTopicCreated(TopicName topicName, Handler<AsyncResult<Void>> handler);
     void onTopicDeleted(TopicName topicName, Handler<AsyncResult<Void>> handler);
     void onTopicConfigChanged(TopicName topicName, Handler<AsyncResult<Void>> handler);

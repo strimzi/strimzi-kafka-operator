@@ -31,7 +31,7 @@ import java.util.List;
 
 public class K8sImpl implements K8s {
 
-    private final static Logger logger = LoggerFactory.getLogger(Operator.class);
+    private final static Logger logger = LoggerFactory.getLogger(Controller.class);
 
     private final LabelPredicate cmPredicate;
 
