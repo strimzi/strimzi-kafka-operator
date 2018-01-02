@@ -20,6 +20,7 @@ release_version:
 
 release_pkg:
 	tar -z -cf ./strimzi-$(RELEASE_VERSION).tar.gz strimzi-$(RELEASE_VERSION)/
+	zip -r ./strimzi-$(RELEASE_VERSION).zip strimzi-$(RELEASE_VERSION)/
 	rm -rf ./strimzi-$(RELEASE_VERSION)
 
 $(SUBDIRS):
