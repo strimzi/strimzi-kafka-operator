@@ -31,6 +31,7 @@ public class MockTopicStore implements TopicStore {
     private Map<TopicName, Topic> topics = new HashMap<>();
     private Function<TopicName, AsyncResult<Void>> createTopicResponse = t -> Future.failedFuture("Unexpected. Your test's MockTopicStore probably nees a createTopicResponse configured.");
     private Function<TopicName, AsyncResult<Void>> deleteTopicResponse = t -> Future.failedFuture("Unexpected. Your test's MockTopicStore probably nees a deleteTopicResponse configured.");
+    private Function<TopicName, AsyncResult<Void>> updateTopicResponse = t -> Future.failedFuture("Unexpected. Your test's MockTopicStore probably nees a updateTopicResponse configured.");
 
     @Override
     public void read(TopicName name, Handler<AsyncResult<Topic>> handler) {
@@ -108,6 +109,22 @@ public class MockTopicStore implements TopicStore {
         Function<TopicName, AsyncResult<Void>> old = this.deleteTopicResponse;
         this.deleteTopicResponse = t -> {
             if (t.equals(createTopic)) {
+                if (exception != null) {
+                    return Future.failedFuture(exception);
+                } else {
+                    return Future.succeededFuture();
+                }
+            } else {
+                return old.apply(t);
+            }
+        };
+        return this;
+    }
+
+    public MockTopicStore setUpdateTopicResponse(TopicName updateTopic, Exception exception) {
+        Function<TopicName, AsyncResult<Void>> old = this.updateTopicResponse;
+        this.updateTopicResponse = t -> {
+            if (t.equals(updateTopic)) {
                 if (exception != null) {
                     return Future.failedFuture(exception);
                 } else {

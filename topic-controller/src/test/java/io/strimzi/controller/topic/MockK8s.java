@@ -87,9 +87,9 @@ public class MockK8s implements K8s {
 
     @Override
     public void createConfigMap(ConfigMap cm, Handler<AsyncResult<Void>> handler) {
-        AsyncResult<Void> response = createResponse.apply(new MapName(cm.getMetadata().getName()));
+        AsyncResult<Void> response = createResponse.apply(new MapName(cm));
         if (response.succeeded()) {
-            ConfigMap old = byName.put(new MapName(cm.getMetadata().getName()), cm);
+            ConfigMap old = byName.put(new MapName(cm), cm);
             if (old == null) {
                 byTopicName.put(new TopicName(cm.getData().getOrDefault(TopicSerialization.CM_KEY_NAME, cm.getMetadata().getName())), cm);
             } else {
@@ -102,11 +102,11 @@ public class MockK8s implements K8s {
 
     @Override
     public void updateConfigMap(ConfigMap cm, Handler<AsyncResult<Void>> handler) {
-        AsyncResult<Void> response = modifyResponse.apply(new MapName(cm.getMetadata().getName()));
+        AsyncResult<Void> response = modifyResponse.apply(new MapName(cm));
         if (response.succeeded()) {
-            ConfigMap old = byName.put(new MapName(cm.getMetadata().getName()), cm);
+            ConfigMap old = byName.put(new MapName(cm), cm);
             if (old == null) {
-                handler.handle(Future.failedFuture("configmap does not exists, cannot be updated: " + cm.getMetadata().getName()));
+                handler.handle(Future.failedFuture("configmap does not exist, cannot be updated: " + cm.getMetadata().getName()));
                 return;
             } else {
                 byTopicName.put(new TopicName(cm.getData().getOrDefault(TopicSerialization.CM_KEY_NAME, cm.getMetadata().getName())), cm);
@@ -137,7 +137,7 @@ public class MockK8s implements K8s {
 
     @Override
     public void getFromName(MapName mapName, Handler<AsyncResult<ConfigMap>> handler) {
-        ConfigMap cm = byName.get(mapName.toString());
+        ConfigMap cm = byName.get(mapName);
         if (cm != null) {
             handler.handle(Future.succeededFuture(cm));
         } else {
@@ -151,8 +151,8 @@ public class MockK8s implements K8s {
         handler.handle(Future.succeededFuture());
     }
 
-    public void assertExists(TestContext context, MapName topicName) {
-        context.assertTrue(byName.containsKey(topicName));
+    public void assertExists(TestContext context, MapName mapName) {
+        context.assertTrue(byName.containsKey(mapName));
     }
 
     public void assertContains(TestContext context, ConfigMap cm) {
@@ -160,8 +160,8 @@ public class MockK8s implements K8s {
         context.assertEquals(cm, configMap);
     }
 
-    public void assertNotExists(TestContext context, MapName topicName) {
-        context.assertFalse(byName.containsKey(topicName));
+    public void assertNotExists(TestContext context, MapName mapName) {
+        context.assertFalse(byName.containsKey(mapName));
     }
 
     public void assertContainsEvent(TestContext context, Predicate<Event> test) {

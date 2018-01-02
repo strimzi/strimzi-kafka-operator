@@ -31,21 +31,31 @@ The `data` of such ConfigMaps supports the following keys:
 
 ## Reconciliation
 
-The fundamental difficulty that the controller has to solve is that there is no 
-single source of truth: Both the ConfigMap and the topic can be modified independently 
-of the controller. Complicating this, the topic controller might not always be able to observe
+A fundamental problem that the controller has to solve is that there is no 
+single source of truth: 
+Both the ConfigMap and the topic can be modified independently of the controller. 
+Complicating this, the topic controller might not always be able to observe
 changes at each in real time (the controller might be down etc).
  
 To resolve this, the controller maintains its own private copy of the 
-information about each topic. When a change happens either in the Kafka cluster, or 
+information about each topic. 
+When a change happens either in the Kafka cluster, or 
 in Kubernetes/OpenShift, it looks at both the state of the other system, and at its 
 private copy in order to determine what needs to change to keep everything in sync.  
 The same thing happens whenever the controller starts, and periodically while its running.
 
-The private copy allows the controller to usually cope with scenarios where the topic 
+For example, suppose the topic controller is not running, and a ConfigMap "my-topic" gets created. 
+When the controller starts it will lack a private copy of "my-topic", 
+so it can infer that the ConfigMap has been created since it was last running. 
+The controller will create the topic corresponding to "my-topic" and also store a private copy of the 
+metadata for "my-topic".
+
+The private copy allows the controller to cope with scenarios where the topic 
 config gets changed both in Kafka and in Kubernetes/OpenShift, so long as the 
-changes are not incompatible (e.g. both changeing the same topic config key, but to 
+changes are not incompatible (e.g. both changing the same topic config key, but to 
 different values). 
+In the case of incompatible changes, the Kafka configuration wins, and the ConfigMap will 
+be updated to reflect that.
 
 
 ## Controller configuration

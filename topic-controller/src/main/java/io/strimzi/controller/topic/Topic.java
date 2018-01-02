@@ -66,6 +66,7 @@ public class Topic {
         public Builder(Topic topic) {
             this.topicName = topic.topicName;
             this.numPartitions = topic.numPartitions;
+            this.numReplicas = topic.numReplicas;
             this.config.putAll(topic.config);
         }
 

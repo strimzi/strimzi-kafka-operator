@@ -23,6 +23,7 @@ import io.vertx.core.Handler;
 import io.vertx.ext.unit.TestContext;
 import org.apache.kafka.clients.admin.NewTopic;
 
+import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -42,6 +43,8 @@ public class MockKafka implements Kafka {
             t -> failedFuture("Unexpected. Your test probably need to configure the MockKafka with a createTopicResponse.");
     private Function<TopicName, AsyncResult<Void>> deleteTopicResponse =
             t -> failedFuture("Unexpected. Your test probably need to configure the MockKafka with a deleteTopicResponse.");
+    private Function<TopicName, AsyncResult<Void>> updateTopicResponse =
+            t -> failedFuture("Unexpected. Your test probably need to configure the MockKafka with a updateTopicResponse.");
 
     public MockKafka setTopicsListResponse(AsyncResult<Set<String>> topicsListResponse) {
         this.topicsListResponse = topicsListResponse;
@@ -121,12 +124,18 @@ public class MockKafka implements Kafka {
         NewTopic newTopic = TopicSerialization.toNewTopic(t, null);
         AsyncResult<Void> event = createTopicResponse.apply(newTopic.name());
         if (event.succeeded()) {
-            Topic topic = new Topic.Builder()
+            Topic.Builder topicBuilder = new Topic.Builder()
                     .withTopicName(newTopic.name())
                     .withNumPartitions(newTopic.numPartitions())
-                    .withNumReplicas(newTopic.replicationFactor())
-                    // TODO.withConfig(newTopic.configs())
-                    .build();
+                    .withNumReplicas(newTopic.replicationFactor());
+            try {
+                Field field = NewTopic.class.getDeclaredField("configs");
+                field.setAccessible(true);
+                topicBuilder.withConfig((Map) field.get(newTopic));
+            } catch (ReflectiveOperationException e) {
+                throw new RuntimeException(e);
+            }
+            Topic topic = topicBuilder.build();
             topics.put(topic.getTopicName(), topic);
         }
         handler.handle(event);
@@ -141,19 +150,51 @@ public class MockKafka implements Kafka {
         handler.handle(event);
     }
 
+    public MockKafka setUpdateTopicResponse(Function<TopicName, AsyncResult<Void>> updateTopicResponse) {
+        this.updateTopicResponse = updateTopicResponse;
+        return this;
+    }
+
     @Override
     public void updateTopicConfig(Topic topic, Handler<AsyncResult<Void>> handler) {
-        throw new RuntimeException("Implement this in the mock!");
+        AsyncResult<Void> event = updateTopicResponse.apply(topic.getTopicName());
+        if (event.succeeded()) {
+            Topic t = topics.get(topic.getTopicName());
+            if (t == null) {
+                event = Future.failedFuture("No such topic " + topic.getTopicName());
+            }
+            t = new Topic.Builder(t).withConfig(topic.getConfig()).build();
+            topics.put(topic.getTopicName(), t);
+        }
+        handler.handle(event);
     }
 
     @Override
     public void increasePartitions(Topic topic, Handler<AsyncResult<Void>> handler) {
-        throw new RuntimeException("Implement this in the mock!");
+        AsyncResult<Void> event = updateTopicResponse.apply(topic.getTopicName());
+        if (event.succeeded()) {
+            Topic t = topics.get(topic.getTopicName());
+            if (t == null) {
+                event = Future.failedFuture("No such topic " + topic.getTopicName());
+            }
+            t = new Topic.Builder(t).withNumPartitions(topic.getNumPartitions()).build();
+            topics.put(topic.getTopicName(), t);
+        }
+        handler.handle(event);
     }
 
     @Override
     public void changeReplicationFactor(Topic topic, Handler<AsyncResult<Void>> handler) {
-        throw new RuntimeException("Implement this in the mock!");
+        AsyncResult<Void> event = updateTopicResponse.apply(topic.getTopicName());
+        if (event.succeeded()) {
+            Topic t = topics.get(topic.getTopicName());
+            if (t == null) {
+                event = Future.failedFuture("No such topic " + topic.getTopicName());
+            }
+            t = new Topic.Builder(t).withNumReplicas(topic.getNumReplicas()).build();
+            topics.put(topic.getTopicName(), t);
+        }
+        handler.handle(event);
     }
 
     @Override
@@ -180,5 +221,9 @@ public class MockKafka implements Kafka {
 
     public void assertContains(TestContext context, Topic topic) {
         context.assertEquals(topic, topics.get(topic.getTopicName()));
+    }
+
+    public Topic getTopicState(TopicName topicName) {
+        return topics.get(topicName);
     }
 }

@@ -164,9 +164,10 @@ public class TopicSerialization {
         for (Map.Entry<String, String> entry : topic.getConfig().entrySet()) {
             configEntries.add(new ConfigEntry(entry.getKey(), entry.getValue()));
         }
+        Config config = new Config(configEntries);
         return Collections.singletonMap(
                 new ConfigResource(ConfigResource.Type.TOPIC, topic.getTopicName().toString()),
-                new Config(configEntries));
+                config);
     }
 
     /**

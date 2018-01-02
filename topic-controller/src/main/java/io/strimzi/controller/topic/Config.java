@@ -41,19 +41,19 @@ public class Config {
             this.name = name;
             this.doc = doc;
         }
-        abstract T parse(@NotNull String s);
+        abstract T parse(String s);
     }
 
     private static Type<? extends String> STRING = new Type<String>("string", "A Java string.") {
         @Override
-        public String parse(@NotNull String s) {
+        public String parse(String s) {
             return s;
         }
     };
 
     private static Type<? extends Long> LONG = new Type<Long>("long", "A Java long.") {
         @Override
-        public Long parse(@NotNull String s) {
+        public Long parse(String s) {
             return Long.parseLong(s);
         }
     };
@@ -64,7 +64,7 @@ public class Config {
         private final Pattern pattern = Pattern.compile("([0-9]+) *([a-z]+)", Pattern.CASE_INSENSITIVE);
 
         @Override
-        public Long parse(@NotNull String s) {
+        public Long parse(String s) {
             Matcher m = pattern.matcher(s);
             if (m.matches()) {
                 final TimeUnit unit = TimeUnit.valueOf(m.group(2).toUpperCase(Locale.ENGLISH));
@@ -161,7 +161,6 @@ public class Config {
         return Collections.unmodifiableCollection(CONFIG_VALUES.values());
     }
 
-    @Nullable
     private <T> T get(Map<String, String> map, Value<T> value) {
         final String s = map.getOrDefault(value.key, value.defaultValue);
         if (s != null) {

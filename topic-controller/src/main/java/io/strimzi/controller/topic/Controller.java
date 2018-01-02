@@ -36,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 public class Controller implements ControllerOp {
 
     private final static Logger logger = LoggerFactory.getLogger(Controller.class);
+    private final static Logger eventLogger = LoggerFactory.getLogger("Event");
     private final Kafka kafka;
     private final K8s k8s;
     private final Vertx vertx;
@@ -65,15 +66,18 @@ public class Controller implements ControllerOp {
 
         private final String message;
         private final HasMetadata involvedObject;
+        private final Handler<AsyncResult<Void>> handler;
 
-        public ErrorEvent(ControllerException exception) {
+        public ErrorEvent(ControllerException exception, Handler<AsyncResult<Void>> handler) {
             this.involvedObject = exception.getInvolvedObject();
             this.message = exception.getMessage();
+            this.handler = handler;
         }
 
-        public ErrorEvent(HasMetadata involvedObject, String message) {
+        public ErrorEvent(HasMetadata involvedObject, String message, Handler<AsyncResult<Void>> handler) {
             this.involvedObject = involvedObject;
             this.message = message;
+            this.handler = handler;
         }
 
         @Override
@@ -97,7 +101,8 @@ public class Controller implements ControllerOp {
                     .withComponent(Controller.class.getName())
                     .endSource();
             Event event = evtb.build();
-            k8s.createEvent(event, ar -> {});
+            k8s.createEvent(event, handler);
+            eventLogger.warn(event.toString());
         }
 
         public String toString() {
@@ -234,7 +239,7 @@ public class Controller implements ControllerOp {
         public void process() throws ControllerException {
             kafka.updateTopicConfig(topic, ar-> {
                 if (ar.failed()) {
-                    enqueue(new ErrorEvent(involvedObject, ar.cause().toString()));
+                    enqueue(new ErrorEvent(involvedObject, ar.cause().toString(), eventResult -> {}));
                 }
                 handler.handle(ar);
             });
@@ -265,7 +270,7 @@ public class Controller implements ControllerOp {
         public void process() throws ControllerException {
             kafka.increasePartitions(topic, ar-> {
                 if (ar.failed()) {
-                    enqueue(new ErrorEvent(involvedObject, ar.cause().toString()));
+                    enqueue(new ErrorEvent(involvedObject, ar.cause().toString(), eventResult -> {}));
                 }
                 handler.handle(ar);
             });
@@ -296,7 +301,7 @@ public class Controller implements ControllerOp {
         public void process() throws ControllerException {
             kafka.changeReplicationFactor(topic, ar-> {
                 if (ar.failed()) {
-                    enqueue(new ErrorEvent(involvedObject, ar.cause().toString()));
+                    enqueue(new ErrorEvent(involvedObject, ar.cause().toString(), eventResult -> {}));
                 }
                 handler.handle(ar);
             });
@@ -425,8 +430,21 @@ public class Controller implements ControllerOp {
                 logger.debug("k8s and kafka versions of topic '{}' are the same", kafkaTopic.getTopicName());
                 enqueue(new CreateInTopicStore(kafkaTopic, involvedObject, reconciliationResultHandler));
             } else {
-                // TODO use whichever has the most recent mtime
-                throw new RuntimeException("Not implemented");
+                // Just use kafka version, but also create a warning event
+                enqueue(new ErrorEvent(involvedObject, "ConfigMap is incompatible with the topic metadata. " +
+                        "The topic metadata will be treated as canonical.", ar -> {
+                    if (ar.succeeded()) {
+                        enqueue(new UpdateConfigMap(kafkaTopic, involvedObject, ar2 -> {
+                            if (ar2.succeeded()) {
+                                enqueue(new CreateInTopicStore(kafkaTopic, involvedObject, reconciliationResultHandler));
+                            } else {
+                                reconciliationResultHandler.handle(ar2);
+                            }
+                        }));
+                    } else {
+                        reconciliationResultHandler.handle(ar);
+                    }
+                }));
             }
         } else {
             if (k8sTopic == null) {
@@ -466,7 +484,7 @@ public class Controller implements ControllerOp {
         String conflict = oursKafka.conflict(oursK8s);
         if (conflict != null) {
             final String message = "ConfigMap and Topic both changed in a conflicting way: " + conflict;
-            enqueue(new ErrorEvent(involvedObject, message));
+            enqueue(new ErrorEvent(involvedObject, message, eventResult -> {}));
             reconciliationResultHandler.handle(Future.failedFuture(new Exception(message)));
         } else {
             TopicDiff merged = oursKafka.merge(oursK8s);
@@ -474,7 +492,7 @@ public class Controller implements ControllerOp {
             int partitionsDelta = merged.numPartitionsDelta();
             if (partitionsDelta < 0) {
                 final String message = "Number of partitions cannot be decreased";
-                enqueue(new ErrorEvent(involvedObject, message));
+                enqueue(new ErrorEvent(involvedObject, message, eventResult -> {}));
                 reconciliationResultHandler.handle(Future.failedFuture(new Exception(message)));
             } else {
 
@@ -678,7 +696,7 @@ public class Controller implements ControllerOp {
         public void process() throws ControllerException {
             topicStore.update(topic, ar-> {
                 if (ar.failed()) {
-                    enqueue(new ErrorEvent(involvedObject, ar.cause().toString()));
+                    enqueue(new ErrorEvent(involvedObject, ar.cause().toString(), eventResult -> {}));
                 }
                 handler.handle(ar);
             });
@@ -706,7 +724,7 @@ public class Controller implements ControllerOp {
         public void process() throws ControllerException {
             topicStore.create(topic, ar-> {
                 if (ar.failed()) {
-                    enqueue(new ErrorEvent(involvedObject, ar.cause().toString()));
+                    enqueue(new ErrorEvent(involvedObject, ar.cause().toString(), eventResult -> {}));
                 }
                 handler.handle(ar);
             });
@@ -734,7 +752,7 @@ public class Controller implements ControllerOp {
         public void process() throws ControllerException {
             topicStore.delete(topicName, ar-> {
                 if (ar.failed()) {
-                    enqueue(new ErrorEvent(involvedObject, ar.cause().toString()));
+                    enqueue(new ErrorEvent(involvedObject, ar.cause().toString(), eventResult -> {}));
                 }
                 handler.handle(ar);
             });
