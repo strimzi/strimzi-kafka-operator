@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/strimzi/strimzi?branch=master)](https://travis-ci.org/strimzi/strimzi)
+
 # Kafka as a Service
 
 Strimzi provides a way to run an [Apache Kafka][kafka] cluster on 
