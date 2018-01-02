@@ -13,8 +13,8 @@ public class ClusterControllerConfig {
     }
 
     public static ClusterControllerConfig fromEnv() {
-        String namespace = System.getenv("BARNABAS_CONTROLLER_NAMESPACE");
-        String stringLabels = System.getenv("BARNABAS_CONTROLLER_LABELS");
+        String namespace = System.getenv("STRIMZI_CONTROLLER_NAMESPACE");
+        String stringLabels = System.getenv("STRIMZI_CONTROLLER_LABELS");
 
         Map<String, String> labelsMap = new HashMap<>();
 

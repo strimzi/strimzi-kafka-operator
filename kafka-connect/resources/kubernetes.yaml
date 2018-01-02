@@ -3,9 +3,9 @@ kind: ConfigMap
 metadata:
   name: kafka-connect
   labels:
-    app: barnabas
-    type: deployment
-    kind: kafka-connect
+    app: strimzi
+    kind: cluster
+    type: kafka-connect
 data:
   nodes: "1"
   image: "strimzi/kafka-connect:latest"

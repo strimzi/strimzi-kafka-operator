@@ -2,16 +2,16 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: barnabas-cluster-controller
+  name: strimzi-cluster-controller
   labels:
-    app: barnabas
+    app: strimzi
 ---
 apiVersion: v1
 kind: ClusterRole
 metadata:
-  name: barnabas-cluster-controller-role
+  name: strimzi-cluster-controller-role
   labels:
-    app: barnabas
+    app: strimzi
 rules:
 - apiGroups:
   - ""
@@ -75,32 +75,39 @@ rules:
 apiVersion: v1
 kind: RoleBinding
 metadata:
-  name: barnabas-cluster-controller-binding
+  name: strimzi-cluster-controller-binding
   labels:
-    app: barnabas
+    app: strimzi
 subjects:
   - kind: ServiceAccount
-    name: barnabas-cluster-controller
+    name: strimzi-cluster-controller
 roleRef:
   kind: ClusterRole
-  name: barnabas-cluster-controller-role
+  name: strimzi-cluster-controller-role
   apiGroup: v1
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: barnabas-cluster-controller
+  name: strimzi-cluster-controller
 spec:
   replicas: 1
   template:
     metadata:
       labels:
-        name: barnabas-cluster-controller
+        name: strimzi-cluster-controller
     spec:
-      serviceAccountName: barnabas-cluster-controller
+      serviceAccountName: strimzi-cluster-controller
       containers:
-        - name: barnabas-cluster-controller
-          image: enmasseproject/barnabas-cluster-controller:latest
+        - name: strimzi-cluster-controller
+          image: strimzi/cluster-controller:latest
+          env:
+            - name: STRIMZI_CONTROLLER_LABELS
+              value: "app=strimzi,kind=cluster"
+            - name: STRIMZI_CONTROLLER_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
 ---
 apiVersion: v1
 kind: Template
@@ -192,9 +199,9 @@ objects:
   metadata:
     name: kafka
     labels:
-      app: barnabas
-      type: deployment
-      kind: kafka
+      app: strimzi
+      type: kafka
+      kind: cluster
   data:
     kafka-nodes: "${KAFKA_NODE_COUNT}"
     kafka-image: "${IMAGE_REPO_NAME}/${KAFKA_IMAGE_NAME}:${KAFKA_IMAGE_TAG}"
