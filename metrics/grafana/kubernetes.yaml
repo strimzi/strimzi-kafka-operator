@@ -11,7 +11,7 @@ spec:
     spec:
       containers:
       - name: grafana
-        image: barnabas/grafana:latest
+        image: strimzi/grafana:latest
         imagePullPolicy: IfNotPresent
         ports:
         - name: grafana

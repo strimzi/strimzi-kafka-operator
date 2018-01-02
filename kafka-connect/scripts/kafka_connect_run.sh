@@ -38,7 +38,7 @@ else
   fi
 
   # Write the config file
-  cat > /tmp/barnabas-connect.properties <<EOF
+  cat > /tmp/strimzi-connect.properties <<EOF
 rest.port=8083
 rest.advertised.host.name=$(hostname -I)
 rest.advertised.port=8083
@@ -62,7 +62,7 @@ status.storage.replication.factor=${KAFKA_CONNECT_STATUS_STORAGE_REPLICATION_FAC
 EOF
 
   echo "Starting Kafka connect with configuration:"
-  cat /tmp/barnabas-connect.properties
+  cat /tmp/strimzi-connect.properties
   echo ""
 
   # Disable Kafka's GC logging (which logs to a file)...
@@ -82,5 +82,5 @@ EOF
   export LOG_DIR="$KAFKA_HOME"
 
   # starting Kafka server with final configuration
-  exec $KAFKA_HOME/bin/connect-distributed.sh /tmp/barnabas-connect.properties
+  exec $KAFKA_HOME/bin/connect-distributed.sh /tmp/strimzi-connect.properties
 fi

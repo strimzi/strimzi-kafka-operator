@@ -25,7 +25,7 @@ spec:
     spec:
       containers:
         - name: kafka-connect
-          image: enmasseproject/kafka-connect:latest
+          image: strimzi/kafka-connect:latest
           ports:
             - name: rest-api
               containerPort: 8083
