@@ -44,19 +44,14 @@ public class Controller {
     private TopicStore topicStore;
     private final InFlight inFlight = new InFlight();
 
-
-    static abstract class ControllerEvent implements Runnable, Handler<Void> {
+    static abstract class ControllerEvent implements Handler<Void> {
 
         public abstract void process() throws ControllerException;
 
-        public void run() {
+        public void handle(Void v) {
             logger.info("Processing event {}", this);
             this.process();
             logger.info("Event {} processed successfully", this);
-        }
-
-        public void handle(Void v) {
-            run();
         }
 
         public abstract String toString();
