@@ -208,19 +208,19 @@ public class MockKafka implements Kafka {
     }
 
     public void assertExists(TestContext context, TopicName topicName) {
-        context.assertTrue(topics.containsKey(topicName));
+        context.assertTrue(topics.containsKey(topicName), "The topic "  + topicName + " should exist in " + this);
     }
 
     public void assertNotExists(TestContext context, TopicName topicName) {
-        context.assertFalse(topics.containsKey(topicName));
+        context.assertFalse(topics.containsKey(topicName), "The topic "  + topicName + " should not exist in " + this);
     }
 
     public void assertEmpty(TestContext context) {
-        context.assertTrue(topics.isEmpty());
+        context.assertTrue(topics.isEmpty(), "No topics should exist in " + this);
     }
 
     public void assertContains(TestContext context, Topic topic) {
-        context.assertEquals(topic, topics.get(topic.getTopicName()));
+        context.assertEquals(topic, topics.get(topic.getTopicName()), "The topic " + topic.getTopicName() + " either didn't exist, or had unexpected state");
     }
 
     public Topic getTopicState(TopicName topicName) {

@@ -27,7 +27,7 @@ import org.apache.kafka.clients.admin.ListTopicsResult;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.config.ConfigResource;
-import org.apache.kafka.common.internals.KafkaFutureImpl;
+import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,7 +35,6 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.function.BiFunction;
 
 /**
  * Partial implementation of {@link Kafka} omitting those methods which imply a partition assignment.
@@ -119,77 +118,72 @@ public abstract class BaseKafkaImpl implements Kafka {
     }
 
     /** Some work that depends on two futures */
-    class BiWork<T, U, R> extends Work {
-        private final KafkaFuture<T> futureT;
-        private final KafkaFuture<U> futureU;
-        private final BiFunction<T, U, R> combiner;
-        private final Handler<AsyncResult<R>> handler;
+    class MetadataWork extends Work {
+        private final KafkaFuture<TopicDescription> descFuture;
+        private final KafkaFuture<Config> configFuture;
+        private final Handler<AsyncResult<TopicMetadata>> handler;
+        private boolean handled = false;
 
-        public BiWork(KafkaFuture<T> futureT, KafkaFuture<U> futureU, BiFunction<T, U, R> combiner, Handler<AsyncResult<R>> handler) {
-            if (futureT == null) {
+        public MetadataWork(KafkaFuture<TopicDescription> descFuture,
+                            KafkaFuture<Config> configFuture, Handler<AsyncResult<TopicMetadata>> handler) {
+            if (descFuture == null) {
                 throw new NullPointerException();
             }
-            if (futureU == null) {
-                throw new NullPointerException();
-            }
-            if (combiner == null) {
+            if (configFuture == null) {
                 throw new NullPointerException();
             }
             if (handler == null) {
                 throw new NullPointerException();
             }
-            this.futureT = futureT;
-            this.futureU = futureU;
-            this.combiner = combiner;
+            this.descFuture = descFuture;
+            this.configFuture = configFuture;
             this.handler = handler;
+        }
+
+
+        private <T> T result(KafkaFuture<T> future) {
+            T resultT;
+            try {
+                resultT = future.get();
+                logger.debug("Future {} has result {}", future, resultT);
+            } catch (ExecutionException e) {
+                logger.debug("Future {} threw {}", future, e.toString());
+                if (e.getCause() instanceof UnknownTopicOrPartitionException) {
+                    resultT = null;
+                } else{
+                    handler.handle(Future.failedFuture(e.getCause()));
+                    handled = true;
+                    return null;
+                }
+            } catch (InterruptedException e) {
+                logger.debug("Future {} threw {}", future, e.toString());
+                handler.handle(Future.failedFuture(e));
+                handled = true;
+                return null;
+            }
+            return resultT;
         }
 
         @Override
         protected boolean complete() {
-            if (this.futureT.isDone()
-                    && this.futureU.isDone()) {
-                try {
-                    final T resultT;
-                    try {
-                        resultT = this.futureT.get();
-                        logger.debug("Future {} has result {}", futureT, resultT);
-                    } catch (ExecutionException e) {
-                        logger.debug("Future {} threw {}", futureT, e.toString());
-                        this.handler.handle(Future.failedFuture(e.getCause()));
-                        return true;
-                    } catch (InterruptedException e) {
-                        logger.debug("Future {} threw {}", futureT, e.toString());
-                        this.handler.handle(Future.failedFuture(e));
-                        return true;
-                    }
-                    final U resultU;
-                    try {
-                        resultU = this.futureU.get();
-                        logger.debug("Future {} has result {}", futureU, resultU);
-                    } catch (ExecutionException e) {
-                        logger.debug("Future {} threw {}", futureT, e.toString());
-                        this.handler.handle(Future.failedFuture(e.getCause()));
-                        return true;
-                    } catch (InterruptedException e) {
-                        logger.debug("Future {} threw {}", futureT, e.toString());
-                        this.handler.handle(Future.failedFuture(e));
-                        return true;
-                    }
-
-                    this.handler.handle(Future.succeededFuture(combiner.apply(resultT, resultU)));
+            if (this.descFuture.isDone()
+                    && this.configFuture.isDone()) {
+                final TopicDescription desc = result(this.descFuture);
+                final Config config = result(this.configFuture);
+                if (!handled) {
+                    TopicMetadata metadata = new TopicMetadata(desc, config);
+                    this.handler.handle(Future.succeededFuture(metadata));
+                    this.handled = true;
                     logger.debug("Handler for work {} executed ok", this);
-                } catch (ControllerException e) {
-                    // TODO handler threw, but I have no context for creating a k8s error event
-                    logger.debug("Handler for work {} threw {}", this, e.toString());
-                    e.printStackTrace();
+                    return true;
+                } else {
+                    return false;
                 }
-
-                return true;
             } else {
-                if (!this.futureT.isDone())
-                    logger.debug("Future {} is not done", futureT);
-                if (!this.futureU.isDone())
-                    logger.debug("Future {} is not done", futureU);
+                if (!this.descFuture.isDone())
+                    logger.debug("Future {} is not done", descFuture);
+                if (!this.configFuture.isDone())
+                    logger.debug("Future {} is not done", configFuture);
                 return false;
             }
         }
@@ -235,12 +229,9 @@ public abstract class BaseKafkaImpl implements Kafka {
                 Collections.singleton(resource)).values().get(resource);
         KafkaFuture<TopicDescription> descriptionFuture = adminClient.describeTopics(
                 Collections.singleton(topicName.toString())).values().get(topicName);
-        if (descriptionFuture == null) {
-            descriptionFuture = KafkaFutureImpl.completedFuture(null);
-        }
-        queueWork(new BiWork<>(descriptionFuture, configFuture,
-                (desc, conf) -> new TopicMetadata(desc, conf),
-                result -> handler.handle(result)));
+        queueWork(new MetadataWork(descriptionFuture,
+                    configFuture,
+                    result -> handler.handle(result)));
     }
 
     @Override

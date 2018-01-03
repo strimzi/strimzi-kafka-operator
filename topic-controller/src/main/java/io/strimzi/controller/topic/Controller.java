@@ -31,6 +31,7 @@ import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 public class Controller implements ControllerOp {
@@ -625,19 +626,7 @@ public class Controller implements ControllerOp {
     /** Called when a ConfigMap is added in k8s */
     public void onConfigMapAdded(ConfigMap configMap, Handler<AsyncResult<Void>> resultHandler) {
         if (cmPredicate.test(configMap)) {
-            TopicName topicName = new TopicName(configMap);
-            if (inFlight.shouldProcessConfigMapAdded(topicName)) {
-                Topic topic = TopicSerialization.fromConfigMap(configMap);
-                enqueue(new CreateKafkaTopic(topic, configMap, ar -> {
-                    if (ar.succeeded()) {
-                        enqueue(new CreateInTopicStore(topic, configMap, resultHandler));
-                    } else {
-                        resultHandler.handle(Future.failedFuture(ar.cause()));
-                    }
-                }));
-            } else {
-                resultHandler.handle(Future.succeededFuture());
-            }
+            reconcileOnCmChange(configMap, TopicSerialization.fromConfigMap(configMap), resultHandler);
         } else {
             resultHandler.handle(Future.succeededFuture());
         }
@@ -646,36 +635,34 @@ public class Controller implements ControllerOp {
     /** Called when a ConfigMap is modified in k8s */
     public void onConfigMapModified(ConfigMap configMap, Handler<AsyncResult<Void>> handler) {
         if (cmPredicate.test(configMap)) {
-            TopicName topicName = new TopicName(configMap);
-            if (inFlight.shouldProcessConfigMapModified(topicName)) {
-                // We don't know what's changed in the ConfigMap
-                // it could be #partitions and/or config and/or replication factor
-                // So call reconcile, rather than enqueuing a UpdateKafkaTopic directly
-                reconcile(configMap, topicName);
-                //enqueue(new UpdateKafkaTopic(topic, configMap));
-            } else {
-                handler.handle(Future.succeededFuture());
-            }
+            reconcileOnCmChange(configMap, TopicSerialization.fromConfigMap(configMap), handler);
         } else {
             handler.handle(Future.succeededFuture());
         }
     }
 
+    private void reconcileOnCmChange(ConfigMap configMap, Topic k8sTopic, Handler<AsyncResult<Void>> handler) {
+        TopicName topicName = new TopicName(configMap);
+        Future f1 = Future.future();
+        Future f2 = Future.future();
+        kafka.topicMetadata(topicName, f1.completer());
+        topicStore.read(topicName, f2.completer());
+        CompositeFuture.all(f1, f2).setHandler(ar -> {
+            if (ar.succeeded()) {
+                TopicMetadata topicMetadata = ar.result().resultAt(0);
+                Topic kafkaTopic = TopicSerialization.fromTopicMetadata(topicMetadata);
+                Topic privateTopic = ar.result().resultAt(1);
+                reconcile(configMap, k8sTopic, kafkaTopic, privateTopic, handler);
+            } else {
+                handler.handle(Future.failedFuture(ar.cause()));
+            }
+        });
+    }
+
     /** Called when a ConfigMap is deleted in k8s */
     public void onConfigMapDeleted(ConfigMap configMap, Handler<AsyncResult<Void>> handler) {
         if (cmPredicate.test(configMap)) {
-            TopicName topicName = new TopicName(configMap);
-            if (inFlight.shouldProcessConfigMapDeleted(topicName)) {
-                enqueue(new DeleteKafkaTopic(topicName, configMap, ar -> {
-                    if (ar.succeeded()) {
-                        enqueue(new DeleteFromTopicStore(topicName, configMap, handler));
-                    } else {
-                        handler.handle(ar);
-                    }
-                }));
-            } else {
-                handler.handle(Future.succeededFuture());
-            }
+            reconcileOnCmChange(configMap, null, handler);
         } else {
             handler.handle(Future.succeededFuture());
         }

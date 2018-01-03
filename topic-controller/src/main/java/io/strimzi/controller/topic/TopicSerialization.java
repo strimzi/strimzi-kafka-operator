@@ -174,6 +174,9 @@ public class TopicSerialization {
      * Create a Topic to reflect the given TopicMetadata.
      */
     public static Topic fromTopicMetadata(TopicMetadata meta) {
+        if (meta == null) {
+            return null;
+        }
         Topic.Builder builder = new Topic.Builder()
                 .withTopicName(meta.getDescription().name())
                 .withNumPartitions(meta.getDescription().partitions().size())

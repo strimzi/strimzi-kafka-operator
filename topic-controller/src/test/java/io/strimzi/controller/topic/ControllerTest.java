@@ -39,6 +39,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -125,6 +127,7 @@ public class ControllerTest {
      */
     private Controller configMapAdded(TestContext context, Exception createException, Exception storeException) {
         mockKafka.setCreateTopicResponse(topicName.toString(), createException);
+        mockKafka.setTopicMetadataResponse(topicName, null, null);
         mockTopicStore.setCreateTopicResponse(topicName, storeException);
 
         ConfigMap cm = new ConfigMapBuilder().withNewMetadata()
@@ -145,7 +148,7 @@ public class ControllerTest {
                 } else {
                     expectedExceptionType = storeException.getClass();
                 }
-                context.assertEquals(expectedExceptionType, ar.cause().getClass());
+                context.assertEquals(expectedExceptionType, ar.cause().getClass(), ar.cause().getMessage());
                 TopicName topicName = TopicSerialization.fromConfigMap(cm).getTopicName();
                 if (createException != null) {
                     mockKafka.assertNotExists(context, topicName);
@@ -573,6 +576,7 @@ public class ControllerTest {
 
         mockKafka.setCreateTopicResponse(topicName.toString(), null)
                 .createTopic(kafkaTopic, ar -> {});
+        mockKafka.setTopicMetadataResponse(topicName, mkTopicMetadata(kubeTopic), null);
         mockKafka.setDeleteTopicResponse(topicName, deleteTopicException);
 
         mockTopicStore.setCreateTopicResponse(topicName, null)
@@ -600,6 +604,19 @@ public class ControllerTest {
             }
             async.complete();
         });
+    }
+
+    private TopicMetadata mkTopicMetadata(Topic kubeTopic) {
+        List<Node> nodes = new ArrayList<>();
+        for (int nodeId = 0; nodeId < kubeTopic.getNumReplicas(); nodeId++) {
+            nodes.add(new Node(nodeId, "localhost", 9092+nodeId));
+        }
+        List<TopicPartitionInfo> partitions = new ArrayList<>();
+        for (int partitionId = 0; partitionId < kubeTopic.getNumPartitions(); partitionId++) {
+            partitions.add(new TopicPartitionInfo(partitionId, nodes.get(0), nodes, nodes));
+        }
+        return new TopicMetadata(new TopicDescription(kubeTopic.getTopicName().toString(), false,
+                partitions), new Config(Collections.emptyList()));
     }
 
     @Test

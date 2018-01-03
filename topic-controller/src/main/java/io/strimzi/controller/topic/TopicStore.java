@@ -37,16 +37,15 @@ public interface TopicStore {
     /**
      * Asynchronously get the topic with the given name
      * and run the given handler on the context with the resulting Topic.
-     * If no topic with the given name exists, the handler wiil be called with
-     * a failed result whose {@code cause()} is
-     * {@link NoSuchEntityExistsException}.
+     * If no topic with the given name exists, the handler will be called with
+     * a null result.
      */
     void read(TopicName name, Handler<AsyncResult<Topic>> handler);
 
     /**
      * Asynchronously persist the given topic in the store
      * and run the given handler on the context when done.
-     * If a topic with the given name already exists, the handler wiil be called with
+     * If a topic with the given name already exists, the handler will be called with
      * a failed result whose {@code cause()} is
      * {@link EntityExistsException}.
      */
@@ -55,7 +54,7 @@ public interface TopicStore {
     /**
      * Asynchronously update the given topic in the store
      * and run the given handler on the context when done.
-     * If no topic with the given name exists, the handler wiil be called with
+     * If no topic with the given name exists, the handler will be called with
      * a failed result whose {@code cause()} is
      * {@link NoSuchEntityExistsException}.
      */

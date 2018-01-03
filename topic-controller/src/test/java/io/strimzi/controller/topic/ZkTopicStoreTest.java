@@ -153,11 +153,9 @@ public class ZkTopicStoreTest {
         store.read(new TopicName("my_topic"), ar-> {
             async5.complete();
             if (ar.succeeded()) {
-                context.fail("Should throw");
+                context.assertNull(ar.result());
             } else {
-                if (!(ar.cause() instanceof TopicStore.NoSuchEntityExistsException)) {
-                    context.fail("Unexpected exception "+ar.cause());
-                }
+                context.fail("read() on a non-existent topic should return null");
             }
         });
         async5.await();

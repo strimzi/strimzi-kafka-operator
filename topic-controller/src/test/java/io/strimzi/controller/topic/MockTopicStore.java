@@ -36,11 +36,7 @@ public class MockTopicStore implements TopicStore {
     @Override
     public void read(TopicName name, Handler<AsyncResult<Topic>> handler) {
         Topic result = topics.get(name);
-        if (result != null) {
-            handler.handle(Future.succeededFuture(result));
-        } else {
-            handler.handle(Future.failedFuture("No such topic '"+name+"'"));
-        }
+        handler.handle(Future.succeededFuture(result));
     }
 
     @Override

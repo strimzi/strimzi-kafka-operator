@@ -95,16 +95,16 @@ public class ZkTopicStore implements TopicStore, Handler<AsyncResult<ZooKeeper>>
             @Override
             public void processResult(int rc, String path, Object ctx, byte[] data, Stat stat) {
                 Exception exception = mapExceptions(rc);
-                if (exception == null) {
+                final Future<Topic> future;
+                if (exception instanceof NoSuchEntityExistsException) {
+                    future = Future.succeededFuture(null);
+                } else if (exception == null) {
                     Topic topic = TopicSerialization.fromJson(data);
-                    vertx.runOnContext(ar ->
-                        handler.handle(Future.succeededFuture(topic))
-                    );
+                    future = Future.succeededFuture(topic);
                 } else {
-                    vertx.runOnContext(ar ->
-                        handler.handle(Future.failedFuture(exception))
-                    );
+                    future = Future.failedFuture(exception);
                 }
+                vertx.runOnContext(ar -> handler.handle(future));
             }
         }, null);
     }
