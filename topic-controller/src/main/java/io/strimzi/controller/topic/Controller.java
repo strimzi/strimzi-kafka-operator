@@ -44,20 +44,7 @@ public class Controller {
     private TopicStore topicStore;
     private final InFlight inFlight = new InFlight();
 
-    static abstract class ControllerEvent implements Handler<Void> {
-
-        public abstract void process() throws ControllerException;
-
-        public void handle(Void v) {
-            logger.info("Processing event {}", this);
-            this.process();
-            logger.info("Event {} processed successfully", this);
-        }
-
-        public abstract String toString();
-    }
-
-    public class ErrorEvent extends ControllerEvent {
+    public class ErrorEvent implements Handler<Void> {
 
         private final String message;
         private final HasMetadata involvedObject;
@@ -76,7 +63,7 @@ public class Controller {
         }
 
         @Override
-        public void process() {
+        public void handle(Void v) {
             String myHost = "";
             EventBuilder evtb = new EventBuilder().withApiVersion("v1");
             if (involvedObject != null) {
@@ -107,7 +94,7 @@ public class Controller {
 
 
     /** Topic created in ZK */
-    public class CreateConfigMap extends ControllerEvent {
+    public class CreateConfigMap implements Handler<Void> {
         private final Topic topic;
         private final Handler<io.vertx.core.AsyncResult<Void>> handler;
 
@@ -117,7 +104,7 @@ public class Controller {
         }
 
         @Override
-        public void process() throws ControllerException {
+        public void handle(Void v) throws ControllerException {
             ConfigMap cm = TopicSerialization.toConfigMap(topic, cmPredicate);
             inFlight.startCreatingConfigMap(cm);
             k8s.createConfigMap(cm, handler);
@@ -130,7 +117,7 @@ public class Controller {
     }
 
     /** Topic deleted in ZK */
-    public class DeleteConfigMap extends ControllerEvent {
+    public class DeleteConfigMap implements Handler<Void> {
 
         private final TopicName topicName;
         private final Handler<io.vertx.core.AsyncResult<Void>> handler;
@@ -141,7 +128,7 @@ public class Controller {
         }
 
         @Override
-        public void process() {
+        public void handle(Void v) {
             inFlight.startDeletingConfigMap(topicName);
             k8s.deleteConfigMap(topicName, handler);
         }
@@ -153,7 +140,7 @@ public class Controller {
     }
 
     /** Topic config modified in ZK */
-    public class UpdateConfigMap extends ControllerEvent {
+    public class UpdateConfigMap implements Handler<Void> {
 
         private final Topic topic;
         private final Handler<io.vertx.core.AsyncResult<Void>> handler;
@@ -166,7 +153,7 @@ public class Controller {
         }
 
         @Override
-        public void process() {
+        public void handle(Void v) {
             ConfigMap cm = TopicSerialization.toConfigMap(topic, cmPredicate);
             inFlight.startUpdatingConfigMap(cm);
             k8s.updateConfigMap(cm, handler);
@@ -179,7 +166,7 @@ public class Controller {
     }
 
     /** ConfigMap created in k8s */
-    public class CreateKafkaTopic extends ControllerEvent {
+    public class CreateKafkaTopic implements Handler<Void> {
 
         private final Topic topic;
         private final HasMetadata involvedObject;
@@ -193,7 +180,7 @@ public class Controller {
         }
 
         @Override
-        public void process() throws ControllerException {
+        public void handle(Void v) throws ControllerException {
             inFlight.startCreatingTopic(topic.getTopicName());
             kafka.createTopic(topic, ar -> {
                 if (ar.succeeded()) {
@@ -217,7 +204,7 @@ public class Controller {
     }
 
     /** ConfigMap modified in k8s */
-    public class UpdateKafkaConfig extends ControllerEvent {
+    public class UpdateKafkaConfig implements Handler<Void> {
 
         private final HasMetadata involvedObject;
 
@@ -231,7 +218,7 @@ public class Controller {
         }
 
         @Override
-        public void process() throws ControllerException {
+        public void handle(Void v) throws ControllerException {
             kafka.updateTopicConfig(topic, ar-> {
                 if (ar.failed()) {
                     enqueue(new ErrorEvent(involvedObject, ar.cause().toString(), eventResult -> {}));
@@ -248,7 +235,7 @@ public class Controller {
     }
 
     /** ConfigMap modified in k8s */
-    public class IncreaseKafkaPartitions extends ControllerEvent {
+    public class IncreaseKafkaPartitions implements Handler<Void> {
 
         private final HasMetadata involvedObject;
 
@@ -262,7 +249,7 @@ public class Controller {
         }
 
         @Override
-        public void process() throws ControllerException {
+        public void handle(Void v) throws ControllerException {
             kafka.increasePartitions(topic, ar-> {
                 if (ar.failed()) {
                     enqueue(new ErrorEvent(involvedObject, ar.cause().toString(), eventResult -> {}));
@@ -279,7 +266,7 @@ public class Controller {
     }
 
     /** ConfigMap modified in k8s */
-    public class ChangeReplicationFactor extends ControllerEvent {
+    public class ChangeReplicationFactor implements Handler<Void> {
 
         private final HasMetadata involvedObject;
 
@@ -293,7 +280,7 @@ public class Controller {
         }
 
         @Override
-        public void process() throws ControllerException {
+        public void handle(Void v) throws ControllerException {
             kafka.changeReplicationFactor(topic, ar-> {
                 if (ar.failed()) {
                     enqueue(new ErrorEvent(involvedObject, ar.cause().toString(), eventResult -> {}));
@@ -310,7 +297,7 @@ public class Controller {
     }
 
     /** ConfigMap deleted in k8s */
-    public class DeleteKafkaTopic extends ControllerEvent {
+    public class DeleteKafkaTopic implements Handler<Void> {
 
         public final TopicName topicName;
         private final HasMetadata involvedObject;
@@ -323,7 +310,7 @@ public class Controller {
         }
 
         @Override
-        public void process() throws ControllerException {
+        public void handle(Void v) throws ControllerException {
             logger.info("Deleting topic '{}'", topicName);
             inFlight.startDeletingTopic(topicName);
             kafka.deleteTopic(topicName, handler);
@@ -662,7 +649,7 @@ public class Controller {
         }
     }
 
-    private class UpdateInTopicStore extends ControllerEvent {
+    private class UpdateInTopicStore implements Handler<Void> {
         private final Topic topic;
         private final HasMetadata involvedObject;
         private final Handler<AsyncResult<Void>> handler;
@@ -674,7 +661,7 @@ public class Controller {
         }
 
         @Override
-        public void process() throws ControllerException {
+        public void handle(Void v) throws ControllerException {
             topicStore.update(topic, ar-> {
                 if (ar.failed()) {
                     enqueue(new ErrorEvent(involvedObject, ar.cause().toString(), eventResult -> {}));
@@ -689,7 +676,7 @@ public class Controller {
         }
     }
 
-    class CreateInTopicStore extends ControllerEvent {
+    class CreateInTopicStore implements Handler<Void> {
         private final Topic topic;
         private final HasMetadata involvedObject;
         private final Handler<AsyncResult<Void>> handler;
@@ -702,7 +689,7 @@ public class Controller {
         }
 
         @Override
-        public void process() throws ControllerException {
+        public void handle(Void v) throws ControllerException {
             topicStore.create(topic, ar-> {
                 if (ar.failed()) {
                     enqueue(new ErrorEvent(involvedObject, ar.cause().toString(), eventResult -> {}));
@@ -717,7 +704,7 @@ public class Controller {
         }
     }
 
-    class DeleteFromTopicStore extends ControllerEvent {
+    class DeleteFromTopicStore implements Handler<Void> {
         private final TopicName topicName;
         private final HasMetadata involvedObject;
         private final Handler<AsyncResult<Void>> handler;
@@ -730,7 +717,7 @@ public class Controller {
         }
 
         @Override
-        public void process() throws ControllerException {
+        public void handle(Void v) throws ControllerException {
             topicStore.delete(topicName, ar-> {
                 if (ar.failed()) {
                     enqueue(new ErrorEvent(involvedObject, ar.cause().toString(), eventResult -> {}));
