@@ -21,6 +21,9 @@ rules:
   - get
   - list
   - watch
+  - create
+  - patch
+  - update
 - apiGroups:
   - ""
   resources:
@@ -185,14 +188,6 @@ parameters:
   displayName: Transaction state replication factor
   name: KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR
   value: "3"
-- description: true to enable metric collection from Kafka
-  displayName: Kafka metrics enabled
-  name: KAFKA_METRICS_ENABLED
-  value: "true"
-- description: true to enable metric collection from Zookeeper
-  displayName: Zookeeper metrics enabled
-  name: ZOOKEEPER_METRICS_ENABLED
-  value: "true"
 objects:
 - apiVersion: v1
   kind: ConfigMap
@@ -214,3 +209,25 @@ objects:
     KAFKA_DEFAULT_REPLICATION_FACTOR: "${KAFKA_DEFAULT_REPLICATION_FACTOR}"
     KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "${KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR}"
     KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "${KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR}"
+    kafka-metrics-config: |-
+      {
+        "lowercaseOutputName": true,
+        "rules": [
+            {
+              "pattern": "kafka.server<type=(.+), name=(.+)PerSec\\w*><>Count",
+              "name": "kafka_server_$1_$2_total"
+            },
+            {
+              "pattern": "kafka.server<type=(.+), name=(.+)PerSec\\w*, topic=(.+)><>Count",
+              "name": "kafka_server_$1_$2_total",
+              "labels":
+              {
+                "topic": "$3"
+              }
+            }
+        ]
+      }
+    zookeeper-metrics-config: |-
+      {
+        "lowercaseOutputName": true
+      }

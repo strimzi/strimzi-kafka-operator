@@ -21,6 +21,9 @@ rules:
   - get
   - list
   - watch
+  - create
+  - patch
+  - update
 - apiGroups:
   - ""
   resources:
@@ -129,3 +132,25 @@ data:
   KAFKA_DEFAULT_REPLICATION_FACTOR: "3"
   KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "3"
   KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "3"
+  kafka-metrics-config: |-
+    {
+      "lowercaseOutputName": true,
+      "rules": [
+          {
+            "pattern": "kafka.server<type=(.+), name=(.+)PerSec\\w*><>Count",
+            "name": "kafka_server_$1_$2_total"
+          },
+          {
+            "pattern": "kafka.server<type=(.+), name=(.+)PerSec\\w*, topic=(.+)><>Count",
+            "name": "kafka_server_$1_$2_total",
+            "labels":
+            {
+              "topic": "$3"
+            }
+          }
+      ]
+    }
+  zookeeper-metrics-config: |-
+    {
+      "lowercaseOutputName": true
+    }
