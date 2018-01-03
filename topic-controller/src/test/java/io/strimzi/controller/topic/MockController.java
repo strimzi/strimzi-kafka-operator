@@ -21,11 +21,16 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 
 import java.util.ArrayList;
 import java.util.List;
 
-class MockController implements ControllerOp {
+class MockController extends Controller {
+
+    public MockController() {
+        super(null, null, null, null);
+    }
 
     static class Event {
         private final Event.Type type;

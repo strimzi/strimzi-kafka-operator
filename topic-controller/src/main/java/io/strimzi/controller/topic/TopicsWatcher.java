@@ -36,13 +36,13 @@ class TopicsWatcher {
 
     private static final String TOPICS_ZNODE = "/brokers/topics";
 
-    private final ControllerOp controller;
+    private final Controller controller;
 
     private List<String> children;
 
     private volatile boolean stopped = false;
 
-    TopicsWatcher(ControllerOp controller) {
+    TopicsWatcher(Controller controller) {
         this.controller = controller;
     }
 
