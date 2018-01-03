@@ -28,6 +28,7 @@ import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.apache.kafka.clients.admin.Config;
+import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.TopicPartitionInfo;
@@ -615,8 +616,50 @@ public class ControllerTest {
         for (int partitionId = 0; partitionId < kubeTopic.getNumPartitions(); partitionId++) {
             partitions.add(new TopicPartitionInfo(partitionId, nodes.get(0), nodes, nodes));
         }
+        List<ConfigEntry> configs = new ArrayList<>();
+        for (Map.Entry<String,String> entry: kubeTopic.getConfig().entrySet()) {
+            configs.add(new ConfigEntry(entry.getKey(), entry.getValue()));
+        }
+
         return new TopicMetadata(new TopicDescription(kubeTopic.getTopicName().toString(), false,
-                partitions), new Config(Collections.emptyList()));
+                partitions), new Config(configs));
+    }
+
+    @Test
+    public void testOnConfigMapChanged(TestContext context) {
+        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short)2, map("foo", "baz")).build();
+        Topic kafkaTopic = new Topic.Builder(topicName.toString(), 10, (short)2, map("foo", "bar")).build();
+        Topic privateTopic = kafkaTopic;
+
+        mockKafka.setCreateTopicResponse(topicName.toString(), null)
+                .createTopic(kafkaTopic, ar -> {});
+        mockKafka.setTopicMetadataResponse(topicName, mkTopicMetadata(kubeTopic), null);
+        mockKafka.setUpdateTopicResponse(topicName -> Future.succeededFuture());
+
+        mockTopicStore.setCreateTopicResponse(topicName, null)
+                .create(privateTopic, ar -> {});
+        mockTopicStore.setUpdateTopicResponse(topicName, null);
+
+        mockK8s.setModifyResponse(mapName, null);
+
+        ConfigMap cm = TopicSerialization.toConfigMap(kubeTopic, cmPredicate);
+
+        Async async = context.async(3);
+        controller.onConfigMapModified(cm, ar-> {
+            assertSucceeded(context, ar);
+            context.assertEquals("baz", mockKafka.getTopicState(topicName).getConfig().get("foo"));
+            mockTopicStore.read(topicName, ar2-> {
+                assertSucceeded(context, ar2);
+                context.assertEquals("baz", ar2.result().getConfig().get("foo"));
+                async.countDown();
+            });
+            mockK8s.getFromName(mapName, ar2-> {
+                assertSucceeded(context, ar2);
+                context.assertEquals("baz", TopicSerialization.fromConfigMap(ar2.result()).getConfig().get("foo"));
+                async.countDown();
+            });
+            async.countDown();
+        });
     }
 
     @Test

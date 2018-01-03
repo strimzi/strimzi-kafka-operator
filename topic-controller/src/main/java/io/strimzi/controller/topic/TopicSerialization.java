@@ -82,6 +82,9 @@ public class TopicSerialization {
      * Create a Topic to reflect the given ConfigMap.
      */
     public static Topic fromConfigMap(ConfigMap cm) {
+        if (cm == null) {
+            return null;
+        }
         Map<String, String> mapData = cm.getData();
         String name = cm.getMetadata().getName();
         Topic.Builder builder = new Topic.Builder()

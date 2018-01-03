@@ -138,11 +138,7 @@ public class MockK8s implements K8s {
     @Override
     public void getFromName(MapName mapName, Handler<AsyncResult<ConfigMap>> handler) {
         ConfigMap cm = byName.get(mapName);
-        if (cm != null) {
-            handler.handle(Future.succeededFuture(cm));
-        } else {
-            handler.handle(Future.failedFuture("No such configmap " + mapName));
-        }
+        handler.handle(Future.succeededFuture(cm));
     }
 
     @Override

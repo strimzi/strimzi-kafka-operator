@@ -37,6 +37,11 @@ public interface K8s {
 
     void listMaps(Handler<AsyncResult<List<ConfigMap>>> handler);
 
+    /**
+     * Get the ConfigMap with the given name, invoking the given handler with the result.
+     * If a ConfigMap with the given name does not exist, the handler will be called with
+     * a null {@link AsyncResult#result() result()}.
+     */
     void getFromName(MapName mapName, Handler<AsyncResult<ConfigMap>> handler);
 
     void createEvent(Event event, Handler<AsyncResult<Void>> handler);

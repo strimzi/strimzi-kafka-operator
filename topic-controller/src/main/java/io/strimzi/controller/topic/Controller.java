@@ -44,7 +44,7 @@ public class Controller {
     private TopicStore topicStore;
     private final InFlight inFlight = new InFlight();
 
-    public class ErrorEvent implements Handler<Void> {
+    class ErrorEvent implements Handler<Void> {
 
         private final String message;
         private final HasMetadata involvedObject;
@@ -94,7 +94,7 @@ public class Controller {
 
 
     /** Topic created in ZK */
-    public class CreateConfigMap implements Handler<Void> {
+    class CreateConfigMap implements Handler<Void> {
         private final Topic topic;
         private final Handler<io.vertx.core.AsyncResult<Void>> handler;
 
@@ -117,7 +117,7 @@ public class Controller {
     }
 
     /** Topic deleted in ZK */
-    public class DeleteConfigMap implements Handler<Void> {
+    class DeleteConfigMap implements Handler<Void> {
 
         private final TopicName topicName;
         private final Handler<io.vertx.core.AsyncResult<Void>> handler;
@@ -140,7 +140,7 @@ public class Controller {
     }
 
     /** Topic config modified in ZK */
-    public class UpdateConfigMap implements Handler<Void> {
+    class UpdateConfigMap implements Handler<Void> {
 
         private final Topic topic;
         private final Handler<io.vertx.core.AsyncResult<Void>> handler;
@@ -166,7 +166,7 @@ public class Controller {
     }
 
     /** ConfigMap created in k8s */
-    public class CreateKafkaTopic implements Handler<Void> {
+    class CreateKafkaTopic implements Handler<Void> {
 
         private final Topic topic;
         private final HasMetadata involvedObject;
@@ -204,7 +204,7 @@ public class Controller {
     }
 
     /** ConfigMap modified in k8s */
-    public class UpdateKafkaConfig implements Handler<Void> {
+    class UpdateKafkaConfig implements Handler<Void> {
 
         private final HasMetadata involvedObject;
 
@@ -235,7 +235,7 @@ public class Controller {
     }
 
     /** ConfigMap modified in k8s */
-    public class IncreaseKafkaPartitions implements Handler<Void> {
+    class IncreaseKafkaPartitions implements Handler<Void> {
 
         private final HasMetadata involvedObject;
 
@@ -266,7 +266,7 @@ public class Controller {
     }
 
     /** ConfigMap modified in k8s */
-    public class ChangeReplicationFactor implements Handler<Void> {
+    class ChangeReplicationFactor implements Handler<Void> {
 
         private final HasMetadata involvedObject;
 
@@ -297,7 +297,7 @@ public class Controller {
     }
 
     /** ConfigMap deleted in k8s */
-    public class DeleteKafkaTopic implements Handler<Void> {
+    class DeleteKafkaTopic implements Handler<Void> {
 
         public final TopicName topicName;
         private final HasMetadata involvedObject;
@@ -513,36 +513,23 @@ public class Controller {
     }
 
     /** Called when a topic znode is deleted in ZK */
-    public void onTopicDeleted(TopicName topicName, Handler<AsyncResult<Void>> handler) {
+    void onTopicDeleted(TopicName topicName, Handler<AsyncResult<Void>> handler) {
         // XXX currently runs on the ZK thread, requiring a synchronized `inFlight`
         // is it better to put this check in the topic deleted event?
         // that would require exposing an API to remove()
         if (inFlight.shouldProcessDelete(topicName)) {
-            enqueue(new DeleteConfigMap(topicName, ar -> {
-                if (ar.succeeded()) {
-                    enqueue(new DeleteFromTopicStore(topicName, null, handler));
-                } else {
-                    handler.handle(ar);
-                }
-            }));
+            reconcileOnTopicChange(topicName, null, handler);
         } else {
             handler.handle(Future.succeededFuture());
         }
     }
 
-    public void onTopicConfigChanged(TopicName topicName, Handler<AsyncResult<Void>> resultHandler) {
+    void onTopicConfigChanged(TopicName topicName, Handler<AsyncResult<Void>> resultHandler) {
         if (inFlight.shouldProcessTopicConfigChange(topicName)) {
             kafka.topicMetadata(topicName, metadataResult -> {
                 if (metadataResult.succeeded()) {
                     Topic topic = TopicSerialization.fromTopicMetadata(metadataResult.result());
-                    enqueue(new UpdateConfigMap(topic, null, ar -> {
-                        if (ar.succeeded()) {
-                            enqueue(new UpdateInTopicStore(
-                                    topic, null, resultHandler));
-                        } else {
-                            resultHandler.handle(ar);
-                        }
-                    }));
+                    reconcileOnTopicChange(topicName, topic, resultHandler);
                 } else {
                     resultHandler.handle(Future.failedFuture(metadataResult.cause()));
                 }
@@ -552,8 +539,25 @@ public class Controller {
         }
     }
 
+    private void reconcileOnTopicChange(TopicName topicName, Topic kafkaTopic, Handler<AsyncResult<Void>> resultHandler) {
+        k8s.getFromName(topicName.asMapName(), kubeResult -> {
+            if (kubeResult.succeeded()) {
+                ConfigMap cm = kubeResult.result();
+                topicStore.read(topicName, storeResult -> {
+                    if (storeResult.succeeded()) {
+                        reconcile(cm, TopicSerialization.fromConfigMap(cm), kafkaTopic, storeResult.result(), resultHandler);
+                    } else {
+                        resultHandler.handle(storeResult.<Void>map((Void)null));
+                    }
+                });
+            } else {
+                resultHandler.handle(kubeResult.<Void>map((Void)null));
+            }
+        });
+    }
+
     /** Called when a topic znode is created in ZK */
-    public void onTopicCreated(TopicName topicName, Handler<AsyncResult<Void>> resultHandler) {
+    void onTopicCreated(TopicName topicName, Handler<AsyncResult<Void>> resultHandler) {
         // XXX currently runs on the ZK thread, requiring a synchronized inFlight
         // is it better to put this check in the topic deleted event?
         if (inFlight.shouldProcessTopicCreate(topicName)) {
@@ -563,7 +567,7 @@ public class Controller {
                 @Override
                 public void handle(AsyncResult<TopicMetadata> metadataResult) {
                     if (metadataResult.failed()) {
-                        if (metadataResult.cause() instanceof UnknownTopicOrPartitionException) {
+                        if (metadataResult.result() == null || metadataResult.cause() instanceof UnknownTopicOrPartitionException) {
                             // In this case it is most likely that we've been notified by ZK
                             // before Kafka has finished creating the topic, so we retry
                             // with exponential backoff.
@@ -587,14 +591,8 @@ public class Controller {
                     } else {
                         // We now have the metadata we need to create the
                         // ConfigMap...
-                        Topic topic = TopicSerialization.fromTopicMetadata(metadataResult.result());
-                        enqueue(new CreateConfigMap(topic, kubeResult -> {
-                            if (kubeResult.succeeded()) {
-                                enqueue(new CreateInTopicStore(topic, null, resultHandler));
-                            } else {
-                                resultHandler.handle(kubeResult);
-                            }
-                        }));
+                        Topic kafkaTopic = TopicSerialization.fromTopicMetadata(metadataResult.result());
+                        reconcileOnTopicChange(topicName, kafkaTopic, resultHandler);
                     }
                 }
             };
@@ -605,7 +603,7 @@ public class Controller {
     }
 
     /** Called when a ConfigMap is added in k8s */
-    public void onConfigMapAdded(ConfigMap configMap, Handler<AsyncResult<Void>> resultHandler) {
+    void onConfigMapAdded(ConfigMap configMap, Handler<AsyncResult<Void>> resultHandler) {
         if (cmPredicate.test(configMap)) {
             reconcileOnCmChange(configMap, TopicSerialization.fromConfigMap(configMap), resultHandler);
         } else {
@@ -614,7 +612,7 @@ public class Controller {
     }
 
     /** Called when a ConfigMap is modified in k8s */
-    public void onConfigMapModified(ConfigMap configMap, Handler<AsyncResult<Void>> handler) {
+    void onConfigMapModified(ConfigMap configMap, Handler<AsyncResult<Void>> handler) {
         if (cmPredicate.test(configMap)) {
             reconcileOnCmChange(configMap, TopicSerialization.fromConfigMap(configMap), handler);
         } else {
@@ -641,7 +639,7 @@ public class Controller {
     }
 
     /** Called when a ConfigMap is deleted in k8s */
-    public void onConfigMapDeleted(ConfigMap configMap, Handler<AsyncResult<Void>> handler) {
+    void onConfigMapDeleted(ConfigMap configMap, Handler<AsyncResult<Void>> handler) {
         if (cmPredicate.test(configMap)) {
             reconcileOnCmChange(configMap, null, handler);
         } else {
