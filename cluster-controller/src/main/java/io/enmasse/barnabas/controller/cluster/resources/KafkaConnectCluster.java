@@ -29,7 +29,7 @@ public class KafkaConnectCluster extends AbstractCluster {
     private int statusStorageReplicationFactor = DEFAULT_STATUS_STORAGE_REPLICATION_FACTOR;
 
     // Configuration defaults
-    private static String DEFAULT_IMAGE = "enmasseproject/kafka-connect:latest";
+    private static String DEFAULT_IMAGE = "strimzi/kafka-connect:latest";
     private static int DEFAULT_REPLICAS = 3;
     private static int DEFAULT_HEALTHCHECK_DELAY = 60;
     private static int DEFAULT_HEALTHCHECK_TIMEOUT = 5;

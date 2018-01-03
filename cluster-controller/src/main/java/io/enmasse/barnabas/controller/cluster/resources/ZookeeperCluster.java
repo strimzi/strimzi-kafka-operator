@@ -30,7 +30,7 @@ public class ZookeeperCluster extends AbstractCluster {
     // N/A
 
     // Configuration defaults
-    private static String DEFAULT_IMAGE = "enmasseproject/zookeeper:latest";
+    private static String DEFAULT_IMAGE = "strimzi/zookeeper:latest";
     private static int DEFAULT_REPLICAS = 3;
     private static int DEFAULT_HEALTHCHECK_DELAY = 15;
     private static int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
