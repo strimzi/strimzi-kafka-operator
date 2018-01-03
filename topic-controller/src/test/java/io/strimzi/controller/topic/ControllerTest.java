@@ -41,7 +41,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -105,6 +104,24 @@ public class ControllerTest {
         ));
         Config config = new Config(Collections.emptyList());
         return new TopicMetadata(desc, config);
+    }
+
+    private TopicMetadata getTopicMetadata(Topic kubeTopic) {
+        List<Node> nodes = new ArrayList<>();
+        for (int nodeId = 0; nodeId < kubeTopic.getNumReplicas(); nodeId++) {
+            nodes.add(new Node(nodeId, "localhost", 9092+nodeId));
+        }
+        List<TopicPartitionInfo> partitions = new ArrayList<>();
+        for (int partitionId = 0; partitionId < kubeTopic.getNumPartitions(); partitionId++) {
+            partitions.add(new TopicPartitionInfo(partitionId, nodes.get(0), nodes, nodes));
+        }
+        List<ConfigEntry> configs = new ArrayList<>();
+        for (Map.Entry<String,String> entry: kubeTopic.getConfig().entrySet()) {
+            configs.add(new ConfigEntry(entry.getKey(), entry.getValue()));
+        }
+
+        return new TopicMetadata(new TopicDescription(kubeTopic.getTopicName().toString(), false,
+                partitions), new Config(configs));
     }
 
     /** Test what happens when a non-topic config map gets created in kubernetes */
@@ -304,6 +321,48 @@ public class ControllerTest {
             mockK8s.assertNotExists(context, mapName);
             mockTopicStore.assertNotExists(context, topicName);
             async.complete();
+        });
+    }
+
+    /**
+     * 0. ZK notifies of a change in topic config
+     * 1.
+     */
+    @Test
+    public void testOnTopicChanged(TestContext context) {
+        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short)2, map("foo", "bar")).build();
+        Topic kafkaTopic = new Topic.Builder(topicName.toString(), 10, (short)2, map("foo", "baz")).build();
+        Topic privateTopic = kubeTopic;
+        ConfigMap cm = TopicSerialization.toConfigMap(kubeTopic, cmPredicate);
+
+        mockKafka.setCreateTopicResponse(topicName.toString(), null)
+                .createTopic(kafkaTopic, ar -> {});
+        mockKafka.setTopicMetadataResponse(topicName, getTopicMetadata(kafkaTopic), null);
+        //mockKafka.setUpdateTopicResponse(topicName -> Future.succeededFuture());
+
+        mockTopicStore.setCreateTopicResponse(topicName, null)
+                .create(privateTopic, ar -> {});
+        mockTopicStore.setUpdateTopicResponse(topicName, null);
+
+        mockK8s.setCreateResponse(mapName, null)
+                .createConfigMap(cm, ar->{});
+        mockK8s.setModifyResponse(mapName, null);
+
+        Async async = context.async(3);
+        controller.onTopicConfigChanged(topicName, ar-> {
+            assertSucceeded(context, ar);
+            context.assertEquals("baz", mockKafka.getTopicState(topicName).getConfig().get("foo"));
+            mockTopicStore.read(topicName, ar2-> {
+                assertSucceeded(context, ar2);
+                context.assertEquals("baz", ar2.result().getConfig().get("foo"));
+                async.countDown();
+            });
+            mockK8s.getFromName(mapName, ar2-> {
+                assertSucceeded(context, ar2);
+                context.assertEquals("baz", TopicSerialization.fromConfigMap(ar2.result()).getConfig().get("foo"));
+                async.countDown();
+            });
+            async.countDown();
         });
     }
 
@@ -577,7 +636,7 @@ public class ControllerTest {
 
         mockKafka.setCreateTopicResponse(topicName.toString(), null)
                 .createTopic(kafkaTopic, ar -> {});
-        mockKafka.setTopicMetadataResponse(topicName, mkTopicMetadata(kubeTopic), null);
+        mockKafka.setTopicMetadataResponse(topicName, getTopicMetadata(kubeTopic), null);
         mockKafka.setDeleteTopicResponse(topicName, deleteTopicException);
 
         mockTopicStore.setCreateTopicResponse(topicName, null)
@@ -607,33 +666,16 @@ public class ControllerTest {
         });
     }
 
-    private TopicMetadata mkTopicMetadata(Topic kubeTopic) {
-        List<Node> nodes = new ArrayList<>();
-        for (int nodeId = 0; nodeId < kubeTopic.getNumReplicas(); nodeId++) {
-            nodes.add(new Node(nodeId, "localhost", 9092+nodeId));
-        }
-        List<TopicPartitionInfo> partitions = new ArrayList<>();
-        for (int partitionId = 0; partitionId < kubeTopic.getNumPartitions(); partitionId++) {
-            partitions.add(new TopicPartitionInfo(partitionId, nodes.get(0), nodes, nodes));
-        }
-        List<ConfigEntry> configs = new ArrayList<>();
-        for (Map.Entry<String,String> entry: kubeTopic.getConfig().entrySet()) {
-            configs.add(new ConfigEntry(entry.getKey(), entry.getValue()));
-        }
-
-        return new TopicMetadata(new TopicDescription(kubeTopic.getTopicName().toString(), false,
-                partitions), new Config(configs));
-    }
-
     @Test
     public void testOnConfigMapChanged(TestContext context) {
         Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short)2, map("foo", "baz")).build();
         Topic kafkaTopic = new Topic.Builder(topicName.toString(), 10, (short)2, map("foo", "bar")).build();
         Topic privateTopic = kafkaTopic;
+        ConfigMap cm = TopicSerialization.toConfigMap(kubeTopic, cmPredicate);
 
         mockKafka.setCreateTopicResponse(topicName.toString(), null)
                 .createTopic(kafkaTopic, ar -> {});
-        mockKafka.setTopicMetadataResponse(topicName, mkTopicMetadata(kubeTopic), null);
+        mockKafka.setTopicMetadataResponse(topicName, getTopicMetadata(kafkaTopic), null);
         mockKafka.setUpdateTopicResponse(topicName -> Future.succeededFuture());
 
         mockTopicStore.setCreateTopicResponse(topicName, null)
@@ -641,8 +683,6 @@ public class ControllerTest {
         mockTopicStore.setUpdateTopicResponse(topicName, null);
 
         mockK8s.setModifyResponse(mapName, null);
-
-        ConfigMap cm = TopicSerialization.toConfigMap(kubeTopic, cmPredicate);
 
         Async async = context.async(3);
         controller.onConfigMapModified(cm, ar-> {
