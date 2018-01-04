@@ -22,6 +22,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 
@@ -43,6 +44,11 @@ class MockZk implements Zk {
     @Override
     public Zk connect(Handler<AsyncResult<Zk>> handler) {
         handler.handle(connectResult);
+        return this;
+    }
+
+    @Override
+    public Zk temporaryConnectionHandler(Handler<AsyncResult<ZooKeeper>> handler) {
         return this;
     }
 

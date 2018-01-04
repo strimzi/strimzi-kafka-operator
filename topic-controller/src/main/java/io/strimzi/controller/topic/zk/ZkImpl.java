@@ -45,6 +45,7 @@ import java.util.Set;
 public class ZkImpl implements Zk {
 
     private final static Logger logger = LoggerFactory.getLogger(ZkImpl.class);
+    private Handler<AsyncResult<ZooKeeper>> temporaryConnectionHandler;
 
     private static <T> Map<String, Set<Handler<AsyncResult<T>>>>
     addHandler(Map<String, Set<Handler<AsyncResult<T>>>> watches, String path, Handler<AsyncResult<T>> handler) {
@@ -112,6 +113,8 @@ public class ZkImpl implements Zk {
                         case ConnectedReadOnly:
                             future = Future.succeededFuture(this);
                             handler = connectionHandler;
+                            // TODO fix this: get rid of this temporary handler: The zkTopicStore should use a Zk not a ZooKeeper
+                            temporaryConnectionHandler.handle(Future.succeededFuture(zk));
                             break;
                         case Expired:
                         case Disconnected:
@@ -136,6 +139,12 @@ public class ZkImpl implements Zk {
         } else {
             connectionHandler.handle(Future.failedFuture(new IllegalStateException("Already connected")));
         }
+        return this;
+    }
+
+    @Override
+    public Zk temporaryConnectionHandler(Handler<AsyncResult<ZooKeeper>> handler) {
+        this.temporaryConnectionHandler = handler;
         return this;
     }
 

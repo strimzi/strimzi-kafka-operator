@@ -21,6 +21,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 
@@ -36,6 +37,9 @@ public interface Zk {
     }
 
     Zk connect(Handler<AsyncResult<Zk>> handler);
+
+    @Deprecated
+    Zk temporaryConnectionHandler(Handler<AsyncResult<ZooKeeper>> handler);
 
     /**
      * Register a handler to be called when the client gets disconnected from
