@@ -225,10 +225,10 @@ public abstract class BaseKafkaImpl implements Kafka {
     public void topicMetadata(TopicName topicName, Handler<AsyncResult<TopicMetadata>> handler) {
         logger.debug("Getting metadata for topic {}", topicName);
         ConfigResource resource = new ConfigResource(ConfigResource.Type.TOPIC, topicName.toString());
+        KafkaFuture<TopicDescription> descriptionFuture = adminClient.describeTopics(
+                Collections.singleton(topicName.toString())).values().get(topicName.toString());
         KafkaFuture<Config> configFuture = adminClient.describeConfigs(
                 Collections.singleton(resource)).values().get(resource);
-        KafkaFuture<TopicDescription> descriptionFuture = adminClient.describeTopics(
-                Collections.singleton(topicName.toString())).values().get(topicName);
         queueWork(new MetadataWork(descriptionFuture,
                     configFuture,
                     result -> handler.handle(result)));
