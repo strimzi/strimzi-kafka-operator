@@ -114,7 +114,9 @@ public class ZkImpl implements Zk {
                             future = Future.succeededFuture(this);
                             handler = connectionHandler;
                             // TODO fix this: get rid of this temporary handler: The zkTopicStore should use a Zk not a ZooKeeper
-                            temporaryConnectionHandler.handle(Future.succeededFuture(zk));
+                            if (temporaryConnectionHandler != null) {
+                                temporaryConnectionHandler.handle(Future.succeededFuture(zk));
+                            }
                             break;
                         case Expired:
                         case Disconnected:

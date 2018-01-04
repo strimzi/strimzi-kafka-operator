@@ -19,11 +19,8 @@ package io.strimzi.controller.topic;
 
 import io.strimzi.controller.topic.zk.Zk;
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
-import io.fabric8.kubernetes.client.Watcher;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
@@ -109,37 +106,7 @@ public class Session extends AbstractVerticle {
         }).connect(zkConnectHandler);
 
         Thread configMapThread = new Thread(() -> {
-            Session.this.topicCmWatch = kubeClient.configMaps().watch(new Watcher<ConfigMap>() {
-                public void eventReceived(Action action, ConfigMap configMap) {
-                    if (stopped) {
-                        return;
-                    }
-                    ObjectMeta metadata = configMap.getMetadata();
-                    Map<String, String> labels = metadata.getLabels();
-                    if (cmPredicate.test(configMap)) {
-                        String name = metadata.getName();
-                        logger.info("ConfigMap watch received event {} on map {} with labels {}", action, name, labels);
-                        logger.info("ConfigMap {} was created {}", name, metadata.getCreationTimestamp());
-                        switch (action) {
-                            case ADDED:
-                                controller.onConfigMapAdded(configMap, ar -> {});
-                                break;
-                            case MODIFIED:
-                                controller.onConfigMapModified(configMap, ar -> {});
-                                break;
-                            case DELETED:
-                                controller.onConfigMapDeleted(configMap, ar -> {});
-                                break;
-                            case ERROR:
-                                logger.error("Watch received action=ERROR for ConfigMap " + name);
-                        }
-                    }
-                }
-
-                public void onClose(KubernetesClientException e) {
-                    // TODO reconnect, unless shutting down
-                }
-            });
+            Session.this.topicCmWatch = kubeClient.configMaps().watch(new ConfigMapWatcher(controller, cmPredicate));
         }, "configmap-watcher");
         logger.debug("Starting {}", configMapThread);
         configMapThread.start();
@@ -190,4 +157,5 @@ public class Session extends AbstractVerticle {
             }
         });
     }
+
 }

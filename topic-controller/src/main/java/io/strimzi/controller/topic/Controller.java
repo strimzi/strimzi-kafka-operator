@@ -370,27 +370,15 @@ public class Controller {
      * Topic identification should be by uid/cxid, not by name.
      * Topic identification should be by uid/cxid, not by name.
      */
-    void reconcile(HasMetadata involvedObject,
-                   Topic k8sTopic, Topic kafkaTopic, Topic privateTopic, Handler<AsyncResult<Void>> reconciliationResultHandler) {
+    void reconcile(final HasMetadata involvedObject,
+                   final Topic k8sTopic, final Topic kafkaTopic, final Topic privateTopic,
+                   final Handler<AsyncResult<Void>> reconciliationResultHandler) {
+
+        {
+            TopicName topicName = k8sTopic != null ? k8sTopic.getTopicName() : kafkaTopic != null ? kafkaTopic.getTopicName() : privateTopic != null ? privateTopic.getTopicName() : null;
+            logger.info("Reconciling topic {}, k8sTopic:{}, kafkaTopic:{}, privateTopic:{}", topicName, k8sTopic, kafkaTopic, privateTopic);
+        }
         if (privateTopic == null) {
-            class CreateInTopicStoreHandler implements Handler<AsyncResult<Void>>  {
-
-                private final Topic source;
-
-                CreateInTopicStoreHandler(Topic source) {
-                    this.source = source;
-                }
-
-                @Override
-                public void handle(AsyncResult<Void> ar) {
-                    // In all cases, create in privateState
-                    if (ar.succeeded()) {
-                        enqueue(new CreateInTopicStore(source, involvedObject, reconciliationResultHandler));
-                    } else {
-                        reconciliationResultHandler.handle(ar);
-                    }
-                }
-            }
             if (k8sTopic == null) {
                 if (kafkaTopic == null) {
                     // All three null? This shouldn't be possible
@@ -398,14 +386,27 @@ public class Controller {
                     return;
                 } else {
                     // it's been created in Kafka => create in k8s and privateState
-                    enqueue(new CreateConfigMap(kafkaTopic, new CreateInTopicStoreHandler(kafkaTopic)));
-
+                    enqueue(new CreateConfigMap(kafkaTopic, ar -> {
+                        // In all cases, create in privateState
+                        if (ar.succeeded()) {
+                            enqueue(new CreateInTopicStore(kafkaTopic, involvedObject, reconciliationResultHandler));
+                        } else {
+                            reconciliationResultHandler.handle(ar);
+                        }
+                    }));
                 }
             } else if (kafkaTopic == null) {
                 // it's been created in k8s => create in Kafka and privateState
-                enqueue(new CreateKafkaTopic(k8sTopic, involvedObject, new CreateInTopicStoreHandler(k8sTopic)));
+                enqueue(new CreateKafkaTopic(k8sTopic, involvedObject, ar -> {
+                    // In all cases, create in privateState
+                    if (ar.succeeded()) {
+                        enqueue(new CreateInTopicStore(k8sTopic, involvedObject, reconciliationResultHandler));
+                    } else {
+                        reconciliationResultHandler.handle(ar);
+                    }
+                }));
             } else if (TopicDiff.diff(kafkaTopic, k8sTopic).isEmpty()) {
-                // they're the same => do nothing
+                // they're the same => do nothing, but stil create the private copy
                 logger.debug("k8s and kafka versions of topic '{}' are the same", kafkaTopic.getTopicName());
                 enqueue(new CreateInTopicStore(kafkaTopic, involvedObject, reconciliationResultHandler));
             } else {
@@ -467,45 +468,51 @@ public class Controller {
             reconciliationResultHandler.handle(Future.failedFuture(new Exception(message)));
         } else {
             TopicDiff merged = oursKafka.merge(oursK8s);
-            Topic result = merged.apply(privateTopic);
-            int partitionsDelta = merged.numPartitionsDelta();
-            if (partitionsDelta < 0) {
-                final String message = "Number of partitions cannot be decreased";
-                enqueue(new ErrorEvent(involvedObject, message, eventResult -> {}));
-                reconciliationResultHandler.handle(Future.failedFuture(new Exception(message)));
+            if (merged.isEmpty()) {
+                logger.info("All three topics are identical");
+                reconciliationResultHandler.handle(Future.succeededFuture());
             } else {
+                Topic result = merged.apply(privateTopic);
+                int partitionsDelta = merged.numPartitionsDelta();
+                if (partitionsDelta < 0) {
+                    final String message = "Number of partitions cannot be decreased";
+                    enqueue(new ErrorEvent(involvedObject, message, eventResult -> {
+                    }));
+                    reconciliationResultHandler.handle(Future.failedFuture(new Exception(message)));
+                } else {
 
-                if (merged.changesReplicationFactor()) {
-                    enqueue(new ChangeReplicationFactor(result, involvedObject, null));
+                    if (merged.changesReplicationFactor()) {
+                        enqueue(new ChangeReplicationFactor(result, involvedObject, null));
+                    }
+                    // TODO What if we increase min.in.sync.replicas and the number of replicas,
+                    // such that the old number of replicas < the new min isr? But likewise
+                    // we could decrease, so order of tasks in the queue will need to change
+                    // depending on what the diffs are.
+
+                    // TODO replace this with compose
+                    enqueue(new UpdateConfigMap(result, involvedObject, ar -> {
+                        Handler<Void> topicStoreHandler =
+                                ignored -> enqueue(new UpdateInTopicStore(
+                                        result, involvedObject, reconciliationResultHandler));
+                        Handler<Void> partitionsHandler;
+                        if (partitionsDelta > 0) {
+                            partitionsHandler = ar4 -> enqueue(new IncreaseKafkaPartitions(result, involvedObject, ar2 -> topicStoreHandler.handle(null)));
+                        } else {
+                            partitionsHandler = topicStoreHandler;
+                        }
+                        if (merged.changesConfig()) {
+                            enqueue(new UpdateKafkaConfig(result, involvedObject, ar2 -> partitionsHandler.handle(null)));
+                        } else {
+                            enqueue(partitionsHandler);
+                        }
+                    }));
                 }
-                // TODO What if we increase min.in.sync.replicas and the number of replicas,
-                // such that the old number of replicas < the new min isr? But likewise
-                // we could decrease, so order of tasks in the queue will need to change
-                // depending on what the diffs are.
-
-                // TODO replace this with compose
-                enqueue(new UpdateConfigMap(result, involvedObject, ar -> {
-                    Handler<Void> topicStoreHandler =
-                            ignored -> enqueue(new UpdateInTopicStore(
-                                    result, involvedObject, reconciliationResultHandler));
-                    Handler<Void> partitionsHandler;
-                    if (partitionsDelta > 0) {
-                        partitionsHandler = ar4 -> enqueue(new IncreaseKafkaPartitions(result, involvedObject, ar2 -> topicStoreHandler.handle(null)));
-                    } else {
-                        partitionsHandler = topicStoreHandler;
-                    }
-                    if (merged.changesConfig()) {
-                        enqueue(new UpdateKafkaConfig(result, involvedObject, ar2 -> partitionsHandler.handle(null)));
-                    } else {
-                        enqueue(partitionsHandler);
-                    }
-                }));
             }
         }
     }
 
     void enqueue(Handler<Void> event) {
-        logger.info("Enqueuing event {}", event);
+        logger.debug("Enqueuing event {}", event);
         vertx.runOnContext(event);
     }
 

@@ -78,8 +78,10 @@ public class ZkTopicStore implements TopicStore, Handler<AsyncResult<ZooKeeper>>
         } catch (KeeperException.NodeExistsException e) {
             // That's fine then
         } catch (KeeperException e) {
+            logger.error("Error creating {}", path, e);
             throw new RuntimeException(e);
         } catch (InterruptedException e) {
+            logger.error("Error creating {}", path, e);
             throw new RuntimeException(e);
         }
     }
@@ -111,11 +113,12 @@ public class ZkTopicStore implements TopicStore, Handler<AsyncResult<ZooKeeper>>
 
     @Override
     public void create(Topic topic, Handler<AsyncResult<Void>> handler) {
+        Throwable t= new Throwable();
         byte[] data = TopicSerialization.toJson(topic);
         getZookeeper().create(getTopicPath(topic.getTopicName()), data,
                 Collections.singletonList(acl),
                 CreateMode.PERSISTENT,
-                (rc, path, ctx, name) -> handleOnContext(rc, handler), null);
+                (rc, path, ctx, name) -> handleOnContext(t, rc, handler), null);
     }
 
     @Override
@@ -123,18 +126,18 @@ public class ZkTopicStore implements TopicStore, Handler<AsyncResult<ZooKeeper>>
         byte[] data = TopicSerialization.toJson(topic);
         // TODO pass a non-zero version
         getZookeeper().setData(getTopicPath(topic.getTopicName()), data, -1,
-                (rc, path, ctx, stat) -> handleOnContext(rc, handler), null);
+                (rc, path, ctx, stat) -> handleOnContext(null, rc, handler), null);
     }
 
     @Override
     public void delete(TopicName topicName, Handler<AsyncResult<Void>> handler) {
         // TODO pass a non-zero version
         getZookeeper().delete(getTopicPath(topicName), -1,
-                (rc, path, ctx) -> handleOnContext(rc, handler), null);
+                (rc, path, ctx) -> handleOnContext(null, rc, handler), null);
     }
 
     /** Run the handler on the vertx context */
-    private void handleOnContext(int rc, Handler<AsyncResult<Void>> handler) {
+    private void handleOnContext(Throwable t, int rc, Handler<AsyncResult<Void>> handler) {
         Exception exception = mapExceptions(rc);
         if (exception == null) {
             vertx.runOnContext(ar ->

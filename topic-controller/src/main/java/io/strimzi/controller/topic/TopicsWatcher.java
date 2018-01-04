@@ -40,21 +40,30 @@ class TopicsWatcher {
 
     private List<String> children;
 
-    private volatile boolean stopped = false;
+    private volatile int state = 0;//0=starting, 1=started, 2=stopping, 3=stopped
 
     TopicsWatcher(Controller controller) {
         this.controller = controller;
     }
 
     void stop() {
-        this.stopped = true;
+        this.state = 2;
+    }
+
+    boolean stopped() {
+        return this.state == 3;
+    }
+
+    boolean started() {
+        return this.state == 1;
     }
 
     void start(Zk zk) {
         children = null;
         zk.children(TOPICS_ZNODE, true, childResult -> {
-            if (stopped) {
+            if (state == 2) {
                 // TODO not ideal as the Zk instance will continue watching
+                state = 3;
                 return;
             }
             if (childResult.failed()) {
@@ -95,6 +104,7 @@ class TopicsWatcher {
             }
             logger.debug("Setting current children {}", result);
             this.children = result;
+            this.state = 1;
         });
     }
 }

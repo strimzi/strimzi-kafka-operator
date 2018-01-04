@@ -277,7 +277,7 @@ public class ControllerTest {
             if (count == 3) {
                 return Future.succeededFuture(topicMetadata);
             } else if (count < 3) {
-                return Future.failedFuture(new UnknownTopicOrPartitionException());
+                return Future.succeededFuture(null);
             }
             context.fail("This should never happen");
             return Future.failedFuture("This should never happen");
@@ -311,7 +311,7 @@ public class ControllerTest {
     public void testOnTopicCreated_retryTimeout(TestContext context) {
         TopicMetadata topicMetadata = getTopicMetadata();
 
-        mockKafka.setTopicMetadataResponse(topicName, null, new UnknownTopicOrPartitionException());
+        mockKafka.setTopicMetadataResponse(topicName, null, null);
 
         Async async = context.async();
         controller.onTopicCreated(topicName, ar -> {
