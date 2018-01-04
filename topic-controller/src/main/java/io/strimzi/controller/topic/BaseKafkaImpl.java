@@ -111,7 +111,9 @@ public abstract class BaseKafkaImpl implements Kafka {
                 }
                 return true;
             } else {
-                logger.debug("Future {} is not done", future);
+                if (logger.isTraceEnabled()) {
+                    logger.trace("Future {} is not done", future);
+                }
                 return false;
             }
         }

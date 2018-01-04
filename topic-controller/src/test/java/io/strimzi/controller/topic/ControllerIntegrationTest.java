@@ -54,7 +54,7 @@ import java.util.function.Supplier;
 @RunWith(VertxUnitRunner.class)
 public class ControllerIntegrationTest {
 
-    Logger logger = LoggerFactory.getLogger(ControllerIntegrationTest.class);
+    private static final Logger logger = LoggerFactory.getLogger(ControllerIntegrationTest.class);
 
     private static final Oc OC = new Oc();
     private static Thread ocHook = new Thread(() -> {
@@ -88,6 +88,7 @@ public class ControllerIntegrationTest {
 
     @BeforeClass
     public static void startKube() throws Exception {
+        logger.info("Executing oc cluster up");
         // It can happen that if the VM exits abnormally the cluster remains up, and further tests don't work because
         // it appears there are two brokers with id 1, so use a shutdown hook to kill the cluster.
         Runtime.getRuntime().addShutdownHook(ocHook);
