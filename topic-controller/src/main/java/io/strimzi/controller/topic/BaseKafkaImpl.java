@@ -142,14 +142,14 @@ public abstract class BaseKafkaImpl implements Kafka {
 
 
         private <T> T result(KafkaFuture<T> future) {
-            T resultT;
+            T result;
             try {
-                resultT = future.get();
-                logger.debug("Future {} has result {}", future, resultT);
+                result = future.get();
+                logger.debug("Future {} has result {}", future, result);
             } catch (ExecutionException e) {
                 logger.debug("Future {} threw {}", future, e.toString());
                 if (e.getCause() instanceof UnknownTopicOrPartitionException) {
-                    resultT = null;
+                    result = null;
                 } else{
                     handler.handle(Future.failedFuture(e.getCause()));
                     handled = true;
@@ -161,7 +161,7 @@ public abstract class BaseKafkaImpl implements Kafka {
                 handled = true;
                 return null;
             }
-            return resultT;
+            return result;
         }
 
         @Override
