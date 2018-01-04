@@ -46,6 +46,10 @@ public class BackOff {
      */
     public long delayMs() {
         int n = attempt++;
+        return delay(n);
+    }
+
+    private long delay(int n) {
         if (n == 0) {
             return 0L;
         }
@@ -57,5 +61,13 @@ public class BackOff {
             pow *= base;
         }
         return scaleMs*pow;
+    }
+
+    public long totalDelayMs() {
+        long total = 0;
+        for (int i = 0; i < maxAttempts; i++) {
+            total += delay(i);
+        }
+        return total;
     }
 }
