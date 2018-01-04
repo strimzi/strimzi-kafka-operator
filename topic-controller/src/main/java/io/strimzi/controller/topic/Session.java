@@ -90,11 +90,9 @@ public class Session extends AbstractVerticle {
 
         this.k8s = new K8sImpl(vertx, kubeClient, cmPredicate);
 
-        this.controller = new Controller(vertx, kafka, k8s, cmPredicate);
-
         ZkTopicStore topicStore = new ZkTopicStore(vertx);
 
-        this.controller.setTopicStore(topicStore);
+        this.controller = new Controller(vertx, kafka, k8s, topicStore, cmPredicate);
 
         this.tw = new TopicsWatcher(controller);
         this.tcw = new TopicConfigsWatcher(controller);

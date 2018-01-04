@@ -324,17 +324,14 @@ public class Controller {
 
     public Controller(Vertx vertx, Kafka kafka,
                       K8s k8s,
+                      TopicStore topicStore,
                       LabelPredicate cmPredicate) {
         this.kafka = kafka;
         this.k8s = k8s;
         this.vertx = vertx;
         this.cmPredicate = cmPredicate;
-    }
-
-    public void setTopicStore(TopicStore topicStore) {
         this.topicStore = topicStore;
     }
-
 
     void reconcile(ConfigMap cm, TopicName topicName) {
         Topic k8sTopic = cm != null ? TopicSerialization.fromConfigMap(cm) : null;

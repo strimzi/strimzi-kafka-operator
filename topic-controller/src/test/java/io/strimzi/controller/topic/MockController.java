@@ -29,7 +29,7 @@ import java.util.List;
 class MockController extends Controller {
 
     public MockController() {
-        super(null, null, null, null);
+        super(null, null, null, null, null);
     }
 
     static class Event {

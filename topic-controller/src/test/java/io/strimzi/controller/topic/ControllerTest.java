@@ -69,8 +69,7 @@ public class ControllerTest {
         mockKafka = new MockKafka();
         mockTopicStore = new MockTopicStore();
         mockK8s = new MockK8s();
-        controller = new Controller(vertx, mockKafka, mockK8s, cmPredicate);
-        controller.setTopicStore(mockTopicStore);
+        controller = new Controller(vertx, mockKafka, mockK8s, mockTopicStore, cmPredicate);
     }
 
     @After
