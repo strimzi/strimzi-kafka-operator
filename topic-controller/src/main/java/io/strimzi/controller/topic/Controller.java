@@ -559,12 +559,12 @@ public class Controller {
         // is it better to put this check in the topic deleted event?
         if (inFlight.shouldProcessTopicCreate(topicName)) {
             Handler<AsyncResult<TopicMetadata>> handler = new Handler<AsyncResult<TopicMetadata>>() {
-                BackOff backOff = new BackOff();
+                private final BackOff backOff = new BackOff();
 
                 @Override
                 public void handle(AsyncResult<TopicMetadata> metadataResult) {
-                    if (metadataResult.failed()) {
-                        if (metadataResult.result() == null || metadataResult.cause() instanceof UnknownTopicOrPartitionException) {
+                    if (metadataResult.succeeded()) {
+                        if (metadataResult.result() == null) {
                             // In this case it is most likely that we've been notified by ZK
                             // before Kafka has finished creating the topic, so we retry
                             // with exponential backoff.
@@ -575,6 +575,7 @@ public class Controller {
                                 resultHandler.handle(Future.failedFuture(e));
                                 return;
                             }
+                            logger.debug("Backing off for {}ms", delay);
                             if (delay < 1) {
                                 // vertx won't tolerate a zero delay
                                 vertx.runOnContext(timerId -> kafka.topicMetadata(topicName, this));
@@ -583,13 +584,13 @@ public class Controller {
                                         timerId -> kafka.topicMetadata(topicName, this));
                             }
                         } else {
-                            resultHandler.handle(Future.failedFuture(metadataResult.cause()));
+                            // We now have the metadata we need to create the
+                            // ConfigMap...
+                            Topic kafkaTopic = TopicSerialization.fromTopicMetadata(metadataResult.result());
+                            reconcileOnTopicChange(topicName, kafkaTopic, resultHandler);
                         }
                     } else {
-                        // We now have the metadata we need to create the
-                        // ConfigMap...
-                        Topic kafkaTopic = TopicSerialization.fromTopicMetadata(metadataResult.result());
-                        reconcileOnTopicChange(topicName, kafkaTopic, resultHandler);
+                        resultHandler.handle(metadataResult.map((Void)null));
                     }
                 }
             };

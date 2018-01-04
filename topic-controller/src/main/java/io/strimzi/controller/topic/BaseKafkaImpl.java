@@ -171,7 +171,12 @@ public abstract class BaseKafkaImpl implements Kafka {
                 final TopicDescription desc = result(this.descFuture);
                 final Config config = result(this.configFuture);
                 if (!handled) {
-                    TopicMetadata metadata = new TopicMetadata(desc, config);
+                    TopicMetadata metadata;
+                    if (desc != null && config != null) {
+                        metadata = new TopicMetadata(desc, config);
+                    } else {
+                        metadata = null;
+                    }
                     this.handler.handle(Future.succeededFuture(metadata));
                     this.handled = true;
                     logger.debug("Handler for work {} executed ok", this);
@@ -181,9 +186,9 @@ public abstract class BaseKafkaImpl implements Kafka {
                 }
             } else {
                 if (!this.descFuture.isDone())
-                    logger.debug("Future {} is not done", descFuture);
+                    logger.debug("Description future {} is not done", descFuture);
                 if (!this.configFuture.isDone())
-                    logger.debug("Future {} is not done", configFuture);
+                    logger.debug("Config future {} is not done", configFuture);
                 return false;
             }
         }
