@@ -132,6 +132,10 @@ data:
   KAFKA_DEFAULT_REPLICATION_FACTOR: "3"
   KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "3"
   KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "3"
+  kafka-storage: |-
+    { "type": "temporary" }
+  zookeeper-storage: |-
+    { "type": "temporary" }
   kafka-metrics-config: |-
     {
       "lowercaseOutputName": true,
