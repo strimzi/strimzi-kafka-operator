@@ -126,4 +126,11 @@ public class InFlightTest {
             }
         });
     }
+
+    @Test
+    public void test0(TestContext context) {
+        testSingleTask(context);
+        testTwoTasks(context);
+        testTwoTasks(context);
+    }
 }
