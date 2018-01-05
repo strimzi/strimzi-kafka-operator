@@ -51,8 +51,6 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -216,9 +214,7 @@ public class ControllerIntegrationTest {
 
     @Test
     public void testTopicAdded(TestContext context) throws Exception {
-        connectToZk(topicStore);
-        waitFor(context, () -> this.topicsWatcher.started(), timeout, "Topic watcher not started");
-        cmWatcher = kubeClient.configMaps().watch(new ConfigMapWatcher(controller, cmPredicate));
+        connect(context);
 
         // Create a topic
         String configMapName = "test-topic-added";
@@ -236,9 +232,7 @@ public class ControllerIntegrationTest {
 
     @Test
     public void testTopicDeleted(TestContext context) throws Exception {
-        connectToZk(topicStore);
-        waitFor(context, () -> this.topicsWatcher.started(), timeout, "Topic watcher not started");
-        cmWatcher = kubeClient.configMaps().watch(new ConfigMapWatcher(controller, cmPredicate));
+        connect(context);
 
         // Create a topic
         String configMapName = "test-topic-deleted";
@@ -265,12 +259,9 @@ public class ControllerIntegrationTest {
     }
 
     @Test
-    @Ignore
     public void testTopicConfigChanged(TestContext context) throws Exception {
-        connectToZk(topicStore);
-        waitFor(context, () -> this.topicsWatcher.started(), timeout, "Topic watcher not started");
-        waitFor(context, () -> this.topicsConfigWatcher.started(), timeout, "Topic configs watcher not started");
-        cmWatcher = kubeClient.configMaps().watch(new ConfigMapWatcher(controller, cmPredicate));
+        context.fail("This won't work until the TopicConfigsWatcher is properly working");
+        connect(context);
 
         // Create a topic
         String configMapName = "test-topic-config-changed";
@@ -286,8 +277,8 @@ public class ControllerIntegrationTest {
 
 
         // Get the topic config
-        ConfigResource configResource = new ConfigResource(ConfigResource.Type.TOPIC, configMapName);
-        org.apache.kafka.clients.admin.Config config = adminClient.describeConfigs(singletonList(configResource)).values().get(configResource).get();
+        ConfigResource configResource = topicConfigResource(configMapName);
+        org.apache.kafka.clients.admin.Config config = getTopicConfig(configResource);
 
         String key = "compression.type";
 
@@ -319,60 +310,120 @@ public class ControllerIntegrationTest {
         }, timeout, "Expected the configmap to have been deleted by now");
     }
 
+    private org.apache.kafka.clients.admin.Config getTopicConfig(ConfigResource configResource) {
+        try {
+            return adminClient.describeConfigs(singletonList(configResource)).values().get(configResource).get();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private ConfigResource topicConfigResource(String topicName) {
+        return new ConfigResource(ConfigResource.Type.TOPIC, topicName);
+    }
+
     @Test
     @Ignore
     public void testTopicNumPartitionsChanged(TestContext context) {
+        connect(context);
         context.fail("Implement this");
     }
 
     @Test
     @Ignore
     public void testTopicNumReplicasChanged(TestContext context) {
+        connect(context);
         context.fail("Implement this");
+    }
+
+    private ConfigMap createCm(TestContext context, String topicName) {
+        Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap()).build();
+        ConfigMap cm = TopicSerialization.toConfigMap(topic, cmPredicate);
+
+        // Create a CM
+        kubeClient.configMaps().create(cm);
+
+        // Wait for the topic to be created
+        waitFor(context, ()-> {
+            try {
+                adminClient.describeTopics(singletonList(topicName)).values().get(topicName).get();
+                return true;
+            } catch (ExecutionException e) {
+                if (e.getCause() instanceof UnknownTopicOrPartitionException) {
+                    return false;
+                } else {
+                    throw new RuntimeException(e);
+                }
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }, timeout, "Expected topic to be created by now");
+        return cm;
     }
 
     @Test
     public void testConfigMapAdded(TestContext context) {
-            connectToZk(topicStore);
-            waitFor(context, () -> this.topicsWatcher.started(), timeout, "Topic watcher not started");
-            waitFor(context, () -> this.topicsConfigWatcher.started(), timeout, "Topic configs watcher not started");
-            cmWatcher = kubeClient.configMaps().watch(new ConfigMapWatcher(controller, cmPredicate));
+        connect(context);
 
-            String topicName = "test-configmap-created";
-            Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap()).build();
-            ConfigMap cm = TopicSerialization.toConfigMap(topic, cmPredicate);
+        String topicName = "test-configmap-created";
+        createCm(context, topicName);
+    }
 
-            // Create a CM
-            kubeClient.configMaps().create(cm);
+    @Test
+    public void testConfigMapDeleted(TestContext context) {
+        connect(context);
 
-            // Wait for the topic to be created
-            waitFor(context, ()-> {
-                try {
-                    adminClient.deleteTopics(singletonList(topicName)).values().get(topicName).get();
+        // create the cm
+        String topicName = "test-configmap-deleted";
+        ConfigMap cm = createCm(context, topicName);
+
+        // can now delete the cm
+        kubeClient.configMaps().withName(cm.getMetadata().getName()).delete();
+
+        // Wait for the topic to be created
+        waitFor(context, ()-> {
+            try {
+                adminClient.describeTopics(singletonList(topicName)).values().get(topicName).get();
+                return false;
+            } catch (ExecutionException e) {
+                if (e.getCause() instanceof UnknownTopicOrPartitionException) {
                     return true;
-                } catch (ExecutionException e) {
-                    if (e.getCause() instanceof  UnknownTopicOrPartitionException) {
-                        return false;
-                    } else {
-                        throw new RuntimeException(e);
-                    }
-                } catch (InterruptedException e) {
+                } else {
                     throw new RuntimeException(e);
                 }
-            }, timeout, "Expected topic to be created by now");
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }, timeout, "Expected topic to be deleted by now");
 
-            // TODO context.fail("Check the stacktrace, there are 3 reconciliation events when there should only be two");
+    }
+
+    private void connect(TestContext context) {
+        connectToZk(topicStore);
+        waitFor(context, () -> this.topicsWatcher.started(), timeout, "Topic watcher not started");
+        waitFor(context, () -> this.topicsConfigWatcher.started(), timeout, "Topic configs watcher not started");
+        cmWatcher = kubeClient.configMaps().watch(new ConfigMapWatcher(controller, cmPredicate));
     }
 
     @Test
-    @Ignore
-    public void testConfigMapDeleted(TestContext context) {
-        context.fail("Implement this");
-    }
+    public void testConfigMapModified(TestContext context) throws Exception {
+        connect(context);
+        // create the cm
+        String topicName = "test-configmap-modified";
+        ConfigMap cm = createCm(context, topicName);
 
-    @Test
-    @Ignore
-    public void testConfigMapModified(TestContext context) {
-        context.fail("Implement this");
+        // now change the cm
+        kubeClient.configMaps().withName(cm.getMetadata().getName()).edit().addToData(TopicSerialization.CM_KEY_CONFIG, "{\"retention.ms\":\"12341234\"}").done();
+
+        // Wait for that to be reflected in the topic
+        waitFor(context, ()-> {
+            ConfigResource configResource = topicConfigResource(topicName);
+            org.apache.kafka.clients.admin.Config config = getTopicConfig(configResource);
+            String retention = config.get("retention.ms").value();
+            logger.debug("retention of {}, waiting for 12341234", retention);
+            return "12341234".equals(retention);
+        },  timeout, "Expected the topic be be updated");
     }
 }
