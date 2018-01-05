@@ -57,6 +57,7 @@ class TopicConfigsWatcher {
                     zk.setData(CONFIGS_ZNODE + "/" + child, true, dataResult -> {
                         if (!this.children.add(child)) {
                             controller.onTopicConfigChanged(new TopicName(child), ar2 -> {
+                                logger.info("Reconciliation result due to topic config change: {}", ar2);
                             });
                         }
                     });
