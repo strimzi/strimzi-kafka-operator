@@ -17,7 +17,6 @@
 
 package io.strimzi.controller.topic;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 
 import java.util.HashMap;
@@ -60,5 +59,18 @@ public class LabelPredicate implements Predicate<HasMetadata> {
             }
             return true;
         }
+    }
+
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        boolean f = false;
+        for (Map.Entry<String, String> entry : labels.entrySet()) {
+            if (f) {
+                sb.append("&");
+            }
+            sb.append(entry.getKey()).append("=").append(entry.getValue());
+            f = true;
+        }
+        return sb.toString();
     }
 }
