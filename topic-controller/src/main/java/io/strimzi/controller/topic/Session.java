@@ -83,7 +83,7 @@ public class Session extends AbstractVerticle {
         // app=barnabas and kind=topic
         // or app=barnabas, kind=topic, cluster=my-cluster if we need to scope it to a cluster
         LabelPredicate cmPredicate = new LabelPredicate("kind", "topic",
-                "app", "barnabas");
+                "app", "strimzi");
 
         this.k8s = new K8sImpl(vertx, kubeClient, cmPredicate);
 
@@ -103,42 +103,48 @@ public class Session extends AbstractVerticle {
             if (ar.result() != null) {
                 zk.connect(zkConnectHandler);
             }
-        }).connect(zkConnectHandler);
+        }).temporaryConnectionHandler(topicStore).connect(zkConnectHandler);
 
         Thread configMapThread = new Thread(() -> {
-            Session.this.topicCmWatch = kubeClient.configMaps().watch(new ConfigMapWatcher(controller, cmPredicate));
+            logger.debug("Watching configmaps matching {}", cmPredicate);
+            Session.this.topicCmWatch = kubeClient.configMaps().inNamespace(kubeClient.getNamespace()).watch(new ConfigMapWatcher(controller, cmPredicate));
+            logger.debug("Watching setup");
         }, "configmap-watcher");
         logger.debug("Starting {}", configMapThread);
         configMapThread.start();
 
-        // Reconcile initially
-        reconcileTopics();
-        // And periodically after that
-        vertx.setPeriodic(this.config.get(Config.FULL_RECONCILIATION_INTERVAL_MS),
-                (timerId) -> {
-                    if (stopped) {
-                        vertx.cancelTimer(timerId);
-                        return;
-                    }
-                    reconcileTopics();
-                });
+//        // Reconcile initially
+//        reconcileTopics("initial");
+//        // And periodically after that
+//        vertx.setPeriodic(this.config.get(Config.FULL_RECONCILIATION_INTERVAL_MS),
+//                (timerId) -> {
+//                    if (stopped) {
+//                        vertx.cancelTimer(timerId);
+//                        return;
+//                    }
+//                    reconcileTopics("periodic");
+//                });
     }
 
-    private void reconcileTopics() {
+    private void reconcileTopics(String reconciliationType) {
+        logger.info("Starting {} reconciliation", reconciliationType);
         kafka.listTopics(arx -> {
             if (arx.succeeded()) {
                 Set<String> kafkaTopics = arx.result();
+                logger.debug("Reconciling kafka topics {}", kafkaTopics);
                 // First reconcile the topics in kafka
                 for (String name : kafkaTopics) {
+                    logger.debug("{} reconciliation of topic {}", reconciliationType, name);
                     TopicName topicName = new TopicName(name);
-                    // TODO need to check inflight
-                    // Reconciliation
                     k8s.getFromName(topicName.asMapName(), ar -> {
                         ConfigMap cm = ar.result();
+                        // TODO need to check inflight
+                        // TODO And need to prevent pileup of inflight periodic reconciliations
                         controller.reconcile(cm, topicName);
                     });
                 }
 
+                logger.debug("Reconciling configmaps");
                 // Then those in k8s which aren't in kafka
                 k8s.listMaps(ar -> {
                     List<ConfigMap> configMaps = ar.result();
@@ -146,7 +152,11 @@ public class Session extends AbstractVerticle {
                             cm -> cm.getMetadata().getName(),
                             cm -> cm));
                     configMapsMap.keySet().removeAll(kafkaTopics);
+                    logger.debug("Reconciling configmaps: {}", configMapsMap.keySet());
                     for (ConfigMap cm : configMapsMap.values()) {
+                        logger.debug("{} reconciliation of configmap {}", reconciliationType, cm.getMetadata().getName());
+                        // TODO need to check inflight
+                        // TODO And need to prevent pileup of inflight periodic reconciliations
                         TopicName topicName = new TopicName(cm);
                         controller.reconcile(cm, topicName);
                     }
@@ -154,6 +164,8 @@ public class Session extends AbstractVerticle {
                     // Finally those in private store which we've not dealt with so far...
                     // TODO ^^
                 });
+            } else {
+                logger.error("Error performing {} reconciliation", reconciliationType, arx.cause());
             }
         });
     }

@@ -29,6 +29,8 @@ import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
+
 /**
  * The entry-point to the topic controller.
  * Main responsibility is to deploy a {@link Session} with an appropriate Config and KubeClient,
@@ -41,8 +43,8 @@ public class Main {
     public static final String ENV_VAR_MASTER_URL = "CONTROLLER_K8S_URL";
     public static final String ENV_VAR_CONFIG_NS = "CONTROLLER_K8S_NS";
     public static final String ENV_VAR_CONFIG_NAME = "CONTROLLER_K8S_NAME";
-    public static final String DEFAULT_MASTER_URL = "https://localhost:8443";
-    public static final String DEFAULT_CONFIG_NS = "strimzi";
+    public static final String DEFAULT_MASTER_URL = null;
+    public static final String DEFAULT_CONFIG_NS = null;
     public static final String DEFAULT_CONFIG_NAME = "topic-controller";
 
     private Config config;
@@ -60,14 +62,14 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
         Main main = new Main();
-        main.masterUrl = getOption(ENV_VAR_MASTER_URL, DEFAULT_MASTER_URL);
+        main.masterUrl = getOption(ENV_VAR_MASTER_URL, null);
         main.configNamespace = getOption(ENV_VAR_CONFIG_NS, DEFAULT_CONFIG_NS);
         main.configName = getOption(ENV_VAR_CONFIG_NAME, DEFAULT_CONFIG_NAME);
         main.run();
     }
 
     private static String getOption(String envVar, String defaultValue) {
-        String optionValue = optionValue = System.getenv(envVar);
+        String optionValue = System.getenv(envVar);
         if (optionValue == null) {
             logger.trace("Env var {} is null, using default value: {}", envVar, defaultValue);
             optionValue = defaultValue;
@@ -77,15 +79,12 @@ public class Main {
 
     public void run() throws Exception {
 
-        if (this.configNamespace == null
-                || this.configNamespace.isEmpty()
-                || this.configName == null
-                || this.configName.isEmpty()
-                || this.masterUrl == null
-                || this.masterUrl.isEmpty()) {
-            throw new IllegalArgumentException("Missing required arguments");
+        if (this.configName == null
+                || this.configName.isEmpty()) {
+            throw new IllegalArgumentException("Missing required env var " + ENV_VAR_CONFIG_NAME);
         }
         BootstrapResult bootstrapResult = bootstrap(this.masterUrl, this.configNamespace, this.configName);
+        this.configNamespace = bootstrapResult.kubeClient.getNamespace();
         this.vertx = Vertx.vertx();
         vertx.runOnContext(ar-> {
             deployOnContext(bootstrapResult);
@@ -116,13 +115,13 @@ public class Main {
     private void setWatch(final BootstrapResult bootstrapResult, Handler<AsyncResult<Void>> handler) {
         vertx.executeBlocking(fut -> {
             logger.debug("Setting watch on ConfigMap '{}' in namespace '{}' of apiserver {}", configName, configNamespace, bootstrapResult.masterUrl);
-            this.controllerConfigWatch = kubeClient.configMaps().inNamespace(configNamespace).withName(configName).watch(new Watcher<ConfigMap>() {
+            this.controllerConfigWatch = kubeClient.configMaps().inNamespace(configNamespace == null ? kubeClient.getNamespace() : configNamespace).withName(configName).watch(new Watcher<ConfigMap>() {
 
                 @Override
                 public void eventReceived(Action action, ConfigMap cm) {
                     if (cm.getMetadata() != null
                             && configName.equals(cm.getMetadata().getName())
-                            && configNamespace.equals(cm.getMetadata().getNamespace())) {
+                            && Objects.equals(configNamespace, cm.getMetadata().getNamespace())) {
                         logger.debug("ConfigMap '{}' in namespace '{}' of apiserver {} has been {}",
                                 configName, configNamespace, bootstrapResult.masterUrl, action);
                         switch (action) {
@@ -198,16 +197,15 @@ public class Main {
         int bootstrapConnections = 3;
         while (true) {
             logger.info("Connecting to apiserver {}", currentMasterUrl);
-            final io.fabric8.kubernetes.client.Config kubeConfig = new ConfigBuilder().withMasterUrl(currentMasterUrl).build();
-            kubeClient = new DefaultKubernetesClient(kubeConfig);
-            ConfigMap cm = kubeClient.configMaps().inNamespace(configNamespace).withName(configName).get();
+            kubeClient = new DefaultKubernetesClient();
+            ConfigMap cm = (configNamespace != null ? kubeClient.configMaps().inNamespace(configNamespace) : kubeClient.configMaps()).withName(configName).get();
             if (cm == null) {
                 throw new Exception("ConfigMap '" + configName + "' in namespace '" + configNamespace
                         + "' on apiserver " + currentMasterUrl + " does not exist");
             }
             config = new Config(cm.getData());
             final String otherMaster = config.get(Config.KUBERNETES_MASTER_URL);
-            if (!otherMaster.equals(currentMasterUrl)) {
+            /*if ((otherMaster == null && currentMasterUrl != null) || !otherMaster.equals(currentMasterUrl)) {
                 logger.info("ConfigMap at apiserver {} nominates a different master {}", currentMasterUrl, otherMaster);
                 // Allow the ConfigMap to nominate another master url...
                 kubeClient.close();
@@ -218,7 +216,7 @@ public class Main {
                             + " configs. " + "Started from " + initialMasterUrl);
                 }
                 continue;
-            }
+            }*/
             break;
         }
         return new BootstrapResult(kubeClient, config, currentMasterUrl);
