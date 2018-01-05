@@ -185,7 +185,9 @@ public class TopicSerialization {
                 .withNumPartitions(meta.getDescription().partitions().size())
                 .withNumReplicas((short)meta.getDescription().partitions().get(0).replicas().size());
         for (ConfigEntry entry: meta.getConfig().entries()) {
-            builder.withConfigEntry(entry.name(), entry.value());
+            if (!entry.isDefault()) {
+                builder.withConfigEntry(entry.name(), entry.value());
+            }
         }
         return builder.build();
     }
