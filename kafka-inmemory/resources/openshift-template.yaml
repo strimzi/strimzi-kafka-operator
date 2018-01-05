@@ -209,6 +209,10 @@ objects:
     KAFKA_DEFAULT_REPLICATION_FACTOR: "${KAFKA_DEFAULT_REPLICATION_FACTOR}"
     KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "${KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR}"
     KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "${KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR}"
+    kafka-storage: |-
+      { "type": "temporary" }
+    zookeeper-storage: |-
+      { "type": "temporary" }
     kafka-metrics-config: |-
       {
         "lowercaseOutputName": true,
