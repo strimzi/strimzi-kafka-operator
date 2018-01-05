@@ -40,7 +40,7 @@ class TopicsWatcher {
 
     private List<String> children;
 
-    private volatile int state = 0;//0=starting, 1=started, 2=stopping, 3=stopped
+    private volatile int state = 0;
 
     TopicsWatcher(Controller controller) {
         this.controller = controller;
