@@ -42,6 +42,8 @@ public abstract class AbstractCluster {
     protected JsonObject metricsConfig;
     protected String metricsConfigName;
 
+    protected Storage storage;
+
     protected AbstractCluster(String namespace, String name) {
         this.name = name;
         this.namespace = namespace;
@@ -118,6 +120,10 @@ public abstract class AbstractCluster {
         return null;
     }
 
+    protected void setStorage(Storage storage) {
+        this.storage = storage;
+    }
+
     protected VolumeMount createVolumeMount(String name, String path) {
         VolumeMount volumeMount = new VolumeMountBuilder()
                 .withName(name)
@@ -146,6 +152,27 @@ public abstract class AbstractCluster {
                 .build();
         log.trace("Created service port {}", servicePort);
         return servicePort;
+    }
+
+    protected PersistentVolumeClaim createPersistentVolumeClaim(String name) {
+
+        Map<String, Quantity> requests = new HashMap<>();
+        requests.put("storage", storage.size());
+
+        PersistentVolumeClaim pvc = new PersistentVolumeClaimBuilder()
+                .withNewMetadata()
+                .withName(name)
+                .endMetadata()
+                .withNewSpec()
+                .withAccessModes("ReadWriteOnce")
+                .withNewResources()
+                .withRequests(requests)
+                .endResources()
+                .withStorageClassName(storage.storageClass())
+                .endSpec()
+                .build();
+
+        return pvc;
     }
 
     protected Volume createEmptyDirVolume(String name) {
@@ -246,6 +273,7 @@ public abstract class AbstractCluster {
     protected StatefulSet createStatefulSet(
             List<ContainerPort> ports,
             List<Volume> volumes,
+            List<PersistentVolumeClaim> volumeClaims,
             List<VolumeMount> volumeMounts,
             Probe livenessProbe,
             Probe readinessProbe) {
@@ -282,6 +310,7 @@ public abstract class AbstractCluster {
                 .withVolumes(volumes)
                 .endSpec()
                 .endTemplate()
+                .withVolumeClaimTemplates(volumeClaims)
                 .endSpec()
                 .build();
 
