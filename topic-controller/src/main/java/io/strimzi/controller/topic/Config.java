@@ -17,11 +17,8 @@
 
 package io.strimzi.controller.topic;
 
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
@@ -31,6 +28,8 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static java.lang.System.getenv;
 
 public class Config {
 
@@ -107,9 +106,9 @@ public class Config {
 
     public static final Value<String> KUBERNETES_MASTER_URL = new Value("kubernetesMasterUrl", STRING, Main.DEFAULT_MASTER_URL,
             "The URL of the kubernetes master apiserver.");
-    public static final Value<String> KAFKA_BOOTSTRAP_SERVERS = new Value("kafkaBootstrapServers", STRING,"localhost:9092",
+    public static final Value<String> KAFKA_BOOTSTRAP_SERVERS = new Value("kafkaBootstrapServers", STRING,getenv("KAFKA_SERVICE_HOST") + ":" + getenv("KAFKA_SERVICE_PORT"),
             "A comma-separated list of kafka bootstrap servers.");
-    public static final Value<String> ZOOKEEPER_CONNECT = new Value("zookeeperConnect", STRING, "localhost:2181",
+    public static final Value<String> ZOOKEEPER_CONNECT = new Value("zookeeperConnect", STRING, getenv("KAFKA_ZOOKEEPER_SERVICE_HOST") + ":" + getenv("KAFKA_ZOOKEEPER_SERVICE_PORT"),
             "The zookeeper connection string.");
     public static final Value<Long> ZOOKEEPER_SESSION_TIMEOUT_MS = new Value("zookeeperSessionTimeout", DURATION, "2 seconds",
             "The ZooKeeper session timeout.");
@@ -181,42 +180,6 @@ public class Config {
         return (T)this.map.get(value.key);
     }
 
-    public static void help(Appendable out) throws IOException {
-        out.append("The following keys are supported:");
-        out.append(System.lineSeparator());
-        out.append(System.lineSeparator());
-
-        final ArrayList<Value> values = new ArrayList<>(CONFIG_VALUES.values());
-        Collections.sort(values, Comparator.comparing(a -> a.key));
-        for (Value v: values) {
-            out./*append("  Key: ").*/append(v.key).append(", Type: ").append(v.type.name);
-            if (v.required) {
-                out.append(", Required");
-            } else {
-                out.append(", Default value: ").append(v.defaultValue);
-            }
-            out.append(System.lineSeparator());
-            out.append("  ").append(v.doc);
-            out.append(System.lineSeparator());
-            out.append(System.lineSeparator());
-        }
-
-        out.append(System.lineSeparator());
-        out.append("Where types are defined thus:");
-        out.append(System.lineSeparator());
-        out.append(System.lineSeparator());
-
-        final ArrayList<Type> types = new ArrayList<>(TYPES);
-        Collections.sort(types, Comparator.comparing(t -> t.name));
-        for (Type t: types) {
-            out./*append("  Type: ").*/append(t.name);
-            out.append(System.lineSeparator());
-            out.append("  ").append(t.doc);
-            out.append(System.lineSeparator());
-            out.append(System.lineSeparator());
-        }
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -227,7 +190,6 @@ public class Config {
 
     @Override
     public int hashCode() {
-
         return Objects.hash(map);
     }
 }
