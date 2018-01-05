@@ -50,9 +50,6 @@ public class Main {
     private Session session;
     private Vertx vertx;
 
-
-    public boolean helpConfig = false;
-
     public String masterUrl;
 
     public String configNamespace;
@@ -66,15 +63,7 @@ public class Main {
         main.masterUrl = getOption(ENV_VAR_MASTER_URL, DEFAULT_MASTER_URL);
         main.configNamespace = getOption(ENV_VAR_CONFIG_NS, DEFAULT_CONFIG_NS);
         main.configName = getOption(ENV_VAR_CONFIG_NAME, DEFAULT_CONFIG_NAME);
-        if (main.helpConfig) {
-            System.out.append("The topic controller will be configured via the ConfigMap '").append(main.configName)
-                    .append("' in namespace '").append(main.configNamespace).append("' accessible from the apiserver at ")
-                    .append(main.masterUrl).println();
-            System.out.println();
-            Config.help(System.out);
-        } else {
-            main.run();
-        }
+        main.run();
     }
 
     private static String getOption(String envVar, String defaultValue) {
