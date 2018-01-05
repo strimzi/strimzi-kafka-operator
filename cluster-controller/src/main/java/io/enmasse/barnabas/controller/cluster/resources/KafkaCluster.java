@@ -47,6 +47,7 @@ public class KafkaCluster extends AbstractCluster {
     private static String KEY_HEALTHCHECK_DELAY = "kafka-healthcheck-delay";
     private static String KEY_HEALTHCHECK_TIMEOUT = "kafka-healthcheck-timeout";
     private static String KEY_METRICS_CONFIG = "kafka-metrics-config";
+    private static String KEY_STORAGE = "kafka-storage";
 
     // Kafka configuration keys
     private static String KEY_KAFKA_ZOOKEEPER_CONNECT = "KAFKA_ZOOKEEPER_CONNECT";
@@ -87,6 +88,10 @@ public class KafkaCluster extends AbstractCluster {
         if (kafka.isMetricsEnabled()) {
             kafka.setMetricsConfig(new JsonObject(metricsConfig));
         }
+
+        // TODO : making more checks for exception on JSON ?
+        String storageConfig = cm.getData().get(KEY_STORAGE);
+        kafka.setStorage(Storage.fromJson(new JsonObject(storageConfig)));
 
         return kafka;
     }
@@ -202,6 +207,7 @@ public class KafkaCluster extends AbstractCluster {
         return createStatefulSet(
                 getContainerPortList(),
                 getVolumes(),
+                getVolumeClaims(),
                 getVolumeMounts(),
                 createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout),
                 createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout));
@@ -243,12 +249,22 @@ public class KafkaCluster extends AbstractCluster {
 
     private List<Volume> getVolumes() {
         List<Volume> volumeList = new ArrayList<>();
-        volumeList.add(createEmptyDirVolume(volumeName));
+        if (storage.type() == Storage.StorageType.TEMPORARY) {
+            volumeList.add(createEmptyDirVolume(volumeName));
+        }
         if (isMetricsEnabled) {
             volumeList.add(createConfigMapVolume(metricsConfigVolumeName, metricsConfigName));
         }
 
         return volumeList;
+    }
+
+    private List<PersistentVolumeClaim> getVolumeClaims() {
+        List<PersistentVolumeClaim> pvcList = new ArrayList<>();
+        if (storage.type() == Storage.StorageType.PERSISTENT_CLAIM) {
+            pvcList.add(createPersistentVolumeClaim(volumeName));
+        }
+        return pvcList;
     }
 
     private List<VolumeMount> getVolumeMounts() {
