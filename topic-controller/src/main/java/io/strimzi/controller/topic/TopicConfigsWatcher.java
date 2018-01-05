@@ -38,9 +38,8 @@ class TopicConfigsWatcher {
 
     private final Controller controller;
 
-
     private Set<String> children;
-    private volatile boolean stopped;
+    private volatile int state = 0;
 
     TopicConfigsWatcher(Controller controller) {
         this.controller = controller;
@@ -49,8 +48,8 @@ class TopicConfigsWatcher {
     public void start(Zk zk) {
         children = new HashSet<>();
         zk.children(CONFIGS_ZNODE, true, ar -> {
-            if (stopped) {
-                // TODO not ideal as the Zk instance will continue watching
+            if (state == 2) {
+                state = 3;
                 return;
             }
             if (ar.succeeded()) {
@@ -65,9 +64,14 @@ class TopicConfigsWatcher {
             }
         });
         // TODO Do I need to cope with znode removal?
+        this.state = 1;
     }
 
     public void stop() {
-        this.stopped = true;
+        this.state = 2;
+    }
+
+    public boolean started() {
+        return state == 1;
     }
 }

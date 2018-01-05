@@ -33,23 +33,34 @@ import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
+import org.apache.kafka.clients.admin.AlterConfigsResult;
+import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
 import org.apache.kafka.clients.admin.DeleteTopicsResult;
 import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.common.config.ConfigResource;
+import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
+
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 
 @RunWith(VertxUnitRunner.class)
 public class ControllerIntegrationTest {
@@ -85,6 +96,7 @@ public class ControllerIntegrationTest {
     private final long timeout = 60_000L;
     private ZkTopicStore topicStore;
     private Watch cmWatcher;
+    private TopicConfigsWatcher topicsConfigWatcher;
 
     @BeforeClass
     public static void startKube() throws Exception {
@@ -130,6 +142,7 @@ public class ControllerIntegrationTest {
         controller = new Controller(vertx, kafka, k8s, topicStore, cmPredicate);
 
         topicsWatcher = new TopicsWatcher(controller);
+        topicsConfigWatcher = new TopicConfigsWatcher(controller);
 
         // TODO The topicStore needs access to a ZooKeeper instance
         // Ideally the topicStore would use the Zk wrapper, but that's probably a bit of work
@@ -141,7 +154,7 @@ public class ControllerIntegrationTest {
         ZkImpl zk = new ZkImpl(vertx, "localhost:"+ zkPort(), 30_000);
         final Handler<AsyncResult<Zk>> zkConnectHandler = ar -> {
             topicsWatcher.start(ar.result());
-            //tcw.start(ar.result());
+            topicsConfigWatcher.start(ar.result());
         };
         zk.disconnectionHandler(ar -> {
             // reconnect if we got disconnected
@@ -208,7 +221,7 @@ public class ControllerIntegrationTest {
 
         // Create a topic
         String configMapName = "test-topic-added";
-        CreateTopicsResult crt = adminClient.createTopics(Collections.singletonList(new NewTopic(configMapName, 1, (short) 1)));
+        CreateTopicsResult crt = adminClient.createTopics(singletonList(new NewTopic(configMapName, 1, (short) 1)));
         crt.all().get();
 
         // Wait for the configmap to be created
@@ -228,7 +241,7 @@ public class ControllerIntegrationTest {
 
         // Create a topic
         String configMapName = "test-topic-deleted";
-        CreateTopicsResult crt = adminClient.createTopics(Collections.singletonList(new NewTopic(configMapName, 1, (short) 1)));
+        CreateTopicsResult crt = adminClient.createTopics(singletonList(new NewTopic(configMapName, 1, (short) 1)));
         crt.all().get();
 
         // Wait for the configmap to be created
@@ -239,7 +252,7 @@ public class ControllerIntegrationTest {
         }, timeout, "Expected the configmap to have been created by now");
 
         // Now we can delete the topic
-        DeleteTopicsResult dlt = adminClient.deleteTopics(Collections.singletonList(configMapName));
+        DeleteTopicsResult dlt = adminClient.deleteTopics(singletonList(configMapName));
         dlt.all().get();
 
         // Wait for the configmap to be deleted
@@ -249,35 +262,116 @@ public class ControllerIntegrationTest {
             return cm == null;
         }, timeout, "Expected the configmap to have been deleted by now");
     }
-/*
+
     @Test
-    public void testTopicConfigChanged(TestContext context) {
-        context.fail("Implement this");
+    @Ignore
+    public void testTopicConfigChanged(TestContext context) throws Exception {
+        connectToZk(topicStore);
+        waitFor(context, () -> this.topicsWatcher.started(), timeout, "Topic watcher not started");
+        waitFor(context, () -> this.topicsConfigWatcher.started(), timeout, "Topic configs watcher not started");
+        cmWatcher = kubeClient.configMaps().watch(new ConfigMapWatcher(controller, cmPredicate));
+
+        // Create a topic
+        String configMapName = "test-topic-config-changed";
+        CreateTopicsResult crt = adminClient.createTopics(singletonList(new NewTopic(configMapName, 1, (short) 1)));
+        crt.all().get();
+
+        // Wait for the configmap to be created
+        waitFor(context, () -> {
+            ConfigMap cm = kubeClient.configMaps().withName(configMapName).get();
+            logger.info("Polled configmap {} waiting for creation", configMapName);
+            return cm != null;
+        }, timeout, "Expected the configmap to have been created by now");
+
+
+        // Get the topic config
+        ConfigResource configResource = new ConfigResource(ConfigResource.Type.TOPIC, configMapName);
+        org.apache.kafka.clients.admin.Config config = adminClient.describeConfigs(singletonList(configResource)).values().get(configResource).get();
+
+        String key = "compression.type";
+
+        Map<String, ConfigEntry> m = new HashMap<>();
+        for (ConfigEntry entry: config.entries()) {
+            m.put(entry.name(), entry);
+        }
+        final String changedValue;
+        if ("snappy".equals(m.get(key).value())) {
+            changedValue = "lz4";
+        } else {
+            changedValue = "snappy";
+        }
+        m.put(key, new ConfigEntry(key, changedValue));
+        logger.info("Changing topic config {} to {}", key, changedValue);
+
+        // Update the topic config
+        AlterConfigsResult cgf = adminClient.alterConfigs(singletonMap(configResource,
+                new org.apache.kafka.clients.admin.Config(m.values())));
+        cgf.all().get();
+
+        // Wait for the configmap to be modified
+        waitFor(context, () -> {
+            ConfigMap cm = kubeClient.configMaps().withName(configMapName).get();
+            logger.info("Polled configmap {}, waiting for config change", configMapName);
+            String gotValue = TopicSerialization.fromConfigMap(cm).getConfig().get(key);
+            logger.info("Got value {}", gotValue);
+            return changedValue.equals(gotValue);
+        }, timeout, "Expected the configmap to have been deleted by now");
     }
 
     @Test
+    @Ignore
     public void testTopicNumPartitionsChanged(TestContext context) {
         context.fail("Implement this");
     }
 
     @Test
+    @Ignore
     public void testTopicNumReplicasChanged(TestContext context) {
         context.fail("Implement this");
     }
 
     @Test
     public void testConfigMapAdded(TestContext context) {
-        context.fail("Implement this");
+            connectToZk(topicStore);
+            waitFor(context, () -> this.topicsWatcher.started(), timeout, "Topic watcher not started");
+            waitFor(context, () -> this.topicsConfigWatcher.started(), timeout, "Topic configs watcher not started");
+            cmWatcher = kubeClient.configMaps().watch(new ConfigMapWatcher(controller, cmPredicate));
+
+            String topicName = "test-configmap-created";
+            Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap()).build();
+            ConfigMap cm = TopicSerialization.toConfigMap(topic, cmPredicate);
+
+            // Create a CM
+            kubeClient.configMaps().create(cm);
+
+            // Wait for the topic to be created
+            waitFor(context, ()-> {
+                try {
+                    adminClient.deleteTopics(singletonList(topicName)).values().get(topicName).get();
+                    return true;
+                } catch (ExecutionException e) {
+                    if (e.getCause() instanceof  UnknownTopicOrPartitionException) {
+                        return false;
+                    } else {
+                        throw new RuntimeException(e);
+                    }
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }, timeout, "Expected topic to be created by now");
+
+            // TODO context.fail("Check the stacktrace, there are 3 reconciliation events when there should only be two");
     }
 
     @Test
+    @Ignore
     public void testConfigMapDeleted(TestContext context) {
         context.fail("Implement this");
     }
 
     @Test
+    @Ignore
     public void testConfigMapModified(TestContext context) {
         context.fail("Implement this");
     }
-    */
 }
