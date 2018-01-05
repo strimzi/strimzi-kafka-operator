@@ -17,7 +17,6 @@
 
 package io.strimzi.controller.topic;
 
-import com.google.common.io.Files;
 import io.debezium.kafka.KafkaCluster;
 import io.debezium.kafka.ZookeeperServer;
 import io.fabric8.kubernetes.api.model.ConfigMap;
@@ -51,6 +50,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -121,7 +121,7 @@ public class ControllerIntegrationTest {
         cluster.addBrokers(1);
         cluster.deleteDataPriorToStartup(true);
         cluster.deleteDataUponShutdown(true);
-        cluster.usingDirectory(Files.createTempDir());
+        cluster.usingDirectory(Files.createTempDirectory("controller-integration-test").toFile());
         cluster.startup();
 
         Map<String, Object> adminClientConfig = new HashMap<>();

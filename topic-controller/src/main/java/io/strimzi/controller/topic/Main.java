@@ -17,10 +17,6 @@
 
 package io.strimzi.controller.topic;
 
-import io.airlift.airline.Command;
-import io.airlift.airline.HelpOption;
-import io.airlift.airline.Option;
-import io.airlift.airline.SingleCommand;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
@@ -33,14 +29,11 @@ import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
-
 /**
  * The entry-point to the topic controller.
  * Main responsibility is to deploy a {@link Session} with an appropriate Config and KubeClient,
  * redeploying if the config changes.
  */
-@Command(name="topic-controller", description = "Keeps Kubernetes ConfigMaps and Kafka topics in sync")
 public class Main {
 
     private final static Logger logger = LoggerFactory.getLogger(Main.class);
@@ -57,37 +50,22 @@ public class Main {
     private Session session;
     private Vertx vertx;
 
-    @Inject
-    public HelpOption helpOption;
 
-    @Option(name={"--help:config"}, description="Show information about how the ConfigMap the topic controller is configured with, then exit.")
     public boolean helpConfig = false;
 
-    @Option(name={"--master-url"}, description="The URL of the kubernetes master apiserver. " +
-            "If absent from the command line options, the " + ENV_VAR_MASTER_URL + " environment variable is used, if set, " +
-            "otherwise the value " + DEFAULT_MASTER_URL + " is used.")
     public String masterUrl;
 
-    @Option(name={"--config-namespace"}, description="The name of the kubernetes namespace containing the topic controller's configuration. " +
-            "If absent from the command line options, the " + ENV_VAR_CONFIG_NS + " environment variable is used, if set, " +
-            "otherwise the value '" + DEFAULT_CONFIG_NS + "' is used.")
     public String configNamespace;
 
-    @Option(name={"--config-name"}, description="The name of the ConfigMap (in the --config-namespace) containing the topic controller's configuration. " +
-            "If absent from the command line options, the " + ENV_VAR_CONFIG_NAME + " environment variable is used, if set, " +
-            "otherwise the value '" + DEFAULT_CONFIG_NAME + "' is used.")
     public String configName;
 
     private Watch controllerConfigWatch;
 
     public static void main(String[] args) throws Exception {
-        Main main = SingleCommand.singleCommand(Main.class).parse(args);
-        if (main.helpOption.showHelpIfRequested()) {
-            return;
-        }
-        main.masterUrl = getOption(main.masterUrl, ENV_VAR_MASTER_URL, DEFAULT_MASTER_URL);
-        main.configNamespace = getOption(main.configNamespace, ENV_VAR_CONFIG_NS, DEFAULT_CONFIG_NS);
-        main.configName = getOption(main.configName, ENV_VAR_CONFIG_NAME, DEFAULT_CONFIG_NAME);
+        Main main = new Main();
+        main.masterUrl = getOption(ENV_VAR_MASTER_URL, DEFAULT_MASTER_URL);
+        main.configNamespace = getOption(ENV_VAR_CONFIG_NS, DEFAULT_CONFIG_NS);
+        main.configName = getOption(ENV_VAR_CONFIG_NAME, DEFAULT_CONFIG_NAME);
         if (main.helpConfig) {
             System.out.append("The topic controller will be configured via the ConfigMap '").append(main.configName)
                     .append("' in namespace '").append(main.configNamespace).append("' accessible from the apiserver at ")
@@ -99,12 +77,8 @@ public class Main {
         }
     }
 
-    private static String getOption(String cli, String envVar, String defaultValue) {
-        String optionValue = cli;
-        if (optionValue == null) {
-            logger.trace("Option from CLI is null, trying {} env var", envVar);
-            optionValue = System.getenv(envVar);
-        }
+    private static String getOption(String envVar, String defaultValue) {
+        String optionValue = optionValue = System.getenv(envVar);
         if (optionValue == null) {
             logger.trace("Env var {} is null, using default value: {}", envVar, defaultValue);
             optionValue = defaultValue;

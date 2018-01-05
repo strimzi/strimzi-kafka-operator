@@ -66,11 +66,6 @@
             <version>${vertx.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.airlift</groupId>
-            <artifactId>airline</artifactId>
-            <version>0.8</version>
-        </dependency>
-        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>${junit.version}</version>
