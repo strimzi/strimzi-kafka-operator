@@ -75,8 +75,9 @@ public abstract class BaseKafkaImpl implements Kafka {
     class UniWork<T> extends Work {
         private final KafkaFuture<T> future;
         private final Handler<AsyncResult<T>> handler;
+        private final String name;
 
-        public UniWork(KafkaFuture<T> future, Handler<AsyncResult<T>> handler) {
+        public UniWork(String name, KafkaFuture<T> future, Handler<AsyncResult<T>> handler) {
             if (future == null) {
                 throw new NullPointerException();
             }
@@ -85,12 +86,13 @@ public abstract class BaseKafkaImpl implements Kafka {
             }
             this.future = future;
             this.handler = handler;
+            this.name = name;
         }
 
         @Override
         protected boolean complete() {
             if (this.future.isDone()) {
-                logger.debug("Future {} of work {} is done", future, this);
+                logger.trace("Future {} of work {} is done", future, this);
                 try {
                     try {
                         T result = this.future.get();
@@ -106,7 +108,7 @@ public abstract class BaseKafkaImpl implements Kafka {
                     }
                 } catch (ControllerException e) {
                     // TODO handler threw, but I have no context for creating a k8s error event
-                    logger.debug("Handler for work {} threw {}", this, e.toString());
+                    logger.trace("Handler for work {} threw {}", this, e.toString());
                     e.printStackTrace();
                 }
                 return true;
@@ -116,6 +118,11 @@ public abstract class BaseKafkaImpl implements Kafka {
                 }
                 return false;
             }
+        }
+
+        @Override
+        public String toString() {
+            return name + System.identityHashCode(this);
         }
     }
 
@@ -147,7 +154,7 @@ public abstract class BaseKafkaImpl implements Kafka {
             T result;
             try {
                 result = future.get();
-                logger.debug("Future {} has result {}", future, result);
+                logger.trace("Future {} has result {}", future, result);
             } catch (ExecutionException e) {
                 logger.debug("Future {} threw {}", future, e.toString());
                 if (e.getCause() instanceof UnknownTopicOrPartitionException) {
@@ -181,7 +188,7 @@ public abstract class BaseKafkaImpl implements Kafka {
                     }
                     this.handler.handle(Future.succeededFuture(metadata));
                     this.handled = true;
-                    logger.debug("Handler for work {} executed ok", this);
+                    logger.trace("Handler for work {} executed ok", this);
                     return true;
                 } else {
                     return false;
@@ -201,7 +208,7 @@ public abstract class BaseKafkaImpl implements Kafka {
      * when the future is ready.
      */
     protected void queueWork(Work work) {
-        logger.debug("Queuing work {} for immediate execution", work);
+        logger.trace("Queuing work {} for immediate execution", work);
         vertx.runOnContext(work);
     }
 
@@ -213,15 +220,15 @@ public abstract class BaseKafkaImpl implements Kafka {
     public void deleteTopic(TopicName topicName, Handler<AsyncResult<Void>> handler) {
         logger.debug("Deleting topic {}", topicName);
         KafkaFuture<Void> future = adminClient.deleteTopics(
-                Collections.singleton(topicName.toString())).values().get(topicName);
-        queueWork(new UniWork<>(future, handler));
+                Collections.singleton(topicName.toString())).values().get(topicName.toString());
+        queueWork(new UniWork<>("deleteTopic", future, handler));
     }
 
     @Override
     public void updateTopicConfig(Topic topic, Handler<AsyncResult<Void>> handler) {
         Map<ConfigResource, Config> configs = TopicSerialization.toTopicConfig(topic);
         KafkaFuture<Void> future = adminClient.alterConfigs(configs).values().get(configs.keySet().iterator().next());
-        queueWork(new UniWork<>(future, handler));
+        queueWork(new UniWork<>("updateTopicConfig", future, handler));
     }
 
     /**
@@ -243,8 +250,9 @@ public abstract class BaseKafkaImpl implements Kafka {
 
     @Override
     public void listTopics(Handler<AsyncResult<Set<String>>> handler) {
+        logger.debug("Listing topics");
         ListTopicsResult future = adminClient.listTopics();
-        queueWork(new UniWork<>(future.names(), handler));
+        queueWork(new UniWork<>("listTopics", future.names(), handler));
     }
 
 

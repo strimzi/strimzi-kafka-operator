@@ -70,7 +70,7 @@ public class ControllerAssignedKafkaImpl extends BaseKafkaImpl {
         final NewPartitions newPartitions = NewPartitions.increaseTo(topic.getNumPartitions());
         final Map<String, NewPartitions> request = Collections.singletonMap(topic.getTopicName().toString(), newPartitions);
         KafkaFuture<Void> future = adminClient.createPartitions(request).values().get(topic.getTopicName());
-        queueWork(new UniWork<>(future, handler));
+        queueWork(new UniWork<>("increasePartitions", future, handler));
     }
 
     /**
@@ -84,7 +84,7 @@ public class ControllerAssignedKafkaImpl extends BaseKafkaImpl {
         logger.debug("Creating topic {}", newTopic);
         KafkaFuture<Void> future = adminClient.createTopics(
                 Collections.singleton(newTopic)).values().get(newTopic.name());
-        queueWork(new UniWork<>(future, handler));
+        queueWork(new UniWork<>("createTopic", future, handler));
     }
 
     @Override
