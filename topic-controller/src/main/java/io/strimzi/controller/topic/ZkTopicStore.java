@@ -93,7 +93,9 @@ public class ZkTopicStore implements TopicStore, Handler<AsyncResult<ZooKeeper>>
 
     @Override
     public void read(TopicName topicName, Handler<AsyncResult<Topic>> handler) {
-        getZookeeper().getData(getTopicPath(topicName), null, new AsyncCallback.DataCallback() {
+        String topicPath = getTopicPath(topicName);
+        logger.debug("read znode {}", topicPath);
+        getZookeeper().getData(topicPath, null, new AsyncCallback.DataCallback() {
             @Override
             public void processResult(int rc, String path, Object ctx, byte[] data, Stat stat) {
                 Exception exception = mapExceptions(rc);
@@ -106,6 +108,7 @@ public class ZkTopicStore implements TopicStore, Handler<AsyncResult<ZooKeeper>>
                 } else {
                     future = Future.failedFuture(exception);
                 }
+                logger.debug("read znode {} result: {}", topicPath, future);
                 vertx.runOnContext(ar -> handler.handle(future));
             }
         }, null);
@@ -115,39 +118,46 @@ public class ZkTopicStore implements TopicStore, Handler<AsyncResult<ZooKeeper>>
     public void create(Topic topic, Handler<AsyncResult<Void>> handler) {
         Throwable t= new Throwable();
         byte[] data = TopicSerialization.toJson(topic);
-        getZookeeper().create(getTopicPath(topic.getTopicName()), data,
+        String topicPath = getTopicPath(topic.getTopicName());
+        logger.debug("create znode {}", topicPath);
+        getZookeeper().create(topicPath, data,
                 Collections.singletonList(acl),
                 CreateMode.PERSISTENT,
-                (rc, path, ctx, name) -> handleOnContext(t, rc, handler), null);
+                (rc, path, ctx, name) -> handleOnContext("create", path, rc, handler), null);
     }
 
     @Override
     public void update(Topic topic, Handler<AsyncResult<Void>> handler) {
         byte[] data = TopicSerialization.toJson(topic);
         // TODO pass a non-zero version
-        getZookeeper().setData(getTopicPath(topic.getTopicName()), data, -1,
-                (rc, path, ctx, stat) -> handleOnContext(null, rc, handler), null);
+        String topicPath = getTopicPath(topic.getTopicName());
+        logger.debug("update znode {}", topicPath);
+        getZookeeper().setData(topicPath, data, -1,
+                (rc, path, ctx, stat) -> handleOnContext("update", path, rc, handler), null);
     }
 
     @Override
     public void delete(TopicName topicName, Handler<AsyncResult<Void>> handler) {
         // TODO pass a non-zero version
-        getZookeeper().delete(getTopicPath(topicName), -1,
-                (rc, path, ctx) -> handleOnContext(null, rc, handler), null);
+        String topicPath = getTopicPath(topicName);
+        logger.debug("delete znode {}", topicPath);
+        getZookeeper().delete(topicPath, -1,
+                (rc, path, ctx) -> handleOnContext("delete", path, rc, handler), null);
     }
 
     /** Run the handler on the vertx context */
-    private void handleOnContext(Throwable t, int rc, Handler<AsyncResult<Void>> handler) {
+    private void handleOnContext(String action, String path, int rc, Handler<AsyncResult<Void>> handler) {
         Exception exception = mapExceptions(rc);
+        Future<Void> future;
         if (exception == null) {
-            vertx.runOnContext(ar ->
-                    handler.handle(Future.succeededFuture())
-            );
+            future = Future.succeededFuture();
         } else {
-            vertx.runOnContext(ar -> {
-                handler.handle(Future.failedFuture(exception));
-            });
+            future = Future.failedFuture(exception);
         }
+        logger.debug("{} znode {} result: {}", path, future);
+        vertx.runOnContext(ar ->
+                handler.handle(future)
+        );
     }
 
     private Exception mapExceptions(int rc) {
