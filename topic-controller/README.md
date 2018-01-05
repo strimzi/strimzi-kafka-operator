@@ -75,21 +75,17 @@ The data of this ConfigMap supports the following keys:
 The controller watches for changes to the config map and reconfigures itself according.
 
 
-## Controller command line and environment
+## Controller environment
 
-* `--master-url` (or the `CONTROLLER_K8S_URL` env var if absent from the command line) 
+* `CONTROLLER_K8S_URL` 
   the URL of the master apiserver in which to find the topic controller's ConfigMap. 
-* `--config-namespace` (or the `CONTROLLER_K8S_NS` env var if absent from the 
-  command line) the namespace within the master apiserver which contains the topic 
+* `CONTROLLER_K8S_NS`
+  the namespace within the master apiserver which contains the topic 
   controller's ConfigMap.
-* `--config-name` (or the `CONTROLLER_K8S_NAME` env var if absent from the 
-  command line) the name of the config map (with the namespace given by `--config-namespace`)
+* `CONTROLLER_K8S_NAME`
+  the name of the config map (with the namespace given by `--config-namespace`)
   which contains the topic 
   controller's ConfigMap.
-* `--help` command line help, and exit
-* `--help:config` for help on the topic controller's configuration. 
-
-
 
 ## Possible future directions
 
