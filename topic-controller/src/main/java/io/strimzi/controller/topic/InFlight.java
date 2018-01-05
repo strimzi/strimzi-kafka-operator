@@ -51,16 +51,41 @@ class InFlight<T> {
 
     private final Vertx vertx;
 
-    private ConcurrentHashMap<T, Future<Void>> map = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<T, BiHandler> map = new ConcurrentHashMap<>();
+
+    static class BiHandler implements Handler<AsyncResult<Void>> {
+
+        private final Handler<AsyncResult<Void>> h1;
+        private Handler<AsyncResult<Void>> h2;
+        private final Future<Void> fut;
+
+        public BiHandler(Handler<AsyncResult<Void>> h1) {
+            this.h1 = h1;
+            Future<Void> fut = Future.future();
+            this.fut = fut;
+            fut.setHandler(this);
+        }
+
+        @Override
+        public void handle(AsyncResult<Void> event) {
+            h1.handle(event);
+            if (h2 != null) {
+                h2.handle(event);
+            }
+        }
+
+        public void setHandler(Handler<AsyncResult<Void>> h2) {
+            this.h2 = h2;
+        }
+    }
 
     public InFlight(Vertx vertx) {
         this.vertx = vertx;
     }
 
-    private Future<Void> futureWithHandler(Handler<AsyncResult<Void>> handler) {
-        Future<Void> fut = Future.future();
-        fut.setHandler(handler);
-        return fut;
+    private BiHandler futureWithHandler(Handler<AsyncResult<Void>> handler) {
+        BiHandler foo = new BiHandler(handler);
+        return foo;
     }
 
     /**
@@ -71,16 +96,16 @@ class InFlight<T> {
      * which will complete the given {@code resultHandler}.
      */
     public void enqueue(T key, Handler<AsyncResult<Void>> resultHandler, Handler<Future<Void>> action) {
-        Future<Void> fut = futureWithHandler(resultHandler);
+        BiHandler fut = futureWithHandler(resultHandler);
         map.compute(key, (k, current) -> {
             if (current == null) {
-                vertx.runOnContext(ignored->action.handle(fut));
+                vertx.runOnContext(ignored->action.handle(fut.fut));
                 return fut;
             } else {
                 current.setHandler(ar -> {
                     vertx.runOnContext(ar2 -> {
                         try {
-                            action.handle(fut);
+                            action.handle(fut.fut);
                         } finally {
                             // remove from map if fut is the current key
                             map.compute(key, (k2, v)-> {
