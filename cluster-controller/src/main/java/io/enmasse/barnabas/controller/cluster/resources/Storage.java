@@ -1,8 +1,10 @@
 package io.enmasse.barnabas.controller.cluster.resources;
 
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.vertx.core.json.JsonObject;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -91,6 +93,25 @@ public class Storage {
         return storage;
     }
 
+    /**
+     * Returns a Storage instance from a corresponding PersistentVolumeClaim
+     *
+     * @param pvc   PersistentVolumeClaim representation
+     * @return  Storage instance
+     */
+    public static Storage fromPersistentVolumeClaim(PersistentVolumeClaim pvc) {
+
+        Storage storage = new Storage(StorageType.PERSISTENT_CLAIM);
+        storage.withSize(pvc.getSpec().getResources().getRequests().get("storage"))
+                .withClass(pvc.getSpec().getStorageClassName());
+
+        if (pvc.getSpec().getSelector() != null) {
+            storage.withSelector(new HashMap<>(pvc.getSpec().getSelector().getMatchLabels()));
+        }
+
+        return storage;
+    }
+
 
     /**
      * Storage type Kubernetes/OpenShift oriented
@@ -144,7 +165,7 @@ public class Storage {
     /**
      * @return  map with labels=values for selecting storage
      */
-    private Map<String, String> selector() {
+    public Map<String, String> selector() {
         return this.selector;
     }
 }

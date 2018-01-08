@@ -129,6 +129,14 @@ public class K8SUtils {
         return client.configMaps().inNamespace(namespace).withLabels(labels).list().getItems();
     }
 
+    public PersistentVolumeClaim getPersistentVolumeClaim(String namespace, String name) {
+        return getPersistentVolumeClaimResource(namespace, name).get();
+    }
+
+    public Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim> getPersistentVolumeClaimResource(String namespace, String name) {
+        return client.persistentVolumeClaims().inNamespace(namespace).withName(name);
+    }
+
     /*
       DELETE methods
      */
@@ -164,6 +172,13 @@ public class K8SUtils {
         if (configMapExists(namespace, name)) {
             log.debug("Deleting configmap {}", name);
             getConfigmapResource(namespace, name).delete();
+        }
+    }
+
+    public void deletePersistentVolumeClaim(String namespace, String name) {
+        if (persistentVolumeClaimExists(namespace, name)) {
+            log.debug("Deleting persistentvolumeclaim {}", name);
+            getPersistentVolumeClaimResource(namespace, name).delete();
         }
     }
 
@@ -210,6 +225,10 @@ public class K8SUtils {
 
     public boolean configMapExists(String namespace, String name) {
         return getConfigmap(namespace, name) == null ? false : true;
+    }
+
+    public boolean persistentVolumeClaimExists(String namespace, String name) {
+        return getPersistentVolumeClaim(namespace, name) == null ? false : true;
     }
 
     /*
