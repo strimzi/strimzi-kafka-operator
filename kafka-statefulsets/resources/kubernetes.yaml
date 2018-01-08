@@ -1,235 +1,160 @@
-apiVersion: v1
-kind: Service
-metadata:
-  name: zookeeper
-spec:
-  ports:
-    - name: clientport
-      port: 2181
-      targetPort: 2181
-      protocol: TCP
-  selector:
-    name: zookeeper
-  type: ClusterIP
 ---
 apiVersion: v1
-kind: Service
+kind: ServiceAccount
 metadata:
-  name: zookeeper-headless
+  name: strimzi-cluster-controller
+  labels:
+    app: strimzi
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: Role
+metadata:
+  name: strimzi-cluster-controller-role
+  labels:
+    app: strimzi
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - patch
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - services
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+  - patch
+  - update
+- apiGroups:
+  - "extensions"
+  resources:
+  - deployments
+  - deployments/scale
+  - replicasets
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+  - patch
+  - update
+- apiGroups:
+  - "apps"
+  resources:
+  - deployments
+  - deployments/scale
+  - deployments/status
+  - statefulsets
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+  - patch
+  - update
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: RoleBinding
+metadata:
+  name: strimzi-cluster-controller-binding
+  labels:
+    app: strimzi
+subjects:
+  - kind: ServiceAccount
+    name: strimzi-cluster-controller
+roleRef:
+  kind: Role
+  name: strimzi-cluster-controller-role
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: strimzi-cluster-controller
 spec:
-  ports:
-    - name: clientport
-      port: 2181
-      targetPort: 2181
-      protocol: TCP
-    - name: clustering
-      port: 2888
-      targetPort: 2888
-      protocol: TCP
-    - name: leaderelection
-      port: 3888
-      targetPort: 3888
-      protocol: TCP
-  selector:
-    name: zookeeper
-  type: ClusterIP
-  clusterIP: None
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: strimzi-cluster-controller
+    spec:
+      serviceAccountName: strimzi-cluster-controller
+      containers:
+        - name: strimzi-cluster-controller
+          image: strimzi/cluster-controller:latest
+          env:
+            - name: STRIMZI_CONTROLLER_LABELS
+              value: "app=strimzi,kind=cluster"
+            - name: STRIMZI_CONTROLLER_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: zookeeper-metrics-config
-data:
-  config.yml: |
-    lowercaseOutputName: true
----
-apiVersion: apps/v1beta1
-kind: StatefulSet
-metadata:
-  name: zookeeper
-spec:
-  serviceName: "zookeeper-headless"
-  replicas: 3
-  template:
-    metadata:
-      labels:
-        name: zookeeper
-      annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/path: "/metrics"
-        prometheus.io/port: "9404"
-    spec:
-      securityContext:
-        fsGroup: 1001
-      initContainers:
-        - name: volume-mount-hack
-          image: busybox
-          command: ["sh", "-c", "chown -R 1001:1001 /var/lib/zookeeper/"]
-          volumeMounts:
-            - name: zookeeper-storage
-              mountPath: /var/lib/zookeeper
-      containers:
-        - name: zookeeper
-          image: "strimzi/zookeeper:latest"
-          ports:
-            - name: clientport
-              containerPort: 2181
-              protocol: TCP
-            - name: clustering
-              containerPort: 2888
-              protocol: TCP
-            - name: leaderelection
-              containerPort: 3888
-              protocol: TCP
-            - name: kafkametrics
-              containerPort: 9404
-              protocol: TCP
-          env:
-            - name: ZOOKEEPER_NODE_COUNT
-              value: "3"
-            - name: ZOOKEEPER_METRICS_ENABLED
-              value: "true"
-          volumeMounts:
-            - name: zookeeper-storage
-              mountPath: /var/lib/zookeeper
-            - name: zookeeper-metrics-config
-              mountPath: /opt/prometheus/config/
-          livenessProbe:
-            exec:
-              command:
-              - "/opt/zookeeper/zookeeper_healthcheck.sh"
-            initialDelaySeconds: 15
-            timeoutSeconds: 5
-          readinessProbe:
-            exec:
-              command:
-              - "/opt/zookeeper/zookeeper_healthcheck.sh"
-            initialDelaySeconds: 15
-            timeoutSeconds: 5
-      volumes:
-        - name: zookeeper-metrics-config
-          configMap:
-            name: zookeeper-metrics-config
-  volumeClaimTemplates:
-    - metadata:
-        name: zookeeper-storage
-      spec:
-        resources:
-          requests:
-            storage: 1Gi
-        accessModes:
-          - ReadWriteOnce
----
-apiVersion: v1
-kind: Service
-metadata:
   name: kafka
-spec:
-  ports:
-    - name: kafka
-      port: 9092
-      targetPort: 9092
-      protocol: TCP
-  selector:
-    name: kafka
-  type: ClusterIP
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: kafka-headless
-spec:
-  ports:
-    - name: kafka
-      port: 9092
-      targetPort: 9092
-      protocol: TCP
-  selector:
-    name: kafka
-  type: ClusterIP
-  clusterIP: None
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: kafka-metrics-config
+  labels:
+    app: strimzi
+    kind: cluster
+    type: kafka
 data:
-  config.yml: |
-    lowercaseOutputName: true
-    rules:
-      - pattern: kafka.server<type=(.+), name=(.+)PerSec\w*><>Count
-        name: kafka_server_$1_$2_total
-      - pattern : kafka.server<type=(.+), name=(.+)PerSec\w*, topic=(.+)><>Count
-        name: kafka_server_$1_$2_total
-        labels:
-          topic: "$3"
----
-apiVersion: apps/v1beta1
-kind: StatefulSet
-metadata:
-  name: kafka
-spec:
-  serviceName: "kafka-headless"
-  # used 3 replicas in order to have alwayas majority for leader election
-  replicas: 3
-  template:
-    metadata:
-      labels:
-        name: kafka
-      annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/path: "/metrics"
-        prometheus.io/port: "9404"
-    spec:
-      securityContext:
-        fsGroup: 1001
-      initContainers:
-       - name: volume-mount-hack
-         image: busybox
-         command: ["sh", "-c", "chown -R 1001:1001 /var/lib/kafka/"]
-         volumeMounts:
-           - name: kafka-storage
-             mountPath: /var/lib/kafka/
-      containers:
-        - name: kafka
-          image: "strimzi/kafka-statefulsets:latest"
-          ports:
-            - name: kafka
-              containerPort: 9092
-              protocol: TCP
-            - name: kafkametrics
-              containerPort: 9404
-              protocol: TCP
-          env:
-            - name: KAFKA_METRICS_ENABLED
-              value: "true"
-          volumeMounts:
-            - name: kafka-storage
-              mountPath: /var/lib/kafka/
-            - name: kafka-metrics-config
-              mountPath: /opt/prometheus/config/
-          livenessProbe:
-            exec:
-              command:
-              - "/opt/kafka/kafka_healthcheck.sh"
-            initialDelaySeconds: 15
-            timeoutSeconds: 5
-          readinessProbe:
-            exec:
-              command:
-              - "/opt/kafka/kafka_healthcheck.sh"
-            initialDelaySeconds: 15
-            timeoutSeconds: 5
-      volumes:
-        - name: kafka-metrics-config
-          configMap:
-            name: kafka-metrics-config
-  volumeClaimTemplates:
-    - metadata:
-        name: kafka-storage
-      spec:
-        resources:
-          requests:
-            storage: 1Gi
-        accessModes:
-          - ReadWriteOnce
+  kafka-nodes: "3"
+  kafka-image: "strimzi/kafka-statefulsets:latest"
+  kafka-healthcheck-delay: "15"
+  kafka-healthcheck-timeout: "5"
+  zookeeper-nodes: "3"
+  zookeeper-image: "strimzi/zookeeper:latest"
+  zookeeper-healthcheck-delay: "15"
+  zookeeper-healthcheck-timeout: "5"
+  KAFKA_DEFAULT_REPLICATION_FACTOR: "3"
+  KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "3"
+  KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "3"
+  kafka-storage: |-
+    { "type": "persistent-claim", "size": "1Gi" }
+  zookeeper-storage: |-
+    { "type": "persistent-claim", "size": "1Gi" }
+  kafka-metrics-config: |-
+    {
+      "lowercaseOutputName": true,
+      "rules": [
+          {
+            "pattern": "kafka.server<type=(.+), name=(.+)PerSec\\w*><>Count",
+            "name": "kafka_server_$1_$2_total"
+          },
+          {
+            "pattern": "kafka.server<type=(.+), name=(.+)PerSec\\w*, topic=(.+)><>Count",
+            "name": "kafka_server_$1_$2_total",
+            "labels":
+            {
+              "topic": "$3"
+            }
+          }
+      ]
+    }
+  zookeeper-metrics-config: |-
+    {
+      "lowercaseOutputName": true
+    }
