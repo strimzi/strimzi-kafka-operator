@@ -180,7 +180,7 @@ public class ZookeeperCluster extends AbstractCluster {
         return patchHeadlessService(headlessName, svc);
     }
 
-    public StatefulSet generateStatefulSet() {
+    public StatefulSet generateStatefulSet(boolean isOpenShift) {
 
         return createStatefulSet(
                 getContainerPortList(),
@@ -188,7 +188,8 @@ public class ZookeeperCluster extends AbstractCluster {
                 getVolumeClaims(),
                 getVolumeMounts(),
                 createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout),
-                createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout));
+                createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout),
+                isOpenShift);
     }
 
     public ConfigMap generateMetricsConfigMap() {

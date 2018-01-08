@@ -12,6 +12,7 @@ import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +20,10 @@ import java.util.Map;
 public abstract class AbstractCluster {
 
     protected final Logger log = LoggerFactory.getLogger(getClass());
+
+    private static final String VOLUME_MOUNT_HACK_IMAGE = "busybox";
+    private static final String VOLUME_MOUNT_HACK_NAME = "volume-mount-hack";
+    private static final Long VOLUME_MOUNT_HACK_GROUPID = 1001L;
 
     protected final String name;
     protected final String namespace;
@@ -276,7 +281,8 @@ public abstract class AbstractCluster {
             List<PersistentVolumeClaim> volumeClaims,
             List<VolumeMount> volumeMounts,
             Probe livenessProbe,
-            Probe readinessProbe) {
+            Probe readinessProbe,
+            boolean isOpenShift) {
 
         Container container = new ContainerBuilder()
                 .withName(name)
@@ -287,6 +293,31 @@ public abstract class AbstractCluster {
                 .withLivenessProbe(livenessProbe)
                 .withReadinessProbe(readinessProbe)
                 .build();
+
+        List<Container> initContainers = new ArrayList<>();
+        PodSecurityContext securityContext = null;
+        // if a persistent volume claim is requested and the running cluster is a Kubernetes one
+        // there is an hack on volume mounting which needs an "init-container"
+        if ((this.storage.type() == Storage.StorageType.PERSISTENT_CLAIM) && !isOpenShift) {
+
+            String chown = String.format("chown -R %d:%d %s",
+                    AbstractCluster.VOLUME_MOUNT_HACK_GROUPID,
+                    AbstractCluster.VOLUME_MOUNT_HACK_GROUPID,
+                    volumeMounts.get(0).getMountPath());
+
+            Container initContainer = new ContainerBuilder()
+                    .withName(AbstractCluster.VOLUME_MOUNT_HACK_NAME)
+                    .withImage(AbstractCluster.VOLUME_MOUNT_HACK_IMAGE)
+                    .withVolumeMounts(volumeMounts.get(0))
+                    .withCommand("sh", "-c", chown)
+                    .build();
+
+            initContainers.add(initContainer);
+
+            securityContext = new PodSecurityContextBuilder()
+                    .withFsGroup(AbstractCluster.VOLUME_MOUNT_HACK_GROUPID)
+                    .build();
+        }
 
         StatefulSet statefulSet = new StatefulSetBuilder()
                 .withNewMetadata()
@@ -306,6 +337,8 @@ public abstract class AbstractCluster {
                 .withLabels(getLabelsWithName())
                 .endMetadata()
                 .withNewSpec()
+                .withSecurityContext(securityContext)
+                .withInitContainers(initContainers)
                 .withContainers(container)
                 .withVolumes(volumes)
                 .endSpec()

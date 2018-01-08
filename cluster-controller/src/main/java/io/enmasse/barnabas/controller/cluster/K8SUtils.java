@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.*;
+import io.fabric8.openshift.client.OpenShiftClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,6 +27,13 @@ public class K8SUtils {
 
     public KubernetesClient getKubernetesClient() {
         return client;
+    }
+
+    /**
+     * @return  if the current cluster is an OpenShift one (false, it's Kubernetes)
+     */
+    public boolean isOpenShift() {
+        return this.client.isAdaptable(OpenShiftClient.class);
     }
 
     /*

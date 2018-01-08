@@ -202,7 +202,7 @@ public class KafkaCluster extends AbstractCluster {
         return patchHeadlessService(headlessName, svc);
     }
 
-    public StatefulSet generateStatefulSet() {
+    public StatefulSet generateStatefulSet(boolean isOpenShift) {
 
         return createStatefulSet(
                 getContainerPortList(),
@@ -210,7 +210,8 @@ public class KafkaCluster extends AbstractCluster {
                 getVolumeClaims(),
                 getVolumeMounts(),
                 createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout),
-                createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout));
+                createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout),
+                isOpenShift);
     }
 
     public ConfigMap generateMetricsConfigMap() {

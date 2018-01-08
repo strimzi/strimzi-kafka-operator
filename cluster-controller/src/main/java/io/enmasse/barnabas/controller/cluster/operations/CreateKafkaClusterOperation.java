@@ -43,7 +43,7 @@ public class CreateKafkaClusterOperation extends KafkaClusterOperation {
                 OperationExecutor.getInstance().execute(new CreateServiceOperation(kafka.generateHeadlessService()), futureHeadlessService.completer());
 
                 Future<Void> futureStatefulSet = Future.future();
-                OperationExecutor.getInstance().execute(new CreateStatefulSetOperation(kafka.generateStatefulSet()), futureStatefulSet.completer());
+                OperationExecutor.getInstance().execute(new CreateStatefulSetOperation(kafka.generateStatefulSet(k8s.isOpenShift())), futureStatefulSet.completer());
 
                 CompositeFuture.join(futureConfigMap, futureService, futureHeadlessService, futureStatefulSet).setHandler(ar -> {
                     if (ar.succeeded()) {
