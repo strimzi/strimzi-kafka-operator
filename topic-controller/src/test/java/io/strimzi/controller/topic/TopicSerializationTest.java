@@ -63,8 +63,7 @@ public class TopicSerializationTest {
         assertEquals(wroteTopic.getTopicName().toString(), cm.getData().get(TopicSerialization.CM_KEY_NAME));
         assertEquals("2", cm.getData().get(TopicSerialization.CM_KEY_PARTITIONS));
         assertEquals("1", cm.getData().get(TopicSerialization.CM_KEY_REPLICAS));
-        assertEquals("---\n" +
-                "foo: \"bar\"\n", cm.getData().get(TopicSerialization.CM_KEY_CONFIG));
+        assertEquals("{\"foo\":\"bar\"}" , cm.getData().get(TopicSerialization.CM_KEY_CONFIG));
 
         Topic readTopic = TopicSerialization.fromConfigMap(cm);
         assertEquals(wroteTopic, readTopic);

@@ -27,7 +27,7 @@ The `data` of such ConfigMaps supports the following keys:
 * `name` The name of the topic. If this is absent the name of the ConfigMap itself is used.
 * `partitions` The number of partitions of the Kafka topic. This can be increased, but not decreased.
 * `replicas` The number of replicas of the Kafka topic. 
-* `config` A multiline string in YAML format representing the topic configuration. 
+* `config` A string in JSON format representing the topic configuration. 
 
 ## Reconciliation
 

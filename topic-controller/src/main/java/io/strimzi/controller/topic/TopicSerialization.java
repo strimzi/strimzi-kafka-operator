@@ -63,7 +63,7 @@ public class TopicSerialization {
         if (value == null || value.isEmpty()) {
             return Collections.emptyMap();
         } else {
-            YAMLFactory yf = new YAMLFactory();
+            JsonFactory yf = new JsonFactory();
             ObjectMapper mapper = new ObjectMapper(yf);
             Map<String, String> result = mapper.readValue(new StringReader(value), Map.class);
             return result;
@@ -71,7 +71,7 @@ public class TopicSerialization {
     }
 
     private static String topicConfigToConfigMapString(Map<String, String> config) throws IOException {
-        YAMLFactory yf = new YAMLFactory();
+        JsonFactory yf = new JsonFactory();
         ObjectMapper mapper = new ObjectMapper(yf);
         StringWriter sw = new StringWriter();
         mapper.writeValue(sw, config);
