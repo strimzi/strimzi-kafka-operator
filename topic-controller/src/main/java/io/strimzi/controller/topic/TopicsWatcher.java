@@ -37,13 +37,15 @@ class TopicsWatcher {
     private static final String TOPICS_ZNODE = "/brokers/topics";
 
     private final Controller controller;
+    private final TopicConfigsWatcher tcw;
 
     private List<String> children;
 
     private volatile int state = 0;
 
-    TopicsWatcher(Controller controller) {
+    TopicsWatcher(Controller controller, TopicConfigsWatcher tcw) {
         this.controller = controller;
+        this.tcw = tcw;
     }
 
     void stop() {
@@ -60,6 +62,7 @@ class TopicsWatcher {
 
     void start(Zk zk) {
         children = null;
+        tcw.start(zk);
         zk.children(TOPICS_ZNODE, true, childResult -> {
             if (state == 2) {
                 // TODO not ideal as the Zk instance will continue watching
@@ -78,6 +81,7 @@ class TopicsWatcher {
                 if (!deleted.isEmpty()) {
                     logger.info("Deleted topics: {}", deleted);
                     for (String topicName : deleted) {
+                        tcw.removeChild(topicName);
                         controller.onTopicDeleted(new TopicName(topicName), ar -> {
                             if (ar.succeeded()) {
                                 logger.debug("Success responding to deletion of topic {}", topicName);
@@ -92,6 +96,7 @@ class TopicsWatcher {
                 if (!created.isEmpty()) {
                     logger.info("Created topics: {}", created);
                     for (String topicName : created) {
+                        tcw.addChild(topicName);
                         controller.onTopicCreated(new TopicName(topicName), ar -> {
                             if (ar.succeeded()) {
                                 logger.debug("Success responding to creation of topic {}", topicName);

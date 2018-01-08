@@ -272,7 +272,7 @@ public class ZkImpl implements Zk {
     }
 
     @Override
-    public synchronized Zk setData(String path, boolean watch, Handler<AsyncResult<byte[]>> handler) {
+    public synchronized Zk getData(String path, boolean watch, Handler<AsyncResult<byte[]>> handler) {
         ZooKeeper zookeeper;
         synchronized(this) {
             zookeeper = zk;

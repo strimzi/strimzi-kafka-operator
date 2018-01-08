@@ -81,7 +81,8 @@ public class InFlightTest {
                 empty.complete();
             }
         });
-
+        // TODO Need to test the case where the action doesn't complete immediately, but runs something on the context
+        // (e.g. via timer) which will complete the fut at a later time.
     }
 
     @Test

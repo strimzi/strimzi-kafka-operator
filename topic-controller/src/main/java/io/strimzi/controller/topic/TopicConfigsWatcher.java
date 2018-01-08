@@ -22,8 +22,7 @@ import io.vertx.core.Handler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * ZooKeeper watcher for child znodes of {@code /configs/topics},
@@ -34,39 +33,51 @@ class TopicConfigsWatcher {
 
     private final static Logger logger = LoggerFactory.getLogger(TopicConfigsWatcher.class);
 
-    private static final String CONFIGS_ZNODE = "/configs/topics";
+    private static final String CONFIGS_ZNODE = "/config/topics";
 
     private final Controller controller;
 
-    private Set<String> children;
+    private final ConcurrentHashMap<String,Boolean> children = new ConcurrentHashMap<>();
     private volatile int state = 0;
+    private volatile  Zk zk;
 
     TopicConfigsWatcher(Controller controller) {
         this.controller = controller;
     }
 
-    public void start(Zk zk) {
-        children = new HashSet<>();
-        zk.children(CONFIGS_ZNODE, true, ar -> {
-            if (state == 2) {
-                state = 3;
-                return;
-            }
-            if (ar.succeeded()) {
-                for (String child : ar.result()) {
-                    zk.setData(CONFIGS_ZNODE + "/" + child, true, dataResult -> {
-                        if (!this.children.add(child)) {
-                            controller.onTopicConfigChanged(new TopicName(child), ar2 -> {
-                                logger.info("Reconciliation result due to topic config change: {}", ar2);
-                            });
-                        }
-                    });
-                }
+    public void addChild(String child) {
+        this.children.put(child, Boolean.FALSE);
+        String path = CONFIGS_ZNODE + "/" + child;
+        zk.getData(path, true, dataResult -> {
+            if (dataResult.succeeded()) {
+                this.children.compute(child, (k, v) -> {
+                    if (Boolean.TRUE.equals(v)) {
+                        controller.onTopicConfigChanged(new TopicName(child), ar2 -> {
+                            logger.info("Reconciliation result due to topic config change: {}", ar2);
+                        });
+                    }
+                    return Boolean.TRUE;
+                });
+            } else {
+                logger.error("While getting or watching znode {}", path, dataResult.cause());
             }
         });
-        // TODO Do I need to cope with znode removal?
+    }
+
+    boolean watching(String child) {
+        return children.containsKey(child);
+    }
+
+    public synchronized void removeChild(String child) {
+        this.children.remove(child);
+        zk.getData(CONFIGS_ZNODE + "/" + child, false, dataResult -> {});
+    }
+
+    public void start(Zk zk) {
+        this.zk = zk;
         this.state = 1;
     }
+
 
     public void stop() {
         this.state = 2;

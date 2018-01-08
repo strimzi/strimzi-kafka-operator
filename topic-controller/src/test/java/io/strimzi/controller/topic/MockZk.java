@@ -36,9 +36,14 @@ class MockZk implements Zk {
     public AsyncResult<List<String>> childrenResult = Future.failedFuture("Unexpected mock interaction. Configure " + getClass().getSimpleName()+".childrenResult");
     public AsyncResult<byte[]> dataResult = Future.failedFuture("Unexpected mock interaction. Configure " + getClass().getSimpleName()+".dataResult");
     private Handler<AsyncResult<List<String>>> childrenHandler;
+    private Handler<AsyncResult<byte[]>> dataHandler;
 
     public void triggerChildren(AsyncResult<List<String>> childrenResult) {
         childrenHandler.handle(childrenResult);
+    }
+
+    public void triggerData(AsyncResult<byte[]> dataResult) {
+        dataHandler.handle(dataResult);
     }
 
     @Override
@@ -82,7 +87,8 @@ class MockZk implements Zk {
     }
 
     @Override
-    public Zk setData(String path, boolean watch, Handler<AsyncResult<byte[]>> handler) {
+    public Zk getData(String path, boolean watch, Handler<AsyncResult<byte[]>> handler) {
+        dataHandler = handler;
         handler.handle(dataResult);
         return this;
     }

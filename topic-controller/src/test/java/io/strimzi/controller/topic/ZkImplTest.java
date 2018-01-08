@@ -226,7 +226,7 @@ public class ZkImplTest {
         Async async2 = context.async(3);
         zk.create("/foo", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT,  ar -> {
             context.assertTrue(ar.succeeded());
-            zk.setData("/foo", true, dataResult -> {
+            zk.getData("/foo", true, dataResult -> {
                 context.assertTrue(dataResult.succeeded());
                 if (async2.count() == 3) {
                     context.assertTrue(dataResult.result().length == 0);

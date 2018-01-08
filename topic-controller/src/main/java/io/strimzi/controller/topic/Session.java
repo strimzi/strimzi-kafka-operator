@@ -91,8 +91,9 @@ public class Session extends AbstractVerticle {
 
         this.controller = new Controller(vertx, kafka, k8s, topicStore, cmPredicate);
 
-        this.tw = new TopicsWatcher(controller);
         this.tcw = new TopicConfigsWatcher(controller);
+        this.tw = new TopicsWatcher(controller, tcw);
+
         Zk zk = Zk.create(vertx, config.get(Config.ZOOKEEPER_CONNECT), this.config.get(Config.ZOOKEEPER_SESSION_TIMEOUT_MS).intValue());
         final Handler<AsyncResult<Zk>> zkConnectHandler = ar -> {
             tw.start(ar.result());

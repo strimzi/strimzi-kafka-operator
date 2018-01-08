@@ -655,7 +655,7 @@ public class Controller {
                                 // We now have the metadata we need to create the
                                 // ConfigMap...
                                 Topic kafkaTopic = TopicSerialization.fromTopicMetadata(metadataResult.result());
-                                reconcileOnTopicChange(topicName, kafkaTopic, fut.completer());
+                                reconcileOnTopicChange(topicName, kafkaTopic, fut);
                             }
                         } else {
                             fut.handle(metadataResult.map((Void) null));
@@ -713,7 +713,7 @@ public class Controller {
                 handler.handle(Future.failedFuture(e));
                 return;
             }
-            Reconciliation handlerHandler = new Reconciliation("onConfigMapModified") {
+            Reconciliation action = new Reconciliation("onConfigMapModified") {
                 @Override
                 public void handle(Future<Void> fut) {
                     Controller.this.reconcileOnCmChange(configMap, k8sTopic, fut);
@@ -721,7 +721,7 @@ public class Controller {
             };
             inFlight.enqueue(new TopicName(configMap),
                     handler,
-                    handlerHandler
+                    action
             );
         } else {
             handler.handle(Future.succeededFuture());
@@ -803,9 +803,14 @@ public class Controller {
 
         @Override
         public void handle(Void v) throws ControllerException {
+            logger.debug("Executing {}", this);
             topicStore.create(topic, ar-> {
+                logger.debug("Completing {}", this);
                 if (ar.failed()) {
+                    logger.debug("{} failed", this);
                     enqueue(new ErrorEvent(involvedObject, ar.cause().toString(), eventResult -> {}));
+                } else {
+                    logger.debug("{} succeeded", this);
                 }
                 handler.handle(ar);
             });

@@ -38,7 +38,8 @@ class MockController extends Controller {
         static enum Type {
             CREATE,
             DELETE,
-            MODIFY
+            MODIFY,
+            MODIFY_CONFIG
         }
         private final TopicName topicName;
         private final ConfigMap configMap;
@@ -98,6 +99,10 @@ class MockController extends Controller {
         return events;
     }
 
+    public void clearEvents() {
+        events.clear();
+    }
+
     @Override
     public void onTopicCreated(TopicName topicName, Handler<AsyncResult<Void>> handler) {
         events.add(new Event(Event.Type.CREATE, topicName));
@@ -112,7 +117,7 @@ class MockController extends Controller {
 
     @Override
     public void onTopicConfigChanged(TopicName topicName, Handler<AsyncResult<Void>> handler) {
-        events.add(new Event(Event.Type.MODIFY, topicName));
+        events.add(new Event(Event.Type.MODIFY_CONFIG, topicName));
         handler.handle(topicModifiedResult);
     }
 

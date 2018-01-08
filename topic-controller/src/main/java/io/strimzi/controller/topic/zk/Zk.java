@@ -90,7 +90,8 @@ public interface Zk {
      * Register a handler to be called with the data of the given path,
      * and, if watch is true, whenever that data subsequently changes.
      */
-    Zk setData(String path, boolean watch, Handler<AsyncResult<byte[]>> handler);
+    // TODO switch to new API as this old one doesn't support unsubscribing
+    Zk getData(String path, boolean watch, Handler<AsyncResult<byte[]>> handler);
 
     /**
      * Delete the znode at the given path, iff the given version is -1 or matches the version of the znode,

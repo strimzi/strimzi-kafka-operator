@@ -60,7 +60,6 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 
-@Ignore
 @RunWith(VertxUnitRunner.class)
 public class ControllerIntegrationTest {
 
@@ -140,8 +139,8 @@ public class ControllerIntegrationTest {
 
         controller = new Controller(vertx, kafka, k8s, topicStore, cmPredicate);
 
-        topicsWatcher = new TopicsWatcher(controller);
         topicsConfigWatcher = new TopicConfigsWatcher(controller);
+        topicsWatcher = new TopicsWatcher(controller, topicsConfigWatcher);
 
         // TODO The topicStore needs access to a ZooKeeper instance
         // Ideally the topicStore would use the Zk wrapper, but that's probably a bit of work
@@ -153,7 +152,6 @@ public class ControllerIntegrationTest {
         ZkImpl zk = new ZkImpl(vertx, "localhost:"+ zkPort(), 30_000);
         final Handler<AsyncResult<Zk>> zkConnectHandler = ar -> {
             topicsWatcher.start(ar.result());
-            topicsConfigWatcher.start(ar.result());
         };
         zk.disconnectionHandler(ar -> {
             // reconnect if we got disconnected
@@ -260,9 +258,7 @@ public class ControllerIntegrationTest {
 
     @Test
     public void testTopicConfigChanged(TestContext context) throws Exception {
-        context.fail("This won't work until the TopicConfigsWatcher is properly working");
         connect(context);
-
         // Create a topic
         String configMapName = "test-topic-config-changed";
         CreateTopicsResult crt = adminClient.createTopics(singletonList(new NewTopic(configMapName, 1, (short) 1)));
