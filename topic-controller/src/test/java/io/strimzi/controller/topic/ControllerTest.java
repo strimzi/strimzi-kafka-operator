@@ -556,11 +556,54 @@ public class ControllerTest {
     }
 
     /**
-     * Test reconciliation when a cm has been added both in kafka and in k8s while the controller was down, and both
-     * topics are identical.
+     * Test reconciliation when a cm has been added both in kafka and in k8s while the controller was down, and
+     * the topics are irreconcilably different: Kafka wins
      */
     @Test
-    public void testReconcile_withCm_withKafka_noPrivate_notMatching(TestContext context) {
+    public void testReconcile_withCm_withKafka_noPrivate_configsReconcilable(TestContext context) {
+        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short)2, map("cleanup.policy", "bar")).build();
+        Topic kafkaTopic = new Topic.Builder(topicName.toString(), 10, (short)2, map("unclean.leader.election.enable", "true")).build();
+        Topic privateTopic = null;
+        Topic mergedTopic = new Topic.Builder(topicName.toString(), 10, (short)2, map("unclean.leader.election.enable", "true", "cleanup.policy", "bar")).build();
+
+        Async async0 = context.async(2);
+        mockKafka.setCreateTopicResponse(topicName -> Future.succeededFuture());
+        mockKafka.createTopic(kafkaTopic, ar -> async0.countDown());
+        mockKafka.setUpdateTopicResponse(topicName -> Future.succeededFuture());
+
+        ConfigMap cm = TopicSerialization.toConfigMap(kubeTopic, cmPredicate);
+        mockK8s.setCreateResponse(topicName.asMapName(), null);
+        mockK8s.createConfigMap(cm, ar -> async0.countDown());
+        mockK8s.setModifyResponse(topicName.asMapName(), null);
+        mockTopicStore.setCreateTopicResponse(topicName, null);
+        async0.await();
+
+        Async async = context.async(2);
+        controller.reconcile(cm, kubeTopic, kafkaTopic, privateTopic, reconcileResult -> {
+            assertSucceeded(context, reconcileResult);
+            mockTopicStore.assertExists(context, topicName);
+            mockK8s.assertExists(context, topicName.asMapName());
+            mockKafka.assertExists(context, topicName);
+            mockTopicStore.read(topicName, readResult -> {
+                assertSucceeded(context, readResult);
+                context.assertEquals(mergedTopic, readResult.result());
+                async.countDown();
+            });
+            mockK8s.getFromName(topicName.asMapName(), readResult -> {
+                assertSucceeded(context, readResult);
+                context.assertEquals(mergedTopic, TopicSerialization.fromConfigMap(readResult.result()));
+                async.countDown();
+            });
+            context.assertEquals(mergedTopic, mockKafka.getTopicState(topicName));
+        });
+    }
+
+    /**
+     * Test reconciliation when a cm has been added both in kafka and in k8s while the controller was down, and
+     * the topics are irreconcilably different: Kafka wins
+     */
+    @Test
+    public void testReconcile_withCm_withKafka_noPrivate_irreconcilable(TestContext context) {
         Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short)2, map("cleanup.policy", "bar")).build();
         Topic kafkaTopic = new Topic.Builder(topicName.toString(), 12, (short)2, map("cleanup.policy", "baz")).build();
         Topic privateTopic = null;

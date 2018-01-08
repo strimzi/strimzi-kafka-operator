@@ -30,7 +30,11 @@ import org.apache.kafka.common.errors.TopicExistsException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
+import static java.util.Collections.disjoint;
 
 public class Controller {
 
@@ -401,28 +405,8 @@ public class Controller {
                         reconciliationResultHandler.handle(ar);
                     }
                 }));
-            } else if (TopicDiff.diff(kafkaTopic, k8sTopic).isEmpty()) {
-                // they're the same => do nothing, but stil create the private copy
-                logger.debug("cm created in k8s and topic created in kafka, but they're identical => just creating in topicStore");
-                logger.debug("k8s and kafka versions of topic '{}' are the same", kafkaTopic.getTopicName());
-                enqueue(new CreateInTopicStore(kafkaTopic, involvedObject, reconciliationResultHandler));
             } else {
-                // Just use kafka version, but also create a warning event
-                logger.debug("cm created in k8s and topic created in kafka, and they are different => kafka version wins");
-                enqueue(new ErrorEvent(involvedObject, "ConfigMap is incompatible with the topic metadata. " +
-                        "The topic metadata will be treated as canonical.", ar -> {
-                    if (ar.succeeded()) {
-                        enqueue(new UpdateConfigMap(kafkaTopic, involvedObject, ar2 -> {
-                            if (ar2.succeeded()) {
-                                enqueue(new CreateInTopicStore(kafkaTopic, involvedObject, reconciliationResultHandler));
-                            } else {
-                                reconciliationResultHandler.handle(ar2);
-                            }
-                        }));
-                    } else {
-                        reconciliationResultHandler.handle(ar);
-                    }
-                }));
+                update2Way(involvedObject, k8sTopic, kafkaTopic, reconciliationResultHandler);
             }
         } else {
             if (k8sTopic == null) {
@@ -458,6 +442,54 @@ public class Controller {
                 logger.debug("3 way diff");
                 update3Way(involvedObject, k8sTopic, kafkaTopic, privateTopic, reconciliationResultHandler);
             }
+        }
+    }
+
+    private void update2Way(HasMetadata involvedObject, Topic k8sTopic, Topic kafkaTopic, Handler<AsyncResult<Void>> reconciliationResultHandler) {
+        TopicDiff diff = TopicDiff.diff(kafkaTopic, k8sTopic);
+        if (diff.isEmpty()) {
+            // they're the same => do nothing, but stil create the private copy
+            logger.debug("cm created in k8s and topic created in kafka, but they're identical => just creating in topicStore");
+            logger.debug("k8s and kafka versions of topic '{}' are the same", kafkaTopic.getTopicName());
+            enqueue(new CreateInTopicStore(kafkaTopic, involvedObject, reconciliationResultHandler));
+        } else if (!diff.changesReplicationFactor()
+                && !diff.changesNumPartitions()
+                && diff.changesConfig()
+                && disjoint(kafkaTopic.getConfig().keySet(), k8sTopic.getConfig().keySet())) {
+            logger.debug("cm created in k8s and topic created in kafka, they differ only in topic config, and those configs are disjoint: Updating k8s and kafka, and creating in topic store");
+            Map mergedConfigs = new HashMap(kafkaTopic.getConfig());
+            mergedConfigs.putAll(k8sTopic.getConfig());
+            Topic mergedTopic = new Topic.Builder(kafkaTopic).withConfig(mergedConfigs).build();
+            enqueue(new UpdateConfigMap(mergedTopic, involvedObject, ar -> {
+                if (ar.succeeded()) {
+                    enqueue(new UpdateKafkaConfig(mergedTopic, involvedObject, ar2 -> {
+                        if (ar2.succeeded()) {
+                            enqueue(new CreateInTopicStore(mergedTopic, involvedObject, reconciliationResultHandler));
+                        } else {
+                            reconciliationResultHandler.handle(ar2);
+                        }
+                    }));
+                } else {
+                    reconciliationResultHandler.handle(ar);
+                }
+            }));
+        } else {
+            // Just use kafka version, but also create a warning event
+            logger.debug("cm created in k8s and topic created in kafka, and they are irreconcilably different => kafka version wins");
+            enqueue(new ErrorEvent(involvedObject, "ConfigMap is incompatible with the topic metadata. " +
+                    "The topic metadata will be treated as canonical.", ar -> {
+                if (ar.succeeded()) {
+                    enqueue(new UpdateConfigMap(kafkaTopic, involvedObject, ar2 -> {
+                        if (ar2.succeeded()) {
+                            enqueue(new CreateInTopicStore(kafkaTopic, involvedObject, reconciliationResultHandler));
+                        } else {
+                            reconciliationResultHandler.handle(ar2);
+                        }
+                    }));
+                } else {
+                    reconciliationResultHandler.handle(ar);
+                }
+            }));
         }
     }
 
