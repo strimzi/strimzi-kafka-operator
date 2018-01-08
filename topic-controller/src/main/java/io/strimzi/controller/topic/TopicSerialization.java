@@ -128,6 +128,7 @@ public class TopicSerialization {
 
     /**
      * Create a Topic to reflect the given ConfigMap.
+     * @throws InvalidConfigMapException
      */
     public static Topic fromConfigMap(ConfigMap cm) {
         if (cm == null) {

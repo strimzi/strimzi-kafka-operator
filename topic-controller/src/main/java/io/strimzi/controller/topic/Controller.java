@@ -332,17 +332,24 @@ public class Controller {
     }
 
     void reconcile(ConfigMap cm, TopicName topicName) {
-        Topic k8sTopic = cm != null ? TopicSerialization.fromConfigMap(cm) : null;
-        Future<Topic> topicResult = Future.future();
-        Future<TopicMetadata> metadataResult = Future.future();
-        kafka.topicMetadata(topicName, metadataResult.completer());
-        topicStore.read(topicName, topicResult.completer());
-        CompositeFuture.all(topicResult, metadataResult).setHandler(ar -> {
-            Topic privateTopic = ar.result().resultAt(0);
-            TopicMetadata kafkaTopicMeta = ar.result().resultAt(1);
-            Topic kafkaTopic = TopicSerialization.fromTopicMetadata(kafkaTopicMeta);
-            reconcile(cm, k8sTopic, kafkaTopic, privateTopic, reconcileResult -> {});
-        });
+        try {
+            Topic k8sTopic = cm != null ? TopicSerialization.fromConfigMap(cm) : null;
+            Future<Topic> topicResult = Future.future();
+            Future<TopicMetadata> metadataResult = Future.future();
+            kafka.topicMetadata(topicName, metadataResult.completer());
+            topicStore.read(topicName, topicResult.completer());
+            CompositeFuture.all(topicResult, metadataResult).setHandler(ar -> {
+                Topic privateTopic = ar.result().resultAt(0);
+                TopicMetadata kafkaTopicMeta = ar.result().resultAt(1);
+                Topic kafkaTopic = TopicSerialization.fromTopicMetadata(kafkaTopicMeta);
+                reconcile(cm, k8sTopic, kafkaTopic, privateTopic, reconcileResult -> {
+                });
+            });
+        } catch (InvalidConfigMapException e) {
+            logger.error("Error reconciling ConfigMap {}: Invalid 'data' section: ", cm.getMetadata().getName(), e.getMessage());
+        } catch (ControllerException e) {
+            logger.error("Error reconciling ConfigMap {}: ", cm.getMetadata().getName(), e);
+        }
     }
 
     /**
@@ -595,7 +602,7 @@ public class Controller {
                         final Topic k8sTopic;
                         try {
                             k8sTopic = TopicSerialization.fromConfigMap(cm);
-                        } catch (Exception e) {
+                        } catch (InvalidConfigMapException e) {
                             resultHandler.handle(Future.failedFuture(e));
                             return;
                         }
@@ -667,7 +674,7 @@ public class Controller {
             final Topic k8sTopic;
             try {
                 k8sTopic = TopicSerialization.fromConfigMap(configMap);
-            } catch (Exception e) {
+            } catch (InvalidConfigMapException e) {
                 resultHandler.handle(Future.failedFuture(e));
                 return;
             }
@@ -702,7 +709,7 @@ public class Controller {
             final Topic k8sTopic;
             try {
                 k8sTopic = TopicSerialization.fromConfigMap(configMap);
-            } catch (Exception e) {
+            } catch (InvalidConfigMapException e) {
                 handler.handle(Future.failedFuture(e));
                 return;
             }
