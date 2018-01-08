@@ -39,7 +39,7 @@ public class CreateKafkaConnectClusterOperation extends KafkaConnectClusterOpera
                         lock.release();
                     } else {
                         log.error("Kafka Connect cluster {} failed to create in namespace {}", name, namespace);
-                        handler.handle(Future.failedFuture("Failed to create Zookeeper cluster"));
+                        handler.handle(Future.failedFuture("Failed to create Kafka Connect cluster"));
                         lock.release();
                     }
                 });
