@@ -121,6 +121,14 @@ public class KafkaCluster extends AbstractCluster {
             kafka.setMetricsConfigName(ss.getMetadata().getName() + "-metrics-config");
         }
 
+        if (!ss.getSpec().getVolumeClaimTemplates().isEmpty()) {
+            Storage storage = Storage.fromPersistentVolumeClaim(ss.getSpec().getVolumeClaimTemplates().get(0));
+            kafka.setStorage(storage);
+        } else {
+            Storage storage = new Storage(Storage.StorageType.TEMPORARY);
+            kafka.setStorage(storage);
+        }
+
         return kafka;
     }
 

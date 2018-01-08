@@ -125,6 +125,10 @@ public abstract class AbstractCluster {
         return null;
     }
 
+    public Storage getStorage() {
+        return storage;
+    }
+
     protected void setStorage(Storage storage) {
         this.storage = storage;
     }
@@ -163,6 +167,8 @@ public abstract class AbstractCluster {
 
         Map<String, Quantity> requests = new HashMap<>();
         requests.put("storage", storage.size());
+
+        // TODO : deal with the storage.selector field
 
         PersistentVolumeClaim pvc = new PersistentVolumeClaimBuilder()
                 .withNewMetadata()

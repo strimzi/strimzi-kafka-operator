@@ -108,6 +108,14 @@ public class ZookeeperCluster extends AbstractCluster {
             zk.setMetricsConfigName(ss.getMetadata().getName() + "-metrics-config");
         }
 
+        if (!ss.getSpec().getVolumeClaimTemplates().isEmpty()) {
+            Storage storage = Storage.fromPersistentVolumeClaim(ss.getSpec().getVolumeClaimTemplates().get(0));
+            zk.setStorage(storage);
+        } else {
+            Storage storage = new Storage(Storage.StorageType.TEMPORARY);
+            zk.setStorage(storage);
+        }
+
         return zk;
     }
 
