@@ -50,7 +50,11 @@ class ConfigMapWatcher implements Watcher<ConfigMap> {
                 if (ar.succeeded()) {
                     logger.info("Success processing ConfigMap watch event {} on map {} with labels {}", action, name, labels);
                 } else {
-                    logger.error("Failure processing ConfigMap watch event {} on map {} with labels {}", action, name, labels, ar.cause());
+                    if (ar.cause() instanceof InvalidConfigMapException) {
+                        logger.error("ConfigMap {} has an invalid 'data' section: {}", name, ar.cause().getMessage());
+                    } else {
+                        logger.error("Failure processing ConfigMap watch event {} on map {} with labels {}", action, name, labels, ar.cause());
+                    }
                 }
             };
             switch (action) {

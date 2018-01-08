@@ -18,6 +18,7 @@
 package io.strimzi.controller.topic;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -32,6 +33,7 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -39,6 +41,8 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class TopicSerializationTest {
 
@@ -52,7 +56,7 @@ public class TopicSerializationTest {
         builder.withTopicName("tom");
         builder.withNumReplicas((short) 1);
         builder.withNumPartitions(2);
-        builder.withConfigEntry("foo", "bar");
+        builder.withConfigEntry("cleanup.policy", "bar");
         Topic wroteTopic = builder.build();
         ConfigMap cm = TopicSerialization.toConfigMap(wroteTopic, cmPredicate);
 
@@ -63,7 +67,7 @@ public class TopicSerializationTest {
         assertEquals(wroteTopic.getTopicName().toString(), cm.getData().get(TopicSerialization.CM_KEY_NAME));
         assertEquals("2", cm.getData().get(TopicSerialization.CM_KEY_PARTITIONS));
         assertEquals("1", cm.getData().get(TopicSerialization.CM_KEY_REPLICAS));
-        assertEquals("{\"foo\":\"bar\"}" , cm.getData().get(TopicSerialization.CM_KEY_CONFIG));
+        assertEquals("{\"cleanup.policy\":\"bar\"}" , cm.getData().get(TopicSerialization.CM_KEY_CONFIG));
 
         Topic readTopic = TopicSerialization.fromConfigMap(cm);
         assertEquals(wroteTopic, readTopic);
@@ -155,4 +159,183 @@ public class TopicSerializationTest {
         assertEquals(3, topic.getNumReplicas());
     }
 
+    @Test
+    public void testErrorInDefaultTopicName() {
+        Map<String, String> data = new HashMap<>();
+        data.put(TopicSerialization.CM_KEY_REPLICAS, "1");
+        data.put(TopicSerialization.CM_KEY_PARTITIONS, "1");
+        data.put(TopicSerialization.CM_KEY_CONFIG, "{}");
+
+        ConfigMap cm = new ConfigMapBuilder().editOrNewMetadata().withName("An invalid topic name!")
+                .endMetadata().withData(data).build();
+
+        try {
+            TopicSerialization.fromConfigMap(cm);
+            fail("Should throw");
+        } catch (InvalidConfigMapException e) {
+            assertEquals("ConfigMap's 'data' section lacks a 'name' key and ConfigMap's name is invalid as a topic name: Topic name \"An invalid topic name!\" is illegal, it contains a character other than ASCII alphanumerics, '.', '_' and '-'", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testErrorInTopicName() {
+        Map<String, String> data = new HashMap<>();
+        data.put(TopicSerialization.CM_KEY_REPLICAS, "1");
+        data.put(TopicSerialization.CM_KEY_PARTITIONS, "1");
+        data.put(TopicSerialization.CM_KEY_CONFIG, "{}");
+        data.put(TopicSerialization.CM_KEY_NAME, "An invalid topic name!");
+
+        ConfigMap cm = new ConfigMapBuilder().editOrNewMetadata().withName("foo")
+                .endMetadata().withData(data).build();
+
+        try {
+            TopicSerialization.fromConfigMap(cm);
+            fail("Should throw");
+        } catch (InvalidConfigMapException e) {
+            assertEquals("ConfigMap's 'data' section has invalid 'name' key: Topic name \"An invalid topic name!\" is illegal, it contains a character other than ASCII alphanumerics, '.', '_' and '-'", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testErrorInPartitions() {
+        Map<String, String> data = new HashMap<>();
+        data.put(TopicSerialization.CM_KEY_REPLICAS, "1");
+        data.put(TopicSerialization.CM_KEY_PARTITIONS, "foo");
+        data.put(TopicSerialization.CM_KEY_CONFIG, "{}");
+
+        ConfigMap cm = new ConfigMapBuilder().editOrNewMetadata().withName("my-topic")
+                .endMetadata().withData(data).build();
+
+        try {
+            TopicSerialization.fromConfigMap(cm);
+            fail("Should throw");
+        } catch (InvalidConfigMapException e) {
+            assertEquals("ConfigMap's 'data' section has invalid key 'partitions': should be a strictly positive integer but was 'foo'", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testErrorInReplicas() {
+        Map<String, String> data = new HashMap<>();
+        data.put(TopicSerialization.CM_KEY_REPLICAS, "foo");
+        data.put(TopicSerialization.CM_KEY_PARTITIONS, "1");
+        data.put(TopicSerialization.CM_KEY_CONFIG, "{}");
+
+        ConfigMap cm = new ConfigMapBuilder().editOrNewMetadata().withName("my-topic")
+                .endMetadata().withData(data).build();
+
+        try {
+            TopicSerialization.fromConfigMap(cm);
+            fail("Should throw");
+        } catch (InvalidConfigMapException e) {
+            assertEquals("ConfigMap's 'data' section has invalid key 'replicas': should be a strictly positive integer but was 'foo'", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testErrorInConfigNotJson() {
+        Map<String, String> data = new HashMap<>();
+        data.put(TopicSerialization.CM_KEY_REPLICAS, "1");
+        data.put(TopicSerialization.CM_KEY_PARTITIONS, "1");
+        data.put(TopicSerialization.CM_KEY_CONFIG, "foobar");
+
+        ConfigMap cm = new ConfigMapBuilder().editOrNewMetadata().withName("my-topic")
+                .endMetadata().withData(data).build();
+
+        try {
+            TopicSerialization.fromConfigMap(cm);
+            fail("Should throw");
+        } catch (InvalidConfigMapException e) {
+            assertEquals("ConfigMap's 'data' section has invalid key 'config': " +
+                    "Unrecognized token 'foobar': was expecting 'null', 'true', 'false' or NaN\n" +
+                    " at [Source: 'config' key of 'data' section of " +
+                    "ConfigMap 'my-topic' in namespace 'null'; line: 1, column: 13]",
+                    e.getMessage());
+        }
+    }
+
+    @Test
+    public void testErrorInConfigInvalidKey() {
+        Map<String, String> data = new HashMap<>();
+        data.put(TopicSerialization.CM_KEY_REPLICAS, "1");
+        data.put(TopicSerialization.CM_KEY_PARTITIONS, "1");
+        data.put(TopicSerialization.CM_KEY_CONFIG, "{\"foo\":\"bar\"}");
+
+        ConfigMap cm = new ConfigMapBuilder().editOrNewMetadata().withName("my-topic")
+                .endMetadata().withData(data).build();
+
+        try {
+            TopicSerialization.fromConfigMap(cm);
+            fail("Should throw");
+        } catch (InvalidConfigMapException e) {
+            assertTrue(e.getMessage().startsWith("ConfigMap's 'data' section has invalid key 'config': " +
+                            "The key 'foo' of the topic config is invalid: " +
+                            "The allowed configs keys are ["));
+        }
+    }
+
+    @Test
+    public void testErrorInConfigInvalidKeyNull() {
+        Map<String, String> data = new HashMap<>();
+        data.put(TopicSerialization.CM_KEY_REPLICAS, "1");
+        data.put(TopicSerialization.CM_KEY_PARTITIONS, "1");
+        data.put(TopicSerialization.CM_KEY_CONFIG, "{null:null}");
+
+        ConfigMap cm = new ConfigMapBuilder().editOrNewMetadata().withName("my-topic")
+                .endMetadata().withData(data).build();
+        try {
+            TopicSerialization.fromConfigMap(cm);
+            fail("Should throw");
+        } catch (InvalidConfigMapException e) {
+            assertEquals("ConfigMap's 'data' section has invalid key 'config': " +
+                            "Unexpected character ('n' (code 110)): was expecting double-quote to start field name\n" +
+                            " at [Source: 'config' key of 'data' section of ConfigMap 'my-topic' in namespace 'null'; line: 1, column: 3]",
+                    e.getMessage());
+        }
+    }
+
+    @Test
+    public void testErrorInConfigInvalidValueWrongType() {
+        Map<String, String> data = new HashMap<>();
+        data.put(TopicSerialization.CM_KEY_REPLICAS, "1");
+        data.put(TopicSerialization.CM_KEY_PARTITIONS, "1");
+        data.put(TopicSerialization.CM_KEY_CONFIG, "{\"cleanup.policy\":1}");
+
+        ConfigMap cm = new ConfigMapBuilder().editOrNewMetadata().withName("my-topic")
+                .endMetadata().withData(data).build();
+
+        try {
+            TopicSerialization.fromConfigMap(cm);
+            fail("Should throw");
+        } catch (InvalidConfigMapException e) {
+            assertEquals("ConfigMap's 'data' section has invalid key 'config': " +
+                    "The key 'cleanup.policy' of the topic config is invalid: " +
+                    "The value corresponding to the key must have a String value, " +
+                    "not a value of type class java.lang.Integer",
+                    e.getMessage());
+        }
+    }
+
+    @Test
+    public void testErrorInConfigInvalidValueNull() {
+        Map<String, String> data = new HashMap<>();
+        data.put(TopicSerialization.CM_KEY_REPLICAS, "1");
+        data.put(TopicSerialization.CM_KEY_PARTITIONS, "1");
+        data.put(TopicSerialization.CM_KEY_CONFIG, "{\"cleanup.policy\":null}");
+
+        ConfigMap cm = new ConfigMapBuilder().editOrNewMetadata().withName("my-topic")
+                .endMetadata().withData(data).build();
+
+        try {
+            TopicSerialization.fromConfigMap(cm);
+            fail("Should throw");
+        } catch (InvalidConfigMapException e) {
+            assertEquals("ConfigMap's 'data' section has invalid key 'config': " +
+                    "The key 'cleanup.policy' of the topic config is invalid: " +
+                    "The value corresponding to the key must have a String value, not null",
+                    e.getMessage());
+        }
+    }
+
 }
+
