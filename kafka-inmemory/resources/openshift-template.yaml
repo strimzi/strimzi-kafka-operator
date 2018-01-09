@@ -211,9 +211,9 @@ objects:
     KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "${KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR}"
     KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "${KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR}"
     kafka-storage: |-
-      { "type": "temporary" }
+      { "type": "ephemeral" }
     zookeeper-storage: |-
-      { "type": "temporary" }
+      { "type": "ephemeral" }
     kafka-metrics-config: |-
       {
         "lowercaseOutputName": true,

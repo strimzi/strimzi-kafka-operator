@@ -118,7 +118,7 @@ public class Storage {
      */
     public enum StorageType {
 
-        TEMPORARY("temporary"),
+        EPHEMERAL("ephemeral"),
         PERSISTENT_CLAIM("persistent-claim"),
         LOCAL("local");
 
@@ -128,9 +128,15 @@ public class Storage {
             this.type = type;
         }
 
+        /**
+         * Get the storage type from a string representation
+         *
+         * @param type  string representation for the storage type
+         * @return  storage type
+         */
         public static StorageType from(String type) {
-            if (type.equals(TEMPORARY.type)) {
-                return TEMPORARY;
+            if (type.equals(EPHEMERAL.type)) {
+                return EPHEMERAL;
             } else if (type.equals(PERSISTENT_CLAIM.type)) {
                 return PERSISTENT_CLAIM;
             } else if (type.equals(LOCAL.type)) {
