@@ -112,7 +112,7 @@ public class ZookeeperCluster extends AbstractCluster {
             Storage storage = Storage.fromPersistentVolumeClaim(ss.getSpec().getVolumeClaimTemplates().get(0));
             zk.setStorage(storage);
         } else {
-            Storage storage = new Storage(Storage.StorageType.TEMPORARY);
+            Storage storage = new Storage(Storage.StorageType.EPHEMERAL);
             zk.setStorage(storage);
         }
 
@@ -255,7 +255,7 @@ public class ZookeeperCluster extends AbstractCluster {
 
     private List<Volume> getVolumes() {
         List<Volume> volumeList = new ArrayList<>();
-        if (storage.type() == Storage.StorageType.TEMPORARY) {
+        if (storage.type() == Storage.StorageType.EPHEMERAL) {
             volumeList.add(createEmptyDirVolume(volumeName));
         }
         if (isMetricsEnabled) {
