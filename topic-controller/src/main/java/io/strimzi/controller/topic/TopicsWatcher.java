@@ -63,10 +63,9 @@ class TopicsWatcher {
     void start(Zk zk) {
         children = null;
         tcw.start(zk);
-        zk.children(TOPICS_ZNODE, true, childResult -> {
+        zk.watchChildren(TOPICS_ZNODE, childResult -> {
             if (state == 2) {
-                // TODO not ideal as the Zk instance will continue watching
-                state = 3;
+                zk.unwatchChildren(TOPICS_ZNODE);
                 return;
             }
             if (childResult.failed()) {
@@ -74,39 +73,44 @@ class TopicsWatcher {
             }
             List<String> result = childResult.result();
             logger.debug("znode {} has children {}", TOPICS_ZNODE, result);
-            if (this.children != null) {
-                logger.debug("Current children {}", this.children);
-                Set<String> deleted = new HashSet(this.children);
-                deleted.removeAll(result);
-                if (!deleted.isEmpty()) {
-                    logger.info("Deleted topics: {}", deleted);
-                    for (String topicName : deleted) {
-                        tcw.removeChild(topicName);
-                        controller.onTopicDeleted(new TopicName(topicName), ar -> {
-                            if (ar.succeeded()) {
-                                logger.debug("Success responding to deletion of topic {}", topicName);
-                            } else {
-                                logger.warn("Error responding to deletion of topic {}", topicName, ar.cause());
-                            }
-                        });
-                    }
-                }
-                Set<String> created = new HashSet(result);
-                created.removeAll(this.children);
-                if (!created.isEmpty()) {
-                    logger.info("Created topics: {}", created);
-                    for (String topicName : created) {
-                        tcw.addChild(topicName);
-                        controller.onTopicCreated(new TopicName(topicName), ar -> {
-                            if (ar.succeeded()) {
-                                logger.debug("Success responding to creation of topic {}", topicName);
-                            } else {
-                                logger.warn("Error responding to creation of topic {}", topicName, ar.cause());
-                            }
-                        });
-                    }
+            logger.debug("Current children {}", this.children);
+            Set<String> deleted = new HashSet(this.children);
+            deleted.removeAll(result);
+            if (!deleted.isEmpty()) {
+                logger.info("Deleted topics: {}", deleted);
+                for (String topicName : deleted) {
+                    tcw.removeChild(topicName);
+                    controller.onTopicDeleted(new TopicName(topicName), ar -> {
+                        if (ar.succeeded()) {
+                            logger.debug("Success responding to deletion of topic {}", topicName);
+                        } else {
+                            logger.warn("Error responding to deletion of topic {}", topicName, ar.cause());
+                        }
+                    });
                 }
             }
+            Set<String> created = new HashSet(result);
+            created.removeAll(this.children);
+            if (!created.isEmpty()) {
+                logger.info("Created topics: {}", created);
+                for (String topicName : created) {
+                    tcw.addChild(topicName);
+                    controller.onTopicCreated(new TopicName(topicName), ar -> {
+                        if (ar.succeeded()) {
+                            logger.debug("Success responding to creation of topic {}", topicName);
+                        } else {
+                            logger.warn("Error responding to creation of topic {}", topicName, ar.cause());
+                        }
+                    });
+                }
+            }
+
+        });
+        zk.children(TOPICS_ZNODE, childResult -> {
+            if (childResult.failed()) {
+                throw new RuntimeException(childResult.cause());
+            }
+            List<String> result = childResult.result();
             logger.debug("Setting current children {}", result);
             this.children = result;
             this.state = 1;

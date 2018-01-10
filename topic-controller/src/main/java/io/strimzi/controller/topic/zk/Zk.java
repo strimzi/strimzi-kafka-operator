@@ -73,22 +73,6 @@ public interface Zk {
      */
     Zk setData(String path, byte[] data, int version, Handler<AsyncResult<Void>> handler);
 
-    /**
-     * Register a handler to be called with the children of the given path,
-     * and, if watch is true, whenever the children subsequently change.
-     *
-     * The handler is passed a list, whose order is undefined,
-     * of the paths of the children relative to
-     * the given path. For example, if the path is {@code /foo} and the znode
-     * {@code /foo/bar} is added then the handler will be called with a
-     * list containing {@code bar}, in addition to the other child
-     * znodes of {@code /foo}.
-     *
-     * @deprecated
-     */
-    @Deprecated
-    Zk children(String path, boolean watch, Handler<AsyncResult<List<String>>> handler);
-
     Zk children(String path, Handler<AsyncResult<List<String>>> handler);
 
     /**
@@ -105,17 +89,8 @@ public interface Zk {
     /**
      * Remove any children watcher for the given path.
      */
-    default Zk unwatchChildren(String path) {
-        return watchChildren(path, null);
-    };
+    Zk unwatchChildren(String path);
 
-    /**
-     * Register a handler to be called with the data of the given path,
-     * and, if watch is true, whenever that data subsequently changes.
-     * @deprecated
-     */
-    @Deprecated
-    Zk getData(String path, boolean watch, Handler<AsyncResult<byte[]>> handler);
 
     Zk getData(String path, Handler<AsyncResult<byte[]>> handler);
     Zk watchData(String path, Handler<AsyncResult<byte[]>> watcher);

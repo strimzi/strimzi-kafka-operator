@@ -39,11 +39,15 @@ class MockZk implements Zk {
     private Handler<AsyncResult<byte[]>> dataHandler;
 
     public void triggerChildren(AsyncResult<List<String>> childrenResult) {
-        childrenHandler.handle(childrenResult);
+        if (childrenHandler != null) {
+            childrenHandler.handle(childrenResult);
+        }
     }
 
     public void triggerData(AsyncResult<byte[]> dataResult) {
-        dataHandler.handle(dataResult);
+        if (dataHandler != null) {
+            dataHandler.handle(dataResult);
+        }
     }
 
     @Override
@@ -80,42 +84,39 @@ class MockZk implements Zk {
     }
 
     @Override
-    public Zk children(String path, boolean watch, Handler<AsyncResult<List<String>>> handler) {
-        childrenHandler = handler;
+    public Zk children(String path, Handler<AsyncResult<List<String>>> handler) {
         handler.handle(childrenResult);
         return this;
     }
 
     @Override
-    public Zk children(String path, Handler<AsyncResult<List<String>>> handler) {
-        return null;
-    }
-
-    @Override
     public Zk watchChildren(String path, Handler<AsyncResult<List<String>>> watcher) {
-        return null;
+        childrenHandler = watcher;
+        return this;
     }
 
     @Override
-    public Zk getData(String path, boolean watch, Handler<AsyncResult<byte[]>> handler) {
-        dataHandler = handler;
-        handler.handle(dataResult);
+    public Zk unwatchChildren(String path) {
+        childrenHandler = null;
         return this;
     }
 
     @Override
     public Zk getData(String path, Handler<AsyncResult<byte[]>> handler) {
-        return null;
+        handler.handle(dataResult);
+        return this;
     }
 
     @Override
     public Zk watchData(String path, Handler<AsyncResult<byte[]>> watcher) {
-        return null;
+        dataHandler = watcher;
+        return this;
     }
 
     @Override
     public Zk unwatchData(String path) {
-        return null;
+        dataHandler = null;
+        return this;
     }
 
     @Override

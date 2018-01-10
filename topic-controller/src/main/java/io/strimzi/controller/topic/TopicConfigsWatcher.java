@@ -18,6 +18,7 @@
 package io.strimzi.controller.topic;
 
 import io.strimzi.controller.topic.zk.Zk;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,7 +49,7 @@ class TopicConfigsWatcher {
     public void addChild(String child) {
         this.children.put(child, Boolean.FALSE);
         String path = CONFIGS_ZNODE + "/" + child;
-        zk.getData(path, true, dataResult -> {
+        Handler<AsyncResult<byte[]>> handler = dataResult -> {
             if (dataResult.succeeded()) {
                 this.children.compute(child, (k, v) -> {
                     if (Boolean.TRUE.equals(v)) {
@@ -61,7 +62,8 @@ class TopicConfigsWatcher {
             } else {
                 logger.error("While getting or watching znode {}", path, dataResult.cause());
             }
-        });
+        };
+        zk.watchData(path, handler).getData(path, handler);
     }
 
     boolean watching(String child) {
@@ -70,7 +72,7 @@ class TopicConfigsWatcher {
 
     public synchronized void removeChild(String child) {
         this.children.remove(child);
-        zk.getData(CONFIGS_ZNODE + "/" + child, false, dataResult -> {});
+        zk.unwatchData(CONFIGS_ZNODE + "/" + child);
     }
 
     public void start(Zk zk) {

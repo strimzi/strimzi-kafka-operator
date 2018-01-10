@@ -240,68 +240,6 @@ public class ZkImpl implements Zk {
     }
 
     @Override
-    public Zk children(String path, boolean watch, Handler<AsyncResult<List<String>>> handler) {
-        ZooKeeper zookeeper;
-        synchronized(this) {
-            zookeeper = zk;
-        }
-        if (zookeeper == null) {
-            handler.handle(Future.failedFuture(new IllegalStateException("Not connected")));
-        }
-        final AsyncCallback.Children2Callback callback = (rc, path2, ctx, children, stat) -> {
-            Watcher.Event.EventType eventType = (Watcher.Event.EventType)ctx;
-            if (eventType == null // first time
-                || eventType == Watcher.Event.EventType.NodeChildrenChanged
-                || KeeperException.Code.get(rc) != KeeperException.Code.OK) {
-                invokeOnContext(handler, rc, children);
-            }
-        };
-        final Watcher watcher = new Watcher() {
-            @Override
-            public void process(WatchedEvent event) {
-                zookeeper.getChildren(path, this,
-                        callback, event.getType());
-            }
-        };
-        zookeeper.getChildren(path, watch ? watcher : null,
-                callback, null);
-        return this;
-    }
-
-    @Override
-    public synchronized Zk getData(String path, boolean watch, Handler<AsyncResult<byte[]>> handler) {
-        ZooKeeper zookeeper;
-        synchronized(this) {
-            zookeeper = zk;
-        }
-        if (zookeeper == null) {
-            handler.handle(Future.failedFuture(new IllegalStateException("Not connected")));
-        }
-        final AsyncCallback.DataCallback callback = (rc, path2, ctx, data, stat) -> {
-            Watcher.Event.EventType eventType = (Watcher.Event.EventType)ctx;
-            if (eventType == null // first time
-                    || eventType == Watcher.Event.EventType.NodeDataChanged
-                    || KeeperException.Code.get(rc) != KeeperException.Code.OK) {
-                invokeOnContext(handler, rc, data);
-            }
-        };
-        final Watcher watcher;
-        if (watch) {
-            watcher = new Watcher() {
-                @Override
-                public void process(WatchedEvent event) {
-                    zookeeper.getData(path, this,
-                            callback, event.getType());
-                }
-            };
-        } else {
-            watcher = null;
-        }
-        zookeeper.getData(path, watcher, callback, null);
-        return this;
-    }
-
-    @Override
     public Zk getData(String path, Handler<AsyncResult<byte[]>> handler) {
         ZooKeeper zookeeper;
         synchronized(this) {
