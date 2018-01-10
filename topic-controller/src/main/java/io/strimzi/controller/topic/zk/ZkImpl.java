@@ -33,11 +33,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
+import static java.util.Collections.emptySet;
 
 /**
  * Implementation of {@link Zk}
@@ -45,21 +49,11 @@ import java.util.Set;
 public class ZkImpl implements Zk {
 
     private final static Logger logger = LoggerFactory.getLogger(ZkImpl.class);
+    public static final String PREFIX_DATA = "data:";
+    public static final String PREFIX_CHILDREN = "children:";
+    public static final String PREFIX_EXISTS = "exists:";
     private Handler<AsyncResult<ZooKeeper>> temporaryConnectionHandler;
 
-    private static <T> Map<String, Set<Handler<AsyncResult<T>>>>
-    addHandler(Map<String, Set<Handler<AsyncResult<T>>>> watches, String path, Handler<AsyncResult<T>> handler) {
-        if (watches == null) {
-            watches = new HashMap<>();
-        }
-        Set<Handler<AsyncResult<T>>> handlers = watches.get(path);
-        if (handlers == null) {
-            handlers = new HashSet<>(1);
-            watches.put(path, handlers);
-        }
-        handlers.add(handler);
-        return watches;
-    }
 
     private static <T> Map<String, Set<Handler<AsyncResult<T>>>>
     removeWatch(Map<String, Set<Handler<AsyncResult<T>>>> watches, String path, Handler<AsyncResult<T>> handler) {
@@ -83,6 +77,9 @@ public class ZkImpl implements Zk {
     private final Vertx vertx;
     private ZooKeeper zk;
     private Handler<AsyncResult<Zk>> disconnectionHandler;
+
+    // Only accessed on the vertx context.
+    private final ConcurrentHashMap<String, Handler<? extends AsyncResult<?>>> watches = new ConcurrentHashMap<>();
 
     public ZkImpl(Vertx vertx, String zkConnectionString, int sessionTimeout) {
         this.vertx = vertx;
@@ -305,6 +302,76 @@ public class ZkImpl implements Zk {
     }
 
     @Override
+    public Zk getData(String path, Handler<AsyncResult<byte[]>> handler) {
+        ZooKeeper zookeeper;
+        synchronized(this) {
+            zookeeper = zk;
+        }
+        if (zookeeper == null) {
+            handler.handle(Future.failedFuture(new IllegalStateException("Not connected")));
+        }
+        final AsyncCallback.DataCallback callback = (rc, path2, ctx, data, stat) -> {
+            Watcher.Event.EventType eventType = (Watcher.Event.EventType)ctx;
+            if (eventType == null // first time
+                    || eventType == Watcher.Event.EventType.NodeDataChanged
+                    || KeeperException.Code.get(rc) != KeeperException.Code.OK) {
+                Future<byte[]> future = mapResult(rc, data);
+                vertx.runOnContext(ignored -> {
+                    final Handler<AsyncResult<byte[]>> watch = getDataWatchHandler(path);
+                    if (eventType != null && watch != null) {
+                        // Only call the handlers if callback fired due to watch
+                        watch.handle(future);
+                    }
+                    if (eventType == null && handler != null) {
+                        handler.handle(future);
+                    }
+                });
+            }
+        };
+        final Watcher watcher;
+        if (getDataWatchHandler(path) != null) {
+            watcher = new Watcher() {
+                @Override
+                public void process(WatchedEvent event) {
+                    if (getDataWatchHandler(path) != null) {
+                        // Reset the watch if there still is a handler
+                        zookeeper.getData(path, this,
+                                callback, event.getType());
+                    }
+                }
+            };
+        } else {
+            watcher = null;
+        }
+        zookeeper.getData(path, watcher, callback, null);
+        return this;
+    }
+
+    private Handler<AsyncResult<byte[]>> getDataWatchHandler(String path) {
+        return (Handler<AsyncResult<byte[]>>)watches.get(PREFIX_DATA + path);
+    }
+
+    private Handler<AsyncResult<List<String>>> getChildrenWatchHandler(String path) {
+        return (Handler<AsyncResult<List<String>>>)watches.get(PREFIX_CHILDREN + path);
+    }
+
+    private Handler<AsyncResult<Stat>> getExistsWatchHandler(String path) {
+        return (Handler<AsyncResult<Stat>>)watches.get(PREFIX_EXISTS + path);
+    }
+
+    @Override
+    public Zk watchData(String path, Handler<AsyncResult<byte[]>> watcher) {
+        watches.put(PREFIX_DATA + path, watcher);
+        return this;
+    }
+
+    @Override
+    public Zk unwatchData(String path) {
+        watches.remove(PREFIX_DATA + path);
+        return this;
+    }
+
+    @Override
     public Zk delete(String path, int version, Handler<AsyncResult<Void>> handler) {
         ZooKeeper zookeeper;
         synchronized(this) {
@@ -315,30 +382,6 @@ public class ZkImpl implements Zk {
         }
         Object ctx = null;
         zookeeper.delete(path, version, (rc, path1, ctx1) -> invokeOnContext(handler, rc, null), ctx);
-        return this;
-    }
-
-    // Only accessed on the vertx context.
-    private Map<String, Set<Handler<AsyncResult<Stat>>>> existsWatches;
-    private volatile boolean haveExistsWatchers = false;
-
-    @Override
-    public Zk watchExists(String path, Handler<AsyncResult<Stat>> watcher, Handler<AsyncResult<Stat>> complete) {
-        vertx.runOnContext(fut -> {
-            existsWatches = addHandler(existsWatches, path, watcher);
-            haveExistsWatchers = !existsWatches.isEmpty();
-            exists(path, complete);
-        });
-        return this;
-    }
-
-    @Override
-    public Zk unwatchExists(String path, Handler<AsyncResult<Stat>> handler, Handler<AsyncResult<Void>> complete) {
-        vertx.runOnContext(ignored -> {
-            existsWatches = removeWatch(existsWatches, path, handler);
-            haveExistsWatchers = !existsWatches.isEmpty();
-            complete.handle(Future.succeededFuture());
-        });
         return this;
     }
 
@@ -359,24 +402,27 @@ public class ZkImpl implements Zk {
                     || KeeperException.Code.get(rc) != KeeperException.Code.OK) {
                 Future<Stat> future = mapResult(rc, stat);
                 vertx.runOnContext(ignored -> {
-                    final Set<Handler<AsyncResult<Stat>>> handlers = existsWatches.get(path);
-                    if (eventType != null) {
+                    final Handler<AsyncResult<Stat>> watch = getExistsWatchHandler(path);
+                    if (eventType != null && watch != null) {
                         // Only call the handlers if callback fired due to watch
-                        dispatchHandlers(future, handlers);
+                        watch.handle(future);
                     }
-                    if (handler != null) {
+                    if (eventType == null && handler != null) {
                         handler.handle(future);
                     }
                 });
             }
         };
         final Watcher watcher;
-        if (haveExistsWatchers) {
+        if (getExistsWatchHandler(path) != null) {
             watcher = new Watcher() {
                 @Override
                 public void process(WatchedEvent event) {
-                    zookeeper.exists(path, this,
-                            callback, event.getType());
+                    if (getExistsWatchHandler(path) != null) {
+                        // Reset the watch if there still is a handler
+                        zookeeper.exists(path, this,
+                                callback, event.getType());
+                    }
                 }
             };
         } else {
@@ -386,13 +432,77 @@ public class ZkImpl implements Zk {
         return this;
     }
 
-    private <T> void dispatchHandlers(Future<T> future, Set<Handler<AsyncResult<T>>> handlers) {
-        if (handlers != null) {
-            for (Handler<AsyncResult<T>> handler: handlers) {
-                vertx.runOnContext(x->handler.handle(future));
-            }
-        }
+    @Override
+    public Zk watchExists(String path, Handler<AsyncResult<Stat>> watcher) {
+        watches.put(PREFIX_EXISTS + path, watcher);
+        return this;
     }
+
+    @Override
+    public Zk unwatchExists(String path) {
+        watches.remove(PREFIX_EXISTS + path);
+        return this;
+    }
+
+    @Override
+    public Zk children(String path, Handler<AsyncResult<List<String>>> handler) {
+        ZooKeeper zookeeper;
+        synchronized(this) {
+            zookeeper = zk;
+        }
+        if (zookeeper == null) {
+            handler.handle(Future.failedFuture(new IllegalStateException("Not connected")));
+            return this;
+        }
+        final AsyncCallback.Children2Callback callback = (rc, path2, ctx, children, stat) -> {
+            Watcher.Event.EventType eventType = (Watcher.Event.EventType)ctx;
+            if (eventType == null // first time
+                    || eventType == Watcher.Event.EventType.NodeChildrenChanged
+                    || KeeperException.Code.get(rc) != KeeperException.Code.OK) {
+                Future<List<String>> future = mapResult(rc, children);
+                vertx.runOnContext(ignored -> {
+                    final Handler<AsyncResult<List<String>>> watch = getChildrenWatchHandler(path);
+                    if (eventType != null && watch != null) {
+                        // Only call the handlers if callback fired due to watch
+                        watch.handle(future);
+                    }
+                    if (eventType == null && handler != null) {
+                        handler.handle(future);
+                    }
+                });
+            }
+        };
+        final Watcher watcher;
+        if (getChildrenWatchHandler(path) != null) {
+            watcher = new Watcher() {
+                @Override
+                public void process(WatchedEvent event) {
+                    if (getChildrenWatchHandler(path) != null) {
+                        // Reset the watch if there still is a handler
+                        zookeeper.getChildren(path, this,
+                                callback, event.getType());
+                    }
+                }
+            };
+        } else {
+            watcher = null;
+        }
+        zookeeper.getChildren(path, watcher, callback, null);
+        return this;
+    }
+
+    @Override
+    public Zk watchChildren(String path, Handler<AsyncResult<List<String>>> watcher) {
+        watches.put(PREFIX_CHILDREN + path, watcher);
+        return this;
+    }
+
+    @Override
+    public Zk unwatchChildren(String path) {
+        watches.remove(PREFIX_CHILDREN + path);
+        return this;
+    }
+
 
 
 }

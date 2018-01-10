@@ -15,11 +15,9 @@
  * limitations under the License.
  */
 
-package io.strimzi.controller.topic;
+package io.strimzi.controller.topic.zk;
 
-import io.strimzi.controller.topic.zk.AclBuilder;
-import io.strimzi.controller.topic.zk.Zk;
-import io.strimzi.controller.topic.zk.ZkImpl;
+import io.strimzi.controller.topic.EmbeddedZooKeeper;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -35,10 +33,12 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
 @RunWith(VertxUnitRunner.class)
@@ -127,7 +127,7 @@ public class ZkImplTest {
         connection.await();
     }
 
-    private Zk connect(TestContext context) {
+    private ZkImpl connect(TestContext context) {
         Async async = context.async();
         Zk zk = new ZkImpl(vertx, zkServer.getZkConnectString(), 60_000).connect(ar -> {
             if (ar.failed()) {
@@ -138,7 +138,7 @@ public class ZkImplTest {
         });
 
         async.await();
-        return zk;
+        return (ZkImpl)zk;
     }
 
     /**
@@ -173,6 +173,87 @@ public class ZkImplTest {
                     context.fail();
                 }
             });
+        });
+    }
+
+    @Test
+    public void testWatchUnwatchChildren(TestContext context) {
+        ZkImpl zk = connect(context);
+        // Create a node
+        Async fooFuture = context.async();
+        zk.create("/foo", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, ar-> {
+            fooFuture.complete();
+        });
+        fooFuture.await();
+
+        // Now watch its children
+        Async barFuture = context.async();
+        zk.watchChildren("/foo", watchResult -> {
+            context.assertEquals(singletonList("bar"), watchResult.result());
+            zk.unwatchChildren("/foo");
+            zk.delete("/foo/bar", -1, deleteResult -> {
+                barFuture.countDown();
+            });
+
+        });
+        zk.children("/foo", lsResult -> {
+            context.assertEquals(emptyList(), lsResult.result());
+            zk.create("/foo/bar", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, ig -> {});
+        });
+        barFuture.await();
+    }
+
+    @Test
+    public void testWatchUnwatchData(TestContext context) {
+        ZkImpl zk = connect(context);
+        // Create a node
+        Async fooFuture = context.async();
+        byte[] data1 = new byte[]{1};
+        zk.create("/foo", data1, AclBuilder.PUBLIC, CreateMode.PERSISTENT, ar-> {
+            fooFuture.complete();
+        });
+        fooFuture.await();
+
+        Async done = context.async();
+        byte[] data2 = {2};
+        zk.watchData("/foo", dataWatch -> {
+            context.assertTrue(Arrays.equals(data2, dataWatch.result()));
+        }).getData("/foo", dataResult -> {
+            context.assertTrue(Arrays.equals(data1, dataResult.result()));
+
+            zk.setData("/foo", data2, -1, setResult -> {
+                done.complete();
+            });
+        });
+    }
+
+    @Test
+    public void testWatchUnwatchExists(TestContext context) {
+        ZkImpl zk = connect(context);
+        // Create a node
+        Async created = context.async(2);
+        Async deleted = context.async(2);
+        zk.watchExists("/foo", existsResult-> {
+            if (existsResult.result() != null) {
+                created.countDown();
+            } else {
+                deleted.countDown();
+            }
+        }).exists("/foo", null);
+        zk.create("/foo", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, ar-> {
+            created.countDown();
+        });
+        created.await();
+
+        zk.delete("/foo", -1, deleteResult -> {
+            deleted.countDown();
+        });
+        deleted.await();
+
+        zk.unwatchExists("/foo");
+        Async created2 = context.async();
+        zk.create("/foo", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, ar-> {
+            created2.complete();
         });
     }
 

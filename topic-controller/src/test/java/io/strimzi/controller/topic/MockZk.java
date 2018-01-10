@@ -87,10 +87,35 @@ class MockZk implements Zk {
     }
 
     @Override
+    public Zk children(String path, Handler<AsyncResult<List<String>>> handler) {
+        return null;
+    }
+
+    @Override
+    public Zk watchChildren(String path, Handler<AsyncResult<List<String>>> watcher) {
+        return null;
+    }
+
+    @Override
     public Zk getData(String path, boolean watch, Handler<AsyncResult<byte[]>> handler) {
         dataHandler = handler;
         handler.handle(dataResult);
         return this;
+    }
+
+    @Override
+    public Zk getData(String path, Handler<AsyncResult<byte[]>> handler) {
+        return null;
+    }
+
+    @Override
+    public Zk watchData(String path, Handler<AsyncResult<byte[]>> watcher) {
+        return null;
+    }
+
+    @Override
+    public Zk unwatchData(String path) {
+        return null;
     }
 
     @Override
@@ -99,12 +124,12 @@ class MockZk implements Zk {
     }
 
     @Override
-    public Zk watchExists(String path, Handler<AsyncResult<Stat>> watcher, Handler<AsyncResult<Stat>> complete) {
+    public Zk watchExists(String path, Handler<AsyncResult<Stat>> watcher) {
         return null;
     }
 
     @Override
-    public Zk unwatchExists(String path, Handler<AsyncResult<Stat>> watcher, Handler<AsyncResult<Void>> complete) {
+    public Zk unwatchExists(String path) {
         return null;
     }
 
