@@ -12,15 +12,17 @@ import java.util.Map;
  */
 public class Storage {
 
-    private static final String TYPE_FIELD = "type";
-    private static final String SIZE_FIELD = "size";
-    private static final String STORAGE_CLASS_FIELD = "class";
-    private static final String SELECTOR_FIELD = "selector";
+    public static final String TYPE_FIELD = "type";
+    public static final String SIZE_FIELD = "size";
+    public static final String STORAGE_CLASS_FIELD = "class";
+    public static final String SELECTOR_FIELD = "selector";
+    public static final String DELETE_CLAIM_FIELD = "delete-claim";
 
     private final StorageType type;
     private Quantity size;
     private String storageClass;
     private Map<String, String> selector;
+    private boolean isDeleteClaim = false;
 
     /**
      * Constructor
@@ -65,6 +67,18 @@ public class Storage {
     }
 
     /**
+     * Specify if the claims (for "persistent-claim" type) have to be deleted
+     * when the entire cluster is deleted
+     *
+     * @param isDeleteClaim if claims have to be deleted
+     * @return  current Storage instance
+     */
+    public Storage withDeleteClaim(final boolean isDeleteClaim) {
+        this.isDeleteClaim = isDeleteClaim;
+        return this;
+    }
+
+    /**
      * Returns a Storage instance from a corresponding JSON representation
      *
      * @param json  storage JSON representation
@@ -88,6 +102,11 @@ public class Storage {
             storage.withClass(storageClass);
         }
 
+        if (json.getValue(Storage.DELETE_CLAIM_FIELD) instanceof Boolean) {
+            boolean isDeleteClaim = json.getBoolean(Storage.DELETE_CLAIM_FIELD);
+            storage.withDeleteClaim(isDeleteClaim);
+        }
+
         // TODO : getting the storage selector
 
         return storage;
@@ -107,6 +126,10 @@ public class Storage {
 
         if (pvc.getSpec().getSelector() != null) {
             storage.withSelector(new HashMap<>(pvc.getSpec().getSelector().getMatchLabels()));
+        }
+
+        if (pvc.getMetadata().getAnnotations() != null) {
+            storage.withDeleteClaim(Boolean.valueOf(pvc.getMetadata().getAnnotations().computeIfAbsent(Storage.DELETE_CLAIM_FIELD, s -> "false")));
         }
 
         return storage;
@@ -173,5 +196,13 @@ public class Storage {
      */
     public Map<String, String> selector() {
         return this.selector;
+    }
+
+    /**
+     * @return  if the claims (for "persistent-claim" type) have to be deleted
+     *          when the entire cluster is deleted
+     */
+    public boolean isDeleteClaim() {
+        return this.isDeleteClaim;
     }
 }
