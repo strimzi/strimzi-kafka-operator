@@ -168,11 +168,15 @@ public abstract class AbstractCluster {
         Map<String, Quantity> requests = new HashMap<>();
         requests.put("storage", storage.size());
 
+        Map<String, String> annotations = new HashMap<>();
+        annotations.put(Storage.DELETE_CLAIM_FIELD, String.valueOf(storage.isDeleteClaim()));
+
         // TODO : deal with the storage.selector field
 
         PersistentVolumeClaim pvc = new PersistentVolumeClaimBuilder()
                 .withNewMetadata()
                 .withName(name)
+                .withAnnotations(annotations)
                 .endMetadata()
                 .withNewSpec()
                 .withAccessModes("ReadWriteOnce")

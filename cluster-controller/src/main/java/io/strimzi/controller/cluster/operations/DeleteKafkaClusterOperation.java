@@ -2,13 +2,18 @@ package io.strimzi.controller.cluster.operations;
 
 import io.strimzi.controller.cluster.K8SUtils;
 import io.strimzi.controller.cluster.operations.kubernetes.DeleteConfigMapOperation;
+import io.strimzi.controller.cluster.operations.kubernetes.DeletePersistentVolumeClaimOperation;
 import io.strimzi.controller.cluster.operations.kubernetes.DeleteServiceOperation;
 import io.strimzi.controller.cluster.operations.kubernetes.DeleteStatefulSetOperation;
 import io.strimzi.controller.cluster.resources.KafkaCluster;
+import io.strimzi.controller.cluster.resources.Storage;
 import io.vertx.core.*;
 import io.vertx.core.shareddata.Lock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class DeleteKafkaClusterOperation extends KafkaClusterOperation {
     private static final Logger log = LoggerFactory.getLogger(DeleteKafkaClusterOperation.class.getName());
@@ -45,7 +50,27 @@ public class DeleteKafkaClusterOperation extends KafkaClusterOperation {
                 Future<Void> futureStatefulSet = Future.future();
                 OperationExecutor.getInstance().execute(new DeleteStatefulSetOperation(namespace, name), futureStatefulSet.completer());
 
-                CompositeFuture.join(futureConfigMap, futureService, futureHeadlessService, futureStatefulSet).setHandler(ar -> {
+                Future<Void> futurePersistentVolumeClaim = Future.future();
+                if ((kafka.getStorage().type() == Storage.StorageType.PERSISTENT_CLAIM) && kafka.getStorage().isDeleteClaim()) {
+
+                    List<Future> futurePersistentVolumeClaims = new ArrayList<>();
+                    for (int i = 0; i < kafka.getReplicas(); i++) {
+                        Future<Void> f = Future.future();
+                        futurePersistentVolumeClaims.add(f);
+                        OperationExecutor.getInstance().execute(new DeletePersistentVolumeClaimOperation(namespace, "kafka-storage-" + name + "-" + i), f.completer());
+                    }
+                    CompositeFuture.join(futurePersistentVolumeClaims).setHandler(ar -> {
+                        if (ar.succeeded()) {
+                            handler.handle(Future.succeededFuture());
+                        } else {
+                            handler.handle(Future.failedFuture("Failed to delete persistent volume claims"));
+                        }
+                    });
+                } else {
+                    futurePersistentVolumeClaim.complete();
+                }
+
+                CompositeFuture.join(futureConfigMap, futureService, futureHeadlessService, futureStatefulSet, futurePersistentVolumeClaim).setHandler(ar -> {
                     if (ar.succeeded()) {
                         log.info("Kafka cluster {} successfully deleted from namespace {}", name, namespace);
                         handler.handle(Future.succeededFuture());
