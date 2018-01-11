@@ -81,10 +81,7 @@ public class Session extends AbstractVerticle {
         this.adminClient = AdminClient.create(adminClientProps);
         this.kafka = new ControllerAssignedKafkaImpl(adminClient, vertx, config);
 
-        // app=barnabas and kind=topic
-        // or app=barnabas, kind=topic, cluster=my-cluster if we need to scope it to a cluster
-        LabelPredicate cmPredicate = new LabelPredicate("kind", "topic",
-                "app", "strimzi");
+        LabelPredicate cmPredicate = config.get(Config.LABELS);
 
         this.k8s = new K8sImpl(vertx, kubeClient, cmPredicate);
 

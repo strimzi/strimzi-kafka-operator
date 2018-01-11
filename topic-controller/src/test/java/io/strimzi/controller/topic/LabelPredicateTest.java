@@ -48,6 +48,51 @@ public class LabelPredicateTest {
         }
     }
 
+    /**
+     * See https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set
+     * and https://github.com/kubernetes/community/blob/master/contributors/design-proposals/architecture/identifiers.md
+     */
+    @Test
+    public void testParser() {
+        asserParseFails("foo");
+
+        asserParseFails("foo=bar,");
+
+        // Disallow these for now
+        asserParseFails("foo==bar");
+        asserParseFails("foo!=bar");
+        asserParseFails("foo=bar,");
+        asserParseFails("foo=bar,,");
+        asserParseFails(",foo=bar");
+        asserParseFails(",,foo=bar");
+        asserParseFails("8/foo=bar");
+        asserParseFails("//foo=bar");
+        asserParseFails("a/b/foo=bar");
+        asserParseFails("foo=bar/");
+
+        // label values can be empty
+        LabelPredicate.fromString("foo=");
+
+        // single selector
+        LabelPredicate.fromString("foo=bar");
+        LabelPredicate.fromString("foo/bar=baz");
+        LabelPredicate.fromString("foo.io/bar=baz");
+
+        // multiple selectors
+        LabelPredicate.fromString("foo=bar,name=gee");
+        LabelPredicate.fromString("foo=bar,name=");
+        LabelPredicate.fromString("foo=bar,lala/name=");
+    }
+
+    private void asserParseFails(String foo) {
+        try {
+            LabelPredicate.fromString(foo);
+            fail();
+        } catch (IllegalArgumentException e) {
+
+        }
+    }
+
     @Test
     public void testLabels() {
         LabelPredicate p = new LabelPredicate("foo", "1", "bar", "2");

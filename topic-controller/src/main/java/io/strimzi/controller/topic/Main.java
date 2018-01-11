@@ -22,6 +22,9 @@ import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * The entry-point to the topic controller.
  * Main responsibility is to deploy a {@link Session} with an appropriate Config and KubeClient,
@@ -37,18 +40,14 @@ public class Main {
     }
 
     public void run() {
-        Config config = new Config(System.getenv());
+        Map<String, String> m = new HashMap<>(System.getenv());
+        m.keySet().retainAll(Config.keyNames());
+        Config config = new Config(m);
         deploy(config);
     }
 
     private void deploy(Config config) {
-        String masterUrl = config.get(Config.KUBERNETES_MASTER_URL);
-        DefaultKubernetesClient kubeClient;
-        if (masterUrl == null) {
-            kubeClient = new DefaultKubernetesClient();
-        } else {
-            kubeClient = new DefaultKubernetesClient(masterUrl);
-        }
+        DefaultKubernetesClient kubeClient = new DefaultKubernetesClient();
         Vertx vertx = Vertx.vertx();
         StringBuilder sb = new StringBuilder(System.lineSeparator());
         for (Config.Value v: config.keys()) {

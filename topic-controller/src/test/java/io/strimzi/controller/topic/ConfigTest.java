@@ -22,6 +22,7 @@ import org.junit.Test;
 import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class ConfigTest {
 
@@ -33,7 +34,6 @@ public class ConfigTest {
     @Test
     public void empty() {
         Config c = new Config(Collections.emptyMap());
-        assertEquals(Config.KUBERNETES_MASTER_URL.defaultValue, c.get(Config.KUBERNETES_MASTER_URL));
         assertEquals(Config.ZOOKEEPER_CONNECT.defaultValue, c.get(Config.ZOOKEEPER_CONNECT));
         assertEquals(Config.KAFKA_BOOTSTRAP_SERVERS.defaultValue, c.get(Config.KAFKA_BOOTSTRAP_SERVERS));
         assertEquals(2_000, c.get(Config.ZOOKEEPER_SESSION_TIMEOUT_MS).intValue());
@@ -42,9 +42,20 @@ public class ConfigTest {
     @Test
     public void override() {
         Config c = new Config(Collections.singletonMap(Config.ZOOKEEPER_SESSION_TIMEOUT_MS.key, "13 seconds"));
-        assertEquals(Config.KUBERNETES_MASTER_URL.defaultValue, c.get(Config.KUBERNETES_MASTER_URL));
         assertEquals(Config.ZOOKEEPER_CONNECT.defaultValue, c.get(Config.ZOOKEEPER_CONNECT));
         assertEquals(Config.KAFKA_BOOTSTRAP_SERVERS.defaultValue, c.get(Config.KAFKA_BOOTSTRAP_SERVERS));
         assertEquals(13_000, c.get(Config.ZOOKEEPER_SESSION_TIMEOUT_MS).intValue());
+    }
+
+    @Test
+    public void intervals() {
+        new Config(Collections.singletonMap(Config.ZOOKEEPER_SESSION_TIMEOUT_MS.key, "13 seconds"));
+        new Config(Collections.singletonMap(Config.ZOOKEEPER_SESSION_TIMEOUT_MS.key, "13seconds"));
+        try {
+            new Config(Collections.singletonMap(Config.ZOOKEEPER_SESSION_TIMEOUT_MS.key, "13foos"));
+            fail();
+        } catch (IllegalArgumentException e) {
+
+        }
     }
 }

@@ -27,6 +27,7 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.apache.zookeeper.CreateMode;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -85,6 +86,7 @@ public class ZkImplTest {
         });
     }
 
+    @Ignore
     @Test
     public void testReconnectOnBounce(TestContext context) throws IOException, InterruptedException {
         ZkImpl zkImpl = new ZkImpl(vertx, zkServer.getZkConnectString(), 60_000);

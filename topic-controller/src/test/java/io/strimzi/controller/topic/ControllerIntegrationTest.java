@@ -128,7 +128,6 @@ public class ControllerIntegrationTest {
 
         Map<String, String> controllerConfig = new HashMap<>();
         controllerConfig.put(Config.KAFKA_BOOTSTRAP_SERVERS.key, cluster.brokerList());
-        controllerConfig.put(Config.KUBERNETES_MASTER_URL.key, OC.masterUrl());
         Config config = new Config(controllerConfig);
         kafka = new ControllerAssignedKafkaImpl(adminClient, vertx, config);
 

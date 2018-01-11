@@ -18,6 +18,7 @@
 package io.strimzi.controller.topic;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -76,6 +77,13 @@ public class Config {
         }
     };
 
+    private static Type<? extends LabelPredicate> LABEL_PREDICATE = new Type<LabelPredicate>("selector", "A kubernetes selector") {
+        @Override
+        public LabelPredicate parse(String s) {
+            return LabelPredicate.fromString(s);
+        }
+    };
+
     static class Value<T> {
         public final String key;
         public final String defaultValue;
@@ -92,7 +100,7 @@ public class Config {
             this.required = false;
             this.doc = doc;
         }
-        private Value(String key, Type type, boolean required, String doc) {
+        private Value(String key, Type<? extends T> type, boolean required, String doc) {
             this.key = key;
             this.type = type;
             this.defaultValue = null;
@@ -101,8 +109,8 @@ public class Config {
         }
     }
 
-    public static final String TC_K8S_URL = "TC_K8S_URL";
-    public static final String TC_KAFKA_BOOTSTRAP_SERVERS = "TC_KAFKA_BOOTSTRAP_SERVERS";
+    public static final String TC_CM_LABELS = "TC_CM_LABELS";
+    public static final String TC_KAFKA_BOOTSTRAP_SERVERS = "TC_KF_BOOTSTRAP_SERVERS";
     public static final String TC_ZK_CONNECT = "TC_ZK_CONNECT";
     public static final String TC_ZK_SESSION_TIMEOUT = "TC_ZK_SESSION_TIMEOUT";
     public static final String TC_PERIODIC_INTERVAL = "TC_PERIODIC_INTERVAL";
@@ -112,8 +120,8 @@ public class Config {
     private static final Map<String, Value> CONFIG_VALUES = new HashMap<>();
     private static final Set<Type> TYPES = new HashSet<>();
 
-    public static final Value<String> KUBERNETES_MASTER_URL = new Value(TC_K8S_URL, STRING, null,
-            "The URL of the kubernetes master apiserver.");
+    public static final Value<LabelPredicate> LABELS = new Value(TC_CM_LABELS, LABEL_PREDICATE,"strimzi.io/kind=topic",
+            "A comma-separated list of key=value pairs for selecting ConfigMaps that describe topics.");
     public static final Value<String> KAFKA_BOOTSTRAP_SERVERS = new Value(TC_KAFKA_BOOTSTRAP_SERVERS, STRING,getenv("KAFKA_SERVICE_HOST") + ":" + getenv("KAFKA_SERVICE_PORT"),
             "A comma-separated list of kafka bootstrap servers.");
     public static final Value<String> ZOOKEEPER_CONNECT = new Value(TC_ZK_CONNECT, STRING, getenv("KAFKA_ZOOKEEPER_SERVICE_HOST") + ":" + getenv("KAFKA_ZOOKEEPER_SERVICE_PORT"),
@@ -126,10 +134,10 @@ public class Config {
             "The interbroker throttled rate to use when a topic change requires partition reassignment.");
     public static final Value<Long> REASSIGN_VERIFY_INTERVAL_MS = new Value(TC_REASSIGN_VERIFY_INTERVAL, DURATION, "2 minutes",
             "The interval between verification executions (as in kafka-reassign-partitions.sh --verify ...) when a topic change requires partition reassignment.");
-    
+
     static {
         Map<String, Value> configValues = CONFIG_VALUES;
-        addConfigValue(configValues, KUBERNETES_MASTER_URL);
+        addConfigValue(configValues, LABELS);
         addConfigValue(configValues, KAFKA_BOOTSTRAP_SERVERS);
         addConfigValue(configValues, ZOOKEEPER_CONNECT);
         addConfigValue(configValues, ZOOKEEPER_SESSION_TIMEOUT_MS);
@@ -164,11 +172,18 @@ public class Config {
         }
     }
 
-    public Iterable<Value> keys() {
+    public static Collection<Value> keys() {
         return Collections.unmodifiableCollection(CONFIG_VALUES.values());
     }
 
+    public static Set<String> keyNames() {
+        return Collections.unmodifiableSet(CONFIG_VALUES.keySet());
+    }
+
     private <T> T get(Map<String, String> map, Value<T> value) {
+        if (!CONFIG_VALUES.containsKey(value)) {
+            throw new IllegalArgumentException("Unknown config value: It probably needs to be added to Config.CONFIG_VALUES");
+        }
         final String s = map.getOrDefault(value.key, value.defaultValue);
         if (s != null) {
             return (T) value.type.parse(s);

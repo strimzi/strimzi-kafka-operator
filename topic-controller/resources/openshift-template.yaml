@@ -55,20 +55,9 @@ spec:
         - name: strimzi-topic-controller
           image: strimzi/topic-controller:latest
           env:
-            - name: STRIMZI_CONTROLLER_LABELS
-              value: "app=strimzi,kind=topic" # TODO
-            # specify the configmap name where to find the rest of the config
-            - name: CONTROLLER_K8S_NAME
-              value: topic-controller-config
----
-# A configmap for configuring the topic controller
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: topic-controller-config
-data:
-  #kafkaBootstrapServers: "${KAFKA_SERVICE_HOST}:${KAFKA_SERVICE_PORT}"
-  #zookeeperConnect: "${KAFKA_ZOOKEEPER_SERVICE_HOST}:${KAFKA_ZOOKEEPER_SERVICE_PORT}"
-  zookeeperSessionTimeout: 10 seconds
-  fullReconciliationInterval: 2 hours
-  reassignVerifyInterval: 30 seconds
+            - name: TC_CM_LABELS
+              value: "strimzi.io/kind=topic"
+            - name: TC_ZK_SESSION_TIMEOUT
+              value: "2seconds"
+            - name: TC_PERIODIC_INTERVAL
+              value: "15minutes"
