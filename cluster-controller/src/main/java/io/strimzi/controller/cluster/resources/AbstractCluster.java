@@ -21,7 +21,7 @@ public abstract class AbstractCluster {
 
     protected final Logger log = LoggerFactory.getLogger(getClass());
 
-    public static final String STRIMZI_CLUSTER_CONTROLLER_DOMAIN = "cluster-contorller.strimzi,io";
+    public static final String STRIMZI_CLUSTER_CONTROLLER_DOMAIN = "cluster.controller.strimzi.io";
 
     private static final String VOLUME_MOUNT_HACK_IMAGE = "busybox";
     private static final String VOLUME_MOUNT_HACK_NAME = "volume-mount-hack";
