@@ -21,6 +21,8 @@ public abstract class AbstractCluster {
 
     protected final Logger log = LoggerFactory.getLogger(getClass());
 
+    public static final String STRIMZI_CLUSTER_CONTROLLER_DOMAIN = "cluster-contorller.strimzi,io";
+
     private static final String VOLUME_MOUNT_HACK_IMAGE = "busybox";
     private static final String VOLUME_MOUNT_HACK_NAME = "volume-mount-hack";
     private static final Long VOLUME_MOUNT_HACK_GROUPID = 1001L;
@@ -169,7 +171,8 @@ public abstract class AbstractCluster {
         requests.put("storage", storage.size());
 
         Map<String, String> annotations = new HashMap<>();
-        annotations.put(Storage.DELETE_CLAIM_FIELD, String.valueOf(storage.isDeleteClaim()));
+        annotations.put(String.format("%s/%s", AbstractCluster.STRIMZI_CLUSTER_CONTROLLER_DOMAIN, Storage.DELETE_CLAIM_FIELD),
+                String.valueOf(storage.isDeleteClaim()));
 
         // TODO : deal with the storage.selector field
 
