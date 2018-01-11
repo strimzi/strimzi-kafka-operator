@@ -101,24 +101,32 @@ public class Config {
         }
     }
 
+    public static final String TC_K8S_URL = "TC_K8S_URL";
+    public static final String TC_KAFKA_BOOTSTRAP_SERVERS = "TC_KAFKA_BOOTSTRAP_SERVERS";
+    public static final String TC_ZK_CONNECT = "TC_ZK_CONNECT";
+    public static final String TC_ZK_SESSION_TIMEOUT = "TC_ZK_SESSION_TIMEOUT";
+    public static final String TC_PERIODIC_INTERVAL = "TC_PERIODIC_INTERVAL";
+    public static final String TC_REASSIGN_THROTTLE = "TC_REASSIGN_THROTTLE";
+    public static final String TC_REASSIGN_VERIFY_INTERVAL = "TC_REASSIGN_VERIFY_INTERVAL";
+
     private static final Map<String, Value> CONFIG_VALUES = new HashMap<>();
     private static final Set<Type> TYPES = new HashSet<>();
 
-    public static final Value<String> KUBERNETES_MASTER_URL = new Value("kubernetesMasterUrl", STRING, Main.DEFAULT_MASTER_URL,
+    public static final Value<String> KUBERNETES_MASTER_URL = new Value(TC_K8S_URL, STRING, null,
             "The URL of the kubernetes master apiserver.");
-    public static final Value<String> KAFKA_BOOTSTRAP_SERVERS = new Value("kafkaBootstrapServers", STRING,getenv("KAFKA_SERVICE_HOST") + ":" + getenv("KAFKA_SERVICE_PORT"),
+    public static final Value<String> KAFKA_BOOTSTRAP_SERVERS = new Value(TC_KAFKA_BOOTSTRAP_SERVERS, STRING,getenv("KAFKA_SERVICE_HOST") + ":" + getenv("KAFKA_SERVICE_PORT"),
             "A comma-separated list of kafka bootstrap servers.");
-    public static final Value<String> ZOOKEEPER_CONNECT = new Value("zookeeperConnect", STRING, getenv("KAFKA_ZOOKEEPER_SERVICE_HOST") + ":" + getenv("KAFKA_ZOOKEEPER_SERVICE_PORT"),
+    public static final Value<String> ZOOKEEPER_CONNECT = new Value(TC_ZK_CONNECT, STRING, getenv("KAFKA_ZOOKEEPER_SERVICE_HOST") + ":" + getenv("KAFKA_ZOOKEEPER_SERVICE_PORT"),
             "The zookeeper connection string.");
-    public static final Value<Long> ZOOKEEPER_SESSION_TIMEOUT_MS = new Value("zookeeperSessionTimeout", DURATION, "2 seconds",
+    public static final Value<Long> ZOOKEEPER_SESSION_TIMEOUT_MS = new Value(TC_ZK_SESSION_TIMEOUT, DURATION, "2 seconds",
             "The ZooKeeper session timeout.");
-    public static final Value<Long> FULL_RECONCILIATION_INTERVAL_MS = new Value("fullReconciliationInterval", DURATION, "15 minutes",
+    public static final Value<Long> FULL_RECONCILIATION_INTERVAL_MS = new Value(TC_PERIODIC_INTERVAL, DURATION, "15 minutes",
             "The period between full reconciliations.");
-    public static final Value<Long> REASSIGN_THROTTLE = new Value("reassignThrottle", LONG, Long.toString(Long.MAX_VALUE),
+    public static final Value<Long> REASSIGN_THROTTLE = new Value(TC_REASSIGN_THROTTLE, LONG, Long.toString(Long.MAX_VALUE),
             "The interbroker throttled rate to use when a topic change requires partition reassignment.");
-    public static final Value<Long> REASSIGN_VERIFY_INTERVAL_MS = new Value("reassignVerifyInterval", DURATION, "2 minutes",
+    public static final Value<Long> REASSIGN_VERIFY_INTERVAL_MS = new Value(TC_REASSIGN_VERIFY_INTERVAL, DURATION, "2 minutes",
             "The interval between verification executions (as in kafka-reassign-partitions.sh --verify ...) when a topic change requires partition reassignment.");
-
+    
     static {
         Map<String, Value> configValues = CONFIG_VALUES;
         addConfigValue(configValues, KUBERNETES_MASTER_URL);
@@ -192,4 +200,6 @@ public class Config {
     public int hashCode() {
         return Objects.hash(map);
     }
+
+    // TODO Generate documentation about the env vars
 }

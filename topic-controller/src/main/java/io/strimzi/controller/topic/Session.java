@@ -17,6 +17,7 @@
 
 package io.strimzi.controller.topic;
 
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.controller.topic.zk.Zk;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
@@ -41,7 +42,7 @@ public class Session extends AbstractVerticle {
     private final static Logger logger = LoggerFactory.getLogger(Session.class);
 
     private final Config config;
-    private final DefaultKubernetesClient kubeClient;
+    private final KubernetesClient kubeClient;
 
     private ControllerAssignedKafkaImpl kafka;
     private AdminClient adminClient;
@@ -52,7 +53,7 @@ public class Session extends AbstractVerticle {
     private TopicConfigsWatcher tcw;
     private volatile boolean stopped = false;
 
-    public Session(DefaultKubernetesClient kubeClient, Config config) {
+    public Session(KubernetesClient kubeClient, Config config) {
         this.kubeClient = kubeClient;
         this.config = config;
     }
