@@ -87,24 +87,16 @@ public class Session extends AbstractVerticle {
 
         this.k8s = new K8sImpl(vertx, kubeClient, cmPredicate);
 
-        ZkTopicStore topicStore = new ZkTopicStore(vertx);
+        Zk zk = Zk.create(vertx, config.get(Config.ZOOKEEPER_CONNECT), this.config.get(Config.ZOOKEEPER_SESSION_TIMEOUT_MS).intValue());
+
+        ZkTopicStore topicStore = new ZkTopicStore(zk, vertx);
 
         this.controller = new Controller(vertx, kafka, k8s, topicStore, cmPredicate);
 
         this.tcw = new TopicConfigsWatcher(controller);
         this.tw = new TopicsWatcher(controller, tcw);
-
-        Zk zk = Zk.create(vertx, config.get(Config.ZOOKEEPER_CONNECT), this.config.get(Config.ZOOKEEPER_SESSION_TIMEOUT_MS).intValue());
-        final Handler<AsyncResult<Zk>> zkConnectHandler = ar -> {
-            tw.start(ar.result());
-            tcw.start(ar.result());
-        };
-        zk.disconnectionHandler(ar -> {
-            // reconnect if we got disconnected
-            if (ar.result() != null) {
-                zk.connect(zkConnectHandler);
-            }
-        }).temporaryConnectionHandler(topicStore).connect(zkConnectHandler);
+        tw.start(zk);
+        tcw.start(zk);
 
         Thread configMapThread = new Thread(() -> {
             logger.debug("Watching configmaps matching {}", cmPredicate);

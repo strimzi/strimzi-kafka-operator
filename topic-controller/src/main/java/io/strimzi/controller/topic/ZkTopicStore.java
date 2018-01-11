@@ -17,6 +17,9 @@
 
 package io.strimzi.controller.topic;
 
+import io.strimzi.controller.topic.zk.AclBuilder;
+import io.strimzi.controller.topic.zk.AclBuilder.Permission;
+import io.strimzi.controller.topic.zk.Zk;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -33,57 +36,37 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
+import java.util.List;
 
 /**
  * Implementation of {@link TopicStore} that stores the topic state in ZooKeeper.
  */
-public class ZkTopicStore implements TopicStore, Handler<AsyncResult<ZooKeeper>> {
+public class ZkTopicStore implements TopicStore {
 
     private final static Logger logger = LoggerFactory.getLogger(ZkTopicStore.class);
     private final Vertx vertx;
 
-    private volatile ZooKeeper zookeeper = null;
+    private final Zk zk;
 
-    private final ACL acl;
+    private final List<ACL> acl;
 
-    public ZkTopicStore(Vertx vertx) {
+    public ZkTopicStore(Zk zk, Vertx vertx) {
+        this.zk = zk;
         this.vertx = vertx;
-        acl = new ACL();
-        String scheme = "world";
-        String id = "anyone";
-        int perm = ZooDefs.Perms.READ | ZooDefs.Perms.WRITE |ZooDefs.Perms.CREATE | ZooDefs.Perms.DELETE;
-        acl.setId(new Id(scheme, id));
-        acl.setPerms(perm);
-
-    }
-
-    private ZooKeeper getZookeeper() {
-        try {
-            // TODO this is the wrong way to do it: Rather than consuming
-            // a ZooKeeper we should register a handler with the bootstrap
-            // watcher which will be called when it has a viable session
-            return zookeeper;
-        } catch (Exception e) {
-            logger.error("Error waiting for a ZooKeeper instance", e);
-            if (e instanceof RuntimeException) {
-                throw (RuntimeException)e;
-            }
-            throw new RuntimeException(e);
-        }
+        acl = new AclBuilder().addWorld(Permission.values()).build();
+        createParent("/barnabas");
+        createParent("/barnabas/topics");
     }
 
     private void createParent(String path) {
-        try {
-            getZookeeper().create(path, new byte[0], Collections.singletonList(acl), CreateMode.PERSISTENT);
-        } catch (KeeperException.NodeExistsException e) {
-            // That's fine then
-        } catch (KeeperException e) {
-            logger.error("Error creating {}", path, e);
-            throw new RuntimeException(e);
-        } catch (InterruptedException e) {
-            logger.error("Error creating {}", path, e);
-            throw new RuntimeException(e);
-        }
+        zk.create(path, null, acl, CreateMode.PERSISTENT, result -> {
+            if (result.failed()) {
+                if (!(result.cause() instanceof KeeperException.NodeExistsException)) {
+                    logger.error("Error creating {}", path, result.cause());
+                    throw new RuntimeException(result.cause());
+                }
+            }
+        });
     }
 
 
@@ -95,23 +78,19 @@ public class ZkTopicStore implements TopicStore, Handler<AsyncResult<ZooKeeper>>
     public void read(TopicName topicName, Handler<AsyncResult<Topic>> handler) {
         String topicPath = getTopicPath(topicName);
         logger.debug("read znode {}", topicPath);
-        getZookeeper().getData(topicPath, null, new AsyncCallback.DataCallback() {
-            @Override
-            public void processResult(int rc, String path, Object ctx, byte[] data, Stat stat) {
-                Exception exception = mapExceptions(rc);
-                final Future<Topic> future;
-                if (exception instanceof NoSuchEntityExistsException) {
-                    future = Future.succeededFuture(null);
-                } else if (exception == null) {
-                    Topic topic = TopicSerialization.fromJson(data);
-                    future = Future.succeededFuture(topic);
+        zk.getData(topicPath, result -> {
+            final AsyncResult<Topic> fut;
+            if (result.succeeded()) {
+                fut = Future.succeededFuture(TopicSerialization.fromJson(result.result()));
+            } else {
+                if (result.cause() instanceof KeeperException.NoNodeException) {
+                    fut = Future.succeededFuture(null);
                 } else {
-                    future = Future.failedFuture(exception);
+                    fut = result.map((Topic)null);
                 }
-                logger.debug("read znode {} result: {}", topicPath, future);
-                vertx.runOnContext(ar -> handler.handle(future));
             }
-        }, null);
+            handler.handle(fut);
+        });
     }
 
     @Override
@@ -120,10 +99,13 @@ public class ZkTopicStore implements TopicStore, Handler<AsyncResult<ZooKeeper>>
         byte[] data = TopicSerialization.toJson(topic);
         String topicPath = getTopicPath(topic.getTopicName());
         logger.debug("create znode {}", topicPath);
-        getZookeeper().create(topicPath, data,
-                Collections.singletonList(acl),
-                CreateMode.PERSISTENT,
-                (rc, path, ctx, name) -> handleOnContext("create", path, rc, handler), null);
+        zk.create(topicPath, data, acl, CreateMode.PERSISTENT, result -> {
+            if (result.failed() && result.cause() instanceof KeeperException.NodeExistsException) {
+                handler.handle(Future.failedFuture(new EntityExistsException()));
+            } else {
+                handler.handle(result);
+            }
+        });
     }
 
     @Override
@@ -132,8 +114,7 @@ public class ZkTopicStore implements TopicStore, Handler<AsyncResult<ZooKeeper>>
         // TODO pass a non-zero version
         String topicPath = getTopicPath(topic.getTopicName());
         logger.debug("update znode {}", topicPath);
-        getZookeeper().setData(topicPath, data, -1,
-                (rc, path, ctx, stat) -> handleOnContext("update", path, rc, handler), null);
+        zk.setData(topicPath, data, -1, handler);
     }
 
     @Override
@@ -141,49 +122,12 @@ public class ZkTopicStore implements TopicStore, Handler<AsyncResult<ZooKeeper>>
         // TODO pass a non-zero version
         String topicPath = getTopicPath(topicName);
         logger.debug("delete znode {}", topicPath);
-        getZookeeper().delete(topicPath, -1,
-                (rc, path, ctx) -> handleOnContext("delete", path, rc, handler), null);
-    }
-
-    /** Run the handler on the vertx context */
-    private void handleOnContext(String action, String path, int rc, Handler<AsyncResult<Void>> handler) {
-        Exception exception = mapExceptions(rc);
-        Future<Void> future;
-        if (exception == null) {
-            future = Future.succeededFuture();
-        } else {
-            future = Future.failedFuture(exception);
-        }
-        logger.debug("{} znode {} result: {}", path, future);
-        vertx.runOnContext(ar ->
-                handler.handle(future)
-        );
-    }
-
-    private Exception mapExceptions(int rc) {
-        Exception exception;
-        KeeperException.Code code = KeeperException.Code.get(rc);
-        switch (code) {
-            case OK:
-                exception = null;
-                break;
-            case NODEEXISTS:
-                exception = new EntityExistsException();
-                break;
-            case NONODE:
-                exception = new NoSuchEntityExistsException();
-                break;
-            default:
-                exception = KeeperException.create(code);
-
-        }
-        return exception;
-    }
-
-    @Override
-    public void handle(AsyncResult<ZooKeeper> event) {
-        this.zookeeper = event.result();
-        createParent("/barnabas");
-        createParent("/barnabas/topics");
+        zk.delete(topicPath, -1, result -> {
+            if (result.failed() && result.cause() instanceof KeeperException.NoNodeException) {
+                handler.handle(Future.failedFuture(new NoSuchEntityExistsException()));
+            } else {
+                handler.handle(result);
+            }
+        });
     }
 }

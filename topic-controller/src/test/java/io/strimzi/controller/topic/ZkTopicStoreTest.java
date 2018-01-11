@@ -17,6 +17,7 @@
 
 package io.strimzi.controller.topic;
 
+import io.strimzi.controller.topic.zk.ZkImpl;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
@@ -52,21 +53,8 @@ public class ZkTopicStoreTest {
             throws IOException, InterruptedException,
             TimeoutException, ExecutionException {
         this.zkServer = new EmbeddedZooKeeper();
-        CompletableFuture<Void> future = new CompletableFuture<>();
-        ZooKeeper zk = new ZooKeeper(zkServer.getZkConnectString(), 60000, new Watcher() {
-            @Override
-            public void process(WatchedEvent event) {
-                switch (event.getState()) {
-                    case SyncConnected:
-                        future.complete(null);
-                }
-            }
-        });
-
-        this.store = new ZkTopicStore(vertx);
-        future.get();
-        this.store.handle(Future.succeededFuture(zk));
-
+        ZkImpl zk = new ZkImpl(vertx, zkServer.getZkConnectString(), 60000);
+        this.store = new ZkTopicStore(zk, vertx);
     }
 
     @After

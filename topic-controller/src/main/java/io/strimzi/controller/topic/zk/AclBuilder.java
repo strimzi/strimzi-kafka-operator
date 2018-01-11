@@ -62,7 +62,7 @@ public class AclBuilder {
     public AclBuilder() {
 
     }
-    AclBuilder addWorld(Permission... permissions) {
+    public AclBuilder addWorld(Permission... permissions) {
         if (world == null) {
             world = new ACL();
         }
@@ -71,7 +71,7 @@ public class AclBuilder {
         return this;
     }
 
-    AclBuilder anyAuthenticated(Permission... permissions) {
+    public AclBuilder anyAuthenticated(Permission... permissions) {
         if (auth == null) {
             auth = new ACL();
         }
@@ -80,7 +80,7 @@ public class AclBuilder {
         return this;
     }
 
-    AclBuilder addDigest(String username, String password, Permission... permissions) {
+    public AclBuilder addDigest(String username, String password, Permission... permissions) {
         if (digests == null) {
             digests = new HashMap<>();
         }
@@ -94,7 +94,7 @@ public class AclBuilder {
         return this;
     }
 
-    AclBuilder addHost(String host, Permission... permissions) {
+    public AclBuilder addHost(String host, Permission... permissions) {
         if (hosts == null) {
             hosts = new HashMap<>();
         }
@@ -108,7 +108,7 @@ public class AclBuilder {
         return this;
     }
 
-    AclBuilder ip(String addr, int bits, Permission... permissions) {
+    public AclBuilder ip(String addr, int bits, Permission... permissions) {
         if (ips == null) {
             ips = new HashMap<>();
         }

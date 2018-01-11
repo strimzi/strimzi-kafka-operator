@@ -30,7 +30,6 @@ import java.util.List;
 
 class MockZk implements Zk {
 
-    public AsyncResult<Zk> connectResult = Future.failedFuture("Unexpected mock interaction. Configure " + getClass().getSimpleName()+".connectResult");
     public AsyncResult<Void> createResult = Future.failedFuture("Unexpected mock interaction. Configure " + getClass().getSimpleName()+".connectResult");
     public AsyncResult<Void> setDataResult = Future.failedFuture("Unexpected mock interaction. Configure " + getClass().getSimpleName()+".setDataResult");
     public AsyncResult<List<String>> childrenResult = Future.failedFuture("Unexpected mock interaction. Configure " + getClass().getSimpleName()+".childrenResult");
@@ -48,22 +47,6 @@ class MockZk implements Zk {
         if (dataHandler != null) {
             dataHandler.handle(dataResult);
         }
-    }
-
-    @Override
-    public Zk connect(Handler<AsyncResult<Zk>> handler) {
-        handler.handle(connectResult);
-        return this;
-    }
-
-    @Override
-    public Zk temporaryConnectionHandler(Handler<AsyncResult<ZooKeeper>> handler) {
-        return this;
-    }
-
-    @Override
-    public Zk disconnectionHandler(Handler<AsyncResult<Zk>> handler) {
-        return this;
     }
 
     @Override

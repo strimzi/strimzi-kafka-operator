@@ -136,7 +136,9 @@ public class ControllerIntegrationTest {
 
         k8s = new K8sImpl(vertx, kubeClient, cmPredicate);
 
-        topicStore = new ZkTopicStore(vertx);
+        ZkImpl zk = new ZkImpl(vertx, "localhost:"+ zkPort(), 30_000);
+
+        topicStore = new ZkTopicStore(zk, vertx);
 
         controller = new Controller(vertx, kafka, k8s, topicStore, cmPredicate);
 
@@ -147,19 +149,6 @@ public class ControllerIntegrationTest {
         // Ideally the topicStore would use the Zk wrapper, but that's probably a bit of work
         // So maybe for now the Zk wrapper can tell the topicStore when it's connected
 
-    }
-
-    private void connectToZk(ZkTopicStore topicStore) {
-        ZkImpl zk = new ZkImpl(vertx, "localhost:"+ zkPort(), 30_000);
-        final Handler<AsyncResult<Zk>> zkConnectHandler = ar -> {
-            topicsWatcher.start(ar.result());
-        };
-        zk.disconnectionHandler(ar -> {
-            // reconnect if we got disconnected
-            if (ar.result() != null) {
-                zk.connect(zkConnectHandler);
-            }
-        }).temporaryConnectionHandler(topicStore).connect(zkConnectHandler);
     }
 
     private int zkPort() {
@@ -398,7 +387,6 @@ public class ControllerIntegrationTest {
     }
 
     private void connect(TestContext context) {
-        connectToZk(topicStore);
         waitFor(context, () -> this.topicsWatcher.started(), timeout, "Topic watcher not started");
         waitFor(context, () -> this.topicsConfigWatcher.started(), timeout, "Topic configs watcher not started");
         cmWatcher = kubeClient.configMaps().watch(new ConfigMapWatcher(controller, cmPredicate));

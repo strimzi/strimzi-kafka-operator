@@ -33,15 +33,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static java.util.Collections.emptySet;
 
 /**
  * Implementation of {@link Zk}
@@ -76,19 +71,22 @@ public class ZkImpl implements Zk {
     private final int sessionTimeout;
     private final Vertx vertx;
     private ZooKeeper zk;
-    private Handler<AsyncResult<Zk>> disconnectionHandler;
 
     // Only accessed on the vertx context.
     private final ConcurrentHashMap<String, Handler<? extends AsyncResult<?>>> watches = new ConcurrentHashMap<>();
+
+    // TODO We need to reset the watches on reconnection.
+    // TODO We need to retry methods which fail due to connection loss, up to some limit/time
+    // We should probably try to avoid stampede though, so random exponential backoff
 
     public ZkImpl(Vertx vertx, String zkConnectionString, int sessionTimeout) {
         this.vertx = vertx;
         this.zkConnectionString = zkConnectionString;
         this.sessionTimeout = sessionTimeout;
+        connect();
     }
 
-    @Override
-    public synchronized Zk connect(Handler<AsyncResult<Zk>> connectionHandler) {
+    private synchronized Zk connect() {
         if (zk == null) {
             try {
                 zk = new ZooKeeper(zkConnectionString, sessionTimeout, watchedEvent -> {
@@ -98,58 +96,31 @@ public class ZkImpl implements Zk {
                     final Handler<AsyncResult<Zk>> handler;
                     switch (state) {
                         case AuthFailed:
-                            future = Future.failedFuture(new IllegalStateException("ZooKeeper authentication failed"));
-                            handler = connectionHandler;
                             break;
                         case SaslAuthenticated:
                             // TODO add callback for SASL handshake
-                            future = Future.failedFuture(new RuntimeException("TODO add callback for SASL handshake"));
-                            handler = connectionHandler;
                             break;
                         case SyncConnected:
                         case ConnectedReadOnly:
-                            future = Future.succeededFuture(this);
-                            handler = connectionHandler;
-                            // TODO fix this: get rid of this temporary handler: The zkTopicStore should use a Zk not a ZooKeeper
-                            if (temporaryConnectionHandler != null) {
-                                temporaryConnectionHandler.handle(Future.succeededFuture(zk));
-                            }
                             break;
                         case Expired:
                         case Disconnected:
                             // To get to these states we must have been connected
                             zk = null;
-                            future = Future.succeededFuture(this);
-                            handler = disconnectionHandler;
+                            connect();
                             break;
                         default:
                             // According to the KeeperState doc
                             // the remaining states should be impossible
-                            future = Future.failedFuture(new IllegalStateException("Unexpected state: " + state.toString() + ""));
-                            handler = connectionHandler;
-                    }
-                    if (future != null && handler != null) {
-                        vertx.runOnContext(ar -> handler.handle(future));
+                            throw new IllegalStateException("Unexpected state: " + state.toString() + "");
                     }
                 });
             } catch (IOException e) {
-                connectionHandler.handle(Future.failedFuture(e));
+                //connectionHandler.handle(Future.failedFuture(e));
             }
         } else {
-            connectionHandler.handle(Future.failedFuture(new IllegalStateException("Already connected")));
+            //connectionHandler.handle(Future.failedFuture(new IllegalStateException("Already connected")));
         }
-        return this;
-    }
-
-    @Override
-    public Zk temporaryConnectionHandler(Handler<AsyncResult<ZooKeeper>> handler) {
-        this.temporaryConnectionHandler = handler;
-        return this;
-    }
-
-    @Override
-    public Zk disconnectionHandler(Handler<AsyncResult<Zk>> handler) {
-        this.disconnectionHandler = handler;
         return this;
     }
 
@@ -190,6 +161,7 @@ public class ZkImpl implements Zk {
         }
         if (zookeeper == null) {
             handler.handle(Future.failedFuture(new IllegalStateException("Not connected")));
+            return this;
         }
         zookeeper.create(path, data == null ? new byte[0] : data, acls, createMode,
         (rc, path2, ctx, name) -> invokeOnContext(handler, rc, null), null);
@@ -205,6 +177,7 @@ public class ZkImpl implements Zk {
         }
         if (zookeeper == null) {
             handler.handle(Future.failedFuture(new IllegalStateException("Not connected")));
+            return this;
         }
         zookeeper.setData(path, data, version,
                 (int rc, String path2, Object ctx, Stat stat) -> invokeOnContext(handler, rc, null),
@@ -214,7 +187,6 @@ public class ZkImpl implements Zk {
 
     @Override
     public Zk disconnect(Handler<AsyncResult<Void>> handler) {
-
         vertx.<Void>executeBlocking((f) -> {
             logger.error("Disconnecting");
             if (zk == null) {
@@ -230,10 +202,6 @@ public class ZkImpl implements Zk {
             }
         }, ar-> {
             zk = null;
-            if (this.disconnectionHandler != null) {
-                vertx.runOnContext(
-                        ignored -> this.disconnectionHandler.handle(ar.map(x->null)));
-            }
             handler.handle(ar);
         });
         return this;
@@ -247,6 +215,7 @@ public class ZkImpl implements Zk {
         }
         if (zookeeper == null) {
             handler.handle(Future.failedFuture(new IllegalStateException("Not connected")));
+            return this;
         }
         final AsyncCallback.DataCallback callback = (rc, path2, ctx, data, stat) -> {
             Watcher.Event.EventType eventType = (Watcher.Event.EventType)ctx;
@@ -317,6 +286,7 @@ public class ZkImpl implements Zk {
         }
         if (zookeeper == null) {
             handler.handle(Future.failedFuture(new IllegalStateException("Not connected")));
+            return this;
         }
         Object ctx = null;
         zookeeper.delete(path, version, (rc, path1, ctx1) -> invokeOnContext(handler, rc, null), ctx);
@@ -331,6 +301,7 @@ public class ZkImpl implements Zk {
         }
         if (zookeeper == null) {
             handler.handle(Future.failedFuture(new IllegalStateException("Not connected")));
+            return this;
         }
         final AsyncCallback.StatCallback callback = (rc, path1, ctx1, stat) -> {
             Watcher.Event.EventType eventType = (Watcher.Event.EventType) ctx1;

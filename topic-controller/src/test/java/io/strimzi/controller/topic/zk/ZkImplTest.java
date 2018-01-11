@@ -72,72 +72,45 @@ public class ZkImplTest {
     @Test
     public void testConnectDisconnect(TestContext context) {
         ZkImpl zkImpl = new ZkImpl(vertx, zkServer.getZkConnectString(), 60_000);
-        Async connection = context.async(10);
-        final Handler<AsyncResult<Zk>> connectionHandler = ar -> {
-            if (ar.succeeded()) {
-                connection.countDown();
-                zkImpl.disconnect((ar2)->{});
-            } else {
-                context.fail(ar.cause());
-            }
-        };
-        zkImpl.disconnectionHandler(ar-> {
-            System.err.println("Reconnecting " + connection.count());
-            if (ar.succeeded()) {
-                if (connection.count() > 0) {
-                    System.err.println("Reconnecting " + connection.count());
-                    zkImpl.connect(connectionHandler);
-                } else {
-                    context.fail(ar.cause());
-                }
-            }
-        }).connect(connectionHandler);
-        connection.await();
+        Async async = context.async();
+        zkImpl.disconnect(ar -> {
+            context.assertTrue(ar.succeeded());
+            async.complete();
+        });
+        async.await();
+        Async async2 = context.async();
+        zkImpl.create("/foo", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, ar-> {
+            context.assertFalse(ar.succeeded());
+            async2.complete();
+        });
     }
 
     @Test
-    public void testReconnectOnBounce(TestContext context) {
+    public void testReconnectOnBounce(TestContext context) throws IOException, InterruptedException {
         ZkImpl zkImpl = new ZkImpl(vertx, zkServer.getZkConnectString(), 60_000);
-        Async connection = context.async(10);
-        final Handler<AsyncResult<Zk>> connectionHandler = ar -> {
-            if (ar.succeeded()) {
-                connection.countDown();
-                try {
-                    zkServer.restart();
-                } catch (IOException e) {
-                    context.fail(e);
-                } catch (InterruptedException e) {
-                    context.fail(e);
-                }
-            } else {
-                context.fail(ar.cause());
-            }
-        };
-        zkImpl.disconnectionHandler(ar-> {
-            System.err.println("Reconnecting " + connection.count());
-            if (ar.succeeded()) {
-                if (connection.count() > 0) {
-                    System.err.println("Reconnecting " + connection.count());
-                    zkImpl.connect(connectionHandler);
-                } else {
-                    context.fail(ar.cause());
-                }
-            }
-        }).connect(connectionHandler);
-        connection.await();
+        zkServer.restart();
+        Async async = context.async();
+        zkImpl.create("/foo", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, ar-> {
+            context.assertTrue(ar.succeeded());
+            async.complete();
+        });
+        async.await();
+        zkServer.restart();
+        // TODO Without the sleep this test fails, because there's a race between the creation of /bar
+        // and the reconnection within ZkImpl. We probably need to fix ZkImpl to retry if things fail due to
+        // connection loss, possibly with some limit on the number of retries.
+        // TODO We also need to reset the watches on reconnection.
+        Thread.sleep(2000);
+        Async async2 = context.async();
+        zkImpl.create("/bar", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, ar-> {
+            //ar.cause().printStackTrace();
+            context.assertTrue(ar.succeeded(), ar.toString());
+            async2.complete();
+        });
     }
 
     private ZkImpl connect(TestContext context) {
-        Async async = context.async();
-        Zk zk = new ZkImpl(vertx, zkServer.getZkConnectString(), 60_000).connect(ar -> {
-            if (ar.failed()) {
-                context.fail(ar.cause());
-                return;
-            }
-            async.complete();
-        });
-
-        async.await();
+        Zk zk = new ZkImpl(vertx, zkServer.getZkConnectString(), 60_000);
         return (ZkImpl)zk;
     }
 

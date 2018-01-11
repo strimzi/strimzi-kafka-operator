@@ -36,23 +36,6 @@ public interface Zk {
         return new ZkImpl(vertx, zkConnectionString, sessionTimeout);
     }
 
-    Zk connect(Handler<AsyncResult<Zk>> handler);
-
-    @Deprecated
-    Zk temporaryConnectionHandler(Handler<AsyncResult<ZooKeeper>> handler);
-
-    /**
-     * Register a handler to be called when the client gets disconnected from
-     * the zookeeper server/cluster. If the disconnection was caused explicitly
-     * via {@link #disconnect(Handler)} the {@code handler}'s result will be
-     * null, otherwise if the connection was lost for any other reason the
-     * {@code handler}'s result will be the Zk instance.
-     *
-     * The disconnection handler can be used to automatically reconnect
-     * to the server if the connection gets lost.
-     */
-    Zk disconnectionHandler(Handler<AsyncResult<Zk>> handler);
-
     /**
      * Explicitly disconnect from the connected zookeeper.
      * Any configured {@link #disconnectionHandler(Handler)} will be
