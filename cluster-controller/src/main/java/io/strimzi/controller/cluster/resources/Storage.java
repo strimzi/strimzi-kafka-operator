@@ -129,7 +129,8 @@ public class Storage {
         }
 
         if (pvc.getMetadata().getAnnotations() != null) {
-            storage.withDeleteClaim(Boolean.valueOf(pvc.getMetadata().getAnnotations().computeIfAbsent(Storage.DELETE_CLAIM_FIELD, s -> "false")));
+            String deleteClaimAnnotation = String.format("%s/%s", AbstractCluster.STRIMZI_CLUSTER_CONTROLLER_DOMAIN, Storage.DELETE_CLAIM_FIELD);
+            storage.withDeleteClaim(Boolean.valueOf(pvc.getMetadata().getAnnotations().computeIfAbsent(deleteClaimAnnotation, s -> "false")));
         }
 
         return storage;
