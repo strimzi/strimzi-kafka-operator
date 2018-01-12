@@ -2,6 +2,7 @@ package io.strimzi.controller.cluster.resources;
 
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Quantity;
+import io.strimzi.controller.cluster.ClusterController;
 import io.vertx.core.json.JsonObject;
 
 import java.util.HashMap;
@@ -129,7 +130,7 @@ public class Storage {
         }
 
         if (pvc.getMetadata().getAnnotations() != null) {
-            String deleteClaimAnnotation = String.format("%s/%s", AbstractCluster.STRIMZI_CLUSTER_CONTROLLER_DOMAIN, Storage.DELETE_CLAIM_FIELD);
+            String deleteClaimAnnotation = String.format("%s/%s", ClusterController.STRIMZI_CLUSTER_CONTROLLER_DOMAIN, Storage.DELETE_CLAIM_FIELD);
             storage.withDeleteClaim(Boolean.valueOf(pvc.getMetadata().getAnnotations().computeIfAbsent(deleteClaimAnnotation, s -> "false")));
         }
 
