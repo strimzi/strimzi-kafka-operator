@@ -56,29 +56,15 @@ In the case of incompatible changes, the Kafka configuration wins, and the Confi
 be updated to reflect that.
 
 
-## Controller configuration
-
-The controller is configured via a ConfigMap within the K8s/OpenShift cluster.
-
-The data of this ConfigMap supports the following keys:
-
-* `kubernetesMasterUrl`, default: `https://localhost:8443`
-* `kafkaBootstrapServers`, default:`localhost:9092`
-* `zookeeperConnect`, default: `localhost:2181`
-* `zookeeperSessionTimeout` a durection for the timeout on the zookeeper session, default: `2 seconds`
-* `fullReconciliationInterval` a duration for the time between full reconciliations, default: `15 minutes`
-* `reassignThrottle`, the throttle to use when topic updates require topic partition reassignment
-* `reassignVerifyInterval` a duration between executions of the `--verify` stage of partition reassignment, default: `2 minutes`  
-
-The controller watches for changes to the config map and reconfigures itself according.
-
-
 ## Controller environment
 
+The controller is configured from environment variables:
+
 * `TC_CM_LABELS` 
-– The Kubernetes label selector used to identify ConfigMaps to be managed by the controller.  
+– The Kubernetes label selector used to identify ConfigMaps to be managed by the controller.
+  Default: `strimzi.io/kind=topic`.  
 * `TC_ZK_SESSION_TIMEOUT`
-– The Zookeeper session timeout. For example `10 seconds`. Default: `2 seconds`.
+– The Zookeeper session timeout. For example `10 seconds`. Default: `20 seconds`.
 * `TC_KF_BOOTSTRAP_SERVERS`
 – The list of Kafka bootstrap servers. Default: `${KAFKA_SERVICE_HOST}:${KAFKA_SERVICE_PORT}` 
 * `TC_ZK_CONNECT`
@@ -86,3 +72,6 @@ The controller watches for changes to the config map and reconfigures itself acc
 * `TC_PERIODIC_INTERVAL`
 – The interval between periodic reconciliations.
 
+If the controller configuration needs to be changed the process must be killed and restarted.
+Since the controller is intended to execute within Kubernetes, this can be achieved
+by deleting the pod.
