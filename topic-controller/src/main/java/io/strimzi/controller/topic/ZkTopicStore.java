@@ -48,7 +48,7 @@ public class ZkTopicStore implements TopicStore {
     public ZkTopicStore(Zk zk, Vertx vertx) {
         this.zk = zk;
         this.vertx = vertx;
-        acl = new AclBuilder().addWorld(Permission.values()).build();
+        acl = new AclBuilder().setWorld(Permission.values()).build();
         createParent("/strimzi");
         createParent(TOPICS_PATH);
     }
