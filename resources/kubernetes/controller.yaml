@@ -107,7 +107,7 @@ spec:
           image: strimzi/cluster-controller:latest
           env:
             - name: STRIMZI_CONTROLLER_LABELS
-              value: "app=strimzi,kind=cluster"
+              value: "strimzi.io/kind=cluster"
             - name: STRIMZI_CONTROLLER_NAMESPACE
               valueFrom:
                 fieldRef:
