@@ -75,7 +75,7 @@ public class ControllerIntegrationTest {
 
     private final LabelPredicate cmPredicate = new LabelPredicate(
             "kind", "topic",
-            "app", "barnabas");
+            "app", "strimzi");
 
     private final Vertx vertx = Vertx.vertx();
     private KafkaCluster cluster;

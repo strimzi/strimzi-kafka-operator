@@ -47,7 +47,7 @@ import static org.junit.Assert.fail;
 public class TopicSerializationTest {
 
     private final LabelPredicate cmPredicate = new LabelPredicate("kind", "topic",
-            "app", "barnabas");
+            "app", "strimzi");
 
     @Test
     public void testConfigMapSerializationRoundTrip() {
@@ -62,7 +62,7 @@ public class TopicSerializationTest {
 
         assertEquals(wroteTopic.getTopicName().toString(), cm.getMetadata().getName());
         assertEquals(2, cm.getMetadata().getLabels().size());
-        assertEquals("barnabas", cm.getMetadata().getLabels().get("app"));
+        assertEquals("strimzi", cm.getMetadata().getLabels().get("app"));
         assertEquals("topic", cm.getMetadata().getLabels().get("kind"));
         assertEquals(wroteTopic.getTopicName().toString(), cm.getData().get(TopicSerialization.CM_KEY_NAME));
         assertEquals("2", cm.getData().get(TopicSerialization.CM_KEY_PARTITIONS));

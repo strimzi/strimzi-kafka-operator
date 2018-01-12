@@ -17,10 +17,8 @@ And also in the other direction:
 
 ## Format of the ConfigMap
 
-The controller only considers ConfigMaps having all the labels:
-
-* `app=barnabas`
-* `kind=topic`
+By default, the controller only considers ConfigMaps having the label `strimzi.io/kind=topic`, 
+but this is configurable via the `TC_CM_LABELS` environment variable.
 
 The `data` of such ConfigMaps supports the following keys:
 
@@ -77,17 +75,14 @@ The controller watches for changes to the config map and reconfigures itself acc
 
 ## Controller environment
 
-* `CONTROLLER_K8S_URL` 
-  the URL of the master apiserver in which to find the topic controller's ConfigMap. 
-* `CONTROLLER_K8S_NS`
-  the namespace within the master apiserver which contains the topic 
-  controller's ConfigMap.
-* `CONTROLLER_K8S_NAME`
-  the name of the config map (with the namespace given by `--config-namespace`)
-  which contains the topic 
-  controller's ConfigMap.
+* `TC_CM_LABELS` 
+– The Kubernetes label selector used to identify ConfigMaps to be managed by the controller.  
+* `TC_ZK_SESSION_TIMEOUT`
+– The Zookeeper session timeout. For example `10 seconds`. Default: `2 seconds`.
+* `TC_KF_BOOTSTRAP_SERVERS`
+– The list of Kafka bootstrap servers. Default: `${KAFKA_SERVICE_HOST}:${KAFKA_SERVICE_PORT}` 
+* `TC_ZK_CONNECT`
+– The Zookeeper connection information. Default: `${KAFKA_ZOOKEEPER_SERVICE_HOST}:${KAFKA_ZOOKEEPER_SERVICE_PORT}`.
+* `TC_PERIODIC_INTERVAL`
+– The interval between periodic reconciliations.
 
-## Possible future directions
-
-* Grow an HTTP REST API for changing topics, and representing them as YAML resources, evolving into 
-  an aggregated K8s apiserver.

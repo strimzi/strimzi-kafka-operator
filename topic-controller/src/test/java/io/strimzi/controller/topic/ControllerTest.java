@@ -54,7 +54,7 @@ public class ControllerTest {
 
     private final LabelPredicate cmPredicate = new LabelPredicate(
             "kind", "topic",
-            "app", "barnabas");
+            "app", "strimzi");
 
     private final TopicName topicName = new TopicName("my-topic");
     private final MapName mapName = topicName.asMapName();

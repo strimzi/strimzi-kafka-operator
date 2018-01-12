@@ -32,7 +32,7 @@ public class EmbeddedZooKeeper {
     File dir;
 
     public EmbeddedZooKeeper() throws IOException, InterruptedException {
-        dir = Files.createTempDirectory("barnabas").toFile();
+        dir = Files.createTempDirectory("strimzi").toFile();
         dir.mkdirs();
         zk = new ZooKeeperServer(dir, dir, 1000);
         start(new InetSocketAddress(0));
