@@ -58,6 +58,6 @@ spec:
             - name: TC_CM_LABELS
               value: "strimzi.io/kind=topic"
             - name: TC_ZK_SESSION_TIMEOUT
-              value: "2seconds"
+              value: "20seconds"
             - name: TC_PERIODIC_INTERVAL
               value: "15minutes"
