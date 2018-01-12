@@ -32,14 +32,13 @@ import java.util.List;
 public interface Zk {
 
     public static Zk create(Vertx vertx, String zkConnectionString, int sessionTimeout) {
-        return new ZkImpl(vertx, zkConnectionString, sessionTimeout);
+        return new ZkImpl(vertx, zkConnectionString, sessionTimeout, false);
     }
 
     /**
-     * Asynchronously disconnect from the ZooKeeper server,
-     * invoking the given handler when disconnected.
+     * Disconnect from the ZooKeeper server, synchronously.
      */
-    Zk disconnect(Handler<AsyncResult<Void>> handler);
+    Zk disconnect() throws InterruptedException;
 
     /**
      * Asynchronously create the znode at the given path and with the given data and ACL, using the

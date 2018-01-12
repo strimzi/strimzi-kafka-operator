@@ -50,7 +50,7 @@ class MockZk implements Zk {
     }
 
     @Override
-    public Zk disconnect(Handler<AsyncResult<Void>> handler) {
+    public Zk disconnect() {
         return this;
     }
 

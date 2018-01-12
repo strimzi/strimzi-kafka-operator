@@ -65,31 +65,10 @@ public class ZkImplTest {
         vertx.close();
     }
 
-    /**
-     * When we get disconnected via a call to disconnect, can we use the
-     * disconnectionHandler to reconnect?
-     * @param context
-     */
-    @Test
-    public void testConnectDisconnect(TestContext context) {
-        ZkImpl zkImpl = new ZkImpl(vertx, zkServer.getZkConnectString(), 60_000);
-        Async async = context.async();
-        zkImpl.disconnect(ar -> {
-            context.assertTrue(ar.succeeded());
-            async.complete();
-        });
-        async.await();
-        Async async2 = context.async();
-        zkImpl.create("/foo", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, ar-> {
-            context.assertFalse(ar.succeeded());
-            async2.complete();
-        });
-    }
-
     @Ignore
     @Test
     public void testReconnectOnBounce(TestContext context) throws IOException, InterruptedException {
-        ZkImpl zkImpl = new ZkImpl(vertx, zkServer.getZkConnectString(), 60_000);
+        ZkImpl zkImpl = new ZkImpl(vertx, zkServer.getZkConnectString(), 60_000, false);
         zkServer.restart();
         Async async = context.async();
         zkImpl.create("/foo", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, ar-> {
@@ -112,7 +91,7 @@ public class ZkImplTest {
     }
 
     private ZkImpl connect(TestContext context) {
-        Zk zk = new ZkImpl(vertx, zkServer.getZkConnectString(), 60_000);
+        Zk zk = new ZkImpl(vertx, zkServer.getZkConnectString(), 60_000, false);
         return (ZkImpl)zk;
     }
 

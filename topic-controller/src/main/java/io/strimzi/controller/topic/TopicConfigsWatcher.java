@@ -47,12 +47,14 @@ class TopicConfigsWatcher {
     }
 
     public void addChild(String child) {
+        logger.debug("Watching topic {} for config changes", child);
         this.children.put(child, Boolean.FALSE);
-        String path = CONFIGS_ZNODE + "/" + child;
+        String path = getPath(child);
         Handler<AsyncResult<byte[]>> handler = dataResult -> {
             if (dataResult.succeeded()) {
                 this.children.compute(child, (k, v) -> {
                     if (Boolean.TRUE.equals(v)) {
+                        logger.debug("Config change for topic {}", child);
                         controller.onTopicConfigChanged(new TopicName(child), ar2 -> {
                             logger.info("Reconciliation result due to topic config change: {}", ar2);
                         });
@@ -66,13 +68,18 @@ class TopicConfigsWatcher {
         zk.watchData(path, handler).getData(path, handler);
     }
 
+    private String getPath(String child) {
+        return CONFIGS_ZNODE + "/" + child;
+    }
+
     boolean watching(String child) {
         return children.containsKey(child);
     }
 
     public synchronized void removeChild(String child) {
+        logger.debug("Unwatching topic {} for config changes", child);
         this.children.remove(child);
-        zk.unwatchData(CONFIGS_ZNODE + "/" + child);
+        zk.unwatchData(getPath(child));
     }
 
     public void start(Zk zk) {

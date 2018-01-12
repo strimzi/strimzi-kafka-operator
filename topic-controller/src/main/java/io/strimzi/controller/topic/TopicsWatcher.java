@@ -72,10 +72,13 @@ class TopicsWatcher {
                 throw new RuntimeException(childResult.cause());
             }
             List<String> result = childResult.result();
-            logger.debug("znode {} has children {}", TOPICS_ZNODE, result);
-            logger.debug("Current children {}", this.children);
+            logger.debug("znode {} now has children {}, previous children {}", TOPICS_ZNODE, result, this.children);
             Set<String> deleted = new HashSet(this.children);
             deleted.removeAll(result);
+            Set<String> created = new HashSet(result);
+            created.removeAll(this.children);
+            this.children = result;
+
             if (!deleted.isEmpty()) {
                 logger.info("Deleted topics: {}", deleted);
                 for (String topicName : deleted) {
@@ -89,8 +92,7 @@ class TopicsWatcher {
                     });
                 }
             }
-            Set<String> created = new HashSet(result);
-            created.removeAll(this.children);
+
             if (!created.isEmpty()) {
                 logger.info("Created topics: {}", created);
                 for (String topicName : created) {
@@ -105,13 +107,12 @@ class TopicsWatcher {
                 }
             }
 
-        });
-        zk.children(TOPICS_ZNODE, childResult -> {
+        }).children(TOPICS_ZNODE, childResult -> {
             if (childResult.failed()) {
                 throw new RuntimeException(childResult.cause());
             }
             List<String> result = childResult.result();
-            logger.debug("Setting current children {}", result);
+            logger.debug("Setting initial children {}", result);
             this.children = result;
             this.state = 1;
         });

@@ -24,6 +24,7 @@ import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
@@ -34,6 +35,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -44,18 +47,24 @@ public class Session extends AbstractVerticle {
     private final Config config;
     private final KubernetesClient kubeClient;
 
-    private ControllerAssignedKafkaImpl kafka;
-    private AdminClient adminClient;
-    private K8sImpl k8s;
-    private Controller controller;
-    private Watch topicCmWatch;
-    private TopicsWatcher tw;
-    private TopicConfigsWatcher tcw;
+    ControllerAssignedKafkaImpl kafka;
+    AdminClient adminClient;
+    K8sImpl k8s;
+    Controller controller;
+    Watch topicCmWatch;
+    TopicsWatcher tw;
+    TopicConfigsWatcher tcw;
     private volatile boolean stopped = false;
+    private Zk zk;
 
     public Session(KubernetesClient kubeClient, Config config) {
         this.kubeClient = kubeClient;
         this.config = config;
+        StringBuilder sb = new StringBuilder(System.lineSeparator());
+        for (Config.Value v: config.keys()) {
+            sb.append("\t").append(v.key).append(": ").append(config.get(v)).append(System.lineSeparator());
+        }
+        logger.info("Using config:{}", sb.toString());
     }
 
     /**
@@ -70,12 +79,18 @@ public class Session extends AbstractVerticle {
         tw.stop();
         tcw.stop();
         // TODO wait for inflight to "empty"
+        try {
+            zk.disconnect();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
         adminClient.close(1, TimeUnit.MINUTES);
         logger.info("Stopped");
     }
 
     @Override
     public void start() {
+        logger.info("Starting");
         Properties adminClientProps = new Properties();
         adminClientProps.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, config.get(Config.KAFKA_BOOTSTRAP_SERVERS));
         this.adminClient = AdminClient.create(adminClientProps);
@@ -85,7 +100,7 @@ public class Session extends AbstractVerticle {
 
         this.k8s = new K8sImpl(vertx, kubeClient, cmPredicate);
 
-        Zk zk = Zk.create(vertx, config.get(Config.ZOOKEEPER_CONNECT), this.config.get(Config.ZOOKEEPER_SESSION_TIMEOUT_MS).intValue());
+        this.zk = Zk.create(vertx, config.get(Config.ZOOKEEPER_CONNECT), this.config.get(Config.ZOOKEEPER_SESSION_TIMEOUT_MS).intValue());
 
         ZkTopicStore topicStore = new ZkTopicStore(zk, vertx);
 
@@ -115,6 +130,7 @@ public class Session extends AbstractVerticle {
 //                    }
 //                    reconcileTopics("periodic");
 //                });
+        logger.info("Started");
     }
 
     private void reconcileTopics(String reconciliationType) {

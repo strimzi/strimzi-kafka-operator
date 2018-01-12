@@ -22,16 +22,11 @@ import io.debezium.kafka.ZookeeperServer;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
-import io.strimzi.controller.topic.zk.Zk;
-import io.strimzi.controller.topic.zk.ZkImpl;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.apache.kafka.clients.admin.AdminClient;
-import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.AlterConfigsResult;
 import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
@@ -73,12 +68,11 @@ public class ControllerIntegrationTest {
         } catch (Exception e) {}
     });
 
-    private final LabelPredicate cmPredicate = new LabelPredicate(
-            "kind", "topic",
-            "app", "strimzi");
+    private final LabelPredicate cmPredicate = LabelPredicate.fromString(
+            "strimzi.io/kind=topic");
 
     private final Vertx vertx = Vertx.vertx();
-    private KafkaCluster cluster;
+    private KafkaCluster kafkaCluster;
     private Controller controller;
     private volatile ControllerAssignedKafkaImpl kafka;
     private AdminClient adminClient;
@@ -87,15 +81,17 @@ public class ControllerIntegrationTest {
     private TopicsWatcher topicsWatcher;
     private Thread kafkaHook = new Thread() {
         public void run() {
-            if (cluster != null) {
-                cluster.shutdown();
+            if (kafkaCluster != null) {
+                kafkaCluster.shutdown();
             }
         }
     };
     private final long timeout = 60_000L;
-    private ZkTopicStore topicStore;
     private Watch cmWatcher;
     private TopicConfigsWatcher topicsConfigWatcher;
+
+    private Session session;
+    private String deploymentId;
 
     @BeforeClass
     public static void startKube() throws Exception {
@@ -108,49 +104,48 @@ public class ControllerIntegrationTest {
 
     @AfterClass
     public static void stopKube() throws Exception {
+        logger.info("Executing oc cluster down");
         OC.clusterDown();
         Runtime.getRuntime().removeShutdownHook(ocHook);
     }
 
     @Before
-    public void setup() throws Exception {
+    public void setup(TestContext context) throws Exception {
+        logger.info("Setting up test");
         Runtime.getRuntime().addShutdownHook(kafkaHook);
-        cluster = new KafkaCluster();
-        cluster.addBrokers(1);
-        cluster.deleteDataPriorToStartup(true);
-        cluster.deleteDataUponShutdown(true);
-        cluster.usingDirectory(Files.createTempDirectory("controller-integration-test").toFile());
-        cluster.startup();
-
-        Map<String, Object> adminClientConfig = new HashMap<>();
-        adminClientConfig.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.brokerList());
-        adminClient = AdminClient.create(adminClientConfig);
-
-        Map<String, String> controllerConfig = new HashMap<>();
-        controllerConfig.put(Config.KAFKA_BOOTSTRAP_SERVERS.key, cluster.brokerList());
-        Config config = new Config(controllerConfig);
-        kafka = new ControllerAssignedKafkaImpl(adminClient, vertx, config);
+        kafkaCluster = new KafkaCluster();
+        kafkaCluster.addBrokers(1);
+        kafkaCluster.deleteDataPriorToStartup(true);
+        kafkaCluster.deleteDataUponShutdown(true);
+        kafkaCluster.usingDirectory(Files.createTempDirectory("controller-integration-test").toFile());
+        kafkaCluster.startup();
 
         kubeClient = new DefaultKubernetesClient(OC.masterUrl());
+        Map<String, String> m = new HashMap();
+        m.put(Config.KAFKA_BOOTSTRAP_SERVERS.key, kafkaCluster.brokerList());
+        m.put(Config.ZOOKEEPER_CONNECT.key, "localhost:"+ zkPort(kafkaCluster));
+        Session session = new Session(kubeClient, new Config(m));
 
-        k8s = new K8sImpl(vertx, kubeClient, cmPredicate);
-
-        ZkImpl zk = new ZkImpl(vertx, "localhost:"+ zkPort(), 30_000);
-
-        topicStore = new ZkTopicStore(zk, vertx);
-
-        controller = new Controller(vertx, kafka, k8s, topicStore, cmPredicate);
-
-        topicsConfigWatcher = new TopicConfigsWatcher(controller);
-        topicsWatcher = new TopicsWatcher(controller, topicsConfigWatcher);
-
-        // TODO The topicStore needs access to a ZooKeeper instance
-        // Ideally the topicStore would use the Zk wrapper, but that's probably a bit of work
-        // So maybe for now the Zk wrapper can tell the topicStore when it's connected
-
+        Async async = context.async();
+        vertx.deployVerticle(session, ar -> {
+            if (ar.succeeded()) {
+                deploymentId = ar.result();
+                adminClient = session.adminClient;
+                kafka = session.kafka;
+                k8s = session.k8s;
+                controller = session.controller;
+                topicsConfigWatcher = session.tcw;
+                topicsWatcher = session.tw;
+                async.complete();
+            } else {
+                context.fail("Failed to deploy session");
+            }
+        });
+        async.await();
+        logger.info("Finished setting up test");
     }
 
-    private int zkPort() {
+    private static int zkPort(KafkaCluster cluster) {
         // TODO PR for upstream debezium to get the ZK port?
         try {
             Field zkServerField = KafkaCluster.class.getDeclaredField("zkServer");
@@ -162,23 +157,26 @@ public class ControllerIntegrationTest {
     }
 
     @After
-    public void teardown() {
-        if (topicsWatcher != null) {
-            topicsWatcher.stop();
+    public void teardown(TestContext context) {
+        logger.info("Tearing down test");
+        Async async = context.async();
+        if (deploymentId != null) {
+            vertx.undeploy(deploymentId, ar -> {
+                this.deploymentId = null;
+
+                if (ar.failed()) {
+                    logger.error("Error undeploying session", ar.cause());
+                    context.fail("Error undeploying session");
+                }
+                async.complete();
+            });
         }
-        if (cmWatcher != null) {
-            cmWatcher.close();
-        }
-        if (kubeClient != null) {
-            kubeClient.close();
-        }
-        if (adminClient != null) {
-            adminClient.close();
-        }
-        if (cluster != null) {
-            cluster.shutdown();
+        async.await();
+        if (kafkaCluster != null) {
+            kafkaCluster.shutdown();
         }
         Runtime.getRuntime().removeShutdownHook(kafkaHook);
+        logger.info("Finished tearing down test");
     }
 
     private void waitFor(TestContext context, Supplier<Boolean> ready, long timeout, String message) {
@@ -201,41 +199,22 @@ public class ControllerIntegrationTest {
 
     @Test
     public void testTopicAdded(TestContext context) throws Exception {
-        connect(context);
-
-        // Create a topic
-        String configMapName = "test-topic-added";
-        CreateTopicsResult crt = adminClient.createTopics(singletonList(new NewTopic(configMapName, 1, (short) 1)));
-        crt.all().get();
-
-        // Wait for the configmap to be created
-        waitFor(context, () -> {
-            ConfigMap cm = kubeClient.configMaps().withName(configMapName).get();
-            logger.info("Polled configmap {}", configMapName);
-            return cm != null;
-        }, timeout, "Expected the configmap to have been created by now");
+        createTopic(context, "test-topic-added");
     }
 
 
     @Test
     public void testTopicDeleted(TestContext context) throws Exception {
-        connect(context);
+        String topicName = "test-topic-deleted";
+        String configMapName = createTopic(context, topicName);
 
-        // Create a topic
-        String configMapName = "test-topic-deleted";
-        CreateTopicsResult crt = adminClient.createTopics(singletonList(new NewTopic(configMapName, 1, (short) 1)));
-        crt.all().get();
+        Thread.sleep(5_000L);
 
-        // Wait for the configmap to be created
-        waitFor(context, () -> {
-            ConfigMap cm = kubeClient.configMaps().withName(configMapName).get();
-            logger.info("Polled configmap {} waiting for creation", configMapName);
-            return cm != null;
-        }, timeout, "Expected the configmap to have been created by now");
-
+        logger.info("Deleting topic {}", topicName);
         // Now we can delete the topic
         DeleteTopicsResult dlt = adminClient.deleteTopics(singletonList(configMapName));
         dlt.all().get();
+        logger.info("Deleted topic {}", topicName);
 
         // Wait for the configmap to be deleted
         waitFor(context, () -> {
@@ -245,12 +224,12 @@ public class ControllerIntegrationTest {
         }, timeout, "Expected the configmap to have been deleted by now");
     }
 
-    @Test
-    public void testTopicConfigChanged(TestContext context) throws Exception {
+    private String createTopic(TestContext context, String topicName) throws InterruptedException, ExecutionException {
         connect(context);
+
         // Create a topic
-        String configMapName = "test-topic-config-changed";
-        CreateTopicsResult crt = adminClient.createTopics(singletonList(new NewTopic(configMapName, 1, (short) 1)));
+        String configMapName = topicName;
+        CreateTopicsResult crt = adminClient.createTopics(singletonList(new NewTopic(topicName, 1, (short) 1)));
         crt.all().get();
 
         // Wait for the configmap to be created
@@ -260,9 +239,17 @@ public class ControllerIntegrationTest {
             return cm != null;
         }, timeout, "Expected the configmap to have been created by now");
 
+        logger.info("configmap {} has been created", configMapName);
+        return configMapName;
+    }
+
+    @Test
+    public void testTopicConfigChanged(TestContext context) throws Exception {
+        String topicName = "test-topic-config-changed";
+        String configMapName = createTopic(context, topicName);
 
         // Get the topic config
-        ConfigResource configResource = topicConfigResource(configMapName);
+        ConfigResource configResource = topicConfigResource(topicName);
         org.apache.kafka.clients.admin.Config config = getTopicConfig(configResource);
 
         String key = "compression.type";

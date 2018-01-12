@@ -49,11 +49,6 @@ public class Main {
     private void deploy(Config config) {
         DefaultKubernetesClient kubeClient = new DefaultKubernetesClient();
         Vertx vertx = Vertx.vertx();
-        StringBuilder sb = new StringBuilder(System.lineSeparator());
-        for (Config.Value v: config.keys()) {
-            sb.append("\t").append(v.key).append(": ").append(config.get(v)).append(System.lineSeparator());
-        }
-        logger.info("Using config:{}", sb.toString());
         Session session = new Session(kubeClient, config);
         vertx.deployVerticle(session, ar -> {
             if (ar.succeeded()) {

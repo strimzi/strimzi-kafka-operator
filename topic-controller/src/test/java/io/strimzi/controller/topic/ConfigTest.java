@@ -36,7 +36,7 @@ public class ConfigTest {
         Config c = new Config(Collections.emptyMap());
         assertEquals(Config.ZOOKEEPER_CONNECT.defaultValue, c.get(Config.ZOOKEEPER_CONNECT));
         assertEquals(Config.KAFKA_BOOTSTRAP_SERVERS.defaultValue, c.get(Config.KAFKA_BOOTSTRAP_SERVERS));
-        assertEquals(2_000, c.get(Config.ZOOKEEPER_SESSION_TIMEOUT_MS).intValue());
+        assertEquals(20_000, c.get(Config.ZOOKEEPER_SESSION_TIMEOUT_MS).intValue());
     }
 
     @Test
