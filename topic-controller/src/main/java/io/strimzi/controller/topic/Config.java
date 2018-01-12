@@ -181,8 +181,8 @@ public class Config {
     }
 
     private <T> T get(Map<String, String> map, Value<T> value) {
-        if (!CONFIG_VALUES.containsKey(value)) {
-            throw new IllegalArgumentException("Unknown config value: It probably needs to be added to Config.CONFIG_VALUES");
+        if (!CONFIG_VALUES.containsKey(value.key)) {
+            throw new IllegalArgumentException("Unknown config value: " + value.key + " probably needs to be added to Config.CONFIG_VALUES");
         }
         final String s = map.getOrDefault(value.key, value.defaultValue);
         if (s != null) {
