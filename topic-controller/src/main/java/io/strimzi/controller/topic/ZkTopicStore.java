@@ -24,18 +24,12 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooDefs;
-import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
-import org.apache.zookeeper.data.Id;
-import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -44,6 +38,7 @@ import java.util.List;
 public class ZkTopicStore implements TopicStore {
 
     private final static Logger logger = LoggerFactory.getLogger(ZkTopicStore.class);
+    public static final String TOPICS_PATH = "/strimzi/topics";
     private final Vertx vertx;
 
     private final Zk zk;
@@ -54,8 +49,8 @@ public class ZkTopicStore implements TopicStore {
         this.zk = zk;
         this.vertx = vertx;
         acl = new AclBuilder().addWorld(Permission.values()).build();
-        createParent("/barnabas");
-        createParent("/barnabas/topics");
+        createParent("/strimzi");
+        createParent(TOPICS_PATH);
     }
 
     private void createParent(String path) {
@@ -71,7 +66,7 @@ public class ZkTopicStore implements TopicStore {
 
 
     private static String getTopicPath(TopicName name) {
-        return "/barnabas/topics/" + name;
+        return TOPICS_PATH + "/" + name;
     }
 
     @Override
