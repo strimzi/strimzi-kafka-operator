@@ -193,10 +193,9 @@ public abstract class BaseKafkaImpl implements Kafka {
                     this.handler.handle(Future.succeededFuture(metadata));
                     this.handled = true;
                     logger.trace("Handler for work {} executed ok", this);
-                    return true;
                 } else {
-                    return false;
                 }
+                return handled;
             } else {
                 if (!this.descFuture.isDone())
                     logger.trace("Description future {} is not done", descFuture);
