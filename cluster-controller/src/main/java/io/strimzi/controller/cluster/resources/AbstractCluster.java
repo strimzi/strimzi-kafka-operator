@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.extensions.RollingUpdateDeploymentBuilder
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSetUpdateStrategyBuilder;
+import io.strimzi.controller.cluster.ClusterController;
 import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,8 +21,6 @@ import java.util.Map;
 public abstract class AbstractCluster {
 
     protected final Logger log = LoggerFactory.getLogger(getClass());
-
-    public static final String STRIMZI_CLUSTER_CONTROLLER_DOMAIN = "cluster.controller.strimzi.io";
 
     private static final String VOLUME_MOUNT_HACK_IMAGE = "busybox";
     private static final String VOLUME_MOUNT_HACK_NAME = "volume-mount-hack";
@@ -171,7 +170,7 @@ public abstract class AbstractCluster {
         requests.put("storage", storage.size());
 
         Map<String, String> annotations = new HashMap<>();
-        annotations.put(String.format("%s/%s", AbstractCluster.STRIMZI_CLUSTER_CONTROLLER_DOMAIN, Storage.DELETE_CLAIM_FIELD),
+        annotations.put(String.format("%s/%s", ClusterController.STRIMZI_CLUSTER_CONTROLLER_DOMAIN, Storage.DELETE_CLAIM_FIELD),
                 String.valueOf(storage.isDeleteClaim()));
 
         // TODO : deal with the storage.selector field

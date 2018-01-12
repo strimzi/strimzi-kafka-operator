@@ -2,6 +2,7 @@ package io.strimzi.controller.cluster.resources;
 
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
+import io.strimzi.controller.cluster.ClusterController;
 import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
@@ -286,8 +287,9 @@ public class ZookeeperCluster extends AbstractCluster {
     protected void setLabels(Map<String, String> labels) {
         Map<String, String> newLabels = new HashMap<>(labels);
 
-        if (newLabels.containsKey("type") && newLabels.get("type").equals(KafkaCluster.TYPE)) {
-            newLabels.put("type", TYPE);
+        if (newLabels.containsKey(ClusterController.STRIMZI_TYPE_LABEL) &&
+                newLabels.get(ClusterController.STRIMZI_TYPE_LABEL).equals(KafkaCluster.TYPE)) {
+            newLabels.put(ClusterController.STRIMZI_TYPE_LABEL, ZookeeperCluster.TYPE);
         }
 
         super.setLabels(newLabels);

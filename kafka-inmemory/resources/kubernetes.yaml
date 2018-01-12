@@ -118,9 +118,8 @@ kind: ConfigMap
 metadata:
   name: kafka
   labels:
-    app: strimzi
-    kind: cluster
-    type: kafka
+    strimzi.io/kind: cluster
+    strimzi.io/type: kafka
 data:
   kafka-nodes: "3"
   kafka-image: "strimzi/kafka-statefulsets:latest"

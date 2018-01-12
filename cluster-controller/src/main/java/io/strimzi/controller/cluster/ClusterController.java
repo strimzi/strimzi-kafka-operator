@@ -33,6 +33,10 @@ import java.util.stream.Collectors;
 public class ClusterController extends AbstractVerticle {
     private static final Logger log = LoggerFactory.getLogger(ClusterController.class.getName());
 
+    public static final String STRIMZI_DOMAIN = "strimzi.io";
+    public static final String STRIMZI_CLUSTER_CONTROLLER_DOMAIN = "cluster.controller.strimzi.io";
+    public static final String STRIMZI_TYPE_LABEL = STRIMZI_DOMAIN + "/type";
+
     private final K8SUtils k8s;
     private final Map<String, String> labels;
     private final String namespace;
@@ -98,17 +102,17 @@ public class ClusterController extends AbstractVerticle {
                             Map<String, String> labels = cm.getMetadata().getLabels();
                             String type;
 
-                            if (!labels.containsKey("type")) {
+                            if (!labels.containsKey(ClusterController.STRIMZI_TYPE_LABEL)) {
                                 log.warn("Missing type in Config Map {}", cm.getMetadata().getName());
                                 return;
                             }
-                            else if (!labels.get("type").equals(KafkaCluster.TYPE) &&
-                                     !labels.get("type").equals(KafkaConnectCluster.TYPE)) {
-                                log.warn("Unknown type {} received in Config Map {}", labels.get("type"), cm.getMetadata().getName());
+                            else if (!labels.get(ClusterController.STRIMZI_TYPE_LABEL).equals(KafkaCluster.TYPE) &&
+                                     !labels.get(ClusterController.STRIMZI_TYPE_LABEL).equals(KafkaConnectCluster.TYPE)) {
+                                log.warn("Unknown type {} received in Config Map {}", labels.get(ClusterController.STRIMZI_TYPE_LABEL), cm.getMetadata().getName());
                                 return;
                             }
                             else {
-                                type = labels.get("type");
+                                type = labels.get(ClusterController.STRIMZI_TYPE_LABEL);
                             }
 
                             switch (action) {
@@ -201,7 +205,7 @@ public class ClusterController extends AbstractVerticle {
         log.info("Reconciling Kafka clusters ...");
 
         Map<String, String> kafkaLabels = new HashMap(labels);
-        kafkaLabels.put("type", KafkaCluster.TYPE);
+        kafkaLabels.put(ClusterController.STRIMZI_TYPE_LABEL, KafkaCluster.TYPE);
 
         List<ConfigMap> cms = k8s.getConfigmaps(namespace, kafkaLabels);
         List<StatefulSet> sss = k8s.getStatefulSets(namespace, kafkaLabels);
@@ -243,7 +247,7 @@ public class ClusterController extends AbstractVerticle {
         log.info("Reconciling Kafka Connect clusters ...");
 
         Map<String, String> kafkaLabels = new HashMap(labels);
-        kafkaLabels.put("type", KafkaConnectCluster.TYPE);
+        kafkaLabels.put(ClusterController.STRIMZI_TYPE_LABEL, KafkaConnectCluster.TYPE);
 
         List<ConfigMap> cms = k8s.getConfigmaps(namespace, kafkaLabels);
         List<Deployment> deps = k8s.getDeployments(namespace, kafkaLabels);

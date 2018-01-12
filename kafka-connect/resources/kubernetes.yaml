@@ -3,9 +3,8 @@ kind: ConfigMap
 metadata:
   name: kafka-connect
   labels:
-    app: strimzi
-    kind: cluster
-    type: kafka-connect
+    strimzi.io/kind: cluster
+    strimzi.io/type: kafka-connect
 data:
   nodes: "1"
   image: "strimzi/kafka-connect:latest"

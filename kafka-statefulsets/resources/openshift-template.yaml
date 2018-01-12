@@ -107,7 +107,7 @@ spec:
           image: strimzi/cluster-controller:latest
           env:
             - name: STRIMZI_CONTROLLER_LABELS
-              value: "app=strimzi,kind=cluster"
+              value: "strimzi.io/kind=cluster"
             - name: STRIMZI_CONTROLLER_NAMESPACE
               valueFrom:
                 fieldRef:
@@ -201,9 +201,8 @@ objects:
   metadata:
     name: kafka
     labels:
-      app: strimzi
-      type: kafka
-      kind: cluster
+      strimzi.io/type: kafka
+      strimzi.io/kind: cluster
   data:
     kafka-nodes: "${KAFKA_NODE_COUNT}"
     kafka-image: "${IMAGE_REPO_NAME}/${KAFKA_IMAGE_NAME}:${KAFKA_IMAGE_TAG}"

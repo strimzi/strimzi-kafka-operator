@@ -83,9 +83,8 @@ objects:
   metadata:
     name: kafka-connect
     labels:
-      app: strimzi
-      kind: cluster
-      type: kafka-connect
+      strimzi.io/kind: cluster
+      strimzi.io/type: kafka-connect
   data:
     nodes: "${INSTANCES}"
     image: "${IMAGE_REPO_NAME}/${IMAGE_NAME}:${IMAGE_TAG}"
