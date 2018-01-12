@@ -209,8 +209,6 @@ public class ControllerIntegrationTest {
         String topicName = "test-topic-deleted";
         String configMapName = createTopic(context, topicName);
 
-        Thread.sleep(5_000L);
-
         logger.info("Deleting topic {}", topicName);
         // Now we can delete the topic
         DeleteTopicsResult dlt = adminClient.deleteTopics(singletonList(configMapName));
