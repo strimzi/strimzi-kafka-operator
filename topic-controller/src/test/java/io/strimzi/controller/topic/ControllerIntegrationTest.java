@@ -146,7 +146,8 @@ public class ControllerIntegrationTest {
     }
 
     private static int zkPort(KafkaCluster cluster) {
-        // TODO PR for upstream debezium to get the ZK port?
+        // TODO Method was added in DBZ-540, so no need for reflection once
+        // dependency gets upgraded
         try {
             Field zkServerField = KafkaCluster.class.getDeclaredField("zkServer");
             zkServerField.setAccessible(true);

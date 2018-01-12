@@ -50,8 +50,6 @@ public class ZkImpl implements Zk {
     public static final String PREFIX_CHILDREN = "children:";
     public static final String PREFIX_EXISTS = "exists:";
     private final boolean readOnly;
-    private Handler<AsyncResult<ZooKeeper>> temporaryConnectionHandler;
-
 
     private static <T> Map<String, Set<Handler<AsyncResult<T>>>>
     removeWatch(Map<String, Set<Handler<AsyncResult<T>>>> watches, String path, Handler<AsyncResult<T>> handler) {
