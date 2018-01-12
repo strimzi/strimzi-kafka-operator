@@ -160,13 +160,17 @@ public abstract class BaseKafkaImpl implements Kafka {
                 if (e.getCause() instanceof UnknownTopicOrPartitionException) {
                     result = null;
                 } else{
-                    handler.handle(Future.failedFuture(e.getCause()));
+                    if (!handled) {
+                        handler.handle(Future.failedFuture(e.getCause()));
+                    }
                     handled = true;
                     return null;
                 }
             } catch (InterruptedException e) {
                 logger.debug("Future {} threw {}", future, e.toString());
-                handler.handle(Future.failedFuture(e));
+                if (!handled) {
+                    handler.handle(Future.failedFuture(e));
+                }
                 handled = true;
                 return null;
             }
