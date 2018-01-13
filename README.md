@@ -19,7 +19,7 @@ Strimzi provides a way to run an [Apache Kafka][kafka] cluster on
     - [Deploying to Kubernetes](#deploying-to-kubernetes-2)
     - [Using Kafka Connect with additional plugins](#using-kafka-connect-with-additional-plugins)
         - [Create a new image based on `strimzi/kafka-connect`](#create-a-new-image-based-on-strimzikafka-connect)
-        - [Using Openshift Build and S2I image](#using-openshift-build-and-s2i-image)
+        - [Using OpenShift Build and S2I image](#using-openshift-build-and-s2i-image)
 - [Metrics](#metrics)
 
 <!-- /TOC -->
@@ -58,7 +58,9 @@ More information about this way can be found [here][occlusterup].
 
 ## Cluster Controller
 
-Strimzi is using process called Cluster Controller to deploy and manage Kafka and Kafka Connect clusters. Cluster Controller is a process which is running inside your Kubernetes or OpenShift cluster. To deploy a Kafka cluster, a ConfigMap with the cluster configuration has to be created. The ConfigMap needs ot be labaled with followign labels:
+Strimzi is using process called Cluster Controller to deploy and manage Kafka (including Zookeeper) and Kafka Connect clusters. Cluster 
+Controller is a process which is running inside your Kubernetes or OpenShift cluster. To deploy a Kafka cluster, 
+a ConfigMap with the cluster configuration has to be created. The ConfigMap needs to be labeled with following labels:
 ```
 strimzi.io/type: kafka
 strimzi.io/kind: cluster
@@ -99,7 +101,7 @@ services:
 * regular services can be used as bootstrap servers for Kafka clients;
 * headless services are needed to have DNS resolve the pods IP addresses directly.
 
-Strimzi provides two flavors of Kafka broker deplyoment: **ephemeral** and **persisitent**. 
+Strimzi provides two flavors of Kafka broker deployment: **ephemeral** and **persistent**. 
 
 The **ephemeral** flavour is suitable only for development and testing purposes and not for production. The 
 ephemeral flavour is using `emptyDir` volumes for storing broker information (Zookeeper side) and topics/partitions 
@@ -112,7 +114,7 @@ acquired using PersistentVolumeClaim – that makes it independent on the actual
 example, it can use HostPath volumes on Minikube or Amazon EBS volumes in Amazon AWS deployments without any 
 changes in the YAML files.
 
-To deploy a Kafka cluster, create a ConfigMap with the cluster configuration and followign labels:
+To deploy a Kafka cluster, create a ConfigMap with the cluster configuration and following labels:
 ```
 strimzi.io/type: kafka
 strimzi.io/kind: cluster
@@ -125,7 +127,7 @@ into the example ConfigMaps for [ephemeral](resources/kubernetes/kafka-ephemeral
 ### Deploying to OpenShift
 
 Kafka broker is provided in the form of OpenShift template. The cluster can be deployed from the template either 
-using command line or using the OpenShift console. To create the ephemeral cluster, run following commend in your 
+using command line or using the OpenShift console. To create the ephemeral cluster, run following command in your 
 terminal:
 ```
 oc new-app strimzi-ephemeral
@@ -198,9 +200,9 @@ USER kafka:kafka
 2. Build the Docker image and upload it to your Docker repository
 3. Use your new Docker image in your Kafka Connect deployment
   * On OpenShift, use the parameters `IMAGE_REPO_NAME`, `IMAGE_NAME` and `IMAGE_TAG` to specify your custom Docker image
-  * On Kubernetes, edit the [ConfigMap](resources/kuberneters/kafka-connect.yaml) and specify your Docker image.
+  * On Kubernetes, edit the [ConfigMap](resources/kubernetes/kafka-connect.yaml) and specify your Docker image.
 
-#### Using Openshift Build and S2I image
+#### Using OpenShift Build and S2I image
 
 OpenShift supports [Builds](https://docs.openshift.org/3.6/dev_guide/builds/index.html) which can be used together 
 with [Source-to-Image (S2I)](https://docs.openshift.org/3.6/creating_images/s2i.html#creating-images-s2i) framework 
