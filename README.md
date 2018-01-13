@@ -31,7 +31,9 @@ You will need a Kubernetes or OpenShift cluster to deploy Strimzi.
 ### Kubernetes
 
 In order to interact with a Kubernetes cluster, be sure to have [the kubectl tool][kubectl] installed.
-If you don't have a Kubernetes cluster up and running, the easiest way to deploy one, for development purposes, is to use the [Minikube][minikube] project which provides a single-node cluster in a VM. In order to do that you can just follow the installation guide which describes all the prerequisites and how to get the Minikube binaries.
+If you don't have a Kubernetes cluster up and running, the easiest way to deploy one, for development purposes, 
+is to use the [Minikube][minikube] project which provides a single-node cluster in a VM. In order to do that you 
+can just follow the installation guide which describes all the prerequisites and how to get the Minikube binaries.
 Finally, the cluster can be deployed by running
 
 ```
@@ -41,14 +43,17 @@ minikube start
 ### OpenShift
 
 In order to interact with an OpenShift cluster, be sure to have the [OpenShift client tools][origin] installed.
-If you don't have an OpenShift cluster up and running, the easiest way to deploy one, for development purposes, is to use the [Minishift][minishift] project which provides a single-node cluster in a VM. In order to do that you can just follow the installation guide which describes all the prerequisites and how to get the Minishift binaries.
+If you don't have an OpenShift cluster up and running, the easiest way to deploy one, for development purposes, is 
+to use the [Minishift][minishift] project which provides a single-node cluster in a VM. In order to do that you can 
+just follow the installation guide which describes all the prerequisites and how to get the Minishift binaries.
 Finally, the cluster can be deployed by running
 
 ```
 minishift start
 ```
 
-Another way is to use the OpenShift client tools directly to spin-up a single-node cluster. It will run OpenShift as a Docker container on the local machine.
+Another way is to use the OpenShift client tools directly to spin-up a single-node cluster. It will run OpenShift as a 
+Docker container on the local machine.
 
 ```
 oc cluster up
@@ -153,7 +158,8 @@ kubectl apply -f resources/kubernetes/kafka-persistent.yaml
 
 ## Kafka Connect
 
-The Cluster Controller can also deploy a [Kafka Connect][connect] cluster which can be used with either of the Kafka broker deployments described above. It is implemented as a deployment with a configurable number of workers. 
+The Cluster Controller can also deploy a [Kafka Connect][connect] cluster which can be used with either of the Kafka 
+broker deployments described above. It is implemented as a deployment with a configurable number of workers. 
 The default image currently contains only the Connectors distributed with Apache Kafka Connect - 
 `FileStreamSinkConnector` and `FileStreamSourceConnector`. 
 The REST interface for managing the Kafka Connect cluster is exposed internally within the Kubernetes/OpenShift 
@@ -237,9 +243,13 @@ oc start-build kafka-connect --from-dir ./my-plugins/
 
 ## Metrics
 
-Each Kafka broker and Zookeeper server pod exposes metrics by means of a [Prometheus][prometheus] endpoint. A JMX exporter, running as a Java agent, is in charge of getting metrics from the pod (both JVM metrics and metrics strictly related to the broker) and exposing them as such an endpoint.
+Each Kafka broker and Zookeeper server pod exposes metrics by means of a [Prometheus][prometheus] endpoint. A JMX exporter, 
+running as a Java agent, is in charge of getting metrics from the pod (both JVM metrics and metrics strictly related to the 
+broker) and exposing them as such an endpoint.
 
-The [Metrics](/metrics/METRICS.md) page details all the information for deploying a Prometheus server in the cluster in order to scrape the pods and obtain metrics. The same page describes how to set up a [Grafana][grafana] instance to have a dashboard showing the main configured metrics.
+The [Metrics](/metrics/METRICS.md) page details all the information for deploying a Prometheus server in the cluster in order 
+to scrape the pods and obtain metrics. The same page describes how to set up a [Grafana][grafana] instance to have a dashboard 
+showing the main configured metrics.
 
 [kafka]: https://kafka.apache.org "Apache Kafka"
 [connect]: https://kafka.apache.org/documentation/#connect "Apache Kafka Connect"
