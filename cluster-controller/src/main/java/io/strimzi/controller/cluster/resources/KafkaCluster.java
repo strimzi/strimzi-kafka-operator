@@ -29,7 +29,7 @@ public class KafkaCluster extends AbstractCluster {
     private int transactionStateLogReplicationFactor = DEFAULT_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR;
 
     // Configuration defaults
-    private static String DEFAULT_IMAGE = "strimzi/kafka-statefulsets:latest";
+    private static String DEFAULT_IMAGE = "strimzi/kafka:latest";
     private static int DEFAULT_REPLICAS = 3;
     private static int DEFAULT_HEALTHCHECK_DELAY = 15;
     private static int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
