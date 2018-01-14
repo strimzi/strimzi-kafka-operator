@@ -152,7 +152,7 @@ parameters:
 - description: Kafka image name
   displayName: Kafka image Name
   name: KAFKA_IMAGE_NAME
-  value: kafka-statefulsets
+  value: kafka
 - description: Kafka image tag
   displayName: Kafka image tag
   name: KAFKA_IMAGE_TAG
@@ -285,7 +285,7 @@ parameters:
 - description: Kafka image name
   displayName: Kafka image Name
   name: KAFKA_IMAGE_NAME
-  value: kafka-statefulsets
+  value: kafka
 - description: Kafka image tag
   displayName: Kafka image tag
   name: KAFKA_IMAGE_TAG
