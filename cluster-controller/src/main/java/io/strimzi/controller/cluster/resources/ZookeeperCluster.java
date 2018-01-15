@@ -161,7 +161,7 @@ public class ZookeeperCluster extends AbstractCluster {
         } else {
 
             if (isMetricsEnabled) {
-                JsonObject metricsConfig = new JsonObject(metricsConfigMap.getData().get("config.yml"));
+                JsonObject metricsConfig = new JsonObject(metricsConfigMap.getData().get(METRICS_CONFIG_FILE));
                 if (!this.metricsConfig.equals(metricsConfig)) {
                     diff.setMetricsChanged(true);
                 }
@@ -203,7 +203,7 @@ public class ZookeeperCluster extends AbstractCluster {
 
         // TODO: making data field and configMap name constants ?
         Map<String, String> data = new HashMap<>();
-        data.put("config.yml", metricsConfig.toString());
+        data.put(METRICS_CONFIG_FILE, metricsConfig.toString());
 
         return createConfigMap(metricsConfigName, data);
     }
@@ -211,7 +211,7 @@ public class ZookeeperCluster extends AbstractCluster {
     public ConfigMap patchMetricsConfigMap(ConfigMap cm) {
 
         Map<String, String> data = new HashMap<>();
-        data.put("config.yml", metricsConfig != null ? metricsConfig.toString() : null);
+        data.put(METRICS_CONFIG_FILE, metricsConfig != null ? metricsConfig.toString() : null);
 
         return patchConfigMap(cm, data);
     }
