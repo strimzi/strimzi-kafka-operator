@@ -40,8 +40,17 @@ public class UpdateKafkaClusterOperation extends KafkaClusterOperation {
                 ConfigMap kafkaConfigMap = k8s.getConfigmap(namespace, name);
 
                 if (kafkaConfigMap != null)    {
-                    kafka = KafkaCluster.fromConfigMap(kafkaConfigMap);
-                    diff = kafka.diff(k8s.getStatefulSet(namespace, name), k8s.getConfigmap(namespace, name + "-metrics-config"));
+
+                    try {
+                        kafka = KafkaCluster.fromConfigMap(kafkaConfigMap);
+                        diff = kafka.diff(k8s.getStatefulSet(namespace, name), k8s.getConfigmap(namespace, name + "-metrics-config"));
+                    } catch (Exception ex) {
+                        log.error("Error while parsing cluster ConfigMap", ex);
+                        handler.handle(Future.failedFuture("ConfigMap parsing error"));
+                        lock.release();
+                        return;
+                    }
+
                 } else {
                     log.error("ConfigMap {} doesn't exist anymore in namespace {}", name, namespace);
                     handler.handle(Future.failedFuture("ConfigMap doesn't exist anymore"));

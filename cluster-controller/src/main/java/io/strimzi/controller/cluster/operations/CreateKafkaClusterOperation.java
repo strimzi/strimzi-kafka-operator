@@ -25,7 +25,15 @@ public class CreateKafkaClusterOperation extends KafkaClusterOperation {
 
                 log.info("Creating Kafka cluster {} in namespace {}", name, namespace);
 
-                KafkaCluster kafka = KafkaCluster.fromConfigMap(k8s.getConfigmap(namespace, name));
+                KafkaCluster kafka;
+                try {
+                    kafka = KafkaCluster.fromConfigMap(k8s.getConfigmap(namespace, name));
+                } catch (Exception ex) {
+                    log.error("Error while parsing cluster ConfigMap", ex);
+                    handler.handle(Future.failedFuture("ConfigMap parsing error"));
+                    lock.release();
+                    return;
+                }
 
                 // start creating configMap operation only if metrics are enabled,
                 // otherwise the future is already complete (for the "join")

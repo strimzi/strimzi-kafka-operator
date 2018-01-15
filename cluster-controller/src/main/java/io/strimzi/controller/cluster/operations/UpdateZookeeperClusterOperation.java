@@ -37,8 +37,17 @@ public class UpdateZookeeperClusterOperation extends ZookeeperClusterOperation {
                 ConfigMap zkConfigMap = k8s.getConfigmap(namespace, name);
 
                 if (zkConfigMap != null)    {
-                    zk = ZookeeperCluster.fromConfigMap(zkConfigMap);
-                    diff = zk.diff(k8s.getStatefulSet(namespace, name + "-zookeeper"), k8s.getConfigmap(namespace, name + "-zookeeper-metrics-config"));
+
+                    try {
+                        zk = ZookeeperCluster.fromConfigMap(zkConfigMap);
+                        diff = zk.diff(k8s.getStatefulSet(namespace, name + "-zookeeper"), k8s.getConfigmap(namespace, name + "-zookeeper-metrics-config"));
+                    } catch (Exception ex) {
+                        log.error("Error while parsing cluster ConfigMap", ex);
+                        handler.handle(Future.failedFuture("ConfigMap parsing error"));
+                        lock.release();
+                        return;
+                    }
+
                 } else {
                     log.error("ConfigMap {} doesn't exist anymore in namespace {}", name, namespace);
                     handler.handle(Future.failedFuture("ConfigMap doesn't exist anymore"));
