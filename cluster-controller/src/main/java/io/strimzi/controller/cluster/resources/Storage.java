@@ -1,12 +1,15 @@
 package io.strimzi.controller.cluster.resources;
 
+import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.fabric8.kubernetes.api.model.LabelSelectorRequirement;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.strimzi.controller.cluster.ClusterController;
 import io.vertx.core.json.JsonObject;
 
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Represents information about storage to use
@@ -17,12 +20,13 @@ public class Storage {
     public static final String SIZE_FIELD = "size";
     public static final String STORAGE_CLASS_FIELD = "class";
     public static final String SELECTOR_FIELD = "selector";
+    public static final String SELECTOR_MATCH_LABELS_FIELD = "match-labels";
     public static final String DELETE_CLAIM_FIELD = "delete-claim";
 
     private final StorageType type;
     private Quantity size;
     private String storageClass;
-    private Map<String, String> selector;
+    private LabelSelector selector;
     private boolean isDeleteClaim = false;
 
     /**
@@ -62,7 +66,7 @@ public class Storage {
      * @param selector  map with labels=values for selecting storage
      * @return  current Storage instance
      */
-    public Storage withSelector(final Map<String, String> selector) {
+    public Storage withSelector(final LabelSelector selector) {
         this.selector = selector;
         return this;
     }
@@ -108,7 +112,19 @@ public class Storage {
             storage.withDeleteClaim(isDeleteClaim);
         }
 
-        // TODO : getting the storage selector
+        JsonObject selector = json.getJsonObject(Storage.SELECTOR_FIELD);
+        if (selector != null) {
+
+            JsonObject matchLabelsJson = selector.getJsonObject(Storage.SELECTOR_MATCH_LABELS_FIELD);
+            Map<String, String> matchLabels =
+                    matchLabelsJson.getMap().entrySet().stream()
+                            .collect(Collectors.toMap(Map.Entry::getKey, e -> String.valueOf(e.getValue())));
+
+            // match-expressions doesn't supported yet
+            List<LabelSelectorRequirement> matchExpressions = null;
+
+            storage.withSelector(new LabelSelector(matchExpressions, matchLabels));
+        }
 
         return storage;
     }
@@ -126,7 +142,7 @@ public class Storage {
                 .withClass(pvc.getSpec().getStorageClassName());
 
         if (pvc.getSpec().getSelector() != null) {
-            storage.withSelector(new HashMap<>(pvc.getSpec().getSelector().getMatchLabels()));
+            storage.withSelector(pvc.getSpec().getSelector());
         }
 
         if (pvc.getMetadata().getAnnotations() != null) {
@@ -196,7 +212,7 @@ public class Storage {
     /**
      * @return  map with labels=values for selecting storage
      */
-    public Map<String, String> selector() {
+    public LabelSelector selector() {
         return this.selector;
     }
 
