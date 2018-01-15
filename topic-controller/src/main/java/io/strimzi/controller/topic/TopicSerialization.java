@@ -18,11 +18,8 @@
 package io.strimzi.controller.topic;
 
 import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import kafka.log.LogConfig;
@@ -60,6 +57,7 @@ public class TopicSerialization {
 
     // These are the keys in the JSON we store in ZK
     public static final String JSON_KEY_TOPIC_NAME = "topic-name";
+    public static final String JSON_KEY_MAP_NAME = "map-name";
     public static final String JSON_KEY_PARTITIONS = "partitions";
     public static final String JSON_KEY_REPLICAS = "replicas";
     public static final String JSON_KEY_CONFIG = "config";
@@ -132,7 +130,6 @@ public class TopicSerialization {
         if (cm == null) {
             return null;
         }
-        String name = cm.getMetadata().getName();
         Topic.Builder builder = new Topic.Builder()
                 .withMapName(cm.getMetadata().getName())
                 .withTopicName(getTopicName(cm))
@@ -211,12 +208,9 @@ public class TopicSerialization {
         } catch (IOException e) {
             throw new RuntimeException("Error converting topic config to a string, for topic '"+topic.getTopicName()+"'", e);
         }
-        MapName mapName = topic.getMapName();
-        if (mapName == null) {
-            mapName = topic.getTopicName().asMapName();
-        }
+        MapName mapName = topic.getOrAsMapName();
         return new ConfigMapBuilder().withApiVersion("v1")
-                .withNewMetadata()
+                    .withNewMetadata()
                     .withName(mapName.toString())
                     .withLabels(cmPredicate.labels())
                     // TODO .withUid()
@@ -297,9 +291,8 @@ public class TopicSerialization {
     public static byte[] toJson(Topic topic) {
         ObjectMapper mapper = objectMapper();
         ObjectNode root = mapper.createObjectNode();
-        // TODO Do we store the k8s name here too?
-        // TODO Do we store the k9s uid here?
-        // If so, both of those need to be properties of the Topic class
+        // TODO Do we store the k8s uid here?
+        root.put(JSON_KEY_MAP_NAME, topic.getOrAsMapName().toString());
         root.put(JSON_KEY_TOPIC_NAME, topic.getTopicName().toString());
         root.put(JSON_KEY_PARTITIONS, topic.getNumPartitions());
         root.put(JSON_KEY_REPLICAS, topic.getNumReplicas());
@@ -332,8 +325,9 @@ public class TopicSerialization {
         }
         Topic.Builder builder = new Topic.Builder();
         builder.withTopicName((String)root.get(JSON_KEY_TOPIC_NAME))
-        .withNumPartitions((Integer)root.get(JSON_KEY_PARTITIONS))
-        .withNumReplicas(((Integer)root.get(JSON_KEY_REPLICAS)).shortValue());
+                .withMapName((String)root.get(JSON_KEY_MAP_NAME))
+                .withNumPartitions((Integer)root.get(JSON_KEY_PARTITIONS))
+                .withNumReplicas(((Integer)root.get(JSON_KEY_REPLICAS)).shortValue());
         Map<String, String> config = (Map)root.get(JSON_KEY_CONFIG);
         for (Map.Entry<String, String> entry : config.entrySet()) {
             builder.withConfigEntry(entry.getKey(), entry.getValue());

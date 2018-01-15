@@ -20,6 +20,7 @@ package io.strimzi.controller.topic;
 import io.debezium.kafka.KafkaCluster;
 import io.debezium.kafka.ZookeeperServer;
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
 import io.vertx.core.Vertx;
@@ -203,31 +204,46 @@ public class ControllerIntegrationTest {
         createTopic(context, "test-topic-added");
     }
 
+    @Test
+    public void testTopicAddedWithEncodableName(TestContext context) throws Exception {
+        createTopic(context, "thest-TOPIC_ADDED");
+    }
 
     @Test
     public void testTopicDeleted(TestContext context) throws Exception {
-        String topicName = "test-topic-deleted";
-        String configMapName = createTopic(context, topicName);
+        createAndDeleteTopic(context, "test-topic-deleted");
+    }
 
-        logger.info("Deleting topic {}", topicName);
+    @Test
+    public void testTopicDeletedWithEncodableName(TestContext context) throws Exception {
+        createAndDeleteTopic(context, "test-TOPIC_DELETED");
+    }
+
+    private void createAndDeleteTopic(TestContext context, String topicName) throws InterruptedException, ExecutionException {
+        String configMapName = createTopic(context, topicName);
+        deleteTopic(context, topicName, configMapName);
+    }
+
+    private void deleteTopic(TestContext context, String topicName, String configMapName) throws InterruptedException, ExecutionException {
+        logger.info("Deleting topic {} (ConfigMap {})", topicName, configMapName);
         // Now we can delete the topic
-        DeleteTopicsResult dlt = adminClient.deleteTopics(singletonList(configMapName));
+        DeleteTopicsResult dlt = adminClient.deleteTopics(singletonList(topicName));
         dlt.all().get();
         logger.info("Deleted topic {}", topicName);
 
         // Wait for the configmap to be deleted
         waitFor(context, () -> {
             ConfigMap cm = kubeClient.configMaps().withName(configMapName).get();
-            logger.info("Polled configmap {}, waiting for deletion", configMapName);
+            logger.info("Polled configmap {}, got {}, waiting for deletion", configMapName, cm);
             return cm == null;
         }, timeout, "Expected the configmap to have been deleted by now");
     }
 
     private String createTopic(TestContext context, String topicName) throws InterruptedException, ExecutionException {
         connect(context);
-
+        logger.info("Creating topic {}", topicName);
         // Create a topic
-        String configMapName = topicName;
+        String configMapName = new TopicName(topicName).asMapName().toString();
         CreateTopicsResult crt = adminClient.createTopics(singletonList(new NewTopic(topicName, 1, (short) 1)));
         crt.all().get();
 
@@ -244,9 +260,20 @@ public class ControllerIntegrationTest {
 
     @Test
     public void testTopicConfigChanged(TestContext context) throws Exception {
-        String topicName = "test-topic-config-changed";
-        String configMapName = createTopic(context, topicName);
+        createAndAlterTopicConfig(context, "test-topic-config-changed");
+    }
 
+    @Test
+    public void testTopicConfigChangedWithEncodableName(TestContext context) throws Exception {
+        createAndAlterTopicConfig(context, "test-TOPIC_CONFIG_CHANGED");
+    }
+
+    private void createAndAlterTopicConfig(TestContext context, String topicName) throws InterruptedException, ExecutionException {
+        String configMapName = createTopic(context, topicName);
+        alterTopicConfig(context, topicName, configMapName);
+    }
+
+    private void alterTopicConfig(TestContext context, String topicName, String configMapName) throws InterruptedException, ExecutionException {
         // Get the topic config
         ConfigResource configResource = topicConfigResource(topicName);
         org.apache.kafka.clients.admin.Config config = getTopicConfig(configResource);
@@ -378,7 +405,7 @@ public class ControllerIntegrationTest {
     }
 
     @Test
-    public void testConfigMapModified(TestContext context) throws Exception {
+    public void testConfigMapModifiedTopicConfigChanged(TestContext context) throws Exception {
         connect(context);
         // create the cm
         String topicName = "test-configmap-modified";
@@ -394,6 +421,39 @@ public class ControllerIntegrationTest {
             String retention = config.get("retention.ms").value();
             logger.debug("retention of {}, waiting for 12341234", retention);
             return "12341234".equals(retention);
-        },  timeout, "Expected the topic be be updated");
+        },  timeout, "Expected the topic to be updated");
     }
+
+    @Test
+    public void testConfigMapModified_ConfigMapNameChanged(TestContext context) throws Exception {
+        connect(context);
+        // create the cm
+        String topicName = "test-configmap-modified";
+        ConfigMap cm = createCm(context, topicName);
+
+        // now change the cm
+        String cmName = cm.getMetadata().getName();
+        String changedName = cmName+"-changed";
+        ConfigMap patchedMap = new ConfigMapBuilder(cm).editMetadata().withName(changedName).endMetadata().build();
+        kubeClient.configMaps().withName(cmName).patch(patchedMap);
+
+        // now change the cm
+        //kubeClient.configMaps().withName(changedName).edit().addToData(TopicSerialization.CM_KEY_CONFIG, "{\"retention.ms\":\"12341234\"}").done();
+
+        // Wait for that to be reflected in the topic
+        waitFor(context, ()-> {
+            ConfigResource configResource = topicConfigResource(topicName);
+            org.apache.kafka.clients.admin.Config config = getTopicConfig(configResource);
+            String retention = config.get("retention.ms").value();
+            logger.debug("retention of {}, waiting for 12341234", retention);
+            return "12341234".equals(retention);
+        },  timeout, "Expected the topic to be updated");
+    }
+
+    // TODO: Test changing CM data/name (expect error, because renaming a topic is not supported in Kafka)
+    // TODO: Test changing CM metadata/name (expect no error)
+    // TODO: Test create with CM metadata/name=bar,data/name=foo, then create another with metadata/name=foo,data/name=foo (expect error)
+    //       How do we know (e.g. on failover) which one we were ignoring? Otherwise we could end up flip-flopping
+    // TODO: Test create with CM metadata/name=bar,data/name=foo, then create another with metadata/name=foo (expect error)
+    // TODO: Test create with CM metadata/name=foo, then create another with metadata/name=bar,data/name=foo (expect error)
 }

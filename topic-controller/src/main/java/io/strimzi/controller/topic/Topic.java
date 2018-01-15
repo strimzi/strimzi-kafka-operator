@@ -139,6 +139,14 @@ public class Topic {
         return mapName;
     }
 
+    public MapName getOrAsMapName() {
+        if (mapName != null) {
+            return mapName;
+        } else {
+            return topicName.asMapName();
+        }
+    }
+
     public int getNumPartitions() {
         return numPartitions;
     }

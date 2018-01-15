@@ -70,11 +70,11 @@ public class K8sImpl implements K8s {
     }
 
     @Override
-    public void deleteConfigMap(TopicName topicName, Handler<AsyncResult<Void>> handler) {
+    public void deleteConfigMap(MapName mapName, Handler<AsyncResult<Void>> handler) {
         vertx.executeBlocking(future -> {
             try {
                 // Delete the CM by the topic name, because neither ZK nor Kafka know the CM name
-                client.configMaps().withName(topicName.toString()).delete();
+                client.configMaps().withName(mapName.toString()).delete();
                 future.complete();
             } catch (Exception e) {
                 future.fail(e);

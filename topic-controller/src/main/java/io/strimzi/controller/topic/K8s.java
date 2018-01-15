@@ -26,14 +26,11 @@ import java.util.List;
 
 public interface K8s {
 
-    // TODO define what happens if cm already exists
     void createConfigMap(ConfigMap cm, Handler<AsyncResult<Void>> handler);
 
-    // TODO define what happens if cm doesn't exist
     void updateConfigMap(ConfigMap cm, Handler<AsyncResult<Void>> handler);
 
-    // TODO define what happens if cm doesn't exists
-    void deleteConfigMap(TopicName topicName, Handler<AsyncResult<Void>> handler);
+    void deleteConfigMap(MapName mapName, Handler<AsyncResult<Void>> handler);
 
     void listMaps(Handler<AsyncResult<List<ConfigMap>>> handler);
 
