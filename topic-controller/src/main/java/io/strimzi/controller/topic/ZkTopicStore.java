@@ -23,7 +23,6 @@ import io.strimzi.controller.topic.zk.Zk;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.ACL;
@@ -39,15 +38,13 @@ public class ZkTopicStore implements TopicStore {
 
     private final static Logger logger = LoggerFactory.getLogger(ZkTopicStore.class);
     public static final String TOPICS_PATH = "/strimzi/topics";
-    private final Vertx vertx;
 
     private final Zk zk;
 
     private final List<ACL> acl;
 
-    public ZkTopicStore(Zk zk, Vertx vertx) {
+    public ZkTopicStore(Zk zk) {
         this.zk = zk;
-        this.vertx = vertx;
         acl = new AclBuilder().setWorld(Permission.values()).build();
         createParent("/strimzi");
         createParent(TOPICS_PATH);
@@ -90,7 +87,6 @@ public class ZkTopicStore implements TopicStore {
 
     @Override
     public void create(Topic topic, Handler<AsyncResult<Void>> handler) {
-        Throwable t= new Throwable();
         byte[] data = TopicSerialization.toJson(topic);
         String topicPath = getTopicPath(topic.getTopicName());
         logger.debug("create znode {}", topicPath);
