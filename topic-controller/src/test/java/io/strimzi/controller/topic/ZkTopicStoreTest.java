@@ -54,7 +54,7 @@ public class ZkTopicStoreTest {
             TimeoutException, ExecutionException {
         this.zkServer = new EmbeddedZooKeeper();
         ZkImpl zk = new ZkImpl(vertx, zkServer.getZkConnectString(), 60000, false);
-        this.store = new ZkTopicStore(zk, vertx);
+        this.store = new ZkTopicStore(zk);
     }
 
     @After

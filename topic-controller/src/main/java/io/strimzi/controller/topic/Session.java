@@ -96,7 +96,7 @@ public class Session extends AbstractVerticle {
 
         this.zk = Zk.create(vertx, config.get(Config.ZOOKEEPER_CONNECT), this.config.get(Config.ZOOKEEPER_SESSION_TIMEOUT_MS).intValue());
 
-        ZkTopicStore topicStore = new ZkTopicStore(zk, vertx);
+        ZkTopicStore topicStore = new ZkTopicStore(zk);
 
         this.controller = new Controller(vertx, kafka, k8s, topicStore, cmPredicate);
 
