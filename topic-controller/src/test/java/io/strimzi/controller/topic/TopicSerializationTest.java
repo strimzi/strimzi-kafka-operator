@@ -78,13 +78,15 @@ public class TopicSerializationTest {
     public void testJsonSerializationRoundTrip() throws UnsupportedEncodingException {
         Topic.Builder builder = new Topic.Builder();
         builder.withTopicName("tom");
+        builder.withMapName("bob");
         builder.withNumReplicas((short) 1);
         builder.withNumPartitions(2);
         builder.withConfigEntry("foo", "bar");
         Topic wroteTopic = builder.build();
         byte[] bytes = TopicSerialization.toJson(wroteTopic);
         String json = new String(bytes, "UTF-8");
-        assertEquals("{\"topic-name\":\"tom\"," +
+        assertEquals("{\"map-name\":\"bob\"," +
+                "\"topic-name\":\"tom\"," +
                 "\"partitions\":2," +
                 "\"replicas\":1," +
                 "\"config\":{\"foo\":\"bar\"}" +
@@ -166,14 +168,21 @@ public class TopicSerializationTest {
         data.put(TopicSerialization.CM_KEY_PARTITIONS, "1");
         data.put(TopicSerialization.CM_KEY_CONFIG, "{}");
 
-        ConfigMap cm = new ConfigMapBuilder().editOrNewMetadata().withName("An invalid topic name!")
+        // The problem with this configmap name is it's too long to be a legal topic name
+        String illegalAsATopicName = "012345678901234567890123456789012345678901234567890123456789" +
+                "01234567890123456789012345678901234567890123456789012345678901234567890123456789" +
+                "01234567890123456789012345678901234567890123456789012345678901234567890123456789" +
+                "012345678901234567890123456789";
+        ConfigMap cm = new ConfigMapBuilder().editOrNewMetadata().withName(illegalAsATopicName)
                 .endMetadata().withData(data).build();
 
         try {
             TopicSerialization.fromConfigMap(cm);
             fail("Should throw");
         } catch (InvalidConfigMapException e) {
-            assertEquals("ConfigMap's 'data' section lacks a 'name' key and ConfigMap's name is invalid as a topic name: Topic name \"An invalid topic name!\" is illegal, it contains a character other than ASCII alphanumerics, '.', '_' and '-'", e.getMessage());
+            assertEquals("ConfigMap's 'data' section lacks a 'name' key and ConfigMap's name is invalid as a topic name: " +
+                    "Topic name is illegal, it can't be longer than 249 characters, topic name: " +
+                    illegalAsATopicName, e.getMessage());
         }
     }
 

@@ -19,13 +19,26 @@ package io.strimzi.controller.topic;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 
+import java.util.regex.Pattern;
+
 /**
  * Typesafe representation of the name of a ConfigMap.
  */
 class MapName {
     private final String name;
 
+    private static final Pattern RESOURCE_PATTERN = Pattern.compile("[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*");
+    public static final int MAX_RESOURCE_NAME_LENGTH = 253;
+
+    public static boolean isValidResourceName(String resourceName) {
+        return resourceName.length() <= MAX_RESOURCE_NAME_LENGTH
+                && RESOURCE_PATTERN.matcher(resourceName).matches();
+    }
+
     public MapName(String name) {
+        if (!isValidResourceName(name)) {
+            throw new IllegalArgumentException("'" + name + "' is not a valid Kubernetes resource name");
+        }
         this.name = name;
     }
 

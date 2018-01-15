@@ -437,7 +437,7 @@ public class ControllerTest {
         Async async0 = context.async(2);
         mockK8s.setCreateResponse(mapName, null)
                 .createConfigMap(TopicSerialization.toConfigMap(kubeTopic, cmPredicate), ar -> async0.countDown());
-        mockK8s.setDeleteResponse(topicName, null);
+        mockK8s.setDeleteResponse(mapName, null);
         mockTopicStore.setCreateTopicResponse(topicName, null)
                 .create(privateTopic, ar-> async0.countDown());
         mockTopicStore.setDeleteTopicResponse(topicName, null);
@@ -790,13 +790,13 @@ public class ControllerTest {
     }
 
     private void topicDeleted(TestContext context, Exception storeException, Exception k8sException) {
-        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short)2, map("cleanup.policy", "bar")).build();
+        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short)2, map("cleanup.policy", "bar")).withMapName(mapName).build();
         Topic kafkaTopic = kubeTopic;
         Topic privateTopic = kubeTopic;
 
         mockK8s.setCreateResponse(mapName, null)
                 .createConfigMap(TopicSerialization.toConfigMap(kubeTopic, cmPredicate), ar -> {});
-        mockK8s.setDeleteResponse(topicName, k8sException);
+        mockK8s.setDeleteResponse(mapName, k8sException);
 
         mockTopicStore.setCreateTopicResponse(topicName, null)
                 .create(privateTopic, ar -> {});

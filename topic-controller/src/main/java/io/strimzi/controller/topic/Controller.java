@@ -120,22 +120,22 @@ public class Controller {
     /** Topic deleted in ZK */
     class DeleteConfigMap implements Handler<Void> {
 
-        private final TopicName topicName;
+        private final MapName mapName;
         private final Handler<io.vertx.core.AsyncResult<Void>> handler;
 
-        public DeleteConfigMap(TopicName topicName, Handler<io.vertx.core.AsyncResult<Void>> handler) {
-            this.topicName = topicName;
+        public DeleteConfigMap(MapName mapName, Handler<io.vertx.core.AsyncResult<Void>> handler) {
+            this.mapName = mapName;
             this.handler = handler;
         }
 
         @Override
         public void handle(Void v) {
-            k8s.deleteConfigMap(topicName, handler);
+            k8s.deleteConfigMap(mapName, handler);
         }
 
         @Override
         public String toString() {
-            return "DeleteConfigMap(topicName="+topicName+")";
+            return "DeleteConfigMap(mapName=" + mapName + ")";
         }
     }
 
@@ -427,7 +427,7 @@ public class Controller {
                     logger.debug("cm deleted in k8s => delete topic from kafka and from topicStore");
                     enqueue(new DeleteKafkaTopic(kafkaTopic.getTopicName(), involvedObject, ar -> {
                         if (ar.succeeded()) {
-                            enqueue(new DeleteFromTopicStore(kafkaTopic.getTopicName(), involvedObject, reconciliationResultHandler));
+                            enqueue(new DeleteFromTopicStore(privateTopic.getTopicName(), involvedObject, reconciliationResultHandler));
                         } else {
                             reconciliationResultHandler.handle(ar);
                         }
@@ -437,9 +437,9 @@ public class Controller {
             } else if (kafkaTopic == null) {
                 // it was deleted in kafka so delete in k8s and privateState
                 logger.debug("topic deleted in kafkas => delete cm from k8s and from topicStore");
-                enqueue(new DeleteConfigMap(k8sTopic.getTopicName(), ar -> {
+                enqueue(new DeleteConfigMap(privateTopic.getOrAsMapName(), ar -> {
                     if (ar.succeeded()) {
-                        enqueue(new DeleteFromTopicStore(k8sTopic.getTopicName(), involvedObject, reconciliationResultHandler));
+                        enqueue(new DeleteFromTopicStore(privateTopic.getTopicName(), involvedObject, reconciliationResultHandler));
                     } else {
                         reconciliationResultHandler.handle(ar);
                     }
@@ -594,6 +594,32 @@ public class Controller {
     }
 
     private void reconcileOnTopicChange(TopicName topicName, Topic kafkaTopic, Handler<AsyncResult<Void>> resultHandler) {
+        // TODO Here I need to lookup the name of the configmap from the name of the topic.
+        // I can either do that from the topicStore, or maintain an in-memory map
+        // I can then look up the CM from k8s
+        topicStore.read(topicName, storeResult -> {
+            if (storeResult.succeeded()) {
+                Topic storeTopic = storeResult.result();
+                MapName mapName = null;
+                if (storeTopic != null) {
+                    mapName = storeTopic.getMapName();
+                } else {
+                    mapName = topicName.asMapName();
+                }
+                k8s.getFromName(mapName, kubeResult -> {
+                    if (kubeResult.succeeded()) {
+                        ConfigMap cm = kubeResult.result();
+                        Topic k8sTopic = TopicSerialization.fromConfigMap(cm);
+                        reconcile(cm, k8sTopic, kafkaTopic, storeTopic, resultHandler);
+                    } else {
+                        resultHandler.handle(kubeResult.<Void>map((Void)null));
+                    }
+                });
+            } else {
+                resultHandler.handle(storeResult.<Void>map((Void)null));
+            }
+        });
+/*
         k8s.getFromName(topicName.asMapName(), kubeResult -> {
             if (kubeResult.succeeded()) {
                 ConfigMap cm = kubeResult.result();
@@ -615,6 +641,7 @@ public class Controller {
                 resultHandler.handle(kubeResult.<Void>map((Void)null));
             }
         });
+        */
     }
 
     /** Called when a topic znode is created in ZK */
