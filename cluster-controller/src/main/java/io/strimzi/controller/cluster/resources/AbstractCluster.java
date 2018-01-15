@@ -173,8 +173,6 @@ public abstract class AbstractCluster {
         annotations.put(String.format("%s/%s", ClusterController.STRIMZI_CLUSTER_CONTROLLER_DOMAIN, Storage.DELETE_CLAIM_FIELD),
                 String.valueOf(storage.isDeleteClaim()));
 
-        // TODO : deal with the storage.selector field
-
         PersistentVolumeClaim pvc = new PersistentVolumeClaimBuilder()
                 .withNewMetadata()
                 .withName(name)
@@ -186,6 +184,7 @@ public abstract class AbstractCluster {
                 .withRequests(requests)
                 .endResources()
                 .withStorageClassName(storage.storageClass())
+                .withSelector(storage.selector())
                 .endSpec()
                 .build();
 

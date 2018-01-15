@@ -81,7 +81,6 @@ public class KafkaCluster extends AbstractCluster {
         kafka.setOffsetsTopicReplicationFactor(Integer.parseInt(cm.getData().getOrDefault(KEY_KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR, String.valueOf(DEFAULT_KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR))));
         kafka.setTransactionStateLogReplicationFactor(Integer.parseInt(cm.getData().getOrDefault(KEY_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR, String.valueOf(DEFAULT_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR))));
 
-        // TODO : making more checks for exception on JSON ?
         String metricsConfig = cm.getData().get(KEY_METRICS_CONFIG);
         kafka.setMetricsConfigName(cm.getMetadata().getName() + "-metrics-config");
         kafka.setMetricsEnabled(metricsConfig != null);
@@ -89,7 +88,6 @@ public class KafkaCluster extends AbstractCluster {
             kafka.setMetricsConfig(new JsonObject(metricsConfig));
         }
 
-        // TODO : making more checks for exception on JSON ?
         String storageConfig = cm.getData().get(KEY_STORAGE);
         kafka.setStorage(Storage.fromJson(new JsonObject(storageConfig)));
 

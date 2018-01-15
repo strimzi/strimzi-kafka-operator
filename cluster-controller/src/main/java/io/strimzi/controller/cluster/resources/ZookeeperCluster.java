@@ -74,7 +74,6 @@ public class ZookeeperCluster extends AbstractCluster {
         zk.setHealthCheckInitialDelay(Integer.parseInt(cm.getData().getOrDefault(KEY_HEALTHCHECK_DELAY, String.valueOf(DEFAULT_HEALTHCHECK_DELAY))));
         zk.setHealthCheckTimeout(Integer.parseInt(cm.getData().getOrDefault(KEY_HEALTHCHECK_TIMEOUT, String.valueOf(DEFAULT_HEALTHCHECK_TIMEOUT))));
 
-        // TODO : making more checks for exception on JSON ?
         String metricsConfig = cm.getData().get(KEY_METRICS_CONFIG);
         zk.setMetricsConfigName(cm.getMetadata().getName() + "-zookeeper-metrics-config");
         zk.setMetricsEnabled(metricsConfig != null);
@@ -82,7 +81,6 @@ public class ZookeeperCluster extends AbstractCluster {
             zk.setMetricsConfig(new JsonObject(metricsConfig));
         }
 
-        // TODO : making more checks for exception on JSON ?
         String storageConfig = cm.getData().get(KEY_STORAGE);
         zk.setStorage(Storage.fromJson(new JsonObject(storageConfig)));
 
