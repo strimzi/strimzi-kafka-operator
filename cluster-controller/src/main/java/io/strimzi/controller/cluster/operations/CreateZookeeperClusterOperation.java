@@ -25,7 +25,15 @@ public class CreateZookeeperClusterOperation extends ZookeeperClusterOperation {
 
                 log.info("Creating Zookeeper cluster {} in namespace {}", name + "-zookeeper", namespace);
 
-                ZookeeperCluster zk = ZookeeperCluster.fromConfigMap(k8s.getConfigmap(namespace, name));
+                ZookeeperCluster zk;
+                try {
+                    zk = ZookeeperCluster.fromConfigMap(k8s.getConfigmap(namespace, name));
+                } catch (Exception ex) {
+                    log.error("Error while parsing cluster ConfigMap", ex);
+                    handler.handle(Future.failedFuture("ConfigMap parsing error"));
+                    lock.release();
+                    return;
+                }
 
                 // start creating configMap operation only if metrics are enabled,
                 // otherwise the future is already complete (for the "join")
