@@ -1,4 +1,4 @@
-PROJECT_NAME=kafka-connect
+PROJECT_NAME=kafka
 
 include ../Makefile.docker
 

@@ -7,6 +7,4 @@ include ../Makefile.docker
 
 include ../Makefile.maven
 
-include ../Makefile.release
-
-.PHONY: build clean
+.PHONY: build clean release
