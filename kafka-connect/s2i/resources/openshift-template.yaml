@@ -73,7 +73,7 @@ parameters:
 - description: Tag of the new Kafka Connect Docker image which will be generated
   displayName: Target image tag
   name: TARGET_IMAGE_TAG
-  value: latest
+  value: 0.1.0
 - description: Image repository name of the S2I Docker image
   displayName: S2I image repository
   name: S2I_IMAGE_REPO_NAME
@@ -85,7 +85,7 @@ parameters:
 - description: Tag of the S2I Docker image
   displayName: S2I image tag
   name: S2I_IMAGE_TAG
-  value: latest
+  value: 0.1.0
 objects:
 - apiVersion: v1
   kind: ImageStream

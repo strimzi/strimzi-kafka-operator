@@ -68,7 +68,7 @@ parameters:
 - description: Image tag
   displayName: Image tag
   name: IMAGE_TAG
-  value: latest
+  value: 0.1.0
 objects:
 - apiVersion: v1
   kind: Service

@@ -70,7 +70,7 @@ spec:
               mountPath: /var/lib/zookeeper
       containers:
         - name: zookeeper
-          image: "strimzi/zookeeper:latest"
+          image: "strimzi/zookeeper:0.1.0"
           ports:
             - name: clientport
               containerPort: 2181
@@ -192,7 +192,7 @@ spec:
              mountPath: /var/lib/kafka/
       containers:
         - name: kafka
-          image: "strimzi/kafka-statefulsets:latest"
+          image: "strimzi/kafka-statefulsets:0.1.0"
           ports:
             - name: kafka
               containerPort: 9092
