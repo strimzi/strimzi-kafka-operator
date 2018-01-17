@@ -526,9 +526,6 @@ public class ControllerIntegrationTest {
                         "ConfigMap's 'data' section has invalid key 'partitions': " +
                         "should be a strictly positive integer but was 'foo'",
                 Controller.EventType.WARNING);
-
-        // TODO Check we can change the partitions back and that future changes get handled correctly
-        // TODO What if the topic end gets changed while it's in a broken state?
     }
 
     @Test
@@ -547,16 +544,26 @@ public class ControllerIntegrationTest {
                 "Kafka topics cannot be renamed, but ConfigMap's data.name has changed.",
                 Controller.EventType.WARNING);
 
-        // TODO Check we can change the data.name back and that future changes get handled correctly
-        // TODO What if the topic end gets changed while the data.name is wrong?
     }
 
-    // TODO: Test create with bogus cm.data
-    // TODO: Test update with bogus cm.data
+    @Test
+    public void testCreateTwoConfigMapsManagingOneTopic(TestContext context) {
+        String topicName = "two-cms-one-topic";
+        Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap()).build();
+        ConfigMap cm = TopicSerialization.toConfigMap(topic, cmPredicate);
+        ConfigMap cm2 = new ConfigMapBuilder(cm).editMetadata().withName(topicName+"-1").endMetadata().build();
+        // create one
+        createCm(context, cm2);
+        // create another
+        kubeClient.configMaps().create(cm);
+
+        waitForEvent(context, cm,
+                "Failure processing ConfigMap watch event ADDED on map two-cms-one-topic with labels {strimzi.io/kind=topic}: " +
+                        "Topic 'two-cms-one-topic' is already managed via ConfigMap 'two-cms-one-topic-1' it cannot also be managed via the ConfiMap 'two-cms-one-topic'",
+                Controller.EventType.WARNING);
+    }
+
     // TODO: What happens if we create and then change labels to the CM predicate isn't matched any more
     //       What then happens if we change labels back?
-    // TODO: Test create with CM metadata/name=bar,data/name=foo, then create another with metadata/name=foo,data/name=foo (expect error)
-    //       How do we know (e.g. on failover) which one we were ignoring? Otherwise we could end up flip-flopping
-    // TODO: Test create with CM metadata/name=bar,data/name=foo, then create another with metadata/name=foo (expect error)
-    // TODO: Test create with CM metadata/name=foo, then create another with metadata/name=bar,data/name=foo (expect error)
+
 }
