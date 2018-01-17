@@ -361,7 +361,7 @@ public class ClusterController extends AbstractVerticle {
                 });
             }
             else {
-                log.error("Failed to delete Kafka cluster {}. SKipping Zookeeper cluster deletion.", name);
+                log.error("Failed to delete Kafka cluster {}. Skipping Zookeeper cluster deletion.", name);
             }
         });
     }

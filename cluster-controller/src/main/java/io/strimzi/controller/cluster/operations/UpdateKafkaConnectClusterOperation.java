@@ -32,15 +32,16 @@ public class UpdateKafkaConnectClusterOperation extends KafkaConnectClusterOpera
             if (res.succeeded()) {
                 Lock lock = res.result();
 
-                log.info("Updating Kafka Connect cluster {} in namespace {}", name, namespace);
-
                 ClusterDiffResult diff;
                 KafkaConnectCluster connect;
                 ConfigMap connectConfigMap = k8s.getConfigmap(namespace, name);
 
                 if (connectConfigMap != null)    {
+
                     connect = KafkaConnectCluster.fromConfigMap(connectConfigMap);
-                    diff = connect.diff(k8s.getDeployment(namespace, name));
+                    log.info("Updating Kafka Connect cluster {} in namespace {}", connect.getName(), namespace);
+                    diff = connect.diff(k8s, namespace, name);
+
                 } else  {
                     log.error("ConfigMap {} doesn't exist anymore in namespace {}", name, namespace);
                     handler.handle(Future.failedFuture("ConfigMap doesn't exist anymore"));
@@ -58,11 +59,11 @@ public class UpdateKafkaConnectClusterOperation extends KafkaConnectClusterOpera
 
                 chainFuture.setHandler(ar -> {
                     if (ar.succeeded()) {
-                        log.info("Kafka Connect cluster {} successfully updated in namespace {}", name, namespace);
+                        log.info("Kafka Connect cluster {} successfully updated in namespace {}", connect.getName(), namespace);
                         handler.handle(Future.succeededFuture());
                         lock.release();
                     } else {
-                        log.error("Kafka Connect cluster {} failed to update in namespace {}", name, namespace);
+                        log.error("Kafka Connect cluster {} failed to update in namespace {}", connect.getName(), namespace);
                         handler.handle(Future.failedFuture("Failed to update Zookeeper cluster"));
                         lock.release();
                     }
@@ -78,8 +79,8 @@ public class UpdateKafkaConnectClusterOperation extends KafkaConnectClusterOpera
         Future<Void> scaleDown = Future.future();
 
         if (diff.getScaleDown())    {
-            log.info("Scaling down deployment {} in namespace {}", name, namespace);
-            OperationExecutor.getInstance().execute(new ScaleDownOperation(k8s.getDeploymentResource(namespace, name), connect.getReplicas()), scaleDown.completer());
+            log.info("Scaling down deployment {} in namespace {}", connect.getName(), namespace);
+            OperationExecutor.getInstance().execute(new ScaleDownOperation(k8s.getDeploymentResource(namespace, connect.getName()), connect.getReplicas()), scaleDown.completer());
         }
         else {
             scaleDown.complete();
@@ -91,7 +92,7 @@ public class UpdateKafkaConnectClusterOperation extends KafkaConnectClusterOpera
     private Future<Void> patchService(KafkaConnectCluster connect, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchService = Future.future();
-            OperationExecutor.getInstance().execute(new PatchOperation(k8s.getServiceResource(namespace, name), connect.patchService(k8s.getService(namespace, name))), patchService.completer());
+            OperationExecutor.getInstance().execute(new PatchOperation(k8s.getServiceResource(namespace, connect.getName()), connect.patchService(k8s.getService(namespace, connect.getName()))), patchService.completer());
             return patchService;
         }
             else
@@ -103,7 +104,7 @@ public class UpdateKafkaConnectClusterOperation extends KafkaConnectClusterOpera
     private Future<Void> patchDeployment(KafkaConnectCluster connect, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchDeployment = Future.future();
-            OperationExecutor.getInstance().execute(new PatchOperation(k8s.getDeploymentResource(namespace, name), connect.patchDeployment(k8s.getDeployment(namespace, name))), patchDeployment.completer());
+            OperationExecutor.getInstance().execute(new PatchOperation(k8s.getDeploymentResource(namespace, connect.getName()), connect.patchDeployment(k8s.getDeployment(namespace, connect.getName()))), patchDeployment.completer());
             return patchDeployment;
         }
         else
@@ -116,7 +117,7 @@ public class UpdateKafkaConnectClusterOperation extends KafkaConnectClusterOpera
         Future<Void> scaleUp = Future.future();
 
         if (diff.getScaleUp()) {
-            OperationExecutor.getInstance().execute(new ScaleUpOperation(k8s.getDeploymentResource(namespace, name), connect.getReplicas()), scaleUp.completer());
+            OperationExecutor.getInstance().execute(new ScaleUpOperation(k8s.getDeploymentResource(namespace, connect.getName()), connect.getReplicas()), scaleUp.completer());
         }
         else {
             scaleUp.complete();
