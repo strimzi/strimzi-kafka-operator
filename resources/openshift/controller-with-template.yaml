@@ -400,7 +400,7 @@ parameters:
   displayName: Kafka bootstrap servers
   name: KAFKA_CONNECT_BOOTSTRAP_SERVERS
   required: true
-  value: kafka:9092
+  value: kafka-kafka:9092
 - description: A unique string that identifies the Connect cluster group this worker belongs to. Note this must not conflict with any consumer group IDs.
   displayName: Group ID
   name: KAFKA_CONNECT_GROUP_ID
