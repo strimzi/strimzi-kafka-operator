@@ -517,6 +517,11 @@ public class Controller {
 
     private void update3Way(HasMetadata involvedObject, Topic k8sTopic, Topic kafkaTopic, Topic privateTopic,
                             Handler<AsyncResult<Void>> reconciliationResultHandler) {
+        if (!privateTopic.getMapName().equals(k8sTopic.getMapName())) {
+            reconciliationResultHandler.handle(Future.failedFuture(new ControllerException(involvedObject,
+                    "Topic '"+ kafkaTopic.getTopicName() + "' is already managed via ConfigMap '" + privateTopic.getMapName() + "' it cannot also be managed via the ConfiMap '" + k8sTopic.getMapName() + "'")));
+            return;
+        }
         TopicDiff oursKafka = TopicDiff.diff(privateTopic, kafkaTopic);
         logger.debug("topicStore->kafkaTopic: {}", oursKafka);
         TopicDiff oursK8s = TopicDiff.diff(privateTopic, k8sTopic);
