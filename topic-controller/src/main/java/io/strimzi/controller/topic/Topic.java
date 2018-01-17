@@ -55,7 +55,12 @@ public class Topic {
         }
 
         public Builder(TopicName topicName, int numPartitions, short numReplicas, Map<String, String> config) {
+            this(topicName, topicName.asMapName(), numPartitions, numReplicas, config);
+        }
+
+        public Builder(TopicName topicName, MapName mapName, int numPartitions, short numReplicas, Map<String, String> config) {
             this.topicName = topicName;
+            this.mapName = mapName;
             this.numPartitions = numPartitions;
             this.numReplicas = numReplicas;
             if (config != null) {
@@ -67,6 +72,7 @@ public class Topic {
             this.topicName = topic.topicName;
             this.numPartitions = topic.numPartitions;
             this.numReplicas = topic.numReplicas;
+            this.mapName = topic.mapName;
             this.config.putAll(topic.config);
         }
 
