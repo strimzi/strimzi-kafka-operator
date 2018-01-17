@@ -213,7 +213,7 @@ public class ClusterController extends AbstractVerticle {
         List<StatefulSet> sss = k8s.getStatefulSets(namespace, kafkaLabels);
 
         List<String> cmsNames = cms.stream().map(cm -> cm.getMetadata().getName()).collect(Collectors.toList());
-        List<String> sssNames = sss.stream().map(cm -> cm.getMetadata().getName()).collect(Collectors.toList());
+        List<String> sssNames = sss.stream().map(cm -> cm.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL)).collect(Collectors.toList());
 
         List<ConfigMap> addList = cms.stream().filter(cm -> !sssNames.contains(cm.getMetadata().getName())).collect(Collectors.toList());
         List<ConfigMap> updateList = cms.stream().filter(cm -> sssNames.contains(cm.getMetadata().getName())).collect(Collectors.toList());
@@ -255,7 +255,7 @@ public class ClusterController extends AbstractVerticle {
         List<Deployment> deps = k8s.getDeployments(namespace, kafkaLabels);
 
         List<String> cmsNames = cms.stream().map(cm -> cm.getMetadata().getName()).collect(Collectors.toList());
-        List<String> sssNames = deps.stream().map(cm -> cm.getMetadata().getName()).collect(Collectors.toList());
+        List<String> sssNames = deps.stream().map(cm -> cm.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL)).collect(Collectors.toList());
 
         List<ConfigMap> addList = cms.stream().filter(cm -> !sssNames.contains(cm.getMetadata().getName())).collect(Collectors.toList());
         List<ConfigMap> updateList = cms.stream().filter(cm -> sssNames.contains(cm.getMetadata().getName())).collect(Collectors.toList());
@@ -269,7 +269,7 @@ public class ClusterController extends AbstractVerticle {
     private void addKafkaConnectClusters(List<ConfigMap> add)   {
         for (ConfigMap cm : add) {
             log.info("Reconciliation: Kafka Connect cluster {} should be added", cm.getMetadata().getName());
-            addKafkaCluster(cm);
+            addKafkaConnectCluster(cm);
         }
     }
 
