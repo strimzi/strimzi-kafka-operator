@@ -23,11 +23,12 @@ public class CreateKafkaClusterOperation extends KafkaClusterOperation {
             if (res.succeeded()) {
                 Lock lock = res.result();
 
-                log.info("Creating Kafka cluster {} in namespace {}", name, namespace);
-
                 KafkaCluster kafka;
                 try {
+
                     kafka = KafkaCluster.fromConfigMap(k8s.getConfigmap(namespace, name));
+                    log.info("Creating Kafka cluster {} in namespace {}", kafka.getName(), namespace);
+
                 } catch (Exception ex) {
                     log.error("Error while parsing cluster ConfigMap", ex);
                     handler.handle(Future.failedFuture("ConfigMap parsing error"));
@@ -55,11 +56,11 @@ public class CreateKafkaClusterOperation extends KafkaClusterOperation {
 
                 CompositeFuture.join(futureConfigMap, futureService, futureHeadlessService, futureStatefulSet).setHandler(ar -> {
                     if (ar.succeeded()) {
-                        log.info("Kafka cluster {} successfully created in namespace {}", name, namespace);
+                        log.info("Kafka cluster {} successfully created in namespace {}", kafka.getName(), namespace);
                         handler.handle(Future.succeededFuture());
                         lock.release();
                     } else {
-                        log.error("Kafka cluster {} failed to create in namespace {}", name, namespace);
+                        log.error("Kafka cluster {} failed to create in namespace {}", kafka.getName(), namespace);
                         handler.handle(Future.failedFuture("Failed to create Kafka cluster"));
                         lock.release();
                     }

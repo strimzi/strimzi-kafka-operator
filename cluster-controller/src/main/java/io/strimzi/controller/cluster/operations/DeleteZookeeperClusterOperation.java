@@ -28,9 +28,9 @@ public class DeleteZookeeperClusterOperation extends ZookeeperClusterOperation {
             if (res.succeeded()) {
                 Lock lock = res.result();
 
-                log.info("Deleting Zookeeper cluster {} from namespace {}", name + "-zookeeper", namespace);
+                ZookeeperCluster zk = ZookeeperCluster.fromStatefulSet(k8s, namespace, name);
 
-                ZookeeperCluster zk = ZookeeperCluster.fromStatefulSet(k8s.getStatefulSet(namespace, name + "-zookeeper"));
+                log.info("Deleting Zookeeper cluster {} from namespace {}", zk.getName(), namespace);
 
                 // start deleting configMap operation only if metrics are enabled,
                 // otherwise the future is already complete (for the "join")
@@ -42,13 +42,13 @@ public class DeleteZookeeperClusterOperation extends ZookeeperClusterOperation {
                 }
 
                 Future<Void> futureService = Future.future();
-                OperationExecutor.getInstance().execute(new DeleteServiceOperation(namespace, name + "-zookeeper"), futureService.completer());
+                OperationExecutor.getInstance().execute(new DeleteServiceOperation(namespace, zk.getName()), futureService.completer());
 
                 Future<Void> futureHeadlessService = Future.future();
                 OperationExecutor.getInstance().execute(new DeleteServiceOperation(namespace, zk.getHeadlessName()), futureHeadlessService.completer());
 
                 Future<Void> futureStatefulSet = Future.future();
-                OperationExecutor.getInstance().execute(new DeleteStatefulSetOperation(namespace, name + "-zookeeper"), futureStatefulSet.completer());
+                OperationExecutor.getInstance().execute(new DeleteStatefulSetOperation(namespace, zk.getName()), futureStatefulSet.completer());
 
                 Future<Void> futurePersistentVolumeClaim = Future.future();
                 if ((zk.getStorage().type() == Storage.StorageType.PERSISTENT_CLAIM) && zk.getStorage().isDeleteClaim()) {
@@ -57,7 +57,7 @@ public class DeleteZookeeperClusterOperation extends ZookeeperClusterOperation {
                     for (int i = 0; i < zk.getReplicas(); i++) {
                         Future<Void> f = Future.future();
                         futurePersistentVolumeClaims.add(f);
-                        OperationExecutor.getInstance().execute(new DeletePersistentVolumeClaimOperation(namespace, "zookeeper-storage-" + name + "-zookeeper-" + i), f.completer());
+                        OperationExecutor.getInstance().execute(new DeletePersistentVolumeClaimOperation(namespace, zk.getVolumeName() + "-" + zk.getName() + "-" + i), f.completer());
                     }
                     CompositeFuture.join(futurePersistentVolumeClaims).setHandler(ar -> {
                         if (ar.succeeded()) {
@@ -72,11 +72,11 @@ public class DeleteZookeeperClusterOperation extends ZookeeperClusterOperation {
 
                 CompositeFuture.join(futureConfigMap, futureService, futureHeadlessService, futureStatefulSet, futurePersistentVolumeClaim).setHandler(ar -> {
                     if (ar.succeeded()) {
-                        log.info("Zookeeper cluster {} successfully deleted from namespace {}", name + "-zookeeper", namespace);
+                        log.info("Zookeeper cluster {} successfully deleted from namespace {}", zk.getName(), namespace);
                         handler.handle(Future.succeededFuture());
                         lock.release();
                     } else {
-                        log.error("Zookeeper cluster {} failed to delete from namespace {}", name + "-zookeeper", namespace);
+                        log.error("Zookeeper cluster {} failed to delete from namespace {}", zk.getName(), namespace);
                         handler.handle(Future.failedFuture("Failed to delete Zookeeper cluster"));
                         lock.release();
                     }

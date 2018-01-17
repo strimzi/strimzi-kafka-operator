@@ -30,8 +30,6 @@ public class UpdateZookeeperClusterOperation extends ZookeeperClusterOperation {
             if (res.succeeded()) {
                 Lock lock = res.result();
 
-                log.info("Updating Zookeeper cluster {} in namespace {}", name + "-zookeeper", namespace);
-
                 ClusterDiffResult diff;
                 ZookeeperCluster zk;
                 ConfigMap zkConfigMap = k8s.getConfigmap(namespace, name);
@@ -39,9 +37,13 @@ public class UpdateZookeeperClusterOperation extends ZookeeperClusterOperation {
                 if (zkConfigMap != null)    {
 
                     try {
+
                         zk = ZookeeperCluster.fromConfigMap(zkConfigMap);
-                        diff = zk.diff(k8s.getStatefulSet(namespace, name + "-zookeeper"), k8s.getConfigmap(namespace, name + "-zookeeper-metrics-config"));
+                        log.info("Updating Zookeeper cluster {} in namespace {}", zk.getName(), namespace);
+                        diff = zk.diff(k8s, namespace, name);
+
                     } catch (Exception ex) {
+
                         log.error("Error while parsing cluster ConfigMap", ex);
                         handler.handle(Future.failedFuture("ConfigMap parsing error"));
                         lock.release();
@@ -62,17 +64,17 @@ public class UpdateZookeeperClusterOperation extends ZookeeperClusterOperation {
                         .compose(i -> patchHeadlessService(zk, diff))
                         .compose(i -> patchStatefulSet(zk, diff))
                         .compose(i -> patchMetricsConfigMap(zk, diff))
-                        .compose(i -> rollingUpdate(diff))
+                        .compose(i -> rollingUpdate(zk, diff))
                         .compose(i -> scaleUp(zk, diff))
                         .compose(chainFuture::complete, chainFuture);
 
                 chainFuture.setHandler(ar -> {
                     if (ar.succeeded()) {
-                        log.info("Zookeeper cluster {} successfully updated in namespace {}", name + "-zookeeper", namespace);
+                        log.info("Zookeeper cluster {} successfully updated in namespace {}", zk.getName(), namespace);
                         handler.handle(Future.succeededFuture());
                         lock.release();
                     } else {
-                        log.error("Zookeeper cluster {} failed to update in namespace {}", name + "-zookeeper", namespace);
+                        log.error("Zookeeper cluster {} failed to update in namespace {}", zk.getName(), namespace);
                         handler.handle(Future.failedFuture("Failed to update Zookeeper cluster"));
                         lock.release();
                     }
@@ -88,8 +90,8 @@ public class UpdateZookeeperClusterOperation extends ZookeeperClusterOperation {
         Future<Void> scaleDown = Future.future();
 
         if (diff.getScaleDown())    {
-            log.info("Scaling down stateful set {} in namespace {}", name + "-zookeeper", namespace);
-            OperationExecutor.getInstance().execute(new ScaleDownOperation(k8s.getStatefulSetResource(namespace, name + "-zookeeper"), zk.getReplicas()), scaleDown.completer());
+            log.info("Scaling down stateful set {} in namespace {}", zk.getName(), namespace);
+            OperationExecutor.getInstance().execute(new ScaleDownOperation(k8s.getStatefulSetResource(namespace, zk.getName()), zk.getReplicas()), scaleDown.completer());
         }
         else {
             scaleDown.complete();
@@ -101,7 +103,7 @@ public class UpdateZookeeperClusterOperation extends ZookeeperClusterOperation {
     private Future<Void> patchService(ZookeeperCluster zk, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchService = Future.future();
-            OperationExecutor.getInstance().execute(new PatchOperation(k8s.getServiceResource(namespace, name + "-zookeeper"), zk.patchService(k8s.getService(namespace, name + "-zookeeper"))), patchService.completer());
+            OperationExecutor.getInstance().execute(new PatchOperation(k8s.getServiceResource(namespace, zk.getName()), zk.patchService(k8s.getService(namespace, zk.getName()))), patchService.completer());
             return patchService;
         }
             else
@@ -125,7 +127,7 @@ public class UpdateZookeeperClusterOperation extends ZookeeperClusterOperation {
     private Future<Void> patchStatefulSet(ZookeeperCluster zk, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchStatefulSet = Future.future();
-            OperationExecutor.getInstance().execute(new PatchOperation(k8s.getStatefulSetResource(namespace, name + "-zookeeper").cascading(false), zk.patchStatefulSet(k8s.getStatefulSet(namespace, name + "-zookeeper"))), patchStatefulSet.completer());
+            OperationExecutor.getInstance().execute(new PatchOperation(k8s.getStatefulSetResource(namespace, zk.getName()).cascading(false), zk.patchStatefulSet(k8s.getStatefulSet(namespace, zk.getName()))), patchStatefulSet.completer());
             return patchStatefulSet;
         }
         else
@@ -137,18 +139,18 @@ public class UpdateZookeeperClusterOperation extends ZookeeperClusterOperation {
     private Future<Void> patchMetricsConfigMap(ZookeeperCluster zk, ClusterDiffResult diff) {
         if (diff.isMetricsChanged()) {
             Future<Void> patchConfigMap = Future.future();
-            OperationExecutor.getInstance().execute(new PatchOperation(k8s.getConfigmapResource(namespace, zk.getMetricsConfigName()), zk.patchMetricsConfigMap(k8s.getConfigmap(namespace, name + "-zookeeper-metrics-config"))), patchConfigMap.completer());
+            OperationExecutor.getInstance().execute(new PatchOperation(k8s.getConfigmapResource(namespace, zk.getMetricsConfigName()), zk.patchMetricsConfigMap(k8s.getConfigmap(namespace, zk.getMetricsConfigName()))), patchConfigMap.completer());
             return patchConfigMap;
         } else {
             return Future.succeededFuture();
         }
     }
 
-    private Future<Void> rollingUpdate(ClusterDiffResult diff) {
+    private Future<Void> rollingUpdate(ZookeeperCluster zk, ClusterDiffResult diff) {
         Future<Void> rollingUpdate = Future.future();
 
         if (diff.getRollingUpdate()) {
-            OperationExecutor.getInstance().execute(new ManualRollingUpdateOperation(namespace, name + "-zookeeper", k8s.getStatefulSet(namespace, name + "-zookeeper").getSpec().getReplicas()), rollingUpdate.completer());
+            OperationExecutor.getInstance().execute(new ManualRollingUpdateOperation(namespace, zk.getName(), k8s.getStatefulSet(namespace, zk.getName()).getSpec().getReplicas()), rollingUpdate.completer());
         }
         else {
             rollingUpdate.complete();
@@ -161,7 +163,7 @@ public class UpdateZookeeperClusterOperation extends ZookeeperClusterOperation {
         Future<Void> scaleUp = Future.future();
 
         if (diff.getScaleUp()) {
-            OperationExecutor.getInstance().execute(new ScaleUpOperation(k8s.getStatefulSetResource(namespace, name + "-zookeeper"), zk.getReplicas()), scaleUp.completer());
+            OperationExecutor.getInstance().execute(new ScaleUpOperation(k8s.getStatefulSetResource(namespace, zk.getName()), zk.getReplicas()), scaleUp.completer());
         }
         else {
             scaleUp.complete();

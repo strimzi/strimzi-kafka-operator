@@ -28,7 +28,7 @@ public abstract class AbstractCluster {
 
     protected static final String METRICS_CONFIG_FILE = "config.yml";
 
-    protected final String name;
+    protected final String cluster;
     protected final String namespace;
     protected Map<String, String> labels = new HashMap<>();
 
@@ -42,6 +42,7 @@ public abstract class AbstractCluster {
     protected int healthCheckInitialDelay;
 
     protected String headlessName;
+    protected String name;
 
     protected final int metricsPort = 9404;
     protected final String metricsPortName = "kafkametrics";
@@ -52,8 +53,19 @@ public abstract class AbstractCluster {
 
     protected Storage storage;
 
-    protected AbstractCluster(String namespace, String name) {
-        this.name = name;
+    protected String mounthPath;
+    protected String volumeName;
+    protected String metricsConfigVolumeName;
+    protected String metricsConfigMountPath;
+
+    /**
+     * Constructor
+     *
+     * @param namespace Kubernetes/OpenShift namespace where cluster resources are going to be created
+     * @param cluster   overall cluster name
+     */
+    protected AbstractCluster(String namespace, String cluster) {
+        this.cluster = cluster;
         this.namespace = namespace;
     }
 
@@ -62,7 +74,7 @@ public abstract class AbstractCluster {
     }
 
     protected void setLabels(Map<String, String> newLabels) {
-        newLabels.put("cluster-name", name);
+        newLabels.put(ClusterController.STRIMZI_CLUSTER_LABEL, cluster);
         this.labels = new HashMap<>(newLabels);
     }
 
@@ -86,6 +98,10 @@ public abstract class AbstractCluster {
         this.healthCheckInitialDelay = healthCheckInitialDelay;
     }
 
+    public String getName() {
+        return name;
+    }
+
     public String getHeadlessName() {
         return headlessName;
     }
@@ -96,7 +112,7 @@ public abstract class AbstractCluster {
 
     protected Map<String, String> getLabelsWithName(String name) {
         Map<String, String> labelsWithName = new HashMap<>(labels);
-        labelsWithName.put("name", name);
+        labelsWithName.put(ClusterController.STRIMZI_NAME_LABEL, name);
         return labelsWithName;
     }
 
@@ -134,6 +150,10 @@ public abstract class AbstractCluster {
 
     protected void setStorage(Storage storage) {
         this.storage = storage;
+    }
+
+    public String getVolumeName() {
+        return this.volumeName;
     }
 
     protected VolumeMount createVolumeMount(String name, String path) {

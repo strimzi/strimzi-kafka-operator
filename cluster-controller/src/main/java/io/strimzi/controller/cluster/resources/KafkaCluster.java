@@ -2,6 +2,7 @@ package io.strimzi.controller.cluster.resources;
 
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
+import io.strimzi.controller.cluster.K8SUtils;
 import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
@@ -17,10 +18,10 @@ public class KafkaCluster extends AbstractCluster {
 
     private final int clientPort = 9092;
     private final String clientPortName = "clients";
-    private final String mounthPath = "/var/lib/kafka";
-    private final String volumeName = "kafka-storage";
-    private final String metricsConfigVolumeName = "kafka-metrics-config";
-    private final String metricsConfigMountPath = "/opt/prometheus/config/";
+
+    private static String NAME_SUFFIX = ""; // TODO : add new suffix ?
+    private static String HEADLESS_NAME_SUFFIX = NAME_SUFFIX + "-headless";
+    private static String METRICS_CONFIG_SUFFIX = NAME_SUFFIX + "-metrics-config";
 
     // Kafka configuration
     private String zookeeperConnect = DEFAULT_KAFKA_ZOOKEEPER_CONNECT;
@@ -56,18 +57,39 @@ public class KafkaCluster extends AbstractCluster {
     private static String KEY_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR = "KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR";
     private static String KEY_KAFKA_METRICS_ENABLED = "KAFKA_METRICS_ENABLED";
 
-    private KafkaCluster(String namespace, String name) {
-        super(namespace, name);
-        this.headlessName = name + "-headless";
+    /**
+     * Constructor
+     *
+     * @param namespace Kubernetes/OpenShift namespace where Kafka cluster resources are going to be created
+     * @param cluster  overall cluster name
+     */
+    private KafkaCluster(String namespace, String cluster) {
+
+        super(namespace, cluster);
+        this.name = cluster + KafkaCluster.NAME_SUFFIX;
+        this.headlessName = cluster + KafkaCluster.HEADLESS_NAME_SUFFIX;
+        this.metricsConfigName = cluster + KafkaCluster.METRICS_CONFIG_SUFFIX;
         this.image = DEFAULT_IMAGE;
         this.replicas = DEFAULT_REPLICAS;
         this.healthCheckPath = "/opt/kafka/kafka_healthcheck.sh";
         this.healthCheckTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
         this.healthCheckInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
         this.isMetricsEnabled = DEFAULT_KAFKA_METRICS_ENABLED;
+
+        this.mounthPath = "/var/lib/kafka";
+        this.volumeName = "kafka-storage";
+        this.metricsConfigVolumeName = "kafka-metrics-config";
+        this.metricsConfigMountPath = "/opt/prometheus/config/";
     }
 
+    /**
+     * Create a Kafka cluster from the related ConfigMap resource
+     *
+     * @param cm    ConfigMap with cluster configuration
+     * @return   Kafka cluster instance
+     */
     public static KafkaCluster fromConfigMap(ConfigMap cm) {
+
         KafkaCluster kafka = new KafkaCluster(cm.getMetadata().getNamespace(), cm.getMetadata().getName());
         kafka.setLabels(cm.getMetadata().getLabels());
 
@@ -82,7 +104,6 @@ public class KafkaCluster extends AbstractCluster {
         kafka.setTransactionStateLogReplicationFactor(Integer.parseInt(cm.getData().getOrDefault(KEY_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR, String.valueOf(DEFAULT_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR))));
 
         String metricsConfig = cm.getData().get(KEY_METRICS_CONFIG);
-        kafka.setMetricsConfigName(cm.getMetadata().getName() + "-metrics-config");
         kafka.setMetricsEnabled(metricsConfig != null);
         if (kafka.isMetricsEnabled()) {
             kafka.setMetricsConfig(new JsonObject(metricsConfig));
@@ -94,11 +115,19 @@ public class KafkaCluster extends AbstractCluster {
         return kafka;
     }
 
-    // This is currently needed only to delete the headless service. All other deletions can be done just using namespace
-    // and name. Do we need this as it is? Or would it be enough to create just and empty shell from name and namespace
-    // which would generate the headless name?
-    public static KafkaCluster fromStatefulSet(StatefulSet ss) {
-        KafkaCluster kafka =  new KafkaCluster(ss.getMetadata().getNamespace(), ss.getMetadata().getName());
+    /**
+     * Create a Kafka cluster from the deployed StatefulSet resource
+     *
+     * @param k8s   K8SUtils client instance for accessing Kubernetes/OpenShift cluster
+     * @param namespace Kubernetes/OpenShift namespace where cluster resources belong to
+     * @param cluster   overall cluster name
+     * @return  Kafka cluster instance
+     */
+    public static KafkaCluster fromStatefulSet(K8SUtils k8s, String namespace, String cluster) {
+
+        StatefulSet ss = k8s.getStatefulSet(namespace, cluster + KafkaCluster.NAME_SUFFIX);
+
+        KafkaCluster kafka =  new KafkaCluster(namespace, cluster);
 
         kafka.setLabels(ss.getMetadata().getLabels());
         kafka.setReplicas(ss.getSpec().getReplicas());
@@ -116,7 +145,7 @@ public class KafkaCluster extends AbstractCluster {
 
         kafka.setMetricsEnabled(Boolean.parseBoolean(vars.getOrDefault(KEY_KAFKA_METRICS_ENABLED, String.valueOf(DEFAULT_KAFKA_METRICS_ENABLED))));
         if (kafka.isMetricsEnabled()) {
-            kafka.setMetricsConfigName(ss.getMetadata().getName() + "-metrics-config");
+            kafka.setMetricsConfigName(cluster + KafkaCluster.METRICS_CONFIG_SUFFIX);
         }
 
         if (!ss.getSpec().getVolumeClaimTemplates().isEmpty()) {
@@ -130,7 +159,19 @@ public class KafkaCluster extends AbstractCluster {
         return kafka;
     }
 
-    public ClusterDiffResult diff(StatefulSet ss, ConfigMap metricsConfigMap)  {
+    /**
+     * Return the differences between the current Kafka cluster and the deployed one
+     *
+     * @param k8s   K8SUtils client instance for accessing Kubernetes/OpenShift cluster
+     * @param namespace Kubernetes/OpenShift namespace where cluster resources belong to
+     * @param cluster   overall cluster name
+     * @return  ClusterDiffResult instance with differences
+     */
+    public ClusterDiffResult diff(K8SUtils k8s, String namespace, String cluster)  {
+
+        StatefulSet ss = k8s.getStatefulSet(namespace, cluster + KafkaCluster.NAME_SUFFIX);
+        ConfigMap metricsConfigMap = k8s.getConfigmap(namespace, cluster + KafkaCluster.METRICS_CONFIG_SUFFIX);
+
         ClusterDiffResult diff = new ClusterDiffResult();
 
         if (replicas > ss.getSpec().getReplicas()) {
@@ -222,7 +263,6 @@ public class KafkaCluster extends AbstractCluster {
 
     public ConfigMap generateMetricsConfigMap() {
 
-        // TODO: making data field and configMap name constants ?
         Map<String, String> data = new HashMap<>();
         data.put(METRICS_CONFIG_FILE, metricsConfig.toString());
 

@@ -36,6 +36,8 @@ public class ClusterController extends AbstractVerticle {
     public static final String STRIMZI_DOMAIN = "strimzi.io";
     public static final String STRIMZI_CLUSTER_CONTROLLER_DOMAIN = "cluster.controller.strimzi.io";
     public static final String STRIMZI_TYPE_LABEL = STRIMZI_DOMAIN + "/type";
+    public static final String STRIMZI_CLUSTER_LABEL = STRIMZI_DOMAIN + "/cluster";
+    public static final String STRIMZI_NAME_LABEL = STRIMZI_DOMAIN + "/name";
 
     private final K8SUtils k8s;
     private final Map<String, String> labels;
