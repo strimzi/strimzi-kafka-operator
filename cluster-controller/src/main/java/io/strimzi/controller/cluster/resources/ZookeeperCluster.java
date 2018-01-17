@@ -3,6 +3,7 @@ package io.strimzi.controller.cluster.resources;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.controller.cluster.ClusterController;
+import io.strimzi.controller.cluster.K8SUtils;
 import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
@@ -22,10 +23,10 @@ public class ZookeeperCluster extends AbstractCluster {
     private final String clusteringPortName = "clustering";
     private final int leaderElectionPort = 3888;
     private final String leaderElectionPortName = "leader-election";
-    private final String mounthPath = "/var/lib/zookeeper";
-    private final String volumeName = "zookeeper-storage";
-    private final String metricsConfigVolumeName = "zookeeper-metrics-config";
-    private final String metricsConfigMountPath = "/opt/prometheus/config/";
+
+    private static String NAME_SUFFIX = "-zookeeper";
+    private static String HEADLESS_NAME_SUFFIX = NAME_SUFFIX + "-headless";
+    private static String METRICS_CONFIG_SUFFIX = NAME_SUFFIX + "-metrics-config";
 
     // Zookeeper configuration
     // N/A
@@ -52,20 +53,40 @@ public class ZookeeperCluster extends AbstractCluster {
     private static String KEY_ZOOKEEPER_NODE_COUNT = "ZOOKEEPER_NODE_COUNT";
     private static String KEY_ZOOKEEPER_METRICS_ENABLED = "ZOOKEEPER_METRICS_ENABLED";
 
-    private ZookeeperCluster(String namespace, String name) {
-        super(namespace, name);
-        this.headlessName = name + "-headless";
+    /**
+     * Constructor
+     *
+     * @param namespace Kubernetes/OpenShift namespace where Zookeeper cluster resources are going to be created
+     * @param cluster   overall cluster name
+     */
+    private ZookeeperCluster(String namespace, String cluster) {
+
+        super(namespace, cluster);
+        this.name = cluster + ZookeeperCluster.NAME_SUFFIX;
+        this.headlessName = cluster + ZookeeperCluster.HEADLESS_NAME_SUFFIX;
+        this.metricsConfigName = cluster + ZookeeperCluster.METRICS_CONFIG_SUFFIX;
         this.image = DEFAULT_IMAGE;
         this.replicas = DEFAULT_REPLICAS;
         this.healthCheckPath = "/opt/zookeeper/zookeeper_healthcheck.sh";
         this.healthCheckTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
         this.healthCheckInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
         this.isMetricsEnabled = DEFAULT_ZOOKEEPER_METRICS_ENABLED;
+
+        this.mounthPath = "/var/lib/zookeeper";
+        this.volumeName = "zookeeper-storage";
+        this.metricsConfigVolumeName = "zookeeper-metrics-config";
+        this.metricsConfigMountPath = "/opt/prometheus/config/";
     }
 
+    /**
+     * Create a Zookeeper cluster from the related ConfigMap resource
+     *
+     * @param cm    ConfigMap with cluster configuration
+     * @return  Zookeeper cluster instance
+     */
     public static ZookeeperCluster fromConfigMap(ConfigMap cm) {
-        String name = cm.getMetadata().getName() + "-zookeeper";
-        ZookeeperCluster zk = new ZookeeperCluster(cm.getMetadata().getNamespace(), name);
+
+        ZookeeperCluster zk = new ZookeeperCluster(cm.getMetadata().getNamespace(), cm.getMetadata().getName());
 
         zk.setLabels(cm.getMetadata().getLabels());
 
@@ -75,7 +96,6 @@ public class ZookeeperCluster extends AbstractCluster {
         zk.setHealthCheckTimeout(Integer.parseInt(cm.getData().getOrDefault(KEY_HEALTHCHECK_TIMEOUT, String.valueOf(DEFAULT_HEALTHCHECK_TIMEOUT))));
 
         String metricsConfig = cm.getData().get(KEY_METRICS_CONFIG);
-        zk.setMetricsConfigName(cm.getMetadata().getName() + "-zookeeper-metrics-config");
         zk.setMetricsEnabled(metricsConfig != null);
         if (zk.isMetricsEnabled()) {
             zk.setMetricsConfig(new JsonObject(metricsConfig));
@@ -87,11 +107,19 @@ public class ZookeeperCluster extends AbstractCluster {
         return zk;
     }
 
-    // This is currently needed only to delete the headless service. All other deletions can be done just using namespace
-    // and name. Do we need this as it is? Or would it be enough to create just and empty shell from name and namespace
-    // which would generate the headless name?
-    public static ZookeeperCluster fromStatefulSet(StatefulSet ss) {
-        ZookeeperCluster zk =  new ZookeeperCluster(ss.getMetadata().getNamespace(), ss.getMetadata().getName());
+    /**
+     * Create a Zookeeper cluster from the deployed StatefulSet resource
+     *
+     * @param k8s   K8SUtils client instance for accessing Kubernetes/OpenShift cluster
+     * @param namespace Kubernetes/OpenShift namespace where cluster resources belong to
+     * @param cluster   overall cluster name
+     * @return  Zookeeper cluster instance
+     */
+    public static ZookeeperCluster fromStatefulSet(K8SUtils k8s, String namespace, String cluster) {
+
+        StatefulSet ss = k8s.getStatefulSet(namespace, cluster + ZookeeperCluster.NAME_SUFFIX);
+
+        ZookeeperCluster zk =  new ZookeeperCluster(namespace, cluster);
 
         zk.setLabels(ss.getMetadata().getLabels());
         zk.setReplicas(ss.getSpec().getReplicas());
@@ -104,7 +132,7 @@ public class ZookeeperCluster extends AbstractCluster {
 
         zk.setMetricsEnabled(Boolean.parseBoolean(vars.getOrDefault(KEY_ZOOKEEPER_METRICS_ENABLED, String.valueOf(DEFAULT_ZOOKEEPER_METRICS_ENABLED))));
         if (zk.isMetricsEnabled()) {
-            zk.setMetricsConfigName(ss.getMetadata().getName() + "-metrics-config");
+            zk.setMetricsConfigName(cluster + ZookeeperCluster.METRICS_CONFIG_SUFFIX);
         }
 
         if (!ss.getSpec().getVolumeClaimTemplates().isEmpty()) {
@@ -118,7 +146,19 @@ public class ZookeeperCluster extends AbstractCluster {
         return zk;
     }
 
-    public ClusterDiffResult diff(StatefulSet ss, ConfigMap metricsConfigMap)  {
+    /**
+     * Return the differences between the current Zookeeper cluster and the deployed one
+     *
+     * @param k8s   K8SUtils client instance for accessing Kubernetes/OpenShift cluster
+     * @param namespace Kubernetes/OpenShift namespace where cluster resources belong to
+     * @param cluster   overall cluster name
+     * @return  ClusterDiffResult instance with differences
+     */
+    public ClusterDiffResult diff(K8SUtils k8s, String namespace, String cluster)  {
+
+        StatefulSet ss = k8s.getStatefulSet(namespace, cluster + ZookeeperCluster.NAME_SUFFIX);
+        ConfigMap metricsConfigMap = k8s.getConfigmap(namespace, cluster + ZookeeperCluster.METRICS_CONFIG_SUFFIX);
+
         ClusterDiffResult diff = new ClusterDiffResult();
 
         if (replicas > ss.getSpec().getReplicas()) {
@@ -201,7 +241,6 @@ public class ZookeeperCluster extends AbstractCluster {
 
     public ConfigMap generateMetricsConfigMap() {
 
-        // TODO: making data field and configMap name constants ?
         Map<String, String> data = new HashMap<>();
         data.put(METRICS_CONFIG_FILE, metricsConfig.toString());
 

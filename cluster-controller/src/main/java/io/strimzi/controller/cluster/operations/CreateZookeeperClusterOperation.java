@@ -23,11 +23,12 @@ public class CreateZookeeperClusterOperation extends ZookeeperClusterOperation {
             if (res.succeeded()) {
                 Lock lock = res.result();
 
-                log.info("Creating Zookeeper cluster {} in namespace {}", name + "-zookeeper", namespace);
-
                 ZookeeperCluster zk;
                 try {
+
                     zk = ZookeeperCluster.fromConfigMap(k8s.getConfigmap(namespace, name));
+                    log.info("Creating Zookeeper cluster {} in namespace {}", zk.getName(), namespace);
+
                 } catch (Exception ex) {
                     log.error("Error while parsing cluster ConfigMap", ex);
                     handler.handle(Future.failedFuture("ConfigMap parsing error"));
@@ -55,11 +56,11 @@ public class CreateZookeeperClusterOperation extends ZookeeperClusterOperation {
 
                 CompositeFuture.join(futureConfigMap, futureService, futureHeadlessService, futureStatefulSet).setHandler(ar -> {
                     if (ar.succeeded()) {
-                        log.info("Zookeeper cluster {} successfully created in namespace {}", name + "-zookeeper", namespace);
+                        log.info("Zookeeper cluster {} successfully created in namespace {}", zk.getName(), namespace);
                         handler.handle(Future.succeededFuture());
                         lock.release();
                     } else {
-                        log.error("Zookeeper cluster {} failed to create in namespace {}", name + "-zookeeper", namespace);
+                        log.error("Zookeeper cluster {} failed to create in namespace {}", zk.getName(), namespace);
                         handler.handle(Future.failedFuture("Failed to create Zookeeper cluster"));
                         lock.release();
                     }

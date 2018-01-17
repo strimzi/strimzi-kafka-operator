@@ -33,8 +33,6 @@ public class UpdateKafkaClusterOperation extends KafkaClusterOperation {
             if (res.succeeded()) {
                 Lock lock = res.result();
 
-                log.info("Updating Kafka cluster {} in namespace {}", name, namespace);
-
                 ClusterDiffResult diff;
                 KafkaCluster kafka;
                 ConfigMap kafkaConfigMap = k8s.getConfigmap(namespace, name);
@@ -42,9 +40,13 @@ public class UpdateKafkaClusterOperation extends KafkaClusterOperation {
                 if (kafkaConfigMap != null)    {
 
                     try {
+
                         kafka = KafkaCluster.fromConfigMap(kafkaConfigMap);
-                        diff = kafka.diff(k8s.getStatefulSet(namespace, name), k8s.getConfigmap(namespace, name + "-metrics-config"));
+                        log.info("Updating Kafka cluster {} in namespace {}", kafka.getName(), namespace);
+                        diff = kafka.diff(k8s, namespace, name);
+
                     } catch (Exception ex) {
+
                         log.error("Error while parsing cluster ConfigMap", ex);
                         handler.handle(Future.failedFuture("ConfigMap parsing error"));
                         lock.release();
@@ -65,17 +67,17 @@ public class UpdateKafkaClusterOperation extends KafkaClusterOperation {
                         .compose(i -> patchHeadlessService(kafka, diff))
                         .compose(i -> patchStatefulSet(kafka, diff))
                         .compose(i -> patchMetricsConfigMap(kafka, diff))
-                        .compose(i -> rollingUpdate(diff))
+                        .compose(i -> rollingUpdate(kafka, diff))
                         .compose(i -> scaleUp(kafka, diff))
                         .compose(chainFuture::complete, chainFuture);
 
                 chainFuture.setHandler(ar -> {
                     if (ar.succeeded()) {
-                        log.info("Kafka cluster {} successfully updated in namespace {}", name, namespace);
+                        log.info("Kafka cluster {} successfully updated in namespace {}", kafka.getName(), namespace);
                         handler.handle(Future.succeededFuture());
                         lock.release();
                     } else {
-                        log.error("Kafka cluster {} failed to update in namespace {}", name, namespace);
+                        log.error("Kafka cluster {} failed to update in namespace {}", kafka.getName(), namespace);
                         handler.handle(Future.failedFuture("Failed to update Zookeeper cluster"));
                         lock.release();
                     }
@@ -91,8 +93,8 @@ public class UpdateKafkaClusterOperation extends KafkaClusterOperation {
         Future<Void> scaleDown = Future.future();
 
         if (diff.getScaleDown())    {
-            log.info("Scaling down stateful set {} in namespace {}", name, namespace);
-            OperationExecutor.getInstance().execute(new ScaleDownOperation(k8s.getStatefulSetResource(namespace, name), kafka.getReplicas()), scaleDown.completer());
+            log.info("Scaling down stateful set {} in namespace {}", kafka.getName(), namespace);
+            OperationExecutor.getInstance().execute(new ScaleDownOperation(k8s.getStatefulSetResource(namespace, kafka.getName()), kafka.getReplicas()), scaleDown.completer());
         }
         else {
             scaleDown.complete();
@@ -104,7 +106,7 @@ public class UpdateKafkaClusterOperation extends KafkaClusterOperation {
     private Future<Void> patchService(KafkaCluster kafka, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchService = Future.future();
-            OperationExecutor.getInstance().execute(new PatchOperation(k8s.getServiceResource(namespace, name), kafka.patchService(k8s.getService(namespace, name))), patchService.completer());
+            OperationExecutor.getInstance().execute(new PatchOperation(k8s.getServiceResource(namespace, kafka.getName()), kafka.patchService(k8s.getService(namespace, kafka.getName()))), patchService.completer());
             return patchService;
         }
             else
@@ -128,7 +130,7 @@ public class UpdateKafkaClusterOperation extends KafkaClusterOperation {
     private Future<Void> patchStatefulSet(KafkaCluster kafka, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchStatefulSet = Future.future();
-            OperationExecutor.getInstance().execute(new PatchOperation(k8s.getStatefulSetResource(namespace, name).cascading(false), kafka.patchStatefulSet(k8s.getStatefulSet(namespace, name))), patchStatefulSet.completer());
+            OperationExecutor.getInstance().execute(new PatchOperation(k8s.getStatefulSetResource(namespace, kafka.getName()).cascading(false), kafka.patchStatefulSet(k8s.getStatefulSet(namespace, kafka.getName()))), patchStatefulSet.completer());
             return patchStatefulSet;
         }
         else
@@ -140,18 +142,18 @@ public class UpdateKafkaClusterOperation extends KafkaClusterOperation {
     private Future<Void> patchMetricsConfigMap(KafkaCluster kafka, ClusterDiffResult diff) {
         if (diff.isMetricsChanged()) {
             Future<Void> patchConfigMap = Future.future();
-            OperationExecutor.getInstance().execute(new PatchOperation(k8s.getConfigmapResource(namespace, kafka.getMetricsConfigName()), kafka.patchMetricsConfigMap(k8s.getConfigmap(namespace, name + "-metrics-config"))), patchConfigMap.completer());
+            OperationExecutor.getInstance().execute(new PatchOperation(k8s.getConfigmapResource(namespace, kafka.getMetricsConfigName()), kafka.patchMetricsConfigMap(k8s.getConfigmap(namespace, kafka.getMetricsConfigName()))), patchConfigMap.completer());
             return patchConfigMap;
         } else {
             return Future.succeededFuture();
         }
     }
 
-    private Future<Void> rollingUpdate(ClusterDiffResult diff) {
+    private Future<Void> rollingUpdate(KafkaCluster kafka, ClusterDiffResult diff) {
         Future<Void> rollingUpdate = Future.future();
 
         if (diff.getRollingUpdate()) {
-            OperationExecutor.getInstance().execute(new ManualRollingUpdateOperation(namespace, name, k8s.getStatefulSet(namespace, name).getSpec().getReplicas()), rollingUpdate.completer());
+            OperationExecutor.getInstance().execute(new ManualRollingUpdateOperation(namespace, kafka.getName(), k8s.getStatefulSet(namespace, kafka.getName()).getSpec().getReplicas()), rollingUpdate.completer());
         }
         else {
             rollingUpdate.complete();
@@ -164,7 +166,7 @@ public class UpdateKafkaClusterOperation extends KafkaClusterOperation {
         Future<Void> scaleUp = Future.future();
 
         if (diff.getScaleUp()) {
-            OperationExecutor.getInstance().execute(new ScaleUpOperation(k8s.getStatefulSetResource(namespace, name), kafka.getReplicas()), scaleUp.completer());
+            OperationExecutor.getInstance().execute(new ScaleUpOperation(k8s.getStatefulSetResource(namespace, kafka.getName()), kafka.getReplicas()), scaleUp.completer());
         }
         else {
             scaleUp.complete();

@@ -28,9 +28,9 @@ public class DeleteKafkaClusterOperation extends KafkaClusterOperation {
             if (res.succeeded()) {
                 Lock lock = res.result();
 
-                log.info("Deleting Kafka cluster {} from namespace {}", name, namespace);
+                KafkaCluster kafka = KafkaCluster.fromStatefulSet(k8s, namespace, name);
 
-                KafkaCluster kafka = KafkaCluster.fromStatefulSet(k8s.getStatefulSet(namespace, name));
+                log.info("Deleting Kafka cluster {} from namespace {}", kafka.getName(), namespace);
 
                 // start deleting configMap operation only if metrics are enabled,
                 // otherwise the future is already complete (for the "join")
@@ -42,13 +42,13 @@ public class DeleteKafkaClusterOperation extends KafkaClusterOperation {
                 }
 
                 Future<Void> futureService = Future.future();
-                OperationExecutor.getInstance().execute(new DeleteServiceOperation(namespace, name), futureService.completer());
+                OperationExecutor.getInstance().execute(new DeleteServiceOperation(namespace, kafka.getName()), futureService.completer());
 
                 Future<Void> futureHeadlessService = Future.future();
                 OperationExecutor.getInstance().execute(new DeleteServiceOperation(namespace, kafka.getHeadlessName()), futureHeadlessService.completer());
 
                 Future<Void> futureStatefulSet = Future.future();
-                OperationExecutor.getInstance().execute(new DeleteStatefulSetOperation(namespace, name), futureStatefulSet.completer());
+                OperationExecutor.getInstance().execute(new DeleteStatefulSetOperation(namespace, kafka.getName()), futureStatefulSet.completer());
 
                 Future<Void> futurePersistentVolumeClaim = Future.future();
                 if ((kafka.getStorage().type() == Storage.StorageType.PERSISTENT_CLAIM) && kafka.getStorage().isDeleteClaim()) {
@@ -57,7 +57,7 @@ public class DeleteKafkaClusterOperation extends KafkaClusterOperation {
                     for (int i = 0; i < kafka.getReplicas(); i++) {
                         Future<Void> f = Future.future();
                         futurePersistentVolumeClaims.add(f);
-                        OperationExecutor.getInstance().execute(new DeletePersistentVolumeClaimOperation(namespace, "kafka-storage-" + name + "-" + i), f.completer());
+                        OperationExecutor.getInstance().execute(new DeletePersistentVolumeClaimOperation(namespace, kafka.getVolumeName() + "-" + kafka.getName() + "-" + i), f.completer());
                     }
                     CompositeFuture.join(futurePersistentVolumeClaims).setHandler(ar -> {
                         if (ar.succeeded()) {
@@ -72,11 +72,11 @@ public class DeleteKafkaClusterOperation extends KafkaClusterOperation {
 
                 CompositeFuture.join(futureConfigMap, futureService, futureHeadlessService, futureStatefulSet, futurePersistentVolumeClaim).setHandler(ar -> {
                     if (ar.succeeded()) {
-                        log.info("Kafka cluster {} successfully deleted from namespace {}", name, namespace);
+                        log.info("Kafka cluster {} successfully deleted from namespace {}", kafka.getName(), namespace);
                         handler.handle(Future.succeededFuture());
                         lock.release();
                     } else {
-                        log.error("Kafka cluster {} failed to delete from namespace {}", name, namespace);
+                        log.error("Kafka cluster {} failed to delete from namespace {}", kafka.getName(), namespace);
                         handler.handle(Future.failedFuture("Failed to delete Zookeeper cluster"));
                         lock.release();
                     }
