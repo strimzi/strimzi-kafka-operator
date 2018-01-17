@@ -19,7 +19,7 @@ public class KafkaCluster extends AbstractCluster {
     private final int clientPort = 9092;
     private final String clientPortName = "clients";
 
-    private static String NAME_SUFFIX = ""; // TODO : add new suffix ?
+    private static String NAME_SUFFIX = "-kafka";
     private static String HEADLESS_NAME_SUFFIX = NAME_SUFFIX + "-headless";
     private static String METRICS_CONFIG_SUFFIX = NAME_SUFFIX + "-metrics-config";
 
@@ -164,13 +164,12 @@ public class KafkaCluster extends AbstractCluster {
      *
      * @param k8s   K8SUtils client instance for accessing Kubernetes/OpenShift cluster
      * @param namespace Kubernetes/OpenShift namespace where cluster resources belong to
-     * @param cluster   overall cluster name
      * @return  ClusterDiffResult instance with differences
      */
-    public ClusterDiffResult diff(K8SUtils k8s, String namespace, String cluster)  {
+    public ClusterDiffResult diff(K8SUtils k8s, String namespace)  {
 
-        StatefulSet ss = k8s.getStatefulSet(namespace, cluster + KafkaCluster.NAME_SUFFIX);
-        ConfigMap metricsConfigMap = k8s.getConfigmap(namespace, cluster + KafkaCluster.METRICS_CONFIG_SUFFIX);
+        StatefulSet ss = k8s.getStatefulSet(namespace, getName());
+        ConfigMap metricsConfigMap = k8s.getConfigmap(namespace, getMetricsConfigName());
 
         ClusterDiffResult diff = new ClusterDiffResult();
 

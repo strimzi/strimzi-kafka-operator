@@ -40,7 +40,7 @@ public class UpdateZookeeperClusterOperation extends ZookeeperClusterOperation {
 
                         zk = ZookeeperCluster.fromConfigMap(zkConfigMap);
                         log.info("Updating Zookeeper cluster {} in namespace {}", zk.getName(), namespace);
-                        diff = zk.diff(k8s, namespace, name);
+                        diff = zk.diff(k8s, namespace);
 
                     } catch (Exception ex) {
 
