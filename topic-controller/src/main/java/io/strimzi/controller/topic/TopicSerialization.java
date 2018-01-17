@@ -72,8 +72,7 @@ public class TopicSerialization {
             result = Collections.emptyMap();
         } else {
             try {
-                JsonFactory yf = new JsonFactory();
-                ObjectMapper mapper = new ObjectMapper(yf);
+                ObjectMapper mapper = objectMapper();
                 result = mapper.readValue(new StringReader(value) {
                     @Override
                     public String toString() {
@@ -119,8 +118,7 @@ public class TopicSerialization {
     }
 
     private static String topicConfigToConfigMapString(Map<String, String> config) throws IOException {
-        JsonFactory yf = new JsonFactory();
-        ObjectMapper mapper = new ObjectMapper(yf);
+        ObjectMapper mapper = objectMapper();
         StringWriter sw = new StringWriter();
         mapper.writeValue(sw, config);
         return sw.toString();
@@ -297,8 +295,7 @@ public class TopicSerialization {
      * This is what is stored in the znodes owned by the {@link ZkTopicStore}.
      */
     public static byte[] toJson(Topic topic) {
-        JsonFactory yf = new JsonFactory();
-        ObjectMapper mapper = new ObjectMapper(yf);
+        ObjectMapper mapper = objectMapper();
         ObjectNode root = mapper.createObjectNode();
         // TODO Do we store the k8s name here too?
         // TODO Do we store the k9s uid here?
@@ -326,8 +323,7 @@ public class TopicSerialization {
      * This is what is stored in the znodes owned by the {@link ZkTopicStore}.
      */
     public static Topic fromJson(byte[] json) {
-        JsonFactory yf = new JsonFactory();
-        ObjectMapper mapper = new ObjectMapper(yf);
+        ObjectMapper mapper = objectMapper();
         Map<String, Object> root = null;
         try {
             root = mapper.readValue(json, Map.class);
@@ -343,6 +339,11 @@ public class TopicSerialization {
             builder.withConfigEntry(entry.getKey(), entry.getValue());
         }
         return builder.build();
+    }
+
+    private static ObjectMapper objectMapper() {
+        JsonFactory jf = new JsonFactory();
+        return new ObjectMapper(jf);
     }
 
 }
