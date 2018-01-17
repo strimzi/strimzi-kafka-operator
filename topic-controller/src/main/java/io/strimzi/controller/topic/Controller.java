@@ -47,8 +47,17 @@ public class Controller {
     private TopicStore topicStore;
     private final InFlight inFlight;
 
-    class ErrorEvent implements Handler<Void> {
+    enum ErrorType {
+        INFO("Info"),
+        WARNING("Warning");
+        final String name;
+        ErrorType(String name) {
+            this.name = name;
+        }
+    }
 
+    class ErrorEvent implements Handler<Void> {
+        private final ErrorType errorType;
         private final String message;
         private final HasMetadata involvedObject;
         private final Handler<AsyncResult<Void>> handler;
@@ -57,37 +66,44 @@ public class Controller {
             this.involvedObject = exception.getInvolvedObject();
             this.message = exception.getMessage();
             this.handler = handler;
+            this.errorType = ErrorType.WARNING;
         }
 
-        public ErrorEvent(HasMetadata involvedObject, String message, Handler<AsyncResult<Void>> handler) {
+        public ErrorEvent(HasMetadata involvedObject, String message, ErrorType errorType, Handler<AsyncResult<Void>> handler) {
             this.involvedObject = involvedObject;
             this.message = message;
             this.handler = handler;
+            this.errorType = errorType;
         }
 
         @Override
         public void handle(Void v) {
-            String myHost = "";
             EventBuilder evtb = new EventBuilder().withApiVersion("v1");
             if (involvedObject != null) {
                 evtb.withNewInvolvedObject()
-                        .withKind(involvedObject.getKind())
+                        .withKind("ConfigMap")
                         .withName(involvedObject.getMetadata().getName())
                         .withApiVersion(involvedObject.getApiVersion())
                         .withNamespace(involvedObject.getMetadata().getNamespace())
                         .withUid(involvedObject.getMetadata().getUid())
                         .endInvolvedObject();
             }
-            evtb.withType("Warning")
-                    .withMessage(this.getClass().getSimpleName() + " failed: " + message)
-                    //.withReason("")
+            evtb.withType(errorType.name)
+                    .withMessage(message)
+                    .withNewMetadata().withLabels(cmPredicate.labels()).withGenerateName("topic-controller").endMetadata()
                     .withNewSource()
-                    .withHost(myHost)
                     .withComponent(Controller.class.getName())
                     .endSource();
             Event event = evtb.build();
+            switch (errorType) {
+                case INFO:
+                    logger.info("{}", message);
+                    break;
+                case WARNING:
+                    logger.warn("{}", message);
+                    break;
+            }
             k8s.createEvent(event, handler);
-            eventLogger.warn(event.toString());
         }
 
         public String toString() {
@@ -219,7 +235,7 @@ public class Controller {
         public void handle(Void v) throws ControllerException {
             kafka.updateTopicConfig(topic, ar-> {
                 if (ar.failed()) {
-                    enqueue(new ErrorEvent(involvedObject, ar.cause().toString(), eventResult -> {}));
+                    enqueue(new ErrorEvent(involvedObject, ar.cause().toString(), ErrorType.WARNING, eventResult -> {}));
                 }
                 handler.handle(ar);
             });
@@ -250,7 +266,7 @@ public class Controller {
         public void handle(Void v) throws ControllerException {
             kafka.increasePartitions(topic, ar-> {
                 if (ar.failed()) {
-                    enqueue(new ErrorEvent(involvedObject, ar.cause().toString(), eventResult -> {}));
+                    enqueue(new ErrorEvent(involvedObject, ar.cause().toString(), ErrorType.WARNING, eventResult -> {}));
                 }
                 handler.handle(ar);
             });
@@ -281,7 +297,7 @@ public class Controller {
         public void handle(Void v) throws ControllerException {
             kafka.changeReplicationFactor(topic, ar-> {
                 if (ar.failed()) {
-                    enqueue(new ErrorEvent(involvedObject, ar.cause().toString(), eventResult -> {}));
+                    enqueue(new ErrorEvent(involvedObject, ar.cause().toString(), ErrorType.WARNING, eventResult -> {}));
                 }
                 handler.handle(ar);
             });
@@ -484,7 +500,7 @@ public class Controller {
             // Just use kafka version, but also create a warning event
             logger.debug("cm created in k8s and topic created in kafka, and they are irreconcilably different => kafka version wins");
             enqueue(new ErrorEvent(involvedObject, "ConfigMap is incompatible with the topic metadata. " +
-                    "The topic metadata will be treated as canonical.", ar -> {
+                    "The topic metadata will be treated as canonical.", ErrorType.INFO, ar -> {
                 if (ar.succeeded()) {
                     enqueue(new UpdateConfigMap(kafkaTopic, involvedObject, ar2 -> {
                         if (ar2.succeeded()) {
@@ -510,7 +526,7 @@ public class Controller {
         if (conflict != null) {
             final String message = "ConfigMap and Topic both changed in a conflicting way: " + conflict;
             logger.error(message);
-            enqueue(new ErrorEvent(involvedObject, message, eventResult -> {}));
+            enqueue(new ErrorEvent(involvedObject, message, ErrorType.INFO, eventResult -> {}));
             reconciliationResultHandler.handle(Future.failedFuture(new Exception(message)));
         } else {
             TopicDiff merged = oursKafka.merge(oursK8s);
@@ -524,7 +540,7 @@ public class Controller {
                 if (partitionsDelta < 0) {
                     final String message = "Number of partitions cannot be decreased";
                     logger.error(message);
-                    enqueue(new ErrorEvent(involvedObject, message, eventResult -> {
+                    enqueue(new ErrorEvent(involvedObject, message, ErrorType.INFO, eventResult -> {
                     }));
                     reconciliationResultHandler.handle(Future.failedFuture(new Exception(message)));
                 } else {
@@ -708,7 +724,7 @@ public class Controller {
             Handler<Future<Void>> action = new Reconciliation("onConfigMapAdded") {
                 @Override
                 public void handle(Future<Void> fut) {
-                    Controller.this.reconcileOnCmChange(configMap, k8sTopic, fut);
+                    Controller.this.reconcileOnCmChange(configMap, k8sTopic, false, fut);
                 }
             };
             inFlight.enqueue(new TopicName(configMap), resultHandler, action);
@@ -743,7 +759,7 @@ public class Controller {
             Reconciliation action = new Reconciliation("onConfigMapModified") {
                 @Override
                 public void handle(Future<Void> fut) {
-                    Controller.this.reconcileOnCmChange(configMap, k8sTopic, fut);
+                    Controller.this.reconcileOnCmChange(configMap, k8sTopic, true, fut);
                 }
             };
             inFlight.enqueue(new TopicName(configMap),
@@ -755,7 +771,7 @@ public class Controller {
         }
     }
 
-    private void reconcileOnCmChange(ConfigMap configMap, Topic k8sTopic, Handler<AsyncResult<Void>> handler) {
+    private void reconcileOnCmChange(ConfigMap configMap, Topic k8sTopic, boolean isModify, Handler<AsyncResult<Void>> handler) {
         TopicName topicName = new TopicName(configMap);
         Future f1 = Future.future();
         Future f2 = Future.future();
@@ -766,7 +782,11 @@ public class Controller {
                 TopicMetadata topicMetadata = ar.result().resultAt(0);
                 Topic kafkaTopic = TopicSerialization.fromTopicMetadata(topicMetadata);
                 Topic privateTopic = ar.result().resultAt(1);
-                reconcile(configMap, k8sTopic, kafkaTopic, privateTopic, handler);
+                if (privateTopic == null && isModify) {
+                    enqueue(new ErrorEvent(configMap, "Kafka topics cannot be renamed, but ConfigMap's data." + TopicSerialization.CM_KEY_NAME + " has changed.", ErrorType.WARNING, handler));
+                } else {
+                    reconcile(configMap, k8sTopic, kafkaTopic, privateTopic, handler);
+                }
             } else {
                 handler.handle(Future.failedFuture(ar.cause()));
             }
@@ -779,7 +799,7 @@ public class Controller {
             Reconciliation handlerHandler = new Reconciliation("onConfigMapDeleted") {
                 @Override
                 public void handle(Future<Void> fut) {
-                    Controller.this.reconcileOnCmChange(configMap, null, fut);
+                    Controller.this.reconcileOnCmChange(configMap, null, false, fut);
                 }
             };
             inFlight.enqueue(new TopicName(configMap), handler,
@@ -804,7 +824,7 @@ public class Controller {
         public void handle(Void v) throws ControllerException {
             topicStore.update(topic, ar-> {
                 if (ar.failed()) {
-                    enqueue(new ErrorEvent(involvedObject, ar.cause().toString(), eventResult -> {}));
+                    enqueue(new ErrorEvent(involvedObject, ar.cause().toString(), ErrorType.WARNING, eventResult -> {}));
                 }
                 handler.handle(ar);
             });
@@ -835,7 +855,7 @@ public class Controller {
                 logger.debug("Completing {}", this);
                 if (ar.failed()) {
                     logger.debug("{} failed", this);
-                    enqueue(new ErrorEvent(involvedObject, ar.cause().toString(), eventResult -> {}));
+                    enqueue(new ErrorEvent(involvedObject, ar.cause().toString(), ErrorType.WARNING, eventResult -> {}));
                 } else {
                     logger.debug("{} succeeded", this);
                 }
@@ -865,7 +885,7 @@ public class Controller {
         public void handle(Void v) throws ControllerException {
             topicStore.delete(topicName, ar-> {
                 if (ar.failed()) {
-                    enqueue(new ErrorEvent(involvedObject, ar.cause().toString(), eventResult -> {}));
+                    enqueue(new ErrorEvent(involvedObject, ar.cause().toString(), ErrorType.WARNING, eventResult -> {}));
                 }
                 handler.handle(ar);
             });

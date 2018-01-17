@@ -16,7 +16,7 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - configmaps
+  - ["configmaps", "events"]
   verbs:
   - get
   - list
@@ -24,6 +24,7 @@ rules:
   - create
   - patch
   - update
+  - delete
 ---
 apiVersion: v1
 kind: RoleBinding

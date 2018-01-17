@@ -114,7 +114,7 @@ public class K8sImpl implements K8s {
             try {
                 try {
                     logger.debug("Creating event {}", event);
-                    //client.events().create(event);
+                    client.events().create(event);
                 } catch (KubernetesClientException e) {
                     logger.error("Error creating event {}", event, e);
                 }
