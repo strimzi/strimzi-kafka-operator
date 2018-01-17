@@ -895,5 +895,9 @@ public class Controller {
             return "DeleteFromTopicStore(topicName="+topicName+")";
         }
     }
+
+    public boolean isWorkInflight() {
+        return inFlight.size() > 0;
+    }
 }
 

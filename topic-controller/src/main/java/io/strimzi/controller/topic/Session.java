@@ -22,6 +22,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
 import io.strimzi.controller.topic.zk.Zk;
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Future;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.slf4j.Logger;
@@ -64,22 +65,43 @@ public class Session extends AbstractVerticle {
     /**
      * Stop the controller.
      */
-    public void stop() {
+    public void stop(Future<Void> stopFuture) throws Exception {
         this.stopped = true;
-        logger.info("Stopping");
-        logger.debug("Stopping kube watch");
-        topicCmWatch.close();
-        logger.debug("Stopping zk watches");
-        tw.stop();
-        tcw.stop();
-        // TODO wait for inflight to "empty"
-        try {
-            zk.disconnect();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-        adminClient.close(1, TimeUnit.MINUTES);
-        logger.info("Stopped");
+        vertx.executeBlocking(blockingResult -> {
+            long t0 = System.currentTimeMillis();
+            long timeout = 120_000L;
+            logger.info("Stopping");
+            logger.debug("Stopping kube watch");
+            topicCmWatch.close();
+            logger.debug("Stopping zk watches");
+            tw.stop();
+            tcw.stop();
+
+            while (controller.isWorkInflight()) {
+                if (System.currentTimeMillis() - t0 > timeout) {
+                    logger.error("Timeout waiting for inflight work to finish");
+                    break;
+                }
+                logger.debug("Waiting for inflight work to finish");
+                try {
+                    Thread.sleep(1_000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+            logger.debug("Stopping kafka {}", kafka);
+            kafka.stop();
+            try {
+                logger.debug("Disconnecting from zookeeper {}", zk);
+                zk.disconnect();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            logger.debug("Closing AdminClient {}", adminClient);
+            adminClient.close(timeout - (System.currentTimeMillis() - t0), TimeUnit.MILLISECONDS);
+            logger.info("Stopped");
+            blockingResult.complete();
+        }, stopFuture);
     }
 
     @Override
@@ -88,20 +110,27 @@ public class Session extends AbstractVerticle {
         Properties adminClientProps = new Properties();
         adminClientProps.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, config.get(Config.KAFKA_BOOTSTRAP_SERVERS));
         this.adminClient = AdminClient.create(adminClientProps);
+        logger.debug("Using AdminClient {}", adminClient);
         this.kafka = new ControllerAssignedKafkaImpl(adminClient, vertx, config);
-
+        logger.debug("Using Kafka {}", kafka);
         LabelPredicate cmPredicate = config.get(Config.LABELS);
 
         this.k8s = new K8sImpl(vertx, kubeClient, cmPredicate);
+        logger.debug("Using k8s {}", k8s);
 
         this.zk = Zk.create(vertx, config.get(Config.ZOOKEEPER_CONNECT), this.config.get(Config.ZOOKEEPER_SESSION_TIMEOUT_MS).intValue());
+        logger.debug("Using ZooKeeper {}", zk);
 
         ZkTopicStore topicStore = new ZkTopicStore(zk);
+        logger.debug("Using TopicStore {}", topicStore);
 
         this.controller = new Controller(vertx, kafka, k8s, topicStore, cmPredicate);
+        logger.debug("Using Controller {}", controller);
 
         this.tcw = new TopicConfigsWatcher(controller);
+        logger.debug("Using TopicConfigsWatcher {}", tcw);
         this.tw = new TopicsWatcher(controller, tcw);
+        logger.debug("Using TopicsWatcher {}", tw);
         tw.start(zk);
         tcw.start(zk);
 
