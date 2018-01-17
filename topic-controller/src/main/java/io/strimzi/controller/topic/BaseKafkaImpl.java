@@ -50,15 +50,21 @@ public abstract class BaseKafkaImpl implements Kafka {
 
     protected final Vertx vertx;
 
+    private volatile boolean stopped = false;
+
     public BaseKafkaImpl(AdminClient adminClient, Vertx vertx) {
         this.adminClient = adminClient;
         this.vertx = vertx;
     }
 
+    public void stop() {
+        this.stopped = true;
+    }
+
     abstract class Work implements Runnable, Handler<Void> {
         @Override
         public void run() {
-            if (!complete()) {
+            if (!stopped && !complete()) {
                 vertx.runOnContext(this);
             }
         }
