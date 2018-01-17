@@ -22,9 +22,8 @@ public class CreateKafkaConnectClusterOperation extends KafkaConnectClusterOpera
             if (res.succeeded()) {
                 Lock lock = res.result();
 
-                log.info("Creating Kafka Connect cluster {} in namespace {}", name, namespace);
-
                 KafkaConnectCluster connect = KafkaConnectCluster.fromConfigMap(k8s.getConfigmap(namespace, name));
+                log.info("Creating Kafka Connect cluster {} in namespace {}", connect.getName(), namespace);
 
                 Future<Void> futureService = Future.future();
                 OperationExecutor.getInstance().execute(new CreateServiceOperation(connect.generateService()), futureService.completer());
@@ -34,11 +33,11 @@ public class CreateKafkaConnectClusterOperation extends KafkaConnectClusterOpera
 
                 CompositeFuture.join(futureService, futureDeployment).setHandler(ar -> {
                     if (ar.succeeded()) {
-                        log.info("Kafka Connect cluster {} successfully created in namespace {}", name, namespace);
+                        log.info("Kafka Connect cluster {} successfully created in namespace {}", connect.getName(), namespace);
                         handler.handle(Future.succeededFuture());
                         lock.release();
                     } else {
-                        log.error("Kafka Connect cluster {} failed to create in namespace {}", name, namespace);
+                        log.error("Kafka Connect cluster {} failed to create in namespace {}", connect.getName(), namespace);
                         handler.handle(Future.failedFuture("Failed to create Kafka Connect cluster"));
                         lock.release();
                     }

@@ -2,6 +2,7 @@ package io.strimzi.controller.cluster.resources;
 
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.extensions.*;
+import io.strimzi.controller.cluster.K8SUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -16,6 +17,8 @@ public class KafkaConnectCluster extends AbstractCluster {
     // Port configuration
     private final int restApiPort = 8083;
     private final String restApiPortName = "rest-api";
+
+    private static String NAME_SUFFIX = "-connect";
 
     // Kafka Connect configuration
     private String bootstrapServers = DEFAULT_BOOTSTRAP_SERVERS;
@@ -62,8 +65,16 @@ public class KafkaConnectCluster extends AbstractCluster {
     private static String KEY_OFFSET_STORAGE_REPLICATION_FACTOR = "KAFKA_CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR";
     private static String KEY_STATUS_STORAGE_REPLICATION_FACTOR = "KAFKA_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR";
 
-    private KafkaConnectCluster(String namespace, String name) {
-        super(namespace, name);
+    /**
+     * Constructor
+     *
+     * @param namespace Kubernetes/OpenShift namespace where Kafka Connect cluster resources are going to be created
+     * @param cluster   overall cluster name
+     */
+    private KafkaConnectCluster(String namespace, String cluster) {
+
+        super(namespace, cluster);
+        this.name = cluster + KafkaConnectCluster.NAME_SUFFIX;
         this.image = DEFAULT_IMAGE;
         this.replicas = DEFAULT_REPLICAS;
         this.healthCheckPath = "/";
@@ -71,8 +82,16 @@ public class KafkaConnectCluster extends AbstractCluster {
         this.healthCheckInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
     }
 
+    /**
+     * Create a Kafka Connect cluster from the related ConfigMap resource
+     *
+     * @param cm    ConfigMap with cluster configuration
+     * @return  Kafka Connect cluster instance
+     */
     public static KafkaConnectCluster fromConfigMap(ConfigMap cm) {
+
         KafkaConnectCluster kafkaConnect = new KafkaConnectCluster(cm.getMetadata().getNamespace(), cm.getMetadata().getName());
+
         kafkaConnect.setLabels(cm.getMetadata().getLabels());
 
         kafkaConnect.setReplicas(Integer.parseInt(cm.getData().getOrDefault(KEY_REPLICAS, String.valueOf(DEFAULT_REPLICAS))));
@@ -93,10 +112,19 @@ public class KafkaConnectCluster extends AbstractCluster {
         return kafkaConnect;
     }
 
-    // This is currently not needed. But the similar function for statefulsets is used partially. Should we remove this?
-    // Or might we need to use it in the future?
-    public static KafkaConnectCluster fromDeployment(Deployment dep) {
-        KafkaConnectCluster kafkaConnect =  new KafkaConnectCluster(dep.getMetadata().getNamespace(), dep.getMetadata().getName());
+    /**
+     * Create a Kafka Connect cluster from the deployed Deployment resource
+     *
+     * @param k8s   K8SUtils client instance for accessing Kubernetes/OpenShift cluster
+     * @param namespace Kubernetes/OpenShift namespace where cluster resources belong to
+     * @param cluster   overall cluster name
+     * @return  Kafka Connect cluster instance
+     */
+    public static KafkaConnectCluster fromDeployment(K8SUtils k8s, String namespace, String cluster) {
+
+        Deployment dep = k8s.getDeployment(namespace, cluster + KafkaConnectCluster.NAME_SUFFIX);
+
+        KafkaConnectCluster kafkaConnect =  new KafkaConnectCluster(namespace, cluster);
 
         kafkaConnect.setLabels(dep.getMetadata().getLabels());
         kafkaConnect.setReplicas(dep.getSpec().getReplicas());
@@ -120,7 +148,18 @@ public class KafkaConnectCluster extends AbstractCluster {
         return kafkaConnect;
     }
 
-    public ClusterDiffResult diff(Deployment dep)  {
+    /**
+     * Return the differences between the current Kafka Connect cluster and the deployed one
+     *
+     * @param k8s   K8SUtils client instance for accessing Kubernetes/OpenShift cluster
+     * @param namespace Kubernetes/OpenShift namespace where cluster resources belong to
+     * @param cluster   overall cluster name
+     * @return  ClusterDiffResult instance with differences
+     */
+    public ClusterDiffResult diff(K8SUtils k8s, String namespace, String cluster) {
+
+        Deployment dep = k8s.getDeployment(namespace, cluster + KafkaConnectCluster.NAME_SUFFIX);
+
         ClusterDiffResult diff = new ClusterDiffResult();
 
         if (replicas > dep.getSpec().getReplicas()) {
