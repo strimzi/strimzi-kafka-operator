@@ -348,7 +348,8 @@ public class ControllerTest {
 
     /**
      * 0. ZK notifies of a change in topic config
-     * 1.
+     * 1. controller gets updated topic metadata
+     * 2. controller updates k8s and topic store.
      */
     @Test
     public void testOnTopicChanged(TestContext context) {
