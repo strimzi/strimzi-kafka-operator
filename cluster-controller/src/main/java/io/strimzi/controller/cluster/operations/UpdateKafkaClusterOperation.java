@@ -43,7 +43,7 @@ public class UpdateKafkaClusterOperation extends KafkaClusterOperation {
 
                         kafka = KafkaCluster.fromConfigMap(kafkaConfigMap);
                         log.info("Updating Kafka cluster {} in namespace {}", kafka.getName(), namespace);
-                        diff = kafka.diff(k8s, namespace, name);
+                        diff = kafka.diff(k8s, namespace);
 
                     } catch (Exception ex) {
 

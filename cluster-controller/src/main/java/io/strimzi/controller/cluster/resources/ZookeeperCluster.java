@@ -151,13 +151,12 @@ public class ZookeeperCluster extends AbstractCluster {
      *
      * @param k8s   K8SUtils client instance for accessing Kubernetes/OpenShift cluster
      * @param namespace Kubernetes/OpenShift namespace where cluster resources belong to
-     * @param cluster   overall cluster name
      * @return  ClusterDiffResult instance with differences
      */
-    public ClusterDiffResult diff(K8SUtils k8s, String namespace, String cluster)  {
+    public ClusterDiffResult diff(K8SUtils k8s, String namespace)  {
 
-        StatefulSet ss = k8s.getStatefulSet(namespace, cluster + ZookeeperCluster.NAME_SUFFIX);
-        ConfigMap metricsConfigMap = k8s.getConfigmap(namespace, cluster + ZookeeperCluster.METRICS_CONFIG_SUFFIX);
+        StatefulSet ss = k8s.getStatefulSet(namespace, getName());
+        ConfigMap metricsConfigMap = k8s.getConfigmap(namespace, getMetricsConfigName());
 
         ClusterDiffResult diff = new ClusterDiffResult();
 

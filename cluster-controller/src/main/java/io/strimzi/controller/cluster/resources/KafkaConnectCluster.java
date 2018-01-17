@@ -153,12 +153,11 @@ public class KafkaConnectCluster extends AbstractCluster {
      *
      * @param k8s   K8SUtils client instance for accessing Kubernetes/OpenShift cluster
      * @param namespace Kubernetes/OpenShift namespace where cluster resources belong to
-     * @param cluster   overall cluster name
      * @return  ClusterDiffResult instance with differences
      */
-    public ClusterDiffResult diff(K8SUtils k8s, String namespace, String cluster) {
+    public ClusterDiffResult diff(K8SUtils k8s, String namespace) {
 
-        Deployment dep = k8s.getDeployment(namespace, cluster + KafkaConnectCluster.NAME_SUFFIX);
+        Deployment dep = k8s.getDeployment(namespace, getName());
 
         ClusterDiffResult diff = new ClusterDiffResult();
 

@@ -40,7 +40,7 @@ public class UpdateKafkaConnectClusterOperation extends KafkaConnectClusterOpera
 
                     connect = KafkaConnectCluster.fromConfigMap(connectConfigMap);
                     log.info("Updating Kafka Connect cluster {} in namespace {}", connect.getName(), namespace);
-                    diff = connect.diff(k8s, namespace, name);
+                    diff = connect.diff(k8s, namespace);
 
                 } else  {
                     log.error("ConfigMap {} doesn't exist anymore in namespace {}", name, namespace);
