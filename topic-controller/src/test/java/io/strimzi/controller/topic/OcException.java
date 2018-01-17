@@ -18,7 +18,10 @@
 package io.strimzi.controller.topic;
 
 public class OcException extends Exception {
-    public OcException(String s) {
+    public final int statusCode;
+
+    public OcException(int statusCode, String s) {
         super(s);
+        this.statusCode = statusCode;
     }
 }

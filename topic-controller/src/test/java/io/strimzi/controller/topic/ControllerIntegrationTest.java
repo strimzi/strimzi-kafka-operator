@@ -21,8 +21,10 @@ import io.debezium.kafka.KafkaCluster;
 import io.debezium.kafka.ZookeeperServer;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -48,15 +50,21 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
-@Ignore
 @RunWith(VertxUnitRunner.class)
 public class ControllerIntegrationTest {
 
@@ -68,18 +76,19 @@ public class ControllerIntegrationTest {
             OC.clusterDown();
         } catch (Exception e) {}
     });
+    private static boolean startedOc = false;
 
     private final LabelPredicate cmPredicate = LabelPredicate.fromString(
             "strimzi.io/kind=topic");
 
     private final Vertx vertx = Vertx.vertx();
     private KafkaCluster kafkaCluster;
-    private Controller controller;
+    private volatile Controller controller;
     private volatile ControllerAssignedKafkaImpl kafka;
-    private AdminClient adminClient;
-    private K8sImpl k8s;
+    private volatile AdminClient adminClient;
+    private volatile K8sImpl k8s;
     private DefaultKubernetesClient kubeClient;
-    private TopicsWatcher topicsWatcher;
+    private volatile TopicsWatcher topicsWatcher;
     private Thread kafkaHook = new Thread() {
         public void run() {
             if (kafkaCluster != null) {
@@ -88,26 +97,36 @@ public class ControllerIntegrationTest {
         }
     };
     private final long timeout = 60_000L;
-    private Watch cmWatcher;
-    private TopicConfigsWatcher topicsConfigWatcher;
+    private volatile TopicConfigsWatcher topicsConfigWatcher;
 
     private Session session;
-    private String deploymentId;
+    private volatile String deploymentId;
+    private Set<String> preExistingEvents;
 
     @BeforeClass
     public static void startKube() throws Exception {
         logger.info("Executing oc cluster up");
+        if (OC.isClusterUp()) {
+            throw new RuntimeException("OpenShift cluster is already up");
+        }
         // It can happen that if the VM exits abnormally the cluster remains up, and further tests don't work because
         // it appears there are two brokers with id 1, so use a shutdown hook to kill the cluster.
+        startedOc = true;
         Runtime.getRuntime().addShutdownHook(ocHook);
         OC.clusterUp();
+        OC.loginSystemAdmin();
+        //OC.apply(new File("src/test/resources/role.yaml"));
+        OC.loginDeveloper();
     }
 
     @AfterClass
     public static void stopKube() throws Exception {
-        logger.info("Executing oc cluster down");
-        OC.clusterDown();
-        Runtime.getRuntime().removeShutdownHook(ocHook);
+        if (startedOc) {
+            startedOc = false;
+            logger.info("Executing oc cluster down");
+            OC.clusterDown();
+            Runtime.getRuntime().removeShutdownHook(ocHook);
+        }
     }
 
     @Before
@@ -143,6 +162,17 @@ public class ControllerIntegrationTest {
             }
         });
         async.await();
+
+        waitFor(context, () -> this.topicsWatcher.started(), timeout, "Topic watcher not started");
+        waitFor(context, () -> this.topicsConfigWatcher.started(), timeout, "Topic configs watcher not started");
+
+        // We can't delete events, so record the events which exist at the start of the test
+        // and then waitForEvents() can ignore those
+        preExistingEvents = kubeClient.events().withLabels(cmPredicate.labels()).list().
+                getItems().stream().
+                map(evt -> evt.getMetadata().getUid()).
+                collect(Collectors.toSet());
+
         logger.info("Finished setting up test");
     }
 
@@ -164,8 +194,13 @@ public class ControllerIntegrationTest {
         Async async = context.async();
         if (deploymentId != null) {
             vertx.undeploy(deploymentId, ar -> {
-                this.deploymentId = null;
-
+                deploymentId = null;
+                adminClient = null;
+                kafka = null;
+                k8s = null;
+                controller = null;
+                topicsConfigWatcher = null;
+                topicsWatcher = null;
                 if (ar.failed()) {
                     logger.error("Error undeploying session", ar.cause());
                     context.fail("Error undeploying session");
@@ -181,66 +216,37 @@ public class ControllerIntegrationTest {
         logger.info("Finished tearing down test");
     }
 
-    private void waitFor(TestContext context, Supplier<Boolean> ready, long timeout, String message) {
-        Async async = context.async();
-        long t0 = System.currentTimeMillis();
-        vertx.setPeriodic(3_000L, timerId-> {
-            // Wait for a configmap to be created
-            if (ready.get()) {
-                async.complete();
-                vertx.cancelTimer(timerId);
+
+    private ConfigMap createCm(TestContext context, ConfigMap cm) {
+        String topicName = new TopicName(cm).toString();
+        // Create a CM
+        kubeClient.configMaps().create(cm);
+
+        // Wait for the topic to be created
+        waitFor(context, ()-> {
+            try {
+                adminClient.describeTopics(singletonList(topicName)).values().get(topicName).get();
+                return true;
+            } catch (ExecutionException e) {
+                if (e.getCause() instanceof UnknownTopicOrPartitionException) {
+                    return false;
+                } else {
+                    throw new RuntimeException(e);
+                }
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
             }
-            long timeLeft = timeout - (System.currentTimeMillis() - t0);
-            if (timeLeft <= 0) {
-                vertx.cancelTimer(timerId);
-                context.fail(message);
-            }
-        });
-        async.await(timeout);
+        }, timeout, "Expected topic to be created by now");
+        return cm;
     }
 
-    @Test
-    public void testTopicAdded(TestContext context) throws Exception {
-        createTopic(context, "test-topic-added");
-    }
-
-    @Test
-    public void testTopicAddedWithEncodableName(TestContext context) throws Exception {
-        createTopic(context, "thest-TOPIC_ADDED");
-    }
-
-    @Test
-    public void testTopicDeleted(TestContext context) throws Exception {
-        createAndDeleteTopic(context, "test-topic-deleted");
-    }
-
-    @Test
-    public void testTopicDeletedWithEncodableName(TestContext context) throws Exception {
-        createAndDeleteTopic(context, "test-TOPIC_DELETED");
-    }
-
-    private void createAndDeleteTopic(TestContext context, String topicName) throws InterruptedException, ExecutionException {
-        String configMapName = createTopic(context, topicName);
-        deleteTopic(context, topicName, configMapName);
-    }
-
-    private void deleteTopic(TestContext context, String topicName, String configMapName) throws InterruptedException, ExecutionException {
-        logger.info("Deleting topic {} (ConfigMap {})", topicName, configMapName);
-        // Now we can delete the topic
-        DeleteTopicsResult dlt = adminClient.deleteTopics(singletonList(topicName));
-        dlt.all().get();
-        logger.info("Deleted topic {}", topicName);
-
-        // Wait for the configmap to be deleted
-        waitFor(context, () -> {
-            ConfigMap cm = kubeClient.configMaps().withName(configMapName).get();
-            logger.info("Polled configmap {}, got {}, waiting for deletion", configMapName, cm);
-            return cm == null;
-        }, timeout, "Expected the configmap to have been deleted by now");
+    private ConfigMap createCm(TestContext context, String topicName) {
+        Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap()).build();
+        ConfigMap cm = TopicSerialization.toConfigMap(topic, cmPredicate);
+        return createCm(context, cm);
     }
 
     private String createTopic(TestContext context, String topicName) throws InterruptedException, ExecutionException {
-        connect(context);
         logger.info("Creating topic {}", topicName);
         // Create a topic
         String configMapName = new TopicName(topicName).asMapName().toString();
@@ -256,21 +262,6 @@ public class ControllerIntegrationTest {
 
         logger.info("configmap {} has been created", configMapName);
         return configMapName;
-    }
-
-    @Test
-    public void testTopicConfigChanged(TestContext context) throws Exception {
-        createAndAlterTopicConfig(context, "test-topic-config-changed");
-    }
-
-    @Test
-    public void testTopicConfigChangedWithEncodableName(TestContext context) throws Exception {
-        createAndAlterTopicConfig(context, "test-TOPIC_CONFIG_CHANGED");
-    }
-
-    private void createAndAlterTopicConfig(TestContext context, String topicName) throws InterruptedException, ExecutionException {
-        String configMapName = createTopic(context, topicName);
-        alterTopicConfig(context, topicName, configMapName);
     }
 
     private void alterTopicConfig(TestContext context, String topicName, String configMapName) throws InterruptedException, ExecutionException {
@@ -322,57 +313,159 @@ public class ControllerIntegrationTest {
         return new ConfigResource(ConfigResource.Type.TOPIC, topicName);
     }
 
+    private void createAndAlterTopicConfig(TestContext context, String topicName) throws InterruptedException, ExecutionException {
+        String configMapName = createTopic(context, topicName);
+        alterTopicConfig(context, topicName, configMapName);
+    }
+
+    private void deleteTopic(TestContext context, String topicName, String configMapName) throws InterruptedException, ExecutionException {
+        logger.info("Deleting topic {} (ConfigMap {})", topicName, configMapName);
+        // Now we can delete the topic
+        DeleteTopicsResult dlt = adminClient.deleteTopics(singletonList(topicName));
+        dlt.all().get();
+        logger.info("Deleted topic {}", topicName);
+
+        // Wait for the configmap to be deleted
+        waitFor(context, () -> {
+            ConfigMap cm = kubeClient.configMaps().withName(configMapName).get();
+            logger.info("Polled configmap {}, got {}, waiting for deletion", configMapName, cm);
+            return cm == null;
+        }, timeout, "Expected the configmap to have been deleted by now");
+    }
+
+    private void createAndDeleteTopic(TestContext context, String topicName) throws InterruptedException, ExecutionException {
+        String configMapName = createTopic(context, topicName);
+        deleteTopic(context, topicName, configMapName);
+    }
+
+
+    private void waitFor(TestContext context, BooleanSupplier ready, long timeout, String message) {
+        Async async = context.async();
+        long t0 = System.currentTimeMillis();
+        Future<Void> fut = Future.future();
+        vertx.setPeriodic(3_000L, timerId-> {
+            // Wait for a configmap to be created
+            boolean isFinished;
+            try {
+                isFinished = ready.getAsBoolean();
+                if (isFinished) {
+                    fut.complete();
+                }
+            } catch (Throwable e) {
+                fut.fail(e);
+                isFinished = true;
+            }
+            if (isFinished) {
+                async.complete();
+                vertx.cancelTimer(timerId);
+            }
+            long timeLeft = timeout - (System.currentTimeMillis() - t0);
+            if (timeLeft <= 0) {
+                vertx.cancelTimer(timerId);
+                context.fail(message);
+            }
+        });
+        async.await(timeout);
+        if (fut.failed()) {
+            context.fail(fut.cause());
+        }
+    }
+
+    private void waitForEvent(TestContext context, ConfigMap cm, String expectedMessage, Controller.EventType expectedType) {
+        waitFor(context, () -> {
+            List<Event> items = kubeClient.events().withLabels(cmPredicate.labels()).list().getItems();
+            List<Event> filtered = items.stream().
+                    filter(evt -> !preExistingEvents.contains(evt.getMetadata().getUid())
+                    && "ConfigMap".equals(evt.getInvolvedObject().getKind())
+                    && cm.getMetadata().getName().equals(evt.getInvolvedObject().getName())).
+                    collect(Collectors.toList());
+            logger.debug("Waiting for events: {}", filtered.stream().map(evt->evt.getMessage()).collect(Collectors.toList()));
+            if (!filtered.isEmpty()) {
+                assertEquals(1, filtered.size());
+                Event event = filtered.get(0);
+
+                assertEquals(expectedMessage, event.getMessage());
+                assertEquals(expectedType.name, event.getType());
+                assertNotNull(event.getInvolvedObject());
+                assertEquals("ConfigMap", event.getInvolvedObject().getKind());
+                assertEquals(cm.getMetadata().getName(), event.getInvolvedObject().getName());
+                return true;
+            } else {
+                return false;
+            }
+        }, timeout, "Expected an error event");
+    }
+
+
+    @Test
+    public void testTopicAdded(TestContext context) throws Exception {
+        createTopic(context, "test-topic-added");
+    }
+
+    @Test
+    public void testTopicAddedWithEncodableName(TestContext context) throws Exception {
+        createTopic(context, "thest-TOPIC_ADDED");
+    }
+
+    @Test
+    public void testTopicDeleted(TestContext context) throws Exception {
+        createAndDeleteTopic(context, "test-topic-deleted");
+    }
+
+    @Test
+    public void testTopicDeletedWithEncodableName(TestContext context) throws Exception {
+        createAndDeleteTopic(context, "test-TOPIC_DELETED");
+    }
+
+    @Test
+    public void testTopicConfigChanged(TestContext context) throws Exception {
+        createAndAlterTopicConfig(context, "test-topic-config-changed");
+    }
+
+    @Test
+    public void testTopicConfigChangedWithEncodableName(TestContext context) throws Exception {
+        createAndAlterTopicConfig(context, "test-TOPIC_CONFIG_CHANGED");
+    }
+
     @Test
     @Ignore
     public void testTopicNumPartitionsChanged(TestContext context) {
-        connect(context);
         context.fail("Implement this");
     }
 
     @Test
     @Ignore
     public void testTopicNumReplicasChanged(TestContext context) {
-        connect(context);
         context.fail("Implement this");
-    }
-
-    private ConfigMap createCm(TestContext context, String topicName) {
-        Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap()).build();
-        ConfigMap cm = TopicSerialization.toConfigMap(topic, cmPredicate);
-
-        // Create a CM
-        kubeClient.configMaps().create(cm);
-
-        // Wait for the topic to be created
-        waitFor(context, ()-> {
-            try {
-                adminClient.describeTopics(singletonList(topicName)).values().get(topicName).get();
-                return true;
-            } catch (ExecutionException e) {
-                if (e.getCause() instanceof UnknownTopicOrPartitionException) {
-                    return false;
-                } else {
-                    throw new RuntimeException(e);
-                }
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }, timeout, "Expected topic to be created by now");
-        return cm;
     }
 
     @Test
     public void testConfigMapAdded(TestContext context) {
-        connect(context);
-
         String topicName = "test-configmap-created";
         createCm(context, topicName);
     }
 
     @Test
-    public void testConfigMapDeleted(TestContext context) {
-        connect(context);
+    public void testConfigMapAddedWithBadData(TestContext context) {
+        String topicName = "test-configmap-created-with-bad-data";
+        Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap()).build();
+        ConfigMap cm = TopicSerialization.toConfigMap(topic, cmPredicate);
+        cm.getData().put(TopicSerialization.CM_KEY_PARTITIONS, "foo");
 
+        // Create a CM
+        kubeClient.configMaps().create(cm);
+
+        // Wait for the warning event
+        waitForEvent(context, cm,
+                "ConfigMap test-configmap-created-with-bad-data has an invalid 'data' section: " +
+                        "ConfigMap's 'data' section has invalid key 'partitions': " +
+                        "should be a strictly positive integer but was 'foo'",
+                Controller.EventType.WARNING);
+
+    }
+
+    @Test
+    public void testConfigMapDeleted(TestContext context) {
         // create the cm
         String topicName = "test-configmap-deleted";
         ConfigMap cm = createCm(context, topicName);
@@ -380,7 +473,7 @@ public class ControllerIntegrationTest {
         // can now delete the cm
         kubeClient.configMaps().withName(cm.getMetadata().getName()).delete();
 
-        // Wait for the topic to be created
+        // Wait for the topic to be deleted
         waitFor(context, ()-> {
             try {
                 adminClient.describeTopics(singletonList(topicName)).values().get(topicName).get();
@@ -398,17 +491,11 @@ public class ControllerIntegrationTest {
 
     }
 
-    private void connect(TestContext context) {
-        waitFor(context, () -> this.topicsWatcher.started(), timeout, "Topic watcher not started");
-        waitFor(context, () -> this.topicsConfigWatcher.started(), timeout, "Topic configs watcher not started");
-        cmWatcher = kubeClient.configMaps().watch(new ConfigMapWatcher(controller, cmPredicate));
-    }
 
     @Test
-    public void testConfigMapModifiedTopicConfigChanged(TestContext context) throws Exception {
-        connect(context);
+    public void testConfigMapModifiedRetentionChanged(TestContext context) throws Exception {
         // create the cm
-        String topicName = "test-configmap-modified";
+        String topicName = "test-configmap-modified-retention-changed";
         ConfigMap cm = createCm(context, topicName);
 
         // now change the cm
@@ -425,33 +512,49 @@ public class ControllerIntegrationTest {
     }
 
     @Test
-    public void testConfigMapModified_ConfigMapNameChanged(TestContext context) throws Exception {
-        connect(context);
+    public void testConfigMapModifiedWithBadData(TestContext context) throws Exception {
         // create the cm
-        String topicName = "test-configmap-modified";
+        String topicName = "test-configmap-modified-with-bad-data";
         ConfigMap cm = createCm(context, topicName);
 
         // now change the cm
-        String cmName = cm.getMetadata().getName();
-        String changedName = cmName+"-changed";
-        ConfigMap patchedMap = new ConfigMapBuilder(cm).editMetadata().withName(changedName).endMetadata().build();
-        kubeClient.configMaps().withName(cmName).patch(patchedMap);
-
-        // now change the cm
-        //kubeClient.configMaps().withName(changedName).edit().addToData(TopicSerialization.CM_KEY_CONFIG, "{\"retention.ms\":\"12341234\"}").done();
+        kubeClient.configMaps().withName(cm.getMetadata().getName()).edit().addToData(TopicSerialization.CM_KEY_PARTITIONS, "foo").done();
 
         // Wait for that to be reflected in the topic
-        waitFor(context, ()-> {
-            ConfigResource configResource = topicConfigResource(topicName);
-            org.apache.kafka.clients.admin.Config config = getTopicConfig(configResource);
-            String retention = config.get("retention.ms").value();
-            logger.debug("retention of {}, waiting for 12341234", retention);
-            return "12341234".equals(retention);
-        },  timeout, "Expected the topic to be updated");
+        waitForEvent(context, cm,
+                "ConfigMap test-configmap-modified-with-bad-data has an invalid 'data' section: " +
+                        "ConfigMap's 'data' section has invalid key 'partitions': " +
+                        "should be a strictly positive integer but was 'foo'",
+                Controller.EventType.WARNING);
+
+        // TODO Check we can change the partitions back and that future changes get handled correctly
+        // TODO What if the topic end gets changed while it's in a broken state?
     }
 
-    // TODO: Test changing CM data/name (expect error, because renaming a topic is not supported in Kafka)
-    // TODO: Test changing CM metadata/name (expect no error)
+    @Test
+    public void testConfigMapModifiedNameChanged(TestContext context) throws Exception {
+        // create the cm
+        String topicName = "test-configmap-modified-name-changed";
+        ConfigMap cm = createCm(context, topicName);
+
+        // now change the cm
+        String changedName = topicName.toUpperCase(Locale.ENGLISH);
+        logger.info("Changing CM data.name from {} to {}", topicName, changedName);
+        kubeClient.configMaps().withName(cm.getMetadata().getName()).edit().addToData(TopicSerialization.CM_KEY_NAME, changedName).done();
+
+        // We expect this to cause a warning event
+        waitForEvent(context, cm,
+                "Kafka topics cannot be renamed, but ConfigMap's data.name has changed.",
+                Controller.EventType.WARNING);
+
+        // TODO Check we can change the data.name back and that future changes get handled correctly
+        // TODO What if the topic end gets changed while the data.name is wrong?
+    }
+
+    // TODO: Test create with bogus cm.data
+    // TODO: Test update with bogus cm.data
+    // TODO: What happens if we create and then change labels to the CM predicate isn't matched any more
+    //       What then happens if we change labels back?
     // TODO: Test create with CM metadata/name=bar,data/name=foo, then create another with metadata/name=foo,data/name=foo (expect error)
     //       How do we know (e.g. on failover) which one we were ignoring? Otherwise we could end up flip-flopping
     // TODO: Test create with CM metadata/name=bar,data/name=foo, then create another with metadata/name=foo (expect error)
