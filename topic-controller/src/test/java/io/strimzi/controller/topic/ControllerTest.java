@@ -649,10 +649,10 @@ public class ControllerTest {
      */
     @Test
     public void testReconcile_withCm_withKafka_withPrivate_3WayMerge(TestContext context) {
-        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short)2, map("cleanup.policy", "bar")).build();
-        Topic kafkaTopic = new Topic.Builder(topicName.toString(), 12, (short)2, map("cleanup.policy", "baz")).build();
-        Topic privateTopic = new Topic.Builder(topicName.toString(), 10, (short)2, map("cleanup.policy", "baz")).build();
-        Topic resultTopic = new Topic.Builder(topicName.toString(), 12, (short)2, map("cleanup.policy", "bar")).build();
+        Topic kubeTopic = new Topic.Builder(topicName, mapName, 10, (short)2, map("cleanup.policy", "bar")).build();
+        Topic kafkaTopic = new Topic.Builder(topicName, mapName, 12, (short)2, map("cleanup.policy", "baz")).build();
+        Topic privateTopic = new Topic.Builder(topicName, mapName, 10, (short)2, map("cleanup.policy", "baz")).build();
+        Topic resultTopic = new Topic.Builder(topicName, mapName, 12, (short)2, map("cleanup.policy", "bar")).build();
 
         Async async0 = context.async(3);
         mockKafka.setCreateTopicResponse(topicName -> Future.succeededFuture());
@@ -734,8 +734,8 @@ public class ControllerTest {
 
     @Test
     public void testOnConfigMapChanged(TestContext context) {
-        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short)2, map("cleanup.policy", "baz")).build();
-        Topic kafkaTopic = new Topic.Builder(topicName.toString(), 10, (short)2, map("cleanup.policy", "bar")).build();
+        Topic kubeTopic = new Topic.Builder(topicName, mapName, 10, (short)2, map("cleanup.policy", "baz")).build();
+        Topic kafkaTopic = new Topic.Builder(topicName, mapName, 10, (short)2, map("cleanup.policy", "bar")).build();
         Topic privateTopic = kafkaTopic;
         ConfigMap cm = TopicSerialization.toConfigMap(kubeTopic, cmPredicate);
 
