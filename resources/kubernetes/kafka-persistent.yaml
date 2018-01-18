@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: kafka
+  name: mycluster
   labels:
     strimzi.io/kind: cluster
     strimzi.io/type: kafka
