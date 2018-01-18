@@ -129,12 +129,12 @@ metadata:
     tags: "messaging,datastore"
     iconClass: "fa fa-share-alt fa-flip-horizontal"
     template.openshift.io/documentation-url: "http://strimzi.io"
-message: "Use 'kafka:9092' as bootstrap server in your application"
+message: "Use 'mycluster-kafka:9092' as bootstrap server in your application"
 parameters:
 - description: All Kubernetes resources will be named after the cluster name
   displayName: Name of the cluster
   name: CLUSTER_NAME
-  value: kafka
+  value: mycluster
 - description: Number of Zookeper cluster nodes which will be deployed (odd number of nodes is recomended)
   displayName: Number of Zookeper cluster nodes (odd number of nodes is recomended)
   name: ZOOKEEPER_NODE_COUNT
@@ -252,12 +252,12 @@ metadata:
     tags: "messaging,datastore"
     iconClass: "fa fa-share-alt fa-flip-horizontal"
     template.openshift.io/documentation-url: "http://strimzi.io"
-message: "Use 'kafka:9092' as bootstrap server in your application"
+message: "Use 'mycluster-kafka:9092' as bootstrap server in your application"
 parameters:
 - description: All Kubernetes resources will be named after the cluster name
   displayName: Name of the cluster
   name: CLUSTER_NAME
-  value: kafka
+  value: mycluster
 - description: Number of Zookeper cluster nodes which will be deployed (odd number of nodes is recomended)
   displayName: Number of Zookeper cluster nodes (odd number of nodes is recomended)
   name: ZOOKEEPER_NODE_COUNT
@@ -385,12 +385,12 @@ metadata:
     tags: "messaging"
     iconClass: "fa fa-exchange"
     template.openshift.io/documentation-url: "http://strimzi.io"
-message: "Use 'kafka-connect:8083' to access Kafka Connect REST API."
+message: "Use 'my-connect-cluster-connect:8083' to access Kafka Connect REST API."
 parameters:
 - description: All Kubernetes resources will be named after the cluster name
   displayName: Name of the cluster
   name: CLUSTER_NAME
-  value: kafka-connect
+  value: my-connect-cluster
 - description: Specifies the number of Kafka Connect instances to be started by default.
   displayName: Number of Kafka Connect instances
   name: INSTANCES
@@ -400,7 +400,7 @@ parameters:
   displayName: Kafka bootstrap servers
   name: KAFKA_CONNECT_BOOTSTRAP_SERVERS
   required: true
-  value: kafka-kafka:9092
+  value: mycluster-kafka:9092
 - description: A unique string that identifies the Connect cluster group this worker belongs to. Note this must not conflict with any consumer group IDs.
   displayName: Group ID
   name: KAFKA_CONNECT_GROUP_ID
