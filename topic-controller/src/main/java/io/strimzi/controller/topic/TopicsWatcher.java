@@ -36,65 +36,85 @@ class TopicsWatcher {
 
     private static final String TOPICS_ZNODE = "/brokers/topics";
 
-    private final ControllerOp controller;
+    private final Controller controller;
+    private final TopicConfigsWatcher tcw;
 
     private List<String> children;
 
-    private volatile boolean stopped = false;
+    private volatile int state = 0;
 
-    TopicsWatcher(ControllerOp controller) {
+    TopicsWatcher(Controller controller, TopicConfigsWatcher tcw) {
         this.controller = controller;
+        this.tcw = tcw;
     }
 
     void stop() {
-        this.stopped = true;
+        this.state = 2;
+    }
+
+    boolean stopped() {
+        return this.state == 3;
+    }
+
+    boolean started() {
+        return this.state == 1;
     }
 
     void start(Zk zk) {
         children = null;
-        zk.children(TOPICS_ZNODE, true, childResult -> {
-            if (stopped) {
-                // TODO not ideal as the Zk instance will continue watching
+        tcw.start(zk);
+        zk.watchChildren(TOPICS_ZNODE, childResult -> {
+            if (state == 2) {
+                zk.unwatchChildren(TOPICS_ZNODE);
                 return;
             }
             if (childResult.failed()) {
                 throw new RuntimeException(childResult.cause());
             }
             List<String> result = childResult.result();
-            logger.debug("znode {} has children {}", TOPICS_ZNODE, result);
-            if (this.children != null) {
-                logger.debug("Current children {}", this.children);
-                Set<String> deleted = new HashSet(this.children);
-                deleted.removeAll(result);
-                if (!deleted.isEmpty()) {
-                    logger.info("Deleted topics: {}", deleted);
-                    for (String topicName : deleted) {
-                        controller.onTopicDeleted(new TopicName(topicName), ar -> {
-                            if (ar.succeeded()) {
-                                logger.debug("Success responding to deletion of topic {}", topicName);
-                            } else {
-                                logger.warn("Error responding to deletion of topic {}", topicName, ar.cause());
-                            }
-                        });
-                    }
-                }
-                Set<String> created = new HashSet(result);
-                created.removeAll(this.children);
-                if (!created.isEmpty()) {
-                    logger.info("Created topics: {}", created);
-                    for (String topicName : created) {
-                        controller.onTopicCreated(new TopicName(topicName), ar -> {
-                            if (ar.succeeded()) {
-                                logger.debug("Success responding to creation of topic {}", topicName);
-                            } else {
-                                logger.warn("Error responding to creation of topic {}", topicName, ar.cause());
-                            }
-                        });
-                    }
+            logger.debug("znode {} now has children {}, previous children {}", TOPICS_ZNODE, result, this.children);
+            Set<String> deleted = new HashSet(this.children);
+            deleted.removeAll(result);
+            Set<String> created = new HashSet(result);
+            created.removeAll(this.children);
+            this.children = result;
+
+            if (!deleted.isEmpty()) {
+                logger.info("Deleted topics: {}", deleted);
+                for (String topicName : deleted) {
+                    tcw.removeChild(topicName);
+                    controller.onTopicDeleted(new TopicName(topicName), ar -> {
+                        if (ar.succeeded()) {
+                            logger.debug("Success responding to deletion of topic {}", topicName);
+                        } else {
+                            logger.warn("Error responding to deletion of topic {}", topicName, ar.cause());
+                        }
+                    });
                 }
             }
-            logger.debug("Setting current children {}", result);
+
+            if (!created.isEmpty()) {
+                logger.info("Created topics: {}", created);
+                for (String topicName : created) {
+                    tcw.addChild(topicName);
+                    controller.onTopicCreated(new TopicName(topicName), ar -> {
+                        if (ar.succeeded()) {
+                            logger.debug("Success responding to creation of topic {}", topicName);
+                        } else {
+                            logger.warn("Error responding to creation of topic {}", topicName, ar.cause());
+                        }
+                    });
+                }
+            }
+
+        }).children(TOPICS_ZNODE, childResult -> {
+            if (childResult.failed()) {
+                throw new RuntimeException(childResult.cause());
+            }
+            List<String> result = childResult.result();
+            logger.debug("Setting initial children {}", result);
             this.children = result;
+            this.state = 1;
         });
     }
 }

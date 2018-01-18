@@ -19,38 +19,69 @@ package io.strimzi.controller.topic;
 
 import io.vertx.core.Future;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
-import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import static java.util.Arrays.asList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(VertxUnitRunner.class)
 public class TopicsWatcherTest {
 
+    private MockController controller;
+    private MockZk mockZk;
+    @Before
+    public void setup() {
+        controller = new MockController();
+        mockZk = new MockZk();
+    }
+
     @Test
     public void testTopicAdd() {
-        MockController controller = new MockController();
+        addTopic();
+    }
+
+    private void addTopic() {
+        controller = new MockController();
         controller.topicCreatedResult = Future.succeededFuture();
-        MockZk mockZk = new MockZk();
+        mockZk = new MockZk();
         mockZk.childrenResult = Future.succeededFuture(asList("foo", "bar"));
-        TopicsWatcher tw = new TopicsWatcher(controller);
+        mockZk.dataResult = Future.succeededFuture(new byte[0]);
+        TopicConfigsWatcher tcw = new TopicConfigsWatcher(controller);
+        TopicsWatcher tw = new TopicsWatcher(controller, tcw);
         tw.start(mockZk);
         mockZk.triggerChildren(Future.succeededFuture(asList("foo", "bar", "baz")));
-        Assert.assertEquals(asList(new MockController.Event(
+        assertEquals(asList(new MockController.Event(
                 MockController.Event.Type.CREATE, new TopicName("baz"))), controller.getEvents());
+        assertTrue(tcw.watching("baz"));
+    }
+
+    @Test
+    public void testTopicConfigChange() {
+        // First add a topic
+        addTopic();
+        // Now change the config
+        controller.clearEvents();
+        mockZk.triggerData(Future.succeededFuture(new byte[0]));
+        assertEquals(asList(new MockController.Event(
+                MockController.Event.Type.MODIFY_CONFIG, new TopicName("baz"))), controller.getEvents());
     }
 
     @Test
     public void testTopicDelete() {
-        MockController controller = new MockController();
+        controller = new MockController();
         controller.topicDeletedResult = Future.succeededFuture();
-        MockZk mockZk = new MockZk();
+        mockZk = new MockZk();
         mockZk.childrenResult = Future.succeededFuture(asList("foo", "bar"));
-        TopicsWatcher tw = new TopicsWatcher(controller);
+        TopicConfigsWatcher tcw = new TopicConfigsWatcher(controller);
+        TopicsWatcher tw = new TopicsWatcher(controller, tcw);
         tw.start(mockZk);
         mockZk.triggerChildren(Future.succeededFuture(asList("foo")));
-        Assert.assertEquals(asList(new MockController.Event(
+        assertEquals(asList(new MockController.Event(
                 MockController.Event.Type.DELETE, new TopicName("bar"))), controller.getEvents());
+        assertFalse(tcw.watching("baz"));
     }
 }

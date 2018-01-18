@@ -32,35 +32,25 @@ import java.util.List;
 public interface Zk {
 
     public static Zk create(Vertx vertx, String zkConnectionString, int sessionTimeout) {
-        return new ZkImpl(vertx, zkConnectionString, sessionTimeout);
+        return new ZkImpl(vertx, zkConnectionString, sessionTimeout, false);
     }
 
-    Zk connect(Handler<AsyncResult<Zk>> handler);
-
     /**
-     * Register a handler to be called when the client gets disconnected from
-     * the zookeeper server/cluster. If the disconnection was caused explicitly
-     * via {@link #disconnect(Handler)} the {@code handler}'s result will be
-     * null, otherwise if the connection was lost for any other reason the
-     * {@code handler}'s result will be the Zk instance.
-     *
-     * The disconnection handler can be used to automatically reconnect
-     * to the server if the connection gets lost.
+     * Disconnect from the ZooKeeper server, synchronously.
      */
-    Zk disconnectionHandler(Handler<AsyncResult<Zk>> handler);
+    Zk disconnect() throws InterruptedException;
 
     /**
-     * Explicitly disconnect from the connected zookeeper.
-     * Any configured {@link #disconnectionHandler(Handler)} will be
-     * invoked with a null result and then the given handler will be invoked.
-     */
-    Zk disconnect(Handler<AsyncResult<Void>> handler);
-
-    /**
-     * Asynchronously create the node at the given path and with the given data and ACL, using the
+     * Asynchronously create the znode at the given path and with the given data and ACL, using the
      * given createMode, then invoke the given handler with the result.
      */
     Zk create(String path, byte[] data, List<ACL> acls, CreateMode createMode, Handler<AsyncResult<Void>> handler);
+
+    /**
+     * Asynchronously delete the znode at the given path, iff the given version is -1 or matches the version of the znode,
+     * then invoke the given handler with the result.
+     */
+    Zk delete(String path, int version, Handler<AsyncResult<Void>> handler);
 
     /**
      * Asynchronously set the data in the znode at the given path to the
@@ -70,47 +60,62 @@ public interface Zk {
     Zk setData(String path, byte[] data, int version, Handler<AsyncResult<Void>> handler);
 
     /**
-     * Register a handler to be called with the children of the given path,
-     * and, if watch is true, whenever the children subsequently change.
-     *
-     * The handler is passed a list, whose order is undefined,
-     * of the paths of the children relative to
-     * the given path. For example, if the path is {@code /foo} and the znode
-     * {@code /foo/bar} is added then the handler will be called with a
-     * list containing {@code bar}, in addition to the other child
-     * znodes of {@code /foo}.
+     * Asynchronously fetch the children of the znode at the given {@code path}, calling the given
+     * handler with the result.
      */
-    Zk children(String path, boolean watch, Handler<AsyncResult<List<String>>> handler);
+    Zk children(String path, Handler<AsyncResult<List<String>>> handler);
 
     /**
-     * Register a handler to be called with the data of the given path,
-     * and, if watch is true, whenever that data subsequently changes.
+     * Set given the children {@code watcher} on the given {@code path}.
+     * A subsequent call to {@link #children(String, Handler)} with the same path will register the child {@code watcher}
+     * for the given {@code path} current at that time with zookeeper so
+     * that that {@code watcher} is called when the children of the given {@code path} change.
      */
-    Zk setData(String path, boolean watch, Handler<AsyncResult<byte[]>> handler);
+    Zk watchChildren(String path, Handler<AsyncResult<List<String>>> watcher);
 
     /**
-     * Delete the znode at the given path, iff the given version is -1 or matches the version of the znode,
-     * then invoke the given handler with the result.
+     * Remove the children watcher, if any, for the given {@code path}.
      */
-    Zk delete(String path, int version, Handler<AsyncResult<Void>> handler);
+    Zk unwatchChildren(String path);
 
     /**
-     * Add the given watcher to watch for changes to the given path.
-     * The watcher will be called initially upon registration and
-     * whenever a znode at the path is created or deleted.
+     * Asynchronously fetch the data of the given znode at the given path, calling the given handler
+     * with the result.
      */
-    Zk watchExists(String path, Handler<AsyncResult<Stat>> watcher, Handler<AsyncResult<Stat>> complete);
+    Zk getData(String path, Handler<AsyncResult<byte[]>> handler);
 
     /**
-     * Remove the given watcher that was previously added for watching existence changes to the given path.
-     * It is not an error if the given watcher was not actually watching the given path.
+     * Set given the data {@code watcher} on the given {@code path}.
+     * A subsequent call to {@link #getData(String, Handler)} with the same path will register the data {@code watcher}
+     * for the given {@code path} current at that time with zookeeper so
+     * that that {@code watcher} is called when the data of the given {@code path} changes.
      */
-    Zk unwatchExists(String path, Handler<AsyncResult<Stat>> watcher, Handler<AsyncResult<Void>> complete);
+    Zk watchData(String path, Handler<AsyncResult<byte[]>> watcher);
 
     /**
-     * Check whether a znode exists at the given path.
+     * Remove the data watcher, if any, for the given {@code path}.
+     */
+    Zk unwatchData(String path);
+
+    /**
+     * Asynchronously check whether a znode exists at the given {@code path},
+     * calling the given handler with the result.
+     * The result will be null if no znode existed at the given {@code path}.
      */
     Zk exists(String path, Handler<AsyncResult<Stat>> handler);
+
+    /**
+     * Set given the existence {@code watcher} on the given {@code path}.
+     * A subsequent call to {@link #exists(String, Handler)} with the same path will register the existence {@code watcher}
+     * for the given {@code path} current at that time with zookeeper so
+     * that that {@code watcher} is called when a znode at that path is created or deleted.
+     */
+    Zk watchExists(String path, Handler<AsyncResult<Stat>> watcher);
+
+    /**
+     * Remove the existence watcher, if any, for the given {@code path}.
+     */
+    Zk unwatchExists(String path);
 
     // TODO getAcl(), setAcl(), multi()
 

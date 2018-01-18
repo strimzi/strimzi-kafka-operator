@@ -17,144 +17,127 @@
 
 package io.strimzi.controller.topic;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Keeps track of all the in-flight changes so we don't respond to changes we ourselves initiated.
+ * Inflight tracks the current reconciliation jobs being done, and prevents
+ * us from trying to handling a change that we caused while we're still
+ * handling the original change.
+ *
+ * For example, consider this linearization:
+ * 1. User creates a topic in Kafka
+ * 2. Controller notified of topic creation via ZooKeeper.
+ * 3. Controller creates ConfigMap due to event 1.
+ * 4. Controller notified of ConfigMap creation via Kubernetes
+ *
+ * Without Inflight the processing for event 1 is not complete (we've not created the
+ * topic in the private topic store), so the linearization can proceed like this:
+ *
+ * 5. Controller creates private topic in topic store due to event 1.
+ * 6. Controller creates private topic in topic sture doe to event 4.
+ *    Exception because that private topic already exists.
+ *
+ * With Inflight the processing for the ConfigMap creation is deferred until all the processing
+ * due to event 1 is complete. The reconciliation algorithm is smart
+ * enough realize, when reconciling the ConfigMap creation that the Kafka
+ * and TopicStore state is already correct, and so the reconciliation is a noop.
  */
-public class InFlight {
-
-    // TODO Could this actually check that the states of the topics match?
-    // Because right now there can be a race if both ends get changed at about
-    // the same time. In practice this is unlikely to be a problem, but it
-    // would be good to eliminiate it
+class InFlight<T> {
 
     private final static Logger logger = LoggerFactory.getLogger(InFlight.class);
 
-    public void startCreatingTopic(TopicName topicName) {
-        pending.put(topicName, State.TOPIC_CREATE);
-    }
+    private final Vertx vertx;
 
-    public void startDeletingTopic(TopicName topicName) {
-        // TODO assert no existing mapping
-        pending.put(topicName, State.TOPIC_DELETE);
-    }
+    private final ConcurrentHashMap<T, InflightHandler> map = new ConcurrentHashMap<>();
 
-    public boolean shouldProcessDelete(TopicName topicName) {
-        State pendingState = pending.remove(topicName);
-        if (pendingState != null) {
-            if (pendingState != State.TOPIC_DELETE) {
-                logger.error("This shouldn't happen", topicName);
-            } else {
-                logger.info("Topic {} was deleted by me, so no need to reconcile", topicName);
+    class InflightHandler implements Handler<AsyncResult<Void>> {
+
+        private final Handler<AsyncResult<Void>> h1;
+        private final Handler<AsyncResult<Void>> h2;
+        private final String fur;
+        private Handler<AsyncResult<Void>> h3;
+        private final Future<Void> fut;
+
+        public InflightHandler(T key, String fur, Handler<AsyncResult<Void>> h1) {
+            this.fur = fur;
+            this.h1 = h1;
+            this.h2 = x-> {
+                // remove from map if fut is the current key
+                map.compute(key, (k2, v)-> {
+                    if (v == this) {
+                        logger.debug("Removing finished action {}", this);
+                        return null;
+                    } else {
+                        return v;
+                    }
+                });
+            };
+            Future<Void> fut = Future.future();
+            this.fut = fut;
+            fut.setHandler(this);
+        }
+
+        @Override
+        public void handle(AsyncResult<Void> event) {
+            h1.handle(event);
+            h2.handle(event);
+            if (h3 != null) {
+                h3.handle(event);
             }
-            return false;
-        } else {
-            return true;
+        }
+
+        public void setHandler(Handler<AsyncResult<Void>> h3) {
+            this.h3 = h3;
+        }
+
+        public String toString() {
+            return fur;
         }
     }
 
-    public boolean shouldProcessTopicCreate(TopicName topicName) {
-        State pendingState = pending.remove(topicName);
-        if (pendingState != null) {
-            if (pendingState != State.TOPIC_CREATE) {
-                logger.error("This shouldn't happen", topicName);
+    public InFlight(Vertx vertx) {
+        this.vertx = vertx;
+    }
+
+
+    /**
+     * Run the given {@code action} on the context thread,
+     * immediately if there are currently no other actions with the given {@code key},
+     * or when the other actions with the given {@code key} have completed.
+     * When the given {@code action} is complete it must complete its argument future,
+     * which will complete the given {@code resultHandler}.
+     */
+    public void enqueue(T key, Handler<AsyncResult<Void>> resultHandler, Handler<Future<Void>> action) {
+        InflightHandler fut = new InflightHandler(key, action.toString(), resultHandler);
+        logger.debug("resultHandler:{}, action:{}, fut:{}", resultHandler, action, fut);
+        map.compute(key, (k, current) -> {
+            if (current == null) {
+                logger.debug("Queueing {} for immediate execution", action);
+                vertx.runOnContext(ignored-> action.handle(fut.fut));
+                return fut;
             } else {
-                logger.info("Topic {} was created by me, so no need to reconcile", topicName);
+                logger.debug("Queueing {} for deferred execution after {}", action, current);
+                current.setHandler(ar -> {
+                    logger.debug("Queueing {} after deferred execution", action);
+                    vertx.runOnContext(ar2 ->
+                            action.handle(fut.fut) );
+                });
+                return fut;
             }
-            return false;
-        } else {
-            return true;
-        }
+        });
     }
 
-    public boolean shouldProcessConfigMapAdded(TopicName topicName) {
-        State pendingState = pending.remove(topicName);
-        if (pendingState != null) {
-            if (pendingState != State.CM_CREATE) {
-                logger.error("This shouldn't happen", topicName);
-            } else {
-                logger.info("ConfigMap for topic {} was created by me, so no need to reconcile", topicName);
-            }
-            return false;
-        } else {
-            return true;
-        }
-    }
-
-    public boolean shouldProcessConfigMapModified(TopicName topicName) {
-        State pendingState = pending.remove(topicName);
-        if (pendingState != null) {
-            if (pendingState != State.CM_UPDATE) {
-                logger.error("This shouldn't happen", topicName);
-            } else {
-                logger.info("ConfigMap for topic {} was modified by me, so no need to reconcile", topicName);
-            }
-            return false;
-        } else {
-            return true;
-        }
-    }
-
-    public boolean shouldProcessConfigMapDeleted(TopicName topicName) {
-        State pendingState = pending.remove(topicName);
-        if (pendingState != null) {
-            if (pendingState != State.CM_DELETE) {
-                logger.error("This shouldn't happen", topicName);
-            } else {
-                logger.info("ConfigMap for topic {} was deleted by me, so no need to reconcile", topicName);
-            }
-            return false;
-        } else {
-            return true;
-        }
-    }
-
-    public boolean shouldProcessTopicConfigChange(TopicName topicName) {
-        State pendingState = pending.remove(topicName);
-        if (pendingState != null) {
-            if (pendingState != State.TOPIC_UPDATE_CONFIG) {
-                logger.error("This shouldn't happen", topicName);
-            } else {
-                logger.info("Config change for topic {} was initiated by me, so no need to reconcile", topicName);
-            }
-            return false;
-        } else {
-            return true;
-        }
-    }
-
-    enum State {
-        CM_CREATE,
-        CM_DELETE,
-        CM_UPDATE,
-        TOPIC_CREATE,
-        TOPIC_DELETE,
-        TOPIC_UPDATE_CONFIG
-    }
-    // track changes we caused, so we don't try to update zk for a cm change we
-    // make because of a zk change... They're accessed by the both the
-    // ZK and topic-controller-executor threads
-    private final Map<TopicName, State> pending = Collections.synchronizedMap(new HashMap());
-
-    public void startUpdatingConfigMap(ConfigMap cm) {
-        // TODO Assert no existing mapping
-        pending.put(new TopicName(cm), State.CM_UPDATE);
-    }
-
-    public void startCreatingConfigMap(ConfigMap cm) {
-        // TODO Assert no existing mapping
-        pending.put(new TopicName(cm), State.CM_CREATE);
-    }
-
-    public void startDeletingConfigMap(TopicName topicName) {
-        // TODO Assert no existing mapping
-        pending.put(topicName, State.CM_DELETE);
+    /**
+     * The number of keys with inflight actions.
+     */
+    public int size() {
+        return map.size();
     }
 }

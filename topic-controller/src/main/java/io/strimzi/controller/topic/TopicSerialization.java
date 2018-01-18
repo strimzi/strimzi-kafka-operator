@@ -18,15 +18,20 @@
 package io.strimzi.controller.topic;
 
 import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import kafka.log.LogConfig;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.config.ConfigResource;
+import org.apache.kafka.common.errors.InvalidTopicException;
+import scala.collection.Iterator;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -38,6 +43,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 import static java.lang.String.format;
 
@@ -58,21 +64,61 @@ public class TopicSerialization {
     public static final String JSON_KEY_REPLICAS = "replicas";
     public static final String JSON_KEY_CONFIG = "config";
 
-    private static Map<String, String> topicConfigFromConfigMapString(Map<String, String> mapData) throws IOException {
+    private static Map<String, String> topicConfigFromConfigMapString(ConfigMap cm) {
+        Map<String, String> mapData = cm.getData();
         String value = mapData.get(CM_KEY_CONFIG);
+        Map<Object, Object> result;
         if (value == null || value.isEmpty()) {
-            return Collections.emptyMap();
+            result = Collections.emptyMap();
         } else {
-            YAMLFactory yf = new YAMLFactory();
-            ObjectMapper mapper = new ObjectMapper(yf);
-            Map<String, String> result = mapper.readValue(new StringReader(value), Map.class);
-            return result;
+            try {
+                ObjectMapper mapper = objectMapper();
+                result = mapper.readValue(new StringReader(value) {
+                    @Override
+                    public String toString() {
+                        return "'config' key of 'data' section of ConfigMap '" +cm.getMetadata().getName() + "' in namespace '" + cm.getMetadata().getNamespace() + "'";
+                    }
+                }, Map.class);
+            } catch (IOException e) {
+                throw new InvalidConfigMapException(cm, "ConfigMap's 'data' section has invalid key '" +
+                        CM_KEY_CONFIG + "': " + (e.getMessage() != null ? e.getMessage() : e.toString()));
+            }
         }
+        Set<String> supportedConfigs = getSupportedTopicConfigs();
+        for (Map.Entry<Object, Object> entry : result.entrySet()) {
+            Object key = entry.getKey();
+            String msg = null;
+            if (!(key instanceof String)) {
+                msg = "The must be of type String, not of type " + key.getClass();
+            }
+            Object v = entry.getValue();
+            if (v == null) {
+                msg = "The value corresponding to the key must have a String value, not null";
+            } else if (!(v instanceof String)) {
+                msg = "The value corresponding to the key must have a String value, not a value of type " + v.getClass();
+            }
+            if (!supportedConfigs.contains(key)) {
+                msg = "The allowed configs keys are "+ supportedConfigs;
+            }
+            if (msg != null) {
+                throw new InvalidConfigMapException(cm, "ConfigMap's 'data' section has invalid key '" +
+                        CM_KEY_CONFIG + "': The key '" + key +"' of the topic config is invalid: " + msg);
+            }
+        }
+        return (Map)result;
+    }
+
+    private static Set<String> getSupportedTopicConfigs() {
+        Set<String> supportedKeys = new TreeSet<>();
+        Iterator<String> it = LogConfig.configNames().iterator();
+        while (it.hasNext()) {
+            supportedKeys.add(it.next());
+        }
+        return supportedKeys;
     }
 
     private static String topicConfigToConfigMapString(Map<String, String> config) throws IOException {
-        YAMLFactory yf = new YAMLFactory();
-        ObjectMapper mapper = new ObjectMapper(yf);
+        ObjectMapper mapper = objectMapper();
         StringWriter sw = new StringWriter();
         mapper.writeValue(sw, config);
         return sw.toString();
@@ -80,21 +126,76 @@ public class TopicSerialization {
 
     /**
      * Create a Topic to reflect the given ConfigMap.
+     * @throws InvalidConfigMapException
      */
     public static Topic fromConfigMap(ConfigMap cm) {
-        Map<String, String> mapData = cm.getData();
+        if (cm == null) {
+            return null;
+        }
         String name = cm.getMetadata().getName();
         Topic.Builder builder = new Topic.Builder()
                 .withMapName(cm.getMetadata().getName())
-                .withTopicName(mapData.getOrDefault(CM_KEY_NAME, name))
-                .withNumPartitions(Integer.parseInt(mapData.get(CM_KEY_PARTITIONS)))
-                .withNumReplicas(Short.parseShort(mapData.get(CM_KEY_REPLICAS)));
-        try {
-            builder.withConfig(topicConfigFromConfigMapString(mapData));
-        } catch (IOException e) {
-            throw new RuntimeException("Error parsing key '"+ CM_KEY_CONFIG +"' of ConfigMap '"+ name +"'", e);
-        }
+                .withTopicName(getTopicName(cm))
+                .withNumPartitions(getPartitions(cm))
+                .withNumReplicas(getReplicas(cm))
+                .withConfig(topicConfigFromConfigMapString(cm));
         return builder.build();
+    }
+
+    private static String getTopicName(ConfigMap cm) {
+        Map<String, String> mapData = cm.getData();
+        String prefix = "ConfigMap's 'data' section has invalid '" + CM_KEY_NAME + "' key: ";
+        String topicName = mapData.get(CM_KEY_NAME);
+        if (topicName == null) {
+            topicName = cm.getMetadata().getName();
+            prefix = "ConfigMap's 'data' section lacks a '" + CM_KEY_NAME + "' key and ConfigMap's name is invalid as a topic name: ";
+        }
+        try {
+            org.apache.kafka.common.internals.Topic.validate(topicName);
+        } catch (InvalidTopicException e) {
+            throw new InvalidConfigMapException(cm, prefix + e.getMessage());
+        }
+        return topicName;
+    }
+
+    private static short getReplicas(ConfigMap cm) {
+        Map<String, String> mapData = cm.getData();
+        String str = mapData.get(CM_KEY_REPLICAS);
+        if (str == null) {
+            throw new InvalidConfigMapException(cm, "ConfigMap's 'data' section lacks required key '" +
+                    CM_KEY_REPLICAS + "', which should be a strictly positive integer");
+        }
+        short num;
+        try {
+            num = Short.parseShort(str);
+            if (num <= 0) {
+                throw new NumberFormatException();
+            }
+        } catch (NumberFormatException e) {
+            throw new InvalidConfigMapException(cm, "ConfigMap's 'data' section has invalid key '" +
+                    CM_KEY_REPLICAS + "': should be a strictly positive integer but was '" + str + "'");
+        }
+        return num;
+    }
+
+    private static int getPartitions(ConfigMap cm) {
+        Map<String, String> mapData = cm.getData();
+        String str = mapData.get(CM_KEY_PARTITIONS);
+        if (str == null) {
+            throw new InvalidConfigMapException(cm, "ConfigMap's 'data' section lacks required key '" +
+                    CM_KEY_PARTITIONS + "', which should be a strictly positive integer");
+        }
+        int num;
+        try {
+            num = Integer.parseInt(str);
+            if (num <= 0) {
+                throw new NumberFormatException();
+            }
+        } catch (NumberFormatException e) {
+            throw new InvalidConfigMapException(null, "ConfigMap's 'data' section has invalid key '" +
+                    CM_KEY_PARTITIONS + "': should be a strictly positive integer but was '" + str + "'");
+        }
+        return num;
     }
 
     /**
@@ -164,21 +265,27 @@ public class TopicSerialization {
         for (Map.Entry<String, String> entry : topic.getConfig().entrySet()) {
             configEntries.add(new ConfigEntry(entry.getKey(), entry.getValue()));
         }
+        Config config = new Config(configEntries);
         return Collections.singletonMap(
                 new ConfigResource(ConfigResource.Type.TOPIC, topic.getTopicName().toString()),
-                new Config(configEntries));
+                config);
     }
 
     /**
      * Create a Topic to reflect the given TopicMetadata.
      */
     public static Topic fromTopicMetadata(TopicMetadata meta) {
+        if (meta == null) {
+            return null;
+        }
         Topic.Builder builder = new Topic.Builder()
                 .withTopicName(meta.getDescription().name())
                 .withNumPartitions(meta.getDescription().partitions().size())
                 .withNumReplicas((short)meta.getDescription().partitions().get(0).replicas().size());
         for (ConfigEntry entry: meta.getConfig().entries()) {
-            builder.withConfigEntry(entry.name(), entry.value());
+            if (!entry.isDefault()) {
+                builder.withConfigEntry(entry.name(), entry.value());
+            }
         }
         return builder.build();
     }
@@ -188,8 +295,7 @@ public class TopicSerialization {
      * This is what is stored in the znodes owned by the {@link ZkTopicStore}.
      */
     public static byte[] toJson(Topic topic) {
-        JsonFactory yf = new JsonFactory();
-        ObjectMapper mapper = new ObjectMapper(yf);
+        ObjectMapper mapper = objectMapper();
         ObjectNode root = mapper.createObjectNode();
         // TODO Do we store the k8s name here too?
         // TODO Do we store the k9s uid here?
@@ -217,8 +323,7 @@ public class TopicSerialization {
      * This is what is stored in the znodes owned by the {@link ZkTopicStore}.
      */
     public static Topic fromJson(byte[] json) {
-        JsonFactory yf = new JsonFactory();
-        ObjectMapper mapper = new ObjectMapper(yf);
+        ObjectMapper mapper = objectMapper();
         Map<String, Object> root = null;
         try {
             root = mapper.readValue(json, Map.class);
@@ -234,6 +339,11 @@ public class TopicSerialization {
             builder.withConfigEntry(entry.getKey(), entry.getValue());
         }
         return builder.build();
+    }
+
+    private static ObjectMapper objectMapper() {
+        JsonFactory jf = new JsonFactory();
+        return new ObjectMapper(jf);
     }
 
 }

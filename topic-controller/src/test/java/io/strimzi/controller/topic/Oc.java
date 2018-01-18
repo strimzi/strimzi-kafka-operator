@@ -17,21 +17,30 @@
 
 package io.strimzi.controller.topic;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.io.IOException;
+import java.util.Arrays;
 
-/***/
-@Target({ElementType.PARAMETER, ElementType.FIELD, ElementType.LOCAL_VARIABLE, ElementType.METHOD})
-@Retention(RetentionPolicy.SOURCE)
-@Documented
-@interface NotNull {
-}
+public class Oc {
 
-@Target({ElementType.PARAMETER, ElementType.FIELD, ElementType.LOCAL_VARIABLE, ElementType.METHOD})
-@Retention(RetentionPolicy.SOURCE)
-@Documented
-@interface Nullable {
+    public void clusterUp() throws Exception {
+        exec(new String[]{"oc", "cluster", "up"});
+    }
+
+    private void exec(String[] cmd) throws IOException, InterruptedException, OcException {
+        ProcessBuilder pb = new ProcessBuilder(cmd);
+        Process p = pb.start();
+        int sc = p.waitFor();
+        if (sc != 0) {
+            throw new OcException(Arrays.toString(cmd) + " got status code " + sc);
+        }
+    }
+
+    public void clusterDown() throws Exception {
+        exec(new String[]{"oc", "cluster", "down"});
+    }
+
+    public String masterUrl() {
+        return "https://localhost:8443";
+    }
+
 }

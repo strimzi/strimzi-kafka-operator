@@ -28,6 +28,7 @@ import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.apache.kafka.clients.admin.Config;
+import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.TopicPartitionInfo;
@@ -39,6 +40,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -52,7 +54,7 @@ public class ControllerTest {
 
     private final LabelPredicate cmPredicate = new LabelPredicate(
             "kind", "topic",
-            "app", "barnabas");
+            "app", "strimzi");
 
     private final TopicName topicName = new TopicName("my-topic");
     private final MapName mapName = topicName.asMapName();
@@ -60,15 +62,14 @@ public class ControllerTest {
     private MockKafka mockKafka = new MockKafka();
     private MockTopicStore mockTopicStore = new MockTopicStore();
     private MockK8s mockK8s = new MockK8s();
-    private Controller op;
+    private Controller controller;
 
     @Before
     public void setup() {
         mockKafka = new MockKafka();
         mockTopicStore = new MockTopicStore();
         mockK8s = new MockK8s();
-        op = new Controller(vertx, mockKafka, mockK8s, cmPredicate);
-        op.setTopicStore(mockTopicStore);
+        controller = new Controller(vertx, mockKafka, mockK8s, mockTopicStore, cmPredicate);
     }
 
     @After
@@ -77,7 +78,7 @@ public class ControllerTest {
         mockKafka = null;
         mockTopicStore = null;
         mockK8s = null;
-        op = null;
+        controller = null;
     }
 
     private Map<String, String> map(String... pairs) {
@@ -104,14 +105,55 @@ public class ControllerTest {
         return new TopicMetadata(desc, config);
     }
 
+    private TopicMetadata getTopicMetadata(Topic kubeTopic) {
+        List<Node> nodes = new ArrayList<>();
+        for (int nodeId = 0; nodeId < kubeTopic.getNumReplicas(); nodeId++) {
+            nodes.add(new Node(nodeId, "localhost", 9092+nodeId));
+        }
+        List<TopicPartitionInfo> partitions = new ArrayList<>();
+        for (int partitionId = 0; partitionId < kubeTopic.getNumPartitions(); partitionId++) {
+            partitions.add(new TopicPartitionInfo(partitionId, nodes.get(0), nodes, nodes));
+        }
+        List<ConfigEntry> configs = new ArrayList<>();
+        for (Map.Entry<String,String> entry: kubeTopic.getConfig().entrySet()) {
+            configs.add(new ConfigEntry(entry.getKey(), entry.getValue()));
+        }
+
+        return new TopicMetadata(new TopicDescription(kubeTopic.getTopicName().toString(), false,
+                partitions), new Config(configs));
+    }
+
     /** Test what happens when a non-topic config map gets created in kubernetes */
     @Test
     public void testOnConfigMapAdded_ignorable(TestContext context) {
         ConfigMap cm = new ConfigMapBuilder().withNewMetadata().withName("non-topic").endMetadata().build();
 
         Async async = context.async();
-        op.onConfigMapAdded(cm, ar -> {
+        controller.onConfigMapAdded(cm, ar -> {
             assertSucceeded(context, ar);
+            mockKafka.assertEmpty(context);
+            mockTopicStore.assertEmpty(context);
+            async.complete();
+
+        });
+    }
+
+    /** Test what happens when a non-topic config map gets created in kubernetes */
+    @Test
+    public void testOnConfigMapAdded_invalidCm(TestContext context) {
+        Map<String, String> data = new HashMap<>();
+        data.put(TopicSerialization.CM_KEY_REPLICAS, "1");
+        data.put(TopicSerialization.CM_KEY_PARTITIONS, "1");
+        data.put(TopicSerialization.CM_KEY_CONFIG, "{null:null}");
+        ConfigMap cm = new ConfigMapBuilder().withNewMetadata().withName("invalid").withLabels(cmPredicate.labels()).endMetadata().
+                withData(data).build();
+
+        Async async = context.async();
+        controller.onConfigMapAdded(cm, ar -> {
+            assertFailed(context, ar);
+            context.assertTrue(ar.cause() instanceof InvalidConfigMapException);
+            context.assertEquals("ConfigMap's 'data' section has invalid key 'config': Unexpected character ('n' (code 110)): was expecting double-quote to start field name\n" +
+                    " at [Source: 'config' key of 'data' section of ConfigMap 'invalid' in namespace 'null'; line: 1, column: 3]", ar.cause().getMessage());
             mockKafka.assertEmpty(context);
             mockTopicStore.assertEmpty(context);
             async.complete();
@@ -125,6 +167,7 @@ public class ControllerTest {
      */
     private Controller configMapAdded(TestContext context, Exception createException, Exception storeException) {
         mockKafka.setCreateTopicResponse(topicName.toString(), createException);
+        mockKafka.setTopicMetadataResponse(topicName, null, null);
         mockTopicStore.setCreateTopicResponse(topicName, storeException);
 
         ConfigMap cm = new ConfigMapBuilder().withNewMetadata()
@@ -135,7 +178,7 @@ public class ControllerTest {
 
         Async async = context.async();
 
-        op.onConfigMapAdded(cm, ar -> {
+        controller.onConfigMapAdded(cm, ar -> {
             if (createException != null
                     || storeException != null) {
                 assertFailed(context, ar);
@@ -145,7 +188,7 @@ public class ControllerTest {
                 } else {
                     expectedExceptionType = storeException.getClass();
                 }
-                context.assertEquals(expectedExceptionType, ar.cause().getClass());
+                context.assertEquals(expectedExceptionType, ar.cause().getClass(), ar.cause().getMessage());
                 TopicName topicName = TopicSerialization.fromConfigMap(cm).getTopicName();
                 if (createException != null) {
                     mockKafka.assertNotExists(context, topicName);
@@ -164,7 +207,7 @@ public class ControllerTest {
             async.complete();
         });
 
-        return op;
+        return controller;
     }
 
     /**
@@ -231,7 +274,7 @@ public class ControllerTest {
         mockK8s.setCreateResponse(mapName, null);
 
         Async async = context.async();
-        op.onTopicCreated(topicName, ar -> {
+        controller.onTopicCreated(topicName, ar -> {
             assertSucceeded(context, ar);
             mockK8s.assertExists(context, mapName);
             mockTopicStore.assertContains(context, TopicSerialization.fromTopicMetadata(topicMetadata));
@@ -257,7 +300,7 @@ public class ControllerTest {
             if (count == 3) {
                 return Future.succeededFuture(topicMetadata);
             } else if (count < 3) {
-                return Future.failedFuture(new UnknownTopicOrPartitionException());
+                return Future.succeededFuture(null);
             }
             context.fail("This should never happen");
             return Future.failedFuture("This should never happen");
@@ -265,7 +308,7 @@ public class ControllerTest {
         mockK8s.setCreateResponse(mapName, null);
 
         Async async = context.async();
-        op.onTopicCreated(topicName, ar -> {
+        controller.onTopicCreated(topicName, ar -> {
             assertSucceeded(context, ar);
             context.assertEquals(4, counter.get());
             mockK8s.assertExists(context, mapName);
@@ -274,11 +317,11 @@ public class ControllerTest {
         });
     }
 
-    private void assertSucceeded(TestContext context, AsyncResult<Void> ar) {
+    private <T> void assertSucceeded(TestContext context, AsyncResult<T> ar) {
         context.assertTrue(ar.succeeded(), ar.cause() != null ? ar.cause().toString(): "");
     }
 
-    private void assertFailed(TestContext context, AsyncResult<Void> ar) {
+    private <T> void assertFailed(TestContext context, AsyncResult<T> ar) {
         context.assertFalse(ar.succeeded(), ar.failed() ? "" : ar.result().toString());
     }
 
@@ -291,15 +334,58 @@ public class ControllerTest {
     public void testOnTopicCreated_retryTimeout(TestContext context) {
         TopicMetadata topicMetadata = getTopicMetadata();
 
-        mockKafka.setTopicMetadataResponse(topicName, null, new UnknownTopicOrPartitionException());
+        mockKafka.setTopicMetadataResponse(topicName, null, null);
 
         Async async = context.async();
-        op.onTopicCreated(topicName, ar -> {
+        controller.onTopicCreated(topicName, ar -> {
             assertFailed(context, ar);
             context.assertEquals(ar.cause().getClass(), MaxAttemptsExceededException.class);
             mockK8s.assertNotExists(context, mapName);
             mockTopicStore.assertNotExists(context, topicName);
             async.complete();
+        });
+    }
+
+    /**
+     * 0. ZK notifies of a change in topic config
+     * 1. controller gets updated topic metadata
+     * 2. controller updates k8s and topic store.
+     */
+    @Test
+    public void testOnTopicChanged(TestContext context) {
+        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short)2, map("cleanup.policy", "bar")).build();
+        Topic kafkaTopic = new Topic.Builder(topicName.toString(), 10, (short)2, map("cleanup.policy", "baz")).build();
+        Topic privateTopic = kubeTopic;
+        ConfigMap cm = TopicSerialization.toConfigMap(kubeTopic, cmPredicate);
+
+        mockKafka.setCreateTopicResponse(topicName.toString(), null)
+                .createTopic(kafkaTopic, ar -> {});
+        mockKafka.setTopicMetadataResponse(topicName, getTopicMetadata(kafkaTopic), null);
+        //mockKafka.setUpdateTopicResponse(topicName -> Future.succeededFuture());
+
+        mockTopicStore.setCreateTopicResponse(topicName, null)
+                .create(privateTopic, ar -> {});
+        mockTopicStore.setUpdateTopicResponse(topicName, null);
+
+        mockK8s.setCreateResponse(mapName, null)
+                .createConfigMap(cm, ar->{});
+        mockK8s.setModifyResponse(mapName, null);
+
+        Async async = context.async(3);
+        controller.onTopicConfigChanged(topicName, ar-> {
+            assertSucceeded(context, ar);
+            context.assertEquals("baz", mockKafka.getTopicState(topicName).getConfig().get("cleanup.policy"));
+            mockTopicStore.read(topicName, ar2-> {
+                assertSucceeded(context, ar2);
+                context.assertEquals("baz", ar2.result().getConfig().get("cleanup.policy"));
+                async.countDown();
+            });
+            mockK8s.getFromName(mapName, ar2-> {
+                assertSucceeded(context, ar2);
+                context.assertEquals("baz", TopicSerialization.fromConfigMap(ar2.result()).getConfig().get("cleanup.policy"));
+                async.countDown();
+            });
+            async.countDown();
         });
     }
 
@@ -311,20 +397,29 @@ public class ControllerTest {
      */
     @Test
     public void testReconcile_withCm_noKafka_noPrivate(TestContext context) {
+
+        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short)2, map("cleanup.policy", "bar")).build();
+        Topic kafkaTopic = null;
+        Topic privateTopic = null;
+
+        Async async0 = context.async();
         mockKafka.setCreateTopicResponse(topicName.toString(), null);
 
         mockTopicStore.setCreateTopicResponse(topicName, null);
+        mockK8s.setCreateResponse(topicName.asMapName(), null);
+        mockK8s.createConfigMap(TopicSerialization.toConfigMap(kubeTopic, cmPredicate), ar -> async0.countDown());
 
-        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short)2, map("foo", "bar")).build();
-        Topic kafkaTopic = null;
-        Topic privateTopic = null;
-        Async async = context.async();
-        op.reconcile(null, kubeTopic, kafkaTopic, privateTopic, reconcileResult -> {
+        Async async = context.async(1);
+        controller.reconcile(null, kubeTopic, kafkaTopic, privateTopic, reconcileResult -> {
             assertSucceeded(context, reconcileResult);
             mockKafka.assertExists(context, kubeTopic.getTopicName());
             mockTopicStore.assertExists(context, kubeTopic.getTopicName());
             mockK8s.assertNoEvents(context);
-            async.complete();
+            mockTopicStore.read(topicName, readResult -> {
+                assertSucceeded(context, readResult);
+                context.assertEquals(kubeTopic, readResult.result());
+                async.countDown();
+            });
         });
     }
 
@@ -335,38 +430,279 @@ public class ControllerTest {
     @Test
     public void testReconcile_withCm_noKafka_withPrivate(TestContext context) {
 
-        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short)2, map("foo", "bar")).build();
+        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short)2, map("cleanup.policy", "bar")).build();
         Topic kafkaTopic = null;
         Topic privateTopic = kubeTopic;
 
+        Async async0 = context.async(2);
         mockK8s.setCreateResponse(mapName, null)
-                .createConfigMap(TopicSerialization.toConfigMap(kubeTopic, cmPredicate), ar -> {});
+                .createConfigMap(TopicSerialization.toConfigMap(kubeTopic, cmPredicate), ar -> async0.countDown());
         mockK8s.setDeleteResponse(topicName, null);
         mockTopicStore.setCreateTopicResponse(topicName, null)
-                .create(privateTopic, ar-> {});
+                .create(privateTopic, ar-> async0.countDown());
         mockTopicStore.setDeleteTopicResponse(topicName, null);
-
 
         Async async = context.async();
 
-        op.reconcile(null, kubeTopic, kafkaTopic, privateTopic, reconcileResult -> {
+        controller.reconcile(null, kubeTopic, kafkaTopic, privateTopic, reconcileResult -> {
             assertSucceeded(context, reconcileResult);
             mockKafka.assertNotExists(context, kubeTopic.getTopicName());
             mockTopicStore.assertNotExists(context, kubeTopic.getTopicName());
             mockK8s.assertNotExists(context, kubeTopic.getMapName());
+            mockK8s.assertNoEvents(context);
             async.complete();
         });
     }
 
+    /**
+     * Test reconciliation when a topic has been created while the controller wasn't running
+     */
+    @Test
+    public void testReconcile_noCm_withKafka_noPrivate(TestContext context) {
+
+        Topic kubeTopic = null;
+        Topic kafkaTopic = new Topic.Builder(topicName.toString(), 10, (short)2, map("cleanup.policy", "bar")).build();
+        Topic privateTopic = null;
+
+        Async async0 = context.async();
+        mockTopicStore.setCreateTopicResponse(topicName, null);
+        mockK8s.setCreateResponse(topicName.asMapName(), null);
+        mockKafka.setCreateTopicResponse(topicName -> Future.succeededFuture());
+        mockKafka.createTopic(kafkaTopic, ar -> async0.complete());
+        async0.await();
+
+        Async async = context.async(2);
+        controller.reconcile(null, kubeTopic, kafkaTopic, privateTopic, reconcileResult -> {
+            assertSucceeded(context, reconcileResult);
+            mockTopicStore.assertExists(context, topicName);
+            mockK8s.assertExists(context, topicName.asMapName());
+            mockKafka.assertExists(context, topicName);
+            mockK8s.assertNoEvents(context);
+            mockTopicStore.read(topicName, readResult -> {
+                assertSucceeded(context, readResult);
+                context.assertEquals(kafkaTopic, readResult.result());
+                async.countDown();
+            });
+            mockK8s.getFromName(topicName.asMapName(), readResult -> {
+                assertSucceeded(context, readResult);
+                context.assertEquals(kafkaTopic, TopicSerialization.fromConfigMap(readResult.result()));
+                async.countDown();
+            });
+            context.assertEquals(kafkaTopic, mockKafka.getTopicState(topicName));
+        });
+    }
+
+    /**
+     * Test reconciliation when a cm has been deleted while the controller
+     * wasn't running
+     */
+    @Test
+    public void testReconcile_noCm_withKafka_withPrivate(TestContext context) {
+        Topic kubeTopic = null;
+        Topic kafkaTopic = new Topic.Builder(topicName.toString(), 10, (short)2, map("cleanup.policy", "bar")).build();
+        Topic privateTopic = kafkaTopic;
+
+        Async async0 = context.async(2);
+        mockKafka.createTopic(kafkaTopic, ar -> async0.countDown());
+        mockKafka.setDeleteTopicResponse(topicName, null);
+        mockTopicStore.setCreateTopicResponse(topicName, null);
+        mockTopicStore.create(kafkaTopic, ar -> async0.countDown());
+        mockTopicStore.setDeleteTopicResponse(topicName, null);
+        async0.await();
+
+        Async async = context.async();
+        controller.reconcile(null, kubeTopic, kafkaTopic, privateTopic, reconcileResult -> {
+            assertSucceeded(context, reconcileResult);
+            mockTopicStore.assertNotExists(context, topicName);
+            mockK8s.assertNotExists(context, topicName.asMapName());
+            mockKafka.assertNotExists(context, topicName);
+            mockK8s.assertNoEvents(context);
+            async.complete();
+        });
+    }
+
+    /**
+     * Test reconciliation when a cm has been added both in kafka and in k8s while the controller was down, and both
+     * topics are identical.
+     */
+    @Test
+    public void testReconcile_withCm_withKafka_noPrivate_matching(TestContext context) {
+        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short)2, map("cleanup.policy", "bar")).build();
+        Topic kafkaTopic = kubeTopic;
+        Topic privateTopic = null;
+
+        Async async0 = context.async(2);
+        mockKafka.setCreateTopicResponse(topicName -> Future.succeededFuture());
+        mockKafka.createTopic(kafkaTopic, ar -> async0.countDown());
+        mockK8s.setCreateResponse(topicName.asMapName(), null);
+        mockK8s.createConfigMap(TopicSerialization.toConfigMap(kubeTopic, cmPredicate), ar -> async0.countDown());
+        mockTopicStore.setCreateTopicResponse(topicName, null);
+        async0.await();
+
+        Async async = context.async();
+        controller.reconcile(null, kubeTopic, kafkaTopic, privateTopic, reconcileResult -> {
+            assertSucceeded(context, reconcileResult);
+            mockTopicStore.assertExists(context, topicName);
+            mockK8s.assertExists(context, topicName.asMapName());
+            mockK8s.assertNoEvents(context);
+            mockKafka.assertExists(context, topicName);
+            mockTopicStore.read(topicName, readResult -> {
+                assertSucceeded(context, readResult);
+                context.assertEquals(kubeTopic, readResult.result());
+                async.complete();
+            });
+            context.assertEquals(kafkaTopic, mockKafka.getTopicState(topicName));
+
+        });
+    }
+
+    /**
+     * Test reconciliation when a cm has been added both in kafka and in k8s while the controller was down, and
+     * the topics are irreconcilably different: Kafka wins
+     */
+    @Test
+    public void testReconcile_withCm_withKafka_noPrivate_configsReconcilable(TestContext context) {
+        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short)2, map("cleanup.policy", "bar")).build();
+        Topic kafkaTopic = new Topic.Builder(topicName.toString(), 10, (short)2, map("unclean.leader.election.enable", "true")).build();
+        Topic privateTopic = null;
+        Topic mergedTopic = new Topic.Builder(topicName.toString(), 10, (short)2, map("unclean.leader.election.enable", "true", "cleanup.policy", "bar")).build();
+
+        Async async0 = context.async(2);
+        mockKafka.setCreateTopicResponse(topicName -> Future.succeededFuture());
+        mockKafka.createTopic(kafkaTopic, ar -> async0.countDown());
+        mockKafka.setUpdateTopicResponse(topicName -> Future.succeededFuture());
+
+        ConfigMap cm = TopicSerialization.toConfigMap(kubeTopic, cmPredicate);
+        mockK8s.setCreateResponse(topicName.asMapName(), null);
+        mockK8s.createConfigMap(cm, ar -> async0.countDown());
+        mockK8s.setModifyResponse(topicName.asMapName(), null);
+        mockTopicStore.setCreateTopicResponse(topicName, null);
+        async0.await();
+
+        Async async = context.async(2);
+        controller.reconcile(cm, kubeTopic, kafkaTopic, privateTopic, reconcileResult -> {
+            assertSucceeded(context, reconcileResult);
+            mockTopicStore.assertExists(context, topicName);
+            mockK8s.assertExists(context, topicName.asMapName());
+            mockKafka.assertExists(context, topicName);
+            mockTopicStore.read(topicName, readResult -> {
+                assertSucceeded(context, readResult);
+                context.assertEquals(mergedTopic, readResult.result());
+                async.countDown();
+            });
+            mockK8s.getFromName(topicName.asMapName(), readResult -> {
+                assertSucceeded(context, readResult);
+                context.assertEquals(mergedTopic, TopicSerialization.fromConfigMap(readResult.result()));
+                async.countDown();
+            });
+            context.assertEquals(mergedTopic, mockKafka.getTopicState(topicName));
+        });
+    }
+
+    /**
+     * Test reconciliation when a cm has been added both in kafka and in k8s while the controller was down, and
+     * the topics are irreconcilably different: Kafka wins
+     */
+    @Test
+    public void testReconcile_withCm_withKafka_noPrivate_irreconcilable(TestContext context) {
+        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short)2, map("cleanup.policy", "bar")).build();
+        Topic kafkaTopic = new Topic.Builder(topicName.toString(), 12, (short)2, map("cleanup.policy", "baz")).build();
+        Topic privateTopic = null;
+
+        Async async0 = context.async(2);
+        mockKafka.setCreateTopicResponse(topicName -> Future.succeededFuture());
+        mockKafka.createTopic(kafkaTopic, ar -> async0.countDown());
+
+        ConfigMap cm = TopicSerialization.toConfigMap(kubeTopic, cmPredicate);
+        mockK8s.setCreateResponse(topicName.asMapName(), null);
+        mockK8s.createConfigMap(cm, ar -> async0.countDown());
+        mockK8s.setModifyResponse(topicName.asMapName(), null);
+        mockTopicStore.setCreateTopicResponse(topicName, null);
+        async0.await();
+
+        Async async = context.async(2);
+        controller.reconcile(cm, kubeTopic, kafkaTopic, privateTopic, reconcileResult -> {
+            assertSucceeded(context, reconcileResult);
+            mockK8s.assertContainsEvent(context, e ->
+                    e.getMessage().contains("ConfigMap is incompatible with the topic metadata. " +
+                            "The topic metadata will be treated as canonical."));
+            mockTopicStore.assertExists(context, topicName);
+            mockK8s.assertExists(context, topicName.asMapName());
+            mockKafka.assertExists(context, topicName);
+            mockTopicStore.read(topicName, readResult -> {
+                assertSucceeded(context, readResult);
+                context.assertEquals(kafkaTopic, readResult.result());
+                async.countDown();
+            });
+            mockK8s.getFromName(topicName.asMapName(), readResult -> {
+                assertSucceeded(context, readResult);
+                context.assertEquals(kafkaTopic, TopicSerialization.fromConfigMap(readResult.result()));
+                async.countDown();
+            });
+            context.assertEquals(kafkaTopic, mockKafka.getTopicState(topicName));
+        });
+    }
+
+    /**
+     * Test reconciliation when a cm has been changed both in kafka and in k8s while the controller was down, and
+     * a 3 way merge is needed.
+     */
+    @Test
+    public void testReconcile_withCm_withKafka_withPrivate_3WayMerge(TestContext context) {
+        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short)2, map("cleanup.policy", "bar")).build();
+        Topic kafkaTopic = new Topic.Builder(topicName.toString(), 12, (short)2, map("cleanup.policy", "baz")).build();
+        Topic privateTopic = new Topic.Builder(topicName.toString(), 10, (short)2, map("cleanup.policy", "baz")).build();
+        Topic resultTopic = new Topic.Builder(topicName.toString(), 12, (short)2, map("cleanup.policy", "bar")).build();
+
+        Async async0 = context.async(3);
+        mockKafka.setCreateTopicResponse(topicName -> Future.succeededFuture());
+        mockKafka.createTopic(kafkaTopic, ar -> async0.countDown());
+        mockKafka.setUpdateTopicResponse(topicName -> Future.succeededFuture());
+
+        ConfigMap cm = TopicSerialization.toConfigMap(kubeTopic, cmPredicate);
+        mockK8s.setCreateResponse(topicName.asMapName(), null);
+        mockK8s.createConfigMap(cm, ar -> async0.countDown());
+        mockK8s.setModifyResponse(topicName.asMapName(), null);
+        mockTopicStore.setCreateTopicResponse(topicName, null);
+        mockTopicStore.create(privateTopic, ar -> async0.countDown());
+        async0.await();
+
+        Async async = context.async(3);
+        controller.reconcile(cm, kubeTopic, kafkaTopic, privateTopic, reconcileResult -> {
+            assertSucceeded(context, reconcileResult);
+            mockK8s.assertNoEvents(context);
+            mockTopicStore.read(topicName, readResult -> {
+                assertSucceeded(context, readResult);
+                context.assertEquals(resultTopic, readResult.result());
+                async.countDown();
+            });
+            mockK8s.getFromName(topicName.asMapName(), readResult -> {
+                assertSucceeded(context, readResult);
+                context.assertEquals(resultTopic, TopicSerialization.fromConfigMap(readResult.result()));
+                async.countDown();
+            });
+            context.assertEquals(resultTopic, mockKafka.getTopicState(topicName));
+            async.countDown();
+        });
+    }
+
+    // TODO 3way reconcilation where kafka and kube agree
+    // TODO 3way reconcilation where all three agree
+    // TODO 3way reconcilation with conflict
+    // TODO reconciliation where only private state exists => delete the private state
+
     // TODO tests for the other reconciliation cases
+    // + non-matching predicate
+    // + error cases
 
     private void configMapRemoved(TestContext context, Exception deleteTopicException, Exception storeException) {
-        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short)2, map("foo", "bar")).build();
+        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short)2, map("cleanup.policy", "bar")).build();
         Topic kafkaTopic = kubeTopic;
         Topic privateTopic = kubeTopic;
 
         mockKafka.setCreateTopicResponse(topicName.toString(), null)
                 .createTopic(kafkaTopic, ar -> {});
+        mockKafka.setTopicMetadataResponse(topicName, getTopicMetadata(kubeTopic), null);
         mockKafka.setDeleteTopicResponse(topicName, deleteTopicException);
 
         mockTopicStore.setCreateTopicResponse(topicName, null)
@@ -376,7 +712,7 @@ public class ControllerTest {
         ConfigMap cm = TopicSerialization.toConfigMap(kubeTopic, cmPredicate);
 
         Async async = context.async();
-        op.onConfigMapDeleted(cm, ar -> {
+        controller.onConfigMapDeleted(cm, ar -> {
             if (deleteTopicException != null
                     || storeException != null) {
                 assertFailed(context, ar);
@@ -393,6 +729,42 @@ public class ControllerTest {
                 mockTopicStore.assertNotExists(context, kafkaTopic.getTopicName());
             }
             async.complete();
+        });
+    }
+
+    @Test
+    public void testOnConfigMapChanged(TestContext context) {
+        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short)2, map("cleanup.policy", "baz")).build();
+        Topic kafkaTopic = new Topic.Builder(topicName.toString(), 10, (short)2, map("cleanup.policy", "bar")).build();
+        Topic privateTopic = kafkaTopic;
+        ConfigMap cm = TopicSerialization.toConfigMap(kubeTopic, cmPredicate);
+
+        mockKafka.setCreateTopicResponse(topicName.toString(), null)
+                .createTopic(kafkaTopic, ar -> {});
+        mockKafka.setTopicMetadataResponse(topicName, getTopicMetadata(kafkaTopic), null);
+        mockKafka.setUpdateTopicResponse(topicName -> Future.succeededFuture());
+
+        mockTopicStore.setCreateTopicResponse(topicName, null)
+                .create(privateTopic, ar -> {});
+        mockTopicStore.setUpdateTopicResponse(topicName, null);
+
+        mockK8s.setModifyResponse(mapName, null);
+
+        Async async = context.async(3);
+        controller.onConfigMapModified(cm, ar-> {
+            assertSucceeded(context, ar);
+            context.assertEquals("baz", mockKafka.getTopicState(topicName).getConfig().get("cleanup.policy"));
+            mockTopicStore.read(topicName, ar2-> {
+                assertSucceeded(context, ar2);
+                context.assertEquals("baz", ar2.result().getConfig().get("cleanup.policy"));
+                async.countDown();
+            });
+            mockK8s.getFromName(mapName, ar2-> {
+                assertSucceeded(context, ar2);
+                context.assertEquals("baz", TopicSerialization.fromConfigMap(ar2.result()).getConfig().get("cleanup.policy"));
+                async.countDown();
+            });
+            async.countDown();
         });
     }
 
@@ -418,7 +790,7 @@ public class ControllerTest {
     }
 
     private void topicDeleted(TestContext context, Exception storeException, Exception k8sException) {
-        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short)2, map("foo", "bar")).build();
+        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short)2, map("cleanup.policy", "bar")).build();
         Topic kafkaTopic = kubeTopic;
         Topic privateTopic = kubeTopic;
 
@@ -431,7 +803,7 @@ public class ControllerTest {
         mockTopicStore.setDeleteTopicResponse(topicName, storeException);
 
         Async async = context.async();
-        op.onTopicDeleted(topicName, ar -> {
+        controller.onTopicDeleted(topicName, ar -> {
             if (k8sException != null
                     || storeException != null) {
                 assertFailed(context, ar);

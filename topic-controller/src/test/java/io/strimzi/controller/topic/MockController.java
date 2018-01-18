@@ -21,11 +21,16 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 
 import java.util.ArrayList;
 import java.util.List;
 
-class MockController implements ControllerOp {
+class MockController extends Controller {
+
+    public MockController() {
+        super(null, null, null, null, null);
+    }
 
     static class Event {
         private final Event.Type type;
@@ -33,7 +38,8 @@ class MockController implements ControllerOp {
         static enum Type {
             CREATE,
             DELETE,
-            MODIFY
+            MODIFY,
+            MODIFY_CONFIG
         }
         private final TopicName topicName;
         private final ConfigMap configMap;
@@ -93,6 +99,10 @@ class MockController implements ControllerOp {
         return events;
     }
 
+    public void clearEvents() {
+        events.clear();
+    }
+
     @Override
     public void onTopicCreated(TopicName topicName, Handler<AsyncResult<Void>> handler) {
         events.add(new Event(Event.Type.CREATE, topicName));
@@ -107,7 +117,7 @@ class MockController implements ControllerOp {
 
     @Override
     public void onTopicConfigChanged(TopicName topicName, Handler<AsyncResult<Void>> handler) {
-        events.add(new Event(Event.Type.MODIFY, topicName));
+        events.add(new Event(Event.Type.MODIFY_CONFIG, topicName));
         handler.handle(topicModifiedResult);
     }
 

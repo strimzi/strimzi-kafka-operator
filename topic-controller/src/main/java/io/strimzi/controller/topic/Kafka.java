@@ -73,6 +73,7 @@ public interface Kafka {
      * handler with the result. If the operation fails the given handler
      * will be called with a failed AsyncResult whose {@code cause()} is the
      * KafkaException (not an ExecutionException).
+     * If the topic does not exist the {@link AsyncResult#result()} will be null.
      */
     void topicMetadata(TopicName topicName, Handler<AsyncResult<TopicMetadata>> handler);
 

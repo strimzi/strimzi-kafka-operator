@@ -17,11 +17,9 @@
 
 package io.strimzi.controller.topic;
 
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
@@ -32,6 +30,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static java.lang.System.getenv;
+
 public class Config {
 
     private static abstract class Type<T> {
@@ -41,19 +41,19 @@ public class Config {
             this.name = name;
             this.doc = doc;
         }
-        abstract T parse(@NotNull String s);
+        abstract T parse(String s);
     }
 
     private static Type<? extends String> STRING = new Type<String>("string", "A Java string.") {
         @Override
-        public String parse(@NotNull String s) {
+        public String parse(String s) {
             return s;
         }
     };
 
     private static Type<? extends Long> LONG = new Type<Long>("long", "A Java long.") {
         @Override
-        public Long parse(@NotNull String s) {
+        public Long parse(String s) {
             return Long.parseLong(s);
         }
     };
@@ -64,7 +64,7 @@ public class Config {
         private final Pattern pattern = Pattern.compile("([0-9]+) *([a-z]+)", Pattern.CASE_INSENSITIVE);
 
         @Override
-        public Long parse(@NotNull String s) {
+        public Long parse(String s) {
             Matcher m = pattern.matcher(s);
             if (m.matches()) {
                 final TimeUnit unit = TimeUnit.valueOf(m.group(2).toUpperCase(Locale.ENGLISH));
@@ -74,6 +74,13 @@ public class Config {
                 throw new IllegalArgumentException("Invalid duration: Expected an integer followed by one of " + TimeUnit.values() + " e.g. '5 MINUTES'");
             }
 
+        }
+    };
+
+    private static Type<? extends LabelPredicate> LABEL_PREDICATE = new Type<LabelPredicate>("selector", "A kubernetes selector") {
+        @Override
+        public LabelPredicate parse(String s) {
+            return LabelPredicate.fromString(s);
         }
     };
 
@@ -93,7 +100,7 @@ public class Config {
             this.required = false;
             this.doc = doc;
         }
-        private Value(String key, Type type, boolean required, String doc) {
+        private Value(String key, Type<? extends T> type, boolean required, String doc) {
             this.key = key;
             this.type = type;
             this.defaultValue = null;
@@ -102,27 +109,35 @@ public class Config {
         }
     }
 
+    public static final String TC_CM_LABELS = "TC_CM_LABELS";
+    public static final String TC_KAFKA_BOOTSTRAP_SERVERS = "TC_KF_BOOTSTRAP_SERVERS";
+    public static final String TC_ZK_CONNECT = "TC_ZK_CONNECT";
+    public static final String TC_ZK_SESSION_TIMEOUT = "TC_ZK_SESSION_TIMEOUT";
+    public static final String TC_PERIODIC_INTERVAL = "TC_PERIODIC_INTERVAL";
+    public static final String TC_REASSIGN_THROTTLE = "TC_REASSIGN_THROTTLE";
+    public static final String TC_REASSIGN_VERIFY_INTERVAL = "TC_REASSIGN_VERIFY_INTERVAL";
+
     private static final Map<String, Value> CONFIG_VALUES = new HashMap<>();
     private static final Set<Type> TYPES = new HashSet<>();
 
-    public static final Value<String> KUBERNETES_MASTER_URL = new Value("kubernetesMasterUrl", STRING, Main.DEFAULT_MASTER_URL,
-            "The URL of the kubernetes master apiserver.");
-    public static final Value<String> KAFKA_BOOTSTRAP_SERVERS = new Value("kafkaBootstrapServers", STRING,"localhost:9092",
+    public static final Value<LabelPredicate> LABELS = new Value(TC_CM_LABELS, LABEL_PREDICATE,"strimzi.io/kind=topic",
+            "A comma-separated list of key=value pairs for selecting ConfigMaps that describe topics.");
+    public static final Value<String> KAFKA_BOOTSTRAP_SERVERS = new Value(TC_KAFKA_BOOTSTRAP_SERVERS, STRING,getenv("KAFKA_SERVICE_HOST") + ":" + getenv("KAFKA_SERVICE_PORT"),
             "A comma-separated list of kafka bootstrap servers.");
-    public static final Value<String> ZOOKEEPER_CONNECT = new Value("zookeeperConnect", STRING, "localhost:2181",
+    public static final Value<String> ZOOKEEPER_CONNECT = new Value(TC_ZK_CONNECT, STRING, getenv("KAFKA_ZOOKEEPER_SERVICE_HOST") + ":" + getenv("KAFKA_ZOOKEEPER_SERVICE_PORT"),
             "The zookeeper connection string.");
-    public static final Value<Long> ZOOKEEPER_SESSION_TIMEOUT_MS = new Value("zookeeperSessionTimeout", DURATION, "2 seconds",
+    public static final Value<Long> ZOOKEEPER_SESSION_TIMEOUT_MS = new Value(TC_ZK_SESSION_TIMEOUT, DURATION, "20 seconds",
             "The ZooKeeper session timeout.");
-    public static final Value<Long> FULL_RECONCILIATION_INTERVAL_MS = new Value("fullReconciliationInterval", DURATION, "15 minutes",
+    public static final Value<Long> FULL_RECONCILIATION_INTERVAL_MS = new Value(TC_PERIODIC_INTERVAL, DURATION, "15 minutes",
             "The period between full reconciliations.");
-    public static final Value<Long> REASSIGN_THROTTLE = new Value("reassignThrottle", LONG, Long.toString(Long.MAX_VALUE),
+    public static final Value<Long> REASSIGN_THROTTLE = new Value(TC_REASSIGN_THROTTLE, LONG, Long.toString(Long.MAX_VALUE),
             "The interbroker throttled rate to use when a topic change requires partition reassignment.");
-    public static final Value<Long> REASSIGN_VERIFY_INTERVAL_MS = new Value("reassignVerifyInterval", DURATION, "2 minutes",
+    public static final Value<Long> REASSIGN_VERIFY_INTERVAL_MS = new Value(TC_REASSIGN_VERIFY_INTERVAL, DURATION, "2 minutes",
             "The interval between verification executions (as in kafka-reassign-partitions.sh --verify ...) when a topic change requires partition reassignment.");
 
     static {
         Map<String, Value> configValues = CONFIG_VALUES;
-        addConfigValue(configValues, KUBERNETES_MASTER_URL);
+        addConfigValue(configValues, LABELS);
         addConfigValue(configValues, KAFKA_BOOTSTRAP_SERVERS);
         addConfigValue(configValues, ZOOKEEPER_CONNECT);
         addConfigValue(configValues, ZOOKEEPER_SESSION_TIMEOUT_MS);
@@ -157,12 +172,18 @@ public class Config {
         }
     }
 
-    public Iterable<Value> keys() {
+    public static Collection<Value> keys() {
         return Collections.unmodifiableCollection(CONFIG_VALUES.values());
     }
 
-    @Nullable
+    public static Set<String> keyNames() {
+        return Collections.unmodifiableSet(CONFIG_VALUES.keySet());
+    }
+
     private <T> T get(Map<String, String> map, Value<T> value) {
+        if (!CONFIG_VALUES.containsKey(value.key)) {
+            throw new IllegalArgumentException("Unknown config value: " + value.key + " probably needs to be added to Config.CONFIG_VALUES");
+        }
         final String s = map.getOrDefault(value.key, value.defaultValue);
         if (s != null) {
             return (T) value.type.parse(s);
@@ -182,42 +203,6 @@ public class Config {
         return (T)this.map.get(value.key);
     }
 
-    public static void help(Appendable out) throws IOException {
-        out.append("The following keys are supported:");
-        out.append(System.lineSeparator());
-        out.append(System.lineSeparator());
-
-        final ArrayList<Value> values = new ArrayList<>(CONFIG_VALUES.values());
-        Collections.sort(values, Comparator.comparing(a -> a.key));
-        for (Value v: values) {
-            out./*append("  Key: ").*/append(v.key).append(", Type: ").append(v.type.name);
-            if (v.required) {
-                out.append(", Required");
-            } else {
-                out.append(", Default value: ").append(v.defaultValue);
-            }
-            out.append(System.lineSeparator());
-            out.append("  ").append(v.doc);
-            out.append(System.lineSeparator());
-            out.append(System.lineSeparator());
-        }
-
-        out.append(System.lineSeparator());
-        out.append("Where types are defined thus:");
-        out.append(System.lineSeparator());
-        out.append(System.lineSeparator());
-
-        final ArrayList<Type> types = new ArrayList<>(TYPES);
-        Collections.sort(types, Comparator.comparing(t -> t.name));
-        for (Type t: types) {
-            out./*append("  Type: ").*/append(t.name);
-            out.append(System.lineSeparator());
-            out.append("  ").append(t.doc);
-            out.append(System.lineSeparator());
-            out.append(System.lineSeparator());
-        }
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -228,7 +213,8 @@ public class Config {
 
     @Override
     public int hashCode() {
-
         return Objects.hash(map);
     }
+
+    // TODO Generate documentation about the env vars
 }

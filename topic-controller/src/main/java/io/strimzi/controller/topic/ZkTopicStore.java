@@ -17,160 +17,112 @@
 
 package io.strimzi.controller.topic;
 
+import io.strimzi.controller.topic.zk.AclBuilder;
+import io.strimzi.controller.topic.zk.AclBuilder.Permission;
+import io.strimzi.controller.topic.zk.Zk;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooDefs;
-import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
-import org.apache.zookeeper.data.Id;
-import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
+import java.util.List;
 
 /**
  * Implementation of {@link TopicStore} that stores the topic state in ZooKeeper.
  */
-public class ZkTopicStore implements TopicStore, Handler<AsyncResult<ZooKeeper>> {
+public class ZkTopicStore implements TopicStore {
 
     private final static Logger logger = LoggerFactory.getLogger(ZkTopicStore.class);
+    public static final String TOPICS_PATH = "/strimzi/topics";
     private final Vertx vertx;
 
-    private volatile ZooKeeper zookeeper = null;
+    private final Zk zk;
 
-    private final ACL acl;
+    private final List<ACL> acl;
 
-    public ZkTopicStore(Vertx vertx) {
+    public ZkTopicStore(Zk zk, Vertx vertx) {
+        this.zk = zk;
         this.vertx = vertx;
-        acl = new ACL();
-        String scheme = "world";
-        String id = "anyone";
-        int perm = ZooDefs.Perms.READ | ZooDefs.Perms.WRITE |ZooDefs.Perms.CREATE | ZooDefs.Perms.DELETE;
-        acl.setId(new Id(scheme, id));
-        acl.setPerms(perm);
-
-    }
-
-    private ZooKeeper getZookeeper() {
-        try {
-            // TODO this is the wrong way to do it: Rather than consuming
-            // a ZooKeeper we should register a handler with the bootstrap
-            // watcher which will be called when it has a viable session
-            return zookeeper;
-        } catch (Exception e) {
-            logger.error("Error waiting for a ZooKeeper instance", e);
-            if (e instanceof RuntimeException) {
-                throw (RuntimeException)e;
-            }
-            throw new RuntimeException(e);
-        }
+        acl = new AclBuilder().setWorld(Permission.values()).build();
+        createParent("/strimzi");
+        createParent(TOPICS_PATH);
     }
 
     private void createParent(String path) {
-        try {
-            getZookeeper().create(path, new byte[0], Collections.singletonList(acl), CreateMode.PERSISTENT);
-        } catch (KeeperException.NodeExistsException e) {
-            // That's fine then
-        } catch (KeeperException e) {
-            throw new RuntimeException(e);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+        zk.create(path, null, acl, CreateMode.PERSISTENT, result -> {
+            if (result.failed()) {
+                if (!(result.cause() instanceof KeeperException.NodeExistsException)) {
+                    logger.error("Error creating {}", path, result.cause());
+                    throw new RuntimeException(result.cause());
+                }
+            }
+        });
     }
 
 
     private static String getTopicPath(TopicName name) {
-        return "/barnabas/topics/" + name;
+        return TOPICS_PATH + "/" + name;
     }
 
     @Override
     public void read(TopicName topicName, Handler<AsyncResult<Topic>> handler) {
-        getZookeeper().getData(getTopicPath(topicName), null, new AsyncCallback.DataCallback() {
-            @Override
-            public void processResult(int rc, String path, Object ctx, byte[] data, Stat stat) {
-                Exception exception = mapExceptions(rc);
-                if (exception == null) {
-                    Topic topic = TopicSerialization.fromJson(data);
-                    vertx.runOnContext(ar ->
-                        handler.handle(Future.succeededFuture(topic))
-                    );
+        String topicPath = getTopicPath(topicName);
+        logger.debug("read znode {}", topicPath);
+        zk.getData(topicPath, result -> {
+            final AsyncResult<Topic> fut;
+            if (result.succeeded()) {
+                fut = Future.succeededFuture(TopicSerialization.fromJson(result.result()));
+            } else {
+                if (result.cause() instanceof KeeperException.NoNodeException) {
+                    fut = Future.succeededFuture(null);
                 } else {
-                    vertx.runOnContext(ar ->
-                        handler.handle(Future.failedFuture(exception))
-                    );
+                    fut = result.map((Topic)null);
                 }
             }
-        }, null);
+            handler.handle(fut);
+        });
     }
 
     @Override
     public void create(Topic topic, Handler<AsyncResult<Void>> handler) {
+        Throwable t= new Throwable();
         byte[] data = TopicSerialization.toJson(topic);
-        getZookeeper().create(getTopicPath(topic.getTopicName()), data,
-                Collections.singletonList(acl),
-                CreateMode.PERSISTENT,
-                (rc, path, ctx, name) -> handleOnContext(rc, handler), null);
+        String topicPath = getTopicPath(topic.getTopicName());
+        logger.debug("create znode {}", topicPath);
+        zk.create(topicPath, data, acl, CreateMode.PERSISTENT, result -> {
+            if (result.failed() && result.cause() instanceof KeeperException.NodeExistsException) {
+                handler.handle(Future.failedFuture(new EntityExistsException()));
+            } else {
+                handler.handle(result);
+            }
+        });
     }
 
     @Override
     public void update(Topic topic, Handler<AsyncResult<Void>> handler) {
         byte[] data = TopicSerialization.toJson(topic);
         // TODO pass a non-zero version
-        getZookeeper().setData(getTopicPath(topic.getTopicName()), data, -1,
-                (rc, path, ctx, stat) -> handleOnContext(rc, handler), null);
+        String topicPath = getTopicPath(topic.getTopicName());
+        logger.debug("update znode {}", topicPath);
+        zk.setData(topicPath, data, -1, handler);
     }
 
     @Override
     public void delete(TopicName topicName, Handler<AsyncResult<Void>> handler) {
         // TODO pass a non-zero version
-        getZookeeper().delete(getTopicPath(topicName), -1,
-                (rc, path, ctx) -> handleOnContext(rc, handler), null);
-    }
-
-    /** Run the handler on the vertx context */
-    private void handleOnContext(int rc, Handler<AsyncResult<Void>> handler) {
-        Exception exception = mapExceptions(rc);
-        if (exception == null) {
-            vertx.runOnContext(ar ->
-                    handler.handle(Future.succeededFuture())
-            );
-        } else {
-            vertx.runOnContext(ar -> {
-                handler.handle(Future.failedFuture(exception));
-            });
-        }
-    }
-
-    private Exception mapExceptions(int rc) {
-        Exception exception;
-        KeeperException.Code code = KeeperException.Code.get(rc);
-        switch (code) {
-            case OK:
-                exception = null;
-                break;
-            case NODEEXISTS:
-                exception = new EntityExistsException();
-                break;
-            case NONODE:
-                exception = new NoSuchEntityExistsException();
-                break;
-            default:
-                exception = KeeperException.create(code);
-
-        }
-        return exception;
-    }
-
-    @Override
-    public void handle(AsyncResult<ZooKeeper> event) {
-        this.zookeeper = event.result();
-        createParent("/barnabas");
-        createParent("/barnabas/topics");
+        String topicPath = getTopicPath(topicName);
+        logger.debug("delete znode {}", topicPath);
+        zk.delete(topicPath, -1, result -> {
+            if (result.failed() && result.cause() instanceof KeeperException.NoNodeException) {
+                handler.handle(Future.failedFuture(new NoSuchEntityExistsException()));
+            } else {
+                handler.handle(result);
+            }
+        });
     }
 }

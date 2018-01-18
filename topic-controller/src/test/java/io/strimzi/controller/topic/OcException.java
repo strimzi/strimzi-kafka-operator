@@ -17,15 +17,8 @@
 
 package io.strimzi.controller.topic;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Handler;
-
-public interface ControllerOp {
-    void onTopicCreated(TopicName topicName, Handler<AsyncResult<Void>> handler);
-    void onTopicDeleted(TopicName topicName, Handler<AsyncResult<Void>> handler);
-    void onTopicConfigChanged(TopicName topicName, Handler<AsyncResult<Void>> handler);
-    void onConfigMapAdded(ConfigMap cm, Handler<AsyncResult<Void>> handler);
-    void onConfigMapModified(ConfigMap cm, Handler<AsyncResult<Void>> handler);
-    void onConfigMapDeleted(ConfigMap cm, Handler<AsyncResult<Void>> handler);
+public class OcException extends Exception {
+    public OcException(String s) {
+        super(s);
+    }
 }

@@ -22,6 +22,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 
@@ -29,30 +30,27 @@ import java.util.List;
 
 class MockZk implements Zk {
 
-    public AsyncResult<Zk> connectResult = Future.failedFuture("Unexpected mock interaction. Configure " + getClass().getSimpleName()+".connectResult");
     public AsyncResult<Void> createResult = Future.failedFuture("Unexpected mock interaction. Configure " + getClass().getSimpleName()+".connectResult");
     public AsyncResult<Void> setDataResult = Future.failedFuture("Unexpected mock interaction. Configure " + getClass().getSimpleName()+".setDataResult");
     public AsyncResult<List<String>> childrenResult = Future.failedFuture("Unexpected mock interaction. Configure " + getClass().getSimpleName()+".childrenResult");
     public AsyncResult<byte[]> dataResult = Future.failedFuture("Unexpected mock interaction. Configure " + getClass().getSimpleName()+".dataResult");
     private Handler<AsyncResult<List<String>>> childrenHandler;
+    private Handler<AsyncResult<byte[]>> dataHandler;
 
     public void triggerChildren(AsyncResult<List<String>> childrenResult) {
-        childrenHandler.handle(childrenResult);
+        if (childrenHandler != null) {
+            childrenHandler.handle(childrenResult);
+        }
+    }
+
+    public void triggerData(AsyncResult<byte[]> dataResult) {
+        if (dataHandler != null) {
+            dataHandler.handle(dataResult);
+        }
     }
 
     @Override
-    public Zk connect(Handler<AsyncResult<Zk>> handler) {
-        handler.handle(connectResult);
-        return this;
-    }
-
-    @Override
-    public Zk disconnectionHandler(Handler<AsyncResult<Zk>> handler) {
-        return this;
-    }
-
-    @Override
-    public Zk disconnect(Handler<AsyncResult<Void>> handler) {
+    public Zk disconnect() {
         return this;
     }
 
@@ -69,15 +67,38 @@ class MockZk implements Zk {
     }
 
     @Override
-    public Zk children(String path, boolean watch, Handler<AsyncResult<List<String>>> handler) {
-        childrenHandler = handler;
+    public Zk children(String path, Handler<AsyncResult<List<String>>> handler) {
         handler.handle(childrenResult);
         return this;
     }
 
     @Override
-    public Zk setData(String path, boolean watch, Handler<AsyncResult<byte[]>> handler) {
+    public Zk watchChildren(String path, Handler<AsyncResult<List<String>>> watcher) {
+        childrenHandler = watcher;
+        return this;
+    }
+
+    @Override
+    public Zk unwatchChildren(String path) {
+        childrenHandler = null;
+        return this;
+    }
+
+    @Override
+    public Zk getData(String path, Handler<AsyncResult<byte[]>> handler) {
         handler.handle(dataResult);
+        return this;
+    }
+
+    @Override
+    public Zk watchData(String path, Handler<AsyncResult<byte[]>> watcher) {
+        dataHandler = watcher;
+        return this;
+    }
+
+    @Override
+    public Zk unwatchData(String path) {
+        dataHandler = null;
         return this;
     }
 
@@ -87,12 +108,12 @@ class MockZk implements Zk {
     }
 
     @Override
-    public Zk watchExists(String path, Handler<AsyncResult<Stat>> watcher, Handler<AsyncResult<Stat>> complete) {
+    public Zk watchExists(String path, Handler<AsyncResult<Stat>> watcher) {
         return null;
     }
 
     @Override
-    public Zk unwatchExists(String path, Handler<AsyncResult<Stat>> watcher, Handler<AsyncResult<Void>> complete) {
+    public Zk unwatchExists(String path) {
         return null;
     }
 

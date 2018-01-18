@@ -17,71 +17,67 @@ And also in the other direction:
 
 ## Format of the ConfigMap
 
-The controller only considers ConfigMaps having all the labels:
-
-* `app=barnabas`
-* `kind=topic`
+By default, the controller only considers ConfigMaps having the label `strimzi.io/kind=topic`, 
+but this is configurable via the `TC_CM_LABELS` environment variable.
 
 The `data` of such ConfigMaps supports the following keys:
 
 * `name` The name of the topic. If this is absent the name of the ConfigMap itself is used.
 * `partitions` The number of partitions of the Kafka topic. This can be increased, but not decreased.
 * `replicas` The number of replicas of the Kafka topic. 
-* `config` A multiline string in YAML format representing the topic configuration. 
+* `config` A string in JSON format representing the topic configuration. 
 
 ## Reconciliation
 
-The fundamental difficulty that the controller has to solve is that there is no 
-single source of truth: Both the ConfigMap and the topic can be modified independently 
-of the controller. Complicating this, the topic controller might not always be able to observe
+A fundamental problem that the controller has to solve is that there is no 
+single source of truth: 
+Both the ConfigMap and the topic can be modified independently of the controller. 
+Complicating this, the topic controller might not always be able to observe
 changes at each in real time (the controller might be down etc).
  
 To resolve this, the controller maintains its own private copy of the 
-information about each topic. When a change happens either in the Kafka cluster, or 
+information about each topic. 
+When a change happens either in the Kafka cluster, or 
 in Kubernetes/OpenShift, it looks at both the state of the other system, and at its 
 private copy in order to determine what needs to change to keep everything in sync.  
 The same thing happens whenever the controller starts, and periodically while its running.
 
-The private copy allows the controller to usually cope with scenarios where the topic 
+For example, suppose the topic controller is not running, and a ConfigMap "my-topic" gets created. 
+When the controller starts it will lack a private copy of "my-topic", 
+so it can infer that the ConfigMap has been created since it was last running. 
+The controller will create the topic corresponding to "my-topic" and also store a private copy of the 
+metadata for "my-topic".
+
+The private copy allows the controller to cope with scenarios where the topic 
 config gets changed both in Kafka and in Kubernetes/OpenShift, so long as the 
-changes are not incompatible (e.g. both changeing the same topic config key, but to 
+changes are not incompatible (e.g. both changing the same topic config key, but to 
 different values). 
+In the case of incompatible changes, the Kafka configuration wins, and the ConfigMap will 
+be updated to reflect that. Defaulting to the Kafka configuration ensures that, 
+in the worst case, data won't be lost. 
+
+The private copy is held in the same ZooKeeper ensemble used by Kafka itself. 
+This mitigates availability concerns, because if ZooKeeper is not running
+then Kafka itself cannot run, so the controller will be no less available 
+than it would even if it was stateless. 
 
 
-## Controller configuration
+## Controller environment
 
-The controller is configured via a ConfigMap within the K8s/OpenShift cluster.
+The controller is configured from environment variables:
 
-The data of this ConfigMap supports the following keys:
+* `TC_CM_LABELS` 
+– The Kubernetes label selector used to identify ConfigMaps to be managed by the controller.
+  Default: `strimzi.io/kind=topic`.  
+* `TC_ZK_SESSION_TIMEOUT`
+– The Zookeeper session timeout. For example `10 seconds`. Default: `20 seconds`.
+* `TC_KF_BOOTSTRAP_SERVERS`
+– The list of Kafka bootstrap servers. Default: `${KAFKA_SERVICE_HOST}:${KAFKA_SERVICE_PORT}` 
+* `TC_ZK_CONNECT`
+– The Zookeeper connection information. Default: `${KAFKA_ZOOKEEPER_SERVICE_HOST}:${KAFKA_ZOOKEEPER_SERVICE_PORT}`.
+* `TC_PERIODIC_INTERVAL`
+– The interval between periodic reconciliations.
 
-* `kubernetesMasterUrl`, default: `https://localhost:8443`
-* `kafkaBootstrapServers`, default:`localhost:9092`
-* `zookeeperConnect`, default: `localhost:2181`
-* `zookeeperSessionTimeout` a durection for the timeout on the zookeeper session, default: `2 seconds`
-* `fullReconciliationInterval` a duration for the time between full reconciliations, default: `15 minutes`
-* `reassignThrottle`, the throttle to use when topic updates require topic partition reassignment
-* `reassignVerifyInterval` a duration between executions of the `--verify` stage of partition reassignment, default: `2 minutes`  
-
-The controller watches for changes to the config map and reconfigures itself according.
-
-
-## Controller command line and environment
-
-* `--master-url` (or the `CONTROLLER_K8S_URL` env var if absent from the command line) 
-  the URL of the master apiserver in which to find the topic controller's ConfigMap. 
-* `--config-namespace` (or the `CONTROLLER_K8S_NS` env var if absent from the 
-  command line) the namespace within the master apiserver which contains the topic 
-  controller's ConfigMap.
-* `--config-name` (or the `CONTROLLER_K8S_NAME` env var if absent from the 
-  command line) the name of the config map (with the namespace given by `--config-namespace`)
-  which contains the topic 
-  controller's ConfigMap.
-* `--help` command line help, and exit
-* `--help:config` for help on the topic controller's configuration. 
-
-
-
-## Possible future directions
-
-* Grow an HTTP REST API for changing topics, and representing them as YAML resources, evolving into 
-  an aggregated K8s apiserver.
+If the controller configuration needs to be changed the process must be killed and restarted.
+Since the controller is intended to execute within Kubernetes, this can be achieved
+by deleting the pod.

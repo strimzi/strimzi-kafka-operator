@@ -38,6 +38,7 @@ public class BackOffTest {
         } catch (MaxAttemptsExceededException e) {
 
         }
+        assertEquals(1400L, b.totalDelayMs());
     }
 
     @Test
@@ -54,5 +55,7 @@ public class BackOffTest {
         } catch (MaxAttemptsExceededException e) {
 
         }
+
+        assertEquals(1111L, b.totalDelayMs());
     }
 }

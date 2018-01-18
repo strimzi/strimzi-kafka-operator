@@ -74,7 +74,7 @@ public class K8sImpl implements K8s {
         vertx.executeBlocking(future -> {
             try {
                 // Delete the CM by the topic name, because neither ZK nor Kafka know the CM name
-                client.configMaps().withField("name", topicName.toString()).delete();
+                client.configMaps().withName(topicName.toString()).delete();
                 future.complete();
             } catch (Exception e) {
                 future.fail(e);

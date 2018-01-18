@@ -18,16 +18,12 @@
 package io.strimzi.controller.topic;
 
 import org.apache.zookeeper.server.NIOServerCnxnFactory;
-import org.apache.zookeeper.server.ZKDatabase;
 import org.apache.zookeeper.server.ZooKeeperServer;
-import org.apache.zookeeper.server.persistence.FileTxnSnapLog;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 
 public class EmbeddedZooKeeper {
 
@@ -36,7 +32,7 @@ public class EmbeddedZooKeeper {
     File dir;
 
     public EmbeddedZooKeeper() throws IOException, InterruptedException {
-        dir = Files.createTempDirectory("barnabas").toFile();
+        dir = Files.createTempDirectory("strimzi").toFile();
         dir.mkdirs();
         zk = new ZooKeeperServer(dir, dir, 1000);
         start(new InetSocketAddress(0));
