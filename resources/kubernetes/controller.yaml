@@ -106,9 +106,9 @@ spec:
         - name: strimzi-cluster-controller
           image: strimzi/cluster-controller:latest
           env:
-            - name: STRIMZI_CONTROLLER_LABELS
+            - name: STRIMZI_CONFIGMAP_LABELS
               value: "strimzi.io/kind=cluster"
-            - name: STRIMZI_CONTROLLER_NAMESPACE
+            - name: STRIMZI_NAMESPACE
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace

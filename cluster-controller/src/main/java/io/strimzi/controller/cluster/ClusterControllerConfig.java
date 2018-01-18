@@ -4,6 +4,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ClusterControllerConfig {
+
+    public static final String STRIMZI_NAMESPACE = "STRIMZI_NAMESPACE";
+    public static final String STRIMZI_CONFIGMAP_LABELS = "STRIMZI_CONFIGMAP_LABELS";
+
     private Map<String, String> labels;
     private String namespace;
 
@@ -13,8 +17,9 @@ public class ClusterControllerConfig {
     }
 
     public static ClusterControllerConfig fromEnv() {
-        String namespace = System.getenv("STRIMZI_CONTROLLER_NAMESPACE");
-        String stringLabels = System.getenv("STRIMZI_CONTROLLER_LABELS");
+
+        String namespace = System.getenv(ClusterControllerConfig.STRIMZI_NAMESPACE);
+        String stringLabels = System.getenv(ClusterControllerConfig.STRIMZI_CONFIGMAP_LABELS);
 
         Map<String, String> labelsMap = new HashMap<>();
 
