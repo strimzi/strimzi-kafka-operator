@@ -55,9 +55,9 @@ spec:
         - name: strimzi-topic-controller
           image: strimzi/topic-controller:latest
           env:
-            - name: TC_CM_LABELS
+            - name: TOPIC_CONTROLLER_CONFIGMAP_LABELS
               value: "strimzi.io/kind=topic"
-            - name: TC_ZK_SESSION_TIMEOUT
+            - name: TOPIC_CONTROLLER_ZOOKEEPER_SESSION_TIMEOUT
               value: "20seconds"
-            - name: TC_PERIODIC_INTERVAL
+            - name: TOPIC_CONTROLLER_PERIODIC_INTERVAL
               value: "15minutes"

@@ -109,13 +109,13 @@ public class Config {
         }
     }
 
-    public static final String TC_CM_LABELS = "TC_CM_LABELS";
-    public static final String TC_KAFKA_BOOTSTRAP_SERVERS = "TC_KF_BOOTSTRAP_SERVERS";
-    public static final String TC_ZK_CONNECT = "TC_ZK_CONNECT";
-    public static final String TC_ZK_SESSION_TIMEOUT = "TC_ZK_SESSION_TIMEOUT";
-    public static final String TC_PERIODIC_INTERVAL = "TC_PERIODIC_INTERVAL";
-    public static final String TC_REASSIGN_THROTTLE = "TC_REASSIGN_THROTTLE";
-    public static final String TC_REASSIGN_VERIFY_INTERVAL = "TC_REASSIGN_VERIFY_INTERVAL";
+    public static final String TC_CM_LABELS = "TOPIC_CONTROLLER_CONFIGMAP_LABELS";
+    public static final String TC_KAFKA_BOOTSTRAP_SERVERS = "TOPIC_CONTROLLER_KAFKA_BOOTSTRAP_SERVERS";
+    public static final String TC_ZK_CONNECT = "TOPIC_CONTROLLER_ZOOKEEPER_CONNECT";
+    public static final String TC_ZK_SESSION_TIMEOUT = "TOPIC_CONTROLLER_ZOOKEEPER_SESSION_TIMEOUT";
+    public static final String TC_PERIODIC_INTERVAL = "TOPIC_CONTROLLER_PERIODIC_INTERVAL";
+    public static final String TC_REASSIGN_THROTTLE = "TOPIC_CONTROLLER_REASSIGN_THROTTLE";
+    public static final String TC_REASSIGN_VERIFY_INTERVAL = "TOPIC_CONTROLLER_REASSIGN_VERIFY_INTERVAL";
 
     private static final Map<String, Value> CONFIG_VALUES = new HashMap<>();
     private static final Set<Type> TYPES = new HashSet<>();
