@@ -53,7 +53,13 @@ config gets changed both in Kafka and in Kubernetes/OpenShift, so long as the
 changes are not incompatible (e.g. both changing the same topic config key, but to 
 different values). 
 In the case of incompatible changes, the Kafka configuration wins, and the ConfigMap will 
-be updated to reflect that.
+be updated to reflect that. Defaulting to the Kafka configuration ensures that, 
+in the worst case, data won't be lost. 
+
+The private copy is held in the same ZooKeeper ensemble used by Kafka itself. 
+This mitigates availability concerns, because if ZooKeeper is not running
+then Kafka itself cannot run, so the controller will be no less available 
+than it would even if it was stateless. 
 
 
 ## Controller environment
