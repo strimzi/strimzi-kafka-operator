@@ -212,29 +212,31 @@ public class ZookeeperCluster extends AbstractCluster {
             }
         }
 
-        if (!ss.getSpec().getVolumeClaimTemplates().isEmpty()) {
-
-            if (storage.type() == Storage.StorageType.PERSISTENT_CLAIM) {
-
-                Storage ssStorage = Storage.fromPersistentVolumeClaim(ss.getSpec().getVolumeClaimTemplates().get(0));
-                if (ss.getMetadata().getAnnotations() != null) {
-                    String deleteClaimAnnotation = String.format("%s/%s", ClusterController.STRIMZI_CLUSTER_CONTROLLER_DOMAIN, Storage.DELETE_CLAIM_FIELD);
-                    ssStorage.withDeleteClaim(Boolean.valueOf(ss.getMetadata().getAnnotations().computeIfAbsent(deleteClaimAnnotation, s -> "false")));
-                }
-
-                if (storage.isDeleteClaim() != ssStorage.isDeleteClaim()) {
-                    diff.setDifferent(true);
-                }
-                // changing from "persistent-claim" to "ephemeral"
-            } else {
-                // TODO : warning ! the user is trying to change storage type which is not allowed !
-            }
+        // get the current (deployed) kind of storage
+        Storage ssStorage;
+        if (ss.getSpec().getVolumeClaimTemplates().isEmpty()) {
+            ssStorage = new Storage(Storage.StorageType.EPHEMERAL);
         } else {
-
-            // changing from current "ephemeral" to "persistent-claim"
-            if (storage.type() == Storage.StorageType.PERSISTENT_CLAIM) {
-                // TODO : warning ! the user is trying to change storage type which is not allowed !
+            ssStorage = Storage.fromPersistentVolumeClaim(ss.getSpec().getVolumeClaimTemplates().get(0));
+            // the delete-claim flack is backed by the StatefulSets
+            if (ss.getMetadata().getAnnotations() != null) {
+                String deleteClaimAnnotation = String.format("%s/%s", ClusterController.STRIMZI_CLUSTER_CONTROLLER_DOMAIN, Storage.DELETE_CLAIM_FIELD);
+                ssStorage.withDeleteClaim(Boolean.valueOf(ss.getMetadata().getAnnotations().computeIfAbsent(deleteClaimAnnotation, s -> "false")));
             }
+        }
+
+        // compute the differences with the requested storage (from the updated ConfigMap)
+        Storage.StorageDiffResult storageDiffResult = storage.diff(ssStorage);
+
+        // check for all the not allowed changes to the storage
+        boolean isStorageRejected = (storageDiffResult.isType() || storageDiffResult.isSize() ||
+                storageDiffResult.isStorageClass() || storageDiffResult.isSelector());
+
+        // only delete-claim flag can be changed
+        if (!isStorageRejected && (storage.type() == Storage.StorageType.PERSISTENT_CLAIM)) {
+            diff.setDifferent(storageDiffResult.isDeleteClaim());
+        } else {
+            log.warn("Changing storage configuration other than delete-claim is not supported !");
         }
 
         return diff;
