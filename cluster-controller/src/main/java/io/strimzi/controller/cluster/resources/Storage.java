@@ -4,7 +4,6 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorRequirement;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Quantity;
-import io.strimzi.controller.cluster.ClusterController;
 import io.vertx.core.json.JsonObject;
 
 import java.util.List;
@@ -143,11 +142,6 @@ public class Storage {
 
         if (pvc.getSpec().getSelector() != null) {
             storage.withSelector(pvc.getSpec().getSelector());
-        }
-
-        if (pvc.getMetadata().getAnnotations() != null) {
-            String deleteClaimAnnotation = String.format("%s/%s", ClusterController.STRIMZI_CLUSTER_CONTROLLER_DOMAIN, Storage.DELETE_CLAIM_FIELD);
-            storage.withDeleteClaim(Boolean.valueOf(pvc.getMetadata().getAnnotations().computeIfAbsent(deleteClaimAnnotation, s -> "false")));
         }
 
         return storage;
