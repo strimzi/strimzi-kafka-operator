@@ -191,14 +191,9 @@ public abstract class AbstractCluster {
         Map<String, Quantity> requests = new HashMap<>();
         requests.put("storage", storage.size());
 
-        Map<String, String> annotations = new HashMap<>();
-        annotations.put(String.format("%s/%s", ClusterController.STRIMZI_CLUSTER_CONTROLLER_DOMAIN, Storage.DELETE_CLAIM_FIELD),
-                String.valueOf(storage.isDeleteClaim()));
-
         PersistentVolumeClaim pvc = new PersistentVolumeClaimBuilder()
                 .withNewMetadata()
                 .withName(name)
-                .withAnnotations(annotations)
                 .endMetadata()
                 .withNewSpec()
                 .withAccessModes("ReadWriteOnce")
@@ -317,6 +312,10 @@ public abstract class AbstractCluster {
             Probe readinessProbe,
             boolean isOpenShift) {
 
+        Map<String, String> annotations = new HashMap<>();
+        annotations.put(String.format("%s/%s", ClusterController.STRIMZI_CLUSTER_CONTROLLER_DOMAIN, Storage.DELETE_CLAIM_FIELD),
+                String.valueOf(storage.isDeleteClaim()));
+
         Container container = new ContainerBuilder()
                 .withName(name)
                 .withImage(image)
@@ -357,6 +356,7 @@ public abstract class AbstractCluster {
                 .withName(name)
                 .withLabels(getLabelsWithName())
                 .withNamespace(namespace)
+                .withAnnotations(annotations)
                 .endMetadata()
                 .withNewSpec()
                 .withPodManagementPolicy("Parallel")
@@ -435,10 +435,12 @@ public abstract class AbstractCluster {
     }
 
     protected StatefulSet patchStatefulSet(StatefulSet statefulSet,
-                                        Probe livenessProbe,
-                                        Probe readinessProbe) {
+                                           Probe livenessProbe,
+                                           Probe readinessProbe,
+                                           Map<String, String> annotations) {
 
         statefulSet.getMetadata().setLabels(getLabelsWithName());
+        statefulSet.getMetadata().getAnnotations().putAll(annotations);
         statefulSet.getSpec().setSelector(new LabelSelectorBuilder().withMatchLabels(getLabelsWithName()).build());
         statefulSet.getSpec().getTemplate().getMetadata().setLabels(getLabelsWithName());
         statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(image);
@@ -463,7 +465,7 @@ public abstract class AbstractCluster {
         return dep;
     }
 
-    public ConfigMap patchConfigMap(ConfigMap cm, Map<String, String> data) {
+    protected ConfigMap patchConfigMap(ConfigMap cm, Map<String, String> data) {
 
         cm.setData(data);
 

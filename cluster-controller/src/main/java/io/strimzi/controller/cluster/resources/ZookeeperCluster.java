@@ -136,7 +136,12 @@ public class ZookeeperCluster extends AbstractCluster {
         }
 
         if (!ss.getSpec().getVolumeClaimTemplates().isEmpty()) {
+
             Storage storage = Storage.fromPersistentVolumeClaim(ss.getSpec().getVolumeClaimTemplates().get(0));
+            if (ss.getMetadata().getAnnotations() != null) {
+                String deleteClaimAnnotation = String.format("%s/%s", ClusterController.STRIMZI_CLUSTER_CONTROLLER_DOMAIN, Storage.DELETE_CLAIM_FIELD);
+                storage.withDeleteClaim(Boolean.valueOf(ss.getMetadata().getAnnotations().computeIfAbsent(deleteClaimAnnotation, s -> "false")));
+            }
             zk.setStorage(storage);
         } else {
             Storage storage = new Storage(Storage.StorageType.EPHEMERAL);
@@ -207,6 +212,31 @@ public class ZookeeperCluster extends AbstractCluster {
             }
         }
 
+        if (!ss.getSpec().getVolumeClaimTemplates().isEmpty()) {
+
+            if (storage.type() == Storage.StorageType.PERSISTENT_CLAIM) {
+
+                Storage ssStorage = Storage.fromPersistentVolumeClaim(ss.getSpec().getVolumeClaimTemplates().get(0));
+                if (ss.getMetadata().getAnnotations() != null) {
+                    String deleteClaimAnnotation = String.format("%s/%s", ClusterController.STRIMZI_CLUSTER_CONTROLLER_DOMAIN, Storage.DELETE_CLAIM_FIELD);
+                    ssStorage.withDeleteClaim(Boolean.valueOf(ss.getMetadata().getAnnotations().computeIfAbsent(deleteClaimAnnotation, s -> "false")));
+                }
+
+                if (storage.isDeleteClaim() != ssStorage.isDeleteClaim()) {
+                    diff.setDifferent(true);
+                }
+                // changing from "persistent-claim" to "ephemeral"
+            } else {
+                // TODO : warning ! the user is trying to change storage type which is not allowed !
+            }
+        } else {
+
+            // changing from current "ephemeral" to "persistent-claim"
+            if (storage.type() == Storage.StorageType.PERSISTENT_CLAIM) {
+                // TODO : warning ! the user is trying to change storage type which is not allowed !
+            }
+        }
+
         return diff;
     }
 
@@ -256,9 +286,14 @@ public class ZookeeperCluster extends AbstractCluster {
 
     public StatefulSet patchStatefulSet(StatefulSet statefulSet) {
 
+        Map<String, String> annotations = new HashMap<>();
+        annotations.put(String.format("%s/%s", ClusterController.STRIMZI_CLUSTER_CONTROLLER_DOMAIN, Storage.DELETE_CLAIM_FIELD),
+                String.valueOf(storage.isDeleteClaim()));
+
         return patchStatefulSet(statefulSet,
                 createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout),
-                createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout));
+                createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout),
+                annotations);
     }
 
     protected List<EnvVar> getEnvVars() {
