@@ -109,13 +109,13 @@ public class Config {
         }
     }
 
-    public static final String TC_CM_LABELS = "TC_CM_LABELS";
-    public static final String TC_KAFKA_BOOTSTRAP_SERVERS = "TC_KF_BOOTSTRAP_SERVERS";
-    public static final String TC_ZK_CONNECT = "TC_ZK_CONNECT";
-    public static final String TC_ZK_SESSION_TIMEOUT = "TC_ZK_SESSION_TIMEOUT";
-    public static final String TC_PERIODIC_INTERVAL = "TC_PERIODIC_INTERVAL";
-    public static final String TC_REASSIGN_THROTTLE = "TC_REASSIGN_THROTTLE";
-    public static final String TC_REASSIGN_VERIFY_INTERVAL = "TC_REASSIGN_VERIFY_INTERVAL";
+    public static final String TC_CM_LABELS = "STRIMZI_CONFIGMAP_LABELS";
+    public static final String TC_KAFKA_BOOTSTRAP_SERVERS = "STRIMZI_KAFKA_BOOTSTRAP_SERVERS";
+    public static final String TC_ZK_CONNECT = "STRIMZI_ZOOKEEPER_CONNECT";
+    public static final String TC_ZK_SESSION_TIMEOUT = "STRIMZI_ZOOKEEPER_SESSION_TIMEOUT";
+    public static final String TC_PERIODIC_INTERVAL = "STRIMZI_FULL_RECONCILIATION_INTERVAL";
+    public static final String TC_REASSIGN_THROTTLE = "STRIMZI_REASSIGN_THROTTLE";
+    public static final String TC_REASSIGN_VERIFY_INTERVAL = "STRIMZI_REASSIGN_VERIFY_INTERVAL";
 
     private static final Map<String, Value> CONFIG_VALUES = new HashMap<>();
     private static final Set<Type> TYPES = new HashSet<>();
@@ -127,7 +127,7 @@ public class Config {
     public static final Value<String> ZOOKEEPER_CONNECT = new Value(TC_ZK_CONNECT, STRING, getenv("KAFKA_ZOOKEEPER_SERVICE_HOST") + ":" + getenv("KAFKA_ZOOKEEPER_SERVICE_PORT"),
             "The zookeeper connection string.");
     public static final Value<Long> ZOOKEEPER_SESSION_TIMEOUT_MS = new Value(TC_ZK_SESSION_TIMEOUT, DURATION, "20 seconds",
-            "The ZooKeeper session timeout.");
+            "The zookeeper session timeout.");
     public static final Value<Long> FULL_RECONCILIATION_INTERVAL_MS = new Value(TC_PERIODIC_INTERVAL, DURATION, "15 minutes",
             "The period between full reconciliations.");
     public static final Value<Long> REASSIGN_THROTTLE = new Value(TC_REASSIGN_THROTTLE, LONG, Long.toString(Long.MAX_VALUE),

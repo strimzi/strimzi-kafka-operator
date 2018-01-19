@@ -66,16 +66,16 @@ than it would even if it was stateless.
 
 The controller is configured from environment variables:
 
-* `TC_CM_LABELS` 
+* `STRIMZI_CONFIGMAP_LABELS` 
 – The Kubernetes label selector used to identify ConfigMaps to be managed by the controller.
   Default: `strimzi.io/kind=topic`.  
-* `TC_ZK_SESSION_TIMEOUT`
+* `STRIMZI_ZOOKEEPER_SESSION_TIMEOUT`
 – The Zookeeper session timeout. For example `10 seconds`. Default: `20 seconds`.
-* `TC_KF_BOOTSTRAP_SERVERS`
+* `STRIMZI_KAFKA_BOOTSTRAP_SERVERS`
 – The list of Kafka bootstrap servers. Default: `${KAFKA_SERVICE_HOST}:${KAFKA_SERVICE_PORT}` 
-* `TC_ZK_CONNECT`
+* `STRIMZI_ZOOKEEPER_CONNECT`
 – The Zookeeper connection information. Default: `${KAFKA_ZOOKEEPER_SERVICE_HOST}:${KAFKA_ZOOKEEPER_SERVICE_PORT}`.
-* `TC_PERIODIC_INTERVAL`
+* `STRIMZI_FULL_RECONCILIATION_INTERVAL`
 – The interval between periodic reconciliations.
 
 If the controller configuration needs to be changed the process must be killed and restarted.
