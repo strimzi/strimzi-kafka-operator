@@ -30,7 +30,7 @@ rules:
   resources:
   - events
   verbs:
-  - get
+  - create
 ---
 apiVersion: v1
 kind: RoleBinding
