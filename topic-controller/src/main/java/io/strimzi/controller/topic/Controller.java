@@ -18,7 +18,6 @@
 package io.strimzi.controller.topic;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.EventBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.vertx.core.AsyncResult;
@@ -47,33 +46,33 @@ public class Controller {
     private TopicStore topicStore;
     private final InFlight inFlight;
 
-    enum ErrorType {
+    enum EventType {
         INFO("Info"),
         WARNING("Warning");
         final String name;
-        ErrorType(String name) {
+        EventType(String name) {
             this.name = name;
         }
     }
 
-    class ErrorEvent implements Handler<Void> {
-        private final ErrorType errorType;
+    class Event implements Handler<Void> {
+        private final EventType eventType;
         private final String message;
         private final HasMetadata involvedObject;
         private final Handler<AsyncResult<Void>> handler;
 
-        public ErrorEvent(ControllerException exception, Handler<AsyncResult<Void>> handler) {
+        public Event(ControllerException exception, Handler<AsyncResult<Void>> handler) {
             this.involvedObject = exception.getInvolvedObject();
             this.message = exception.getMessage();
             this.handler = handler;
-            this.errorType = ErrorType.WARNING;
+            this.eventType = EventType.WARNING;
         }
 
-        public ErrorEvent(HasMetadata involvedObject, String message, ErrorType errorType, Handler<AsyncResult<Void>> handler) {
+        public Event(HasMetadata involvedObject, String message, EventType eventType, Handler<AsyncResult<Void>> handler) {
             this.involvedObject = involvedObject;
             this.message = message;
             this.handler = handler;
-            this.errorType = errorType;
+            this.eventType = eventType;
         }
 
         @Override
@@ -88,14 +87,14 @@ public class Controller {
                         .withUid(involvedObject.getMetadata().getUid())
                         .endInvolvedObject();
             }
-            evtb.withType(errorType.name)
+            evtb.withType(eventType.name)
                     .withMessage(message)
                     .withNewMetadata().withLabels(cmPredicate.labels()).withGenerateName("topic-controller").endMetadata()
                     .withNewSource()
                     .withComponent(Controller.class.getName())
                     .endSource();
-            Event event = evtb.build();
-            switch (errorType) {
+            io.fabric8.kubernetes.api.model.Event event = evtb.build();
+            switch (eventType) {
                 case INFO:
                     logger.info("{}", message);
                     break;
@@ -235,7 +234,7 @@ public class Controller {
         public void handle(Void v) throws ControllerException {
             kafka.updateTopicConfig(topic, ar-> {
                 if (ar.failed()) {
-                    enqueue(new ErrorEvent(involvedObject, ar.cause().toString(), ErrorType.WARNING, eventResult -> {}));
+                    enqueue(new Event(involvedObject, ar.cause().toString(), EventType.WARNING, eventResult -> {}));
                 }
                 handler.handle(ar);
             });
@@ -266,7 +265,7 @@ public class Controller {
         public void handle(Void v) throws ControllerException {
             kafka.increasePartitions(topic, ar-> {
                 if (ar.failed()) {
-                    enqueue(new ErrorEvent(involvedObject, ar.cause().toString(), ErrorType.WARNING, eventResult -> {}));
+                    enqueue(new Event(involvedObject, ar.cause().toString(), EventType.WARNING, eventResult -> {}));
                 }
                 handler.handle(ar);
             });
@@ -297,7 +296,7 @@ public class Controller {
         public void handle(Void v) throws ControllerException {
             kafka.changeReplicationFactor(topic, ar-> {
                 if (ar.failed()) {
-                    enqueue(new ErrorEvent(involvedObject, ar.cause().toString(), ErrorType.WARNING, eventResult -> {}));
+                    enqueue(new Event(involvedObject, ar.cause().toString(), EventType.WARNING, eventResult -> {}));
                 }
                 handler.handle(ar);
             });
@@ -499,8 +498,8 @@ public class Controller {
         } else {
             // Just use kafka version, but also create a warning event
             logger.debug("cm created in k8s and topic created in kafka, and they are irreconcilably different => kafka version wins");
-            enqueue(new ErrorEvent(involvedObject, "ConfigMap is incompatible with the topic metadata. " +
-                    "The topic metadata will be treated as canonical.", ErrorType.INFO, ar -> {
+            enqueue(new Event(involvedObject, "ConfigMap is incompatible with the topic metadata. " +
+                    "The topic metadata will be treated as canonical.", EventType.INFO, ar -> {
                 if (ar.succeeded()) {
                     enqueue(new UpdateConfigMap(kafkaTopic, involvedObject, ar2 -> {
                         if (ar2.succeeded()) {
@@ -526,7 +525,7 @@ public class Controller {
         if (conflict != null) {
             final String message = "ConfigMap and Topic both changed in a conflicting way: " + conflict;
             logger.error(message);
-            enqueue(new ErrorEvent(involvedObject, message, ErrorType.INFO, eventResult -> {}));
+            enqueue(new Event(involvedObject, message, EventType.INFO, eventResult -> {}));
             reconciliationResultHandler.handle(Future.failedFuture(new Exception(message)));
         } else {
             TopicDiff merged = oursKafka.merge(oursK8s);
@@ -540,7 +539,7 @@ public class Controller {
                 if (partitionsDelta < 0) {
                     final String message = "Number of partitions cannot be decreased";
                     logger.error(message);
-                    enqueue(new ErrorEvent(involvedObject, message, ErrorType.INFO, eventResult -> {
+                    enqueue(new Event(involvedObject, message, EventType.INFO, eventResult -> {
                     }));
                     reconciliationResultHandler.handle(Future.failedFuture(new Exception(message)));
                 } else {
@@ -783,7 +782,7 @@ public class Controller {
                 Topic kafkaTopic = TopicSerialization.fromTopicMetadata(topicMetadata);
                 Topic privateTopic = ar.result().resultAt(1);
                 if (privateTopic == null && isModify) {
-                    enqueue(new ErrorEvent(configMap, "Kafka topics cannot be renamed, but ConfigMap's data." + TopicSerialization.CM_KEY_NAME + " has changed.", ErrorType.WARNING, handler));
+                    enqueue(new Event(configMap, "Kafka topics cannot be renamed, but ConfigMap's data." + TopicSerialization.CM_KEY_NAME + " has changed.", EventType.WARNING, handler));
                 } else {
                     reconcile(configMap, k8sTopic, kafkaTopic, privateTopic, handler);
                 }
@@ -824,7 +823,7 @@ public class Controller {
         public void handle(Void v) throws ControllerException {
             topicStore.update(topic, ar-> {
                 if (ar.failed()) {
-                    enqueue(new ErrorEvent(involvedObject, ar.cause().toString(), ErrorType.WARNING, eventResult -> {}));
+                    enqueue(new Event(involvedObject, ar.cause().toString(), EventType.WARNING, eventResult -> {}));
                 }
                 handler.handle(ar);
             });
@@ -855,7 +854,7 @@ public class Controller {
                 logger.debug("Completing {}", this);
                 if (ar.failed()) {
                     logger.debug("{} failed", this);
-                    enqueue(new ErrorEvent(involvedObject, ar.cause().toString(), ErrorType.WARNING, eventResult -> {}));
+                    enqueue(new Event(involvedObject, ar.cause().toString(), EventType.WARNING, eventResult -> {}));
                 } else {
                     logger.debug("{} succeeded", this);
                 }
@@ -885,7 +884,7 @@ public class Controller {
         public void handle(Void v) throws ControllerException {
             topicStore.delete(topicName, ar-> {
                 if (ar.failed()) {
-                    enqueue(new ErrorEvent(involvedObject, ar.cause().toString(), ErrorType.WARNING, eventResult -> {}));
+                    enqueue(new Event(involvedObject, ar.cause().toString(), EventType.WARNING, eventResult -> {}));
                 }
                 handler.handle(ar);
             });

@@ -59,7 +59,7 @@ class ConfigMapWatcher implements Watcher<ConfigMap> {
                         message = "Failure processing ConfigMap watch event " + action + " on map " + name + " with labels " + labels +": " + ar.cause().getMessage();
                         logger.error("{}", message, ar.cause());
                     }
-                    controller.enqueue(controller.new ErrorEvent(configMap, message, Controller.ErrorType.WARNING, errorResult -> {}));
+                    controller.enqueue(controller.new Event(configMap, message, Controller.EventType.WARNING, errorResult -> {}));
                 }
             };
             switch (action) {
