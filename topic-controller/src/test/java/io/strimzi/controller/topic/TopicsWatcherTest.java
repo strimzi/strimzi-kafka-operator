@@ -54,8 +54,8 @@ public class TopicsWatcherTest {
         TopicsWatcher tw = new TopicsWatcher(controller, tcw);
         tw.start(mockZk);
         mockZk.triggerChildren(Future.succeededFuture(asList("foo", "bar", "baz")));
-        assertEquals(asList(new MockController.Event(
-                MockController.Event.Type.CREATE, new TopicName("baz"))), controller.getEvents());
+        assertEquals(asList(new MockController.MockControllerEvent(
+                MockController.MockControllerEvent.Type.CREATE, new TopicName("baz"))), controller.getMockControllerEvents());
         assertTrue(tcw.watching("baz"));
     }
 
@@ -66,8 +66,8 @@ public class TopicsWatcherTest {
         // Now change the config
         controller.clearEvents();
         mockZk.triggerData(Future.succeededFuture(new byte[0]));
-        assertEquals(asList(new MockController.Event(
-                MockController.Event.Type.MODIFY_CONFIG, new TopicName("baz"))), controller.getEvents());
+        assertEquals(asList(new MockController.MockControllerEvent(
+                MockController.MockControllerEvent.Type.MODIFY_CONFIG, new TopicName("baz"))), controller.getMockControllerEvents());
     }
 
     @Test
@@ -80,8 +80,8 @@ public class TopicsWatcherTest {
         TopicsWatcher tw = new TopicsWatcher(controller, tcw);
         tw.start(mockZk);
         mockZk.triggerChildren(Future.succeededFuture(asList("foo")));
-        assertEquals(asList(new MockController.Event(
-                MockController.Event.Type.DELETE, new TopicName("bar"))), controller.getEvents());
+        assertEquals(asList(new MockController.MockControllerEvent(
+                MockController.MockControllerEvent.Type.DELETE, new TopicName("bar"))), controller.getMockControllerEvents());
         assertFalse(tcw.watching("baz"));
     }
 }

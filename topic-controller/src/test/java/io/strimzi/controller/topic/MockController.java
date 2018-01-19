@@ -21,7 +21,6 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,8 +31,8 @@ class MockController extends Controller {
         super(null, null, null, null, null);
     }
 
-    static class Event {
-        private final Event.Type type;
+    static class MockControllerEvent {
+        private final MockControllerEvent.Type type;
 
         static enum Type {
             CREATE,
@@ -44,13 +43,13 @@ class MockController extends Controller {
         private final TopicName topicName;
         private final ConfigMap configMap;
 
-        public Event(Event.Type type, TopicName topicName) {
+        public MockControllerEvent(MockControllerEvent.Type type, TopicName topicName) {
             this.type = type;
             this.topicName = topicName;
             this.configMap = null;
         }
 
-        public Event(Event.Type type, ConfigMap configMap) {
+        public MockControllerEvent(MockControllerEvent.Type type, ConfigMap configMap) {
             this.type = type;
             this.topicName = null;
             this.configMap = configMap;
@@ -61,12 +60,12 @@ class MockController extends Controller {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
 
-            Event event = (Event) o;
+            MockControllerEvent mockControllerEvent = (MockControllerEvent) o;
 
-            if (type != event.type) return false;
-            if (topicName != null ? !topicName.equals(event.topicName) : event.topicName != null)
+            if (type != mockControllerEvent.type) return false;
+            if (topicName != null ? !topicName.equals(mockControllerEvent.topicName) : mockControllerEvent.topicName != null)
                 return false;
-            return configMap != null ? configMap.equals(event.configMap) : event.configMap == null;
+            return configMap != null ? configMap.equals(mockControllerEvent.configMap) : mockControllerEvent.configMap == null;
         }
 
         @Override
@@ -93,49 +92,49 @@ class MockController extends Controller {
     public AsyncResult<Void> cmAddedResult = Future.failedFuture("Unexpected mock interaction. Configure " + getClass().getSimpleName()+".cmAddedResult");
     public AsyncResult<Void> cmDeletedResult = Future.failedFuture("Unexpected mock interaction. Configure " + getClass().getSimpleName()+".cmDeletedResult");
     public AsyncResult<Void> cmModifiedResult = Future.failedFuture("Unexpected mock interaction. Configure " + getClass().getSimpleName()+".cmModifiedResult");
-    private List<Event> events = new ArrayList<>();
+    private List<MockControllerEvent> mockControllerEvents = new ArrayList<>();
 
-    public List<Event> getEvents() {
-        return events;
+    public List<MockControllerEvent> getMockControllerEvents() {
+        return mockControllerEvents;
     }
 
     public void clearEvents() {
-        events.clear();
+        mockControllerEvents.clear();
     }
 
     @Override
     public void onTopicCreated(TopicName topicName, Handler<AsyncResult<Void>> handler) {
-        events.add(new Event(Event.Type.CREATE, topicName));
+        mockControllerEvents.add(new MockControllerEvent(MockControllerEvent.Type.CREATE, topicName));
         handler.handle(topicCreatedResult);
     }
 
     @Override
     public void onTopicDeleted(TopicName topicName, Handler<AsyncResult<Void>> handler) {
-        events.add(new Event(Event.Type.DELETE, topicName));
+        mockControllerEvents.add(new MockControllerEvent(MockControllerEvent.Type.DELETE, topicName));
         handler.handle(topicDeletedResult);
     }
 
     @Override
     public void onTopicConfigChanged(TopicName topicName, Handler<AsyncResult<Void>> handler) {
-        events.add(new Event(Event.Type.MODIFY_CONFIG, topicName));
+        mockControllerEvents.add(new MockControllerEvent(MockControllerEvent.Type.MODIFY_CONFIG, topicName));
         handler.handle(topicModifiedResult);
     }
 
     @Override
     public void onConfigMapAdded(ConfigMap cm, Handler<AsyncResult<Void>> handler) {
-        events.add(new Event(Event.Type.CREATE, cm));
+        mockControllerEvents.add(new MockControllerEvent(MockControllerEvent.Type.CREATE, cm));
         handler.handle(cmAddedResult);
     }
 
     @Override
     public void onConfigMapModified(ConfigMap cm, Handler<AsyncResult<Void>> handler) {
-        events.add(new Event(Event.Type.MODIFY, cm));
+        mockControllerEvents.add(new MockControllerEvent(MockControllerEvent.Type.MODIFY, cm));
         handler.handle(cmModifiedResult);
     }
 
     @Override
     public void onConfigMapDeleted(ConfigMap cm, Handler<AsyncResult<Void>> handler) {
-        events.add(new Event(Event.Type.DELETE, cm));
+        mockControllerEvents.add(new MockControllerEvent(MockControllerEvent.Type.DELETE, cm));
         handler.handle(cmDeletedResult);
     }
 }

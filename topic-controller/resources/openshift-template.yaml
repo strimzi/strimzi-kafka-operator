@@ -24,6 +24,13 @@ rules:
   - create
   - patch
   - update
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
 ---
 apiVersion: v1
 kind: RoleBinding
