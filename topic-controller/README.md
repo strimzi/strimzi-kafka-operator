@@ -62,28 +62,31 @@ than it would even if it was stateless.
 
 ## Usage Recommendations
 
-1. Decide to either always operate on ConfigMaps or always operate directly on topics.
+1. Try to either always operate on ConfigMaps or always operate directly on topics.
 2. When creating a ConfigMap:
     * Remember that you can't easily change the name later.
     * Choose a name for the ConfigMap that reflects the name of the topic it describes.
     * Ideally the ConfigMap's `metadata.name` should be the same as its `data.name`.
+      To do this, the topic name will have to be a [valid Kubernetes resource name][identifiers].
 3. When creating a topic:
     * Remember that you can't change the name later.
     * It's best to use a name that is a [valid Kubernetes resource name][identifiers], 
       otherwise the controller will have to sanitize the name when creating 
       the corresponding ConfigMap.
+
     
 ## Format of the ConfigMap
 
 By default, the controller only considers ConfigMaps having the label `strimzi.io/kind=topic`, 
-but this is configurable via the `TC_CM_LABELS` environment variable.
+but this is configurable via the `STRIMZI_CONFIGMAP_LABELS` environment variable.
 
 The `data` of such ConfigMaps supports the following keys:
 
-* `name` The name of the topic. If this is absent the name of the ConfigMap itself is used.
-* `partitions` The number of partitions of the Kafka topic. This can be increased, but not decreased.
-* `replicas` The number of replicas of the Kafka topic. 
-* `config` A string in JSON format representing the topic configuration. 
+* `name` The name of the topic. Optional; if this is absent the name of the ConfigMap itself is used.
+* `partitions` The number of partitions of the Kafka topic. This can be increased, but not decreased. Required. 
+* `replicas` The number of replicas of the Kafka topic. Required. 
+* `config` A string in JSON format representing the [topic configuration][topic-config]. Optional, defaulting to the empty set.
+ 
 
 ## Example
 
@@ -103,14 +106,16 @@ data:
   name: orders
   partitions: "10"
   replicas: "2"
-  config: '{}' 
 ```
 
-You would then create this ConfigMap:
+Because the `config` key is omitted from the `data` the topic's config will be empty, and thus default to the 
+Kafka broker default.
+
+You would then create this ConfigMap in Kubernetes:
 
     kubectl create -f orders-topic.yaml
     
-Or 
+Or in OpenShift:
 
     oc create -f orders-topic.yaml
 
@@ -167,3 +172,4 @@ Since the controller is intended to execute within Kubernetes, this can be achie
 by deleting the pod.
 
 [identifiers]: https://github.com/kubernetes/community/blob/master/contributors/design-proposals/architecture/identifiers.md
+[topic-config]: https://kafka.apache.org/documentation/#topicconfigs
