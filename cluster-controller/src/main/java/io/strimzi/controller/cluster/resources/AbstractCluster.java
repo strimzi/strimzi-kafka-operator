@@ -156,6 +156,10 @@ public abstract class AbstractCluster {
         return this.volumeName;
     }
 
+    public String getImage() {
+        return this.image;
+    }
+
     protected VolumeMount createVolumeMount(String name, String path) {
         VolumeMount volumeMount = new VolumeMountBuilder()
                 .withName(name)
@@ -318,7 +322,7 @@ public abstract class AbstractCluster {
 
         Container container = new ContainerBuilder()
                 .withName(name)
-                .withImage(image)
+                .withImage(getImage())
                 .withEnv(getEnvVars())
                 .withVolumeMounts(volumeMounts)
                 .withPorts(ports)
@@ -386,11 +390,12 @@ public abstract class AbstractCluster {
     protected Deployment createDeployment(
             List<ContainerPort> ports,
             Probe livenessProbe,
-            Probe readinessProbe) {
+            Probe readinessProbe,
+            Map<String, String> annotations) {
 
         Container container = new ContainerBuilder()
                 .withName(name)
-                .withImage(image)
+                .withImage(getImage())
                 .withEnv(getEnvVars())
                 .withPorts(ports)
                 .withLivenessProbe(livenessProbe)
@@ -402,6 +407,7 @@ public abstract class AbstractCluster {
                 .withName(name)
                 .withLabels(getLabelsWithName())
                 .withNamespace(namespace)
+                .withAnnotations(annotations)
                 .endMetadata()
                 .withNewSpec()
                 .withStrategy(new DeploymentStrategyBuilder().withType("RollingUpdate").withRollingUpdate(new RollingUpdateDeploymentBuilder().withMaxSurge(new IntOrString(1)).withMaxUnavailable(new IntOrString(0)).build()).build())
@@ -443,7 +449,7 @@ public abstract class AbstractCluster {
         statefulSet.getMetadata().getAnnotations().putAll(annotations);
         statefulSet.getSpec().setSelector(new LabelSelectorBuilder().withMatchLabels(getLabelsWithName()).build());
         statefulSet.getSpec().getTemplate().getMetadata().setLabels(getLabelsWithName());
-        statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(image);
+        statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(getImage());
         statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).setLivenessProbe(livenessProbe);
         statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).setReadinessProbe(readinessProbe);
         statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(getEnvVars());
@@ -453,11 +459,13 @@ public abstract class AbstractCluster {
 
     protected Deployment patchDeployment(Deployment dep,
                                       Probe livenessProbe,
-                                      Probe readinessProbe) {
+                                      Probe readinessProbe,
+                                      Map<String, String> annotations) {
 
         dep.getMetadata().setLabels(getLabelsWithName());
+        dep.getMetadata().setAnnotations(annotations);
         dep.getSpec().getTemplate().getMetadata().setLabels(getLabelsWithName());
-        dep.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(image);
+        dep.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(getImage());
         dep.getSpec().getTemplate().getSpec().getContainers().get(0).setLivenessProbe(livenessProbe);
         dep.getSpec().getTemplate().getSpec().getContainers().get(0).setReadinessProbe(readinessProbe);
         dep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(getEnvVars());

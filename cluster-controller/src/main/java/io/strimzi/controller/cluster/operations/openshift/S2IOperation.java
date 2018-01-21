@@ -1,0 +1,11 @@
+package io.strimzi.controller.cluster.operations.openshift;
+
+import io.strimzi.controller.cluster.resources.Source2Image;
+
+public abstract class S2IOperation extends OpenShiftOperation {
+    protected final Source2Image s2i;
+
+    protected S2IOperation(Source2Image s2i) {
+        this.s2i = s2i;
+    }
+}

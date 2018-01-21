@@ -36,6 +36,16 @@ public class K8SUtils {
         return this.client.isAdaptable(OpenShiftClient.class);
     }
 
+    public OpenShiftUtils getOpenShiftUtils()   {
+        if (isOpenShift()) {
+            return new OpenShiftUtils(client.adapt(OpenShiftClient.class));
+        }
+        else {
+            log.error("OpenShiftUtils can be created only on OpenShift");
+            throw new RuntimeException("OpenShiftUtils can be created only on OpenShift");
+        }
+    }
+
     /*
       CREATE methods
      */

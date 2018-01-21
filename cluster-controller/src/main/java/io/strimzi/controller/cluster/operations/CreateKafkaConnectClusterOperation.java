@@ -3,6 +3,7 @@ package io.strimzi.controller.cluster.operations;
 import io.strimzi.controller.cluster.K8SUtils;
 import io.strimzi.controller.cluster.operations.kubernetes.CreateDeploymentOperation;
 import io.strimzi.controller.cluster.operations.kubernetes.CreateServiceOperation;
+import io.strimzi.controller.cluster.operations.openshift.CreateS2IOperation;
 import io.strimzi.controller.cluster.resources.KafkaConnectCluster;
 import io.vertx.core.*;
 import io.vertx.core.shareddata.Lock;
@@ -31,7 +32,20 @@ public class CreateKafkaConnectClusterOperation extends KafkaConnectClusterOpera
                 Future<Void> futureDeployment = Future.future();
                 OperationExecutor.getInstance().execute(new CreateDeploymentOperation(connect.generateDeployment()), futureDeployment.completer());
 
-                CompositeFuture.join(futureService, futureDeployment).setHandler(ar -> {
+                Future<Void> futureS2I;
+                if (connect.getS2I() != null) {
+                    if (k8s.isOpenShift())  {
+                        futureS2I = Future.future();
+                        OperationExecutor.getInstance().execute(new CreateS2IOperation(connect.getS2I()), futureS2I.completer());
+                    } else {
+                        futureS2I = Future.succeededFuture();
+                        log.error("S2I is supported only on OpenShift. S2I will be ignored in Kafka Connect cluster {} in namespace {}", connect.getName(), namespace);
+                    }
+                } else {
+                    futureS2I = Future.succeededFuture();
+                }
+
+                CompositeFuture.join(futureService, futureDeployment, futureS2I).setHandler(ar -> {
                     if (ar.succeeded()) {
                         log.info("Kafka Connect cluster {} successfully created in namespace {}", connect.getName(), namespace);
                         handler.handle(Future.succeededFuture());
