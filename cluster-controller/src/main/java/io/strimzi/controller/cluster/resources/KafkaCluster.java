@@ -257,7 +257,7 @@ public class KafkaCluster extends AbstractCluster {
         // only delete-claim flag can be changed
         if (!isStorageRejected && (storage.type() == Storage.StorageType.PERSISTENT_CLAIM)) {
             if (storageDiffResult.isDeleteClaim()) {
-                diff.setDifferent(storageDiffResult.isDeleteClaim());
+                diff.setDifferent(true);
             }
         } else if (isStorageRejected) {
             log.warn("Changing storage configuration other than delete-claim is not supported !");
