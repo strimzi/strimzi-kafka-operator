@@ -227,6 +227,31 @@ public class KafkaConnectCluster extends AbstractCluster {
             diff.setRollingUpdate(true);
         }
 
+        boolean deploymentHasS2I = false;
+        String s2iAnnotation = String.format("%s/%s", ClusterController.STRIMZI_CLUSTER_CONTROLLER_DOMAIN, Source2Image.ANNOTATION_S2I);
+        if (dep.getMetadata().getAnnotations().containsKey(s2iAnnotation)) {
+            JsonObject config = new JsonObject(dep.getMetadata().getAnnotations().get(s2iAnnotation));
+            if (config.getBoolean(Source2Image.KEY_ENABLED, false)) {
+                deploymentHasS2I = true;
+            }
+        }
+
+        if (s2i == null && deploymentHasS2I)    {
+            log.info("Diff: Kafka Connect S2I should be removed");
+            diff.setDifferent(true);
+            diff.setS2i(Source2Image.Source2ImageDiff.DELETE);
+        } else if (s2i != null && !deploymentHasS2I)    {
+            log.info("Diff: Kafka Connect S2I should be added");
+            diff.setDifferent(true);
+            diff.setS2i(Source2Image.Source2ImageDiff.CREATE);
+        } else if (s2i != null && deploymentHasS2I) {
+            if (!s2i.toJson().equals(new JsonObject(dep.getMetadata().getAnnotations().get(s2iAnnotation)))) {
+                log.info("Diff: Kafka Connect S2I should be updated");
+                diff.setS2i(Source2Image.Source2ImageDiff.UPDATE);
+                diff.setDifferent(true);
+            }
+        }
+
         return diff;
     }
 
@@ -242,16 +267,18 @@ public class KafkaConnectCluster extends AbstractCluster {
                 Collections.singletonList(createContainerPort(restApiPortName, restApiPort, "TCP")),
                 createHttpProbe(healthCheckPath, restApiPortName, healthCheckInitialDelay, healthCheckTimeout),
                 createHttpProbe(healthCheckPath, restApiPortName, healthCheckInitialDelay, healthCheckTimeout),
-                getAnnmotations()
+                getDeploymentAnnotations(),
+                getPodAnnotations()
                 );
     }
 
     public Deployment patchDeployment(Deployment dep) {
-
         return patchDeployment(dep,
                 createHttpProbe(healthCheckPath, restApiPortName, healthCheckInitialDelay, healthCheckTimeout),
                 createHttpProbe(healthCheckPath, restApiPortName, healthCheckInitialDelay, healthCheckTimeout),
-                getAnnmotations());
+                getDeploymentAnnotations(),
+                getPodAnnotations()
+                );
     }
 
     protected List<EnvVar> getEnvVars() {
@@ -269,12 +296,22 @@ public class KafkaConnectCluster extends AbstractCluster {
         return varList;
     }
 
-    protected Map<String, String> getAnnmotations() {
+    protected Map<String, String> getDeploymentAnnotations() {
         Map<String, String> annotations = new HashMap<>();
 
         if (s2i != null)    {
-            annotations.put("alpha.image.policy.openshift.io/resolve-names", "*");
+            annotations.put(Source2Image.ANNOTATION_RESOLVE_NAMES, "*");
             annotations.put(String.format("%s/%s", ClusterController.STRIMZI_CLUSTER_CONTROLLER_DOMAIN, Source2Image.ANNOTATION_S2I), s2i.toJson().encode());
+        }
+
+        return annotations;
+    }
+
+    protected Map<String, String> getPodAnnotations() {
+        Map<String, String> annotations = new HashMap<>();
+
+        if (s2i != null)    {
+            annotations.put(Source2Image.ANNOTATION_RESOLVE_NAMES, "*");
         }
 
         return annotations;

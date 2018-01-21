@@ -98,4 +98,8 @@ public class OpenShiftUtils {
             throw new RuntimeException("Unsupported type " + type.getSimpleName());
         }
     }
+
+    public void patch(Patchable patchable, KubernetesResource patch)    {
+        patchable.patch(patch);
+    }
 }

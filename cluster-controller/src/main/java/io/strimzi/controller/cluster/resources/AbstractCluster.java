@@ -391,7 +391,8 @@ public abstract class AbstractCluster {
             List<ContainerPort> ports,
             Probe livenessProbe,
             Probe readinessProbe,
-            Map<String, String> annotations) {
+            Map<String, String> deploymentAnnotations,
+            Map<String, String> podAnnotations) {
 
         Container container = new ContainerBuilder()
                 .withName(name)
@@ -407,7 +408,7 @@ public abstract class AbstractCluster {
                 .withName(name)
                 .withLabels(getLabelsWithName())
                 .withNamespace(namespace)
-                .withAnnotations(annotations)
+                .withAnnotations(deploymentAnnotations)
                 .endMetadata()
                 .withNewSpec()
                 .withStrategy(new DeploymentStrategyBuilder().withType("RollingUpdate").withRollingUpdate(new RollingUpdateDeploymentBuilder().withMaxSurge(new IntOrString(1)).withMaxUnavailable(new IntOrString(0)).build()).build())
@@ -415,6 +416,7 @@ public abstract class AbstractCluster {
                 .withNewTemplate()
                 .withNewMetadata()
                 .withLabels(getLabels())
+                .withAnnotations(podAnnotations)
                 .endMetadata()
                 .withNewSpec()
                 .withContainers(container)
@@ -460,11 +462,13 @@ public abstract class AbstractCluster {
     protected Deployment patchDeployment(Deployment dep,
                                       Probe livenessProbe,
                                       Probe readinessProbe,
-                                      Map<String, String> annotations) {
+                                      Map<String, String> deploymentAnnotations,
+                                      Map<String, String> podAnnotations) {
 
         dep.getMetadata().setLabels(getLabelsWithName());
-        dep.getMetadata().setAnnotations(annotations);
+        dep.getMetadata().setAnnotations(deploymentAnnotations);
         dep.getSpec().getTemplate().getMetadata().setLabels(getLabelsWithName());
+        dep.getSpec().getTemplate().getMetadata().setAnnotations(podAnnotations);
         dep.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(getImage());
         dep.getSpec().getTemplate().getSpec().getContainers().get(0).setLivenessProbe(livenessProbe);
         dep.getSpec().getTemplate().getSpec().getContainers().get(0).setReadinessProbe(readinessProbe);

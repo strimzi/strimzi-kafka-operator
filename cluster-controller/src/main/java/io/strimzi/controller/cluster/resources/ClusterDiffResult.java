@@ -6,6 +6,7 @@ public class ClusterDiffResult {
     private Boolean scaleUp = false;
     private Boolean scaleDown = false;
     private boolean isMetricsChanged = false;
+    private Source2Image.Source2ImageDiff s2i = Source2Image.Source2ImageDiff.NONE;
 
     public ClusterDiffResult() {
         // Nothing to do
@@ -66,5 +67,13 @@ public class ClusterDiffResult {
 
     public void setMetricsChanged(boolean metricsChanged) {
         isMetricsChanged = metricsChanged;
+    }
+
+    public Source2Image.Source2ImageDiff getS2i() {
+        return s2i;
+    }
+
+    public void setS2i(Source2Image.Source2ImageDiff s2i) {
+        this.s2i = s2i;
     }
 }

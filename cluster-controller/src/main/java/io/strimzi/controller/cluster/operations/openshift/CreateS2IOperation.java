@@ -31,19 +31,13 @@ public class CreateS2IOperation extends S2IOperation {
         Future<Void> futureTargetImageStream = Future.future();
         OperationExecutor.getInstance().execute(new CreateImageStreamOperation(s2i.generateTargetImageStream()), futureTargetImageStream.completer());
 
-        CompositeFuture.join(futureSourceImageStream, futureTargetImageStream).setHandler(ar -> {
-            if (ar.succeeded()) {
-                // First cresate the ImageStreams and only afterwards the BuildConfig
-                OperationExecutor.getInstance().execute(new CreateBuildConfigOperation(s2i.generateBuildConfig()), res -> {
-                    if (res.succeeded()) {
+        Future<Void> futureBuildConfig = Future.future();
+        OperationExecutor.getInstance().execute(new CreateBuildConfigOperation(s2i.generateBuildConfig()), futureBuildConfig.completer());
 
-                        log.info("S2I {} successfully created in namespace {}", s2i.getName(), s2i.getNamespace());
-                        handler.handle(Future.succeededFuture());
-                    } else {
-                        log.error("S2I cluster {} failed to create in namespace {}", s2i.getName(), s2i.getNamespace(), res.cause());
-                        handler.handle(Future.failedFuture("Failed to create S2I"));
-                    }
-                });
+        CompositeFuture.join(futureSourceImageStream, futureTargetImageStream, futureBuildConfig).setHandler(ar -> {
+            if (ar.succeeded()) {
+                log.info("S2I {} successfully created in namespace {}", s2i.getName(), s2i.getNamespace());
+                handler.handle(Future.succeededFuture());
             } else {
                 log.error("S2I cluster {} failed to create in namespace {}", s2i.getName(), s2i.getNamespace());
                 handler.handle(Future.failedFuture("Failed to create S2I"));

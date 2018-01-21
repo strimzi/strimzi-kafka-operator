@@ -4,9 +4,13 @@ import io.strimzi.controller.cluster.K8SUtils;
 import io.strimzi.controller.cluster.operations.kubernetes.PatchOperation;
 import io.strimzi.controller.cluster.operations.kubernetes.ScaleDownOperation;
 import io.strimzi.controller.cluster.operations.kubernetes.ScaleUpOperation;
+import io.strimzi.controller.cluster.operations.openshift.CreateS2IOperation;
+import io.strimzi.controller.cluster.operations.openshift.DeleteS2IOperation;
+import io.strimzi.controller.cluster.operations.openshift.UpdateS2IOperation;
 import io.strimzi.controller.cluster.resources.KafkaConnectCluster;
 import io.strimzi.controller.cluster.resources.ClusterDiffResult;
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.strimzi.controller.cluster.resources.Source2Image;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -37,11 +41,9 @@ public class UpdateKafkaConnectClusterOperation extends KafkaConnectClusterOpera
                 ConfigMap connectConfigMap = k8s.getConfigmap(namespace, name);
 
                 if (connectConfigMap != null)    {
-
                     connect = KafkaConnectCluster.fromConfigMap(connectConfigMap);
                     log.info("Updating Kafka Connect cluster {} in namespace {}", connect.getName(), namespace);
                     diff = connect.diff(k8s, namespace);
-
                 } else  {
                     log.error("ConfigMap {} doesn't exist anymore in namespace {}", name, namespace);
                     handler.handle(Future.failedFuture("ConfigMap doesn't exist anymore"));
@@ -54,6 +56,7 @@ public class UpdateKafkaConnectClusterOperation extends KafkaConnectClusterOpera
                 scaleDown(connect, diff)
                         .compose(i -> patchService(connect, diff))
                         .compose(i -> patchDeployment(connect, diff))
+                        .compose(i -> patchS2I(connect, diff))
                         .compose(i -> scaleUp(connect, diff))
                         .compose(chainFuture::complete, chainFuture);
 
@@ -106,6 +109,29 @@ public class UpdateKafkaConnectClusterOperation extends KafkaConnectClusterOpera
             Future<Void> patchDeployment = Future.future();
             OperationExecutor.getInstance().execute(new PatchOperation(k8s.getDeploymentResource(namespace, connect.getName()), connect.patchDeployment(k8s.getDeployment(namespace, connect.getName()))), patchDeployment.completer());
             return patchDeployment;
+        }
+        else
+        {
+            return Future.succeededFuture();
+        }
+    }
+
+    private Future<Void> patchS2I(KafkaConnectCluster connect, ClusterDiffResult diff) {
+        if (diff.getS2i() == Source2Image.Source2ImageDiff.CREATE) {
+            log.info("Creating S2I deployment {} in namespace {}", connect.getName(), namespace);
+            Future<Void> createS2I = Future.future();
+            OperationExecutor.getInstance().execute(new CreateS2IOperation(connect.getS2I()), createS2I.completer());
+            return createS2I;
+        } else if (diff.getS2i() == Source2Image.Source2ImageDiff.DELETE) {
+            log.info("Deleting S2I deployment {} in namespace {}", connect.getName(), namespace);
+            Future<Void> deleteS2I = Future.future();
+            OperationExecutor.getInstance().execute(new DeleteS2IOperation(new Source2Image(namespace, connect.getName())), deleteS2I.completer());
+            return deleteS2I;
+        } else if (diff.getS2i() == Source2Image.Source2ImageDiff.UPDATE) {
+            log.info("Updating S2I deployment {} in namespace {}", connect.getName(), namespace);
+            Future<Void> patchS2I = Future.future();
+            OperationExecutor.getInstance().execute(new UpdateS2IOperation(connect.getS2I()), patchS2I.completer());
+            return patchS2I;
         }
         else
         {

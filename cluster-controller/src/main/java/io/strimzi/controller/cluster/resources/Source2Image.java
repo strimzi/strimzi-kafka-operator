@@ -22,11 +22,13 @@ public class Source2Image {
     private final String name;
     private final String namespace;
     private final String sourceImage;
+    private final String tag;
     private final String targetImage;
     protected Map<String, String> labels;
 
     // Annotations
     public static String ANNOTATION_S2I = "s2i";
+    public static String ANNOTATION_RESOLVE_NAMES = "alpha.image.policy.openshift.io/resolve-names";
 
     // Keys to config JSON
     private static String KEY_SOURCE_IMAGE = "sourceImage";
@@ -46,8 +48,24 @@ public class Source2Image {
         this.name = name;
         this.namespace = namespace;
         this.labels = labels;
-        this.sourceImage = sourceImage;
-        this.targetImage = name + ":latest";
+        this.sourceImage = sourceImage.substring(0, sourceImage.lastIndexOf(":"));
+        this.tag = sourceImage.substring(sourceImage.lastIndexOf(":") + 1);
+        this.targetImage = name;
+    }
+
+    /**
+     * Constructor which can be used for deleting the Source2Image objects based only on name and namsespace
+     *
+     * @param namespace     OpenShift project
+     * @param name       Name od the name
+     */
+    public Source2Image(String namespace, String name) {
+        this.name = name;
+        this.namespace = namespace;
+        this.labels = null;
+        this.sourceImage = null;
+        this.tag = null;
+        this.targetImage = null;
     }
 
     public static Source2Image fromJson(String name, String namespace, Map<String, String> labels, JsonObject config) {
@@ -56,7 +74,7 @@ public class Source2Image {
     }
 
     public JsonObject toJson()  {
-        return new JsonObject().put(KEY_ENABLED, true).put(KEY_SOURCE_IMAGE, getSourceImage());
+        return new JsonObject().put(KEY_ENABLED, true).put(KEY_SOURCE_IMAGE, getSourceImage() + ":" + tag);
     }
 
     public String getName() {
@@ -72,21 +90,25 @@ public class Source2Image {
     }
 
     public String getTargetImage() {
-        return targetImage;
+        return targetImage + ":" + tag;
     }
 
     public Map<String, String> getLabels() {
         return labels;
     }
 
+    public String getSourceImageStreamName() {
+        return name + "-source";
+    }
+
     public ImageStream generateSourceImageStream() {
         ObjectReference image = new ObjectReference();
         image.setKind("DockerImage");
-        image.setName(sourceImage.substring(0, sourceImage.lastIndexOf(":")));
+        image.setName(sourceImage);
 
-        TagReference tag = new TagReference();
-        tag.setName(sourceImage.substring(sourceImage.lastIndexOf(":") + 1));
-        tag.setFrom(image);
+        TagReference sourceTag = new TagReference();
+        sourceTag.setName(tag);
+        sourceTag.setFrom(image);
 
         ImageStream imageStream = new ImageStreamBuilder()
                 .withNewMetadata()
@@ -96,7 +118,7 @@ public class Source2Image {
                 .endMetadata()
                 .withNewSpec()
                 .withLookupPolicy(new ImageLookupPolicyBuilder().withLocal(false).build())
-                .withTags(tag)
+                .withTags(sourceTag)
                 .endSpec()
                 .build();
 
@@ -150,7 +172,7 @@ public class Source2Image {
                 .withNewSourceStrategy()
                 .withNewFrom()
                 .withKind("ImageStreamTag")
-                .withName(getSourceImageStreamName() + ":latest")
+                .withName(getSourceImageStreamName() + ":" + tag)
                 .endFrom()
                 .endSourceStrategy()
                 .endStrategy()
@@ -161,7 +183,30 @@ public class Source2Image {
         return build;
     }
 
-    public String getSourceImageStreamName() {
-        return name + "-source";
+    public ImageStream patchSourceImageStream(ImageStream is) {
+        is.getMetadata().setLabels(getLabels());
+        is.getSpec().getTags().get(0).setName(tag);
+        is.getSpec().getTags().get(0).getFrom().setName(sourceImage);
+
+        return is;
+    }
+
+    public ImageStream patchTargetImageStream(ImageStream is) {
+        is.getMetadata().setLabels(getLabels());
+
+        return is;
+    }
+
+    public BuildConfig patchBuildConfig(BuildConfig bc) {
+        bc.getMetadata().setLabels(getLabels());
+        bc.getSpec().getOutput().getTo().setName(getTargetImage());
+        bc.getSpec().getStrategy().getSourceStrategy().getFrom().setName(getSourceImageStreamName() + ":" + tag);
+
+        return bc;
+    }
+
+
+    public enum Source2ImageDiff {
+        DELETE, UPDATE, CREATE, NONE;
     }
 }
