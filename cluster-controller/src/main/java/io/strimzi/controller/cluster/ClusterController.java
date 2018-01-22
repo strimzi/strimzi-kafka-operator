@@ -1,5 +1,6 @@
 package io.strimzi.controller.cluster;
 
+import io.netty.handler.codec.http.HttpResponseStatus;
 import io.strimzi.controller.cluster.operations.CreateKafkaClusterOperation;
 import io.strimzi.controller.cluster.operations.CreateKafkaConnectClusterOperation;
 import io.strimzi.controller.cluster.operations.CreateZookeeperClusterOperation;
@@ -39,6 +40,8 @@ public class ClusterController extends AbstractVerticle {
     public static final String STRIMZI_CLUSTER_LABEL = STRIMZI_DOMAIN + "/cluster";
     public static final String STRIMZI_NAME_LABEL = STRIMZI_DOMAIN + "/name";
 
+    private static final int HEALTH_SERVER_PORT = 8080;
+
     private final K8SUtils k8s;
     private final Map<String, String> labels;
     private final String namespace;
@@ -76,6 +79,10 @@ public class ClusterController extends AbstractVerticle {
                 });
 
                 log.info("ClusterController up and running");
+
+                // start the HTTP server for healthchecks
+                this.startHealthServer();
+
                 start.complete();
             }
             else {
@@ -418,5 +425,22 @@ public class ClusterController extends AbstractVerticle {
                 log.error("Failed to delete Kafka Connect cluster {}.", name);
             }
         });
+    }
+
+    /**
+     * Start an HTTP health server
+     */
+    private void startHealthServer() {
+
+        this.vertx.createHttpServer()
+                .requestHandler(request -> {
+
+                    if (request.path().equals("/health")) {
+                        request.response().setStatusCode(HttpResponseStatus.OK.code()).end();
+                    } else if (request.path().equals("/ready")) {
+                        request.response().setStatusCode(HttpResponseStatus.OK.code()).end();
+                    }
+                })
+                .listen(HEALTH_SERVER_PORT);
     }
 }
