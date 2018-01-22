@@ -234,8 +234,10 @@ public class ZookeeperCluster extends AbstractCluster {
 
         // only delete-claim flag can be changed
         if (!isStorageRejected && (storage.type() == Storage.StorageType.PERSISTENT_CLAIM)) {
-            diff.setDifferent(storageDiffResult.isDeleteClaim());
-        } else {
+            if (storageDiffResult.isDeleteClaim()) {
+                diff.setDifferent(true);
+            }
+        } else if (isStorageRejected) {
             log.warn("Changing storage configuration other than delete-claim is not supported !");
         }
 
