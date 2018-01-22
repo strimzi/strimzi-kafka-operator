@@ -46,6 +46,7 @@ public abstract class AbstractCluster {
     protected String name;
 
     protected final int metricsPort = 9404;
+    private final String metricsPath = "/metrics";
     protected final String metricsPortName = "kafkametrics";
     protected boolean isMetricsEnabled;
 
@@ -129,9 +130,9 @@ public abstract class AbstractCluster {
     protected Map<String, String> getPrometheusAnnotations() {
         if (isMetricsEnabled()) {
             Map<String, String> annotations = new HashMap<>(3);
-            annotations.put("prometheus.io/scrape", "true");
-            annotations.put("prometheus.io/path", "/metrics");
-            annotations.put("prometheus.io/port", "9404");
+            annotations.put("prometheus.io/scrape", Boolean.toString(isMetricsEnabled()));
+            annotations.put("prometheus.io/path", metricsPath);
+            annotations.put("prometheus.io/port", Integer.toString(metricsPort));
             return annotations;
         } else {
             return Collections.emptyMap();
