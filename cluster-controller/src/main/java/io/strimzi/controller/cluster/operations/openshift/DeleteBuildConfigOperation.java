@@ -23,19 +23,19 @@ public class DeleteBuildConfigOperation extends OpenShiftOperation {
     public void execute(Vertx vertx, OpenShiftUtils os, Handler<AsyncResult<Void>> handler) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
-                    if (os.exists(namespace, name, BuildConfig.class)) {
-                        try {
+                    try {
+                        if (os.exists(namespace, name, BuildConfig.class)) {
                             log.info("Deleting BuildConfig {}", name);
                             os.delete(namespace, name, BuildConfig.class);
                             future.complete();
-                        } catch (Exception e) {
-                            log.error("Caught exception while deleting BuildConfig", e);
-                            future.fail(e);
                         }
-                    }
-                    else {
-                        log.warn("BuildConfig {} doesn't exists", name);
-                        future.complete();
+                        else {
+                            log.warn("BuildConfig {} doesn't exists", name);
+                            future.complete();
+                        }
+                    } catch (Exception e) {
+                        log.error("Caught exception while deleting BuildConfig", e);
+                        future.fail(e);
                     }
                 },
                 false,

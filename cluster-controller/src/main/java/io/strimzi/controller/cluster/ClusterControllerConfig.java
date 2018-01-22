@@ -17,7 +17,6 @@ public class ClusterControllerConfig {
     }
 
     public static ClusterControllerConfig fromEnv() {
-
         String namespace = System.getenv(ClusterControllerConfig.STRIMZI_NAMESPACE);
         String stringLabels = System.getenv(ClusterControllerConfig.STRIMZI_CONFIGMAP_LABELS);
 

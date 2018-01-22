@@ -75,6 +75,86 @@ rules:
   - delete
   - patch
   - update
+- apiGroups:
+  - ""
+  - build.openshift.io
+  resources:
+  - buildconfigs
+  - builds
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  - build.openshift.io
+  attributeRestrictions: null
+  resources:
+  - builds/log
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  - build.openshift.io
+  attributeRestrictions: null
+  resources:
+  - buildconfigs/instantiate
+  - buildconfigs/instantiatebinary
+  - builds/clone
+  verbs:
+  - create
+- apiGroups:
+  - ""
+  - image.openshift.io
+  attributeRestrictions: null
+  resources:
+  - imagestreamimages
+  - imagestreammappings
+  - imagestreams
+  - imagestreams/secrets
+  - imagestreamtags
+  verbs:
+  - create
+  - delete
+  - deletecollection
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  - image.openshift.io
+  attributeRestrictions: null
+  resources:
+  - imagestreams/status
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  - image.openshift.io
+  attributeRestrictions: null
+  resources:
+  - imagestreams/layers
+  verbs:
+  - get
+  - update
+- apiGroups:
+  - ""
+  - image.openshift.io
+  attributeRestrictions: null
+  resources:
+  - imagestreamimports
+  verbs:
+  - create
 ---
 apiVersion: v1
 kind: RoleBinding

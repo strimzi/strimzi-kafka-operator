@@ -22,19 +22,19 @@ public class CreateBuildConfigOperation extends OpenShiftOperation {
     public void execute(Vertx vertx, OpenShiftUtils os, Handler<AsyncResult<Void>> handler) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
-                    if (!os.exists(build.getMetadata().getNamespace(), build.getMetadata().getName(), BuildConfig.class)) {
-                        try {
-                            log.info("Creating BuildConfig {}", build.getMetadata().getName());
-                            os.create(build);
-                            future.complete();
-                        } catch (Exception e) {
-                            log.error("Caught exception while creating BuildConfig", e);
-                            future.fail(e);
+                    try {
+                        if (!os.exists(build.getMetadata().getNamespace(), build.getMetadata().getName(), BuildConfig.class)) {
+                                log.info("Creating BuildConfig {}", build.getMetadata().getName());
+                                os.create(build);
+                                future.complete();
                         }
-                    }
-                    else {
-                        log.warn("BuildConfig {} already exists", build.getMetadata().getName());
-                        future.complete();
+                        else {
+                            log.warn("BuildConfig {} already exists", build.getMetadata().getName());
+                            future.complete();
+                        }
+                    } catch (Exception e) {
+                        log.error("Caught exception while creating BuildConfig", e);
+                        future.fail(e);
                     }
                 },
                 false,

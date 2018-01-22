@@ -23,18 +23,18 @@ public class DeleteImageStreamOperation extends OpenShiftOperation {
     public void execute(Vertx vertx, OpenShiftUtils os, Handler<AsyncResult<Void>> handler) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
-                    if (os.exists(namespace, name, ImageStream.class)) {
-                        try {
+                    try {
+                        if (os.exists(namespace, name, ImageStream.class)) {
                             log.info("Deleting ImageStream {}", name);
                             os.delete(namespace, name, ImageStream.class);
                             future.complete();
-                        } catch (Exception e) {
+                        } else {
+                            log.warn("ImageStream {} doesn't exists", name);
+                            future.complete();
+                        }
+                    } catch (Exception e) {
                             log.error("Caught exception while deleting ImageStream", e);
                             future.fail(e);
-                        }
-                    } else {
-                        log.warn("ImageStream {} doesn't exists", name);
-                        future.complete();
                     }
                 },
                 false,

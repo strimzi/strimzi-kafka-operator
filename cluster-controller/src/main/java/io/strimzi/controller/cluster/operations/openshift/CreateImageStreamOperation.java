@@ -25,20 +25,21 @@ public class CreateImageStreamOperation extends OpenShiftOperation {
     public void execute(Vertx vertx, OpenShiftUtils os, Handler<AsyncResult<Void>> handler) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
-                    if (!os.exists(imageStream.getMetadata().getNamespace(), imageStream.getMetadata().getName(), ImageStream.class)) {
-                        try {
-                            log.info("Creating ImageStream {}", imageStream.getMetadata().getName());
-                            os.create(imageStream);
-                            future.complete();
-                        } catch (Exception e) {
-                            log.error("Caught exception while creating ImageStream", e);
-                            future.fail(e);
-                        }
-                    } else {
-                        log.warn("ImageStream {} already exists", imageStream.getMetadata().getName());
-                        future.complete();
-                    }
+                    try {
+                        if (!os.exists(imageStream.getMetadata().getNamespace(), imageStream.getMetadata().getName(), ImageStream.class)) {
 
+                                log.info("Creating ImageStream {}", imageStream.getMetadata().getName());
+                                os.create(imageStream);
+                                future.complete();
+
+                        } else {
+                            log.warn("ImageStream {} already exists", imageStream.getMetadata().getName());
+                            future.complete();
+                        }
+                    } catch (Exception e) {
+                        log.error("Caught exception while creating ImageStream", e);
+                        future.fail(e);
+                    }
                 },
                 false,
                 res -> {
