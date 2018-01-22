@@ -336,7 +336,7 @@ public class ClusterController extends AbstractVerticle {
     }
 
     private void deleteKafkaCluster(StatefulSet ss)   {
-        String name = ss.getMetadata().getName();
+        String name = ss.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL);
         log.info("Deleting cluster {}", name);
         deleteKafkaCluster(namespace, name);
     }
