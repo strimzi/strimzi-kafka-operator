@@ -435,7 +435,7 @@ public class ClusterController extends AbstractVerticle {
         this.vertx.createHttpServer()
                 .requestHandler(request -> {
 
-                    if (request.path().equals("/health")) {
+                    if (request.path().equals("/healthy")) {
                         request.response().setStatusCode(HttpResponseStatus.OK.code()).end();
                     } else if (request.path().equals("/ready")) {
                         request.response().setStatusCode(HttpResponseStatus.OK.code()).end();
