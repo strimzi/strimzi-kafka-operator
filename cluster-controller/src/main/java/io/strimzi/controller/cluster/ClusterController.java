@@ -398,7 +398,7 @@ public class ClusterController extends AbstractVerticle {
     }
 
     private void deleteKafkaConnectCluster(Deployment dep)   {
-        String name = dep.getMetadata().getName();
+        String name = dep.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL);
         log.info("Deleting cluster {}", name);
         deleteKafkaConnectCluster(namespace, name);
     }
