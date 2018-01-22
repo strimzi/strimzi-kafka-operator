@@ -20,7 +20,7 @@ import java.util.Map;
 
 public abstract class AbstractCluster {
 
-    protected final Logger log = LoggerFactory.getLogger(getClass());
+    protected static final Logger log = LoggerFactory.getLogger(AbstractCluster.class.getName());
 
     private static final String VOLUME_MOUNT_HACK_IMAGE = "busybox";
     private static final String VOLUME_MOUNT_HACK_NAME = "volume-mount-hack";

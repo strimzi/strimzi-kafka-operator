@@ -23,7 +23,7 @@ public class CreateKafkaConnectClusterOperation extends KafkaConnectClusterOpera
             if (res.succeeded()) {
                 Lock lock = res.result();
 
-                KafkaConnectCluster connect = KafkaConnectCluster.fromConfigMap(k8s.getConfigmap(namespace, name));
+                KafkaConnectCluster connect = KafkaConnectCluster.fromConfigMap(k8s.getConfigmap(namespace, name), k8s);
                 log.info("Creating Kafka Connect cluster {} in namespace {}", connect.getName(), namespace);
 
                 Future<Void> futureService = Future.future();
@@ -34,13 +34,8 @@ public class CreateKafkaConnectClusterOperation extends KafkaConnectClusterOpera
 
                 Future<Void> futureS2I;
                 if (connect.getS2I() != null) {
-                    if (k8s.isOpenShift())  {
-                        futureS2I = Future.future();
-                        OperationExecutor.getInstance().execute(new CreateS2IOperation(connect.getS2I()), futureS2I.completer());
-                    } else {
-                        futureS2I = Future.succeededFuture();
-                        log.error("S2I is supported only on OpenShift. S2I will be ignored in Kafka Connect cluster {} in namespace {}", connect.getName(), namespace);
-                    }
+                    futureS2I = Future.future();
+                    OperationExecutor.getInstance().execute(new CreateS2IOperation(connect.getS2I()), futureS2I.completer());
                 } else {
                     futureS2I = Future.succeededFuture();
                 }

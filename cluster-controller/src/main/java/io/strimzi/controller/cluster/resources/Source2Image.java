@@ -10,6 +10,7 @@ import io.fabric8.openshift.api.model.ImageLookupPolicyBuilder;
 import io.fabric8.openshift.api.model.ImageStream;
 import io.fabric8.openshift.api.model.ImageStreamBuilder;
 import io.fabric8.openshift.api.model.TagReference;
+import io.strimzi.controller.cluster.OpenShiftUtils;
 import io.vertx.core.json.JsonObject;
 
 import java.util.HashMap;
@@ -68,13 +69,16 @@ public class Source2Image {
         this.targetImage = null;
     }
 
-    public static Source2Image fromJson(String name, String namespace, Map<String, String> labels, JsonObject config) {
+    public static Source2Image fromJson(String namespace, String name, Map<String, String> labels, JsonObject config) {
         String sourceImage = config.getString(KEY_SOURCE_IMAGE, DEFAULT_SOURCE_IMAGE);
-        return new Source2Image(name, namespace, labels, sourceImage);
+        return new Source2Image(namespace, name, labels, sourceImage);
     }
 
-    public JsonObject toJson()  {
-        return new JsonObject().put(KEY_ENABLED, true).put(KEY_SOURCE_IMAGE, getSourceImage() + ":" + tag);
+    public static Source2Image fromOpenShift(String namespace, String name, OpenShiftUtils os) {
+        ImageStream sis = (ImageStream) os.get(namespace, getSourceImageStreamName(name), ImageStream.class);
+        String sourceImage = sis.getSpec().getTags().get(0).getFrom().getName() + ":" + sis.getSpec().getTags().get(0).getName();
+
+        return new Source2Image(namespace, name, sis.getMetadata().getLabels(), sourceImage);
     }
 
     public String getName() {
@@ -98,7 +102,11 @@ public class Source2Image {
     }
 
     public String getSourceImageStreamName() {
-        return name + "-source";
+        return getSourceImageStreamName(name);
+    }
+
+    public static String getSourceImageStreamName(String baseName) {
+        return baseName + "-source";
     }
 
     public ImageStream generateSourceImageStream() {
@@ -205,6 +213,31 @@ public class Source2Image {
         return bc;
     }
 
+    public ClusterDiffResult diff(OpenShiftUtils os) {
+        ClusterDiffResult diff = new ClusterDiffResult();
+
+        ImageStream sis = (ImageStream) os.get(namespace, getSourceImageStreamName(), ImageStream.class);
+        ImageStream tis = (ImageStream) os.get(namespace, getName(), ImageStream.class);
+        BuildConfig bc = (BuildConfig) os.get(namespace, getName(), BuildConfig.class);
+
+        if (!getLabels().equals(sis.getMetadata().getLabels())
+                || !getLabels().equals(tis.getMetadata().getLabels())
+                || !getLabels().equals(bc.getMetadata().getLabels())) {
+            diff.setDifferent(true);
+        }
+
+        if (!getTargetImage().equals(bc.getSpec().getOutput().getTo().getName())
+                || !(getSourceImageStreamName() + ":" + tag).equals(bc.getSpec().getStrategy().getSourceStrategy().getFrom().getName()))    {
+            diff.setDifferent(true);
+        }
+
+        if (!tag.equals(sis.getSpec().getTags().get(0).getName())
+                || !sourceImage.equals(sis.getSpec().getTags().get(0).getFrom().getName()))   {
+            diff.setDifferent(true);
+        }
+
+        return diff;
+    }
 
     public enum Source2ImageDiff {
         DELETE, UPDATE, CREATE, NONE;

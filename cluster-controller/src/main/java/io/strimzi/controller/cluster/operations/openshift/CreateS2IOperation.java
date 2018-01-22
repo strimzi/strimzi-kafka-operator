@@ -1,10 +1,7 @@
 package io.strimzi.controller.cluster.operations.openshift;
 
-import io.strimzi.controller.cluster.K8SUtils;
 import io.strimzi.controller.cluster.OpenShiftUtils;
 import io.strimzi.controller.cluster.operations.OperationExecutor;
-import io.strimzi.controller.cluster.operations.kubernetes.CreateDeploymentOperation;
-import io.strimzi.controller.cluster.operations.kubernetes.CreateServiceOperation;
 import io.strimzi.controller.cluster.resources.Source2Image;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;

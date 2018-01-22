@@ -35,13 +35,8 @@ public class DeleteKafkaConnectClusterOperation extends KafkaConnectClusterOpera
 
                 Future<Void> futureS2I;
                 if (connect.getS2I() != null) {
-                    if (k8s.isOpenShift())  {
-                        futureS2I = Future.future();
-                        OperationExecutor.getInstance().execute(new DeleteS2IOperation(connect.getS2I()), futureS2I.completer());
-                    } else {
-                        futureS2I = Future.succeededFuture();
-                        log.error("S2I is supported only on OpenShift. S2I will be ignored in Kafka Connect cluster {} in namespace {}", connect.getName(), namespace);
-                    }
+                    futureS2I = Future.future();
+                    OperationExecutor.getInstance().execute(new DeleteS2IOperation(connect.getS2I()), futureS2I.completer());
                 } else {
                     futureS2I = Future.succeededFuture();
                 }

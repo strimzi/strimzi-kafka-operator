@@ -95,7 +95,7 @@ public class KafkaConnectCluster extends AbstractCluster {
      * @param cm    ConfigMap with cluster configuration
      * @return  Kafka Connect cluster instance
      */
-    public static KafkaConnectCluster fromConfigMap(ConfigMap cm) {
+    public static KafkaConnectCluster fromConfigMap(ConfigMap cm, K8SUtils k8s) {
         KafkaConnectCluster kafkaConnect = new KafkaConnectCluster(cm.getMetadata().getNamespace(), cm.getMetadata().getName());
 
         kafkaConnect.setLabels(cm.getMetadata().getLabels());
@@ -116,9 +116,14 @@ public class KafkaConnectCluster extends AbstractCluster {
         kafkaConnect.setStatusStorageReplicationFactor(Integer.parseInt(cm.getData().getOrDefault(KEY_STATUS_STORAGE_REPLICATION_FACTOR, String.valueOf(DEFAULT_STATUS_STORAGE_REPLICATION_FACTOR))));
 
         if (cm.getData().containsKey(KEY_S2I)) {
-            JsonObject config = new JsonObject(cm.getData().get(KEY_S2I));
-            if (config.getBoolean(Source2Image.KEY_ENABLED, false)) {
-                kafkaConnect.setS2I(Source2Image.fromJson(cm.getMetadata().getNamespace(), kafkaConnect.getName(), kafkaConnect.getLabelsWithName(), config));
+            if (k8s.isOpenShift()) {
+                JsonObject config = new JsonObject(cm.getData().get(KEY_S2I));
+                if (config.getBoolean(Source2Image.KEY_ENABLED, false)) {
+                    kafkaConnect.setS2I(Source2Image.fromJson(cm.getMetadata().getNamespace(), kafkaConnect.getName(), kafkaConnect.getLabelsWithName(), config));
+                }
+            }
+            else {
+                log.error("S2I is supported only on OpenShift. S2I will be ignored in Kafka Connect cluster {} in namespace {}", cm.getMetadata().getName(), cm.getMetadata().getNamespace());
             }
         }
 
@@ -136,7 +141,7 @@ public class KafkaConnectCluster extends AbstractCluster {
     public static KafkaConnectCluster fromDeployment(K8SUtils k8s, String namespace, String cluster) {
 
         Deployment dep = k8s.getDeployment(namespace, cluster + KafkaConnectCluster.NAME_SUFFIX);
-
+log.info("Namespace: {}, Cluster: {}", namespace, cluster);
         KafkaConnectCluster kafkaConnect =  new KafkaConnectCluster(namespace, cluster);
 
         kafkaConnect.setLabels(dep.getMetadata().getLabels());
@@ -159,10 +164,12 @@ public class KafkaConnectCluster extends AbstractCluster {
         kafkaConnect.setStatusStorageReplicationFactor(Integer.parseInt(vars.getOrDefault(KEY_STATUS_STORAGE_REPLICATION_FACTOR, String.valueOf(DEFAULT_STATUS_STORAGE_REPLICATION_FACTOR))));
 
         String s2iAnnotation = String.format("%s/%s", ClusterController.STRIMZI_CLUSTER_CONTROLLER_DOMAIN, Source2Image.ANNOTATION_S2I);
-        if (dep.getMetadata().getAnnotations().containsKey(s2iAnnotation)) {
-            JsonObject config = new JsonObject(dep.getMetadata().getAnnotations().get(s2iAnnotation));
-            if (config.getBoolean(Source2Image.KEY_ENABLED, false)) {
-                kafkaConnect.setS2I(Source2Image.fromJson(namespace, kafkaConnect.getName(), kafkaConnect.getLabelsWithName(), config));
+        if (dep.getMetadata().getAnnotations().containsKey(s2iAnnotation) && Boolean.parseBoolean(dep.getMetadata().getAnnotations().getOrDefault(s2iAnnotation, "false"))) {
+            if (k8s.isOpenShift()) {
+                kafkaConnect.setS2I(Source2Image.fromOpenShift(namespace, kafkaConnect.getName(), k8s.getOpenShiftUtils()));
+            }
+            else {
+                log.error("S2I is supported only on OpenShift. S2I will be ignored in Kafka Connect cluster {} in namespace {}", cluster, namespace);
             }
         }
 
@@ -227,28 +234,27 @@ public class KafkaConnectCluster extends AbstractCluster {
             diff.setRollingUpdate(true);
         }
 
-        boolean deploymentHasS2I = false;
-        String s2iAnnotation = String.format("%s/%s", ClusterController.STRIMZI_CLUSTER_CONTROLLER_DOMAIN, Source2Image.ANNOTATION_S2I);
-        if (dep.getMetadata().getAnnotations().containsKey(s2iAnnotation)) {
-            JsonObject config = new JsonObject(dep.getMetadata().getAnnotations().get(s2iAnnotation));
-            if (config.getBoolean(Source2Image.KEY_ENABLED, false)) {
-                deploymentHasS2I = true;
+        if (k8s.isOpenShift()) {
+            Source2Image realS2I = null;
+            String s2iAnnotation = String.format("%s/%s", ClusterController.STRIMZI_CLUSTER_CONTROLLER_DOMAIN, Source2Image.ANNOTATION_S2I);
+            if (Boolean.parseBoolean(dep.getMetadata().getAnnotations().getOrDefault(s2iAnnotation, "false"))) {
+                realS2I = Source2Image.fromOpenShift(namespace, getName(), k8s.getOpenShiftUtils());
             }
-        }
 
-        if (s2i == null && deploymentHasS2I)    {
-            log.info("Diff: Kafka Connect S2I should be removed");
-            diff.setDifferent(true);
-            diff.setS2i(Source2Image.Source2ImageDiff.DELETE);
-        } else if (s2i != null && !deploymentHasS2I)    {
-            log.info("Diff: Kafka Connect S2I should be added");
-            diff.setDifferent(true);
-            diff.setS2i(Source2Image.Source2ImageDiff.CREATE);
-        } else if (s2i != null && deploymentHasS2I) {
-            if (!s2i.toJson().equals(new JsonObject(dep.getMetadata().getAnnotations().get(s2iAnnotation)))) {
-                log.info("Diff: Kafka Connect S2I should be updated");
-                diff.setS2i(Source2Image.Source2ImageDiff.UPDATE);
+            if (s2i == null && realS2I != null) {
+                log.info("Diff: Kafka Connect S2I should be removed");
                 diff.setDifferent(true);
+                diff.setS2i(Source2Image.Source2ImageDiff.DELETE);
+            } else if (s2i != null && realS2I == null) {
+                log.info("Diff: Kafka Connect S2I should be added");
+                diff.setDifferent(true);
+                diff.setS2i(Source2Image.Source2ImageDiff.CREATE);
+            } else if (s2i != null && realS2I != null) {
+                if (s2i.diff(k8s.getOpenShiftUtils()).getDifferent()) {
+                    log.info("Diff: Kafka Connect S2I should be updated");
+                    diff.setS2i(Source2Image.Source2ImageDiff.UPDATE);
+                    diff.setDifferent(true);
+                }
             }
         }
 
@@ -301,7 +307,7 @@ public class KafkaConnectCluster extends AbstractCluster {
 
         if (s2i != null)    {
             annotations.put(Source2Image.ANNOTATION_RESOLVE_NAMES, "*");
-            annotations.put(String.format("%s/%s", ClusterController.STRIMZI_CLUSTER_CONTROLLER_DOMAIN, Source2Image.ANNOTATION_S2I), s2i.toJson().encode());
+            annotations.put(String.format("%s/%s", ClusterController.STRIMZI_CLUSTER_CONTROLLER_DOMAIN, Source2Image.ANNOTATION_S2I), "true");
         }
 
         return annotations;

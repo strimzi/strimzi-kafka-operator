@@ -104,7 +104,7 @@ spec:
       serviceAccountName: strimzi-cluster-controller
       containers:
         - name: strimzi-cluster-controller
-          image: scholzj/cluster-controller:latest
+          image: strimzi/cluster-controller:latest
           env:
             - name: STRIMZI_CONFIGMAP_LABELS
               value: "strimzi.io/kind=cluster"
@@ -507,7 +507,7 @@ parameters:
   displayName: Kafka bootstrap servers
   name: KAFKA_CONNECT_BOOTSTRAP_SERVERS
   required: true
-  value: mycluster-kafka:9092
+  value: my-cluster-kafka:9092
 - description: A unique string that identifies the Connect cluster group this worker belongs to. Note this must not conflict with any consumer group IDs.
   displayName: Group ID
   name: KAFKA_CONNECT_GROUP_ID

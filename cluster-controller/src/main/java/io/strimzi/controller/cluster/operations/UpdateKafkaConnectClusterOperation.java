@@ -41,7 +41,7 @@ public class UpdateKafkaConnectClusterOperation extends KafkaConnectClusterOpera
                 ConfigMap connectConfigMap = k8s.getConfigmap(namespace, name);
 
                 if (connectConfigMap != null)    {
-                    connect = KafkaConnectCluster.fromConfigMap(connectConfigMap);
+                    connect = KafkaConnectCluster.fromConfigMap(connectConfigMap, k8s);
                     log.info("Updating Kafka Connect cluster {} in namespace {}", connect.getName(), namespace);
                     diff = connect.diff(k8s, namespace);
                 } else  {
@@ -117,24 +117,24 @@ public class UpdateKafkaConnectClusterOperation extends KafkaConnectClusterOpera
     }
 
     private Future<Void> patchS2I(KafkaConnectCluster connect, ClusterDiffResult diff) {
-        if (diff.getS2i() == Source2Image.Source2ImageDiff.CREATE) {
-            log.info("Creating S2I deployment {} in namespace {}", connect.getName(), namespace);
-            Future<Void> createS2I = Future.future();
-            OperationExecutor.getInstance().execute(new CreateS2IOperation(connect.getS2I()), createS2I.completer());
-            return createS2I;
-        } else if (diff.getS2i() == Source2Image.Source2ImageDiff.DELETE) {
-            log.info("Deleting S2I deployment {} in namespace {}", connect.getName(), namespace);
-            Future<Void> deleteS2I = Future.future();
-            OperationExecutor.getInstance().execute(new DeleteS2IOperation(new Source2Image(namespace, connect.getName())), deleteS2I.completer());
-            return deleteS2I;
-        } else if (diff.getS2i() == Source2Image.Source2ImageDiff.UPDATE) {
-            log.info("Updating S2I deployment {} in namespace {}", connect.getName(), namespace);
-            Future<Void> patchS2I = Future.future();
-            OperationExecutor.getInstance().execute(new UpdateS2IOperation(connect.getS2I()), patchS2I.completer());
-            return patchS2I;
-        }
-        else
-        {
+        if (diff.getS2i() != Source2Image.Source2ImageDiff.NONE) {
+            if (diff.getS2i() == Source2Image.Source2ImageDiff.CREATE) {
+                log.info("Creating S2I deployment {} in namespace {}", connect.getName(), namespace);
+                Future<Void> createS2I = Future.future();
+                OperationExecutor.getInstance().execute(new CreateS2IOperation(connect.getS2I()), createS2I.completer());
+                return createS2I;
+            } else if (diff.getS2i() == Source2Image.Source2ImageDiff.DELETE) {
+                log.info("Deleting S2I deployment {} in namespace {}", connect.getName(), namespace);
+                Future<Void> deleteS2I = Future.future();
+                OperationExecutor.getInstance().execute(new DeleteS2IOperation(new Source2Image(namespace, connect.getName())), deleteS2I.completer());
+                return deleteS2I;
+            } else {
+                log.info("Updating S2I deployment {} in namespace {}", connect.getName(), namespace);
+                Future<Void> patchS2I = Future.future();
+                OperationExecutor.getInstance().execute(new UpdateS2IOperation(connect.getS2I()), patchS2I.completer());
+                return patchS2I;
+            }
+        } else {
             return Future.succeededFuture();
         }
     }
