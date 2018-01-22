@@ -11,13 +11,23 @@ import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Creates all Source2Image resources
+ */
 public class CreateS2IOperation extends S2IOperation {
     private static final Logger log = LoggerFactory.getLogger(CreateS2IOperation.class.getName());
+    private final Source2Image s2i;
 
     public CreateS2IOperation(Source2Image s2i) {
         super(s2i);
+        this.s2i = s2i;
     }
 
+    /**
+     * @param vertx   Vert.x instance
+     * @param os      OpenShiftUtils instance
+     * @param handler Result handler
+     */
     @Override
     public void execute(Vertx vertx, OpenShiftUtils os, Handler<AsyncResult<Void>> handler) {
         log.info("Creating S2I {} in namespace {}", s2i.getName(), s2i.getNamespace());

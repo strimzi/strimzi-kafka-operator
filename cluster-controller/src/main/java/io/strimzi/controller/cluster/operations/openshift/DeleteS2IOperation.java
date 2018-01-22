@@ -11,13 +11,24 @@ import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Deletes all Soruce2Image resources
+ */
 public class DeleteS2IOperation extends S2IOperation {
     private static final Logger log = LoggerFactory.getLogger(DeleteS2IOperation.class.getName());
 
+    /**
+     * @param s2i
+     */
     public DeleteS2IOperation(Source2Image s2i) {
         super(s2i);
     }
 
+    /**
+     * @param vertx   Vert.x instance
+     * @param os      OpenShiftUtils instance
+     * @param handler Result handler
+     */
     @Override
     public void execute(Vertx vertx, OpenShiftUtils os, Handler<AsyncResult<Void>> handler) {
         log.info("Deleting S2I {} in namespace {}", s2i.getName(), s2i.getNamespace());

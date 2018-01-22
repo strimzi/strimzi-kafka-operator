@@ -13,14 +13,25 @@ import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Creates ImageStream resource
+ */
 public class CreateImageStreamOperation extends OpenShiftOperation {
     private static final Logger log = LoggerFactory.getLogger(CreateImageStreamOperation.class.getName());
     private final ImageStream imageStream;
 
+    /**
+     * @param imageStream
+     */
     public CreateImageStreamOperation(ImageStream imageStream) {
         this.imageStream = imageStream;
     }
 
+    /**
+     * @param vertx   Vert.x instance
+     * @param os      OpenShiftUtils instance
+     * @param handler Result handler
+     */
     @Override
     public void execute(Vertx vertx, OpenShiftUtils os, Handler<AsyncResult<Void>> handler) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(

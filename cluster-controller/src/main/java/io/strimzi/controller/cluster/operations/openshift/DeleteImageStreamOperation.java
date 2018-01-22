@@ -9,16 +9,28 @@ import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Deletes ImageStream resource
+ */
 public class DeleteImageStreamOperation extends OpenShiftOperation {
     private static final Logger log = LoggerFactory.getLogger(DeleteImageStreamOperation.class.getName());
     private final String namespace;
     private final String name;
 
+    /**
+     * @param namespace
+     * @param name
+     */
     public DeleteImageStreamOperation(String namespace, String name) {
         this.namespace = namespace;
         this.name = name;
     }
 
+    /**
+     * @param vertx   Vert.x instance
+     * @param os      OpenShiftUtils instance
+     * @param handler Result handler
+     */
     @Override
     public void execute(Vertx vertx, OpenShiftUtils os, Handler<AsyncResult<Void>> handler) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(

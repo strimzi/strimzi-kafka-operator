@@ -36,6 +36,11 @@ public class K8SUtils {
         return this.client.isAdaptable(OpenShiftClient.class);
     }
 
+    /**
+     * Returns CpenShiftUtils instance. Works only on OpenShift - throws exception if called on Kubernetes.
+     *
+     * @return
+     */
     public OpenShiftUtils getOpenShiftUtils()   {
         if (isOpenShift()) {
             return new OpenShiftUtils(client.adapt(OpenShiftClient.class));

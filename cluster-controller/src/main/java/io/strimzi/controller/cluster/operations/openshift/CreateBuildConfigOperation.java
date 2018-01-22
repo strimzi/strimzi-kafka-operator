@@ -10,14 +10,27 @@ import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Creates BuildConfig resource
+ */
 public class CreateBuildConfigOperation extends OpenShiftOperation {
     private static final Logger log = LoggerFactory.getLogger(CreateBuildConfigOperation.class.getName());
     private final BuildConfig build;
 
+    /**
+     * Constructor
+     *
+     * @param build BuildConfig which should be created
+     */
     public CreateBuildConfigOperation(BuildConfig build) {
         this.build = build;
     }
 
+    /**
+     * @param vertx   Vert.x instance
+     * @param os      OpenShiftUtils instance
+     * @param handler Result handler
+     */
     @Override
     public void execute(Vertx vertx, OpenShiftUtils os, Handler<AsyncResult<Void>> handler) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(

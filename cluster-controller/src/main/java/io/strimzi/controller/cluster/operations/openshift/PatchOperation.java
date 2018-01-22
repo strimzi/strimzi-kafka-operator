@@ -12,16 +12,28 @@ import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Patches OpenShift resource. Should work with all Patchable resources
+ */
 public class PatchOperation extends OpenShiftOperation {
     private static final Logger log = LoggerFactory.getLogger(PatchOperation.class.getName());
     private final Patchable patchable;
     private final KubernetesResource patch;
 
+    /**
+     * @param patchable     Resource which should be patched
+     * @param patch         Patch
+     */
     public PatchOperation(Patchable patchable, KubernetesResource patch) {
         this.patchable = patchable;
         this.patch = patch;
     }
 
+    /**
+     * @param vertx   Vert.x instance
+     * @param os      OpenShiftUtils instance
+     * @param handler Result handler
+     */
     @Override
     public void execute(Vertx vertx, OpenShiftUtils os, Handler<AsyncResult<Void>> handler) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
