@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -114,6 +115,27 @@ public abstract class AbstractCluster {
         Map<String, String> labelsWithName = new HashMap<>(labels);
         labelsWithName.put(ClusterController.STRIMZI_NAME_LABEL, name);
         return labelsWithName;
+    }
+
+    /**
+     * Returns a map with the prometheus annotations:
+     * <pre><code>
+     * prometheus.io/scrape: "true"
+     * prometheus.io/path: "/metrics"
+     * prometheus.io/port: "9404"
+     * </code></pre>
+     * if metrics are enabled, otherwise returns the empty map.
+     */
+    protected Map<String, String> getPrometheusAnnotations() {
+        if (isMetricsEnabled()) {
+            Map<String, String> annotations = new HashMap<>(3);
+            annotations.put("prometheus.io/scrape", "true");
+            annotations.put("prometheus.io/path", "/metrics");
+            annotations.put("prometheus.io/port", "9404");
+            return annotations;
+        } else {
+            return Collections.emptyMap();
+        }
     }
 
     public boolean isMetricsEnabled() {
@@ -368,6 +390,7 @@ public abstract class AbstractCluster {
                 .withNewMetadata()
                 .withName(name)
                 .withLabels(getLabelsWithName())
+                .withAnnotations(getPrometheusAnnotations())
                 .endMetadata()
                 .withNewSpec()
                 .withSecurityContext(securityContext)
