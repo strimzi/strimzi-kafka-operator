@@ -69,10 +69,21 @@ public class ClusterDiffResult {
         isMetricsChanged = metricsChanged;
     }
 
+    /**
+     * Returns the Diff enum for S2I. This is not the full S2I diff. It just defines whether S2I should be added,
+     * removed or updates (or nothing). It doesn't contain any detaqiled diff information.
+     *
+     * @return
+     */
     public Source2Image.Source2ImageDiff getS2i() {
         return s2i;
     }
 
+    /**
+     * Set the Diff enum for S2I diff
+     *
+     * @param s2i   Source2Image.Source2ImageDiff value
+     */
     public void setS2i(Source2Image.Source2ImageDiff s2i) {
         this.s2i = s2i;
     }

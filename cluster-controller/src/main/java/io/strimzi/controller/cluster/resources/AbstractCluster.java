@@ -98,6 +98,11 @@ public abstract class AbstractCluster {
         this.healthCheckInitialDelay = healthCheckInitialDelay;
     }
 
+    /**
+     * Returns the Docker image which should be used by this cluster
+     *
+     * @return
+     */
     public String getName() {
         return name;
     }

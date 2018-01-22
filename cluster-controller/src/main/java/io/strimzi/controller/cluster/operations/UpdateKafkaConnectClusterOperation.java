@@ -116,6 +116,14 @@ public class UpdateKafkaConnectClusterOperation extends KafkaConnectClusterOpera
         }
     }
 
+    /**
+     * Will check the Source2Image diff and add / delete / update resources when needed (S2I can be added / removed while
+     * the cluster already exists)
+     *
+     * @param connect       KafkaConnectResource instance
+     * @param diff          ClusterDiffResult from KafkaConnectResource
+     * @return
+     */
     private Future<Void> patchS2I(KafkaConnectCluster connect, ClusterDiffResult diff) {
         if (diff.getS2i() != Source2Image.Source2ImageDiff.NONE) {
             if (diff.getS2i() == Source2Image.Source2ImageDiff.CREATE) {

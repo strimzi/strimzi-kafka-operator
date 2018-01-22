@@ -93,6 +93,7 @@ public class KafkaConnectCluster extends AbstractCluster {
      * Create a Kafka Connect cluster from the related ConfigMap resource
      *
      * @param cm    ConfigMap with cluster configuration
+     * @param k8s   K8SUtils instance, which is needed to check whether we are on OpenShift due to S2I support
      * @return  Kafka Connect cluster instance
      */
     public static KafkaConnectCluster fromConfigMap(ConfigMap cm, K8SUtils k8s) {
@@ -302,6 +303,11 @@ log.info("Namespace: {}, Cluster: {}", namespace, cluster);
         return varList;
     }
 
+    /**
+     * Returns map with annotations which should be set at Deployment level
+     *
+     * @return
+     */
     protected Map<String, String> getDeploymentAnnotations() {
         Map<String, String> annotations = new HashMap<>();
 
@@ -313,6 +319,11 @@ log.info("Namespace: {}, Cluster: {}", namespace, cluster);
         return annotations;
     }
 
+    /**
+     * Returns map with annotations which should be set at Template / Pod level
+     *
+     * @return
+     */
     protected Map<String, String> getPodAnnotations() {
         Map<String, String> annotations = new HashMap<>();
 
@@ -359,14 +370,30 @@ log.info("Namespace: {}, Cluster: {}", namespace, cluster);
         this.statusStorageReplicationFactor = statusStorageReplicationFactor;
     }
 
+    /**
+     * Get Source2Image resource belonging to this cluster
+     *
+     * @return
+     */
     public Source2Image getS2I() {
         return s2i;
     }
 
+    /**
+     * Set the Source2Image resource related to this cluster
+     *
+     * @param s2i
+     */
     public void setS2I(Source2Image s2i) {
         this.s2i = s2i;
     }
 
+
+    /**
+     * Return the Docker image which should be used. The image differs for Source2Image deployments and regular deployments.
+     *
+     * @return
+     */
     public String getImage()    {
         if (s2i != null) {
             return s2i.getTargetImage();
