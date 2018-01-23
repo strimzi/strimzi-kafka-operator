@@ -145,17 +145,17 @@ public class Session extends AbstractVerticle {
         logger.debug("Starting {}", configMapThread);
         configMapThread.start();
 
-//        // Reconcile initially
-//        reconcileTopics("initial");
-//        // And periodically after that
-//        vertx.setPeriodic(this.config.get(Config.FULL_RECONCILIATION_INTERVAL_MS),
-//                (timerId) -> {
-//                    if (stopped) {
-//                        vertx.cancelTimer(timerId);
-//                        return;
-//                    }
-//                    reconcileTopics("periodic");
-//                });
+        // Reconcile initially
+        reconcileTopics("initial");
+        // And periodically after that
+        vertx.setPeriodic(this.config.get(Config.FULL_RECONCILIATION_INTERVAL_MS),
+                (timerId) -> {
+                    if (stopped) {
+                        vertx.cancelTimer(timerId);
+                        return;
+                    }
+                    reconcileTopics("periodic");
+                });
         logger.info("Started");
     }
 
