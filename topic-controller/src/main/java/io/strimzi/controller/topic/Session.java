@@ -114,7 +114,9 @@ public class Session extends AbstractVerticle {
         logger.debug("Using Kafka {}", kafka);
         LabelPredicate cmPredicate = config.get(Config.LABELS);
 
-        this.k8s = new K8sImpl(vertx, kubeClient, cmPredicate);
+        String namespace = config.get(Config.NAMESPACE);
+        logger.debug("Using namespace {}", namespace);
+        this.k8s = new K8sImpl(vertx, kubeClient, cmPredicate, namespace);
         logger.debug("Using k8s {}", k8s);
 
         this.zk = Zk.create(vertx, config.get(Config.ZOOKEEPER_CONNECT), this.config.get(Config.ZOOKEEPER_SESSION_TIMEOUT_MS).intValue());
@@ -123,7 +125,7 @@ public class Session extends AbstractVerticle {
         ZkTopicStore topicStore = new ZkTopicStore(zk);
         logger.debug("Using TopicStore {}", topicStore);
 
-        this.controller = new Controller(vertx, kafka, k8s, topicStore, cmPredicate);
+        this.controller = new Controller(vertx, kafka, k8s, topicStore, cmPredicate, namespace);
         logger.debug("Using Controller {}", controller);
 
         this.tcw = new TopicConfigsWatcher(controller);

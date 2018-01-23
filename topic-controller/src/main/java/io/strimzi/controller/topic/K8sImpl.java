@@ -34,22 +34,24 @@ public class K8sImpl implements K8s {
     private final static Logger logger = LoggerFactory.getLogger(Controller.class);
 
     private final LabelPredicate cmPredicate;
+    private final String namespace;
 
     private KubernetesClient client;
 
     private Vertx vertx;
 
-    public K8sImpl(Vertx vertx, KubernetesClient client, LabelPredicate cmPredicate) {
+    public K8sImpl(Vertx vertx, KubernetesClient client, LabelPredicate cmPredicate, String namespace) {
         this.vertx = vertx;
         this.client = client;
         this.cmPredicate = cmPredicate;
+        this.namespace = namespace;
     }
 
     @Override
     public void createConfigMap(ConfigMap cm, Handler<AsyncResult<Void>> handler) {
         vertx.executeBlocking(future -> {
             try {
-                client.configMaps().create(cm);
+                client.configMaps().inNamespace(namespace).create(cm);
                 future.complete();
             } catch (Exception e) {
                 future.fail(e);
@@ -61,7 +63,7 @@ public class K8sImpl implements K8s {
     public void updateConfigMap(ConfigMap cm, Handler<AsyncResult<Void>> handler) {
         vertx.executeBlocking(future -> {
             try {
-                client.configMaps().createOrReplace(cm);
+                client.configMaps().inNamespace(namespace).createOrReplace(cm);
                 future.complete();
             } catch (Exception e) {
                 future.fail(e);
@@ -74,7 +76,7 @@ public class K8sImpl implements K8s {
         vertx.executeBlocking(future -> {
             try {
                 // Delete the CM by the topic name, because neither ZK nor Kafka know the CM name
-                client.configMaps().withName(mapName.toString()).delete();
+                client.configMaps().inNamespace(namespace).withName(mapName.toString()).delete();
                 future.complete();
             } catch (Exception e) {
                 future.fail(e);
@@ -86,7 +88,7 @@ public class K8sImpl implements K8s {
     public void listMaps(Handler<AsyncResult<List<ConfigMap> >> handler) {
         vertx.executeBlocking(future -> {
             try {
-                future.complete(client.configMaps().withLabels(cmPredicate.labels()).list().getItems());
+                future.complete(client.configMaps().inNamespace(namespace).withLabels(cmPredicate.labels()).list().getItems());
             } catch (Exception e) {
                 future.fail(e);
             }
@@ -97,7 +99,7 @@ public class K8sImpl implements K8s {
     public void getFromName(MapName mapName, Handler<AsyncResult<ConfigMap >> handler) {
         vertx.executeBlocking(future -> {
             try {
-                future.complete(client.configMaps().withName(mapName.toString()).get());
+                future.complete(client.configMaps().inNamespace(namespace).withName(mapName.toString()).get());
             } catch (Exception e) {
                 future.fail(e);
             }

@@ -111,6 +111,7 @@ public class Config {
 
     public static final String TC_CM_LABELS = "STRIMZI_CONFIGMAP_LABELS";
     public static final String TC_KAFKA_BOOTSTRAP_SERVERS = "STRIMZI_KAFKA_BOOTSTRAP_SERVERS";
+    public static final String TC_NAMESPACE = "STRIMZI_NAMESPACE";
     public static final String TC_ZK_CONNECT = "STRIMZI_ZOOKEEPER_CONNECT";
     public static final String TC_ZK_SESSION_TIMEOUT = "STRIMZI_ZOOKEEPER_SESSION_TIMEOUT";
     public static final String TC_PERIODIC_INTERVAL = "STRIMZI_FULL_RECONCILIATION_INTERVAL";
@@ -124,6 +125,8 @@ public class Config {
             "A comma-separated list of key=value pairs for selecting ConfigMaps that describe topics.");
     public static final Value<String> KAFKA_BOOTSTRAP_SERVERS = new Value(TC_KAFKA_BOOTSTRAP_SERVERS, STRING, true,
             "A comma-separated list of kafka bootstrap servers.");
+    public static final Value<String> NAMESPACE = new Value(TC_NAMESPACE, STRING,true,
+            "The kubernetes namespace in which to operate.");
     public static final Value<String> ZOOKEEPER_CONNECT = new Value(TC_ZK_CONNECT, STRING, true,
             "The zookeeper connection string.");
     public static final Value<Long> ZOOKEEPER_SESSION_TIMEOUT_MS = new Value(TC_ZK_SESSION_TIMEOUT, DURATION, "20 seconds",
@@ -139,6 +142,7 @@ public class Config {
         Map<String, Value> configValues = CONFIG_VALUES;
         addConfigValue(configValues, LABELS);
         addConfigValue(configValues, KAFKA_BOOTSTRAP_SERVERS);
+        addConfigValue(configValues, NAMESPACE);
         addConfigValue(configValues, ZOOKEEPER_CONNECT);
         addConfigValue(configValues, ZOOKEEPER_SESSION_TIMEOUT_MS);
         addConfigValue(configValues, FULL_RECONCILIATION_INTERVAL_MS);

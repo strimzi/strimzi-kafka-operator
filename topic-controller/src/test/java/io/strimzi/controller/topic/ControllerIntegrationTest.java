@@ -23,7 +23,10 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.fabric8.kubernetes.client.Watch;
+import io.strimzi.test.KubeClusterResource;
+import io.strimzi.test.Permission;
+import io.strimzi.test.Role;
+import io.strimzi.test.RoleBinding;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
@@ -38,9 +41,8 @@ import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -56,7 +58,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BooleanSupplier;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
@@ -65,21 +66,30 @@ import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+@RoleBinding(
+        name="strimzi-role-binding",
+        role="strimzi-role",
+        users="developer"
+)
+@Role(
+        name="strimzi-role",
+        permissions = {
+            @Permission(resource="cm", verbs={"get", "create", "watch", "list", "delete", "update"}),
+            @Permission(resource="events", verbs={"get", "create"})
+        }
+)
 @RunWith(VertxUnitRunner.class)
 public class ControllerIntegrationTest {
 
     private static final Logger logger = LoggerFactory.getLogger(ControllerIntegrationTest.class);
 
-    private static final Oc OC = new Oc();
-    private static Thread ocHook = new Thread(() -> {
-        try {
-            OC.clusterDown();
-        } catch (Exception e) {}
-    });
-    private static boolean startedOc = false;
+    @ClassRule
+    public static KubeClusterResource testCluster = new KubeClusterResource();
 
     private final LabelPredicate cmPredicate = LabelPredicate.fromString(
             "strimzi.io/kind=topic");
+
+    private String namespace;
 
     private final Vertx vertx = Vertx.vertx();
     private KafkaCluster kafkaCluster;
@@ -103,31 +113,6 @@ public class ControllerIntegrationTest {
     private volatile String deploymentId;
     private Set<String> preExistingEvents;
 
-    @BeforeClass
-    public static void startKube() throws Exception {
-        logger.info("Executing oc cluster up");
-        if (OC.isClusterUp()) {
-            throw new RuntimeException("OpenShift cluster is already up");
-        }
-        // It can happen that if the VM exits abnormally the cluster remains up, and further tests don't work because
-        // it appears there are two brokers with id 1, so use a shutdown hook to kill the cluster.
-        startedOc = true;
-        Runtime.getRuntime().addShutdownHook(ocHook);
-        OC.clusterUp();
-        OC.loginSystemAdmin();
-        //OC.apply(new File("src/test/resources/role.yaml"));
-        OC.loginDeveloper();
-    }
-
-    @AfterClass
-    public static void stopKube() throws Exception {
-        if (startedOc) {
-            startedOc = false;
-            logger.info("Executing oc cluster down");
-            OC.clusterDown();
-            Runtime.getRuntime().removeShutdownHook(ocHook);
-        }
-    }
 
     @Before
     public void setup(TestContext context) throws Exception {
@@ -140,10 +125,13 @@ public class ControllerIntegrationTest {
         kafkaCluster.usingDirectory(Files.createTempDirectory("controller-integration-test").toFile());
         kafkaCluster.startup();
 
-        kubeClient = new DefaultKubernetesClient(OC.masterUrl());
+        kubeClient = new DefaultKubernetesClient();
+        namespace = testCluster.defaultNamespace();
+        logger.info("Using namespace {}", namespace);
         Map<String, String> m = new HashMap();
         m.put(Config.KAFKA_BOOTSTRAP_SERVERS.key, kafkaCluster.brokerList());
         m.put(Config.ZOOKEEPER_CONNECT.key, "localhost:"+ zkPort(kafkaCluster));
+        m.put(Config.NAMESPACE.key, testCluster.defaultNamespace());
         Session session = new Session(kubeClient, new Config(m));
 
         Async async = context.async();
@@ -168,7 +156,7 @@ public class ControllerIntegrationTest {
 
         // We can't delete events, so record the events which exist at the start of the test
         // and then waitForEvents() can ignore those
-        preExistingEvents = kubeClient.events().withLabels(cmPredicate.labels()).list().
+        preExistingEvents = kubeClient.events().inNamespace(namespace).withLabels(cmPredicate.labels()).list().
                 getItems().stream().
                 map(evt -> evt.getMetadata().getUid()).
                 collect(Collectors.toSet());
@@ -191,6 +179,9 @@ public class ControllerIntegrationTest {
     @After
     public void teardown(TestContext context) {
         logger.info("Tearing down test");
+
+        kubeClient.configMaps().inNamespace(namespace).delete();
+
         Async async = context.async();
         if (deploymentId != null) {
             vertx.undeploy(deploymentId, ar -> {
@@ -220,7 +211,7 @@ public class ControllerIntegrationTest {
     private ConfigMap createCm(TestContext context, ConfigMap cm) {
         String topicName = new TopicName(cm).toString();
         // Create a CM
-        kubeClient.configMaps().create(cm);
+        kubeClient.configMaps().inNamespace(namespace).create(cm);
 
         // Wait for the topic to be created
         waitFor(context, ()-> {
@@ -255,7 +246,7 @@ public class ControllerIntegrationTest {
 
         // Wait for the configmap to be created
         waitFor(context, () -> {
-            ConfigMap cm = kubeClient.configMaps().withName(configMapName).get();
+            ConfigMap cm = kubeClient.configMaps().inNamespace(namespace).withName(configMapName).get();
             logger.info("Polled configmap {} waiting for creation", configMapName);
             return cm != null;
         }, timeout, "Expected the configmap to have been created by now");
@@ -291,7 +282,7 @@ public class ControllerIntegrationTest {
 
         // Wait for the configmap to be modified
         waitFor(context, () -> {
-            ConfigMap cm = kubeClient.configMaps().withName(configMapName).get();
+            ConfigMap cm = kubeClient.configMaps().inNamespace(namespace).withName(configMapName).get();
             logger.info("Polled configmap {}, waiting for config change", configMapName);
             String gotValue = TopicSerialization.fromConfigMap(cm).getConfig().get(key);
             logger.info("Got value {}", gotValue);
@@ -327,7 +318,7 @@ public class ControllerIntegrationTest {
 
         // Wait for the configmap to be deleted
         waitFor(context, () -> {
-            ConfigMap cm = kubeClient.configMaps().withName(configMapName).get();
+            ConfigMap cm = kubeClient.configMaps().inNamespace(namespace).withName(configMapName).get();
             logger.info("Polled configmap {}, got {}, waiting for deletion", configMapName, cm);
             return cm == null;
         }, timeout, "Expected the configmap to have been deleted by now");
@@ -373,7 +364,7 @@ public class ControllerIntegrationTest {
 
     private void waitForEvent(TestContext context, ConfigMap cm, String expectedMessage, Controller.EventType expectedType) {
         waitFor(context, () -> {
-            List<Event> items = kubeClient.events().withLabels(cmPredicate.labels()).list().getItems();
+            List<Event> items = kubeClient.events().inNamespace(namespace).withLabels(cmPredicate.labels()).list().getItems();
             List<Event> filtered = items.stream().
                     filter(evt -> !preExistingEvents.contains(evt.getMetadata().getUid())
                     && "ConfigMap".equals(evt.getInvolvedObject().getKind())
@@ -453,7 +444,7 @@ public class ControllerIntegrationTest {
         cm.getData().put(TopicSerialization.CM_KEY_PARTITIONS, "foo");
 
         // Create a CM
-        kubeClient.configMaps().create(cm);
+        kubeClient.configMaps().inNamespace(namespace).create(cm);
 
         // Wait for the warning event
         waitForEvent(context, cm,
@@ -471,7 +462,7 @@ public class ControllerIntegrationTest {
         ConfigMap cm = createCm(context, topicName);
 
         // can now delete the cm
-        kubeClient.configMaps().withName(cm.getMetadata().getName()).delete();
+        kubeClient.configMaps().inNamespace(namespace).withName(cm.getMetadata().getName()).delete();
 
         // Wait for the topic to be deleted
         waitFor(context, ()-> {
@@ -499,7 +490,7 @@ public class ControllerIntegrationTest {
         ConfigMap cm = createCm(context, topicName);
 
         // now change the cm
-        kubeClient.configMaps().withName(cm.getMetadata().getName()).edit().addToData(TopicSerialization.CM_KEY_CONFIG, "{\"retention.ms\":\"12341234\"}").done();
+        kubeClient.configMaps().inNamespace(namespace).withName(cm.getMetadata().getName()).edit().addToData(TopicSerialization.CM_KEY_CONFIG, "{\"retention.ms\":\"12341234\"}").done();
 
         // Wait for that to be reflected in the topic
         waitFor(context, ()-> {
@@ -518,7 +509,7 @@ public class ControllerIntegrationTest {
         ConfigMap cm = createCm(context, topicName);
 
         // now change the cm
-        kubeClient.configMaps().withName(cm.getMetadata().getName()).edit().addToData(TopicSerialization.CM_KEY_PARTITIONS, "foo").done();
+        kubeClient.configMaps().inNamespace(namespace).withName(cm.getMetadata().getName()).edit().addToData(TopicSerialization.CM_KEY_PARTITIONS, "foo").done();
 
         // Wait for that to be reflected in the topic
         waitForEvent(context, cm,
@@ -537,7 +528,7 @@ public class ControllerIntegrationTest {
         // now change the cm
         String changedName = topicName.toUpperCase(Locale.ENGLISH);
         logger.info("Changing CM data.name from {} to {}", topicName, changedName);
-        kubeClient.configMaps().withName(cm.getMetadata().getName()).edit().addToData(TopicSerialization.CM_KEY_NAME, changedName).done();
+        kubeClient.configMaps().inNamespace(namespace).withName(cm.getMetadata().getName()).edit().addToData(TopicSerialization.CM_KEY_NAME, changedName).done();
 
         // We expect this to cause a warning event
         waitForEvent(context, cm,
@@ -555,7 +546,7 @@ public class ControllerIntegrationTest {
         // create one
         createCm(context, cm2);
         // create another
-        kubeClient.configMaps().create(cm);
+        kubeClient.configMaps().inNamespace(namespace).create(cm);
 
         waitForEvent(context, cm,
                 "Failure processing ConfigMap watch event ADDED on map two-cms-one-topic with labels {strimzi.io/kind=topic}: " +
