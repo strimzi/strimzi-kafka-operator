@@ -37,8 +37,9 @@ public class K8SUtils {
     }
 
     /**
-     * Works only on OpenShift - throws exception if called on Kubernetes.
+     * Works only on OpenShift.
      *
+     * @throws  Throws exception if called on Kubernetes.
      * @return  OpenShiftUtils instance
      */
     public OpenShiftUtils getOpenShiftUtils()   {
