@@ -160,12 +160,10 @@ public class Controller {
 
         private final Topic topic;
         private final Handler<io.vertx.core.AsyncResult<Void>> handler;
-        private final HasMetadata involvedObject;
 
-        public UpdateConfigMap(Topic topic, HasMetadata involvedObject, Handler<AsyncResult<Void>> handler) {
+        public UpdateConfigMap(Topic topic, Handler<AsyncResult<Void>> handler) {
             this.topic = topic;
             this.handler = handler;
-            this.involvedObject = involvedObject;
         }
 
         @Override
@@ -314,12 +312,10 @@ public class Controller {
     class DeleteKafkaTopic implements Handler<Void> {
 
         public final TopicName topicName;
-        private final HasMetadata involvedObject;
         private final Handler<AsyncResult<Void>> handler;
 
-        public DeleteKafkaTopic(TopicName topicName, HasMetadata involvedObject, Handler<AsyncResult<Void>> handler) {
+        public DeleteKafkaTopic(TopicName topicName, Handler<AsyncResult<Void>> handler) {
             this.topicName = topicName;
-            this.involvedObject = involvedObject;
             this.handler = handler;
         }
 
@@ -443,7 +439,7 @@ public class Controller {
                 } else {
                     // it was deleted in k8s so delete in kafka and privateState
                     logger.debug("cm deleted in k8s => delete topic from kafka and from topicStore");
-                    enqueue(new DeleteKafkaTopic(kafkaTopic.getTopicName(), involvedObject, ar -> {
+                    enqueue(new DeleteKafkaTopic(kafkaTopic.getTopicName(), ar -> {
                         if (ar.succeeded()) {
                             enqueue(new DeleteFromTopicStore(privateTopic.getTopicName(), involvedObject, reconciliationResultHandler));
                         } else {
@@ -485,7 +481,7 @@ public class Controller {
             Map mergedConfigs = new HashMap(kafkaTopic.getConfig());
             mergedConfigs.putAll(k8sTopic.getConfig());
             Topic mergedTopic = new Topic.Builder(kafkaTopic).withConfig(mergedConfigs).build();
-            enqueue(new UpdateConfigMap(mergedTopic, involvedObject, ar -> {
+            enqueue(new UpdateConfigMap(mergedTopic, ar -> {
                 if (ar.succeeded()) {
                     enqueue(new UpdateKafkaConfig(mergedTopic, involvedObject, ar2 -> {
                         if (ar2.succeeded()) {
@@ -504,7 +500,7 @@ public class Controller {
             enqueue(new Event(involvedObject, "ConfigMap is incompatible with the topic metadata. " +
                     "The topic metadata will be treated as canonical.", EventType.INFO, ar -> {
                 if (ar.succeeded()) {
-                    enqueue(new UpdateConfigMap(kafkaTopic, involvedObject, ar2 -> {
+                    enqueue(new UpdateConfigMap(kafkaTopic, ar2 -> {
                         if (ar2.succeeded()) {
                             enqueue(new CreateInTopicStore(kafkaTopic, involvedObject, reconciliationResultHandler));
                         } else {
@@ -561,7 +557,7 @@ public class Controller {
                     // depending on what the diffs are.
                     logger.debug("Updating cm, kafka topic and topicStore");
                     // TODO replace this with compose
-                    enqueue(new UpdateConfigMap(result, involvedObject, ar -> {
+                    enqueue(new UpdateConfigMap(result, ar -> {
                         Handler<Void> topicStoreHandler =
                                 ignored -> enqueue(new UpdateInTopicStore(
                                         result, involvedObject, reconciliationResultHandler));
