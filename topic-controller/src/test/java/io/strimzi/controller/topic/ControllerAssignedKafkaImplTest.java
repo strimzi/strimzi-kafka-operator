@@ -26,7 +26,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
@@ -34,6 +36,13 @@ import static java.util.Collections.singletonMap;
 
 @RunWith(VertxUnitRunner.class)
 public class ControllerAssignedKafkaImplTest {
+
+    private static final Map<String, String> mandatory = new HashMap<>();
+
+    static {
+        mandatory.put(Config.ZOOKEEPER_CONNECT.key, "localhost:2181");
+        mandatory.put(Config.KAFKA_BOOTSTRAP_SERVERS.key, "localhost:9092");
+    }
 
     /**
      * We subclass the class under test so that we can run our own executable
@@ -110,7 +119,9 @@ public class ControllerAssignedKafkaImplTest {
     public void changeReplicationFactor_missingExecutable(TestContext context) {
         MockAdminClient adminClient = new MockAdminClient();
         Vertx vertx = Vertx.vertx();
-        Config config = new Config(singletonMap(Config.REASSIGN_VERIFY_INTERVAL_MS.key, "1 seconds"));
+        Map<String, String> map = new HashMap<>(mandatory);
+        mandatory.put(Config.REASSIGN_VERIFY_INTERVAL_MS.key, "1 seconds");
+        Config config = new Config(map);
         Topic topic = new Topic.Builder("changeReplicationFactor", 2, (short) 2, emptyMap()).build();
         String[] partitions = new String[]{"changeReplicationFactor-0", "changeReplicationFactor-1"};
         final String doesNotExist = "/some/executable/that/does/not/exist";
@@ -134,7 +145,9 @@ public class ControllerAssignedKafkaImplTest {
     public void changeReplicationFactor_notExecutable(TestContext context) {
         MockAdminClient adminClient = new MockAdminClient();
         Vertx vertx = Vertx.vertx();
-        Config config = new Config(singletonMap(Config.REASSIGN_VERIFY_INTERVAL_MS.key, "1 seconds"));
+        Map<String, String> map = new HashMap<>(mandatory);
+        mandatory.put(Config.REASSIGN_VERIFY_INTERVAL_MS.key, "1 seconds");
+        Config config = new Config(map);
         Topic topic = new Topic.Builder("changeReplicationFactor", 2, (short) 2, emptyMap()).build();
         String[] partitions = new String[]{"changeReplicationFactor-0", "changeReplicationFactor-1"};
         Subclass sub = new Subclass(adminClient, vertx, config, "pom.xml", asList(
@@ -157,7 +170,9 @@ public class ControllerAssignedKafkaImplTest {
     public void changeReplicationFactor(TestContext context) {
         MockAdminClient adminClient = new MockAdminClient();
         Vertx vertx = Vertx.vertx();
-        Config config = new Config(singletonMap(Config.REASSIGN_VERIFY_INTERVAL_MS.key, "1 seconds"));
+        Map<String, String> map = new HashMap<>(mandatory);
+        mandatory.put(Config.REASSIGN_VERIFY_INTERVAL_MS.key, "1 seconds");
+        Config config = new Config(map);
         Topic topic = new Topic.Builder("changeReplicationFactor", 2, (short) 2, emptyMap()).build();
         String[] partitions = new String[]{"changeReplicationFactor-0", "changeReplicationFactor-1"};
         Subclass sub = new Subclass(adminClient, vertx, config, asList(
@@ -182,7 +197,9 @@ public class ControllerAssignedKafkaImplTest {
     public void changeReplicationFactor_TransientErrorInVerify(TestContext context) {
         MockAdminClient adminClient = new MockAdminClient();
         Vertx vertx = Vertx.vertx();
-        Config config = new Config(singletonMap(Config.REASSIGN_VERIFY_INTERVAL_MS.key, "1 seconds"));
+        Map<String, String> map = new HashMap<>(mandatory);
+        mandatory.put(Config.REASSIGN_VERIFY_INTERVAL_MS.key, "1 seconds");
+        Config config = new Config(map);
         Topic topic = new Topic.Builder("changeReplicationFactor", 2, (short) 2, emptyMap()).build();
         String[] partitions = new String[]{"changeReplicationFactor-0", "changeReplicationFactor-1"};
         Subclass sub = new Subclass(adminClient, vertx, config, asList(
@@ -204,7 +221,9 @@ public class ControllerAssignedKafkaImplTest {
     public void changeReplicationFactor_ErrorInVerify(TestContext context) {
         MockAdminClient adminClient = new MockAdminClient();
         Vertx vertx = Vertx.vertx();
-        Config config = new Config(singletonMap(Config.REASSIGN_VERIFY_INTERVAL_MS.key, "1 seconds"));
+        Map<String, String> map = new HashMap<>(mandatory);
+        mandatory.put(Config.REASSIGN_VERIFY_INTERVAL_MS.key, "1 seconds");
+        Config config = new Config(map);
         Topic topic = new Topic.Builder("changeReplicationFactor", 2, (short) 2, emptyMap()).build();
         String[] partitions = new String[]{"changeReplicationFactor-0", "changeReplicationFactor-1"};
         Subclass sub = new Subclass(adminClient, vertx, config, asList(
@@ -231,7 +250,9 @@ public class ControllerAssignedKafkaImplTest {
     public void changeReplicationFactor_ExecuteInProgress(TestContext context) {
         MockAdminClient adminClient = new MockAdminClient();
         Vertx vertx = Vertx.vertx();
-        Config config = new Config(singletonMap(Config.REASSIGN_VERIFY_INTERVAL_MS.key, "1 seconds"));
+        Map<String, String> map = new HashMap<>(mandatory);
+        mandatory.put(Config.REASSIGN_VERIFY_INTERVAL_MS.key, "1 seconds");
+        Config config = new Config(map);
         Topic topic = new Topic.Builder("changeReplicationFactor", 2, (short) 2, emptyMap()).build();
         String[] partitions = new String[]{"changeReplicationFactor-0", "changeReplicationFactor-1"};
         Subclass sub = new Subclass(adminClient, vertx, config, asList(
@@ -257,7 +278,9 @@ public class ControllerAssignedKafkaImplTest {
     public void changeReplicationFactor_ExecuteFail(TestContext context) {
         MockAdminClient adminClient = new MockAdminClient();
         Vertx vertx = Vertx.vertx();
-        Config config = new Config(singletonMap(Config.REASSIGN_VERIFY_INTERVAL_MS.key, "1 seconds"));
+        Map<String, String> map = new HashMap<>(mandatory);
+        mandatory.put(Config.REASSIGN_VERIFY_INTERVAL_MS.key, "1 seconds");
+        Config config = new Config(map);
         Topic topic = new Topic.Builder("changeReplicationFactor", 2, (short) 2, emptyMap()).build();
         String[] partitions = new String[]{"changeReplicationFactor-0", "changeReplicationFactor-1"};
         Subclass sub = new Subclass(adminClient, vertx, config, asList(
