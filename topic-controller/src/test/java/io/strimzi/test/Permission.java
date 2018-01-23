@@ -15,13 +15,20 @@
  * limitations under the License.
  */
 
-package io.strimzi.controller.topic;
+package io.strimzi.test;
 
-public class OcException extends Exception {
-    public final int statusCode;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-    public OcException(int statusCode, String s) {
-        super(s);
-        this.statusCode = statusCode;
-    }
+/**
+ * Represents the granting of permissions to do certain things (the verbs) to certain types of resource.
+ */
+@Target({})
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Permission {
+    /** The types of resource being granted. */
+    String[] resource();
+    /** The verbs being granted. */
+    String[] verbs();
 }

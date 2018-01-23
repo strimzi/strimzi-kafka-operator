@@ -52,6 +52,7 @@ public class K8sImplTest {
         MixedOperation<ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> mockConfigMaps = mock(MixedOperation.class);
         when(mockClient.configMaps()).thenReturn(mockConfigMaps);
         when(mockConfigMaps.withLabels(any())).thenReturn(mockConfigMaps);
+        when(mockConfigMaps.inNamespace(any())).thenReturn(mockConfigMaps);
         when(mockConfigMaps.list()).thenReturn(new ConfigMapListBuilder()
                 .addNewItem().withKind("ConfigMap")
                 .withNewMetadata()
@@ -61,7 +62,7 @@ public class K8sImplTest {
                 .addNewItem().endItem()
                 .build());
 
-        K8sImpl k8s = new K8sImpl(vertx, mockClient, new LabelPredicate("foo", "bar"));
+        K8sImpl k8s = new K8sImpl(vertx, mockClient, new LabelPredicate("foo", "bar"), "default");
 
         k8s.listMaps(ar -> {
             List<ConfigMap> list = ar.result();

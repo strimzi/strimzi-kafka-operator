@@ -43,6 +43,7 @@ public class Controller {
     private final K8s k8s;
     private final Vertx vertx;
     private final LabelPredicate cmPredicate;
+    private final String namespace;
     private TopicStore topicStore;
     private final InFlight inFlight;
 
@@ -89,7 +90,7 @@ public class Controller {
             }
             evtb.withType(eventType.name)
                     .withMessage(message)
-                    .withNewMetadata().withLabels(cmPredicate.labels()).withGenerateName("topic-controller").endMetadata()
+                    .withNewMetadata().withLabels(cmPredicate.labels()).withGenerateName("topic-controller").withNamespace(namespace).endMetadata()
                     .withNewSource()
                     .withComponent(Controller.class.getName())
                     .endSource();
@@ -337,13 +338,15 @@ public class Controller {
     public Controller(Vertx vertx, Kafka kafka,
                       K8s k8s,
                       TopicStore topicStore,
-                      LabelPredicate cmPredicate) {
+                      LabelPredicate cmPredicate,
+                      String namespace) {
         this.kafka = kafka;
         this.k8s = k8s;
         this.vertx = vertx;
         this.cmPredicate = cmPredicate;
         this.topicStore = topicStore;
         this.inFlight = new InFlight(vertx);
+        this.namespace = namespace;
     }
 
     void reconcile(ConfigMap cm, TopicName topicName) {

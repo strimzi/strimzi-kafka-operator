@@ -44,6 +44,7 @@ public class ControllerAssignedKafkaImplTest {
         Map<String, String> map = new HashMap<>();
         map.put(Config.ZOOKEEPER_CONNECT.key, "localhost:2181");
         map.put(Config.KAFKA_BOOTSTRAP_SERVERS.key, "localhost:9092");
+        map.put(Config.NAMESPACE.key, "default");
         map.put(Config.REASSIGN_VERIFY_INTERVAL_MS.key, "1 seconds");
         config = new Config(map);
     }

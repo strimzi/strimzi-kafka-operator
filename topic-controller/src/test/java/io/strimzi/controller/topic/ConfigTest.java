@@ -33,6 +33,7 @@ public class ConfigTest {
     static {
         mandatory.put(Config.ZOOKEEPER_CONNECT.key, "localhost:2181");
         mandatory.put(Config.KAFKA_BOOTSTRAP_SERVERS.key, "localhost:9092");
+        mandatory.put(Config.NAMESPACE.key, "default");
     }
 
     @Test(expected = IllegalArgumentException.class)
