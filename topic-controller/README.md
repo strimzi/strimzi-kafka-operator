@@ -101,7 +101,7 @@ kind: ConfigMap
 metadata:
   name: orders
   labels:
-    kind: strimzi.io/kind=topic
+    strimzi.io/kind: topic
 data:
   name: orders
   partitions: "10"
@@ -131,7 +131,7 @@ kind: ConfigMap
 metadata:
   name: orders
   labels:
-    kind: strimzi.io/kind=topic
+    strimzi.io/kind: topic
 data:
   name: orders
   partitions: "10"
@@ -161,9 +161,9 @@ The controller is configured from environment variables:
 * `STRIMZI_ZOOKEEPER_SESSION_TIMEOUT`
 – The Zookeeper session timeout. For example `10 seconds`. Default: `20 seconds`.
 * `STRIMZI_KAFKA_BOOTSTRAP_SERVERS`
-– The list of Kafka bootstrap servers. Default: `${KAFKA_SERVICE_HOST}:${KAFKA_SERVICE_PORT}` 
+– The list of Kafka bootstrap servers. This variable is mandatory.
 * `STRIMZI_ZOOKEEPER_CONNECT`
-– The Zookeeper connection information. Default: `${KAFKA_ZOOKEEPER_SERVICE_HOST}:${KAFKA_ZOOKEEPER_SERVICE_PORT}`.
+– The Zookeeper connection information. This variable is mandatory.
 * `STRIMZI_FULL_RECONCILIATION_INTERVAL`
 – The interval between periodic reconciliations.
 
