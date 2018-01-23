@@ -18,13 +18,17 @@ public class DeleteS2IOperation extends S2IOperation {
     private static final Logger log = LoggerFactory.getLogger(DeleteS2IOperation.class.getName());
 
     /**
-     * @param s2i
+     * Constructor
+     *
+     * @param s2i   Source2Image instance which should be deleted
      */
     public DeleteS2IOperation(Source2Image s2i) {
         super(s2i);
     }
 
     /**
+     * Delete the Source2Image instance
+     *
      * @param vertx   Vert.x instance
      * @param os      OpenShiftUtils instance
      * @param handler Result handler

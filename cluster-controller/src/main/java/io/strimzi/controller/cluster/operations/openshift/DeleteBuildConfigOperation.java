@@ -18,8 +18,10 @@ public class DeleteBuildConfigOperation extends OpenShiftOperation {
     private final String name;
 
     /**
-     * @param namespace
-     * @param name
+     * Constructor
+     *
+     * @param namespace     Namespace of the BuildConfig
+     * @param name          Name of the BuildConfig
      */
     public DeleteBuildConfigOperation(String namespace, String name) {
         this.namespace = namespace;
@@ -27,6 +29,8 @@ public class DeleteBuildConfigOperation extends OpenShiftOperation {
     }
 
     /**
+     * Deletes BuildConfig
+     *
      * @param vertx   Vert.x instance
      * @param os      OpenShiftUtils instance
      * @param handler Result handler

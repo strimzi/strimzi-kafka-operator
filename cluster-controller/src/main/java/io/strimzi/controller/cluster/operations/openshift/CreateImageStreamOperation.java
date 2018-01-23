@@ -21,6 +21,8 @@ public class CreateImageStreamOperation extends OpenShiftOperation {
     private final ImageStream imageStream;
 
     /**
+     * Constructor
+     *
      * @param imageStream
      */
     public CreateImageStreamOperation(ImageStream imageStream) {
@@ -28,6 +30,8 @@ public class CreateImageStreamOperation extends OpenShiftOperation {
     }
 
     /**
+     * Create ImageStream resource
+     *
      * @param vertx   Vert.x instance
      * @param os      OpenShiftUtils instance
      * @param handler Result handler

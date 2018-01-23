@@ -27,6 +27,8 @@ public class CreateBuildConfigOperation extends OpenShiftOperation {
     }
 
     /**
+     * Creates BuildConfig resource
+     *
      * @param vertx   Vert.x instance
      * @param os      OpenShiftUtils instance
      * @param handler Result handler

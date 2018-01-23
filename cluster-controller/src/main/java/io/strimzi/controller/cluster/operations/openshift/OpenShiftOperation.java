@@ -15,7 +15,7 @@ public abstract class OpenShiftOperation implements Operation {
     }
 
     /**
-     * This methoid is called from the default executor with K8SUtils object.
+     * This method is called from the default executor with K8SUtils object.
      * It converts it to OpenShiftUtils object and calls the operation
      *
      * @param vertx     Vert.x instance

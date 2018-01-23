@@ -51,9 +51,9 @@ public class OpenShiftUtils {
     }
 
     /**
-     * Returns the Fabric8 OpenShift client for direct use
+     * Get Fabric8 OpenShift client
      *
-     * @return
+     * @return  Fabric8 OpenShift client for direct use
      */
     public OpenShiftClient getOpenShiftClient() {
         return client;
@@ -82,7 +82,7 @@ public class OpenShiftUtils {
      * @param namespace     OpenShift project
      * @param name          Name of the resource
      * @param type          Type of the resource
-     * @return
+     * @return              True if resource exists, false if it doesn't
      */
     public boolean exists(String namespace, String name, Class<? extends HasMetadata> type) {
         log.info("Checking if {} {} exists in namespace {}", type.getSimpleName(), name, namespace);
@@ -90,12 +90,12 @@ public class OpenShiftUtils {
     }
 
     /**
-     * Returns the resource
+     * Get OpenShift resource definition
      *
      * @param namespace     OpenShift project
      * @param name          Resource name
      * @param type          Resource type
-     * @return
+     * @return              OpenShift resource definition
      */
     public HasMetadata get(String namespace, String name, Class<? extends HasMetadata> type) {
         log.info("Getting {} {} from namespace {}", type.getSimpleName(), name, namespace);
@@ -110,12 +110,12 @@ public class OpenShiftUtils {
     }
 
     /**
-     * Returns the resource
+     * Get OpenShift resource
      *
      * @param namespace     OpenShift project
      * @param name          Resource name
      * @param type          Resource type
-     * @return
+     * @return              OpenShift Resource
      */
     public Resource<? extends HasMetadata, ? extends BaseFluent<? extends BaseFluent<?>>> getResource(String namespace, String name, Class<? extends HasMetadata> type) {
         log.info("Getting resource {} {} from namespace {}", type.getSimpleName(), name, namespace);
@@ -135,7 +135,6 @@ public class OpenShiftUtils {
      * @param namespace     OpenShift project
      * @param name          Resource name
      * @param type          Resource type
-     * @return
      */
     public void delete(String namespace, String name, Class<? extends HasMetadata> type) {
         log.info("Deleting {} {} from namespace {}", type.getSimpleName(), name, namespace);
@@ -153,7 +152,7 @@ public class OpenShiftUtils {
     /**
      * Patch the resource
      *
-     * @param patchable     Resource whcich should be patched
+     * @param patchable     Resource which should be patched
      * @param patch         Patch which should be applied
      */
     public void patch(Patchable patchable, KubernetesResource patch)    {

@@ -96,7 +96,7 @@ public class KafkaConnectCluster extends AbstractCluster {
      * @param k8s   K8SUtils instance, which is needed to check whether we are on OpenShift due to S2I support
      * @return  Kafka Connect cluster instance
      */
-    public static KafkaConnectCluster fromConfigMap(ConfigMap cm, K8SUtils k8s) {
+    public static KafkaConnectCluster fromConfigMap(K8SUtils k8s, ConfigMap cm) {
         KafkaConnectCluster kafkaConnect = new KafkaConnectCluster(cm.getMetadata().getNamespace(), cm.getMetadata().getName());
 
         kafkaConnect.setLabels(cm.getMetadata().getLabels());
@@ -140,9 +140,8 @@ public class KafkaConnectCluster extends AbstractCluster {
      * @return  Kafka Connect cluster instance
      */
     public static KafkaConnectCluster fromDeployment(K8SUtils k8s, String namespace, String cluster) {
-
         Deployment dep = k8s.getDeployment(namespace, cluster + KafkaConnectCluster.NAME_SUFFIX);
-log.info("Namespace: {}, Cluster: {}", namespace, cluster);
+
         KafkaConnectCluster kafkaConnect =  new KafkaConnectCluster(namespace, cluster);
 
         kafkaConnect.setLabels(dep.getMetadata().getLabels());

@@ -88,17 +88,6 @@ rules:
   - list
   - patch
   - update
-  - watch
-- apiGroups:
-  - ""
-  - build.openshift.io
-  attributeRestrictions: null
-  resources:
-  - builds/log
-  verbs:
-  - get
-  - list
-  - watch
 - apiGroups:
   - ""
   - build.openshift.io
@@ -106,7 +95,6 @@ rules:
   resources:
   - buildconfigs/instantiate
   - buildconfigs/instantiatebinary
-  - builds/clone
   verbs:
   - create
 - apiGroups:
@@ -117,7 +105,6 @@ rules:
   - imagestreamimages
   - imagestreammappings
   - imagestreams
-  - imagestreams/secrets
   - imagestreamtags
   verbs:
   - create
@@ -127,7 +114,6 @@ rules:
   - list
   - patch
   - update
-  - watch
 - apiGroups:
   - ""
   - image.openshift.io
@@ -184,7 +170,7 @@ spec:
       serviceAccountName: strimzi-cluster-controller
       containers:
         - name: strimzi-cluster-controller
-          image: strimzi/cluster-controller:latest
+          image: scholzj/cluster-controller:latest
           env:
             - name: STRIMZI_CONFIGMAP_LABELS
               value: "strimzi.io/kind=cluster"
@@ -200,7 +186,7 @@ metadata:
   annotations:
     openshift.io/display-name: "Apache Kafka (Ephemeral storage)"
     description: >-
-      This template installes Apache Zookeeper and Apache Kafka clusters. For more information
+      This template installs Apache Zookeeper and Apache Kafka clusters. For more information
       about using this template see http://strimzi.io
 
 

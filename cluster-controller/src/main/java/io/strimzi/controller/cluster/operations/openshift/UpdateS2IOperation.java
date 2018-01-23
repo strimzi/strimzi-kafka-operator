@@ -20,13 +20,17 @@ public class UpdateS2IOperation extends S2IOperation {
     private static final Logger log = LoggerFactory.getLogger(UpdateS2IOperation.class.getName());
 
     /**
-     * @param s2i
+     * Constructor
+     *
+     * @param s2i   Source2Image instance which should be updated
      */
     public UpdateS2IOperation(Source2Image s2i) {
         super(s2i);
     }
 
     /**
+     * Updates Source2Image instance
+     *
      * @param vertx   Vert.x instance
      * @param os      OpenShiftUtils instance
      * @param handler Result handler

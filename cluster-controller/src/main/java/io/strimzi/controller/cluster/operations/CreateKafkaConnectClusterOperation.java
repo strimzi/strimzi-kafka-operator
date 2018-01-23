@@ -23,7 +23,7 @@ public class CreateKafkaConnectClusterOperation extends KafkaConnectClusterOpera
             if (res.succeeded()) {
                 Lock lock = res.result();
 
-                KafkaConnectCluster connect = KafkaConnectCluster.fromConfigMap(k8s.getConfigmap(namespace, name), k8s);
+                KafkaConnectCluster connect = KafkaConnectCluster.fromConfigMap(k8s, k8s.getConfigmap(namespace, name));
                 log.info("Creating Kafka Connect cluster {} in namespace {}", connect.getName(), namespace);
 
                 Future<Void> futureService = Future.future();

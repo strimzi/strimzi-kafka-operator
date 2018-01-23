@@ -77,7 +77,7 @@ public class Source2Image {
      * @param name          Name of the Source2Image resources
      * @param labels        Map with labels
      * @param config        JsonObject with configuration
-     * @return
+     * @return              Source2Image instance
      */
     public static Source2Image fromJson(String namespace, String name, Map<String, String> labels, JsonObject config) {
         String sourceImage = config.getString(KEY_SOURCE_IMAGE, DEFAULT_SOURCE_IMAGE);
@@ -90,7 +90,7 @@ public class Source2Image {
      * @param namespace     OpenShift project
      * @param name          Name of the Source2Image resources
      * @param os            OpenShift utils
-     * @return
+     * @return              Source2Image instance
      */
     public static Source2Image fromOpenShift(String namespace, String name, OpenShiftUtils os) {
         ImageStream sis = (ImageStream) os.get(namespace, getSourceImageStreamName(name), ImageStream.class);
@@ -100,55 +100,55 @@ public class Source2Image {
     }
 
     /**
-     * Returns the name of this Source2Image resources
+     * Get the Source2Image name
      *
-     * @return
+     * @return      Name of the Source2Image instance
      */
     public String getName() {
         return name;
     }
 
     /**
-     * Returns the namespace of this Source2Image resources
+     * Get OpenShift project / namespace
      *
-     * @return
+     * @return      OpenShift project / namespace of this Source2Image instance
      */
     public String getNamespace() {
         return namespace;
     }
 
     /**
-     * Returns the S2I Docker image which is used as a source for the build. The image name includes the repository /
-     * organization. It doesn't include the tag.
+     * Get the S2I source Docker image
      *
-     * @return
+     * @return      S2I Docker image which is used as a source for the build. The image name includes the repository /
+     * organization. It doesn't include the tag.
      */
     public String getSourceImage() {
         return sourceImage;
     }
 
     /**
-     * Returns the name of the newly created Docker Image including tag
+     * Get the name of the target image
      *
-     * @return
+     * @return      Name of the target Docker image including tag
      */
     public String getTargetImage() {
         return targetImage + ":" + tag;
     }
 
     /**
-     * Returns labels
+     * Get labels used by this Source2Image instance
      *
-     * @return
+     * @return      Map with lables
      */
     public Map<String, String> getLabels() {
         return labels;
     }
 
     /**
-     * Returns the name of the source ImageStream resource for given instance
+     * Get the source ImageStream name for given instance
      *
-     * @return
+     * @return      name of the source ImageStream resource
      */
     public String getSourceImageStreamName() {
         return getSourceImageStreamName(name);
@@ -157,8 +157,8 @@ public class Source2Image {
     /**
      * Generates the name of the source ImageStream
      *
-     * @param baseName      NAme of the Source2Image resource
-     * @return
+     * @param baseName       Name of the Source2Image resource
+     * @return               Name of the source ImageStream instance
      */
     public static String getSourceImageStreamName(String baseName) {
         return baseName + "-source";
@@ -167,7 +167,7 @@ public class Source2Image {
     /**
      * Generate new source ImageStream for this Source2Image object
      *
-     * @return
+     * @return      Source ImageStream resource definition
      */
     public ImageStream generateSourceImageStream() {
         ObjectReference image = new ObjectReference();
@@ -196,7 +196,7 @@ public class Source2Image {
     /**
      * Generate new target ImageStream for this Source2Image object
      *
-     * @return
+     * @return      Target ImageStream resource definition
      */
     public ImageStream generateTargetImageStream() {
         ImageStream imageStream = new ImageStreamBuilder()
@@ -216,7 +216,7 @@ public class Source2Image {
     /**
      * Generate new BuildConfig for this Source2Image object
      *
-     * @return
+     * @return      BuildConfig resource definition
      */
     public BuildConfig generateBuildConfig() {
         BuildTriggerPolicy triggerConfigChange = new BuildTriggerPolicy();
@@ -265,7 +265,7 @@ public class Source2Image {
      * Patches existing source ImageStream with latest changes
      *
      * @param is    Existing source ImageStream which should be patched
-     * @return
+     * @return      Patched ImageStream resource definition
      */
     public ImageStream patchSourceImageStream(ImageStream is) {
         is.getMetadata().setLabels(getLabels());
@@ -279,7 +279,7 @@ public class Source2Image {
      * Patches existing target ImageStream with latest changes
      *
      * @param is    Existing target ImageStream which should be patched
-     * @return
+     * @return      Patched ImageStream resource definition
      */
     public ImageStream patchTargetImageStream(ImageStream is) {
         is.getMetadata().setLabels(getLabels());
@@ -291,7 +291,7 @@ public class Source2Image {
      * Patches existing BuildConfig with latest changes
      *
      * @param bc    Existing BuildConfig which should be patched
-     * @return
+     * @return      Patched BuildConfig resource definition
      */
     public BuildConfig patchBuildConfig(BuildConfig bc) {
         bc.getMetadata().setLabels(getLabels());
@@ -305,7 +305,7 @@ public class Source2Image {
      * Calculates the difference between this Source2Image instance and actual OpenShift resources
      *
      * @param os       OpenShiftUtils client
-     * @return
+     * @return         ClusterDiffResult instance describing the differences between desired and actual Source2Image
      */
     public ClusterDiffResult diff(OpenShiftUtils os) {
         ClusterDiffResult diff = new ClusterDiffResult();
@@ -337,6 +337,24 @@ public class Source2Image {
      * Enum for passing Diff resources in ClusterDiffResult class
      */
     public enum Source2ImageDiff {
-        DELETE, UPDATE, CREATE, NONE;
+        /**
+         * Soruce2Image should be deleted
+         */
+        DELETE,
+
+        /**
+        * Source2Image should be checked for updates
+        */
+        UPDATE,
+
+        /**
+         * Source2Image should be created
+         */
+        CREATE,
+
+        /**
+         * No changes to Source2Image
+         */
+        NONE;
     }
 }

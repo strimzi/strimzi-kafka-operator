@@ -18,12 +18,19 @@ public class CreateS2IOperation extends S2IOperation {
     private static final Logger log = LoggerFactory.getLogger(CreateS2IOperation.class.getName());
     private final Source2Image s2i;
 
+    /**
+     * Constructor
+     *
+     * @param s2i   Source2Image resources which should be created
+     */
     public CreateS2IOperation(Source2Image s2i) {
         super(s2i);
         this.s2i = s2i;
     }
 
     /**
+     * Triggers the Soruce2Image resource (ImageStreams, BuildConfigs) creation
+     *
      * @param vertx   Vert.x instance
      * @param os      OpenShiftUtils instance
      * @param handler Result handler

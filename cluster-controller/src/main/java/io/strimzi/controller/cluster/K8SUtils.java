@@ -30,16 +30,16 @@ public class K8SUtils {
     }
 
     /**
-     * @return  if the current cluster is an OpenShift one (false, it's Kubernetes)
+     * @return  If the current cluster is an OpenShift one, returns true. If its Kubernetes, returns false.
      */
     public boolean isOpenShift() {
         return this.client.isAdaptable(OpenShiftClient.class);
     }
 
     /**
-     * Returns CpenShiftUtils instance. Works only on OpenShift - throws exception if called on Kubernetes.
+     * Works only on OpenShift - throws exception if called on Kubernetes.
      *
-     * @return
+     * @return  OpenShiftUtils instance
      */
     public OpenShiftUtils getOpenShiftUtils()   {
         if (isOpenShift()) {

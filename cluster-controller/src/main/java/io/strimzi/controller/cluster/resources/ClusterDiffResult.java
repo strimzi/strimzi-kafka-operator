@@ -71,9 +71,9 @@ public class ClusterDiffResult {
 
     /**
      * Returns the Diff enum for S2I. This is not the full S2I diff. It just defines whether S2I should be added,
-     * removed or updates (or nothing). It doesn't contain any detaqiled diff information.
+     * removed or updates (or nothing). It doesn't contain any detailed diff information.
      *
-     * @return
+     * @return  Source2ImageDiff value describing the highlevel diff result for Source2Image
      */
     public Source2Image.Source2ImageDiff getS2i() {
         return s2i;

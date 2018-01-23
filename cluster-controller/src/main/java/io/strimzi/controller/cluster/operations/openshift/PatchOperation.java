@@ -21,6 +21,8 @@ public class PatchOperation extends OpenShiftOperation {
     private final KubernetesResource patch;
 
     /**
+     * Constructor
+     *
      * @param patchable     Resource which should be patched
      * @param patch         Patch
      */
@@ -30,6 +32,8 @@ public class PatchOperation extends OpenShiftOperation {
     }
 
     /**
+     * Patches OpenShift resource
+     *
      * @param vertx   Vert.x instance
      * @param os      OpenShiftUtils instance
      * @param handler Result handler

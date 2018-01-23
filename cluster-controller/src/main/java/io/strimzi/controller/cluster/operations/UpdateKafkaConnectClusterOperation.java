@@ -41,7 +41,7 @@ public class UpdateKafkaConnectClusterOperation extends KafkaConnectClusterOpera
                 ConfigMap connectConfigMap = k8s.getConfigmap(namespace, name);
 
                 if (connectConfigMap != null)    {
-                    connect = KafkaConnectCluster.fromConfigMap(connectConfigMap, k8s);
+                    connect = KafkaConnectCluster.fromConfigMap(k8s, connectConfigMap);
                     log.info("Updating Kafka Connect cluster {} in namespace {}", connect.getName(), namespace);
                     diff = connect.diff(k8s, namespace);
                 } else  {

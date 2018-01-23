@@ -18,8 +18,10 @@ public class DeleteImageStreamOperation extends OpenShiftOperation {
     private final String name;
 
     /**
-     * @param namespace
-     * @param name
+     * Constructor
+     *
+     * @param namespace     Namespace of the ImageStream
+     * @param name          Name of the ImageStream
      */
     public DeleteImageStreamOperation(String namespace, String name) {
         this.namespace = namespace;
@@ -27,6 +29,8 @@ public class DeleteImageStreamOperation extends OpenShiftOperation {
     }
 
     /**
+     * Deletes ImageStream
+     *
      * @param vertx   Vert.x instance
      * @param os      OpenShiftUtils instance
      * @param handler Result handler
