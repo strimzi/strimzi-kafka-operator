@@ -35,31 +35,31 @@ import static java.lang.System.getenv;
 public class Config {
 
     private static abstract class Type<T> {
-        final String name;
-        final String doc;
-        Type(String name, String doc) {
-            this.name = name;
-            this.doc = doc;
-        }
+
         abstract T parse(String s);
     }
 
-    private static Type<? extends String> STRING = new Type<String>("string", "A Java string.") {
+    /** A java string */
+    private static Type<? extends String> STRING = new Type<String>() {
         @Override
         public String parse(String s) {
             return s;
         }
     };
 
-    private static Type<? extends Long> LONG = new Type<Long>("long", "A Java long.") {
+    /** A java Long */
+    private static Type<? extends Long> LONG = new Type<Long>() {
         @Override
         public Long parse(String s) {
             return Long.parseLong(s);
         }
     };
 
-    private static Type<? extends Long> DURATION = new Type<Long>("duration",
-            "A time duration composed of a non-negative integer quantity and time unit taken from " + Arrays.toString(TimeUnit.values()) + ". For example '5 seconds'.") {
+    /**
+     * A time duration composed of a non-negative integer quantity and time unit taken from {@link TimeUnit}.
+     * For example '5 seconds'.
+     */
+    private static Type<? extends Long> DURATION = new Type<Long>() {
 
         private final Pattern pattern = Pattern.compile("([0-9]+) *([a-z]+)", Pattern.CASE_INSENSITIVE);
 
@@ -71,13 +71,16 @@ public class Config {
                 final String quantity = m.group(1);
                 return TimeUnit.MILLISECONDS.convert(Long.parseLong(quantity), unit);
             } else {
-                throw new IllegalArgumentException("Invalid duration: Expected an integer followed by one of " + TimeUnit.values() + " e.g. '5 MINUTES'");
+                throw new IllegalArgumentException("Invalid duration: Expected an integer followed by one of " + Arrays.toString(TimeUnit.values()) + " e.g. '5 MINUTES'");
             }
 
         }
     };
 
-    private static Type<? extends LabelPredicate> LABEL_PREDICATE = new Type<LabelPredicate>("selector", "A kubernetes selector") {
+    /**
+     * A kubernetes selector.
+     */
+    private static Type<? extends LabelPredicate> LABEL_PREDICATE = new Type<LabelPredicate>() {
         @Override
         public LabelPredicate parse(String s) {
             return LabelPredicate.fromString(s);
@@ -88,9 +91,8 @@ public class Config {
         public final String key;
         public final String defaultValue;
         public final boolean required;
-        public final String doc;
         private final Type<? extends T> type;
-        private Value(String key, Type<? extends T> type, String defaultValue, String doc) {
+        private Value(String key, Type<? extends T> type, String defaultValue) {
             this.key = key;
             this.type = type;
             if (defaultValue != null) {
@@ -98,14 +100,12 @@ public class Config {
             }
             this.defaultValue = defaultValue;
             this.required = false;
-            this.doc = doc;
         }
-        private Value(String key, Type<? extends T> type, boolean required, String doc) {
+        private Value(String key, Type<? extends T> type, boolean required) {
             this.key = key;
             this.type = type;
             this.defaultValue = null;
             this.required = required;
-            this.doc = doc;
         }
     }
 
@@ -121,22 +121,33 @@ public class Config {
     private static final Map<String, Value> CONFIG_VALUES = new HashMap<>();
     private static final Set<Type> TYPES = new HashSet<>();
 
-    public static final Value<LabelPredicate> LABELS = new Value(TC_CM_LABELS, LABEL_PREDICATE,"strimzi.io/kind=topic",
-            "A comma-separated list of key=value pairs for selecting ConfigMaps that describe topics.");
-    public static final Value<String> KAFKA_BOOTSTRAP_SERVERS = new Value(TC_KAFKA_BOOTSTRAP_SERVERS, STRING, true,
-            "A comma-separated list of kafka bootstrap servers.");
-    public static final Value<String> NAMESPACE = new Value(TC_NAMESPACE, STRING, true,
-            "The kubernetes namespace in which to operate.");
-    public static final Value<String> ZOOKEEPER_CONNECT = new Value(TC_ZK_CONNECT, STRING, true,
-            "The zookeeper connection string.");
-    public static final Value<Long> ZOOKEEPER_SESSION_TIMEOUT_MS = new Value(TC_ZK_SESSION_TIMEOUT, DURATION, "20 seconds",
-            "The zookeeper session timeout.");
-    public static final Value<Long> FULL_RECONCILIATION_INTERVAL_MS = new Value(TC_PERIODIC_INTERVAL, DURATION, "15 minutes",
-            "The period between full reconciliations.");
-    public static final Value<Long> REASSIGN_THROTTLE = new Value(TC_REASSIGN_THROTTLE, LONG, Long.toString(Long.MAX_VALUE),
-            "The interbroker throttled rate to use when a topic change requires partition reassignment.");
-    public static final Value<Long> REASSIGN_VERIFY_INTERVAL_MS = new Value(TC_REASSIGN_VERIFY_INTERVAL, DURATION, "2 minutes",
-            "The interval between verification executions (as in kafka-reassign-partitions.sh --verify ...) when a topic change requires partition reassignment.");
+    /** A comma-separated list of key=value pairs for selecting ConfigMaps that describe topics. */
+    public static final Value<LabelPredicate> LABELS = new Value(TC_CM_LABELS, LABEL_PREDICATE,"strimzi.io/kind=topic");
+
+    /** A comma-separated list of kafka bootstrap servers. */
+    public static final Value<String> KAFKA_BOOTSTRAP_SERVERS = new Value(TC_KAFKA_BOOTSTRAP_SERVERS, STRING, true);
+
+    /** The kubernetes namespace in which to operate. */
+    public static final Value<String> NAMESPACE = new Value(TC_NAMESPACE, STRING, true);
+
+    /** The zookeeper connection string. */
+    public static final Value<String> ZOOKEEPER_CONNECT = new Value(TC_ZK_CONNECT, STRING, true);
+
+    /** The zookeeper session timeout. */
+    public static final Value<Long> ZOOKEEPER_SESSION_TIMEOUT_MS = new Value(TC_ZK_SESSION_TIMEOUT, DURATION, "20 seconds");
+
+    /** The period between full reconciliations. */
+    public static final Value<Long> FULL_RECONCILIATION_INTERVAL_MS = new Value(TC_PERIODIC_INTERVAL, DURATION, "15 minutes");
+
+    /** The interbroker throttled rate to use when a topic change requires partition reassignment. */
+    public static final Value<Long> REASSIGN_THROTTLE = new Value(TC_REASSIGN_THROTTLE, LONG, Long.toString(Long.MAX_VALUE));
+
+    /**
+     * The interval between verification executions (as in {@code kafka-reassign-partitions.sh --verify ...})
+     * when a topic change requires partition reassignment.
+     */
+    public static final Value<Long> REASSIGN_VERIFY_INTERVAL_MS = new Value(TC_REASSIGN_VERIFY_INTERVAL, DURATION, "2 minutes");
+
 
     static {
         Map<String, Value> configValues = CONFIG_VALUES;
