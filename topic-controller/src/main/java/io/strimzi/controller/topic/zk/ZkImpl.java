@@ -51,23 +51,6 @@ public class ZkImpl implements Zk {
     public static final String PREFIX_EXISTS = "exists:";
     private final boolean readOnly;
 
-    private static <T> Map<String, Set<Handler<AsyncResult<T>>>>
-    removeWatch(Map<String, Set<Handler<AsyncResult<T>>>> watches, String path, Handler<AsyncResult<T>> handler) {
-        if (watches != null) {
-            Set<Handler<AsyncResult<T>>> handlers = watches.get(path);
-            if (handlers != null) {
-                handlers.remove(handler);
-                if (handlers.isEmpty()) {
-                    watches.remove(path);
-                }
-            }
-            if (watches.isEmpty()) {
-                watches = null;
-            }
-        }
-        return watches;
-    }
-
     private final String zkConnectionString;
     private final int sessionTimeout;
     private final Vertx vertx;
