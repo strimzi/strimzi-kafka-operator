@@ -338,7 +338,7 @@ public class TopicDiff {
      * Return true if this TopicDiff conflicts with the given other TopicDiff
      */
     public String conflict(TopicDiff other) {
-        Set<Difference> intersection = new HashSet(this.differences.keySet());
+        Set<String> intersection = new HashSet(this.differences.keySet());
         intersection.retainAll(other.differences.keySet());
         // they could still be OK if they're applying the _same_ differences
         StringBuilder sb = new StringBuilder();
