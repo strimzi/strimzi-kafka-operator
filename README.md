@@ -243,7 +243,6 @@ To configure the OpenShift Build and create a new Kafka Connect image, follow th
 1. Create OpenShift build configuration and Kafka Connect deployment using our OpenShift template
 
 ```shell
-oc apply -f kafka-connect/s2i/resources/openshift-template.yaml
 oc new-app strimzi-connect-s2i
 ```
 
@@ -252,17 +251,47 @@ oc new-app strimzi-connect-s2i
 ```shell
 $ tree ./my-plugins/
 ./my-plugins/
-└── kafka-connect-jdbc
-    ├── kafka-connect-jdbc-3.3.0.jar
-    ├── postgresql-9.4-1206-jdbc41.jar
-    └── sqlite-jdbc-3.8.11.2.jar
+├── debezium-connector-mongodb
+│   ├── bson-3.4.2.jar
+│   ├── CHANGELOG.md
+│   ├── CONTRIBUTE.md
+│   ├── COPYRIGHT.txt
+│   ├── debezium-connector-mongodb-0.7.1.jar
+│   ├── debezium-core-0.7.1.jar
+│   ├── LICENSE.txt
+│   ├── mongodb-driver-3.4.2.jar
+│   ├── mongodb-driver-core-3.4.2.jar
+│   └── README.md
+├── debezium-connector-mysql
+│   ├── CHANGELOG.md
+│   ├── CONTRIBUTE.md
+│   ├── COPYRIGHT.txt
+│   ├── debezium-connector-mysql-0.7.1.jar
+│   ├── debezium-core-0.7.1.jar
+│   ├── LICENSE.txt
+│   ├── mysql-binlog-connector-java-0.13.0.jar
+│   ├── mysql-connector-java-5.1.40.jar
+│   ├── README.md
+│   └── wkb-1.0.2.jar
+└── debezium-connector-postgres
+    ├── CHANGELOG.md
+    ├── CONTRIBUTE.md
+    ├── COPYRIGHT.txt
+    ├── debezium-connector-postgres-0.7.1.jar
+    ├── debezium-core-0.7.1.jar
+    ├── LICENSE.txt
+    ├── postgresql-42.0.0.jar
+    ├── protobuf-java-2.6.1.jar
+    └── README.md
 ```
 
 3. Start new image build using the prepared directory
 
 ```shell
-oc start-build kafka-connect --from-dir ./my-plugins/
+oc start-build my-connect-cluster-connect --from-dir ./my-plugins/
 ```
+
+_The name of the build should be changed according to your cluster name._
 
 4. Once the build is finished, the new image will be automatically used with your Kafka Connect deployment.
 

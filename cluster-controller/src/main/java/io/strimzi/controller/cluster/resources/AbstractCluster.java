@@ -21,7 +21,7 @@ import java.util.Map;
 
 public abstract class AbstractCluster {
 
-    protected final Logger log = LoggerFactory.getLogger(getClass());
+    protected static final Logger log = LoggerFactory.getLogger(AbstractCluster.class.getName());
 
     private static final String VOLUME_MOUNT_HACK_IMAGE = "busybox";
     private static final String VOLUME_MOUNT_HACK_NAME = "volume-mount-hack";
@@ -100,6 +100,11 @@ public abstract class AbstractCluster {
         this.healthCheckInitialDelay = healthCheckInitialDelay;
     }
 
+    /**
+     * Returns the Docker image which should be used by this cluster
+     *
+     * @return
+     */
     public String getName() {
         return name;
     }
@@ -177,6 +182,10 @@ public abstract class AbstractCluster {
 
     public String getVolumeName() {
         return this.volumeName;
+    }
+
+    public String getImage() {
+        return this.image;
     }
 
     protected VolumeMount createVolumeMount(String name, String path) {
@@ -341,7 +350,7 @@ public abstract class AbstractCluster {
 
         Container container = new ContainerBuilder()
                 .withName(name)
-                .withImage(image)
+                .withImage(getImage())
                 .withEnv(getEnvVars())
                 .withVolumeMounts(volumeMounts)
                 .withPorts(ports)
@@ -410,11 +419,13 @@ public abstract class AbstractCluster {
     protected Deployment createDeployment(
             List<ContainerPort> ports,
             Probe livenessProbe,
-            Probe readinessProbe) {
+            Probe readinessProbe,
+            Map<String, String> deploymentAnnotations,
+            Map<String, String> podAnnotations) {
 
         Container container = new ContainerBuilder()
                 .withName(name)
-                .withImage(image)
+                .withImage(getImage())
                 .withEnv(getEnvVars())
                 .withPorts(ports)
                 .withLivenessProbe(livenessProbe)
@@ -426,6 +437,7 @@ public abstract class AbstractCluster {
                 .withName(name)
                 .withLabels(getLabelsWithName())
                 .withNamespace(namespace)
+                .withAnnotations(deploymentAnnotations)
                 .endMetadata()
                 .withNewSpec()
                 .withStrategy(new DeploymentStrategyBuilder().withType("RollingUpdate").withRollingUpdate(new RollingUpdateDeploymentBuilder().withMaxSurge(new IntOrString(1)).withMaxUnavailable(new IntOrString(0)).build()).build())
@@ -433,6 +445,7 @@ public abstract class AbstractCluster {
                 .withNewTemplate()
                 .withNewMetadata()
                 .withLabels(getLabels())
+                .withAnnotations(podAnnotations)
                 .endMetadata()
                 .withNewSpec()
                 .withContainers(container)
@@ -467,7 +480,7 @@ public abstract class AbstractCluster {
         statefulSet.getMetadata().getAnnotations().putAll(annotations);
         statefulSet.getSpec().setSelector(new LabelSelectorBuilder().withMatchLabels(getLabelsWithName()).build());
         statefulSet.getSpec().getTemplate().getMetadata().setLabels(getLabelsWithName());
-        statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(image);
+        statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(getImage());
         statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).setLivenessProbe(livenessProbe);
         statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).setReadinessProbe(readinessProbe);
         statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(getEnvVars());
@@ -477,11 +490,15 @@ public abstract class AbstractCluster {
 
     protected Deployment patchDeployment(Deployment dep,
                                       Probe livenessProbe,
-                                      Probe readinessProbe) {
+                                      Probe readinessProbe,
+                                      Map<String, String> deploymentAnnotations,
+                                      Map<String, String> podAnnotations) {
 
         dep.getMetadata().setLabels(getLabelsWithName());
+        dep.getMetadata().setAnnotations(deploymentAnnotations);
         dep.getSpec().getTemplate().getMetadata().setLabels(getLabelsWithName());
-        dep.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(image);
+        dep.getSpec().getTemplate().getMetadata().setAnnotations(podAnnotations);
+        dep.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(getImage());
         dep.getSpec().getTemplate().getSpec().getContainers().get(0).setLivenessProbe(livenessProbe);
         dep.getSpec().getTemplate().getSpec().getContainers().get(0).setReadinessProbe(readinessProbe);
         dep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(getEnvVars());

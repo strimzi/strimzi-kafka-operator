@@ -2,10 +2,13 @@ package io.strimzi.controller.cluster.resources;
 
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.extensions.*;
+import io.strimzi.controller.cluster.ClusterController;
 import io.strimzi.controller.cluster.K8SUtils;
+import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -31,6 +34,9 @@ public class KafkaConnectCluster extends AbstractCluster {
     private int offsetStorageReplicationFactor = DEFAULT_OFFSET_STORAGE_REPLICATION_FACTOR;
     private int statusStorageReplicationFactor = DEFAULT_STATUS_STORAGE_REPLICATION_FACTOR;
 
+    // S2I
+    private Source2Image s2i = null;
+
     // Configuration defaults
     private static String DEFAULT_IMAGE = "strimzi/kafka-connect:latest";
     private static int DEFAULT_REPLICAS = 3;
@@ -53,6 +59,7 @@ public class KafkaConnectCluster extends AbstractCluster {
     private static String KEY_REPLICAS = "nodes";
     private static String KEY_HEALTHCHECK_DELAY = "healthcheck-delay";
     private static String KEY_HEALTHCHECK_TIMEOUT = "healthcheck-timeout";
+    private static String KEY_S2I = "s2i";
 
     // Kafka Connect configuration keys
     private static String KEY_BOOTSTRAP_SERVERS = "KAFKA_CONNECT_BOOTSTRAP_SERVERS";
@@ -86,10 +93,10 @@ public class KafkaConnectCluster extends AbstractCluster {
      * Create a Kafka Connect cluster from the related ConfigMap resource
      *
      * @param cm    ConfigMap with cluster configuration
+     * @param k8s   K8SUtils instance, which is needed to check whether we are on OpenShift due to S2I support
      * @return  Kafka Connect cluster instance
      */
-    public static KafkaConnectCluster fromConfigMap(ConfigMap cm) {
-
+    public static KafkaConnectCluster fromConfigMap(K8SUtils k8s, ConfigMap cm) {
         KafkaConnectCluster kafkaConnect = new KafkaConnectCluster(cm.getMetadata().getNamespace(), cm.getMetadata().getName());
 
         kafkaConnect.setLabels(cm.getMetadata().getLabels());
@@ -109,6 +116,18 @@ public class KafkaConnectCluster extends AbstractCluster {
         kafkaConnect.setOffsetStorageReplicationFactor(Integer.parseInt(cm.getData().getOrDefault(KEY_OFFSET_STORAGE_REPLICATION_FACTOR, String.valueOf(DEFAULT_OFFSET_STORAGE_REPLICATION_FACTOR))));
         kafkaConnect.setStatusStorageReplicationFactor(Integer.parseInt(cm.getData().getOrDefault(KEY_STATUS_STORAGE_REPLICATION_FACTOR, String.valueOf(DEFAULT_STATUS_STORAGE_REPLICATION_FACTOR))));
 
+        if (cm.getData().containsKey(KEY_S2I)) {
+            if (k8s.isOpenShift()) {
+                JsonObject config = new JsonObject(cm.getData().get(KEY_S2I));
+                if (config.getBoolean(Source2Image.KEY_ENABLED, false)) {
+                    kafkaConnect.setS2I(Source2Image.fromJson(cm.getMetadata().getNamespace(), kafkaConnect.getName(), kafkaConnect.getLabelsWithName(), config));
+                }
+            }
+            else {
+                log.error("S2I is supported only on OpenShift. S2I will be ignored in Kafka Connect cluster {} in namespace {}", cm.getMetadata().getName(), cm.getMetadata().getNamespace());
+            }
+        }
+
         return kafkaConnect;
     }
 
@@ -121,7 +140,6 @@ public class KafkaConnectCluster extends AbstractCluster {
      * @return  Kafka Connect cluster instance
      */
     public static KafkaConnectCluster fromDeployment(K8SUtils k8s, String namespace, String cluster) {
-
         Deployment dep = k8s.getDeployment(namespace, cluster + KafkaConnectCluster.NAME_SUFFIX);
 
         KafkaConnectCluster kafkaConnect =  new KafkaConnectCluster(namespace, cluster);
@@ -144,6 +162,16 @@ public class KafkaConnectCluster extends AbstractCluster {
         kafkaConnect.setConfigStorageReplicationFactor(Integer.parseInt(vars.getOrDefault(KEY_CONFIG_STORAGE_REPLICATION_FACTOR, String.valueOf(DEFAULT_CONFIG_STORAGE_REPLICATION_FACTOR))));
         kafkaConnect.setOffsetStorageReplicationFactor(Integer.parseInt(vars.getOrDefault(KEY_OFFSET_STORAGE_REPLICATION_FACTOR, String.valueOf(DEFAULT_OFFSET_STORAGE_REPLICATION_FACTOR))));
         kafkaConnect.setStatusStorageReplicationFactor(Integer.parseInt(vars.getOrDefault(KEY_STATUS_STORAGE_REPLICATION_FACTOR, String.valueOf(DEFAULT_STATUS_STORAGE_REPLICATION_FACTOR))));
+
+        String s2iAnnotation = String.format("%s/%s", ClusterController.STRIMZI_CLUSTER_CONTROLLER_DOMAIN, Source2Image.ANNOTATION_S2I);
+        if (dep.getMetadata().getAnnotations().containsKey(s2iAnnotation) && Boolean.parseBoolean(dep.getMetadata().getAnnotations().getOrDefault(s2iAnnotation, "false"))) {
+            if (k8s.isOpenShift()) {
+                kafkaConnect.setS2I(Source2Image.fromOpenShift(namespace, kafkaConnect.getName(), k8s.getOpenShiftUtils()));
+            }
+            else {
+                log.error("S2I is supported only on OpenShift. S2I will be ignored in Kafka Connect cluster {} in namespace {}", cluster, namespace);
+            }
+        }
 
         return kafkaConnect;
     }
@@ -175,8 +203,8 @@ public class KafkaConnectCluster extends AbstractCluster {
             diff.setDifferent(true);
         }
 
-        if (!image.equals(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage())) {
-            log.info("Diff: Expected image {}, actual image {}", image, dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
+        if (!getImage().equals(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage())) {
+            log.info("Diff: Expected image {}, actual image {}", getImage(), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
             diff.setDifferent(true);
             diff.setRollingUpdate(true);
         }
@@ -206,6 +234,30 @@ public class KafkaConnectCluster extends AbstractCluster {
             diff.setRollingUpdate(true);
         }
 
+        if (k8s.isOpenShift()) {
+            Source2Image realS2I = null;
+            String s2iAnnotation = String.format("%s/%s", ClusterController.STRIMZI_CLUSTER_CONTROLLER_DOMAIN, Source2Image.ANNOTATION_S2I);
+            if (Boolean.parseBoolean(dep.getMetadata().getAnnotations().getOrDefault(s2iAnnotation, "false"))) {
+                realS2I = Source2Image.fromOpenShift(namespace, getName(), k8s.getOpenShiftUtils());
+            }
+
+            if (s2i == null && realS2I != null) {
+                log.info("Diff: Kafka Connect S2I should be removed");
+                diff.setDifferent(true);
+                diff.setS2i(Source2Image.Source2ImageDiff.DELETE);
+            } else if (s2i != null && realS2I == null) {
+                log.info("Diff: Kafka Connect S2I should be added");
+                diff.setDifferent(true);
+                diff.setS2i(Source2Image.Source2ImageDiff.CREATE);
+            } else if (s2i != null && realS2I != null) {
+                if (s2i.diff(k8s.getOpenShiftUtils()).getDifferent()) {
+                    log.info("Diff: Kafka Connect S2I should be updated");
+                    diff.setS2i(Source2Image.Source2ImageDiff.UPDATE);
+                    diff.setDifferent(true);
+                }
+            }
+        }
+
         return diff;
     }
 
@@ -220,14 +272,19 @@ public class KafkaConnectCluster extends AbstractCluster {
         return createDeployment(
                 Collections.singletonList(createContainerPort(restApiPortName, restApiPort, "TCP")),
                 createHttpProbe(healthCheckPath, restApiPortName, healthCheckInitialDelay, healthCheckTimeout),
-                createHttpProbe(healthCheckPath, restApiPortName, healthCheckInitialDelay, healthCheckTimeout));
+                createHttpProbe(healthCheckPath, restApiPortName, healthCheckInitialDelay, healthCheckTimeout),
+                getDeploymentAnnotations(),
+                getPodAnnotations()
+                );
     }
 
     public Deployment patchDeployment(Deployment dep) {
-
         return patchDeployment(dep,
                 createHttpProbe(healthCheckPath, restApiPortName, healthCheckInitialDelay, healthCheckTimeout),
-                createHttpProbe(healthCheckPath, restApiPortName, healthCheckInitialDelay, healthCheckTimeout));
+                createHttpProbe(healthCheckPath, restApiPortName, healthCheckInitialDelay, healthCheckTimeout),
+                getDeploymentAnnotations(),
+                getPodAnnotations()
+                );
     }
 
     protected List<EnvVar> getEnvVars() {
@@ -243,6 +300,37 @@ public class KafkaConnectCluster extends AbstractCluster {
         varList.add(new EnvVarBuilder().withName(KEY_STATUS_STORAGE_REPLICATION_FACTOR).withValue(String.valueOf(statusStorageReplicationFactor)).build());
 
         return varList;
+    }
+
+    /**
+     * Returns map with annotations which should be set at Deployment level
+     *
+     * @return
+     */
+    protected Map<String, String> getDeploymentAnnotations() {
+        Map<String, String> annotations = new HashMap<>();
+
+        if (s2i != null)    {
+            annotations.put(Source2Image.ANNOTATION_RESOLVE_NAMES, "*");
+            annotations.put(String.format("%s/%s", ClusterController.STRIMZI_CLUSTER_CONTROLLER_DOMAIN, Source2Image.ANNOTATION_S2I), "true");
+        }
+
+        return annotations;
+    }
+
+    /**
+     * Returns map with annotations which should be set at Template / Pod level
+     *
+     * @return
+     */
+    protected Map<String, String> getPodAnnotations() {
+        Map<String, String> annotations = new HashMap<>();
+
+        if (s2i != null)    {
+            annotations.put(Source2Image.ANNOTATION_RESOLVE_NAMES, "*");
+        }
+
+        return annotations;
     }
 
     protected void setBootstrapServers(String bootstrapServers) {
@@ -279,5 +367,37 @@ public class KafkaConnectCluster extends AbstractCluster {
 
     protected void setStatusStorageReplicationFactor(int statusStorageReplicationFactor) {
         this.statusStorageReplicationFactor = statusStorageReplicationFactor;
+    }
+
+    /**
+     * Get Source2Image resource belonging to this cluster
+     *
+     * @return
+     */
+    public Source2Image getS2I() {
+        return s2i;
+    }
+
+    /**
+     * Set the Source2Image resource related to this cluster
+     *
+     * @param s2i
+     */
+    public void setS2I(Source2Image s2i) {
+        this.s2i = s2i;
+    }
+
+
+    /**
+     * Return the Docker image which should be used. The image differs for Source2Image deployments and regular deployments.
+     *
+     * @return
+     */
+    public String getImage()    {
+        if (s2i != null) {
+            return s2i.getTargetImage();
+        } else {
+            return super.getImage();
+        }
     }
 }

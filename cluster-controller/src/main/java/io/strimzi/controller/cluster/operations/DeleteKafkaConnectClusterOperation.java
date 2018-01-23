@@ -3,6 +3,7 @@ package io.strimzi.controller.cluster.operations;
 import io.strimzi.controller.cluster.K8SUtils;
 import io.strimzi.controller.cluster.operations.kubernetes.DeleteDeploymentOperation;
 import io.strimzi.controller.cluster.operations.kubernetes.DeleteServiceOperation;
+import io.strimzi.controller.cluster.operations.openshift.DeleteS2IOperation;
 import io.strimzi.controller.cluster.resources.KafkaConnectCluster;
 import io.vertx.core.*;
 import io.vertx.core.shareddata.Lock;
@@ -32,7 +33,15 @@ public class DeleteKafkaConnectClusterOperation extends KafkaConnectClusterOpera
                 Future<Void> futureDeployment = Future.future();
                 OperationExecutor.getInstance().execute(new DeleteDeploymentOperation(namespace, connect.getName()), futureDeployment.completer());
 
-                CompositeFuture.join(futureService, futureDeployment).setHandler(ar -> {
+                Future<Void> futureS2I;
+                if (connect.getS2I() != null) {
+                    futureS2I = Future.future();
+                    OperationExecutor.getInstance().execute(new DeleteS2IOperation(connect.getS2I()), futureS2I.completer());
+                } else {
+                    futureS2I = Future.succeededFuture();
+                }
+
+                CompositeFuture.join(futureService, futureDeployment, futureS2I).setHandler(ar -> {
                     if (ar.succeeded()) {
                         log.info("Kafka Connect cluster {} successfully deleted from namespace {}", connect.getName(), namespace);
                         handler.handle(Future.succeededFuture());
