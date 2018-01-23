@@ -208,6 +208,24 @@ public class ControllerAssignedKafkaImpl extends BaseKafkaImpl {
         return tmpFile;
     }
 
+    private static class VerifyLineParser implements Function<String, Void> {
+        int complete = 0;
+        int inProgress = 0;
+
+        @Override
+        public Void apply(String line) {
+            if (line.contains("Partitions reassignment failed due to")
+                    || Pattern.matches("Reassignment of partition .* failed", line)) {
+                throw new ControllerException("Reassigment failed: " + line);
+            } else if (Pattern.matches("Reassignment of partition .* completed successfully", line)) {
+                complete++;
+            } else if (Pattern.matches("Reassignment of partition .* is still in progress", line)) {
+                inProgress++;
+            }
+            return null;
+        }
+    }
+
     private boolean verifyReassignment(File reassignmentJsonFile, String zookeeper, Long throttle) throws IOException, InterruptedException {
         List<String> verifyArgs = new ArrayList<>();
         addJavaArgs(verifyArgs);
@@ -221,27 +239,9 @@ public class ControllerAssignedKafkaImpl extends BaseKafkaImpl {
         verifyArgs.add("--reassignment-json-file");
         verifyArgs.add(reassignmentJsonFile.toString());
         verifyArgs.add("--verify");
-
-        class Progress implements Function<String, Boolean> {
-            int complete = 0;
-            int inProgress = 0;
-
-            @Override
-            public Boolean apply(String line) {
-                if (line.contains("Partitions reassignment failed due to")
-                        || Pattern.matches("Reassignment of partition .* failed", line)) {
-                    throw new ControllerException("Reassigment failed: " + line);
-                } else if (Pattern.matches("Reassignment of partition .* completed successfully", line)) {
-                    complete++;
-                } else if (Pattern.matches("Reassignment of partition .* is still in progress", line)) {
-                    inProgress++;
-                }
-                return null;
-            }
-        }
-        Progress progress = new Progress();
-        executeSubprocess(verifyArgs).forEachLineStdout(progress);
-        return progress.inProgress == 0;
+        VerifyLineParser verifyLineParser = new VerifyLineParser();
+        executeSubprocess(verifyArgs).forEachLineStdout(verifyLineParser);
+        return verifyLineParser.inProgress == 0;
     }
 
     private void executeReassignment(File reassignmentJsonFile, String zookeeper, Long throttle) throws IOException, InterruptedException {
@@ -300,23 +300,7 @@ public class ControllerAssignedKafkaImpl extends BaseKafkaImpl {
 
         final ProcessResult processResult = executeSubprocess(executeArgs);
         delete(topicsToMove);
-        String json = processResult.forEachLineStdout(new Function<String, String>() {
-            boolean returnLine = false;
-            @Override
-            public String apply(String line) {
-                if (line.contains("Partitions reassignment failed due to")) {
-                    throw new TransientControllerException("Reassignment failed: " + line);
-                }
-                if (returnLine) {
-                    return line;
-                }
-                if (line.contains("Proposed partition reassignment configuration")) {
-                    // Return the line following this one, since that's the JSON representation of the reassignment
-                    returnLine = true;
-                }
-                return null;
-            }
-        });
+        String json = processResult.forEachLineStdout(new ReassignmentLineParser());
         return json;
 
     }
@@ -370,7 +354,7 @@ public class ControllerAssignedKafkaImpl extends BaseKafkaImpl {
         int exitCode = p.waitFor();
         // TODO timeout on wait
         logger.info("Process {}: exited with status {}", p, exitCode);
-        return new ProcessResult(p, exitCode, stdout, stderr);
+        return new ProcessResult(p, stdout, stderr);
     }
 
 
@@ -378,12 +362,10 @@ public class ControllerAssignedKafkaImpl extends BaseKafkaImpl {
     private static class ProcessResult implements AutoCloseable {
         private final File stdout;
         private final File stderr;
-        private final int exitCode;
         private final Object pid;
 
-        ProcessResult(Object pid, int exitCode, File stdout, File stderr) {
+        ProcessResult(Object pid, File stdout, File stderr) {
             this.pid = pid;
-            this.exitCode = exitCode;
             this.stdout = stdout;
             this.stderr = stderr;
         }
@@ -414,5 +396,23 @@ public class ControllerAssignedKafkaImpl extends BaseKafkaImpl {
         }
     }
 
+    private static class ReassignmentLineParser implements Function<String, String> {
+        boolean returnLine = false;
+
+        @Override
+        public String apply(String line) {
+            if (line.contains("Partitions reassignment failed due to")) {
+                throw new TransientControllerException("Reassignment failed: " + line);
+            }
+            if (returnLine) {
+                return line;
+            }
+            if (line.contains("Proposed partition reassignment configuration")) {
+                // Return the line following this one, since that's the JSON representation of the reassignment
+                returnLine = true;
+            }
+            return null;
+        }
+    }
 }
 
