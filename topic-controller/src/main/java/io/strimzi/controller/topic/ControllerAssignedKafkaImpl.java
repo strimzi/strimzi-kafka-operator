@@ -35,11 +35,13 @@ import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -69,7 +71,7 @@ public class ControllerAssignedKafkaImpl extends BaseKafkaImpl {
     public void increasePartitions(Topic topic, Handler<AsyncResult<Void>> handler) {
         final NewPartitions newPartitions = NewPartitions.increaseTo(topic.getNumPartitions());
         final Map<String, NewPartitions> request = Collections.singletonMap(topic.getTopicName().toString(), newPartitions);
-        KafkaFuture<Void> future = adminClient.createPartitions(request).values().get(topic.getTopicName());
+        KafkaFuture<Void> future = adminClient.createPartitions(request).values().get(topic.getTopicName().toString());
         queueWork(new UniWork<>("increasePartitions", future, handler));
     }
 
