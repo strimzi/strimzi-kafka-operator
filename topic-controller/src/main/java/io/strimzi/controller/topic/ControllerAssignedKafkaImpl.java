@@ -375,7 +375,10 @@ public class ControllerAssignedKafkaImpl extends BaseKafkaImpl {
         }
 
         private <T> T forEachLine(File file, Function<String, T> fn) throws IOException {
-            try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+                    // Use platform default charset, on assumption that
+                    // the ReassignPartitionsCommand will output in that
+                    new FileInputStream(file), Charset.defaultCharset()))) {
                 String line = reader.readLine();
                 while (line != null) {
                     logger.debug("Process {}: stdout: {}", pid, line);
