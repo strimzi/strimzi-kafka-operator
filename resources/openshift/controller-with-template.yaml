@@ -170,7 +170,7 @@ spec:
       serviceAccountName: strimzi-cluster-controller
       containers:
         - name: strimzi-cluster-controller
-          image: scholzj/cluster-controller:latest
+          image: strimzi/cluster-controller:latest
           env:
             - name: STRIMZI_CONFIGMAP_LABELS
               value: "strimzi.io/kind=cluster"
