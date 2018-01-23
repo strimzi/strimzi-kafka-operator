@@ -122,7 +122,7 @@ public class Config {
 
     public static final Value<LabelPredicate> LABELS = new Value(TC_CM_LABELS, LABEL_PREDICATE,"strimzi.io/kind=topic",
             "A comma-separated list of key=value pairs for selecting ConfigMaps that describe topics.");
-    public static final Value<String> KAFKA_BOOTSTRAP_SERVERS = new Value(TC_KAFKA_BOOTSTRAP_SERVERS, STRING,true,
+    public static final Value<String> KAFKA_BOOTSTRAP_SERVERS = new Value(TC_KAFKA_BOOTSTRAP_SERVERS, STRING, true,
             "A comma-separated list of kafka bootstrap servers.");
     public static final Value<String> ZOOKEEPER_CONNECT = new Value(TC_ZK_CONNECT, STRING, true,
             "The zookeeper connection string.");
