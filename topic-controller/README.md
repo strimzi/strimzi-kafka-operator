@@ -94,7 +94,7 @@ Suppose you want to create a topic called "orders" with 10 partitions and 2 repl
 
 You would first prepare a ConfigMap:
 
-```
+```yaml
 # contents of orders-topic.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -124,7 +124,7 @@ That's it! The controller will create the topic "orders".
 Suppose you later want to change the log segment retention time to 4 days, 
 you can update `orders-topic.yaml` like this:
 
-```
+```yaml
 # contents of orders-topic.yaml
 apiVersion: v1
 kind: ConfigMap
