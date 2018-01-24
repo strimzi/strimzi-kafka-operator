@@ -1,0 +1,911 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements. See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.strimzi.controller.topic;
+
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.EventBuilder;
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.CompositeFuture;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
+import org.apache.kafka.common.errors.TopicExistsException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+import static java.util.Collections.disjoint;
+
+public class Controller {
+
+    private final static Logger logger = LoggerFactory.getLogger(Controller.class);
+    private final static Logger eventLogger = LoggerFactory.getLogger("Event");
+    private final Kafka kafka;
+    private final K8s k8s;
+    private final Vertx vertx;
+    private final LabelPredicate cmPredicate;
+    private final String namespace;
+    private TopicStore topicStore;
+    private final InFlight inFlight;
+
+    enum EventType {
+        INFO("Info"),
+        WARNING("Warning");
+        final String name;
+        EventType(String name) {
+            this.name = name;
+        }
+    }
+
+    class Event implements Handler<Void> {
+        private final EventType eventType;
+        private final String message;
+        private final HasMetadata involvedObject;
+        private final Handler<AsyncResult<Void>> handler;
+
+        public Event(ControllerException exception, Handler<AsyncResult<Void>> handler) {
+            this.involvedObject = exception.getInvolvedObject();
+            this.message = exception.getMessage();
+            this.handler = handler;
+            this.eventType = EventType.WARNING;
+        }
+
+        public Event(HasMetadata involvedObject, String message, EventType eventType, Handler<AsyncResult<Void>> handler) {
+            this.involvedObject = involvedObject;
+            this.message = message;
+            this.handler = handler;
+            this.eventType = eventType;
+        }
+
+        @Override
+        public void handle(Void v) {
+            EventBuilder evtb = new EventBuilder().withApiVersion("v1");
+            if (involvedObject != null) {
+                evtb.withNewInvolvedObject()
+                        .withKind("ConfigMap")
+                        .withName(involvedObject.getMetadata().getName())
+                        .withApiVersion(involvedObject.getApiVersion())
+                        .withNamespace(involvedObject.getMetadata().getNamespace())
+                        .withUid(involvedObject.getMetadata().getUid())
+                        .endInvolvedObject();
+            }
+            evtb.withType(eventType.name)
+                    .withMessage(message)
+                    .withNewMetadata().withLabels(cmPredicate.labels()).withGenerateName("topic-controller").withNamespace(namespace).endMetadata()
+                    .withNewSource()
+                    .withComponent(Controller.class.getName())
+                    .endSource();
+            io.fabric8.kubernetes.api.model.Event event = evtb.build();
+            switch (eventType) {
+                case INFO:
+                    logger.info("{}", message);
+                    break;
+                case WARNING:
+                    logger.warn("{}", message);
+                    break;
+            }
+            k8s.createEvent(event, handler);
+        }
+
+        public String toString() {
+            return "ErrorEvent(involvedObject="+involvedObject+", message="+message+")";
+        }
+    }
+
+    /** Topic created in ZK */
+    class CreateConfigMap implements Handler<Void> {
+        private final Topic topic;
+        private final Handler<io.vertx.core.AsyncResult<Void>> handler;
+
+        public CreateConfigMap(Topic topic, Handler<io.vertx.core.AsyncResult<Void>> handler) {
+            this.topic = topic;
+            this.handler = handler;
+        }
+
+        @Override
+        public void handle(Void v) throws ControllerException {
+            ConfigMap cm = TopicSerialization.toConfigMap(topic, cmPredicate);
+            k8s.createConfigMap(cm, handler);
+        }
+
+        @Override
+        public String toString() {
+            return "CreateConfigMap(topicName="+topic.getTopicName()+")";
+        }
+    }
+
+    /** Topic deleted in ZK */
+    class DeleteConfigMap implements Handler<Void> {
+
+        private final MapName mapName;
+        private final Handler<io.vertx.core.AsyncResult<Void>> handler;
+
+        public DeleteConfigMap(MapName mapName, Handler<io.vertx.core.AsyncResult<Void>> handler) {
+            this.mapName = mapName;
+            this.handler = handler;
+        }
+
+        @Override
+        public void handle(Void v) {
+            k8s.deleteConfigMap(mapName, handler);
+        }
+
+        @Override
+        public String toString() {
+            return "DeleteConfigMap(mapName=" + mapName + ")";
+        }
+    }
+
+    /** Topic config modified in ZK */
+    class UpdateConfigMap implements Handler<Void> {
+
+        private final Topic topic;
+        private final Handler<io.vertx.core.AsyncResult<Void>> handler;
+        private final HasMetadata involvedObject;
+
+        public UpdateConfigMap(Topic topic, HasMetadata involvedObject, Handler<AsyncResult<Void>> handler) {
+            this.topic = topic;
+            this.handler = handler;
+            this.involvedObject = involvedObject;
+        }
+
+        @Override
+        public void handle(Void v) {
+            ConfigMap cm = TopicSerialization.toConfigMap(topic, cmPredicate);
+            k8s.updateConfigMap(cm, handler);
+        }
+
+        @Override
+        public String toString() {
+            return "UpdateConfigMap(topicName="+topic.getTopicName()+")";
+        }
+    }
+
+    /** ConfigMap created in k8s */
+    class CreateKafkaTopic implements Handler<Void> {
+
+        private final Topic topic;
+        private final HasMetadata involvedObject;
+        private final Handler<AsyncResult<Void>> handler;
+
+        public CreateKafkaTopic(Topic topic,
+                                HasMetadata involvedObject, Handler<AsyncResult<Void>> handler) {
+            this.topic = topic;
+            this.handler = handler;
+            this.involvedObject = involvedObject;
+        }
+
+        @Override
+        public void handle(Void v) throws ControllerException {
+            kafka.createTopic(topic, ar -> {
+                if (ar.succeeded()) {
+                    logger.info("Created topic '{}' for ConfigMap '{}'", topic.getTopicName(), topic.getMapName());
+                    handler.handle(ar);
+                } else {
+                    handler.handle(ar);
+                    if (ar.cause() instanceof TopicExistsException) {
+                        // TODO reconcile
+                    } else {
+                        throw new ControllerException(involvedObject, ar.cause());
+                    }
+                }
+            });
+        }
+
+        @Override
+        public String toString() {
+            return "CreateKafkaTopic(topicName="+ topic.getTopicName()+")";
+        }
+    }
+
+    /** ConfigMap modified in k8s */
+    class UpdateKafkaConfig implements Handler<Void> {
+
+        private final HasMetadata involvedObject;
+
+        private final Topic topic;
+        private final Handler<AsyncResult<Void>> handler;
+
+        public UpdateKafkaConfig(Topic topic, HasMetadata involvedObject, Handler<AsyncResult<Void>> handler) {
+            this.topic = topic;
+            this.involvedObject = involvedObject;
+            this.handler = handler;
+        }
+
+        @Override
+        public void handle(Void v) throws ControllerException {
+            kafka.updateTopicConfig(topic, ar-> {
+                if (ar.failed()) {
+                    enqueue(new Event(involvedObject, ar.cause().toString(), EventType.WARNING, eventResult -> {}));
+                }
+                handler.handle(ar);
+            });
+
+        }
+
+        @Override
+        public String toString() {
+            return "UpdateKafkaConfig(topicName="+topic.getTopicName()+")";
+        }
+    }
+
+    /** ConfigMap modified in k8s */
+    class IncreaseKafkaPartitions implements Handler<Void> {
+
+        private final HasMetadata involvedObject;
+
+        private final Topic topic;
+        private final Handler<AsyncResult<Void>> handler;
+
+        public IncreaseKafkaPartitions(Topic topic, HasMetadata involvedObject, Handler<AsyncResult<Void>> handler) {
+            this.topic = topic;
+            this.involvedObject = involvedObject;
+            this.handler = handler;
+        }
+
+        @Override
+        public void handle(Void v) throws ControllerException {
+            kafka.increasePartitions(topic, ar-> {
+                if (ar.failed()) {
+                    enqueue(new Event(involvedObject, ar.cause().toString(), EventType.WARNING, eventResult -> {}));
+                }
+                handler.handle(ar);
+            });
+
+        }
+
+        @Override
+        public String toString() {
+            return "UpdateKafkaPartitions(topicName="+topic.getTopicName()+")";
+        }
+    }
+
+    /** ConfigMap modified in k8s */
+    class ChangeReplicationFactor implements Handler<Void> {
+
+        private final HasMetadata involvedObject;
+
+        private final Topic topic;
+        private final Handler<AsyncResult<Void>> handler;
+
+        public ChangeReplicationFactor(Topic topic, HasMetadata involvedObject, Handler<AsyncResult<Void>> handler) {
+            this.topic = topic;
+            this.involvedObject = involvedObject;
+            this.handler = handler;
+        }
+
+        @Override
+        public void handle(Void v) throws ControllerException {
+            kafka.changeReplicationFactor(topic, ar-> {
+                if (ar.failed()) {
+                    enqueue(new Event(involvedObject, ar.cause().toString(), EventType.WARNING, eventResult -> {}));
+                }
+                handler.handle(ar);
+            });
+
+        }
+
+        @Override
+        public String toString() {
+            return "ChangeReplicationFactor(topicName="+topic.getTopicName()+")";
+        }
+    }
+
+    /** ConfigMap deleted in k8s */
+    class DeleteKafkaTopic implements Handler<Void> {
+
+        public final TopicName topicName;
+        private final HasMetadata involvedObject;
+        private final Handler<AsyncResult<Void>> handler;
+
+        public DeleteKafkaTopic(TopicName topicName, HasMetadata involvedObject, Handler<AsyncResult<Void>> handler) {
+            this.topicName = topicName;
+            this.involvedObject = involvedObject;
+            this.handler = handler;
+        }
+
+        @Override
+        public void handle(Void v) throws ControllerException {
+            logger.info("Deleting topic '{}'", topicName);
+            kafka.deleteTopic(topicName, handler);
+        }
+
+        @Override
+        public String toString() {
+            return "DeleteKafkaTopic(topicName="+topicName+")";
+        }
+    }
+
+    public Controller(Vertx vertx, Kafka kafka,
+                      K8s k8s,
+                      TopicStore topicStore,
+                      LabelPredicate cmPredicate,
+                      String namespace) {
+        this.kafka = kafka;
+        this.k8s = k8s;
+        this.vertx = vertx;
+        this.cmPredicate = cmPredicate;
+        this.topicStore = topicStore;
+        this.inFlight = new InFlight(vertx);
+        this.namespace = namespace;
+    }
+
+    void reconcile(ConfigMap cm, TopicName topicName) {
+        try {
+            Topic k8sTopic = cm != null ? TopicSerialization.fromConfigMap(cm) : null;
+            Future<Topic> topicResult = Future.future();
+            Future<TopicMetadata> metadataResult = Future.future();
+            kafka.topicMetadata(topicName, metadataResult.completer());
+            topicStore.read(topicName, topicResult.completer());
+            CompositeFuture.all(topicResult, metadataResult).setHandler(ar -> {
+                Topic privateTopic = ar.result().resultAt(0);
+                TopicMetadata kafkaTopicMeta = ar.result().resultAt(1);
+                Topic kafkaTopic = TopicSerialization.fromTopicMetadata(kafkaTopicMeta);
+                reconcile(cm, k8sTopic, kafkaTopic, privateTopic, reconcileResult -> {
+                });
+            });
+        } catch (InvalidConfigMapException e) {
+            logger.error("Error reconciling ConfigMap {}: Invalid 'data' section: ", cm.getMetadata().getName(), e.getMessage());
+        } catch (ControllerException e) {
+            logger.error("Error reconciling ConfigMap {}: ", cm.getMetadata().getName(), e);
+        }
+    }
+
+    /**
+     * 0. Set up some persistent ZK nodes for us
+     * 1. When updating CM, we also update our ZK nodes
+     * 2. When updating Kafka, we also update our ZK nodes
+     * 3. When reconciling we get all three versions of the Topic, k8s, kafka and privateState
+     *   - If privateState doesn't exist:
+     *     - If k8s doesn't exist, we reason it's been created in kafka and we create it k8s from kafka
+     *     - If kafka doesn't exist, we reason it's been created in k8s, and we create it in kafka from k8s
+     *     - If both exist, and are the same: That's fine
+     *     - If both exist, and are different: We use whichever has the most recent mtime.
+     *     - In all above cases we create privateState
+     *   - If privateState does exist:
+     *     - If k8s doesn't exist, we reason it was deleted, and delete kafka
+     *     - If kafka doesn't exist, we reason it was delete and we delete k8s
+     *     - If neither exists, we delete privateState.
+     *     - If both exist then all three exist, and we need to reconcile:
+     *       - We compute diff privateState->k8s and privateState->kafka and we merge the two
+     *         - If there are conflicts => error
+     *         - Otherwise we apply the apply the merged diff to privateState, and use that for both k8s and kafka
+     *     - In all above cases we update privateState
+     * Topic identification should be by uid/cxid, not by name.
+     * Topic identification should be by uid/cxid, not by name.
+     */
+    void reconcile(final HasMetadata involvedObject,
+                   final Topic k8sTopic, final Topic kafkaTopic, final Topic privateTopic,
+                   final Handler<AsyncResult<Void>> reconciliationResultHandler) {
+
+        {
+            TopicName topicName = k8sTopic != null ? k8sTopic.getTopicName() : kafkaTopic != null ? kafkaTopic.getTopicName() : privateTopic != null ? privateTopic.getTopicName() : null;
+            logger.info("Reconciling topic {}, k8sTopic:{}, kafkaTopic:{}, privateTopic:{}", topicName, k8sTopic==null?"null":"nonnull", kafkaTopic==null?"null":"nonnull", privateTopic==null?"null":"nonnull");
+        }
+        if (privateTopic == null) {
+            if (k8sTopic == null) {
+                if (kafkaTopic == null) {
+                    // All three null: This happens reentrantly when a topic or configmap is deleted
+                    logger.debug("All three topics null during reconciliation.");
+                    reconciliationResultHandler.handle(Future.succeededFuture());
+                } else {
+                    // it's been created in Kafka => create in k8s and privateState
+                    logger.debug("topic created in kafka, will create cm in k8s and topicStore");
+                    enqueue(new CreateConfigMap(kafkaTopic, ar -> {
+                        // In all cases, create in privateState
+                        if (ar.succeeded()) {
+                            enqueue(new CreateInTopicStore(kafkaTopic, involvedObject, reconciliationResultHandler));
+                        } else {
+                            reconciliationResultHandler.handle(ar);
+                        }
+                    }));
+                }
+            } else if (kafkaTopic == null) {
+                // it's been created in k8s => create in Kafka and privateState
+                logger.debug("cm created in k8s, will create topic in kafka and topicStore");
+                enqueue(new CreateKafkaTopic(k8sTopic, involvedObject, ar -> {
+                    // In all cases, create in privateState
+                    if (ar.succeeded()) {
+                        enqueue(new CreateInTopicStore(k8sTopic, involvedObject, reconciliationResultHandler));
+                    } else {
+                        reconciliationResultHandler.handle(ar);
+                    }
+                }));
+            } else {
+                update2Way(involvedObject, k8sTopic, kafkaTopic, reconciliationResultHandler);
+            }
+        } else {
+            if (k8sTopic == null) {
+                if (kafkaTopic == null) {
+                    // delete privateState
+                    logger.debug("cm deleted in k8s and topic deleted in kafka => delete from topicStore");
+                    enqueue(new DeleteFromTopicStore(privateTopic.getTopicName(), involvedObject, reconciliationResultHandler));
+                    reconciliationResultHandler.handle(Future.succeededFuture());
+                } else {
+                    // it was deleted in k8s so delete in kafka and privateState
+                    logger.debug("cm deleted in k8s => delete topic from kafka and from topicStore");
+                    enqueue(new DeleteKafkaTopic(kafkaTopic.getTopicName(), involvedObject, ar -> {
+                        if (ar.succeeded()) {
+                            enqueue(new DeleteFromTopicStore(privateTopic.getTopicName(), involvedObject, reconciliationResultHandler));
+                        } else {
+                            reconciliationResultHandler.handle(ar);
+                        }
+                    }));
+
+                }
+            } else if (kafkaTopic == null) {
+                // it was deleted in kafka so delete in k8s and privateState
+                logger.debug("topic deleted in kafkas => delete cm from k8s and from topicStore");
+                enqueue(new DeleteConfigMap(privateTopic.getOrAsMapName(), ar -> {
+                    if (ar.succeeded()) {
+                        enqueue(new DeleteFromTopicStore(privateTopic.getTopicName(), involvedObject, reconciliationResultHandler));
+                    } else {
+                        reconciliationResultHandler.handle(ar);
+                    }
+                }));
+            } else {
+                // all three exist
+                logger.debug("3 way diff");
+                update3Way(involvedObject, k8sTopic, kafkaTopic, privateTopic, reconciliationResultHandler);
+            }
+        }
+    }
+
+    private void update2Way(HasMetadata involvedObject, Topic k8sTopic, Topic kafkaTopic, Handler<AsyncResult<Void>> reconciliationResultHandler) {
+        TopicDiff diff = TopicDiff.diff(kafkaTopic, k8sTopic);
+        if (diff.isEmpty()) {
+            // they're the same => do nothing, but stil create the private copy
+            logger.debug("cm created in k8s and topic created in kafka, but they're identical => just creating in topicStore");
+            logger.debug("k8s and kafka versions of topic '{}' are the same", kafkaTopic.getTopicName());
+            enqueue(new CreateInTopicStore(kafkaTopic, involvedObject, reconciliationResultHandler));
+        } else if (!diff.changesReplicationFactor()
+                && !diff.changesNumPartitions()
+                && diff.changesConfig()
+                && disjoint(kafkaTopic.getConfig().keySet(), k8sTopic.getConfig().keySet())) {
+            logger.debug("cm created in k8s and topic created in kafka, they differ only in topic config, and those configs are disjoint: Updating k8s and kafka, and creating in topic store");
+            Map mergedConfigs = new HashMap(kafkaTopic.getConfig());
+            mergedConfigs.putAll(k8sTopic.getConfig());
+            Topic mergedTopic = new Topic.Builder(kafkaTopic).withConfig(mergedConfigs).build();
+            enqueue(new UpdateConfigMap(mergedTopic, involvedObject, ar -> {
+                if (ar.succeeded()) {
+                    enqueue(new UpdateKafkaConfig(mergedTopic, involvedObject, ar2 -> {
+                        if (ar2.succeeded()) {
+                            enqueue(new CreateInTopicStore(mergedTopic, involvedObject, reconciliationResultHandler));
+                        } else {
+                            reconciliationResultHandler.handle(ar2);
+                        }
+                    }));
+                } else {
+                    reconciliationResultHandler.handle(ar);
+                }
+            }));
+        } else {
+            // Just use kafka version, but also create a warning event
+            logger.debug("cm created in k8s and topic created in kafka, and they are irreconcilably different => kafka version wins");
+            enqueue(new Event(involvedObject, "ConfigMap is incompatible with the topic metadata. " +
+                    "The topic metadata will be treated as canonical.", EventType.INFO, ar -> {
+                if (ar.succeeded()) {
+                    enqueue(new UpdateConfigMap(kafkaTopic, involvedObject, ar2 -> {
+                        if (ar2.succeeded()) {
+                            enqueue(new CreateInTopicStore(kafkaTopic, involvedObject, reconciliationResultHandler));
+                        } else {
+                            reconciliationResultHandler.handle(ar2);
+                        }
+                    }));
+                } else {
+                    reconciliationResultHandler.handle(ar);
+                }
+            }));
+        }
+    }
+
+    private void update3Way(HasMetadata involvedObject, Topic k8sTopic, Topic kafkaTopic, Topic privateTopic,
+                            Handler<AsyncResult<Void>> reconciliationResultHandler) {
+        if (!privateTopic.getMapName().equals(k8sTopic.getMapName())) {
+            reconciliationResultHandler.handle(Future.failedFuture(new ControllerException(involvedObject,
+                    "Topic '"+ kafkaTopic.getTopicName() + "' is already managed via ConfigMap '" + privateTopic.getMapName() + "' it cannot also be managed via the ConfiMap '" + k8sTopic.getMapName() + "'")));
+            return;
+        }
+        TopicDiff oursKafka = TopicDiff.diff(privateTopic, kafkaTopic);
+        logger.debug("topicStore->kafkaTopic: {}", oursKafka);
+        TopicDiff oursK8s = TopicDiff.diff(privateTopic, k8sTopic);
+        logger.debug("topicStore->k8sTopic: {}", oursK8s);
+        String conflict = oursKafka.conflict(oursK8s);
+        if (conflict != null) {
+            final String message = "ConfigMap and Topic both changed in a conflicting way: " + conflict;
+            logger.error(message);
+            enqueue(new Event(involvedObject, message, EventType.INFO, eventResult -> {}));
+            reconciliationResultHandler.handle(Future.failedFuture(new Exception(message)));
+        } else {
+            TopicDiff merged = oursKafka.merge(oursK8s);
+            logger.debug("Diffs do not conflict, merged diff: {}", merged);
+            if (merged.isEmpty()) {
+                logger.info("All three topics are identical");
+                reconciliationResultHandler.handle(Future.succeededFuture());
+            } else {
+                Topic result = merged.apply(privateTopic);
+                int partitionsDelta = merged.numPartitionsDelta();
+                if (partitionsDelta < 0) {
+                    final String message = "Number of partitions cannot be decreased";
+                    logger.error(message);
+                    enqueue(new Event(involvedObject, message, EventType.INFO, eventResult -> {
+                    }));
+                    reconciliationResultHandler.handle(Future.failedFuture(new Exception(message)));
+                } else {
+                    if (merged.changesReplicationFactor()) {
+                        logger.error("Changes replication factor");
+                        enqueue(new ChangeReplicationFactor(result, involvedObject, null));
+                    }
+                    // TODO What if we increase min.in.sync.replicas and the number of replicas,
+                    // such that the old number of replicas < the new min isr? But likewise
+                    // we could decrease, so order of tasks in the queue will need to change
+                    // depending on what the diffs are.
+                    logger.debug("Updating cm, kafka topic and topicStore");
+                    // TODO replace this with compose
+                    enqueue(new UpdateConfigMap(result, involvedObject, ar -> {
+                        Handler<Void> topicStoreHandler =
+                                ignored -> enqueue(new UpdateInTopicStore(
+                                        result, involvedObject, reconciliationResultHandler));
+                        Handler<Void> partitionsHandler;
+                        if (partitionsDelta > 0) {
+                            partitionsHandler = ar4 -> enqueue(new IncreaseKafkaPartitions(result, involvedObject, ar2 -> topicStoreHandler.handle(null)));
+                        } else {
+                            partitionsHandler = topicStoreHandler;
+                        }
+                        if (merged.changesConfig()) {
+                            enqueue(new UpdateKafkaConfig(result, involvedObject, ar2 -> partitionsHandler.handle(null)));
+                        } else {
+                            enqueue(partitionsHandler);
+                        }
+                    }));
+                }
+            }
+        }
+    }
+
+    void enqueue(Handler<Void> event) {
+        logger.debug("Enqueuing event {}", event);
+        vertx.runOnContext(event);
+    }
+
+    /** Called when a topic znode is deleted in ZK */
+    void onTopicDeleted(TopicName topicName, Handler<AsyncResult<Void>> handler) {
+        Handler<Future<Void>> futureHandler = new Reconciliation("onTopicDeleted") {
+            @Override
+            public void handle(Future<Void> fut) {
+                Controller.this.reconcileOnTopicChange(topicName, null, fut.completer());
+            }
+        };
+        inFlight.enqueue(topicName, handler, futureHandler);
+
+    }
+
+    void onTopicConfigChanged(TopicName topicName, Handler<AsyncResult<Void>> resultHandler) {
+        Handler<Future<Void>> futureHandler = new Reconciliation("onTopicConfigChanged") {
+            @Override
+            public void handle(Future<Void> fut) {
+                kafka.topicMetadata(topicName, metadataResult -> {
+                    if (metadataResult.succeeded()) {
+                        Topic topic = TopicSerialization.fromTopicMetadata(metadataResult.result());
+                        Controller.this.reconcileOnTopicChange(topicName, topic, fut.completer());
+                    } else {
+                        fut.fail(metadataResult.cause());
+                    }
+                });
+            }
+        };
+        inFlight.enqueue(topicName, resultHandler, futureHandler);
+    }
+
+    private void reconcileOnTopicChange(TopicName topicName, Topic kafkaTopic, Handler<AsyncResult<Void>> resultHandler) {
+        // TODO Here I need to lookup the name of the configmap from the name of the topic.
+        // I can either do that from the topicStore, or maintain an in-memory map
+        // I can then look up the CM from k8s
+        topicStore.read(topicName, storeResult -> {
+            if (storeResult.succeeded()) {
+                Topic storeTopic = storeResult.result();
+                MapName mapName = null;
+                if (storeTopic != null) {
+                    mapName = storeTopic.getMapName();
+                } else {
+                    mapName = topicName.asMapName();
+                }
+                k8s.getFromName(mapName, kubeResult -> {
+                    if (kubeResult.succeeded()) {
+                        ConfigMap cm = kubeResult.result();
+                        Topic k8sTopic = TopicSerialization.fromConfigMap(cm);
+                        reconcile(cm, k8sTopic, kafkaTopic, storeTopic, resultHandler);
+                    } else {
+                        resultHandler.handle(kubeResult.<Void>map((Void)null));
+                    }
+                });
+            } else {
+                resultHandler.handle(storeResult.<Void>map((Void)null));
+            }
+        });
+/*
+        k8s.getFromName(topicName.asMapName(), kubeResult -> {
+            if (kubeResult.succeeded()) {
+                ConfigMap cm = kubeResult.result();
+                topicStore.read(topicName, storeResult -> {
+                    if (storeResult.succeeded()) {
+                        final Topic k8sTopic;
+                        try {
+                            k8sTopic = TopicSerialization.fromConfigMap(cm);
+                        } catch (InvalidConfigMapException e) {
+                            resultHandler.handle(Future.failedFuture(e));
+                            return;
+                        }
+                        reconcile(cm, k8sTopic, kafkaTopic, storeResult.result(), resultHandler);
+                    } else {
+                        resultHandler.handle(storeResult.<Void>map((Void)null));
+                    }
+                });
+            } else {
+                resultHandler.handle(kubeResult.<Void>map((Void)null));
+            }
+        });
+        */
+    }
+
+    /** Called when a topic znode is created in ZK */
+    void onTopicCreated(TopicName topicName, Handler<AsyncResult<Void>> resultHandler) {
+        // XXX currently runs on the ZK thread, requiring a synchronized inFlight
+        // is it better to put this check in the topic deleted event?
+        Handler<Future<Void>> futureHandler = new Reconciliation("onTopicCreated") {
+            @Override
+            public void handle(Future<Void> fut) {
+                Handler<AsyncResult<TopicMetadata>> handler = new Handler<AsyncResult<TopicMetadata>>() {
+                    private final BackOff backOff = new BackOff();
+
+                    @Override
+                    public void handle(AsyncResult<TopicMetadata> metadataResult) {
+                        if (metadataResult.succeeded()) {
+                            if (metadataResult.result() == null) {
+                                // In this case it is most likely that we've been notified by ZK
+                                // before Kafka has finished creating the topic, so we retry
+                                // with exponential backoff.
+                                long delay;
+                                try {
+                                    delay = backOff.delayMs();
+                                    logger.debug("Topic {} created in ZK, but no metadata available from Kafka yet: Backing off for {}ms", topicName, delay);
+                                } catch (MaxAttemptsExceededException e) {
+                                    logger.info("Topic {} created in ZK, and no metadata available from Kafka after {}ms, giving up for now", topicName, backOff.totalDelayMs());
+                                    fut.fail(e);
+                                    return;
+                                }
+
+                                if (delay < 1) {
+                                    // vertx won't tolerate a zero delay
+                                    vertx.runOnContext(timerId -> kafka.topicMetadata(topicName, this));
+                                } else {
+                                    vertx.setTimer(TimeUnit.MILLISECONDS.convert(delay, TimeUnit.MILLISECONDS),
+                                            timerId -> kafka.topicMetadata(topicName, this));
+                                }
+                            } else {
+                                // We now have the metadata we need to create the
+                                // ConfigMap...
+                                Topic kafkaTopic = TopicSerialization.fromTopicMetadata(metadataResult.result());
+                                reconcileOnTopicChange(topicName, kafkaTopic, fut);
+                            }
+                        } else {
+                            fut.handle(metadataResult.map((Void) null));
+                        }
+                    }
+                };
+                kafka.topicMetadata(topicName, handler);
+            }
+        };
+        inFlight.enqueue(topicName, resultHandler, futureHandler);
+    }
+
+    /** Called when a ConfigMap is added in k8s */
+    void onConfigMapAdded(ConfigMap configMap, Handler<AsyncResult<Void>> resultHandler) {
+        if (cmPredicate.test(configMap)) {
+            final Topic k8sTopic;
+            try {
+                k8sTopic = TopicSerialization.fromConfigMap(configMap);
+            } catch (InvalidConfigMapException e) {
+                resultHandler.handle(Future.failedFuture(e));
+                return;
+            }
+            Handler<Future<Void>> action = new Reconciliation("onConfigMapAdded") {
+                @Override
+                public void handle(Future<Void> fut) {
+                    Controller.this.reconcileOnCmChange(configMap, k8sTopic, false, fut);
+                }
+            };
+            inFlight.enqueue(new TopicName(configMap), resultHandler, action);
+        } else {
+            resultHandler.handle(Future.succeededFuture());
+        }
+    }
+
+    abstract class Reconciliation implements Handler<Future<Void>> {
+        private final String name;
+
+        public Reconciliation(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public String toString() {
+            return name + "-" + System.identityHashCode(this);
+        }
+    };
+
+    /** Called when a ConfigMap is modified in k8s */
+    void onConfigMapModified(ConfigMap configMap, Handler<AsyncResult<Void>> handler) {
+        if (cmPredicate.test(configMap)) {
+            final Topic k8sTopic;
+            try {
+                k8sTopic = TopicSerialization.fromConfigMap(configMap);
+            } catch (InvalidConfigMapException e) {
+                handler.handle(Future.failedFuture(e));
+                return;
+            }
+            Reconciliation action = new Reconciliation("onConfigMapModified") {
+                @Override
+                public void handle(Future<Void> fut) {
+                    Controller.this.reconcileOnCmChange(configMap, k8sTopic, true, fut);
+                }
+            };
+            inFlight.enqueue(new TopicName(configMap),
+                    handler,
+                    action
+            );
+        } else {
+            handler.handle(Future.succeededFuture());
+        }
+    }
+
+    private void reconcileOnCmChange(ConfigMap configMap, Topic k8sTopic, boolean isModify, Handler<AsyncResult<Void>> handler) {
+        TopicName topicName = new TopicName(configMap);
+        Future f1 = Future.future();
+        Future f2 = Future.future();
+        kafka.topicMetadata(topicName, f1.completer());
+        topicStore.read(topicName, f2.completer());
+        CompositeFuture.all(f1, f2).setHandler(ar -> {
+            if (ar.succeeded()) {
+                TopicMetadata topicMetadata = ar.result().resultAt(0);
+                Topic kafkaTopic = TopicSerialization.fromTopicMetadata(topicMetadata);
+                Topic privateTopic = ar.result().resultAt(1);
+                if (privateTopic == null && isModify) {
+                    enqueue(new Event(configMap, "Kafka topics cannot be renamed, but ConfigMap's data." + TopicSerialization.CM_KEY_NAME + " has changed.", EventType.WARNING, handler));
+                } else {
+                    reconcile(configMap, k8sTopic, kafkaTopic, privateTopic, handler);
+                }
+            } else {
+                handler.handle(Future.failedFuture(ar.cause()));
+            }
+        });
+    }
+
+    /** Called when a ConfigMap is deleted in k8s */
+    void onConfigMapDeleted(ConfigMap configMap, Handler<AsyncResult<Void>> handler) {
+        if (cmPredicate.test(configMap)) {
+            Reconciliation handlerHandler = new Reconciliation("onConfigMapDeleted") {
+                @Override
+                public void handle(Future<Void> fut) {
+                    Controller.this.reconcileOnCmChange(configMap, null, false, fut);
+                }
+            };
+            inFlight.enqueue(new TopicName(configMap), handler,
+                    handlerHandler);
+        } else {
+            handler.handle(Future.succeededFuture());
+        }
+    }
+
+    private class UpdateInTopicStore implements Handler<Void> {
+        private final Topic topic;
+        private final HasMetadata involvedObject;
+        private final Handler<AsyncResult<Void>> handler;
+
+        public UpdateInTopicStore(Topic topic, HasMetadata involvedObject, Handler<AsyncResult<Void>> handler) {
+            this.topic = topic;
+            this.involvedObject = involvedObject;
+            this.handler = handler;
+        }
+
+        @Override
+        public void handle(Void v) throws ControllerException {
+            topicStore.update(topic, ar-> {
+                if (ar.failed()) {
+                    enqueue(new Event(involvedObject, ar.cause().toString(), EventType.WARNING, eventResult -> {}));
+                }
+                handler.handle(ar);
+            });
+        }
+
+        @Override
+        public String toString() {
+            return "UpdateInTopicStore(topicName="+topic.getTopicName()+")";
+        }
+    }
+
+    class CreateInTopicStore implements Handler<Void> {
+        private final Topic topic;
+        private final HasMetadata involvedObject;
+        private final Handler<AsyncResult<Void>> handler;
+
+        private CreateInTopicStore(Topic topic, HasMetadata involvedObject,
+                                   Handler<AsyncResult<Void>> handler) {
+            this.topic = topic;
+            this.involvedObject = involvedObject;
+            this.handler = handler;
+        }
+
+        @Override
+        public void handle(Void v) throws ControllerException {
+            logger.debug("Executing {}", this);
+            topicStore.create(topic, ar-> {
+                logger.debug("Completing {}", this);
+                if (ar.failed()) {
+                    logger.debug("{} failed", this);
+                    enqueue(new Event(involvedObject, ar.cause().toString(), EventType.WARNING, eventResult -> {}));
+                } else {
+                    logger.debug("{} succeeded", this);
+                }
+                handler.handle(ar);
+            });
+        }
+
+        @Override
+        public String toString() {
+            return "CreateInTopicStore(topicName="+topic.getTopicName()+")";
+        }
+    }
+
+    class DeleteFromTopicStore implements Handler<Void> {
+        private final TopicName topicName;
+        private final HasMetadata involvedObject;
+        private final Handler<AsyncResult<Void>> handler;
+
+        private DeleteFromTopicStore(TopicName topicName, HasMetadata involvedObject,
+                                     Handler<AsyncResult<Void>> handler) {
+            this.topicName = topicName;
+            this.involvedObject = involvedObject;
+            this.handler = handler;
+        }
+
+        @Override
+        public void handle(Void v) throws ControllerException {
+            topicStore.delete(topicName, ar-> {
+                if (ar.failed()) {
+                    enqueue(new Event(involvedObject, ar.cause().toString(), EventType.WARNING, eventResult -> {}));
+                }
+                handler.handle(ar);
+            });
+        }
+
+        @Override
+        public String toString() {
+            return "DeleteFromTopicStore(topicName="+topicName+")";
+        }
+    }
+
+    public boolean isWorkInflight() {
+        return inFlight.size() > 0;
+    }
+}
+

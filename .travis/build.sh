@@ -11,8 +11,9 @@ export DOCKER_VERSION_ARG=${COMMIT:-latest}
 
 make docker_build
 
-if [ "$PULL_REQUEST" != "false" ]; then
+if [ "$PULL_REQUEST" != "false" ] ; then
     echo "Building Pull Request - nothing to push"
+
 elif [ "$TAG" = "latest" ] && [ "$BRANCH" != "master" ]; then
     echo "Not in master branch and not in release tag - nothing to push"
 else

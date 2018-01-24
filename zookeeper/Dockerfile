@@ -44,6 +44,9 @@ WORKDIR $ZOOKEEPER_HOME
 # copy template Zookeeper configuration files
 COPY ./config/ $ZOOKEEPER_HOME/conf/
 
+# copy template Zookeeper configuration files
+COPY ./config/ $ZOOKEEPER_HOME/conf/
+
 # copy scripts for starting Zookeeper
 COPY ./scripts/ $ZOOKEEPER_HOME
 
