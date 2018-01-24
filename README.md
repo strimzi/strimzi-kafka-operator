@@ -134,7 +134,7 @@ changes in the YAML files.
 
 To deploy a Kafka cluster, create a ConfigMap with the cluster configuration and following labels:
 
-```shell
+```yaml
 strimzi.io/type: kafka
 strimzi.io/kind: cluster
 ```
