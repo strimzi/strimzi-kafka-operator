@@ -32,46 +32,56 @@ import static java.lang.String.join;
 public abstract class KubeCluster {
     private static final Logger logger = LoggerFactory.getLogger(KubeCluster.class);
 
+    /**
+     * Executes the given command in a subprocess.
+     * @throws KubeClusterException if the process returned a non-zero status code, or if anything else went wrong.
+     */
     protected void exec(String... cmd) throws KubeClusterException {
         exec(Arrays.asList(cmd));
     }
+
+    /**
+     * Executes the given command in a subprocess.
+     * @throws KubeClusterException if the process returned a non-zero status code, or if anything else went wrong.
+     */
     protected void exec(List<String> cmd) throws KubeClusterException {
+        execOutput(null, cmd);
+    }
+
+    /**
+     * Executes the given command in a subprocess and returns the standard output generated.
+     * @throws KubeClusterException if the process returned a non-zero status code, or if anything else went wrong.
+     */
+    protected String execOutput(String... cmd) throws KubeClusterException {
         try {
-            logger.info("{}", join(" ", cmd));
-            ProcessBuilder pb = new ProcessBuilder(cmd);
-            pb.inheritIO();
-            Process p = pb.start();
-            int sc = p.waitFor();
-            if (sc != 0) {
-                throw new KubeClusterException(sc, cmd + " got status code " + sc);
+            File tmp = File.createTempFile(KubeCluster.class.getName(), Integer.toString(Arrays.hashCode(cmd)));
+            try {
+                tmp.deleteOnExit();
+                return execOutput(tmp, Arrays.asList(cmd));
+            } finally {
+                tmp.delete();
             }
         } catch (IOException e) {
-            throw new KubeClusterException(e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
             throw new KubeClusterException(e);
         }
     }
 
-    protected String exec2(String... cmd) throws KubeClusterException {
-
+    private String execOutput(File out, List<String> cmd) throws KubeClusterException {
         try {
-            logger.info("{}", Arrays.toString(cmd));
+            logger.info("{}", join(" ", cmd));
             ProcessBuilder pb = new ProcessBuilder(cmd);
-            pb.redirectError(ProcessBuilder.Redirect.INHERIT);
-            File tmp = File.createTempFile(KubeCluster.class.getName(), Integer.toString(Arrays.hashCode(cmd)));
-            try {
-                tmp.deleteOnExit();
-                pb.redirectOutput(tmp);
-                Process p = pb.start();
-                int sc = p.waitFor();
-                if (sc != 0) {
-                    throw new KubeClusterException(sc, Arrays.toString(cmd) + " got status code " + sc);
-                }
-                return new String(Files.readAllBytes(tmp.toPath()));
-            } finally {
-                tmp.delete();
+            if (out == null) {
+                pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+            } else {
+                pb.redirectOutput(out);
             }
+            pb.redirectError(ProcessBuilder.Redirect.INHERIT);
+            Process p = pb.start();
+            int sc = p.waitFor();
+            if (sc != 0) {
+                throw new KubeClusterException(sc, "`"+ join(" ", cmd) + "` got status code " + sc);
+            }
+            return out == null ? null : new String(Files.readAllBytes(out.toPath()));
         } catch (IOException e) {
             throw new KubeClusterException(e);
         } catch (InterruptedException e) {

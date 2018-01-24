@@ -39,7 +39,7 @@ public class Minikube extends KubeCluster {
 
     @Override
     public boolean isClusterUp() {
-        String output = exec2(MINIKUBE, "status");
+        String output = execOutput(MINIKUBE, "status");
         return output.contains("minikube: Running")
                 && output.contains("cluster: Running")
                 && output.contains("kubectl: Correctly Configured:");
