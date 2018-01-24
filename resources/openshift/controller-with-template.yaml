@@ -325,7 +325,7 @@ metadata:
   annotations:
     openshift.io/display-name: "Apache Kafka (Persistent storage)"
     description: >-
-      This template installes Apache Zookeeper and Apache Kafka clusters. For more information
+      This template installs Apache Zookeeper and Apache Kafka clusters. For more information
       about using this template see http://strimzi.io
     tags: "messaging,datastore"
     iconClass: "fa fa-share-alt fa-flip-horizontal"
@@ -458,7 +458,7 @@ metadata:
   annotations:
     openshift.io/display-name: "Apache Kafka Connect"
     description: >-
-      This template installes Apache Kafka Connect in distributed mode. For more information
+      This template installs Apache Kafka Connect in distributed mode. For more information
       about using this template see http://strimzi.io
     tags: "messaging"
     iconClass: "fa fa-exchange"
