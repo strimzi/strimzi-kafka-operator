@@ -17,23 +17,42 @@
 
 package io.strimzi.test;
 
-/**
- * Abstraction for a Kubernetes cluster, for example {@code oc cluster up} or {@code minikube}.
- */
-public interface KubeCluster {
+import static io.strimzi.test.Exec.*;
 
-    /** Return true iff this kind of cluster installed on the local machine. */
-    boolean isAvailable();
+public class OpenShift implements KubeCluster {
 
-    /** Return true iff this kind of cluster is running on the local machine */
-    boolean isClusterUp();
+    private static final String OC = "oc";
 
-    /** Attempt to start a cluster */
-    void clusterUp();
+    @Override
+    public boolean isAvailable() {
+        return isExecutableOnPath(OC);
+    }
 
-    /** Attempt to stop a cluster */
-    void clusterDown();
+    @Override
+    public boolean isClusterUp() {
+        try {
+            exec(OC, "cluster", "status");
+            return true;
+        } catch (KubeClusterException e) {
+            if (e.statusCode == 1) {
+                return false;
+            }
+            throw e;
+        }
+    }
 
-    /** Return a default client for this kind of cluster. */
-    KubeClient defaultClient();
+    @Override
+    public void clusterUp() {
+        exec(OC, "cluster", "up");
+    }
+
+    @Override
+    public void clusterDown() {
+        exec(OC, "cluster", "down");
+    }
+
+    @Override
+    public KubeClient defaultClient() {
+        return new Oc();
+    }
 }

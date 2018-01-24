@@ -17,29 +17,40 @@
 
 package io.strimzi.test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import static io.strimzi.test.Exec.exec;
+import static io.strimzi.test.Exec.execOutput;
+import static io.strimzi.test.Exec.isExecutableOnPath;
 
 /**
- * A {@link KubeCluster} implementation that uses an already-running cluster,
- * as opposed to starting one itself.
- * This is used in CI environments where the cluster has been started by the CI infrastructure.
+ * A {@link KubeCluster} implementation for {@code minikube} and {@code minishift}.
  */
-public class Minikube extends KubeCluster {
+public class Minikube implements KubeCluster {
 
     public static final String MINIKUBE = "minikube";
-    public static final String KUBECTL = "kubectl";
+    public static final String MINISHIFT = "minishift";
+
+    private final String cmd;
+
+    private Minikube(String cmd) {
+        this.cmd = cmd;
+    }
+
+    public static Minikube minikube() {
+        return new Minikube(MINIKUBE);
+    }
+
+    public static Minikube minishift() {
+        return new Minikube(MINISHIFT);
+    }
 
     @Override
     public boolean isAvailable() {
-        return isExecutableOnPath(MINIKUBE)
-                && isExecutableOnPath(KUBECTL);
+        return isExecutableOnPath(cmd);
     }
 
     @Override
     public boolean isClusterUp() {
-        String output = execOutput(MINIKUBE, "status");
+        String output = execOutput(cmd, "status");
         return output.contains("minikube: Running")
                 && output.contains("cluster: Running")
                 && output.contains("kubectl: Correctly Configured:");
@@ -47,53 +58,16 @@ public class Minikube extends KubeCluster {
 
     @Override
     public void clusterUp() {
-        exec(MINIKUBE, "start");
+        exec(cmd, "start");
     }
 
     @Override
     public void clusterDown() {
-        exec(MINIKUBE, "stop");
-    }
-
-    // Just have a create and delete
-
-    @Override
-    public void createRole(String roleName, Permission... permissions) {
-        List<String> cmd = new ArrayList<>();
-        cmd.addAll(Arrays.asList(KUBECTL, "create", "role", roleName));
-        for (Permission p: permissions) {
-            for (String resource: p.resource()) {
-                cmd.add("--resource=" + resource);
-            }
-            for (int i = 0; i < p.verbs().length; i++) {
-                cmd.add("--verb="+p.verbs()[i]);
-            }
-        }
-        exec(cmd);
+        exec(cmd, "stop");
     }
 
     @Override
-    public void createRoleBinding(String bindingName, String roleName, String... users) {
-        List<String> cmd = new ArrayList<>();
-        cmd.addAll(Arrays.asList(KUBECTL, "create", "rolebinding", bindingName, "--role="+roleName));
-        for (int i = 0; i < users.length; i++) {
-            cmd.add("--user="+users[i]);
-        }
-        exec(cmd);
-    }
-
-    @Override
-    public void deleteRoleBinding(String bindingName) {
-        exec(KUBECTL, "delete", "rolebinding", bindingName);
-    }
-
-    @Override
-    public void deleteRole(String roleName) {
-        exec(KUBECTL, "delete", "role", roleName);
-    }
-
-    @Override
-    public String defaultNamespace() {
-        return "default";
+    public KubeClient defaultClient() {
+        return MINIKUBE.equals(cmd) ? new Kubectl() : new Oc();
     }
 }

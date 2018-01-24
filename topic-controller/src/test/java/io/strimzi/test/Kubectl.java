@@ -24,22 +24,21 @@ import java.util.List;
 import static io.strimzi.test.Exec.*;
 
 /**
- * A {@link KubeClient} implementation wrapping {@code oc}.
+ * A {@link KubeClient} wrapping {@code kubectl}.
  */
-public class Oc implements KubeClient {
+public class Kubectl implements KubeClient {
 
-    public static final String OC = "oc";
+    public static final String KUBECTL = "kubectl";
 
     @Override
     public boolean clientAvailable() {
-        return isExecutableOnPath(OC);
+        return isExecutableOnPath(KUBECTL);
     }
 
     @Override
     public void createRole(String roleName, Permission... permissions) {
-        exec(OC, "login", "-u", "system:admin");
         List<String> cmd = new ArrayList<>();
-        cmd.addAll(Arrays.asList(OC, "create", "role", roleName));
+        cmd.addAll(Arrays.asList(KUBECTL, "create", "role", roleName));
         for (Permission p: permissions) {
             for (String resource: p.resource()) {
                 cmd.add("--resource=" + resource);
@@ -49,38 +48,30 @@ public class Oc implements KubeClient {
             }
         }
         exec(cmd);
-        exec(OC, "login", "-u", "developer");
     }
 
     @Override
-    public void createRoleBinding(String bindingName, String roleName, String... user) {
-        exec(OC, "login", "-u", "system:admin");
+    public void createRoleBinding(String bindingName, String roleName, String... users) {
         List<String> cmd = new ArrayList<>();
-        cmd.addAll(Arrays.asList(OC, "create", "rolebinding", bindingName, "--role="+roleName));
-        for (int i = 0; i < user.length; i++) {
-            cmd.add("--user="+user[i]);
+        cmd.addAll(Arrays.asList(KUBECTL, "create", "rolebinding", bindingName, "--role="+roleName));
+        for (int i = 0; i < users.length; i++) {
+            cmd.add("--user="+users[i]);
         }
         exec(cmd);
-        exec(OC, "login", "-u", "developer");
     }
 
     @Override
     public void deleteRoleBinding(String bindingName) {
-        exec(OC, "login", "-u", "system:admin");
-        exec(OC, "delete", "rolebinding", bindingName);
-        exec(OC, "login", "-u", "developer");
+        exec(KUBECTL, "delete", "rolebinding", bindingName);
     }
 
     @Override
     public void deleteRole(String roleName) {
-        exec(OC, "login", "-u", "system:admin");
-        exec(OC, "delete", "role", roleName);
-        exec(OC, "login", "-u", "developer");
+        exec(KUBECTL, "delete", "role", roleName);
     }
 
     @Override
     public String defaultNamespace() {
-        return "myproject";
+        return "default";
     }
-
 }

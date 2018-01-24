@@ -18,22 +18,18 @@
 package io.strimzi.test;
 
 /**
- * Abstraction for a Kubernetes cluster, for example {@code oc cluster up} or {@code minikube}.
+ * Abstraction for a kubernetes client.
  */
-public interface KubeCluster {
+public interface KubeClient {
+    void createRole(String roleName, Permission... permissions);
 
-    /** Return true iff this kind of cluster installed on the local machine. */
-    boolean isAvailable();
+    void createRoleBinding(String bindingName, String roleName, String... users);
 
-    /** Return true iff this kind of cluster is running on the local machine */
-    boolean isClusterUp();
+    void deleteRoleBinding(String bindingName);
 
-    /** Attempt to start a cluster */
-    void clusterUp();
+    void deleteRole(String roleName);
 
-    /** Attempt to stop a cluster */
-    void clusterDown();
+    String defaultNamespace();
 
-    /** Return a default client for this kind of cluster. */
-    KubeClient defaultClient();
+    boolean clientAvailable();
 }
