@@ -125,7 +125,7 @@ public class Config {
             "A comma-separated list of key=value pairs for selecting ConfigMaps that describe topics.");
     public static final Value<String> KAFKA_BOOTSTRAP_SERVERS = new Value(TC_KAFKA_BOOTSTRAP_SERVERS, STRING, true,
             "A comma-separated list of kafka bootstrap servers.");
-    public static final Value<String> NAMESPACE = new Value(TC_NAMESPACE, STRING,true,
+    public static final Value<String> NAMESPACE = new Value(TC_NAMESPACE, STRING, true,
             "The kubernetes namespace in which to operate.");
     public static final Value<String> ZOOKEEPER_CONNECT = new Value(TC_ZK_CONNECT, STRING, true,
             "The zookeeper connection string.");
