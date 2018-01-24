@@ -109,12 +109,7 @@ public class KubeClusterResource extends ExternalResource {
         }
         RoleBinding binding = testClass.getAnnotation(RoleBinding.class);
         if (binding != null) {
-            String roleName = binding.role();
-            String bindingName = binding.name();
-            if (bindingName == null) {
-                bindingName = roleName + "-binding";
-            }
-            cluster.createRoleBinding(bindingName, roleName, binding.users());
+            cluster.createRoleBinding(binding.name(), binding.role(), binding.users());
         }
     }
 
@@ -123,12 +118,7 @@ public class KubeClusterResource extends ExternalResource {
         try {
             RoleBinding binding = testClass.getAnnotation(RoleBinding.class);
             if (binding != null) {
-                String roleName = binding.role();
-                String bindingName = binding.name();
-                if (bindingName == null) {
-                    bindingName = roleName + "-binding";
-                }
-                cluster.deleteRoleBinding(bindingName);
+                cluster.deleteRoleBinding(binding.name());
             }
         } catch (Exception e) {
             e.printStackTrace();

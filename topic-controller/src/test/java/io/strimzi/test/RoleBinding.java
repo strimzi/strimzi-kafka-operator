@@ -30,7 +30,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface RoleBinding {
     /** The name of the role binding. If not specified it will default to the Role name + "-binding". */
-    String name() default "";
+    String name();
     /** The name of the @Role being bound. */
     String role();
     /** The users being granted the role. */
