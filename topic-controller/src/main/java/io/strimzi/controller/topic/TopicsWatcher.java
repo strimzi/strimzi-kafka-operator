@@ -49,6 +49,7 @@ class TopicsWatcher {
     }
 
     void stop() {
+        this.tcw.stop();
         this.state = 2;
     }
 

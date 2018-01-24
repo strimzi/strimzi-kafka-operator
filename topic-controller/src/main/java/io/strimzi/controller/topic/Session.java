@@ -75,7 +75,6 @@ public class Session extends AbstractVerticle {
             topicCmWatch.close();
             logger.debug("Stopping zk watches");
             tw.stop();
-            tcw.stop();
 
             while (controller.isWorkInflight()) {
                 if (System.currentTimeMillis() - t0 > timeout) {
@@ -132,7 +131,6 @@ public class Session extends AbstractVerticle {
         this.tw = new TopicsWatcher(controller, tcw);
         logger.debug("Using TopicsWatcher {}", tw);
         tw.start(zk);
-        tcw.start(zk);
 
         Thread configMapThread = new Thread(() -> {
             logger.debug("Watching configmaps matching {}", cmPredicate);
