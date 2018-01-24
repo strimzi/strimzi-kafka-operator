@@ -2,6 +2,13 @@ sudo: required
 language: java
 notifications:
   email: false
+  irc:
+    template:
+    - "%{repository}#%{build_number} (%{branch} - %{commit} : %{author}): %{message}"
+    channels:
+    - chat.freenode.net#strimzi
+    use_notice: true
+    skip_join: true
 jdk:
 - oraclejdk8
 services:
