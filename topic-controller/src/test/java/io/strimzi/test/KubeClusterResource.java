@@ -23,6 +23,8 @@ import org.junit.runners.model.Statement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
+
 /**
  * A Junit resource for using with {@code @ClassRule} (or {@code Rule},
  * but since starting and stopping a cluster is really slow, it's better to pay that cost as infrequently as possible).
@@ -47,6 +49,7 @@ public class KubeClusterResource extends ExternalResource {
     private static final Logger logger = LoggerFactory.getLogger(KubeClusterResource.class);
     private final boolean shouldStartCluster = System.getenv("CI") == null;
     private final KubeCluster cluster;
+    private final KubeClient client;
     private final Thread clusterHook;
     private boolean startedCluster = false;
     private Class<?> testClass;
@@ -54,7 +57,7 @@ public class KubeClusterResource extends ExternalResource {
     public KubeClusterResource() {
 
         KubeCluster cluster = null;
-        for (KubeCluster kc : new KubeCluster[]{new Oc(), new Minikube()}) {
+        for (KubeCluster kc : new KubeCluster[]{new OpenShift(), Minikube.minikube(), Minikube.minishift()}) {
             if (kc.isAvailable()) {
                 logger.debug("Cluster {} is installed", kc);
                 if (shouldStartCluster) {
@@ -78,6 +81,14 @@ public class KubeClusterResource extends ExternalResource {
         this.clusterHook = new Thread(() -> {
             after();
         });
+        KubeClient client = null;
+        for (KubeClient kc: Arrays.asList(cluster.defaultClient(), new Kubectl(), new Oc())) {
+            if (kc.clientAvailable()) {
+                client = kc;
+                break;
+            }
+        }
+        this.client = client;
     }
 
     @Override
@@ -105,11 +116,11 @@ public class KubeClusterResource extends ExternalResource {
 
         Role role = testClass.getAnnotation(Role.class);
         if (role != null) {
-            cluster.createRole(role.name(), role.permissions());
+            client.createRole(role.name(), role.permissions());
         }
         RoleBinding binding = testClass.getAnnotation(RoleBinding.class);
         if (binding != null) {
-            cluster.createRoleBinding(binding.name(), binding.role(), binding.users());
+            client.createRoleBinding(binding.name(), binding.role(), binding.users());
         }
     }
 
@@ -118,7 +129,7 @@ public class KubeClusterResource extends ExternalResource {
         try {
             RoleBinding binding = testClass.getAnnotation(RoleBinding.class);
             if (binding != null) {
-                cluster.deleteRoleBinding(binding.name());
+                client.deleteRoleBinding(binding.name());
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -126,7 +137,7 @@ public class KubeClusterResource extends ExternalResource {
         try {
             Role role = testClass.getAnnotation(Role.class);
             if (role != null) {
-                cluster.deleteRole(role.name());
+                client.deleteRole(role.name());
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -144,7 +155,8 @@ public class KubeClusterResource extends ExternalResource {
         Runtime.getRuntime().removeShutdownHook(clusterHook);
     }
 
+    /** Gets the namespace in use */
     public String defaultNamespace() {
-        return cluster.defaultNamespace();
+        return client.defaultNamespace();
     }
 }
