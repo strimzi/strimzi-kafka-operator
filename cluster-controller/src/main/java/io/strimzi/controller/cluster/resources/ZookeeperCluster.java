@@ -22,7 +22,7 @@ public class ZookeeperCluster extends AbstractCluster {
     private static final String CLIENT_PORT_NAME = "clients";
     private static final int CLUSTERING_PORT = 2888;
     private static final String CLUSTERING_PORT_NAME = "clustering";
-    private final int leaderElectionPort = 3888;
+    private static final int LEADER_ELECTION_PORT = 3888;
     private final String leaderElectionPortName = "leader-election";
 
     private static String NAME_SUFFIX = "-zookeeper";
@@ -313,7 +313,7 @@ public class ZookeeperCluster extends AbstractCluster {
         List<ServicePort> portList = new ArrayList<>();
         portList.add(createServicePort(CLIENT_PORT_NAME, CLIENT_PORT, CLIENT_PORT, "TCP"));
         portList.add(createServicePort(CLUSTERING_PORT_NAME, CLUSTERING_PORT, CLUSTERING_PORT, "TCP"));
-        portList.add(createServicePort(leaderElectionPortName, leaderElectionPort, leaderElectionPort, "TCP"));
+        portList.add(createServicePort(leaderElectionPortName, LEADER_ELECTION_PORT, LEADER_ELECTION_PORT, "TCP"));
 
         return portList;
     }
@@ -322,7 +322,7 @@ public class ZookeeperCluster extends AbstractCluster {
         List<ContainerPort> portList = new ArrayList<>();
         portList.add(createContainerPort(CLIENT_PORT_NAME, CLIENT_PORT, "TCP"));
         portList.add(createContainerPort(CLUSTERING_PORT_NAME, CLUSTERING_PORT, "TCP"));
-        portList.add(createContainerPort(leaderElectionPortName, leaderElectionPort,"TCP"));
+        portList.add(createContainerPort(leaderElectionPortName, LEADER_ELECTION_PORT,"TCP"));
         if (isMetricsEnabled) {
             portList.add(createContainerPort(metricsPortName, metricsPort, "TCP"));
         }
