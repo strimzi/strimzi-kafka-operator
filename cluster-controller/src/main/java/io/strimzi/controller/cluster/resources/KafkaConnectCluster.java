@@ -23,7 +23,7 @@ public class KafkaConnectCluster extends AbstractCluster {
 
     // Port configuration
     private static final int REST_API_PORT = 8083;
-    private final String restApiPortName = "rest-api";
+    private static final String REST_API_PORT_NAME = "rest-api";
 
     private static String NAME_SUFFIX = "-connect";
 
@@ -277,15 +277,15 @@ public class KafkaConnectCluster extends AbstractCluster {
     public Service generateService() {
 
         return createService("ClusterIP",
-                Collections.singletonList(createServicePort(restApiPortName, REST_API_PORT, REST_API_PORT, "TCP")));
+                Collections.singletonList(createServicePort(REST_API_PORT_NAME, REST_API_PORT, REST_API_PORT, "TCP")));
     }
 
     public Deployment generateDeployment() {
 
         return createDeployment(
-                Collections.singletonList(createContainerPort(restApiPortName, REST_API_PORT, "TCP")),
-                createHttpProbe(healthCheckPath, restApiPortName, healthCheckInitialDelay, healthCheckTimeout),
-                createHttpProbe(healthCheckPath, restApiPortName, healthCheckInitialDelay, healthCheckTimeout),
+                Collections.singletonList(createContainerPort(REST_API_PORT_NAME, REST_API_PORT, "TCP")),
+                createHttpProbe(healthCheckPath, REST_API_PORT_NAME, healthCheckInitialDelay, healthCheckTimeout),
+                createHttpProbe(healthCheckPath, REST_API_PORT_NAME, healthCheckInitialDelay, healthCheckTimeout),
                 getDeploymentAnnotations(),
                 getPodAnnotations()
                 );
@@ -293,8 +293,8 @@ public class KafkaConnectCluster extends AbstractCluster {
 
     public Deployment patchDeployment(Deployment dep) {
         return patchDeployment(dep,
-                createHttpProbe(healthCheckPath, restApiPortName, healthCheckInitialDelay, healthCheckTimeout),
-                createHttpProbe(healthCheckPath, restApiPortName, healthCheckInitialDelay, healthCheckTimeout),
+                createHttpProbe(healthCheckPath, REST_API_PORT_NAME, healthCheckInitialDelay, healthCheckTimeout),
+                createHttpProbe(healthCheckPath, REST_API_PORT_NAME, healthCheckInitialDelay, healthCheckTimeout),
                 getDeploymentAnnotations(),
                 getPodAnnotations()
                 );
