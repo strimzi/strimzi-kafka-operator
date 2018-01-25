@@ -2,6 +2,7 @@ package io.strimzi.controller.cluster.operations.openshift;
 
 import io.fabric8.openshift.api.model.ImageStream;
 import io.strimzi.controller.cluster.OpenShiftUtils;
+import io.strimzi.controller.cluster.operations.Operation;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -12,7 +13,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Deletes ImageStream resource
  */
-public class DeleteImageStreamOperation extends OpenShiftOperation {
+public class DeleteImageStreamOperation implements Operation<OpenShiftUtils> {
     private static final Logger log = LoggerFactory.getLogger(DeleteImageStreamOperation.class.getName());
     private final String namespace;
     private final String name;

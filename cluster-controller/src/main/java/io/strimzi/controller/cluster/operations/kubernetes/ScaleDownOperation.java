@@ -4,6 +4,7 @@ import io.strimzi.controller.cluster.K8SUtils;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.client.dsl.ScalableResource;
+import io.strimzi.controller.cluster.operations.Operation;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -11,7 +12,7 @@ import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ScaleDownOperation extends K8sOperation {
+public class ScaleDownOperation implements Operation<K8SUtils> {
     private static final Logger log = LoggerFactory.getLogger(ScaleDownOperation.class.getName());
     private final ScalableResource res;
     private final int scaleTo;

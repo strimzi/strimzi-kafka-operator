@@ -19,6 +19,7 @@ package io.strimzi.controller.cluster.operations.kubernetes;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.strimzi.controller.cluster.K8SUtils;
 import io.strimzi.controller.cluster.MockK8sUtils;
 import io.strimzi.controller.cluster.operations.CreateOperation;
 import io.vertx.core.Vertx;
@@ -61,7 +62,7 @@ public class CreateOperationTest {
                 .endMetadata()
                 .withData(singletonMap("FOO", "BAR"))
                 .build();
-        CreateOperation<ConfigMap> op = CreateOperation.createConfigMap(cm);
+        CreateOperation<K8SUtils, ConfigMap> op = CreateOperation.createConfigMap(cm);
         op.execute(vertx, new MockK8sUtils() {
             public boolean configMapExists(String namespace, String name) {
                 return true;
@@ -83,7 +84,7 @@ public class CreateOperationTest {
                 .withData(singletonMap("FOO", "BAR"))
                 .build();
         RuntimeException ex = new RuntimeException();
-        CreateOperation<ConfigMap> op = CreateOperation.createConfigMap(cm);
+        CreateOperation<K8SUtils, ConfigMap> op = CreateOperation.createConfigMap(cm);
         op.execute(vertx, new MockK8sUtils() {
             public boolean configMapExists(String namespace, String name) {
                 throw ex;
@@ -105,7 +106,7 @@ public class CreateOperationTest {
                 .endMetadata()
                 .withData(singletonMap("FOO", "BAR"))
                 .build();
-        CreateOperation<ConfigMap> op = CreateOperation.createConfigMap(cm);
+        CreateOperation<K8SUtils, ConfigMap> op = CreateOperation.createConfigMap(cm);
         op.execute(vertx, new MockK8sUtils() {
             public boolean configMapExists(String namespace, String name) {
                 return false;
@@ -129,7 +130,7 @@ public class CreateOperationTest {
                 .endMetadata()
                 .withData(singletonMap("FOO", "BAR"))
                 .build();
-        CreateOperation<ConfigMap> op = CreateOperation.createConfigMap(cm);
+        CreateOperation<K8SUtils, ConfigMap> op = CreateOperation.createConfigMap(cm);
         RuntimeException ex = new RuntimeException();
         op.execute(vertx, new MockK8sUtils() {
             public boolean configMapExists(String namespace, String name) {
