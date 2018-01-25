@@ -20,6 +20,7 @@ package io.strimzi.controller.cluster.operations.kubernetes;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.strimzi.controller.cluster.MockK8sUtils;
+import io.strimzi.controller.cluster.operations.CreateOperation;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -36,7 +37,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(VertxUnitRunner.class)
-public class CreateConfigMapOperationTest {
+public class CreateOperationTest {
 
     private static Vertx vertx;
 
@@ -60,7 +61,7 @@ public class CreateConfigMapOperationTest {
                 .endMetadata()
                 .withData(singletonMap("FOO", "BAR"))
                 .build();
-        CreateConfigMapOperation op = new CreateConfigMapOperation(cm);
+        CreateOperation<ConfigMap> op = CreateOperation.createConfigMap(cm);
         op.execute(vertx, new MockK8sUtils() {
             public boolean configMapExists(String namespace, String name) {
                 return true;
@@ -82,7 +83,7 @@ public class CreateConfigMapOperationTest {
                 .withData(singletonMap("FOO", "BAR"))
                 .build();
         RuntimeException ex = new RuntimeException();
-        CreateConfigMapOperation op = new CreateConfigMapOperation(cm);
+        CreateOperation<ConfigMap> op = CreateOperation.createConfigMap(cm);
         op.execute(vertx, new MockK8sUtils() {
             public boolean configMapExists(String namespace, String name) {
                 throw ex;
@@ -104,7 +105,7 @@ public class CreateConfigMapOperationTest {
                 .endMetadata()
                 .withData(singletonMap("FOO", "BAR"))
                 .build();
-        CreateConfigMapOperation op = new CreateConfigMapOperation(cm);
+        CreateOperation<ConfigMap> op = CreateOperation.createConfigMap(cm);
         op.execute(vertx, new MockK8sUtils() {
             public boolean configMapExists(String namespace, String name) {
                 return false;
@@ -128,7 +129,7 @@ public class CreateConfigMapOperationTest {
                 .endMetadata()
                 .withData(singletonMap("FOO", "BAR"))
                 .build();
-        CreateConfigMapOperation op = new CreateConfigMapOperation(cm);
+        CreateOperation<ConfigMap> op = CreateOperation.createConfigMap(cm);
         RuntimeException ex = new RuntimeException();
         op.execute(vertx, new MockK8sUtils() {
             public boolean configMapExists(String namespace, String name) {

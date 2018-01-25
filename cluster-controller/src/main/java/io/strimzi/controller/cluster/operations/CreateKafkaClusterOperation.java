@@ -1,9 +1,6 @@
 package io.strimzi.controller.cluster.operations;
 
 import io.strimzi.controller.cluster.K8SUtils;
-import io.strimzi.controller.cluster.operations.kubernetes.CreateConfigMapOperation;
-import io.strimzi.controller.cluster.operations.kubernetes.CreateServiceOperation;
-import io.strimzi.controller.cluster.operations.kubernetes.CreateStatefulSetOperation;
 import io.strimzi.controller.cluster.resources.KafkaCluster;
 import io.vertx.core.*;
 import io.vertx.core.shareddata.Lock;
@@ -40,19 +37,19 @@ public class CreateKafkaClusterOperation extends KafkaClusterOperation {
                 // otherwise the future is already complete (for the "join")
                 Future<Void> futureConfigMap = Future.future();
                 if (kafka.isMetricsEnabled()) {
-                    OperationExecutor.getInstance().execute(new CreateConfigMapOperation(kafka.generateMetricsConfigMap()), futureConfigMap.completer());
+                    OperationExecutor.getInstance().execute(CreateOperation.createConfigMap(kafka.generateMetricsConfigMap()), futureConfigMap.completer());
                 } else {
                     futureConfigMap.complete();
                 }
 
                 Future<Void> futureService = Future.future();
-                OperationExecutor.getInstance().execute(new CreateServiceOperation(kafka.generateService()), futureService.completer());
+                OperationExecutor.getInstance().execute(CreateOperation.createService(kafka.generateService()), futureService.completer());
 
                 Future<Void> futureHeadlessService = Future.future();
-                OperationExecutor.getInstance().execute(new CreateServiceOperation(kafka.generateHeadlessService()), futureHeadlessService.completer());
+                OperationExecutor.getInstance().execute(CreateOperation.createService(kafka.generateHeadlessService()), futureHeadlessService.completer());
 
                 Future<Void> futureStatefulSet = Future.future();
-                OperationExecutor.getInstance().execute(new CreateStatefulSetOperation(kafka.generateStatefulSet(k8s.isOpenShift())), futureStatefulSet.completer());
+                OperationExecutor.getInstance().execute(CreateOperation.createStatefulSet(kafka.generateStatefulSet(k8s.isOpenShift())), futureStatefulSet.completer());
 
                 CompositeFuture.join(futureConfigMap, futureService, futureHeadlessService, futureStatefulSet).setHandler(ar -> {
                     if (ar.succeeded()) {
