@@ -19,7 +19,7 @@ public class ZookeeperCluster extends AbstractCluster {
     public static final String TYPE = "zookeeper";
 
     private static final int CLIENT_PORT = 2181;
-    private final String clientPortName = "clients";
+    private static final String CLIENT_PORT_NAME = "clients";
     private final int clusteringPort = 2888;
     private final String clusteringPortName = "clustering";
     private final int leaderElectionPort = 3888;
@@ -248,7 +248,7 @@ public class ZookeeperCluster extends AbstractCluster {
     public Service generateService() {
 
         return createService("ClusterIP",
-                Collections.singletonList(createServicePort(clientPortName, CLIENT_PORT, CLIENT_PORT, "TCP")));
+                Collections.singletonList(createServicePort(CLIENT_PORT_NAME, CLIENT_PORT, CLIENT_PORT, "TCP")));
     }
 
     public Service generateHeadlessService() {
@@ -311,7 +311,7 @@ public class ZookeeperCluster extends AbstractCluster {
 
     private List<ServicePort> getServicePortList() {
         List<ServicePort> portList = new ArrayList<>();
-        portList.add(createServicePort(clientPortName, CLIENT_PORT, CLIENT_PORT, "TCP"));
+        portList.add(createServicePort(CLIENT_PORT_NAME, CLIENT_PORT, CLIENT_PORT, "TCP"));
         portList.add(createServicePort(clusteringPortName, clusteringPort, clusteringPort, "TCP"));
         portList.add(createServicePort(leaderElectionPortName, leaderElectionPort, leaderElectionPort, "TCP"));
 
@@ -320,7 +320,7 @@ public class ZookeeperCluster extends AbstractCluster {
 
     private List<ContainerPort> getContainerPortList() {
         List<ContainerPort> portList = new ArrayList<>();
-        portList.add(createContainerPort(clientPortName, CLIENT_PORT, "TCP"));
+        portList.add(createContainerPort(CLIENT_PORT_NAME, CLIENT_PORT, "TCP"));
         portList.add(createContainerPort(clusteringPortName, clusteringPort, "TCP"));
         portList.add(createContainerPort(leaderElectionPortName, leaderElectionPort,"TCP"));
         if (isMetricsEnabled) {
