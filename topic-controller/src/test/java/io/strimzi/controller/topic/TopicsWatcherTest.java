@@ -69,8 +69,8 @@ public class TopicsWatcherTest {
         controller.clearEvents();
         mockZk.triggerData(Future.succeededFuture(new byte[0]));
         assertEquals(asList(
-                new MockController.MockControllerEvent(MockController.MockControllerEvent.Type.MODIFY_CONFIG, new TopicName("baz")),
-                new MockController.MockControllerEvent(MockController.MockControllerEvent.Type.MODIFY_PARTITIONS, new TopicName("baz"))),
+                new MockController.MockControllerEvent(MockController.MockControllerEvent.Type.MODIFY_PARTITIONS, new TopicName("baz")),
+                new MockController.MockControllerEvent(MockController.MockControllerEvent.Type.MODIFY_CONFIG, new TopicName("baz"))),
                 controller.getMockControllerEvents());
     }
 
