@@ -184,8 +184,8 @@ public class Storage {
      */
     private boolean compareStorageClass(String other) {
 
-        return Objects.isNull(this.storageClass) ?
-                Objects.isNull(other) : this.storageClass.equals(other);
+        return this.storageClass == null ?
+                other == null : this.storageClass.equals(other);
     }
 
     /**
@@ -196,13 +196,13 @@ public class Storage {
      */
     private boolean compareSelector(LabelSelector other) {
 
-        if (!Objects.isNull(this.selector) && !Objects.isNull(other)) {
+        if (this.selector != null && other != null) {
 
-            if (Objects.isNull(this.selector.getMatchLabels()) && !Objects.isNull(other.getMatchLabels())) {
+            if (this.selector.getMatchLabels() == null && other.getMatchLabels() != null) {
                 return false;
             }
 
-            if (!Objects.isNull(this.selector.getMatchLabels()) && Objects.isNull(other.getMatchLabels())) {
+            if (this.selector.getMatchLabels() != null && other.getMatchLabels() == null) {
                 return false;
             }
 
@@ -212,10 +212,8 @@ public class Storage {
 
             return this.selector.getMatchLabels().entrySet().equals(other.getMatchLabels().entrySet());
 
-        } else if (Objects.isNull(this.selector) && Objects.isNull(other)) {
-            return true;
         } else {
-            return false;
+            return this.selector == null && other == null;
         }
     }
 
