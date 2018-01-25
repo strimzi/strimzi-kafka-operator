@@ -616,6 +616,29 @@ public class Controller {
         inFlight.enqueue(topicName, resultHandler, futureHandler);
     }
 
+    void onTopicPartitionsChanged(TopicName topicName, Handler<AsyncResult<Void>> resultHandler) {
+        Handler<Future<Void>> futureHandler = new Reconciliation("onTopicPartitionsChanged") {
+            @Override
+            public void handle(Future<Void> fut) {
+
+                // in order to get updated information about the partitions change we have to wait
+                // a little bit before using the Admin Client API for getting such an information
+                vertx.setTimer(5000, t -> {
+
+                    kafka.topicMetadata(topicName, metadataResult -> {
+                        if (metadataResult.succeeded()) {
+                            Topic topic = TopicSerialization.fromTopicMetadata(metadataResult.result());
+                            Controller.this.reconcileOnTopicChange(topicName, topic, fut.completer());
+                        } else {
+                            fut.fail(metadataResult.cause());
+                        }
+                    });
+                });
+            }
+        };
+        inFlight.enqueue(topicName, resultHandler, futureHandler);
+    }
+
     private void reconcileOnTopicChange(TopicName topicName, Topic kafkaTopic, Handler<AsyncResult<Void>> resultHandler) {
         // TODO Here I need to lookup the name of the configmap from the name of the topic.
         // I can either do that from the topicStore, or maintain an in-memory map

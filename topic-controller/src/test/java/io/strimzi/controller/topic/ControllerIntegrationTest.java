@@ -108,6 +108,7 @@ public class ControllerIntegrationTest {
     };
     private final long timeout = 60_000L;
     private volatile TopicConfigsWatcher topicsConfigWatcher;
+    private volatile TopicWatcher topicWatcher;
 
     private Session session;
     private volatile String deploymentId;
@@ -142,8 +143,9 @@ public class ControllerIntegrationTest {
                 kafka = session.kafka;
                 k8s = session.k8s;
                 controller = session.controller;
-                topicsConfigWatcher = session.tcw;
-                topicsWatcher = session.tw;
+                topicsConfigWatcher = session.topicConfigsWatcher;
+                topicWatcher = session.topicWatcher;
+                topicsWatcher = session.topicsWatcher;
                 async.complete();
             } else {
                 context.fail("Failed to deploy session");
@@ -151,8 +153,9 @@ public class ControllerIntegrationTest {
         });
         async.await();
 
-        waitFor(context, () -> this.topicsWatcher.started(), timeout, "Topic watcher not started");
+        waitFor(context, () -> this.topicsWatcher.started(), timeout, "Topics watcher not started");
         waitFor(context, () -> this.topicsConfigWatcher.started(), timeout, "Topic configs watcher not started");
+        waitFor(context, () -> this.topicWatcher.started(), timeout, "Topic watcher not started");
 
         // We can't delete events, so record the events which exist at the start of the test
         // and then waitForEvents() can ignore those
@@ -191,6 +194,7 @@ public class ControllerIntegrationTest {
                 k8s = null;
                 controller = null;
                 topicsConfigWatcher = null;
+                topicWatcher = null;
                 topicsWatcher = null;
                 if (ar.failed()) {
                     logger.error("Error undeploying session", ar.cause());
