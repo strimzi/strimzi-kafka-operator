@@ -43,8 +43,8 @@ public class CreateServiceOperation extends K8sOperation {
                         handler.handle(Future.succeededFuture());
                     }
                     else {
-                        log.error("Service creation failed: {}", res.result());
-                        handler.handle(Future.failedFuture((Exception)res.result()));
+                        log.error("Service creation failed: {}", res.cause().toString());
+                        handler.handle(Future.failedFuture(res.cause()));
                     }
                 }
         );

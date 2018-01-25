@@ -44,8 +44,8 @@ public class DeleteServiceOperation extends K8sOperation {
                         handler.handle(Future.succeededFuture());
                     }
                     else {
-                        log.error("Service deletion failed: {}", res.result());
-                        handler.handle(Future.failedFuture((Exception)res.result()));
+                        log.error("Service deletion failed: {}", res.cause().toString());
+                        handler.handle(Future.failedFuture(res.cause()));
                     }
                 }
         );

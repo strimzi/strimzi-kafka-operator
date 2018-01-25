@@ -41,8 +41,8 @@ public class PatchOperation extends K8sOperation {
                         handler.handle(Future.succeededFuture());
                     }
                     else {
-                        log.error("Failed to patch resource: {}", res.result());
-                        handler.handle(Future.failedFuture((Exception)res.result()));
+                        log.error("Failed to patch resource: {}", res.cause().toString());
+                        handler.handle(Future.failedFuture(res.cause()));
                     }
                 }
         );

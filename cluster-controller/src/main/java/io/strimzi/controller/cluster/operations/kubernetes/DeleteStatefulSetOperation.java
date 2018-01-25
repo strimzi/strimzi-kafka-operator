@@ -44,8 +44,8 @@ public class DeleteStatefulSetOperation extends K8sOperation {
                         handler.handle(Future.succeededFuture());
                     }
                     else {
-                        log.error("Stateful set deletion failed: {}", res.result());
-                        handler.handle(Future.failedFuture((Exception)res.result()));
+                        log.error("Stateful set deletion failed: {}", res.cause().toString());
+                        handler.handle(Future.failedFuture(res.cause()));
                     }
                 }
         );

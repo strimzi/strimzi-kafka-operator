@@ -43,8 +43,8 @@ public class CreateStatefulSetOperation extends K8sOperation {
                         handler.handle(Future.succeededFuture());
                     }
                     else {
-                        log.error("Stateful set creation failed: {}", res.result());
-                        handler.handle(Future.failedFuture((Exception)res.result()));
+                        log.error("Stateful set creation failed: {}", res.cause().toString());
+                        handler.handle(Future.failedFuture(res.cause()));
                     }
                 }
         );

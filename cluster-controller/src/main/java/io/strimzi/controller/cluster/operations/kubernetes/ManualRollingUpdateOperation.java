@@ -69,8 +69,8 @@ public class ManualRollingUpdateOperation extends K8sOperation {
                         handler.handle(Future.succeededFuture());
                     }
                     else {
-                        log.error("Failed to do rolling update of stateful set {} in namespace {}: {}", name, namespace, res.result());
-                        handler.handle(Future.failedFuture((Exception)res.result()));
+                        log.error("Failed to do rolling update of stateful set {} in namespace {}: {}", name, namespace, res.cause().toString());
+                        handler.handle(Future.failedFuture(res.cause()));
                     }
                 }
         );

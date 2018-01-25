@@ -60,8 +60,8 @@ public class DeleteImageStreamOperation extends OpenShiftOperation {
                         handler.handle(Future.succeededFuture());
                     }
                     else {
-                        log.error("ImageStream deletion failed: {}", res.result());
-                        handler.handle(Future.failedFuture((Exception)res.result()));
+                        log.error("ImageStream deletion failed: {}", res.cause().toString());
+                        handler.handle(Future.failedFuture(res.cause()));
                     }
                 }
         );
