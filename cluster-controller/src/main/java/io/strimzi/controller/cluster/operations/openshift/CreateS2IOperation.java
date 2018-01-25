@@ -1,6 +1,7 @@
 package io.strimzi.controller.cluster.operations.openshift;
 
 import io.strimzi.controller.cluster.OpenShiftUtils;
+import io.strimzi.controller.cluster.operations.CreateOperation;
 import io.strimzi.controller.cluster.operations.OperationExecutor;
 import io.strimzi.controller.cluster.resources.Source2Image;
 import io.vertx.core.AsyncResult;
@@ -40,13 +41,13 @@ public class CreateS2IOperation extends S2IOperation {
         log.info("Creating S2I {} in namespace {}", s2i.getName(), s2i.getNamespace());
 
         Future<Void> futureSourceImageStream = Future.future();
-        OperationExecutor.getInstance().execute(new CreateImageStreamOperation(s2i.generateSourceImageStream()), futureSourceImageStream.completer());
+        OperationExecutor.getInstance().execute(CreateOperation.createImageStream(s2i.generateSourceImageStream()), futureSourceImageStream.completer());
 
         Future<Void> futureTargetImageStream = Future.future();
-        OperationExecutor.getInstance().execute(new CreateImageStreamOperation(s2i.generateTargetImageStream()), futureTargetImageStream.completer());
+        OperationExecutor.getInstance().execute(CreateOperation.createImageStream(s2i.generateTargetImageStream()), futureTargetImageStream.completer());
 
         Future<Void> futureBuildConfig = Future.future();
-        OperationExecutor.getInstance().execute(new CreateBuildConfigOperation(s2i.generateBuildConfig()), futureBuildConfig.completer());
+        OperationExecutor.getInstance().execute(CreateOperation.createBuildConfig(s2i.generateBuildConfig()), futureBuildConfig.completer());
 
         CompositeFuture.join(futureSourceImageStream, futureTargetImageStream, futureBuildConfig).setHandler(ar -> {
             if (ar.succeeded()) {

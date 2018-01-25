@@ -1,6 +1,7 @@
 package io.strimzi.controller.cluster.operations.kubernetes;
 
 import io.strimzi.controller.cluster.K8SUtils;
+import io.strimzi.controller.cluster.operations.Operation;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -8,7 +9,7 @@ import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DeleteStatefulSetOperation extends K8sOperation {
+public class DeleteStatefulSetOperation implements Operation<K8SUtils> {
     private static final Logger log = LoggerFactory.getLogger(DeleteStatefulSetOperation.class.getName());
     private final String namespace;
     private final String name;

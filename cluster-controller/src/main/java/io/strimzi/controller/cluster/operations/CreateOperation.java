@@ -22,8 +22,10 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
+import io.fabric8.openshift.api.model.BuildConfig;
+import io.fabric8.openshift.api.model.ImageStream;
 import io.strimzi.controller.cluster.K8SUtils;
-import io.strimzi.controller.cluster.operations.kubernetes.K8sOperation;
+import io.strimzi.controller.cluster.OpenShiftUtils;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -31,7 +33,7 @@ import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class CreateOperation<R extends HasMetadata> extends K8sOperation {
+public abstract class CreateOperation<U, R extends HasMetadata> implements Operation<U> {
 
     private static final Logger log = LoggerFactory.getLogger(CreateOperation.class);
 
@@ -46,13 +48,13 @@ public abstract class CreateOperation<R extends HasMetadata> extends K8sOperatio
     }
 
     @Override
-    public void execute(Vertx vertx, K8SUtils k8s, Handler<AsyncResult<Void>> handler) {
+    public void execute(Vertx vertx, U utils, Handler<AsyncResult<Void>> handler) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
-                    if (!exists(k8s, resource.getMetadata().getNamespace(), resource.getMetadata().getName())) {
+                    if (!exists(utils, resource.getMetadata().getNamespace(), resource.getMetadata().getName())) {
                         try {
                             log.info("Creating {} {}", resourceKind, resource);
-                            create(k8s, resource);
+                            create(utils, resource);
                             future.complete();
                         } catch (Exception e) {
                             log.error("Caught exception while creating {}", resourceKind, e);
@@ -78,12 +80,12 @@ public abstract class CreateOperation<R extends HasMetadata> extends K8sOperatio
         );
     }
 
-    protected abstract void create(K8SUtils k8s, R resource);
+    protected abstract void create(U utils, R resource);
 
-    protected abstract boolean exists(K8SUtils k8s, String namespace, String name);
+    protected abstract boolean exists(U k8s, String namespace, String name);
 
-    public static CreateOperation<Deployment> createDeployment(Deployment dep) {
-        return new CreateOperation<Deployment>("Deployment", dep) {
+    public static CreateOperation<K8SUtils, Deployment> createDeployment(Deployment dep) {
+        return new CreateOperation<K8SUtils, Deployment>("Deployment", dep) {
 
             @Override
             protected void create(K8SUtils k8s, Deployment resource) {
@@ -97,8 +99,8 @@ public abstract class CreateOperation<R extends HasMetadata> extends K8sOperatio
         };
     }
 
-    public static CreateOperation<ConfigMap> createConfigMap(ConfigMap cm) {
-        return new CreateOperation<ConfigMap>("ConfigMap", cm) {
+    public static CreateOperation<K8SUtils, ConfigMap> createConfigMap(ConfigMap cm) {
+        return new CreateOperation<K8SUtils, ConfigMap>("ConfigMap", cm) {
 
             @Override
             protected void create(K8SUtils k8s, ConfigMap resource) {
@@ -112,8 +114,8 @@ public abstract class CreateOperation<R extends HasMetadata> extends K8sOperatio
         };
     }
 
-    public static CreateOperation<StatefulSet> createStatefulSet(StatefulSet cm) {
-        return new CreateOperation<StatefulSet>("StatefulSet", cm) {
+    public static CreateOperation<K8SUtils, StatefulSet> createStatefulSet(StatefulSet cm) {
+        return new CreateOperation<K8SUtils, StatefulSet>("StatefulSet", cm) {
 
             @Override
             protected void create(K8SUtils k8s, StatefulSet resource) {
@@ -127,8 +129,8 @@ public abstract class CreateOperation<R extends HasMetadata> extends K8sOperatio
         };
     }
 
-    public static CreateOperation<Service> createService(Service service) {
-        return new CreateOperation<Service>("Service", service) {
+    public static CreateOperation<K8SUtils, Service> createService(Service service) {
+        return new CreateOperation<K8SUtils, Service>("Service", service) {
 
             @Override
             protected void create(K8SUtils k8s, Service resource) {
@@ -138,6 +140,34 @@ public abstract class CreateOperation<R extends HasMetadata> extends K8sOperatio
             @Override
             protected boolean exists(K8SUtils k8s, String namespace, String name) {
                 return k8s.serviceExists(namespace, name);
+            }
+        };
+    }
+
+    public static CreateOperation<OpenShiftUtils, BuildConfig> createBuildConfig(BuildConfig config) {
+        return new CreateOperation<OpenShiftUtils, BuildConfig>("BuildConfig", config) {
+            @Override
+            protected void create(OpenShiftUtils os, BuildConfig resource) {
+                os.create(resource);
+            }
+
+            @Override
+            protected boolean exists(OpenShiftUtils os, String namespace, String name) {
+                return os.exists(namespace, name, BuildConfig.class);
+            }
+        };
+    }
+
+    public static CreateOperation<OpenShiftUtils, ImageStream> createImageStream(ImageStream is) {
+        return new CreateOperation<OpenShiftUtils, ImageStream>("ImageStream", is) {
+            @Override
+            protected void create(OpenShiftUtils os, ImageStream resource) {
+                os.create(resource);
+            }
+
+            @Override
+            protected boolean exists(OpenShiftUtils os, String namespace, String name) {
+                return os.exists(namespace, name, ImageStream.class);
             }
         };
     }

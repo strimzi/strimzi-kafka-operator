@@ -2,9 +2,8 @@ package io.strimzi.controller.cluster.operations.openshift;
 
 import io.fabric8.kubernetes.api.model.KubernetesResource;
 import io.fabric8.kubernetes.client.dsl.Patchable;
-import io.strimzi.controller.cluster.K8SUtils;
 import io.strimzi.controller.cluster.OpenShiftUtils;
-import io.strimzi.controller.cluster.operations.kubernetes.K8sOperation;
+import io.strimzi.controller.cluster.operations.Operation;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -15,7 +14,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Patches OpenShift resource. Should work with all Patchable resources
  */
-public class PatchOperation extends OpenShiftOperation {
+public class PatchOperation implements Operation<OpenShiftUtils> {
     private static final Logger log = LoggerFactory.getLogger(PatchOperation.class.getName());
     private final Patchable patchable;
     private final KubernetesResource patch;

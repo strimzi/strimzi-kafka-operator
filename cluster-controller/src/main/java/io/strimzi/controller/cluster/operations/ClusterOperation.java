@@ -1,6 +1,8 @@
 package io.strimzi.controller.cluster.operations;
 
-public abstract class ClusterOperation implements Operation {
+import io.strimzi.controller.cluster.K8SUtils;
+
+public abstract class ClusterOperation implements Operation<K8SUtils> {
     protected final String namespace;
     protected final String name;
 
