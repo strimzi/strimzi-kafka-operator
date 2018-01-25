@@ -22,7 +22,7 @@ public class KafkaConnectCluster extends AbstractCluster {
     public static final String TYPE = "kafka-connect";
 
     // Port configuration
-    private final int restApiPort = 8083;
+    private static final int REST_API_PORT = 8083;
     private final String restApiPortName = "rest-api";
 
     private static String NAME_SUFFIX = "-connect";
@@ -277,13 +277,13 @@ public class KafkaConnectCluster extends AbstractCluster {
     public Service generateService() {
 
         return createService("ClusterIP",
-                Collections.singletonList(createServicePort(restApiPortName, restApiPort, restApiPort, "TCP")));
+                Collections.singletonList(createServicePort(restApiPortName, REST_API_PORT, REST_API_PORT, "TCP")));
     }
 
     public Deployment generateDeployment() {
 
         return createDeployment(
-                Collections.singletonList(createContainerPort(restApiPortName, restApiPort, "TCP")),
+                Collections.singletonList(createContainerPort(restApiPortName, REST_API_PORT, "TCP")),
                 createHttpProbe(healthCheckPath, restApiPortName, healthCheckInitialDelay, healthCheckTimeout),
                 createHttpProbe(healthCheckPath, restApiPortName, healthCheckInitialDelay, healthCheckTimeout),
                 getDeploymentAnnotations(),
