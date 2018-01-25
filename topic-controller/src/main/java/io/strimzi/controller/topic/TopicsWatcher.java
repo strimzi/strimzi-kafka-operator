@@ -38,18 +38,28 @@ class TopicsWatcher {
 
     private final Controller controller;
     private final TopicConfigsWatcher tcw;
+    private final TopicWatcher tw;
 
     private List<String> children;
 
     private volatile int state = 0;
 
-    TopicsWatcher(Controller controller, TopicConfigsWatcher tcw) {
+    /**
+     * Constructor
+     *
+     * @param controller    Controller instance
+     * @param tcw   watcher for the topics config changes
+     * @param tw    watcher for the topics partitions changes
+     */
+    TopicsWatcher(Controller controller, TopicConfigsWatcher tcw, TopicWatcher tw) {
         this.controller = controller;
         this.tcw = tcw;
+        this.tw = tw;
     }
 
     void stop() {
         this.tcw.stop();
+        this.tw.stop();
         this.state = 2;
     }
 
@@ -64,6 +74,7 @@ class TopicsWatcher {
     void start(Zk zk) {
         children = null;
         tcw.start(zk);
+        tw.start(zk);
         zk.watchChildren(TOPICS_ZNODE, childResult -> {
             if (state == 2) {
                 zk.unwatchChildren(TOPICS_ZNODE);
@@ -84,6 +95,7 @@ class TopicsWatcher {
                 logger.info("Deleted topics: {}", deleted);
                 for (String topicName : deleted) {
                     tcw.removeChild(topicName);
+                    tw.removeChild(topicName);
                     controller.onTopicDeleted(new TopicName(topicName), ar -> {
                         if (ar.succeeded()) {
                             logger.debug("Success responding to deletion of topic {}", topicName);
@@ -98,6 +110,7 @@ class TopicsWatcher {
                 logger.info("Created topics: {}", created);
                 for (String topicName : created) {
                     tcw.addChild(topicName);
+                    tw.addChild(topicName);
                     controller.onTopicCreated(new TopicName(topicName), ar -> {
                         if (ar.succeeded()) {
                             logger.debug("Success responding to creation of topic {}", topicName);

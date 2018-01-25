@@ -47,8 +47,9 @@ public class Session extends AbstractVerticle {
     K8sImpl k8s;
     Controller controller;
     Watch topicCmWatch;
-    TopicsWatcher tw;
-    TopicConfigsWatcher tcw;
+    TopicsWatcher topicsWatcher;
+    TopicConfigsWatcher topicConfigsWatcher;
+    TopicWatcher topicWatcher;
     private volatile boolean stopped = false;
     private Zk zk;
 
@@ -74,7 +75,7 @@ public class Session extends AbstractVerticle {
             logger.debug("Stopping kube watch");
             topicCmWatch.close();
             logger.debug("Stopping zk watches");
-            tw.stop();
+            topicsWatcher.stop();
 
             while (controller.isWorkInflight()) {
                 if (System.currentTimeMillis() - t0 > timeout) {
@@ -128,11 +129,13 @@ public class Session extends AbstractVerticle {
         this.controller = new Controller(vertx, kafka, k8s, topicStore, cmPredicate, namespace);
         logger.debug("Using Controller {}", controller);
 
-        this.tcw = new TopicConfigsWatcher(controller);
-        logger.debug("Using TopicConfigsWatcher {}", tcw);
-        this.tw = new TopicsWatcher(controller, tcw);
-        logger.debug("Using TopicsWatcher {}", tw);
-        tw.start(zk);
+        this.topicConfigsWatcher = new TopicConfigsWatcher(controller);
+        logger.debug("Using TopicConfigsWatcher {}", topicConfigsWatcher);
+        this.topicWatcher = new TopicWatcher(controller);
+        logger.debug("Using TopicWatcher {}", topicWatcher);
+        this.topicsWatcher = new TopicsWatcher(controller, topicConfigsWatcher, topicWatcher);
+        logger.debug("Using TopicsWatcher {}", topicsWatcher);
+        topicsWatcher.start(zk);
 
         Thread configMapThread = new Thread(() -> {
             logger.debug("Watching configmaps matching {}", cmPredicate);

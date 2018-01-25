@@ -38,7 +38,8 @@ class MockController extends Controller {
             CREATE,
             DELETE,
             MODIFY,
-            MODIFY_CONFIG
+            MODIFY_CONFIG,
+            MODIFY_PARTITIONS
         }
         private final TopicName topicName;
         private final ConfigMap configMap;
@@ -117,6 +118,12 @@ class MockController extends Controller {
     @Override
     public void onTopicConfigChanged(TopicName topicName, Handler<AsyncResult<Void>> handler) {
         mockControllerEvents.add(new MockControllerEvent(MockControllerEvent.Type.MODIFY_CONFIG, topicName));
+        handler.handle(topicModifiedResult);
+    }
+
+    @Override
+    public void onTopicPartitionsChanged(TopicName topicName, Handler<AsyncResult<Void>> handler) {
+        mockControllerEvents.add(new MockControllerEvent(MockControllerEvent.Type.MODIFY_PARTITIONS, topicName));
         handler.handle(topicModifiedResult);
     }
 
