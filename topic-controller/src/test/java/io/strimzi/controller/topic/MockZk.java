@@ -22,11 +22,12 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 class MockZk implements Zk {
 
@@ -35,7 +36,7 @@ class MockZk implements Zk {
     public AsyncResult<List<String>> childrenResult = Future.failedFuture("Unexpected mock interaction. Configure " + getClass().getSimpleName()+".childrenResult");
     public AsyncResult<byte[]> dataResult = Future.failedFuture("Unexpected mock interaction. Configure " + getClass().getSimpleName()+".dataResult");
     private Handler<AsyncResult<List<String>>> childrenHandler;
-    private Handler<AsyncResult<byte[]>> dataHandler;
+    private Map<String, Handler<AsyncResult<byte[]>>> dataHandlers = new HashMap<>();
 
     public void triggerChildren(AsyncResult<List<String>> childrenResult) {
         if (childrenHandler != null) {
@@ -44,8 +45,10 @@ class MockZk implements Zk {
     }
 
     public void triggerData(AsyncResult<byte[]> dataResult) {
-        if (dataHandler != null) {
-            dataHandler.handle(dataResult);
+        if (!dataHandlers.isEmpty()) {
+            for (Handler<AsyncResult<byte[]>> handler: dataHandlers.values()) {
+                handler.handle(dataResult);
+            }
         }
     }
 
@@ -92,13 +95,13 @@ class MockZk implements Zk {
 
     @Override
     public Zk watchData(String path, Handler<AsyncResult<byte[]>> watcher) {
-        dataHandler = watcher;
+        dataHandlers.put(path, watcher);
         return this;
     }
 
     @Override
     public Zk unwatchData(String path) {
-        dataHandler = null;
+        dataHandlers.remove(path);
         return this;
     }
 
