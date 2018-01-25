@@ -6,8 +6,8 @@ metadata:
   labels:
     app: strimzi
 ---
-apiVersion: v1
-kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: Role
 metadata:
   name: strimzi-topic-controller-role
   labels:
@@ -32,7 +32,7 @@ rules:
   verbs:
   - create
 ---
-apiVersion: v1
+apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: RoleBinding
 metadata:
   name: strimzi-topic-controller-binding
@@ -42,9 +42,9 @@ subjects:
   - kind: ServiceAccount
     name: strimzi-topic-controller
 roleRef:
-  kind: ClusterRole
+  kind: Role
   name: strimzi-topic-controller-role
-apiGroup: v1
+  apiGroup: rbac.authorization.k8s.io
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
@@ -64,7 +64,15 @@ spec:
           env:
             - name: STRIMZI_CONFIGMAP_LABELS
               value: "strimzi.io/kind=topic"
+            - name: STRIMZI_KAFKA_BOOTSTRAP_SERVERS
+              value: my-cluster-kafka:9092
+            - name: STRIMZI_ZOOKEEPER_CONNECT
+              value: my-cluster-zookeeper:2181
             - name: STRIMZI_ZOOKEEPER_SESSION_TIMEOUT
-              value: "20seconds"
+              value: 20seconds
             - name: STRIMZI_PERIODIC_INTERVAL
-              value: "15minutes"
+              value: 10minutes
+            - name: STRIMZI_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
