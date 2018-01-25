@@ -1,14 +1,11 @@
 package io.strimzi.controller.cluster.resources;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
-import io.fabric8.kubernetes.api.model.LabelSelectorRequirement;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.vertx.core.json.JsonObject;
 
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -120,10 +117,8 @@ public class Storage {
                     matchLabelsJson.getMap().entrySet().stream()
                             .collect(Collectors.toMap(Map.Entry::getKey, e -> String.valueOf(e.getValue())));
 
-            // match-expressions doesn't supported yet
-            List<LabelSelectorRequirement> matchExpressions = null;
-
-            storage.withSelector(new LabelSelector(matchExpressions, matchLabels));
+            // match-expressions doesn't supported yet, so null first argument
+            storage.withSelector(new LabelSelector(null, matchLabels));
         }
 
         return storage;
