@@ -1,8 +1,6 @@
 package io.strimzi.controller.cluster.operations;
 
 import io.strimzi.controller.cluster.K8SUtils;
-import io.strimzi.controller.cluster.operations.kubernetes.CreateDeploymentOperation;
-import io.strimzi.controller.cluster.operations.kubernetes.CreateServiceOperation;
 import io.strimzi.controller.cluster.operations.openshift.CreateS2IOperation;
 import io.strimzi.controller.cluster.resources.KafkaConnectCluster;
 import io.vertx.core.*;
@@ -27,10 +25,10 @@ public class CreateKafkaConnectClusterOperation extends KafkaConnectClusterOpera
                 log.info("Creating Kafka Connect cluster {} in namespace {}", connect.getName(), namespace);
 
                 Future<Void> futureService = Future.future();
-                OperationExecutor.getInstance().execute(new CreateServiceOperation(connect.generateService()), futureService.completer());
+                OperationExecutor.getInstance().execute(CreateOperation.createService(connect.generateService()), futureService.completer());
 
                 Future<Void> futureDeployment = Future.future();
-                OperationExecutor.getInstance().execute(new CreateDeploymentOperation(connect.generateDeployment()), futureDeployment.completer());
+                OperationExecutor.getInstance().execute(CreateOperation.createDeployment(connect.generateDeployment()), futureDeployment.completer());
 
                 Future<Void> futureS2I;
                 if (connect.getS2I() != null) {
