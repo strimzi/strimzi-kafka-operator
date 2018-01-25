@@ -31,39 +31,28 @@ import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CreateOperation<R extends HasMetadata> extends K8sOperation {
+public abstract class CreateOperation<R extends HasMetadata> extends K8sOperation {
 
     private static final Logger log = LoggerFactory.getLogger(CreateOperation.class);
 
     private final R resource;
     private final String resourceKind;
-    private final Exists exists;
-    private final Create<R> create;
 
-    interface Exists {
-        boolean exists(K8SUtils utils, String namespace, String name);
-    }
 
-    interface Create<R> {
-        void create(K8SUtils utils, R resource);
-    }
 
-    public CreateOperation(String resourceKind, R resource, Exists exists,
-                           Create<R> create) {
+    public CreateOperation(String resourceKind, R resource) {
         this.resourceKind = resourceKind;
         this.resource = resource;
-        this.exists = exists;
-        this.create = create;
     }
 
     @Override
     public void execute(Vertx vertx, K8SUtils k8s, Handler<AsyncResult<Void>> handler) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
-                    if (!exists.exists(k8s, resource.getMetadata().getNamespace(), resource.getMetadata().getName())) {
+                    if (!exists(k8s, resource.getMetadata().getNamespace(), resource.getMetadata().getName())) {
                         try {
                             log.info("Creating {} {}", resourceKind, resource);
-                            create.create(k8s, resource);
+                            create(k8s, resource);
                             future.complete();
                         } catch (Exception e) {
                             log.error("Caught exception while creating {}", resourceKind, e);
@@ -89,19 +78,67 @@ public class CreateOperation<R extends HasMetadata> extends K8sOperation {
         );
     }
 
+    protected abstract void create(K8SUtils k8s, R resource);
+
+    protected abstract boolean exists(K8SUtils k8s, String namespace, String name);
+
     public static CreateOperation<Deployment> createDeployment(Deployment dep) {
-        return new CreateOperation<>("Deployment", dep, K8SUtils::deploymentExists, K8SUtils::createDeployment);
+        return new CreateOperation<Deployment>("Deployment", dep) {
+
+            @Override
+            protected void create(K8SUtils k8s, Deployment resource) {
+                k8s.createDeployment(resource);
+            }
+
+            @Override
+            protected boolean exists(K8SUtils k8s, String namespace, String name) {
+                return k8s.deploymentExists(namespace, name);
+            }
+        };
     }
 
     public static CreateOperation<ConfigMap> createConfigMap(ConfigMap cm) {
-        return new CreateOperation<>("ConfigMap", cm, K8SUtils::configMapExists, K8SUtils::createConfigMap);
+        return new CreateOperation<ConfigMap>("ConfigMap", cm) {
+
+            @Override
+            protected void create(K8SUtils k8s, ConfigMap resource) {
+                k8s.createConfigMap(resource);
+            }
+
+            @Override
+            protected boolean exists(K8SUtils k8s, String namespace, String name) {
+                return k8s.configMapExists(namespace, name);
+            }
+        };
     }
 
     public static CreateOperation<StatefulSet> createStatefulSet(StatefulSet cm) {
-        return new CreateOperation<>("StatefulSet", cm, K8SUtils::statefulSetExists, K8SUtils::createStatefulSet);
+        return new CreateOperation<StatefulSet>("StatefulSet", cm) {
+
+            @Override
+            protected void create(K8SUtils k8s, StatefulSet resource) {
+                k8s.createStatefulSet(resource);
+            }
+
+            @Override
+            protected boolean exists(K8SUtils k8s, String namespace, String name) {
+                return k8s.statefulSetExists(namespace, name);
+            }
+        };
     }
 
     public static CreateOperation<Service> createService(Service service) {
-        return new CreateOperation<>("Service", service, K8SUtils::serviceExists, K8SUtils::createService);
+        return new CreateOperation<Service>("Service", service) {
+
+            @Override
+            protected void create(K8SUtils k8s, Service resource) {
+                k8s.createService(resource);
+            }
+
+            @Override
+            protected boolean exists(K8SUtils k8s, String namespace, String name) {
+                return k8s.serviceExists(namespace, name);
+            }
+        };
     }
 }
