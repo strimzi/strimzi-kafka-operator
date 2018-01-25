@@ -172,8 +172,8 @@ public class Storage {
      */
     private boolean compareSize(Quantity other) {
 
-        return Objects.isNull(this.size) ?
-                Objects.isNull(other) : this.size.getAmount().equals(other.getAmount());
+        return this.size == null ?
+                other == null : this.size.getAmount().equals(other.getAmount());
     }
 
     /**
