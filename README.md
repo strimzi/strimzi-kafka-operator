@@ -81,7 +81,7 @@ and contain the cluster configuration in specific format.
 To deploy the Cluster Controller on OpenShift, run the following command in your terminal:
 
 ```shell
-oc create -f resources/openshift/controller-with-template.yaml
+oc create -f resources/openshift/cluster-controller-with-template.yaml
 ```
 
 You should be able to verify that the controller is running using:
@@ -97,7 +97,7 @@ or using the OpenShift console.
 To deploy the Cluster Controller on Kubernetes, run the following command in your terminal:
 
 ```shell
-kubectl create -f resources/kubernetes/controller.yaml
+kubectl create -f resources/kubernetes/cluster-controller.yaml
 ```
 
 You should be able to verify that the controller is running using:
