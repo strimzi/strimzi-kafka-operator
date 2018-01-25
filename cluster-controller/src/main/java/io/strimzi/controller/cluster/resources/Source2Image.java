@@ -37,12 +37,12 @@ public class Source2Image {
     protected Map<String, String> labels;
 
     // Annotations
-    public static String ANNOTATION_S2I = "s2i";
-    public static String ANNOTATION_RESOLVE_NAMES = "alpha.image.policy.openshift.io/resolve-names";
+    public static final String ANNOTATION_S2I = "s2i";
+    public static final String ANNOTATION_RESOLVE_NAMES = "alpha.image.policy.openshift.io/resolve-names";
 
     // Keys to config JSON
-    private static String KEY_SOURCE_IMAGE = "sourceImage";
-    public static String KEY_ENABLED = "enabled";
+    private static final String KEY_SOURCE_IMAGE = "sourceImage";
+    public static final String KEY_ENABLED = "enabled";
 
     // Default values
     private static String DEFAULT_SOURCE_IMAGE = "strimzi/kafka-connect-s2i:latest";
