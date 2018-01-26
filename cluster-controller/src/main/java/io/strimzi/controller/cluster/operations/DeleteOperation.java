@@ -78,7 +78,7 @@ public abstract class DeleteOperation<U> implements Operation<U> {
                         handler.handle(Future.succeededFuture());
                     }
                     else {
-                        log.error("{} deletion failed: {}", resourceKind, res.cause().toString());
+                        log.error("{} deletion failed:", resourceKind, res.cause());
                         handler.handle(Future.failedFuture(res.cause()));
                     }
                 }
