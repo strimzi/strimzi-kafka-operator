@@ -27,7 +27,7 @@ public class DeleteKafkaConnectClusterOperation extends SimpleClusterOperation<K
         result.add(futureService);
 
         Future<Void> futureDeployment = Future.future();
-        OperationExecutor.getInstance().executeK8s(DeleteOperation.deleteDeployment(namespace, connect.getName()), futureDeployment.completer());
+        OperationExecutor.getInstance().executeFabric8(DeleteOperation.deleteDeployment(namespace, connect.getName()), futureDeployment.completer());
         result.add(futureDeployment);
 
         if (connect.getS2I() != null) {

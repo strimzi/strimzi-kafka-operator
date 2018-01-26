@@ -28,7 +28,7 @@ public class CreateKafkaConnectClusterOperation extends SimpleClusterOperation<K
         result.add(futureService);
 
         Future<Void> futureDeployment = Future.future();
-        OperationExecutor.getInstance().executeK8s(CreateOperation.createDeployment(connect.generateDeployment()), futureDeployment.completer());
+        OperationExecutor.getInstance().executeFabric8(CreateOperation.createDeployment(connect.generateDeployment()), futureDeployment.completer());
         result.add(futureDeployment);
 
         Future<Void> futureS2I;

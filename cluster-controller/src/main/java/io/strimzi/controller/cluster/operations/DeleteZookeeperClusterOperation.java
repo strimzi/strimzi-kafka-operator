@@ -28,7 +28,7 @@ public class DeleteZookeeperClusterOperation extends SimpleClusterOperation<Zook
         // otherwise the future is already complete (for the "join")
         if (zk.isMetricsEnabled()) {
             Future<Void> futureConfigMap = Future.future();
-            OperationExecutor.getInstance().executeK8s(DeleteOperation.deleteConfigMap(namespace, zk.getMetricsConfigName()), futureConfigMap.completer());
+            OperationExecutor.getInstance().executeFabric8(DeleteOperation.deleteConfigMap(namespace, zk.getMetricsConfigName()), futureConfigMap.completer());
             result.add(futureConfigMap);
         }
 
@@ -41,14 +41,14 @@ public class DeleteZookeeperClusterOperation extends SimpleClusterOperation<Zook
         result.add(futureHeadlessService);
 
         Future<Void> futureStatefulSet = Future.future();
-        OperationExecutor.getInstance().executeK8s(DeleteOperation.deleteStatefulSet(namespace, zk.getName()), futureStatefulSet.completer());
+        OperationExecutor.getInstance().executeFabric8(DeleteOperation.deleteStatefulSet(namespace, zk.getName()), futureStatefulSet.completer());
         result.add(futureStatefulSet);
 
 
         if (deleteClaims) {
             for (int i = 0; i < zk.getReplicas(); i++) {
                 Future<Void> f = Future.future();
-                OperationExecutor.getInstance().executeK8s(DeleteOperation.deletePersistentVolumeClaim(namespace, zk.getVolumeName() + "-" + zk.getName() + "-" + i), f.completer());
+                OperationExecutor.getInstance().executeFabric8(DeleteOperation.deletePersistentVolumeClaim(namespace, zk.getVolumeName() + "-" + zk.getName() + "-" + i), f.completer());
                 result.add(f);
             }
         }
