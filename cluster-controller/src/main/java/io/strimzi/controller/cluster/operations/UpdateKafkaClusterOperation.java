@@ -16,13 +16,18 @@ import io.vertx.core.shareddata.Lock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class UpdateKafkaClusterOperation extends KafkaClusterOperation {
+public class UpdateKafkaClusterOperation extends ClusterOperation {
     private static final Logger log = LoggerFactory.getLogger(UpdateKafkaClusterOperation.class.getName());
 
     private K8SUtils k8s;
 
     public UpdateKafkaClusterOperation(String namespace, String name) {
         super(namespace, name);
+    }
+
+    @Override
+    protected String getLockName() {
+        return "lock::kafka::" + namespace + "::" + name;
     }
 
     @Override

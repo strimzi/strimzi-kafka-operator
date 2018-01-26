@@ -8,52 +8,39 @@ import io.vertx.core.shareddata.Lock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DeleteKafkaConnectClusterOperation extends KafkaConnectClusterOperation {
+import java.util.ArrayList;
+import java.util.List;
+
+public class DeleteKafkaConnectClusterOperation extends SimpleClusterOperation<KafkaConnectCluster> {
     private static final Logger log = LoggerFactory.getLogger(DeleteKafkaConnectClusterOperation.class.getName());
 
     public DeleteKafkaConnectClusterOperation(String namespace, String name) {
-        super(namespace, name);
+        super("kafka-connect", "delete", namespace, name);
     }
 
     @Override
-    public void execute(Vertx vertx, K8SUtils k8s, Handler<AsyncResult<Void>> handler) {
-        vertx.sharedData().getLockWithTimeout(getLockName(), LOCK_TIMEOUT, res -> {
-            if (res.succeeded()) {
-                Lock lock = res.result();
+    protected List<Future> creationFutures(K8SUtils k8s, KafkaConnectCluster connect) {
+        List<Future> result = new ArrayList<>(3);
 
-                KafkaConnectCluster connect = KafkaConnectCluster.fromDeployment(k8s, namespace, name);
+        Future<Void> futureService = Future.future();
+        OperationExecutor.getInstance().executeFabric8(DeleteOperation.deleteService(namespace, connect.getName()), futureService.completer());
+        result.add(futureService);
 
-                log.info("Deleting Kafka Connect cluster {} from namespace {}", connect.getName(), namespace);
+        Future<Void> futureDeployment = Future.future();
+        OperationExecutor.getInstance().executeK8s(DeleteOperation.deleteDeployment(namespace, connect.getName()), futureDeployment.completer());
+        result.add(futureDeployment);
 
-                Future<Void> futureService = Future.future();
-                OperationExecutor.getInstance().executeFabric8(DeleteOperation.deleteService(namespace, connect.getName()), futureService.completer());
+        if (connect.getS2I() != null) {
+            Future<Void> futureS2I = Future.future();
+            OperationExecutor.getInstance().executeOpenShift(new DeleteS2IOperation(connect.getS2I()), futureS2I.completer());
+            result.add(futureS2I);
+        }
 
-                Future<Void> futureDeployment = Future.future();
-                OperationExecutor.getInstance().executeK8s(DeleteOperation.deleteDeployment(namespace, connect.getName()), futureDeployment.completer());
+        return result;
+    }
 
-                Future<Void> futureS2I;
-                if (connect.getS2I() != null) {
-                    futureS2I = Future.future();
-                    OperationExecutor.getInstance().executeOpenShift(new DeleteS2IOperation(connect.getS2I()), futureS2I.completer());
-                } else {
-                    futureS2I = Future.succeededFuture();
-                }
-
-                CompositeFuture.join(futureService, futureDeployment, futureS2I).setHandler(ar -> {
-                    if (ar.succeeded()) {
-                        log.info("Kafka Connect cluster {} successfully deleted from namespace {}", connect.getName(), namespace);
-                        handler.handle(Future.succeededFuture());
-                        lock.release();
-                    } else {
-                        log.error("Kafka Connect cluster {} failed to delete from namespace {}", connect.getName(), namespace);
-                        handler.handle(Future.failedFuture("Failed to delete Kafka Connect cluster"));
-                        lock.release();
-                    }
-                });
-            } else {
-                log.error("Failed to acquire lock to delete Kafka Connect cluster {}", getLockName());
-                handler.handle(Future.failedFuture("Failed to acquire lock to delete Kafka Connect cluster"));
-            }
-        });
+    @Override
+    protected KafkaConnectCluster getCluster(K8SUtils k8s, Handler<AsyncResult<Void>> handler, Lock lock) {
+        return KafkaConnectCluster.fromDeployment(k8s, namespace, name);
     }
 }

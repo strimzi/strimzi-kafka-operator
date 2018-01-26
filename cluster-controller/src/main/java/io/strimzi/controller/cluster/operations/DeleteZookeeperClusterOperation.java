@@ -12,76 +12,52 @@ import io.vertx.core.shareddata.Lock;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DeleteZookeeperClusterOperation extends ZookeeperClusterOperation {
+public class DeleteZookeeperClusterOperation extends SimpleClusterOperation<ZookeeperCluster> {
     private static final Logger log = LoggerFactory.getLogger(DeleteZookeeperClusterOperation.class.getName());
 
     public DeleteZookeeperClusterOperation(String namespace, String name) {
-        super(namespace, name);
+        super("zookeeper", "delete", namespace, name);
     }
 
     @Override
-    public void execute(Vertx vertx, K8SUtils k8s, Handler<AsyncResult<Void>> handler) {
-        vertx.sharedData().getLockWithTimeout(getLockName(), LOCK_TIMEOUT, res -> {
-            if (res.succeeded()) {
-                Lock lock = res.result();
+    protected List<Future> creationFutures(K8SUtils k8s, ZookeeperCluster zk) {
+        boolean deleteClaims = zk.getStorage().type() == Storage.StorageType.PERSISTENT_CLAIM
+                && zk.getStorage().isDeleteClaim();
+        List<Future> result = new ArrayList<>(4 + (deleteClaims ? zk.getReplicas() : 0));
 
-                ZookeeperCluster zk = ZookeeperCluster.fromStatefulSet(k8s, namespace, name);
+        // start deleting configMap operation only if metrics are enabled,
+        // otherwise the future is already complete (for the "join")
+        if (zk.isMetricsEnabled()) {
+            Future<Void> futureConfigMap = Future.future();
+            OperationExecutor.getInstance().executeK8s(DeleteOperation.deleteConfigMap(namespace, zk.getMetricsConfigName()), futureConfigMap.completer());
+            result.add(futureConfigMap);
+        }
 
-                log.info("Deleting Zookeeper cluster {} from namespace {}", zk.getName(), namespace);
+        Future<Void> futureService = Future.future();
+        OperationExecutor.getInstance().executeFabric8(DeleteOperation.deleteService(namespace, zk.getName()), futureService.completer());
+        result.add(futureService);
 
-                // start deleting configMap operation only if metrics are enabled,
-                // otherwise the future is already complete (for the "join")
-                Future<Void> futureConfigMap = Future.future();
-                if (zk.isMetricsEnabled()) {
-                    OperationExecutor.getInstance().executeK8s(DeleteOperation.deleteConfigMap(namespace, zk.getMetricsConfigName()), futureConfigMap.completer());
-                } else {
-                    futureConfigMap.complete();
-                }
+        Future<Void> futureHeadlessService = Future.future();
+        OperationExecutor.getInstance().executeFabric8(DeleteOperation.deleteService(namespace, zk.getHeadlessName()), futureHeadlessService.completer());
+        result.add(futureHeadlessService);
 
-                Future<Void> futureService = Future.future();
-                OperationExecutor.getInstance().executeFabric8(DeleteOperation.deleteService(namespace, zk.getName()), futureService.completer());
+        Future<Void> futureStatefulSet = Future.future();
+        OperationExecutor.getInstance().executeK8s(DeleteOperation.deleteStatefulSet(namespace, zk.getName()), futureStatefulSet.completer());
+        result.add(futureStatefulSet);
 
-                Future<Void> futureHeadlessService = Future.future();
-                OperationExecutor.getInstance().executeFabric8(DeleteOperation.deleteService(namespace, zk.getHeadlessName()), futureHeadlessService.completer());
 
-                Future<Void> futureStatefulSet = Future.future();
-                OperationExecutor.getInstance().executeK8s(DeleteOperation.deleteStatefulSet(namespace, zk.getName()), futureStatefulSet.completer());
-
-                Future<Void> futurePersistentVolumeClaim = Future.future();
-                if ((zk.getStorage().type() == Storage.StorageType.PERSISTENT_CLAIM) && zk.getStorage().isDeleteClaim()) {
-
-                    List<Future> futurePersistentVolumeClaims = new ArrayList<>();
-                    for (int i = 0; i < zk.getReplicas(); i++) {
-                        Future<Void> f = Future.future();
-                        futurePersistentVolumeClaims.add(f);
-                        OperationExecutor.getInstance().executeK8s(new DeletePersistentVolumeClaimOperation(namespace, zk.getVolumeName() + "-" + zk.getName() + "-" + i), f.completer());
-                    }
-                    CompositeFuture.join(futurePersistentVolumeClaims).setHandler(ar -> {
-                        if (ar.succeeded()) {
-                            handler.handle(Future.succeededFuture());
-                        } else {
-                            handler.handle(Future.failedFuture("Failed to delete persistent volume claims"));
-                        }
-                    });
-                } else {
-                    futurePersistentVolumeClaim.complete();
-                }
-
-                CompositeFuture.join(futureConfigMap, futureService, futureHeadlessService, futureStatefulSet, futurePersistentVolumeClaim).setHandler(ar -> {
-                    if (ar.succeeded()) {
-                        log.info("Zookeeper cluster {} successfully deleted from namespace {}", zk.getName(), namespace);
-                        handler.handle(Future.succeededFuture());
-                        lock.release();
-                    } else {
-                        log.error("Zookeeper cluster {} failed to delete from namespace {}", zk.getName(), namespace);
-                        handler.handle(Future.failedFuture("Failed to delete Zookeeper cluster"));
-                        lock.release();
-                    }
-                });
-            } else {
-                log.error("Failed to acquire lock to delete Zookeeper cluster {}", getLockName());
-                handler.handle(Future.failedFuture("Failed to acquire lock to delete Zookeeper cluster"));
+        if (deleteClaims) {
+            for (int i = 0; i < zk.getReplicas(); i++) {
+                Future<Void> f = Future.future();
+                OperationExecutor.getInstance().executeK8s(new DeletePersistentVolumeClaimOperation(namespace, zk.getVolumeName() + "-" + zk.getName() + "-" + i), f.completer());
+                result.add(f);
             }
-        });
+        }
+        return result;
+    }
+
+    @Override
+    protected ZookeeperCluster getCluster(K8SUtils k8s, Handler<AsyncResult<Void>> handler, Lock lock) {
+        return ZookeeperCluster.fromStatefulSet(k8s, namespace, name);
     }
 }
