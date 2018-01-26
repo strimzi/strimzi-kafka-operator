@@ -1,6 +1,7 @@
 package io.strimzi.controller.cluster.operations.openshift;
 
 import io.strimzi.controller.cluster.OpenShiftUtils;
+import io.strimzi.controller.cluster.operations.DeleteOperation;
 import io.strimzi.controller.cluster.operations.OperationExecutor;
 import io.strimzi.controller.cluster.resources.Source2Image;
 import io.vertx.core.AsyncResult;
@@ -38,13 +39,13 @@ public class DeleteS2IOperation extends S2IOperation {
         log.info("Deleting S2I {} in namespace {}", s2i.getName(), s2i.getNamespace());
 
         Future<Void> futureSourceImageStream = Future.future();
-        OperationExecutor.getInstance().executeOpenShift(new DeleteImageStreamOperation(s2i.getNamespace(), s2i.getSourceImageStreamName()), futureSourceImageStream.completer());
+        OperationExecutor.getInstance().executeOpenShift(DeleteOperation.deleteImageStream(s2i.getNamespace(), s2i.getSourceImageStreamName()), futureSourceImageStream.completer());
 
         Future<Void> futureTargetImageStream = Future.future();
-        OperationExecutor.getInstance().executeOpenShift(new DeleteImageStreamOperation(s2i.getNamespace(), s2i.getName()), futureTargetImageStream.completer());
+        OperationExecutor.getInstance().executeOpenShift(DeleteOperation.deleteImageStream(s2i.getNamespace(), s2i.getName()), futureTargetImageStream.completer());
 
         Future<Void> futureBuildConfig = Future.future();
-        OperationExecutor.getInstance().executeOpenShift(new DeleteBuildConfigOperation(s2i.getNamespace(), s2i.getName()), futureBuildConfig.completer());
+        OperationExecutor.getInstance().executeOpenShift(DeleteOperation.deleteBuildConfig(s2i.getNamespace(), s2i.getName()), futureBuildConfig.completer());
 
         CompositeFuture.join(futureSourceImageStream, futureTargetImageStream, futureBuildConfig).setHandler(ar -> {
             if (ar.succeeded()) {

@@ -17,11 +17,6 @@
 
 package io.strimzi.controller.cluster.operations;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.Service;
-import io.fabric8.kubernetes.api.model.extensions.Deployment;
-import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.openshift.api.model.BuildConfig;
 import io.fabric8.openshift.api.model.ImageStream;
@@ -35,67 +30,67 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Abstract resource creation, for a generic resource type {@code R}.
+ * Abstract resource deletion.
  * This class applies the template method pattern, first checking whether the resource exists,
  * and creating it if it does not. It is not an error if the resource did already exist.
  * @param <U> The {@code *Utils} instance used to interact with kubernetes.
- * @param <R> The type of resource created
  */
-public abstract class CreateOperation<U, R extends HasMetadata> implements Operation<U> {
+public abstract class DeleteOperation<U> implements Operation<U> {
 
-    private static final Logger log = LoggerFactory.getLogger(CreateOperation.class);
+    private static final Logger log = LoggerFactory.getLogger(DeleteOperation.class);
 
-    private final R resource;
     private final String resourceKind;
+    private final String namespace;
+    private final String name;
 
-    public CreateOperation(String resourceKind, R resource) {
+    public DeleteOperation(String resourceKind, String namespace, String name) {
         this.resourceKind = resourceKind;
-        this.resource = resource;
+        this.namespace = namespace;
+        this.name = name;
     }
+
+    protected abstract boolean exists(U utils, String namespace, String name);
+
+    protected abstract void delete(U utils, String namespace, String name);
 
     @Override
     public void execute(Vertx vertx, U utils, Handler<AsyncResult<Void>> handler) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
-                    if (!exists(utils, resource.getMetadata().getNamespace(), resource.getMetadata().getName())) {
+
+                    if (exists(utils, namespace, name)) {
                         try {
-                            log.info("Creating {} {}", resourceKind, resource);
-                            create(utils, resource);
+                            log.info("Deleting {} {} in namespace {}", resourceKind, name, namespace);
+                            delete(utils, namespace, name);
                             future.complete();
                         } catch (Exception e) {
-                            log.error("Caught exception while creating {}", resourceKind, e);
+                            log.error("Caught exception while deleting {}", resourceKind, e);
                             future.fail(e);
                         }
-                    }
-                    else {
-                        log.warn("{} {} already exists", resourceKind, resource);
+                    } else {
+                        log.warn("{} {} in namespace {} doesn't exists", resourceKind, name, namespace);
                         future.complete();
                     }
-                },
-                false,
+                }, false,
                 res -> {
                     if (res.succeeded()) {
-                        log.info("{} {} has been created", resourceKind, resource);
+                        log.info("{} {} in namespace {} has been deleted", resourceKind, name, namespace);
                         handler.handle(Future.succeededFuture());
                     }
                     else {
-                        log.error("{} creation failed: {}", resourceKind, res.cause().toString());
+                        log.error("{} deletion failed: {}", resourceKind, res.cause().toString());
                         handler.handle(Future.failedFuture(res.cause()));
                     }
                 }
         );
     }
 
-    protected abstract void create(U utils, R resource);
-
-    protected abstract boolean exists(U k8s, String namespace, String name);
-
-    public static CreateOperation<K8SUtils, Deployment> createDeployment(Deployment dep) {
-        return new CreateOperation<K8SUtils, Deployment>("Deployment", dep) {
+    public static DeleteOperation<K8SUtils> deleteDeployment(String namespace, String name) {
+        return new DeleteOperation<K8SUtils>("Deployment", namespace, name) {
 
             @Override
-            protected void create(K8SUtils k8s, Deployment resource) {
-                k8s.createDeployment(resource);
+            protected void delete(K8SUtils k8s, String namespace, String name) {
+                k8s.deleteDeployment(namespace, name);
             }
 
             @Override
@@ -105,12 +100,12 @@ public abstract class CreateOperation<U, R extends HasMetadata> implements Opera
         };
     }
 
-    public static CreateOperation<K8SUtils, ConfigMap> createConfigMap(ConfigMap cm) {
-        return new CreateOperation<K8SUtils, ConfigMap>("ConfigMap", cm) {
+    public static DeleteOperation<K8SUtils> deleteConfigMap(String namespace, String name) {
+        return new DeleteOperation<K8SUtils>("ConfigMap", namespace, name) {
 
             @Override
-            protected void create(K8SUtils k8s, ConfigMap resource) {
-                k8s.createConfigMap(resource);
+            protected void delete(K8SUtils k8s, String namespace, String name) {
+                k8s.deleteConfigMap(namespace, name);
             }
 
             @Override
@@ -120,12 +115,12 @@ public abstract class CreateOperation<U, R extends HasMetadata> implements Opera
         };
     }
 
-    public static CreateOperation<K8SUtils, StatefulSet> createStatefulSet(StatefulSet cm) {
-        return new CreateOperation<K8SUtils, StatefulSet>("StatefulSet", cm) {
+    public static DeleteOperation<K8SUtils> deleteStatefulSet(String namespace, String name) {
+        return new DeleteOperation<K8SUtils>("StatefulSet", namespace, name) {
 
             @Override
-            protected void create(K8SUtils k8s, StatefulSet resource) {
-                k8s.createStatefulSet(resource);
+            protected void delete(K8SUtils k8s, String namespace, String name) {
+                k8s.deleteStatefulSet(namespace, name);
             }
 
             @Override
@@ -135,13 +130,13 @@ public abstract class CreateOperation<U, R extends HasMetadata> implements Opera
         };
     }
 
-    public static CreateOperation<KubernetesClient, Service> createService(Service service) {
-        return new CreateOperation<KubernetesClient, Service>("Service", service) {
+    public static DeleteOperation<KubernetesClient> deleteService(String namespace, String name) {
+        return new DeleteOperation<KubernetesClient>("Service", namespace, name) {
 
             @Override
-            protected void create(KubernetesClient k8s, Service resource) {
-                log.info("Creating service {}", resource.getMetadata().getName());
-                k8s.services().createOrReplace(resource);
+            protected void delete(KubernetesClient k8s, String namespace, String name) {
+                log.info("Deleting service {}", name);
+                k8s.services().inNamespace(namespace).withName(name).delete();
             }
 
             @Override
@@ -151,11 +146,11 @@ public abstract class CreateOperation<U, R extends HasMetadata> implements Opera
         };
     }
 
-    public static CreateOperation<OpenShiftUtils, BuildConfig> createBuildConfig(BuildConfig config) {
-        return new CreateOperation<OpenShiftUtils, BuildConfig>("BuildConfig", config) {
+    public static DeleteOperation<OpenShiftUtils> deleteBuildConfig(String namespace, String name) {
+        return new DeleteOperation<OpenShiftUtils>("BuildConfig", namespace, name) {
             @Override
-            protected void create(OpenShiftUtils os, BuildConfig resource) {
-                os.create(resource);
+            protected void delete(OpenShiftUtils os, String namespace, String name) {
+                os.delete(namespace, name, BuildConfig.class);
             }
 
             @Override
@@ -165,11 +160,11 @@ public abstract class CreateOperation<U, R extends HasMetadata> implements Opera
         };
     }
 
-    public static CreateOperation<OpenShiftUtils, ImageStream> createImageStream(ImageStream is) {
-        return new CreateOperation<OpenShiftUtils, ImageStream>("ImageStream", is) {
+    public static DeleteOperation<OpenShiftUtils> deleteImageStream(String namespace, String name) {
+        return new DeleteOperation<OpenShiftUtils>("ImageStream", namespace, name) {
             @Override
-            protected void create(OpenShiftUtils os, ImageStream resource) {
-                os.create(resource);
+            protected void delete(OpenShiftUtils os, String namespace, String name) {
+                os.delete(namespace, name, ImageStream.class);
             }
 
             @Override

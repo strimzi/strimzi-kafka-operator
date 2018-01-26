@@ -1,10 +1,7 @@
 package io.strimzi.controller.cluster.operations;
 
 import io.strimzi.controller.cluster.K8SUtils;
-import io.strimzi.controller.cluster.operations.kubernetes.DeleteConfigMapOperation;
 import io.strimzi.controller.cluster.operations.kubernetes.DeletePersistentVolumeClaimOperation;
-import io.strimzi.controller.cluster.operations.kubernetes.DeleteServiceOperation;
-import io.strimzi.controller.cluster.operations.kubernetes.DeleteStatefulSetOperation;
 import io.strimzi.controller.cluster.resources.KafkaCluster;
 import io.strimzi.controller.cluster.resources.Storage;
 import io.vertx.core.*;
@@ -36,19 +33,19 @@ public class DeleteKafkaClusterOperation extends KafkaClusterOperation {
                 // otherwise the future is already complete (for the "join")
                 Future<Void> futureConfigMap = Future.future();
                 if (kafka.isMetricsEnabled()) {
-                    OperationExecutor.getInstance().executeK8s(new DeleteConfigMapOperation(namespace, kafka.getMetricsConfigName()), futureConfigMap.completer());
+                    OperationExecutor.getInstance().executeK8s(DeleteOperation.deleteConfigMap(namespace, kafka.getMetricsConfigName()), futureConfigMap.completer());
                 } else {
                     futureConfigMap.complete();
                 }
 
                 Future<Void> futureService = Future.future();
-                OperationExecutor.getInstance().executeK8s(new DeleteServiceOperation(namespace, kafka.getName()), futureService.completer());
+                OperationExecutor.getInstance().executeFabric8(DeleteOperation.deleteService(namespace, kafka.getName()), futureService.completer());
 
                 Future<Void> futureHeadlessService = Future.future();
-                OperationExecutor.getInstance().executeK8s(new DeleteServiceOperation(namespace, kafka.getHeadlessName()), futureHeadlessService.completer());
+                OperationExecutor.getInstance().executeFabric8(DeleteOperation.deleteService(namespace, kafka.getHeadlessName()), futureHeadlessService.completer());
 
                 Future<Void> futureStatefulSet = Future.future();
-                OperationExecutor.getInstance().executeK8s(new DeleteStatefulSetOperation(namespace, kafka.getName()), futureStatefulSet.completer());
+                OperationExecutor.getInstance().executeK8s(DeleteOperation.deleteStatefulSet(namespace, kafka.getName()), futureStatefulSet.completer());
 
                 Future<Void> futurePersistentVolumeClaim = Future.future();
                 if ((kafka.getStorage().type() == Storage.StorageType.PERSISTENT_CLAIM) && kafka.getStorage().isDeleteClaim()) {
