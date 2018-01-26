@@ -90,47 +90,50 @@ public abstract class CreateOperation<U, R extends HasMetadata> implements Opera
 
     protected abstract boolean exists(U k8s, String namespace, String name);
 
-    public static CreateOperation<K8SUtils, Deployment> createDeployment(Deployment dep) {
-        return new CreateOperation<K8SUtils, Deployment>("Deployment", dep) {
+    public static CreateOperation<KubernetesClient, Deployment> createDeployment(Deployment dep) {
+        return new CreateOperation<KubernetesClient, Deployment>("Deployment", dep) {
 
             @Override
-            protected void create(K8SUtils k8s, Deployment resource) {
-                k8s.createDeployment(resource);
+            protected void create(KubernetesClient client, Deployment resource) {
+                log.info("Creating deployment {}", resource.getMetadata().getName());
+                client.extensions().deployments().createOrReplace(resource);
             }
 
             @Override
-            protected boolean exists(K8SUtils k8s, String namespace, String name) {
-                return k8s.deploymentExists(namespace, name);
-            }
-        };
-    }
-
-    public static CreateOperation<K8SUtils, ConfigMap> createConfigMap(ConfigMap cm) {
-        return new CreateOperation<K8SUtils, ConfigMap>("ConfigMap", cm) {
-
-            @Override
-            protected void create(K8SUtils k8s, ConfigMap resource) {
-                k8s.createConfigMap(resource);
-            }
-
-            @Override
-            protected boolean exists(K8SUtils k8s, String namespace, String name) {
-                return k8s.configMapExists(namespace, name);
+            protected boolean exists(KubernetesClient client, String namespace, String name) {
+                return client.extensions().deployments().inNamespace(namespace).withName(name).get() != null;
             }
         };
     }
 
-    public static CreateOperation<K8SUtils, StatefulSet> createStatefulSet(StatefulSet cm) {
-        return new CreateOperation<K8SUtils, StatefulSet>("StatefulSet", cm) {
+    public static CreateOperation<KubernetesClient, ConfigMap> createConfigMap(ConfigMap cm) {
+        return new CreateOperation<KubernetesClient, ConfigMap>("ConfigMap", cm) {
 
             @Override
-            protected void create(K8SUtils k8s, StatefulSet resource) {
-                k8s.createStatefulSet(resource);
+            protected void create(KubernetesClient client, ConfigMap resource) {
+                log.info("Creating configmap {}", resource.getMetadata().getName());
+                client.configMaps().createOrReplace(resource);
             }
 
             @Override
-            protected boolean exists(K8SUtils k8s, String namespace, String name) {
-                return k8s.statefulSetExists(namespace, name);
+            protected boolean exists(KubernetesClient client, String namespace, String name) {
+                return client.configMaps().inNamespace(namespace).withName(name).get() != null;
+            }
+        };
+    }
+
+    public static CreateOperation<KubernetesClient, StatefulSet> createStatefulSet(StatefulSet cm) {
+        return new CreateOperation<KubernetesClient, StatefulSet>("StatefulSet", cm) {
+
+            @Override
+            protected void create(KubernetesClient client, StatefulSet resource) {
+                log.info("Creating stateful set {}", resource.getMetadata().getName());
+                client.apps().statefulSets().createOrReplace(resource);
+            }
+
+            @Override
+            protected boolean exists(KubernetesClient client, String namespace, String name) {
+                return client.apps().statefulSets().inNamespace(namespace).withName(name).get() != null;
             }
         };
     }

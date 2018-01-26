@@ -26,7 +26,7 @@ public class DeleteKafkaClusterOperation extends SimpleClusterOperation<KafkaClu
 
         if (kafka.isMetricsEnabled()) {
             Future<Void> futureConfigMap = Future.future();
-            OperationExecutor.getInstance().executeK8s(DeleteOperation.deleteConfigMap(namespace, kafka.getMetricsConfigName()), futureConfigMap.completer());
+            OperationExecutor.getInstance().executeFabric8(DeleteOperation.deleteConfigMap(namespace, kafka.getMetricsConfigName()), futureConfigMap.completer());
             result.add(futureConfigMap);
         }
 
@@ -39,13 +39,13 @@ public class DeleteKafkaClusterOperation extends SimpleClusterOperation<KafkaClu
         result.add(futureHeadlessService);
 
         Future<Void> futureStatefulSet = Future.future();
-        OperationExecutor.getInstance().executeK8s(DeleteOperation.deleteStatefulSet(namespace, kafka.getName()), futureStatefulSet.completer());
+        OperationExecutor.getInstance().executeFabric8(DeleteOperation.deleteStatefulSet(namespace, kafka.getName()), futureStatefulSet.completer());
         result.add(futureStatefulSet);
 
         if (deleteClaims) {
             for (int i = 0; i < kafka.getReplicas(); i++) {
                 Future<Void> f = Future.future();
-                OperationExecutor.getInstance().executeK8s(DeleteOperation.deletePersistentVolumeClaim(namespace, kafka.getVolumeName() + "-" + kafka.getName() + "-" + i), f.completer());
+                OperationExecutor.getInstance().executeFabric8(DeleteOperation.deletePersistentVolumeClaim(namespace, kafka.getVolumeName() + "-" + kafka.getName() + "-" + i), f.completer());
                 result.add(f);
             }
         }

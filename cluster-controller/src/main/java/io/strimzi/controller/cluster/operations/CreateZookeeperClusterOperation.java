@@ -28,7 +28,7 @@ public class CreateZookeeperClusterOperation extends SimpleClusterOperation<Zook
 
         if (zk.isMetricsEnabled()) {
             Future<Void> futureConfigMap = Future.future();
-            OperationExecutor.getInstance().executeK8s(CreateOperation.createConfigMap(zk.generateMetricsConfigMap()), futureConfigMap.completer());
+            OperationExecutor.getInstance().executeFabric8(CreateOperation.createConfigMap(zk.generateMetricsConfigMap()), futureConfigMap.completer());
             result.add(futureConfigMap);
         }
 
@@ -41,7 +41,7 @@ public class CreateZookeeperClusterOperation extends SimpleClusterOperation<Zook
         result.add(futureHeadlessService);
 
         Future<Void> futureStatefulSet = Future.future();
-        OperationExecutor.getInstance().executeK8s(CreateOperation.createStatefulSet(zk.generateStatefulSet(k8s.isOpenShift())), futureStatefulSet.completer());
+        OperationExecutor.getInstance().executeFabric8(CreateOperation.createStatefulSet(zk.generateStatefulSet(k8s.isOpenShift())), futureStatefulSet.completer());
         result.add(futureStatefulSet);
 
         return result;

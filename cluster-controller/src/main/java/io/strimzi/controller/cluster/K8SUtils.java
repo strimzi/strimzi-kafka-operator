@@ -53,25 +53,6 @@ public class K8SUtils {
     }
 
     /*
-      CREATE methods
-     */
-
-    public void createStatefulSet(StatefulSet ss) {
-        log.info("Creating stateful set {}", ss.getMetadata().getName());
-        client.apps().statefulSets().createOrReplace(ss);
-    }
-
-    public void createDeployment(Deployment dep) {
-        log.info("Creating deployment {}", dep.getMetadata().getName());
-        client.extensions().deployments().createOrReplace(dep);
-    }
-
-    public void createConfigMap(ConfigMap cm) {
-        log.info("Creating configmap {}", cm.getMetadata().getName());
-        client.configMaps().createOrReplace(cm);
-    }
-
-    /*
       GET methods
      */
     public StatefulSet getStatefulSet(String namespace, String name)    {
@@ -126,56 +107,13 @@ public class K8SUtils {
         return client.configMaps().inNamespace(namespace).withLabels(labels).list().getItems();
     }
 
-    public PersistentVolumeClaim getPersistentVolumeClaim(String namespace, String name) {
-        return getPersistentVolumeClaimResource(namespace, name).get();
-    }
-
-    public Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim> getPersistentVolumeClaimResource(String namespace, String name) {
-        return client.persistentVolumeClaims().inNamespace(namespace).withName(name);
-    }
-
     /*
       DELETE methods
      */
-    public void deleteService(String namespace, String name) {
-        if (serviceExists(namespace, name)) {
-            log.debug("Deleting service {}", name);
-            getServiceResource(namespace, name).delete();
-        }
-    }
-
-    public void deleteStatefulSet(String namespace, String name) {
-        if (statefulSetExists(namespace, name)) {
-            log.debug("Deleting stateful set {}", name);
-            getStatefulSetResource(namespace, name).delete();
-        }
-    }
-
-    public void deleteDeployment(String namespace, String name) {
-        if (deploymentExists(namespace, name)) {
-            log.debug("Deleting deployment {}", name);
-            getDeploymentResource(namespace, name).delete();
-        }
-    }
-
     public void deletePod(String namespace, String name) {
         if (podExists(namespace, name)) {
             log.debug("Deleting pod {}", name);
             getPodResource(namespace, name).delete();
-        }
-    }
-
-    public void deleteConfigMap(String namespace, String name) {
-        if (configMapExists(namespace, name)) {
-            log.debug("Deleting configmap {}", name);
-            getConfigmapResource(namespace, name).delete();
-        }
-    }
-
-    public void deletePersistentVolumeClaim(String namespace, String name) {
-        if (persistentVolumeClaimExists(namespace, name)) {
-            log.debug("Deleting persistentvolumeclaim {}", name);
-            getPersistentVolumeClaimResource(namespace, name).delete();
         }
     }
 
@@ -184,13 +122,6 @@ public class K8SUtils {
      */
     public void scale(ScalableResource res, int replicas, boolean wait)    {
         res.scale(replicas, wait);
-    }
-
-    /*
-      PATCH methods
-     */
-    public void patch(Patchable patchable, KubernetesResource patch)    {
-        patchable.patch(patch);
     }
 
     /*
@@ -204,28 +135,8 @@ public class K8SUtils {
     /*
       EXISTS methods
      */
-    public boolean statefulSetExists(String namespace, String name) {
-        return getStatefulSet(namespace, name) == null ? false : true;
-    }
-
-    public boolean deploymentExists(String namespace, String name) {
-        return getDeployment(namespace, name) == null ? false : true;
-    }
-
-    public boolean serviceExists(String namespace, String name) {
-        return getService(namespace, name) == null ? false : true;
-    }
-
     public boolean podExists(String namespace, String name) {
         return getPod(namespace, name) == null ? false : true;
-    }
-
-    public boolean configMapExists(String namespace, String name) {
-        return getConfigmap(namespace, name) == null ? false : true;
-    }
-
-    public boolean persistentVolumeClaimExists(String namespace, String name) {
-        return getPersistentVolumeClaim(namespace, name) == null ? false : true;
     }
 
     /*

@@ -29,7 +29,7 @@ public class CreateKafkaClusterOperation extends SimpleClusterOperation<KafkaClu
         // otherwise the future is already complete (for the "join")
         if (kafka.isMetricsEnabled()) {
             Future<Void> futureConfigMap = Future.future();
-            OperationExecutor.getInstance().executeK8s(CreateOperation.createConfigMap(kafka.generateMetricsConfigMap()), futureConfigMap.completer());
+            OperationExecutor.getInstance().executeFabric8(CreateOperation.createConfigMap(kafka.generateMetricsConfigMap()), futureConfigMap.completer());
             result.add(futureConfigMap);
         }
 
@@ -42,7 +42,7 @@ public class CreateKafkaClusterOperation extends SimpleClusterOperation<KafkaClu
         result.add(futureHeadlessService);
 
         Future<Void> futureStatefulSet = Future.future();
-        OperationExecutor.getInstance().executeK8s(CreateOperation.createStatefulSet(kafka.generateStatefulSet(k8s.isOpenShift())), futureStatefulSet.completer());
+        OperationExecutor.getInstance().executeFabric8(CreateOperation.createStatefulSet(kafka.generateStatefulSet(k8s.isOpenShift())), futureStatefulSet.completer());
         result.add(futureStatefulSet);
 
         return result;

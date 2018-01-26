@@ -68,13 +68,13 @@ public abstract class DeleteOperation<U> implements Operation<U> {
                             future.fail(e);
                         }
                     } else {
-                        log.warn("{} {} in namespace {} doesn't exists", resourceKind, name, namespace);
+                        log.warn("{} {} in namespace {} doesn't exist", resourceKind, name, namespace);
                         future.complete();
                     }
                 }, false,
                 res -> {
                     if (res.succeeded()) {
-                        log.info("{} {} in namespace {} has been deleted", resourceKind, name, namespace);
+                        log.info("{} {} in namespace {} has been deleted (or no longer exists)", resourceKind, name, namespace);
                         handler.handle(Future.succeededFuture());
                     }
                     else {
@@ -85,47 +85,50 @@ public abstract class DeleteOperation<U> implements Operation<U> {
         );
     }
 
-    public static DeleteOperation<K8SUtils> deleteDeployment(String namespace, String name) {
-        return new DeleteOperation<K8SUtils>("Deployment", namespace, name) {
+    public static DeleteOperation<KubernetesClient> deleteDeployment(String namespace, String name) {
+        return new DeleteOperation<KubernetesClient>("Deployment", namespace, name) {
 
             @Override
-            protected void delete(K8SUtils k8s, String namespace, String name) {
-                k8s.deleteDeployment(namespace, name);
+            protected void delete(KubernetesClient client, String namespace, String name) {
+                log.debug("Deleting deployment {}", name);
+                client.extensions().deployments().inNamespace(namespace).withName(name).delete();
             }
 
             @Override
-            protected boolean exists(K8SUtils k8s, String namespace, String name) {
-                return k8s.deploymentExists(namespace, name);
-            }
-        };
-    }
-
-    public static DeleteOperation<K8SUtils> deleteConfigMap(String namespace, String name) {
-        return new DeleteOperation<K8SUtils>("ConfigMap", namespace, name) {
-
-            @Override
-            protected void delete(K8SUtils k8s, String namespace, String name) {
-                k8s.deleteConfigMap(namespace, name);
-            }
-
-            @Override
-            protected boolean exists(K8SUtils k8s, String namespace, String name) {
-                return k8s.configMapExists(namespace, name);
+            protected boolean exists(KubernetesClient client, String namespace, String name) {
+                return client.extensions().deployments().inNamespace(namespace).withName(name).get() != null;
             }
         };
     }
 
-    public static DeleteOperation<K8SUtils> deleteStatefulSet(String namespace, String name) {
-        return new DeleteOperation<K8SUtils>("StatefulSet", namespace, name) {
+    public static DeleteOperation<KubernetesClient> deleteConfigMap(String namespace, String name) {
+        return new DeleteOperation<KubernetesClient>("ConfigMap", namespace, name) {
 
             @Override
-            protected void delete(K8SUtils k8s, String namespace, String name) {
-                k8s.deleteStatefulSet(namespace, name);
+            protected void delete(KubernetesClient client, String namespace, String name) {
+                log.debug("Deleting configmap {}", name);
+                client.configMaps().inNamespace(namespace).withName(name).delete();
             }
 
             @Override
-            protected boolean exists(K8SUtils k8s, String namespace, String name) {
-                return k8s.statefulSetExists(namespace, name);
+            protected boolean exists(KubernetesClient client, String namespace, String name) {
+                return client.configMaps().inNamespace(namespace).withName(name).get() != null;
+            }
+        };
+    }
+
+    public static DeleteOperation<KubernetesClient> deleteStatefulSet(String namespace, String name) {
+        return new DeleteOperation<KubernetesClient>("StatefulSet", namespace, name) {
+
+            @Override
+            protected void delete(KubernetesClient client, String namespace, String name) {
+                log.debug("Deleting stateful set {}", name);
+                client.apps().statefulSets().inNamespace(namespace).withName(name).delete();
+            }
+
+            @Override
+            protected boolean exists(KubernetesClient client, String namespace, String name) {
+                return client.apps().statefulSets().inNamespace(namespace).withName(name).get() != null;
             }
         };
     }
@@ -174,16 +177,17 @@ public abstract class DeleteOperation<U> implements Operation<U> {
         };
     }
 
-    public static DeleteOperation<K8SUtils> deletePersistentVolumeClaim(String namespace, String name) {
-        return new DeleteOperation<K8SUtils>("PersistentVolumeClaim", namespace, name) {
+    public static DeleteOperation<KubernetesClient> deletePersistentVolumeClaim(String namespace, String name) {
+        return new DeleteOperation<KubernetesClient>("PersistentVolumeClaim", namespace, name) {
             @Override
-            protected void delete(K8SUtils k8s, String namespace, String name) {
-                k8s.deletePersistentVolumeClaim(namespace, name);
+            protected void delete(KubernetesClient client, String namespace, String name) {
+                log.debug("Deleting persistentvolumeclaim {}", name);
+                client.persistentVolumeClaims().inNamespace(namespace).withName(name).delete();
             }
 
             @Override
-            protected boolean exists(K8SUtils k8s, String namespace, String name) {
-                return k8s.persistentVolumeClaimExists(namespace, name);
+            protected boolean exists(KubernetesClient client, String namespace, String name) {
+                return client.persistentVolumeClaims().inNamespace(namespace).withName(name).get() != null;
             }
         };
     }
