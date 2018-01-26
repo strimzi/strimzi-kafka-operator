@@ -4,6 +4,7 @@ import io.fabric8.openshift.api.model.BuildConfig;
 import io.fabric8.openshift.api.model.ImageStream;
 import io.strimzi.controller.cluster.OpenShiftUtils;
 import io.strimzi.controller.cluster.operations.OperationExecutor;
+import io.strimzi.controller.cluster.operations.kubernetes.PatchOperation;
 import io.strimzi.controller.cluster.resources.Source2Image;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;

@@ -11,7 +11,7 @@ import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class PatchOperation implements Operation<K8SUtils> {
+public class PatchOperation<U> implements Operation<U> {
     private static final Logger log = LoggerFactory.getLogger(PatchOperation.class.getName());
     private final Patchable patchable;
     private final KubernetesResource patch;
@@ -22,12 +22,12 @@ public class PatchOperation implements Operation<K8SUtils> {
     }
 
     @Override
-    public void execute(Vertx vertx, K8SUtils k8s, Handler<AsyncResult<Void>> handler) {
+    public void execute(Vertx vertx, U k8s, Handler<AsyncResult<Void>> handler) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
                     try {
                         log.info("Patching resource with {}", patch);
-                        k8s.patch(patchable, patch);
+                        patchable.patch(patch);
                         future.complete();
                     }
                     catch (Exception e) {
