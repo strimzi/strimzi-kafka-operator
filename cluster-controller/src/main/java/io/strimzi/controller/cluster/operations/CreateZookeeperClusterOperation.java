@@ -25,15 +25,12 @@ public class CreateZookeeperClusterOperation extends CreateClusterOperation<Zook
     @Override
     protected List<Future> creationFutures(K8SUtils k8s, ZookeeperCluster zk) {
         List<Future> result = new ArrayList<>(4);
-        // start creating configMap operation only if metrics are enabled,
-        // otherwise the future is already complete (for the "join")
-        Future<Void> futureConfigMap = Future.future();
+
         if (zk.isMetricsEnabled()) {
+            Future<Void> futureConfigMap = Future.future();
             OperationExecutor.getInstance().executeK8s(CreateOperation.createConfigMap(zk.generateMetricsConfigMap()), futureConfigMap.completer());
-        } else {
-            futureConfigMap.complete();
+            result.add(futureConfigMap);
         }
-        result.add(futureConfigMap);
 
         Future<Void> futureService = Future.future();
         OperationExecutor.getInstance().executeFabric8(CreateOperation.createService(zk.generateService()), futureService.completer());
