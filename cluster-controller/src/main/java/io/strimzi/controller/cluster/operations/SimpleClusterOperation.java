@@ -19,7 +19,6 @@ package io.strimzi.controller.cluster.operations;
 
 import io.strimzi.controller.cluster.K8SUtils;
 import io.strimzi.controller.cluster.resources.AbstractCluster;
-import io.strimzi.controller.cluster.resources.KafkaCluster;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -29,14 +28,13 @@ import io.vertx.core.shareddata.Lock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Abstract cluster creation, for a generic cluster type {@code C}.
  * This class applies the template method pattern, first obtaining the desired cluster configuration
  * ({@link #getCluster(K8SUtils, Handler, Lock)}),
- * then creating resources to match ({@link #creationFutures(K8SUtils, AbstractCluster)}).
+ * then creating resources to match ({@link #futures(K8SUtils, AbstractCluster)}).
  *
  * This class manages a per-cluster-type and per-cluster locking strategy so only one operation per cluster
  * can proceed at once.
@@ -74,7 +72,7 @@ public abstract class SimpleClusterOperation<C extends AbstractCluster> extends 
                     lock.release();
                     return;
                 }
-                List<Future> list = creationFutures(k8s, cluster);
+                List<Future> list = futures(k8s, cluster);
 
                 CompositeFuture.join(list).setHandler(ar -> {
                     if (ar.succeeded()) {
@@ -95,7 +93,7 @@ public abstract class SimpleClusterOperation<C extends AbstractCluster> extends 
     }
 
     /** Create the resources in Kubernetes according to the given {@code cluster} */
-    protected abstract List<Future> creationFutures(K8SUtils k8s, C cluster);
+    protected abstract List<Future> futures(K8SUtils k8s, C cluster);
 
     /** Get the desired Cluster instance */
     protected abstract C getCluster(K8SUtils k8s, Handler<AsyncResult<Void>> handler, Lock lock);

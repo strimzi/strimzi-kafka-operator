@@ -20,7 +20,7 @@ public class DeleteZookeeperClusterOperation extends SimpleClusterOperation<Zook
     }
 
     @Override
-    protected List<Future> creationFutures(K8SUtils k8s, ZookeeperCluster zk) {
+    protected List<Future> futures(K8SUtils k8s, ZookeeperCluster zk) {
         boolean deleteClaims = zk.getStorage().type() == Storage.StorageType.PERSISTENT_CLAIM
                 && zk.getStorage().isDeleteClaim();
         List<Future> result = new ArrayList<>(4 + (deleteClaims ? zk.getReplicas() : 0));

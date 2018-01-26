@@ -19,7 +19,7 @@ public class DeleteKafkaConnectClusterOperation extends SimpleClusterOperation<K
     }
 
     @Override
-    protected List<Future> creationFutures(K8SUtils k8s, KafkaConnectCluster connect) {
+    protected List<Future> futures(K8SUtils k8s, KafkaConnectCluster connect) {
         List<Future> result = new ArrayList<>(3);
 
         Future<Void> futureService = Future.future();

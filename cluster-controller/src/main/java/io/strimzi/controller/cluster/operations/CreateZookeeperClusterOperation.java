@@ -23,7 +23,7 @@ public class CreateZookeeperClusterOperation extends SimpleClusterOperation<Zook
     }
 
     @Override
-    protected List<Future> creationFutures(K8SUtils k8s, ZookeeperCluster zk) {
+    protected List<Future> futures(K8SUtils k8s, ZookeeperCluster zk) {
         List<Future> result = new ArrayList<>(4);
 
         if (zk.isMetricsEnabled()) {
