@@ -28,13 +28,11 @@ public class CreateKafkaClusterOperation extends CreateClusterOperation<KafkaClu
         List<Future> result = new ArrayList<>(4);
         // start creating configMap operation only if metrics are enabled,
         // otherwise the future is already complete (for the "join")
-        Future<Void> futureConfigMap = Future.future();
         if (kafka.isMetricsEnabled()) {
+            Future<Void> futureConfigMap = Future.future();
             OperationExecutor.getInstance().executeK8s(CreateOperation.createConfigMap(kafka.generateMetricsConfigMap()), futureConfigMap.completer());
-        } else {
-            futureConfigMap.complete();
+            result.add(futureConfigMap);
         }
-        result.add(futureConfigMap);
 
         Future<Void> futureService = Future.future();
         OperationExecutor.getInstance().executeFabric8(CreateOperation.createService(kafka.generateService()), futureService.completer());
