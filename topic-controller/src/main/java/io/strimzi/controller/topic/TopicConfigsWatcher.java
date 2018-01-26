@@ -17,82 +17,26 @@
 
 package io.strimzi.controller.topic;
 
-import io.strimzi.controller.topic.zk.Zk;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * ZooKeeper watcher for child znodes of {@code /configs/topics},
  * calling {@link Controller#onTopicConfigChanged(TopicName, Handler)}
  * for changed children.
  */
-class TopicConfigsWatcher {
-
-    private final static Logger logger = LoggerFactory.getLogger(TopicConfigsWatcher.class);
+class TopicConfigsWatcher extends ZkWatcher {
 
     private static final String CONFIGS_ZNODE = "/config/topics";
 
-    private final Controller controller;
-
-    private final ConcurrentHashMap<String,Boolean> children = new ConcurrentHashMap<>();
-    private volatile int state = 0;
-    private volatile  Zk zk;
-
     TopicConfigsWatcher(Controller controller) {
-        this.controller = controller;
+        super(controller, CONFIGS_ZNODE);
     }
 
-    public void addChild(String child) {
-        logger.debug("Watching topic {} for config changes", child);
-        this.children.put(child, Boolean.FALSE);
-        String path = getPath(child);
-        Handler<AsyncResult<byte[]>> handler = dataResult -> {
-            if (dataResult.succeeded()) {
-                this.children.compute(child, (k, v) -> {
-                    if (Boolean.TRUE.equals(v)) {
-                        logger.debug("Config change for topic {}", child);
-                        controller.onTopicConfigChanged(new TopicName(child), ar2 -> {
-                            logger.info("Reconciliation result due to topic config change: {}", ar2);
-                        });
-                    }
-                    return Boolean.TRUE;
-                });
-            } else {
-                logger.error("While getting or watching znode {}", path, dataResult.cause());
-            }
-        };
-        zk.watchData(path, handler).getData(path, handler);
-    }
-
-    private String getPath(String child) {
-        return CONFIGS_ZNODE + "/" + child;
-    }
-
-    boolean watching(String child) {
-        return children.containsKey(child);
-    }
-
-    public synchronized void removeChild(String child) {
-        logger.debug("Unwatching topic {} for config changes", child);
-        this.children.remove(child);
-        zk.unwatchData(getPath(child));
-    }
-
-    public void start(Zk zk) {
-        this.zk = zk;
-        this.state = 1;
-    }
-
-
-    public void stop() {
-        this.state = 2;
-    }
-
-    public boolean started() {
-        return state == 1;
+    @Override
+    protected void notifyController(String child) {
+        log.debug("Config change for topic {}", child);
+        controller.onTopicConfigChanged(new TopicName(child), ar2 -> {
+            log.info("Reconciliation result due to topic config change: {}", ar2);
+        });
     }
 }

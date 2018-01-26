@@ -63,10 +63,6 @@ class TopicsWatcher {
         this.state = 2;
     }
 
-    boolean stopped() {
-        return this.state == 3;
-    }
-
     boolean started() {
         return this.state == 1;
     }
