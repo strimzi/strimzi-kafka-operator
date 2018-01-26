@@ -20,7 +20,7 @@ public class DeleteKafkaClusterOperation extends SimpleClusterOperation<KafkaClu
     }
 
     @Override
-    protected List<Future> creationFutures(K8SUtils k8s, KafkaCluster kafka) {
+    protected List<Future> futures(K8SUtils k8s, KafkaCluster kafka) {
         boolean deleteClaims = kafka.getStorage().type() == Storage.StorageType.PERSISTENT_CLAIM
                 && kafka.getStorage().isDeleteClaim();
         List<Future> result = new ArrayList<>(4 + (deleteClaims ? kafka.getReplicas() : 0));

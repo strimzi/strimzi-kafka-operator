@@ -23,7 +23,7 @@ public class CreateKafkaClusterOperation extends SimpleClusterOperation<KafkaClu
     }
 
     @Override
-    protected List<Future> creationFutures(K8SUtils k8s, KafkaCluster kafka) {
+    protected List<Future> futures(K8SUtils k8s, KafkaCluster kafka) {
         List<Future> result = new ArrayList<>(4);
         // start creating configMap operation only if metrics are enabled,
         // otherwise the future is already complete (for the "join")
