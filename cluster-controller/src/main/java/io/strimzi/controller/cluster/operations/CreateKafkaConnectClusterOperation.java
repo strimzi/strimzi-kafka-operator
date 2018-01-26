@@ -25,7 +25,7 @@ public class CreateKafkaConnectClusterOperation extends CreateClusterOperation<K
 
     @Override
     protected List<Future> creationFutures(K8SUtils k8s, KafkaConnectCluster connect) {
-        List<Future> result = new ArrayList<>(4);
+        List<Future> result = new ArrayList<>(3);
         Future<Void> futureService = Future.future();
         OperationExecutor.getInstance().executeFabric8(CreateOperation.createService(connect.generateService()), futureService.completer());
         result.add(futureService);
