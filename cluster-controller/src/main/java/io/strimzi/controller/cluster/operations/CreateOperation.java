@@ -79,7 +79,7 @@ public abstract class CreateOperation<U, R extends HasMetadata> implements Opera
                         handler.handle(Future.succeededFuture());
                     }
                     else {
-                        log.error("{} creation failed: {}", resourceKind, res.cause().toString());
+                        log.error("{} creation failed:", resourceKind, res.cause());
                         handler.handle(Future.failedFuture(res.cause()));
                     }
                 }
