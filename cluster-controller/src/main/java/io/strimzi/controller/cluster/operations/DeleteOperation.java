@@ -173,4 +173,18 @@ public abstract class DeleteOperation<U> implements Operation<U> {
             }
         };
     }
+
+    public static DeleteOperation<K8SUtils> deletePersistentVolumeClaim(String namespace, String name) {
+        return new DeleteOperation<K8SUtils>("PersistentVolumeClaim", namespace, name) {
+            @Override
+            protected void delete(K8SUtils k8s, String namespace, String name) {
+                k8s.deletePersistentVolumeClaim(namespace, name);
+            }
+
+            @Override
+            protected boolean exists(K8SUtils k8s, String namespace, String name) {
+                return k8s.persistentVolumeClaimExists(namespace, name);
+            }
+        };
+    }
 }
