@@ -621,19 +621,53 @@ public class Controller {
             @Override
             public void handle(Future<Void> fut) {
 
-                // in order to get updated information about the partitions change we have to wait
-                // a little bit before using the Admin Client API for getting such an information
-                vertx.setTimer(5000, t -> {
+                Handler<AsyncResult<TopicMetadata>> handler = new Handler<AsyncResult<TopicMetadata>>() {
 
-                    kafka.topicMetadata(topicName, metadataResult -> {
+                    private final BackOff backOff = new BackOff();
+
+                    @Override
+                    public void handle(AsyncResult<TopicMetadata> metadataResult) {
+
                         if (metadataResult.succeeded()) {
-                            Topic topic = TopicSerialization.fromTopicMetadata(metadataResult.result());
-                            Controller.this.reconcileOnTopicChange(topicName, topic, fut.completer());
+
+                            // getting topic metadata from Kafka
+                            Topic kafkaTopic = TopicSerialization.fromTopicMetadata(metadataResult.result());
+
+                            // getting topic information from the private store
+                            topicStore.read(topicName, topicResult -> {
+
+                                // if partitions aren't changed on Kafka yet, we retry with exponential backoff
+                                if (topicResult.result().getNumPartitions() == kafkaTopic.getNumPartitions()) {
+
+                                    long delay;
+                                    try {
+                                        delay = backOff.delayMs();
+                                        logger.debug("Topic {} partitions changed, but metadata not updated in Kafka yet: Backing off for {}ms", topicName, delay);
+                                    } catch (MaxAttemptsExceededException e) {
+                                        logger.info("Topic {} partitions changed, but metadata not updated in Kafka after {}ms, giving up for now", topicName, backOff.totalDelayMs());
+                                        fut.fail(e);
+                                        return;
+                                    }
+
+                                    if (delay < 1) {
+                                        // vertx won't tolerate a zero delay
+                                        vertx.runOnContext(timerId -> kafka.topicMetadata(topicName, this));
+                                    } else {
+                                        vertx.setTimer(TimeUnit.MILLISECONDS.convert(delay, TimeUnit.MILLISECONDS),
+                                                timerId -> kafka.topicMetadata(topicName, this));
+                                    }
+                                } else {
+                                    logger.info("Topic {} partitions changed to {}", topicName, kafkaTopic.getNumPartitions());
+                                    Controller.this.reconcileOnTopicChange(topicName, kafkaTopic, fut.completer());
+                                }
+                            });
+
                         } else {
                             fut.fail(metadataResult.cause());
                         }
-                    });
-                });
+                    }
+                };
+                kafka.topicMetadata(topicName, handler);
             }
         };
         inFlight.enqueue(topicName, resultHandler, futureHandler);
