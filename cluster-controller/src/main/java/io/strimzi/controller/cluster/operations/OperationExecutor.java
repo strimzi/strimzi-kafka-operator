@@ -1,6 +1,8 @@
 package io.strimzi.controller.cluster.operations;
 
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.controller.cluster.K8SUtils;
+import io.strimzi.controller.cluster.OpenShiftUtils;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -32,8 +34,16 @@ public class OperationExecutor {
         this.k8s = k8s;
     }
 
-    public void execute(Operation op, Handler<AsyncResult<Void>> handler) {
+    public void executeK8s(Operation<K8SUtils> op, Handler<AsyncResult<Void>> handler) {
         op.execute(vertx, k8s, handler);
+    }
+
+    public void executeOpenShift(Operation<OpenShiftUtils> op, Handler<AsyncResult<Void>> handler) {
+        op.execute(vertx, k8s.getOpenShiftUtils(), handler);
+    }
+
+    public void executeFabric8(Operation<KubernetesClient> op, Handler<AsyncResult<Void>> handler) {
+        op.execute(vertx, k8s.getKubernetesClient(), handler);
     }
 
     private Vertx getVertx() {

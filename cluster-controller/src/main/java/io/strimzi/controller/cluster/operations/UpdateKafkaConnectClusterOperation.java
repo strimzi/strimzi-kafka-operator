@@ -83,7 +83,7 @@ public class UpdateKafkaConnectClusterOperation extends KafkaConnectClusterOpera
 
         if (diff.getScaleDown())    {
             log.info("Scaling down deployment {} in namespace {}", connect.getName(), namespace);
-            OperationExecutor.getInstance().execute(new ScaleDownOperation(k8s.getDeploymentResource(namespace, connect.getName()), connect.getReplicas()), scaleDown.completer());
+            OperationExecutor.getInstance().executeK8s(new ScaleDownOperation(k8s.getDeploymentResource(namespace, connect.getName()), connect.getReplicas()), scaleDown.completer());
         }
         else {
             scaleDown.complete();
@@ -95,7 +95,7 @@ public class UpdateKafkaConnectClusterOperation extends KafkaConnectClusterOpera
     private Future<Void> patchService(KafkaConnectCluster connect, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchService = Future.future();
-            OperationExecutor.getInstance().execute(new PatchOperation(k8s.getServiceResource(namespace, connect.getName()), connect.patchService(k8s.getService(namespace, connect.getName()))), patchService.completer());
+            OperationExecutor.getInstance().executeK8s(new PatchOperation(k8s.getServiceResource(namespace, connect.getName()), connect.patchService(k8s.getService(namespace, connect.getName()))), patchService.completer());
             return patchService;
         }
             else
@@ -107,7 +107,7 @@ public class UpdateKafkaConnectClusterOperation extends KafkaConnectClusterOpera
     private Future<Void> patchDeployment(KafkaConnectCluster connect, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchDeployment = Future.future();
-            OperationExecutor.getInstance().execute(new PatchOperation(k8s.getDeploymentResource(namespace, connect.getName()), connect.patchDeployment(k8s.getDeployment(namespace, connect.getName()))), patchDeployment.completer());
+            OperationExecutor.getInstance().executeK8s(new PatchOperation(k8s.getDeploymentResource(namespace, connect.getName()), connect.patchDeployment(k8s.getDeployment(namespace, connect.getName()))), patchDeployment.completer());
             return patchDeployment;
         }
         else
@@ -129,17 +129,17 @@ public class UpdateKafkaConnectClusterOperation extends KafkaConnectClusterOpera
             if (diff.getS2i() == Source2Image.Source2ImageDiff.CREATE) {
                 log.info("Creating S2I deployment {} in namespace {}", connect.getName(), namespace);
                 Future<Void> createS2I = Future.future();
-                OperationExecutor.getInstance().execute(new CreateS2IOperation(connect.getS2I()), createS2I.completer());
+                OperationExecutor.getInstance().executeOpenShift(new CreateS2IOperation(connect.getS2I()), createS2I.completer());
                 return createS2I;
             } else if (diff.getS2i() == Source2Image.Source2ImageDiff.DELETE) {
                 log.info("Deleting S2I deployment {} in namespace {}", connect.getName(), namespace);
                 Future<Void> deleteS2I = Future.future();
-                OperationExecutor.getInstance().execute(new DeleteS2IOperation(new Source2Image(namespace, connect.getName())), deleteS2I.completer());
+                OperationExecutor.getInstance().executeOpenShift(new DeleteS2IOperation(new Source2Image(namespace, connect.getName())), deleteS2I.completer());
                 return deleteS2I;
             } else {
                 log.info("Updating S2I deployment {} in namespace {}", connect.getName(), namespace);
                 Future<Void> patchS2I = Future.future();
-                OperationExecutor.getInstance().execute(new UpdateS2IOperation(connect.getS2I()), patchS2I.completer());
+                OperationExecutor.getInstance().executeOpenShift(new UpdateS2IOperation(connect.getS2I()), patchS2I.completer());
                 return patchS2I;
             }
         } else {
@@ -151,7 +151,7 @@ public class UpdateKafkaConnectClusterOperation extends KafkaConnectClusterOpera
         Future<Void> scaleUp = Future.future();
 
         if (diff.getScaleUp()) {
-            OperationExecutor.getInstance().execute(new ScaleUpOperation(k8s.getDeploymentResource(namespace, connect.getName()), connect.getReplicas()), scaleUp.completer());
+            OperationExecutor.getInstance().executeK8s(new ScaleUpOperation(k8s.getDeploymentResource(namespace, connect.getName()), connect.getReplicas()), scaleUp.completer());
         }
         else {
             scaleUp.complete();

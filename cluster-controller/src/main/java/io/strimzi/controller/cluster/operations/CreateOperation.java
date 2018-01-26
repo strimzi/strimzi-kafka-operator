@@ -22,6 +22,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.openshift.api.model.BuildConfig;
 import io.fabric8.openshift.api.model.ImageStream;
 import io.strimzi.controller.cluster.K8SUtils;
@@ -129,17 +130,18 @@ public abstract class CreateOperation<U, R extends HasMetadata> implements Opera
         };
     }
 
-    public static CreateOperation<K8SUtils, Service> createService(Service service) {
-        return new CreateOperation<K8SUtils, Service>("Service", service) {
+    public static CreateOperation<KubernetesClient, Service> createService(Service service) {
+        return new CreateOperation<KubernetesClient, Service>("Service", service) {
 
             @Override
-            protected void create(K8SUtils k8s, Service resource) {
-                k8s.createService(resource);
+            protected void create(KubernetesClient k8s, Service resource) {
+                log.info("Creating service {}", resource.getMetadata().getName());
+                k8s.services().createOrReplace(resource);
             }
 
             @Override
-            protected boolean exists(K8SUtils k8s, String namespace, String name) {
-                return k8s.serviceExists(namespace, name);
+            protected boolean exists(KubernetesClient client, String namespace, String name) {
+                return client.services().inNamespace(namespace).withName(name).get() != null;
             }
         };
     }

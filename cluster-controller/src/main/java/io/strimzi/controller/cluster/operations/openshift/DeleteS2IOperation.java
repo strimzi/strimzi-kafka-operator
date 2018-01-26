@@ -38,13 +38,13 @@ public class DeleteS2IOperation extends S2IOperation {
         log.info("Deleting S2I {} in namespace {}", s2i.getName(), s2i.getNamespace());
 
         Future<Void> futureSourceImageStream = Future.future();
-        OperationExecutor.getInstance().execute(new DeleteImageStreamOperation(s2i.getNamespace(), s2i.getSourceImageStreamName()), futureSourceImageStream.completer());
+        OperationExecutor.getInstance().executeOpenShift(new DeleteImageStreamOperation(s2i.getNamespace(), s2i.getSourceImageStreamName()), futureSourceImageStream.completer());
 
         Future<Void> futureTargetImageStream = Future.future();
-        OperationExecutor.getInstance().execute(new DeleteImageStreamOperation(s2i.getNamespace(), s2i.getName()), futureTargetImageStream.completer());
+        OperationExecutor.getInstance().executeOpenShift(new DeleteImageStreamOperation(s2i.getNamespace(), s2i.getName()), futureTargetImageStream.completer());
 
         Future<Void> futureBuildConfig = Future.future();
-        OperationExecutor.getInstance().execute(new DeleteBuildConfigOperation(s2i.getNamespace(), s2i.getName()), futureBuildConfig.completer());
+        OperationExecutor.getInstance().executeOpenShift(new DeleteBuildConfigOperation(s2i.getNamespace(), s2i.getName()), futureBuildConfig.completer());
 
         CompositeFuture.join(futureSourceImageStream, futureTargetImageStream, futureBuildConfig).setHandler(ar -> {
             if (ar.succeeded()) {
