@@ -28,15 +28,15 @@ public class DeleteKafkaConnectClusterOperation extends KafkaConnectClusterOpera
                 log.info("Deleting Kafka Connect cluster {} from namespace {}", connect.getName(), namespace);
 
                 Future<Void> futureService = Future.future();
-                OperationExecutor.getInstance().execute(new DeleteServiceOperation(namespace, connect.getName()), futureService.completer());
+                OperationExecutor.getInstance().executeK8s(new DeleteServiceOperation(namespace, connect.getName()), futureService.completer());
 
                 Future<Void> futureDeployment = Future.future();
-                OperationExecutor.getInstance().execute(new DeleteDeploymentOperation(namespace, connect.getName()), futureDeployment.completer());
+                OperationExecutor.getInstance().executeK8s(new DeleteDeploymentOperation(namespace, connect.getName()), futureDeployment.completer());
 
                 Future<Void> futureS2I;
                 if (connect.getS2I() != null) {
                     futureS2I = Future.future();
-                    OperationExecutor.getInstance().execute(new DeleteS2IOperation(connect.getS2I()), futureS2I.completer());
+                    OperationExecutor.getInstance().executeOpenShift(new DeleteS2IOperation(connect.getS2I()), futureS2I.completer());
                 } else {
                     futureS2I = Future.succeededFuture();
                 }

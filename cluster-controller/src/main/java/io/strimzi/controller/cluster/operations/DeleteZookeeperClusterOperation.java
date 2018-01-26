@@ -36,19 +36,19 @@ public class DeleteZookeeperClusterOperation extends ZookeeperClusterOperation {
                 // otherwise the future is already complete (for the "join")
                 Future<Void> futureConfigMap = Future.future();
                 if (zk.isMetricsEnabled()) {
-                    OperationExecutor.getInstance().execute(new DeleteConfigMapOperation(namespace, zk.getMetricsConfigName()), futureConfigMap.completer());
+                    OperationExecutor.getInstance().executeK8s(new DeleteConfigMapOperation(namespace, zk.getMetricsConfigName()), futureConfigMap.completer());
                 } else {
                     futureConfigMap.complete();
                 }
 
                 Future<Void> futureService = Future.future();
-                OperationExecutor.getInstance().execute(new DeleteServiceOperation(namespace, zk.getName()), futureService.completer());
+                OperationExecutor.getInstance().executeK8s(new DeleteServiceOperation(namespace, zk.getName()), futureService.completer());
 
                 Future<Void> futureHeadlessService = Future.future();
-                OperationExecutor.getInstance().execute(new DeleteServiceOperation(namespace, zk.getHeadlessName()), futureHeadlessService.completer());
+                OperationExecutor.getInstance().executeK8s(new DeleteServiceOperation(namespace, zk.getHeadlessName()), futureHeadlessService.completer());
 
                 Future<Void> futureStatefulSet = Future.future();
-                OperationExecutor.getInstance().execute(new DeleteStatefulSetOperation(namespace, zk.getName()), futureStatefulSet.completer());
+                OperationExecutor.getInstance().executeK8s(new DeleteStatefulSetOperation(namespace, zk.getName()), futureStatefulSet.completer());
 
                 Future<Void> futurePersistentVolumeClaim = Future.future();
                 if ((zk.getStorage().type() == Storage.StorageType.PERSISTENT_CLAIM) && zk.getStorage().isDeleteClaim()) {
@@ -57,7 +57,7 @@ public class DeleteZookeeperClusterOperation extends ZookeeperClusterOperation {
                     for (int i = 0; i < zk.getReplicas(); i++) {
                         Future<Void> f = Future.future();
                         futurePersistentVolumeClaims.add(f);
-                        OperationExecutor.getInstance().execute(new DeletePersistentVolumeClaimOperation(namespace, zk.getVolumeName() + "-" + zk.getName() + "-" + i), f.completer());
+                        OperationExecutor.getInstance().executeK8s(new DeletePersistentVolumeClaimOperation(namespace, zk.getVolumeName() + "-" + zk.getName() + "-" + i), f.completer());
                     }
                     CompositeFuture.join(futurePersistentVolumeClaims).setHandler(ar -> {
                         if (ar.succeeded()) {

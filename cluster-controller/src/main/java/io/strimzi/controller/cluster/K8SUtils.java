@@ -55,29 +55,10 @@ public class K8SUtils {
     /*
       CREATE methods
      */
-    public void createService(String namespace, Service svc) {
-        log.info("Creating service {}", svc.getMetadata().getName());
-        client.services().inNamespace(namespace).createOrReplace(svc);
-    }
-
-    public void createService(Service svc) {
-        log.info("Creating service {}", svc.getMetadata().getName());
-        client.services().createOrReplace(svc);
-    }
-
-    public void createStatefulSet(String namespace, StatefulSet ss) {
-        log.info("Creating stateful set {}", ss.getMetadata().getName());
-        client.apps().statefulSets().inNamespace(namespace).createOrReplace(ss);
-    }
 
     public void createStatefulSet(StatefulSet ss) {
         log.info("Creating stateful set {}", ss.getMetadata().getName());
         client.apps().statefulSets().createOrReplace(ss);
-    }
-
-    public void createDeployment(String namespace, Deployment dep) {
-        log.info("Creating deployment {}", dep.getMetadata().getName());
-        client.extensions().deployments().inNamespace(namespace).createOrReplace(dep);
     }
 
     public void createDeployment(Deployment dep) {

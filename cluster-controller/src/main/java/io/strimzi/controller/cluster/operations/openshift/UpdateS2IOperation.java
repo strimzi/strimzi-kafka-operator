@@ -42,13 +42,13 @@ public class UpdateS2IOperation extends S2IOperation {
         try {
             if (s2i.diff(os).getDifferent()) {
                 Future<Void> futureSourceImageStream = Future.future();
-                OperationExecutor.getInstance().execute(new PatchOperation(os.getResource(s2i.getNamespace(), s2i.getSourceImageStreamName(), ImageStream.class), s2i.patchSourceImageStream((ImageStream) os.get(s2i.getNamespace(), s2i.getSourceImageStreamName(), ImageStream.class))), futureSourceImageStream.completer());
+                OperationExecutor.getInstance().executeOpenShift(new PatchOperation(os.getResource(s2i.getNamespace(), s2i.getSourceImageStreamName(), ImageStream.class), s2i.patchSourceImageStream((ImageStream) os.get(s2i.getNamespace(), s2i.getSourceImageStreamName(), ImageStream.class))), futureSourceImageStream.completer());
 
                 Future<Void> futureTargetImageStream = Future.future();
-                OperationExecutor.getInstance().execute(new PatchOperation(os.getResource(s2i.getNamespace(), s2i.getName(), ImageStream.class), s2i.patchTargetImageStream((ImageStream) os.get(s2i.getNamespace(), s2i.getName(), ImageStream.class))), futureTargetImageStream.completer());
+                OperationExecutor.getInstance().executeOpenShift(new PatchOperation(os.getResource(s2i.getNamespace(), s2i.getName(), ImageStream.class), s2i.patchTargetImageStream((ImageStream) os.get(s2i.getNamespace(), s2i.getName(), ImageStream.class))), futureTargetImageStream.completer());
 
                 Future<Void> futureBuildConfig = Future.future();
-                OperationExecutor.getInstance().execute(new PatchOperation(os.getResource(s2i.getNamespace(), s2i.getName(), BuildConfig.class), s2i.patchBuildConfig((BuildConfig) os.get(s2i.getNamespace(), s2i.getName(), BuildConfig.class))), futureBuildConfig.completer());
+                OperationExecutor.getInstance().executeOpenShift(new PatchOperation(os.getResource(s2i.getNamespace(), s2i.getName(), BuildConfig.class), s2i.patchBuildConfig((BuildConfig) os.get(s2i.getNamespace(), s2i.getName(), BuildConfig.class))), futureBuildConfig.completer());
 
                 CompositeFuture.join(futureSourceImageStream, futureTargetImageStream, futureBuildConfig).setHandler(ar -> {
                     if (ar.succeeded()) {

@@ -37,19 +37,19 @@ public class CreateZookeeperClusterOperation extends ZookeeperClusterOperation {
                 // otherwise the future is already complete (for the "join")
                 Future<Void> futureConfigMap = Future.future();
                 if (zk.isMetricsEnabled()) {
-                    OperationExecutor.getInstance().execute(CreateOperation.createConfigMap(zk.generateMetricsConfigMap()), futureConfigMap.completer());
+                    OperationExecutor.getInstance().executeK8s(CreateOperation.createConfigMap(zk.generateMetricsConfigMap()), futureConfigMap.completer());
                 } else {
                     futureConfigMap.complete();
                 }
 
                 Future<Void> futureService = Future.future();
-                OperationExecutor.getInstance().execute(CreateOperation.createService(zk.generateService()), futureService.completer());
+                OperationExecutor.getInstance().executeFabric8(CreateOperation.createService(zk.generateService()), futureService.completer());
 
                 Future<Void> futureHeadlessService = Future.future();
-                OperationExecutor.getInstance().execute(CreateOperation.createService(zk.generateHeadlessService()), futureHeadlessService.completer());
+                OperationExecutor.getInstance().executeFabric8(CreateOperation.createService(zk.generateHeadlessService()), futureHeadlessService.completer());
 
                 Future<Void> futureStatefulSet = Future.future();
-                OperationExecutor.getInstance().execute(CreateOperation.createStatefulSet(zk.generateStatefulSet(k8s.isOpenShift())), futureStatefulSet.completer());
+                OperationExecutor.getInstance().executeK8s(CreateOperation.createStatefulSet(zk.generateStatefulSet(k8s.isOpenShift())), futureStatefulSet.completer());
 
                 CompositeFuture.join(futureConfigMap, futureService, futureHeadlessService, futureStatefulSet).setHandler(ar -> {
                     if (ar.succeeded()) {

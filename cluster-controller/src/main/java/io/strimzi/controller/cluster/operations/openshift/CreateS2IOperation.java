@@ -41,13 +41,13 @@ public class CreateS2IOperation extends S2IOperation {
         log.info("Creating S2I {} in namespace {}", s2i.getName(), s2i.getNamespace());
 
         Future<Void> futureSourceImageStream = Future.future();
-        OperationExecutor.getInstance().execute(CreateOperation.createImageStream(s2i.generateSourceImageStream()), futureSourceImageStream.completer());
+        OperationExecutor.getInstance().executeOpenShift(CreateOperation.createImageStream(s2i.generateSourceImageStream()), futureSourceImageStream.completer());
 
         Future<Void> futureTargetImageStream = Future.future();
-        OperationExecutor.getInstance().execute(CreateOperation.createImageStream(s2i.generateTargetImageStream()), futureTargetImageStream.completer());
+        OperationExecutor.getInstance().executeOpenShift(CreateOperation.createImageStream(s2i.generateTargetImageStream()), futureTargetImageStream.completer());
 
         Future<Void> futureBuildConfig = Future.future();
-        OperationExecutor.getInstance().execute(CreateOperation.createBuildConfig(s2i.generateBuildConfig()), futureBuildConfig.completer());
+        OperationExecutor.getInstance().executeOpenShift(CreateOperation.createBuildConfig(s2i.generateBuildConfig()), futureBuildConfig.completer());
 
         CompositeFuture.join(futureSourceImageStream, futureTargetImageStream, futureBuildConfig).setHandler(ar -> {
             if (ar.succeeded()) {

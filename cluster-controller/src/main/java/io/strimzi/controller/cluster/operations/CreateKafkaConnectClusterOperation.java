@@ -25,15 +25,15 @@ public class CreateKafkaConnectClusterOperation extends KafkaConnectClusterOpera
                 log.info("Creating Kafka Connect cluster {} in namespace {}", connect.getName(), namespace);
 
                 Future<Void> futureService = Future.future();
-                OperationExecutor.getInstance().execute(CreateOperation.createService(connect.generateService()), futureService.completer());
+                OperationExecutor.getInstance().executeFabric8(CreateOperation.createService(connect.generateService()), futureService.completer());
 
                 Future<Void> futureDeployment = Future.future();
-                OperationExecutor.getInstance().execute(CreateOperation.createDeployment(connect.generateDeployment()), futureDeployment.completer());
+                OperationExecutor.getInstance().executeK8s(CreateOperation.createDeployment(connect.generateDeployment()), futureDeployment.completer());
 
                 Future<Void> futureS2I;
                 if (connect.getS2I() != null) {
                     futureS2I = Future.future();
-                    OperationExecutor.getInstance().execute(new CreateS2IOperation(connect.getS2I()), futureS2I.completer());
+                    OperationExecutor.getInstance().executeOpenShift(new CreateS2IOperation(connect.getS2I()), futureS2I.completer());
                 } else {
                     futureS2I = Future.succeededFuture();
                 }
