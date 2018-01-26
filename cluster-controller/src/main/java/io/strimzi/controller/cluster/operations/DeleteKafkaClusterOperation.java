@@ -1,7 +1,6 @@
 package io.strimzi.controller.cluster.operations;
 
 import io.strimzi.controller.cluster.K8SUtils;
-import io.strimzi.controller.cluster.operations.kubernetes.DeletePersistentVolumeClaimOperation;
 import io.strimzi.controller.cluster.resources.KafkaCluster;
 import io.strimzi.controller.cluster.resources.Storage;
 import io.vertx.core.*;
@@ -46,7 +45,7 @@ public class DeleteKafkaClusterOperation extends SimpleClusterOperation<KafkaClu
         if (deleteClaims) {
             for (int i = 0; i < kafka.getReplicas(); i++) {
                 Future<Void> f = Future.future();
-                OperationExecutor.getInstance().executeK8s(new DeletePersistentVolumeClaimOperation(namespace, kafka.getVolumeName() + "-" + kafka.getName() + "-" + i), f.completer());
+                OperationExecutor.getInstance().executeK8s(DeleteOperation.deletePersistentVolumeClaim(namespace, kafka.getVolumeName() + "-" + kafka.getName() + "-" + i), f.completer());
                 result.add(f);
             }
         }

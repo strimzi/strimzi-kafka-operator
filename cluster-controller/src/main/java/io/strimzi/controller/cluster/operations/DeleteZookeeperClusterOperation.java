@@ -1,7 +1,6 @@
 package io.strimzi.controller.cluster.operations;
 
 import io.strimzi.controller.cluster.K8SUtils;
-import io.strimzi.controller.cluster.operations.kubernetes.DeletePersistentVolumeClaimOperation;
 import io.strimzi.controller.cluster.resources.Storage;
 import io.strimzi.controller.cluster.resources.ZookeeperCluster;
 import io.vertx.core.*;
@@ -49,7 +48,7 @@ public class DeleteZookeeperClusterOperation extends SimpleClusterOperation<Zook
         if (deleteClaims) {
             for (int i = 0; i < zk.getReplicas(); i++) {
                 Future<Void> f = Future.future();
-                OperationExecutor.getInstance().executeK8s(new DeletePersistentVolumeClaimOperation(namespace, zk.getVolumeName() + "-" + zk.getName() + "-" + i), f.completer());
+                OperationExecutor.getInstance().executeK8s(DeleteOperation.deletePersistentVolumeClaim(namespace, zk.getVolumeName() + "-" + zk.getName() + "-" + i), f.completer());
                 result.add(f);
             }
         }
