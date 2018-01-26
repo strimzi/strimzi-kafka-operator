@@ -35,8 +35,10 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AlterConfigsResult;
 import org.apache.kafka.clients.admin.ConfigEntry;
+import org.apache.kafka.clients.admin.CreatePartitionsResult;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
 import org.apache.kafka.clients.admin.DeleteTopicsResult;
+import org.apache.kafka.clients.admin.NewPartitions;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
@@ -294,9 +296,39 @@ public class ControllerIntegrationTest {
         }, timeout, "Expected the configmap to have been deleted by now");
     }
 
+    private void alterTopicNumPartitions(TestContext context, String topicName, String configMapName) throws InterruptedException, ExecutionException {
+        int changedValue = 2;
+
+        NewPartitions newPartitions = NewPartitions.increaseTo(changedValue);
+        Map<String, NewPartitions> map = new HashMap<>(1);
+        map.put(topicName, newPartitions);
+
+        CreatePartitionsResult createPartitionsResult = adminClient.createPartitions(map);
+        createPartitionsResult.all().get();
+
+        // Wait for the configmap to be modified
+        waitFor(context, () -> {
+            ConfigMap cm = kubeClient.configMaps().inNamespace(namespace).withName(configMapName).get();
+            logger.info("Polled configmap {}, waiting for partitions change", configMapName);
+            int gotValue = TopicSerialization.fromConfigMap(cm).getNumPartitions();
+            logger.info("Got value {}", gotValue);
+            return (changedValue == gotValue);
+        }, timeout, "Expected the configmap to have been deleted by now");
+    }
+
     private org.apache.kafka.clients.admin.Config getTopicConfig(ConfigResource configResource) {
         try {
             return adminClient.describeConfigs(singletonList(configResource)).values().get(configResource).get();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private int getTopicNumPartitions(String topicName) {
+        try {
+            return adminClient.describeTopics(singletonList(topicName)).values().get(topicName).get().partitions().size();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         } catch (ExecutionException e) {
@@ -331,6 +363,11 @@ public class ControllerIntegrationTest {
     private void createAndDeleteTopic(TestContext context, String topicName) throws InterruptedException, ExecutionException {
         String configMapName = createTopic(context, topicName);
         deleteTopic(context, topicName, configMapName);
+    }
+
+    private void createAndAlterNumPartitions(TestContext context, String topicName) throws InterruptedException, ExecutionException {
+        String configMapName = createTopic(context, topicName);
+        alterTopicNumPartitions(context, topicName, configMapName);
     }
 
 
@@ -423,9 +460,8 @@ public class ControllerIntegrationTest {
     }
 
     @Test
-    @Ignore
-    public void testTopicNumPartitionsChanged(TestContext context) {
-        context.fail("Implement this");
+    public void testTopicNumPartitionsChanged(TestContext context) throws Exception {
+        createAndAlterNumPartitions(context, "test-topic-partitions-changed");
     }
 
     @Test
