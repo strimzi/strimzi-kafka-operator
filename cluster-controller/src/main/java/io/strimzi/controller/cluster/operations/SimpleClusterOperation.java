@@ -39,25 +39,27 @@ import java.util.List;
  * then creating resources to match ({@link #creationFutures(K8SUtils, AbstractCluster)}).
  *
  * This class manages a per-cluster-type and per-cluster locking strategy so only one operation per cluster
- * can proceed at once. 
+ * can proceed at once.
  * @param <C>
  */
-public abstract class CreateClusterOperation<C extends AbstractCluster> extends ClusterOperation {
+public abstract class SimpleClusterOperation<C extends AbstractCluster> extends ClusterOperation {
     private static final Logger log = LoggerFactory.getLogger(CreateKafkaClusterOperation.class.getName());
     private final String clusterType;
+    private final String operationType;
 
-    protected CreateClusterOperation(String clusterType, String namespace, String name) {
+    protected SimpleClusterOperation(String clusterType, String operationType, String namespace, String name) {
         super(namespace, name);
         this.clusterType = clusterType;
+        this.operationType = operationType;
     }
 
     @Override
-    protected String getLockName() {
+    protected final String getLockName() {
         return "lock::"+ clusterType +"::" + namespace + "::" + name;
     }
 
     @Override
-    public void execute(Vertx vertx, K8SUtils k8s, Handler<AsyncResult<Void>> handler) {
+    public final void execute(Vertx vertx, K8SUtils k8s, Handler<AsyncResult<Void>> handler) {
         vertx.sharedData().getLockWithTimeout(getLockName(), LOCK_TIMEOUT, res -> {
             if (res.succeeded()) {
                 Lock lock = res.result();
@@ -65,9 +67,9 @@ public abstract class CreateClusterOperation<C extends AbstractCluster> extends 
                 C cluster;
                 try {
                     cluster = getCluster(k8s, handler, lock);
-                    log.info("Creating {} cluster {} in namespace {}", clusterType, cluster.getName(), namespace);
+                    log.info("{} {} cluster {} in namespace {}", operationType, clusterType, cluster.getName(), namespace);
                 } catch (Exception ex) {
-                    log.error("Error while getting required {} cluster state", clusterType, ex);
+                    log.error("Error while getting required {} cluster state for {} operation", clusterType, operationType, ex);
                     handler.handle(Future.failedFuture("getCluster error"));
                     lock.release();
                     return;
@@ -76,18 +78,18 @@ public abstract class CreateClusterOperation<C extends AbstractCluster> extends 
 
                 CompositeFuture.join(list).setHandler(ar -> {
                     if (ar.succeeded()) {
-                        log.info("{} cluster {} successfully created in namespace {}", clusterType, cluster.getName(), namespace);
+                        log.info("{} cluster {} in namespace {}: successful {}", clusterType, cluster.getName(), namespace, operationType);
                         handler.handle(Future.succeededFuture());
                         lock.release();
                     } else {
-                        log.error("{} cluster {} failed to create in namespace {}", clusterType, cluster.getName(), namespace);
+                        log.error("{} cluster {} in namespace {}: failed to {}", clusterType, cluster.getName(), namespace, operationType);
                         handler.handle(Future.failedFuture("Failed to create Kafka cluster"));
                         lock.release();
                     }
                 });
             } else {
-                log.error("Failed to acquire lock to create {} cluster {}", clusterType, getLockName());
-                handler.handle(Future.failedFuture("Failed to acquire lock to create "+ clusterType + " cluster"));
+                log.error("Failed to acquire lock to {} {} cluster {}", operationType, clusterType, getLockName());
+                handler.handle(Future.failedFuture("Failed to acquire lock to " + operationType + " "+ clusterType + " cluster"));
             }
         });
     }

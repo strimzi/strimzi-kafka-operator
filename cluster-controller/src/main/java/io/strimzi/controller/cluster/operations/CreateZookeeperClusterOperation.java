@@ -10,11 +10,11 @@ import io.vertx.core.shareddata.Lock;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CreateZookeeperClusterOperation extends CreateClusterOperation<ZookeeperCluster> {
+public class CreateZookeeperClusterOperation extends SimpleClusterOperation<ZookeeperCluster> {
     private static final Logger log = LoggerFactory.getLogger(CreateZookeeperClusterOperation.class.getName());
 
     public CreateZookeeperClusterOperation(String namespace, String name) {
-        super("zookeeper", namespace, name);
+        super("zookeeper", "create", namespace, name);
     }
 
     @Override

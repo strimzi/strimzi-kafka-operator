@@ -1,7 +1,6 @@
 package io.strimzi.controller.cluster.operations;
 
 import io.strimzi.controller.cluster.K8SUtils;
-import io.strimzi.controller.cluster.resources.AbstractCluster;
 import io.strimzi.controller.cluster.resources.KafkaCluster;
 import io.vertx.core.*;
 import io.vertx.core.shareddata.Lock;
@@ -11,11 +10,11 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CreateKafkaClusterOperation extends CreateClusterOperation<KafkaCluster> {
+public class CreateKafkaClusterOperation extends SimpleClusterOperation<KafkaCluster> {
     private static final Logger log = LoggerFactory.getLogger(CreateKafkaClusterOperation.class.getName());
 
     public CreateKafkaClusterOperation(String namespace, String name) {
-        super("kafka", namespace, name);
+        super("kafka", "create", namespace, name);
     }
 
     @Override

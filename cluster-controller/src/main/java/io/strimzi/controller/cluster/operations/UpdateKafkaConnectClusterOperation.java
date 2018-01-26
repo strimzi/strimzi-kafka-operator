@@ -19,7 +19,7 @@ import io.vertx.core.shareddata.Lock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class UpdateKafkaConnectClusterOperation extends KafkaConnectClusterOperation {
+public class UpdateKafkaConnectClusterOperation extends ClusterOperation {
     private static final Logger log = LoggerFactory.getLogger(UpdateKafkaConnectClusterOperation.class.getName());
 
     private K8SUtils k8s;
@@ -27,6 +27,11 @@ public class UpdateKafkaConnectClusterOperation extends KafkaConnectClusterOpera
     public UpdateKafkaConnectClusterOperation(String namespace, String name) {
         super(namespace, name);
     }
+
+    protected String getLockName() {
+        return "lock::kafka-connect::" + namespace + "::" + name;
+    }
+
 
     @Override
     public void execute(Vertx vertx, K8SUtils k8s, Handler<AsyncResult<Void>> handler) {

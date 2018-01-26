@@ -13,13 +13,17 @@ import io.vertx.core.shareddata.Lock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class UpdateZookeeperClusterOperation extends ZookeeperClusterOperation {
+public class UpdateZookeeperClusterOperation extends ClusterOperation {
     private static final Logger log = LoggerFactory.getLogger(UpdateZookeeperClusterOperation.class.getName());
 
     private K8SUtils k8s;
 
     public UpdateZookeeperClusterOperation(String namespace, String name) {
         super(namespace, name);
+    }
+
+    protected String getLockName() {
+        return "lock::zookeeper::" + namespace + "::" + name;
     }
 
     @Override

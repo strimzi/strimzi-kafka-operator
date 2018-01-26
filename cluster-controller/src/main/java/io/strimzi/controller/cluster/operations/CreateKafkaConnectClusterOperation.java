@@ -5,17 +5,14 @@ import io.strimzi.controller.cluster.operations.openshift.CreateS2IOperation;
 import io.strimzi.controller.cluster.resources.KafkaConnectCluster;
 import io.vertx.core.*;
 import io.vertx.core.shareddata.Lock;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class CreateKafkaConnectClusterOperation extends CreateClusterOperation<KafkaConnectCluster> {
-    private static final Logger log = LoggerFactory.getLogger(CreateKafkaConnectClusterOperation.class.getName());
+public class CreateKafkaConnectClusterOperation extends SimpleClusterOperation<KafkaConnectCluster> {
 
     public CreateKafkaConnectClusterOperation(String namespace, String name) {
-        super("kafka-connect", namespace, name);
+        super("kafka-connect","create", namespace, name);
     }
 
     @Override
