@@ -326,16 +326,6 @@ public class ControllerIntegrationTest {
         }
     }
 
-    private int getTopicNumPartitions(String topicName) {
-        try {
-            return adminClient.describeTopics(singletonList(topicName)).values().get(topicName).get().partitions().size();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        } catch (ExecutionException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     private ConfigResource topicConfigResource(String topicName) {
         return new ConfigResource(ConfigResource.Type.TOPIC, topicName);
     }
