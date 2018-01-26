@@ -1,8 +1,6 @@
 package io.strimzi.controller.cluster.operations;
 
 import io.strimzi.controller.cluster.K8SUtils;
-import io.strimzi.controller.cluster.operations.kubernetes.DeleteDeploymentOperation;
-import io.strimzi.controller.cluster.operations.kubernetes.DeleteServiceOperation;
 import io.strimzi.controller.cluster.operations.openshift.DeleteS2IOperation;
 import io.strimzi.controller.cluster.resources.KafkaConnectCluster;
 import io.vertx.core.*;
@@ -28,10 +26,10 @@ public class DeleteKafkaConnectClusterOperation extends KafkaConnectClusterOpera
                 log.info("Deleting Kafka Connect cluster {} from namespace {}", connect.getName(), namespace);
 
                 Future<Void> futureService = Future.future();
-                OperationExecutor.getInstance().executeK8s(new DeleteServiceOperation(namespace, connect.getName()), futureService.completer());
+                OperationExecutor.getInstance().executeFabric8(DeleteOperation.deleteService(namespace, connect.getName()), futureService.completer());
 
                 Future<Void> futureDeployment = Future.future();
-                OperationExecutor.getInstance().executeK8s(new DeleteDeploymentOperation(namespace, connect.getName()), futureDeployment.completer());
+                OperationExecutor.getInstance().executeK8s(DeleteOperation.deleteDeployment(namespace, connect.getName()), futureDeployment.completer());
 
                 Future<Void> futureS2I;
                 if (connect.getS2I() != null) {

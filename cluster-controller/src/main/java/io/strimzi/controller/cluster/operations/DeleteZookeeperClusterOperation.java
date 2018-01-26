@@ -1,10 +1,7 @@
 package io.strimzi.controller.cluster.operations;
 
 import io.strimzi.controller.cluster.K8SUtils;
-import io.strimzi.controller.cluster.operations.kubernetes.DeleteConfigMapOperation;
 import io.strimzi.controller.cluster.operations.kubernetes.DeletePersistentVolumeClaimOperation;
-import io.strimzi.controller.cluster.operations.kubernetes.DeleteServiceOperation;
-import io.strimzi.controller.cluster.operations.kubernetes.DeleteStatefulSetOperation;
 import io.strimzi.controller.cluster.resources.Storage;
 import io.strimzi.controller.cluster.resources.ZookeeperCluster;
 import io.vertx.core.*;
@@ -36,19 +33,19 @@ public class DeleteZookeeperClusterOperation extends ZookeeperClusterOperation {
                 // otherwise the future is already complete (for the "join")
                 Future<Void> futureConfigMap = Future.future();
                 if (zk.isMetricsEnabled()) {
-                    OperationExecutor.getInstance().executeK8s(new DeleteConfigMapOperation(namespace, zk.getMetricsConfigName()), futureConfigMap.completer());
+                    OperationExecutor.getInstance().executeK8s(DeleteOperation.deleteConfigMap(namespace, zk.getMetricsConfigName()), futureConfigMap.completer());
                 } else {
                     futureConfigMap.complete();
                 }
 
                 Future<Void> futureService = Future.future();
-                OperationExecutor.getInstance().executeK8s(new DeleteServiceOperation(namespace, zk.getName()), futureService.completer());
+                OperationExecutor.getInstance().executeFabric8(DeleteOperation.deleteService(namespace, zk.getName()), futureService.completer());
 
                 Future<Void> futureHeadlessService = Future.future();
-                OperationExecutor.getInstance().executeK8s(new DeleteServiceOperation(namespace, zk.getHeadlessName()), futureHeadlessService.completer());
+                OperationExecutor.getInstance().executeFabric8(DeleteOperation.deleteService(namespace, zk.getHeadlessName()), futureHeadlessService.completer());
 
                 Future<Void> futureStatefulSet = Future.future();
-                OperationExecutor.getInstance().executeK8s(new DeleteStatefulSetOperation(namespace, zk.getName()), futureStatefulSet.completer());
+                OperationExecutor.getInstance().executeK8s(DeleteOperation.deleteStatefulSet(namespace, zk.getName()), futureStatefulSet.completer());
 
                 Future<Void> futurePersistentVolumeClaim = Future.future();
                 if ((zk.getStorage().type() == Storage.StorageType.PERSISTENT_CLAIM) && zk.getStorage().isDeleteClaim()) {
