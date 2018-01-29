@@ -25,6 +25,7 @@ import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.openshift.api.model.BuildConfig;
 import io.fabric8.openshift.api.model.ImageStream;
+import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.controller.cluster.K8SUtils;
 import io.strimzi.controller.cluster.OpenShiftUtils;
 import io.vertx.core.AsyncResult;
@@ -154,30 +155,30 @@ public abstract class CreateOperation<U, R extends HasMetadata> implements Opera
         };
     }
 
-    public static CreateOperation<OpenShiftUtils, BuildConfig> createBuildConfig(BuildConfig config) {
-        return new CreateOperation<OpenShiftUtils, BuildConfig>("BuildConfig", config) {
+    public static CreateOperation<OpenShiftClient, BuildConfig> createBuildConfig(BuildConfig config) {
+        return new CreateOperation<OpenShiftClient, BuildConfig>("BuildConfig", config) {
             @Override
-            protected void create(OpenShiftUtils os, BuildConfig resource) {
-                os.create(resource);
+            protected void create(OpenShiftClient client, BuildConfig resource) {
+                client.buildConfigs().createOrReplace(resource);
             }
 
             @Override
-            protected boolean exists(OpenShiftUtils os, String namespace, String name) {
-                return os.exists(namespace, name, BuildConfig.class);
+            protected boolean exists(OpenShiftClient client, String namespace, String name) {
+                return client.buildConfigs().inNamespace(namespace).withName(name).get() != null;
             }
         };
     }
 
-    public static CreateOperation<OpenShiftUtils, ImageStream> createImageStream(ImageStream is) {
-        return new CreateOperation<OpenShiftUtils, ImageStream>("ImageStream", is) {
+    public static CreateOperation<OpenShiftClient, ImageStream> createImageStream(ImageStream is) {
+        return new CreateOperation<OpenShiftClient, ImageStream>("ImageStream", is) {
             @Override
-            protected void create(OpenShiftUtils os, ImageStream resource) {
-                os.create(resource);
+            protected void create(OpenShiftClient client, ImageStream resource) {
+                client.imageStreams().createOrReplace(resource);
             }
 
             @Override
-            protected boolean exists(OpenShiftUtils os, String namespace, String name) {
-                return os.exists(namespace, name, ImageStream.class);
+            protected boolean exists(OpenShiftClient client, String namespace, String name) {
+                return client.imageStreams().inNamespace(namespace).withName(name).get() != null;
             }
         };
     }

@@ -20,6 +20,7 @@ package io.strimzi.controller.cluster.operations;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.openshift.api.model.BuildConfig;
 import io.fabric8.openshift.api.model.ImageStream;
+import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.controller.cluster.K8SUtils;
 import io.strimzi.controller.cluster.OpenShiftUtils;
 import io.vertx.core.AsyncResult;
@@ -149,30 +150,30 @@ public abstract class DeleteOperation<U> implements Operation<U> {
         };
     }
 
-    public static DeleteOperation<OpenShiftUtils> deleteBuildConfig(String namespace, String name) {
-        return new DeleteOperation<OpenShiftUtils>("BuildConfig", namespace, name) {
+    public static DeleteOperation<OpenShiftClient> deleteBuildConfig(String namespace, String name) {
+        return new DeleteOperation<OpenShiftClient>("BuildConfig", namespace, name) {
             @Override
-            protected void delete(OpenShiftUtils os, String namespace, String name) {
-                os.delete(namespace, name, BuildConfig.class);
+            protected void delete(OpenShiftClient client, String namespace, String name) {
+                client.buildConfigs().inNamespace(namespace).withName(name).delete();
             }
 
             @Override
-            protected boolean exists(OpenShiftUtils os, String namespace, String name) {
-                return os.exists(namespace, name, BuildConfig.class);
+            protected boolean exists(OpenShiftClient client, String namespace, String name) {
+                return client.buildConfigs().inNamespace(namespace).withName(name).get() != null;
             }
         };
     }
 
-    public static DeleteOperation<OpenShiftUtils> deleteImageStream(String namespace, String name) {
-        return new DeleteOperation<OpenShiftUtils>("ImageStream", namespace, name) {
+    public static DeleteOperation<OpenShiftClient> deleteImageStream(String namespace, String name) {
+        return new DeleteOperation<OpenShiftClient>("ImageStream", namespace, name) {
             @Override
-            protected void delete(OpenShiftUtils os, String namespace, String name) {
-                os.delete(namespace, name, ImageStream.class);
+            protected void delete(OpenShiftClient client, String namespace, String name) {
+                client.imageStreams().inNamespace(namespace).withName(name).delete();
             }
 
             @Override
-            protected boolean exists(OpenShiftUtils os, String namespace, String name) {
-                return os.exists(namespace, name, ImageStream.class);
+            protected boolean exists(OpenShiftClient client, String namespace, String name) {
+                return client.imageStreams().inNamespace(namespace).withName(name).get() != null;
             }
         };
     }
