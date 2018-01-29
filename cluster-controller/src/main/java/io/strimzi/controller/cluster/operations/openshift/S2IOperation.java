@@ -33,34 +33,27 @@ public abstract class S2IOperation implements Operation<OpenShiftUtils> {
     }
 
     @Override
-    public final void execute(Vertx vertx, OpenShiftUtils os, Handler<AsyncResult<Void>> handler) {
+    public final void execute(Vertx vertx2, OpenShiftUtils os, Handler<AsyncResult<Void>> handler) {
         log.info("{} S2I {} in namespace {}", operationType, s2i.getName(), s2i.getNamespace());
 
         try {
-            if (guard(os)) {
-                List<Future> futures = futures(os);
+            List<Future> futures = futures(os);
 
-                CompositeFuture.join(futures).setHandler(ar -> {
-                    if (ar.succeeded()) {
-                        log.info("S2I {} successfully updated in namespace {}", s2i.getName(), s2i.getNamespace());
-                        handler.handle(Future.succeededFuture());
-                    } else {
-                        log.error("S2I cluster {} failed to update in namespace {}", s2i.getName(), s2i.getNamespace());
-                        handler.handle(Future.failedFuture("Failed to update S2I"));
-                    }
-                });
-            } else {
-                log.info("No S2I {} differences found in namespace {}", s2i.getName(), s2i.getNamespace());
-                handler.handle(Future.succeededFuture());
-            }
+            CompositeFuture.join(futures).setHandler(ar -> {
+                if (ar.succeeded()) {
+                    log.info("S2I {} successfully updated in namespace {}", s2i.getName(), s2i.getNamespace());
+                    handler.handle(Future.succeededFuture());
+                } else {
+                    log.error("S2I cluster {} failed to update in namespace {}", s2i.getName(), s2i.getNamespace());
+                    handler.handle(Future.failedFuture("Failed to update S2I"));
+                }
+            });
         }
         catch (Exception e) {
             log.error("S2I cluster {} failed to update in namespace {}", s2i.getName(), s2i.getNamespace(), e);
             handler.handle(Future.failedFuture("Failed to update S2I"));
         }
     }
-
-    protected abstract boolean guard(OpenShiftUtils os);
 
     protected abstract List<Future> futures(OpenShiftUtils os);
 }
