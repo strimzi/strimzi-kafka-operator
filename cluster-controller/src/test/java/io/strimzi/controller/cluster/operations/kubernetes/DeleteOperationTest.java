@@ -20,9 +20,15 @@ package io.strimzi.controller.cluster.operations.kubernetes;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.dsl.AppsAPIGroupDSL;
+import io.fabric8.kubernetes.client.dsl.ExtensionsAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
+import io.fabric8.kubernetes.client.dsl.ScalableResource;
+import io.fabric8.openshift.client.OpenShiftClient;
+import io.fabric8.openshift.client.dsl.BuildConfigResource;
 import io.strimzi.controller.cluster.operations.DeleteOperation;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
@@ -33,11 +39,11 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.function.BiConsumer;
+
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.matches;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -69,10 +75,13 @@ public class DeleteOperationTest {
     public static void after() {
         vertx.close();
     }
-    
-    @Test
-    public void testDeleteWhenMapDoesNotExistIsANop(TestContext context) {
-        Resource mockResource = mock(Resource.class);
+
+    private <C extends KubernetesClient> void deleteWhenResourceDoesNotExistIsANop(TestContext context,
+                                                       Class<C> clientType,
+                                                       Class<? extends Resource> resourceType,
+                                                       BiConsumer<C, MixedOperation> mocker,
+                                                       DeleteOperation<C> op) {
+        Resource mockResource = mock(resourceType);
         when(mockResource.get()).thenReturn(null);
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
@@ -81,10 +90,8 @@ public class DeleteOperationTest {
         MixedOperation mockCms = mock(MixedOperation.class);
         when(mockCms.inNamespace(matches(NAMESPACE))).thenReturn(mockNameable);
 
-        KubernetesClient mockClient = mock(KubernetesClient.class);
-        when(mockClient.configMaps()).thenReturn(mockCms);
-
-        DeleteOperation<KubernetesClient> op = DeleteOperation.deleteConfigMap(NAMESPACE, NAME);
+        C mockClient = mock(clientType);
+        mocker.accept(mockClient, mockCms);
 
         Async async = context.async();
         op.execute(vertx, mockClient, ar -> {
@@ -96,11 +103,14 @@ public class DeleteOperationTest {
         });
     }
 
-    @Test
-    public void testDeleteWhenMapExistsThrows(TestContext context) {
+    private <C extends KubernetesClient> void deleteWhenResourceExistsThrows(TestContext context,
+                                                                 Class<C> clientType,
+                                                                 Class<? extends Resource> resourceType,
+                                                                 BiConsumer<C, MixedOperation> mocker,
+                                                                 DeleteOperation<C> op) {
         RuntimeException ex = new RuntimeException();
 
-        Resource mockResource = mock(Resource.class);
+        Resource mockResource = mock(resourceType);
         when(mockResource.get()).thenThrow(ex);
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
@@ -109,10 +119,9 @@ public class DeleteOperationTest {
         MixedOperation mockCms = mock(MixedOperation.class);
         when(mockCms.inNamespace(matches(NAMESPACE))).thenReturn(mockNameable);
 
-        KubernetesClient mockClient = mock(KubernetesClient.class);
-        when(mockClient.configMaps()).thenReturn(mockCms);
+        C mockClient = mock(clientType);
+        mocker.accept(mockClient, mockCms);
 
-        DeleteOperation<KubernetesClient> op = DeleteOperation.deleteConfigMap(NAMESPACE, NAME);
         Async async = context.async();
         op.execute(vertx, mockClient, ar -> {
             assertTrue(ar.failed());
@@ -121,9 +130,12 @@ public class DeleteOperationTest {
         });
     }
 
-    @Test
-    public void testDeletionOfAConfigMap(TestContext context) {
-        Resource mockResource = mock(Resource.class);
+    private <C extends KubernetesClient> void successfulDeletion(TestContext context,
+                                    Class<C> clientType,
+                                    Class<? extends Resource> resourceType,
+                                    BiConsumer<C, MixedOperation> mocker,
+                                    DeleteOperation<C> op) {
+        Resource mockResource = mock(resourceType);
         when(mockResource.get()).thenReturn(cm);
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
@@ -132,11 +144,10 @@ public class DeleteOperationTest {
         MixedOperation mockCms = mock(MixedOperation.class);
         when(mockCms.inNamespace(matches(NAMESPACE))).thenReturn(mockNameable);
 
-        KubernetesClient mockClient = mock(KubernetesClient.class);
-        when(mockClient.configMaps()).thenReturn(mockCms);
+        C mockClient = mock(clientType);
+        mocker.accept(mockClient, mockCms);
 
         Async async = context.async();
-        DeleteOperation<KubernetesClient> op = DeleteOperation.deleteConfigMap(NAMESPACE, NAME);
         op.execute(vertx, mockClient, ar -> {
             assertTrue(ar.succeeded());
             verify(mockResource).get();
@@ -145,11 +156,14 @@ public class DeleteOperationTest {
         });
     }
 
-    @Test
-    public void testDeletionOfAConfigMapThrows(TestContext context) {
+    private <C extends KubernetesClient> void deletionThrows(TestContext context,
+                                Class<C> clientType,
+                                Class<? extends Resource> resourceType,
+                                BiConsumer<C, MixedOperation> mocker,
+                                DeleteOperation<C> op) {
         RuntimeException ex = new RuntimeException();
 
-        Resource mockResource = mock(Resource.class);
+        Resource mockResource = mock(resourceType);
         when(mockResource.get()).thenReturn(cm);
         when(mockResource.delete()).thenThrow(ex);
 
@@ -159,16 +173,225 @@ public class DeleteOperationTest {
         MixedOperation mockCms = mock(MixedOperation.class);
         when(mockCms.inNamespace(matches(NAMESPACE))).thenReturn(mockNameable);
 
-        KubernetesClient mockClient = mock(KubernetesClient.class);
-        when(mockClient.configMaps()).thenReturn(mockCms);
+        C mockClient = mock(clientType);
+        mocker.accept(mockClient, mockCms);
 
         Async async = context.async();
-        DeleteOperation<KubernetesClient> op = DeleteOperation.deleteConfigMap(NAMESPACE, NAME);
 
         op.execute(vertx, mockClient, ar -> {
             assertTrue(ar.failed());
             assertEquals(ex, ar.cause());
             async.complete();
         });
+    }
+
+    @Test
+    public void testConfigMap(TestContext context) {
+
+        DeleteOperation<KubernetesClient> op = DeleteOperation.deleteConfigMap(NAMESPACE, NAME);
+
+        BiConsumer<KubernetesClient, MixedOperation> mocker = (mockClient, mockCms) -> when(mockClient.configMaps()).thenReturn(mockCms);
+        deleteWhenResourceDoesNotExistIsANop(context,
+                KubernetesClient.class,
+                Resource.class,
+                mocker,
+                op);
+        deleteWhenResourceExistsThrows(context,
+                KubernetesClient.class,
+                Resource.class,
+                mocker,
+                op);
+        successfulDeletion(context,
+                KubernetesClient.class,
+                Resource.class,
+                mocker,
+                op);
+        deletionThrows(context,
+                KubernetesClient.class,
+                Resource.class,
+                mocker,
+                op);
+    }
+
+    @Test
+    public void testDeployment(TestContext context) {
+
+        DeleteOperation<KubernetesClient> op = DeleteOperation.deleteDeployment(NAMESPACE, NAME);
+        BiConsumer<KubernetesClient, MixedOperation> mocker = (mockClient, mockCms) -> {
+            ExtensionsAPIGroupDSL mockExt = mock(ExtensionsAPIGroupDSL.class);
+            when(mockExt.deployments()).thenReturn(mockCms);
+            when(mockClient.extensions()).thenReturn(mockExt);
+        };
+
+        deleteWhenResourceDoesNotExistIsANop(context,
+                KubernetesClient.class,
+                ScalableResource.class,
+                mocker,
+                op);
+        deleteWhenResourceExistsThrows(context,
+                KubernetesClient.class,
+                ScalableResource.class,
+                mocker,
+                op);
+        successfulDeletion(context,
+                KubernetesClient.class,
+                ScalableResource.class,
+                mocker,
+                op);
+        deletionThrows(context,
+                KubernetesClient.class,
+                ScalableResource.class,
+                mocker,
+                op);
+    }
+
+    @Test
+    public void testService(TestContext context) {
+
+        DeleteOperation<KubernetesClient> op = DeleteOperation.deleteService(NAMESPACE, NAME);
+        BiConsumer<KubernetesClient, MixedOperation> mocker = (mockClient, mockCms) -> {
+            when(mockClient.services()).thenReturn(mockCms);
+        };
+
+        deleteWhenResourceDoesNotExistIsANop(context,
+                KubernetesClient.class,
+                ScalableResource.class,
+                mocker,
+                op);
+        deleteWhenResourceExistsThrows(context,
+                KubernetesClient.class,
+                ScalableResource.class,
+                mocker,
+                op);
+        successfulDeletion(context,
+                KubernetesClient.class,
+                ScalableResource.class,
+                mocker,
+                op);
+        deletionThrows(context,
+                KubernetesClient.class,
+                ScalableResource.class,
+                mocker,
+                op);
+    }
+
+    @Test
+    public void testStatefulSet(TestContext context) {
+
+        DeleteOperation<KubernetesClient> op = DeleteOperation.deleteStatefulSet(NAMESPACE, NAME);
+        BiConsumer<KubernetesClient, MixedOperation> mocker = (mockClient, mockCms) -> {
+            AppsAPIGroupDSL mockExt = mock(AppsAPIGroupDSL.class);
+            when(mockExt.statefulSets()).thenReturn(mockCms);
+            when(mockClient.apps()).thenReturn(mockExt);
+        };
+
+        deleteWhenResourceDoesNotExistIsANop(context,
+                KubernetesClient.class,
+                RollableScalableResource.class,
+                mocker,
+                op);
+        deleteWhenResourceExistsThrows(context,
+                KubernetesClient.class,
+                RollableScalableResource.class,
+                mocker,
+                op);
+        successfulDeletion(context,
+                KubernetesClient.class,
+                RollableScalableResource.class,
+                mocker,
+                op);
+        deletionThrows(context,
+                KubernetesClient.class,
+                RollableScalableResource.class,
+                mocker,
+                op);
+    }
+
+    @Test
+    public void testPvc(TestContext context) {
+
+        DeleteOperation<KubernetesClient> op = DeleteOperation.deletePersistentVolumeClaim(NAMESPACE, NAME);
+        BiConsumer<KubernetesClient, MixedOperation> mocker = (mockClient, mockCms) -> {
+            when(mockClient.persistentVolumeClaims()).thenReturn(mockCms);
+        };
+
+        deleteWhenResourceDoesNotExistIsANop(context,
+                KubernetesClient.class,
+                Resource.class,
+                mocker,
+                op);
+        deleteWhenResourceExistsThrows(context,
+                KubernetesClient.class,
+                Resource.class,
+                mocker,
+                op);
+        successfulDeletion(context,
+                KubernetesClient.class,
+                Resource.class,
+                mocker,
+                op);
+        deletionThrows(context,
+                KubernetesClient.class,
+                RollableScalableResource.class,
+                mocker,
+                op);
+    }
+
+    @Test
+    public void testBuildConfig(TestContext context) {
+
+        DeleteOperation<OpenShiftClient> op = DeleteOperation.deleteBuildConfig(NAMESPACE, NAME);
+        BiConsumer<OpenShiftClient, MixedOperation> mocker = (mockClient, mockCms) ->
+                when(mockClient.buildConfigs()).thenReturn(mockCms);
+
+        deleteWhenResourceDoesNotExistIsANop(context,
+                OpenShiftClient.class,
+                BuildConfigResource.class,
+                mocker,
+                op);
+        deleteWhenResourceExistsThrows(context,
+                OpenShiftClient.class,
+                BuildConfigResource.class,
+                mocker,
+                op);
+        successfulDeletion(context,
+                OpenShiftClient.class,
+                BuildConfigResource.class,
+                mocker,
+                op);
+        deletionThrows(context,
+                OpenShiftClient.class,
+                BuildConfigResource.class,
+                mocker,
+                op);
+    }
+
+    @Test
+    public void testImageStream(TestContext context) {
+
+        DeleteOperation<OpenShiftClient> op = DeleteOperation.deleteImageStream(NAMESPACE, NAME);
+        BiConsumer<OpenShiftClient, MixedOperation> mocker = (mockClient, mockCms) ->
+                when(mockClient.imageStreams()).thenReturn(mockCms);
+
+        deleteWhenResourceDoesNotExistIsANop(context,
+                OpenShiftClient.class,
+                Resource.class,
+                mocker,
+                op);
+        deleteWhenResourceExistsThrows(context,
+                OpenShiftClient.class,
+                Resource.class,
+                mocker,
+                op);
+        successfulDeletion(context,
+                OpenShiftClient.class,
+                Resource.class,
+                mocker,
+                op);
+        deletionThrows(context,
+                OpenShiftClient.class,
+                Resource.class,
+                mocker,
+                op);
     }
 }
