@@ -621,20 +621,20 @@ public class Controller {
             @Override
             public void handle(Future<Void> fut) {
 
-                Handler<AsyncResult<TopicMetadata>> handler = new Handler<AsyncResult<TopicMetadata>>() {
+                // getting topic information from the private store
+                topicStore.read(topicName, topicResult -> {
 
-                    private final BackOff backOff = new BackOff();
+                    Handler<AsyncResult<TopicMetadata>> handler = new Handler<AsyncResult<TopicMetadata>>() {
 
-                    @Override
-                    public void handle(AsyncResult<TopicMetadata> metadataResult) {
+                        private final BackOff backOff = new BackOff();
 
-                        if (metadataResult.succeeded()) {
+                        @Override
+                        public void handle(AsyncResult<TopicMetadata> metadataResult) {
 
-                            // getting topic metadata from Kafka
-                            Topic kafkaTopic = TopicSerialization.fromTopicMetadata(metadataResult.result());
+                            if (metadataResult.succeeded()) {
 
-                            // getting topic information from the private store
-                            topicStore.read(topicName, topicResult -> {
+                                // getting topic metadata from Kafka
+                                Topic kafkaTopic = TopicSerialization.fromTopicMetadata(metadataResult.result());
 
                                 // if partitions aren't changed on Kafka yet, we retry with exponential backoff
                                 if (topicResult.result().getNumPartitions() == kafkaTopic.getNumPartitions()) {
@@ -645,7 +645,7 @@ public class Controller {
                                         logger.debug("Topic {} partitions changed, but metadata not updated in Kafka yet: Backing off for {}ms", topicName, delay);
                                     } catch (MaxAttemptsExceededException e) {
                                         logger.info("Topic {} partitions changed, but metadata not updated in Kafka after {}ms, giving up for now", topicName, backOff.totalDelayMs());
-                                        fut.fail(e);
+                                        fut.complete();
                                         return;
                                     }
 
@@ -660,14 +660,14 @@ public class Controller {
                                     logger.info("Topic {} partitions changed to {}", topicName, kafkaTopic.getNumPartitions());
                                     Controller.this.reconcileOnTopicChange(topicName, kafkaTopic, fut.completer());
                                 }
-                            });
 
-                        } else {
-                            fut.fail(metadataResult.cause());
+                            } else {
+                                fut.fail(metadataResult.cause());
+                            }
                         }
-                    }
-                };
-                kafka.topicMetadata(topicName, handler);
+                    };
+                    kafka.topicMetadata(topicName, handler);
+                });
             }
         };
         inFlight.enqueue(topicName, resultHandler, futureHandler);
@@ -747,7 +747,7 @@ public class Controller {
                                     logger.debug("Topic {} created in ZK, but no metadata available from Kafka yet: Backing off for {}ms", topicName, delay);
                                 } catch (MaxAttemptsExceededException e) {
                                     logger.info("Topic {} created in ZK, and no metadata available from Kafka after {}ms, giving up for now", topicName, backOff.totalDelayMs());
-                                    fut.complete();
+                                    fut.fail(e);
                                     return;
                                 }
 
