@@ -30,11 +30,6 @@ public class CreateS2IOperation extends S2IOperation {
     }
 
     @Override
-    protected boolean guard(OpenShiftUtils os) {
-        return true;
-    }
-
-    @Override
     protected List<Future> futures(OpenShiftUtils os) {
         List<Future> result = new ArrayList<>(3);
 
