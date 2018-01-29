@@ -60,36 +60,6 @@ public class OpenShiftUtils {
     }
 
     /**
-     * Creates OpenShift resource
-     *
-     * @param res   Resource which should be created
-     */
-    public void create(HasMetadata res) {
-        log.info("Creating {} {}", res.getClass().getSimpleName(), res.getMetadata().getName());
-
-        if (res instanceof BuildConfig) {
-            client.buildConfigs().createOrReplace((BuildConfig)res);
-        } else if (res instanceof ImageStream) {
-            client.imageStreams().createOrReplace((ImageStream)res);
-        } else {
-            throw new RuntimeException("Unsupported type " + res.getClass().getSimpleName());
-        }
-    }
-
-    /**
-     * Checks if the namespace contains a resource with given name and type
-     *
-     * @param namespace     OpenShift project
-     * @param name          Name of the resource
-     * @param type          Type of the resource
-     * @return              True if resource exists, false if it doesn't
-     */
-    public boolean exists(String namespace, String name, Class<? extends HasMetadata> type) {
-        log.info("Checking if {} {} exists in namespace {}", type.getSimpleName(), name, namespace);
-        return get(namespace, name, type) == null ? false : true;
-    }
-
-    /**
      * Get OpenShift resource definition
      *
      * @param namespace     OpenShift project
@@ -127,35 +97,5 @@ public class OpenShiftUtils {
         } else {
             throw new RuntimeException("Unsupported type " + type.getSimpleName());
         }
-    }
-
-    /**
-     * Deletes the resource
-     *
-     * @param namespace     OpenShift project
-     * @param name          Resource name
-     * @param type          Resource type
-     */
-    public void delete(String namespace, String name, Class<? extends HasMetadata> type) {
-        log.info("Deleting {} {} from namespace {}", type.getSimpleName(), name, namespace);
-
-        if (type == BuildConfig.class) {
-            client.buildConfigs().inNamespace(namespace).withName(name).delete();
-        } else if (type == ImageStream.class) {
-            client.imageStreams().inNamespace(namespace).withName(name).delete();
-        } else {
-            throw new RuntimeException("Unsupported type " + type.getSimpleName());
-        }
-    }
-
-
-    /**
-     * Patch the resource
-     *
-     * @param patchable     Resource which should be patched
-     * @param patch         Patch which should be applied
-     */
-    public void patch(Patchable patchable, KubernetesResource patch)    {
-        patchable.patch(patch);
     }
 }

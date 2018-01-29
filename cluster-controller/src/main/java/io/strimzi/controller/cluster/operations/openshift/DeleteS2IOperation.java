@@ -39,15 +39,15 @@ public class DeleteS2IOperation extends S2IOperation {
         List<Future> result = new ArrayList<>(3);
 
         Future<Void> futureSourceImageStream = Future.future();
-        OperationExecutor.getInstance().executeOpenShift(DeleteOperation.deleteImageStream(s2i.getNamespace(), s2i.getSourceImageStreamName()), futureSourceImageStream.completer());
+        OperationExecutor.getInstance().executeOpenShiftClient(DeleteOperation.deleteImageStream(s2i.getNamespace(), s2i.getSourceImageStreamName()), futureSourceImageStream.completer());
         result.add(futureSourceImageStream);
 
         Future<Void> futureTargetImageStream = Future.future();
-        OperationExecutor.getInstance().executeOpenShift(DeleteOperation.deleteImageStream(s2i.getNamespace(), s2i.getName()), futureTargetImageStream.completer());
+        OperationExecutor.getInstance().executeOpenShiftClient(DeleteOperation.deleteImageStream(s2i.getNamespace(), s2i.getName()), futureTargetImageStream.completer());
         result.add(futureTargetImageStream);
 
         Future<Void> futureBuildConfig = Future.future();
-        OperationExecutor.getInstance().executeOpenShift(DeleteOperation.deleteBuildConfig(s2i.getNamespace(), s2i.getName()), futureBuildConfig.completer());
+        OperationExecutor.getInstance().executeOpenShiftClient(DeleteOperation.deleteBuildConfig(s2i.getNamespace(), s2i.getName()), futureBuildConfig.completer());
         result.add(futureBuildConfig);
 
         return result;

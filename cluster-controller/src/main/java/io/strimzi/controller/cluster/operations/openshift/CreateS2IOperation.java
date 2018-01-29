@@ -39,15 +39,15 @@ public class CreateS2IOperation extends S2IOperation {
         List<Future> result = new ArrayList<>(3);
 
         Future<Void> futureSourceImageStream = Future.future();
-        OperationExecutor.getInstance().executeOpenShift(CreateOperation.createImageStream(s2i.generateSourceImageStream()), futureSourceImageStream.completer());
+        OperationExecutor.getInstance().executeOpenShiftClient(CreateOperation.createImageStream(s2i.generateSourceImageStream()), futureSourceImageStream.completer());
         result.add(futureSourceImageStream);
 
         Future<Void> futureTargetImageStream = Future.future();
-        OperationExecutor.getInstance().executeOpenShift(CreateOperation.createImageStream(s2i.generateTargetImageStream()), futureTargetImageStream.completer());
+        OperationExecutor.getInstance().executeOpenShiftClient(CreateOperation.createImageStream(s2i.generateTargetImageStream()), futureTargetImageStream.completer());
         result.add(futureTargetImageStream);
 
         Future<Void> futureBuildConfig = Future.future();
-        OperationExecutor.getInstance().executeOpenShift(CreateOperation.createBuildConfig(s2i.generateBuildConfig()), futureBuildConfig.completer());
+        OperationExecutor.getInstance().executeOpenShiftClient(CreateOperation.createBuildConfig(s2i.generateBuildConfig()), futureBuildConfig.completer());
         result.add(futureBuildConfig);
 
         return result;
