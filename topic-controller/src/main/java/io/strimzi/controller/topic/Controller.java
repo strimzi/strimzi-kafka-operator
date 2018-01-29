@@ -624,10 +624,7 @@ public class Controller {
                 // getting topic information from the private store
                 topicStore.read(topicName, topicResult -> {
 
-                    Handler<AsyncResult<TopicMetadata>> handler = new Handler<AsyncResult<TopicMetadata>>() {
-
-                        private final BackOff backOff = new BackOff();
-
+                    TopicMetadataHandler handler = new TopicMetadataHandler(vertx, kafka, topicName) {
                         @Override
                         public void handle(AsyncResult<TopicMetadata> metadataResult) {
 
@@ -638,24 +635,7 @@ public class Controller {
 
                                 // if partitions aren't changed on Kafka yet, we retry with exponential backoff
                                 if (topicResult.result().getNumPartitions() == kafkaTopic.getNumPartitions()) {
-
-                                    long delay;
-                                    try {
-                                        delay = backOff.delayMs();
-                                        logger.debug("Topic {} partitions changed, but metadata not updated in Kafka yet: Backing off for {}ms", topicName, delay);
-                                    } catch (MaxAttemptsExceededException e) {
-                                        logger.info("Topic {} partitions changed, but metadata not updated in Kafka after {}ms, giving up for now", topicName, backOff.totalDelayMs());
-                                        fut.complete();
-                                        return;
-                                    }
-
-                                    if (delay < 1) {
-                                        // vertx won't tolerate a zero delay
-                                        vertx.runOnContext(timerId -> kafka.topicMetadata(topicName, this));
-                                    } else {
-                                        vertx.setTimer(TimeUnit.MILLISECONDS.convert(delay, TimeUnit.MILLISECONDS),
-                                                timerId -> kafka.topicMetadata(topicName, this));
-                                    }
+                                    retry();
                                 } else {
                                     logger.info("Topic {} partitions changed to {}", topicName, kafkaTopic.getNumPartitions());
                                     Controller.this.reconcileOnTopicChange(topicName, kafkaTopic, fut.completer());
@@ -664,6 +644,11 @@ public class Controller {
                             } else {
                                 fut.fail(metadataResult.cause());
                             }
+                        }
+
+                        @Override
+                        public void onMaxAttemptsExceeded(MaxAttemptsExceededException e) {
+                            fut.complete();
                         }
                     };
                     kafka.topicMetadata(topicName, handler);
@@ -731,33 +716,18 @@ public class Controller {
         Handler<Future<Void>> futureHandler = new Reconciliation("onTopicCreated") {
             @Override
             public void handle(Future<Void> fut) {
-                Handler<AsyncResult<TopicMetadata>> handler = new Handler<AsyncResult<TopicMetadata>>() {
-                    private final BackOff backOff = new BackOff();
+
+                TopicMetadataHandler handler = new TopicMetadataHandler(vertx, kafka, topicName) {
 
                     @Override
                     public void handle(AsyncResult<TopicMetadata> metadataResult) {
+
                         if (metadataResult.succeeded()) {
                             if (metadataResult.result() == null) {
                                 // In this case it is most likely that we've been notified by ZK
                                 // before Kafka has finished creating the topic, so we retry
                                 // with exponential backoff.
-                                long delay;
-                                try {
-                                    delay = backOff.delayMs();
-                                    logger.debug("Topic {} created in ZK, but no metadata available from Kafka yet: Backing off for {}ms", topicName, delay);
-                                } catch (MaxAttemptsExceededException e) {
-                                    logger.info("Topic {} created in ZK, and no metadata available from Kafka after {}ms, giving up for now", topicName, backOff.totalDelayMs());
-                                    fut.fail(e);
-                                    return;
-                                }
-
-                                if (delay < 1) {
-                                    // vertx won't tolerate a zero delay
-                                    vertx.runOnContext(timerId -> kafka.topicMetadata(topicName, this));
-                                } else {
-                                    vertx.setTimer(TimeUnit.MILLISECONDS.convert(delay, TimeUnit.MILLISECONDS),
-                                            timerId -> kafka.topicMetadata(topicName, this));
-                                }
+                                retry();
                             } else {
                                 // We now have the metadata we need to create the
                                 // ConfigMap...
@@ -767,6 +737,11 @@ public class Controller {
                         } else {
                             fut.handle(metadataResult.map((Void) null));
                         }
+                    }
+
+                    @Override
+                    public void onMaxAttemptsExceeded(MaxAttemptsExceededException e) {
+                        fut.fail(e);
                     }
                 };
                 kafka.topicMetadata(topicName, handler);
