@@ -28,17 +28,18 @@ import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSetBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.AppsAPIGroupDSL;
-import io.fabric8.kubernetes.client.dsl.CreateOrReplaceable;
-import io.fabric8.kubernetes.client.dsl.Createable;
-import io.fabric8.kubernetes.client.dsl.Deletable;
 import io.fabric8.kubernetes.client.dsl.ExtensionsAPIGroupDSL;
-import io.fabric8.kubernetes.client.dsl.Gettable;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.Nameable;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.dsl.ScalableResource;
+import io.fabric8.openshift.api.model.BuildConfig;
+import io.fabric8.openshift.api.model.BuildConfigBuilder;
+import io.fabric8.openshift.api.model.ImageStream;
+import io.fabric8.openshift.api.model.ImageStreamBuilder;
+import io.fabric8.openshift.client.OpenShiftClient;
+import io.fabric8.openshift.client.dsl.BuildConfigResource;
 import io.strimzi.controller.cluster.operations.CreateOperation;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
@@ -48,19 +49,13 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentMatchers;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
 import java.util.function.BiConsumer;
-import java.util.function.Function;
 
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyVararg;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.matches;
 import static org.mockito.Mockito.mock;
@@ -85,11 +80,12 @@ public class CreateOperationTest {
         vertx.close();
     }
 
-    private <R extends HasMetadata> void createWhenExistsIsANop(TestContext context,
+    private <C extends KubernetesClient, R extends HasMetadata> void createWhenExistsIsANop(TestContext context,
+                                                                Class<C> clientType,
                                                                 Class<? extends Resource> resourceType,
                                                                 R resource,
-                                                                BiConsumer<KubernetesClient, MixedOperation> mocker,
-                                                                CreateOperation<KubernetesClient, R> op) {
+                                                                BiConsumer<C, MixedOperation> mocker,
+                                                                CreateOperation<C, R> op) {
         Resource mockResource = mock(resourceType);
         when(mockResource.get()).thenReturn(resource);
 
@@ -99,7 +95,7 @@ public class CreateOperationTest {
         MixedOperation mockCms = mock(MixedOperation.class);
         when(mockCms.inNamespace(matches(resource.getMetadata().getNamespace()))).thenReturn(mockNameable);
 
-        KubernetesClient mockClient = mock(KubernetesClient.class);
+        C mockClient = mock(clientType);
         mocker.accept(mockClient, mockCms);
 
         Async async = context.async();
@@ -115,11 +111,12 @@ public class CreateOperationTest {
     }
 
 
-    private <R extends HasMetadata> void existenceCheckThrows(TestContext context,
+    private <C extends KubernetesClient, R extends HasMetadata> void existenceCheckThrows(TestContext context,
+                                      Class<C> clientType,
                                       Class<? extends Resource> resourceType,
                                       R resource,
-                                      BiConsumer<KubernetesClient, MixedOperation> mocker,
-                                      CreateOperation<KubernetesClient, R> op) {
+                                      BiConsumer<C, MixedOperation> mocker,
+                                      CreateOperation<C, R> op) {
         RuntimeException ex = new RuntimeException();
 
         Resource mockResource = mock(resourceType);
@@ -131,7 +128,7 @@ public class CreateOperationTest {
         MixedOperation mockCms = mock(MixedOperation.class);
         when(mockCms.inNamespace(matches(resource.getMetadata().getNamespace()))).thenReturn(mockNameable);
 
-        KubernetesClient mockClient = mock(KubernetesClient.class);
+        C mockClient = mock(clientType);
         mocker.accept(mockClient, mockCms);
 
         Async async = context.async();
@@ -142,11 +139,12 @@ public class CreateOperationTest {
         });
     }
 
-    private <R extends HasMetadata> void successfulCreation(TestContext context,
+    private <C extends KubernetesClient, R extends HasMetadata> void successfulCreation(TestContext context,
+                                                            Class<C> clientType,
                                                             Class<? extends Resource> resourceType,
                                                             R resource,
-                                                            BiConsumer<KubernetesClient, MixedOperation> mocker,
-                                                            CreateOperation<KubernetesClient, R> op) {
+                                                            BiConsumer<C, MixedOperation> mocker,
+                                                            CreateOperation<C, R> op) {
         Resource mockResource = mock(resourceType);
         when(mockResource.get()).thenReturn(null);
 
@@ -156,7 +154,7 @@ public class CreateOperationTest {
         MixedOperation mockCms = mock(MixedOperation.class);
         when(mockCms.inNamespace(matches(resource.getMetadata().getNamespace()))).thenReturn(mockNameable);
 
-        KubernetesClient mockClient = mock(KubernetesClient.class);
+        C mockClient = mock(clientType);
         mocker.accept(mockClient, mockCms);
 
         Async async = context.async();
@@ -168,11 +166,12 @@ public class CreateOperationTest {
         });
     }
 
-    private <R extends HasMetadata> void creationThrows(TestContext context,
+    private <C extends KubernetesClient, R extends HasMetadata> void creationThrows(TestContext context,
+                                                        Class<C> clientType,
                                                         Class<? extends Resource> resourceType,
                                                         R resource,
-                                                        BiConsumer<KubernetesClient, MixedOperation> mocker,
-                                                        CreateOperation<KubernetesClient, R> op) {
+                                                        BiConsumer<C, MixedOperation> mocker,
+                                                        CreateOperation<C, R> op) {
         RuntimeException ex = new RuntimeException();
 
         Resource mockResource = mock(resourceType);
@@ -185,7 +184,7 @@ public class CreateOperationTest {
         when(mockCms.inNamespace(matches(resource.getMetadata().getNamespace()))).thenReturn(mockNameable);
         when(mockCms.createOrReplace(any())).thenThrow(ex);
 
-        KubernetesClient mockClient = mock(KubernetesClient.class);
+        C mockClient = mock(clientType);
         mocker.accept(mockClient, mockCms);
 
         Async async = context.async();
@@ -212,10 +211,10 @@ public class CreateOperationTest {
 
         BiConsumer<KubernetesClient, MixedOperation> mocker = (mockClient, mockCms) -> when(mockClient.configMaps()).thenReturn(mockCms);
 
-        createWhenExistsIsANop(context, Resource.class, cm, mocker, op);
-        existenceCheckThrows(context, Resource.class, cm, mocker, op);
-        successfulCreation(context, Resource.class, cm, mocker, op);
-        creationThrows(context, Resource.class, cm, mocker, op);
+        createWhenExistsIsANop(context, KubernetesClient.class, Resource.class, cm, mocker, op);
+        existenceCheckThrows(context, KubernetesClient.class, Resource.class, cm, mocker, op);
+        successfulCreation(context, KubernetesClient.class, Resource.class, cm, mocker, op);
+        creationThrows(context, KubernetesClient.class, Resource.class, cm, mocker, op);
     }
 
     @Test
@@ -228,10 +227,10 @@ public class CreateOperationTest {
         };
         CreateOperation<KubernetesClient, Deployment> op = CreateOperation.createDeployment(dep);
 
-        createWhenExistsIsANop(context, ScalableResource.class, dep, mocker, op);
-        existenceCheckThrows(context, ScalableResource.class, dep, mocker, op);
-        successfulCreation(context, ScalableResource.class, dep, mocker, op);
-        creationThrows(context, ScalableResource.class, dep, mocker, op);
+        createWhenExistsIsANop(context, KubernetesClient.class, ScalableResource.class, dep, mocker, op);
+        existenceCheckThrows(context, KubernetesClient.class, ScalableResource.class, dep, mocker, op);
+        successfulCreation(context, KubernetesClient.class, ScalableResource.class, dep, mocker, op);
+        creationThrows(context, KubernetesClient.class, ScalableResource.class, dep, mocker, op);
     }
 
     @Test
@@ -240,10 +239,10 @@ public class CreateOperationTest {
         BiConsumer<KubernetesClient, MixedOperation> mocker = (mockClient, mockCms) -> when(mockClient.services()).thenReturn(mockCms);
         CreateOperation<KubernetesClient, Service> op = CreateOperation.createService(dep);
 
-        createWhenExistsIsANop(context, Resource.class, dep, mocker, op);
-        existenceCheckThrows(context, Resource.class, dep, mocker, op);
-        successfulCreation(context, Resource.class, dep, mocker, op);
-        creationThrows(context, Resource.class, dep, mocker, op);
+        createWhenExistsIsANop(context, KubernetesClient.class, Resource.class, dep, mocker, op);
+        existenceCheckThrows(context, KubernetesClient.class, Resource.class, dep, mocker, op);
+        successfulCreation(context, KubernetesClient.class, Resource.class, dep, mocker, op);
+        creationThrows(context, KubernetesClient.class, Resource.class, dep, mocker, op);
     }
 
     @Test
@@ -256,10 +255,33 @@ public class CreateOperationTest {
         };
         CreateOperation<KubernetesClient, StatefulSet> op = CreateOperation.createStatefulSet(dep);
 
-        createWhenExistsIsANop(context, RollableScalableResource.class, dep, mocker, op);
-        existenceCheckThrows(context, RollableScalableResource.class, dep, mocker, op);
-        successfulCreation(context, RollableScalableResource.class, dep, mocker, op);
-        creationThrows(context, RollableScalableResource.class, dep, mocker, op);
+        createWhenExistsIsANop(context, KubernetesClient.class, RollableScalableResource.class, dep, mocker, op);
+        existenceCheckThrows(context, KubernetesClient.class, RollableScalableResource.class, dep, mocker, op);
+        successfulCreation(context, KubernetesClient.class, RollableScalableResource.class, dep, mocker, op);
+        creationThrows(context, KubernetesClient.class, RollableScalableResource.class, dep, mocker, op);
     }
 
+    @Test
+    public void testBuildConfig(TestContext context) {
+        BuildConfig dep = new BuildConfigBuilder().withNewMetadata().withNamespace(NAMESPACE).withName(NAME).endMetadata().build();
+        BiConsumer<OpenShiftClient, MixedOperation> mocker = (mockClient, mockCms) -> when(mockClient.buildConfigs()).thenReturn(mockCms);
+        CreateOperation<OpenShiftClient, BuildConfig> op = CreateOperation.createBuildConfig(dep);
+
+        createWhenExistsIsANop(context, OpenShiftClient.class, BuildConfigResource.class, dep, mocker, op);
+        existenceCheckThrows(context, OpenShiftClient.class, BuildConfigResource.class, dep, mocker, op);
+        successfulCreation(context, OpenShiftClient.class, BuildConfigResource.class, dep, mocker, op);
+        creationThrows(context, OpenShiftClient.class, BuildConfigResource.class, dep, mocker, op);
+    }
+
+    @Test
+    public void testImageStream(TestContext context) {
+        ImageStream dep = new ImageStreamBuilder().withNewMetadata().withNamespace(NAMESPACE).withName(NAME).endMetadata().build();
+        BiConsumer<OpenShiftClient, MixedOperation> mocker = (mockClient, mockCms) -> when(mockClient.imageStreams()).thenReturn(mockCms);
+        CreateOperation<OpenShiftClient, ImageStream> op = CreateOperation.createImageStream(dep);
+
+        createWhenExistsIsANop(context, OpenShiftClient.class, Resource.class, dep, mocker, op);
+        existenceCheckThrows(context, OpenShiftClient.class, Resource.class, dep, mocker, op);
+        successfulCreation(context, OpenShiftClient.class, Resource.class, dep, mocker, op);
+        creationThrows(context, OpenShiftClient.class, Resource.class, dep, mocker, op);
+    }
 }
