@@ -648,6 +648,9 @@ public class Controller {
 
                         @Override
                         public void onMaxAttemptsExceeded(MaxAttemptsExceededException e) {
+                            // it's possible that the watched znode for partitions changes, is changed
+                            // due to a reassignment if we don't observe a partition count change within the backoff
+                            // no need for failing the future in this case
                             fut.complete();
                         }
                     };
