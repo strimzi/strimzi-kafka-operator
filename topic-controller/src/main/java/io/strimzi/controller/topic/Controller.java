@@ -747,7 +747,7 @@ public class Controller {
                                     logger.debug("Topic {} created in ZK, but no metadata available from Kafka yet: Backing off for {}ms", topicName, delay);
                                 } catch (MaxAttemptsExceededException e) {
                                     logger.info("Topic {} created in ZK, and no metadata available from Kafka after {}ms, giving up for now", topicName, backOff.totalDelayMs());
-                                    fut.fail(e);
+                                    fut.complete();
                                     return;
                                 }
 
