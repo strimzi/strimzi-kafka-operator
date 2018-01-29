@@ -26,8 +26,8 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Represents an handler for getting Kafka topic metadata with built-in retry
- * mechanism with backoff
+ * Represents a handler for getting Kafka topic metadata, providing a helper {@link #retry} method
+ * for subclasses which want to retry when they need to do that
  */
 public abstract class TopicMetadataHandler implements Handler<AsyncResult<TopicMetadata>> {
 
@@ -66,7 +66,8 @@ public abstract class TopicMetadataHandler implements Handler<AsyncResult<TopicM
     }
 
     /**
-     * Provides the retry mechanism
+     * Schedules this handler to execute again after a delay defined by the {@code BackOff}.
+     * Calls {@link #onMaxAttemptsExceeded} if the backoff has reached its permitted number of retries.
      */
     protected void retry() {
 
