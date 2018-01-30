@@ -47,7 +47,7 @@ EOF
 NODE=1
 while [ $NODE -le $ZOOKEEPER_NODE_COUNT ]; do
     echo "server.${NODE}=${BASE_HOSTNAME}-$((NODE-1)).${BASE_FQDN}:2888:3888" >> /tmp/zookeeper.properties
-    let NODE=NODE+1 
+    let NODE=NODE+1
 done
 
 echo "Starting Zookeeper with configuration:"
@@ -67,4 +67,4 @@ if [ "$ZOOKEEPER_METRICS_ENABLED" = "true" ]; then
 fi
 
 # starting Zookeeper with final configuration
-exec $ZOOKEEPER_HOME/bin/zkServer.sh start-foreground /tmp/zookeeper.properties
+exec $KAFKA_HOME/bin/zookeeper-server-start.sh /tmp/zookeeper.properties

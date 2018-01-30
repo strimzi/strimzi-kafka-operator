@@ -1,6 +1,6 @@
 FROM centos:7
 
-RUN yum -y install java-1.8.0-openjdk-headless gettext hostname && yum clean all -y
+RUN yum -y install java-1.8.0-openjdk-headless gettext nmap-ncat && yum clean all -y
 
 # set Kafka home folder
 ENV KAFKA_HOME=/opt/kafka
