@@ -10,4 +10,4 @@ COPY ./scripts/ $KAFKA_HOME
 
 USER kafka:kafka
 
-ENTRYPOINT ["/opt/kafka/kafka_connect_run.sh"]
+CMD ["/opt/kafka/kafka_connect_run.sh"]
