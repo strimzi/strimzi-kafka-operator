@@ -6,7 +6,6 @@ import io.strimzi.controller.cluster.operations.resource.ConfigMapResources;
 import io.strimzi.controller.cluster.operations.resource.PvcResources;
 import io.strimzi.controller.cluster.operations.resource.ServiceResources;
 import io.strimzi.controller.cluster.operations.resource.StatefulSetResources;
-import io.strimzi.controller.cluster.operations.kubernetes.ManualRollingUpdateOperation;
 import io.strimzi.controller.cluster.resources.ClusterDiffResult;
 import io.strimzi.controller.cluster.resources.KafkaCluster;
 import io.strimzi.controller.cluster.resources.Storage;
@@ -248,7 +247,8 @@ public class KafkaClusterOperation extends ClusterOperation<KafkaCluster> {
         Future<Void> rollingUpdate = Future.future();
 
         if (diff.getRollingUpdate()) {
-            new ManualRollingUpdateOperation(vertx, k8s).rollingUpdate(namespace, kafka.getName(), k8s.getStatefulSet(namespace, kafka.getName()).getSpec().getReplicas(), rollingUpdate.completer());
+            statefulSetResources.rollingUpdate(namespace, kafka.getName(),
+                    rollingUpdate.completer());
         }
         else {
             rollingUpdate.complete();
