@@ -28,15 +28,15 @@ public class DeleteS2IOperation extends S2IOperation {
         List<Future> result = new ArrayList<>(3);
 
         Future<Void> futureSourceImageStream = Future.future();
-        DeleteOperation.deleteImageStream(s2i.getNamespace(), s2i.getSourceImageStreamName()).delete(vertx, client, futureSourceImageStream.completer());
+        DeleteOperation.deleteImageStream(vertx, client).delete(s2i.getNamespace(), s2i.getSourceImageStreamName(), futureSourceImageStream.completer());
         result.add(futureSourceImageStream);
 
         Future<Void> futureTargetImageStream = Future.future();
-        DeleteOperation.deleteImageStream(s2i.getNamespace(), s2i.getName()).delete(vertx, client, futureTargetImageStream.completer());
+        DeleteOperation.deleteImageStream(vertx, client).delete(s2i.getNamespace(), s2i.getName(), futureTargetImageStream.completer());
         result.add(futureTargetImageStream);
 
         Future<Void> futureBuildConfig = Future.future();
-        DeleteOperation.deleteBuildConfig(s2i.getNamespace(), s2i.getName()).delete(vertx, client, futureBuildConfig.completer());
+        DeleteOperation.deleteBuildConfig(vertx, client).delete(s2i.getNamespace(), s2i.getName(), futureBuildConfig.completer());
         result.add(futureBuildConfig);
 
         return result;

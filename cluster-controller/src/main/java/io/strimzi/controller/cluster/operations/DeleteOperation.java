@@ -41,27 +41,27 @@ public abstract class DeleteOperation<U> {
     private static final Logger log = LoggerFactory.getLogger(DeleteOperation.class);
 
     private final String resourceKind;
-    private final String namespace;
-    private final String name;
+    private final Vertx vertx;
+    private final U client;
 
-    public DeleteOperation(String resourceKind, String namespace, String name) {
+    public DeleteOperation(Vertx vertx, U client, String resourceKind) {
+        this.vertx = vertx;
+        this.client = client;
         this.resourceKind = resourceKind;
-        this.namespace = namespace;
-        this.name = name;
     }
 
-    protected abstract boolean exists(U utils, String namespace, String name);
+    protected abstract boolean exists(String namespace, String name);
 
-    protected abstract void delete(U utils, String namespace, String name);
+    protected abstract void delete(String namespace, String name);
 
-    public void delete(Vertx vertx, U utils, Handler<AsyncResult<Void>> handler) {
+    public void delete(String namespace, String name, Handler<AsyncResult<Void>> handler) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
 
-                    if (exists(utils, namespace, name)) {
+                    if (exists(namespace, name)) {
                         try {
                             log.info("Deleting {} {} in namespace {}", resourceKind, name, namespace);
-                            delete(utils, namespace, name);
+                            delete(namespace, name);
                             future.complete();
                         } catch (Exception e) {
                             log.error("Caught exception while deleting {}", resourceKind, e);
@@ -85,108 +85,108 @@ public abstract class DeleteOperation<U> {
         );
     }
 
-    public static DeleteOperation<KubernetesClient> deleteDeployment(String namespace, String name) {
-        return new DeleteOperation<KubernetesClient>("Deployment", namespace, name) {
+    public static DeleteOperation<KubernetesClient> deleteDeployment(Vertx vertx, KubernetesClient client) {
+        return new DeleteOperation<KubernetesClient>(vertx, client, "Deployment") {
 
             @Override
-            protected void delete(KubernetesClient client, String namespace, String name) {
+            protected void delete(String namespace, String name) {
                 log.debug("Deleting deployment {}", name);
                 client.extensions().deployments().inNamespace(namespace).withName(name).delete();
             }
 
             @Override
-            protected boolean exists(KubernetesClient client, String namespace, String name) {
+            protected boolean exists(String namespace, String name) {
                 return client.extensions().deployments().inNamespace(namespace).withName(name).get() != null;
             }
         };
     }
 
-    public static DeleteOperation<KubernetesClient> deleteConfigMap(String namespace, String name) {
-        return new DeleteOperation<KubernetesClient>("ConfigMap", namespace, name) {
+    public static DeleteOperation<KubernetesClient> deleteConfigMap(Vertx vertx, KubernetesClient client) {
+        return new DeleteOperation<KubernetesClient>(vertx, client, "ConfigMap") {
 
             @Override
-            protected void delete(KubernetesClient client, String namespace, String name) {
+            protected void delete(String namespace, String name) {
                 log.debug("Deleting configmap {}", name);
                 client.configMaps().inNamespace(namespace).withName(name).delete();
             }
 
             @Override
-            protected boolean exists(KubernetesClient client, String namespace, String name) {
+            protected boolean exists(String namespace, String name) {
                 return client.configMaps().inNamespace(namespace).withName(name).get() != null;
             }
         };
     }
 
-    public static DeleteOperation<KubernetesClient> deleteStatefulSet(String namespace, String name) {
-        return new DeleteOperation<KubernetesClient>("StatefulSet", namespace, name) {
+    public static DeleteOperation<KubernetesClient> deleteStatefulSet(Vertx vertx, KubernetesClient client) {
+        return new DeleteOperation<KubernetesClient>(vertx, client, "StatefulSet") {
 
             @Override
-            protected void delete(KubernetesClient client, String namespace, String name) {
+            protected void delete(String namespace, String name) {
                 log.debug("Deleting stateful set {}", name);
                 client.apps().statefulSets().inNamespace(namespace).withName(name).delete();
             }
 
             @Override
-            protected boolean exists(KubernetesClient client, String namespace, String name) {
+            protected boolean exists(String namespace, String name) {
                 return client.apps().statefulSets().inNamespace(namespace).withName(name).get() != null;
             }
         };
     }
 
-    public static DeleteOperation<KubernetesClient> deleteService(String namespace, String name) {
-        return new DeleteOperation<KubernetesClient>("Service", namespace, name) {
+    public static DeleteOperation<KubernetesClient> deleteService(Vertx vertx, KubernetesClient client) {
+        return new DeleteOperation<KubernetesClient>(vertx, client, "Service") {
 
             @Override
-            protected void delete(KubernetesClient k8s, String namespace, String name) {
+            protected void delete(String namespace, String name) {
                 log.info("Deleting service {}", name);
-                k8s.services().inNamespace(namespace).withName(name).delete();
+                client.services().inNamespace(namespace).withName(name).delete();
             }
 
             @Override
-            protected boolean exists(KubernetesClient client, String namespace, String name) {
+            protected boolean exists(String namespace, String name) {
                 return client.services().inNamespace(namespace).withName(name).get() != null;
             }
         };
     }
 
-    public static DeleteOperation<OpenShiftClient> deleteBuildConfig(String namespace, String name) {
-        return new DeleteOperation<OpenShiftClient>("BuildConfig", namespace, name) {
+    public static DeleteOperation<OpenShiftClient> deleteBuildConfig(Vertx vertx, OpenShiftClient client) {
+        return new DeleteOperation<OpenShiftClient>(vertx, client, "BuildConfig") {
             @Override
-            protected void delete(OpenShiftClient client, String namespace, String name) {
+            protected void delete(String namespace, String name) {
                 client.buildConfigs().inNamespace(namespace).withName(name).delete();
             }
 
             @Override
-            protected boolean exists(OpenShiftClient client, String namespace, String name) {
+            protected boolean exists(String namespace, String name) {
                 return client.buildConfigs().inNamespace(namespace).withName(name).get() != null;
             }
         };
     }
 
-    public static DeleteOperation<OpenShiftClient> deleteImageStream(String namespace, String name) {
-        return new DeleteOperation<OpenShiftClient>("ImageStream", namespace, name) {
+    public static DeleteOperation<OpenShiftClient> deleteImageStream(Vertx vertx, OpenShiftClient client) {
+        return new DeleteOperation<OpenShiftClient>(vertx, client, "ImageStream") {
             @Override
-            protected void delete(OpenShiftClient client, String namespace, String name) {
+            protected void delete(String namespace, String name) {
                 client.imageStreams().inNamespace(namespace).withName(name).delete();
             }
 
             @Override
-            protected boolean exists(OpenShiftClient client, String namespace, String name) {
+            protected boolean exists(String namespace, String name) {
                 return client.imageStreams().inNamespace(namespace).withName(name).get() != null;
             }
         };
     }
 
-    public static DeleteOperation<KubernetesClient> deletePersistentVolumeClaim(String namespace, String name) {
-        return new DeleteOperation<KubernetesClient>("PersistentVolumeClaim", namespace, name) {
+    public static DeleteOperation<KubernetesClient> deletePersistentVolumeClaim(Vertx vertx, KubernetesClient client) {
+        return new DeleteOperation<KubernetesClient>(vertx, client, "PersistentVolumeClaim") {
             @Override
-            protected void delete(KubernetesClient client, String namespace, String name) {
+            protected void delete(String namespace, String name) {
                 log.debug("Deleting persistentvolumeclaim {}", name);
                 client.persistentVolumeClaims().inNamespace(namespace).withName(name).delete();
             }
 
             @Override
-            protected boolean exists(KubernetesClient client, String namespace, String name) {
+            protected boolean exists(String namespace, String name) {
                 return client.persistentVolumeClaims().inNamespace(namespace).withName(name).get() != null;
             }
         };

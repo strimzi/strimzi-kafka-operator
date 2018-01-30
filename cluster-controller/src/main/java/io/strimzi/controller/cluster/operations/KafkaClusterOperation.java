@@ -69,26 +69,26 @@ public class KafkaClusterOperation extends ClusterOperation<KafkaCluster> {
 
             if (kafka.isMetricsEnabled()) {
                 Future<Void> futureConfigMap = Future.future();
-                DeleteOperation.deleteConfigMap(namespace, kafka.getMetricsConfigName()).delete(vertx, k8s.getKubernetesClient(), futureConfigMap.completer());
+                DeleteOperation.deleteConfigMap(vertx, k8s.getKubernetesClient()).delete(namespace, kafka.getMetricsConfigName(), futureConfigMap.completer());
                 result.add(futureConfigMap);
             }
 
             Future<Void> futureService = Future.future();
-            DeleteOperation.deleteService(namespace, kafka.getName()).delete(vertx, k8s.getKubernetesClient(), futureService.completer());
+            DeleteOperation.deleteService(vertx, k8s.getKubernetesClient()).delete(namespace, kafka.getName(), futureService.completer());
             result.add(futureService);
 
             Future<Void> futureHeadlessService = Future.future();
-            DeleteOperation.deleteService(namespace, kafka.getHeadlessName()).delete(vertx, k8s.getKubernetesClient(), futureHeadlessService.completer());
+            DeleteOperation.deleteService(vertx, k8s.getKubernetesClient()).delete(namespace, kafka.getHeadlessName(), futureHeadlessService.completer());
             result.add(futureHeadlessService);
 
             Future<Void> futureStatefulSet = Future.future();
-            DeleteOperation.deleteStatefulSet(namespace, kafka.getName()).delete(vertx, k8s.getKubernetesClient(), futureStatefulSet.completer());
+            DeleteOperation.deleteStatefulSet(vertx, k8s.getKubernetesClient()).delete(namespace, kafka.getName(), futureStatefulSet.completer());
             result.add(futureStatefulSet);
 
             if (deleteClaims) {
                 for (int i = 0; i < kafka.getReplicas(); i++) {
                     Future<Void> f = Future.future();
-                    DeleteOperation.deletePersistentVolumeClaim(namespace, kafka.getVolumeName() + "-" + kafka.getName() + "-" + i).delete(vertx, k8s.getKubernetesClient(), f.completer());
+                    DeleteOperation.deletePersistentVolumeClaim(vertx, k8s.getKubernetesClient()).delete(namespace, kafka.getVolumeName() + "-" + kafka.getName() + "-" + i, f.completer());
                     result.add(f);
                 }
             }
