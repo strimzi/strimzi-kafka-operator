@@ -14,12 +14,12 @@ import java.util.List;
 public class DeleteKafkaClusterOperation extends SimpleClusterOperation<KafkaCluster> {
     private static final Logger log = LoggerFactory.getLogger(DeleteKafkaClusterOperation.class.getName());
 
-    public DeleteKafkaClusterOperation(Vertx vertx, K8SUtils k8s, String namespace, String name) {
-        super(vertx, k8s, "kafka", "delete", namespace, name);
+    public DeleteKafkaClusterOperation(Vertx vertx, K8SUtils k8s) {
+        super(vertx, k8s, "kafka", "delete");
     }
 
     @Override
-    protected List<Future> futures(K8SUtils k8s, KafkaCluster kafka) {
+    protected List<Future> futures(K8SUtils k8s, String namespace, KafkaCluster kafka) {
         boolean deleteClaims = kafka.getStorage().type() == Storage.StorageType.PERSISTENT_CLAIM
                 && kafka.getStorage().isDeleteClaim();
         List<Future> result = new ArrayList<>(4 + (deleteClaims ? kafka.getReplicas() : 0));
@@ -54,7 +54,7 @@ public class DeleteKafkaClusterOperation extends SimpleClusterOperation<KafkaClu
     }
 
     @Override
-    protected KafkaCluster getCluster(K8SUtils k8s, Handler<AsyncResult<Void>> handler, Lock lock) {
+    protected KafkaCluster getCluster(K8SUtils k8s, String namespace, String name) {
         return KafkaCluster.fromStatefulSet(k8s, namespace, name);
     }
 }

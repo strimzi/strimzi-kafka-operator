@@ -14,12 +14,12 @@ import java.util.List;
 public class DeleteKafkaConnectClusterOperation extends SimpleClusterOperation<KafkaConnectCluster> {
     private static final Logger log = LoggerFactory.getLogger(DeleteKafkaConnectClusterOperation.class.getName());
 
-    public DeleteKafkaConnectClusterOperation(Vertx vertx, K8SUtils k8s, String namespace, String name) {
-        super(vertx, k8s, "kafka-connect", "delete", namespace, name);
+    public DeleteKafkaConnectClusterOperation(Vertx vertx, K8SUtils k8s) {
+        super(vertx, k8s, "kafka-connect", "delete");
     }
 
     @Override
-    protected List<Future> futures(K8SUtils k8s, KafkaConnectCluster connect) {
+    protected List<Future> futures(K8SUtils k8s, String namespace, KafkaConnectCluster connect) {
         List<Future> result = new ArrayList<>(3);
 
         Future<Void> futureService = Future.future();
@@ -40,7 +40,7 @@ public class DeleteKafkaConnectClusterOperation extends SimpleClusterOperation<K
     }
 
     @Override
-    protected KafkaConnectCluster getCluster(K8SUtils k8s, Handler<AsyncResult<Void>> handler, Lock lock) {
+    protected KafkaConnectCluster getCluster(K8SUtils k8s, String namespace, String name) {
         return KafkaConnectCluster.fromDeployment(k8s, namespace, name);
     }
 }

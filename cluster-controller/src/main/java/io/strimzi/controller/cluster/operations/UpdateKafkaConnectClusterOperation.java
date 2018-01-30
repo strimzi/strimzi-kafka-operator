@@ -23,18 +23,20 @@ public class UpdateKafkaConnectClusterOperation extends ClusterOperation {
     private static final Logger log = LoggerFactory.getLogger(UpdateKafkaConnectClusterOperation.class.getName());
     private final K8SUtils k8s;
 
-    public UpdateKafkaConnectClusterOperation(Vertx vertx, K8SUtils k8s, String namespace, String name) {
-        super(vertx, namespace, name);
+    public UpdateKafkaConnectClusterOperation(Vertx vertx, K8SUtils k8s) {
+        super(vertx);
         this.k8s = k8s;
     }
 
-    protected String getLockName() {
+    @Override
+    protected String getLockName(String namespace, String name) {
         return "lock::kafka-connect::" + namespace + "::" + name;
     }
 
-    public void execute(Handler<AsyncResult<Void>> handler) {
+    public void execute(String namespace, String name, Handler<AsyncResult<Void>> handler) {
 
-        vertx.sharedData().getLockWithTimeout(getLockName(), LOCK_TIMEOUT, res -> {
+        final String lockName = getLockName(namespace, name);
+        vertx.sharedData().getLockWithTimeout(lockName, LOCK_TIMEOUT, res -> {
             if (res.succeeded()) {
                 Lock lock = res.result();
 
@@ -55,11 +57,11 @@ public class UpdateKafkaConnectClusterOperation extends ClusterOperation {
 
                 Future<Void> chainFuture = Future.future();
 
-                scaleDown(connect, diff)
-                        .compose(i -> patchService(connect, diff))
-                        .compose(i -> patchDeployment(connect, diff))
-                        .compose(i -> patchS2I(connect, diff))
-                        .compose(i -> scaleUp(connect, diff))
+                scaleDown(connect, namespace, diff)
+                        .compose(i -> patchService(connect, namespace, diff))
+                        .compose(i -> patchDeployment(connect, namespace, diff))
+                        .compose(i -> patchS2I(connect, namespace, diff))
+                        .compose(i -> scaleUp(connect, namespace, diff))
                         .compose(chainFuture::complete, chainFuture);
 
                 chainFuture.setHandler(ar -> {
@@ -74,13 +76,13 @@ public class UpdateKafkaConnectClusterOperation extends ClusterOperation {
                     }
                 });
             } else {
-                log.error("Failed to acquire lock to create Kafka Connect cluster {}", getLockName());
+                log.error("Failed to acquire lock to create Kafka Connect cluster {}", lockName);
                 handler.handle(Future.failedFuture("Failed to acquire lock to create Kafka Connect cluster"));
             }
         });
     }
 
-    private Future<Void> scaleDown(KafkaConnectCluster connect, ClusterDiffResult diff) {
+    private Future<Void> scaleDown(KafkaConnectCluster connect, String namespace, ClusterDiffResult diff) {
         Future<Void> scaleDown = Future.future();
 
         if (diff.getScaleDown())    {
@@ -94,7 +96,7 @@ public class UpdateKafkaConnectClusterOperation extends ClusterOperation {
         return scaleDown;
     }
 
-    private Future<Void> patchService(KafkaConnectCluster connect, ClusterDiffResult diff) {
+    private Future<Void> patchService(KafkaConnectCluster connect, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchService = Future.future();
             OperationExecutor.getInstance().executeK8s(new PatchOperation(k8s.getServiceResource(namespace, connect.getName()), connect.patchService(k8s.getService(namespace, connect.getName()))), patchService.completer());
@@ -106,7 +108,7 @@ public class UpdateKafkaConnectClusterOperation extends ClusterOperation {
         }
     }
 
-    private Future<Void> patchDeployment(KafkaConnectCluster connect, ClusterDiffResult diff) {
+    private Future<Void> patchDeployment(KafkaConnectCluster connect, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchDeployment = Future.future();
             OperationExecutor.getInstance().executeK8s(new PatchOperation(k8s.getDeploymentResource(namespace, connect.getName()), connect.patchDeployment(k8s.getDeployment(namespace, connect.getName()))), patchDeployment.completer());
@@ -126,7 +128,7 @@ public class UpdateKafkaConnectClusterOperation extends ClusterOperation {
      * @param diff          ClusterDiffResult from KafkaConnectResource
      * @return
      */
-    private Future<Void> patchS2I(KafkaConnectCluster connect, ClusterDiffResult diff) {
+    private Future<Void> patchS2I(KafkaConnectCluster connect, String namespace, ClusterDiffResult diff) {
         if (diff.getS2i() != Source2Image.Source2ImageDiff.NONE) {
             if (diff.getS2i() == Source2Image.Source2ImageDiff.CREATE) {
                 log.info("Creating S2I deployment {} in namespace {}", connect.getName(), namespace);
@@ -149,7 +151,7 @@ public class UpdateKafkaConnectClusterOperation extends ClusterOperation {
         }
     }
 
-    private Future<Void> scaleUp(KafkaConnectCluster connect, ClusterDiffResult diff) {
+    private Future<Void> scaleUp(KafkaConnectCluster connect, String namespace, ClusterDiffResult diff) {
         Future<Void> scaleUp = Future.future();
 
         if (diff.getScaleUp()) {

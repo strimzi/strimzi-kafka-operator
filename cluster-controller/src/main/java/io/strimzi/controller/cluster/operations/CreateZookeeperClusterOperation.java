@@ -13,17 +13,17 @@ import java.util.List;
 public class CreateZookeeperClusterOperation extends SimpleClusterOperation<ZookeeperCluster> {
     private static final Logger log = LoggerFactory.getLogger(CreateZookeeperClusterOperation.class.getName());
 
-    public CreateZookeeperClusterOperation(Vertx vertx, K8SUtils k8s, String namespace, String name) {
-        super(vertx, k8s, "zookeeper", "create", namespace, name);
+    public CreateZookeeperClusterOperation(Vertx vertx, K8SUtils k8s) {
+        super(vertx, k8s, "zookeeper", "create");
     }
 
     @Override
-    protected ZookeeperCluster getCluster(K8SUtils k8s, Handler<AsyncResult<Void>> handler, Lock lock) {
+    protected ZookeeperCluster getCluster(K8SUtils k8s, String namespace, String name) {
         return ZookeeperCluster.fromConfigMap(k8s.getConfigmap(namespace, name));
     }
 
     @Override
-    protected List<Future> futures(K8SUtils k8s, ZookeeperCluster zk) {
+    protected List<Future> futures(K8SUtils k8s, String namespace, ZookeeperCluster zk) {
         List<Future> result = new ArrayList<>(4);
 
         if (zk.isMetricsEnabled()) {
