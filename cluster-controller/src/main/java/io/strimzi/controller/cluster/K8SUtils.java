@@ -87,14 +87,6 @@ public class K8SUtils {
         return client.pods().inNamespace(namespace).withName(name);
     }
 
-    public Service getService(String namespace, String name)    {
-        return getServiceResource(namespace, name).get();
-    }
-
-    public Resource<Service, DoneableService> getServiceResource(String namespace, String name)    {
-        return client.services().inNamespace(namespace).withName(name);
-    }
-
     public ConfigMap getConfigmap(String namespace, String name) {
         return getConfigmapResource(namespace, name).get();
     }
