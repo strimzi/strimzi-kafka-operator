@@ -13,8 +13,8 @@ import java.util.List;
 public class CreateKafkaClusterOperation extends SimpleClusterOperation<KafkaCluster> {
     private static final Logger log = LoggerFactory.getLogger(CreateKafkaClusterOperation.class.getName());
 
-    public CreateKafkaClusterOperation(String namespace, String name) {
-        super("kafka", "create", namespace, name);
+    public CreateKafkaClusterOperation(Vertx vertx, String namespace, String name) {
+        super(vertx, "kafka", "create", namespace, name);
     }
 
     @Override

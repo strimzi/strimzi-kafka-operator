@@ -24,8 +24,8 @@ public class UpdateKafkaConnectClusterOperation extends ClusterOperation {
 
     private K8SUtils k8s;
 
-    public UpdateKafkaConnectClusterOperation(String namespace, String name) {
-        super(namespace, name);
+    public UpdateKafkaConnectClusterOperation(Vertx vertx, String namespace, String name) {
+        super(vertx, namespace, name);
     }
 
     protected String getLockName() {
@@ -34,7 +34,7 @@ public class UpdateKafkaConnectClusterOperation extends ClusterOperation {
 
 
     @Override
-    public void execute(Vertx vertx, K8SUtils k8s, Handler<AsyncResult<Void>> handler) {
+    public void execute(K8SUtils k8s, Handler<AsyncResult<Void>> handler) {
         this.k8s = k8s;
 
         vertx.sharedData().getLockWithTimeout(getLockName(), LOCK_TIMEOUT, res -> {

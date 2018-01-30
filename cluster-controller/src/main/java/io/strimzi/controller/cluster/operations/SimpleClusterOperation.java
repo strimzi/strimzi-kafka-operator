@@ -45,8 +45,8 @@ public abstract class SimpleClusterOperation<C extends AbstractCluster> extends 
     private final String clusterType;
     private final String operationType;
 
-    protected SimpleClusterOperation(String clusterType, String operationType, String namespace, String name) {
-        super(namespace, name);
+    protected SimpleClusterOperation(Vertx vertx, String clusterType, String operationType, String namespace, String name) {
+        super(vertx, namespace, name);
         this.clusterType = clusterType;
         this.operationType = operationType;
     }
@@ -57,7 +57,7 @@ public abstract class SimpleClusterOperation<C extends AbstractCluster> extends 
     }
 
     @Override
-    public final void execute(Vertx vertx, K8SUtils k8s, Handler<AsyncResult<Void>> handler) {
+    public final void execute(K8SUtils k8s, Handler<AsyncResult<Void>> handler) {
         vertx.sharedData().getLockWithTimeout(getLockName(), LOCK_TIMEOUT, res -> {
             if (res.succeeded()) {
                 Lock lock = res.result();
