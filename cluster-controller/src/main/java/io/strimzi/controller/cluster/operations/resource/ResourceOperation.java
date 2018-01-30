@@ -18,8 +18,8 @@
 package io.strimzi.controller.cluster.operations.resource;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.Patchable;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -27,6 +27,9 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * Abstract resource creation, for a generic resource type {@code R}.
@@ -38,7 +41,7 @@ import org.slf4j.LoggerFactory;
  * @param <D> The doneable variant of the Kubernetes resource type.
  * @param <R> The resource operations.
  */
-public abstract class ResourceOperation<C, T extends HasMetadata, L, D, R extends Resource<T, D>> {
+public abstract class ResourceOperation<C, T extends HasMetadata, L extends KubernetesResourceList/*<T>*/, D, R extends Resource<T, D>> {
 
     private static final Logger log = LoggerFactory.getLogger(ResourceOperation.class);
     protected final Vertx vertx;
@@ -120,10 +123,6 @@ public abstract class ResourceOperation<C, T extends HasMetadata, L, D, R extend
         patch(namespace, name, true, patch, handler);
     }
 
-    public T get(String namespace, String name) {
-        return operation().inNamespace(namespace).withName(name).get();
-    }
-
     public void patch(String namespace, String name, boolean cascading, T patch, Handler<AsyncResult<Void>> handler) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
@@ -149,6 +148,14 @@ public abstract class ResourceOperation<C, T extends HasMetadata, L, D, R extend
                     }
                 }
         );
+    }
+
+    public T get(String namespace, String name) {
+        return operation().inNamespace(namespace).withName(name).get();
+    }
+
+    public List<T> list(String namespace, Map<String, String> labels) {
+        return operation().inNamespace(namespace).withLabels(labels).list().getItems();
     }
 
 }

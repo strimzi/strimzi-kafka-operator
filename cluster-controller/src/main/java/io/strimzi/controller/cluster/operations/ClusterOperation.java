@@ -17,7 +17,7 @@
 
 package io.strimzi.controller.cluster.operations;
 
-import io.strimzi.controller.cluster.K8SUtils;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.controller.cluster.resources.AbstractCluster;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
@@ -48,11 +48,11 @@ public abstract class ClusterOperation<C extends AbstractCluster> {
     protected final Vertx vertx;
     private final String clusterType;
     private final String operationType;
-    protected final K8SUtils k8s;
+    protected final KubernetesClient client;
 
-    protected ClusterOperation(Vertx vertx, K8SUtils k8s, String clusterType, String operationType) {
+    protected ClusterOperation(Vertx vertx, KubernetesClient client, String clusterType, String operationType) {
         this.vertx = vertx;
-        this.k8s = k8s;
+        this.client = client;
         this.clusterType = clusterType;
         this.operationType = operationType;
     }
@@ -63,10 +63,10 @@ public abstract class ClusterOperation<C extends AbstractCluster> {
 
     protected interface Op<C extends AbstractCluster> {
         /** Create the resources in Kubernetes according to the given {@code cluster} */
-        List<Future> futures(K8SUtils k8s, String namespace, C cluster);
+        List<Future> futures(KubernetesClient client, String namespace, C cluster);
 
         /** Get the desired Cluster instance */
-        C getCluster(K8SUtils k8s, String namespace, String name);
+        C getCluster(KubernetesClient client, String namespace, String name);
     }
 
     private final void execute(String namespace, String name, Op<C> op, Handler<AsyncResult<Void>> handler) {
@@ -77,7 +77,7 @@ public abstract class ClusterOperation<C extends AbstractCluster> {
 
                 C cluster;
                 try {
-                    cluster = op.getCluster(k8s, namespace, name);
+                    cluster = op.getCluster(client, namespace, name);
                     log.info("{} {} cluster {} in namespace {}", operationType, clusterType, cluster.getName(), namespace);
                 } catch (Exception ex) {
                     log.error("Error while getting required {} cluster state for {} operation", clusterType, operationType, ex);
@@ -85,7 +85,7 @@ public abstract class ClusterOperation<C extends AbstractCluster> {
                     lock.release();
                     return;
                 }
-                List<Future> list = op.futures(k8s, namespace, cluster);
+                List<Future> list = op.futures(client, namespace, cluster);
 
                 CompositeFuture.join(list).setHandler(ar -> {
                     if (ar.succeeded()) {
