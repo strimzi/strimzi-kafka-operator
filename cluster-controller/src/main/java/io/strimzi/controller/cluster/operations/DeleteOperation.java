@@ -57,17 +57,21 @@ import org.slf4j.LoggerFactory;
  * Abstract resource deletion.
  * This class applies the template method pattern, first checking whether the resource exists,
  * and creating it if it does not. It is not an error if the resource did already exist.
- * @param <U> The {@code *Utils} instance used to interact with kubernetes.
+ * @param <C> The type of client used to interact with kubernetes.
+ * @param <T> The Kubernetes resource type.
+ * @param <L> The list variant of the Kubernetes resource type.
+ * @param <D> The doneable variant of the Kubernetes resource type.
+ * @param <R> The resource operations.
  */
-public abstract class DeleteOperation<U, T, L, D, R extends Resource<T, D>> {
+public abstract class DeleteOperation<C, T, L, D, R extends Resource<T, D>> {
 
     private static final Logger log = LoggerFactory.getLogger(DeleteOperation.class);
 
     private final String resourceKind;
     private final Vertx vertx;
-    private final U client;
+    private final C client;
 
-    public DeleteOperation(Vertx vertx, U client, String resourceKind) {
+    public DeleteOperation(Vertx vertx, C client, String resourceKind) {
         this.vertx = vertx;
         this.client = client;
         this.resourceKind = resourceKind;
