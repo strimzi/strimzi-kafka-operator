@@ -1,6 +1,17 @@
 package io.strimzi.controller.cluster.operations;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapList;
+import io.fabric8.kubernetes.api.model.DoneableConfigMap;
+import io.fabric8.kubernetes.api.model.DoneableService;
+import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.ServiceList;
+import io.fabric8.kubernetes.api.model.extensions.DoneableStatefulSet;
+import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
+import io.fabric8.kubernetes.api.model.extensions.StatefulSetList;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.strimzi.controller.cluster.K8SUtils;
 import io.strimzi.controller.cluster.operations.kubernetes.ManualRollingUpdateOperation;
 import io.strimzi.controller.cluster.operations.kubernetes.ScaleDownOperation;
@@ -19,9 +30,15 @@ import java.util.List;
 public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster> {
 
     private static final Logger log = LoggerFactory.getLogger(ZookeeperClusterOperation.class.getName());
+    private final ResourceOperation<KubernetesClient, Service, ServiceList, DoneableService, Resource<Service, DoneableService>> serviceResources;
+    private final ResourceOperation<KubernetesClient, StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> statefulSetResources;
+    private final ResourceOperation<KubernetesClient, ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> configMapResources;
 
     public ZookeeperClusterOperation(Vertx vertx, K8SUtils k8s) {
         super(vertx, k8s, "zookeeper", "create");
+        serviceResources = ResourceOperation.service(vertx, k8s.getKubernetesClient());
+        statefulSetResources = ResourceOperation.statefulSet(vertx, k8s.getKubernetesClient());
+        configMapResources = ResourceOperation.configMap(vertx, k8s.getKubernetesClient());
     }
 
     private final Op<ZookeeperCluster> create = new Op<ZookeeperCluster>() {
@@ -192,8 +209,8 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
     private Future<Void> patchService(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchService = Future.future();
-            ResourceOperation.service(vertx, k8s.getKubernetesClient()).patch(namespace, zk.getName(),
-                    zk.patchService(k8s.getService(namespace, zk.getName())), patchService.completer());
+            serviceResources.patch(namespace, zk.getName(),
+                    zk.patchService(serviceResources.get(namespace, zk.getName())), patchService.completer());
             return patchService;
         }
         else
@@ -205,8 +222,8 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
     private Future<Void> patchHeadlessService(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchService = Future.future();
-            ResourceOperation.service(vertx, k8s.getKubernetesClient()).patch(namespace, zk.getHeadlessName(),
-                    zk.patchHeadlessService(k8s.getService(namespace, zk.getHeadlessName())), patchService.completer());
+            serviceResources.patch(namespace, zk.getHeadlessName(),
+                    zk.patchHeadlessService(serviceResources.get(namespace, zk.getHeadlessName())), patchService.completer());
             return patchService;
         }
         else
@@ -218,8 +235,8 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
     private Future<Void> patchStatefulSet(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchStatefulSet = Future.future();
-            ResourceOperation.statefulSet(vertx, k8s.getKubernetesClient()).patch(namespace, zk.getName(), false,
-                    zk.patchStatefulSet(k8s.getStatefulSet(namespace, zk.getName())), patchStatefulSet.completer());
+            statefulSetResources.patch(namespace, zk.getName(), false,
+                    zk.patchStatefulSet(statefulSetResources.get(namespace, zk.getName())), patchStatefulSet.completer());
             return patchStatefulSet;
         }
         else
@@ -231,8 +248,8 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
     private Future<Void> patchMetricsConfigMap(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
         if (diff.isMetricsChanged()) {
             Future<Void> patchConfigMap = Future.future();
-            ResourceOperation.configMap(vertx, k8s.getKubernetesClient()).patch(namespace, zk.getMetricsConfigName(),
-                    zk.patchMetricsConfigMap(k8s.getConfigmap(namespace, zk.getMetricsConfigName())),
+            configMapResources.patch(namespace, zk.getMetricsConfigName(),
+                    zk.patchMetricsConfigMap(configMapResources.get(namespace, zk.getMetricsConfigName())),
                     patchConfigMap.completer());
             return patchConfigMap;
         } else {

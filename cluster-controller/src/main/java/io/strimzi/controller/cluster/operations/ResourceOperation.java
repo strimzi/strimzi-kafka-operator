@@ -148,6 +148,10 @@ public abstract class ResourceOperation<C, T extends HasMetadata, L, D, R extend
         patch(namespace, name, true, patch, handler);
     }
 
+    public T get(String namespace, String name) {
+        return operation().inNamespace(namespace).withName(name).get();
+    }
+
     public <P extends Patchable<T, T>> void patch(String namespace, String name, boolean cascading, T patch, Handler<AsyncResult<Void>> handler) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
