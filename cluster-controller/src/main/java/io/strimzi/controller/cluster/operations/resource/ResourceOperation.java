@@ -41,7 +41,7 @@ import org.slf4j.LoggerFactory;
 public abstract class ResourceOperation<C, T extends HasMetadata, L, D, R extends Resource<T, D>> {
 
     private static final Logger log = LoggerFactory.getLogger(ResourceOperation.class);
-    private final Vertx vertx;
+    protected final Vertx vertx;
     protected final C client;
     private final String resourceKind;
 

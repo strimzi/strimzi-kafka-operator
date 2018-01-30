@@ -7,8 +7,6 @@ import io.strimzi.controller.cluster.operations.resource.PvcResources;
 import io.strimzi.controller.cluster.operations.resource.ServiceResources;
 import io.strimzi.controller.cluster.operations.resource.StatefulSetResources;
 import io.strimzi.controller.cluster.operations.kubernetes.ManualRollingUpdateOperation;
-import io.strimzi.controller.cluster.operations.kubernetes.ScaleDownOperation;
-import io.strimzi.controller.cluster.operations.kubernetes.ScaleUpOperation;
 import io.strimzi.controller.cluster.resources.ClusterDiffResult;
 import io.strimzi.controller.cluster.resources.KafkaCluster;
 import io.strimzi.controller.cluster.resources.Storage;
@@ -188,7 +186,7 @@ public class KafkaClusterOperation extends ClusterOperation<KafkaCluster> {
 
         if (diff.getScaleDown())    {
             log.info("Scaling down stateful set {} in namespace {}", kafka.getName(), namespace);
-            new ScaleDownOperation(vertx, k8s).scaleDown(k8s.getStatefulSetResource(namespace, kafka.getName()), kafka.getReplicas(), scaleDown.completer());
+            statefulSetResources.scaleDown(namespace, kafka.getName(), kafka.getReplicas(), scaleDown.completer());
         }
         else {
             scaleDown.complete();
@@ -263,7 +261,7 @@ public class KafkaClusterOperation extends ClusterOperation<KafkaCluster> {
         Future<Void> scaleUp = Future.future();
 
         if (diff.getScaleUp()) {
-            new ScaleUpOperation(vertx, k8s).scaleUp(k8s.getStatefulSetResource(namespace, kafka.getName()), kafka.getReplicas(), scaleUp.completer());
+            statefulSetResources.scaleUp(namespace, kafka.getName(), kafka.getReplicas(), scaleUp.completer());
         }
         else {
             scaleUp.complete();

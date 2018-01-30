@@ -25,7 +25,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.vertx.core.Vertx;
 
-public class StatefulSetResources extends ResourceOperation<KubernetesClient, StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> {
+public class StatefulSetResources extends ScalableResourceOperation<KubernetesClient, StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> {
     public StatefulSetResources(Vertx vertx, KubernetesClient client) {
         super(vertx, client, "StatefulSet");
     }

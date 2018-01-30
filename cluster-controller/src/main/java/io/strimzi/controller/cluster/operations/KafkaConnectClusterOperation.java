@@ -8,8 +8,6 @@ import io.strimzi.controller.cluster.operations.resource.ConfigMapResources;
 import io.strimzi.controller.cluster.operations.resource.DeploymentResources;
 import io.strimzi.controller.cluster.operations.resource.ImageStreamResources;
 import io.strimzi.controller.cluster.operations.resource.ServiceResources;
-import io.strimzi.controller.cluster.operations.kubernetes.ScaleDownOperation;
-import io.strimzi.controller.cluster.operations.kubernetes.ScaleUpOperation;
 import io.strimzi.controller.cluster.operations.openshift.CreateS2IOperation;
 import io.strimzi.controller.cluster.operations.openshift.DeleteS2IOperation;
 import io.strimzi.controller.cluster.operations.openshift.UpdateS2IOperation;
@@ -166,7 +164,7 @@ public class KafkaConnectClusterOperation extends ClusterOperation<KafkaConnectC
 
         if (diff.getScaleDown())    {
             log.info("Scaling down deployment {} in namespace {}", connect.getName(), namespace);
-            new ScaleDownOperation(vertx, k8s).scaleDown(k8s.getDeploymentResource(namespace, connect.getName()), connect.getReplicas(), scaleDown.completer());
+            deploymentResources.scaleDown(namespace, connect.getName(), connect.getReplicas(), scaleDown.completer());
         }
         else {
             scaleDown.complete();
@@ -236,7 +234,7 @@ public class KafkaConnectClusterOperation extends ClusterOperation<KafkaConnectC
         Future<Void> scaleUp = Future.future();
 
         if (diff.getScaleUp()) {
-            new ScaleUpOperation(vertx, k8s).scaleUp(k8s.getDeploymentResource(namespace, connect.getName()), connect.getReplicas(), scaleUp.completer());
+            deploymentResources.scaleUp(namespace, connect.getName(), connect.getReplicas(), scaleUp.completer());
         }
         else {
             scaleUp.complete();
