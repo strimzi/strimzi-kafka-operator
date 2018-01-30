@@ -1,33 +1,119 @@
 package io.strimzi.controller.cluster.operations;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.strimzi.controller.cluster.K8SUtils;
 import io.strimzi.controller.cluster.operations.kubernetes.ManualRollingUpdateOperation;
 import io.strimzi.controller.cluster.operations.kubernetes.PatchOperation;
 import io.strimzi.controller.cluster.operations.kubernetes.ScaleDownOperation;
 import io.strimzi.controller.cluster.operations.kubernetes.ScaleUpOperation;
 import io.strimzi.controller.cluster.resources.ClusterDiffResult;
+import io.strimzi.controller.cluster.resources.Storage;
 import io.strimzi.controller.cluster.resources.ZookeeperCluster;
-import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.vertx.core.*;
-import io.vertx.core.shareddata.Lock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import io.vertx.core.shareddata.Lock;
 
-public class UpdateZookeeperClusterOperation extends ClusterOperation {
-    private static final Logger log = LoggerFactory.getLogger(UpdateZookeeperClusterOperation.class.getName());
+import java.util.ArrayList;
+import java.util.List;
 
-    private final K8SUtils k8s;
+public class ZookeeperClusterOperation extends SimpleClusterOperation<ZookeeperCluster> {
+    
+    private static final Logger log = LoggerFactory.getLogger(ZookeeperClusterOperation.class.getName());
 
-    public UpdateZookeeperClusterOperation(Vertx vertx, K8SUtils k8s) {
-        super(vertx);
-        this.k8s = k8s;
+    public ZookeeperClusterOperation(Vertx vertx, K8SUtils k8s) {
+        super(vertx, k8s, "zookeeper", "create");
     }
 
-    protected String getLockName(String namespace, String name) {
-        return "lock::zookeeper::" + namespace + "::" + name;
+    private static final Op<ZookeeperCluster> CREATE = new Op<ZookeeperCluster>() {
+
+        @Override
+        public ZookeeperCluster getCluster(K8SUtils k8s, String namespace, String name) {
+            return ZookeeperCluster.fromConfigMap(k8s.getConfigmap(namespace, name));
+        }
+
+        @Override
+        public List<Future> futures(K8SUtils k8s, String namespace, ZookeeperCluster zk) {
+            List<Future> result = new ArrayList<>(4);
+
+            if (zk.isMetricsEnabled()) {
+                Future<Void> futureConfigMap = Future.future();
+                OperationExecutor.getInstance().executeFabric8(CreateOperation.createConfigMap(zk.generateMetricsConfigMap()), futureConfigMap.completer());
+                result.add(futureConfigMap);
+            }
+
+            Future<Void> futureService = Future.future();
+            OperationExecutor.getInstance().executeFabric8(CreateOperation.createService(zk.generateService()), futureService.completer());
+            result.add(futureService);
+
+            Future<Void> futureHeadlessService = Future.future();
+            OperationExecutor.getInstance().executeFabric8(CreateOperation.createService(zk.generateHeadlessService()), futureHeadlessService.completer());
+            result.add(futureHeadlessService);
+
+            Future<Void> futureStatefulSet = Future.future();
+            OperationExecutor.getInstance().executeFabric8(CreateOperation.createStatefulSet(zk.generateStatefulSet(k8s.isOpenShift())), futureStatefulSet.completer());
+            result.add(futureStatefulSet);
+
+            return result;
+        }
+    };
+
+    @Override
+    protected Op<ZookeeperCluster> createOp() {
+        return CREATE;
     }
 
-    public void execute(String namespace, String name, Handler<AsyncResult<Void>> handler) {
+    private static final Op<ZookeeperCluster> DELETE = new Op<ZookeeperCluster>() {
+        @Override
+        public List<Future> futures(K8SUtils k8s, String namespace, ZookeeperCluster zk) {
+            boolean deleteClaims = zk.getStorage().type() == Storage.StorageType.PERSISTENT_CLAIM
+                    && zk.getStorage().isDeleteClaim();
+            List<Future> result = new ArrayList<>(4 + (deleteClaims ? zk.getReplicas() : 0));
+
+            // start deleting configMap operation only if metrics are enabled,
+            // otherwise the future is already complete (for the "join")
+            if (zk.isMetricsEnabled()) {
+                Future<Void> futureConfigMap = Future.future();
+                OperationExecutor.getInstance().executeFabric8(DeleteOperation.deleteConfigMap(namespace, zk.getMetricsConfigName()), futureConfigMap.completer());
+                result.add(futureConfigMap);
+            }
+
+            Future<Void> futureService = Future.future();
+            OperationExecutor.getInstance().executeFabric8(DeleteOperation.deleteService(namespace, zk.getName()), futureService.completer());
+            result.add(futureService);
+
+            Future<Void> futureHeadlessService = Future.future();
+            OperationExecutor.getInstance().executeFabric8(DeleteOperation.deleteService(namespace, zk.getHeadlessName()), futureHeadlessService.completer());
+            result.add(futureHeadlessService);
+
+            Future<Void> futureStatefulSet = Future.future();
+            OperationExecutor.getInstance().executeFabric8(DeleteOperation.deleteStatefulSet(namespace, zk.getName()), futureStatefulSet.completer());
+            result.add(futureStatefulSet);
+
+
+            if (deleteClaims) {
+                for (int i = 0; i < zk.getReplicas(); i++) {
+                    Future<Void> f = Future.future();
+                    OperationExecutor.getInstance().executeFabric8(DeleteOperation.deletePersistentVolumeClaim(namespace, zk.getVolumeName() + "-" + zk.getName() + "-" + i), f.completer());
+                    result.add(f);
+                }
+            }
+            return result;
+        }
+
+        @Override
+        public ZookeeperCluster getCluster(K8SUtils k8s, String namespace, String name) {
+            return ZookeeperCluster.fromStatefulSet(k8s, namespace, name);
+        }
+    };
+
+
+    @Override
+    protected Op<ZookeeperCluster> deleteOp() {
+        return DELETE;
+    }
+
+    public void update(String namespace, String name, Handler<AsyncResult<Void>> handler) {
 
         final String lockName = getLockName(namespace, name);
         vertx.sharedData().getLockWithTimeout(lockName, LOCK_TIMEOUT, res -> {
@@ -110,7 +196,7 @@ public class UpdateZookeeperClusterOperation extends ClusterOperation {
             OperationExecutor.getInstance().executeK8s(new PatchOperation(k8s.getServiceResource(namespace, zk.getName()), zk.patchService(k8s.getService(namespace, zk.getName()))), patchService.completer());
             return patchService;
         }
-            else
+        else
         {
             return Future.succeededFuture();
         }
@@ -122,7 +208,7 @@ public class UpdateZookeeperClusterOperation extends ClusterOperation {
             OperationExecutor.getInstance().executeK8s(new PatchOperation(k8s.getServiceResource(namespace, zk.getHeadlessName()), zk.patchHeadlessService(k8s.getService(namespace, zk.getHeadlessName()))), patchService.completer());
             return patchService;
         }
-            else
+        else
         {
             return Future.succeededFuture();
         }
