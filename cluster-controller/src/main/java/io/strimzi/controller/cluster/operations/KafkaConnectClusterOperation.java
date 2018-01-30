@@ -1,6 +1,8 @@
 package io.strimzi.controller.cluster.operations;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapList;
+import io.fabric8.kubernetes.api.model.DoneableConfigMap;
 import io.fabric8.kubernetes.api.model.DoneableService;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceList;
@@ -10,6 +12,15 @@ import io.fabric8.kubernetes.api.model.extensions.DoneableDeployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.ScalableResource;
+import io.fabric8.openshift.api.model.Build;
+import io.fabric8.openshift.api.model.BuildConfig;
+import io.fabric8.openshift.api.model.BuildConfigList;
+import io.fabric8.openshift.api.model.DoneableBuildConfig;
+import io.fabric8.openshift.api.model.DoneableImageStream;
+import io.fabric8.openshift.api.model.ImageStream;
+import io.fabric8.openshift.api.model.ImageStreamList;
+import io.fabric8.openshift.client.OpenShiftClient;
+import io.fabric8.openshift.client.dsl.BuildConfigResource;
 import io.strimzi.controller.cluster.K8SUtils;
 import io.strimzi.controller.cluster.operations.kubernetes.ScaleDownOperation;
 import io.strimzi.controller.cluster.operations.kubernetes.ScaleUpOperation;
@@ -32,18 +43,24 @@ public class KafkaConnectClusterOperation extends ClusterOperation<KafkaConnectC
     private static final Logger log = LoggerFactory.getLogger(KafkaConnectClusterOperation.class.getName());
     private final ResourceOperation<KubernetesClient, Service, ServiceList, DoneableService, Resource<Service, DoneableService>> serviceResources;
     private final ResourceOperation<KubernetesClient, Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>> deploymentResources;
+    private final ResourceOperation<KubernetesClient, ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> configMapResources;
+    private final ResourceOperation<OpenShiftClient, ImageStream, ImageStreamList, DoneableImageStream, Resource<ImageStream, DoneableImageStream>> imagesStreamResources;
+    private final ResourceOperation<OpenShiftClient, BuildConfig, BuildConfigList, DoneableBuildConfig, BuildConfigResource<BuildConfig, DoneableBuildConfig, Void, Build>> buildConfigResources;
 
     public KafkaConnectClusterOperation(Vertx vertx, K8SUtils k8s) {
         super(vertx, k8s, "kafka-connect","create");
+        configMapResources = ResourceOperation.configMap(vertx, k8s.getKubernetesClient());
         serviceResources = ResourceOperation.service(vertx, k8s.getKubernetesClient());
         deploymentResources = ResourceOperation.deployment(vertx, k8s.getKubernetesClient());
+        imagesStreamResources = ResourceOperation.imageStream(vertx, k8s.getKubernetesClient().adapt(OpenShiftClient.class));
+        buildConfigResources = ResourceOperation.buildConfig(vertx, k8s.getKubernetesClient().adapt(OpenShiftClient.class));
     }
 
     private final Op<KafkaConnectCluster> create = new Op<KafkaConnectCluster>() {
 
         @Override
         public KafkaConnectCluster getCluster(K8SUtils k8s, String namespace, String name) {
-            return KafkaConnectCluster.fromConfigMap(k8s, k8s.getConfigmap(namespace, name));
+            return KafkaConnectCluster.fromConfigMap(k8s, configMapResources.get(namespace, name));
         }
 
         @Override
@@ -60,7 +77,7 @@ public class KafkaConnectClusterOperation extends ClusterOperation<KafkaConnectC
             Future<Void> futureS2I;
             if (connect.getS2I() != null) {
                 futureS2I = Future.future();
-                new CreateS2IOperation(vertx, k8s.getOpenShiftUtils().getOpenShiftClient(), connect.getS2I()).execute(futureS2I.completer());
+                new CreateS2IOperation(vertx, k8s.getKubernetesClient().adapt(OpenShiftClient.class)).execute(connect.getS2I(), futureS2I.completer());
             } else {
                 futureS2I = Future.succeededFuture();
             }
@@ -91,7 +108,7 @@ public class KafkaConnectClusterOperation extends ClusterOperation<KafkaConnectC
 
             if (connect.getS2I() != null) {
                 Future<Void> futureS2I = Future.future();
-                new DeleteS2IOperation(vertx, k8s.getOpenShiftUtils().getOpenShiftClient(), connect.getS2I()).execute(futureS2I.completer());
+                new DeleteS2IOperation(vertx, k8s.getKubernetesClient().adapt(OpenShiftClient.class)).execute(connect.getS2I(), futureS2I.completer());
                 result.add(futureS2I);
             }
 
@@ -100,7 +117,7 @@ public class KafkaConnectClusterOperation extends ClusterOperation<KafkaConnectC
 
         @Override
         public KafkaConnectCluster getCluster(K8SUtils k8s, String namespace, String name) {
-            return KafkaConnectCluster.fromDeployment(k8s, namespace, name);
+            return KafkaConnectCluster.fromDeployment(deploymentResources, imagesStreamResources, namespace, name);
         }
     };
 
@@ -118,12 +135,12 @@ public class KafkaConnectClusterOperation extends ClusterOperation<KafkaConnectC
 
                 ClusterDiffResult diff;
                 KafkaConnectCluster connect;
-                ConfigMap connectConfigMap = k8s.getConfigmap(namespace, name);
+                ConfigMap connectConfigMap = configMapResources.get(namespace, name);
 
                 if (connectConfigMap != null)    {
                     connect = KafkaConnectCluster.fromConfigMap(k8s, connectConfigMap);
                     log.info("Updating Kafka Connect cluster {} in namespace {}", connect.getName(), namespace);
-                    diff = connect.diff(k8s, namespace);
+                    diff = connect.diff(deploymentResources, imagesStreamResources, buildConfigResources, namespace);
                 } else  {
                     log.error("ConfigMap {} doesn't exist anymore in namespace {}", name, namespace);
                     handler.handle(Future.failedFuture("ConfigMap doesn't exist anymore"));
@@ -211,17 +228,17 @@ public class KafkaConnectClusterOperation extends ClusterOperation<KafkaConnectC
             if (diff.getS2i() == Source2Image.Source2ImageDiff.CREATE) {
                 log.info("Creating S2I deployment {} in namespace {}", connect.getName(), namespace);
                 Future<Void> createS2I = Future.future();
-                new CreateS2IOperation(vertx, k8s.getOpenShiftUtils().getOpenShiftClient(), connect.getS2I()).execute(createS2I.completer());
+                new CreateS2IOperation(vertx, k8s.getKubernetesClient().adapt(OpenShiftClient.class)).execute(connect.getS2I(), createS2I.completer());
                 return createS2I;
             } else if (diff.getS2i() == Source2Image.Source2ImageDiff.DELETE) {
                 log.info("Deleting S2I deployment {} in namespace {}", connect.getName(), namespace);
                 Future<Void> deleteS2I = Future.future();
-                new DeleteS2IOperation(vertx, k8s.getOpenShiftUtils().getOpenShiftClient(), new Source2Image(namespace, connect.getName())).execute(deleteS2I.completer());
+                new DeleteS2IOperation(vertx, k8s.getKubernetesClient().adapt(OpenShiftClient.class)).execute(new Source2Image(namespace, connect.getName()), deleteS2I.completer());
                 return deleteS2I;
             } else {
                 log.info("Updating S2I deployment {} in namespace {}", connect.getName(), namespace);
                 Future<Void> patchS2I = Future.future();
-                new UpdateS2IOperation(vertx, k8s.getOpenShiftUtils().getOpenShiftClient(), connect.getS2I()).execute(patchS2I.completer());
+                new UpdateS2IOperation(vertx, k8s.getKubernetesClient().adapt(OpenShiftClient.class)).execute(connect.getS2I(), patchS2I.completer());
                 return patchS2I;
             }
         } else {

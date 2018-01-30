@@ -18,28 +18,23 @@ import java.util.List;
 public abstract class S2IOperation {
     private static final Logger log = LoggerFactory.getLogger(S2IOperation.class.getName());
 
-    protected final Source2Image s2i;
     private final String operationType;
-    protected final OpenShiftClient client;
     protected final Vertx vertx;
 
     /**
      * Constructor
      *
-     * @param s2i   Source2Image instance
      */
-    protected S2IOperation(Vertx vertx, OpenShiftClient client, String operationType, Source2Image s2i) {
+    protected S2IOperation(Vertx vertx, String operationType) {
         this.vertx = vertx;
-        this.client = client;
         this.operationType = operationType;
-        this.s2i = s2i;
     }
 
-    public final void execute(Handler<AsyncResult<Void>> handler) {
+    public final void execute(Source2Image s2i, Handler<AsyncResult<Void>> handler) {
         log.info("{} S2I {} in namespace {}", operationType, s2i.getName(), s2i.getNamespace());
 
         try {
-            List<Future> futures = futures();
+            List<Future> futures = futures(s2i);
 
             CompositeFuture.join(futures).setHandler(ar -> {
                 if (ar.succeeded()) {
@@ -57,5 +52,5 @@ public abstract class S2IOperation {
         }
     }
 
-    protected abstract List<Future> futures();
+    protected abstract List<Future> futures(Source2Image s2i);
 }

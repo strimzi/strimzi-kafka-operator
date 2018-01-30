@@ -36,22 +36,6 @@ public class K8SUtils {
         return this.client.isAdaptable(OpenShiftClient.class);
     }
 
-    /**
-     * Works only on OpenShift.
-     *
-     * @throws  RuntimeException if called on Kubernetes.
-     * @return  OpenShiftUtils instance
-     */
-    public OpenShiftUtils getOpenShiftUtils()   {
-        if (isOpenShift()) {
-            return new OpenShiftUtils(client.adapt(OpenShiftClient.class));
-        }
-        else {
-            log.error("OpenShiftUtils can be created only on OpenShift");
-            throw new RuntimeException("OpenShiftUtils can be created only on OpenShift");
-        }
-    }
-
     /*
       GET methods
      */
@@ -65,10 +49,6 @@ public class K8SUtils {
 
     public List<StatefulSet> getStatefulSets(String namespace, Map<String, String> labels) {
         return client.apps().statefulSets().inNamespace(namespace).withLabels(labels).list().getItems();
-    }
-
-    public Deployment getDeployment(String namespace, String name)    {
-        return getDeploymentResource(namespace, name).get();
     }
 
     public ScalableResource<Deployment, DoneableDeployment> getDeploymentResource(String namespace, String name)    {

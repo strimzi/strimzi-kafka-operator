@@ -3,7 +3,10 @@ package io.strimzi.controller.cluster.operations;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapList;
 import io.fabric8.kubernetes.api.model.DoneableConfigMap;
+import io.fabric8.kubernetes.api.model.DoneablePersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.DoneableService;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaimList;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceList;
 import io.fabric8.kubernetes.api.model.extensions.DoneableStatefulSet;
@@ -33,19 +36,21 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
     private final ResourceOperation<KubernetesClient, Service, ServiceList, DoneableService, Resource<Service, DoneableService>> serviceResources;
     private final ResourceOperation<KubernetesClient, StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> statefulSetResources;
     private final ResourceOperation<KubernetesClient, ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> configMapResources;
+    private final ResourceOperation<KubernetesClient, PersistentVolumeClaim, PersistentVolumeClaimList, DoneablePersistentVolumeClaim, Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim>> pvcResources;
 
     public ZookeeperClusterOperation(Vertx vertx, K8SUtils k8s) {
         super(vertx, k8s, "zookeeper", "create");
         serviceResources = ResourceOperation.service(vertx, k8s.getKubernetesClient());
         statefulSetResources = ResourceOperation.statefulSet(vertx, k8s.getKubernetesClient());
         configMapResources = ResourceOperation.configMap(vertx, k8s.getKubernetesClient());
+        pvcResources = ResourceOperation.persistentVolumeClaim(vertx, k8s.getKubernetesClient());
     }
 
     private final Op<ZookeeperCluster> create = new Op<ZookeeperCluster>() {
 
         @Override
         public ZookeeperCluster getCluster(K8SUtils k8s, String namespace, String name) {
-            return ZookeeperCluster.fromConfigMap(k8s.getConfigmap(namespace, name));
+            return ZookeeperCluster.fromConfigMap(configMapResources.get(namespace, name));
         }
 
         @Override
@@ -59,15 +64,15 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
             }
 
             Future<Void> futureService = Future.future();
-            ResourceOperation.service(vertx, k8s.getKubernetesClient()).create(zk.generateService(), futureService.completer());
+            serviceResources.create(zk.generateService(), futureService.completer());
             result.add(futureService);
 
             Future<Void> futureHeadlessService = Future.future();
-            ResourceOperation.service(vertx, k8s.getKubernetesClient()).create(zk.generateHeadlessService(), futureHeadlessService.completer());
+            serviceResources.create(zk.generateHeadlessService(), futureHeadlessService.completer());
             result.add(futureHeadlessService);
 
             Future<Void> futureStatefulSet = Future.future();
-            ResourceOperation.statefulSet(vertx, k8s.getKubernetesClient()).create(zk.generateStatefulSet(k8s.isOpenShift()), futureStatefulSet.completer());
+            statefulSetResources.create(zk.generateStatefulSet(k8s.isOpenShift()), futureStatefulSet.completer());
             result.add(futureStatefulSet);
 
             return result;
@@ -90,27 +95,27 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
             // otherwise the future is already complete (for the "join")
             if (zk.isMetricsEnabled()) {
                 Future<Void> futureConfigMap = Future.future();
-                ResourceOperation.configMap(vertx, k8s.getKubernetesClient()).delete(namespace, zk.getMetricsConfigName(), futureConfigMap.completer());
+                configMapResources.delete(namespace, zk.getMetricsConfigName(), futureConfigMap.completer());
                 result.add(futureConfigMap);
             }
 
             Future<Void> futureService = Future.future();
-            ResourceOperation.service(vertx, k8s.getKubernetesClient()).delete(namespace, zk.getName(), futureService.completer());
+            serviceResources.delete(namespace, zk.getName(), futureService.completer());
             result.add(futureService);
 
             Future<Void> futureHeadlessService = Future.future();
-            ResourceOperation.service(vertx, k8s.getKubernetesClient()).delete(namespace, zk.getHeadlessName(), futureHeadlessService.completer());
+            serviceResources.delete(namespace, zk.getHeadlessName(), futureHeadlessService.completer());
             result.add(futureHeadlessService);
 
             Future<Void> futureStatefulSet = Future.future();
-            ResourceOperation.statefulSet(vertx, k8s.getKubernetesClient()).delete(namespace, zk.getName(), futureStatefulSet.completer());
+            statefulSetResources.delete(namespace, zk.getName(), futureStatefulSet.completer());
             result.add(futureStatefulSet);
 
 
             if (deleteClaims) {
                 for (int i = 0; i < zk.getReplicas(); i++) {
                     Future<Void> f = Future.future();
-                    ResourceOperation.persistentVolumeClaim(vertx, k8s.getKubernetesClient()).delete(namespace, zk.getVolumeName() + "-" + zk.getName() + "-" + i, f.completer());
+                    pvcResources.delete(namespace, zk.getVolumeName() + "-" + zk.getName() + "-" + i, f.completer());
                     result.add(f);
                 }
             }
@@ -138,7 +143,7 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
 
                 ClusterDiffResult diff;
                 ZookeeperCluster zk;
-                ConfigMap zkConfigMap = k8s.getConfigmap(namespace, name);
+                ConfigMap zkConfigMap = configMapResources.get(namespace, name);
 
                 if (zkConfigMap != null)    {
 
