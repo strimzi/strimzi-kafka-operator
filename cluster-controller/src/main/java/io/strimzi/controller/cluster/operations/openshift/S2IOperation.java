@@ -1,5 +1,6 @@
 package io.strimzi.controller.cluster.operations.openshift;
 
+import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.controller.cluster.OpenShiftUtils;
 import io.strimzi.controller.cluster.operations.Operation;
 import io.strimzi.controller.cluster.resources.Source2Image;
@@ -16,28 +17,32 @@ import java.util.List;
 /**
  * Base Source2Image operation
  */
-public abstract class S2IOperation implements Operation<OpenShiftUtils> {
+public abstract class S2IOperation<U> implements Operation<U> {
     private static final Logger log = LoggerFactory.getLogger(S2IOperation.class.getName());
 
     protected final Source2Image s2i;
     private final String operationType;
+    private final OpenShiftClient client;
+    protected final Vertx vertx;
 
     /**
      * Constructor
      *
      * @param s2i   Source2Image instance
      */
-    protected S2IOperation(String operationType, Source2Image s2i) {
+    protected S2IOperation(Vertx vertx, OpenShiftClient client, String operationType, Source2Image s2i) {
+        this.vertx = vertx;
+        this.client = client;
         this.operationType = operationType;
         this.s2i = s2i;
     }
 
     @Override
-    public final void execute(Vertx vertx2, OpenShiftUtils os, Handler<AsyncResult<Void>> handler) {
+    public final void execute(Vertx vertx2, U os, Handler<AsyncResult<Void>> handler) {
         log.info("{} S2I {} in namespace {}", operationType, s2i.getName(), s2i.getNamespace());
 
         try {
-            List<Future> futures = futures(os);
+            List<Future> futures = futures(client);
 
             CompositeFuture.join(futures).setHandler(ar -> {
                 if (ar.succeeded()) {
@@ -55,5 +60,5 @@ public abstract class S2IOperation implements Operation<OpenShiftUtils> {
         }
     }
 
-    protected abstract List<Future> futures(OpenShiftUtils os);
+    protected abstract List<Future> futures(OpenShiftClient client);
 }

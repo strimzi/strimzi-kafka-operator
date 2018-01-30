@@ -10,6 +10,7 @@ import io.fabric8.openshift.api.model.ImageLookupPolicyBuilder;
 import io.fabric8.openshift.api.model.ImageStream;
 import io.fabric8.openshift.api.model.ImageStreamBuilder;
 import io.fabric8.openshift.api.model.TagReference;
+import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.controller.cluster.OpenShiftUtils;
 import io.vertx.core.json.JsonObject;
 
@@ -304,15 +305,15 @@ public class Source2Image {
     /**
      * Calculates the difference between this Source2Image instance and actual OpenShift resources
      *
-     * @param os       OpenShiftUtils client
+     * @param client   OpenShift client
      * @return         ClusterDiffResult instance describing the differences between desired and actual Source2Image
      */
-    public ClusterDiffResult diff(OpenShiftUtils os) {
+    public ClusterDiffResult diff(OpenShiftClient client) {
         ClusterDiffResult diff = new ClusterDiffResult();
 
-        ImageStream sis = (ImageStream) os.get(namespace, getSourceImageStreamName(), ImageStream.class);
-        ImageStream tis = (ImageStream) os.get(namespace, getName(), ImageStream.class);
-        BuildConfig bc = (BuildConfig) os.get(namespace, getName(), BuildConfig.class);
+        ImageStream sis = client.imageStreams().inNamespace(namespace).withName(getSourceImageStreamName()).get();
+        ImageStream tis = client.imageStreams().inNamespace(namespace).withName(getName()).get();
+        BuildConfig bc = client.buildConfigs().inNamespace(namespace).withName(getName()).get();
 
         if (!getLabels().equals(sis.getMetadata().getLabels())
                 || !getLabels().equals(tis.getMetadata().getLabels())

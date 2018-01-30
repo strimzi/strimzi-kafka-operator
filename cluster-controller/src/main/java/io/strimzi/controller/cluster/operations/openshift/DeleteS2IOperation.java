@@ -1,16 +1,10 @@
 package io.strimzi.controller.cluster.operations.openshift;
 
-import io.strimzi.controller.cluster.OpenShiftUtils;
+import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.controller.cluster.operations.DeleteOperation;
-import io.strimzi.controller.cluster.operations.OperationExecutor;
 import io.strimzi.controller.cluster.resources.Source2Image;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,24 +19,24 @@ public class DeleteS2IOperation extends S2IOperation {
      *
      * @param s2i   Source2Image instance which should be deleted
      */
-    public DeleteS2IOperation(Source2Image s2i) {
-        super("delete", s2i);
+    public DeleteS2IOperation(Vertx vertx, OpenShiftClient client, Source2Image s2i) {
+        super(vertx, client, "delete", s2i);
     }
 
     @Override
-    protected List<Future> futures(OpenShiftUtils os) {
+    protected List<Future> futures(OpenShiftClient client) {
         List<Future> result = new ArrayList<>(3);
 
         Future<Void> futureSourceImageStream = Future.future();
-        OperationExecutor.getInstance().executeOpenShiftClient(DeleteOperation.deleteImageStream(s2i.getNamespace(), s2i.getSourceImageStreamName()), futureSourceImageStream.completer());
+        DeleteOperation.deleteImageStream(s2i.getNamespace(), s2i.getSourceImageStreamName()).execute(vertx, client, futureSourceImageStream.completer());
         result.add(futureSourceImageStream);
 
         Future<Void> futureTargetImageStream = Future.future();
-        OperationExecutor.getInstance().executeOpenShiftClient(DeleteOperation.deleteImageStream(s2i.getNamespace(), s2i.getName()), futureTargetImageStream.completer());
+        DeleteOperation.deleteImageStream(s2i.getNamespace(), s2i.getName()).execute(vertx, client, futureTargetImageStream.completer());
         result.add(futureTargetImageStream);
 
         Future<Void> futureBuildConfig = Future.future();
-        OperationExecutor.getInstance().executeOpenShiftClient(DeleteOperation.deleteBuildConfig(s2i.getNamespace(), s2i.getName()), futureBuildConfig.completer());
+        DeleteOperation.deleteBuildConfig(s2i.getNamespace(), s2i.getName()).execute(vertx, client, futureBuildConfig.completer());
         result.add(futureBuildConfig);
 
         return result;

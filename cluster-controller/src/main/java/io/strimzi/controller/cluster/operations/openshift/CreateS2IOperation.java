@@ -1,16 +1,10 @@
 package io.strimzi.controller.cluster.operations.openshift;
 
-import io.strimzi.controller.cluster.OpenShiftUtils;
+import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.controller.cluster.operations.CreateOperation;
-import io.strimzi.controller.cluster.operations.OperationExecutor;
 import io.strimzi.controller.cluster.resources.Source2Image;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,24 +19,24 @@ public class CreateS2IOperation extends S2IOperation {
      *
      * @param s2i   Source2Image resources which should be created
      */
-    public CreateS2IOperation(Source2Image s2i) {
-        super("create", s2i);
+    public CreateS2IOperation(Vertx vertx, OpenShiftClient client, Source2Image s2i) {
+        super(vertx, client, "create", s2i);
     }
 
     @Override
-    protected List<Future> futures(OpenShiftUtils os) {
+    protected List<Future> futures(OpenShiftClient client) {
         List<Future> result = new ArrayList<>(3);
 
         Future<Void> futureSourceImageStream = Future.future();
-        OperationExecutor.getInstance().executeOpenShiftClient(CreateOperation.createImageStream(s2i.generateSourceImageStream()), futureSourceImageStream.completer());
+        CreateOperation.createImageStream(s2i.generateSourceImageStream()).execute(vertx, client, futureSourceImageStream.completer());
         result.add(futureSourceImageStream);
 
         Future<Void> futureTargetImageStream = Future.future();
-        OperationExecutor.getInstance().executeOpenShiftClient(CreateOperation.createImageStream(s2i.generateTargetImageStream()), futureTargetImageStream.completer());
+        CreateOperation.createImageStream(s2i.generateTargetImageStream()).execute(vertx, client, futureTargetImageStream.completer());
         result.add(futureTargetImageStream);
 
         Future<Void> futureBuildConfig = Future.future();
-        OperationExecutor.getInstance().executeOpenShiftClient(CreateOperation.createBuildConfig(s2i.generateBuildConfig()), futureBuildConfig.completer());
+        CreateOperation.createBuildConfig(s2i.generateBuildConfig()).execute(vertx, client, futureBuildConfig.completer());
         result.add(futureBuildConfig);
 
         return result;

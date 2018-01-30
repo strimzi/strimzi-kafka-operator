@@ -250,7 +250,7 @@ public class KafkaConnectCluster extends AbstractCluster {
                 diff.setDifferent(true);
                 diff.setS2i(Source2Image.Source2ImageDiff.CREATE);
             } else if (s2i != null && realS2I != null) {
-                if (s2i.diff(k8s.getOpenShiftUtils()).getDifferent()) {
+                if (s2i.diff(k8s.getOpenShiftUtils().getOpenShiftClient()).getDifferent()) {
                     log.info("Diff: Kafka Connect S2I should be updated");
                     diff.setS2i(Source2Image.Source2ImageDiff.UPDATE);
                     diff.setDifferent(true);
