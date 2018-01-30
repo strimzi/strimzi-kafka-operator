@@ -1,16 +1,8 @@
 package io.strimzi.controller.cluster.operations.openshift;
 
-import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.openshift.api.model.Build;
-import io.fabric8.openshift.api.model.BuildConfig;
-import io.fabric8.openshift.api.model.BuildConfigList;
-import io.fabric8.openshift.api.model.DoneableBuildConfig;
-import io.fabric8.openshift.api.model.DoneableImageStream;
-import io.fabric8.openshift.api.model.ImageStream;
-import io.fabric8.openshift.api.model.ImageStreamList;
 import io.fabric8.openshift.client.OpenShiftClient;
-import io.fabric8.openshift.client.dsl.BuildConfigResource;
-import io.strimzi.controller.cluster.operations.ResourceOperation;
+import io.strimzi.controller.cluster.operations.resource.BuildConfigResources;
+import io.strimzi.controller.cluster.operations.resource.ImageStreamResources;
 import io.strimzi.controller.cluster.resources.Source2Image;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -27,45 +19,45 @@ import java.util.List;
 public class UpdateS2IOperation extends S2IOperation {
 
     private static final Logger log = LoggerFactory.getLogger(UpdateS2IOperation.class.getName());
-    private final ResourceOperation<OpenShiftClient, BuildConfig, BuildConfigList, DoneableBuildConfig, BuildConfigResource<BuildConfig, DoneableBuildConfig, Void, Build>> buildConfigOperation;
-    private final ResourceOperation<OpenShiftClient, ImageStream, ImageStreamList, DoneableImageStream, Resource<ImageStream, DoneableImageStream>> buildImageStreamOperation;
+    private final BuildConfigResources buildConfigResources;
+    private final ImageStreamResources buildImageStreamResources;
 
     /**
      * Constructor
      */
     public UpdateS2IOperation(Vertx vertx, OpenShiftClient client) {
         super(vertx, "update");
-        buildConfigOperation = ResourceOperation.buildConfig(vertx, client);
-        buildImageStreamOperation = ResourceOperation.imageStream(vertx, client);
+        buildConfigResources = new BuildConfigResources(vertx, client);
+        buildImageStreamResources = new ImageStreamResources(vertx, client);
     }
 
 
     @Override
     protected List<Future> futures(Source2Image s2i) {
-        if (s2i.diff(buildImageStreamOperation, buildConfigOperation).getDifferent()) {
+        if (s2i.diff(buildImageStreamResources, buildConfigResources).getDifferent()) {
             List<Future> result = new ArrayList<>(3);
             Future<Void> futureSourceImageStream = Future.future();
 
-            buildImageStreamOperation.patch(
+            buildImageStreamResources.patch(
                     s2i.getNamespace(), s2i.getSourceImageStreamName(),
                     s2i.patchSourceImageStream(
-                            buildImageStreamOperation.get(s2i.getNamespace(), s2i.getSourceImageStreamName())),
+                            buildImageStreamResources.get(s2i.getNamespace(), s2i.getSourceImageStreamName())),
                     futureSourceImageStream.completer());
             result.add(futureSourceImageStream);
 
             Future<Void> futureTargetImageStream = Future.future();
-            buildImageStreamOperation
+            buildImageStreamResources
                     .patch(s2i.getNamespace(), s2i.getName(),
                             s2i.patchTargetImageStream(
-                                    buildImageStreamOperation.get(s2i.getNamespace(), s2i.getName())),
+                                    buildImageStreamResources.get(s2i.getNamespace(), s2i.getName())),
                             futureTargetImageStream.completer());
             result.add(futureTargetImageStream);
 
             Future<Void> futureBuildConfig = Future.future();
-            buildConfigOperation
+            buildConfigResources
                     .patch(s2i.getNamespace(), s2i.getName(),
                             s2i.patchBuildConfig(
-                                    buildConfigOperation.get(s2i.getNamespace(), s2i.getName())),
+                                    buildConfigResources.get(s2i.getNamespace(), s2i.getName())),
                             futureBuildConfig.completer());
             result.add(futureBuildConfig);
 

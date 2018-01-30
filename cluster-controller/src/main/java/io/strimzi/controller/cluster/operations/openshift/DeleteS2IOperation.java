@@ -1,16 +1,8 @@
 package io.strimzi.controller.cluster.operations.openshift;
 
-import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.openshift.api.model.Build;
-import io.fabric8.openshift.api.model.BuildConfig;
-import io.fabric8.openshift.api.model.BuildConfigList;
-import io.fabric8.openshift.api.model.DoneableBuildConfig;
-import io.fabric8.openshift.api.model.DoneableImageStream;
-import io.fabric8.openshift.api.model.ImageStream;
-import io.fabric8.openshift.api.model.ImageStreamList;
 import io.fabric8.openshift.client.OpenShiftClient;
-import io.fabric8.openshift.client.dsl.BuildConfigResource;
-import io.strimzi.controller.cluster.operations.ResourceOperation;
+import io.strimzi.controller.cluster.operations.resource.BuildConfigResources;
+import io.strimzi.controller.cluster.operations.resource.ImageStreamResources;
 import io.strimzi.controller.cluster.resources.Source2Image;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -23,16 +15,16 @@ import java.util.List;
  */
 public class DeleteS2IOperation extends S2IOperation {
 
-    private final ResourceOperation<OpenShiftClient, ImageStream, ImageStreamList, DoneableImageStream, Resource<ImageStream, DoneableImageStream>> imageStreamResources;
-    private final ResourceOperation<OpenShiftClient, BuildConfig, BuildConfigList, DoneableBuildConfig, BuildConfigResource<BuildConfig, DoneableBuildConfig, Void, Build>> buildConfigResources;
+    private final ImageStreamResources imageStreamResources;
+    private final BuildConfigResources buildConfigResources;
 
     /**
      * Constructor
      */
     public DeleteS2IOperation(Vertx vertx, OpenShiftClient client) {
         super(vertx, "delete");
-        imageStreamResources = ResourceOperation.imageStream(vertx, client);
-        buildConfigResources = ResourceOperation.buildConfig(vertx, client);
+        imageStreamResources = new ImageStreamResources(vertx, client);
+        buildConfigResources = new BuildConfigResources(vertx, client);
     }
 
     @Override

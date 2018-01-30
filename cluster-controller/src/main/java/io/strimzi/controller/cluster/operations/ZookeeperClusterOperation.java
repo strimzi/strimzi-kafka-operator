@@ -1,21 +1,11 @@
 package io.strimzi.controller.cluster.operations;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.ConfigMapList;
-import io.fabric8.kubernetes.api.model.DoneableConfigMap;
-import io.fabric8.kubernetes.api.model.DoneablePersistentVolumeClaim;
-import io.fabric8.kubernetes.api.model.DoneableService;
-import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
-import io.fabric8.kubernetes.api.model.PersistentVolumeClaimList;
-import io.fabric8.kubernetes.api.model.Service;
-import io.fabric8.kubernetes.api.model.ServiceList;
-import io.fabric8.kubernetes.api.model.extensions.DoneableStatefulSet;
-import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
-import io.fabric8.kubernetes.api.model.extensions.StatefulSetList;
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.strimzi.controller.cluster.K8SUtils;
+import io.strimzi.controller.cluster.operations.resource.ConfigMapResources;
+import io.strimzi.controller.cluster.operations.resource.PvcResources;
+import io.strimzi.controller.cluster.operations.resource.ServiceResources;
+import io.strimzi.controller.cluster.operations.resource.StatefulSetResources;
 import io.strimzi.controller.cluster.operations.kubernetes.ManualRollingUpdateOperation;
 import io.strimzi.controller.cluster.operations.kubernetes.ScaleDownOperation;
 import io.strimzi.controller.cluster.operations.kubernetes.ScaleUpOperation;
@@ -33,17 +23,17 @@ import java.util.List;
 public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster> {
 
     private static final Logger log = LoggerFactory.getLogger(ZookeeperClusterOperation.class.getName());
-    private final ResourceOperation<KubernetesClient, Service, ServiceList, DoneableService, Resource<Service, DoneableService>> serviceResources;
-    private final ResourceOperation<KubernetesClient, StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> statefulSetResources;
-    private final ResourceOperation<KubernetesClient, ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> configMapResources;
-    private final ResourceOperation<KubernetesClient, PersistentVolumeClaim, PersistentVolumeClaimList, DoneablePersistentVolumeClaim, Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim>> pvcResources;
+    private final ServiceResources serviceResources;
+    private final StatefulSetResources statefulSetResources;
+    private final ConfigMapResources configMapResources;
+    private final PvcResources pvcResources;
 
     public ZookeeperClusterOperation(Vertx vertx, K8SUtils k8s) {
         super(vertx, k8s, "zookeeper", "create");
-        serviceResources = ResourceOperation.service(vertx, k8s.getKubernetesClient());
-        statefulSetResources = ResourceOperation.statefulSet(vertx, k8s.getKubernetesClient());
-        configMapResources = ResourceOperation.configMap(vertx, k8s.getKubernetesClient());
-        pvcResources = ResourceOperation.persistentVolumeClaim(vertx, k8s.getKubernetesClient());
+        serviceResources = new ServiceResources(vertx, k8s.getKubernetesClient());
+        statefulSetResources = new StatefulSetResources(vertx, k8s.getKubernetesClient());
+        configMapResources = new ConfigMapResources(vertx, k8s.getKubernetesClient());
+        pvcResources = new PvcResources(vertx, k8s.getKubernetesClient());
     }
 
     private final Op<ZookeeperCluster> create = new Op<ZookeeperCluster>() {
@@ -59,7 +49,7 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
 
             if (zk.isMetricsEnabled()) {
                 Future<Void> futureConfigMap = Future.future();
-                ResourceOperation.configMap(vertx, k8s.getKubernetesClient()).create(zk.generateMetricsConfigMap(), futureConfigMap.completer());
+                configMapResources.create(zk.generateMetricsConfigMap(), futureConfigMap.completer());
                 result.add(futureConfigMap);
             }
 
