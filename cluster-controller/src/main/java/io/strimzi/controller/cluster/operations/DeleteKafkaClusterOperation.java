@@ -14,8 +14,8 @@ import java.util.List;
 public class DeleteKafkaClusterOperation extends SimpleClusterOperation<KafkaCluster> {
     private static final Logger log = LoggerFactory.getLogger(DeleteKafkaClusterOperation.class.getName());
 
-    public DeleteKafkaClusterOperation(Vertx vertx, String namespace, String name) {
-        super(vertx, "kafka", "delete", namespace, name);
+    public DeleteKafkaClusterOperation(Vertx vertx, K8SUtils k8s, String namespace, String name) {
+        super(vertx, k8s, "kafka", "delete", namespace, name);
     }
 
     @Override

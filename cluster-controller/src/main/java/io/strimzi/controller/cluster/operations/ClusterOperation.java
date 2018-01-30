@@ -20,5 +20,4 @@ public abstract class ClusterOperation {
 
     protected abstract String getLockName();
 
-    public abstract void execute(K8SUtils utils, Handler<AsyncResult<Void>> handler);
 }

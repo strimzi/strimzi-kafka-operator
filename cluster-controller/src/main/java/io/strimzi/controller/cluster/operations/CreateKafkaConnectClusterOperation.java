@@ -11,8 +11,8 @@ import java.util.List;
 
 public class CreateKafkaConnectClusterOperation extends SimpleClusterOperation<KafkaConnectCluster> {
 
-    public CreateKafkaConnectClusterOperation(Vertx vertx, String namespace, String name) {
-        super(vertx, "kafka-connect","create", namespace, name);
+    public CreateKafkaConnectClusterOperation(Vertx vertx, K8SUtils k8s, String namespace, String name) {
+        super(vertx, k8s, "kafka-connect","create", namespace, name);
     }
 
     @Override
