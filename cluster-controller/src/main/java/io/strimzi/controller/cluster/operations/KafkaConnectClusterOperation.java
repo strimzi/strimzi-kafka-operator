@@ -162,7 +162,8 @@ public class KafkaConnectClusterOperation extends ClusterOperation<KafkaConnectC
     private Future<Void> patchService(KafkaConnectCluster connect, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchService = Future.future();
-            ResourceOperation.service(vertx, k8s.getKubernetesClient()).patch(k8s.getServiceResource(namespace, connect.getName()), connect.patchService(k8s.getService(namespace, connect.getName())), patchService.completer());
+            ResourceOperation.service(vertx, k8s.getKubernetesClient()).patch(namespace, connect.getName(),
+                    connect.patchService(k8s.getService(namespace, connect.getName())), patchService.completer());
             return patchService;
         }
         else
@@ -174,7 +175,8 @@ public class KafkaConnectClusterOperation extends ClusterOperation<KafkaConnectC
     private Future<Void> patchDeployment(KafkaConnectCluster connect, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchDeployment = Future.future();
-            ResourceOperation.deployment(vertx, k8s.getKubernetesClient()).patch(k8s.getDeploymentResource(namespace, connect.getName()), connect.patchDeployment(k8s.getDeployment(namespace, connect.getName())), patchDeployment.completer());
+            ResourceOperation.deployment(vertx, k8s.getKubernetesClient()).patch(namespace, connect.getName(),
+                    connect.patchDeployment(k8s.getDeployment(namespace, connect.getName())), patchDeployment.completer());
             return patchDeployment;
         }
         else

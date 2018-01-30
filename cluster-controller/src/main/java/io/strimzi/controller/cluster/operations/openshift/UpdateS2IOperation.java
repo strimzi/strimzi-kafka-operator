@@ -49,7 +49,7 @@ public class UpdateS2IOperation extends S2IOperation {
             Future<Void> futureSourceImageStream = Future.future();
 
             buildImageStreamOperation.patch(
-                    client.imageStreams().inNamespace(s2i.getNamespace()).withName(s2i.getSourceImageStreamName()),
+                    s2i.getNamespace(), s2i.getSourceImageStreamName(),
                     s2i.patchSourceImageStream(
                             client.imageStreams().inNamespace(s2i.getNamespace()).withName(s2i.getSourceImageStreamName()).get()),
                     futureSourceImageStream.completer());
@@ -57,7 +57,7 @@ public class UpdateS2IOperation extends S2IOperation {
 
             Future<Void> futureTargetImageStream = Future.future();
             buildImageStreamOperation
-                    .patch(client.imageStreams().inNamespace(s2i.getNamespace()).withName(s2i.getName()),
+                    .patch(s2i.getNamespace(), s2i.getName(),
                             s2i.patchTargetImageStream(
                                     client.imageStreams().inNamespace(s2i.getNamespace()).withName(s2i.getName()).get()),
                             futureTargetImageStream.completer());
@@ -65,7 +65,7 @@ public class UpdateS2IOperation extends S2IOperation {
 
             Future<Void> futureBuildConfig = Future.future();
             buildConfigOperation
-                    .patch(client.buildConfigs().inNamespace(s2i.getNamespace()).withName(s2i.getName()),
+                    .patch(s2i.getNamespace(), s2i.getName(),
                             s2i.patchBuildConfig(
                                     client.buildConfigs().inNamespace(s2i.getNamespace()).withName(s2i.getName()).get()),
                             futureBuildConfig.completer());
