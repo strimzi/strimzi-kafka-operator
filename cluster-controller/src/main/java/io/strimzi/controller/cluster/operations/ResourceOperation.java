@@ -144,12 +144,16 @@ public abstract class ResourceOperation<C, T extends HasMetadata, L, D, R extend
         );
     }
 
-    public <P extends Patchable<T, T>> void patch(P patchable, T patch, Handler<AsyncResult<Void>> handler) {
+    public <P extends Patchable<T, T>> void patch(String namespace, String name, T patch, Handler<AsyncResult<Void>> handler) {
+        patch(namespace, name, true, patch, handler);
+    }
+
+    public <P extends Patchable<T, T>> void patch(String namespace, String name, boolean cascading, T patch, Handler<AsyncResult<Void>> handler) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
                     try {
                         log.info("Patching resource with {}", patch);
-                        patchable.patch(patch);
+                        operation().inNamespace(namespace).withName(name).cascading(cascading).patch(patch);
                         future.complete();
                     }
                     catch (Exception e) {
@@ -241,7 +245,7 @@ public abstract class ResourceOperation<C, T extends HasMetadata, L, D, R extend
                 throw new UnsupportedOperationException();// should never happen
             }
             @Override
-            public <P extends Patchable<PersistentVolumeClaim, PersistentVolumeClaim>> void patch(P patchable, PersistentVolumeClaim patch, Handler<AsyncResult<Void>> handler) {
+            public <P extends Patchable<PersistentVolumeClaim, PersistentVolumeClaim>> void patch(String namespace, String name, PersistentVolumeClaim patch, Handler<AsyncResult<Void>> handler) {
                 throw new UnsupportedOperationException();// should never happen
             }
         };

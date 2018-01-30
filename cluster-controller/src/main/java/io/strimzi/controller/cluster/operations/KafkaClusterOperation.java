@@ -190,7 +190,7 @@ public class KafkaClusterOperation extends ClusterOperation<KafkaCluster> {
     private Future<Void> patchService(KafkaCluster kafka, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchService = Future.future();
-            ResourceOperation.service(vertx, k8s.getKubernetesClient()).patch(k8s.getServiceResource(namespace, kafka.getName()), kafka.patchService(k8s.getService(namespace, kafka.getName())), patchService.completer());
+            ResourceOperation.service(vertx, k8s.getKubernetesClient()).patch(namespace, kafka.getName(), kafka.patchService(k8s.getService(namespace, kafka.getName())), patchService.completer());
             return patchService;
         }
         else
@@ -202,7 +202,8 @@ public class KafkaClusterOperation extends ClusterOperation<KafkaCluster> {
     private Future<Void> patchHeadlessService(KafkaCluster kafka, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchService = Future.future();
-            ResourceOperation.service(vertx, k8s.getKubernetesClient()).patch(k8s.getServiceResource(namespace, kafka.getHeadlessName()), kafka.patchHeadlessService(k8s.getService(namespace, kafka.getHeadlessName())), patchService.completer());
+            ResourceOperation.service(vertx, k8s.getKubernetesClient()).patch(namespace, kafka.getHeadlessName(),
+                    kafka.patchHeadlessService(k8s.getService(namespace, kafka.getHeadlessName())), patchService.completer());
             return patchService;
         }
         else
@@ -214,7 +215,8 @@ public class KafkaClusterOperation extends ClusterOperation<KafkaCluster> {
     private Future<Void> patchStatefulSet(KafkaCluster kafka, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchStatefulSet = Future.future();
-            ResourceOperation.statefulSet(vertx, k8s.getKubernetesClient()).patch(k8s.getStatefulSetResource(namespace, kafka.getName()).cascading(false), kafka.patchStatefulSet(k8s.getStatefulSet(namespace, kafka.getName())), patchStatefulSet.completer());
+            ResourceOperation.statefulSet(vertx, k8s.getKubernetesClient()).patch(namespace, kafka.getName(), false,
+                    kafka.patchStatefulSet(k8s.getStatefulSet(namespace, kafka.getName())), patchStatefulSet.completer());
             return patchStatefulSet;
         }
         else
@@ -226,7 +228,8 @@ public class KafkaClusterOperation extends ClusterOperation<KafkaCluster> {
     private Future<Void> patchMetricsConfigMap(KafkaCluster kafka, String namespace, ClusterDiffResult diff) {
         if (diff.isMetricsChanged()) {
             Future<Void> patchConfigMap = Future.future();
-            ResourceOperation.configMap(vertx, k8s.getKubernetesClient()).patch(k8s.getConfigmapResource(namespace, kafka.getMetricsConfigName()), kafka.patchMetricsConfigMap(k8s.getConfigmap(namespace, kafka.getMetricsConfigName())), patchConfigMap.completer());
+            ResourceOperation.configMap(vertx, k8s.getKubernetesClient()).patch(namespace, kafka.getMetricsConfigName(),
+                    kafka.patchMetricsConfigMap(k8s.getConfigmap(namespace, kafka.getMetricsConfigName())), patchConfigMap.completer());
             return patchConfigMap;
         } else {
             return Future.succeededFuture();
