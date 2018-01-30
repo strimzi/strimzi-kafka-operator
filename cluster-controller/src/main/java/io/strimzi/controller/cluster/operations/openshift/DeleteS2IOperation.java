@@ -24,19 +24,19 @@ public class DeleteS2IOperation extends S2IOperation {
     }
 
     @Override
-    protected List<Future> futures(OpenShiftClient client) {
+    protected List<Future> futures() {
         List<Future> result = new ArrayList<>(3);
 
         Future<Void> futureSourceImageStream = Future.future();
-        DeleteOperation.deleteImageStream(s2i.getNamespace(), s2i.getSourceImageStreamName()).execute(vertx, client, futureSourceImageStream.completer());
+        DeleteOperation.deleteImageStream(s2i.getNamespace(), s2i.getSourceImageStreamName()).delete(vertx, client, futureSourceImageStream.completer());
         result.add(futureSourceImageStream);
 
         Future<Void> futureTargetImageStream = Future.future();
-        DeleteOperation.deleteImageStream(s2i.getNamespace(), s2i.getName()).execute(vertx, client, futureTargetImageStream.completer());
+        DeleteOperation.deleteImageStream(s2i.getNamespace(), s2i.getName()).delete(vertx, client, futureTargetImageStream.completer());
         result.add(futureTargetImageStream);
 
         Future<Void> futureBuildConfig = Future.future();
-        DeleteOperation.deleteBuildConfig(s2i.getNamespace(), s2i.getName()).execute(vertx, client, futureBuildConfig.completer());
+        DeleteOperation.deleteBuildConfig(s2i.getNamespace(), s2i.getName()).delete(vertx, client, futureBuildConfig.completer());
         result.add(futureBuildConfig);
 
         return result;

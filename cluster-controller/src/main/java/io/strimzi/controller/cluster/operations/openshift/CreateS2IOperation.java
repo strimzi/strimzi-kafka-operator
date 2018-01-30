@@ -24,19 +24,19 @@ public class CreateS2IOperation extends S2IOperation {
     }
 
     @Override
-    protected List<Future> futures(OpenShiftClient client) {
+    protected List<Future> futures() {
         List<Future> result = new ArrayList<>(3);
 
         Future<Void> futureSourceImageStream = Future.future();
-        CreateOperation.createImageStream(s2i.generateSourceImageStream()).execute(vertx, client, futureSourceImageStream.completer());
+        CreateOperation.createImageStream(s2i.generateSourceImageStream()).create(vertx, client, futureSourceImageStream.completer());
         result.add(futureSourceImageStream);
 
         Future<Void> futureTargetImageStream = Future.future();
-        CreateOperation.createImageStream(s2i.generateTargetImageStream()).execute(vertx, client, futureTargetImageStream.completer());
+        CreateOperation.createImageStream(s2i.generateTargetImageStream()).create(vertx, client, futureTargetImageStream.completer());
         result.add(futureTargetImageStream);
 
         Future<Void> futureBuildConfig = Future.future();
-        CreateOperation.createBuildConfig(s2i.generateBuildConfig()).execute(vertx, client, futureBuildConfig.completer());
+        CreateOperation.createBuildConfig(s2i.generateBuildConfig()).create(vertx, client, futureBuildConfig.completer());
         result.add(futureBuildConfig);
 
         return result;

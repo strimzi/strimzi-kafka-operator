@@ -42,7 +42,7 @@ import org.slf4j.LoggerFactory;
  * @param <U> The {@code *Utils} instance used to interact with kubernetes.
  * @param <R> The type of resource created
  */
-public abstract class CreateOperation<U, R extends HasMetadata> implements Operation<U> {
+public abstract class CreateOperation<U, R extends HasMetadata> {
 
     private static final Logger log = LoggerFactory.getLogger(CreateOperation.class);
 
@@ -54,8 +54,7 @@ public abstract class CreateOperation<U, R extends HasMetadata> implements Opera
         this.resource = resource;
     }
 
-    @Override
-    public void execute(Vertx vertx, U utils, Handler<AsyncResult<Void>> handler) {
+    public void create(Vertx vertx, U utils, Handler<AsyncResult<Void>> handler) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
                     if (!exists(utils, resource.getMetadata().getNamespace(), resource.getMetadata().getName())) {

@@ -1,9 +1,9 @@
 package io.strimzi.controller.cluster.operations.kubernetes;
 
-import io.strimzi.controller.cluster.K8SUtils;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResource;
 import io.fabric8.kubernetes.client.dsl.Patchable;
-import io.strimzi.controller.cluster.operations.Operation;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -11,18 +11,15 @@ import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class PatchOperation<U> implements Operation<U> {
+public class PatchOperation {
     private static final Logger log = LoggerFactory.getLogger(PatchOperation.class.getName());
-    private final Patchable patchable;
-    private final KubernetesResource patch;
+    private final Vertx vertx;
 
-    public PatchOperation(Patchable patchable, KubernetesResource patch) {
-        this.patchable = patchable;
-        this.patch = patch;
+    public PatchOperation(Vertx vertx) {
+        this.vertx = vertx;
     }
 
-    @Override
-    public void execute(Vertx vertx, U k8s, Handler<AsyncResult<Void>> handler) {
+    public <T extends HasMetadata, R extends KubernetesResource<T>, P extends Patchable<R, T>> void patch(P patchable, R patch, Handler<AsyncResult<Void>> handler) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
                     try {
