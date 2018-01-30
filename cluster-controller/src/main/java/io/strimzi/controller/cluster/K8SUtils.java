@@ -51,10 +51,6 @@ public class K8SUtils {
         return client.apps().statefulSets().inNamespace(namespace).withLabels(labels).list().getItems();
     }
 
-    public ScalableResource<Deployment, DoneableDeployment> getDeploymentResource(String namespace, String name)    {
-        return client.extensions().deployments().inNamespace(namespace).withName(name);
-    }
-
     public List<Deployment> getDeployments(String namespace, Map<String, String> labels) {
         return client.extensions().deployments().inNamespace(namespace).withLabels(labels).list().getItems();
     }

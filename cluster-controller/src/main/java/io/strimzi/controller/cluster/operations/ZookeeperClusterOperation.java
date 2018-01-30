@@ -6,7 +6,6 @@ import io.strimzi.controller.cluster.operations.resource.ConfigMapResources;
 import io.strimzi.controller.cluster.operations.resource.PvcResources;
 import io.strimzi.controller.cluster.operations.resource.ServiceResources;
 import io.strimzi.controller.cluster.operations.resource.StatefulSetResources;
-import io.strimzi.controller.cluster.operations.kubernetes.ManualRollingUpdateOperation;
 import io.strimzi.controller.cluster.resources.ClusterDiffResult;
 import io.strimzi.controller.cluster.resources.Storage;
 import io.strimzi.controller.cluster.resources.ZookeeperCluster;
@@ -254,7 +253,8 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
         Future<Void> rollingUpdate = Future.future();
 
         if (diff.getRollingUpdate()) {
-            new ManualRollingUpdateOperation(vertx, k8s).rollingUpdate(namespace, zk.getName(), k8s.getStatefulSet(namespace, zk.getName()).getSpec().getReplicas(), rollingUpdate.completer());
+            statefulSetResources.rollingUpdate(namespace, zk.getName(),
+                    rollingUpdate.completer());
         }
         else {
             rollingUpdate.complete();
