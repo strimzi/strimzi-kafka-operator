@@ -17,12 +17,35 @@
 
 package io.strimzi.controller.cluster.operations;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapList;
+import io.fabric8.kubernetes.api.model.DoneableConfigMap;
+import io.fabric8.kubernetes.api.model.DoneablePersistentVolumeClaim;
+import io.fabric8.kubernetes.api.model.DoneableService;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaimList;
+import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.ServiceList;
+import io.fabric8.kubernetes.api.model.extensions.Deployment;
+import io.fabric8.kubernetes.api.model.extensions.DeploymentList;
+import io.fabric8.kubernetes.api.model.extensions.DoneableDeployment;
+import io.fabric8.kubernetes.api.model.extensions.DoneableStatefulSet;
+import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
+import io.fabric8.kubernetes.api.model.extensions.StatefulSetList;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
+import io.fabric8.kubernetes.client.dsl.ScalableResource;
+import io.fabric8.openshift.api.model.Build;
 import io.fabric8.openshift.api.model.BuildConfig;
+import io.fabric8.openshift.api.model.BuildConfigList;
+import io.fabric8.openshift.api.model.DoneableBuildConfig;
+import io.fabric8.openshift.api.model.DoneableImageStream;
 import io.fabric8.openshift.api.model.ImageStream;
+import io.fabric8.openshift.api.model.ImageStreamList;
 import io.fabric8.openshift.client.OpenShiftClient;
-import io.strimzi.controller.cluster.K8SUtils;
-import io.strimzi.controller.cluster.OpenShiftUtils;
+import io.fabric8.openshift.client.dsl.BuildConfigResource;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -36,7 +59,7 @@ import org.slf4j.LoggerFactory;
  * and creating it if it does not. It is not an error if the resource did already exist.
  * @param <U> The {@code *Utils} instance used to interact with kubernetes.
  */
-public abstract class DeleteOperation<U> {
+public abstract class DeleteOperation<U, T, L, D, R extends Resource<T, D>> {
 
     private static final Logger log = LoggerFactory.getLogger(DeleteOperation.class);
 
@@ -50,18 +73,16 @@ public abstract class DeleteOperation<U> {
         this.resourceKind = resourceKind;
     }
 
-    protected abstract boolean exists(String namespace, String name);
-
-    protected abstract void delete(String namespace, String name);
+    protected abstract MixedOperation<T, L, D, R> operation();
 
     public void delete(String namespace, String name, Handler<AsyncResult<Void>> handler) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
 
-                    if (exists(namespace, name)) {
+                    if (operation().inNamespace(namespace).withName(name).get() != null) {
                         try {
                             log.info("Deleting {} {} in namespace {}", resourceKind, name, namespace);
-                            delete(namespace, name);
+                            operation().inNamespace(namespace).withName(name).delete();
                             future.complete();
                         } catch (Exception e) {
                             log.error("Caught exception while deleting {}", resourceKind, e);
@@ -85,109 +106,67 @@ public abstract class DeleteOperation<U> {
         );
     }
 
-    public static DeleteOperation<KubernetesClient> deleteDeployment(Vertx vertx, KubernetesClient client) {
-        return new DeleteOperation<KubernetesClient>(vertx, client, "Deployment") {
+    public static DeleteOperation<KubernetesClient, Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>> deleteDeployment(Vertx vertx, KubernetesClient client) {
+        return new DeleteOperation<KubernetesClient, Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>>(vertx, client, "Deployment") {
 
             @Override
-            protected void delete(String namespace, String name) {
-                log.debug("Deleting deployment {}", name);
-                client.extensions().deployments().inNamespace(namespace).withName(name).delete();
-            }
-
-            @Override
-            protected boolean exists(String namespace, String name) {
-                return client.extensions().deployments().inNamespace(namespace).withName(name).get() != null;
+            protected MixedOperation<Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>> operation() {
+                return client.extensions().deployments();
             }
         };
     }
 
-    public static DeleteOperation<KubernetesClient> deleteConfigMap(Vertx vertx, KubernetesClient client) {
-        return new DeleteOperation<KubernetesClient>(vertx, client, "ConfigMap") {
+    public static DeleteOperation<KubernetesClient, ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> deleteConfigMap(Vertx vertx, KubernetesClient client) {
+        return new DeleteOperation<KubernetesClient, ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>>(vertx, client, "ConfigMap") {
 
             @Override
-            protected void delete(String namespace, String name) {
-                log.debug("Deleting configmap {}", name);
-                client.configMaps().inNamespace(namespace).withName(name).delete();
-            }
-
-            @Override
-            protected boolean exists(String namespace, String name) {
-                return client.configMaps().inNamespace(namespace).withName(name).get() != null;
+            protected MixedOperation<ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> operation() {
+                return client.configMaps();
             }
         };
     }
 
-    public static DeleteOperation<KubernetesClient> deleteStatefulSet(Vertx vertx, KubernetesClient client) {
-        return new DeleteOperation<KubernetesClient>(vertx, client, "StatefulSet") {
-
+    public static DeleteOperation<KubernetesClient, StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> deleteStatefulSet(Vertx vertx, KubernetesClient client) {
+        return new DeleteOperation<KubernetesClient, StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>>(vertx, client, "StatefulSet") {
             @Override
-            protected void delete(String namespace, String name) {
-                log.debug("Deleting stateful set {}", name);
-                client.apps().statefulSets().inNamespace(namespace).withName(name).delete();
-            }
-
-            @Override
-            protected boolean exists(String namespace, String name) {
-                return client.apps().statefulSets().inNamespace(namespace).withName(name).get() != null;
+            protected MixedOperation<StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> operation() {
+                return client.apps().statefulSets();
             }
         };
     }
 
-    public static DeleteOperation<KubernetesClient> deleteService(Vertx vertx, KubernetesClient client) {
-        return new DeleteOperation<KubernetesClient>(vertx, client, "Service") {
-
+    public static DeleteOperation<KubernetesClient, Service, ServiceList, DoneableService, Resource<Service, DoneableService>> deleteService(Vertx vertx, KubernetesClient client) {
+        return new DeleteOperation<KubernetesClient, Service, ServiceList, DoneableService, Resource<Service, DoneableService>>(vertx, client, "Service") {
             @Override
-            protected void delete(String namespace, String name) {
-                log.info("Deleting service {}", name);
-                client.services().inNamespace(namespace).withName(name).delete();
-            }
-
-            @Override
-            protected boolean exists(String namespace, String name) {
-                return client.services().inNamespace(namespace).withName(name).get() != null;
+            protected MixedOperation<Service, ServiceList, DoneableService, Resource<Service, DoneableService>> operation() {
+                return client.services();
             }
         };
     }
 
-    public static DeleteOperation<OpenShiftClient> deleteBuildConfig(Vertx vertx, OpenShiftClient client) {
-        return new DeleteOperation<OpenShiftClient>(vertx, client, "BuildConfig") {
+    public static DeleteOperation<OpenShiftClient, BuildConfig, BuildConfigList, DoneableBuildConfig, BuildConfigResource<BuildConfig, DoneableBuildConfig, Void, Build>> deleteBuildConfig(Vertx vertx, OpenShiftClient client) {
+        return new DeleteOperation<OpenShiftClient, BuildConfig, BuildConfigList, DoneableBuildConfig, BuildConfigResource<BuildConfig, DoneableBuildConfig, Void, Build>>(vertx, client, "BuildConfig") {
             @Override
-            protected void delete(String namespace, String name) {
-                client.buildConfigs().inNamespace(namespace).withName(name).delete();
-            }
-
-            @Override
-            protected boolean exists(String namespace, String name) {
-                return client.buildConfigs().inNamespace(namespace).withName(name).get() != null;
+            protected MixedOperation<BuildConfig, BuildConfigList, DoneableBuildConfig, BuildConfigResource<BuildConfig, DoneableBuildConfig, Void, Build>> operation() {
+                return client.buildConfigs();
             }
         };
     }
 
-    public static DeleteOperation<OpenShiftClient> deleteImageStream(Vertx vertx, OpenShiftClient client) {
-        return new DeleteOperation<OpenShiftClient>(vertx, client, "ImageStream") {
+    public static DeleteOperation<OpenShiftClient, ImageStream, ImageStreamList, DoneableImageStream, Resource<ImageStream, DoneableImageStream>> deleteImageStream(Vertx vertx, OpenShiftClient client) {
+        return new DeleteOperation<OpenShiftClient, ImageStream, ImageStreamList, DoneableImageStream, Resource<ImageStream, DoneableImageStream>>(vertx, client, "ImageStream") {
             @Override
-            protected void delete(String namespace, String name) {
-                client.imageStreams().inNamespace(namespace).withName(name).delete();
-            }
-
-            @Override
-            protected boolean exists(String namespace, String name) {
-                return client.imageStreams().inNamespace(namespace).withName(name).get() != null;
+            protected MixedOperation<ImageStream, ImageStreamList, DoneableImageStream, Resource<ImageStream, DoneableImageStream>> operation() {
+                return client.imageStreams();
             }
         };
     }
 
-    public static DeleteOperation<KubernetesClient> deletePersistentVolumeClaim(Vertx vertx, KubernetesClient client) {
-        return new DeleteOperation<KubernetesClient>(vertx, client, "PersistentVolumeClaim") {
+    public static DeleteOperation<KubernetesClient, PersistentVolumeClaim, PersistentVolumeClaimList, DoneablePersistentVolumeClaim, Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim>> deletePersistentVolumeClaim(Vertx vertx, KubernetesClient client) {
+        return new DeleteOperation<KubernetesClient, PersistentVolumeClaim, PersistentVolumeClaimList, DoneablePersistentVolumeClaim, Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim>>(vertx, client, "PersistentVolumeClaim") {
             @Override
-            protected void delete(String namespace, String name) {
-                log.debug("Deleting persistentvolumeclaim {}", name);
-                client.persistentVolumeClaims().inNamespace(namespace).withName(name).delete();
-            }
-
-            @Override
-            protected boolean exists(String namespace, String name) {
-                return client.persistentVolumeClaims().inNamespace(namespace).withName(name).get() != null;
+            protected MixedOperation<PersistentVolumeClaim, PersistentVolumeClaimList, DoneablePersistentVolumeClaim, Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim>> operation() {
+                return client.persistentVolumeClaims();
             }
         };
     }
