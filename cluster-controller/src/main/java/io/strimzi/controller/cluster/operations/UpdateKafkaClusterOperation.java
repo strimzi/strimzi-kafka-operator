@@ -19,10 +19,11 @@ import org.slf4j.LoggerFactory;
 public class UpdateKafkaClusterOperation extends ClusterOperation {
     private static final Logger log = LoggerFactory.getLogger(UpdateKafkaClusterOperation.class.getName());
 
-    private K8SUtils k8s;
+    private final K8SUtils k8s;
 
-    public UpdateKafkaClusterOperation(Vertx vertx, String namespace, String name) {
+    public UpdateKafkaClusterOperation(Vertx vertx, K8SUtils k8s, String namespace, String name) {
         super(vertx, namespace, name);
+        this.k8s = k8s;
     }
 
     @Override
@@ -30,9 +31,7 @@ public class UpdateKafkaClusterOperation extends ClusterOperation {
         return "lock::kafka::" + namespace + "::" + name;
     }
 
-    @Override
-    public void execute(K8SUtils k8s, Handler<AsyncResult<Void>> handler) {
-        this.k8s = k8s;
+    public void execute(Handler<AsyncResult<Void>> handler) {
 
         vertx.sharedData().getLockWithTimeout(getLockName(), LOCK_TIMEOUT, res -> {
             if (res.succeeded()) {

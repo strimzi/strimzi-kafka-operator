@@ -21,21 +21,18 @@ import org.slf4j.LoggerFactory;
 
 public class UpdateKafkaConnectClusterOperation extends ClusterOperation {
     private static final Logger log = LoggerFactory.getLogger(UpdateKafkaConnectClusterOperation.class.getName());
+    private final K8SUtils k8s;
 
-    private K8SUtils k8s;
-
-    public UpdateKafkaConnectClusterOperation(Vertx vertx, String namespace, String name) {
+    public UpdateKafkaConnectClusterOperation(Vertx vertx, K8SUtils k8s, String namespace, String name) {
         super(vertx, namespace, name);
+        this.k8s = k8s;
     }
 
     protected String getLockName() {
         return "lock::kafka-connect::" + namespace + "::" + name;
     }
 
-
-    @Override
-    public void execute(K8SUtils k8s, Handler<AsyncResult<Void>> handler) {
-        this.k8s = k8s;
+    public void execute(Handler<AsyncResult<Void>> handler) {
 
         vertx.sharedData().getLockWithTimeout(getLockName(), LOCK_TIMEOUT, res -> {
             if (res.succeeded()) {

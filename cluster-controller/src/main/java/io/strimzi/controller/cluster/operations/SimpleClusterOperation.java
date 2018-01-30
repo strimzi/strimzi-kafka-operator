@@ -44,9 +44,11 @@ public abstract class SimpleClusterOperation<C extends AbstractCluster> extends 
     private static final Logger log = LoggerFactory.getLogger(CreateKafkaClusterOperation.class.getName());
     private final String clusterType;
     private final String operationType;
+    private final K8SUtils k8s;
 
-    protected SimpleClusterOperation(Vertx vertx, String clusterType, String operationType, String namespace, String name) {
+    protected SimpleClusterOperation(Vertx vertx, K8SUtils k8s, String clusterType, String operationType, String namespace, String name) {
         super(vertx, namespace, name);
+        this.k8s = k8s;
         this.clusterType = clusterType;
         this.operationType = operationType;
     }
@@ -56,8 +58,7 @@ public abstract class SimpleClusterOperation<C extends AbstractCluster> extends 
         return "lock::"+ clusterType +"::" + namespace + "::" + name;
     }
 
-    @Override
-    public final void execute(K8SUtils k8s, Handler<AsyncResult<Void>> handler) {
+    public final void execute(Handler<AsyncResult<Void>> handler) {
         vertx.sharedData().getLockWithTimeout(getLockName(), LOCK_TIMEOUT, res -> {
             if (res.succeeded()) {
                 Lock lock = res.result();

@@ -14,8 +14,8 @@ import java.util.List;
 public class DeleteZookeeperClusterOperation extends SimpleClusterOperation<ZookeeperCluster> {
     private static final Logger log = LoggerFactory.getLogger(DeleteZookeeperClusterOperation.class.getName());
 
-    public DeleteZookeeperClusterOperation(Vertx vertx, String namespace, String name) {
-        super(vertx, "zookeeper", "delete", namespace, name);
+    public DeleteZookeeperClusterOperation(Vertx vertx, K8SUtils k8s, String namespace, String name) {
+        super(vertx, k8s, "zookeeper", "delete", namespace, name);
     }
 
     @Override

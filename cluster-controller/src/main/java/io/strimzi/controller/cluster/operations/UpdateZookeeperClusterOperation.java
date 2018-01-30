@@ -16,19 +16,18 @@ import org.slf4j.LoggerFactory;
 public class UpdateZookeeperClusterOperation extends ClusterOperation {
     private static final Logger log = LoggerFactory.getLogger(UpdateZookeeperClusterOperation.class.getName());
 
-    private K8SUtils k8s;
+    private final K8SUtils k8s;
 
-    public UpdateZookeeperClusterOperation(Vertx vertx, String namespace, String name) {
+    public UpdateZookeeperClusterOperation(Vertx vertx, K8SUtils k8s, String namespace, String name) {
         super(vertx, namespace, name);
+        this.k8s = k8s;
     }
 
     protected String getLockName() {
         return "lock::zookeeper::" + namespace + "::" + name;
     }
 
-    @Override
-    public void execute(K8SUtils k8s, Handler<AsyncResult<Void>> handler) {
-        this.k8s = k8s;
+    public void execute(Handler<AsyncResult<Void>> handler) {
 
         vertx.sharedData().getLockWithTimeout(getLockName(), LOCK_TIMEOUT, res -> {
             if (res.succeeded()) {

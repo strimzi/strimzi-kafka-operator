@@ -13,8 +13,8 @@ import java.util.List;
 public class CreateZookeeperClusterOperation extends SimpleClusterOperation<ZookeeperCluster> {
     private static final Logger log = LoggerFactory.getLogger(CreateZookeeperClusterOperation.class.getName());
 
-    public CreateZookeeperClusterOperation(Vertx vertx, String namespace, String name) {
-        super(vertx, "zookeeper", "create", namespace, name);
+    public CreateZookeeperClusterOperation(Vertx vertx, K8SUtils k8s, String namespace, String name) {
+        super(vertx, k8s, "zookeeper", "create", namespace, name);
     }
 
     @Override
