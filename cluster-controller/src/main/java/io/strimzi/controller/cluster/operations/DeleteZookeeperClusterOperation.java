@@ -14,12 +14,12 @@ import java.util.List;
 public class DeleteZookeeperClusterOperation extends SimpleClusterOperation<ZookeeperCluster> {
     private static final Logger log = LoggerFactory.getLogger(DeleteZookeeperClusterOperation.class.getName());
 
-    public DeleteZookeeperClusterOperation(Vertx vertx, K8SUtils k8s, String namespace, String name) {
-        super(vertx, k8s, "zookeeper", "delete", namespace, name);
+    public DeleteZookeeperClusterOperation(Vertx vertx, K8SUtils k8s) {
+        super(vertx, k8s, "zookeeper", "delete");
     }
 
     @Override
-    protected List<Future> futures(K8SUtils k8s, ZookeeperCluster zk) {
+    protected List<Future> futures(K8SUtils k8s, String namespace, ZookeeperCluster zk) {
         boolean deleteClaims = zk.getStorage().type() == Storage.StorageType.PERSISTENT_CLAIM
                 && zk.getStorage().isDeleteClaim();
         List<Future> result = new ArrayList<>(4 + (deleteClaims ? zk.getReplicas() : 0));
@@ -56,7 +56,7 @@ public class DeleteZookeeperClusterOperation extends SimpleClusterOperation<Zook
     }
 
     @Override
-    protected ZookeeperCluster getCluster(K8SUtils k8s, Handler<AsyncResult<Void>> handler, Lock lock) {
+    protected ZookeeperCluster getCluster(K8SUtils k8s, String namespace, String name) {
         return ZookeeperCluster.fromStatefulSet(k8s, namespace, name);
     }
 }

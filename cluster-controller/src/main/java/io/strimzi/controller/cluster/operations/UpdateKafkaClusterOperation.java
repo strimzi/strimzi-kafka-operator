@@ -21,19 +21,20 @@ public class UpdateKafkaClusterOperation extends ClusterOperation {
 
     private final K8SUtils k8s;
 
-    public UpdateKafkaClusterOperation(Vertx vertx, K8SUtils k8s, String namespace, String name) {
-        super(vertx, namespace, name);
+    public UpdateKafkaClusterOperation(Vertx vertx, K8SUtils k8s) {
+        super(vertx);
         this.k8s = k8s;
     }
 
     @Override
-    protected String getLockName() {
+    protected String getLockName(String namespace, String name) {
         return "lock::kafka::" + namespace + "::" + name;
     }
 
-    public void execute(Handler<AsyncResult<Void>> handler) {
+    public void execute(String namespace, String name, Handler<AsyncResult<Void>> handler) {
 
-        vertx.sharedData().getLockWithTimeout(getLockName(), LOCK_TIMEOUT, res -> {
+        final String lockName = getLockName(namespace, name);
+        vertx.sharedData().getLockWithTimeout(lockName, LOCK_TIMEOUT, res -> {
             if (res.succeeded()) {
                 Lock lock = res.result();
 
@@ -66,13 +67,13 @@ public class UpdateKafkaClusterOperation extends ClusterOperation {
 
                 Future<Void> chainFuture = Future.future();
 
-                scaleDown(kafka, diff)
-                        .compose(i -> patchService(kafka, diff))
-                        .compose(i -> patchHeadlessService(kafka, diff))
-                        .compose(i -> patchStatefulSet(kafka, diff))
-                        .compose(i -> patchMetricsConfigMap(kafka, diff))
-                        .compose(i -> rollingUpdate(kafka, diff))
-                        .compose(i -> scaleUp(kafka, diff))
+                scaleDown(kafka, namespace, diff)
+                        .compose(i -> patchService(kafka, namespace, diff))
+                        .compose(i -> patchHeadlessService(kafka, namespace, diff))
+                        .compose(i -> patchStatefulSet(kafka, namespace, diff))
+                        .compose(i -> patchMetricsConfigMap(kafka, namespace, diff))
+                        .compose(i -> rollingUpdate(kafka, namespace, diff))
+                        .compose(i -> scaleUp(kafka, namespace, diff))
                         .compose(chainFuture::complete, chainFuture);
 
                 chainFuture.setHandler(ar -> {
@@ -87,13 +88,13 @@ public class UpdateKafkaClusterOperation extends ClusterOperation {
                     }
                 });
             } else {
-                log.error("Failed to acquire lock to create Kafka cluster {}", getLockName());
+                log.error("Failed to acquire lock to create Kafka cluster {}", lockName);
                 handler.handle(Future.failedFuture("Failed to acquire lock to create Kafka cluster"));
             }
         });
     }
 
-    private Future<Void> scaleDown(KafkaCluster kafka, ClusterDiffResult diff) {
+    private Future<Void> scaleDown(KafkaCluster kafka, String namespace, ClusterDiffResult diff) {
         Future<Void> scaleDown = Future.future();
 
         if (diff.getScaleDown())    {
@@ -107,7 +108,7 @@ public class UpdateKafkaClusterOperation extends ClusterOperation {
         return scaleDown;
     }
 
-    private Future<Void> patchService(KafkaCluster kafka, ClusterDiffResult diff) {
+    private Future<Void> patchService(KafkaCluster kafka, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchService = Future.future();
             OperationExecutor.getInstance().executeK8s(new PatchOperation(k8s.getServiceResource(namespace, kafka.getName()), kafka.patchService(k8s.getService(namespace, kafka.getName()))), patchService.completer());
@@ -119,7 +120,7 @@ public class UpdateKafkaClusterOperation extends ClusterOperation {
         }
     }
 
-    private Future<Void> patchHeadlessService(KafkaCluster kafka, ClusterDiffResult diff) {
+    private Future<Void> patchHeadlessService(KafkaCluster kafka, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchService = Future.future();
             OperationExecutor.getInstance().executeK8s(new PatchOperation(k8s.getServiceResource(namespace, kafka.getHeadlessName()), kafka.patchHeadlessService(k8s.getService(namespace, kafka.getHeadlessName()))), patchService.completer());
@@ -131,7 +132,7 @@ public class UpdateKafkaClusterOperation extends ClusterOperation {
         }
     }
 
-    private Future<Void> patchStatefulSet(KafkaCluster kafka, ClusterDiffResult diff) {
+    private Future<Void> patchStatefulSet(KafkaCluster kafka, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchStatefulSet = Future.future();
             OperationExecutor.getInstance().executeK8s(new PatchOperation(k8s.getStatefulSetResource(namespace, kafka.getName()).cascading(false), kafka.patchStatefulSet(k8s.getStatefulSet(namespace, kafka.getName()))), patchStatefulSet.completer());
@@ -143,7 +144,7 @@ public class UpdateKafkaClusterOperation extends ClusterOperation {
         }
     }
 
-    private Future<Void> patchMetricsConfigMap(KafkaCluster kafka, ClusterDiffResult diff) {
+    private Future<Void> patchMetricsConfigMap(KafkaCluster kafka, String namespace, ClusterDiffResult diff) {
         if (diff.isMetricsChanged()) {
             Future<Void> patchConfigMap = Future.future();
             OperationExecutor.getInstance().executeK8s(new PatchOperation(k8s.getConfigmapResource(namespace, kafka.getMetricsConfigName()), kafka.patchMetricsConfigMap(k8s.getConfigmap(namespace, kafka.getMetricsConfigName()))), patchConfigMap.completer());
@@ -153,7 +154,7 @@ public class UpdateKafkaClusterOperation extends ClusterOperation {
         }
     }
 
-    private Future<Void> rollingUpdate(KafkaCluster kafka, ClusterDiffResult diff) {
+    private Future<Void> rollingUpdate(KafkaCluster kafka, String namespace, ClusterDiffResult diff) {
         Future<Void> rollingUpdate = Future.future();
 
         if (diff.getRollingUpdate()) {
@@ -166,7 +167,7 @@ public class UpdateKafkaClusterOperation extends ClusterOperation {
         return rollingUpdate;
     }
 
-    private Future<Void> scaleUp(KafkaCluster kafka, ClusterDiffResult diff) {
+    private Future<Void> scaleUp(KafkaCluster kafka, String namespace, ClusterDiffResult diff) {
         Future<Void> scaleUp = Future.future();
 
         if (diff.getScaleUp()) {

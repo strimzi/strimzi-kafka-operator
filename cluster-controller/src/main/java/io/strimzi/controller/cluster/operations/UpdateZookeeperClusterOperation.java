@@ -18,18 +18,19 @@ public class UpdateZookeeperClusterOperation extends ClusterOperation {
 
     private final K8SUtils k8s;
 
-    public UpdateZookeeperClusterOperation(Vertx vertx, K8SUtils k8s, String namespace, String name) {
-        super(vertx, namespace, name);
+    public UpdateZookeeperClusterOperation(Vertx vertx, K8SUtils k8s) {
+        super(vertx);
         this.k8s = k8s;
     }
 
-    protected String getLockName() {
+    protected String getLockName(String namespace, String name) {
         return "lock::zookeeper::" + namespace + "::" + name;
     }
 
-    public void execute(Handler<AsyncResult<Void>> handler) {
+    public void execute(String namespace, String name, Handler<AsyncResult<Void>> handler) {
 
-        vertx.sharedData().getLockWithTimeout(getLockName(), LOCK_TIMEOUT, res -> {
+        final String lockName = getLockName(namespace, name);
+        vertx.sharedData().getLockWithTimeout(lockName, LOCK_TIMEOUT, res -> {
             if (res.succeeded()) {
                 Lock lock = res.result();
 
@@ -62,13 +63,13 @@ public class UpdateZookeeperClusterOperation extends ClusterOperation {
 
                 Future<Void> chainFuture = Future.future();
 
-                scaleDown(zk, diff)
-                        .compose(i -> patchService(zk, diff))
-                        .compose(i -> patchHeadlessService(zk, diff))
-                        .compose(i -> patchStatefulSet(zk, diff))
-                        .compose(i -> patchMetricsConfigMap(zk, diff))
-                        .compose(i -> rollingUpdate(zk, diff))
-                        .compose(i -> scaleUp(zk, diff))
+                scaleDown(zk, namespace, diff)
+                        .compose(i -> patchService(zk, namespace, diff))
+                        .compose(i -> patchHeadlessService(zk, namespace, diff))
+                        .compose(i -> patchStatefulSet(zk, namespace, diff))
+                        .compose(i -> patchMetricsConfigMap(zk, namespace, diff))
+                        .compose(i -> rollingUpdate(zk, namespace, diff))
+                        .compose(i -> scaleUp(zk, namespace, diff))
                         .compose(chainFuture::complete, chainFuture);
 
                 chainFuture.setHandler(ar -> {
@@ -83,13 +84,13 @@ public class UpdateZookeeperClusterOperation extends ClusterOperation {
                     }
                 });
             } else {
-                log.error("Failed to acquire lock to create Zookeeper cluster {}", getLockName());
+                log.error("Failed to acquire lock to create Zookeeper cluster {}", lockName);
                 handler.handle(Future.failedFuture("Failed to acquire lock to create Zookeeper cluster"));
             }
         });
     }
 
-    private Future<Void> scaleDown(ZookeeperCluster zk, ClusterDiffResult diff) {
+    private Future<Void> scaleDown(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
         Future<Void> scaleDown = Future.future();
 
         if (diff.getScaleDown())    {
@@ -103,7 +104,7 @@ public class UpdateZookeeperClusterOperation extends ClusterOperation {
         return scaleDown;
     }
 
-    private Future<Void> patchService(ZookeeperCluster zk, ClusterDiffResult diff) {
+    private Future<Void> patchService(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchService = Future.future();
             OperationExecutor.getInstance().executeK8s(new PatchOperation(k8s.getServiceResource(namespace, zk.getName()), zk.patchService(k8s.getService(namespace, zk.getName()))), patchService.completer());
@@ -115,7 +116,7 @@ public class UpdateZookeeperClusterOperation extends ClusterOperation {
         }
     }
 
-    private Future<Void> patchHeadlessService(ZookeeperCluster zk, ClusterDiffResult diff) {
+    private Future<Void> patchHeadlessService(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchService = Future.future();
             OperationExecutor.getInstance().executeK8s(new PatchOperation(k8s.getServiceResource(namespace, zk.getHeadlessName()), zk.patchHeadlessService(k8s.getService(namespace, zk.getHeadlessName()))), patchService.completer());
@@ -127,7 +128,7 @@ public class UpdateZookeeperClusterOperation extends ClusterOperation {
         }
     }
 
-    private Future<Void> patchStatefulSet(ZookeeperCluster zk, ClusterDiffResult diff) {
+    private Future<Void> patchStatefulSet(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchStatefulSet = Future.future();
             OperationExecutor.getInstance().executeK8s(new PatchOperation(k8s.getStatefulSetResource(namespace, zk.getName()).cascading(false), zk.patchStatefulSet(k8s.getStatefulSet(namespace, zk.getName()))), patchStatefulSet.completer());
@@ -139,7 +140,7 @@ public class UpdateZookeeperClusterOperation extends ClusterOperation {
         }
     }
 
-    private Future<Void> patchMetricsConfigMap(ZookeeperCluster zk, ClusterDiffResult diff) {
+    private Future<Void> patchMetricsConfigMap(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
         if (diff.isMetricsChanged()) {
             Future<Void> patchConfigMap = Future.future();
             OperationExecutor.getInstance().executeK8s(new PatchOperation(k8s.getConfigmapResource(namespace, zk.getMetricsConfigName()), zk.patchMetricsConfigMap(k8s.getConfigmap(namespace, zk.getMetricsConfigName()))), patchConfigMap.completer());
@@ -149,7 +150,7 @@ public class UpdateZookeeperClusterOperation extends ClusterOperation {
         }
     }
 
-    private Future<Void> rollingUpdate(ZookeeperCluster zk, ClusterDiffResult diff) {
+    private Future<Void> rollingUpdate(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
         Future<Void> rollingUpdate = Future.future();
 
         if (diff.getRollingUpdate()) {
@@ -162,7 +163,7 @@ public class UpdateZookeeperClusterOperation extends ClusterOperation {
         return rollingUpdate;
     }
 
-    private Future<Void> scaleUp(ZookeeperCluster zk, ClusterDiffResult diff) {
+    private Future<Void> scaleUp(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
         Future<Void> scaleUp = Future.future();
 
         if (diff.getScaleUp()) {

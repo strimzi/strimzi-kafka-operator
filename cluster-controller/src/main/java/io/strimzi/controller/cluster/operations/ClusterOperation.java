@@ -6,18 +6,14 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 
 public abstract class ClusterOperation {
-    protected final String namespace;
-    protected final String name;
 
     protected final int LOCK_TIMEOUT = 60000;
     protected final Vertx vertx;
 
-    protected ClusterOperation(Vertx vertx, String namespace, String name) {
+    protected ClusterOperation(Vertx vertx) {
         this.vertx = vertx;
-        this.namespace = namespace;
-        this.name = name;
     }
 
-    protected abstract String getLockName();
+    protected abstract String getLockName(String namespace, String name);
 
 }

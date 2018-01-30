@@ -33,8 +33,8 @@ import java.util.List;
 /**
  * Abstract cluster creation, for a generic cluster type {@code C}.
  * This class applies the template method pattern, first obtaining the desired cluster configuration
- * ({@link #getCluster(K8SUtils, Handler, Lock)}),
- * then creating resources to match ({@link #futures(K8SUtils, AbstractCluster)}).
+ * ({@link #getCluster(K8SUtils, String, String)}),
+ * then creating resources to match ({@link #futures(K8SUtils, String, AbstractCluster)}).
  *
  * This class manages a per-cluster-type and per-cluster locking strategy so only one operation per cluster
  * can proceed at once.
@@ -46,26 +46,27 @@ public abstract class SimpleClusterOperation<C extends AbstractCluster> extends 
     private final String operationType;
     private final K8SUtils k8s;
 
-    protected SimpleClusterOperation(Vertx vertx, K8SUtils k8s, String clusterType, String operationType, String namespace, String name) {
-        super(vertx, namespace, name);
+    protected SimpleClusterOperation(Vertx vertx, K8SUtils k8s, String clusterType, String operationType) {
+        super(vertx);
         this.k8s = k8s;
         this.clusterType = clusterType;
         this.operationType = operationType;
     }
 
     @Override
-    protected final String getLockName() {
+    protected final String getLockName(String namespace, String name) {
         return "lock::"+ clusterType +"::" + namespace + "::" + name;
     }
 
-    public final void execute(Handler<AsyncResult<Void>> handler) {
-        vertx.sharedData().getLockWithTimeout(getLockName(), LOCK_TIMEOUT, res -> {
+    public final void execute(String namespace, String name, Handler<AsyncResult<Void>> handler) {
+        final String lockName = getLockName(namespace, name);
+        vertx.sharedData().getLockWithTimeout(lockName, LOCK_TIMEOUT, res -> {
             if (res.succeeded()) {
                 Lock lock = res.result();
 
                 C cluster;
                 try {
-                    cluster = getCluster(k8s, handler, lock);
+                    cluster = getCluster(k8s, namespace, name);
                     log.info("{} {} cluster {} in namespace {}", operationType, clusterType, cluster.getName(), namespace);
                 } catch (Exception ex) {
                     log.error("Error while getting required {} cluster state for {} operation", clusterType, operationType, ex);
@@ -73,7 +74,7 @@ public abstract class SimpleClusterOperation<C extends AbstractCluster> extends 
                     lock.release();
                     return;
                 }
-                List<Future> list = futures(k8s, cluster);
+                List<Future> list = futures(k8s, namespace, cluster);
 
                 CompositeFuture.join(list).setHandler(ar -> {
                     if (ar.succeeded()) {
@@ -87,16 +88,16 @@ public abstract class SimpleClusterOperation<C extends AbstractCluster> extends 
                     }
                 });
             } else {
-                log.error("Failed to acquire lock to {} {} cluster {}", operationType, clusterType, getLockName());
+                log.error("Failed to acquire lock to {} {} cluster {}", operationType, clusterType, lockName);
                 handler.handle(Future.failedFuture("Failed to acquire lock to " + operationType + " "+ clusterType + " cluster"));
             }
         });
     }
 
     /** Create the resources in Kubernetes according to the given {@code cluster} */
-    protected abstract List<Future> futures(K8SUtils k8s, C cluster);
+    protected abstract List<Future> futures(K8SUtils k8s, String namespace, C cluster);
 
     /** Get the desired Cluster instance */
-    protected abstract C getCluster(K8SUtils k8s, Handler<AsyncResult<Void>> handler, Lock lock);
+    protected abstract C getCluster(K8SUtils k8s, String namespace, String name);
 
 }

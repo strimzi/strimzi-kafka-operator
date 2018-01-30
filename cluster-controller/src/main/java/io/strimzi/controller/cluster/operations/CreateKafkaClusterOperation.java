@@ -13,17 +13,17 @@ import java.util.List;
 public class CreateKafkaClusterOperation extends SimpleClusterOperation<KafkaCluster> {
     private static final Logger log = LoggerFactory.getLogger(CreateKafkaClusterOperation.class.getName());
 
-    public CreateKafkaClusterOperation(Vertx vertx, K8SUtils k8s, String namespace, String name) {
-        super(vertx, k8s, "kafka", "create", namespace, name);
+    public CreateKafkaClusterOperation(Vertx vertx, K8SUtils k8s) {
+        super(vertx, k8s, "kafka", "create");
     }
 
     @Override
-    protected KafkaCluster getCluster(K8SUtils k8s, Handler handler, Lock lock) {
+    protected KafkaCluster getCluster(K8SUtils k8s, String namespace, String name) {
         return KafkaCluster.fromConfigMap(k8s.getConfigmap(namespace, name));
     }
 
     @Override
-    protected List<Future> futures(K8SUtils k8s, KafkaCluster kafka) {
+    protected List<Future> futures(K8SUtils k8s, String namespace, KafkaCluster kafka) {
         List<Future> result = new ArrayList<>(4);
         // start creating configMap operation only if metrics are enabled,
         // otherwise the future is already complete (for the "join")
