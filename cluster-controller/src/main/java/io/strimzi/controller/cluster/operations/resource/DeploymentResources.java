@@ -25,7 +25,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.ScalableResource;
 import io.vertx.core.Vertx;
 
-public class DeploymentResources extends ResourceOperation<KubernetesClient, Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>> {
+public class DeploymentResources extends ScalableResourceOperation<KubernetesClient, Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>> {
     public DeploymentResources(Vertx vertx, KubernetesClient client) {
         super(vertx, client, "Deployment");
     }

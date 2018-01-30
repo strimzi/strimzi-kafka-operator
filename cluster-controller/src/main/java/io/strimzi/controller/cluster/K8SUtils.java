@@ -82,13 +82,6 @@ public class K8SUtils {
     }
 
     /*
-      SCALE methods
-     */
-    public void scale(ScalableResource res, int replicas, boolean wait)    {
-        res.scale(replicas, wait);
-    }
-
-    /*
       WATCH methods
      */
 

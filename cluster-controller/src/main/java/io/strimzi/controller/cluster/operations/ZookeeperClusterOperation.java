@@ -7,8 +7,6 @@ import io.strimzi.controller.cluster.operations.resource.PvcResources;
 import io.strimzi.controller.cluster.operations.resource.ServiceResources;
 import io.strimzi.controller.cluster.operations.resource.StatefulSetResources;
 import io.strimzi.controller.cluster.operations.kubernetes.ManualRollingUpdateOperation;
-import io.strimzi.controller.cluster.operations.kubernetes.ScaleDownOperation;
-import io.strimzi.controller.cluster.operations.kubernetes.ScaleUpOperation;
 import io.strimzi.controller.cluster.resources.ClusterDiffResult;
 import io.strimzi.controller.cluster.resources.Storage;
 import io.strimzi.controller.cluster.resources.ZookeeperCluster;
@@ -192,7 +190,7 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
 
         if (diff.getScaleDown())    {
             log.info("Scaling down stateful set {} in namespace {}", zk.getName(), namespace);
-            new ScaleDownOperation(vertx, k8s).scaleDown(k8s.getStatefulSetResource(namespace, zk.getName()), zk.getReplicas(), scaleDown.completer());
+            statefulSetResources.scaleDown(namespace, zk.getName(), zk.getReplicas(), scaleDown.completer());
         }
         else {
             scaleDown.complete();
@@ -269,7 +267,7 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
         Future<Void> scaleUp = Future.future();
 
         if (diff.getScaleUp()) {
-            new ScaleUpOperation(vertx, k8s).scaleUp(k8s.getStatefulSetResource(namespace, zk.getName()), zk.getReplicas(), scaleUp.completer());
+            statefulSetResources.scaleUp(namespace, zk.getName(), zk.getReplicas(), scaleUp.completer());
         }
         else {
             scaleUp.complete();
