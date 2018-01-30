@@ -3,7 +3,10 @@ package io.strimzi.controller.cluster.operations;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapList;
 import io.fabric8.kubernetes.api.model.DoneableConfigMap;
+import io.fabric8.kubernetes.api.model.DoneablePersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.DoneableService;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaimList;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceList;
 import io.fabric8.kubernetes.api.model.extensions.DoneableStatefulSet;
@@ -32,19 +35,20 @@ public class KafkaClusterOperation extends ClusterOperation<KafkaCluster> {
     private final ResourceOperation<KubernetesClient, ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> configMapResources;
     private final ResourceOperation<KubernetesClient, StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> statefulSetResources;
     private final ResourceOperation<KubernetesClient, Service, ServiceList, DoneableService, Resource<Service, DoneableService>> serviceResources;
-    
+
     public KafkaClusterOperation(Vertx vertx, K8SUtils k8s) {
         super(vertx, k8s, "kafka", "create");
         configMapResources = ResourceOperation.configMap(vertx, k8s.getKubernetesClient());
         statefulSetResources = ResourceOperation.statefulSet(vertx, k8s.getKubernetesClient());
         serviceResources = ResourceOperation.service(vertx, k8s.getKubernetesClient());
+        pvcResources = ResourceOperation.persistentVolumeClaim(vertx, k8s.getKubernetesClient());
     }
 
     private final Op<KafkaCluster> create = new Op<KafkaCluster>() {
 
         @Override
         public KafkaCluster getCluster (K8SUtils k8s, String namespace, String name){
-            return KafkaCluster.fromConfigMap(k8s.getConfigmap(namespace, name));
+            return KafkaCluster.fromConfigMap(configMapResources.get(namespace, name));
         }
 
         @Override
@@ -54,26 +58,27 @@ public class KafkaClusterOperation extends ClusterOperation<KafkaCluster> {
             // otherwise the future is already complete (for the "join")
             if (kafka.isMetricsEnabled()) {
                 Future<Void> futureConfigMap = Future.future();
-                ResourceOperation.configMap(vertx, k8s.getKubernetesClient()).create(kafka.generateMetricsConfigMap(), futureConfigMap.completer());
+                configMapResources.create(kafka.generateMetricsConfigMap(), futureConfigMap.completer());
                 result.add(futureConfigMap);
             }
 
             Future<Void> futureService = Future.future();
-            ResourceOperation.service(vertx, k8s.getKubernetesClient()).create(kafka.generateService(), futureService.completer());
+            serviceResources.create(kafka.generateService(), futureService.completer());
             result.add(futureService);
 
             Future<Void> futureHeadlessService = Future.future();
-            ResourceOperation.service(vertx, k8s.getKubernetesClient()).create(kafka.generateHeadlessService(), futureHeadlessService.completer());
+            serviceResources.create(kafka.generateHeadlessService(), futureHeadlessService.completer());
             result.add(futureHeadlessService);
 
             Future<Void> futureStatefulSet = Future.future();
-            ResourceOperation.statefulSet(vertx, k8s.getKubernetesClient()).create(kafka.generateStatefulSet(k8s.isOpenShift()), futureStatefulSet.completer());
+            statefulSetResources.create(kafka.generateStatefulSet(k8s.isOpenShift()), futureStatefulSet.completer());
             result.add(futureStatefulSet);
 
             return result;
         }
     };
 
+    private ResourceOperation<KubernetesClient, PersistentVolumeClaim, PersistentVolumeClaimList, DoneablePersistentVolumeClaim, Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim>> pvcResources;
     private final Op<KafkaCluster> delete = new Op<KafkaCluster>() {
         @Override
         public List<Future> futures(K8SUtils k8s, String namespace, KafkaCluster kafka) {
@@ -83,26 +88,26 @@ public class KafkaClusterOperation extends ClusterOperation<KafkaCluster> {
 
             if (kafka.isMetricsEnabled()) {
                 Future<Void> futureConfigMap = Future.future();
-                ResourceOperation.configMap(vertx, k8s.getKubernetesClient()).delete(namespace, kafka.getMetricsConfigName(), futureConfigMap.completer());
+                configMapResources.delete(namespace, kafka.getMetricsConfigName(), futureConfigMap.completer());
                 result.add(futureConfigMap);
             }
 
             Future<Void> futureService = Future.future();
-            ResourceOperation.service(vertx, k8s.getKubernetesClient()).delete(namespace, kafka.getName(), futureService.completer());
+            serviceResources.delete(namespace, kafka.getName(), futureService.completer());
             result.add(futureService);
 
             Future<Void> futureHeadlessService = Future.future();
-            ResourceOperation.service(vertx, k8s.getKubernetesClient()).delete(namespace, kafka.getHeadlessName(), futureHeadlessService.completer());
+            serviceResources.delete(namespace, kafka.getHeadlessName(), futureHeadlessService.completer());
             result.add(futureHeadlessService);
 
             Future<Void> futureStatefulSet = Future.future();
-            ResourceOperation.statefulSet(vertx, k8s.getKubernetesClient()).delete(namespace, kafka.getName(), futureStatefulSet.completer());
+            statefulSetResources.delete(namespace, kafka.getName(), futureStatefulSet.completer());
             result.add(futureStatefulSet);
 
             if (deleteClaims) {
                 for (int i = 0; i < kafka.getReplicas(); i++) {
                     Future<Void> f = Future.future();
-                    ResourceOperation.persistentVolumeClaim(vertx, k8s.getKubernetesClient()).delete(namespace, kafka.getVolumeName() + "-" + kafka.getName() + "-" + i, f.completer());
+                    pvcResources.delete(namespace, kafka.getVolumeName() + "-" + kafka.getName() + "-" + i, f.completer());
                     result.add(f);
                 }
             }
@@ -135,7 +140,7 @@ public class KafkaClusterOperation extends ClusterOperation<KafkaCluster> {
 
                 ClusterDiffResult diff;
                 KafkaCluster kafka;
-                ConfigMap kafkaConfigMap = k8s.getConfigmap(namespace, name);
+                ConfigMap kafkaConfigMap = configMapResources.get(namespace, name);
 
                 if (kafkaConfigMap != null)    {
 

@@ -32,26 +32,24 @@ public class UpdateS2IOperation extends S2IOperation {
 
     /**
      * Constructor
-     *
-     * @param s2i   Source2Image instance which should be updated
      */
-    public UpdateS2IOperation(Vertx vertx, OpenShiftClient client, Source2Image s2i) {
-        super(vertx, client,"update", s2i);
+    public UpdateS2IOperation(Vertx vertx, OpenShiftClient client) {
+        super(vertx, "update");
         buildConfigOperation = ResourceOperation.buildConfig(vertx, client);
         buildImageStreamOperation = ResourceOperation.imageStream(vertx, client);
     }
 
 
     @Override
-    protected List<Future> futures() {
-        if (s2i.diff(client).getDifferent()) {
+    protected List<Future> futures(Source2Image s2i) {
+        if (s2i.diff(buildImageStreamOperation, buildConfigOperation).getDifferent()) {
             List<Future> result = new ArrayList<>(3);
             Future<Void> futureSourceImageStream = Future.future();
 
             buildImageStreamOperation.patch(
                     s2i.getNamespace(), s2i.getSourceImageStreamName(),
                     s2i.patchSourceImageStream(
-                            client.imageStreams().inNamespace(s2i.getNamespace()).withName(s2i.getSourceImageStreamName()).get()),
+                            buildImageStreamOperation.get(s2i.getNamespace(), s2i.getSourceImageStreamName())),
                     futureSourceImageStream.completer());
             result.add(futureSourceImageStream);
 
@@ -59,7 +57,7 @@ public class UpdateS2IOperation extends S2IOperation {
             buildImageStreamOperation
                     .patch(s2i.getNamespace(), s2i.getName(),
                             s2i.patchTargetImageStream(
-                                    client.imageStreams().inNamespace(s2i.getNamespace()).withName(s2i.getName()).get()),
+                                    buildImageStreamOperation.get(s2i.getNamespace(), s2i.getName())),
                             futureTargetImageStream.completer());
             result.add(futureTargetImageStream);
 
@@ -67,7 +65,7 @@ public class UpdateS2IOperation extends S2IOperation {
             buildConfigOperation
                     .patch(s2i.getNamespace(), s2i.getName(),
                             s2i.patchBuildConfig(
-                                    client.buildConfigs().inNamespace(s2i.getNamespace()).withName(s2i.getName()).get()),
+                                    buildConfigOperation.get(s2i.getNamespace(), s2i.getName())),
                             futureBuildConfig.completer());
             result.add(futureBuildConfig);
 
