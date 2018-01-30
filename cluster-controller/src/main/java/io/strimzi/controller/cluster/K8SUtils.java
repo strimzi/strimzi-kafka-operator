@@ -39,13 +39,6 @@ public class K8SUtils {
     /*
       GET methods
      */
-    public StatefulSet getStatefulSet(String namespace, String name)    {
-        return getStatefulSetResource(namespace, name).get();
-    }
-
-    public RollableScalableResource<StatefulSet, DoneableStatefulSet> getStatefulSetResource(String namespace, String name)    {
-        return client.apps().statefulSets().inNamespace(namespace).withName(name);
-    }
 
     public List<StatefulSet> getStatefulSets(String namespace, Map<String, String> labels) {
         return client.apps().statefulSets().inNamespace(namespace).withLabels(labels).list().getItems();
@@ -55,48 +48,8 @@ public class K8SUtils {
         return client.extensions().deployments().inNamespace(namespace).withLabels(labels).list().getItems();
     }
 
-    public Pod getPod(String namespace, String name)    {
-        return getPodResource(namespace, name).get();
-    }
-
-    public PodResource<Pod, DoneablePod> getPodResource(String namespace, String name)    {
-        return client.pods().inNamespace(namespace).withName(name);
-    }
-
     public List<ConfigMap> getConfigmaps(String namespace, Map<String, String> labels) {
         return client.configMaps().inNamespace(namespace).withLabels(labels).list().getItems();
-    }
-
-    /*
-      DELETE methods
-     */
-    public void deletePod(String namespace, String name) {
-        if (podExists(namespace, name)) {
-            log.debug("Deleting pod {}", name);
-            getPodResource(namespace, name).delete();
-        }
-    }
-
-    /*
-      WATCH methods
-     */
-
-    public Watch createPodWatch(String namespace, String name, Watcher watcher) {
-        return client.pods().inNamespace(namespace).withName(name).watch(watcher);
-    }
-
-    /*
-      EXISTS methods
-     */
-    public boolean podExists(String namespace, String name) {
-        return getPod(namespace, name) == null ? false : true;
-    }
-
-    /*
-      READY methods
-     */
-    public boolean isPodReady(String namespace, String name) {
-        return getPodResource(namespace, name).isReady();
     }
 
 }
