@@ -18,14 +18,32 @@
 package io.strimzi.controller.cluster.operations;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapList;
+import io.fabric8.kubernetes.api.model.DoneableConfigMap;
+import io.fabric8.kubernetes.api.model.DoneableService;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.ServiceList;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
+import io.fabric8.kubernetes.api.model.extensions.DeploymentList;
+import io.fabric8.kubernetes.api.model.extensions.DoneableDeployment;
+import io.fabric8.kubernetes.api.model.extensions.DoneableStatefulSet;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
+import io.fabric8.kubernetes.api.model.extensions.StatefulSetList;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
+import io.fabric8.kubernetes.client.dsl.ScalableResource;
+import io.fabric8.openshift.api.model.Build;
 import io.fabric8.openshift.api.model.BuildConfig;
+import io.fabric8.openshift.api.model.BuildConfigList;
+import io.fabric8.openshift.api.model.DoneableBuildConfig;
+import io.fabric8.openshift.api.model.DoneableImageStream;
 import io.fabric8.openshift.api.model.ImageStream;
+import io.fabric8.openshift.api.model.ImageStreamList;
 import io.fabric8.openshift.client.OpenShiftClient;
+import io.fabric8.openshift.client.dsl.BuildConfigResource;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -38,9 +56,8 @@ import org.slf4j.LoggerFactory;
  * This class applies the template method pattern, first checking whether the resource exists,
  * and creating it if it does not. It is not an error if the resource did already exist.
  * @param <U> The {@code *Utils} instance used to interact with kubernetes.
- * @param <R> The type of resource created
  */
-public abstract class CreateOperation<U, R extends HasMetadata> {
+public abstract class CreateOperation<U, T extends HasMetadata, L, D, R2 extends Resource<T, D>> {
 
     private static final Logger log = LoggerFactory.getLogger(CreateOperation.class);
     private final Vertx vertx;
@@ -53,13 +70,15 @@ public abstract class CreateOperation<U, R extends HasMetadata> {
         this.resourceKind = resourceKind;
     }
 
-    public void create(R resource, Handler<AsyncResult<Void>> handler) {
+    protected abstract MixedOperation<T, L, D, R2> operation();
+
+    public void create(T resource, Handler<AsyncResult<Void>> handler) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
-                    if (!exists(resource.getMetadata().getNamespace(), resource.getMetadata().getName())) {
+                    if (operation().inNamespace(resource.getMetadata().getNamespace()).withName(resource.getMetadata().getName()).get() == null) {
                         try {
                             log.info("Creating {} {}", resourceKind, resource);
-                            create(resource);
+                            operation().createOrReplace(resource);
                             future.complete();
                         } catch (Exception e) {
                             log.error("Caught exception while creating {}", resourceKind, e);
@@ -85,98 +104,61 @@ public abstract class CreateOperation<U, R extends HasMetadata> {
         );
     }
 
-    protected abstract void create(R resource);
 
-    protected abstract boolean exists(String namespace, String name);
-
-    public static CreateOperation<KubernetesClient, Deployment> createDeployment(Vertx vertx, KubernetesClient client) {
-        return new CreateOperation<KubernetesClient, Deployment>(vertx, client, "Deployment") {
-
+    public static CreateOperation<KubernetesClient, Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>> createDeployment(Vertx vertx, KubernetesClient client) {
+        return new CreateOperation<KubernetesClient, Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>>(vertx, client, "Deployment") {
             @Override
-            protected void create(Deployment resource) {
-                log.info("Creating deployment {}", resource.getMetadata().getName());
-                client.extensions().deployments().createOrReplace(resource);
-            }
-
-            @Override
-            protected boolean exists(String namespace, String name) {
-                return client.extensions().deployments().inNamespace(namespace).withName(name).get() != null;
+            protected MixedOperation<Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>> operation() {
+                return client.extensions().deployments();
             }
         };
     }
 
-    public static CreateOperation<KubernetesClient, ConfigMap> createConfigMap(Vertx vertx, KubernetesClient client) {
-        return new CreateOperation<KubernetesClient, ConfigMap>(vertx, client, "ConfigMap") {
+    public static CreateOperation<KubernetesClient, ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> createConfigMap(Vertx vertx, KubernetesClient client) {
+        return new CreateOperation<KubernetesClient, ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>>(vertx, client, "ConfigMap") {
 
             @Override
-            protected void create(ConfigMap resource) {
-                log.info("Creating configmap {}", resource.getMetadata().getName());
-                client.configMaps().createOrReplace(resource);
-            }
-
-            @Override
-            protected boolean exists(String namespace, String name) {
-                return client.configMaps().inNamespace(namespace).withName(name).get() != null;
+            protected MixedOperation<ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> operation() {
+                return client.configMaps();
             }
         };
     }
 
-    public static CreateOperation<KubernetesClient, StatefulSet> createStatefulSet(Vertx vertx, KubernetesClient client) {
-        return new CreateOperation<KubernetesClient, StatefulSet>(vertx, client, "StatefulSet") {
+    public static CreateOperation<KubernetesClient, StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> createStatefulSet(Vertx vertx, KubernetesClient client) {
+        return new CreateOperation<KubernetesClient, StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>>(vertx, client, "StatefulSet") {
 
             @Override
-            protected void create(StatefulSet resource) {
-                log.info("Creating stateful set {}", resource.getMetadata().getName());
-                client.apps().statefulSets().createOrReplace(resource);
+            protected MixedOperation<StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> operation() {
+                return client.apps().statefulSets();
             }
 
+        };
+    }
+
+    public static CreateOperation<KubernetesClient, Service, ServiceList, DoneableService, Resource<Service, DoneableService>> createService(Vertx vertx, KubernetesClient client) {
+        return new CreateOperation<KubernetesClient, Service, ServiceList, DoneableService, Resource<Service, DoneableService>>(vertx, client, "Service") {
+
             @Override
-            protected boolean exists(String namespace, String name) {
-                return client.apps().statefulSets().inNamespace(namespace).withName(name).get() != null;
+            protected MixedOperation<Service, ServiceList, DoneableService, Resource<Service, DoneableService>> operation() {
+                return client.services();
             }
         };
     }
 
-    public static CreateOperation<KubernetesClient, Service> createService(Vertx vertx, KubernetesClient client) {
-        return new CreateOperation<KubernetesClient, Service>(vertx, client, "Service") {
-
+    public static CreateOperation<OpenShiftClient, BuildConfig, BuildConfigList, DoneableBuildConfig, BuildConfigResource<BuildConfig, DoneableBuildConfig, Void, Build>> createBuildConfig(Vertx vertx, OpenShiftClient client) {
+        return new CreateOperation<OpenShiftClient, BuildConfig, BuildConfigList, DoneableBuildConfig, BuildConfigResource<BuildConfig, DoneableBuildConfig, Void, Build>>(vertx, client, "BuildConfig") {
             @Override
-            protected void create(Service resource) {
-                log.info("Creating service {}", resource.getMetadata().getName());
-                client.services().createOrReplace(resource);
-            }
-
-            @Override
-            protected boolean exists(String namespace, String name) {
-                return client.services().inNamespace(namespace).withName(name).get() != null;
+            protected MixedOperation<BuildConfig, BuildConfigList, DoneableBuildConfig, BuildConfigResource<BuildConfig, DoneableBuildConfig, Void, Build>> operation() {
+                return client.buildConfigs();
             }
         };
     }
 
-    public static CreateOperation<OpenShiftClient, BuildConfig> createBuildConfig(Vertx vertx, OpenShiftClient client) {
-        return new CreateOperation<OpenShiftClient, BuildConfig>(vertx, client, "BuildConfig") {
+    public static CreateOperation<OpenShiftClient, ImageStream, ImageStreamList, DoneableImageStream, Resource<ImageStream, DoneableImageStream>> createImageStream(Vertx vertx, OpenShiftClient client) {
+        return new CreateOperation<OpenShiftClient, ImageStream, ImageStreamList, DoneableImageStream, Resource<ImageStream, DoneableImageStream>>(vertx, client, "ImageStream") {
             @Override
-            protected void create(BuildConfig resource) {
-                client.buildConfigs().createOrReplace(resource);
-            }
-
-            @Override
-            protected boolean exists(String namespace, String name) {
-                return client.buildConfigs().inNamespace(namespace).withName(name).get() != null;
-            }
-        };
-    }
-
-    public static CreateOperation<OpenShiftClient, ImageStream> createImageStream(Vertx vertx, OpenShiftClient client) {
-        return new CreateOperation<OpenShiftClient, ImageStream>(vertx, client, "ImageStream") {
-            @Override
-            protected void create(ImageStream resource) {
-                client.imageStreams().createOrReplace(resource);
-            }
-
-            @Override
-            protected boolean exists(String namespace, String name) {
-                return client.imageStreams().inNamespace(namespace).withName(name).get() != null;
+            protected MixedOperation<ImageStream, ImageStreamList, DoneableImageStream, Resource<ImageStream, DoneableImageStream>> operation() {
+                return client.imageStreams();
             }
         };
     }
