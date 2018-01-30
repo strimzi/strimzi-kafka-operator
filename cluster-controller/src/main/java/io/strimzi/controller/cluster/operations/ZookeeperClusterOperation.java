@@ -76,27 +76,27 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
             // otherwise the future is already complete (for the "join")
             if (zk.isMetricsEnabled()) {
                 Future<Void> futureConfigMap = Future.future();
-                DeleteOperation.deleteConfigMap(namespace, zk.getMetricsConfigName()).delete(vertx, k8s.getKubernetesClient(), futureConfigMap.completer());
+                DeleteOperation.deleteConfigMap(vertx, k8s.getKubernetesClient()).delete(namespace, zk.getMetricsConfigName(), futureConfigMap.completer());
                 result.add(futureConfigMap);
             }
 
             Future<Void> futureService = Future.future();
-            DeleteOperation.deleteService(namespace, zk.getName()).delete(vertx, k8s.getKubernetesClient(), futureService.completer());
+            DeleteOperation.deleteService(vertx, k8s.getKubernetesClient()).delete(namespace, zk.getName(), futureService.completer());
             result.add(futureService);
 
             Future<Void> futureHeadlessService = Future.future();
-            DeleteOperation.deleteService(namespace, zk.getHeadlessName()).delete(vertx, k8s.getKubernetesClient(), futureHeadlessService.completer());
+            DeleteOperation.deleteService(vertx, k8s.getKubernetesClient()).delete(namespace, zk.getHeadlessName(), futureHeadlessService.completer());
             result.add(futureHeadlessService);
 
             Future<Void> futureStatefulSet = Future.future();
-            DeleteOperation.deleteStatefulSet(namespace, zk.getName()).delete(vertx, k8s.getKubernetesClient(), futureStatefulSet.completer());
+            DeleteOperation.deleteStatefulSet(vertx, k8s.getKubernetesClient()).delete(namespace, zk.getName(), futureStatefulSet.completer());
             result.add(futureStatefulSet);
 
 
             if (deleteClaims) {
                 for (int i = 0; i < zk.getReplicas(); i++) {
                     Future<Void> f = Future.future();
-                    DeleteOperation.deletePersistentVolumeClaim(namespace, zk.getVolumeName() + "-" + zk.getName() + "-" + i).delete(vertx, k8s.getKubernetesClient(), f.completer());
+                    DeleteOperation.deletePersistentVolumeClaim(vertx, k8s.getKubernetesClient()).delete(namespace, zk.getVolumeName() + "-" + zk.getName() + "-" + i, f.completer());
                     result.add(f);
                 }
             }

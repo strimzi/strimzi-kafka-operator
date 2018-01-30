@@ -72,11 +72,11 @@ public class KafkaConnectClusterOperation extends ClusterOperation<KafkaConnectC
             List<Future> result = new ArrayList<>(3);
 
             Future<Void> futureService = Future.future();
-            DeleteOperation.deleteService(namespace, connect.getName()).delete(vertx, k8s.getKubernetesClient(), futureService.completer());
+            DeleteOperation.deleteService(vertx, k8s.getKubernetesClient()).delete(namespace, connect.getName(), futureService.completer());
             result.add(futureService);
 
             Future<Void> futureDeployment = Future.future();
-            DeleteOperation.deleteDeployment(namespace, connect.getName()).delete(vertx, k8s.getKubernetesClient(), futureDeployment.completer());
+            DeleteOperation.deleteDeployment(vertx, k8s.getKubernetesClient()).delete(namespace, connect.getName(), futureDeployment.completer());
             result.add(futureDeployment);
 
             if (connect.getS2I() != null) {
