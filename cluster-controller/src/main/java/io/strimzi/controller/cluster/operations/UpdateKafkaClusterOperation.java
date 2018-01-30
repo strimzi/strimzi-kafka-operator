@@ -21,8 +21,8 @@ public class UpdateKafkaClusterOperation extends ClusterOperation {
 
     private K8SUtils k8s;
 
-    public UpdateKafkaClusterOperation(String namespace, String name) {
-        super(namespace, name);
+    public UpdateKafkaClusterOperation(Vertx vertx, String namespace, String name) {
+        super(vertx, namespace, name);
     }
 
     @Override
@@ -31,7 +31,7 @@ public class UpdateKafkaClusterOperation extends ClusterOperation {
     }
 
     @Override
-    public void execute(Vertx vertx, K8SUtils k8s, Handler<AsyncResult<Void>> handler) {
+    public void execute(K8SUtils k8s, Handler<AsyncResult<Void>> handler) {
         this.k8s = k8s;
 
         vertx.sharedData().getLockWithTimeout(getLockName(), LOCK_TIMEOUT, res -> {

@@ -18,8 +18,8 @@ public class UpdateZookeeperClusterOperation extends ClusterOperation {
 
     private K8SUtils k8s;
 
-    public UpdateZookeeperClusterOperation(String namespace, String name) {
-        super(namespace, name);
+    public UpdateZookeeperClusterOperation(Vertx vertx, String namespace, String name) {
+        super(vertx, namespace, name);
     }
 
     protected String getLockName() {
@@ -27,7 +27,7 @@ public class UpdateZookeeperClusterOperation extends ClusterOperation {
     }
 
     @Override
-    public void execute(Vertx vertx, K8SUtils k8s, Handler<AsyncResult<Void>> handler) {
+    public void execute(K8SUtils k8s, Handler<AsyncResult<Void>> handler) {
         this.k8s = k8s;
 
         vertx.sharedData().getLockWithTimeout(getLockName(), LOCK_TIMEOUT, res -> {
