@@ -20,6 +20,7 @@ package io.strimzi.controller.cluster.operations.resource;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
 import io.fabric8.kubernetes.api.model.Service;
@@ -93,7 +94,7 @@ public class ResourceOperationTest {
         vertx.close();
     }
 
-    private <C extends KubernetesClient, T extends HasMetadata, L, D, R2 extends Resource<T, D>>
+    private <C extends KubernetesClient, T extends HasMetadata, L extends KubernetesResourceList, D, R2 extends Resource<T, D>>
             void createWhenExistsIsANop(TestContext context,
                     Class<C> clientType,
                     Class<? extends Resource> resourceType,
@@ -127,7 +128,7 @@ public class ResourceOperationTest {
     }
 
 
-    private <C extends KubernetesClient, T extends HasMetadata, L, D, R2 extends Resource<T, D>>
+    private <C extends KubernetesClient, T extends HasMetadata, L extends KubernetesResourceList, D, R2 extends Resource<T, D>>
             void existenceCheckThrows(TestContext context,
                       Class<C> clientType,
                       Class<? extends Resource> resourceType,
@@ -158,7 +159,7 @@ public class ResourceOperationTest {
         });
     }
 
-    private <C extends KubernetesClient, T extends HasMetadata, L, D, R2 extends Resource<T, D>>
+    private <C extends KubernetesClient, T extends HasMetadata, L extends KubernetesResourceList, D, R2 extends Resource<T, D>>
             void successfulCreation(TestContext context,
                     Class<C> clientType,
                     Class<? extends Resource> resourceType,
@@ -188,7 +189,7 @@ public class ResourceOperationTest {
         });
     }
 
-    private <C extends KubernetesClient, T extends HasMetadata, L, D, R2 extends Resource<T, D>>
+    private <C extends KubernetesClient, T extends HasMetadata, L extends KubernetesResourceList, D, R2 extends Resource<T, D>>
             void creationThrows(TestContext context,
                     Class<C> clientType,
                     Class<? extends Resource> resourceType,
@@ -220,7 +221,7 @@ public class ResourceOperationTest {
         });
     }
 
-    private <C extends KubernetesClient, T extends HasMetadata, L, D, R2 extends Resource<T, D>>
+    private <C extends KubernetesClient, T extends HasMetadata, L extends KubernetesResourceList, D, R2 extends Resource<T, D>>
             void deleteWhenResourceDoesNotExistIsANop(TestContext context,
                    Class<C> clientType,
                    Class<? extends Resource> resourceType,
@@ -251,7 +252,7 @@ public class ResourceOperationTest {
         });
     }
 
-    private <C extends KubernetesClient, T extends HasMetadata, L, D, R2 extends Resource<T, D>>
+    private <C extends KubernetesClient, T extends HasMetadata, L extends KubernetesResourceList, D, R2 extends Resource<T, D>>
     void deleteWhenResourceExistsThrows(TestContext context,
                                         Class<C> clientType,
                                         Class<? extends Resource> resourceType,
@@ -282,7 +283,7 @@ public class ResourceOperationTest {
         });
     }
 
-    private <C extends KubernetesClient, T extends HasMetadata, L, D, R2 extends Resource<T, D>>
+    private <C extends KubernetesClient, T extends HasMetadata, L extends KubernetesResourceList, D, R2 extends Resource<T, D>>
     void successfulDeletion(TestContext context,
                             Class<C> clientType,
                             Class<? extends Resource> resourceType,
@@ -312,7 +313,7 @@ public class ResourceOperationTest {
         });
     }
 
-    private <C extends KubernetesClient, T extends HasMetadata, L, D, R2 extends Resource<T, D>>
+    private <C extends KubernetesClient, T extends HasMetadata, L extends KubernetesResourceList, D, R2 extends Resource<T, D>>
     void deletionThrows(TestContext context,
                         Class<C> clientType,
                         Class<? extends Resource> resourceType,
