@@ -1,6 +1,5 @@
 package io.strimzi.controller.cluster.operations;
 
-import io.strimzi.controller.cluster.K8SUtils;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -15,5 +14,13 @@ public abstract class ClusterOperation {
     }
 
     protected abstract String getLockName(String namespace, String name);
+
+    public abstract void create(String namespace, String name, Handler<AsyncResult<Void>> handler);
+
+    public abstract void update(String namespace, String name, Handler<AsyncResult<Void>> handler);
+
+    public abstract void delete(String namespace, String name, Handler<AsyncResult<Void>> handler);
+
+
 
 }

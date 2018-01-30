@@ -1,5 +1,6 @@
 package io.strimzi.controller.cluster.operations;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.strimzi.controller.cluster.K8SUtils;
 import io.strimzi.controller.cluster.operations.kubernetes.PatchOperation;
 import io.strimzi.controller.cluster.operations.kubernetes.ScaleDownOperation;
@@ -7,33 +8,96 @@ import io.strimzi.controller.cluster.operations.kubernetes.ScaleUpOperation;
 import io.strimzi.controller.cluster.operations.openshift.CreateS2IOperation;
 import io.strimzi.controller.cluster.operations.openshift.DeleteS2IOperation;
 import io.strimzi.controller.cluster.operations.openshift.UpdateS2IOperation;
-import io.strimzi.controller.cluster.resources.KafkaConnectCluster;
 import io.strimzi.controller.cluster.resources.ClusterDiffResult;
-import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.strimzi.controller.cluster.resources.KafkaConnectCluster;
 import io.strimzi.controller.cluster.resources.Source2Image;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
+import io.vertx.core.*;
 import io.vertx.core.shareddata.Lock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class UpdateKafkaConnectClusterOperation extends ClusterOperation {
-    private static final Logger log = LoggerFactory.getLogger(UpdateKafkaConnectClusterOperation.class.getName());
-    private final K8SUtils k8s;
+import java.util.ArrayList;
+import java.util.List;
 
-    public UpdateKafkaConnectClusterOperation(Vertx vertx, K8SUtils k8s) {
-        super(vertx);
-        this.k8s = k8s;
+public class KafkaConnectClusterOperation extends SimpleClusterOperation<KafkaConnectCluster> {
+
+    private static final Logger log = LoggerFactory.getLogger(KafkaConnectClusterOperation.class.getName());
+
+    public KafkaConnectClusterOperation(Vertx vertx, K8SUtils k8s) {
+        super(vertx, k8s, "kafka-connect","create");
     }
+
+    private static final Op<KafkaConnectCluster> CREATE = new Op<KafkaConnectCluster>() {
+
+        @Override
+        public KafkaConnectCluster getCluster(K8SUtils k8s, String namespace, String name) {
+            return KafkaConnectCluster.fromConfigMap(k8s, k8s.getConfigmap(namespace, name));
+        }
+
+        @Override
+        public List<Future> futures(K8SUtils k8s, String namespace, KafkaConnectCluster connect) {
+            List<Future> result = new ArrayList<>(3);
+            Future<Void> futureService = Future.future();
+            OperationExecutor.getInstance().executeFabric8(CreateOperation.createService(connect.generateService()), futureService.completer());
+            result.add(futureService);
+
+            Future<Void> futureDeployment = Future.future();
+            OperationExecutor.getInstance().executeFabric8(CreateOperation.createDeployment(connect.generateDeployment()), futureDeployment.completer());
+            result.add(futureDeployment);
+
+            Future<Void> futureS2I;
+            if (connect.getS2I() != null) {
+                futureS2I = Future.future();
+                OperationExecutor.getInstance().executeOpenShift(new CreateS2IOperation(connect.getS2I()), futureS2I.completer());
+            } else {
+                futureS2I = Future.succeededFuture();
+            }
+            result.add(futureS2I);
+
+            return result;
+        }
+    };
 
     @Override
-    protected String getLockName(String namespace, String name) {
-        return "lock::kafka-connect::" + namespace + "::" + name;
+    protected Op<KafkaConnectCluster> createOp() {
+        return CREATE;
     }
 
-    public void execute(String namespace, String name, Handler<AsyncResult<Void>> handler) {
+    private static final Op<KafkaConnectCluster> DELETE = new Op<KafkaConnectCluster>() {
+
+        @Override
+        public List<Future> futures(K8SUtils k8s, String namespace, KafkaConnectCluster connect) {
+            List<Future> result = new ArrayList<>(3);
+
+            Future<Void> futureService = Future.future();
+            OperationExecutor.getInstance().executeFabric8(DeleteOperation.deleteService(namespace, connect.getName()), futureService.completer());
+            result.add(futureService);
+
+            Future<Void> futureDeployment = Future.future();
+            OperationExecutor.getInstance().executeFabric8(DeleteOperation.deleteDeployment(namespace, connect.getName()), futureDeployment.completer());
+            result.add(futureDeployment);
+
+            if (connect.getS2I() != null) {
+                Future<Void> futureS2I = Future.future();
+                OperationExecutor.getInstance().executeOpenShift(new DeleteS2IOperation(connect.getS2I()), futureS2I.completer());
+                result.add(futureS2I);
+            }
+
+            return result;
+        }
+
+        @Override
+        public KafkaConnectCluster getCluster(K8SUtils k8s, String namespace, String name) {
+            return KafkaConnectCluster.fromDeployment(k8s, namespace, name);
+        }
+    };
+
+    @Override
+    protected Op<KafkaConnectCluster> deleteOp() {
+        return DELETE;
+    }
+
+    public void update(String namespace, String name, Handler<AsyncResult<Void>> handler) {
 
         final String lockName = getLockName(namespace, name);
         vertx.sharedData().getLockWithTimeout(lockName, LOCK_TIMEOUT, res -> {
@@ -102,7 +166,7 @@ public class UpdateKafkaConnectClusterOperation extends ClusterOperation {
             OperationExecutor.getInstance().executeK8s(new PatchOperation(k8s.getServiceResource(namespace, connect.getName()), connect.patchService(k8s.getService(namespace, connect.getName()))), patchService.completer());
             return patchService;
         }
-            else
+        else
         {
             return Future.succeededFuture();
         }
