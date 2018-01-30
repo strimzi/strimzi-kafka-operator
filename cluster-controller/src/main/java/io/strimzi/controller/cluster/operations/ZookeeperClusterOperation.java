@@ -40,20 +40,20 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
 
             if (zk.isMetricsEnabled()) {
                 Future<Void> futureConfigMap = Future.future();
-                CreateOperation.createConfigMap(zk.generateMetricsConfigMap()).create(vertx, k8s.getKubernetesClient(), futureConfigMap.completer());
+                CreateOperation.createConfigMap(vertx, k8s.getKubernetesClient()).create(zk.generateMetricsConfigMap(), futureConfigMap.completer());
                 result.add(futureConfigMap);
             }
 
             Future<Void> futureService = Future.future();
-            CreateOperation.createService(zk.generateService()).create(vertx, k8s.getKubernetesClient(), futureService.completer());
+            CreateOperation.createService(vertx, k8s.getKubernetesClient()).create(zk.generateService(), futureService.completer());
             result.add(futureService);
 
             Future<Void> futureHeadlessService = Future.future();
-            CreateOperation.createService(zk.generateHeadlessService()).create(vertx, k8s.getKubernetesClient(), futureHeadlessService.completer());
+            CreateOperation.createService(vertx, k8s.getKubernetesClient()).create(zk.generateHeadlessService(), futureHeadlessService.completer());
             result.add(futureHeadlessService);
 
             Future<Void> futureStatefulSet = Future.future();
-            CreateOperation.createStatefulSet(zk.generateStatefulSet(k8s.isOpenShift())).create(vertx, k8s.getKubernetesClient(), futureStatefulSet.completer());
+            CreateOperation.createStatefulSet(vertx, k8s.getKubernetesClient()).create(zk.generateStatefulSet(k8s.isOpenShift()), futureStatefulSet.completer());
             result.add(futureStatefulSet);
 
             return result;
