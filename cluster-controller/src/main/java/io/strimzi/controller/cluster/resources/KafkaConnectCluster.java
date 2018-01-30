@@ -15,6 +15,8 @@ import io.fabric8.openshift.api.model.ImageStreamList;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.openshift.client.dsl.BuildConfigResource;
 import io.strimzi.controller.cluster.ClusterController;
+import io.strimzi.controller.cluster.operations.resource.DeploymentResources;
+import io.strimzi.controller.cluster.operations.resource.ImageStreamResources;
 import io.strimzi.controller.cluster.operations.resource.ResourceOperation;
 import io.vertx.core.json.JsonObject;
 
@@ -150,8 +152,8 @@ public class KafkaConnectCluster extends AbstractCluster {
      * @return  Kafka Connect cluster instance
      */
     public static KafkaConnectCluster fromDeployment(
-            ResourceOperation<KubernetesClient, Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>> deploymentResources,
-            ResourceOperation<OpenShiftClient, ImageStream, ImageStreamList, DoneableImageStream, Resource<ImageStream, DoneableImageStream>> os, String namespace, String cluster) {
+            DeploymentResources deploymentResources,
+            ImageStreamResources os, String namespace, String cluster) {
 
         Deployment dep = deploymentResources.get(namespace, cluster + KafkaConnectCluster.NAME_SUFFIX);
 

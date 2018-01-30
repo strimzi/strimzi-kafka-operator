@@ -26,12 +26,16 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
     private final ConfigMapResources configMapResources;
     private final PvcResources pvcResources;
 
-    public ZookeeperClusterOperation(Vertx vertx, KubernetesClient client) {
+    public ZookeeperClusterOperation(Vertx vertx, KubernetesClient client,
+                                     ServiceResources serviceResources,
+                                     StatefulSetResources statefulSetResources,
+                                     ConfigMapResources configMapResources,
+                                     PvcResources pvcResources) {
         super(vertx, client, "zookeeper", "create");
-        serviceResources = new ServiceResources(vertx, client);
-        statefulSetResources = new StatefulSetResources(vertx, client);
-        configMapResources = new ConfigMapResources(vertx, client);
-        pvcResources = new PvcResources(vertx, client);
+        this.serviceResources = serviceResources;
+        this.statefulSetResources = statefulSetResources;
+        this.configMapResources = configMapResources;
+        this.pvcResources = pvcResources;
     }
 
     private final Op<ZookeeperCluster> create = new Op<ZookeeperCluster>() {
