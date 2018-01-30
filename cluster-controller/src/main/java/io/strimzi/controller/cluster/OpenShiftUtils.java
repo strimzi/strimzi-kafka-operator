@@ -79,23 +79,4 @@ public class OpenShiftUtils {
         }
     }
 
-    /**
-     * Get OpenShift resource
-     *
-     * @param namespace     OpenShift project
-     * @param name          Resource name
-     * @param type          Resource type
-     * @return              OpenShift Resource
-     */
-    public Resource<? extends HasMetadata, ? extends BaseFluent<? extends BaseFluent<?>>> getResource(String namespace, String name, Class<? extends HasMetadata> type) {
-        log.info("Getting resource {} {} from namespace {}", type.getSimpleName(), name, namespace);
-
-        if (type == BuildConfig.class) {
-            return client.buildConfigs().inNamespace(namespace).withName(name);
-        } else if (type == ImageStream.class) {
-            return client.imageStreams().inNamespace(namespace).withName(name);
-        } else {
-            throw new RuntimeException("Unsupported type " + type.getSimpleName());
-        }
-    }
 }

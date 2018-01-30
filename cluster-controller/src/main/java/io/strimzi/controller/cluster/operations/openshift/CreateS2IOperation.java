@@ -1,7 +1,7 @@
 package io.strimzi.controller.cluster.operations.openshift;
 
 import io.fabric8.openshift.client.OpenShiftClient;
-import io.strimzi.controller.cluster.operations.CreateOperation;
+import io.strimzi.controller.cluster.operations.ResourceOperation;
 import io.strimzi.controller.cluster.resources.Source2Image;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -28,15 +28,15 @@ public class CreateS2IOperation extends S2IOperation {
         List<Future> result = new ArrayList<>(3);
 
         Future<Void> futureSourceImageStream = Future.future();
-        CreateOperation.createImageStream(vertx, client).create(s2i.generateSourceImageStream(), futureSourceImageStream.completer());
+        ResourceOperation.imageStream(vertx, client).create(s2i.generateSourceImageStream(), futureSourceImageStream.completer());
         result.add(futureSourceImageStream);
 
         Future<Void> futureTargetImageStream = Future.future();
-        CreateOperation.createImageStream(vertx, client).create(s2i.generateTargetImageStream(), futureTargetImageStream.completer());
+        ResourceOperation.imageStream(vertx, client).create(s2i.generateTargetImageStream(), futureTargetImageStream.completer());
         result.add(futureTargetImageStream);
 
         Future<Void> futureBuildConfig = Future.future();
-        CreateOperation.createBuildConfig(vertx, client).create(s2i.generateBuildConfig(), futureBuildConfig.completer());
+        ResourceOperation.buildConfig(vertx, client).create(s2i.generateBuildConfig(), futureBuildConfig.completer());
         result.add(futureBuildConfig);
 
         return result;

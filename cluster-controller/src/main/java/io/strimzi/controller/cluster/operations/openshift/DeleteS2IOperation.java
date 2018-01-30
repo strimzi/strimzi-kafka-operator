@@ -1,7 +1,7 @@
 package io.strimzi.controller.cluster.operations.openshift;
 
 import io.fabric8.openshift.client.OpenShiftClient;
-import io.strimzi.controller.cluster.operations.DeleteOperation;
+import io.strimzi.controller.cluster.operations.ResourceOperation;
 import io.strimzi.controller.cluster.resources.Source2Image;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -28,15 +28,15 @@ public class DeleteS2IOperation extends S2IOperation {
         List<Future> result = new ArrayList<>(3);
 
         Future<Void> futureSourceImageStream = Future.future();
-        DeleteOperation.deleteImageStream(vertx, client).delete(s2i.getNamespace(), s2i.getSourceImageStreamName(), futureSourceImageStream.completer());
+        ResourceOperation.imageStream(vertx, client).delete(s2i.getNamespace(), s2i.getSourceImageStreamName(), futureSourceImageStream.completer());
         result.add(futureSourceImageStream);
 
         Future<Void> futureTargetImageStream = Future.future();
-        DeleteOperation.deleteImageStream(vertx, client).delete(s2i.getNamespace(), s2i.getName(), futureTargetImageStream.completer());
+        ResourceOperation.imageStream(vertx, client).delete(s2i.getNamespace(), s2i.getName(), futureTargetImageStream.completer());
         result.add(futureTargetImageStream);
 
         Future<Void> futureBuildConfig = Future.future();
-        DeleteOperation.deleteBuildConfig(vertx, client).delete(s2i.getNamespace(), s2i.getName(), futureBuildConfig.completer());
+        ResourceOperation.buildConfig(vertx, client).delete(s2i.getNamespace(), s2i.getName(), futureBuildConfig.completer());
         result.add(futureBuildConfig);
 
         return result;
