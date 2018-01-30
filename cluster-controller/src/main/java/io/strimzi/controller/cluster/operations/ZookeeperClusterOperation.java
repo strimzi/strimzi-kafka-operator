@@ -25,7 +25,7 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
         super(vertx, k8s, "zookeeper", "create");
     }
 
-    private static final Op<ZookeeperCluster> CREATE = new Op<ZookeeperCluster>() {
+    private final Op<ZookeeperCluster> create = new Op<ZookeeperCluster>() {
 
         @Override
         public ZookeeperCluster getCluster(K8SUtils k8s, String namespace, String name) {
@@ -38,20 +38,20 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
 
             if (zk.isMetricsEnabled()) {
                 Future<Void> futureConfigMap = Future.future();
-                OperationExecutor.getInstance().executeFabric8(CreateOperation.createConfigMap(zk.generateMetricsConfigMap()), futureConfigMap.completer());
+                CreateOperation.createConfigMap(zk.generateMetricsConfigMap()).execute(vertx, k8s.getKubernetesClient(), futureConfigMap.completer());
                 result.add(futureConfigMap);
             }
 
             Future<Void> futureService = Future.future();
-            OperationExecutor.getInstance().executeFabric8(CreateOperation.createService(zk.generateService()), futureService.completer());
+            CreateOperation.createService(zk.generateService()).execute(vertx, k8s.getKubernetesClient(), futureService.completer());
             result.add(futureService);
 
             Future<Void> futureHeadlessService = Future.future();
-            OperationExecutor.getInstance().executeFabric8(CreateOperation.createService(zk.generateHeadlessService()), futureHeadlessService.completer());
+            CreateOperation.createService(zk.generateHeadlessService()).execute(vertx, k8s.getKubernetesClient(), futureHeadlessService.completer());
             result.add(futureHeadlessService);
 
             Future<Void> futureStatefulSet = Future.future();
-            OperationExecutor.getInstance().executeFabric8(CreateOperation.createStatefulSet(zk.generateStatefulSet(k8s.isOpenShift())), futureStatefulSet.completer());
+            CreateOperation.createStatefulSet(zk.generateStatefulSet(k8s.isOpenShift())).execute(vertx, k8s.getKubernetesClient(), futureStatefulSet.completer());
             result.add(futureStatefulSet);
 
             return result;
@@ -60,10 +60,10 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
 
     @Override
     protected Op<ZookeeperCluster> createOp() {
-        return CREATE;
+        return create;
     }
 
-    private static final Op<ZookeeperCluster> DELETE = new Op<ZookeeperCluster>() {
+    private final Op<ZookeeperCluster> delete = new Op<ZookeeperCluster>() {
         @Override
         public List<Future> futures(K8SUtils k8s, String namespace, ZookeeperCluster zk) {
             boolean deleteClaims = zk.getStorage().type() == Storage.StorageType.PERSISTENT_CLAIM
@@ -74,27 +74,27 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
             // otherwise the future is already complete (for the "join")
             if (zk.isMetricsEnabled()) {
                 Future<Void> futureConfigMap = Future.future();
-                OperationExecutor.getInstance().executeFabric8(DeleteOperation.deleteConfigMap(namespace, zk.getMetricsConfigName()), futureConfigMap.completer());
+                DeleteOperation.deleteConfigMap(namespace, zk.getMetricsConfigName()).execute(vertx, k8s.getKubernetesClient(), futureConfigMap.completer());
                 result.add(futureConfigMap);
             }
 
             Future<Void> futureService = Future.future();
-            OperationExecutor.getInstance().executeFabric8(DeleteOperation.deleteService(namespace, zk.getName()), futureService.completer());
+            DeleteOperation.deleteService(namespace, zk.getName()).execute(vertx, k8s.getKubernetesClient(), futureService.completer());
             result.add(futureService);
 
             Future<Void> futureHeadlessService = Future.future();
-            OperationExecutor.getInstance().executeFabric8(DeleteOperation.deleteService(namespace, zk.getHeadlessName()), futureHeadlessService.completer());
+            DeleteOperation.deleteService(namespace, zk.getHeadlessName()).execute(vertx, k8s.getKubernetesClient(), futureHeadlessService.completer());
             result.add(futureHeadlessService);
 
             Future<Void> futureStatefulSet = Future.future();
-            OperationExecutor.getInstance().executeFabric8(DeleteOperation.deleteStatefulSet(namespace, zk.getName()), futureStatefulSet.completer());
+            DeleteOperation.deleteStatefulSet(namespace, zk.getName()).execute(vertx, k8s.getKubernetesClient(), futureStatefulSet.completer());
             result.add(futureStatefulSet);
 
 
             if (deleteClaims) {
                 for (int i = 0; i < zk.getReplicas(); i++) {
                     Future<Void> f = Future.future();
-                    OperationExecutor.getInstance().executeFabric8(DeleteOperation.deletePersistentVolumeClaim(namespace, zk.getVolumeName() + "-" + zk.getName() + "-" + i), f.completer());
+                    DeleteOperation.deletePersistentVolumeClaim(namespace, zk.getVolumeName() + "-" + zk.getName() + "-" + i).execute(vertx, k8s.getKubernetesClient(), f.completer());
                     result.add(f);
                 }
             }
@@ -110,7 +110,7 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
 
     @Override
     protected Op<ZookeeperCluster> deleteOp() {
-        return DELETE;
+        return delete;
     }
 
     public void update(String namespace, String name, Handler<AsyncResult<Void>> handler) {
@@ -181,7 +181,7 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
 
         if (diff.getScaleDown())    {
             log.info("Scaling down stateful set {} in namespace {}", zk.getName(), namespace);
-            OperationExecutor.getInstance().executeK8s(new ScaleDownOperation(k8s.getStatefulSetResource(namespace, zk.getName()), zk.getReplicas()), scaleDown.completer());
+            new ScaleDownOperation(k8s.getStatefulSetResource(namespace, zk.getName()), zk.getReplicas()).execute(vertx, k8s, scaleDown.completer());
         }
         else {
             scaleDown.complete();
@@ -193,7 +193,7 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
     private Future<Void> patchService(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchService = Future.future();
-            OperationExecutor.getInstance().executeK8s(new PatchOperation(k8s.getServiceResource(namespace, zk.getName()), zk.patchService(k8s.getService(namespace, zk.getName()))), patchService.completer());
+            new PatchOperation(k8s.getServiceResource(namespace, zk.getName()), zk.patchService(k8s.getService(namespace, zk.getName()))).execute(vertx, k8s.getKubernetesClient(), patchService.completer());
             return patchService;
         }
         else
@@ -205,7 +205,7 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
     private Future<Void> patchHeadlessService(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchService = Future.future();
-            OperationExecutor.getInstance().executeK8s(new PatchOperation(k8s.getServiceResource(namespace, zk.getHeadlessName()), zk.patchHeadlessService(k8s.getService(namespace, zk.getHeadlessName()))), patchService.completer());
+            new PatchOperation(k8s.getServiceResource(namespace, zk.getHeadlessName()), zk.patchHeadlessService(k8s.getService(namespace, zk.getHeadlessName()))).execute(vertx, k8s.getKubernetesClient(), patchService.completer());
             return patchService;
         }
         else
@@ -217,7 +217,7 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
     private Future<Void> patchStatefulSet(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchStatefulSet = Future.future();
-            OperationExecutor.getInstance().executeK8s(new PatchOperation(k8s.getStatefulSetResource(namespace, zk.getName()).cascading(false), zk.patchStatefulSet(k8s.getStatefulSet(namespace, zk.getName()))), patchStatefulSet.completer());
+            new PatchOperation(k8s.getStatefulSetResource(namespace, zk.getName()).cascading(false), zk.patchStatefulSet(k8s.getStatefulSet(namespace, zk.getName()))).execute(vertx, k8s.getKubernetesClient(), patchStatefulSet.completer());
             return patchStatefulSet;
         }
         else
@@ -229,7 +229,7 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
     private Future<Void> patchMetricsConfigMap(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
         if (diff.isMetricsChanged()) {
             Future<Void> patchConfigMap = Future.future();
-            OperationExecutor.getInstance().executeK8s(new PatchOperation(k8s.getConfigmapResource(namespace, zk.getMetricsConfigName()), zk.patchMetricsConfigMap(k8s.getConfigmap(namespace, zk.getMetricsConfigName()))), patchConfigMap.completer());
+            new PatchOperation(k8s.getConfigmapResource(namespace, zk.getMetricsConfigName()), zk.patchMetricsConfigMap(k8s.getConfigmap(namespace, zk.getMetricsConfigName()))).execute(vertx, k8s.getKubernetesClient(), patchConfigMap.completer());
             return patchConfigMap;
         } else {
             return Future.succeededFuture();
@@ -240,7 +240,7 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
         Future<Void> rollingUpdate = Future.future();
 
         if (diff.getRollingUpdate()) {
-            OperationExecutor.getInstance().executeK8s(new ManualRollingUpdateOperation(namespace, zk.getName(), k8s.getStatefulSet(namespace, zk.getName()).getSpec().getReplicas()), rollingUpdate.completer());
+            new ManualRollingUpdateOperation(namespace, zk.getName(), k8s.getStatefulSet(namespace, zk.getName()).getSpec().getReplicas()).execute(vertx, k8s, rollingUpdate.completer());
         }
         else {
             rollingUpdate.complete();
@@ -253,7 +253,7 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
         Future<Void> scaleUp = Future.future();
 
         if (diff.getScaleUp()) {
-            OperationExecutor.getInstance().executeK8s(new ScaleUpOperation(k8s.getStatefulSetResource(namespace, zk.getName()), zk.getReplicas()), scaleUp.completer());
+            new ScaleUpOperation(k8s.getStatefulSetResource(namespace, zk.getName()), zk.getReplicas()).execute(vertx, k8s, scaleUp.completer());
         }
         else {
             scaleUp.complete();

@@ -27,7 +27,7 @@ public class KafkaConnectClusterOperation extends ClusterOperation<KafkaConnectC
         super(vertx, k8s, "kafka-connect","create");
     }
 
-    private static final Op<KafkaConnectCluster> CREATE = new Op<KafkaConnectCluster>() {
+    private final Op<KafkaConnectCluster> create = new Op<KafkaConnectCluster>() {
 
         @Override
         public KafkaConnectCluster getCluster(K8SUtils k8s, String namespace, String name) {
@@ -38,17 +38,17 @@ public class KafkaConnectClusterOperation extends ClusterOperation<KafkaConnectC
         public List<Future> futures(K8SUtils k8s, String namespace, KafkaConnectCluster connect) {
             List<Future> result = new ArrayList<>(3);
             Future<Void> futureService = Future.future();
-            OperationExecutor.getInstance().executeFabric8(CreateOperation.createService(connect.generateService()), futureService.completer());
+            CreateOperation.createService(connect.generateService()).execute(vertx, k8s.getKubernetesClient(), futureService.completer());
             result.add(futureService);
 
             Future<Void> futureDeployment = Future.future();
-            OperationExecutor.getInstance().executeFabric8(CreateOperation.createDeployment(connect.generateDeployment()), futureDeployment.completer());
+            CreateOperation.createDeployment(connect.generateDeployment()).execute(vertx, k8s.getKubernetesClient(), futureDeployment.completer());
             result.add(futureDeployment);
 
             Future<Void> futureS2I;
             if (connect.getS2I() != null) {
                 futureS2I = Future.future();
-                OperationExecutor.getInstance().executeOpenShift(new CreateS2IOperation(connect.getS2I()), futureS2I.completer());
+                new CreateS2IOperation(vertx, k8s.getOpenShiftUtils().getOpenShiftClient(), connect.getS2I()).execute(vertx, k8s.getOpenShiftUtils(), futureS2I.completer());
             } else {
                 futureS2I = Future.succeededFuture();
             }
@@ -60,26 +60,26 @@ public class KafkaConnectClusterOperation extends ClusterOperation<KafkaConnectC
 
     @Override
     protected Op<KafkaConnectCluster> createOp() {
-        return CREATE;
+        return create;
     }
 
-    private static final Op<KafkaConnectCluster> DELETE = new Op<KafkaConnectCluster>() {
+    private final Op<KafkaConnectCluster> delete = new Op<KafkaConnectCluster>() {
 
         @Override
         public List<Future> futures(K8SUtils k8s, String namespace, KafkaConnectCluster connect) {
             List<Future> result = new ArrayList<>(3);
 
             Future<Void> futureService = Future.future();
-            OperationExecutor.getInstance().executeFabric8(DeleteOperation.deleteService(namespace, connect.getName()), futureService.completer());
+            DeleteOperation.deleteService(namespace, connect.getName()).execute(vertx, k8s.getKubernetesClient(), futureService.completer());
             result.add(futureService);
 
             Future<Void> futureDeployment = Future.future();
-            OperationExecutor.getInstance().executeFabric8(DeleteOperation.deleteDeployment(namespace, connect.getName()), futureDeployment.completer());
+            DeleteOperation.deleteDeployment(namespace, connect.getName()).execute(vertx, k8s.getKubernetesClient(), futureDeployment.completer());
             result.add(futureDeployment);
 
             if (connect.getS2I() != null) {
                 Future<Void> futureS2I = Future.future();
-                OperationExecutor.getInstance().executeOpenShift(new DeleteS2IOperation(connect.getS2I()), futureS2I.completer());
+                new DeleteS2IOperation(vertx, k8s.getOpenShiftUtils().getOpenShiftClient(), connect.getS2I()).execute(vertx, k8s.getOpenShiftUtils(), futureS2I.completer());
                 result.add(futureS2I);
             }
 
@@ -94,7 +94,7 @@ public class KafkaConnectClusterOperation extends ClusterOperation<KafkaConnectC
 
     @Override
     protected Op<KafkaConnectCluster> deleteOp() {
-        return DELETE;
+        return delete;
     }
 
     public void update(String namespace, String name, Handler<AsyncResult<Void>> handler) {
@@ -151,7 +151,7 @@ public class KafkaConnectClusterOperation extends ClusterOperation<KafkaConnectC
 
         if (diff.getScaleDown())    {
             log.info("Scaling down deployment {} in namespace {}", connect.getName(), namespace);
-            OperationExecutor.getInstance().executeK8s(new ScaleDownOperation(k8s.getDeploymentResource(namespace, connect.getName()), connect.getReplicas()), scaleDown.completer());
+            new ScaleDownOperation(k8s.getDeploymentResource(namespace, connect.getName()), connect.getReplicas()).execute(vertx, k8s, scaleDown.completer());
         }
         else {
             scaleDown.complete();
@@ -163,7 +163,7 @@ public class KafkaConnectClusterOperation extends ClusterOperation<KafkaConnectC
     private Future<Void> patchService(KafkaConnectCluster connect, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchService = Future.future();
-            OperationExecutor.getInstance().executeK8s(new PatchOperation(k8s.getServiceResource(namespace, connect.getName()), connect.patchService(k8s.getService(namespace, connect.getName()))), patchService.completer());
+            new PatchOperation(k8s.getServiceResource(namespace, connect.getName()), connect.patchService(k8s.getService(namespace, connect.getName()))).execute(vertx, k8s.getKubernetesClient(), patchService.completer());
             return patchService;
         }
         else
@@ -175,7 +175,7 @@ public class KafkaConnectClusterOperation extends ClusterOperation<KafkaConnectC
     private Future<Void> patchDeployment(KafkaConnectCluster connect, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchDeployment = Future.future();
-            OperationExecutor.getInstance().executeK8s(new PatchOperation(k8s.getDeploymentResource(namespace, connect.getName()), connect.patchDeployment(k8s.getDeployment(namespace, connect.getName()))), patchDeployment.completer());
+            new PatchOperation(k8s.getDeploymentResource(namespace, connect.getName()), connect.patchDeployment(k8s.getDeployment(namespace, connect.getName()))).execute(vertx, k8s.getKubernetesClient(), patchDeployment.completer());
             return patchDeployment;
         }
         else
@@ -197,17 +197,17 @@ public class KafkaConnectClusterOperation extends ClusterOperation<KafkaConnectC
             if (diff.getS2i() == Source2Image.Source2ImageDiff.CREATE) {
                 log.info("Creating S2I deployment {} in namespace {}", connect.getName(), namespace);
                 Future<Void> createS2I = Future.future();
-                OperationExecutor.getInstance().executeOpenShift(new CreateS2IOperation(connect.getS2I()), createS2I.completer());
+                new CreateS2IOperation(vertx, k8s.getOpenShiftUtils().getOpenShiftClient(), connect.getS2I()).execute(vertx, k8s.getOpenShiftUtils(), createS2I.completer());
                 return createS2I;
             } else if (diff.getS2i() == Source2Image.Source2ImageDiff.DELETE) {
                 log.info("Deleting S2I deployment {} in namespace {}", connect.getName(), namespace);
                 Future<Void> deleteS2I = Future.future();
-                OperationExecutor.getInstance().executeOpenShift(new DeleteS2IOperation(new Source2Image(namespace, connect.getName())), deleteS2I.completer());
+                new DeleteS2IOperation(vertx, k8s.getOpenShiftUtils().getOpenShiftClient(), new Source2Image(namespace, connect.getName())).execute(vertx, k8s.getOpenShiftUtils(), deleteS2I.completer());
                 return deleteS2I;
             } else {
                 log.info("Updating S2I deployment {} in namespace {}", connect.getName(), namespace);
                 Future<Void> patchS2I = Future.future();
-                OperationExecutor.getInstance().executeOpenShift(new UpdateS2IOperation(connect.getS2I()), patchS2I.completer());
+                new UpdateS2IOperation(vertx, k8s.getOpenShiftUtils().getOpenShiftClient(), connect.getS2I()).execute(vertx, k8s.getOpenShiftUtils(), patchS2I.completer());
                 return patchS2I;
             }
         } else {
@@ -219,7 +219,7 @@ public class KafkaConnectClusterOperation extends ClusterOperation<KafkaConnectC
         Future<Void> scaleUp = Future.future();
 
         if (diff.getScaleUp()) {
-            OperationExecutor.getInstance().executeK8s(new ScaleUpOperation(k8s.getDeploymentResource(namespace, connect.getName()), connect.getReplicas()), scaleUp.completer());
+            new ScaleUpOperation(k8s.getDeploymentResource(namespace, connect.getName()), connect.getReplicas()).execute(vertx, k8s, scaleUp.completer());
         }
         else {
             scaleUp.complete();

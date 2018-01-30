@@ -111,6 +111,7 @@ public abstract class ClusterOperation<C extends AbstractCluster> {
         execute(namespace, name, createOp(), handler);
     }
 
+
     protected abstract Op<C> deleteOp();
 
     public final void delete(String namespace, String name, Handler<AsyncResult<Void>> handler) {
