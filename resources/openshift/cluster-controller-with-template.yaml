@@ -621,18 +621,6 @@ parameters:
   displayName: Status replication factor
   name: KAFKA_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR
   value: "3"
-- description: Image repository name
-  displayName: Repository Name
-  name: IMAGE_REPO_NAME
-  value: strimzi
-- description: Image name
-  displayName: Image Name
-  name: IMAGE_NAME
-  value: kafka-connect
-- description: Image tag
-  displayName: Image tag
-  name: IMAGE_TAG
-  value: latest
 - description: Image repository name of the S2I Docker image
   displayName: S2I image repository
   name: S2I_IMAGE_REPO_NAME
@@ -663,7 +651,6 @@ objects:
       strimzi.io/type: kafka-connect
   data:
     nodes: "${INSTANCES}"
-    image: "${IMAGE_REPO_NAME}/${IMAGE_NAME}:${IMAGE_TAG}"
     s2i: |-
       {
         "enabled": true,
