@@ -5,7 +5,6 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
-import io.strimzi.controller.cluster.operations.Operation;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -13,7 +12,7 @@ import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ManualRollingUpdateOperation implements Operation<K8SUtils> {
+public class ManualRollingUpdateOperation {
     private static final Logger log = LoggerFactory.getLogger(ManualRollingUpdateOperation.class.getName());
     private final String namespace;
     private final String name;
@@ -25,8 +24,7 @@ public class ManualRollingUpdateOperation implements Operation<K8SUtils> {
         this.replicas = replicas;
     }
 
-    @Override
-    public void execute(Vertx vertx, K8SUtils k8s, Handler<AsyncResult<Void>> handler) {
+    public void rollingUpdate(Vertx vertx, K8SUtils k8s, Handler<AsyncResult<Void>> handler) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
                     try {

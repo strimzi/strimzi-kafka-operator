@@ -1,8 +1,7 @@
 package io.strimzi.controller.cluster.operations.kubernetes;
 
-import io.strimzi.controller.cluster.K8SUtils;
 import io.fabric8.kubernetes.client.dsl.ScalableResource;
-import io.strimzi.controller.cluster.operations.Operation;
+import io.strimzi.controller.cluster.K8SUtils;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -10,7 +9,7 @@ import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ScaleUpOperation implements Operation<K8SUtils> {
+public class ScaleUpOperation {
     private static final Logger log = LoggerFactory.getLogger(ScaleUpOperation.class.getName());
     private final ScalableResource res;
     private final int scaleTo;
@@ -20,8 +19,7 @@ public class ScaleUpOperation implements Operation<K8SUtils> {
         this.scaleTo = scaleTo;
     }
 
-    @Override
-    public void execute(Vertx vertx, K8SUtils k8s, Handler<AsyncResult<Void>> handler) {
+    public void scaleUp(Vertx vertx, K8SUtils k8s, Handler<AsyncResult<Void>> handler) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
                     try {

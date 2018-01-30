@@ -38,20 +38,20 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
 
             if (zk.isMetricsEnabled()) {
                 Future<Void> futureConfigMap = Future.future();
-                CreateOperation.createConfigMap(zk.generateMetricsConfigMap()).execute(vertx, k8s.getKubernetesClient(), futureConfigMap.completer());
+                CreateOperation.createConfigMap(zk.generateMetricsConfigMap()).create(vertx, k8s.getKubernetesClient(), futureConfigMap.completer());
                 result.add(futureConfigMap);
             }
 
             Future<Void> futureService = Future.future();
-            CreateOperation.createService(zk.generateService()).execute(vertx, k8s.getKubernetesClient(), futureService.completer());
+            CreateOperation.createService(zk.generateService()).create(vertx, k8s.getKubernetesClient(), futureService.completer());
             result.add(futureService);
 
             Future<Void> futureHeadlessService = Future.future();
-            CreateOperation.createService(zk.generateHeadlessService()).execute(vertx, k8s.getKubernetesClient(), futureHeadlessService.completer());
+            CreateOperation.createService(zk.generateHeadlessService()).create(vertx, k8s.getKubernetesClient(), futureHeadlessService.completer());
             result.add(futureHeadlessService);
 
             Future<Void> futureStatefulSet = Future.future();
-            CreateOperation.createStatefulSet(zk.generateStatefulSet(k8s.isOpenShift())).execute(vertx, k8s.getKubernetesClient(), futureStatefulSet.completer());
+            CreateOperation.createStatefulSet(zk.generateStatefulSet(k8s.isOpenShift())).create(vertx, k8s.getKubernetesClient(), futureStatefulSet.completer());
             result.add(futureStatefulSet);
 
             return result;
@@ -74,27 +74,27 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
             // otherwise the future is already complete (for the "join")
             if (zk.isMetricsEnabled()) {
                 Future<Void> futureConfigMap = Future.future();
-                DeleteOperation.deleteConfigMap(namespace, zk.getMetricsConfigName()).execute(vertx, k8s.getKubernetesClient(), futureConfigMap.completer());
+                DeleteOperation.deleteConfigMap(namespace, zk.getMetricsConfigName()).delete(vertx, k8s.getKubernetesClient(), futureConfigMap.completer());
                 result.add(futureConfigMap);
             }
 
             Future<Void> futureService = Future.future();
-            DeleteOperation.deleteService(namespace, zk.getName()).execute(vertx, k8s.getKubernetesClient(), futureService.completer());
+            DeleteOperation.deleteService(namespace, zk.getName()).delete(vertx, k8s.getKubernetesClient(), futureService.completer());
             result.add(futureService);
 
             Future<Void> futureHeadlessService = Future.future();
-            DeleteOperation.deleteService(namespace, zk.getHeadlessName()).execute(vertx, k8s.getKubernetesClient(), futureHeadlessService.completer());
+            DeleteOperation.deleteService(namespace, zk.getHeadlessName()).delete(vertx, k8s.getKubernetesClient(), futureHeadlessService.completer());
             result.add(futureHeadlessService);
 
             Future<Void> futureStatefulSet = Future.future();
-            DeleteOperation.deleteStatefulSet(namespace, zk.getName()).execute(vertx, k8s.getKubernetesClient(), futureStatefulSet.completer());
+            DeleteOperation.deleteStatefulSet(namespace, zk.getName()).delete(vertx, k8s.getKubernetesClient(), futureStatefulSet.completer());
             result.add(futureStatefulSet);
 
 
             if (deleteClaims) {
                 for (int i = 0; i < zk.getReplicas(); i++) {
                     Future<Void> f = Future.future();
-                    DeleteOperation.deletePersistentVolumeClaim(namespace, zk.getVolumeName() + "-" + zk.getName() + "-" + i).execute(vertx, k8s.getKubernetesClient(), f.completer());
+                    DeleteOperation.deletePersistentVolumeClaim(namespace, zk.getVolumeName() + "-" + zk.getName() + "-" + i).delete(vertx, k8s.getKubernetesClient(), f.completer());
                     result.add(f);
                 }
             }
@@ -181,7 +181,7 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
 
         if (diff.getScaleDown())    {
             log.info("Scaling down stateful set {} in namespace {}", zk.getName(), namespace);
-            new ScaleDownOperation(k8s.getStatefulSetResource(namespace, zk.getName()), zk.getReplicas()).execute(vertx, k8s, scaleDown.completer());
+            new ScaleDownOperation(k8s.getStatefulSetResource(namespace, zk.getName()), zk.getReplicas()).scaleDown(vertx, k8s, scaleDown.completer());
         }
         else {
             scaleDown.complete();
@@ -193,7 +193,7 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
     private Future<Void> patchService(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchService = Future.future();
-            new PatchOperation(k8s.getServiceResource(namespace, zk.getName()), zk.patchService(k8s.getService(namespace, zk.getName()))).execute(vertx, k8s.getKubernetesClient(), patchService.completer());
+            new PatchOperation(vertx).patch(k8s.getServiceResource(namespace, zk.getName()), zk.patchService(k8s.getService(namespace, zk.getName())), patchService.completer());
             return patchService;
         }
         else
@@ -205,7 +205,7 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
     private Future<Void> patchHeadlessService(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchService = Future.future();
-            new PatchOperation(k8s.getServiceResource(namespace, zk.getHeadlessName()), zk.patchHeadlessService(k8s.getService(namespace, zk.getHeadlessName()))).execute(vertx, k8s.getKubernetesClient(), patchService.completer());
+            new PatchOperation(vertx).patch(k8s.getServiceResource(namespace, zk.getHeadlessName()), zk.patchHeadlessService(k8s.getService(namespace, zk.getHeadlessName())), patchService.completer());
             return patchService;
         }
         else
@@ -217,7 +217,7 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
     private Future<Void> patchStatefulSet(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchStatefulSet = Future.future();
-            new PatchOperation(k8s.getStatefulSetResource(namespace, zk.getName()).cascading(false), zk.patchStatefulSet(k8s.getStatefulSet(namespace, zk.getName()))).execute(vertx, k8s.getKubernetesClient(), patchStatefulSet.completer());
+            new PatchOperation(vertx).patch(k8s.getStatefulSetResource(namespace, zk.getName()).cascading(false), zk.patchStatefulSet(k8s.getStatefulSet(namespace, zk.getName())), patchStatefulSet.completer());
             return patchStatefulSet;
         }
         else
@@ -229,7 +229,9 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
     private Future<Void> patchMetricsConfigMap(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
         if (diff.isMetricsChanged()) {
             Future<Void> patchConfigMap = Future.future();
-            new PatchOperation(k8s.getConfigmapResource(namespace, zk.getMetricsConfigName()), zk.patchMetricsConfigMap(k8s.getConfigmap(namespace, zk.getMetricsConfigName()))).execute(vertx, k8s.getKubernetesClient(), patchConfigMap.completer());
+            new PatchOperation(vertx).patch(k8s.getConfigmapResource(namespace, zk.getMetricsConfigName()),
+                    zk.patchMetricsConfigMap(k8s.getConfigmap(namespace, zk.getMetricsConfigName())),
+                    patchConfigMap.completer());
             return patchConfigMap;
         } else {
             return Future.succeededFuture();
@@ -240,7 +242,7 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
         Future<Void> rollingUpdate = Future.future();
 
         if (diff.getRollingUpdate()) {
-            new ManualRollingUpdateOperation(namespace, zk.getName(), k8s.getStatefulSet(namespace, zk.getName()).getSpec().getReplicas()).execute(vertx, k8s, rollingUpdate.completer());
+            new ManualRollingUpdateOperation(namespace, zk.getName(), k8s.getStatefulSet(namespace, zk.getName()).getSpec().getReplicas()).rollingUpdate(vertx, k8s, rollingUpdate.completer());
         }
         else {
             rollingUpdate.complete();
@@ -253,7 +255,7 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
         Future<Void> scaleUp = Future.future();
 
         if (diff.getScaleUp()) {
-            new ScaleUpOperation(k8s.getStatefulSetResource(namespace, zk.getName()), zk.getReplicas()).execute(vertx, k8s, scaleUp.completer());
+            new ScaleUpOperation(k8s.getStatefulSetResource(namespace, zk.getName()), zk.getReplicas()).scaleUp(vertx, k8s, scaleUp.completer());
         }
         else {
             scaleUp.complete();

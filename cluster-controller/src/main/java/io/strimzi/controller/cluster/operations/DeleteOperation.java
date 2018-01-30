@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
  * and creating it if it does not. It is not an error if the resource did already exist.
  * @param <U> The {@code *Utils} instance used to interact with kubernetes.
  */
-public abstract class DeleteOperation<U> implements Operation<U> {
+public abstract class DeleteOperation<U> {
 
     private static final Logger log = LoggerFactory.getLogger(DeleteOperation.class);
 
@@ -54,8 +54,7 @@ public abstract class DeleteOperation<U> implements Operation<U> {
 
     protected abstract void delete(U utils, String namespace, String name);
 
-    @Override
-    public void execute(Vertx vertx, U utils, Handler<AsyncResult<Void>> handler) {
+    public void delete(Vertx vertx, U utils, Handler<AsyncResult<Void>> handler) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
 
