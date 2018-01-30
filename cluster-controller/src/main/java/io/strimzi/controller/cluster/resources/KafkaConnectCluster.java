@@ -15,7 +15,6 @@ import io.fabric8.openshift.api.model.ImageStreamList;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.openshift.client.dsl.BuildConfigResource;
 import io.strimzi.controller.cluster.ClusterController;
-import io.strimzi.controller.cluster.K8SUtils;
 import io.strimzi.controller.cluster.operations.resource.ResourceOperation;
 import io.vertx.core.json.JsonObject;
 
@@ -106,10 +105,9 @@ public class KafkaConnectCluster extends AbstractCluster {
      * Create a Kafka Connect cluster from the related ConfigMap resource
      *
      * @param cm    ConfigMap with cluster configuration
-     * @param k8s   K8SUtils instance, which is needed to check whether we are on OpenShift due to S2I support
      * @return  Kafka Connect cluster instance
      */
-    public static KafkaConnectCluster fromConfigMap(K8SUtils k8s, ConfigMap cm) {
+    public static KafkaConnectCluster fromConfigMap(KubernetesClient client, ConfigMap cm) {
         KafkaConnectCluster kafkaConnect = new KafkaConnectCluster(cm.getMetadata().getNamespace(), cm.getMetadata().getName());
 
         kafkaConnect.setLabels(cm.getMetadata().getLabels());
@@ -130,7 +128,7 @@ public class KafkaConnectCluster extends AbstractCluster {
         kafkaConnect.setStatusStorageReplicationFactor(Integer.parseInt(cm.getData().getOrDefault(KEY_STATUS_STORAGE_REPLICATION_FACTOR, String.valueOf(DEFAULT_STATUS_STORAGE_REPLICATION_FACTOR))));
 
         if (cm.getData().containsKey(KEY_S2I)) {
-            if (k8s.isOpenShift()) {
+            if (client.isAdaptable(OpenShiftClient.class)) {
                 JsonObject config = new JsonObject(cm.getData().get(KEY_S2I));
                 if (config.getBoolean(Source2Image.KEY_ENABLED, false)) {
                     kafkaConnect.setS2I(Source2Image.fromJson(cm.getMetadata().getNamespace(), kafkaConnect.getName(), kafkaConnect.getLabelsWithName(), config));

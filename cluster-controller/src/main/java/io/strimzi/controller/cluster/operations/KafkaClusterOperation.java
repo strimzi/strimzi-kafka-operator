@@ -1,7 +1,8 @@
 package io.strimzi.controller.cluster.operations;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.strimzi.controller.cluster.K8SUtils;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.controller.cluster.operations.resource.ConfigMapResources;
 import io.strimzi.controller.cluster.operations.resource.PvcResources;
 import io.strimzi.controller.cluster.operations.resource.ServiceResources;
@@ -24,23 +25,23 @@ public class KafkaClusterOperation extends ClusterOperation<KafkaCluster> {
     private final ServiceResources serviceResources;
     private final PvcResources pvcResources;
 
-    public KafkaClusterOperation(Vertx vertx, K8SUtils k8s) {
-        super(vertx, k8s, "kafka", "create");
-        configMapResources = new ConfigMapResources(vertx, k8s.getKubernetesClient());
-        statefulSetResources = new StatefulSetResources(vertx, k8s.getKubernetesClient());
-        serviceResources = new ServiceResources(vertx, k8s.getKubernetesClient());
-        pvcResources = new PvcResources(vertx, k8s.getKubernetesClient());
+    public KafkaClusterOperation(Vertx vertx, KubernetesClient client) {
+        super(vertx, client, "kafka", "create");
+        configMapResources = new ConfigMapResources(vertx, client);
+        statefulSetResources = new StatefulSetResources(vertx, client);
+        serviceResources = new ServiceResources(vertx, client);
+        pvcResources = new PvcResources(vertx, client);
     }
 
     private final Op<KafkaCluster> create = new Op<KafkaCluster>() {
 
         @Override
-        public KafkaCluster getCluster (K8SUtils k8s, String namespace, String name){
+        public KafkaCluster getCluster (KubernetesClient client, String namespace, String name){
             return KafkaCluster.fromConfigMap(configMapResources.get(namespace, name));
         }
 
         @Override
-        public List<Future> futures (K8SUtils k8s, String namespace, KafkaCluster kafka){
+        public List<Future> futures (KubernetesClient client, String namespace, KafkaCluster kafka){
             List<Future> result = new ArrayList<>(4);
             // start creating configMap operation only if metrics are enabled,
             // otherwise the future is already complete (for the "join")
@@ -59,7 +60,7 @@ public class KafkaClusterOperation extends ClusterOperation<KafkaCluster> {
             result.add(futureHeadlessService);
 
             Future<Void> futureStatefulSet = Future.future();
-            statefulSetResources.create(kafka.generateStatefulSet(k8s.isOpenShift()), futureStatefulSet.completer());
+            statefulSetResources.create(kafka.generateStatefulSet(client.isAdaptable(OpenShiftClient.class)), futureStatefulSet.completer());
             result.add(futureStatefulSet);
 
             return result;
@@ -67,7 +68,7 @@ public class KafkaClusterOperation extends ClusterOperation<KafkaCluster> {
     };
     private final Op<KafkaCluster> delete = new Op<KafkaCluster>() {
         @Override
-        public List<Future> futures(K8SUtils k8s, String namespace, KafkaCluster kafka) {
+        public List<Future> futures(KubernetesClient client, String namespace, KafkaCluster kafka) {
             boolean deleteClaims = kafka.getStorage().type() == Storage.StorageType.PERSISTENT_CLAIM
                     && kafka.getStorage().isDeleteClaim();
             List<Future> result = new ArrayList<>(4 + (deleteClaims ? kafka.getReplicas() : 0));
@@ -102,7 +103,7 @@ public class KafkaClusterOperation extends ClusterOperation<KafkaCluster> {
         }
 
         @Override
-        public KafkaCluster getCluster(K8SUtils k8s, String namespace, String name) {
+        public KafkaCluster getCluster(KubernetesClient client, String namespace, String name) {
             return KafkaCluster.fromStatefulSet(statefulSetResources, namespace, name);
         }
     };

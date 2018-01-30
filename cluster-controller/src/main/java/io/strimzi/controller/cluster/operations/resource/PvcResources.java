@@ -44,7 +44,7 @@ public class PvcResources extends ResourceOperation<KubernetesClient, Persistent
     }
 
     @Override
-    public <P extends Patchable<PersistentVolumeClaim, PersistentVolumeClaim>> void patch(String namespace, String name, PersistentVolumeClaim patch, Handler<AsyncResult<Void>> handler) {
+    public void patch(String namespace, String name, PersistentVolumeClaim patch, Handler<AsyncResult<Void>> handler) {
         throw new UnsupportedOperationException();// should never happen
     }
 }

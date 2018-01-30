@@ -1,6 +1,7 @@
 package io.strimzi.controller.cluster.operations.resource;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.client.dsl.ScalableResource;
@@ -19,7 +20,7 @@ import org.slf4j.LoggerFactory;
  * @param <D>
  * @param <R>
  */
-public abstract class ScalableResourceOperation<C, T extends HasMetadata, L, D, R extends ScalableResource<T, D>>
+public abstract class ScalableResourceOperation<C, T extends HasMetadata, L extends KubernetesResourceList/*<T>*/, D, R extends ScalableResource<T, D>>
         extends ResourceOperation<C, T, L, D, R> {
 
     private static final Logger log = LoggerFactory.getLogger(ScalableResourceOperation.class.getName());
