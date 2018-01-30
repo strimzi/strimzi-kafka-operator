@@ -42,7 +42,7 @@ import java.util.List;
  */
 public abstract class ClusterOperation<C extends AbstractCluster> {
 
-    private static final Logger log = LoggerFactory.getLogger(KafkaClusterOperation.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(ClusterOperation.class.getName());
     protected final int LOCK_TIMEOUT = 60000;
 
     protected final Vertx vertx;
