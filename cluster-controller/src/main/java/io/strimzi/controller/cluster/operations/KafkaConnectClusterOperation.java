@@ -1,27 +1,13 @@
 package io.strimzi.controller.cluster.operations;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.ConfigMapList;
-import io.fabric8.kubernetes.api.model.DoneableConfigMap;
-import io.fabric8.kubernetes.api.model.DoneableService;
-import io.fabric8.kubernetes.api.model.Service;
-import io.fabric8.kubernetes.api.model.ServiceList;
-import io.fabric8.kubernetes.api.model.extensions.Deployment;
-import io.fabric8.kubernetes.api.model.extensions.DeploymentList;
-import io.fabric8.kubernetes.api.model.extensions.DoneableDeployment;
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.kubernetes.client.dsl.ScalableResource;
-import io.fabric8.openshift.api.model.Build;
-import io.fabric8.openshift.api.model.BuildConfig;
-import io.fabric8.openshift.api.model.BuildConfigList;
-import io.fabric8.openshift.api.model.DoneableBuildConfig;
-import io.fabric8.openshift.api.model.DoneableImageStream;
-import io.fabric8.openshift.api.model.ImageStream;
-import io.fabric8.openshift.api.model.ImageStreamList;
 import io.fabric8.openshift.client.OpenShiftClient;
-import io.fabric8.openshift.client.dsl.BuildConfigResource;
 import io.strimzi.controller.cluster.K8SUtils;
+import io.strimzi.controller.cluster.operations.resource.BuildConfigResources;
+import io.strimzi.controller.cluster.operations.resource.ConfigMapResources;
+import io.strimzi.controller.cluster.operations.resource.DeploymentResources;
+import io.strimzi.controller.cluster.operations.resource.ImageStreamResources;
+import io.strimzi.controller.cluster.operations.resource.ServiceResources;
 import io.strimzi.controller.cluster.operations.kubernetes.ScaleDownOperation;
 import io.strimzi.controller.cluster.operations.kubernetes.ScaleUpOperation;
 import io.strimzi.controller.cluster.operations.openshift.CreateS2IOperation;
@@ -41,19 +27,19 @@ import java.util.List;
 public class KafkaConnectClusterOperation extends ClusterOperation<KafkaConnectCluster> {
 
     private static final Logger log = LoggerFactory.getLogger(KafkaConnectClusterOperation.class.getName());
-    private final ResourceOperation<KubernetesClient, Service, ServiceList, DoneableService, Resource<Service, DoneableService>> serviceResources;
-    private final ResourceOperation<KubernetesClient, Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>> deploymentResources;
-    private final ResourceOperation<KubernetesClient, ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> configMapResources;
-    private final ResourceOperation<OpenShiftClient, ImageStream, ImageStreamList, DoneableImageStream, Resource<ImageStream, DoneableImageStream>> imagesStreamResources;
-    private final ResourceOperation<OpenShiftClient, BuildConfig, BuildConfigList, DoneableBuildConfig, BuildConfigResource<BuildConfig, DoneableBuildConfig, Void, Build>> buildConfigResources;
+    private final ServiceResources serviceResources;
+    private final DeploymentResources deploymentResources;
+    private final ConfigMapResources configMapResources;
+    private final ImageStreamResources imagesStreamResources;
+    private final BuildConfigResources buildConfigResources;
 
     public KafkaConnectClusterOperation(Vertx vertx, K8SUtils k8s) {
         super(vertx, k8s, "kafka-connect","create");
-        configMapResources = ResourceOperation.configMap(vertx, k8s.getKubernetesClient());
-        serviceResources = ResourceOperation.service(vertx, k8s.getKubernetesClient());
-        deploymentResources = ResourceOperation.deployment(vertx, k8s.getKubernetesClient());
-        imagesStreamResources = ResourceOperation.imageStream(vertx, k8s.getKubernetesClient().adapt(OpenShiftClient.class));
-        buildConfigResources = ResourceOperation.buildConfig(vertx, k8s.getKubernetesClient().adapt(OpenShiftClient.class));
+        configMapResources = new ConfigMapResources(vertx, k8s.getKubernetesClient());
+        serviceResources = new ServiceResources(vertx, k8s.getKubernetesClient());
+        deploymentResources = new DeploymentResources(vertx, k8s.getKubernetesClient());
+        imagesStreamResources = new ImageStreamResources(vertx, k8s.getKubernetesClient().adapt(OpenShiftClient.class));
+        buildConfigResources = new BuildConfigResources(vertx, k8s.getKubernetesClient().adapt(OpenShiftClient.class));
     }
 
     private final Op<KafkaConnectCluster> create = new Op<KafkaConnectCluster>() {
@@ -67,11 +53,11 @@ public class KafkaConnectClusterOperation extends ClusterOperation<KafkaConnectC
         public List<Future> futures(K8SUtils k8s, String namespace, KafkaConnectCluster connect) {
             List<Future> result = new ArrayList<>(3);
             Future<Void> futureService = Future.future();
-            ResourceOperation.service(vertx, k8s.getKubernetesClient()).create(connect.generateService(), futureService.completer());
+            serviceResources.create(connect.generateService(), futureService.completer());
             result.add(futureService);
 
             Future<Void> futureDeployment = Future.future();
-            ResourceOperation.deployment(vertx, k8s.getKubernetesClient()).create(connect.generateDeployment(), futureDeployment.completer());
+            deploymentResources.create(connect.generateDeployment(), futureDeployment.completer());
             result.add(futureDeployment);
 
             Future<Void> futureS2I;
@@ -99,11 +85,11 @@ public class KafkaConnectClusterOperation extends ClusterOperation<KafkaConnectC
             List<Future> result = new ArrayList<>(3);
 
             Future<Void> futureService = Future.future();
-            ResourceOperation.service(vertx, k8s.getKubernetesClient()).delete(namespace, connect.getName(), futureService.completer());
+            serviceResources.delete(namespace, connect.getName(), futureService.completer());
             result.add(futureService);
 
             Future<Void> futureDeployment = Future.future();
-            ResourceOperation.deployment(vertx, k8s.getKubernetesClient()).delete(namespace, connect.getName(), futureDeployment.completer());
+            deploymentResources.delete(namespace, connect.getName(), futureDeployment.completer());
             result.add(futureDeployment);
 
             if (connect.getS2I() != null) {

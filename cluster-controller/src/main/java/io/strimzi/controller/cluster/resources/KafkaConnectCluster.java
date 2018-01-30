@@ -16,7 +16,7 @@ import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.openshift.client.dsl.BuildConfigResource;
 import io.strimzi.controller.cluster.ClusterController;
 import io.strimzi.controller.cluster.K8SUtils;
-import io.strimzi.controller.cluster.operations.ResourceOperation;
+import io.strimzi.controller.cluster.operations.resource.ResourceOperation;
 import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
