@@ -26,8 +26,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.openshift.api.model.BuildConfig;
 import io.fabric8.openshift.api.model.ImageStream;
 import io.fabric8.openshift.client.OpenShiftClient;
-import io.strimzi.controller.cluster.K8SUtils;
-import io.strimzi.controller.cluster.OpenShiftUtils;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -45,22 +43,23 @@ import org.slf4j.LoggerFactory;
 public abstract class CreateOperation<U, R extends HasMetadata> {
 
     private static final Logger log = LoggerFactory.getLogger(CreateOperation.class);
-
-    private final R resource;
+    private final Vertx vertx;
+    private final U client;
     private final String resourceKind;
 
-    public CreateOperation(String resourceKind, R resource) {
+    public CreateOperation(Vertx vertx, U client, String resourceKind) {
+        this.vertx = vertx;
+        this.client = client;
         this.resourceKind = resourceKind;
-        this.resource = resource;
     }
 
-    public void create(Vertx vertx, U utils, Handler<AsyncResult<Void>> handler) {
+    public void create(R resource, Handler<AsyncResult<Void>> handler) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
-                    if (!exists(utils, resource.getMetadata().getNamespace(), resource.getMetadata().getName())) {
+                    if (!exists(resource.getMetadata().getNamespace(), resource.getMetadata().getName())) {
                         try {
                             log.info("Creating {} {}", resourceKind, resource);
-                            create(utils, resource);
+                            create(resource);
                             future.complete();
                         } catch (Exception e) {
                             log.error("Caught exception while creating {}", resourceKind, e);
@@ -86,97 +85,97 @@ public abstract class CreateOperation<U, R extends HasMetadata> {
         );
     }
 
-    protected abstract void create(U utils, R resource);
+    protected abstract void create(R resource);
 
-    protected abstract boolean exists(U k8s, String namespace, String name);
+    protected abstract boolean exists(String namespace, String name);
 
-    public static CreateOperation<KubernetesClient, Deployment> createDeployment(Deployment dep) {
-        return new CreateOperation<KubernetesClient, Deployment>("Deployment", dep) {
+    public static CreateOperation<KubernetesClient, Deployment> createDeployment(Vertx vertx, KubernetesClient client) {
+        return new CreateOperation<KubernetesClient, Deployment>(vertx, client, "Deployment") {
 
             @Override
-            protected void create(KubernetesClient client, Deployment resource) {
+            protected void create(Deployment resource) {
                 log.info("Creating deployment {}", resource.getMetadata().getName());
                 client.extensions().deployments().createOrReplace(resource);
             }
 
             @Override
-            protected boolean exists(KubernetesClient client, String namespace, String name) {
+            protected boolean exists(String namespace, String name) {
                 return client.extensions().deployments().inNamespace(namespace).withName(name).get() != null;
             }
         };
     }
 
-    public static CreateOperation<KubernetesClient, ConfigMap> createConfigMap(ConfigMap cm) {
-        return new CreateOperation<KubernetesClient, ConfigMap>("ConfigMap", cm) {
+    public static CreateOperation<KubernetesClient, ConfigMap> createConfigMap(Vertx vertx, KubernetesClient client) {
+        return new CreateOperation<KubernetesClient, ConfigMap>(vertx, client, "ConfigMap") {
 
             @Override
-            protected void create(KubernetesClient client, ConfigMap resource) {
+            protected void create(ConfigMap resource) {
                 log.info("Creating configmap {}", resource.getMetadata().getName());
                 client.configMaps().createOrReplace(resource);
             }
 
             @Override
-            protected boolean exists(KubernetesClient client, String namespace, String name) {
+            protected boolean exists(String namespace, String name) {
                 return client.configMaps().inNamespace(namespace).withName(name).get() != null;
             }
         };
     }
 
-    public static CreateOperation<KubernetesClient, StatefulSet> createStatefulSet(StatefulSet cm) {
-        return new CreateOperation<KubernetesClient, StatefulSet>("StatefulSet", cm) {
+    public static CreateOperation<KubernetesClient, StatefulSet> createStatefulSet(Vertx vertx, KubernetesClient client) {
+        return new CreateOperation<KubernetesClient, StatefulSet>(vertx, client, "StatefulSet") {
 
             @Override
-            protected void create(KubernetesClient client, StatefulSet resource) {
+            protected void create(StatefulSet resource) {
                 log.info("Creating stateful set {}", resource.getMetadata().getName());
                 client.apps().statefulSets().createOrReplace(resource);
             }
 
             @Override
-            protected boolean exists(KubernetesClient client, String namespace, String name) {
+            protected boolean exists(String namespace, String name) {
                 return client.apps().statefulSets().inNamespace(namespace).withName(name).get() != null;
             }
         };
     }
 
-    public static CreateOperation<KubernetesClient, Service> createService(Service service) {
-        return new CreateOperation<KubernetesClient, Service>("Service", service) {
+    public static CreateOperation<KubernetesClient, Service> createService(Vertx vertx, KubernetesClient client) {
+        return new CreateOperation<KubernetesClient, Service>(vertx, client, "Service") {
 
             @Override
-            protected void create(KubernetesClient k8s, Service resource) {
+            protected void create(Service resource) {
                 log.info("Creating service {}", resource.getMetadata().getName());
-                k8s.services().createOrReplace(resource);
+                client.services().createOrReplace(resource);
             }
 
             @Override
-            protected boolean exists(KubernetesClient client, String namespace, String name) {
+            protected boolean exists(String namespace, String name) {
                 return client.services().inNamespace(namespace).withName(name).get() != null;
             }
         };
     }
 
-    public static CreateOperation<OpenShiftClient, BuildConfig> createBuildConfig(BuildConfig config) {
-        return new CreateOperation<OpenShiftClient, BuildConfig>("BuildConfig", config) {
+    public static CreateOperation<OpenShiftClient, BuildConfig> createBuildConfig(Vertx vertx, OpenShiftClient client) {
+        return new CreateOperation<OpenShiftClient, BuildConfig>(vertx, client, "BuildConfig") {
             @Override
-            protected void create(OpenShiftClient client, BuildConfig resource) {
+            protected void create(BuildConfig resource) {
                 client.buildConfigs().createOrReplace(resource);
             }
 
             @Override
-            protected boolean exists(OpenShiftClient client, String namespace, String name) {
+            protected boolean exists(String namespace, String name) {
                 return client.buildConfigs().inNamespace(namespace).withName(name).get() != null;
             }
         };
     }
 
-    public static CreateOperation<OpenShiftClient, ImageStream> createImageStream(ImageStream is) {
-        return new CreateOperation<OpenShiftClient, ImageStream>("ImageStream", is) {
+    public static CreateOperation<OpenShiftClient, ImageStream> createImageStream(Vertx vertx, OpenShiftClient client) {
+        return new CreateOperation<OpenShiftClient, ImageStream>(vertx, client, "ImageStream") {
             @Override
-            protected void create(OpenShiftClient client, ImageStream resource) {
+            protected void create(ImageStream resource) {
                 client.imageStreams().createOrReplace(resource);
             }
 
             @Override
-            protected boolean exists(OpenShiftClient client, String namespace, String name) {
+            protected boolean exists(String namespace, String name) {
                 return client.imageStreams().inNamespace(namespace).withName(name).get() != null;
             }
         };

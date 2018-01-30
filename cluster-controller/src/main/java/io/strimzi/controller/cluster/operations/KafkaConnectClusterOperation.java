@@ -40,11 +40,11 @@ public class KafkaConnectClusterOperation extends ClusterOperation<KafkaConnectC
         public List<Future> futures(K8SUtils k8s, String namespace, KafkaConnectCluster connect) {
             List<Future> result = new ArrayList<>(3);
             Future<Void> futureService = Future.future();
-            CreateOperation.createService(connect.generateService()).create(vertx, k8s.getKubernetesClient(), futureService.completer());
+            CreateOperation.createService(vertx, k8s.getKubernetesClient()).create(connect.generateService(), futureService.completer());
             result.add(futureService);
 
             Future<Void> futureDeployment = Future.future();
-            CreateOperation.createDeployment(connect.generateDeployment()).create(vertx, k8s.getKubernetesClient(), futureDeployment.completer());
+            CreateOperation.createDeployment(vertx, k8s.getKubernetesClient()).create(connect.generateDeployment(), futureDeployment.completer());
             result.add(futureDeployment);
 
             Future<Void> futureS2I;

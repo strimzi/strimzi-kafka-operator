@@ -28,15 +28,15 @@ public class CreateS2IOperation extends S2IOperation {
         List<Future> result = new ArrayList<>(3);
 
         Future<Void> futureSourceImageStream = Future.future();
-        CreateOperation.createImageStream(s2i.generateSourceImageStream()).create(vertx, client, futureSourceImageStream.completer());
+        CreateOperation.createImageStream(vertx, client).create(s2i.generateSourceImageStream(), futureSourceImageStream.completer());
         result.add(futureSourceImageStream);
 
         Future<Void> futureTargetImageStream = Future.future();
-        CreateOperation.createImageStream(s2i.generateTargetImageStream()).create(vertx, client, futureTargetImageStream.completer());
+        CreateOperation.createImageStream(vertx, client).create(s2i.generateTargetImageStream(), futureTargetImageStream.completer());
         result.add(futureTargetImageStream);
 
         Future<Void> futureBuildConfig = Future.future();
-        CreateOperation.createBuildConfig(s2i.generateBuildConfig()).create(vertx, client, futureBuildConfig.completer());
+        CreateOperation.createBuildConfig(vertx, client).create(s2i.generateBuildConfig(), futureBuildConfig.completer());
         result.add(futureBuildConfig);
 
         return result;
