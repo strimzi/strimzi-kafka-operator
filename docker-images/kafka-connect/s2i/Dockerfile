@@ -14,4 +14,4 @@ COPY ./scripts/ $S2I_HOME
 
 USER 1001:1001
 
-CMD /opt/s2i/run
+CMD ["/opt/s2i/run"]
