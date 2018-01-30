@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 
-public class KafkaConnectClusterOperation extends SimpleClusterOperation<KafkaConnectCluster> {
+public class KafkaConnectClusterOperation extends ClusterOperation<KafkaConnectCluster> {
 
     private static final Logger log = LoggerFactory.getLogger(KafkaConnectClusterOperation.class.getName());
 

@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 
-public class KafkaClusterOperation extends SimpleClusterOperation<KafkaCluster> {
+public class KafkaClusterOperation extends ClusterOperation<KafkaCluster> {
     private static final Logger log = LoggerFactory.getLogger(KafkaClusterOperation.class.getName());
 
     public KafkaClusterOperation(Vertx vertx, K8SUtils k8s) {
