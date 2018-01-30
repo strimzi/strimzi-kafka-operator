@@ -14,17 +14,16 @@ import org.slf4j.LoggerFactory;
 
 public class ManualRollingUpdateOperation {
     private static final Logger log = LoggerFactory.getLogger(ManualRollingUpdateOperation.class.getName());
-    private final String namespace;
-    private final String name;
-    private final int replicas;
 
-    public ManualRollingUpdateOperation(String namespace, String name, int replicas) {
-        this.namespace = namespace;
-        this.name = name;
-        this.replicas = replicas;
+    private final Vertx vertx;
+    private final K8SUtils k8s;
+
+    public ManualRollingUpdateOperation(Vertx vertx, K8SUtils k8s) {
+        this.vertx = vertx;
+        this.k8s = k8s;
     }
 
-    public void rollingUpdate(Vertx vertx, K8SUtils k8s, Handler<AsyncResult<Void>> handler) {
+    public void rollingUpdate(String namespace, String name, int replicas, Handler<AsyncResult<Void>> handler) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
                     try {

@@ -67,14 +67,6 @@ public class K8SUtils {
         return client.pods().inNamespace(namespace).withName(name);
     }
 
-    public ConfigMap getConfigmap(String namespace, String name) {
-        return getConfigmapResource(namespace, name).get();
-    }
-
-    public Resource<ConfigMap, DoneableConfigMap> getConfigmapResource(String namespace, String name) {
-        return client.configMaps().inNamespace(namespace).withName(name);
-    }
-
     public List<ConfigMap> getConfigmaps(String namespace, Map<String, String> labels) {
         return client.configMaps().inNamespace(namespace).withLabels(labels).list().getItems();
     }

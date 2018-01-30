@@ -11,20 +11,20 @@ import org.slf4j.LoggerFactory;
 
 public class ScaleUpOperation {
     private static final Logger log = LoggerFactory.getLogger(ScaleUpOperation.class.getName());
-    private final ScalableResource res;
-    private final int scaleTo;
+    private final Vertx vertx;
+    private final K8SUtils k8s;
 
-    public ScaleUpOperation(ScalableResource res, int scaleTo) {
-        this.res = res;
-        this.scaleTo = scaleTo;
+    public ScaleUpOperation(Vertx vertx, K8SUtils k8s) {
+        this.vertx = vertx;
+        this.k8s = k8s;
     }
 
-    public void scaleUp(Vertx vertx, K8SUtils k8s, Handler<AsyncResult<Void>> handler) {
+    public void scaleUp(ScalableResource resource, int scaleTo, Handler<AsyncResult<Void>> handler) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
                     try {
                         log.info("Scaling up to {} replicas", scaleTo);
-                        k8s.scale(res, scaleTo, true);
+                        k8s.scale(resource, scaleTo, true);
                         future.complete();
                     }
                     catch (Exception e) {

@@ -117,7 +117,7 @@ public class KafkaClusterOperation extends ClusterOperation<KafkaCluster> {
 
         @Override
         public KafkaCluster getCluster(K8SUtils k8s, String namespace, String name) {
-            return KafkaCluster.fromStatefulSet(k8s, namespace, name);
+            return KafkaCluster.fromStatefulSet(statefulSetResources, namespace, name);
         }
     };
 
@@ -148,7 +148,7 @@ public class KafkaClusterOperation extends ClusterOperation<KafkaCluster> {
 
                         kafka = KafkaCluster.fromConfigMap(kafkaConfigMap);
                         log.info("Updating Kafka cluster {} in namespace {}", kafka.getName(), namespace);
-                        diff = kafka.diff(k8s, namespace);
+                        diff = kafka.diff(configMapResources, statefulSetResources, namespace);
 
                     } catch (Exception ex) {
 
@@ -199,7 +199,7 @@ public class KafkaClusterOperation extends ClusterOperation<KafkaCluster> {
 
         if (diff.getScaleDown())    {
             log.info("Scaling down stateful set {} in namespace {}", kafka.getName(), namespace);
-            new ScaleDownOperation(k8s.getStatefulSetResource(namespace, kafka.getName()), kafka.getReplicas()).scaleDown(vertx, k8s, scaleDown.completer());
+            new ScaleDownOperation(vertx, k8s).scaleDown(k8s.getStatefulSetResource(namespace, kafka.getName()), kafka.getReplicas(), scaleDown.completer());
         }
         else {
             scaleDown.complete();
@@ -261,7 +261,7 @@ public class KafkaClusterOperation extends ClusterOperation<KafkaCluster> {
         Future<Void> rollingUpdate = Future.future();
 
         if (diff.getRollingUpdate()) {
-            new ManualRollingUpdateOperation(namespace, kafka.getName(), k8s.getStatefulSet(namespace, kafka.getName()).getSpec().getReplicas()).rollingUpdate(vertx, k8s, rollingUpdate.completer());
+            new ManualRollingUpdateOperation(vertx, k8s).rollingUpdate(namespace, kafka.getName(), k8s.getStatefulSet(namespace, kafka.getName()).getSpec().getReplicas(), rollingUpdate.completer());
         }
         else {
             rollingUpdate.complete();
@@ -274,7 +274,7 @@ public class KafkaClusterOperation extends ClusterOperation<KafkaCluster> {
         Future<Void> scaleUp = Future.future();
 
         if (diff.getScaleUp()) {
-            new ScaleUpOperation(k8s.getStatefulSetResource(namespace, kafka.getName()), kafka.getReplicas()).scaleUp(vertx, k8s, scaleUp.completer());
+            new ScaleUpOperation(vertx, k8s).scaleUp(k8s.getStatefulSetResource(namespace, kafka.getName()), kafka.getReplicas(), scaleUp.completer());
         }
         else {
             scaleUp.complete();
