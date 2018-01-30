@@ -42,5 +42,3 @@ RUN curl -O https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_java
 EXPOSE 9404
 
 WORKDIR $KAFKA_HOME
-
-COPY ./config/ $KAFKA_HOME/config/

@@ -14,5 +14,4 @@ COPY ./scripts/ $S2I_HOME
 
 USER 1001:1001
 
-ENTRYPOINT [ ]
 CMD /opt/s2i/run

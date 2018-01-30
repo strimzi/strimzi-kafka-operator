@@ -2,7 +2,7 @@ FROM strimzi/kafka-base:latest
 
 EXPOSE 2181 2888 3888 9404
 
-# copy template Zookeeper configuration files
+# copy configuration files
 COPY ./config/ $KAFKA_HOME/config/
 
 # copy scripts for starting Kafka and Zookeeper

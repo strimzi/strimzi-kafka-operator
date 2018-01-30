@@ -1,44 +1,39 @@
 #!/bin/bash
-set -e
 
-# Start bash if requested. Otherwise start Kafka Connect
-if [ "$1" = 'bash' ]; then
-    exec "$@"
-else
-  if [ -z "$KAFKA_CONNECT_BOOTSTRAP_SERVERS" ]; then
-    export KAFKA_CONNECT_BOOTSTRAP_SERVERS="kafka:9092"
-  fi
+if [ -z "$KAFKA_CONNECT_BOOTSTRAP_SERVERS" ]; then
+export KAFKA_CONNECT_BOOTSTRAP_SERVERS="kafka:9092"
+fi
 
-  if [ -z "$KAFKA_CONNECT_GROUP_ID" ]; then
-    export KAFKA_CONNECT_GROUP_ID="connect-cluster"
-  fi
+if [ -z "$KAFKA_CONNECT_GROUP_ID" ]; then
+export KAFKA_CONNECT_GROUP_ID="connect-cluster"
+fi
 
-  if [ -z "$KAFKA_CONNECT_OFFSET_STORAGE_TOPIC" ]; then
-    export KAFKA_CONNECT_OFFSET_STORAGE_TOPIC="${KAFKA_CONNECT_GROUP_ID}-offsets"
-  fi
+if [ -z "$KAFKA_CONNECT_OFFSET_STORAGE_TOPIC" ]; then
+export KAFKA_CONNECT_OFFSET_STORAGE_TOPIC="${KAFKA_CONNECT_GROUP_ID}-offsets"
+fi
 
-  if [ -z "$KAFKA_CONNECT_CONFIG_STORAGE_TOPIC" ]; then
-    export KAFKA_CONNECT_CONFIG_STORAGE_TOPIC="${KAFKA_CONNECT_GROUP_ID}-configs"
-  fi
+if [ -z "$KAFKA_CONNECT_CONFIG_STORAGE_TOPIC" ]; then
+export KAFKA_CONNECT_CONFIG_STORAGE_TOPIC="${KAFKA_CONNECT_GROUP_ID}-configs"
+fi
 
-  if [ -z "$KAFKA_CONNECT_STATUS_STORAGE_TOPIC" ]; then
-    export KAFKA_CONNECT_STATUS_STORAGE_TOPIC="${KAFKA_CONNECT_GROUP_ID}-status"
-  fi
+if [ -z "$KAFKA_CONNECT_STATUS_STORAGE_TOPIC" ]; then
+export KAFKA_CONNECT_STATUS_STORAGE_TOPIC="${KAFKA_CONNECT_GROUP_ID}-status"
+fi
 
-  if [ -z "$KAFKA_CONNECT_KEY_CONVERTER" ]; then
-    export KAFKA_CONNECT_KEY_CONVERTER="org.apache.kafka.connect.json.JsonConverter"
-  fi
+if [ -z "$KAFKA_CONNECT_KEY_CONVERTER" ]; then
+export KAFKA_CONNECT_KEY_CONVERTER="org.apache.kafka.connect.json.JsonConverter"
+fi
 
-  if [ -z "$KAFKA_CONNECT_VALUE_CONVERTER" ]; then
-    export KAFKA_CONNECT_VALUE_CONVERTER="org.apache.kafka.connect.json.JsonConverter"
-  fi
+if [ -z "$KAFKA_CONNECT_VALUE_CONVERTER" ]; then
+export KAFKA_CONNECT_VALUE_CONVERTER="org.apache.kafka.connect.json.JsonConverter"
+fi
 
-  if [ -z "$KAFKA_CONNECT_PLUGIN_PATH" ]; then
-    export KAFKA_CONNECT_PLUGIN_PATH="${KAFKA_HOME}/plugins"
-  fi
+if [ -z "$KAFKA_CONNECT_PLUGIN_PATH" ]; then
+export KAFKA_CONNECT_PLUGIN_PATH="${KAFKA_HOME}/plugins"
+fi
 
-  # Write the config file
-  cat > /tmp/strimzi-connect.properties <<EOF
+# Write the config file
+cat > /tmp/strimzi-connect.properties <<EOF
 rest.port=8083
 rest.advertised.host.name=$(hostname -I)
 rest.advertised.port=8083
@@ -61,26 +56,25 @@ offset.storage.replication.factor=${KAFKA_CONNECT_OFFSET_STORAGE_REPLICATION_FAC
 status.storage.replication.factor=${KAFKA_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR:-3}
 EOF
 
-  echo "Starting Kafka connect with configuration:"
-  cat /tmp/strimzi-connect.properties
-  echo ""
+echo "Starting Kafka connect with configuration:"
+cat /tmp/strimzi-connect.properties
+echo ""
 
-  # Disable Kafka's GC logging (which logs to a file)...
-  export GC_LOG_ENABLED="false"
-  # ... but enable equivalent GC logging to stdout
-  export KAFKA_GC_LOG_OPTS="-verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps"
+# Disable Kafka's GC logging (which logs to a file)...
+export GC_LOG_ENABLED="false"
+# ... but enable equivalent GC logging to stdout
+export KAFKA_GC_LOG_OPTS="-verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps"
 
-  if [ -z "$KAFKA_CONNECT_LOG_LEVEL" ]; then
-    KAFKA_CONNECT_LOG_LEVEL="INFO"
-  fi
-  if [ -z "$KAFKA_LOG4J_OPTS" ]; then
-    export KAFKA_LOG4J_OPTS="-Dlog4j.configuration=file:$KAFKA_HOME/config/connect-log4j.properties -Dconnect.root.logger.level=$KAFKA_CONNECT_LOG_LEVEL,CONSOLE"
-  fi
-
-  # We don't need LOG_DIR because we write no log files, but setting it to a
-  # directory avoids trying to create it (and logging a permission denied error)
-  export LOG_DIR="$KAFKA_HOME"
-
-  # starting Kafka server with final configuration
-  exec $KAFKA_HOME/bin/connect-distributed.sh /tmp/strimzi-connect.properties
+if [ -z "$KAFKA_CONNECT_LOG_LEVEL" ]; then
+KAFKA_CONNECT_LOG_LEVEL="INFO"
 fi
+if [ -z "$KAFKA_LOG4J_OPTS" ]; then
+export KAFKA_LOG4J_OPTS="-Dlog4j.configuration=file:$KAFKA_HOME/config/connect-log4j.properties -Dconnect.root.logger.level=$KAFKA_CONNECT_LOG_LEVEL,CONSOLE"
+fi
+
+# We don't need LOG_DIR because we write no log files, but setting it to a
+# directory avoids trying to create it (and logging a permission denied error)
+export LOG_DIR="$KAFKA_HOME"
+
+# starting Kafka server with final configuration
+exec $KAFKA_HOME/bin/connect-distributed.sh /tmp/strimzi-connect.properties
