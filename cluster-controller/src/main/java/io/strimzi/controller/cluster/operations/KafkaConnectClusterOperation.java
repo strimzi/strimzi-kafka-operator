@@ -30,19 +30,20 @@ public class KafkaConnectClusterOperation extends ClusterOperation<KafkaConnectC
     private final ConfigMapResources configMapResources;
     private final ImageStreamResources imagesStreamResources;
     private final BuildConfigResources buildConfigResources;
+    private final CreateS2IOperation createS2IOperation;
+    private final DeleteS2IOperation deleteS2IOperation;
+    private final UpdateS2IOperation updateS2IOperation;
 
-    public KafkaConnectClusterOperation(Vertx vertx, KubernetesClient client) {
+    public KafkaConnectClusterOperation(Vertx vertx, KubernetesClient client, ServiceResources serviceResources, DeploymentResources deploymentResources, ConfigMapResources configMapResources, ImageStreamResources imagesStreamResources, BuildConfigResources buildConfigResources) {
         super(vertx, client, "kafka-connect", "create");
-        configMapResources = new ConfigMapResources(vertx, client);
-        serviceResources = new ServiceResources(vertx, client);
-        deploymentResources = new DeploymentResources(vertx, client);
-        if (client.isAdaptable(OpenShiftClient.class)) {
-            imagesStreamResources = new ImageStreamResources(vertx, client.adapt(OpenShiftClient.class));
-            buildConfigResources = new BuildConfigResources(vertx, client.adapt(OpenShiftClient.class));
-        } else {
-            imagesStreamResources = null;
-            buildConfigResources = null;
-        }
+        this.serviceResources = serviceResources;
+        this.deploymentResources = deploymentResources;
+        this.configMapResources = configMapResources;
+        this.imagesStreamResources = imagesStreamResources;
+        this.buildConfigResources = buildConfigResources;
+        createS2IOperation = new CreateS2IOperation(vertx, client.adapt(OpenShiftClient.class));
+        deleteS2IOperation = new DeleteS2IOperation(vertx, client.adapt(OpenShiftClient.class));
+        updateS2IOperation = new UpdateS2IOperation(vertx, client.adapt(OpenShiftClient.class));
     }
 
     private final Op<KafkaConnectCluster> create = new Op<KafkaConnectCluster>() {
@@ -66,7 +67,7 @@ public class KafkaConnectClusterOperation extends ClusterOperation<KafkaConnectC
             Future<Void> futureS2I;
             if (connect.getS2I() != null) {
                 futureS2I = Future.future();
-                new CreateS2IOperation(vertx, client.adapt(OpenShiftClient.class)).execute(connect.getS2I(), futureS2I.completer());
+                createS2IOperation.execute(connect.getS2I(), futureS2I.completer());
             } else {
                 futureS2I = Future.succeededFuture();
             }
@@ -97,7 +98,7 @@ public class KafkaConnectClusterOperation extends ClusterOperation<KafkaConnectC
 
             if (connect.getS2I() != null) {
                 Future<Void> futureS2I = Future.future();
-                new DeleteS2IOperation(vertx, client.adapt(OpenShiftClient.class)).execute(connect.getS2I(), futureS2I.completer());
+                deleteS2IOperation.execute(connect.getS2I(), futureS2I.completer());
                 result.add(futureS2I);
             }
 
@@ -217,17 +218,17 @@ public class KafkaConnectClusterOperation extends ClusterOperation<KafkaConnectC
             if (diff.getS2i() == Source2Image.Source2ImageDiff.CREATE) {
                 log.info("Creating S2I deployment {} in namespace {}", connect.getName(), namespace);
                 Future<Void> createS2I = Future.future();
-                new CreateS2IOperation(vertx, client.adapt(OpenShiftClient.class)).execute(connect.getS2I(), createS2I.completer());
+                createS2IOperation.execute(connect.getS2I(), createS2I.completer());
                 return createS2I;
             } else if (diff.getS2i() == Source2Image.Source2ImageDiff.DELETE) {
                 log.info("Deleting S2I deployment {} in namespace {}", connect.getName(), namespace);
                 Future<Void> deleteS2I = Future.future();
-                new DeleteS2IOperation(vertx, client.adapt(OpenShiftClient.class)).execute(new Source2Image(namespace, connect.getName()), deleteS2I.completer());
+                deleteS2IOperation.execute(new Source2Image(namespace, connect.getName()), deleteS2I.completer());
                 return deleteS2I;
             } else {
                 log.info("Updating S2I deployment {} in namespace {}", connect.getName(), namespace);
                 Future<Void> patchS2I = Future.future();
-                new UpdateS2IOperation(vertx, client.adapt(OpenShiftClient.class)).execute(connect.getS2I(), patchS2I.completer());
+                updateS2IOperation.execute(connect.getS2I(), patchS2I.completer());
                 return patchS2I;
             }
         } else {

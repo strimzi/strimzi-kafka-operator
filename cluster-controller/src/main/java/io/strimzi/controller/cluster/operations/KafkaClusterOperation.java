@@ -25,12 +25,12 @@ public class KafkaClusterOperation extends ClusterOperation<KafkaCluster> {
     private final ServiceResources serviceResources;
     private final PvcResources pvcResources;
 
-    public KafkaClusterOperation(Vertx vertx, KubernetesClient client) {
+    public KafkaClusterOperation(Vertx vertx, KubernetesClient client, ConfigMapResources configMapResources, StatefulSetResources statefulSetResources, ServiceResources serviceResources, PvcResources pvcResources) {
         super(vertx, client, "kafka", "create");
-        configMapResources = new ConfigMapResources(vertx, client);
-        statefulSetResources = new StatefulSetResources(vertx, client);
-        serviceResources = new ServiceResources(vertx, client);
-        pvcResources = new PvcResources(vertx, client);
+        this.configMapResources = configMapResources;
+        this.statefulSetResources = statefulSetResources;
+        this.serviceResources = serviceResources;
+        this.pvcResources = pvcResources;
     }
 
     private final Op<KafkaCluster> create = new Op<KafkaCluster>() {

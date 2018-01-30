@@ -1,13 +1,17 @@
 package io.strimzi.controller.cluster;
 
-import io.fabric8.kubernetes.api.model.extensions.StatefulSetList;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.openshift.client.OpenShiftClient;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.strimzi.controller.cluster.operations.KafkaClusterOperation;
 import io.strimzi.controller.cluster.operations.KafkaConnectClusterOperation;
 import io.strimzi.controller.cluster.operations.ZookeeperClusterOperation;
+import io.strimzi.controller.cluster.operations.resource.BuildConfigResources;
 import io.strimzi.controller.cluster.operations.resource.ConfigMapResources;
 import io.strimzi.controller.cluster.operations.resource.DeploymentResources;
+import io.strimzi.controller.cluster.operations.resource.ImageStreamResources;
+import io.strimzi.controller.cluster.operations.resource.PvcResources;
+import io.strimzi.controller.cluster.operations.resource.ServiceResources;
 import io.strimzi.controller.cluster.operations.resource.StatefulSetResources;
 import io.strimzi.controller.cluster.resources.KafkaCluster;
 import io.strimzi.controller.cluster.resources.KafkaConnectCluster;
@@ -44,6 +48,9 @@ public class ClusterController extends AbstractVerticle {
     private final KubernetesClient client;
     private final Map<String, String> labels;
     private final String namespace;
+    private final ConfigMapResources configMapResources;
+    private final StatefulSetResources statefulSetResources;
+    private final DeploymentResources deploymentResources;
 
     private Watch configMapWatch;
 
@@ -58,9 +65,23 @@ public class ClusterController extends AbstractVerticle {
         this.namespace = config.getNamespace();
         this.labels = config.getLabels();
         this.client = new DefaultKubernetesClient();
-        this.zookeeperClusterOperation = new ZookeeperClusterOperation(vertx, client);
-        this.kafkaClusterOperation = new KafkaClusterOperation(vertx, client);
-        this.kafkaConnectClusterOperation = new KafkaConnectClusterOperation(vertx, client);
+        ServiceResources serviceResources = new ServiceResources(vertx, client);
+        statefulSetResources = new StatefulSetResources(vertx, client);
+        configMapResources = new ConfigMapResources(vertx, client);
+        PvcResources pvcResources = new PvcResources(vertx, client);
+        deploymentResources = new DeploymentResources(vertx, client);
+        ImageStreamResources imagesStreamResources;
+        BuildConfigResources buildConfigResources;
+        if (client.isAdaptable(OpenShiftClient.class)) {
+            imagesStreamResources = new ImageStreamResources(vertx, client.adapt(OpenShiftClient.class));
+            buildConfigResources = new BuildConfigResources(vertx, client.adapt(OpenShiftClient.class));
+        } else {
+            imagesStreamResources = null;
+            buildConfigResources = null;
+        }
+        this.zookeeperClusterOperation = new ZookeeperClusterOperation(vertx, client, serviceResources, statefulSetResources, configMapResources, pvcResources);
+        this.kafkaClusterOperation = new KafkaClusterOperation(vertx, client, configMapResources, statefulSetResources, serviceResources, pvcResources);
+        this.kafkaConnectClusterOperation = new KafkaConnectClusterOperation(vertx, client, serviceResources, deploymentResources, configMapResources, imagesStreamResources, buildConfigResources);
     }
 
     @Override
@@ -218,8 +239,8 @@ public class ClusterController extends AbstractVerticle {
         Map<String, String> kafkaLabels = new HashMap(labels);
         kafkaLabels.put(ClusterController.STRIMZI_TYPE_LABEL, KafkaCluster.TYPE);
 
-        List<ConfigMap> cms = new ConfigMapResources(vertx, client).list(namespace, kafkaLabels);
-        List<StatefulSet> sss = new StatefulSetResources(vertx, client).list(namespace, kafkaLabels);
+        List<ConfigMap> cms = configMapResources.list(namespace, kafkaLabels);
+        List<StatefulSet> sss = statefulSetResources.list(namespace, kafkaLabels);
 
         List<String> cmsNames = cms.stream().map(cm -> cm.getMetadata().getName()).collect(Collectors.toList());
         List<String> sssNames = sss.stream().map(cm -> cm.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL)).collect(Collectors.toList());
@@ -260,8 +281,8 @@ public class ClusterController extends AbstractVerticle {
         Map<String, String> kafkaLabels = new HashMap(labels);
         kafkaLabels.put(ClusterController.STRIMZI_TYPE_LABEL, KafkaConnectCluster.TYPE);
 
-        List<ConfigMap> cms = new ConfigMapResources(vertx, client).list(namespace, kafkaLabels);
-        List<Deployment> deps = new DeploymentResources(vertx, client).list(namespace, kafkaLabels);
+        List<ConfigMap> cms = configMapResources.list(namespace, kafkaLabels);
+        List<Deployment> deps = deploymentResources.list(namespace, kafkaLabels);
 
         List<String> cmsNames = cms.stream().map(cm -> cm.getMetadata().getName()).collect(Collectors.toList());
         List<String> depsNames = deps.stream().map(cm -> cm.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL)).collect(Collectors.toList());
