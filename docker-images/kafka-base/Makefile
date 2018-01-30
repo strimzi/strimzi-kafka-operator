@@ -1,5 +1,5 @@
 PROJECT_NAME=kafka-base
 
-include ../Makefile.docker
+include ../../Makefile.docker
 
 .PHONY: build clean release
