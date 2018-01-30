@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package io.strimzi.controller.cluster.operations.kubernetes;
+package io.strimzi.controller.cluster.operations.resource;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
