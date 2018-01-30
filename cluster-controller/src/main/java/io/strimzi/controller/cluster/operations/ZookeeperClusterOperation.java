@@ -20,9 +20,11 @@ import java.util.List;
 public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster> {
 
     private static final Logger log = LoggerFactory.getLogger(ZookeeperClusterOperation.class.getName());
+    private final PatchOperation patchOperation;
 
     public ZookeeperClusterOperation(Vertx vertx, K8SUtils k8s) {
         super(vertx, k8s, "zookeeper", "create");
+        patchOperation = new PatchOperation(vertx);
     }
 
     private final Op<ZookeeperCluster> create = new Op<ZookeeperCluster>() {
@@ -193,7 +195,7 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
     private Future<Void> patchService(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchService = Future.future();
-            new PatchOperation(vertx).patch(k8s.getServiceResource(namespace, zk.getName()), zk.patchService(k8s.getService(namespace, zk.getName())), patchService.completer());
+            patchOperation.patch(k8s.getServiceResource(namespace, zk.getName()), zk.patchService(k8s.getService(namespace, zk.getName())), patchService.completer());
             return patchService;
         }
         else
@@ -205,7 +207,7 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
     private Future<Void> patchHeadlessService(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchService = Future.future();
-            new PatchOperation(vertx).patch(k8s.getServiceResource(namespace, zk.getHeadlessName()), zk.patchHeadlessService(k8s.getService(namespace, zk.getHeadlessName())), patchService.completer());
+            patchOperation.patch(k8s.getServiceResource(namespace, zk.getHeadlessName()), zk.patchHeadlessService(k8s.getService(namespace, zk.getHeadlessName())), patchService.completer());
             return patchService;
         }
         else
@@ -217,7 +219,7 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
     private Future<Void> patchStatefulSet(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchStatefulSet = Future.future();
-            new PatchOperation(vertx).patch(k8s.getStatefulSetResource(namespace, zk.getName()).cascading(false), zk.patchStatefulSet(k8s.getStatefulSet(namespace, zk.getName())), patchStatefulSet.completer());
+            patchOperation.patch(k8s.getStatefulSetResource(namespace, zk.getName()).cascading(false), zk.patchStatefulSet(k8s.getStatefulSet(namespace, zk.getName())), patchStatefulSet.completer());
             return patchStatefulSet;
         }
         else
@@ -229,7 +231,7 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
     private Future<Void> patchMetricsConfigMap(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
         if (diff.isMetricsChanged()) {
             Future<Void> patchConfigMap = Future.future();
-            new PatchOperation(vertx).patch(k8s.getConfigmapResource(namespace, zk.getMetricsConfigName()),
+            patchOperation.patch(k8s.getConfigmapResource(namespace, zk.getMetricsConfigName()),
                     zk.patchMetricsConfigMap(k8s.getConfigmap(namespace, zk.getMetricsConfigName())),
                     patchConfigMap.completer());
             return patchConfigMap;
