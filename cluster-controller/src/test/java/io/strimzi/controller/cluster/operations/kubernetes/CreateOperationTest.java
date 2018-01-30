@@ -51,6 +51,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
@@ -85,7 +86,7 @@ public class CreateOperationTest {
                                                                 Class<? extends Resource> resourceType,
                                                                 R resource,
                                                                 BiConsumer<C, MixedOperation> mocker,
-                                                                CreateOperation<C, R> op) {
+                                                                BiFunction<Vertx, C, CreateOperation<C, R>> f) {
         Resource mockResource = mock(resourceType);
         when(mockResource.get()).thenReturn(resource);
 
@@ -98,8 +99,10 @@ public class CreateOperationTest {
         C mockClient = mock(clientType);
         mocker.accept(mockClient, mockCms);
 
+        CreateOperation<C, R> op = f.apply(vertx, mockClient);
+
         Async async = context.async();
-        op.execute(vertx, mockClient, ar -> {
+        op.create(resource, ar -> {
             assertTrue(ar.succeeded());
             verify(mockResource).get();
             verify(mockResource, never()).create(any());
@@ -116,7 +119,7 @@ public class CreateOperationTest {
                                       Class<? extends Resource> resourceType,
                                       R resource,
                                       BiConsumer<C, MixedOperation> mocker,
-                                      CreateOperation<C, R> op) {
+                                      BiFunction<Vertx, C, CreateOperation<C, R>> f) {
         RuntimeException ex = new RuntimeException();
 
         Resource mockResource = mock(resourceType);
@@ -131,8 +134,10 @@ public class CreateOperationTest {
         C mockClient = mock(clientType);
         mocker.accept(mockClient, mockCms);
 
+        CreateOperation<C, R> op = f.apply(vertx, mockClient);
+
         Async async = context.async();
-        op.execute(vertx, mockClient, ar -> {
+        op.create(resource, ar -> {
             assertTrue(ar.failed());
             assertEquals(ex, ar.cause());
             async.complete();
@@ -144,7 +149,7 @@ public class CreateOperationTest {
                                                             Class<? extends Resource> resourceType,
                                                             R resource,
                                                             BiConsumer<C, MixedOperation> mocker,
-                                                            CreateOperation<C, R> op) {
+                                                            BiFunction<Vertx, C, CreateOperation<C, R>> f) {
         Resource mockResource = mock(resourceType);
         when(mockResource.get()).thenReturn(null);
 
@@ -157,8 +162,10 @@ public class CreateOperationTest {
         C mockClient = mock(clientType);
         mocker.accept(mockClient, mockCms);
 
+        CreateOperation<C, R> op = f.apply(vertx, mockClient);
+
         Async async = context.async();
-        op.execute(vertx, mockClient, ar -> {
+        op.create(resource, ar -> {
             assertTrue(ar.succeeded());
             verify(mockResource).get();
             verify(mockCms).createOrReplace(eq(resource));
@@ -171,7 +178,7 @@ public class CreateOperationTest {
                                                         Class<? extends Resource> resourceType,
                                                         R resource,
                                                         BiConsumer<C, MixedOperation> mocker,
-                                                        CreateOperation<C, R> op) {
+                                                        BiFunction<Vertx, C, CreateOperation<C, R>> f) {
         RuntimeException ex = new RuntimeException();
 
         Resource mockResource = mock(resourceType);
@@ -187,9 +194,10 @@ public class CreateOperationTest {
         C mockClient = mock(clientType);
         mocker.accept(mockClient, mockCms);
 
-        Async async = context.async();
+        CreateOperation<C, R> op = f.apply(vertx, mockClient);
 
-        op.execute(vertx, mockClient, ar -> {
+        Async async = context.async();
+        op.create(resource, ar -> {
             assertTrue(ar.failed());
             assertEquals(ex, ar.cause());
             async.complete();
@@ -207,14 +215,14 @@ public class CreateOperationTest {
                 .withData(singletonMap("FOO", "BAR"))
                 .build();
 
-        CreateOperation<KubernetesClient, ConfigMap> op = CreateOperation.createConfigMap(cm);
+        BiFunction<Vertx, KubernetesClient, CreateOperation<KubernetesClient, ConfigMap>> f = CreateOperation::createConfigMap;
 
         BiConsumer<KubernetesClient, MixedOperation> mocker = (mockClient, mockCms) -> when(mockClient.configMaps()).thenReturn(mockCms);
 
-        createWhenExistsIsANop(context, KubernetesClient.class, Resource.class, cm, mocker, op);
-        existenceCheckThrows(context, KubernetesClient.class, Resource.class, cm, mocker, op);
-        successfulCreation(context, KubernetesClient.class, Resource.class, cm, mocker, op);
-        creationThrows(context, KubernetesClient.class, Resource.class, cm, mocker, op);
+        createWhenExistsIsANop(context, KubernetesClient.class, Resource.class, cm, mocker, f);
+        existenceCheckThrows(context, KubernetesClient.class, Resource.class, cm, mocker, f);
+        successfulCreation(context, KubernetesClient.class, Resource.class, cm, mocker, f);
+        creationThrows(context, KubernetesClient.class, Resource.class, cm, mocker, f);
     }
 
     @Test
@@ -225,24 +233,25 @@ public class CreateOperationTest {
             when(mockExt.deployments()).thenReturn(mockCms);
             when(mockClient.extensions()).thenReturn(mockExt);
         };
-        CreateOperation<KubernetesClient, Deployment> op = CreateOperation.createDeployment(dep);
+        BiFunction<Vertx, KubernetesClient, CreateOperation<KubernetesClient, Deployment>> f = CreateOperation::createDeployment;
 
-        createWhenExistsIsANop(context, KubernetesClient.class, ScalableResource.class, dep, mocker, op);
-        existenceCheckThrows(context, KubernetesClient.class, ScalableResource.class, dep, mocker, op);
-        successfulCreation(context, KubernetesClient.class, ScalableResource.class, dep, mocker, op);
-        creationThrows(context, KubernetesClient.class, ScalableResource.class, dep, mocker, op);
+        createWhenExistsIsANop(context, KubernetesClient.class, ScalableResource.class, dep, mocker, f);
+        existenceCheckThrows(context, KubernetesClient.class, ScalableResource.class, dep, mocker, f);
+        successfulCreation(context, KubernetesClient.class, ScalableResource.class, dep, mocker, f);
+        creationThrows(context, KubernetesClient.class, ScalableResource.class, dep, mocker, f);
     }
 
     @Test
     public void testService(TestContext context) {
         Service dep = new ServiceBuilder().withNewMetadata().withNamespace(NAMESPACE).withName(NAME).endMetadata().build();
         BiConsumer<KubernetesClient, MixedOperation> mocker = (mockClient, mockCms) -> when(mockClient.services()).thenReturn(mockCms);
-        CreateOperation<KubernetesClient, Service> op = CreateOperation.createService(dep);
 
-        createWhenExistsIsANop(context, KubernetesClient.class, Resource.class, dep, mocker, op);
-        existenceCheckThrows(context, KubernetesClient.class, Resource.class, dep, mocker, op);
-        successfulCreation(context, KubernetesClient.class, Resource.class, dep, mocker, op);
-        creationThrows(context, KubernetesClient.class, Resource.class, dep, mocker, op);
+        BiFunction<Vertx, KubernetesClient, CreateOperation<KubernetesClient, Service>> f = CreateOperation::createService;
+
+        createWhenExistsIsANop(context, KubernetesClient.class, Resource.class, dep, mocker, f);
+        existenceCheckThrows(context, KubernetesClient.class, Resource.class, dep, mocker, f);
+        successfulCreation(context, KubernetesClient.class, Resource.class, dep, mocker, f);
+        creationThrows(context, KubernetesClient.class, Resource.class, dep, mocker, f);
     }
 
     @Test
@@ -253,35 +262,35 @@ public class CreateOperationTest {
             when(mockExt.statefulSets()).thenReturn(mockCms);
             when(mockClient.apps()).thenReturn(mockExt);
         };
-        CreateOperation<KubernetesClient, StatefulSet> op = CreateOperation.createStatefulSet(dep);
+        BiFunction<Vertx, KubernetesClient, CreateOperation<KubernetesClient, StatefulSet>> f = CreateOperation::createStatefulSet;
 
-        createWhenExistsIsANop(context, KubernetesClient.class, RollableScalableResource.class, dep, mocker, op);
-        existenceCheckThrows(context, KubernetesClient.class, RollableScalableResource.class, dep, mocker, op);
-        successfulCreation(context, KubernetesClient.class, RollableScalableResource.class, dep, mocker, op);
-        creationThrows(context, KubernetesClient.class, RollableScalableResource.class, dep, mocker, op);
+        createWhenExistsIsANop(context, KubernetesClient.class, RollableScalableResource.class, dep, mocker, f);
+        existenceCheckThrows(context, KubernetesClient.class, RollableScalableResource.class, dep, mocker, f);
+        successfulCreation(context, KubernetesClient.class, RollableScalableResource.class, dep, mocker, f);
+        creationThrows(context, KubernetesClient.class, RollableScalableResource.class, dep, mocker, f);
     }
 
     @Test
     public void testBuildConfig(TestContext context) {
         BuildConfig dep = new BuildConfigBuilder().withNewMetadata().withNamespace(NAMESPACE).withName(NAME).endMetadata().build();
         BiConsumer<OpenShiftClient, MixedOperation> mocker = (mockClient, mockCms) -> when(mockClient.buildConfigs()).thenReturn(mockCms);
-        CreateOperation<OpenShiftClient, BuildConfig> op = CreateOperation.createBuildConfig(dep);
+        BiFunction<Vertx, OpenShiftClient, CreateOperation<OpenShiftClient, BuildConfig>> f = CreateOperation::createBuildConfig;
 
-        createWhenExistsIsANop(context, OpenShiftClient.class, BuildConfigResource.class, dep, mocker, op);
-        existenceCheckThrows(context, OpenShiftClient.class, BuildConfigResource.class, dep, mocker, op);
-        successfulCreation(context, OpenShiftClient.class, BuildConfigResource.class, dep, mocker, op);
-        creationThrows(context, OpenShiftClient.class, BuildConfigResource.class, dep, mocker, op);
+        createWhenExistsIsANop(context, OpenShiftClient.class, BuildConfigResource.class, dep, mocker, f);
+        existenceCheckThrows(context, OpenShiftClient.class, BuildConfigResource.class, dep, mocker, f);
+        successfulCreation(context, OpenShiftClient.class, BuildConfigResource.class, dep, mocker, f);
+        creationThrows(context, OpenShiftClient.class, BuildConfigResource.class, dep, mocker, f);
     }
 
     @Test
     public void testImageStream(TestContext context) {
         ImageStream dep = new ImageStreamBuilder().withNewMetadata().withNamespace(NAMESPACE).withName(NAME).endMetadata().build();
         BiConsumer<OpenShiftClient, MixedOperation> mocker = (mockClient, mockCms) -> when(mockClient.imageStreams()).thenReturn(mockCms);
-        CreateOperation<OpenShiftClient, ImageStream> op = CreateOperation.createImageStream(dep);
+        BiFunction<Vertx, OpenShiftClient, CreateOperation<OpenShiftClient, ImageStream>> f = CreateOperation::createImageStream;
 
-        createWhenExistsIsANop(context, OpenShiftClient.class, Resource.class, dep, mocker, op);
-        existenceCheckThrows(context, OpenShiftClient.class, Resource.class, dep, mocker, op);
-        successfulCreation(context, OpenShiftClient.class, Resource.class, dep, mocker, op);
-        creationThrows(context, OpenShiftClient.class, Resource.class, dep, mocker, op);
+        createWhenExistsIsANop(context, OpenShiftClient.class, Resource.class, dep, mocker, f);
+        existenceCheckThrows(context, OpenShiftClient.class, Resource.class, dep, mocker, f);
+        successfulCreation(context, OpenShiftClient.class, Resource.class, dep, mocker, f);
+        creationThrows(context, OpenShiftClient.class, Resource.class, dep, mocker, f);
     }
 }
