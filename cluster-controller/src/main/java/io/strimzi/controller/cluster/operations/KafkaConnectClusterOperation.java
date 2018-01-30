@@ -22,9 +22,11 @@ import java.util.List;
 public class KafkaConnectClusterOperation extends ClusterOperation<KafkaConnectCluster> {
 
     private static final Logger log = LoggerFactory.getLogger(KafkaConnectClusterOperation.class.getName());
+    private final PatchOperation patchOperation;
 
     public KafkaConnectClusterOperation(Vertx vertx, K8SUtils k8s) {
         super(vertx, k8s, "kafka-connect","create");
+        patchOperation = new PatchOperation(vertx);
     }
 
     private final Op<KafkaConnectCluster> create = new Op<KafkaConnectCluster>() {
@@ -163,7 +165,7 @@ public class KafkaConnectClusterOperation extends ClusterOperation<KafkaConnectC
     private Future<Void> patchService(KafkaConnectCluster connect, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchService = Future.future();
-            new PatchOperation(vertx).patch(k8s.getServiceResource(namespace, connect.getName()), connect.patchService(k8s.getService(namespace, connect.getName())), patchService.completer());
+            patchOperation.patch(k8s.getServiceResource(namespace, connect.getName()), connect.patchService(k8s.getService(namespace, connect.getName())), patchService.completer());
             return patchService;
         }
         else
@@ -175,7 +177,7 @@ public class KafkaConnectClusterOperation extends ClusterOperation<KafkaConnectC
     private Future<Void> patchDeployment(KafkaConnectCluster connect, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchDeployment = Future.future();
-            new PatchOperation(vertx).patch(k8s.getDeploymentResource(namespace, connect.getName()), connect.patchDeployment(k8s.getDeployment(namespace, connect.getName())), patchDeployment.completer());
+            patchOperation.patch(k8s.getDeploymentResource(namespace, connect.getName()), connect.patchDeployment(k8s.getDeployment(namespace, connect.getName())), patchDeployment.completer());
             return patchDeployment;
         }
         else
