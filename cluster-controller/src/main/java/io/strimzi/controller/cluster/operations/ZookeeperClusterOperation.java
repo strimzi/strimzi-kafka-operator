@@ -17,8 +17,8 @@ import io.vertx.core.shareddata.Lock;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ZookeeperClusterOperation extends SimpleClusterOperation<ZookeeperCluster> {
-    
+public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster> {
+
     private static final Logger log = LoggerFactory.getLogger(ZookeeperClusterOperation.class.getName());
 
     public ZookeeperClusterOperation(Vertx vertx, K8SUtils k8s) {
