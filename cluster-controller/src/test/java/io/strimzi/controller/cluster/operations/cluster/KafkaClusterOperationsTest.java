@@ -33,6 +33,7 @@ import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -61,6 +62,7 @@ public class KafkaClusterOperationsTest {
     public OpenShiftServer server = new OpenShiftServer(false, true);
 
     @Test
+    @Ignore
     public void testCreateCluster(TestContext context) {
         KubernetesClient kubeClient = server.getKubernetesClient();
         KafkaClusterOperations ops = new KafkaClusterOperations(vertx, kubeClient,
