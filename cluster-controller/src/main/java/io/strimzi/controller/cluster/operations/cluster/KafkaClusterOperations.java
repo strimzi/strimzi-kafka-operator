@@ -1,4 +1,4 @@
-package io.strimzi.controller.cluster.operations;
+package io.strimzi.controller.cluster.operations.cluster;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -18,14 +18,14 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 
-public class KafkaClusterOperation extends ClusterOperation<KafkaCluster> {
-    private static final Logger log = LoggerFactory.getLogger(KafkaClusterOperation.class.getName());
+public class KafkaClusterOperations extends AbstractClusterOperations<KafkaCluster> {
+    private static final Logger log = LoggerFactory.getLogger(KafkaClusterOperations.class.getName());
     private final ConfigMapOperations configMapOperations;
     private final StatefulSetOperations statefulSetOperations;
     private final ServiceOperations serviceOperations;
     private final PvcOperations pvcOperations;
 
-    public KafkaClusterOperation(Vertx vertx, KubernetesClient client, ConfigMapOperations configMapOperations, StatefulSetOperations statefulSetOperations, ServiceOperations serviceOperations, PvcOperations pvcOperations) {
+    public KafkaClusterOperations(Vertx vertx, KubernetesClient client, ConfigMapOperations configMapOperations, StatefulSetOperations statefulSetOperations, ServiceOperations serviceOperations, PvcOperations pvcOperations) {
         super(vertx, client, "kafka", "create");
         this.configMapOperations = configMapOperations;
         this.statefulSetOperations = statefulSetOperations;

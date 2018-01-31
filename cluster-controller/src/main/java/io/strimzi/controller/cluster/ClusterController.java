@@ -3,9 +3,9 @@ package io.strimzi.controller.cluster;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.strimzi.controller.cluster.operations.KafkaClusterOperation;
-import io.strimzi.controller.cluster.operations.KafkaConnectClusterOperation;
-import io.strimzi.controller.cluster.operations.ZookeeperClusterOperation;
+import io.strimzi.controller.cluster.operations.cluster.KafkaClusterOperations;
+import io.strimzi.controller.cluster.operations.cluster.KafkaConnectClusterOperations;
+import io.strimzi.controller.cluster.operations.cluster.ZookeeperClusterOperations;
 import io.strimzi.controller.cluster.operations.resource.BuildConfigOperations;
 import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
 import io.strimzi.controller.cluster.operations.resource.DeploymentOperations;
@@ -55,9 +55,9 @@ public class ClusterController extends AbstractVerticle {
     private Watch configMapWatch;
 
     private long reconcileTimer;
-    private final ZookeeperClusterOperation zookeeperClusterOperation;
-    private final KafkaClusterOperation kafkaClusterOperation;
-    private final KafkaConnectClusterOperation kafkaConnectClusterOperation;
+    private final ZookeeperClusterOperations zookeeperClusterOperations;
+    private final KafkaClusterOperations kafkaClusterOperations;
+    private final KafkaConnectClusterOperations kafkaConnectClusterOperations;
 
     public ClusterController(ClusterControllerConfig config) {
         log.info("Creating ClusterController");
@@ -79,9 +79,9 @@ public class ClusterController extends AbstractVerticle {
             imagesStreamResources = null;
             buildConfigOperations = null;
         }
-        this.zookeeperClusterOperation = new ZookeeperClusterOperation(vertx, client, serviceOperations, statefulSetOperations, configMapOperations, pvcOperations);
-        this.kafkaClusterOperation = new KafkaClusterOperation(vertx, client, configMapOperations, statefulSetOperations, serviceOperations, pvcOperations);
-        this.kafkaConnectClusterOperation = new KafkaConnectClusterOperation(vertx, client, serviceOperations, deploymentOperations, configMapOperations, imagesStreamResources, buildConfigOperations);
+        this.zookeeperClusterOperations = new ZookeeperClusterOperations(vertx, client, serviceOperations, statefulSetOperations, configMapOperations, pvcOperations);
+        this.kafkaClusterOperations = new KafkaClusterOperations(vertx, client, configMapOperations, statefulSetOperations, serviceOperations, pvcOperations);
+        this.kafkaConnectClusterOperations = new KafkaConnectClusterOperations(vertx, client, serviceOperations, deploymentOperations, configMapOperations, imagesStreamResources, buildConfigOperations);
     }
 
     @Override
@@ -324,10 +324,10 @@ public class ClusterController extends AbstractVerticle {
         String name = add.getMetadata().getName();
         log.info("Adding cluster {}", name);
 
-        getZookeeperClusterOperation().create(namespace, name, res -> {
+        getZookeeperClusterOperations().create(namespace, name, res -> {
             if (res.succeeded()) {
                 log.info("Zookeeper cluster added {}", name);
-                getKafkaClusterOperation().create(namespace, name, res2 -> {
+                getKafkaClusterOperations().create(namespace, name, res2 -> {
                     if (res2.succeeded()) {
                         log.info("Kafka cluster added {}", name);
                     }
@@ -346,7 +346,7 @@ public class ClusterController extends AbstractVerticle {
         String name = cm.getMetadata().getName();
         log.info("Checking for updates in cluster {}", cm.getMetadata().getName());
 
-        getZookeeperClusterOperation().update(namespace, name, res -> {
+        getZookeeperClusterOperations().update(namespace, name, res -> {
             if (res.succeeded()) {
                 log.info("Zookeeper cluster updated {}", name);
             }
@@ -354,7 +354,7 @@ public class ClusterController extends AbstractVerticle {
                 log.error("Failed to update Zookeeper cluster {}.", name);
             }
 
-            getKafkaClusterOperation().update(namespace, name, res2 -> {
+            getKafkaClusterOperations().update(namespace, name, res2 -> {
                 if (res2.succeeded()) {
                     log.info("Kafka cluster updated {}", name);
                 }
@@ -378,10 +378,10 @@ public class ClusterController extends AbstractVerticle {
     }
 
     private void deleteKafkaCluster(String namespace, String name)   {
-        getKafkaClusterOperation().delete(namespace, name, res -> {
+        getKafkaClusterOperations().delete(namespace, name, res -> {
             if (res.succeeded()) {
                 log.info("Kafka cluster deleted {}", name);
-                getZookeeperClusterOperation().delete(namespace, name, res2 -> {
+                getZookeeperClusterOperations().delete(namespace, name, res2 -> {
                     if (res2.succeeded()) {
                         log.info("Zookeeper cluster deleted {}", name);
                     }
@@ -403,7 +403,7 @@ public class ClusterController extends AbstractVerticle {
         String name = add.getMetadata().getName();
         log.info("Adding Kafka Connect cluster {}", name);
 
-        getKafkaConnectClusterOperation().create(namespace, name, res -> {
+        getKafkaConnectClusterOperations().create(namespace, name, res -> {
             if (res.succeeded()) {
                 log.info("Kafka Connect cluster added {}", name);
             }
@@ -417,7 +417,7 @@ public class ClusterController extends AbstractVerticle {
         String name = cm.getMetadata().getName();
         log.info("Checking for updates in Kafka Connect cluster {}", cm.getMetadata().getName());
 
-        getKafkaConnectClusterOperation().update(namespace, name, res -> {
+        getKafkaConnectClusterOperations().update(namespace, name, res -> {
             if (res.succeeded()) {
                 log.info("Kafka Connect cluster updated {}", name);
             }
@@ -440,7 +440,7 @@ public class ClusterController extends AbstractVerticle {
     }
 
     private void deleteKafkaConnectCluster(String namespace, String name)   {
-        getKafkaConnectClusterOperation().delete(namespace, name, res -> {
+        getKafkaConnectClusterOperations().delete(namespace, name, res -> {
             if (res.succeeded()) {
                 log.info("Kafka Connect cluster deleted {}", name);
             }
@@ -467,15 +467,15 @@ public class ClusterController extends AbstractVerticle {
                 .listen(HEALTH_SERVER_PORT);
     }
 
-    private ZookeeperClusterOperation getZookeeperClusterOperation() {
-        return zookeeperClusterOperation;
+    private ZookeeperClusterOperations getZookeeperClusterOperations() {
+        return zookeeperClusterOperations;
     }
 
-    private KafkaClusterOperation getKafkaClusterOperation() {
-        return kafkaClusterOperation;
+    private KafkaClusterOperations getKafkaClusterOperations() {
+        return kafkaClusterOperations;
     }
 
-    private KafkaConnectClusterOperation getKafkaConnectClusterOperation() {
-        return kafkaConnectClusterOperation;
+    private KafkaConnectClusterOperations getKafkaConnectClusterOperations() {
+        return kafkaConnectClusterOperations;
     }
 }

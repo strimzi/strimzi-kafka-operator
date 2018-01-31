@@ -15,12 +15,13 @@
  * limitations under the License.
  */
 
-package io.strimzi.controller.cluster.operations;
+package io.strimzi.controller.cluster.operations.cluster;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.openshift.client.server.mock.OpenShiftServer;
+import io.strimzi.controller.cluster.operations.cluster.KafkaClusterOperations;
 import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
 import io.strimzi.controller.cluster.operations.resource.PvcOperations;
 import io.strimzi.controller.cluster.operations.resource.ServiceOperations;
@@ -42,7 +43,7 @@ import java.util.Map;
 import static java.util.Collections.singletonMap;
 
 @RunWith(VertxUnitRunner.class)
-public class KafkaClusterOperationTest {
+public class KafkaClusterOperationsTest {
 
     protected static Vertx vertx;
 
@@ -62,7 +63,7 @@ public class KafkaClusterOperationTest {
     @Test
     public void testCreateCluster(TestContext context) {
         KubernetesClient kubeClient = server.getKubernetesClient();
-        KafkaClusterOperation ops = new KafkaClusterOperation(vertx, kubeClient,
+        KafkaClusterOperations ops = new KafkaClusterOperations(vertx, kubeClient,
                 new ConfigMapOperations(vertx, kubeClient),
                 new StatefulSetOperations(vertx, kubeClient),
                 new ServiceOperations(vertx, kubeClient),

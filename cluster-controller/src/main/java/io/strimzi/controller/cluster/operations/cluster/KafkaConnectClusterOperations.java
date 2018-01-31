@@ -1,4 +1,4 @@
-package io.strimzi.controller.cluster.operations;
+package io.strimzi.controller.cluster.operations.cluster;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -22,9 +22,9 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 
-public class KafkaConnectClusterOperation extends ClusterOperation<KafkaConnectCluster> {
+public class KafkaConnectClusterOperations extends AbstractClusterOperations<KafkaConnectCluster> {
 
-    private static final Logger log = LoggerFactory.getLogger(KafkaConnectClusterOperation.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(KafkaConnectClusterOperations.class.getName());
     private final ServiceOperations serviceOperations;
     private final DeploymentOperations deploymentOperations;
     private final ConfigMapOperations configMapOperations;
@@ -34,7 +34,7 @@ public class KafkaConnectClusterOperation extends ClusterOperation<KafkaConnectC
     private final DeleteS2IOperations deleteS2IOperation;
     private final UpdateS2IOperations updateS2IOperation;
 
-    public KafkaConnectClusterOperation(Vertx vertx, KubernetesClient client, ServiceOperations serviceOperations, DeploymentOperations deploymentOperations, ConfigMapOperations configMapOperations, ImageStreamOperations imagesStreamResources, BuildConfigOperations buildConfigOperations) {
+    public KafkaConnectClusterOperations(Vertx vertx, KubernetesClient client, ServiceOperations serviceOperations, DeploymentOperations deploymentOperations, ConfigMapOperations configMapOperations, ImageStreamOperations imagesStreamResources, BuildConfigOperations buildConfigOperations) {
         super(vertx, client, "kafka-connect", "create");
         this.serviceOperations = serviceOperations;
         this.deploymentOperations = deploymentOperations;
