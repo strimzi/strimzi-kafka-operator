@@ -22,6 +22,8 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.PodList;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -45,23 +47,53 @@ public class PodOperationsMockTest extends ResourceOperationsMockTest<Kubernetes
     public OpenShiftServer server = new OpenShiftServer(false, true);
 
     @Test
-    public void testCrud(TestContext context) {
+    public void testCreateReadUpdate(TestContext context) {
+        vertx.createSharedWorkerExecutor("kubernetes-ops-pool", 10);
         KubernetesClient client = server.getKubernetesClient();
         PodResources pr = new PodResources(vertx, client);
 
         context.assertEquals(emptyList(), pr.list(NAMESPACE, emptyMap()));
 
-        Async async = context.async();
-        pr.create(resource(), ar -> {
-            context.assertTrue(ar.succeeded());
+        Async async = context.async(1);
+        pr.create(resource(), createResult -> {
+            context.assertTrue(createResult.succeeded());
             context.assertEquals(singletonList(RESOURCE_NAME), pr.list(NAMESPACE, emptyMap()).stream()
                         .map(p -> p.getMetadata().getName())
                         .collect(Collectors.toList()));
-            //context.assertTrue(pr.isPodReady("test", "mypod"));
-            pr.delete(NAMESPACE, RESOURCE_NAME, deleteResult -> {
-                context.assertTrue(ar.succeeded());
-                async.complete();
+            //Pod got = pr.get(NAMESPACE, RESOURCE_NAME);
+            //context.assertNotNull(got);
+            //context.assertNotNull(got.getMetadata());
+            //context.assertEquals(RESOURCE_NAME, got.getMetadata().getName());
+            context.assertFalse(pr.isPodReady(NAMESPACE, RESOURCE_NAME));
+            /*pr.watch(NAMESPACE, RESOURCE_NAME, new Watcher<Pod>() {
+                @Override
+                public void eventReceived(Action action, Pod resource) {
+                    if (action == Action.DELETED) {
+                        context.assertEquals(RESOURCE_NAME, resource.getMetadata().getName());
+                    } else {
+                        context.fail();
+                    }
+                    async.countDown();
+                }
+
+                @Override
+                public void onClose(KubernetesClientException cause) {
+
+                }
+            });*/
+            Pod modified = resource();
+            modified.getSpec().setHostname("bar");
+            Async patchAsync = context.async();
+            pr.patch(NAMESPACE, RESOURCE_NAME, modified, patchResult -> {
+                context.assertTrue(patchResult.succeeded());
+                patchAsync.complete();
             });
+            patchAsync.await();
+            pr.delete(NAMESPACE, RESOURCE_NAME, deleteResult -> {
+                context.assertTrue(deleteResult.succeeded());
+                async.countDown();
+            });
+
         });
     }
 
@@ -77,7 +109,14 @@ public class PodOperationsMockTest extends ResourceOperationsMockTest<Kubernetes
 
     @Override
     protected Pod resource() {
-        return new PodBuilder().withNewMetadata().withNamespace(NAMESPACE).withName(RESOURCE_NAME).endMetadata().build();
+        return new PodBuilder()
+                .withNewMetadata()
+                    .withNamespace(NAMESPACE)
+                    .withName(RESOURCE_NAME)
+                .endMetadata()
+                .withNewSpec()
+                    .withHostname("foo")
+                .endSpec().build();
     }
 
     @Override
