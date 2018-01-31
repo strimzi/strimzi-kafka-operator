@@ -51,6 +51,12 @@
             <version>2.12.0</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.fabric8</groupId>
+            <artifactId>openshift-server-mock</artifactId>
+            <version>${fabric8.kubernetes-client.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

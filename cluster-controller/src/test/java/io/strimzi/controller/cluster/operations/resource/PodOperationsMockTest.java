@@ -25,14 +25,23 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.openshift.client.server.mock.OpenShiftServer;
 import io.vertx.core.Vertx;
+import io.vertx.ext.unit.Async;
+import io.vertx.ext.unit.TestContext;
+import org.junit.Rule;
+import org.junit.Test;
 
+import java.util.stream.Collectors;
+
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.singletonList;
 import static org.mockito.Mockito.when;
-
 
 public class PodOperationsMockTest extends ResourceOperationsMockTest<KubernetesClient, Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> {
 
-    /*@Rule
+    @Rule
     public OpenShiftServer server = new OpenShiftServer(false, true);
 
     @Test
@@ -40,21 +49,21 @@ public class PodOperationsMockTest extends ResourceOperationsMockTest<Kubernetes
         KubernetesClient client = server.getKubernetesClient();
         PodResources pr = new PodResources(vertx, client);
 
-        context.assertEquals(emptyList(), pr.list("test", emptyMap()));
+        context.assertEquals(emptyList(), pr.list(NAMESPACE, emptyMap()));
 
         Async async = context.async();
         pr.create(resource(), ar -> {
             context.assertTrue(ar.succeeded());
-            context.assertEquals(singletonList("mypod"), pr.list("test", emptyMap()).stream()
+            context.assertEquals(singletonList(RESOURCE_NAME), pr.list(NAMESPACE, emptyMap()).stream()
                         .map(p -> p.getMetadata().getName())
                         .collect(Collectors.toList()));
             //context.assertTrue(pr.isPodReady("test", "mypod"));
-            pr.delete("test", "mypod", deleteResult -> {
+            pr.delete(NAMESPACE, RESOURCE_NAME, deleteResult -> {
                 context.assertTrue(ar.succeeded());
                 async.complete();
             });
         });
-    }*/
+    }
 
     @Override
     protected Class clientType() {
@@ -68,7 +77,7 @@ public class PodOperationsMockTest extends ResourceOperationsMockTest<Kubernetes
 
     @Override
     protected Pod resource() {
-        return new PodBuilder().withNewMetadata().withNamespace(NAMESPACE).withName(NAME).endMetadata().build();
+        return new PodBuilder().withNewMetadata().withNamespace(NAMESPACE).withName(RESOURCE_NAME).endMetadata().build();
     }
 
     @Override

@@ -42,7 +42,7 @@ public class ImageStreamOperationsMockTest extends ResourceOperationsMockTest<Op
 
     @Override
     protected ImageStream resource() {
-        return new ImageStreamBuilder().withNewMetadata().withNamespace(NAMESPACE).withName(NAME).endMetadata().build();
+        return new ImageStreamBuilder().withNewMetadata().withNamespace(NAMESPACE).withName(RESOURCE_NAME).endMetadata().build();
     }
 
     @Override

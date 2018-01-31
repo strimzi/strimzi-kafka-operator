@@ -44,7 +44,7 @@ public class PvcOperationsMockTest extends ResourceOperationsMockTest<Kubernetes
 
     @Override
     protected PersistentVolumeClaim resource() {
-        return new PersistentVolumeClaimBuilder().withNewMetadata().withNamespace(NAMESPACE).withName(NAME).endMetadata().build();
+        return new PersistentVolumeClaimBuilder().withNewMetadata().withNamespace(NAMESPACE).withName(RESOURCE_NAME).endMetadata().build();
     }
 
     @Override
