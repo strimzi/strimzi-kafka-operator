@@ -20,7 +20,6 @@ package io.strimzi.controller.cluster.operations.cluster;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.controller.cluster.resources.AbstractCluster;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -28,13 +27,11 @@ import io.vertx.core.shareddata.Lock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-
 /**
  * Abstract cluster creation, for a generic cluster type {@code C}.
  * This class applies the template method pattern, first obtaining the desired cluster configuration
- * ({@link Op#getCluster(K8SUtils, String, String)}),
- * then creating resources to match ({@link Op#futures(K8SUtils, String, AbstractCluster)}).
+ * ({@link CompositeOperation#getCluster(KubernetesClient, String, String)}),
+ * then creating resources to match ({@link CompositeOperation#futures(KubernetesClient, String, AbstractCluster)}).
  *
  * This class manages a per-cluster-type and per-cluster locking strategy so only one operation per cluster
  * can proceed at once.
@@ -61,15 +58,18 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster> {
         return "lock::"+ clusterType +"::" + namespace + "::" + name;
     }
 
-    protected interface Op<C extends AbstractCluster> {
-        /** Create the resources in Kubernetes according to the given {@code cluster} */
-        List<Future> futures(KubernetesClient client, String namespace, C cluster);
+    protected interface CompositeOperation<C extends AbstractCluster> {
+        /**
+         * Create the resources in Kubernetes according to the given {@code cluster},
+         * returning a composite future for when the overall operation is done
+         */
+        Future<?> composite(String namespace, C cluster);
 
         /** Get the desired Cluster instance */
-        C getCluster(KubernetesClient client, String namespace, String name);
+        C getCluster(String namespace, String name);
     }
 
-    private final void execute(String namespace, String name, Op<C> op, Handler<AsyncResult<Void>> handler) {
+    private final void execute(String namespace, String name, CompositeOperation<C> compositeOperation, Handler<AsyncResult<Void>> handler) {
         final String lockName = getLockName(namespace, name);
         vertx.sharedData().getLockWithTimeout(lockName, LOCK_TIMEOUT, res -> {
             if (res.succeeded()) {
@@ -77,7 +77,7 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster> {
 
                 C cluster;
                 try {
-                    cluster = op.getCluster(client, namespace, name);
+                    cluster = compositeOperation.getCluster(namespace, name);
                     log.info("{} {} cluster {} in namespace {}", operationType, clusterType, cluster.getName(), namespace);
                 } catch (Exception ex) {
                     log.error("Error while getting required {} cluster state for {} operation", clusterType, operationType, ex);
@@ -85,9 +85,9 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster> {
                     lock.release();
                     return;
                 }
-                List<Future> list = op.futures(client, namespace, cluster);
+                Future<?> composite = compositeOperation.composite(namespace, cluster);
 
-                CompositeFuture.join(list).setHandler(ar -> {
+                composite.setHandler(ar -> {
                     if (ar.succeeded()) {
                         log.info("{} cluster {} in namespace {}: successful {}", clusterType, cluster.getName(), namespace, operationType);
                         handler.handle(Future.succeededFuture());
@@ -105,14 +105,14 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster> {
         });
     }
 
-    protected abstract Op<C> createOp();
+    protected abstract CompositeOperation<C> createOp();
 
     public final void create(String namespace, String name, Handler<AsyncResult<Void>> handler) {
         execute(namespace, name, createOp(), handler);
     }
 
 
-    protected abstract Op<C> deleteOp();
+    protected abstract CompositeOperation<C> deleteOp();
 
     public final void delete(String namespace, String name, Handler<AsyncResult<Void>> handler) {
         execute(namespace, name, deleteOp(), handler);

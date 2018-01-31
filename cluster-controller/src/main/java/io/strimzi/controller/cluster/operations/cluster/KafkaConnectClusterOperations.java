@@ -46,15 +46,15 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
         updateS2IOperation = new UpdateS2IOperations(vertx, client.adapt(OpenShiftClient.class));
     }
 
-    private final Op<KafkaConnectCluster> create = new Op<KafkaConnectCluster>() {
+    private final CompositeOperation<KafkaConnectCluster> create = new CompositeOperation<KafkaConnectCluster>() {
 
         @Override
-        public KafkaConnectCluster getCluster(KubernetesClient client, String namespace, String name) {
+        public KafkaConnectCluster getCluster(String namespace, String name) {
             return KafkaConnectCluster.fromConfigMap(client, configMapOperations.get(namespace, name));
         }
 
         @Override
-        public List<Future> futures(KubernetesClient client, String namespace, KafkaConnectCluster connect) {
+        public Future<?> composite(String namespace, KafkaConnectCluster connect) {
             List<Future> result = new ArrayList<>(3);
             Future<Void> futureService = Future.future();
             serviceOperations.create(connect.generateService(), futureService.completer());
@@ -73,19 +73,19 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
             }
             result.add(futureS2I);
 
-            return result;
+            return CompositeFuture.join(result);
         }
     };
 
     @Override
-    protected Op<KafkaConnectCluster> createOp() {
+    protected CompositeOperation<KafkaConnectCluster> createOp() {
         return create;
     }
 
-    private final Op<KafkaConnectCluster> delete = new Op<KafkaConnectCluster>() {
+    private final CompositeOperation<KafkaConnectCluster> delete = new CompositeOperation<KafkaConnectCluster>() {
 
         @Override
-        public List<Future> futures(KubernetesClient client, String namespace, KafkaConnectCluster connect) {
+        public Future<?> composite(String namespace, KafkaConnectCluster connect) {
             List<Future> result = new ArrayList<>(3);
 
             Future<Void> futureService = Future.future();
@@ -102,17 +102,17 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
                 result.add(futureS2I);
             }
 
-            return result;
+            return CompositeFuture.join(result);
         }
 
         @Override
-        public KafkaConnectCluster getCluster(KubernetesClient client, String namespace, String name) {
+        public KafkaConnectCluster getCluster(String namespace, String name) {
             return KafkaConnectCluster.fromDeployment(deploymentOperations, imagesStreamResources, namespace, name);
         }
     };
 
     @Override
-    protected Op<KafkaConnectCluster> deleteOp() {
+    protected CompositeOperation<KafkaConnectCluster> deleteOp() {
         return delete;
     }
 

@@ -79,14 +79,14 @@ public class PodOperationsMockTest extends ResourceOperationsMockTest<Kubernetes
 
                 }
             });*/
-            Pod modified = resource();
+            /*Pod modified = resource();
             modified.getSpec().setHostname("bar");
             Async patchAsync = context.async();
             pr.patch(NAMESPACE, RESOURCE_NAME, modified, patchResult -> {
                 context.assertTrue(patchResult.succeeded());
                 patchAsync.complete();
             });
-            patchAsync.await();
+            patchAsync.await();*/
             pr.delete(NAMESPACE, RESOURCE_NAME, deleteResult -> {
                 context.assertTrue(deleteResult.succeeded());
                 async.countDown();
