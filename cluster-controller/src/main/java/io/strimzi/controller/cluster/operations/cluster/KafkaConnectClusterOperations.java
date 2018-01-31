@@ -2,19 +2,20 @@ package io.strimzi.controller.cluster.operations.cluster;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.controller.cluster.operations.resource.BuildConfigOperations;
 import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
 import io.strimzi.controller.cluster.operations.resource.DeploymentOperations;
 import io.strimzi.controller.cluster.operations.resource.ImageStreamOperations;
+import io.strimzi.controller.cluster.operations.resource.S2IOperations;
 import io.strimzi.controller.cluster.operations.resource.ServiceOperations;
-import io.strimzi.controller.cluster.operations.resource.CreateS2IOperations;
-import io.strimzi.controller.cluster.operations.resource.DeleteS2IOperations;
-import io.strimzi.controller.cluster.operations.resource.UpdateS2IOperations;
 import io.strimzi.controller.cluster.resources.ClusterDiffResult;
 import io.strimzi.controller.cluster.resources.KafkaConnectCluster;
 import io.strimzi.controller.cluster.resources.Source2Image;
-import io.vertx.core.*;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.CompositeFuture;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 import io.vertx.core.shareddata.Lock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,9 +31,7 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
     private final ConfigMapOperations configMapOperations;
     private final ImageStreamOperations imagesStreamResources;
     private final BuildConfigOperations buildConfigOperations;
-    private final CreateS2IOperations createS2IOperation;
-    private final DeleteS2IOperations deleteS2IOperation;
-    private final UpdateS2IOperations updateS2IOperation;
+    private final S2IOperations s2iOperations;
 
     public KafkaConnectClusterOperations(Vertx vertx, KubernetesClient client, ServiceOperations serviceOperations, DeploymentOperations deploymentOperations, ConfigMapOperations configMapOperations, ImageStreamOperations imagesStreamResources, BuildConfigOperations buildConfigOperations) {
         super(vertx, client, "kafka-connect", "create");
@@ -41,9 +40,9 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
         this.configMapOperations = configMapOperations;
         this.imagesStreamResources = imagesStreamResources;
         this.buildConfigOperations = buildConfigOperations;
-        createS2IOperation = new CreateS2IOperations(vertx, client.adapt(OpenShiftClient.class));
-        deleteS2IOperation = new DeleteS2IOperations(vertx, client.adapt(OpenShiftClient.class));
-        updateS2IOperation = new UpdateS2IOperations(vertx, client.adapt(OpenShiftClient.class));
+        s2iOperations = new S2IOperations(vertx,
+                imagesStreamResources,
+                buildConfigOperations);
     }
 
     private final CompositeOperation<KafkaConnectCluster> create = new CompositeOperation<KafkaConnectCluster>() {
@@ -67,7 +66,7 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
             Future<Void> futureS2I;
             if (connect.getS2I() != null) {
                 futureS2I = Future.future();
-                createS2IOperation.execute(connect.getS2I(), futureS2I.completer());
+                s2iOperations.create(connect.getS2I(), futureS2I.completer());
             } else {
                 futureS2I = Future.succeededFuture();
             }
@@ -98,7 +97,7 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
 
             if (connect.getS2I() != null) {
                 Future<Void> futureS2I = Future.future();
-                deleteS2IOperation.execute(connect.getS2I(), futureS2I.completer());
+                s2iOperations.delete(connect.getS2I(), futureS2I.completer());
                 result.add(futureS2I);
             }
 
@@ -218,17 +217,17 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
             if (diff.getS2i() == Source2Image.Source2ImageDiff.CREATE) {
                 log.info("Creating S2I deployment {} in namespace {}", connect.getName(), namespace);
                 Future<Void> createS2I = Future.future();
-                createS2IOperation.execute(connect.getS2I(), createS2I.completer());
+                s2iOperations.create(connect.getS2I(), createS2I.completer());
                 return createS2I;
             } else if (diff.getS2i() == Source2Image.Source2ImageDiff.DELETE) {
                 log.info("Deleting S2I deployment {} in namespace {}", connect.getName(), namespace);
                 Future<Void> deleteS2I = Future.future();
-                deleteS2IOperation.execute(new Source2Image(namespace, connect.getName()), deleteS2I.completer());
+                s2iOperations.delete(new Source2Image(namespace, connect.getName()), deleteS2I.completer());
                 return deleteS2I;
             } else {
                 log.info("Updating S2I deployment {} in namespace {}", connect.getName(), namespace);
                 Future<Void> patchS2I = Future.future();
-                updateS2IOperation.execute(connect.getS2I(), patchS2I.completer());
+                s2iOperations.update(connect.getS2I(), patchS2I.completer());
                 return patchS2I;
             }
         } else {
