@@ -38,15 +38,15 @@ public class ZookeeperClusterOperations extends AbstractClusterOperations<Zookee
         this.pvcOperations = pvcOperations;
     }
 
-    private final Op<ZookeeperCluster> create = new Op<ZookeeperCluster>() {
+    private final CompositeOperation<ZookeeperCluster> create = new CompositeOperation<ZookeeperCluster>() {
 
         @Override
-        public ZookeeperCluster getCluster(KubernetesClient client, String namespace, String name) {
+        public ZookeeperCluster getCluster(String namespace, String name) {
             return ZookeeperCluster.fromConfigMap(configMapOperations.get(namespace, name));
         }
 
         @Override
-        public List<Future> futures(KubernetesClient client, String namespace, ZookeeperCluster zk) {
+        public Future<?> composite(String namespace, ZookeeperCluster zk) {
             List<Future> result = new ArrayList<>(4);
 
             if (zk.isMetricsEnabled()) {
@@ -67,18 +67,18 @@ public class ZookeeperClusterOperations extends AbstractClusterOperations<Zookee
             statefulSetOperations.create(zk.generateStatefulSet(client.isAdaptable(OpenShiftClient.class)), futureStatefulSet.completer());
             result.add(futureStatefulSet);
 
-            return result;
+            return CompositeFuture.join(result);
         }
     };
 
     @Override
-    protected Op<ZookeeperCluster> createOp() {
+    protected CompositeOperation<ZookeeperCluster> createOp() {
         return create;
     }
 
-    private final Op<ZookeeperCluster> delete = new Op<ZookeeperCluster>() {
+    private final CompositeOperation<ZookeeperCluster> delete = new CompositeOperation<ZookeeperCluster>() {
         @Override
-        public List<Future> futures(KubernetesClient client, String namespace, ZookeeperCluster zk) {
+        public Future<?> composite(String namespace, ZookeeperCluster zk) {
             boolean deleteClaims = zk.getStorage().type() == Storage.StorageType.PERSISTENT_CLAIM
                     && zk.getStorage().isDeleteClaim();
             List<Future> result = new ArrayList<>(4 + (deleteClaims ? zk.getReplicas() : 0));
@@ -111,18 +111,19 @@ public class ZookeeperClusterOperations extends AbstractClusterOperations<Zookee
                     result.add(f);
                 }
             }
-            return result;
+
+            return CompositeFuture.join(result);
         }
 
         @Override
-        public ZookeeperCluster getCluster(KubernetesClient client, String namespace, String name) {
+        public ZookeeperCluster getCluster(String namespace, String name) {
             return ZookeeperCluster.fromStatefulSet(statefulSetOperations, namespace, name);
         }
     };
 
 
     @Override
-    protected Op<ZookeeperCluster> deleteOp() {
+    protected CompositeOperation<ZookeeperCluster> deleteOp() {
         return delete;
     }
 

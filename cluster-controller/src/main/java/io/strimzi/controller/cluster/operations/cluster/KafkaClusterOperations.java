@@ -33,15 +33,15 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
         this.pvcOperations = pvcOperations;
     }
 
-    private final Op<KafkaCluster> create = new Op<KafkaCluster>() {
+    private final CompositeOperation<KafkaCluster> create = new CompositeOperation<KafkaCluster>() {
 
         @Override
-        public KafkaCluster getCluster (KubernetesClient client, String namespace, String name){
+        public KafkaCluster getCluster(String namespace, String name){
             return KafkaCluster.fromConfigMap(configMapOperations.get(namespace, name));
         }
 
         @Override
-        public List<Future> futures (KubernetesClient client, String namespace, KafkaCluster kafka){
+        public Future<?> composite(String namespace, KafkaCluster kafka){
             List<Future> result = new ArrayList<>(4);
             // start creating configMap operation only if metrics are enabled,
             // otherwise the future is already complete (for the "join")
@@ -63,12 +63,12 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
             statefulSetOperations.create(kafka.generateStatefulSet(client.isAdaptable(OpenShiftClient.class)), futureStatefulSet.completer());
             result.add(futureStatefulSet);
 
-            return result;
+            return CompositeFuture.join(result);
         }
     };
-    private final Op<KafkaCluster> delete = new Op<KafkaCluster>() {
+    private final CompositeOperation<KafkaCluster> delete = new CompositeOperation<KafkaCluster>() {
         @Override
-        public List<Future> futures(KubernetesClient client, String namespace, KafkaCluster kafka) {
+        public Future<?> composite(String namespace, KafkaCluster kafka) {
             boolean deleteClaims = kafka.getStorage().type() == Storage.StorageType.PERSISTENT_CLAIM
                     && kafka.getStorage().isDeleteClaim();
             List<Future> result = new ArrayList<>(4 + (deleteClaims ? kafka.getReplicas() : 0));
@@ -99,22 +99,22 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
                 }
             }
 
-            return result;
+            return CompositeFuture.join(result);
         }
 
         @Override
-        public KafkaCluster getCluster(KubernetesClient client, String namespace, String name) {
+        public KafkaCluster getCluster(String namespace, String name) {
             return KafkaCluster.fromStatefulSet(statefulSetOperations, namespace, name);
         }
     };
 
     @Override
-    protected Op<KafkaCluster> createOp() {
+    protected CompositeOperation<KafkaCluster> createOp() {
         return create;
     }
 
     @Override
-    protected Op<KafkaCluster> deleteOp() {
+    protected CompositeOperation<KafkaCluster> deleteOp() {
         return delete;
     }
 
