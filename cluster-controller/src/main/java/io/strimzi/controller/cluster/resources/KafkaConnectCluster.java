@@ -15,6 +15,7 @@ import io.fabric8.openshift.api.model.ImageStreamList;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.openshift.client.dsl.BuildConfigResource;
 import io.strimzi.controller.cluster.ClusterController;
+import io.strimzi.controller.cluster.operations.resource.BuildConfigResources;
 import io.strimzi.controller.cluster.operations.resource.DeploymentResources;
 import io.strimzi.controller.cluster.operations.resource.ImageStreamResources;
 import io.strimzi.controller.cluster.operations.resource.ResourceOperation;
@@ -198,9 +199,9 @@ public class KafkaConnectCluster extends AbstractCluster {
      * @return  ClusterDiffResult instance with differences
      */
     public ClusterDiffResult diff(
-            ResourceOperation<KubernetesClient, Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>> deploymentResources,
-            ResourceOperation<OpenShiftClient, ImageStream, ImageStreamList, DoneableImageStream, Resource<ImageStream, DoneableImageStream>> isResources,
-            ResourceOperation<OpenShiftClient, BuildConfig, BuildConfigList, DoneableBuildConfig, BuildConfigResource<BuildConfig, DoneableBuildConfig, Void, Build>> bcResources,
+            DeploymentResources deploymentResources,
+            ImageStreamResources isResources,
+            BuildConfigResources bcResources,
             String namespace) {
 
         Deployment dep = deploymentResources.get(namespace, getName());

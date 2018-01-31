@@ -8,7 +8,9 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.strimzi.controller.cluster.ClusterController;
+import io.strimzi.controller.cluster.operations.resource.ConfigMapResources;
 import io.strimzi.controller.cluster.operations.resource.ResourceOperation;
+import io.strimzi.controller.cluster.operations.resource.StatefulSetResources;
 import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
@@ -128,7 +130,7 @@ public class KafkaCluster extends AbstractCluster {
      * @param cluster   overall cluster name
      * @return  Kafka cluster instance
      */
-    public static KafkaCluster fromStatefulSet(ResourceOperation<KubernetesClient, StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> statefulSetResources, String namespace, String cluster) {
+    public static KafkaCluster fromStatefulSet(StatefulSetResources statefulSetResources, String namespace, String cluster) {
 
         StatefulSet ss = statefulSetResources.get(namespace, cluster + KafkaCluster.NAME_SUFFIX);
 
@@ -176,8 +178,8 @@ public class KafkaCluster extends AbstractCluster {
      * @return  ClusterDiffResult instance with differences
      */
     public ClusterDiffResult diff(
-            ResourceOperation<KubernetesClient, ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> configMapResources,
-            ResourceOperation<KubernetesClient, StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> statefulSetResources,
+            ConfigMapResources configMapResources,
+            StatefulSetResources statefulSetResources,
                                   String namespace)  {
         StatefulSet ss = statefulSetResources.get(namespace, getName());
         ConfigMap metricsConfigMap = configMapResources.get(namespace, getMetricsConfigName());
