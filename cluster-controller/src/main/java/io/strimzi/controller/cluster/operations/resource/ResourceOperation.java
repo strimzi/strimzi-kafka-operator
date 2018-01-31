@@ -124,7 +124,7 @@ public abstract class ResourceOperation<C, T extends HasMetadata, L extends Kube
     }
 
     public void patch(String namespace, String name, boolean cascading, T patch, Handler<AsyncResult<Void>> handler) {
-        vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
+        vertx./*createSharedWorkerExecutor("kubernetes-ops-pool").*/executeBlocking(
                 future -> {
                     try {
                         log.info("Patching resource with {}", patch);
@@ -136,7 +136,7 @@ public abstract class ResourceOperation<C, T extends HasMetadata, L extends Kube
                         future.fail(e);
                     }
                 },
-                false,
+                true,
                 res -> {
                     if (res.succeeded()) {
                         log.info("Resource has been patched", patch);
@@ -150,7 +150,7 @@ public abstract class ResourceOperation<C, T extends HasMetadata, L extends Kube
         );
     }
 
-    public T get(String namespace, String name) {
+    public final T get(String namespace, String name) {
         return operation().inNamespace(namespace).withName(name).get();
     }
 
