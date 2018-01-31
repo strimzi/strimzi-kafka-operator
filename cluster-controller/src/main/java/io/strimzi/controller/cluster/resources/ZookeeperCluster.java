@@ -8,7 +8,9 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.strimzi.controller.cluster.ClusterController;
+import io.strimzi.controller.cluster.operations.resource.ConfigMapResources;
 import io.strimzi.controller.cluster.operations.resource.ResourceOperation;
+import io.strimzi.controller.cluster.operations.resource.StatefulSetResources;
 import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
@@ -119,7 +121,7 @@ public class ZookeeperCluster extends AbstractCluster {
      * @param cluster   overall cluster name
      * @return  Zookeeper cluster instance
      */
-    public static ZookeeperCluster fromStatefulSet(ResourceOperation<KubernetesClient, StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> statefulSetResources,
+    public static ZookeeperCluster fromStatefulSet(StatefulSetResources statefulSetResources,
                                                    String namespace, String cluster) {
 
         StatefulSet ss = statefulSetResources.get(namespace, cluster + ZookeeperCluster.NAME_SUFFIX);
@@ -162,8 +164,8 @@ public class ZookeeperCluster extends AbstractCluster {
      * @param namespace Kubernetes/OpenShift namespace where cluster resources belong to
      * @return  ClusterDiffResult instance with differences
      */
-    public ClusterDiffResult diff(ResourceOperation<KubernetesClient, ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> configMapResources,
-                                  ResourceOperation<KubernetesClient, StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> statefulSetResources,
+    public ClusterDiffResult diff(ConfigMapResources configMapResources,
+                                  StatefulSetResources statefulSetResources,
                                   String namespace)  {
         StatefulSet ss = statefulSetResources.get(namespace, getName());
         ConfigMap metricsConfigMap = configMapResources.get(namespace, getMetricsConfigName());
