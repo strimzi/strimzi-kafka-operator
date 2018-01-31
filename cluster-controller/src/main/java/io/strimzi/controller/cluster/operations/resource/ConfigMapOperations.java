@@ -25,7 +25,15 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.vertx.core.Vertx;
 
+/**
+ * Operations for {@code ConfigMap}s.
+ */
 public class ConfigMapOperations extends AbstractOperations<KubernetesClient, ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> {
+    /**
+     * Constructor
+     * @param vertx The Vertx instance
+     * @param client The Kubernetes client
+     */
     public ConfigMapOperations(Vertx vertx, KubernetesClient client) {
         super(vertx, client, "ConfigMap");
     }

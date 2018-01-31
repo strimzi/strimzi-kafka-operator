@@ -28,14 +28,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Abstract cluster creation, for a generic cluster type {@code C}.
+ * Abstract cluster creation, update, read, delection, etc, for a generic cluster type {@code C}.
  * This class applies the template method pattern, first obtaining the desired cluster configuration
- * ({@link CompositeOperation#getCluster(KubernetesClient, String, String)}),
- * then creating resources to match ({@link CompositeOperation#futures(KubernetesClient, String, AbstractCluster)}).
+ * ({@link CompositeOperation#getCluster(String, String)}),
+ * then creating resources to match ({@link CompositeOperation#composite(String, AbstractCluster)}.
  *
  * This class manages a per-cluster-type and per-cluster locking strategy so only one operation per cluster
  * can proceed at once.
- * @param <C>
+ * @param <C> The type of Kubernetes client
  */
 public abstract class AbstractClusterOperations<C extends AbstractCluster> {
 

@@ -26,7 +26,9 @@ public class S2IOperations {
 
     /**
      * Constructor
-     *
+     * @param vertx The Vertx instance
+     * @param imageStreamOperations For accessing ImageStreams
+     * @param buildConfigOperations For accessing BuildConfigs
      */
     public S2IOperations(Vertx vertx,
                             ImageStreamOperations imageStreamOperations,

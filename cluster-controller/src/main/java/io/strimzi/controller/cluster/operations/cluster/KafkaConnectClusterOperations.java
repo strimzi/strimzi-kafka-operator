@@ -23,6 +23,9 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * CRUD-style operations on a Kafka Connect cluster
+ */
 public class KafkaConnectClusterOperations extends AbstractClusterOperations<KafkaConnectCluster> {
 
     private static final Logger log = LoggerFactory.getLogger(KafkaConnectClusterOperations.class.getName());
@@ -33,6 +36,16 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
     private final BuildConfigOperations buildConfigOperations;
     private final S2IOperations s2iOperations;
 
+    /**
+     * Constructor
+     * @param vertx The Vertx instance
+     * @param client The kubernetes client
+     * @param deploymentOperations For operating on Deployments
+     * @param configMapOperations For operating on ConfigMaps
+     * @param imagesStreamResources For operating on ImageStreams, may be null
+     * @param buildConfigOperations For operating on BuildConfigs, may be null
+     * @param serviceOperations For operating on Services
+     */
     public KafkaConnectClusterOperations(Vertx vertx, KubernetesClient client, ServiceOperations serviceOperations, DeploymentOperations deploymentOperations, ConfigMapOperations configMapOperations, ImageStreamOperations imagesStreamResources, BuildConfigOperations buildConfigOperations) {
         super(vertx, client, "kafka-connect", "create");
         this.serviceOperations = serviceOperations;
@@ -209,8 +222,9 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
      * the cluster already exists)
      *
      * @param connect       KafkaConnectResource instance
+     * @param namespace     The Kubernetes namespace
      * @param diff          ClusterDiffResult from KafkaConnectResource
-     * @return
+     * @return A future for the patching
      */
     private Future<Void> patchS2I(KafkaConnectCluster connect, String namespace, ClusterDiffResult diff) {
         if (diff.getS2i() != Source2Image.Source2ImageDiff.NONE) {
