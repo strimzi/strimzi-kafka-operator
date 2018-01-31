@@ -19,44 +19,40 @@ package io.strimzi.controller.cluster.operations.resource;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.fabric8.kubernetes.api.model.ConfigMapList;
+import io.fabric8.kubernetes.api.model.DoneableConfigMap;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.vertx.core.Vertx;
-import io.vertx.ext.unit.TestContext;
-import org.junit.Test;
-
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
 
 import static java.util.Collections.singletonMap;
 import static org.mockito.Mockito.when;
 
-public class ConfigMapResourcesTest extends ResourceOperationTest {
-    @Test
-    public void testConfigMapCreation(TestContext context) {
-        ConfigMap cm = new ConfigMapBuilder()
-                .withNewMetadata()
-                .withName(NAME)
-                .withNamespace(NAMESPACE)
-                .withLabels(singletonMap("foo", "bar"))
-                .endMetadata()
-                .withData(singletonMap("FOO", "BAR"))
-                .build();
+public class ConfigMapResourcesTest extends ResourceOperationsMockTest<KubernetesClient, ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> {
 
-        BiFunction<Vertx, KubernetesClient, ConfigMapResources> f = (vertx1, client) -> new ConfigMapResources(vertx1, client);
-
-        BiConsumer<KubernetesClient, MixedOperation> mocker = (mockClient, mockCms) -> when(mockClient.configMaps()).thenReturn(mockCms);
-
-        createWhenExistsIsANop(context, KubernetesClient.class, Resource.class, cm, mocker, f);
-        existenceCheckThrows(context, KubernetesClient.class, Resource.class, cm, mocker, f);
-        successfulCreation(context, KubernetesClient.class, Resource.class, cm, mocker, f);
-        creationThrows(context, KubernetesClient.class, Resource.class, cm, mocker, f);
+    protected void  mocker(KubernetesClient mockClient, MixedOperation mockCms) {
+        when(mockClient.configMaps()).thenReturn(mockCms);
     }
 
-    @Test
-    public void testConfigMapDeletion(TestContext context) {
-        ConfigMap cm = new ConfigMapBuilder()
+    @Override
+    protected ResourceOperation<KubernetesClient, ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
+        return new ConfigMapResources(vertx, mockClient);
+    }
+
+    @Override
+    protected Class<KubernetesClient> clientType() {
+        return KubernetesClient.class;
+    }
+
+    @Override
+    protected Class<? extends Resource> resourceType() {
+        return Resource.class;
+    }
+
+    @Override
+    protected ConfigMap resource() {
+        return new ConfigMapBuilder()
                 .withNewMetadata()
                 .withName(NAME)
                 .withNamespace(NAMESPACE)
@@ -64,33 +60,5 @@ public class ConfigMapResourcesTest extends ResourceOperationTest {
                 .endMetadata()
                 .withData(singletonMap("FOO", "BAR"))
                 .build();
-
-        BiFunction<Vertx, KubernetesClient, ConfigMapResources> f = (vertx1, client) -> new ConfigMapResources(vertx1, client);
-
-        BiConsumer<KubernetesClient, MixedOperation> mocker = (mockClient, mockCms) -> when(mockClient.configMaps()).thenReturn(mockCms);
-        deleteWhenResourceDoesNotExistIsANop(context,
-                KubernetesClient.class,
-                Resource.class,
-                cm,
-                mocker,
-                f);
-        deleteWhenResourceExistsThrows(context,
-                KubernetesClient.class,
-                Resource.class,
-                cm,
-                mocker,
-                f);
-        successfulDeletion(context,
-                KubernetesClient.class,
-                Resource.class,
-                cm,
-                mocker,
-                f);
-        deletionThrows(context,
-                KubernetesClient.class,
-                Resource.class,
-                cm,
-                mocker,
-                f);
     }
 }
