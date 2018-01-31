@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package io.strimzi.controller.cluster.operations;
+package io.strimzi.controller.cluster.operations.cluster;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.controller.cluster.resources.AbstractCluster;
@@ -40,9 +40,9 @@ import java.util.List;
  * can proceed at once.
  * @param <C>
  */
-public abstract class ClusterOperation<C extends AbstractCluster> {
+public abstract class AbstractClusterOperations<C extends AbstractCluster> {
 
-    private static final Logger log = LoggerFactory.getLogger(ClusterOperation.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(AbstractClusterOperations.class.getName());
     protected final int LOCK_TIMEOUT = 60000;
 
     protected final Vertx vertx;
@@ -50,7 +50,7 @@ public abstract class ClusterOperation<C extends AbstractCluster> {
     private final String operationType;
     protected final KubernetesClient client;
 
-    protected ClusterOperation(Vertx vertx, KubernetesClient client, String clusterType, String operationType) {
+    protected AbstractClusterOperations(Vertx vertx, KubernetesClient client, String clusterType, String operationType) {
         this.vertx = vertx;
         this.client = client;
         this.clusterType = clusterType;

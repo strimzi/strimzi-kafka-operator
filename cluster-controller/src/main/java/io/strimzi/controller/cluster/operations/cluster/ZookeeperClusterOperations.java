@@ -1,4 +1,4 @@
-package io.strimzi.controller.cluster.operations;
+package io.strimzi.controller.cluster.operations.cluster;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -18,19 +18,19 @@ import io.vertx.core.shareddata.Lock;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster> {
+public class ZookeeperClusterOperations extends AbstractClusterOperations<ZookeeperCluster> {
 
-    private static final Logger log = LoggerFactory.getLogger(ZookeeperClusterOperation.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(ZookeeperClusterOperations.class.getName());
     private final ServiceOperations serviceOperations;
     private final StatefulSetOperations statefulSetOperations;
     private final ConfigMapOperations configMapOperations;
     private final PvcOperations pvcOperations;
 
-    public ZookeeperClusterOperation(Vertx vertx, KubernetesClient client,
-                                     ServiceOperations serviceOperations,
-                                     StatefulSetOperations statefulSetOperations,
-                                     ConfigMapOperations configMapOperations,
-                                     PvcOperations pvcOperations) {
+    public ZookeeperClusterOperations(Vertx vertx, KubernetesClient client,
+                                      ServiceOperations serviceOperations,
+                                      StatefulSetOperations statefulSetOperations,
+                                      ConfigMapOperations configMapOperations,
+                                      PvcOperations pvcOperations) {
         super(vertx, client, "zookeeper", "create");
         this.serviceOperations = serviceOperations;
         this.statefulSetOperations = statefulSetOperations;
