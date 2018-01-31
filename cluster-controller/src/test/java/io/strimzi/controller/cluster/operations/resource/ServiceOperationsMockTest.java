@@ -42,7 +42,7 @@ public class ServiceOperationsMockTest extends ResourceOperationsMockTest<Kubern
 
     @Override
     protected Service resource() {
-        return new ServiceBuilder().withNewMetadata().withNamespace(NAMESPACE).withName(NAME).endMetadata().build();
+        return new ServiceBuilder().withNewMetadata().withNamespace(NAMESPACE).withName(RESOURCE_NAME).endMetadata().build();
     }
 
     @Override

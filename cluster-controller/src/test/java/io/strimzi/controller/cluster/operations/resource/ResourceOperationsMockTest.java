@@ -46,8 +46,8 @@ import static org.mockito.Mockito.when;
 public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T extends HasMetadata,
         L extends KubernetesResourceList, D, R extends Resource<T, D>> {
 
-    public static final String NAME = "name";
-    public static final String NAMESPACE = "namespace";
+    public static final String RESOURCE_NAME = "my-resource";
+    public static final String NAMESPACE = "test";
     protected static Vertx vertx;
 
     @BeforeClass
@@ -202,7 +202,7 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         when(mockResource.get()).thenReturn(null);
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
-        when(mockNameable.withName(matches(NAME))).thenReturn(mockResource);
+        when(mockNameable.withName(matches(RESOURCE_NAME))).thenReturn(mockResource);
 
         MixedOperation mockCms = mock(MixedOperation.class);
         when(mockCms.inNamespace(matches(NAMESPACE))).thenReturn(mockNameable);
@@ -231,7 +231,7 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         when(mockResource.get()).thenThrow(ex);
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
-        when(mockNameable.withName(matches(NAME))).thenReturn(mockResource);
+        when(mockNameable.withName(matches(RESOURCE_NAME))).thenReturn(mockResource);
 
         MixedOperation mockCms = mock(MixedOperation.class);
         when(mockCms.inNamespace(matches(NAMESPACE))).thenReturn(mockNameable);
@@ -256,7 +256,7 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         when(mockResource.get()).thenReturn(resource);
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
-        when(mockNameable.withName(matches(NAME))).thenReturn(mockResource);
+        when(mockNameable.withName(matches(RESOURCE_NAME))).thenReturn(mockResource);
 
         MixedOperation mockCms = mock(MixedOperation.class);
         when(mockCms.inNamespace(matches(NAMESPACE))).thenReturn(mockNameable);
@@ -285,7 +285,7 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         when(mockResource.delete()).thenThrow(ex);
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
-        when(mockNameable.withName(matches(NAME))).thenReturn(mockResource);
+        when(mockNameable.withName(matches(RESOURCE_NAME))).thenReturn(mockResource);
 
         MixedOperation mockCms = mock(MixedOperation.class);
         when(mockCms.inNamespace(matches(NAMESPACE))).thenReturn(mockNameable);

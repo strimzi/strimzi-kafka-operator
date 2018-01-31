@@ -44,7 +44,7 @@ public class StatefulSetOperationsMockTest extends ResourceOperationsMockTest<Ku
 
     @Override
     protected StatefulSet resource() {
-        return new StatefulSetBuilder().withNewMetadata().withNamespace(NAMESPACE).withName(NAME).endMetadata().build();
+        return new StatefulSetBuilder().withNewMetadata().withNamespace(NAMESPACE).withName(RESOURCE_NAME).endMetadata().build();
     }
 
     @Override

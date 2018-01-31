@@ -53,6 +53,6 @@ public class BuildConfigOperationsMockTest extends ResourceOperationsMockTest<Op
 
     @Override
     protected BuildConfig resource() {
-        return new BuildConfigBuilder().withNewMetadata().withNamespace(NAMESPACE).withName(NAME).endMetadata().build();
+        return new BuildConfigBuilder().withNewMetadata().withNamespace(NAMESPACE).withName(RESOURCE_NAME).endMetadata().build();
     }
 }

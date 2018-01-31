@@ -54,7 +54,7 @@ public class ConfigMapResourcesTest extends ResourceOperationsMockTest<Kubernete
     protected ConfigMap resource() {
         return new ConfigMapBuilder()
                 .withNewMetadata()
-                .withName(NAME)
+                .withName(RESOURCE_NAME)
                 .withNamespace(NAMESPACE)
                 .withLabels(singletonMap("foo", "bar"))
                 .endMetadata()

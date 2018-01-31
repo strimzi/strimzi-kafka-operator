@@ -44,7 +44,7 @@ public class DeploymentOperationsMockTest extends ResourceOperationsMockTest<Kub
 
     @Override
     protected Deployment resource() {
-        return new DeploymentBuilder().withNewMetadata().withNamespace(NAMESPACE).withName(NAME).endMetadata().build();
+        return new DeploymentBuilder().withNewMetadata().withNamespace(NAMESPACE).withName(RESOURCE_NAME).endMetadata().build();
     }
 
     @Override
