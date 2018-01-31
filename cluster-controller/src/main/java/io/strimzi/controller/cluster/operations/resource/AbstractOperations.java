@@ -41,14 +41,14 @@ import java.util.Map;
  * @param <D> The doneable variant of the Kubernetes resource type.
  * @param <R> The resource operations.
  */
-public abstract class ResourceOperation<C, T extends HasMetadata, L extends KubernetesResourceList/*<T>*/, D, R extends Resource<T, D>> {
+public abstract class AbstractOperations<C, T extends HasMetadata, L extends KubernetesResourceList/*<T>*/, D, R extends Resource<T, D>> {
 
-    private static final Logger log = LoggerFactory.getLogger(ResourceOperation.class);
+    private static final Logger log = LoggerFactory.getLogger(AbstractOperations.class);
     protected final Vertx vertx;
     protected final C client;
     private final String resourceKind;
 
-    public ResourceOperation(Vertx vertx, C client, String resourceKind) {
+    public AbstractOperations(Vertx vertx, C client, String resourceKind) {
         this.vertx = vertx;
         this.client = client;
         this.resourceKind = resourceKind;

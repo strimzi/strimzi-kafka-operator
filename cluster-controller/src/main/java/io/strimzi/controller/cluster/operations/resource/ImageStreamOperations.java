@@ -25,8 +25,8 @@ import io.fabric8.openshift.api.model.ImageStreamList;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.vertx.core.Vertx;
 
-public class ImageStreamResources extends ResourceOperation<OpenShiftClient, ImageStream, ImageStreamList, DoneableImageStream, Resource<ImageStream, DoneableImageStream>> {
-    public ImageStreamResources(Vertx vertx, OpenShiftClient client) {
+public class ImageStreamOperations extends AbstractOperations<OpenShiftClient, ImageStream, ImageStreamList, DoneableImageStream, Resource<ImageStream, DoneableImageStream>> {
+    public ImageStreamOperations(Vertx vertx, OpenShiftClient client) {
         super(vertx, client, "ImageStream");
     }
 

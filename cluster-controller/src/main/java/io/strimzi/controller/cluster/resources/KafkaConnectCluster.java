@@ -3,22 +3,11 @@ package io.strimzi.controller.cluster.resources;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.extensions.*;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.kubernetes.client.dsl.ScalableResource;
-import io.fabric8.openshift.api.model.Build;
-import io.fabric8.openshift.api.model.BuildConfig;
-import io.fabric8.openshift.api.model.BuildConfigList;
-import io.fabric8.openshift.api.model.DoneableBuildConfig;
-import io.fabric8.openshift.api.model.DoneableImageStream;
-import io.fabric8.openshift.api.model.ImageStream;
-import io.fabric8.openshift.api.model.ImageStreamList;
 import io.fabric8.openshift.client.OpenShiftClient;
-import io.fabric8.openshift.client.dsl.BuildConfigResource;
 import io.strimzi.controller.cluster.ClusterController;
-import io.strimzi.controller.cluster.operations.resource.BuildConfigResources;
-import io.strimzi.controller.cluster.operations.resource.DeploymentResources;
-import io.strimzi.controller.cluster.operations.resource.ImageStreamResources;
-import io.strimzi.controller.cluster.operations.resource.ResourceOperation;
+import io.strimzi.controller.cluster.operations.resource.BuildConfigOperations;
+import io.strimzi.controller.cluster.operations.resource.DeploymentOperations;
+import io.strimzi.controller.cluster.operations.resource.ImageStreamOperations;
 import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
@@ -153,10 +142,10 @@ public class KafkaConnectCluster extends AbstractCluster {
      * @return  Kafka Connect cluster instance
      */
     public static KafkaConnectCluster fromDeployment(
-            DeploymentResources deploymentResources,
-            ImageStreamResources os, String namespace, String cluster) {
+            DeploymentOperations deploymentOperations,
+            ImageStreamOperations os, String namespace, String cluster) {
 
-        Deployment dep = deploymentResources.get(namespace, cluster + KafkaConnectCluster.NAME_SUFFIX);
+        Deployment dep = deploymentOperations.get(namespace, cluster + KafkaConnectCluster.NAME_SUFFIX);
 
         KafkaConnectCluster kafkaConnect =  new KafkaConnectCluster(namespace, cluster);
 
@@ -199,12 +188,12 @@ public class KafkaConnectCluster extends AbstractCluster {
      * @return  ClusterDiffResult instance with differences
      */
     public ClusterDiffResult diff(
-            DeploymentResources deploymentResources,
-            ImageStreamResources isResources,
-            BuildConfigResources bcResources,
+            DeploymentOperations deploymentOperations,
+            ImageStreamOperations isResources,
+            BuildConfigOperations bcResources,
             String namespace) {
 
-        Deployment dep = deploymentResources.get(namespace, getName());
+        Deployment dep = deploymentOperations.get(namespace, getName());
 
         ClusterDiffResult diff = new ClusterDiffResult();
 

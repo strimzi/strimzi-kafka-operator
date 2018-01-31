@@ -51,8 +51,8 @@ public class ImageStreamOperationsMockTest extends ResourceOperationsMockTest<Op
     }
 
     @Override
-    protected ResourceOperation<OpenShiftClient, ImageStream, ImageStreamList, DoneableImageStream, Resource<ImageStream, DoneableImageStream>> createResourceOperations(Vertx vertx, OpenShiftClient mockClient) {
-        return new ImageStreamResources(vertx, mockClient);
+    protected AbstractOperations<OpenShiftClient, ImageStream, ImageStreamList, DoneableImageStream, Resource<ImageStream, DoneableImageStream>> createResourceOperations(Vertx vertx, OpenShiftClient mockClient) {
+        return new ImageStreamOperations(vertx, mockClient);
     }
 
 }

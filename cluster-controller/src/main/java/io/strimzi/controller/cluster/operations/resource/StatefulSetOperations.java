@@ -34,14 +34,14 @@ import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class StatefulSetResources extends ScalableResourceOperation<KubernetesClient, StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> {
+public class StatefulSetOperations extends AbstractScalableOperations<KubernetesClient, StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> {
 
-    private static final Logger log = LoggerFactory.getLogger(StatefulSetResources.class.getName());
-    private final PodResources podResources;
+    private static final Logger log = LoggerFactory.getLogger(StatefulSetOperations.class.getName());
+    private final PodOperations podOperations;
 
-    public StatefulSetResources(Vertx vertx, KubernetesClient client) {
+    public StatefulSetOperations(Vertx vertx, KubernetesClient client) {
         super(vertx, client, "StatefulSet");
-        this.podResources = new PodResources(vertx, client);
+        this.podOperations = new PodOperations(vertx, client);
     }
 
     @Override
@@ -62,9 +62,9 @@ public class StatefulSetResources extends ScalableResourceOperation<KubernetesCl
                             Future deleted = Future.future();
                             Watcher<Pod> watcher = new RollingUpdateWatcher(deleted);
 
-                            Watch watch = podResources.watch(namespace, podName, watcher);
+                            Watch watch = podOperations.watch(namespace, podName, watcher);
                             Future fut = Future.future();
-                            podResources.delete(namespace, podName, fut.completer());
+                            podOperations.delete(namespace, podName, fut.completer());
 
                             // TODO do this async
                             while (!fut.isComplete() && !deleted.isComplete()) {
@@ -75,7 +75,7 @@ public class StatefulSetResources extends ScalableResourceOperation<KubernetesCl
 
                             watch.close();
 
-                            while (!podResources.isPodReady(namespace, podName)) {
+                            while (!podOperations.isPodReady(namespace, podName)) {
                                 log.info("Waiting for pod {} to get ready", podName);
                                 Thread.sleep(1000);
                             };

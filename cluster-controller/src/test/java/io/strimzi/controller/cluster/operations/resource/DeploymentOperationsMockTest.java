@@ -56,7 +56,7 @@ public class DeploymentOperationsMockTest extends ResourceOperationsMockTest<Kub
     }
 
     @Override
-    protected ResourceOperation<KubernetesClient, Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new DeploymentResources(vertx, mockClient);
+    protected AbstractOperations<KubernetesClient, Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
+        return new DeploymentOperations(vertx, mockClient);
     }
 }

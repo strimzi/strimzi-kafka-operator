@@ -29,15 +29,15 @@ import io.vertx.core.Vertx;
 import static java.util.Collections.singletonMap;
 import static org.mockito.Mockito.when;
 
-public class ConfigMapResourcesTest extends ResourceOperationsMockTest<KubernetesClient, ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> {
+public class ConfigMapOperationsTest extends ResourceOperationsMockTest<KubernetesClient, ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> {
 
     protected void  mocker(KubernetesClient mockClient, MixedOperation mockCms) {
         when(mockClient.configMaps()).thenReturn(mockCms);
     }
 
     @Override
-    protected ResourceOperation<KubernetesClient, ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new ConfigMapResources(vertx, mockClient);
+    protected AbstractOperations<KubernetesClient, ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
+        return new ConfigMapOperations(vertx, mockClient);
     }
 
     @Override

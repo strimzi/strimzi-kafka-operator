@@ -22,8 +22,6 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.PodList;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -50,7 +48,7 @@ public class PodOperationsMockTest extends ResourceOperationsMockTest<Kubernetes
     public void testCreateReadUpdate(TestContext context) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool", 10);
         KubernetesClient client = server.getKubernetesClient();
-        PodResources pr = new PodResources(vertx, client);
+        PodOperations pr = new PodOperations(vertx, client);
 
         context.assertEquals(emptyList(), pr.list(NAMESPACE, emptyMap()));
 
@@ -125,7 +123,7 @@ public class PodOperationsMockTest extends ResourceOperationsMockTest<Kubernetes
     }
 
     @Override
-    protected PodResources createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new PodResources(vertx, mockClient);
+    protected PodOperations createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
+        return new PodOperations(vertx, mockClient);
     }
 }

@@ -17,21 +17,22 @@
 
 package io.strimzi.controller.cluster.operations.resource;
 
-import io.fabric8.kubernetes.api.model.extensions.Deployment;
-import io.fabric8.kubernetes.api.model.extensions.DeploymentList;
-import io.fabric8.kubernetes.api.model.extensions.DoneableDeployment;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.ScalableResource;
+import io.fabric8.openshift.api.model.Build;
+import io.fabric8.openshift.api.model.BuildConfig;
+import io.fabric8.openshift.api.model.BuildConfigList;
+import io.fabric8.openshift.api.model.DoneableBuildConfig;
+import io.fabric8.openshift.client.OpenShiftClient;
+import io.fabric8.openshift.client.dsl.BuildConfigResource;
 import io.vertx.core.Vertx;
 
-public class DeploymentResources extends ScalableResourceOperation<KubernetesClient, Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>> {
-    public DeploymentResources(Vertx vertx, KubernetesClient client) {
-        super(vertx, client, "Deployment");
+public class BuildConfigOperations extends AbstractOperations<OpenShiftClient, BuildConfig, BuildConfigList, DoneableBuildConfig, BuildConfigResource<BuildConfig, DoneableBuildConfig, Void, Build>> {
+    public BuildConfigOperations(Vertx vertx, OpenShiftClient client) {
+        super(vertx, client, "BuildConfig");
     }
 
     @Override
-    protected MixedOperation<Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>> operation() {
-        return client.extensions().deployments();
+    protected MixedOperation<BuildConfig, BuildConfigList, DoneableBuildConfig, BuildConfigResource<BuildConfig, DoneableBuildConfig, Void, Build>> operation() {
+        return client.buildConfigs();
     }
 }

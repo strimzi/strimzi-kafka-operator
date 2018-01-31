@@ -51,7 +51,7 @@ public class ServiceOperationsMockTest extends ResourceOperationsMockTest<Kubern
     }
 
     @Override
-    protected ServiceResources createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new ServiceResources(vertx, mockClient);
+    protected ServiceOperations createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
+        return new ServiceOperations(vertx, mockClient);
     }
 }

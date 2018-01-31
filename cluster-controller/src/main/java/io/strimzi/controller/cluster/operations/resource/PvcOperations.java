@@ -22,14 +22,13 @@ import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.Patchable;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 
-public class PvcResources extends ResourceOperation<KubernetesClient, PersistentVolumeClaim, PersistentVolumeClaimList, DoneablePersistentVolumeClaim, Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim>> {
-    public PvcResources(Vertx vertx, KubernetesClient client) {
+public class PvcOperations extends AbstractOperations<KubernetesClient, PersistentVolumeClaim, PersistentVolumeClaimList, DoneablePersistentVolumeClaim, Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim>> {
+    public PvcOperations(Vertx vertx, KubernetesClient client) {
         super(vertx, client, "PersistentVolumeClaim");
     }
 

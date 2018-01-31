@@ -13,19 +13,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A {@link ResourceOperation} that can be scaled up and down.
+ * A {@link AbstractOperations} that can be scaled up and down.
  * @param <C>
  * @param <T>
  * @param <L>
  * @param <D>
  * @param <R>
  */
-public abstract class ScalableResourceOperation<C, T extends HasMetadata, L extends KubernetesResourceList/*<T>*/, D, R extends ScalableResource<T, D>>
-        extends ResourceOperation<C, T, L, D, R> {
+public abstract class AbstractScalableOperations<C, T extends HasMetadata, L extends KubernetesResourceList/*<T>*/, D, R extends ScalableResource<T, D>>
+        extends AbstractOperations<C, T, L, D, R> {
 
-    private static final Logger log = LoggerFactory.getLogger(ScalableResourceOperation.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(AbstractScalableOperations.class.getName());
 
-    public ScalableResourceOperation(Vertx vertx, C client, String resourceKind) {
+    public AbstractScalableOperations(Vertx vertx, C client, String resourceKind) {
         super(vertx, client, resourceKind);
     }
 

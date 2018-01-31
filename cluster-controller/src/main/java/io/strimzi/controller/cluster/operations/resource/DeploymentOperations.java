@@ -17,32 +17,21 @@
 
 package io.strimzi.controller.cluster.operations.resource;
 
-import io.fabric8.kubernetes.api.model.DoneablePod;
-import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.PodList;
+import io.fabric8.kubernetes.api.model.extensions.Deployment;
+import io.fabric8.kubernetes.api.model.extensions.DeploymentList;
+import io.fabric8.kubernetes.api.model.extensions.DoneableDeployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.Watch;
-import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.PodResource;
+import io.fabric8.kubernetes.client.dsl.ScalableResource;
 import io.vertx.core.Vertx;
 
-public class PodResources extends ResourceOperation<KubernetesClient, Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> {
-
-    public PodResources(Vertx vertx, KubernetesClient client) {
-        super(vertx, client, "Pods");
+public class DeploymentOperations extends AbstractScalableOperations<KubernetesClient, Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>> {
+    public DeploymentOperations(Vertx vertx, KubernetesClient client) {
+        super(vertx, client, "Deployment");
     }
 
     @Override
-    protected MixedOperation<Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> operation() {
-        return client.pods();
-    }
-
-    public boolean isPodReady(String namespace, String name) {
-        return operation().inNamespace(namespace).withName(name).isReady();
-    }
-
-    public Watch watch(String namespace, String name, Watcher<Pod> watcher) {
-        return operation().inNamespace(namespace).withName(name).watch(watcher);
+    protected MixedOperation<Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>> operation() {
+        return client.extensions().deployments();
     }
 }

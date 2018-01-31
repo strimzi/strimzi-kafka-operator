@@ -37,8 +37,8 @@ public class BuildConfigOperationsMockTest extends ResourceOperationsMockTest<Op
     }
 
     @Override
-    protected BuildConfigResources createResourceOperations(Vertx vertx, OpenShiftClient mockClient) {
-        return new BuildConfigResources(vertx, mockClient);
+    protected BuildConfigOperations createResourceOperations(Vertx vertx, OpenShiftClient mockClient) {
+        return new BuildConfigOperations(vertx, mockClient);
     }
 
     @Override
