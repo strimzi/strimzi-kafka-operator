@@ -1,6 +1,5 @@
-package io.strimzi.controller.cluster.operations.openshift;
+package io.strimzi.controller.cluster.operations.resource;
 
-import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.controller.cluster.resources.Source2Image;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
@@ -15,8 +14,8 @@ import java.util.List;
 /**
  * Base Source2Image operation
  */
-public abstract class S2IOperation {
-    private static final Logger log = LoggerFactory.getLogger(S2IOperation.class.getName());
+public abstract class S2IOperations {
+    private static final Logger log = LoggerFactory.getLogger(S2IOperations.class.getName());
 
     private final String operationType;
     protected final Vertx vertx;
@@ -25,7 +24,7 @@ public abstract class S2IOperation {
      * Constructor
      *
      */
-    protected S2IOperation(Vertx vertx, String operationType) {
+    protected S2IOperations(Vertx vertx, String operationType) {
         this.vertx = vertx;
         this.operationType = operationType;
     }
