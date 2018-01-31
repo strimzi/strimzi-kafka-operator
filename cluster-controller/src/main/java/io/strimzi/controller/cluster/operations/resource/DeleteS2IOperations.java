@@ -1,8 +1,6 @@
-package io.strimzi.controller.cluster.operations.openshift;
+package io.strimzi.controller.cluster.operations.resource;
 
 import io.fabric8.openshift.client.OpenShiftClient;
-import io.strimzi.controller.cluster.operations.resource.BuildConfigOperations;
-import io.strimzi.controller.cluster.operations.resource.ImageStreamOperations;
 import io.strimzi.controller.cluster.resources.Source2Image;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -13,7 +11,7 @@ import java.util.List;
 /**
  * Deletes all Soruce2Image resources
  */
-public class DeleteS2IOperation extends S2IOperation {
+public class DeleteS2IOperations extends S2IOperations {
 
     private final ImageStreamOperations imageStreamOperations;
     private final BuildConfigOperations buildConfigOperations;
@@ -21,7 +19,7 @@ public class DeleteS2IOperation extends S2IOperation {
     /**
      * Constructor
      */
-    public DeleteS2IOperation(Vertx vertx, OpenShiftClient client) {
+    public DeleteS2IOperations(Vertx vertx, OpenShiftClient client) {
         super(vertx, "delete");
         imageStreamOperations = new ImageStreamOperations(vertx, client);
         buildConfigOperations = new BuildConfigOperations(vertx, client);

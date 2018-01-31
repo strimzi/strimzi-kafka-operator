@@ -8,9 +8,9 @@ import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
 import io.strimzi.controller.cluster.operations.resource.DeploymentOperations;
 import io.strimzi.controller.cluster.operations.resource.ImageStreamOperations;
 import io.strimzi.controller.cluster.operations.resource.ServiceOperations;
-import io.strimzi.controller.cluster.operations.openshift.CreateS2IOperation;
-import io.strimzi.controller.cluster.operations.openshift.DeleteS2IOperation;
-import io.strimzi.controller.cluster.operations.openshift.UpdateS2IOperation;
+import io.strimzi.controller.cluster.operations.resource.CreateS2IOperations;
+import io.strimzi.controller.cluster.operations.resource.DeleteS2IOperations;
+import io.strimzi.controller.cluster.operations.resource.UpdateS2IOperations;
 import io.strimzi.controller.cluster.resources.ClusterDiffResult;
 import io.strimzi.controller.cluster.resources.KafkaConnectCluster;
 import io.strimzi.controller.cluster.resources.Source2Image;
@@ -30,9 +30,9 @@ public class KafkaConnectClusterOperation extends ClusterOperation<KafkaConnectC
     private final ConfigMapOperations configMapOperations;
     private final ImageStreamOperations imagesStreamResources;
     private final BuildConfigOperations buildConfigOperations;
-    private final CreateS2IOperation createS2IOperation;
-    private final DeleteS2IOperation deleteS2IOperation;
-    private final UpdateS2IOperation updateS2IOperation;
+    private final CreateS2IOperations createS2IOperation;
+    private final DeleteS2IOperations deleteS2IOperation;
+    private final UpdateS2IOperations updateS2IOperation;
 
     public KafkaConnectClusterOperation(Vertx vertx, KubernetesClient client, ServiceOperations serviceOperations, DeploymentOperations deploymentOperations, ConfigMapOperations configMapOperations, ImageStreamOperations imagesStreamResources, BuildConfigOperations buildConfigOperations) {
         super(vertx, client, "kafka-connect", "create");
@@ -41,9 +41,9 @@ public class KafkaConnectClusterOperation extends ClusterOperation<KafkaConnectC
         this.configMapOperations = configMapOperations;
         this.imagesStreamResources = imagesStreamResources;
         this.buildConfigOperations = buildConfigOperations;
-        createS2IOperation = new CreateS2IOperation(vertx, client.adapt(OpenShiftClient.class));
-        deleteS2IOperation = new DeleteS2IOperation(vertx, client.adapt(OpenShiftClient.class));
-        updateS2IOperation = new UpdateS2IOperation(vertx, client.adapt(OpenShiftClient.class));
+        createS2IOperation = new CreateS2IOperations(vertx, client.adapt(OpenShiftClient.class));
+        deleteS2IOperation = new DeleteS2IOperations(vertx, client.adapt(OpenShiftClient.class));
+        updateS2IOperation = new UpdateS2IOperations(vertx, client.adapt(OpenShiftClient.class));
     }
 
     private final Op<KafkaConnectCluster> create = new Op<KafkaConnectCluster>() {
