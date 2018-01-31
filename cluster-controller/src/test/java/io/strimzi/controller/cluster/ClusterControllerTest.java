@@ -21,6 +21,8 @@ import io.vertx.core.Vertx;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.Map;
@@ -42,6 +44,8 @@ public class ClusterControllerTest {
         vertx.close();
     }
 
+    @Test
+    @Ignore
     public void test0() {
         String namespace = "ns";
         Map labels = singletonMap("strimzi.io/kind", "cluster");
