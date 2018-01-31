@@ -48,6 +48,12 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
     protected final C client;
     private final String resourceKind;
 
+    /**
+     * Constructor.
+     * @param vertx The vertx instance.
+     * @param client The kubernetes client.
+     * @param resourceKind The mind of Kubernetes resource (used for logging).
+     */
     public AbstractOperations(Vertx vertx, C client, String resourceKind) {
         this.vertx = vertx;
         this.client = client;
@@ -56,6 +62,12 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
 
     protected abstract MixedOperation<T, L, D, R> operation();
 
+    /**
+     * Asynchronously create the given {@code resource} if it doesn't already exists,
+     * calling the given {@code handler} with the outcome.
+     * @param resource The resource to create.
+     * @param handler A handler for the outcome.
+     */
     public void create(T resource, Handler<AsyncResult<Void>> handler) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
@@ -88,6 +100,13 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
         );
     }
 
+    /**
+     * Asynchronously delete the resource with the given {@code name} in the given {@code namespace},
+     * calling the given {@code handler} with the outcome.
+     * @param namespace The namespace of the resource to delete.
+     * @param name The name of the resource to delete.
+     * @param handler A handler for the outcome.
+     */
     public void delete(String namespace, String name, Handler<AsyncResult<Void>> handler) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
@@ -119,6 +138,14 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
         );
     }
 
+    /**
+     * Asynchronously patch the resource with the given {@code name} in the given {@code namespace}
+     * with reflect the state given in the {@code patch}, calling the handler with the outcome.
+     * @param namespace The namespace of the resource to patch.
+     * @param name The name of the resource to patch.
+     * @param patch The desired state of the resource.
+     * @param handler The handler for the outcome.
+     */
     public void patch(String namespace, String name, T patch, Handler<AsyncResult<Void>> handler) {
         patch(namespace, name, true, patch, handler);
     }
@@ -150,10 +177,22 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
         );
     }
 
+    /**
+     * Synchronously gets the resource with the given {@code name} in the given {@code namespace}.
+     * @param namespace The namespace.
+     * @param name The name.
+     * @return The resource, or null if it doesn't exist.
+     */
     public final T get(String namespace, String name) {
         return operation().inNamespace(namespace).withName(name).get();
     }
 
+    /**
+     * Synchronously list the resources in the given {@code namespace} with the given {@code labels}.
+     * @param namespace The namespace.
+     * @param labels The labels.
+     * @return A list of matching resources.
+     */
     public List<T> list(String namespace, Map<String, String> labels) {
         return operation().inNamespace(namespace).withLabels(labels).list().getItems();
     }

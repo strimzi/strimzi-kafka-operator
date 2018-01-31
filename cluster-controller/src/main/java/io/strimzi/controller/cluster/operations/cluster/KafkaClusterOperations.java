@@ -18,6 +18,9 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * CRUD-style operations on a Kafka cluster
+ */
 public class KafkaClusterOperations extends AbstractClusterOperations<KafkaCluster> {
     private static final Logger log = LoggerFactory.getLogger(KafkaClusterOperations.class.getName());
     private final ConfigMapOperations configMapOperations;
@@ -25,7 +28,18 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
     private final ServiceOperations serviceOperations;
     private final PvcOperations pvcOperations;
 
-    public KafkaClusterOperations(Vertx vertx, KubernetesClient client, ConfigMapOperations configMapOperations, StatefulSetOperations statefulSetOperations, ServiceOperations serviceOperations, PvcOperations pvcOperations) {
+    /**
+     * Constructor
+     * @param vertx The Vertx instance
+     * @param client The kubernetes client
+     * @param configMapOperations For operating on ConfigMaps
+     * @param statefulSetOperations For operating on StatefulSets
+     * @param serviceOperations For operating on Services
+     * @param pvcOperations For operating on PersistentVolumeClaims
+     */
+    public KafkaClusterOperations(Vertx vertx, KubernetesClient client,
+                                  ConfigMapOperations configMapOperations, StatefulSetOperations statefulSetOperations,
+                                  ServiceOperations serviceOperations, PvcOperations pvcOperations) {
         super(vertx, client, "kafka", "create");
         this.configMapOperations = configMapOperations;
         this.statefulSetOperations = statefulSetOperations;

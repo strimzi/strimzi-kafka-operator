@@ -34,11 +34,20 @@ import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Operations for {@code StatefulSets}s, which supports {@link #rollingUpdate(String, String, Handler)}
+ * in addition to the usual operations.
+ */
 public class StatefulSetOperations extends AbstractScalableOperations<KubernetesClient, StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> {
 
     private static final Logger log = LoggerFactory.getLogger(StatefulSetOperations.class.getName());
     private final PodOperations podOperations;
 
+    /**
+     * Constructor
+     * @param vertx The Vertx instance
+     * @param client The Kubernetes client
+     */
     public StatefulSetOperations(Vertx vertx, KubernetesClient client) {
         super(vertx, client, "StatefulSet");
         this.podOperations = new PodOperations(vertx, client);

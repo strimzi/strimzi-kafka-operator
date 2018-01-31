@@ -120,6 +120,7 @@ public class KafkaCluster extends AbstractCluster {
     /**
      * Create a Kafka cluster from the deployed StatefulSet resource
      *
+     * @param statefulSetOperations The means of setting the SS to obtain the state from
      * @param namespace Kubernetes/OpenShift namespace where cluster resources belong to
      * @param cluster   overall cluster name
      * @return  Kafka cluster instance
@@ -168,6 +169,8 @@ public class KafkaCluster extends AbstractCluster {
     /**
      * Return the differences between the current Kafka cluster and the deployed one
      *
+     * @param configMapOperations The means of getting the CM to compare with
+     * @param statefulSetOperations The means of getting the SS to compare with
      * @param namespace Kubernetes/OpenShift namespace where cluster resources belong to
      * @return  ClusterDiffResult instance with differences
      */
@@ -267,23 +270,41 @@ public class KafkaCluster extends AbstractCluster {
         return diff;
     }
 
+    /**
+     * Generates a Service according to configured defaults
+     * @return The generated Service
+     */
     public Service generateService() {
 
         return createService("ClusterIP",
                 Collections.singletonList(createServicePort(clientPortName, clientPort, clientPort, "TCP")));
     }
 
+    /**
+     * Generates a headless Service according to configured defaults
+     * @return The generated Service
+     */
     public Service generateHeadlessService() {
 
         return createHeadlessService(headlessName,
                 Collections.singletonList(createServicePort(clientPortName, clientPort, clientPort, "TCP")));
     }
 
+    /**
+     * Patches the given headless Service
+     * @param svc The service to patch
+     * @return The same service
+     */
     public Service patchHeadlessService(Service svc) {
 
         return patchHeadlessService(headlessName, svc);
     }
 
+    /**
+     * Generates a StatefulSet according to configured defaults
+     * @param isOpenShift True iff this controller is operating within OpenShift.
+     * @return The generate StatefulSet
+     */
     public StatefulSet generateStatefulSet(boolean isOpenShift) {
 
         return createStatefulSet(
@@ -296,6 +317,11 @@ public class KafkaCluster extends AbstractCluster {
                 isOpenShift);
     }
 
+
+    /**
+     * Generates a metrics ConfigMap according to configured defaults
+     * @return The generated ConfigMap
+     */
     public ConfigMap generateMetricsConfigMap() {
 
         Map<String, String> data = new HashMap<>();
@@ -304,6 +330,11 @@ public class KafkaCluster extends AbstractCluster {
         return createConfigMap(metricsConfigName, data);
     }
 
+    /**
+     * Patches the given headless metrics ConfigMap
+     * @param cm The metrics ConfigMap to patch
+     * @return The same ConfigMap
+     */
     public ConfigMap patchMetricsConfigMap(ConfigMap cm) {
 
         Map<String, String> data = new HashMap<>();
@@ -312,6 +343,11 @@ public class KafkaCluster extends AbstractCluster {
         return patchConfigMap(cm, data);
     }
 
+    /**
+     * Patches the given StatefulSet
+     * @param statefulSet The StatefulSet to patch
+     * @return The patched StatefulSet
+     */
     public StatefulSet patchStatefulSet(StatefulSet statefulSet) {
 
         Map<String, String> annotations = new HashMap<>();

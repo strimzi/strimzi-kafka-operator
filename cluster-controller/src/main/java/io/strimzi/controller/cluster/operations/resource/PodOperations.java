@@ -27,8 +27,16 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.vertx.core.Vertx;
 
+/**
+ * Operations for {@code Pod}s, which support {@link #isPodReady(String, String)} and
+ * {@link #watch(String, String, Watcher)} in addition to the usual operations.
+ */
 public class PodOperations extends AbstractOperations<KubernetesClient, Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> {
-
+    /**
+     * Constructor
+     * @param vertx The Vertx instance
+     * @param client The Kubernetes client
+     */
     public PodOperations(Vertx vertx, KubernetesClient client) {
         super(vertx, client, "Pods");
     }
@@ -38,10 +46,23 @@ public class PodOperations extends AbstractOperations<KubernetesClient, Pod, Pod
         return client.pods();
     }
 
+    /**
+     * Returns whether the pod given by {@code namespace} and {@code name} is ready
+     * @param namespace The namespace.
+     * @param name The name.
+     * @return True iff the pod is ready.
+     */
     public boolean isPodReady(String namespace, String name) {
         return operation().inNamespace(namespace).withName(name).isReady();
     }
 
+    /**
+     * Watch the pod identified by the given {@code namespace} and {@code name} using the given {@code watcher}.
+     * @param namespace The namespace
+     * @param name The name
+     * @param watcher The watcher
+     * @return The watch
+     */
     public Watch watch(String namespace, String name, Watcher<Pod> watcher) {
         return operation().inNamespace(namespace).withName(name).watch(watcher);
     }

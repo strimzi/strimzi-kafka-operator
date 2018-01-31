@@ -27,7 +27,15 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 
+/**
+ * Operations for {@code PersistentVolumeClaim}s.
+ */
 public class PvcOperations extends AbstractOperations<KubernetesClient, PersistentVolumeClaim, PersistentVolumeClaimList, DoneablePersistentVolumeClaim, Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim>> {
+    /**
+     * Constructor
+     * @param vertx The Vertx instance
+     * @param client The Kubernetes client
+     */
     public PvcOperations(Vertx vertx, KubernetesClient client) {
         super(vertx, client, "PersistentVolumeClaim");
     }

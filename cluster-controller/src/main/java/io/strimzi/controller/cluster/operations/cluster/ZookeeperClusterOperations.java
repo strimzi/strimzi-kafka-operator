@@ -18,6 +18,9 @@ import io.vertx.core.shareddata.Lock;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * CRUD-style operations on a Zookeeper cluster
+ */
 public class ZookeeperClusterOperations extends AbstractClusterOperations<ZookeeperCluster> {
 
     private static final Logger log = LoggerFactory.getLogger(ZookeeperClusterOperations.class.getName());
@@ -26,6 +29,15 @@ public class ZookeeperClusterOperations extends AbstractClusterOperations<Zookee
     private final ConfigMapOperations configMapOperations;
     private final PvcOperations pvcOperations;
 
+    /**
+     * Constructor
+     * @param vertx The Vertx instance
+     * @param client The kubernetes client
+     * @param serviceOperations For operating on Services
+     * @param statefulSetOperations For operating on StatefulSets
+     * @param configMapOperations For operating on ConfigMaps
+     * @param pvcOperations For operating on PersistentVolumeClaims
+     */
     public ZookeeperClusterOperations(Vertx vertx, KubernetesClient client,
                                       ServiceOperations serviceOperations,
                                       StatefulSetOperations statefulSetOperations,

@@ -25,7 +25,15 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.vertx.core.Vertx;
 
+/**
+ * Operations for {@code Service}s.
+ */
 public class ServiceOperations extends AbstractOperations<KubernetesClient, Service, ServiceList, DoneableService, Resource<Service, DoneableService>> {
+    /**
+     * Constructor
+     * @param vertx The Vertx instance
+     * @param client The Kubernetes client
+     */
     public ServiceOperations(Vertx vertx, KubernetesClient client) {
         super(vertx, client, "Service");
     }

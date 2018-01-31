@@ -13,18 +13,24 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A {@link AbstractOperations} that can be scaled up and down.
- * @param <C>
- * @param <T>
- * @param <L>
- * @param <D>
- * @param <R>
+ * An {@link AbstractOperations} that can be scaled up and down in addition to the usual operations.
+ * @param <C> The type of client used to interact with kubernetes.
+ * @param <T> The Kubernetes resource type.
+ * @param <L> The list variant of the Kubernetes resource type.
+ * @param <D> The doneable variant of the Kubernetes resource type.
+ * @param <R> The resource operations.
  */
 public abstract class AbstractScalableOperations<C, T extends HasMetadata, L extends KubernetesResourceList/*<T>*/, D, R extends ScalableResource<T, D>>
         extends AbstractOperations<C, T, L, D, R> {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractScalableOperations.class.getName());
 
+    /**
+     * Constructor
+     * @param vertx The Vertx instance
+     * @param client The Kubernetes client
+     * @param resourceKind The kind of resource.
+     */
     public AbstractScalableOperations(Vertx vertx, C client, String resourceKind) {
         super(vertx, client, resourceKind);
     }
@@ -33,6 +39,14 @@ public abstract class AbstractScalableOperations<C, T extends HasMetadata, L ext
         return operation().inNamespace(namespace).withName(name);
     }
 
+    /**
+     * Asynchronously scale up the resource given by {@code namespace} and {@code name} to have the scale given by
+     * {@code scaleTo}, calling the {@code handler} with the result.
+     * @param namespace The namespace of the resource to scale.
+     * @param name The name of the resource to scale.
+     * @param scaleTo The desired scale.
+     * @param handler A handler for the result.
+     */
     public void scaleUp(String namespace, String name, int scaleTo, Handler<AsyncResult<Void>> handler) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
@@ -60,6 +74,14 @@ public abstract class AbstractScalableOperations<C, T extends HasMetadata, L ext
         );
     }
 
+    /**
+     * Asynchronously scale down the resource given by {@code namespace} and {@code name} to have the scale given by
+     * {@code scaleTo}, calling the {@code handler} with the result.
+     * @param namespace The namespace of the resource to scale.
+     * @param name The name of the resource to scale.
+     * @param scaleTo The desired scale.
+     * @param handler A handler for the result.
+     */
     public void scaleDown(String namespace, String name, int scaleTo, Handler<AsyncResult<Void>> handler) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
