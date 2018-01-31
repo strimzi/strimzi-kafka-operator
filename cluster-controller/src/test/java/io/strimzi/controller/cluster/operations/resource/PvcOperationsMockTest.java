@@ -53,8 +53,8 @@ public class PvcOperationsMockTest extends ResourceOperationsMockTest<Kubernetes
     }
 
     @Override
-    protected PvcResources createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new PvcResources(vertx, mockClient);
+    protected PvcOperations createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
+        return new PvcOperations(vertx, mockClient);
     }
 
     @Override

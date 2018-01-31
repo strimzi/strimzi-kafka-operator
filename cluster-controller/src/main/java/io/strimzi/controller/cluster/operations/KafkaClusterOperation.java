@@ -3,10 +3,10 @@ package io.strimzi.controller.cluster.operations;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.openshift.client.OpenShiftClient;
-import io.strimzi.controller.cluster.operations.resource.ConfigMapResources;
-import io.strimzi.controller.cluster.operations.resource.PvcResources;
-import io.strimzi.controller.cluster.operations.resource.ServiceResources;
-import io.strimzi.controller.cluster.operations.resource.StatefulSetResources;
+import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
+import io.strimzi.controller.cluster.operations.resource.PvcOperations;
+import io.strimzi.controller.cluster.operations.resource.ServiceOperations;
+import io.strimzi.controller.cluster.operations.resource.StatefulSetOperations;
 import io.strimzi.controller.cluster.resources.ClusterDiffResult;
 import io.strimzi.controller.cluster.resources.KafkaCluster;
 import io.strimzi.controller.cluster.resources.Storage;
@@ -20,24 +20,24 @@ import java.util.List;
 
 public class KafkaClusterOperation extends ClusterOperation<KafkaCluster> {
     private static final Logger log = LoggerFactory.getLogger(KafkaClusterOperation.class.getName());
-    private final ConfigMapResources configMapResources;
-    private final StatefulSetResources statefulSetResources;
-    private final ServiceResources serviceResources;
-    private final PvcResources pvcResources;
+    private final ConfigMapOperations configMapOperations;
+    private final StatefulSetOperations statefulSetOperations;
+    private final ServiceOperations serviceOperations;
+    private final PvcOperations pvcOperations;
 
-    public KafkaClusterOperation(Vertx vertx, KubernetesClient client, ConfigMapResources configMapResources, StatefulSetResources statefulSetResources, ServiceResources serviceResources, PvcResources pvcResources) {
+    public KafkaClusterOperation(Vertx vertx, KubernetesClient client, ConfigMapOperations configMapOperations, StatefulSetOperations statefulSetOperations, ServiceOperations serviceOperations, PvcOperations pvcOperations) {
         super(vertx, client, "kafka", "create");
-        this.configMapResources = configMapResources;
-        this.statefulSetResources = statefulSetResources;
-        this.serviceResources = serviceResources;
-        this.pvcResources = pvcResources;
+        this.configMapOperations = configMapOperations;
+        this.statefulSetOperations = statefulSetOperations;
+        this.serviceOperations = serviceOperations;
+        this.pvcOperations = pvcOperations;
     }
 
     private final Op<KafkaCluster> create = new Op<KafkaCluster>() {
 
         @Override
         public KafkaCluster getCluster (KubernetesClient client, String namespace, String name){
-            return KafkaCluster.fromConfigMap(configMapResources.get(namespace, name));
+            return KafkaCluster.fromConfigMap(configMapOperations.get(namespace, name));
         }
 
         @Override
@@ -47,20 +47,20 @@ public class KafkaClusterOperation extends ClusterOperation<KafkaCluster> {
             // otherwise the future is already complete (for the "join")
             if (kafka.isMetricsEnabled()) {
                 Future<Void> futureConfigMap = Future.future();
-                configMapResources.create(kafka.generateMetricsConfigMap(), futureConfigMap.completer());
+                configMapOperations.create(kafka.generateMetricsConfigMap(), futureConfigMap.completer());
                 result.add(futureConfigMap);
             }
 
             Future<Void> futureService = Future.future();
-            serviceResources.create(kafka.generateService(), futureService.completer());
+            serviceOperations.create(kafka.generateService(), futureService.completer());
             result.add(futureService);
 
             Future<Void> futureHeadlessService = Future.future();
-            serviceResources.create(kafka.generateHeadlessService(), futureHeadlessService.completer());
+            serviceOperations.create(kafka.generateHeadlessService(), futureHeadlessService.completer());
             result.add(futureHeadlessService);
 
             Future<Void> futureStatefulSet = Future.future();
-            statefulSetResources.create(kafka.generateStatefulSet(client.isAdaptable(OpenShiftClient.class)), futureStatefulSet.completer());
+            statefulSetOperations.create(kafka.generateStatefulSet(client.isAdaptable(OpenShiftClient.class)), futureStatefulSet.completer());
             result.add(futureStatefulSet);
 
             return result;
@@ -75,26 +75,26 @@ public class KafkaClusterOperation extends ClusterOperation<KafkaCluster> {
 
             if (kafka.isMetricsEnabled()) {
                 Future<Void> futureConfigMap = Future.future();
-                configMapResources.delete(namespace, kafka.getMetricsConfigName(), futureConfigMap.completer());
+                configMapOperations.delete(namespace, kafka.getMetricsConfigName(), futureConfigMap.completer());
                 result.add(futureConfigMap);
             }
 
             Future<Void> futureService = Future.future();
-            serviceResources.delete(namespace, kafka.getName(), futureService.completer());
+            serviceOperations.delete(namespace, kafka.getName(), futureService.completer());
             result.add(futureService);
 
             Future<Void> futureHeadlessService = Future.future();
-            serviceResources.delete(namespace, kafka.getHeadlessName(), futureHeadlessService.completer());
+            serviceOperations.delete(namespace, kafka.getHeadlessName(), futureHeadlessService.completer());
             result.add(futureHeadlessService);
 
             Future<Void> futureStatefulSet = Future.future();
-            statefulSetResources.delete(namespace, kafka.getName(), futureStatefulSet.completer());
+            statefulSetOperations.delete(namespace, kafka.getName(), futureStatefulSet.completer());
             result.add(futureStatefulSet);
 
             if (deleteClaims) {
                 for (int i = 0; i < kafka.getReplicas(); i++) {
                     Future<Void> f = Future.future();
-                    pvcResources.delete(namespace, kafka.getVolumeName() + "-" + kafka.getName() + "-" + i, f.completer());
+                    pvcOperations.delete(namespace, kafka.getVolumeName() + "-" + kafka.getName() + "-" + i, f.completer());
                     result.add(f);
                 }
             }
@@ -104,7 +104,7 @@ public class KafkaClusterOperation extends ClusterOperation<KafkaCluster> {
 
         @Override
         public KafkaCluster getCluster(KubernetesClient client, String namespace, String name) {
-            return KafkaCluster.fromStatefulSet(statefulSetResources, namespace, name);
+            return KafkaCluster.fromStatefulSet(statefulSetOperations, namespace, name);
         }
     };
 
@@ -127,7 +127,7 @@ public class KafkaClusterOperation extends ClusterOperation<KafkaCluster> {
 
                 ClusterDiffResult diff;
                 KafkaCluster kafka;
-                ConfigMap kafkaConfigMap = configMapResources.get(namespace, name);
+                ConfigMap kafkaConfigMap = configMapOperations.get(namespace, name);
 
                 if (kafkaConfigMap != null)    {
 
@@ -135,7 +135,7 @@ public class KafkaClusterOperation extends ClusterOperation<KafkaCluster> {
 
                         kafka = KafkaCluster.fromConfigMap(kafkaConfigMap);
                         log.info("Updating Kafka cluster {} in namespace {}", kafka.getName(), namespace);
-                        diff = kafka.diff(configMapResources, statefulSetResources, namespace);
+                        diff = kafka.diff(configMapOperations, statefulSetOperations, namespace);
 
                     } catch (Exception ex) {
 
@@ -186,7 +186,7 @@ public class KafkaClusterOperation extends ClusterOperation<KafkaCluster> {
 
         if (diff.getScaleDown())    {
             log.info("Scaling down stateful set {} in namespace {}", kafka.getName(), namespace);
-            statefulSetResources.scaleDown(namespace, kafka.getName(), kafka.getReplicas(), scaleDown.completer());
+            statefulSetOperations.scaleDown(namespace, kafka.getName(), kafka.getReplicas(), scaleDown.completer());
         }
         else {
             scaleDown.complete();
@@ -198,7 +198,7 @@ public class KafkaClusterOperation extends ClusterOperation<KafkaCluster> {
     private Future<Void> patchService(KafkaCluster kafka, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchService = Future.future();
-            serviceResources.patch(namespace, kafka.getName(), kafka.patchService(serviceResources.get(namespace, kafka.getName())), patchService.completer());
+            serviceOperations.patch(namespace, kafka.getName(), kafka.patchService(serviceOperations.get(namespace, kafka.getName())), patchService.completer());
             return patchService;
         }
         else
@@ -210,8 +210,8 @@ public class KafkaClusterOperation extends ClusterOperation<KafkaCluster> {
     private Future<Void> patchHeadlessService(KafkaCluster kafka, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchService = Future.future();
-            serviceResources.patch(namespace, kafka.getHeadlessName(),
-                    kafka.patchHeadlessService(serviceResources.get(namespace, kafka.getHeadlessName())), patchService.completer());
+            serviceOperations.patch(namespace, kafka.getHeadlessName(),
+                    kafka.patchHeadlessService(serviceOperations.get(namespace, kafka.getHeadlessName())), patchService.completer());
             return patchService;
         }
         else
@@ -223,8 +223,8 @@ public class KafkaClusterOperation extends ClusterOperation<KafkaCluster> {
     private Future<Void> patchStatefulSet(KafkaCluster kafka, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchStatefulSet = Future.future();
-            statefulSetResources.patch(namespace, kafka.getName(), false,
-                    kafka.patchStatefulSet(statefulSetResources.get(namespace, kafka.getName())), patchStatefulSet.completer());
+            statefulSetOperations.patch(namespace, kafka.getName(), false,
+                    kafka.patchStatefulSet(statefulSetOperations.get(namespace, kafka.getName())), patchStatefulSet.completer());
             return patchStatefulSet;
         }
         else
@@ -236,8 +236,8 @@ public class KafkaClusterOperation extends ClusterOperation<KafkaCluster> {
     private Future<Void> patchMetricsConfigMap(KafkaCluster kafka, String namespace, ClusterDiffResult diff) {
         if (diff.isMetricsChanged()) {
             Future<Void> patchConfigMap = Future.future();
-            configMapResources.patch(namespace, kafka.getMetricsConfigName(),
-                    kafka.patchMetricsConfigMap(configMapResources.get(namespace, kafka.getMetricsConfigName())), patchConfigMap.completer());
+            configMapOperations.patch(namespace, kafka.getMetricsConfigName(),
+                    kafka.patchMetricsConfigMap(configMapOperations.get(namespace, kafka.getMetricsConfigName())), patchConfigMap.completer());
             return patchConfigMap;
         } else {
             return Future.succeededFuture();
@@ -248,7 +248,7 @@ public class KafkaClusterOperation extends ClusterOperation<KafkaCluster> {
         Future<Void> rollingUpdate = Future.future();
 
         if (diff.getRollingUpdate()) {
-            statefulSetResources.rollingUpdate(namespace, kafka.getName(),
+            statefulSetOperations.rollingUpdate(namespace, kafka.getName(),
                     rollingUpdate.completer());
         }
         else {
@@ -262,7 +262,7 @@ public class KafkaClusterOperation extends ClusterOperation<KafkaCluster> {
         Future<Void> scaleUp = Future.future();
 
         if (diff.getScaleUp()) {
-            statefulSetResources.scaleUp(namespace, kafka.getName(), kafka.getReplicas(), scaleUp.completer());
+            statefulSetOperations.scaleUp(namespace, kafka.getName(), kafka.getReplicas(), scaleUp.completer());
         }
         else {
             scaleUp.complete();

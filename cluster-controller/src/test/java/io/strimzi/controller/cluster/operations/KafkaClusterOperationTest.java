@@ -21,10 +21,10 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.openshift.client.server.mock.OpenShiftServer;
-import io.strimzi.controller.cluster.operations.resource.ConfigMapResources;
-import io.strimzi.controller.cluster.operations.resource.PvcResources;
-import io.strimzi.controller.cluster.operations.resource.ServiceResources;
-import io.strimzi.controller.cluster.operations.resource.StatefulSetResources;
+import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
+import io.strimzi.controller.cluster.operations.resource.PvcOperations;
+import io.strimzi.controller.cluster.operations.resource.ServiceOperations;
+import io.strimzi.controller.cluster.operations.resource.StatefulSetOperations;
 import io.strimzi.controller.cluster.resources.KafkaCluster;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
@@ -63,10 +63,10 @@ public class KafkaClusterOperationTest {
     public void testCreateCluster(TestContext context) {
         KubernetesClient kubeClient = server.getKubernetesClient();
         KafkaClusterOperation ops = new KafkaClusterOperation(vertx, kubeClient,
-                new ConfigMapResources(vertx, kubeClient),
-                new StatefulSetResources(vertx, kubeClient),
-                new ServiceResources(vertx, kubeClient),
-                new PvcResources(vertx, kubeClient));
+                new ConfigMapOperations(vertx, kubeClient),
+                new StatefulSetOperations(vertx, kubeClient),
+                new ServiceOperations(vertx, kubeClient),
+                new PvcOperations(vertx, kubeClient));
         // Create a CM
         String clusterCmName = "foo";
         String clusterCmNamespace = "test";

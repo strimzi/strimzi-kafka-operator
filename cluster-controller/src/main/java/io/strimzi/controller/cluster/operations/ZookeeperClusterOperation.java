@@ -3,10 +3,10 @@ package io.strimzi.controller.cluster.operations;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.openshift.client.OpenShiftClient;
-import io.strimzi.controller.cluster.operations.resource.ConfigMapResources;
-import io.strimzi.controller.cluster.operations.resource.PvcResources;
-import io.strimzi.controller.cluster.operations.resource.ServiceResources;
-import io.strimzi.controller.cluster.operations.resource.StatefulSetResources;
+import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
+import io.strimzi.controller.cluster.operations.resource.PvcOperations;
+import io.strimzi.controller.cluster.operations.resource.ServiceOperations;
+import io.strimzi.controller.cluster.operations.resource.StatefulSetOperations;
 import io.strimzi.controller.cluster.resources.ClusterDiffResult;
 import io.strimzi.controller.cluster.resources.Storage;
 import io.strimzi.controller.cluster.resources.ZookeeperCluster;
@@ -21,28 +21,28 @@ import java.util.List;
 public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster> {
 
     private static final Logger log = LoggerFactory.getLogger(ZookeeperClusterOperation.class.getName());
-    private final ServiceResources serviceResources;
-    private final StatefulSetResources statefulSetResources;
-    private final ConfigMapResources configMapResources;
-    private final PvcResources pvcResources;
+    private final ServiceOperations serviceOperations;
+    private final StatefulSetOperations statefulSetOperations;
+    private final ConfigMapOperations configMapOperations;
+    private final PvcOperations pvcOperations;
 
     public ZookeeperClusterOperation(Vertx vertx, KubernetesClient client,
-                                     ServiceResources serviceResources,
-                                     StatefulSetResources statefulSetResources,
-                                     ConfigMapResources configMapResources,
-                                     PvcResources pvcResources) {
+                                     ServiceOperations serviceOperations,
+                                     StatefulSetOperations statefulSetOperations,
+                                     ConfigMapOperations configMapOperations,
+                                     PvcOperations pvcOperations) {
         super(vertx, client, "zookeeper", "create");
-        this.serviceResources = serviceResources;
-        this.statefulSetResources = statefulSetResources;
-        this.configMapResources = configMapResources;
-        this.pvcResources = pvcResources;
+        this.serviceOperations = serviceOperations;
+        this.statefulSetOperations = statefulSetOperations;
+        this.configMapOperations = configMapOperations;
+        this.pvcOperations = pvcOperations;
     }
 
     private final Op<ZookeeperCluster> create = new Op<ZookeeperCluster>() {
 
         @Override
         public ZookeeperCluster getCluster(KubernetesClient client, String namespace, String name) {
-            return ZookeeperCluster.fromConfigMap(configMapResources.get(namespace, name));
+            return ZookeeperCluster.fromConfigMap(configMapOperations.get(namespace, name));
         }
 
         @Override
@@ -51,20 +51,20 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
 
             if (zk.isMetricsEnabled()) {
                 Future<Void> futureConfigMap = Future.future();
-                configMapResources.create(zk.generateMetricsConfigMap(), futureConfigMap.completer());
+                configMapOperations.create(zk.generateMetricsConfigMap(), futureConfigMap.completer());
                 result.add(futureConfigMap);
             }
 
             Future<Void> futureService = Future.future();
-            serviceResources.create(zk.generateService(), futureService.completer());
+            serviceOperations.create(zk.generateService(), futureService.completer());
             result.add(futureService);
 
             Future<Void> futureHeadlessService = Future.future();
-            serviceResources.create(zk.generateHeadlessService(), futureHeadlessService.completer());
+            serviceOperations.create(zk.generateHeadlessService(), futureHeadlessService.completer());
             result.add(futureHeadlessService);
 
             Future<Void> futureStatefulSet = Future.future();
-            statefulSetResources.create(zk.generateStatefulSet(client.isAdaptable(OpenShiftClient.class)), futureStatefulSet.completer());
+            statefulSetOperations.create(zk.generateStatefulSet(client.isAdaptable(OpenShiftClient.class)), futureStatefulSet.completer());
             result.add(futureStatefulSet);
 
             return result;
@@ -87,27 +87,27 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
             // otherwise the future is already complete (for the "join")
             if (zk.isMetricsEnabled()) {
                 Future<Void> futureConfigMap = Future.future();
-                configMapResources.delete(namespace, zk.getMetricsConfigName(), futureConfigMap.completer());
+                configMapOperations.delete(namespace, zk.getMetricsConfigName(), futureConfigMap.completer());
                 result.add(futureConfigMap);
             }
 
             Future<Void> futureService = Future.future();
-            serviceResources.delete(namespace, zk.getName(), futureService.completer());
+            serviceOperations.delete(namespace, zk.getName(), futureService.completer());
             result.add(futureService);
 
             Future<Void> futureHeadlessService = Future.future();
-            serviceResources.delete(namespace, zk.getHeadlessName(), futureHeadlessService.completer());
+            serviceOperations.delete(namespace, zk.getHeadlessName(), futureHeadlessService.completer());
             result.add(futureHeadlessService);
 
             Future<Void> futureStatefulSet = Future.future();
-            statefulSetResources.delete(namespace, zk.getName(), futureStatefulSet.completer());
+            statefulSetOperations.delete(namespace, zk.getName(), futureStatefulSet.completer());
             result.add(futureStatefulSet);
 
 
             if (deleteClaims) {
                 for (int i = 0; i < zk.getReplicas(); i++) {
                     Future<Void> f = Future.future();
-                    pvcResources.delete(namespace, zk.getVolumeName() + "-" + zk.getName() + "-" + i, f.completer());
+                    pvcOperations.delete(namespace, zk.getVolumeName() + "-" + zk.getName() + "-" + i, f.completer());
                     result.add(f);
                 }
             }
@@ -116,7 +116,7 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
 
         @Override
         public ZookeeperCluster getCluster(KubernetesClient client, String namespace, String name) {
-            return ZookeeperCluster.fromStatefulSet(statefulSetResources, namespace, name);
+            return ZookeeperCluster.fromStatefulSet(statefulSetOperations, namespace, name);
         }
     };
 
@@ -135,7 +135,7 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
 
                 ClusterDiffResult diff;
                 ZookeeperCluster zk;
-                ConfigMap zkConfigMap = configMapResources.get(namespace, name);
+                ConfigMap zkConfigMap = configMapOperations.get(namespace, name);
 
                 if (zkConfigMap != null)    {
 
@@ -143,7 +143,7 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
 
                         zk = ZookeeperCluster.fromConfigMap(zkConfigMap);
                         log.info("Updating Zookeeper cluster {} in namespace {}", zk.getName(), namespace);
-                        diff = zk.diff(configMapResources, statefulSetResources, namespace);
+                        diff = zk.diff(configMapOperations, statefulSetOperations, namespace);
 
                     } catch (Exception ex) {
 
@@ -194,7 +194,7 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
 
         if (diff.getScaleDown())    {
             log.info("Scaling down stateful set {} in namespace {}", zk.getName(), namespace);
-            statefulSetResources.scaleDown(namespace, zk.getName(), zk.getReplicas(), scaleDown.completer());
+            statefulSetOperations.scaleDown(namespace, zk.getName(), zk.getReplicas(), scaleDown.completer());
         }
         else {
             scaleDown.complete();
@@ -206,8 +206,8 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
     private Future<Void> patchService(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchService = Future.future();
-            serviceResources.patch(namespace, zk.getName(),
-                    zk.patchService(serviceResources.get(namespace, zk.getName())), patchService.completer());
+            serviceOperations.patch(namespace, zk.getName(),
+                    zk.patchService(serviceOperations.get(namespace, zk.getName())), patchService.completer());
             return patchService;
         }
         else
@@ -219,8 +219,8 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
     private Future<Void> patchHeadlessService(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchService = Future.future();
-            serviceResources.patch(namespace, zk.getHeadlessName(),
-                    zk.patchHeadlessService(serviceResources.get(namespace, zk.getHeadlessName())), patchService.completer());
+            serviceOperations.patch(namespace, zk.getHeadlessName(),
+                    zk.patchHeadlessService(serviceOperations.get(namespace, zk.getHeadlessName())), patchService.completer());
             return patchService;
         }
         else
@@ -232,8 +232,8 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
     private Future<Void> patchStatefulSet(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             Future<Void> patchStatefulSet = Future.future();
-            statefulSetResources.patch(namespace, zk.getName(), false,
-                    zk.patchStatefulSet(statefulSetResources.get(namespace, zk.getName())), patchStatefulSet.completer());
+            statefulSetOperations.patch(namespace, zk.getName(), false,
+                    zk.patchStatefulSet(statefulSetOperations.get(namespace, zk.getName())), patchStatefulSet.completer());
             return patchStatefulSet;
         }
         else
@@ -245,8 +245,8 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
     private Future<Void> patchMetricsConfigMap(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
         if (diff.isMetricsChanged()) {
             Future<Void> patchConfigMap = Future.future();
-            configMapResources.patch(namespace, zk.getMetricsConfigName(),
-                    zk.patchMetricsConfigMap(configMapResources.get(namespace, zk.getMetricsConfigName())),
+            configMapOperations.patch(namespace, zk.getMetricsConfigName(),
+                    zk.patchMetricsConfigMap(configMapOperations.get(namespace, zk.getMetricsConfigName())),
                     patchConfigMap.completer());
             return patchConfigMap;
         } else {
@@ -258,7 +258,7 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
         Future<Void> rollingUpdate = Future.future();
 
         if (diff.getRollingUpdate()) {
-            statefulSetResources.rollingUpdate(namespace, zk.getName(),
+            statefulSetOperations.rollingUpdate(namespace, zk.getName(),
                     rollingUpdate.completer());
         }
         else {
@@ -272,7 +272,7 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
         Future<Void> scaleUp = Future.future();
 
         if (diff.getScaleUp()) {
-            statefulSetResources.scaleUp(namespace, zk.getName(), zk.getReplicas(), scaleUp.completer());
+            statefulSetOperations.scaleUp(namespace, zk.getName(), zk.getReplicas(), scaleUp.completer());
         }
         else {
             scaleUp.complete();

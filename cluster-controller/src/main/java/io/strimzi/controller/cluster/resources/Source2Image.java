@@ -18,7 +18,7 @@ import io.fabric8.openshift.api.model.ImageStreamList;
 import io.fabric8.openshift.api.model.TagReference;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.openshift.client.dsl.BuildConfigResource;
-import io.strimzi.controller.cluster.operations.resource.ResourceOperation;
+import io.strimzi.controller.cluster.operations.resource.AbstractOperations;
 import io.vertx.core.json.JsonObject;
 
 import java.util.Map;
@@ -99,7 +99,7 @@ public class Source2Image {
      * @param os            OpenShift utils
      * @return              Source2Image instance
      */
-    public static Source2Image fromOpenShift(String namespace, String name, ResourceOperation<OpenShiftClient, ImageStream, ImageStreamList, DoneableImageStream, Resource<ImageStream, DoneableImageStream>> os) {
+    public static Source2Image fromOpenShift(String namespace, String name, AbstractOperations<OpenShiftClient, ImageStream, ImageStreamList, DoneableImageStream, Resource<ImageStream, DoneableImageStream>> os) {
         ImageStream sis = os.get(namespace, getSourceImageStreamName(name));
         String sourceImage = sis.getSpec().getTags().get(0).getFrom().getName() + ":" + sis.getSpec().getTags().get(0).getName();
 
@@ -313,8 +313,8 @@ public class Source2Image {
      *
      * @return         ClusterDiffResult instance describing the differences between desired and actual Source2Image
      */
-    public ClusterDiffResult diff(ResourceOperation<OpenShiftClient, ImageStream, ImageStreamList, DoneableImageStream, Resource<ImageStream, DoneableImageStream>> isResources,
-                                  ResourceOperation<OpenShiftClient, BuildConfig, BuildConfigList, DoneableBuildConfig, BuildConfigResource<BuildConfig, DoneableBuildConfig, Void, Build>> bcResources) {
+    public ClusterDiffResult diff(AbstractOperations<OpenShiftClient, ImageStream, ImageStreamList, DoneableImageStream, Resource<ImageStream, DoneableImageStream>> isResources,
+                                  AbstractOperations<OpenShiftClient, BuildConfig, BuildConfigList, DoneableBuildConfig, BuildConfigResource<BuildConfig, DoneableBuildConfig, Void, Build>> bcResources) {
         ClusterDiffResult diff = new ClusterDiffResult();
 
         ImageStream sis = isResources.get(namespace, getSourceImageStreamName());

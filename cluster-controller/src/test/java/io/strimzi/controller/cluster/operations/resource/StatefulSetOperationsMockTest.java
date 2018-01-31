@@ -55,7 +55,7 @@ public class StatefulSetOperationsMockTest extends ResourceOperationsMockTest<Ku
     }
 
     @Override
-    protected StatefulSetResources createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new StatefulSetResources(vertx, mockClient);
+    protected StatefulSetOperations createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
+        return new StatefulSetOperations(vertx, mockClient);
     }
 }

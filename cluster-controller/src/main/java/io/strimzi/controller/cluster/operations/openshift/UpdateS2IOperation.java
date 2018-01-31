@@ -1,8 +1,8 @@
 package io.strimzi.controller.cluster.operations.openshift;
 
 import io.fabric8.openshift.client.OpenShiftClient;
-import io.strimzi.controller.cluster.operations.resource.BuildConfigResources;
-import io.strimzi.controller.cluster.operations.resource.ImageStreamResources;
+import io.strimzi.controller.cluster.operations.resource.BuildConfigOperations;
+import io.strimzi.controller.cluster.operations.resource.ImageStreamOperations;
 import io.strimzi.controller.cluster.resources.Source2Image;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -19,45 +19,45 @@ import java.util.List;
 public class UpdateS2IOperation extends S2IOperation {
 
     private static final Logger log = LoggerFactory.getLogger(UpdateS2IOperation.class.getName());
-    private final BuildConfigResources buildConfigResources;
-    private final ImageStreamResources buildImageStreamResources;
+    private final BuildConfigOperations buildConfigOperations;
+    private final ImageStreamOperations buildImageStreamOperations;
 
     /**
      * Constructor
      */
     public UpdateS2IOperation(Vertx vertx, OpenShiftClient client) {
         super(vertx, "update");
-        buildConfigResources = new BuildConfigResources(vertx, client);
-        buildImageStreamResources = new ImageStreamResources(vertx, client);
+        buildConfigOperations = new BuildConfigOperations(vertx, client);
+        buildImageStreamOperations = new ImageStreamOperations(vertx, client);
     }
 
 
     @Override
     protected List<Future> futures(Source2Image s2i) {
-        if (s2i.diff(buildImageStreamResources, buildConfigResources).getDifferent()) {
+        if (s2i.diff(buildImageStreamOperations, buildConfigOperations).getDifferent()) {
             List<Future> result = new ArrayList<>(3);
             Future<Void> futureSourceImageStream = Future.future();
 
-            buildImageStreamResources.patch(
+            buildImageStreamOperations.patch(
                     s2i.getNamespace(), s2i.getSourceImageStreamName(),
                     s2i.patchSourceImageStream(
-                            buildImageStreamResources.get(s2i.getNamespace(), s2i.getSourceImageStreamName())),
+                            buildImageStreamOperations.get(s2i.getNamespace(), s2i.getSourceImageStreamName())),
                     futureSourceImageStream.completer());
             result.add(futureSourceImageStream);
 
             Future<Void> futureTargetImageStream = Future.future();
-            buildImageStreamResources
+            buildImageStreamOperations
                     .patch(s2i.getNamespace(), s2i.getName(),
                             s2i.patchTargetImageStream(
-                                    buildImageStreamResources.get(s2i.getNamespace(), s2i.getName())),
+                                    buildImageStreamOperations.get(s2i.getNamespace(), s2i.getName())),
                             futureTargetImageStream.completer());
             result.add(futureTargetImageStream);
 
             Future<Void> futureBuildConfig = Future.future();
-            buildConfigResources
+            buildConfigOperations
                     .patch(s2i.getNamespace(), s2i.getName(),
                             s2i.patchBuildConfig(
-                                    buildConfigResources.get(s2i.getNamespace(), s2i.getName())),
+                                    buildConfigOperations.get(s2i.getNamespace(), s2i.getName())),
                             futureBuildConfig.completer());
             result.add(futureBuildConfig);
 

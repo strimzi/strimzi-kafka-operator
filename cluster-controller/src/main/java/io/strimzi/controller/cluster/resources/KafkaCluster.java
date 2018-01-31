@@ -1,16 +1,10 @@
 package io.strimzi.controller.cluster.resources;
 
 import io.fabric8.kubernetes.api.model.*;
-import io.fabric8.kubernetes.api.model.extensions.DoneableStatefulSet;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
-import io.fabric8.kubernetes.api.model.extensions.StatefulSetList;
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.strimzi.controller.cluster.ClusterController;
-import io.strimzi.controller.cluster.operations.resource.ConfigMapResources;
-import io.strimzi.controller.cluster.operations.resource.ResourceOperation;
-import io.strimzi.controller.cluster.operations.resource.StatefulSetResources;
+import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
+import io.strimzi.controller.cluster.operations.resource.StatefulSetOperations;
 import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
@@ -130,9 +124,9 @@ public class KafkaCluster extends AbstractCluster {
      * @param cluster   overall cluster name
      * @return  Kafka cluster instance
      */
-    public static KafkaCluster fromStatefulSet(StatefulSetResources statefulSetResources, String namespace, String cluster) {
+    public static KafkaCluster fromStatefulSet(StatefulSetOperations statefulSetOperations, String namespace, String cluster) {
 
-        StatefulSet ss = statefulSetResources.get(namespace, cluster + KafkaCluster.NAME_SUFFIX);
+        StatefulSet ss = statefulSetOperations.get(namespace, cluster + KafkaCluster.NAME_SUFFIX);
 
         KafkaCluster kafka =  new KafkaCluster(namespace, cluster);
 
@@ -178,11 +172,11 @@ public class KafkaCluster extends AbstractCluster {
      * @return  ClusterDiffResult instance with differences
      */
     public ClusterDiffResult diff(
-            ConfigMapResources configMapResources,
-            StatefulSetResources statefulSetResources,
+            ConfigMapOperations configMapOperations,
+            StatefulSetOperations statefulSetOperations,
                                   String namespace)  {
-        StatefulSet ss = statefulSetResources.get(namespace, getName());
-        ConfigMap metricsConfigMap = configMapResources.get(namespace, getMetricsConfigName());
+        StatefulSet ss = statefulSetOperations.get(namespace, getName());
+        ConfigMap metricsConfigMap = configMapOperations.get(namespace, getMetricsConfigName());
 
         ClusterDiffResult diff = new ClusterDiffResult();
 
