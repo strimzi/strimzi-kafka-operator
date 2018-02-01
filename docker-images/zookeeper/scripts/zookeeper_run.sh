@@ -62,7 +62,7 @@ fi
 
 # enabling Prometheus JMX exporter as Java agent
 if [ "$ZOOKEEPER_METRICS_ENABLED" = "true" ]; then
-  export JVMFLAGS="-javaagent:/opt/prometheus/jmx_prometheus_javaagent.jar=9404:/opt/prometheus/config/config.yml"
+  export KAFKA_OPTS="-javaagent:/opt/prometheus/jmx_prometheus_javaagent.jar=9404:/opt/prometheus/config/config.yml"
 fi
 
 # starting Zookeeper with final configuration
