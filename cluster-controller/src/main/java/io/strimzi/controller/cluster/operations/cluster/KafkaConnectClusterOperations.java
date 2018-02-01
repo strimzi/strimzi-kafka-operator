@@ -58,9 +58,13 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
         this.configMapOperations = configMapOperations;
         this.imagesStreamResources = imagesStreamResources;
         this.buildConfigOperations = buildConfigOperations;
-        s2iOperations = new S2IOperations(vertx,
-                imagesStreamResources,
-                buildConfigOperations);
+        if (imagesStreamResources != null && buildConfigOperations != null) {
+            this.s2iOperations = new S2IOperations(vertx,
+                    imagesStreamResources,
+                    buildConfigOperations);
+        } else {
+            this.s2iOperations = null;
+        }
     }
 
     private final CompositeOperation<KafkaConnectCluster> create = new CompositeOperation<KafkaConnectCluster>() {
@@ -124,7 +128,7 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
 
         @Override
         public KafkaConnectCluster getCluster(String namespace, String name) {
-            return KafkaConnectCluster.fromDeployment(deploymentOperations, imagesStreamResources, namespace, name);
+            return KafkaConnectCluster.fromDeployment(namespace, name, deploymentOperations, imagesStreamResources);
         }
     };
 
@@ -147,7 +151,7 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
                 if (connectConfigMap != null)    {
                     connect = KafkaConnectCluster.fromConfigMap(client, connectConfigMap);
                     log.info("Updating Kafka Connect cluster {} in namespace {}", connect.getName(), namespace);
-                    diff = connect.diff(deploymentOperations, imagesStreamResources, buildConfigOperations, namespace);
+                    diff = connect.diff(namespace, deploymentOperations, imagesStreamResources, buildConfigOperations);
                 } else  {
                     log.error("ConfigMap {} doesn't exist anymore in namespace {}", name, namespace);
                     handler.handle(Future.failedFuture("ConfigMap doesn't exist anymore"));

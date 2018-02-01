@@ -139,11 +139,14 @@ public class KafkaConnectCluster extends AbstractCluster {
      *
      * @param namespace Kubernetes/OpenShift namespace where cluster resources belong to
      * @param cluster   overall cluster name
+     * @param deploymentOperations Deployment operations
+     * @param imageStreamOperations ImageStream operations (may be null)
      * @return  Kafka Connect cluster instance
      */
     public static KafkaConnectCluster fromDeployment(
+            String namespace, String cluster,
             DeploymentOperations deploymentOperations,
-            ImageStreamOperations os, String namespace, String cluster) {
+            ImageStreamOperations imageStreamOperations) {
 
         Deployment dep = deploymentOperations.get(namespace, cluster + KafkaConnectCluster.NAME_SUFFIX);
 
@@ -170,8 +173,8 @@ public class KafkaConnectCluster extends AbstractCluster {
 
         String s2iAnnotation = String.format("%s/%s", ClusterController.STRIMZI_CLUSTER_CONTROLLER_DOMAIN, Source2Image.ANNOTATION_S2I);
         if (dep.getMetadata().getAnnotations().containsKey(s2iAnnotation) && Boolean.parseBoolean(dep.getMetadata().getAnnotations().getOrDefault(s2iAnnotation, "false"))) {
-            if (os != null) {
-                kafkaConnect.setS2I(Source2Image.fromOpenShift(namespace, kafkaConnect.getName(), os));
+            if (imageStreamOperations != null) {
+                kafkaConnect.setS2I(Source2Image.fromOpenShift(namespace, kafkaConnect.getName(), imageStreamOperations));
             }
             else {
                 log.error("S2I is supported only on OpenShift. S2I will be ignored in Kafka Connect cluster {} in namespace {}", cluster, namespace);
@@ -188,10 +191,10 @@ public class KafkaConnectCluster extends AbstractCluster {
      * @return  ClusterDiffResult instance with differences
      */
     public ClusterDiffResult diff(
+            String namespace,
             DeploymentOperations deploymentOperations,
-            ImageStreamOperations isResources,
-            BuildConfigOperations bcResources,
-            String namespace) {
+            ImageStreamOperations imageStreamOperations,
+            BuildConfigOperations buildConfigOperations) {
 
         Deployment dep = deploymentOperations.get(namespace, getName());
 
@@ -242,26 +245,28 @@ public class KafkaConnectCluster extends AbstractCluster {
             diff.setRollingUpdate(true);
         }
 
-        if (isResources != null) {
+        if (imageStreamOperations != null) {
             Source2Image realS2I = null;
             String s2iAnnotation = String.format("%s/%s", ClusterController.STRIMZI_CLUSTER_CONTROLLER_DOMAIN, Source2Image.ANNOTATION_S2I);
             if (Boolean.parseBoolean(dep.getMetadata().getAnnotations().getOrDefault(s2iAnnotation, "false"))) {
-                realS2I = Source2Image.fromOpenShift(namespace, getName(), isResources);
+                realS2I = Source2Image.fromOpenShift(namespace, getName(), imageStreamOperations);
             }
 
             if (s2i == null && realS2I != null) {
                 log.info("Diff: Kafka Connect S2I should be removed");
                 diff.setDifferent(true);
                 diff.setS2i(Source2Image.Source2ImageDiff.DELETE);
-            } else if (s2i != null && realS2I == null) {
-                log.info("Diff: Kafka Connect S2I should be added");
-                diff.setDifferent(true);
-                diff.setS2i(Source2Image.Source2ImageDiff.CREATE);
-            } else if (s2i != null && realS2I != null) {
-                if (s2i.diff(isResources, bcResources).getDifferent()) {
-                    log.info("Diff: Kafka Connect S2I should be updated");
-                    diff.setS2i(Source2Image.Source2ImageDiff.UPDATE);
+            } else if (s2i != null) {
+                if (realS2I == null) {
+                    log.info("Diff: Kafka Connect S2I should be added");
                     diff.setDifferent(true);
+                    diff.setS2i(Source2Image.Source2ImageDiff.CREATE);
+                } else {
+                    if (s2i.diff(imageStreamOperations, buildConfigOperations).getDifferent()) {
+                        log.info("Diff: Kafka Connect S2I should be updated");
+                        diff.setS2i(Source2Image.Source2ImageDiff.UPDATE);
+                        diff.setDifferent(true);
+                    }
                 }
             }
         }

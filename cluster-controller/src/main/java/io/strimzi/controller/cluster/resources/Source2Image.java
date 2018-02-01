@@ -19,6 +19,8 @@ import io.fabric8.openshift.api.model.TagReference;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.openshift.client.dsl.BuildConfigResource;
 import io.strimzi.controller.cluster.operations.resource.AbstractOperations;
+import io.strimzi.controller.cluster.operations.resource.BuildConfigOperations;
+import io.strimzi.controller.cluster.operations.resource.ImageStreamOperations;
 import io.vertx.core.json.JsonObject;
 
 import java.util.Map;
@@ -313,13 +315,13 @@ public class Source2Image {
      *
      * @return         ClusterDiffResult instance describing the differences between desired and actual Source2Image
      */
-    public ClusterDiffResult diff(AbstractOperations<OpenShiftClient, ImageStream, ImageStreamList, DoneableImageStream, Resource<ImageStream, DoneableImageStream>> isResources,
-                                  AbstractOperations<OpenShiftClient, BuildConfig, BuildConfigList, DoneableBuildConfig, BuildConfigResource<BuildConfig, DoneableBuildConfig, Void, Build>> bcResources) {
+    public ClusterDiffResult diff(ImageStreamOperations imageStreamOperations,
+                                  BuildConfigOperations buildConfigOperations) {
         ClusterDiffResult diff = new ClusterDiffResult();
 
-        ImageStream sis = isResources.get(namespace, getSourceImageStreamName());
-        ImageStream tis = isResources.get(namespace, getName());
-        BuildConfig bc = bcResources.get(namespace, getName());
+        ImageStream sis = imageStreamOperations.get(namespace, getSourceImageStreamName());
+        ImageStream tis = imageStreamOperations.get(namespace, getName());
+        BuildConfig bc = buildConfigOperations.get(namespace, getName());
 
         if (!getLabels().equals(sis.getMetadata().getLabels())
                 || !getLabels().equals(tis.getMetadata().getLabels())
