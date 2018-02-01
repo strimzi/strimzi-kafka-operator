@@ -33,13 +33,15 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
      * @param vertx The Vertx instance
      * @param client The kubernetes client
      * @param configMapOperations For operating on ConfigMaps
-     * @param statefulSetOperations For operating on StatefulSets
      * @param serviceOperations For operating on Services
+     * @param statefulSetOperations For operating on StatefulSets
      * @param pvcOperations For operating on PersistentVolumeClaims
      */
     public KafkaClusterOperations(Vertx vertx, KubernetesClient client,
-                                  ConfigMapOperations configMapOperations, StatefulSetOperations statefulSetOperations,
-                                  ServiceOperations serviceOperations, PvcOperations pvcOperations) {
+                                  ConfigMapOperations configMapOperations,
+                                  ServiceOperations serviceOperations,
+                                  StatefulSetOperations statefulSetOperations,
+                                  PvcOperations pvcOperations) {
         super(vertx, client, "kafka", "create");
         this.configMapOperations = configMapOperations;
         this.statefulSetOperations = statefulSetOperations;

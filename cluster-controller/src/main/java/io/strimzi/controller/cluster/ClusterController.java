@@ -86,9 +86,9 @@ public class ClusterController extends AbstractVerticle {
             imagesStreamResources = null;
             buildConfigOperations = null;
         }
-        this.zookeeperClusterOperations = new ZookeeperClusterOperations(vertx, client, serviceOperations, statefulSetOperations, configMapOperations, pvcOperations);
-        this.kafkaClusterOperations = new KafkaClusterOperations(vertx, client, configMapOperations, statefulSetOperations, serviceOperations, pvcOperations);
-        this.kafkaConnectClusterOperations = new KafkaConnectClusterOperations(vertx, client, serviceOperations, deploymentOperations, configMapOperations, imagesStreamResources, buildConfigOperations);
+        this.zookeeperClusterOperations = new ZookeeperClusterOperations(vertx, client, configMapOperations, serviceOperations, statefulSetOperations, pvcOperations);
+        this.kafkaClusterOperations = new KafkaClusterOperations(vertx, client, configMapOperations, serviceOperations, statefulSetOperations, pvcOperations);
+        this.kafkaConnectClusterOperations = new KafkaConnectClusterOperations(vertx, client, configMapOperations, deploymentOperations, serviceOperations, imagesStreamResources, buildConfigOperations);
     }
 
     @Override

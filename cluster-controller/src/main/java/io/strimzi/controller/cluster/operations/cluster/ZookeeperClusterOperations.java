@@ -33,15 +33,15 @@ public class ZookeeperClusterOperations extends AbstractClusterOperations<Zookee
      * Constructor
      * @param vertx The Vertx instance
      * @param client The kubernetes client
+     * @param configMapOperations For operating on ConfigMaps
      * @param serviceOperations For operating on Services
      * @param statefulSetOperations For operating on StatefulSets
-     * @param configMapOperations For operating on ConfigMaps
      * @param pvcOperations For operating on PersistentVolumeClaims
      */
     public ZookeeperClusterOperations(Vertx vertx, KubernetesClient client,
+                                      ConfigMapOperations configMapOperations,
                                       ServiceOperations serviceOperations,
                                       StatefulSetOperations statefulSetOperations,
-                                      ConfigMapOperations configMapOperations,
                                       PvcOperations pvcOperations) {
         super(vertx, client, "zookeeper", "create");
         this.serviceOperations = serviceOperations;
