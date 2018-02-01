@@ -5,8 +5,7 @@ export ZOOKEEPER_VOLUME="/var/lib/zookeeper/"
 # base name for Zookeeper server data dir and application logs
 export ZOOKEEPER_DATA_BASE_NAME="data"
 export ZOOKEEPER_LOG_BASE_NAME="logs"
-# Disable JMX until we need it
-export JMXDISABLE=true
+
 export BASE_HOSTNAME=$(hostname | rev | cut -d "-" -f2- | rev)
 export BASE_FQDN=$(hostname -f | cut -d "." -f2-)
 
