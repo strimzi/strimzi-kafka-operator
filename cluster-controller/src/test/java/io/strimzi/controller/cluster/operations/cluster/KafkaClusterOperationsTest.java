@@ -21,7 +21,6 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.openshift.client.server.mock.OpenShiftServer;
-import io.strimzi.controller.cluster.operations.cluster.KafkaClusterOperations;
 import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
 import io.strimzi.controller.cluster.operations.resource.PvcOperations;
 import io.strimzi.controller.cluster.operations.resource.ServiceOperations;
@@ -67,8 +66,7 @@ public class KafkaClusterOperationsTest {
         KubernetesClient kubeClient = server.getKubernetesClient();
         KafkaClusterOperations ops = new KafkaClusterOperations(vertx, kubeClient,
                 new ConfigMapOperations(vertx, kubeClient),
-                new StatefulSetOperations(vertx, kubeClient),
-                new ServiceOperations(vertx, kubeClient),
+                new ServiceOperations(vertx, kubeClient), new StatefulSetOperations(vertx, kubeClient),
                 new PvcOperations(vertx, kubeClient));
         // Create a CM
         String clusterCmName = "foo";
