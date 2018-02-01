@@ -68,7 +68,7 @@ public class ZookeeperCluster extends AbstractCluster {
         this.metricsConfigName = cluster + ZookeeperCluster.METRICS_CONFIG_SUFFIX;
         this.image = DEFAULT_IMAGE;
         this.replicas = DEFAULT_REPLICAS;
-        this.healthCheckPath = "/opt/zookeeper/zookeeper_healthcheck.sh";
+        this.healthCheckPath = "/opt/kafka/zookeeper_healthcheck.sh";
         this.healthCheckTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
         this.healthCheckInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
         this.isMetricsEnabled = DEFAULT_ZOOKEEPER_METRICS_ENABLED;
