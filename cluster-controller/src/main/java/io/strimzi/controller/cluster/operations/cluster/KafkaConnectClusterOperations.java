@@ -40,13 +40,18 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
      * Constructor
      * @param vertx The Vertx instance
      * @param client The kubernetes client
-     * @param deploymentOperations For operating on Deployments
      * @param configMapOperations For operating on ConfigMaps
+     * @param deploymentOperations For operating on Deployments
+     * @param serviceOperations For operating on Services
      * @param imagesStreamResources For operating on ImageStreams, may be null
      * @param buildConfigOperations For operating on BuildConfigs, may be null
-     * @param serviceOperations For operating on Services
      */
-    public KafkaConnectClusterOperations(Vertx vertx, KubernetesClient client, ServiceOperations serviceOperations, DeploymentOperations deploymentOperations, ConfigMapOperations configMapOperations, ImageStreamOperations imagesStreamResources, BuildConfigOperations buildConfigOperations) {
+    public KafkaConnectClusterOperations(Vertx vertx, KubernetesClient client,
+                                         ConfigMapOperations configMapOperations,
+                                         DeploymentOperations deploymentOperations,
+                                         ServiceOperations serviceOperations,
+                                         ImageStreamOperations imagesStreamResources,
+                                         BuildConfigOperations buildConfigOperations) {
         super(vertx, client, "kafka-connect", "create");
         this.serviceOperations = serviceOperations;
         this.deploymentOperations = deploymentOperations;
