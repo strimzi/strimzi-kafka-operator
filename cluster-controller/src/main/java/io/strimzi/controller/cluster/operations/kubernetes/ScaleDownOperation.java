@@ -13,25 +13,25 @@ import org.slf4j.LoggerFactory;
 
 public class ScaleDownOperation {
     private static final Logger log = LoggerFactory.getLogger(ScaleDownOperation.class.getName());
-    private final ScalableResource res;
-    private final int scaleTo;
+    private final Vertx vertx;
+    private final K8SUtils k8s;
 
-    public ScaleDownOperation(ScalableResource res, int scaleTo) {
-        this.res = res;
-        this.scaleTo = scaleTo;
+    public ScaleDownOperation(Vertx vertx, K8SUtils k8s) {
+        this.vertx = vertx;
+        this.k8s = k8s;
     }
 
-    public void scaleDown(Vertx vertx, K8SUtils k8s, Handler<AsyncResult<Void>> handler) {
+    public void scaleDown(ScalableResource resource, int scaleTo, Handler<AsyncResult<Void>> handler) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
                     try {
-                        Object gettable = res.get();
+                        Object gettable = resource.get();
                         int nextReplicas;
 
                         if (gettable instanceof StatefulSet) {
-                            nextReplicas = ((StatefulSet) res.get()).getSpec().getReplicas();
+                            nextReplicas = ((StatefulSet) resource.get()).getSpec().getReplicas();
                         } else if (gettable instanceof Deployment) {
-                            nextReplicas = ((Deployment) res.get()).getSpec().getReplicas();
+                            nextReplicas = ((Deployment) resource.get()).getSpec().getReplicas();
                         } else {
                             future.fail("Unknown resource type: " + gettable.getClass().getCanonicalName());
                             return;
@@ -40,7 +40,7 @@ public class ScaleDownOperation {
                         while (nextReplicas > scaleTo) {
                             nextReplicas--;
                             log.info("Scaling down from {} to {}", nextReplicas+1, nextReplicas);
-                            k8s.scale(res, nextReplicas, true);
+                            k8s.scale(resource, nextReplicas, true);
                         }
 
                         future.complete();

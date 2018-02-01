@@ -1,9 +1,15 @@
 package io.strimzi.controller.cluster.resources;
 
 import io.fabric8.kubernetes.api.model.*;
+import io.fabric8.kubernetes.api.model.extensions.DoneableStatefulSet;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
+import io.fabric8.kubernetes.api.model.extensions.StatefulSetList;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.strimzi.controller.cluster.ClusterController;
 import io.strimzi.controller.cluster.K8SUtils;
+import io.strimzi.controller.cluster.operations.ResourceOperation;
 import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
@@ -67,7 +73,7 @@ public class ZookeeperCluster extends AbstractCluster {
         this.metricsConfigName = cluster + ZookeeperCluster.METRICS_CONFIG_SUFFIX;
         this.image = DEFAULT_IMAGE;
         this.replicas = DEFAULT_REPLICAS;
-        this.healthCheckPath = "/opt/kafka/zookeeper_healthcheck.sh";
+        this.healthCheckPath = "/opt/zookeeper/zookeeper_healthcheck.sh";
         this.healthCheckTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
         this.healthCheckInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
         this.isMetricsEnabled = DEFAULT_ZOOKEEPER_METRICS_ENABLED;
@@ -110,14 +116,14 @@ public class ZookeeperCluster extends AbstractCluster {
     /**
      * Create a Zookeeper cluster from the deployed StatefulSet resource
      *
-     * @param k8s   K8SUtils client instance for accessing Kubernetes/OpenShift cluster
      * @param namespace Kubernetes/OpenShift namespace where cluster resources belong to
      * @param cluster   overall cluster name
      * @return  Zookeeper cluster instance
      */
-    public static ZookeeperCluster fromStatefulSet(K8SUtils k8s, String namespace, String cluster) {
+    public static ZookeeperCluster fromStatefulSet(ResourceOperation<KubernetesClient, StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> statefulSetResources,
+                                                   String namespace, String cluster) {
 
-        StatefulSet ss = k8s.getStatefulSet(namespace, cluster + ZookeeperCluster.NAME_SUFFIX);
+        StatefulSet ss = statefulSetResources.get(namespace, cluster + ZookeeperCluster.NAME_SUFFIX);
 
         ZookeeperCluster zk =  new ZookeeperCluster(namespace, cluster);
 
@@ -154,14 +160,14 @@ public class ZookeeperCluster extends AbstractCluster {
     /**
      * Return the differences between the current Zookeeper cluster and the deployed one
      *
-     * @param k8s   K8SUtils client instance for accessing Kubernetes/OpenShift cluster
      * @param namespace Kubernetes/OpenShift namespace where cluster resources belong to
      * @return  ClusterDiffResult instance with differences
      */
-    public ClusterDiffResult diff(K8SUtils k8s, String namespace)  {
-
-        StatefulSet ss = k8s.getStatefulSet(namespace, getName());
-        ConfigMap metricsConfigMap = k8s.getConfigmap(namespace, getMetricsConfigName());
+    public ClusterDiffResult diff(ResourceOperation<KubernetesClient, ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> configMapResources,
+                                  ResourceOperation<KubernetesClient, StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> statefulSetResources,
+                                  String namespace)  {
+        StatefulSet ss = statefulSetResources.get(namespace, getName());
+        ConfigMap metricsConfigMap = configMapResources.get(namespace, getMetricsConfigName());
 
         ClusterDiffResult diff = new ClusterDiffResult();
 

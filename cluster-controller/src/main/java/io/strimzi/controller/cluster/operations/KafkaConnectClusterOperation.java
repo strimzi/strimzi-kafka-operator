@@ -180,7 +180,7 @@ public class KafkaConnectClusterOperation extends ClusterOperation<KafkaConnectC
 
         if (diff.getScaleDown())    {
             log.info("Scaling down deployment {} in namespace {}", connect.getName(), namespace);
-            new ScaleDownOperation(k8s.getDeploymentResource(namespace, connect.getName()), connect.getReplicas()).scaleDown(vertx, k8s, scaleDown.completer());
+            new ScaleDownOperation(vertx, k8s).scaleDown(k8s.getDeploymentResource(namespace, connect.getName()), connect.getReplicas(), scaleDown.completer());
         }
         else {
             scaleDown.complete();
@@ -250,7 +250,7 @@ public class KafkaConnectClusterOperation extends ClusterOperation<KafkaConnectC
         Future<Void> scaleUp = Future.future();
 
         if (diff.getScaleUp()) {
-            new ScaleUpOperation(k8s.getDeploymentResource(namespace, connect.getName()), connect.getReplicas()).scaleUp(vertx, k8s, scaleUp.completer());
+            new ScaleUpOperation(vertx, k8s).scaleUp(k8s.getDeploymentResource(namespace, connect.getName()), connect.getReplicas(), scaleUp.completer());
         }
         else {
             scaleUp.complete();

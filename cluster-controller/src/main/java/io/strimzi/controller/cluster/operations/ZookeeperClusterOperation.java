@@ -124,7 +124,7 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
 
         @Override
         public ZookeeperCluster getCluster(K8SUtils k8s, String namespace, String name) {
-            return ZookeeperCluster.fromStatefulSet(k8s, namespace, name);
+            return ZookeeperCluster.fromStatefulSet(statefulSetResources, namespace, name);
         }
     };
 
@@ -151,7 +151,7 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
 
                         zk = ZookeeperCluster.fromConfigMap(zkConfigMap);
                         log.info("Updating Zookeeper cluster {} in namespace {}", zk.getName(), namespace);
-                        diff = zk.diff(k8s, namespace);
+                        diff = zk.diff(configMapResources, statefulSetResources, namespace);
 
                     } catch (Exception ex) {
 
@@ -202,7 +202,7 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
 
         if (diff.getScaleDown())    {
             log.info("Scaling down stateful set {} in namespace {}", zk.getName(), namespace);
-            new ScaleDownOperation(k8s.getStatefulSetResource(namespace, zk.getName()), zk.getReplicas()).scaleDown(vertx, k8s, scaleDown.completer());
+            new ScaleDownOperation(vertx, k8s).scaleDown(k8s.getStatefulSetResource(namespace, zk.getName()), zk.getReplicas(), scaleDown.completer());
         }
         else {
             scaleDown.complete();
@@ -266,7 +266,7 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
         Future<Void> rollingUpdate = Future.future();
 
         if (diff.getRollingUpdate()) {
-            new ManualRollingUpdateOperation(namespace, zk.getName(), k8s.getStatefulSet(namespace, zk.getName()).getSpec().getReplicas()).rollingUpdate(vertx, k8s, rollingUpdate.completer());
+            new ManualRollingUpdateOperation(vertx, k8s).rollingUpdate(namespace, zk.getName(), k8s.getStatefulSet(namespace, zk.getName()).getSpec().getReplicas(), rollingUpdate.completer());
         }
         else {
             rollingUpdate.complete();
@@ -279,7 +279,7 @@ public class ZookeeperClusterOperation extends ClusterOperation<ZookeeperCluster
         Future<Void> scaleUp = Future.future();
 
         if (diff.getScaleUp()) {
-            new ScaleUpOperation(k8s.getStatefulSetResource(namespace, zk.getName()), zk.getReplicas()).scaleUp(vertx, k8s, scaleUp.completer());
+            new ScaleUpOperation(vertx, k8s).scaleUp(k8s.getStatefulSetResource(namespace, zk.getName()), zk.getReplicas(), scaleUp.completer());
         }
         else {
             scaleUp.complete();
