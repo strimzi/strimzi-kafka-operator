@@ -48,16 +48,16 @@ public class ClusterController extends AbstractVerticle {
     private final KubernetesClient client;
     private final Map<String, String> labels;
     private final String namespace;
-    private final ConfigMapOperations configMapOperations;
-    private final StatefulSetOperations statefulSetOperations;
-    private final DeploymentOperations deploymentOperations;
+    private ConfigMapOperations configMapOperations;
+    private StatefulSetOperations statefulSetOperations;
+    private DeploymentOperations deploymentOperations;
 
     private Watch configMapWatch;
 
     private long reconcileTimer;
-    private final ZookeeperClusterOperations zookeeperClusterOperations;
-    private final KafkaClusterOperations kafkaClusterOperations;
-    private final KafkaConnectClusterOperations kafkaConnectClusterOperations;
+    private ZookeeperClusterOperations zookeeperClusterOperations;
+    private KafkaClusterOperations kafkaClusterOperations;
+    private KafkaConnectClusterOperations kafkaConnectClusterOperations;
 
     public ClusterController(ClusterControllerConfig config) {
         log.info("Creating ClusterController");
@@ -65,6 +65,13 @@ public class ClusterController extends AbstractVerticle {
         this.namespace = config.getNamespace();
         this.labels = config.getLabels();
         this.client = new DefaultKubernetesClient();
+    }
+
+    /**
+     * Set up the operations needed for cluster manipulation
+     */
+    private void setupOperations() {
+
         ServiceOperations serviceOperations = new ServiceOperations(vertx, client);
         statefulSetOperations = new StatefulSetOperations(vertx, client);
         configMapOperations = new ConfigMapOperations(vertx, client);
@@ -87,6 +94,8 @@ public class ClusterController extends AbstractVerticle {
     @Override
     public void start(Future<Void> start) {
         log.info("Starting ClusterController");
+
+        this.setupOperations();
 
         // Configure the executor here, but it is used only in other places
         getVertx().createSharedWorkerExecutor("kubernetes-ops-pool", 5, TimeUnit.SECONDS.toNanos(120));
