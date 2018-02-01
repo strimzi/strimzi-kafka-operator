@@ -45,12 +45,12 @@ public class KafkaCluster extends AbstractCluster {
     private static int DEFAULT_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR = 3;
 
     // Configuration keys
-    public static String KEY_IMAGE = "kafka-image";
-    public static String KEY_REPLICAS = "kafka-nodes";
-    public static String KEY_HEALTHCHECK_DELAY = "kafka-healthcheck-delay";
-    public static String KEY_HEALTHCHECK_TIMEOUT = "kafka-healthcheck-timeout";
-    public static String KEY_METRICS_CONFIG = "kafka-metrics-config";
-    public static String KEY_STORAGE = "kafka-storage";
+    public static final String KEY_IMAGE = "kafka-image";
+    public static final String KEY_REPLICAS = "kafka-nodes";
+    public static final String KEY_HEALTHCHECK_DELAY = "kafka-healthcheck-delay";
+    public static final String KEY_HEALTHCHECK_TIMEOUT = "kafka-healthcheck-timeout";
+    public static final String KEY_METRICS_CONFIG = "kafka-metrics-config";
+    public static final String KEY_STORAGE = "kafka-storage";
 
     // Kafka configuration keys
     private static String KEY_KAFKA_ZOOKEEPER_CONNECT = "KAFKA_ZOOKEEPER_CONNECT";
