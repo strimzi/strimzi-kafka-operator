@@ -2,8 +2,12 @@ package io.strimzi.controller.cluster.resources;
 
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.extensions.*;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.controller.cluster.ClusterController;
-import io.strimzi.controller.cluster.K8SUtils;
+import io.strimzi.controller.cluster.operations.resource.BuildConfigOperations;
+import io.strimzi.controller.cluster.operations.resource.DeploymentOperations;
+import io.strimzi.controller.cluster.operations.resource.ImageStreamOperations;
 import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
@@ -93,10 +97,9 @@ public class KafkaConnectCluster extends AbstractCluster {
      * Create a Kafka Connect cluster from the related ConfigMap resource
      *
      * @param cm    ConfigMap with cluster configuration
-     * @param k8s   K8SUtils instance, which is needed to check whether we are on OpenShift due to S2I support
      * @return  Kafka Connect cluster instance
      */
-    public static KafkaConnectCluster fromConfigMap(K8SUtils k8s, ConfigMap cm) {
+    public static KafkaConnectCluster fromConfigMap(KubernetesClient client, ConfigMap cm) {
         KafkaConnectCluster kafkaConnect = new KafkaConnectCluster(cm.getMetadata().getNamespace(), cm.getMetadata().getName());
 
         kafkaConnect.setLabels(cm.getMetadata().getLabels());
@@ -117,7 +120,7 @@ public class KafkaConnectCluster extends AbstractCluster {
         kafkaConnect.setStatusStorageReplicationFactor(Integer.parseInt(cm.getData().getOrDefault(KEY_STATUS_STORAGE_REPLICATION_FACTOR, String.valueOf(DEFAULT_STATUS_STORAGE_REPLICATION_FACTOR))));
 
         if (cm.getData().containsKey(KEY_S2I)) {
-            if (k8s.isOpenShift()) {
+            if (client.isAdaptable(OpenShiftClient.class)) {
                 JsonObject config = new JsonObject(cm.getData().get(KEY_S2I));
                 if (config.getBoolean(Source2Image.KEY_ENABLED, false)) {
                     kafkaConnect.setS2I(Source2Image.fromJson(cm.getMetadata().getNamespace(), kafkaConnect.getName(), kafkaConnect.getLabelsWithName(), config));
@@ -134,13 +137,15 @@ public class KafkaConnectCluster extends AbstractCluster {
     /**
      * Create a Kafka Connect cluster from the deployed Deployment resource
      *
-     * @param k8s   K8SUtils client instance for accessing Kubernetes/OpenShift cluster
      * @param namespace Kubernetes/OpenShift namespace where cluster resources belong to
      * @param cluster   overall cluster name
      * @return  Kafka Connect cluster instance
      */
-    public static KafkaConnectCluster fromDeployment(K8SUtils k8s, String namespace, String cluster) {
-        Deployment dep = k8s.getDeployment(namespace, cluster + KafkaConnectCluster.NAME_SUFFIX);
+    public static KafkaConnectCluster fromDeployment(
+            DeploymentOperations deploymentOperations,
+            ImageStreamOperations os, String namespace, String cluster) {
+
+        Deployment dep = deploymentOperations.get(namespace, cluster + KafkaConnectCluster.NAME_SUFFIX);
 
         KafkaConnectCluster kafkaConnect =  new KafkaConnectCluster(namespace, cluster);
 
@@ -165,8 +170,8 @@ public class KafkaConnectCluster extends AbstractCluster {
 
         String s2iAnnotation = String.format("%s/%s", ClusterController.STRIMZI_CLUSTER_CONTROLLER_DOMAIN, Source2Image.ANNOTATION_S2I);
         if (dep.getMetadata().getAnnotations().containsKey(s2iAnnotation) && Boolean.parseBoolean(dep.getMetadata().getAnnotations().getOrDefault(s2iAnnotation, "false"))) {
-            if (k8s.isOpenShift()) {
-                kafkaConnect.setS2I(Source2Image.fromOpenShift(namespace, kafkaConnect.getName(), k8s.getOpenShiftUtils()));
+            if (os != null) {
+                kafkaConnect.setS2I(Source2Image.fromOpenShift(namespace, kafkaConnect.getName(), os));
             }
             else {
                 log.error("S2I is supported only on OpenShift. S2I will be ignored in Kafka Connect cluster {} in namespace {}", cluster, namespace);
@@ -179,13 +184,16 @@ public class KafkaConnectCluster extends AbstractCluster {
     /**
      * Return the differences between the current Kafka Connect cluster and the deployed one
      *
-     * @param k8s   K8SUtils client instance for accessing Kubernetes/OpenShift cluster
      * @param namespace Kubernetes/OpenShift namespace where cluster resources belong to
      * @return  ClusterDiffResult instance with differences
      */
-    public ClusterDiffResult diff(K8SUtils k8s, String namespace) {
+    public ClusterDiffResult diff(
+            DeploymentOperations deploymentOperations,
+            ImageStreamOperations isResources,
+            BuildConfigOperations bcResources,
+            String namespace) {
 
-        Deployment dep = k8s.getDeployment(namespace, getName());
+        Deployment dep = deploymentOperations.get(namespace, getName());
 
         ClusterDiffResult diff = new ClusterDiffResult();
 
@@ -234,11 +242,11 @@ public class KafkaConnectCluster extends AbstractCluster {
             diff.setRollingUpdate(true);
         }
 
-        if (k8s.isOpenShift()) {
+        if (isResources != null) {
             Source2Image realS2I = null;
             String s2iAnnotation = String.format("%s/%s", ClusterController.STRIMZI_CLUSTER_CONTROLLER_DOMAIN, Source2Image.ANNOTATION_S2I);
             if (Boolean.parseBoolean(dep.getMetadata().getAnnotations().getOrDefault(s2iAnnotation, "false"))) {
-                realS2I = Source2Image.fromOpenShift(namespace, getName(), k8s.getOpenShiftUtils());
+                realS2I = Source2Image.fromOpenShift(namespace, getName(), isResources);
             }
 
             if (s2i == null && realS2I != null) {
@@ -250,7 +258,7 @@ public class KafkaConnectCluster extends AbstractCluster {
                 diff.setDifferent(true);
                 diff.setS2i(Source2Image.Source2ImageDiff.CREATE);
             } else if (s2i != null && realS2I != null) {
-                if (s2i.diff(k8s.getOpenShiftUtils()).getDifferent()) {
+                if (s2i.diff(isResources, bcResources).getDifferent()) {
                     log.info("Diff: Kafka Connect S2I should be updated");
                     diff.setS2i(Source2Image.Source2ImageDiff.UPDATE);
                     diff.setDifferent(true);

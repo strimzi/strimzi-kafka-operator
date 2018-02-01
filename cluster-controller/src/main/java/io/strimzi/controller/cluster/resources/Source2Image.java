@@ -1,19 +1,26 @@
 package io.strimzi.controller.cluster.resources;
 
 import io.fabric8.kubernetes.api.model.ObjectReference;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.api.model.BinaryBuildSource;
+import io.fabric8.openshift.api.model.Build;
 import io.fabric8.openshift.api.model.BuildConfig;
 import io.fabric8.openshift.api.model.BuildConfigBuilder;
+import io.fabric8.openshift.api.model.BuildConfigList;
 import io.fabric8.openshift.api.model.BuildTriggerPolicy;
+import io.fabric8.openshift.api.model.DoneableBuildConfig;
+import io.fabric8.openshift.api.model.DoneableImageStream;
 import io.fabric8.openshift.api.model.ImageChangeTrigger;
 import io.fabric8.openshift.api.model.ImageLookupPolicyBuilder;
 import io.fabric8.openshift.api.model.ImageStream;
 import io.fabric8.openshift.api.model.ImageStreamBuilder;
+import io.fabric8.openshift.api.model.ImageStreamList;
 import io.fabric8.openshift.api.model.TagReference;
-import io.strimzi.controller.cluster.OpenShiftUtils;
+import io.fabric8.openshift.client.OpenShiftClient;
+import io.fabric8.openshift.client.dsl.BuildConfigResource;
+import io.strimzi.controller.cluster.operations.resource.AbstractOperations;
 import io.vertx.core.json.JsonObject;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -92,8 +99,8 @@ public class Source2Image {
      * @param os            OpenShift utils
      * @return              Source2Image instance
      */
-    public static Source2Image fromOpenShift(String namespace, String name, OpenShiftUtils os) {
-        ImageStream sis = (ImageStream) os.get(namespace, getSourceImageStreamName(name), ImageStream.class);
+    public static Source2Image fromOpenShift(String namespace, String name, AbstractOperations<OpenShiftClient, ImageStream, ImageStreamList, DoneableImageStream, Resource<ImageStream, DoneableImageStream>> os) {
+        ImageStream sis = os.get(namespace, getSourceImageStreamName(name));
         String sourceImage = sis.getSpec().getTags().get(0).getFrom().getName() + ":" + sis.getSpec().getTags().get(0).getName();
 
         return new Source2Image(namespace, name, sis.getMetadata().getLabels(), sourceImage);
@@ -304,15 +311,15 @@ public class Source2Image {
     /**
      * Calculates the difference between this Source2Image instance and actual OpenShift resources
      *
-     * @param os       OpenShiftUtils client
      * @return         ClusterDiffResult instance describing the differences between desired and actual Source2Image
      */
-    public ClusterDiffResult diff(OpenShiftUtils os) {
+    public ClusterDiffResult diff(AbstractOperations<OpenShiftClient, ImageStream, ImageStreamList, DoneableImageStream, Resource<ImageStream, DoneableImageStream>> isResources,
+                                  AbstractOperations<OpenShiftClient, BuildConfig, BuildConfigList, DoneableBuildConfig, BuildConfigResource<BuildConfig, DoneableBuildConfig, Void, Build>> bcResources) {
         ClusterDiffResult diff = new ClusterDiffResult();
 
-        ImageStream sis = (ImageStream) os.get(namespace, getSourceImageStreamName(), ImageStream.class);
-        ImageStream tis = (ImageStream) os.get(namespace, getName(), ImageStream.class);
-        BuildConfig bc = (BuildConfig) os.get(namespace, getName(), BuildConfig.class);
+        ImageStream sis = isResources.get(namespace, getSourceImageStreamName());
+        ImageStream tis = isResources.get(namespace, getName());
+        BuildConfig bc = bcResources.get(namespace, getName());
 
         if (!getLabels().equals(sis.getMetadata().getLabels())
                 || !getLabels().equals(tis.getMetadata().getLabels())

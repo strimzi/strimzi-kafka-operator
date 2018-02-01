@@ -1,16 +1,18 @@
 package io.strimzi.controller.cluster;
 
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.openshift.client.OpenShiftClient;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.strimzi.controller.cluster.operations.CreateKafkaClusterOperation;
-import io.strimzi.controller.cluster.operations.CreateKafkaConnectClusterOperation;
-import io.strimzi.controller.cluster.operations.CreateZookeeperClusterOperation;
-import io.strimzi.controller.cluster.operations.DeleteKafkaClusterOperation;
-import io.strimzi.controller.cluster.operations.DeleteKafkaConnectClusterOperation;
-import io.strimzi.controller.cluster.operations.DeleteZookeeperClusterOperation;
-import io.strimzi.controller.cluster.operations.OperationExecutor;
-import io.strimzi.controller.cluster.operations.UpdateKafkaClusterOperation;
-import io.strimzi.controller.cluster.operations.UpdateKafkaConnectClusterOperation;
-import io.strimzi.controller.cluster.operations.UpdateZookeeperClusterOperation;
+import io.strimzi.controller.cluster.operations.cluster.KafkaClusterOperations;
+import io.strimzi.controller.cluster.operations.cluster.KafkaConnectClusterOperations;
+import io.strimzi.controller.cluster.operations.cluster.ZookeeperClusterOperations;
+import io.strimzi.controller.cluster.operations.resource.BuildConfigOperations;
+import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
+import io.strimzi.controller.cluster.operations.resource.DeploymentOperations;
+import io.strimzi.controller.cluster.operations.resource.ImageStreamOperations;
+import io.strimzi.controller.cluster.operations.resource.PvcOperations;
+import io.strimzi.controller.cluster.operations.resource.ServiceOperations;
+import io.strimzi.controller.cluster.operations.resource.StatefulSetOperations;
 import io.strimzi.controller.cluster.resources.KafkaCluster;
 import io.strimzi.controller.cluster.resources.KafkaConnectCluster;
 import io.fabric8.kubernetes.api.model.*;
@@ -32,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class ClusterController extends AbstractVerticle {
+
     private static final Logger log = LoggerFactory.getLogger(ClusterController.class.getName());
 
     public static final String STRIMZI_DOMAIN = "strimzi.io";
@@ -42,31 +45,60 @@ public class ClusterController extends AbstractVerticle {
 
     private static final int HEALTH_SERVER_PORT = 8080;
 
-    private final K8SUtils k8s;
+    private final KubernetesClient client;
     private final Map<String, String> labels;
     private final String namespace;
+    private ConfigMapOperations configMapOperations;
+    private StatefulSetOperations statefulSetOperations;
+    private DeploymentOperations deploymentOperations;
 
     private Watch configMapWatch;
 
-    private OperationExecutor opExec = null;
-
     private long reconcileTimer;
+    private ZookeeperClusterOperations zookeeperClusterOperations;
+    private KafkaClusterOperations kafkaClusterOperations;
+    private KafkaConnectClusterOperations kafkaConnectClusterOperations;
 
-    public ClusterController(ClusterControllerConfig config) throws Exception {
+    public ClusterController(ClusterControllerConfig config) {
         log.info("Creating ClusterController");
 
         this.namespace = config.getNamespace();
         this.labels = config.getLabels();
-        this.k8s = new K8SUtils(new DefaultKubernetesClient());
+        this.client = new DefaultKubernetesClient();
+    }
+
+    /**
+     * Set up the operations needed for cluster manipulation
+     */
+    private void setupOperations() {
+
+        ServiceOperations serviceOperations = new ServiceOperations(vertx, client);
+        statefulSetOperations = new StatefulSetOperations(vertx, client);
+        configMapOperations = new ConfigMapOperations(vertx, client);
+        PvcOperations pvcOperations = new PvcOperations(vertx, client);
+        deploymentOperations = new DeploymentOperations(vertx, client);
+        ImageStreamOperations imagesStreamResources;
+        BuildConfigOperations buildConfigOperations;
+        if (client.isAdaptable(OpenShiftClient.class)) {
+            imagesStreamResources = new ImageStreamOperations(vertx, client.adapt(OpenShiftClient.class));
+            buildConfigOperations = new BuildConfigOperations(vertx, client.adapt(OpenShiftClient.class));
+        } else {
+            imagesStreamResources = null;
+            buildConfigOperations = null;
+        }
+        this.zookeeperClusterOperations = new ZookeeperClusterOperations(vertx, client, serviceOperations, statefulSetOperations, configMapOperations, pvcOperations);
+        this.kafkaClusterOperations = new KafkaClusterOperations(vertx, client, configMapOperations, statefulSetOperations, serviceOperations, pvcOperations);
+        this.kafkaConnectClusterOperations = new KafkaConnectClusterOperations(vertx, client, serviceOperations, deploymentOperations, configMapOperations, imagesStreamResources, buildConfigOperations);
     }
 
     @Override
     public void start(Future<Void> start) {
         log.info("Starting ClusterController");
 
+        this.setupOperations();
+
         // Configure the executor here, but it is used only in other places
         getVertx().createSharedWorkerExecutor("kubernetes-ops-pool", 5, TimeUnit.SECONDS.toNanos(120));
-        this.opExec = OperationExecutor.getInstance(vertx, k8s);
 
         createConfigMapWatch(res -> {
             if (res.succeeded())    {
@@ -97,7 +129,7 @@ public class ClusterController extends AbstractVerticle {
 
         vertx.cancelTimer(reconcileTimer);
         configMapWatch.close();
-        k8s.getKubernetesClient().close();
+        client.close();
 
         stop.complete();
     }
@@ -105,7 +137,7 @@ public class ClusterController extends AbstractVerticle {
     private void createConfigMapWatch(Handler<AsyncResult<Watch>> handler) {
         getVertx().executeBlocking(
                 future -> {
-                    Watch watch = k8s.getKubernetesClient().configMaps().inNamespace(namespace).withLabels(labels).watch(new Watcher<ConfigMap>() {
+                    Watch watch = client.configMaps().inNamespace(namespace).withLabels(labels).watch(new Watcher<ConfigMap>() {
                         @Override
                         public void eventReceived(Action action, ConfigMap cm) {
                             Map<String, String> labels = cm.getMetadata().getLabels();
@@ -216,8 +248,8 @@ public class ClusterController extends AbstractVerticle {
         Map<String, String> kafkaLabels = new HashMap(labels);
         kafkaLabels.put(ClusterController.STRIMZI_TYPE_LABEL, KafkaCluster.TYPE);
 
-        List<ConfigMap> cms = k8s.getConfigmaps(namespace, kafkaLabels);
-        List<StatefulSet> sss = k8s.getStatefulSets(namespace, kafkaLabels);
+        List<ConfigMap> cms = configMapOperations.list(namespace, kafkaLabels);
+        List<StatefulSet> sss = statefulSetOperations.list(namespace, kafkaLabels);
 
         List<String> cmsNames = cms.stream().map(cm -> cm.getMetadata().getName()).collect(Collectors.toList());
         List<String> sssNames = sss.stream().map(cm -> cm.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL)).collect(Collectors.toList());
@@ -258,8 +290,8 @@ public class ClusterController extends AbstractVerticle {
         Map<String, String> kafkaLabels = new HashMap(labels);
         kafkaLabels.put(ClusterController.STRIMZI_TYPE_LABEL, KafkaConnectCluster.TYPE);
 
-        List<ConfigMap> cms = k8s.getConfigmaps(namespace, kafkaLabels);
-        List<Deployment> deps = k8s.getDeployments(namespace, kafkaLabels);
+        List<ConfigMap> cms = configMapOperations.list(namespace, kafkaLabels);
+        List<Deployment> deps = deploymentOperations.list(namespace, kafkaLabels);
 
         List<String> cmsNames = cms.stream().map(cm -> cm.getMetadata().getName()).collect(Collectors.toList());
         List<String> depsNames = deps.stream().map(cm -> cm.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL)).collect(Collectors.toList());
@@ -301,10 +333,10 @@ public class ClusterController extends AbstractVerticle {
         String name = add.getMetadata().getName();
         log.info("Adding cluster {}", name);
 
-        opExec.execute(new CreateZookeeperClusterOperation(namespace, name), res -> {
+        getZookeeperClusterOperations().create(namespace, name, res -> {
             if (res.succeeded()) {
                 log.info("Zookeeper cluster added {}", name);
-                opExec.execute(new CreateKafkaClusterOperation(namespace, name), res2 -> {
+                getKafkaClusterOperations().create(namespace, name, res2 -> {
                     if (res2.succeeded()) {
                         log.info("Kafka cluster added {}", name);
                     }
@@ -323,7 +355,7 @@ public class ClusterController extends AbstractVerticle {
         String name = cm.getMetadata().getName();
         log.info("Checking for updates in cluster {}", cm.getMetadata().getName());
 
-        opExec.execute(new UpdateZookeeperClusterOperation(namespace, name), res -> {
+        getZookeeperClusterOperations().update(namespace, name, res -> {
             if (res.succeeded()) {
                 log.info("Zookeeper cluster updated {}", name);
             }
@@ -331,7 +363,7 @@ public class ClusterController extends AbstractVerticle {
                 log.error("Failed to update Zookeeper cluster {}.", name);
             }
 
-            opExec.execute(new UpdateKafkaClusterOperation(namespace, name), res2 -> {
+            getKafkaClusterOperations().update(namespace, name, res2 -> {
                 if (res2.succeeded()) {
                     log.info("Kafka cluster updated {}", name);
                 }
@@ -355,10 +387,10 @@ public class ClusterController extends AbstractVerticle {
     }
 
     private void deleteKafkaCluster(String namespace, String name)   {
-        opExec.execute(new DeleteKafkaClusterOperation(namespace, name), res -> {
+        getKafkaClusterOperations().delete(namespace, name, res -> {
             if (res.succeeded()) {
                 log.info("Kafka cluster deleted {}", name);
-                opExec.execute(new DeleteZookeeperClusterOperation(namespace, name), res2 -> {
+                getZookeeperClusterOperations().delete(namespace, name, res2 -> {
                     if (res2.succeeded()) {
                         log.info("Zookeeper cluster deleted {}", name);
                     }
@@ -380,7 +412,7 @@ public class ClusterController extends AbstractVerticle {
         String name = add.getMetadata().getName();
         log.info("Adding Kafka Connect cluster {}", name);
 
-        opExec.execute(new CreateKafkaConnectClusterOperation(namespace, name), res -> {
+        getKafkaConnectClusterOperations().create(namespace, name, res -> {
             if (res.succeeded()) {
                 log.info("Kafka Connect cluster added {}", name);
             }
@@ -394,7 +426,7 @@ public class ClusterController extends AbstractVerticle {
         String name = cm.getMetadata().getName();
         log.info("Checking for updates in Kafka Connect cluster {}", cm.getMetadata().getName());
 
-        opExec.execute(new UpdateKafkaConnectClusterOperation(namespace, name), res -> {
+        getKafkaConnectClusterOperations().update(namespace, name, res -> {
             if (res.succeeded()) {
                 log.info("Kafka Connect cluster updated {}", name);
             }
@@ -417,7 +449,7 @@ public class ClusterController extends AbstractVerticle {
     }
 
     private void deleteKafkaConnectCluster(String namespace, String name)   {
-        opExec.execute(new DeleteKafkaConnectClusterOperation(namespace, name), res -> {
+        getKafkaConnectClusterOperations().delete(namespace, name, res -> {
             if (res.succeeded()) {
                 log.info("Kafka Connect cluster deleted {}", name);
             }
@@ -442,5 +474,17 @@ public class ClusterController extends AbstractVerticle {
                     }
                 })
                 .listen(HEALTH_SERVER_PORT);
+    }
+
+    private ZookeeperClusterOperations getZookeeperClusterOperations() {
+        return zookeeperClusterOperations;
+    }
+
+    private KafkaClusterOperations getKafkaClusterOperations() {
+        return kafkaClusterOperations;
+    }
+
+    private KafkaConnectClusterOperations getKafkaConnectClusterOperations() {
+        return kafkaConnectClusterOperations;
     }
 }

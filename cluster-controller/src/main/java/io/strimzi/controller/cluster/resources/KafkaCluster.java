@@ -3,7 +3,8 @@ package io.strimzi.controller.cluster.resources;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.controller.cluster.ClusterController;
-import io.strimzi.controller.cluster.K8SUtils;
+import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
+import io.strimzi.controller.cluster.operations.resource.StatefulSetOperations;
 import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
@@ -44,12 +45,12 @@ public class KafkaCluster extends AbstractCluster {
     private static int DEFAULT_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR = 3;
 
     // Configuration keys
-    private static String KEY_IMAGE = "kafka-image";
-    private static String KEY_REPLICAS = "kafka-nodes";
-    private static String KEY_HEALTHCHECK_DELAY = "kafka-healthcheck-delay";
-    private static String KEY_HEALTHCHECK_TIMEOUT = "kafka-healthcheck-timeout";
-    private static String KEY_METRICS_CONFIG = "kafka-metrics-config";
-    private static String KEY_STORAGE = "kafka-storage";
+    public static String KEY_IMAGE = "kafka-image";
+    public static String KEY_REPLICAS = "kafka-nodes";
+    public static String KEY_HEALTHCHECK_DELAY = "kafka-healthcheck-delay";
+    public static String KEY_HEALTHCHECK_TIMEOUT = "kafka-healthcheck-timeout";
+    public static String KEY_METRICS_CONFIG = "kafka-metrics-config";
+    public static String KEY_STORAGE = "kafka-storage";
 
     // Kafka configuration keys
     private static String KEY_KAFKA_ZOOKEEPER_CONNECT = "KAFKA_ZOOKEEPER_CONNECT";
@@ -119,14 +120,14 @@ public class KafkaCluster extends AbstractCluster {
     /**
      * Create a Kafka cluster from the deployed StatefulSet resource
      *
-     * @param k8s   K8SUtils client instance for accessing Kubernetes/OpenShift cluster
+     * @param statefulSetOperations The means of setting the SS to obtain the state from
      * @param namespace Kubernetes/OpenShift namespace where cluster resources belong to
      * @param cluster   overall cluster name
      * @return  Kafka cluster instance
      */
-    public static KafkaCluster fromStatefulSet(K8SUtils k8s, String namespace, String cluster) {
+    public static KafkaCluster fromStatefulSet(StatefulSetOperations statefulSetOperations, String namespace, String cluster) {
 
-        StatefulSet ss = k8s.getStatefulSet(namespace, cluster + KafkaCluster.NAME_SUFFIX);
+        StatefulSet ss = statefulSetOperations.get(namespace, cluster + KafkaCluster.NAME_SUFFIX);
 
         KafkaCluster kafka =  new KafkaCluster(namespace, cluster);
 
@@ -168,14 +169,17 @@ public class KafkaCluster extends AbstractCluster {
     /**
      * Return the differences between the current Kafka cluster and the deployed one
      *
-     * @param k8s   K8SUtils client instance for accessing Kubernetes/OpenShift cluster
+     * @param configMapOperations The means of getting the CM to compare with
+     * @param statefulSetOperations The means of getting the SS to compare with
      * @param namespace Kubernetes/OpenShift namespace where cluster resources belong to
      * @return  ClusterDiffResult instance with differences
      */
-    public ClusterDiffResult diff(K8SUtils k8s, String namespace)  {
-
-        StatefulSet ss = k8s.getStatefulSet(namespace, getName());
-        ConfigMap metricsConfigMap = k8s.getConfigmap(namespace, getMetricsConfigName());
+    public ClusterDiffResult diff(
+            ConfigMapOperations configMapOperations,
+            StatefulSetOperations statefulSetOperations,
+                                  String namespace)  {
+        StatefulSet ss = statefulSetOperations.get(namespace, getName());
+        ConfigMap metricsConfigMap = configMapOperations.get(namespace, getMetricsConfigName());
 
         ClusterDiffResult diff = new ClusterDiffResult();
 
@@ -266,23 +270,41 @@ public class KafkaCluster extends AbstractCluster {
         return diff;
     }
 
+    /**
+     * Generates a Service according to configured defaults
+     * @return The generated Service
+     */
     public Service generateService() {
 
         return createService("ClusterIP",
                 Collections.singletonList(createServicePort(clientPortName, clientPort, clientPort, "TCP")));
     }
 
+    /**
+     * Generates a headless Service according to configured defaults
+     * @return The generated Service
+     */
     public Service generateHeadlessService() {
 
         return createHeadlessService(headlessName,
                 Collections.singletonList(createServicePort(clientPortName, clientPort, clientPort, "TCP")));
     }
 
+    /**
+     * Patches the given headless Service
+     * @param svc The service to patch
+     * @return The same service
+     */
     public Service patchHeadlessService(Service svc) {
 
         return patchHeadlessService(headlessName, svc);
     }
 
+    /**
+     * Generates a StatefulSet according to configured defaults
+     * @param isOpenShift True iff this controller is operating within OpenShift.
+     * @return The generate StatefulSet
+     */
     public StatefulSet generateStatefulSet(boolean isOpenShift) {
 
         return createStatefulSet(
@@ -295,6 +317,11 @@ public class KafkaCluster extends AbstractCluster {
                 isOpenShift);
     }
 
+
+    /**
+     * Generates a metrics ConfigMap according to configured defaults
+     * @return The generated ConfigMap
+     */
     public ConfigMap generateMetricsConfigMap() {
 
         Map<String, String> data = new HashMap<>();
@@ -303,6 +330,11 @@ public class KafkaCluster extends AbstractCluster {
         return createConfigMap(metricsConfigName, data);
     }
 
+    /**
+     * Patches the given headless metrics ConfigMap
+     * @param cm The metrics ConfigMap to patch
+     * @return The same ConfigMap
+     */
     public ConfigMap patchMetricsConfigMap(ConfigMap cm) {
 
         Map<String, String> data = new HashMap<>();
@@ -311,6 +343,11 @@ public class KafkaCluster extends AbstractCluster {
         return patchConfigMap(cm, data);
     }
 
+    /**
+     * Patches the given StatefulSet
+     * @param statefulSet The StatefulSet to patch
+     * @return The patched StatefulSet
+     */
     public StatefulSet patchStatefulSet(StatefulSet statefulSet) {
 
         Map<String, String> annotations = new HashMap<>();
