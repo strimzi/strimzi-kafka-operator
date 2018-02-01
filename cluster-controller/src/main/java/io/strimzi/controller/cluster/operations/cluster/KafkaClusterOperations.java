@@ -52,12 +52,13 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
     private final CompositeOperation<KafkaCluster> create = new CompositeOperation<KafkaCluster>() {
 
         @Override
-        public KafkaCluster getCluster(String namespace, String name){
-            return KafkaCluster.fromConfigMap(configMapOperations.get(namespace, name));
+        public ClusterOperation<KafkaCluster> getCluster(String namespace, String name){
+            return new ClusterOperation<>(KafkaCluster.fromConfigMap(configMapOperations.get(namespace, name)), null);
         }
 
         @Override
-        public Future<?> composite(String namespace, KafkaCluster kafka){
+        public Future<?> composite(String namespace, ClusterOperation<KafkaCluster> clusterOp){
+            KafkaCluster kafka = clusterOp.cluster();
             List<Future> result = new ArrayList<>(4);
             // start creating configMap operation only if metrics are enabled,
             // otherwise the future is already complete (for the "join")
@@ -82,9 +83,11 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
             return CompositeFuture.join(result);
         }
     };
+
     private final CompositeOperation<KafkaCluster> delete = new CompositeOperation<KafkaCluster>() {
         @Override
-        public Future<?> composite(String namespace, KafkaCluster kafka) {
+        public Future<?> composite(String namespace, ClusterOperation<KafkaCluster> clusterOp) {
+            KafkaCluster kafka = clusterOp.cluster();
             boolean deleteClaims = kafka.getStorage().type() == Storage.StorageType.PERSISTENT_CLAIM
                     && kafka.getStorage().isDeleteClaim();
             List<Future> result = new ArrayList<>(4 + (deleteClaims ? kafka.getReplicas() : 0));
@@ -119,8 +122,8 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
         }
 
         @Override
-        public KafkaCluster getCluster(String namespace, String name) {
-            return KafkaCluster.fromStatefulSet(statefulSetOperations, namespace, name);
+        public ClusterOperation<KafkaCluster> getCluster(String namespace, String name) {
+            return new ClusterOperation<>(KafkaCluster.fromStatefulSet(statefulSetOperations, namespace, name), null);
         }
     };
 
@@ -134,68 +137,46 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
         return delete;
     }
 
-    public void update(String namespace, String name, Handler<AsyncResult<Void>> handler) {
-
-        final String lockName = getLockName(namespace, name);
-        vertx.sharedData().getLockWithTimeout(lockName, LOCK_TIMEOUT, res -> {
-            if (res.succeeded()) {
-                Lock lock = res.result();
-
-                ClusterDiffResult diff;
-                KafkaCluster kafka;
-                ConfigMap kafkaConfigMap = configMapOperations.get(namespace, name);
-
-                if (kafkaConfigMap != null)    {
-
-                    try {
-
-                        kafka = KafkaCluster.fromConfigMap(kafkaConfigMap);
-                        log.info("Updating Kafka cluster {} in namespace {}", kafka.getName(), namespace);
-                        diff = kafka.diff(configMapOperations, statefulSetOperations, namespace);
-
-                    } catch (Exception ex) {
-
-                        log.error("Error while parsing cluster ConfigMap", ex);
-                        handler.handle(Future.failedFuture("ConfigMap parsing error"));
-                        lock.release();
-                        return;
-                    }
-
-                } else {
-                    log.error("ConfigMap {} doesn't exist anymore in namespace {}", name, namespace);
-                    handler.handle(Future.failedFuture("ConfigMap doesn't exist anymore"));
-                    lock.release();
-                    return;
-                }
-
-                Future<Void> chainFuture = Future.future();
-
-                scaleDown(kafka, namespace, diff)
-                        .compose(i -> patchService(kafka, namespace, diff))
-                        .compose(i -> patchHeadlessService(kafka, namespace, diff))
-                        .compose(i -> patchStatefulSet(kafka, namespace, diff))
-                        .compose(i -> patchMetricsConfigMap(kafka, namespace, diff))
-                        .compose(i -> rollingUpdate(kafka, namespace, diff))
-                        .compose(i -> scaleUp(kafka, namespace, diff))
-                        .compose(chainFuture::complete, chainFuture);
-
-                chainFuture.setHandler(ar -> {
-                    if (ar.succeeded()) {
-                        log.info("Kafka cluster {} successfully updated in namespace {}", kafka.getName(), namespace);
-                        handler.handle(Future.succeededFuture());
-                        lock.release();
-                    } else {
-                        log.error("Kafka cluster {} failed to update in namespace {}", kafka.getName(), namespace);
-                        handler.handle(Future.failedFuture("Failed to update Zookeeper cluster"));
-                        lock.release();
-                    }
-                });
-            } else {
-                log.error("Failed to acquire lock to create Kafka cluster {}", lockName);
-                handler.handle(Future.failedFuture("Failed to acquire lock to create Kafka cluster"));
-            }
-        });
+    @Override
+    protected CompositeOperation<KafkaCluster> updateOp() {
+        return update;
     }
+
+    private final CompositeOperation<KafkaCluster> update = new CompositeOperation<KafkaCluster>() {
+        @Override
+        public Future<?> composite(String namespace, ClusterOperation<KafkaCluster> clusterOp) {
+            KafkaCluster kafka = clusterOp.cluster();
+            ClusterDiffResult diff = clusterOp.diff();
+
+            Future<Void> chainFuture = Future.future();
+            scaleDown(kafka, namespace, diff)
+                    .compose(i -> patchService(kafka, namespace, diff))
+                    .compose(i -> patchHeadlessService(kafka, namespace, diff))
+                    .compose(i -> patchStatefulSet(kafka, namespace, diff))
+                    .compose(i -> patchMetricsConfigMap(kafka, namespace, diff))
+                    .compose(i -> rollingUpdate(kafka, namespace, diff))
+                    .compose(i -> scaleUp(kafka, namespace, diff))
+                    .compose(chainFuture::complete, chainFuture);
+
+            return chainFuture;
+        }
+
+        @Override
+        public ClusterOperation<KafkaCluster> getCluster(String namespace, String name) {
+            ClusterDiffResult diff;
+            KafkaCluster kafka;
+            ConfigMap kafkaConfigMap = configMapOperations.get(namespace, name);
+
+            if (kafkaConfigMap != null)    {
+                kafka = KafkaCluster.fromConfigMap(kafkaConfigMap);
+                log.info("Updating Kafka cluster {} in namespace {}", kafka.getName(), namespace);
+                diff = kafka.diff(configMapOperations, statefulSetOperations, namespace);
+            } else {
+                throw new IllegalStateException("ConfigMap " + name + " doesn't exist anymore in namespace " + namespace);
+            }
+            return new ClusterOperation<>(kafka, diff);
+        }
+    };
 
     private Future<Void> scaleDown(KafkaCluster kafka, String namespace, ClusterDiffResult diff) {
         Future<Void> scaleDown = Future.future();
