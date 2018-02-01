@@ -53,12 +53,13 @@ public class ZookeeperClusterOperations extends AbstractClusterOperations<Zookee
     private final CompositeOperation<ZookeeperCluster> create = new CompositeOperation<ZookeeperCluster>() {
 
         @Override
-        public ZookeeperCluster getCluster(String namespace, String name) {
-            return ZookeeperCluster.fromConfigMap(configMapOperations.get(namespace, name));
+        public ClusterOperation<ZookeeperCluster> getCluster(String namespace, String name) {
+            return new ClusterOperation<>(ZookeeperCluster.fromConfigMap(configMapOperations.get(namespace, name)), null);
         }
 
         @Override
-        public Future<?> composite(String namespace, ZookeeperCluster zk) {
+        public Future<?> composite(String namespace, ClusterOperation<ZookeeperCluster> clusterOp) {
+            ZookeeperCluster zk = clusterOp.cluster();
             List<Future> result = new ArrayList<>(4);
 
             if (zk.isMetricsEnabled()) {
@@ -90,7 +91,8 @@ public class ZookeeperClusterOperations extends AbstractClusterOperations<Zookee
 
     private final CompositeOperation<ZookeeperCluster> delete = new CompositeOperation<ZookeeperCluster>() {
         @Override
-        public Future<?> composite(String namespace, ZookeeperCluster zk) {
+        public Future<?> composite(String namespace, ClusterOperation<ZookeeperCluster> clusterOp) {
+            ZookeeperCluster zk = clusterOp.cluster();
             boolean deleteClaims = zk.getStorage().type() == Storage.StorageType.PERSISTENT_CLAIM
                     && zk.getStorage().isDeleteClaim();
             List<Future> result = new ArrayList<>(4 + (deleteClaims ? zk.getReplicas() : 0));
@@ -128,8 +130,8 @@ public class ZookeeperClusterOperations extends AbstractClusterOperations<Zookee
         }
 
         @Override
-        public ZookeeperCluster getCluster(String namespace, String name) {
-            return ZookeeperCluster.fromStatefulSet(statefulSetOperations, namespace, name);
+        public ClusterOperation<ZookeeperCluster> getCluster(String namespace, String name) {
+            return new ClusterOperation<ZookeeperCluster>(ZookeeperCluster.fromStatefulSet(statefulSetOperations, namespace, name), null);
         }
     };
 
@@ -139,68 +141,47 @@ public class ZookeeperClusterOperations extends AbstractClusterOperations<Zookee
         return delete;
     }
 
-    public void update(String namespace, String name, Handler<AsyncResult<Void>> handler) {
-
-        final String lockName = getLockName(namespace, name);
-        vertx.sharedData().getLockWithTimeout(lockName, LOCK_TIMEOUT, res -> {
-            if (res.succeeded()) {
-                Lock lock = res.result();
-
-                ClusterDiffResult diff;
-                ZookeeperCluster zk;
-                ConfigMap zkConfigMap = configMapOperations.get(namespace, name);
-
-                if (zkConfigMap != null)    {
-
-                    try {
-
-                        zk = ZookeeperCluster.fromConfigMap(zkConfigMap);
-                        log.info("Updating Zookeeper cluster {} in namespace {}", zk.getName(), namespace);
-                        diff = zk.diff(configMapOperations, statefulSetOperations, namespace);
-
-                    } catch (Exception ex) {
-
-                        log.error("Error while parsing cluster ConfigMap", ex);
-                        handler.handle(Future.failedFuture("ConfigMap parsing error"));
-                        lock.release();
-                        return;
-                    }
-
-                } else {
-                    log.error("ConfigMap {} doesn't exist anymore in namespace {}", name, namespace);
-                    handler.handle(Future.failedFuture("ConfigMap doesn't exist anymore"));
-                    lock.release();
-                    return;
-                }
-
-                Future<Void> chainFuture = Future.future();
-
-                scaleDown(zk, namespace, diff)
-                        .compose(i -> patchService(zk, namespace, diff))
-                        .compose(i -> patchHeadlessService(zk, namespace, diff))
-                        .compose(i -> patchStatefulSet(zk, namespace, diff))
-                        .compose(i -> patchMetricsConfigMap(zk, namespace, diff))
-                        .compose(i -> rollingUpdate(zk, namespace, diff))
-                        .compose(i -> scaleUp(zk, namespace, diff))
-                        .compose(chainFuture::complete, chainFuture);
-
-                chainFuture.setHandler(ar -> {
-                    if (ar.succeeded()) {
-                        log.info("Zookeeper cluster {} successfully updated in namespace {}", zk.getName(), namespace);
-                        handler.handle(Future.succeededFuture());
-                        lock.release();
-                    } else {
-                        log.error("Zookeeper cluster {} failed to update in namespace {}", zk.getName(), namespace);
-                        handler.handle(Future.failedFuture("Failed to update Zookeeper cluster"));
-                        lock.release();
-                    }
-                });
-            } else {
-                log.error("Failed to acquire lock to create Zookeeper cluster {}", lockName);
-                handler.handle(Future.failedFuture("Failed to acquire lock to create Zookeeper cluster"));
-            }
-        });
+    @Override
+    protected CompositeOperation<ZookeeperCluster> updateOp() {
+        return update;
     }
+
+    private final CompositeOperation<ZookeeperCluster> update = new CompositeOperation<ZookeeperCluster>() {
+        @Override
+        public Future<?> composite(String namespace, ClusterOperation<ZookeeperCluster> operation) {
+            ZookeeperCluster zk = operation.cluster();
+            ClusterDiffResult diff = operation.diff();
+            Future<Void> chainFuture = Future.future();
+
+            scaleDown(zk, namespace, diff)
+                    .compose(i -> patchService(zk, namespace, diff))
+                    .compose(i -> patchHeadlessService(zk, namespace, diff))
+                    .compose(i -> patchStatefulSet(zk, namespace, diff))
+                    .compose(i -> patchMetricsConfigMap(zk, namespace, diff))
+                    .compose(i -> rollingUpdate(zk, namespace, diff))
+                    .compose(i -> scaleUp(zk, namespace, diff))
+                    .compose(chainFuture::complete, chainFuture);
+
+            return chainFuture;
+        }
+
+        @Override
+        public ClusterOperation<ZookeeperCluster> getCluster(String namespace, String name) {
+            ClusterDiffResult diff;
+            ZookeeperCluster zk;
+            ConfigMap zkConfigMap = configMapOperations.get(namespace, name);
+
+            if (zkConfigMap != null)    {
+                zk = ZookeeperCluster.fromConfigMap(zkConfigMap);
+                log.info("Updating Zookeeper cluster {} in namespace {}", zk.getName(), namespace);
+                diff = zk.diff(configMapOperations, statefulSetOperations, namespace);
+            } else {
+                throw new IllegalStateException("ConfigMap " + name + " doesn't exist anymore in namespace " + namespace);
+            }
+
+            return new ClusterOperation<>(zk, diff);
+        }
+    };
 
     private Future<Void> scaleDown(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
         Future<Void> scaleDown = Future.future();
