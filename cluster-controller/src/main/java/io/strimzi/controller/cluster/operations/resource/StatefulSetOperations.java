@@ -113,7 +113,7 @@ public class StatefulSetOperations extends AbstractScalableOperations<Kubernetes
         );
     }
 
-    class RollingUpdateWatcher implements Watcher<Pod> {
+    static class RollingUpdateWatcher implements Watcher<Pod> {
         //private static final Logger log = LoggerFactory.getLogger(RollingUpdateWatcher.class.getName());
         private final Future deleted;
 
