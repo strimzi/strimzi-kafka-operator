@@ -99,7 +99,7 @@ public class ZookeeperClusterOperations extends AbstractClusterOperations<Zookee
 
             result.add(serviceOperations.delete(namespace, zk.getHeadlessName()));
 
-            result.add(statefulSetOperations.delete(namespace, zk.getName());
+            result.add(statefulSetOperations.delete(namespace, zk.getName()));
 
 
             if (deleteClaims) {

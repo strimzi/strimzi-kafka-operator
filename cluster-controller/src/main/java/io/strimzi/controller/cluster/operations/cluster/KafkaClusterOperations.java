@@ -92,11 +92,11 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
             result.add(serviceOperations.delete(namespace, kafka.getHeadlessName()));
 
-            result.add(statefulSetOperations.delete(namespace, kafka.getName());
+            result.add(statefulSetOperations.delete(namespace, kafka.getName()));
 
             if (deleteClaims) {
                 for (int i = 0; i < kafka.getReplicas(); i++) {
-                    result.add(pvcOperations.delete(namespace, kafka.getVolumeName() + "-" + kafka.getName() + "-" + i);
+                    result.add(pvcOperations.delete(namespace, kafka.getVolumeName() + "-" + kafka.getName() + "-" + i));
                 }
             }
 
