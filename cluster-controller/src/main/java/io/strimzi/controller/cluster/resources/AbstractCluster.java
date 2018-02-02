@@ -444,7 +444,7 @@ public abstract class AbstractCluster {
                 .withReplicas(replicas)
                 .withNewTemplate()
                 .withNewMetadata()
-                .withLabels(getLabels())
+                .withLabels(getLabelsWithName())
                 .withAnnotations(podAnnotations)
                 .endMetadata()
                 .withNewSpec()
