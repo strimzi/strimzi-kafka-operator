@@ -136,7 +136,7 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
     }
 
     public void patch(String namespace, String name, boolean cascading, T patch, Handler<AsyncResult<Void>> handler) {
-        vertx./*createSharedWorkerExecutor("kubernetes-ops-pool").*/executeBlocking(
+        vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
                     try {
                         log.info("Patching resource with {}", patch);
