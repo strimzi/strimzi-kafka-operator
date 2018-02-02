@@ -40,6 +40,10 @@ public class KafkaClusterTest {
     @Test
     public void testGenerateService() {
         Service headful = kc.generateService();
+        checkService(headful);
+    }
+
+    private void checkService(Service headful) {
         assertEquals("ClusterIP", headful.getSpec().getType());
         assertEquals(ResourceUtils.labels("strimzi.io/cluster", cluster, "strimzi.io/kind", "kafka-cluster", "strimzi.io/name", cluster + "-kafka"), headful.getSpec().getSelector());
         assertEquals(1, headful.getSpec().getPorts().size());
@@ -51,6 +55,10 @@ public class KafkaClusterTest {
     @Test
     public void testGenerateHeadlessService() {
         Service headless = kc.generateHeadlessService();
+        checkHeadlessService(headless);
+    }
+
+    private void checkHeadlessService(Service headless) {
         assertEquals(cluster+"-kafka-headless", headless.getMetadata().getName());
         assertEquals("ClusterIP", headless.getSpec().getType());
         assertEquals("None", headless.getSpec().getClusterIP());
@@ -65,6 +73,10 @@ public class KafkaClusterTest {
     public void testGenerateStatefulSet() {
         // We expect a single statefulSet ...
         StatefulSet ss = kc.generateStatefulSet(true);
+        checkStatefulSet(ss);
+    }
+
+    private void checkStatefulSet(StatefulSet ss) {
         assertEquals(cluster + "-kafka", ss.getMetadata().getName());
         // ... in the same namespace ...
         assertEquals(namespace, ss.getMetadata().getNamespace());
@@ -80,6 +92,18 @@ public class KafkaClusterTest {
         assertEquals(new Integer(healthDelay), ss.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getInitialDelaySeconds());
         assertEquals(new Integer(healthTimeout), ss.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds());
         assertEquals(new Integer(healthDelay), ss.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds());
+    }
+
+    /**
+     * Check that a KafkaCluster from a statefulset matches the one from a ConfigMap
+     */
+    @Test
+    public void testClusterFromStatefulSet() {
+        StatefulSet ss = kc.generateStatefulSet(true);
+        KafkaCluster kc2 = KafkaCluster.fromStatefulSet(ss, namespace, cluster);
+        checkService(kc2.generateService());
+        checkHeadlessService(kc2.generateHeadlessService());
+        checkStatefulSet(kc2.generateStatefulSet(true));
     }
 
 }
