@@ -10,7 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -44,7 +43,8 @@ public class S2IOperations {
         S2IOperation(String operationType) {
             this.operationType = operationType;
         }
-        public final void execute(Source2Image s2i, Handler<AsyncResult<Void>> handler) {
+        public final Future<Void> execute(Source2Image s2i) {
+            Future<Void> fut = Future.future();
             log.info("{} S2I {} in namespace {}", operationType, s2i.getName(), s2i.getNamespace());
 
             try {
@@ -53,17 +53,18 @@ public class S2IOperations {
                 composite.setHandler(ar -> {
                     if (ar.succeeded()) {
                         log.info("S2I {} successfully updated in namespace {}", s2i.getName(), s2i.getNamespace());
-                        handler.handle(Future.succeededFuture());
+                        fut.complete();
                     } else {
                         log.error("S2I cluster {} failed to update in namespace {}", s2i.getName(), s2i.getNamespace());
-                        handler.handle(Future.failedFuture("Failed to update S2I"));
+                        fut.fail("Failed to update S2I");
                     }
                 });
             }
             catch (Exception e) {
                 log.error("S2I cluster {} failed to update in namespace {}", s2i.getName(), s2i.getNamespace(), e);
-                handler.handle(Future.failedFuture("Failed to update S2I"));
+                fut.fail("Failed to update S2I");
             }
+            return fut;
         }
 
         protected abstract Future<?> composite(Source2Image s2i);
@@ -84,8 +85,8 @@ public class S2IOperations {
         }
     };
 
-    public void create(Source2Image s2i, Handler<AsyncResult<Void>> handler) {
-        createOp.execute(s2i, handler);
+    public Future<Void> create(Source2Image s2i) {
+        return createOp.execute(s2i);
     }
 
     private final S2IOperation updateOp = new S2IOperation("update") {
@@ -116,8 +117,8 @@ public class S2IOperations {
         }
     };
 
-    public void update(Source2Image s2i, Handler<AsyncResult<Void>> handler) {
-        updateOp.execute(s2i, handler);
+    public Future<Void> update(Source2Image s2i) {
+        return updateOp.execute(s2i);
     }
 
     private final S2IOperation deleteOp = new S2IOperation("delete") {
@@ -135,8 +136,8 @@ public class S2IOperations {
         }
     };
 
-    public void delete(Source2Image s2i, Handler<AsyncResult<Void>> handler) {
-        deleteOp.execute(s2i, handler);
+    public Future<Void> delete(Source2Image s2i) {
+        return deleteOp.execute(s2i);
     }
 
 }

@@ -84,8 +84,7 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
 
             Future<Void> futureS2I;
             if (connect.getS2I() != null) {
-                futureS2I = Future.future();
-                s2iOperations.create(connect.getS2I(), futureS2I.completer());
+                futureS2I = s2iOperations.create(connect.getS2I());
             } else {
                 futureS2I = Future.succeededFuture();
             }
@@ -112,9 +111,7 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
             result.add(deploymentOperations.delete(namespace, connect.getName()));
 
             if (connect.getS2I() != null) {
-                Future<Void> futureS2I = Future.future();
-                s2iOperations.delete(connect.getS2I(), futureS2I.completer());
-                result.add(futureS2I);
+                result.add(s2iOperations.delete(connect.getS2I()));
             }
 
             return CompositeFuture.join(result);
@@ -220,19 +217,13 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
         if (diff.getS2i() != Source2Image.Source2ImageDiff.NONE) {
             if (diff.getS2i() == Source2Image.Source2ImageDiff.CREATE) {
                 log.info("Creating S2I deployment {} in namespace {}", connect.getName(), namespace);
-                Future<Void> createS2I = Future.future();
-                s2iOperations.create(connect.getS2I(), createS2I.completer());
-                return createS2I;
+                return s2iOperations.create(connect.getS2I());
             } else if (diff.getS2i() == Source2Image.Source2ImageDiff.DELETE) {
                 log.info("Deleting S2I deployment {} in namespace {}", connect.getName(), namespace);
-                Future<Void> deleteS2I = Future.future();
-                s2iOperations.delete(new Source2Image(namespace, connect.getName()), deleteS2I.completer());
-                return deleteS2I;
+                return s2iOperations.delete(new Source2Image(namespace, connect.getName()));
             } else {
                 log.info("Updating S2I deployment {} in namespace {}", connect.getName(), namespace);
-                Future<Void> patchS2I = Future.future();
-                s2iOperations.update(connect.getS2I(), patchS2I.completer());
-                return patchS2I;
+                return s2iOperations.update(connect.getS2I());
             }
         } else {
             return Future.succeededFuture();
