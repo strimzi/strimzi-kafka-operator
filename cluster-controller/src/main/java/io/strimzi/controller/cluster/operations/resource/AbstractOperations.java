@@ -65,25 +65,28 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
     /**
      * Asynchronously create the given {@code resource} if it doesn't already exists,
      * returning a future for the outcome.
+     * If the resource with that name already exists the future completes successfully.
      * @param resource The resource to create.
      */
     public Future<Void> create(T resource) {
         Future<Void> fut = Future.future();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
-                    if (operation().inNamespace(resource.getMetadata().getNamespace()).withName(resource.getMetadata().getName()).get() == null) {
+                    String namespace = resource.getMetadata().getNamespace();
+                    String name = resource.getMetadata().getName();
+                    if (operation().inNamespace(namespace).withName(name).get() == null) {
                         try {
-                            log.info("Creating {} {}", resourceKind, resource);
+                            log.info("Creating {} {} in namespace {}", resourceKind, name, namespace);
                             operation().createOrReplace(resource);
-                            log.info("{} {} has been created", resourceKind, resource);
+                            log.info("{} {} in namespace {} has been created", resourceKind, name, namespace);
                             future.complete();
                         } catch (Exception e) {
-                            log.error("Caught exception while creating {}", resourceKind, e);
+                            log.error("Caught exception while creating {} {} in namespace {}", resourceKind, name, namespace, e);
                             future.fail(e);
                         }
                     }
                     else {
-                        log.warn("{} {} already exists", resourceKind, resource);
+                        log.warn("{} {} in namespace {} already exists", resourceKind, name, namespace);
                         future.complete();
                     }
                 },
@@ -96,6 +99,7 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
     /**
      * Asynchronously delete the resource with the given {@code name} in the given {@code namespace},
      * returning a future for the outcome.
+     * If the resource didn't exist the future completes successfully.
      * @param namespace The namespace of the resource to delete.
      * @param name The name of the resource to delete.
      */
@@ -108,14 +112,14 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
                         try {
                             log.info("Deleting {} {} in namespace {}", resourceKind, name, namespace);
                             operation().inNamespace(namespace).withName(name).delete();
-                            log.info("{} {} has been deleted", resourceKind, name);
+                            log.info("{} {} in namespace {} has been deleted", resourceKind, name, namespace);
                             future.complete();
                         } catch (Exception e) {
-                            log.error("Caught exception while deleting {}", resourceKind, e);
+                            log.error("Caught exception while deleting {} {} in namespace {}", resourceKind, name, namespace, e);
                             future.fail(e);
                         }
                     } else {
-                        log.warn("{} {} in namespace {} doesn't exist", resourceKind, name, namespace);
+                        log.warn("{} {} in namespace {} doesn't exist, so cannot be deleted", resourceKind, name, namespace);
                         future.complete();
                     }
                 }, false,
@@ -146,7 +150,7 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
                         future.complete();
                     }
                     catch (Exception e) {
-                        log.error("Caught exception while patching", e);
+                        log.error("Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
                         future.fail(e);
                     }
                 },
