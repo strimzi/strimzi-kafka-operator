@@ -58,7 +58,8 @@ public class ResourceUtils {
      * @param healthTimeout
      * @return
      */
-    public static ConfigMap createConfigMap(String clusterCmNamespace, String clusterCmName, int replicas, String image, int healthDelay, int healthTimeout) {
+    public static ConfigMap createConfigMap(String clusterCmNamespace, String clusterCmName, int replicas, String image, int healthDelay,
+                                            int healthTimeout, String metricsCmJson) {
         Map<String, String> cmData = new HashMap<>();
         cmData.put(KafkaCluster.KEY_REPLICAS, Integer.toString(replicas));
         cmData.put(KafkaCluster.KEY_IMAGE, image);
@@ -66,6 +67,7 @@ public class ResourceUtils {
         cmData.put(KafkaCluster.KEY_HEALTHCHECK_TIMEOUT, Integer.toString(healthTimeout));
         // TODO Take a Storage parameter for this
         cmData.put(KafkaCluster.KEY_STORAGE, "{\"type\": \"ephemeral\"}");
+        cmData.put(KafkaCluster.KEY_METRICS_CONFIG, metricsCmJson);
         return new ConfigMapBuilder()
                 .withNewMetadata()
                 .withName(clusterCmName)

@@ -153,7 +153,9 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
             if (kafkaConfigMap != null)    {
                 kafka = KafkaCluster.fromConfigMap(kafkaConfigMap);
                 log.info("Updating Kafka cluster {} in namespace {}", kafka.getName(), namespace);
-                diff = kafka.diff(configMapOperations, statefulSetOperations, namespace);
+                StatefulSet ss = statefulSetOperations.get(namespace, kafka.getName());
+                ConfigMap metricsConfigMap = configMapOperations.get(namespace, kafka.getMetricsConfigName());
+                diff = kafka.diff(metricsConfigMap, ss);
             } else {
                 throw new IllegalStateException("ConfigMap " + name + " doesn't exist anymore in namespace " + namespace);
             }

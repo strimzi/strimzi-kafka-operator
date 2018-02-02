@@ -34,8 +34,19 @@ public class KafkaClusterTest {
     private final String image = "image";
     private final int healthDelay = 120;
     private final int healthTimeout = 30;
-    private final ConfigMap cm = ResourceUtils.createConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout);
+    private final String metricsCmJson = "{\"animal\":\"wombat\"}";
+    private final ConfigMap cm = ResourceUtils.createConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson);
     private final KafkaCluster kc = KafkaCluster.fromConfigMap(cm);
+
+    @Test
+    public void testMetricsConfigMap() {
+        ConfigMap metricsCm = kc.generateMetricsConfigMap();
+        checkMetricsConfigMap(metricsCm);
+    }
+
+    private void checkMetricsConfigMap(ConfigMap metricsCm) {
+        assertEquals(metricsCmJson, metricsCm.getData().get(AbstractCluster.METRICS_CONFIG_FILE));
+    }
 
     @Test
     public void testGenerateService() {
@@ -59,10 +70,10 @@ public class KafkaClusterTest {
     }
 
     private void checkHeadlessService(Service headless) {
-        assertEquals(cluster+"-kafka-headless", headless.getMetadata().getName());
+        assertEquals(KafkaCluster.headlessName(cluster), headless.getMetadata().getName());
         assertEquals("ClusterIP", headless.getSpec().getType());
         assertEquals("None", headless.getSpec().getClusterIP());
-        assertEquals(labels("strimzi.io/cluster", "foo", "strimzi.io/kind", "kafka-cluster", "strimzi.io/name", "foo-kafka"), headless.getSpec().getSelector());
+        assertEquals(labels("strimzi.io/cluster", cluster, "strimzi.io/kind", "kafka-cluster", "strimzi.io/name", KafkaCluster.kafkaClusterName(cluster)), headless.getSpec().getSelector());
         assertEquals(1, headless.getSpec().getPorts().size());
         assertEquals("clients", headless.getSpec().getPorts().get(0).getName());
         assertEquals(new Integer(9092), headless.getSpec().getPorts().get(0).getPort());
@@ -77,13 +88,13 @@ public class KafkaClusterTest {
     }
 
     private void checkStatefulSet(StatefulSet ss) {
-        assertEquals(cluster + "-kafka", ss.getMetadata().getName());
+        assertEquals(KafkaCluster.kafkaClusterName(cluster), ss.getMetadata().getName());
         // ... in the same namespace ...
         assertEquals(namespace, ss.getMetadata().getNamespace());
         // ... with these labels
         assertEquals(labels("strimzi.io/cluster", cluster,
                 "strimzi.io/kind", "kafka-cluster",
-                "strimzi.io/name", cluster + "-kafka"),
+                "strimzi.io/name", KafkaCluster.kafkaClusterName(cluster)),
                 ss.getMetadata().getLabels());
 
         assertEquals(new Integer(replicas), ss.getSpec().getReplicas());
@@ -101,9 +112,17 @@ public class KafkaClusterTest {
     public void testClusterFromStatefulSet() {
         StatefulSet ss = kc.generateStatefulSet(true);
         KafkaCluster kc2 = KafkaCluster.fromStatefulSet(ss, namespace, cluster);
+        // Don't check the metrics CM, since this isn't restored from the StatefulSet
         checkService(kc2.generateService());
         checkHeadlessService(kc2.generateHeadlessService());
         checkStatefulSet(kc2.generateStatefulSet(true));
+    }
+
+    // TODO test volume claim templates
+
+    @Test
+    public void testDiff() {
+        kc.diff(cm, kc.generateStatefulSet(true));
     }
 
 }

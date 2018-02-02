@@ -79,7 +79,8 @@ public class KafkaClusterOperationsTest {
         String image = "bar";
         int healthDelay = 120;
         int healthTimeout = 30;
-        ConfigMap clusterCm = ResourceUtils.createConfigMap(clusterCmNamespace, clusterCmName, replicas, image, healthDelay, healthTimeout);
+        String metricsCmJson = null;
+        ConfigMap clusterCm = ResourceUtils.createConfigMap(clusterCmNamespace, clusterCmName, replicas, image, healthDelay, healthTimeout, metricsCmJson);
         when(mockCmOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
         when(mockServiceOps.create(serviceCaptor.capture())).thenReturn(Future.succeededFuture());

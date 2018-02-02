@@ -88,11 +88,11 @@ public class KafkaCluster extends AbstractCluster {
         return cluster + KafkaCluster.NAME_SUFFIX;
     }
 
-    private static String metricConfigsName(String cluster) {
+    public static String metricConfigsName(String cluster) {
         return cluster + KafkaCluster.METRICS_CONFIG_SUFFIX;
     }
 
-    private String headlessName(String cluster) {
+    public static String headlessName(String cluster) {
         return cluster + KafkaCluster.HEADLESS_NAME_SUFFIX;
     }
 
@@ -179,17 +179,13 @@ public class KafkaCluster extends AbstractCluster {
     /**
      * Return the differences between the current Kafka cluster and the deployed one
      *
-     * @param configMapOperations The means of getting the CM to compare with
-     * @param statefulSetOperations The means of getting the SS to compare with
-     * @param namespace Kubernetes/OpenShift namespace where cluster resources belong to
+     * @param metricsConfigMap The CM to compare with
+     * @param ss The SS to compare with
      * @return  ClusterDiffResult instance with differences
      */
     public ClusterDiffResult diff(
-            ConfigMapOperations configMapOperations,
-            StatefulSetOperations statefulSetOperations,
-                                  String namespace)  {
-        StatefulSet ss = statefulSetOperations.get(namespace, getName());
-        ConfigMap metricsConfigMap = configMapOperations.get(namespace, getMetricsConfigName());
+            ConfigMap metricsConfigMap,
+            StatefulSet ss)  {
 
         ClusterDiffResult diff = new ClusterDiffResult();
 
@@ -239,7 +235,7 @@ public class KafkaCluster extends AbstractCluster {
             diff.setMetricsChanged(true);
             diff.setRollingUpdate(true);
         } else {
-
+            
             if (isMetricsEnabled) {
                 JsonObject metricsConfig = new JsonObject(metricsConfigMap.getData().get(METRICS_CONFIG_FILE));
                 if (!this.metricsConfig.equals(metricsConfig)) {

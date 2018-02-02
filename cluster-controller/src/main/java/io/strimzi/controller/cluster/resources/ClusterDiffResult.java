@@ -28,6 +28,11 @@ public class ClusterDiffResult {
         this.scaleDown = isScaleDown;
     }
 
+    /**
+     * Determines whether a resource needs to be updated/patched.
+     * This doesn't distinguish which resource, but patching unnecessarily ends up being a no-op.
+     * @return true iff a resource needs to be updated/patched
+     */
     public Boolean getDifferent() {
         return different;
     }
