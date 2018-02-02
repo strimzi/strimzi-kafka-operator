@@ -145,7 +145,7 @@ public class KafkaCluster extends AbstractCluster {
         kafka.setReplicas(ss.getSpec().getReplicas());
         kafka.setImage(ss.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
         kafka.setHealthCheckInitialDelay(ss.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds());
-        kafka.setHealthCheckInitialDelay(ss.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds());
+        kafka.setHealthCheckTimeout(ss.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds());
 
         Map<String, String> vars = ss.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream().collect(
                 Collectors.toMap(EnvVar::getName, EnvVar::getValue));
