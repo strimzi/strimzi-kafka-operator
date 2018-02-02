@@ -93,30 +93,20 @@ public class S2IOperations {
         protected Future<?> composite(Source2Image s2i) {
             if (s2i.diff(imageStreamOperations, buildConfigOperations).getDifferent()) {
                 List<Future> result = new ArrayList<>(3);
-                Future<Void> futureSourceImageStream = Future.future();
-
-                imageStreamOperations.patch(
+                result.add(imageStreamOperations.patch(
                         s2i.getNamespace(), s2i.getSourceImageStreamName(),
                         s2i.patchSourceImageStream(
-                                imageStreamOperations.get(s2i.getNamespace(), s2i.getSourceImageStreamName())),
-                        futureSourceImageStream.completer());
-                result.add(futureSourceImageStream);
+                                imageStreamOperations.get(s2i.getNamespace(), s2i.getSourceImageStreamName()))));
 
-                Future<Void> futureTargetImageStream = Future.future();
-                imageStreamOperations
+                result.add(imageStreamOperations
                         .patch(s2i.getNamespace(), s2i.getName(),
                                 s2i.patchTargetImageStream(
-                                        imageStreamOperations.get(s2i.getNamespace(), s2i.getName())),
-                                futureTargetImageStream.completer());
-                result.add(futureTargetImageStream);
+                                        imageStreamOperations.get(s2i.getNamespace(), s2i.getName()))));
 
-                Future<Void> futureBuildConfig = Future.future();
-                buildConfigOperations
+                result.add(buildConfigOperations
                         .patch(s2i.getNamespace(), s2i.getName(),
                                 s2i.patchBuildConfig(
-                                        buildConfigOperations.get(s2i.getNamespace(), s2i.getName())),
-                                futureBuildConfig.completer());
-                result.add(futureBuildConfig);
+                                        buildConfigOperations.get(s2i.getNamespace(), s2i.getName()))));
 
                 return CompositeFuture.join(result);
             } else {

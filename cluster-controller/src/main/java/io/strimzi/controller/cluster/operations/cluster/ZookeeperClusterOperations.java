@@ -181,10 +181,8 @@ public class ZookeeperClusterOperations extends AbstractClusterOperations<Zookee
 
     private Future<Void> patchService(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
-            Future<Void> patchService = Future.future();
-            serviceOperations.patch(namespace, zk.getName(),
-                    zk.patchService(serviceOperations.get(namespace, zk.getName())), patchService.completer());
-            return patchService;
+            return serviceOperations.patch(namespace, zk.getName(),
+                    zk.patchService(serviceOperations.get(namespace, zk.getName())));
         }
         else
         {
@@ -194,10 +192,8 @@ public class ZookeeperClusterOperations extends AbstractClusterOperations<Zookee
 
     private Future<Void> patchHeadlessService(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
-            Future<Void> patchService = Future.future();
-            serviceOperations.patch(namespace, zk.getHeadlessName(),
-                    zk.patchHeadlessService(serviceOperations.get(namespace, zk.getHeadlessName())), patchService.completer());
-            return patchService;
+            return serviceOperations.patch(namespace, zk.getHeadlessName(),
+                    zk.patchHeadlessService(serviceOperations.get(namespace, zk.getHeadlessName())));
         }
         else
         {
@@ -207,10 +203,8 @@ public class ZookeeperClusterOperations extends AbstractClusterOperations<Zookee
 
     private Future<Void> patchStatefulSet(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
-            Future<Void> patchStatefulSet = Future.future();
-            statefulSetOperations.patch(namespace, zk.getName(), false,
-                    zk.patchStatefulSet(statefulSetOperations.get(namespace, zk.getName())), patchStatefulSet.completer());
-            return patchStatefulSet;
+            return statefulSetOperations.patch(namespace, zk.getName(), false,
+                    zk.patchStatefulSet(statefulSetOperations.get(namespace, zk.getName())));
         }
         else
         {
@@ -220,11 +214,8 @@ public class ZookeeperClusterOperations extends AbstractClusterOperations<Zookee
 
     private Future<Void> patchMetricsConfigMap(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
         if (diff.isMetricsChanged()) {
-            Future<Void> patchConfigMap = Future.future();
-            configMapOperations.patch(namespace, zk.getMetricsConfigName(),
-                    zk.patchMetricsConfigMap(configMapOperations.get(namespace, zk.getMetricsConfigName())),
-                    patchConfigMap.completer());
-            return patchConfigMap;
+            return configMapOperations.patch(namespace, zk.getMetricsConfigName(),
+                    zk.patchMetricsConfigMap(configMapOperations.get(namespace, zk.getMetricsConfigName())));
         } else {
             return Future.succeededFuture();
         }

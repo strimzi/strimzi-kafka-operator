@@ -108,6 +108,7 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
                         try {
                             log.info("Deleting {} {} in namespace {}", resourceKind, name, namespace);
                             operation().inNamespace(namespace).withName(name).delete();
+                            log.info("{} {} has been deleted", resourceKind, name);
                             future.complete();
                         } catch (Exception e) {
                             log.error("Caught exception while deleting {}", resourceKind, e);
@@ -125,22 +126,23 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
 
     /**
      * Asynchronously patch the resource with the given {@code name} in the given {@code namespace}
-     * with reflect the state given in the {@code patch}, calling the handler with the outcome.
+     * with reflect the state given in the {@code patch}, returning a future for the outcome.
      * @param namespace The namespace of the resource to patch.
      * @param name The name of the resource to patch.
-     * @param patch The desired state of the resource.
-     * @param handler The handler for the outcome.
+     * @param patch The desired state of the resource..
      */
-    public void patch(String namespace, String name, T patch, Handler<AsyncResult<Void>> handler) {
-        patch(namespace, name, true, patch, handler);
+    public Future<Void> patch(String namespace, String name, T patch) {
+        return patch(namespace, name, true, patch);
     }
 
-    public void patch(String namespace, String name, boolean cascading, T patch, Handler<AsyncResult<Void>> handler) {
+    public Future<Void> patch(String namespace, String name, boolean cascading, T patch) {
+        Future<Void> fut = Future.future();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
                     try {
-                        log.info("Patching resource with {}", patch);
+                        log.info("Patching {} resource {} in namespace {} with {}", resourceKind, name, namespace, patch);
                         operation().inNamespace(namespace).withName(name).cascading(cascading).patch(patch);
+                        log.info("{} {} in namespace {} has been patched", resourceKind, name, namespace);
                         future.complete();
                     }
                     catch (Exception e) {
@@ -149,17 +151,9 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
                     }
                 },
                 true,
-                res -> {
-                    if (res.succeeded()) {
-                        log.info("Resource has been patched", patch);
-                        handler.handle(Future.succeededFuture());
-                    }
-                    else {
-                        log.error("Failed to patch resource: {}", res.cause().toString());
-                        handler.handle(Future.failedFuture(res.cause()));
-                    }
-                }
+                fut.completer()
         );
+        return fut;
     }
 
     /**
