@@ -25,12 +25,14 @@ import org.junit.Test;
 
 import static io.strimzi.controller.cluster.ResourceUtils.labels;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class KafkaClusterTest {
 
     private final String namespace = "test";
     private final String cluster = "foo";
-    private final int replicas = 1;
+    private final int replicas = 3;
     private final String image = "image";
     private final int healthDelay = 120;
     private final int healthTimeout = 30;
@@ -121,8 +123,92 @@ public class KafkaClusterTest {
     // TODO test volume claim templates
 
     @Test
-    public void testDiff() {
-        kc.diff(cm, kc.generateStatefulSet(true));
+    public void testDiffNoDiffs() {
+        ClusterDiffResult diff = kc.diff(kc.generateMetricsConfigMap(), kc.generateStatefulSet(true));
+        assertFalse(diff.getDifferent());
+        assertFalse(diff.getScaleDown());
+        assertFalse(diff.getScaleUp());
+        assertFalse(diff.getRollingUpdate());
+        assertFalse(diff.isMetricsChanged());
+        assertEquals(Source2Image.Source2ImageDiff.NONE, diff.getS2i());
+    }
+
+    @Test
+    public void testDiffMetrics() {
+        KafkaCluster other = KafkaCluster.fromConfigMap(ResourceUtils.createConfigMap(namespace, cluster,
+                replicas, image, healthDelay, healthTimeout,"{\"something\":\"different\"}"));
+        ClusterDiffResult diff = kc.diff(other.generateMetricsConfigMap(), other.generateStatefulSet(true));
+        assertFalse(diff.getDifferent());
+        assertFalse(diff.getScaleDown());
+        assertFalse(diff.getScaleUp());
+        assertFalse(diff.getRollingUpdate());
+        assertTrue(diff.isMetricsChanged());
+        assertEquals(Source2Image.Source2ImageDiff.NONE, diff.getS2i());
+    }
+
+    @Test
+    public void testDiffScaleDown() {
+        KafkaCluster other = KafkaCluster.fromConfigMap(ResourceUtils.createConfigMap(namespace, cluster,
+                replicas + 1, image, healthDelay, healthTimeout, metricsCmJson));
+        ClusterDiffResult diff = kc.diff(other.generateMetricsConfigMap(), other.generateStatefulSet(true));
+        assertFalse(diff.getDifferent());
+        assertTrue(diff.getScaleDown());
+        assertFalse(diff.getScaleUp());
+        assertFalse(diff.getRollingUpdate());
+        assertFalse(diff.isMetricsChanged());
+        assertEquals(Source2Image.Source2ImageDiff.NONE, diff.getS2i());
+    }
+
+    @Test
+    public void testDiffScaleUp() {
+        KafkaCluster other = KafkaCluster.fromConfigMap(ResourceUtils.createConfigMap(namespace, cluster,
+                replicas - 1, image, healthDelay, healthTimeout, metricsCmJson));
+        ClusterDiffResult diff = kc.diff(other.generateMetricsConfigMap(), other.generateStatefulSet(true));
+        assertFalse(diff.getDifferent());
+        assertFalse(diff.getScaleDown());
+        assertTrue(diff.getScaleUp());
+        assertFalse(diff.getRollingUpdate());
+        assertFalse(diff.isMetricsChanged());
+        assertEquals(Source2Image.Source2ImageDiff.NONE, diff.getS2i());
+    }
+
+    @Test
+    public void testDiffImage() {
+        KafkaCluster other = KafkaCluster.fromConfigMap(ResourceUtils.createConfigMap(namespace, cluster,
+                replicas, "differentimage", healthDelay, healthTimeout, metricsCmJson));
+        ClusterDiffResult diff = kc.diff(other.generateMetricsConfigMap(), other.generateStatefulSet(true));
+        assertTrue(diff.getDifferent());
+        assertFalse(diff.getScaleDown());
+        assertFalse(diff.getScaleUp());
+        assertTrue(diff.getRollingUpdate());
+        assertFalse(diff.isMetricsChanged());
+        assertEquals(Source2Image.Source2ImageDiff.NONE, diff.getS2i());
+    }
+
+    @Test
+    public void testDiffHealthDelay() {
+        KafkaCluster other = KafkaCluster.fromConfigMap(ResourceUtils.createConfigMap(namespace, cluster,
+                replicas, image, healthDelay+1, healthTimeout, metricsCmJson));
+        ClusterDiffResult diff = kc.diff(other.generateMetricsConfigMap(), other.generateStatefulSet(true));
+        assertTrue(diff.getDifferent());
+        assertFalse(diff.getScaleDown());
+        assertFalse(diff.getScaleUp());
+        assertTrue(diff.getRollingUpdate());
+        assertFalse(diff.isMetricsChanged());
+        assertEquals(Source2Image.Source2ImageDiff.NONE, diff.getS2i());
+    }
+
+    @Test
+    public void testDiffHealthTimeout() {
+        KafkaCluster other = KafkaCluster.fromConfigMap(ResourceUtils.createConfigMap(namespace, cluster,
+                replicas, image, healthDelay, healthTimeout+1, metricsCmJson));
+        ClusterDiffResult diff = kc.diff(other.generateMetricsConfigMap(), other.generateStatefulSet(true));
+        assertTrue(diff.getDifferent());
+        assertFalse(diff.getScaleDown());
+        assertFalse(diff.getScaleUp());
+        assertTrue(diff.getRollingUpdate());
+        assertFalse(diff.isMetricsChanged());
+        assertEquals(Source2Image.Source2ImageDiff.NONE, diff.getS2i());
     }
 
 }
