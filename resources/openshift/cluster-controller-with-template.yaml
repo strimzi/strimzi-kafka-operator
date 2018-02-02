@@ -648,14 +648,10 @@ objects:
     name: ${CLUSTER_NAME}
     labels:
       strimzi.io/kind: cluster
-      strimzi.io/type: kafka-connect
+      strimzi.io/type: kafka-connect-s2i
   data:
     nodes: "${INSTANCES}"
-    s2i: |-
-      {
-        "enabled": true,
-        "sourceImage": "${S2I_IMAGE_REPO_NAME}/${S2I_IMAGE_NAME}:${S2I_IMAGE_TAG}"
-      }
+    image: "${S2I_IMAGE_REPO_NAME}/${S2I_IMAGE_NAME}:${S2I_IMAGE_TAG}"
     healthcheck-delay: "${HEALTHCHECK_DELAY}"
     healthcheck-timeout: "${HEALTHCHECK_TIMEOUT}"
     KAFKA_CONNECT_BOOTSTRAP_SERVERS: "${KAFKA_CONNECT_BOOTSTRAP_SERVERS}"

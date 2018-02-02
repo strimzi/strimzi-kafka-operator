@@ -5,6 +5,7 @@ import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.client.dsl.ScalableResource;
+import io.fabric8.openshift.api.model.DeploymentConfig;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -93,6 +94,8 @@ public abstract class AbstractScalableOperations<C, T extends HasMetadata, L ext
                             nextReplicas = ((StatefulSet) resource(namespace, name).get()).getSpec().getReplicas();
                         } else if (gettable instanceof Deployment) {
                             nextReplicas = ((Deployment) resource(namespace, name).get()).getSpec().getReplicas();
+                        } else if (gettable instanceof DeploymentConfig) {
+                            nextReplicas = ((DeploymentConfig) resource(namespace, name).get()).getSpec().getReplicas();
                         } else {
                             future.fail("Unknown resource type: " + gettable.getClass().getCanonicalName());
                             return;

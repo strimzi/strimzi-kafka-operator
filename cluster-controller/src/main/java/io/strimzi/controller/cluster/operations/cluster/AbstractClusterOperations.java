@@ -114,7 +114,7 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster> {
                         lock.release();
                     } else {
                         log.error("{} cluster {} in namespace {}: failed to {}", clusterType, clusterOp.cluster().getName(), namespace, operationType);
-                        handler.handle(Future.failedFuture("Failed to create Kafka cluster"));
+                        handler.handle(Future.failedFuture("Failed to execute cluster operation"));
                         lock.release();
                     }
                 });

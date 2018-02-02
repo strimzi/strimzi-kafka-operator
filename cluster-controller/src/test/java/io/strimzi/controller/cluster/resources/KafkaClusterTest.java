@@ -130,7 +130,6 @@ public class KafkaClusterTest {
         assertFalse(diff.getScaleUp());
         assertFalse(diff.getRollingUpdate());
         assertFalse(diff.isMetricsChanged());
-        assertEquals(Source2Image.Source2ImageDiff.NONE, diff.getS2i());
     }
 
     @Test
@@ -143,7 +142,6 @@ public class KafkaClusterTest {
         assertFalse(diff.getScaleUp());
         assertFalse(diff.getRollingUpdate());
         assertTrue(diff.isMetricsChanged());
-        assertEquals(Source2Image.Source2ImageDiff.NONE, diff.getS2i());
     }
 
     @Test
@@ -156,7 +154,6 @@ public class KafkaClusterTest {
         assertFalse(diff.getScaleUp());
         assertFalse(diff.getRollingUpdate());
         assertFalse(diff.isMetricsChanged());
-        assertEquals(Source2Image.Source2ImageDiff.NONE, diff.getS2i());
     }
 
     @Test
@@ -169,7 +166,6 @@ public class KafkaClusterTest {
         assertTrue(diff.getScaleUp());
         assertFalse(diff.getRollingUpdate());
         assertFalse(diff.isMetricsChanged());
-        assertEquals(Source2Image.Source2ImageDiff.NONE, diff.getS2i());
     }
 
     @Test
@@ -182,7 +178,6 @@ public class KafkaClusterTest {
         assertFalse(diff.getScaleUp());
         assertTrue(diff.getRollingUpdate());
         assertFalse(diff.isMetricsChanged());
-        assertEquals(Source2Image.Source2ImageDiff.NONE, diff.getS2i());
     }
 
     @Test
@@ -195,7 +190,6 @@ public class KafkaClusterTest {
         assertFalse(diff.getScaleUp());
         assertTrue(diff.getRollingUpdate());
         assertFalse(diff.isMetricsChanged());
-        assertEquals(Source2Image.Source2ImageDiff.NONE, diff.getS2i());
     }
 
     @Test
@@ -208,7 +202,6 @@ public class KafkaClusterTest {
         assertFalse(diff.getScaleUp());
         assertTrue(diff.getRollingUpdate());
         assertFalse(diff.isMetricsChanged());
-        assertEquals(Source2Image.Source2ImageDiff.NONE, diff.getS2i());
     }
 
 }
