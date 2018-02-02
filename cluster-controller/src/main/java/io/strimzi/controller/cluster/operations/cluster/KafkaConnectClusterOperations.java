@@ -107,13 +107,9 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
             KafkaConnectCluster connect = clusterOp.cluster();
             List<Future> result = new ArrayList<>(3);
 
-            Future<Void> futureService = Future.future();
-            serviceOperations.delete(namespace, connect.getName(), futureService.completer());
-            result.add(futureService);
+            result.add(serviceOperations.delete(namespace, connect.getName()));
 
-            Future<Void> futureDeployment = Future.future();
-            deploymentOperations.delete(namespace, connect.getName(), futureDeployment.completer());
-            result.add(futureDeployment);
+            result.add(deploymentOperations.delete(namespace, connect.getName()));
 
             if (connect.getS2I() != null) {
                 Future<Void> futureS2I = Future.future();

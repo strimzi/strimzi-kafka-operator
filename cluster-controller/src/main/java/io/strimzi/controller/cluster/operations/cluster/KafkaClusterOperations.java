@@ -85,28 +85,18 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
             List<Future> result = new ArrayList<>(4 + (deleteClaims ? kafka.getReplicas() : 0));
 
             if (kafka.isMetricsEnabled()) {
-                Future<Void> futureConfigMap = Future.future();
-                configMapOperations.delete(namespace, kafka.getMetricsConfigName(), futureConfigMap.completer());
-                result.add(futureConfigMap);
+                result.add(configMapOperations.delete(namespace, kafka.getMetricsConfigName()));
             }
 
-            Future<Void> futureService = Future.future();
-            serviceOperations.delete(namespace, kafka.getName(), futureService.completer());
-            result.add(futureService);
+            result.add(serviceOperations.delete(namespace, kafka.getName()));
 
-            Future<Void> futureHeadlessService = Future.future();
-            serviceOperations.delete(namespace, kafka.getHeadlessName(), futureHeadlessService.completer());
-            result.add(futureHeadlessService);
+            result.add(serviceOperations.delete(namespace, kafka.getHeadlessName()));
 
-            Future<Void> futureStatefulSet = Future.future();
-            statefulSetOperations.delete(namespace, kafka.getName(), futureStatefulSet.completer());
-            result.add(futureStatefulSet);
+            result.add(statefulSetOperations.delete(namespace, kafka.getName());
 
             if (deleteClaims) {
                 for (int i = 0; i < kafka.getReplicas(); i++) {
-                    Future<Void> f = Future.future();
-                    pvcOperations.delete(namespace, kafka.getVolumeName() + "-" + kafka.getName() + "-" + i, f.completer());
-                    result.add(f);
+                    result.add(pvcOperations.delete(namespace, kafka.getVolumeName() + "-" + kafka.getName() + "-" + i);
                 }
             }
 

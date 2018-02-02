@@ -64,7 +64,7 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
 
     /**
      * Asynchronously create the given {@code resource} if it doesn't already exists,
-     * calling the given {@code handler} with the outcome.
+     * returning a future for the outcome.
      * @param resource The resource to create.
      */
     public Future<Void> create(T resource) {
@@ -95,12 +95,12 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
 
     /**
      * Asynchronously delete the resource with the given {@code name} in the given {@code namespace},
-     * calling the given {@code handler} with the outcome.
+     * returning a future for the outcome.
      * @param namespace The namespace of the resource to delete.
      * @param name The name of the resource to delete.
-     * @param handler A handler for the outcome.
      */
-    public void delete(String namespace, String name, Handler<AsyncResult<Void>> handler) {
+    public Future<Void> delete(String namespace, String name) {
+        Future fut = Future.future();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
 
@@ -118,17 +118,9 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
                         future.complete();
                     }
                 }, false,
-                res -> {
-                    if (res.succeeded()) {
-                        log.info("{} {} in namespace {} has been deleted (or no longer exists)", resourceKind, name, namespace);
-                        handler.handle(Future.succeededFuture());
-                    }
-                    else {
-                        log.error("{} deletion failed:", resourceKind, res.cause());
-                        handler.handle(Future.failedFuture(res.cause()));
-                    }
-                }
+                fut.completer()
         );
+        return fut;
     }
 
     /**

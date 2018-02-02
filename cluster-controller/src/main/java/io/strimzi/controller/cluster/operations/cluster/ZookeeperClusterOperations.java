@@ -92,29 +92,19 @@ public class ZookeeperClusterOperations extends AbstractClusterOperations<Zookee
             // start deleting configMap operation only if metrics are enabled,
             // otherwise the future is already complete (for the "join")
             if (zk.isMetricsEnabled()) {
-                Future<Void> futureConfigMap = Future.future();
-                configMapOperations.delete(namespace, zk.getMetricsConfigName(), futureConfigMap.completer());
-                result.add(futureConfigMap);
+                result.add(configMapOperations.delete(namespace, zk.getMetricsConfigName()));
             }
 
-            Future<Void> futureService = Future.future();
-            serviceOperations.delete(namespace, zk.getName(), futureService.completer());
-            result.add(futureService);
+            result.add(serviceOperations.delete(namespace, zk.getName()));
 
-            Future<Void> futureHeadlessService = Future.future();
-            serviceOperations.delete(namespace, zk.getHeadlessName(), futureHeadlessService.completer());
-            result.add(futureHeadlessService);
+            result.add(serviceOperations.delete(namespace, zk.getHeadlessName()));
 
-            Future<Void> futureStatefulSet = Future.future();
-            statefulSetOperations.delete(namespace, zk.getName(), futureStatefulSet.completer());
-            result.add(futureStatefulSet);
+            result.add(statefulSetOperations.delete(namespace, zk.getName());
 
 
             if (deleteClaims) {
                 for (int i = 0; i < zk.getReplicas(); i++) {
-                    Future<Void> f = Future.future();
-                    pvcOperations.delete(namespace, zk.getVolumeName() + "-" + zk.getName() + "-" + i, f.completer());
-                    result.add(f);
+                    result.add(pvcOperations.delete(namespace, zk.getVolumeName() + "-" + zk.getName() + "-" + i));
                 }
             }
 

@@ -87,7 +87,7 @@ public class PodOperationsMockTest extends ResourceOperationsMockTest<Kubernetes
                 patchAsync.complete();
             });
             patchAsync.await();*/
-            pr.delete(NAMESPACE, RESOURCE_NAME, deleteResult -> {
+            pr.delete(NAMESPACE, RESOURCE_NAME).setHandler(deleteResult -> {
                 context.assertTrue(deleteResult.succeeded());
                 async.countDown();
             });

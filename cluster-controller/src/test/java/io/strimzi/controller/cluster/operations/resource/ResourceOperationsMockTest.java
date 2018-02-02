@@ -215,7 +215,7 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         AbstractOperations<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
         Async async = context.async();
-        op.delete(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), ar -> {
+        op.delete(resource.getMetadata().getNamespace(), resource.getMetadata().getName()).setHandler(ar -> {
             assertTrue(ar.succeeded());
             verify(mockResource).get();
             verify(mockResource, never()).delete();
@@ -244,7 +244,7 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         AbstractOperations<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
         Async async = context.async();
-        op.delete(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), ar -> {
+        op.delete(resource.getMetadata().getNamespace(), resource.getMetadata().getName()).setHandler(ar -> {
             assertTrue(ar.failed());
             assertEquals(ex, ar.cause());
             async.complete();
@@ -269,7 +269,7 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         AbstractOperations<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
         Async async = context.async();
-        op.delete(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), ar -> {
+        op.delete(resource.getMetadata().getNamespace(), resource.getMetadata().getName()).setHandler(ar -> {
             assertTrue(ar.succeeded());
             verify(mockResource).get();
             verify(mockResource).delete();
@@ -298,7 +298,7 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         AbstractOperations<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
         Async async = context.async();
-        op.delete(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), ar -> {
+        op.delete(resource.getMetadata().getNamespace(), resource.getMetadata().getName()).setHandler(ar -> {
             assertTrue(ar.failed());
             assertEquals(ex, ar.cause());
             async.complete();

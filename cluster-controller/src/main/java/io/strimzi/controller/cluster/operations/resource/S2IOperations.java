@@ -135,19 +135,11 @@ public class S2IOperations {
         protected Future<?> composite(Source2Image s2i) {
             List<Future> result = new ArrayList<>(3);
 
-            Future<Void> futureSourceImageStream = Future.future();
+            result.add(imageStreamOperations.delete(s2i.getNamespace(), s2i.getSourceImageStreamName()));
 
-            imageStreamOperations.delete(s2i.getNamespace(), s2i.getSourceImageStreamName(), futureSourceImageStream.completer());
-            result.add(futureSourceImageStream);
+            result.add(imageStreamOperations.delete(s2i.getNamespace(), s2i.getName()));
 
-            Future<Void> futureTargetImageStream = Future.future();
-            imageStreamOperations.delete(s2i.getNamespace(), s2i.getName(), futureTargetImageStream.completer());
-            result.add(futureTargetImageStream);
-
-            Future<Void> futureBuildConfig = Future.future();
-
-            buildConfigOperations.delete(s2i.getNamespace(), s2i.getName(), futureBuildConfig.completer());
-            result.add(futureBuildConfig);
+            result.add(buildConfigOperations.delete(s2i.getNamespace(), s2i.getName()));
 
             return CompositeFuture.join(result);
         }
