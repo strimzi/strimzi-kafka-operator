@@ -48,9 +48,9 @@ public class S2IOperations {
             log.info("{} S2I {} in namespace {}", operationType, s2i.getName(), s2i.getNamespace());
 
             try {
-                List<Future> futures = futures(s2i);
+                Future<?> composite = composite(s2i);
 
-                CompositeFuture.join(futures).setHandler(ar -> {
+                composite.setHandler(ar -> {
                     if (ar.succeeded()) {
                         log.info("S2I {} successfully updated in namespace {}", s2i.getName(), s2i.getNamespace());
                         handler.handle(Future.succeededFuture());
@@ -66,12 +66,12 @@ public class S2IOperations {
             }
         }
 
-        protected abstract List<Future> futures(Source2Image s2i);
+        protected abstract Future<?> composite(Source2Image s2i);
     }
 
     private final S2IOperation createOp = new S2IOperation("create") {
         @Override
-        protected List<Future> futures(Source2Image s2i) {
+        protected Future<?> composite(Source2Image s2i) {
             List<Future> result = new ArrayList<>(3);
 
             Future<Void> futureSourceImageStream = Future.future();
@@ -87,7 +87,7 @@ public class S2IOperations {
             buildConfigOperations.create(s2i.generateBuildConfig(), futureBuildConfig.completer());
             result.add(futureBuildConfig);
 
-            return result;
+            return CompositeFuture.join(result);
         }
     };
 
@@ -97,7 +97,7 @@ public class S2IOperations {
 
     private final S2IOperation updateOp = new S2IOperation("update") {
         @Override
-        protected List<Future> futures(Source2Image s2i) {
+        protected Future<?> composite(Source2Image s2i) {
             if (s2i.diff(imageStreamOperations, buildConfigOperations).getDifferent()) {
                 List<Future> result = new ArrayList<>(3);
                 Future<Void> futureSourceImageStream = Future.future();
@@ -125,10 +125,10 @@ public class S2IOperations {
                                 futureBuildConfig.completer());
                 result.add(futureBuildConfig);
 
-                return result;
+                return CompositeFuture.join(result);
             } else {
                 log.info("No S2I {} differences found in namespace {}", s2i.getName(), s2i.getNamespace());
-                return Collections.emptyList();
+                return Future.succeededFuture();
             }
         }
     };
@@ -139,7 +139,7 @@ public class S2IOperations {
 
     private final S2IOperation deleteOp = new S2IOperation("delete") {
         @Override
-        protected List<Future> futures(Source2Image s2i) {
+        protected Future<?> composite(Source2Image s2i) {
             List<Future> result = new ArrayList<>(3);
 
             Future<Void> futureSourceImageStream = Future.future();
@@ -156,7 +156,7 @@ public class S2IOperations {
             buildConfigOperations.delete(s2i.getNamespace(), s2i.getName(), futureBuildConfig.completer());
             result.add(futureBuildConfig);
 
-            return result;
+            return CompositeFuture.join(result);
         }
     };
 
