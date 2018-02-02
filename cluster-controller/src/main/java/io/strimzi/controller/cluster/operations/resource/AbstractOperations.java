@@ -75,6 +75,7 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
                         try {
                             log.info("Creating {} {}", resourceKind, resource);
                             operation().createOrReplace(resource);
+                            log.info("{} {} has been created", resourceKind, resource);
                             future.complete();
                         } catch (Exception e) {
                             log.error("Caught exception while creating {}", resourceKind, e);
