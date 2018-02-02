@@ -99,7 +99,7 @@ public class KafkaConnectCluster extends AbstractCluster {
      * @param cm    ConfigMap with cluster configuration
      * @return  Kafka Connect cluster instance
      */
-    public static KafkaConnectCluster fromConfigMap(KubernetesClient client, ConfigMap cm) {
+    public static KafkaConnectCluster fromConfigMap(boolean isOpenShift, ConfigMap cm) {
         KafkaConnectCluster kafkaConnect = new KafkaConnectCluster(cm.getMetadata().getNamespace(), cm.getMetadata().getName());
 
         kafkaConnect.setLabels(cm.getMetadata().getLabels());
@@ -120,7 +120,7 @@ public class KafkaConnectCluster extends AbstractCluster {
         kafkaConnect.setStatusStorageReplicationFactor(Integer.parseInt(cm.getData().getOrDefault(KEY_STATUS_STORAGE_REPLICATION_FACTOR, String.valueOf(DEFAULT_STATUS_STORAGE_REPLICATION_FACTOR))));
 
         if (cm.getData().containsKey(KEY_S2I)) {
-            if (client.isAdaptable(OpenShiftClient.class)) {
+            if (isOpenShift) {
                 JsonObject config = new JsonObject(cm.getData().get(KEY_S2I));
                 if (config.getBoolean(Source2Image.KEY_ENABLED, false)) {
                     kafkaConnect.setS2I(Source2Image.fromJson(cm.getMetadata().getNamespace(), kafkaConnect.getName(), kafkaConnect.getLabelsWithName(), config));

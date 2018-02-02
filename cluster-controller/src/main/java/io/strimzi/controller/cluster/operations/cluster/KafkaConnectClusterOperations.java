@@ -39,20 +39,20 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
     /**
      * Constructor
      * @param vertx The Vertx instance
-     * @param client The kubernetes client
+     * @param isOpenShift Whether we're running with OpenShift
      * @param configMapOperations For operating on ConfigMaps
      * @param deploymentOperations For operating on Deployments
      * @param serviceOperations For operating on Services
      * @param imagesStreamResources For operating on ImageStreams, may be null
      * @param buildConfigOperations For operating on BuildConfigs, may be null
      */
-    public KafkaConnectClusterOperations(Vertx vertx, KubernetesClient client,
+    public KafkaConnectClusterOperations(Vertx vertx, boolean isOpenShift,
                                          ConfigMapOperations configMapOperations,
                                          DeploymentOperations deploymentOperations,
                                          ServiceOperations serviceOperations,
                                          ImageStreamOperations imagesStreamResources,
                                          BuildConfigOperations buildConfigOperations) {
-        super(vertx, client, "kafka-connect", "create");
+        super(vertx, isOpenShift, "kafka-connect", "create");
         this.serviceOperations = serviceOperations;
         this.deploymentOperations = deploymentOperations;
         this.configMapOperations = configMapOperations;
@@ -71,7 +71,7 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
 
         @Override
         public ClusterOperation<KafkaConnectCluster> getCluster(String namespace, String name) {
-            return new ClusterOperation<>(KafkaConnectCluster.fromConfigMap(client, configMapOperations.get(namespace, name)), null);
+            return new ClusterOperation<>(KafkaConnectCluster.fromConfigMap(isOpenShift, configMapOperations.get(namespace, name)), null);
         }
 
         @Override
@@ -157,7 +157,7 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
             ConfigMap connectConfigMap = configMapOperations.get(namespace, name);
 
             if (connectConfigMap != null)    {
-                connect = KafkaConnectCluster.fromConfigMap(client, connectConfigMap);
+                connect = KafkaConnectCluster.fromConfigMap(isOpenShift, connectConfigMap);
                 log.info("Updating Kafka Connect cluster {} in namespace {}", connect.getName(), namespace);
                 diff = connect.diff(namespace, deploymentOperations, imagesStreamResources, buildConfigOperations);
             } else  {

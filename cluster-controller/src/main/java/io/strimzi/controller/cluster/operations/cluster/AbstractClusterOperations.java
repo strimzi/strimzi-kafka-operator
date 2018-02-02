@@ -46,11 +46,11 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster> {
     protected final Vertx vertx;
     private final String clusterType;
     private final String operationType;
-    protected final KubernetesClient client;
+    protected final boolean isOpenShift;
 
-    protected AbstractClusterOperations(Vertx vertx, KubernetesClient client, String clusterType, String operationType) {
+    protected AbstractClusterOperations(Vertx vertx, boolean isOpenShift, String clusterType, String operationType) {
         this.vertx = vertx;
-        this.client = client;
+        this.isOpenShift = isOpenShift;
         this.clusterType = clusterType;
         this.operationType = operationType;
     }

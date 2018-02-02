@@ -32,18 +32,18 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
     /**
      * Constructor
      * @param vertx The Vertx instance
-     * @param client The kubernetes client
+     * @param isOpenShift Whether we're running with OpenShift
      * @param configMapOperations For operating on ConfigMaps
      * @param serviceOperations For operating on Services
      * @param statefulSetOperations For operating on StatefulSets
      * @param pvcOperations For operating on PersistentVolumeClaims
      */
-    public KafkaClusterOperations(Vertx vertx, KubernetesClient client,
+    public KafkaClusterOperations(Vertx vertx, boolean isOpenShift,
                                   ConfigMapOperations configMapOperations,
                                   ServiceOperations serviceOperations,
                                   StatefulSetOperations statefulSetOperations,
                                   PvcOperations pvcOperations) {
-        super(vertx, client, "kafka", "create");
+        super(vertx, isOpenShift, "kafka", "create");
         this.configMapOperations = configMapOperations;
         this.statefulSetOperations = statefulSetOperations;
         this.serviceOperations = serviceOperations;
@@ -71,7 +71,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
             result.add(serviceOperations.create(kafka.generateHeadlessService()));
 
-            result.add(statefulSetOperations.create(kafka.generateStatefulSet(client.isAdaptable(OpenShiftClient.class))));
+            result.add(statefulSetOperations.create(kafka.generateStatefulSet(isOpenShift)));
 
             return CompositeFuture.join(result);
         }

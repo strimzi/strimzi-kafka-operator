@@ -32,18 +32,18 @@ public class ZookeeperClusterOperations extends AbstractClusterOperations<Zookee
     /**
      * Constructor
      * @param vertx The Vertx instance
-     * @param client The kubernetes client
+     * @param isOpenShift Whether we're running with OpenShift
      * @param configMapOperations For operating on ConfigMaps
      * @param serviceOperations For operating on Services
      * @param statefulSetOperations For operating on StatefulSets
      * @param pvcOperations For operating on PersistentVolumeClaims
      */
-    public ZookeeperClusterOperations(Vertx vertx, KubernetesClient client,
+    public ZookeeperClusterOperations(Vertx vertx, boolean isOpenShift,
                                       ConfigMapOperations configMapOperations,
                                       ServiceOperations serviceOperations,
                                       StatefulSetOperations statefulSetOperations,
                                       PvcOperations pvcOperations) {
-        super(vertx, client, "zookeeper", "create");
+        super(vertx, isOpenShift, "zookeeper", "create");
         this.serviceOperations = serviceOperations;
         this.statefulSetOperations = statefulSetOperations;
         this.configMapOperations = configMapOperations;
@@ -70,7 +70,7 @@ public class ZookeeperClusterOperations extends AbstractClusterOperations<Zookee
 
             result.add(serviceOperations.create(zk.generateHeadlessService()));
 
-            result.add(statefulSetOperations.create(zk.generateStatefulSet(client.isAdaptable(OpenShiftClient.class))));
+            result.add(statefulSetOperations.create(zk.generateStatefulSet(isOpenShift)));
 
             return CompositeFuture.join(result);
         }

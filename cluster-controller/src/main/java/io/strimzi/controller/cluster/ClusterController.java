@@ -79,16 +79,17 @@ public class ClusterController extends AbstractVerticle {
         deploymentOperations = new DeploymentOperations(vertx, client);
         ImageStreamOperations imagesStreamResources;
         BuildConfigOperations buildConfigOperations;
-        if (client.isAdaptable(OpenShiftClient.class)) {
+        boolean isOpenShift = Boolean.TRUE.equals(client.isAdaptable(OpenShiftClient.class));
+        if (isOpenShift) {
             imagesStreamResources = new ImageStreamOperations(vertx, client.adapt(OpenShiftClient.class));
             buildConfigOperations = new BuildConfigOperations(vertx, client.adapt(OpenShiftClient.class));
         } else {
             imagesStreamResources = null;
             buildConfigOperations = null;
         }
-        this.zookeeperClusterOperations = new ZookeeperClusterOperations(vertx, client, configMapOperations, serviceOperations, statefulSetOperations, pvcOperations);
-        this.kafkaClusterOperations = new KafkaClusterOperations(vertx, client, configMapOperations, serviceOperations, statefulSetOperations, pvcOperations);
-        this.kafkaConnectClusterOperations = new KafkaConnectClusterOperations(vertx, client, configMapOperations, deploymentOperations, serviceOperations, imagesStreamResources, buildConfigOperations);
+        this.zookeeperClusterOperations = new ZookeeperClusterOperations(vertx, isOpenShift, configMapOperations, serviceOperations, statefulSetOperations, pvcOperations);
+        this.kafkaClusterOperations = new KafkaClusterOperations(vertx, isOpenShift, configMapOperations, serviceOperations, statefulSetOperations, pvcOperations);
+        this.kafkaConnectClusterOperations = new KafkaConnectClusterOperations(vertx, isOpenShift, configMapOperations, deploymentOperations, serviceOperations, imagesStreamResources, buildConfigOperations);
     }
 
     @Override
