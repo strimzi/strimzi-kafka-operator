@@ -166,7 +166,7 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
      * @param name The name.
      * @return The resource, or null if it doesn't exist.
      */
-    public final T get(String namespace, String name) {
+    public T get(String namespace, String name) {
         return operation().inNamespace(namespace).withName(name).get();
     }
 

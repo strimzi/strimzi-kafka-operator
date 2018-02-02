@@ -1,8 +1,7 @@
 package io.strimzi.controller.cluster.operations.cluster;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.openshift.client.OpenShiftClient;
+import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
 import io.strimzi.controller.cluster.operations.resource.PvcOperations;
 import io.strimzi.controller.cluster.operations.resource.ServiceOperations;
@@ -13,7 +12,6 @@ import io.strimzi.controller.cluster.resources.ZookeeperCluster;
 import io.vertx.core.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import io.vertx.core.shareddata.Lock;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,18 +30,18 @@ public class ZookeeperClusterOperations extends AbstractClusterOperations<Zookee
     /**
      * Constructor
      * @param vertx The Vertx instance
-     * @param client The kubernetes client
+     * @param isOpenShift Whether we're running with OpenShift
      * @param configMapOperations For operating on ConfigMaps
      * @param serviceOperations For operating on Services
      * @param statefulSetOperations For operating on StatefulSets
      * @param pvcOperations For operating on PersistentVolumeClaims
      */
-    public ZookeeperClusterOperations(Vertx vertx, KubernetesClient client,
+    public ZookeeperClusterOperations(Vertx vertx, boolean isOpenShift,
                                       ConfigMapOperations configMapOperations,
                                       ServiceOperations serviceOperations,
                                       StatefulSetOperations statefulSetOperations,
                                       PvcOperations pvcOperations) {
-        super(vertx, client, "zookeeper", "create");
+        super(vertx, isOpenShift, "zookeeper", "create");
         this.serviceOperations = serviceOperations;
         this.statefulSetOperations = statefulSetOperations;
         this.configMapOperations = configMapOperations;
@@ -70,7 +68,7 @@ public class ZookeeperClusterOperations extends AbstractClusterOperations<Zookee
 
             result.add(serviceOperations.create(zk.generateHeadlessService()));
 
-            result.add(statefulSetOperations.create(zk.generateStatefulSet(client.isAdaptable(OpenShiftClient.class))));
+            result.add(statefulSetOperations.create(zk.generateStatefulSet(isOpenShift)));
 
             return CompositeFuture.join(result);
         }
@@ -113,7 +111,8 @@ public class ZookeeperClusterOperations extends AbstractClusterOperations<Zookee
 
         @Override
         public ClusterOperation<ZookeeperCluster> getCluster(String namespace, String name) {
-            return new ClusterOperation<ZookeeperCluster>(ZookeeperCluster.fromStatefulSet(statefulSetOperations, namespace, name), null);
+            StatefulSet ss = statefulSetOperations.get(namespace, ZookeeperCluster.zookeeperClusterName(name));
+            return new ClusterOperation<ZookeeperCluster>(ZookeeperCluster.fromStatefulSet(ss, namespace, name), null);
         }
     };
 

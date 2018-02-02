@@ -1,8 +1,7 @@
 package io.strimzi.controller.cluster.operations.cluster;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.openshift.client.OpenShiftClient;
+import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
 import io.strimzi.controller.cluster.operations.resource.PvcOperations;
 import io.strimzi.controller.cluster.operations.resource.ServiceOperations;
@@ -32,18 +31,18 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
     /**
      * Constructor
      * @param vertx The Vertx instance
-     * @param client The kubernetes client
+     * @param isOpenShift Whether we're running with OpenShift
      * @param configMapOperations For operating on ConfigMaps
      * @param serviceOperations For operating on Services
      * @param statefulSetOperations For operating on StatefulSets
      * @param pvcOperations For operating on PersistentVolumeClaims
      */
-    public KafkaClusterOperations(Vertx vertx, KubernetesClient client,
+    public KafkaClusterOperations(Vertx vertx, boolean isOpenShift,
                                   ConfigMapOperations configMapOperations,
                                   ServiceOperations serviceOperations,
                                   StatefulSetOperations statefulSetOperations,
                                   PvcOperations pvcOperations) {
-        super(vertx, client, "kafka", "create");
+        super(vertx, isOpenShift, "kafka", "create");
         this.configMapOperations = configMapOperations;
         this.statefulSetOperations = statefulSetOperations;
         this.serviceOperations = serviceOperations;
@@ -71,7 +70,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
             result.add(serviceOperations.create(kafka.generateHeadlessService()));
 
-            result.add(statefulSetOperations.create(kafka.generateStatefulSet(client.isAdaptable(OpenShiftClient.class))));
+            result.add(statefulSetOperations.create(kafka.generateStatefulSet(isOpenShift)));
 
             return CompositeFuture.join(result);
         }
@@ -106,7 +105,8 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
         @Override
         public ClusterOperation<KafkaCluster> getCluster(String namespace, String name) {
-            return new ClusterOperation<>(KafkaCluster.fromStatefulSet(statefulSetOperations, namespace, name), null);
+            StatefulSet ss = statefulSetOperations.get(namespace, KafkaCluster.kafkaClusterName(name));
+            return new ClusterOperation<>(KafkaCluster.fromStatefulSet(ss, namespace, name), null);
         }
     };
 
@@ -153,7 +153,9 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
             if (kafkaConfigMap != null)    {
                 kafka = KafkaCluster.fromConfigMap(kafkaConfigMap);
                 log.info("Updating Kafka cluster {} in namespace {}", kafka.getName(), namespace);
-                diff = kafka.diff(configMapOperations, statefulSetOperations, namespace);
+                StatefulSet ss = statefulSetOperations.get(namespace, kafka.getName());
+                ConfigMap metricsConfigMap = configMapOperations.get(namespace, kafka.getMetricsConfigName());
+                diff = kafka.diff(metricsConfigMap, ss);
             } else {
                 throw new IllegalStateException("ConfigMap " + name + " doesn't exist anymore in namespace " + namespace);
             }

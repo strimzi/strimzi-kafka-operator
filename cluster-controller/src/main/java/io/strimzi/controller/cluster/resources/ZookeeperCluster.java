@@ -54,6 +54,18 @@ public class ZookeeperCluster extends AbstractCluster {
     private static String KEY_ZOOKEEPER_NODE_COUNT = "ZOOKEEPER_NODE_COUNT";
     private static String KEY_ZOOKEEPER_METRICS_ENABLED = "ZOOKEEPER_METRICS_ENABLED";
 
+    public static String zookeeperClusterName(String cluster) {
+        return cluster + ZookeeperCluster.NAME_SUFFIX;
+    }
+
+    private static String zookeeperMetricsName(String cluster) {
+        return cluster + ZookeeperCluster.METRICS_CONFIG_SUFFIX;
+    }
+
+    private String zookeeperHeadlessName(String cluster) {
+        return cluster + ZookeeperCluster.HEADLESS_NAME_SUFFIX;
+    }
+
     /**
      * Constructor
      *
@@ -63,9 +75,9 @@ public class ZookeeperCluster extends AbstractCluster {
     private ZookeeperCluster(String namespace, String cluster) {
 
         super(namespace, cluster);
-        this.name = cluster + ZookeeperCluster.NAME_SUFFIX;
-        this.headlessName = cluster + ZookeeperCluster.HEADLESS_NAME_SUFFIX;
-        this.metricsConfigName = cluster + ZookeeperCluster.METRICS_CONFIG_SUFFIX;
+        this.name = zookeeperClusterName(cluster);
+        this.headlessName = zookeeperHeadlessName(cluster);
+        this.metricsConfigName = zookeeperMetricsName(cluster);
         this.image = DEFAULT_IMAGE;
         this.replicas = DEFAULT_REPLICAS;
         this.healthCheckPath = "/opt/kafka/zookeeper_healthcheck.sh";
@@ -78,6 +90,7 @@ public class ZookeeperCluster extends AbstractCluster {
         this.metricsConfigVolumeName = "zookeeper-metrics-config";
         this.metricsConfigMountPath = "/opt/prometheus/config/";
     }
+
 
     /**
      * Create a Zookeeper cluster from the related ConfigMap resource
@@ -115,10 +128,8 @@ public class ZookeeperCluster extends AbstractCluster {
      * @param cluster   overall cluster name
      * @return  Zookeeper cluster instance
      */
-    public static ZookeeperCluster fromStatefulSet(StatefulSetOperations statefulSetOperations,
+    public static ZookeeperCluster fromStatefulSet(StatefulSet ss,
                                                    String namespace, String cluster) {
-
-        StatefulSet ss = statefulSetOperations.get(namespace, cluster + ZookeeperCluster.NAME_SUFFIX);
 
         ZookeeperCluster zk =  new ZookeeperCluster(namespace, cluster);
 
@@ -133,7 +144,7 @@ public class ZookeeperCluster extends AbstractCluster {
 
         zk.setMetricsEnabled(Boolean.parseBoolean(vars.getOrDefault(KEY_ZOOKEEPER_METRICS_ENABLED, String.valueOf(DEFAULT_ZOOKEEPER_METRICS_ENABLED))));
         if (zk.isMetricsEnabled()) {
-            zk.setMetricsConfigName(cluster + ZookeeperCluster.METRICS_CONFIG_SUFFIX);
+            zk.setMetricsConfigName(zookeeperMetricsName(cluster));
         }
 
         if (!ss.getSpec().getVolumeClaimTemplates().isEmpty()) {

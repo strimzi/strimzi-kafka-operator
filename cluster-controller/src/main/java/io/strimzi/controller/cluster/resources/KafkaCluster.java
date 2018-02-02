@@ -68,9 +68,9 @@ public class KafkaCluster extends AbstractCluster {
     private KafkaCluster(String namespace, String cluster) {
 
         super(namespace, cluster);
-        this.name = cluster + KafkaCluster.NAME_SUFFIX;
-        this.headlessName = cluster + KafkaCluster.HEADLESS_NAME_SUFFIX;
-        this.metricsConfigName = cluster + KafkaCluster.METRICS_CONFIG_SUFFIX;
+        this.name = kafkaClusterName(cluster);
+        this.headlessName = headlessName(cluster);
+        this.metricsConfigName = metricConfigsName(cluster);
         this.image = DEFAULT_IMAGE;
         this.replicas = DEFAULT_REPLICAS;
         this.healthCheckPath = "/opt/kafka/kafka_healthcheck.sh";
@@ -82,6 +82,18 @@ public class KafkaCluster extends AbstractCluster {
         this.volumeName = "kafka-storage";
         this.metricsConfigVolumeName = "kafka-metrics-config";
         this.metricsConfigMountPath = "/opt/prometheus/config/";
+    }
+
+    public static String kafkaClusterName(String cluster) {
+        return cluster + KafkaCluster.NAME_SUFFIX;
+    }
+
+    public static String metricConfigsName(String cluster) {
+        return cluster + KafkaCluster.METRICS_CONFIG_SUFFIX;
+    }
+
+    public static String headlessName(String cluster) {
+        return cluster + KafkaCluster.HEADLESS_NAME_SUFFIX;
     }
 
     /**
@@ -120,14 +132,12 @@ public class KafkaCluster extends AbstractCluster {
     /**
      * Create a Kafka cluster from the deployed StatefulSet resource
      *
-     * @param statefulSetOperations The means of setting the SS to obtain the state from
+     * @param ss The StatefulSet from which the cluster state should be recovered.
      * @param namespace Kubernetes/OpenShift namespace where cluster resources belong to
      * @param cluster   overall cluster name
      * @return  Kafka cluster instance
      */
-    public static KafkaCluster fromStatefulSet(StatefulSetOperations statefulSetOperations, String namespace, String cluster) {
-
-        StatefulSet ss = statefulSetOperations.get(namespace, cluster + KafkaCluster.NAME_SUFFIX);
+    public static KafkaCluster fromStatefulSet(StatefulSet ss, String namespace, String cluster) {
 
         KafkaCluster kafka =  new KafkaCluster(namespace, cluster);
 
@@ -135,7 +145,7 @@ public class KafkaCluster extends AbstractCluster {
         kafka.setReplicas(ss.getSpec().getReplicas());
         kafka.setImage(ss.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
         kafka.setHealthCheckInitialDelay(ss.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds());
-        kafka.setHealthCheckInitialDelay(ss.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds());
+        kafka.setHealthCheckTimeout(ss.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds());
 
         Map<String, String> vars = ss.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream().collect(
                 Collectors.toMap(EnvVar::getName, EnvVar::getValue));
@@ -147,7 +157,7 @@ public class KafkaCluster extends AbstractCluster {
 
         kafka.setMetricsEnabled(Boolean.parseBoolean(vars.getOrDefault(KEY_KAFKA_METRICS_ENABLED, String.valueOf(DEFAULT_KAFKA_METRICS_ENABLED))));
         if (kafka.isMetricsEnabled()) {
-            kafka.setMetricsConfigName(cluster + KafkaCluster.METRICS_CONFIG_SUFFIX);
+            kafka.setMetricsConfigName(metricConfigsName(cluster));
         }
 
         if (!ss.getSpec().getVolumeClaimTemplates().isEmpty()) {
@@ -169,17 +179,13 @@ public class KafkaCluster extends AbstractCluster {
     /**
      * Return the differences between the current Kafka cluster and the deployed one
      *
-     * @param configMapOperations The means of getting the CM to compare with
-     * @param statefulSetOperations The means of getting the SS to compare with
-     * @param namespace Kubernetes/OpenShift namespace where cluster resources belong to
+     * @param metricsConfigMap The CM to compare with
+     * @param ss The SS to compare with
      * @return  ClusterDiffResult instance with differences
      */
     public ClusterDiffResult diff(
-            ConfigMapOperations configMapOperations,
-            StatefulSetOperations statefulSetOperations,
-                                  String namespace)  {
-        StatefulSet ss = statefulSetOperations.get(namespace, getName());
-        ConfigMap metricsConfigMap = configMapOperations.get(namespace, getMetricsConfigName());
+            ConfigMap metricsConfigMap,
+            StatefulSet ss)  {
 
         ClusterDiffResult diff = new ClusterDiffResult();
 
@@ -229,7 +235,7 @@ public class KafkaCluster extends AbstractCluster {
             diff.setMetricsChanged(true);
             diff.setRollingUpdate(true);
         } else {
-
+            
             if (isMetricsEnabled) {
                 JsonObject metricsConfig = new JsonObject(metricsConfigMap.getData().get(METRICS_CONFIG_FILE));
                 if (!this.metricsConfig.equals(metricsConfig)) {

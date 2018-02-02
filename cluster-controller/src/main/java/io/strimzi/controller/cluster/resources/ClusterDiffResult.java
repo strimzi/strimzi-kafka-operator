@@ -1,10 +1,10 @@
 package io.strimzi.controller.cluster.resources;
 
 public class ClusterDiffResult {
-    private Boolean different = false;
-    private Boolean rollingUpdate = false;
-    private Boolean scaleUp = false;
-    private Boolean scaleDown = false;
+    private boolean different = false;
+    private boolean rollingUpdate = false;
+    private boolean scaleUp = false;
+    private boolean scaleDown = false;
     private boolean isMetricsChanged = false;
     private Source2Image.Source2ImageDiff s2i = Source2Image.Source2ImageDiff.NONE;
 
@@ -12,52 +12,57 @@ public class ClusterDiffResult {
         // Nothing to do
     }
 
-    public ClusterDiffResult(Boolean isDifferent) {
+    public ClusterDiffResult(boolean isDifferent) {
         this.different = isDifferent;
     }
 
-    public ClusterDiffResult(Boolean isDifferent, Boolean needsRollingUpdate) {
+    public ClusterDiffResult(boolean isDifferent, boolean needsRollingUpdate) {
         this.different = isDifferent;
         this.rollingUpdate = needsRollingUpdate;
     }
 
-    public ClusterDiffResult(Boolean isDifferent, Boolean needsRollingUpdate, Boolean isScaleUp, Boolean isScaleDown) {
+    public ClusterDiffResult(boolean isDifferent, boolean needsRollingUpdate, boolean isScaleUp, boolean isScaleDown) {
         this.different = isDifferent;
         this.rollingUpdate = needsRollingUpdate;
         this.scaleUp = isScaleUp;
         this.scaleDown = isScaleDown;
     }
 
-    public Boolean getDifferent() {
+    /**
+     * Determines whether a resource needs to be updated/patched.
+     * This doesn't distinguish which resource, but patching unnecessarily ends up being a no-op.
+     * @return true iff a resource needs to be updated/patched
+     */
+    public boolean getDifferent() {
         return different;
     }
 
-    public void setDifferent(Boolean different) {
+    public void setDifferent(boolean different) {
         this.different = different;
     }
 
-    public Boolean getRollingUpdate() {
+    public boolean getRollingUpdate() {
         return rollingUpdate;
     }
 
-    public void setRollingUpdate(Boolean rollingUpdate) {
+    public void setRollingUpdate(boolean rollingUpdate) {
         setDifferent(true);
         this.rollingUpdate = rollingUpdate;
     }
 
-    public Boolean getScaleUp() {
+    public boolean getScaleUp() {
         return scaleUp;
     }
 
-    public void setScaleUp(Boolean scaleUp) {
+    public void setScaleUp(boolean scaleUp) {
         this.scaleUp = scaleUp;
     }
 
-    public Boolean getScaleDown() {
+    public boolean getScaleDown() {
         return scaleDown;
     }
 
-    public void setScaleDown(Boolean scaleDown) {
+    public void setScaleDown(boolean scaleDown) {
         this.scaleDown = scaleDown;
     }
 
