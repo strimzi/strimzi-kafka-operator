@@ -24,6 +24,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 
@@ -46,7 +47,7 @@ public class PvcOperations extends AbstractOperations<KubernetesClient, Persiste
     }
 
     @Override
-    public void create(PersistentVolumeClaim resource, Handler<AsyncResult<Void>> handler) {
+    public Future<Void> create(PersistentVolumeClaim resource) {
         throw new UnsupportedOperationException();// should never happen
     }
 

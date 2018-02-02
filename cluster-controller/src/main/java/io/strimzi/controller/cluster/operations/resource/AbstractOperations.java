@@ -66,9 +66,9 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
      * Asynchronously create the given {@code resource} if it doesn't already exists,
      * calling the given {@code handler} with the outcome.
      * @param resource The resource to create.
-     * @param handler A handler for the outcome.
      */
-    public void create(T resource, Handler<AsyncResult<Void>> handler) {
+    public Future<Void> create(T resource) {
+        Future<Void> fut = Future.future();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
                     if (operation().inNamespace(resource.getMetadata().getNamespace()).withName(resource.getMetadata().getName()).get() == null) {
@@ -87,17 +87,9 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
                     }
                 },
                 false,
-                res -> {
-                    if (res.succeeded()) {
-                        log.info("{} {} has been created", resourceKind, resource);
-                        handler.handle(Future.succeededFuture());
-                    }
-                    else {
-                        log.error("{} creation failed:", resourceKind, res.cause());
-                        handler.handle(Future.failedFuture(res.cause()));
-                    }
-                }
+                fut.completer()
         );
+        return fut;
     }
 
     /**

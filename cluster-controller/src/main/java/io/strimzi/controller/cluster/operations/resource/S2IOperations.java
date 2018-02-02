@@ -74,18 +74,11 @@ public class S2IOperations {
         protected Future<?> composite(Source2Image s2i) {
             List<Future> result = new ArrayList<>(3);
 
-            Future<Void> futureSourceImageStream = Future.future();
+            result.add(imageStreamOperations.create(s2i.generateSourceImageStream()));
 
-            imageStreamOperations.create(s2i.generateSourceImageStream(), futureSourceImageStream.completer());
-            result.add(futureSourceImageStream);
+            result.add(imageStreamOperations.create(s2i.generateTargetImageStream()));
 
-            Future<Void> futureTargetImageStream = Future.future();
-            imageStreamOperations.create(s2i.generateTargetImageStream(), futureTargetImageStream.completer());
-            result.add(futureTargetImageStream);
-
-            Future<Void> futureBuildConfig = Future.future();
-            buildConfigOperations.create(s2i.generateBuildConfig(), futureBuildConfig.completer());
-            result.add(futureBuildConfig);
+            result.add(buildConfigOperations.create(s2i.generateBuildConfig()));
 
             return CompositeFuture.join(result);
         }

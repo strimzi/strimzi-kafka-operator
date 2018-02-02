@@ -63,22 +63,14 @@ public class ZookeeperClusterOperations extends AbstractClusterOperations<Zookee
             List<Future> result = new ArrayList<>(4);
 
             if (zk.isMetricsEnabled()) {
-                Future<Void> futureConfigMap = Future.future();
-                configMapOperations.create(zk.generateMetricsConfigMap(), futureConfigMap.completer());
-                result.add(futureConfigMap);
+                result.add(configMapOperations.create(zk.generateMetricsConfigMap()));
             }
 
-            Future<Void> futureService = Future.future();
-            serviceOperations.create(zk.generateService(), futureService.completer());
-            result.add(futureService);
+            result.add(serviceOperations.create(zk.generateService()));
 
-            Future<Void> futureHeadlessService = Future.future();
-            serviceOperations.create(zk.generateHeadlessService(), futureHeadlessService.completer());
-            result.add(futureHeadlessService);
+            result.add(serviceOperations.create(zk.generateHeadlessService()));
 
-            Future<Void> futureStatefulSet = Future.future();
-            statefulSetOperations.create(zk.generateStatefulSet(client.isAdaptable(OpenShiftClient.class)), futureStatefulSet.completer());
-            result.add(futureStatefulSet);
+            result.add(statefulSetOperations.create(zk.generateStatefulSet(client.isAdaptable(OpenShiftClient.class))));
 
             return CompositeFuture.join(result);
         }
