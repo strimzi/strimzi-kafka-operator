@@ -10,8 +10,9 @@ import io.strimzi.controller.cluster.operations.resource.StatefulSetOperations;
 import io.strimzi.controller.cluster.resources.ClusterDiffResult;
 import io.strimzi.controller.cluster.resources.KafkaCluster;
 import io.strimzi.controller.cluster.resources.Storage;
-import io.vertx.core.*;
-import io.vertx.core.shareddata.Lock;
+import io.vertx.core.CompositeFuture;
+import io.vertx.core.Future;
+import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,22 +64,14 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
             // start creating configMap operation only if metrics are enabled,
             // otherwise the future is already complete (for the "join")
             if (kafka.isMetricsEnabled()) {
-                Future<Void> futureConfigMap = Future.future();
-                configMapOperations.create(kafka.generateMetricsConfigMap(), futureConfigMap.completer());
-                result.add(futureConfigMap);
+                result.add(configMapOperations.create(kafka.generateMetricsConfigMap()));
             }
 
-            Future<Void> futureService = Future.future();
-            serviceOperations.create(kafka.generateService(), futureService.completer());
-            result.add(futureService);
+            result.add(serviceOperations.create(kafka.generateService()));
 
-            Future<Void> futureHeadlessService = Future.future();
-            serviceOperations.create(kafka.generateHeadlessService(), futureHeadlessService.completer());
-            result.add(futureHeadlessService);
+            result.add(serviceOperations.create(kafka.generateHeadlessService()));
 
-            Future<Void> futureStatefulSet = Future.future();
-            statefulSetOperations.create(kafka.generateStatefulSet(client.isAdaptable(OpenShiftClient.class)), futureStatefulSet.completer());
-            result.add(futureStatefulSet);
+            result.add(statefulSetOperations.create(kafka.generateStatefulSet(client.isAdaptable(OpenShiftClient.class))));
 
             return CompositeFuture.join(result);
         }
@@ -93,28 +86,18 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
             List<Future> result = new ArrayList<>(4 + (deleteClaims ? kafka.getReplicas() : 0));
 
             if (kafka.isMetricsEnabled()) {
-                Future<Void> futureConfigMap = Future.future();
-                configMapOperations.delete(namespace, kafka.getMetricsConfigName(), futureConfigMap.completer());
-                result.add(futureConfigMap);
+                result.add(configMapOperations.delete(namespace, kafka.getMetricsConfigName()));
             }
 
-            Future<Void> futureService = Future.future();
-            serviceOperations.delete(namespace, kafka.getName(), futureService.completer());
-            result.add(futureService);
+            result.add(serviceOperations.delete(namespace, kafka.getName()));
 
-            Future<Void> futureHeadlessService = Future.future();
-            serviceOperations.delete(namespace, kafka.getHeadlessName(), futureHeadlessService.completer());
-            result.add(futureHeadlessService);
+            result.add(serviceOperations.delete(namespace, kafka.getHeadlessName()));
 
-            Future<Void> futureStatefulSet = Future.future();
-            statefulSetOperations.delete(namespace, kafka.getName(), futureStatefulSet.completer());
-            result.add(futureStatefulSet);
+            result.add(statefulSetOperations.delete(namespace, kafka.getName()));
 
             if (deleteClaims) {
                 for (int i = 0; i < kafka.getReplicas(); i++) {
-                    Future<Void> f = Future.future();
-                    pvcOperations.delete(namespace, kafka.getVolumeName() + "-" + kafka.getName() + "-" + i, f.completer());
-                    result.add(f);
+                    result.add(pvcOperations.delete(namespace, kafka.getVolumeName() + "-" + kafka.getName() + "-" + i));
                 }
             }
 
@@ -194,9 +177,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
     private Future<Void> patchService(KafkaCluster kafka, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
-            Future<Void> patchService = Future.future();
-            serviceOperations.patch(namespace, kafka.getName(), kafka.patchService(serviceOperations.get(namespace, kafka.getName())), patchService.completer());
-            return patchService;
+            return serviceOperations.patch(namespace, kafka.getName(), kafka.patchService(serviceOperations.get(namespace, kafka.getName())));
         }
         else
         {
@@ -206,10 +187,8 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
     private Future<Void> patchHeadlessService(KafkaCluster kafka, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
-            Future<Void> patchService = Future.future();
-            serviceOperations.patch(namespace, kafka.getHeadlessName(),
-                    kafka.patchHeadlessService(serviceOperations.get(namespace, kafka.getHeadlessName())), patchService.completer());
-            return patchService;
+            return serviceOperations.patch(namespace, kafka.getHeadlessName(),
+                    kafka.patchHeadlessService(serviceOperations.get(namespace, kafka.getHeadlessName())));
         }
         else
         {
@@ -219,10 +198,8 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
     private Future<Void> patchStatefulSet(KafkaCluster kafka, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
-            Future<Void> patchStatefulSet = Future.future();
-            statefulSetOperations.patch(namespace, kafka.getName(), false,
-                    kafka.patchStatefulSet(statefulSetOperations.get(namespace, kafka.getName())), patchStatefulSet.completer());
-            return patchStatefulSet;
+            return statefulSetOperations.patch(namespace, kafka.getName(), false,
+                    kafka.patchStatefulSet(statefulSetOperations.get(namespace, kafka.getName())));
         }
         else
         {
@@ -232,10 +209,8 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
     private Future<Void> patchMetricsConfigMap(KafkaCluster kafka, String namespace, ClusterDiffResult diff) {
         if (diff.isMetricsChanged()) {
-            Future<Void> patchConfigMap = Future.future();
-            configMapOperations.patch(namespace, kafka.getMetricsConfigName(),
-                    kafka.patchMetricsConfigMap(configMapOperations.get(namespace, kafka.getMetricsConfigName())), patchConfigMap.completer());
-            return patchConfigMap;
+            return configMapOperations.patch(namespace, kafka.getMetricsConfigName(),
+                    kafka.patchMetricsConfigMap(configMapOperations.get(namespace, kafka.getMetricsConfigName())));
         } else {
             return Future.succeededFuture();
         }

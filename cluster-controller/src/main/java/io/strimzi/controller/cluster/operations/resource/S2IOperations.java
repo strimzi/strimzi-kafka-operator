@@ -10,7 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -44,7 +43,8 @@ public class S2IOperations {
         S2IOperation(String operationType) {
             this.operationType = operationType;
         }
-        public final void execute(Source2Image s2i, Handler<AsyncResult<Void>> handler) {
+        public final Future<Void> execute(Source2Image s2i) {
+            Future<Void> fut = Future.future();
             log.info("{} S2I {} in namespace {}", operationType, s2i.getName(), s2i.getNamespace());
 
             try {
@@ -53,17 +53,18 @@ public class S2IOperations {
                 composite.setHandler(ar -> {
                     if (ar.succeeded()) {
                         log.info("S2I {} successfully updated in namespace {}", s2i.getName(), s2i.getNamespace());
-                        handler.handle(Future.succeededFuture());
+                        fut.complete();
                     } else {
                         log.error("S2I cluster {} failed to update in namespace {}", s2i.getName(), s2i.getNamespace());
-                        handler.handle(Future.failedFuture("Failed to update S2I"));
+                        fut.fail("Failed to update S2I");
                     }
                 });
             }
             catch (Exception e) {
                 log.error("S2I cluster {} failed to update in namespace {}", s2i.getName(), s2i.getNamespace(), e);
-                handler.handle(Future.failedFuture("Failed to update S2I"));
+                fut.fail("Failed to update S2I");
             }
+            return fut;
         }
 
         protected abstract Future<?> composite(Source2Image s2i);
@@ -74,25 +75,18 @@ public class S2IOperations {
         protected Future<?> composite(Source2Image s2i) {
             List<Future> result = new ArrayList<>(3);
 
-            Future<Void> futureSourceImageStream = Future.future();
+            result.add(imageStreamOperations.create(s2i.generateSourceImageStream()));
 
-            imageStreamOperations.create(s2i.generateSourceImageStream(), futureSourceImageStream.completer());
-            result.add(futureSourceImageStream);
+            result.add(imageStreamOperations.create(s2i.generateTargetImageStream()));
 
-            Future<Void> futureTargetImageStream = Future.future();
-            imageStreamOperations.create(s2i.generateTargetImageStream(), futureTargetImageStream.completer());
-            result.add(futureTargetImageStream);
-
-            Future<Void> futureBuildConfig = Future.future();
-            buildConfigOperations.create(s2i.generateBuildConfig(), futureBuildConfig.completer());
-            result.add(futureBuildConfig);
+            result.add(buildConfigOperations.create(s2i.generateBuildConfig()));
 
             return CompositeFuture.join(result);
         }
     };
 
-    public void create(Source2Image s2i, Handler<AsyncResult<Void>> handler) {
-        createOp.execute(s2i, handler);
+    public Future<Void> create(Source2Image s2i) {
+        return createOp.execute(s2i);
     }
 
     private final S2IOperation updateOp = new S2IOperation("update") {
@@ -100,30 +94,20 @@ public class S2IOperations {
         protected Future<?> composite(Source2Image s2i) {
             if (s2i.diff(imageStreamOperations, buildConfigOperations).getDifferent()) {
                 List<Future> result = new ArrayList<>(3);
-                Future<Void> futureSourceImageStream = Future.future();
-
-                imageStreamOperations.patch(
+                result.add(imageStreamOperations.patch(
                         s2i.getNamespace(), s2i.getSourceImageStreamName(),
                         s2i.patchSourceImageStream(
-                                imageStreamOperations.get(s2i.getNamespace(), s2i.getSourceImageStreamName())),
-                        futureSourceImageStream.completer());
-                result.add(futureSourceImageStream);
+                                imageStreamOperations.get(s2i.getNamespace(), s2i.getSourceImageStreamName()))));
 
-                Future<Void> futureTargetImageStream = Future.future();
-                imageStreamOperations
+                result.add(imageStreamOperations
                         .patch(s2i.getNamespace(), s2i.getName(),
                                 s2i.patchTargetImageStream(
-                                        imageStreamOperations.get(s2i.getNamespace(), s2i.getName())),
-                                futureTargetImageStream.completer());
-                result.add(futureTargetImageStream);
+                                        imageStreamOperations.get(s2i.getNamespace(), s2i.getName()))));
 
-                Future<Void> futureBuildConfig = Future.future();
-                buildConfigOperations
+                result.add(buildConfigOperations
                         .patch(s2i.getNamespace(), s2i.getName(),
                                 s2i.patchBuildConfig(
-                                        buildConfigOperations.get(s2i.getNamespace(), s2i.getName())),
-                                futureBuildConfig.completer());
-                result.add(futureBuildConfig);
+                                        buildConfigOperations.get(s2i.getNamespace(), s2i.getName()))));
 
                 return CompositeFuture.join(result);
             } else {
@@ -133,8 +117,8 @@ public class S2IOperations {
         }
     };
 
-    public void update(Source2Image s2i, Handler<AsyncResult<Void>> handler) {
-        updateOp.execute(s2i, handler);
+    public Future<Void> update(Source2Image s2i) {
+        return updateOp.execute(s2i);
     }
 
     private final S2IOperation deleteOp = new S2IOperation("delete") {
@@ -142,26 +126,18 @@ public class S2IOperations {
         protected Future<?> composite(Source2Image s2i) {
             List<Future> result = new ArrayList<>(3);
 
-            Future<Void> futureSourceImageStream = Future.future();
+            result.add(imageStreamOperations.delete(s2i.getNamespace(), s2i.getSourceImageStreamName()));
 
-            imageStreamOperations.delete(s2i.getNamespace(), s2i.getSourceImageStreamName(), futureSourceImageStream.completer());
-            result.add(futureSourceImageStream);
+            result.add(imageStreamOperations.delete(s2i.getNamespace(), s2i.getName()));
 
-            Future<Void> futureTargetImageStream = Future.future();
-            imageStreamOperations.delete(s2i.getNamespace(), s2i.getName(), futureTargetImageStream.completer());
-            result.add(futureTargetImageStream);
-
-            Future<Void> futureBuildConfig = Future.future();
-
-            buildConfigOperations.delete(s2i.getNamespace(), s2i.getName(), futureBuildConfig.completer());
-            result.add(futureBuildConfig);
+            result.add(buildConfigOperations.delete(s2i.getNamespace(), s2i.getName()));
 
             return CompositeFuture.join(result);
         }
     };
 
-    public void delete(Source2Image s2i, Handler<AsyncResult<Void>> handler) {
-        deleteOp.execute(s2i, handler);
+    public Future<Void> delete(Source2Image s2i) {
+        return deleteOp.execute(s2i);
     }
 
 }

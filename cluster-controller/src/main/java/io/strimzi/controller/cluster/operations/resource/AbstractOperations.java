@@ -64,50 +64,47 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
 
     /**
      * Asynchronously create the given {@code resource} if it doesn't already exists,
-     * calling the given {@code handler} with the outcome.
+     * returning a future for the outcome.
+     * If the resource with that name already exists the future completes successfully.
      * @param resource The resource to create.
-     * @param handler A handler for the outcome.
      */
-    public void create(T resource, Handler<AsyncResult<Void>> handler) {
+    public Future<Void> create(T resource) {
+        Future<Void> fut = Future.future();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
-                    if (operation().inNamespace(resource.getMetadata().getNamespace()).withName(resource.getMetadata().getName()).get() == null) {
+                    String namespace = resource.getMetadata().getNamespace();
+                    String name = resource.getMetadata().getName();
+                    if (operation().inNamespace(namespace).withName(name).get() == null) {
                         try {
-                            log.info("Creating {} {}", resourceKind, resource);
+                            log.info("Creating {} {} in namespace {}", resourceKind, name, namespace);
                             operation().createOrReplace(resource);
+                            log.info("{} {} in namespace {} has been created", resourceKind, name, namespace);
                             future.complete();
                         } catch (Exception e) {
-                            log.error("Caught exception while creating {}", resourceKind, e);
+                            log.error("Caught exception while creating {} {} in namespace {}", resourceKind, name, namespace, e);
                             future.fail(e);
                         }
                     }
                     else {
-                        log.warn("{} {} already exists", resourceKind, resource);
+                        log.warn("{} {} in namespace {} already exists", resourceKind, name, namespace);
                         future.complete();
                     }
                 },
                 false,
-                res -> {
-                    if (res.succeeded()) {
-                        log.info("{} {} has been created", resourceKind, resource);
-                        handler.handle(Future.succeededFuture());
-                    }
-                    else {
-                        log.error("{} creation failed:", resourceKind, res.cause());
-                        handler.handle(Future.failedFuture(res.cause()));
-                    }
-                }
+                fut.completer()
         );
+        return fut;
     }
 
     /**
      * Asynchronously delete the resource with the given {@code name} in the given {@code namespace},
-     * calling the given {@code handler} with the outcome.
+     * returning a future for the outcome.
+     * If the resource didn't exist the future completes successfully.
      * @param namespace The namespace of the resource to delete.
      * @param name The name of the resource to delete.
-     * @param handler A handler for the outcome.
      */
-    public void delete(String namespace, String name, Handler<AsyncResult<Void>> handler) {
+    public Future<Void> delete(String namespace, String name) {
+        Future fut = Future.future();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
 
@@ -115,66 +112,52 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
                         try {
                             log.info("Deleting {} {} in namespace {}", resourceKind, name, namespace);
                             operation().inNamespace(namespace).withName(name).delete();
+                            log.info("{} {} in namespace {} has been deleted", resourceKind, name, namespace);
                             future.complete();
                         } catch (Exception e) {
-                            log.error("Caught exception while deleting {}", resourceKind, e);
+                            log.error("Caught exception while deleting {} {} in namespace {}", resourceKind, name, namespace, e);
                             future.fail(e);
                         }
                     } else {
-                        log.warn("{} {} in namespace {} doesn't exist", resourceKind, name, namespace);
+                        log.warn("{} {} in namespace {} doesn't exist, so cannot be deleted", resourceKind, name, namespace);
                         future.complete();
                     }
                 }, false,
-                res -> {
-                    if (res.succeeded()) {
-                        log.info("{} {} in namespace {} has been deleted (or no longer exists)", resourceKind, name, namespace);
-                        handler.handle(Future.succeededFuture());
-                    }
-                    else {
-                        log.error("{} deletion failed:", resourceKind, res.cause());
-                        handler.handle(Future.failedFuture(res.cause()));
-                    }
-                }
+                fut.completer()
         );
+        return fut;
     }
 
     /**
      * Asynchronously patch the resource with the given {@code name} in the given {@code namespace}
-     * with reflect the state given in the {@code patch}, calling the handler with the outcome.
+     * with reflect the state given in the {@code patch}, returning a future for the outcome.
      * @param namespace The namespace of the resource to patch.
      * @param name The name of the resource to patch.
-     * @param patch The desired state of the resource.
-     * @param handler The handler for the outcome.
+     * @param patch The desired state of the resource..
      */
-    public void patch(String namespace, String name, T patch, Handler<AsyncResult<Void>> handler) {
-        patch(namespace, name, true, patch, handler);
+    public Future<Void> patch(String namespace, String name, T patch) {
+        return patch(namespace, name, true, patch);
     }
 
-    public void patch(String namespace, String name, boolean cascading, T patch, Handler<AsyncResult<Void>> handler) {
-        vertx./*createSharedWorkerExecutor("kubernetes-ops-pool").*/executeBlocking(
+    public Future<Void> patch(String namespace, String name, boolean cascading, T patch) {
+        Future<Void> fut = Future.future();
+        vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
                     try {
-                        log.info("Patching resource with {}", patch);
+                        log.info("Patching {} resource {} in namespace {} with {}", resourceKind, name, namespace, patch);
                         operation().inNamespace(namespace).withName(name).cascading(cascading).patch(patch);
+                        log.info("{} {} in namespace {} has been patched", resourceKind, name, namespace);
                         future.complete();
                     }
                     catch (Exception e) {
-                        log.error("Caught exception while patching", e);
+                        log.error("Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
                         future.fail(e);
                     }
                 },
                 true,
-                res -> {
-                    if (res.succeeded()) {
-                        log.info("Resource has been patched", patch);
-                        handler.handle(Future.succeededFuture());
-                    }
-                    else {
-                        log.error("Failed to patch resource: {}", res.cause().toString());
-                        handler.handle(Future.failedFuture(res.cause()));
-                    }
-                }
+                fut.completer()
         );
+        return fut;
     }
 
     /**

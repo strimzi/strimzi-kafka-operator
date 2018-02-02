@@ -63,22 +63,14 @@ public class ZookeeperClusterOperations extends AbstractClusterOperations<Zookee
             List<Future> result = new ArrayList<>(4);
 
             if (zk.isMetricsEnabled()) {
-                Future<Void> futureConfigMap = Future.future();
-                configMapOperations.create(zk.generateMetricsConfigMap(), futureConfigMap.completer());
-                result.add(futureConfigMap);
+                result.add(configMapOperations.create(zk.generateMetricsConfigMap()));
             }
 
-            Future<Void> futureService = Future.future();
-            serviceOperations.create(zk.generateService(), futureService.completer());
-            result.add(futureService);
+            result.add(serviceOperations.create(zk.generateService()));
 
-            Future<Void> futureHeadlessService = Future.future();
-            serviceOperations.create(zk.generateHeadlessService(), futureHeadlessService.completer());
-            result.add(futureHeadlessService);
+            result.add(serviceOperations.create(zk.generateHeadlessService()));
 
-            Future<Void> futureStatefulSet = Future.future();
-            statefulSetOperations.create(zk.generateStatefulSet(client.isAdaptable(OpenShiftClient.class)), futureStatefulSet.completer());
-            result.add(futureStatefulSet);
+            result.add(statefulSetOperations.create(zk.generateStatefulSet(client.isAdaptable(OpenShiftClient.class))));
 
             return CompositeFuture.join(result);
         }
@@ -100,29 +92,19 @@ public class ZookeeperClusterOperations extends AbstractClusterOperations<Zookee
             // start deleting configMap operation only if metrics are enabled,
             // otherwise the future is already complete (for the "join")
             if (zk.isMetricsEnabled()) {
-                Future<Void> futureConfigMap = Future.future();
-                configMapOperations.delete(namespace, zk.getMetricsConfigName(), futureConfigMap.completer());
-                result.add(futureConfigMap);
+                result.add(configMapOperations.delete(namespace, zk.getMetricsConfigName()));
             }
 
-            Future<Void> futureService = Future.future();
-            serviceOperations.delete(namespace, zk.getName(), futureService.completer());
-            result.add(futureService);
+            result.add(serviceOperations.delete(namespace, zk.getName()));
 
-            Future<Void> futureHeadlessService = Future.future();
-            serviceOperations.delete(namespace, zk.getHeadlessName(), futureHeadlessService.completer());
-            result.add(futureHeadlessService);
+            result.add(serviceOperations.delete(namespace, zk.getHeadlessName()));
 
-            Future<Void> futureStatefulSet = Future.future();
-            statefulSetOperations.delete(namespace, zk.getName(), futureStatefulSet.completer());
-            result.add(futureStatefulSet);
+            result.add(statefulSetOperations.delete(namespace, zk.getName()));
 
 
             if (deleteClaims) {
                 for (int i = 0; i < zk.getReplicas(); i++) {
-                    Future<Void> f = Future.future();
-                    pvcOperations.delete(namespace, zk.getVolumeName() + "-" + zk.getName() + "-" + i, f.completer());
-                    result.add(f);
+                    result.add(pvcOperations.delete(namespace, zk.getVolumeName() + "-" + zk.getName() + "-" + i));
                 }
             }
 
@@ -199,10 +181,8 @@ public class ZookeeperClusterOperations extends AbstractClusterOperations<Zookee
 
     private Future<Void> patchService(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
-            Future<Void> patchService = Future.future();
-            serviceOperations.patch(namespace, zk.getName(),
-                    zk.patchService(serviceOperations.get(namespace, zk.getName())), patchService.completer());
-            return patchService;
+            return serviceOperations.patch(namespace, zk.getName(),
+                    zk.patchService(serviceOperations.get(namespace, zk.getName())));
         }
         else
         {
@@ -212,10 +192,8 @@ public class ZookeeperClusterOperations extends AbstractClusterOperations<Zookee
 
     private Future<Void> patchHeadlessService(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
-            Future<Void> patchService = Future.future();
-            serviceOperations.patch(namespace, zk.getHeadlessName(),
-                    zk.patchHeadlessService(serviceOperations.get(namespace, zk.getHeadlessName())), patchService.completer());
-            return patchService;
+            return serviceOperations.patch(namespace, zk.getHeadlessName(),
+                    zk.patchHeadlessService(serviceOperations.get(namespace, zk.getHeadlessName())));
         }
         else
         {
@@ -225,10 +203,8 @@ public class ZookeeperClusterOperations extends AbstractClusterOperations<Zookee
 
     private Future<Void> patchStatefulSet(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
-            Future<Void> patchStatefulSet = Future.future();
-            statefulSetOperations.patch(namespace, zk.getName(), false,
-                    zk.patchStatefulSet(statefulSetOperations.get(namespace, zk.getName())), patchStatefulSet.completer());
-            return patchStatefulSet;
+            return statefulSetOperations.patch(namespace, zk.getName(), false,
+                    zk.patchStatefulSet(statefulSetOperations.get(namespace, zk.getName())));
         }
         else
         {
@@ -238,11 +214,8 @@ public class ZookeeperClusterOperations extends AbstractClusterOperations<Zookee
 
     private Future<Void> patchMetricsConfigMap(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
         if (diff.isMetricsChanged()) {
-            Future<Void> patchConfigMap = Future.future();
-            configMapOperations.patch(namespace, zk.getMetricsConfigName(),
-                    zk.patchMetricsConfigMap(configMapOperations.get(namespace, zk.getMetricsConfigName())),
-                    patchConfigMap.completer());
-            return patchConfigMap;
+            return configMapOperations.patch(namespace, zk.getMetricsConfigName(),
+                    zk.patchMetricsConfigMap(configMapOperations.get(namespace, zk.getMetricsConfigName())));
         } else {
             return Future.succeededFuture();
         }

@@ -23,6 +23,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -102,7 +103,8 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         AbstractOperations<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
         Async async = context.async();
-        op.create(resource, ar -> {
+        Future<Void> fut = op.create(resource);
+        fut.setHandler(ar -> {
             assertTrue(ar.succeeded());
             verify(mockResource).get();
             verify(mockResource, never()).create(any());
@@ -134,7 +136,7 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         AbstractOperations<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
         Async async = context.async();
-        op.create(resource, ar -> {
+        op.create(resource).setHandler(ar -> {
             assertTrue(ar.failed());
             assertEquals(ex, ar.cause());
             async.complete();
@@ -159,7 +161,7 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         AbstractOperations<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
         Async async = context.async();
-        op.create(resource, ar -> {
+        op.create(resource).setHandler(ar -> {
             assertTrue(ar.succeeded());
             verify(mockResource).get();
             verify(mockCms).createOrReplace(eq(resource));
@@ -188,7 +190,7 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         AbstractOperations<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
         Async async = context.async();
-        op.create(resource, ar -> {
+        op.create(resource).setHandler(ar -> {
             assertTrue(ar.failed());
             assertEquals(ex, ar.cause());
             async.complete();
@@ -213,7 +215,7 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         AbstractOperations<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
         Async async = context.async();
-        op.delete(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), ar -> {
+        op.delete(resource.getMetadata().getNamespace(), resource.getMetadata().getName()).setHandler(ar -> {
             assertTrue(ar.succeeded());
             verify(mockResource).get();
             verify(mockResource, never()).delete();
@@ -242,7 +244,7 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         AbstractOperations<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
         Async async = context.async();
-        op.delete(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), ar -> {
+        op.delete(resource.getMetadata().getNamespace(), resource.getMetadata().getName()).setHandler(ar -> {
             assertTrue(ar.failed());
             assertEquals(ex, ar.cause());
             async.complete();
@@ -267,7 +269,7 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         AbstractOperations<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
         Async async = context.async();
-        op.delete(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), ar -> {
+        op.delete(resource.getMetadata().getNamespace(), resource.getMetadata().getName()).setHandler(ar -> {
             assertTrue(ar.succeeded());
             verify(mockResource).get();
             verify(mockResource).delete();
@@ -296,7 +298,7 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         AbstractOperations<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
         Async async = context.async();
-        op.delete(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), ar -> {
+        op.delete(resource.getMetadata().getNamespace(), resource.getMetadata().getName()).setHandler(ar -> {
             assertTrue(ar.failed());
             assertEquals(ex, ar.cause());
             async.complete();

@@ -78,18 +78,13 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
         public Future<?> composite(String namespace, ClusterOperation<KafkaConnectCluster> clusterOp) {
             KafkaConnectCluster connect = clusterOp.cluster();
             List<Future> result = new ArrayList<>(3);
-            Future<Void> futureService = Future.future();
-            serviceOperations.create(connect.generateService(), futureService.completer());
-            result.add(futureService);
+            result.add(serviceOperations.create(connect.generateService()));
 
-            Future<Void> futureDeployment = Future.future();
-            deploymentOperations.create(connect.generateDeployment(), futureDeployment.completer());
-            result.add(futureDeployment);
+            result.add(deploymentOperations.create(connect.generateDeployment()));
 
             Future<Void> futureS2I;
             if (connect.getS2I() != null) {
-                futureS2I = Future.future();
-                s2iOperations.create(connect.getS2I(), futureS2I.completer());
+                futureS2I = s2iOperations.create(connect.getS2I());
             } else {
                 futureS2I = Future.succeededFuture();
             }
@@ -111,18 +106,12 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
             KafkaConnectCluster connect = clusterOp.cluster();
             List<Future> result = new ArrayList<>(3);
 
-            Future<Void> futureService = Future.future();
-            serviceOperations.delete(namespace, connect.getName(), futureService.completer());
-            result.add(futureService);
+            result.add(serviceOperations.delete(namespace, connect.getName()));
 
-            Future<Void> futureDeployment = Future.future();
-            deploymentOperations.delete(namespace, connect.getName(), futureDeployment.completer());
-            result.add(futureDeployment);
+            result.add(deploymentOperations.delete(namespace, connect.getName()));
 
             if (connect.getS2I() != null) {
-                Future<Void> futureS2I = Future.future();
-                s2iOperations.delete(connect.getS2I(), futureS2I.completer());
-                result.add(futureS2I);
+                result.add(s2iOperations.delete(connect.getS2I()));
             }
 
             return CompositeFuture.join(result);
@@ -195,10 +184,8 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
 
     private Future<Void> patchService(KafkaConnectCluster connect, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
-            Future<Void> patchService = Future.future();
-            serviceOperations.patch(namespace, connect.getName(),
-                    connect.patchService(serviceOperations.get(namespace, connect.getName())), patchService.completer());
-            return patchService;
+            return serviceOperations.patch(namespace, connect.getName(),
+                    connect.patchService(serviceOperations.get(namespace, connect.getName())));
         }
         else
         {
@@ -208,10 +195,8 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
 
     private Future<Void> patchDeployment(KafkaConnectCluster connect, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
-            Future<Void> patchDeployment = Future.future();
-            deploymentOperations.patch(namespace, connect.getName(),
-                    connect.patchDeployment(deploymentOperations.get(namespace, connect.getName())), patchDeployment.completer());
-            return patchDeployment;
+            return deploymentOperations.patch(namespace, connect.getName(),
+                    connect.patchDeployment(deploymentOperations.get(namespace, connect.getName())));
         }
         else
         {
@@ -232,19 +217,13 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
         if (diff.getS2i() != Source2Image.Source2ImageDiff.NONE) {
             if (diff.getS2i() == Source2Image.Source2ImageDiff.CREATE) {
                 log.info("Creating S2I deployment {} in namespace {}", connect.getName(), namespace);
-                Future<Void> createS2I = Future.future();
-                s2iOperations.create(connect.getS2I(), createS2I.completer());
-                return createS2I;
+                return s2iOperations.create(connect.getS2I());
             } else if (diff.getS2i() == Source2Image.Source2ImageDiff.DELETE) {
                 log.info("Deleting S2I deployment {} in namespace {}", connect.getName(), namespace);
-                Future<Void> deleteS2I = Future.future();
-                s2iOperations.delete(new Source2Image(namespace, connect.getName()), deleteS2I.completer());
-                return deleteS2I;
+                return s2iOperations.delete(new Source2Image(namespace, connect.getName()));
             } else {
                 log.info("Updating S2I deployment {} in namespace {}", connect.getName(), namespace);
-                Future<Void> patchS2I = Future.future();
-                s2iOperations.update(connect.getS2I(), patchS2I.completer());
-                return patchS2I;
+                return s2iOperations.update(connect.getS2I());
             }
         } else {
             return Future.succeededFuture();
