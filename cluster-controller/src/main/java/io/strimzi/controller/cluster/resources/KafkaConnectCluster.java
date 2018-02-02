@@ -2,8 +2,6 @@ package io.strimzi.controller.cluster.resources;
 
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.extensions.*;
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.controller.cluster.ClusterController;
 import io.strimzi.controller.cluster.operations.resource.BuildConfigOperations;
 import io.strimzi.controller.cluster.operations.resource.DeploymentOperations;
@@ -76,6 +74,10 @@ public class KafkaConnectCluster extends AbstractCluster {
     private static String KEY_OFFSET_STORAGE_REPLICATION_FACTOR = "KAFKA_CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR";
     private static String KEY_STATUS_STORAGE_REPLICATION_FACTOR = "KAFKA_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR";
 
+    public static String kafkaConnectClusterName(String cluster) {
+        return cluster + KafkaConnectCluster.NAME_SUFFIX;
+    }
+
     /**
      * Constructor
      *
@@ -85,7 +87,7 @@ public class KafkaConnectCluster extends AbstractCluster {
     private KafkaConnectCluster(String namespace, String cluster) {
 
         super(namespace, cluster);
-        this.name = cluster + KafkaConnectCluster.NAME_SUFFIX;
+        this.name = kafkaConnectClusterName(cluster);
         this.image = DEFAULT_IMAGE;
         this.replicas = DEFAULT_REPLICAS;
         this.healthCheckPath = "/";
@@ -139,16 +141,14 @@ public class KafkaConnectCluster extends AbstractCluster {
      *
      * @param namespace Kubernetes/OpenShift namespace where cluster resources belong to
      * @param cluster   overall cluster name
-     * @param deploymentOperations Deployment operations
+     * @param dep The deployment from which to recover the cluster state
      * @param imageStreamOperations ImageStream operations (may be null)
      * @return  Kafka Connect cluster instance
      */
     public static KafkaConnectCluster fromDeployment(
             String namespace, String cluster,
-            DeploymentOperations deploymentOperations,
+            Deployment dep,
             ImageStreamOperations imageStreamOperations) {
-
-        Deployment dep = deploymentOperations.get(namespace, cluster + KafkaConnectCluster.NAME_SUFFIX);
 
         KafkaConnectCluster kafkaConnect =  new KafkaConnectCluster(namespace, cluster);
 

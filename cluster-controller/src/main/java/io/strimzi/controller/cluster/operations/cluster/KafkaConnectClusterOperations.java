@@ -1,7 +1,7 @@
 package io.strimzi.controller.cluster.operations.cluster;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.strimzi.controller.cluster.operations.resource.BuildConfigOperations;
 import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
 import io.strimzi.controller.cluster.operations.resource.DeploymentOperations;
@@ -11,12 +11,9 @@ import io.strimzi.controller.cluster.operations.resource.ServiceOperations;
 import io.strimzi.controller.cluster.resources.ClusterDiffResult;
 import io.strimzi.controller.cluster.resources.KafkaConnectCluster;
 import io.strimzi.controller.cluster.resources.Source2Image;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.shareddata.Lock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -119,7 +116,8 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
 
         @Override
         public ClusterOperation<KafkaConnectCluster> getCluster(String namespace, String name) {
-            return new ClusterOperation<>(KafkaConnectCluster.fromDeployment(namespace, name, deploymentOperations, imagesStreamResources), null);
+            Deployment dep = deploymentOperations.get(namespace, KafkaConnectCluster.kafkaConnectClusterName(name));
+            return new ClusterOperation<>(KafkaConnectCluster.fromDeployment(namespace, name, dep, imagesStreamResources), null);
         }
     };
 

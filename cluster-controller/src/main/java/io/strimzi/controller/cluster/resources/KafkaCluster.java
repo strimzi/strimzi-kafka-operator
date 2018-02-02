@@ -68,9 +68,9 @@ public class KafkaCluster extends AbstractCluster {
     private KafkaCluster(String namespace, String cluster) {
 
         super(namespace, cluster);
-        this.name = cluster + KafkaCluster.NAME_SUFFIX;
-        this.headlessName = cluster + KafkaCluster.HEADLESS_NAME_SUFFIX;
-        this.metricsConfigName = cluster + KafkaCluster.METRICS_CONFIG_SUFFIX;
+        this.name = kafkaClusterName(cluster);
+        this.headlessName = headlessName(cluster);
+        this.metricsConfigName = metricConfigsName(cluster);
         this.image = DEFAULT_IMAGE;
         this.replicas = DEFAULT_REPLICAS;
         this.healthCheckPath = "/opt/kafka/kafka_healthcheck.sh";
@@ -82,6 +82,18 @@ public class KafkaCluster extends AbstractCluster {
         this.volumeName = "kafka-storage";
         this.metricsConfigVolumeName = "kafka-metrics-config";
         this.metricsConfigMountPath = "/opt/prometheus/config/";
+    }
+
+    public static String kafkaClusterName(String cluster) {
+        return cluster + KafkaCluster.NAME_SUFFIX;
+    }
+
+    private static String metricConfigsName(String cluster) {
+        return cluster + KafkaCluster.METRICS_CONFIG_SUFFIX;
+    }
+
+    private String headlessName(String cluster) {
+        return cluster + KafkaCluster.HEADLESS_NAME_SUFFIX;
     }
 
     /**
@@ -120,14 +132,12 @@ public class KafkaCluster extends AbstractCluster {
     /**
      * Create a Kafka cluster from the deployed StatefulSet resource
      *
-     * @param statefulSetOperations The means of setting the SS to obtain the state from
+     * @param ss The StatefulSet from which the cluster state should be recovered.
      * @param namespace Kubernetes/OpenShift namespace where cluster resources belong to
      * @param cluster   overall cluster name
      * @return  Kafka cluster instance
      */
-    public static KafkaCluster fromStatefulSet(StatefulSetOperations statefulSetOperations, String namespace, String cluster) {
-
-        StatefulSet ss = statefulSetOperations.get(namespace, cluster + KafkaCluster.NAME_SUFFIX);
+    public static KafkaCluster fromStatefulSet(StatefulSet ss, String namespace, String cluster) {
 
         KafkaCluster kafka =  new KafkaCluster(namespace, cluster);
 
@@ -147,7 +157,7 @@ public class KafkaCluster extends AbstractCluster {
 
         kafka.setMetricsEnabled(Boolean.parseBoolean(vars.getOrDefault(KEY_KAFKA_METRICS_ENABLED, String.valueOf(DEFAULT_KAFKA_METRICS_ENABLED))));
         if (kafka.isMetricsEnabled()) {
-            kafka.setMetricsConfigName(cluster + KafkaCluster.METRICS_CONFIG_SUFFIX);
+            kafka.setMetricsConfigName(metricConfigsName(cluster));
         }
 
         if (!ss.getSpec().getVolumeClaimTemplates().isEmpty()) {

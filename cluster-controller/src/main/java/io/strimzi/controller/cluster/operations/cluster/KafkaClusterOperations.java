@@ -1,8 +1,7 @@
 package io.strimzi.controller.cluster.operations.cluster;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.openshift.client.OpenShiftClient;
+import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
 import io.strimzi.controller.cluster.operations.resource.PvcOperations;
 import io.strimzi.controller.cluster.operations.resource.ServiceOperations;
@@ -106,7 +105,8 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
         @Override
         public ClusterOperation<KafkaCluster> getCluster(String namespace, String name) {
-            return new ClusterOperation<>(KafkaCluster.fromStatefulSet(statefulSetOperations, namespace, name), null);
+            StatefulSet ss = statefulSetOperations.get(namespace, KafkaCluster.kafkaClusterName(name));
+            return new ClusterOperation<>(KafkaCluster.fromStatefulSet(ss, namespace, name), null);
         }
     };
 

@@ -1,8 +1,7 @@
 package io.strimzi.controller.cluster.operations.cluster;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.openshift.client.OpenShiftClient;
+import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
 import io.strimzi.controller.cluster.operations.resource.PvcOperations;
 import io.strimzi.controller.cluster.operations.resource.ServiceOperations;
@@ -13,7 +12,6 @@ import io.strimzi.controller.cluster.resources.ZookeeperCluster;
 import io.vertx.core.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import io.vertx.core.shareddata.Lock;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -113,7 +111,8 @@ public class ZookeeperClusterOperations extends AbstractClusterOperations<Zookee
 
         @Override
         public ClusterOperation<ZookeeperCluster> getCluster(String namespace, String name) {
-            return new ClusterOperation<ZookeeperCluster>(ZookeeperCluster.fromStatefulSet(statefulSetOperations, namespace, name), null);
+            StatefulSet ss = statefulSetOperations.get(namespace, ZookeeperCluster.zookeeperClusterName(name));
+            return new ClusterOperation<ZookeeperCluster>(ZookeeperCluster.fromStatefulSet(ss, namespace, name), null);
         }
     };
 
