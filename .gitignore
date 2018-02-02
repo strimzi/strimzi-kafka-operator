@@ -11,3 +11,6 @@
 # IntelliJ IDEA specific
 .idea/
 *.iml
+
+# Velocity.log
+velocity.log
