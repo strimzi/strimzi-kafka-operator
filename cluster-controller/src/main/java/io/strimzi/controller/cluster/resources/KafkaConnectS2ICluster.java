@@ -363,11 +363,9 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
         // Do not update image or trigger image - it will cause problem with rolling updates
         dep.getMetadata().setLabels(getLabelsWithName());
         dep.getSpec().getTemplate().getMetadata().setLabels(getLabelsWithName());
-        //dep.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(getImage());
         dep.getSpec().getTemplate().getSpec().getContainers().get(0).setLivenessProbe(createHttpProbe(healthCheckPath, REST_API_PORT_NAME, healthCheckInitialDelay, healthCheckTimeout));
         dep.getSpec().getTemplate().getSpec().getContainers().get(0).setReadinessProbe(createHttpProbe(healthCheckPath, REST_API_PORT_NAME, healthCheckInitialDelay, healthCheckTimeout));
         dep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(getEnvVars());
-        //dep.getSpec().getTriggers().get(1).getImageChangeParams().getFrom().setName(image);
 
         return dep;
     }
@@ -406,7 +404,6 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
      */
     public BuildConfig patchBuildConfig(BuildConfig bc) {
         bc.getMetadata().setLabels(getLabelsWithName());
-        //bc.getSpec().getOutput().getTo().setName(image);
         bc.getSpec().getStrategy().getSourceStrategy().getFrom().setName(getSourceImageStreamName() + ":" + tag);
 
         return bc;
