@@ -101,8 +101,6 @@ public class ClusterController extends AbstractVerticle {
 
         if (isOpenShift) {
             this.kafkaConnectS2IClusterOperations = new KafkaConnectS2IClusterOperations(vertx, isOpenShift, configMapOperations, deploymentConfigOperations, serviceOperations, imagesStreamOperations, buildConfigOperations);
-        } else {
-            this.kafkaConnectS2IClusterOperations = null;
         }
     }
 
