@@ -32,7 +32,8 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
 
     // Kafka Connect S2I configuration
     private String sourceImageBaseName = DEFAULT_IMAGE.substring(0, DEFAULT_IMAGE.lastIndexOf(":"));
-    private String tag = DEFAULT_IMAGE.substring(DEFAULT_IMAGE.lastIndexOf(":") + 1);
+    private String sourceImageTag = DEFAULT_IMAGE.substring(DEFAULT_IMAGE.lastIndexOf(":") + 1);
+    private String tag = "latest";
 
     // Configuration defaults
     private static final String DEFAULT_IMAGE = "strimzi/kafka-connect-s2i:latest";
@@ -84,7 +85,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
      * @param namespace Kubernetes/OpenShift namespace where cluster resources belong to
      * @param cluster   overall cluster name
      * @param dep The deployment from which to recover the cluster state
-     * @param imageStreamOperations ImageStream operations (may be null)
+     * @param sis ImageStream
      * @return  Kafka Connect cluster instance
      */
     public static KafkaConnectS2ICluster fromDeployment(
@@ -190,11 +191,11 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
         }
 
         if (!image.equals(bc.getSpec().getOutput().getTo().getName())
-                || !(getSourceImageStreamName() + ":" + tag).equals(bc.getSpec().getStrategy().getSourceStrategy().getFrom().getName()))    {
+                || !(getSourceImageStreamName() + ":" + sourceImageTag).equals(bc.getSpec().getStrategy().getSourceStrategy().getFrom().getName()))    {
             diff.setDifferent(true);
         }
 
-        if (!tag.equals(sis.getSpec().getTags().get(0).getName())
+        if (!sourceImageTag.equals(sis.getSpec().getTags().get(0).getName())
                 || !sourceImageBaseName.equals(sis.getSpec().getTags().get(0).getFrom().getName()))   {
             diff.setDifferent(true);
         }
@@ -264,10 +265,10 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
     public ImageStream generateSourceImageStream() {
         ObjectReference image = new ObjectReference();
         image.setKind("DockerImage");
-        image.setName(sourceImageBaseName);
+        image.setName(sourceImageBaseName + ":" + sourceImageTag);
 
         TagReference sourceTag = new TagReference();
-        sourceTag.setName(tag);
+        sourceTag.setName(sourceImageTag);
         sourceTag.setFrom(image);
 
         ImageStream imageStream = new ImageStreamBuilder()
@@ -342,7 +343,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                 .withNewSourceStrategy()
                 .withNewFrom()
                 .withKind("ImageStreamTag")
-                .withName(getSourceImageStreamName() + ":" + tag)
+                .withName(getSourceImageStreamName() + ":" + sourceImageTag)
                 .endFrom()
                 .endSourceStrategy()
                 .endStrategy()
@@ -378,8 +379,8 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
      */
     public ImageStream patchSourceImageStream(ImageStream is) {
         is.getMetadata().setLabels(getLabels());
-        is.getSpec().getTags().get(0).setName(tag);
-        is.getSpec().getTags().get(0).getFrom().setName(sourceImageBaseName);
+        is.getSpec().getTags().get(0).setName(sourceImageTag);
+        is.getSpec().getTags().get(0).getFrom().setName(sourceImageBaseName + ":" + sourceImageTag);
 
         return is;
     }
@@ -404,7 +405,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
      */
     public BuildConfig patchBuildConfig(BuildConfig bc) {
         bc.getMetadata().setLabels(getLabelsWithName());
-        bc.getSpec().getStrategy().getSourceStrategy().getFrom().setName(getSourceImageStreamName() + ":" + tag);
+        bc.getSpec().getStrategy().getSourceStrategy().getFrom().setName(getSourceImageStreamName() + ":" + sourceImageTag);
 
         return bc;
     }
@@ -430,7 +431,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
 
     protected void setImage(String image) {
         this.sourceImageBaseName = image.substring(0, image.lastIndexOf(":"));
-        this.tag = image.substring(image.lastIndexOf(":") + 1);
+        this.sourceImageTag = image.substring(image.lastIndexOf(":") + 1);
         this.image = name + ":" + tag;
 
     }
