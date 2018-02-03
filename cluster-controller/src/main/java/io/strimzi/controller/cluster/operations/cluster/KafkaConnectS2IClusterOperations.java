@@ -212,7 +212,7 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
     private Future<Void> patchTargetImageStream(KafkaConnectS2ICluster connect, String namespace, ClusterDiffResult diff) {
         if (diff.getDifferent()) {
             return imagesStreamOperations.patch(namespace, connect.getName(),
-                    connect.patchSourceImageStream(imagesStreamOperations.get(namespace, connect.getName())));
+                    connect.patchTargetImageStream(imagesStreamOperations.get(namespace, connect.getName())));
         }
         else
         {
