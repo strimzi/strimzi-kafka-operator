@@ -54,21 +54,21 @@ public class KafkaConnectCluster extends AbstractCluster {
     protected static final int DEFAULT_STATUS_STORAGE_REPLICATION_FACTOR = 3;
 
     // Configuration keys
-    protected static final String KEY_IMAGE = "image";
-    protected static final String KEY_REPLICAS = "nodes";
-    protected static final String KEY_HEALTHCHECK_DELAY = "healthcheck-delay";
-    protected static final String KEY_HEALTHCHECK_TIMEOUT = "healthcheck-timeout";
+    public static final String KEY_IMAGE = "image";
+    public static final String KEY_REPLICAS = "nodes";
+    public static final String KEY_HEALTHCHECK_DELAY = "healthcheck-delay";
+    public static final String KEY_HEALTHCHECK_TIMEOUT = "healthcheck-timeout";
 
     // Kafka Connect configuration keys
-    protected static final String KEY_BOOTSTRAP_SERVERS = "KAFKA_CONNECT_BOOTSTRAP_SERVERS";
-    protected static final String KEY_GROUP_ID = "KAFKA_CONNECT_GROUP_ID";
-    protected static final String KEY_KEY_CONVERTER = "KAFKA_CONNECT_KEY_CONVERTER";
-    protected static final String KEY_KEY_CONVERTER_SCHEMAS_EXAMPLE = "KAFKA_CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE";
-    protected static final String KEY_VALUE_CONVERTER = "KAFKA_CONNECT_VALUE_CONVERTER";
-    protected static final String KEY_VALUE_CONVERTER_SCHEMAS_EXAMPLE = "KAFKA_CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE";
-    protected static final String KEY_CONFIG_STORAGE_REPLICATION_FACTOR = "KAFKA_CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR";
-    protected static final String KEY_OFFSET_STORAGE_REPLICATION_FACTOR = "KAFKA_CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR";
-    protected static final String KEY_STATUS_STORAGE_REPLICATION_FACTOR = "KAFKA_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR";
+    public static final String KEY_BOOTSTRAP_SERVERS = "KAFKA_CONNECT_BOOTSTRAP_SERVERS";
+    public static final String KEY_GROUP_ID = "KAFKA_CONNECT_GROUP_ID";
+    public static final String KEY_KEY_CONVERTER = "KAFKA_CONNECT_KEY_CONVERTER";
+    public static final String KEY_KEY_CONVERTER_SCHEMAS_EXAMPLE = "KAFKA_CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE";
+    public static final String KEY_VALUE_CONVERTER = "KAFKA_CONNECT_VALUE_CONVERTER";
+    public static final String KEY_VALUE_CONVERTER_SCHEMAS_EXAMPLE = "KAFKA_CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE";
+    public static final String KEY_CONFIG_STORAGE_REPLICATION_FACTOR = "KAFKA_CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR";
+    public static final String KEY_OFFSET_STORAGE_REPLICATION_FACTOR = "KAFKA_CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR";
+    public static final String KEY_STATUS_STORAGE_REPLICATION_FACTOR = "KAFKA_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR";
 
     public static String kafkaConnectClusterName(String cluster) {
         return cluster + KafkaConnectCluster.NAME_SUFFIX;

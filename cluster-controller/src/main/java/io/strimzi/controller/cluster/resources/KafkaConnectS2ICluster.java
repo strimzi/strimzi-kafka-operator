@@ -31,12 +31,12 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
     public static final String TYPE = "kafka-connect-s2i";
 
     // Kafka Connect S2I configuration
-    private String sourceImageBaseName = DEFAULT_IMAGE.substring(0, DEFAULT_IMAGE.lastIndexOf(":"));
-    private String sourceImageTag = DEFAULT_IMAGE.substring(DEFAULT_IMAGE.lastIndexOf(":") + 1);
-    private String tag = "latest";
+    protected String sourceImageBaseName = DEFAULT_IMAGE.substring(0, DEFAULT_IMAGE.lastIndexOf(":"));
+    protected String sourceImageTag = DEFAULT_IMAGE.substring(DEFAULT_IMAGE.lastIndexOf(":") + 1);
+    protected String tag = "latest";
 
     // Configuration defaults
-    private static final String DEFAULT_IMAGE = "strimzi/kafka-connect-s2i:latest";
+    protected static final String DEFAULT_IMAGE = "strimzi/kafka-connect-s2i:latest";
 
     /**
      * Constructor
@@ -273,13 +273,13 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
 
         ImageStream imageStream = new ImageStreamBuilder()
                 .withNewMetadata()
-                .withName(getSourceImageStreamName())
-                .withNamespace(namespace)
-                .withLabels(labels)
+                    .withName(getSourceImageStreamName())
+                    .withNamespace(namespace)
+                    .withLabels(labels)
                 .endMetadata()
                 .withNewSpec()
-                .withLookupPolicy(new ImageLookupPolicyBuilder().withLocal(false).build())
-                .withTags(sourceTag)
+                    .withLookupPolicy(new ImageLookupPolicyBuilder().withLocal(false).build())
+                    .withTags(sourceTag)
                 .endSpec()
                 .build();
 
@@ -294,12 +294,12 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
     public ImageStream generateTargetImageStream() {
         ImageStream imageStream = new ImageStreamBuilder()
                 .withNewMetadata()
-                .withName(name)
-                .withNamespace(namespace)
-                .withLabels(labels)
+                    .withName(name)
+                    .withNamespace(namespace)
+                    .withLabels(labels)
                 .endMetadata()
                 .withNewSpec()
-                .withLookupPolicy(new ImageLookupPolicyBuilder().withLocal(true).build())
+                    .withLookupPolicy(new ImageLookupPolicyBuilder().withLocal(true).build())
                 .endSpec()
                 .build();
 
@@ -321,33 +321,33 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
 
         BuildConfig build = new BuildConfigBuilder()
                 .withNewMetadata()
-                .withName(name)
-                .withLabels(labels)
-                .withNamespace(namespace)
+                    .withName(name)
+                    .withLabels(labels)
+                    .withNamespace(namespace)
                 .endMetadata()
                 .withNewSpec()
-                .withFailedBuildsHistoryLimit(5)
-                .withNewOutput()
-                .withNewTo()
-                .withKind("ImageStreamTag")
-                .withName(image)
-                .endTo()
-                .endOutput()
-                .withRunPolicy("Serial")
-                .withNewSource()
-                .withType("Binary")
-                .withBinary(new BinaryBuildSource())
-                .endSource()
-                .withNewStrategy()
-                .withType("Source")
-                .withNewSourceStrategy()
-                .withNewFrom()
-                .withKind("ImageStreamTag")
-                .withName(getSourceImageStreamName() + ":" + sourceImageTag)
-                .endFrom()
-                .endSourceStrategy()
-                .endStrategy()
-                .withTriggers(triggerConfigChange, triggerImageChange)
+                    .withFailedBuildsHistoryLimit(5)
+                    .withNewOutput()
+                        .withNewTo()
+                            .withKind("ImageStreamTag")
+                            .withName(image)
+                        .endTo()
+                    .endOutput()
+                    .withRunPolicy("Serial")
+                    .withNewSource()
+                        .withType("Binary")
+                        .withBinary(new BinaryBuildSource())
+                    .endSource()
+                    .withNewStrategy()
+                        .withType("Source")
+                        .withNewSourceStrategy()
+                            .withNewFrom()
+                                .withKind("ImageStreamTag")
+                                .withName(getSourceImageStreamName() + ":" + sourceImageTag)
+                            .endFrom()
+                        .endSourceStrategy()
+                    .endStrategy()
+                    .withTriggers(triggerConfigChange, triggerImageChange)
                 .endSpec()
                 .build();
 
