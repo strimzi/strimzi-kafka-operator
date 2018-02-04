@@ -98,7 +98,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
         kafkaConnect.setLabels(dep.getMetadata().getLabels());
         kafkaConnect.setReplicas(dep.getSpec().getReplicas());
         kafkaConnect.setHealthCheckInitialDelay(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds());
-        kafkaConnect.setHealthCheckInitialDelay(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds());
+        kafkaConnect.setHealthCheckTimeout(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds());
 
         Map<String, String> vars = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream().collect(
                 Collectors.toMap(EnvVar::getName, EnvVar::getValue));
@@ -113,7 +113,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
         kafkaConnect.setOffsetStorageReplicationFactor(Integer.parseInt(vars.getOrDefault(KEY_OFFSET_STORAGE_REPLICATION_FACTOR, String.valueOf(DEFAULT_OFFSET_STORAGE_REPLICATION_FACTOR))));
         kafkaConnect.setStatusStorageReplicationFactor(Integer.parseInt(vars.getOrDefault(KEY_STATUS_STORAGE_REPLICATION_FACTOR, String.valueOf(DEFAULT_STATUS_STORAGE_REPLICATION_FACTOR))));
 
-        String sourceImage = sis.getSpec().getTags().get(0).getFrom().getName() + ":" + sis.getSpec().getTags().get(0).getName();
+        String sourceImage = sis.getSpec().getTags().get(0).getFrom().getName();
         kafkaConnect.setImage(sourceImage);
 
         return kafkaConnect;
@@ -322,7 +322,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
         BuildConfig build = new BuildConfigBuilder()
                 .withNewMetadata()
                     .withName(name)
-                    .withLabels(labels)
+                    .withLabels(getLabelsWithName())
                     .withNamespace(namespace)
                 .endMetadata()
                 .withNewSpec()
