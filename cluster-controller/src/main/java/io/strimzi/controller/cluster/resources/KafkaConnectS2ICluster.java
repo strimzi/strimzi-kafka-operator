@@ -275,7 +275,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                 .withNewMetadata()
                     .withName(getSourceImageStreamName())
                     .withNamespace(namespace)
-                    .withLabels(labels)
+                    .withLabels(getLabelsWithName(getSourceImageStreamName()))
                 .endMetadata()
                 .withNewSpec()
                     .withLookupPolicy(new ImageLookupPolicyBuilder().withLocal(false).build())
@@ -296,7 +296,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                 .withNewMetadata()
                     .withName(name)
                     .withNamespace(namespace)
-                    .withLabels(labels)
+                    .withLabels(getLabelsWithName())
                 .endMetadata()
                 .withNewSpec()
                     .withLookupPolicy(new ImageLookupPolicyBuilder().withLocal(true).build())
@@ -378,7 +378,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
      * @return      Patched ImageStream resource definition
      */
     public ImageStream patchSourceImageStream(ImageStream is) {
-        is.getMetadata().setLabels(getLabels());
+        is.getMetadata().setLabels(getLabelsWithName(getSourceImageStreamName()));
         is.getSpec().getTags().get(0).setName(sourceImageTag);
         is.getSpec().getTags().get(0).getFrom().setName(sourceImageBaseName + ":" + sourceImageTag);
 
@@ -392,7 +392,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
      * @return      Patched ImageStream resource definition
      */
     public ImageStream patchTargetImageStream(ImageStream is) {
-        is.getMetadata().setLabels(getLabels());
+        is.getMetadata().setLabels(getLabelsWithName());
 
         return is;
     }

@@ -18,14 +18,23 @@
 package io.strimzi.controller.cluster.resources;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.EnvVarBuilder;
+import io.fabric8.kubernetes.api.model.ObjectReference;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.openshift.api.model.DeploymentConfig;
+import io.fabric8.openshift.api.model.ImageLookupPolicyBuilder;
+import io.fabric8.openshift.api.model.ImageStream;
+import io.fabric8.openshift.api.model.ImageStreamBuilder;
+import io.fabric8.openshift.api.model.TagReference;
 import io.strimzi.controller.cluster.ResourceUtils;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 import static io.strimzi.controller.cluster.ResourceUtils.labels;
 import static org.junit.Assert.assertEquals;
@@ -54,7 +63,20 @@ public class KafkaConnectS2IClusterTest {
             statusReplicationFactor, keyConverter, valueConverter, keyConverterSchemas, valuesConverterSchema);
     private final KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromConfigMap(true, cm);
 
+    protected List<EnvVar> getExpectedEnvVars() {
+        List<EnvVar> expected = new ArrayList<EnvVar>();
+        expected.add(new EnvVarBuilder().withName(kc.KEY_BOOTSTRAP_SERVERS).withValue(bootstrapServers).build());
+        expected.add(new EnvVarBuilder().withName(kc.KEY_GROUP_ID).withValue(groupID).build());
+        expected.add(new EnvVarBuilder().withName(kc.KEY_KEY_CONVERTER).withValue(keyConverter).build());
+        expected.add(new EnvVarBuilder().withName(kc.KEY_KEY_CONVERTER_SCHEMAS_EXAMPLE).withValue(Boolean.toString(keyConverterSchemas)).build());
+        expected.add(new EnvVarBuilder().withName(kc.KEY_VALUE_CONVERTER).withValue(valueConverter).build());
+        expected.add(new EnvVarBuilder().withName(kc.KEY_VALUE_CONVERTER_SCHEMAS_EXAMPLE).withValue(Boolean.toString(valuesConverterSchema)).build());
+        expected.add(new EnvVarBuilder().withName(kc.KEY_CONFIG_STORAGE_REPLICATION_FACTOR).withValue(Integer.toString(configReplicationFactor)).build());
+        expected.add(new EnvVarBuilder().withName(kc.KEY_OFFSET_STORAGE_REPLICATION_FACTOR).withValue(Integer.toString(offsetReplicationFactor)).build());
+        expected.add(new EnvVarBuilder().withName(kc.KEY_STATUS_STORAGE_REPLICATION_FACTOR).withValue(Integer.toString(statusReplicationFactor)).build());
 
+        return expected;
+    }
 
     @Test
     public void testDefaultValues() {
@@ -96,9 +118,12 @@ public class KafkaConnectS2IClusterTest {
 
     // TODO: Test from DeploymentConfig / ImageStream
 
-    // TODO: Test Env Vars
-
     // TODO: Test diff
+
+    @Test
+    public void testEnvVars()   {
+        assertEquals(getExpectedEnvVars(), kc.getEnvVars());
+    }
 
     @Test
     public void testGenerateService()   {
@@ -143,7 +168,7 @@ public class KafkaConnectS2IClusterTest {
         assertEquals(1, dep.getSpec().getTemplate().getSpec().getContainers().size());
         assertEquals(kc.kafkaConnectClusterName(cluster), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getName());
         assertEquals(kc.kafkaConnectClusterName(cluster) + ":latest", dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
-        assertEquals(kc.getEnvVars(), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv());
+        assertEquals(getExpectedEnvVars(), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv());
         assertEquals(new Integer(healthDelay), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getInitialDelaySeconds());
         assertEquals(new Integer(healthTimeout), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getTimeoutSeconds());
         assertEquals(new Integer(healthDelay), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds());
@@ -178,11 +203,77 @@ public class KafkaConnectS2IClusterTest {
         assertEquals(new Integer(healthTimeout), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getTimeoutSeconds());
         assertEquals(new Integer(healthDelay), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds());
         assertEquals(new Integer(healthTimeout), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds());
-        assertEquals(kc.getEnvVars(), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv());
+        assertEquals(getExpectedEnvVars(), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv());
     }
 
     // TODO: Test Build Config
 
-    // TODO: Test ImageStreams
+    @Test
+    public void testGenerateSourceImageStream() {
+        ImageStream is = kc.generateSourceImageStream();
 
+        assertEquals(kc.getSourceImageStreamName(), is.getMetadata().getName());
+        assertEquals(namespace, is.getMetadata().getNamespace());
+        assertEquals(ResourceUtils.labels("strimzi.io/cluster", cluster, "strimzi.io/type", "kafka-connect-s2i", "strimzi.io/kind", "cluster", "strimzi.io/name", kc.getSourceImageStreamName()), is.getMetadata().getLabels());
+        assertEquals(false, is.getSpec().getLookupPolicy().getLocal());
+        assertEquals(1, is.getSpec().getTags().size());
+        assertEquals(image.substring(image.lastIndexOf(":") + 1), is.getSpec().getTags().get(0).getName());
+        assertEquals("DockerImage", is.getSpec().getTags().get(0).getFrom().getKind());
+        assertEquals(image, is.getSpec().getTags().get(0).getFrom().getName());
+    }
+
+    @Test
+    public void testGenerateTargetImageStream() {
+        ImageStream is = kc.generateTargetImageStream();
+
+        assertEquals(kc.kafkaConnectClusterName(cluster), is.getMetadata().getName());
+        assertEquals(namespace, is.getMetadata().getNamespace());
+        assertEquals(ResourceUtils.labels("strimzi.io/cluster", cluster, "strimzi.io/type", "kafka-connect-s2i", "strimzi.io/kind", "cluster", "strimzi.io/name", kc.kafkaConnectClusterName(cluster)), is.getMetadata().getLabels());
+        assertEquals(true, is.getSpec().getLookupPolicy().getLocal());
+    }
+
+    @Test
+    public void testpatchSourceImageStream() {
+        ObjectReference origImage = new ObjectReference();
+        origImage.setKind("DockerImage");
+        origImage.setName("something:else");
+
+        TagReference sourceTag = new TagReference();
+        sourceTag.setName("something");
+        sourceTag.setFrom(origImage);
+
+        ImageStream orig = new ImageStreamBuilder()
+                .withNewMetadata()
+                .withName(kc.getSourceImageStreamName())
+                .withNamespace(namespace)
+                .endMetadata()
+                .withNewSpec()
+                .withLookupPolicy(new ImageLookupPolicyBuilder().withLocal(false).build())
+                .withTags(sourceTag)
+                .endSpec()
+                .build();
+
+        ImageStream is = kc.patchSourceImageStream(orig);
+
+        assertEquals(ResourceUtils.labels("strimzi.io/cluster", cluster, "strimzi.io/type", "kafka-connect-s2i", "strimzi.io/kind", "cluster", "strimzi.io/name", kc.getSourceImageStreamName()), is.getMetadata().getLabels());
+        assertEquals(image.substring(image.lastIndexOf(":") + 1), is.getSpec().getTags().get(0).getName());
+        assertEquals(image, is.getSpec().getTags().get(0).getFrom().getName());
+    }
+
+    @Test
+    public void testpatchTargetImageStream() {
+        ImageStream orig = new ImageStreamBuilder()
+                .withNewMetadata()
+                .withName(kc.kafkaConnectClusterName(cluster))
+                .withNamespace(namespace)
+                .endMetadata()
+                .withNewSpec()
+                .withLookupPolicy(new ImageLookupPolicyBuilder().withLocal(false).build())
+                .endSpec()
+                .build();
+
+        ImageStream is = kc.patchTargetImageStream(orig);
+
+        assertEquals(ResourceUtils.labels("strimzi.io/cluster", cluster, "strimzi.io/type", "kafka-connect-s2i", "strimzi.io/kind", "cluster", "strimzi.io/name", kc.kafkaConnectClusterName(cluster)), is.getMetadata().getLabels());
+    }
 }
