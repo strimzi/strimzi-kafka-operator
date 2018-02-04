@@ -24,7 +24,12 @@ import io.fabric8.kubernetes.api.model.ObjectReference;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
+import io.fabric8.openshift.api.model.BinaryBuildSource;
+import io.fabric8.openshift.api.model.BuildConfig;
+import io.fabric8.openshift.api.model.BuildConfigBuilder;
+import io.fabric8.openshift.api.model.BuildTriggerPolicy;
 import io.fabric8.openshift.api.model.DeploymentConfig;
+import io.fabric8.openshift.api.model.ImageChangeTrigger;
 import io.fabric8.openshift.api.model.ImageLookupPolicyBuilder;
 import io.fabric8.openshift.api.model.ImageStream;
 import io.fabric8.openshift.api.model.ImageStreamBuilder;
@@ -116,7 +121,46 @@ public class KafkaConnectS2IClusterTest {
         assertEquals(valuesConverterSchema, kc.valueConverterSchemasEnable);
     }
 
-    // TODO: Test from DeploymentConfig / ImageStream
+    @Test
+    public void testFromDeployment() {
+        KafkaConnectS2ICluster newKc = KafkaConnectS2ICluster.fromDeployment(namespace, cluster, kc.generateDeploymentConfig(), kc.generateSourceImageStream());
+
+        assertEquals(newKc.kafkaConnectClusterName(cluster) + ":latest", newKc.image);
+        assertEquals(replicas, newKc.replicas);
+        assertEquals(image, newKc.sourceImageBaseName + ":" + newKc.sourceImageTag);
+        assertEquals(healthDelay, newKc.healthCheckInitialDelay);
+        assertEquals(healthTimeout, newKc.healthCheckTimeout);
+        assertEquals(bootstrapServers, newKc.bootstrapServers);
+        assertEquals(configReplicationFactor, newKc.configStorageReplicationFactor);
+        assertEquals(offsetReplicationFactor, newKc.offsetStorageReplicationFactor);
+        assertEquals(statusReplicationFactor, newKc.statusStorageReplicationFactor);
+        assertEquals(groupID, newKc.groupId);
+        assertEquals(keyConverter, newKc.keyConverter);
+        assertEquals(keyConverterSchemas, newKc.keyConverterSchemasEnable);
+        assertEquals(valueConverter, newKc.valueConverter);
+        assertEquals(valuesConverterSchema, newKc.valueConverterSchemasEnable);
+    }
+
+    @Test
+    public void testFromDeploymentWithDefaultValues() {
+        KafkaConnectS2ICluster defaultsKc = KafkaConnectS2ICluster.fromConfigMap(true, ResourceUtils.createEmptyKafkaConnectS2IClusterConfigMap(namespace, cluster));
+        KafkaConnectS2ICluster newKc = KafkaConnectS2ICluster.fromDeployment(namespace, cluster, defaultsKc.generateDeploymentConfig(), defaultsKc.generateSourceImageStream());
+
+        assertEquals(newKc.kafkaConnectClusterName(cluster) + ":latest", newKc.image);
+        assertEquals(KafkaConnectS2ICluster.DEFAULT_REPLICAS, newKc.replicas);
+        assertEquals(KafkaConnectS2ICluster.DEFAULT_IMAGE, newKc.sourceImageBaseName + ":" + newKc.sourceImageTag);
+        assertEquals(KafkaConnectS2ICluster.DEFAULT_HEALTHCHECK_DELAY, newKc.healthCheckInitialDelay);
+        assertEquals(KafkaConnectS2ICluster.DEFAULT_HEALTHCHECK_TIMEOUT, newKc.healthCheckTimeout);
+        assertEquals(KafkaConnectS2ICluster.DEFAULT_BOOTSTRAP_SERVERS, newKc.bootstrapServers);
+        assertEquals(KafkaConnectS2ICluster.DEFAULT_CONFIG_STORAGE_REPLICATION_FACTOR, newKc.configStorageReplicationFactor);
+        assertEquals(KafkaConnectS2ICluster.DEFAULT_OFFSET_STORAGE_REPLICATION_FACTOR, newKc.offsetStorageReplicationFactor);
+        assertEquals(KafkaConnectS2ICluster.DEFAULT_STATUS_STORAGE_REPLICATION_FACTOR, newKc.statusStorageReplicationFactor);
+        assertEquals(KafkaConnectS2ICluster.DEFAULT_GROUP_ID, newKc.groupId);
+        assertEquals(KafkaConnectS2ICluster.DEFAULT_KEY_CONVERTER, newKc.keyConverter);
+        assertEquals(KafkaConnectS2ICluster.DEFAULT_KEY_CONVERTER_SCHEMAS_EXAMPLE, newKc.keyConverterSchemasEnable);
+        assertEquals(KafkaConnectS2ICluster.DEFAULT_VALUE_CONVERTER, newKc.valueConverter);
+        assertEquals(KafkaConnectS2ICluster.DEFAULT_VALUE_CONVERTER_SCHEMAS_EXAMPLE, newKc.valueConverterSchemasEnable);
+    }
 
     // TODO: Test diff
 
@@ -206,7 +250,72 @@ public class KafkaConnectS2IClusterTest {
         assertEquals(getExpectedEnvVars(), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv());
     }
 
-    // TODO: Test Build Config
+    @Test
+    public void testGenerateBuildConfig() {
+        BuildConfig bc = kc.generateBuildConfig();
+
+        assertEquals(kc.kafkaConnectClusterName(cluster), bc.getMetadata().getName());
+        assertEquals(namespace, bc.getMetadata().getNamespace());
+        assertEquals(ResourceUtils.labels("strimzi.io/cluster", cluster, "strimzi.io/type", "kafka-connect-s2i", "strimzi.io/kind", "cluster", "strimzi.io/name", kc.kafkaConnectClusterName(cluster)), bc.getMetadata().getLabels());
+        assertEquals("ImageStreamTag", bc.getSpec().getOutput().getTo().getKind());
+        assertEquals(kc.image, bc.getSpec().getOutput().getTo().getName());
+        assertEquals("Serial", bc.getSpec().getRunPolicy());
+        assertEquals("Binary", bc.getSpec().getSource().getType());
+        assertEquals(new BinaryBuildSource(), bc.getSpec().getSource().getBinary());
+        assertEquals("Source", bc.getSpec().getStrategy().getType());
+        assertEquals("ImageStreamTag", bc.getSpec().getStrategy().getSourceStrategy().getFrom().getKind());
+        assertEquals(kc.getSourceImageStreamName() + ":" + kc.sourceImageTag, bc.getSpec().getStrategy().getSourceStrategy().getFrom().getName());
+        assertEquals(2, bc.getSpec().getTriggers().size());
+        assertEquals("ConfigChange", bc.getSpec().getTriggers().get(0).getType());
+        assertEquals("ImageChange", bc.getSpec().getTriggers().get(1).getType());
+        assertEquals(new ImageChangeTrigger(), bc.getSpec().getTriggers().get(1).getImageChange());
+    }
+
+    @Test
+    public void testPatchBuildConfig() {
+        BuildTriggerPolicy triggerConfigChange = new BuildTriggerPolicy();
+        triggerConfigChange.setType("ConfigChange");
+
+        BuildTriggerPolicy triggerImageChange = new BuildTriggerPolicy();
+        triggerImageChange.setType("ImageChange");
+        triggerImageChange.setImageChange(new ImageChangeTrigger());
+
+        BuildConfig orig = new BuildConfigBuilder()
+                .withNewMetadata()
+                .withName(kc.kafkaConnectClusterName(cluster))
+                .withNamespace(namespace)
+                .endMetadata()
+                .withNewSpec()
+                .withFailedBuildsHistoryLimit(5)
+                .withNewOutput()
+                .withNewTo()
+                .withKind("ImageStreamTag")
+                .withName(kc.image)
+                .endTo()
+                .endOutput()
+                .withRunPolicy("Serial")
+                .withNewSource()
+                .withType("Binary")
+                .withBinary(new BinaryBuildSource())
+                .endSource()
+                .withNewStrategy()
+                .withType("Source")
+                .withNewSourceStrategy()
+                .withNewFrom()
+                .withKind("ImageStreamTag")
+                .withName("someimage:latest")
+                .endFrom()
+                .endSourceStrategy()
+                .endStrategy()
+                .withTriggers(triggerConfigChange, triggerImageChange)
+                .endSpec()
+                .build();
+
+        BuildConfig bc = kc.patchBuildConfig(orig);
+
+        assertEquals(ResourceUtils.labels("strimzi.io/cluster", cluster, "strimzi.io/type", "kafka-connect-s2i", "strimzi.io/kind", "cluster", "strimzi.io/name", kc.kafkaConnectClusterName(cluster)), bc.getMetadata().getLabels());
+        assertEquals(kc.getSourceImageStreamName() + ":" + kc.sourceImageTag, bc.getSpec().getStrategy().getSourceStrategy().getFrom().getName());
+    }
 
     @Test
     public void testGenerateSourceImageStream() {
@@ -233,7 +342,7 @@ public class KafkaConnectS2IClusterTest {
     }
 
     @Test
-    public void testpatchSourceImageStream() {
+    public void testPatchSourceImageStream() {
         ObjectReference origImage = new ObjectReference();
         origImage.setKind("DockerImage");
         origImage.setName("something:else");
@@ -261,7 +370,7 @@ public class KafkaConnectS2IClusterTest {
     }
 
     @Test
-    public void testpatchTargetImageStream() {
+    public void testPatchTargetImageStream() {
         ImageStream orig = new ImageStreamBuilder()
                 .withNewMetadata()
                 .withName(kc.kafkaConnectClusterName(cluster))
