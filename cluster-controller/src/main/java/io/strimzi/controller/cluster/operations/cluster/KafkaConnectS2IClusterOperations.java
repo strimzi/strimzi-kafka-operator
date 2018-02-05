@@ -1,6 +1,7 @@
 package io.strimzi.controller.cluster.operations.cluster;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.openshift.api.model.BuildConfig;
 import io.fabric8.openshift.api.model.DeploymentConfig;
 import io.fabric8.openshift.api.model.ImageStream;
 import io.strimzi.controller.cluster.operations.resource.BuildConfigOperations;
@@ -142,7 +143,11 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
             if (connectConfigMap != null)    {
                 connect = KafkaConnectS2ICluster.fromConfigMap(isOpenShift, connectConfigMap);
                 log.info("Updating Kafka Connect cluster {} in namespace {}", connect.getName(), namespace);
-                diff = connect.diff(namespace, deploymentConfigOperations, imagesStreamOperations, buildConfigOperations);
+                DeploymentConfig dep = deploymentConfigOperations.get(namespace, connect.getName());
+                ImageStream sis = imagesStreamOperations.get(namespace, connect.getSourceImageStreamName());
+                ImageStream tis = imagesStreamOperations.get(namespace, connect.getName());
+                BuildConfig bc = buildConfigOperations.get(namespace, connect.getName());
+                diff = connect.diff(namespace, dep, sis, tis, bc);
             } else  {
                 throw new IllegalStateException("ConfigMap " + name + " doesn't exist anymore in namespace " + namespace);
             }

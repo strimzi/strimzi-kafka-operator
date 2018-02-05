@@ -125,14 +125,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
      * @param namespace Kubernetes/OpenShift namespace where cluster resources belong to
      * @return  ClusterDiffResult instance with differences
      */
-    public ClusterDiffResult diff(
-            String namespace,
-            DeploymentConfigOperations deploymentOperations,
-            ImageStreamOperations imageStreamOperations,
-            BuildConfigOperations buildConfigOperations) {
-
-        DeploymentConfig dep = deploymentOperations.get(namespace, getName());
-
+    public ClusterDiffResult diff(String namespace, DeploymentConfig dep, ImageStream sis, ImageStream tis, BuildConfig bc) {
         boolean scaleUp = false;
         boolean scaleDown = false;
         boolean different = false;
@@ -184,10 +177,6 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
         }
 
         // S2I diff
-        ImageStream sis = imageStreamOperations.get(namespace, getSourceImageStreamName());
-        ImageStream tis = imageStreamOperations.get(namespace, getName());
-        BuildConfig bc = buildConfigOperations.get(namespace, getName());
-
         if (!getLabels().equals(sis.getMetadata().getLabels())
                 || !getLabels().equals(tis.getMetadata().getLabels())
                 || !getLabels().equals(bc.getMetadata().getLabels())) {

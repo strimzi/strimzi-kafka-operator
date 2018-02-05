@@ -558,7 +558,7 @@ public class ClusterController extends AbstractVerticle {
 
             getKafkaConnectS2IClusterOperations().update(namespace, name, res -> {
                 if (res.succeeded()) {
-                    log.info("Kafka Connect S2I cluster {} in namespace {} updated", namem, namespace);
+                    log.info("Kafka Connect S2I cluster {} in namespace {} updated", name, namespace);
                 }
                 else {
                     log.error("Failed to update Kafka Connect S2I cluster {} in namespace {}.", name, namespace);
