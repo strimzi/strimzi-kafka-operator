@@ -73,7 +73,7 @@ public class ResourceUtils {
                 .withNewMetadata()
                 .withName(clusterCmName)
                 .withNamespace(clusterCmNamespace)
-                .withLabels(labels("strimzi.io/kind", "cluster", "strimzi.io/type", "kafka"))
+                .withLabels(labels(ClusterController.STRIMZI_KIND_LABEL, "cluster", ClusterController.STRIMZI_TYPE_LABEL, "kafka"))
                 .endMetadata()
                 .withData(cmData)
                 .build();
@@ -82,23 +82,6 @@ public class ResourceUtils {
 
     /**
      * Generate ConfigMap for Kafka Conect S2I cluster
-     *
-     * @param clusterCmNamespace
-     * @param clusterCmName
-     * @param replicas
-     * @param image
-     * @param healthDelay
-     * @param healthTimeout
-     * @param bootstrapServers
-     * @param groupID
-     * @param configReplicationFactor
-     * @param offsetReplicationFactor
-     * @param statusReplicationFactor
-     * @param keyConverter
-     * @param valueConverter
-     * @param keyConverterSchemas
-     * @param valuesConverterSchema
-     * @return
      */
     public static ConfigMap createKafkaConnectS2IClusterConfigMap(String clusterCmNamespace, String clusterCmName, int replicas, String image, int healthDelay,
                                                         int healthTimeout, String bootstrapServers, String groupID, int configReplicationFactor, int offsetReplicationFactor,
@@ -126,10 +109,6 @@ public class ResourceUtils {
 
     /**
      * Generate empty KafkaConnect S2I config map
-     *
-     * @param clusterCmNamespace
-     * @param clusterCmName
-     * @return
      */
     public static ConfigMap createEmptyKafkaConnectS2IClusterConfigMap(String clusterCmNamespace, String clusterCmName) {
         Map<String, String> cmData = new HashMap<>();
@@ -138,7 +117,7 @@ public class ResourceUtils {
                 .withNewMetadata()
                 .withName(clusterCmName)
                 .withNamespace(clusterCmNamespace)
-                .withLabels(labels("strimzi.io/kind", "cluster", "strimzi.io/type", "kafka-connect-s2i"))
+                .withLabels(labels(ClusterController.STRIMZI_KIND_LABEL, "cluster", ClusterController.STRIMZI_TYPE_LABEL, "kafka-connect-s2i"))
                 .endMetadata()
                 .withData(cmData)
                 .build();
