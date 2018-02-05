@@ -125,26 +125,30 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
      * @param namespace Kubernetes/OpenShift namespace where cluster resources belong to
      * @return  ClusterDiffResult instance with differences
      */
-    public ClusterDiffResult diff(String namespace, DeploymentConfig dep, ImageStream sis, ImageStream tis, BuildConfig bc) {
-        ClusterDiffResult diff = new ClusterDiffResult();
+    public ClusterDiffResult diff(DeploymentConfig dep, ImageStream sis, ImageStream tis, BuildConfig bc) {
+        boolean scaleUp = false;
+        boolean scaleDown = false;
+        boolean different = false;
+        boolean rollingUpdate = false;
+        boolean metricsChanged = false;
 
         if (replicas > dep.getSpec().getReplicas()) {
             log.info("Diff: Expected replicas {}, actual replicas {}", replicas, dep.getSpec().getReplicas());
-            diff.setScaleUp(true);
+            scaleUp = true;
         }
         else if (replicas < dep.getSpec().getReplicas()) {
             log.info("Diff: Expected replicas {}, actual replicas {}", replicas, dep.getSpec().getReplicas());
-            diff.setScaleDown(true);
+            scaleDown = true;
         }
 
         if (!getLabelsWithName().equals(dep.getMetadata().getLabels()))    {
             log.info("Diff: Expected labels {}, actual labels {}", getLabelsWithName(), dep.getMetadata().getLabels());
-            diff.setDifferent(true);
+            different = true;
         }
 
         if (!getImage().equals(dep.getSpec().getTriggers().get(1).getImageChangeParams().getFrom().getName())) {
             log.info("Diff: Expected trigger from {}, actual image {}", getImage(), dep.getSpec().getTriggers().get(1).getImageChangeParams().getFrom().getName());
-            diff.setDifferent(true);
+            different = true;
         }
 
         Map<String, String> vars = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream().collect(
@@ -161,35 +165,35 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                 || statusStorageReplicationFactor != Integer.parseInt(vars.getOrDefault(KEY_STATUS_STORAGE_REPLICATION_FACTOR, String.valueOf(DEFAULT_STATUS_STORAGE_REPLICATION_FACTOR)))
                 ) {
             log.info("Diff: Kafka Connect options changed");
-            diff.setDifferent(true);
-            diff.setRollingUpdate(true);
+            different = true;
+            rollingUpdate = true;
         }
 
         if (healthCheckInitialDelay != dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds()
                 || healthCheckTimeout != dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds()) {
             log.info("Diff: Kafka Connect healthcheck timing changed");
-            diff.setDifferent(true);
-            diff.setRollingUpdate(true);
+            different = true;
+            rollingUpdate = true;
         }
 
         // S2I diff
         if (!getLabels().equals(sis.getMetadata().getLabels())
                 || !getLabels().equals(tis.getMetadata().getLabels())
                 || !getLabels().equals(bc.getMetadata().getLabels())) {
-            diff.setDifferent(true);
+            different = true;
         }
 
         if (!image.equals(bc.getSpec().getOutput().getTo().getName())
                 || !(getSourceImageStreamName() + ":" + sourceImageTag).equals(bc.getSpec().getStrategy().getSourceStrategy().getFrom().getName()))    {
-            diff.setDifferent(true);
+            different = true;
         }
 
         if (!sourceImageTag.equals(sis.getSpec().getTags().get(0).getName())
                 || !sourceImageBaseName.equals(sis.getSpec().getTags().get(0).getFrom().getName()))   {
-            diff.setDifferent(true);
+            different = true;
         }
 
-        return diff;
+        return new ClusterDiffResult(different, rollingUpdate, scaleUp, scaleDown, metricsChanged);
     }
 
     /**

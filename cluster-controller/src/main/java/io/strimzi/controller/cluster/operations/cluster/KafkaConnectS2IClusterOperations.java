@@ -147,7 +147,7 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
                 ImageStream sis = imagesStreamOperations.get(namespace, connect.getSourceImageStreamName());
                 ImageStream tis = imagesStreamOperations.get(namespace, connect.getName());
                 BuildConfig bc = buildConfigOperations.get(namespace, connect.getName());
-                diff = connect.diff(namespace, dep, sis, tis, bc);
+                diff = connect.diff(dep, sis, tis, bc);
             } else  {
                 throw new IllegalStateException("ConfigMap " + name + " doesn't exist anymore in namespace " + namespace);
             }
