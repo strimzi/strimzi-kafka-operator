@@ -187,27 +187,31 @@ public class KafkaCluster extends AbstractCluster {
             ConfigMap metricsConfigMap,
             StatefulSet ss)  {
 
-        ClusterDiffResult diff = new ClusterDiffResult();
-
+        boolean scaleDown = false;
+        boolean scaleUp = false;
+        boolean different = false;
+        boolean rollingUpdate = false;
+        boolean metricsChanged = false;
         if (replicas > ss.getSpec().getReplicas()) {
             log.info("Diff: Expected replicas {}, actual replicas {}", replicas, ss.getSpec().getReplicas());
-            diff.setScaleUp(true);
+            scaleUp = true;
         }
         else if (replicas < ss.getSpec().getReplicas()) {
             log.info("Diff: Expected replicas {}, actual replicas {}", replicas, ss.getSpec().getReplicas());
-            diff.setScaleDown(true);
+            scaleDown = true;
         }
+
 
         if (!getLabelsWithName().equals(ss.getMetadata().getLabels()))    {
             log.info("Diff: Expected labels {}, actual labels {}", getLabelsWithName(), ss.getMetadata().getLabels());
-            diff.setDifferent(true);
-            diff.setRollingUpdate(true);
+            different = true;
+            rollingUpdate = true;
         }
 
         if (!image.equals(ss.getSpec().getTemplate().getSpec().getContainers().get(0).getImage())) {
             log.info("Diff: Expected image {}, actual image {}", image, ss.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
-            diff.setDifferent(true);
-            diff.setRollingUpdate(true);
+            different = true;
+            rollingUpdate = true;
         }
 
         Map<String, String> vars = ss.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream().collect(
@@ -219,27 +223,27 @@ public class KafkaCluster extends AbstractCluster {
                 || transactionStateLogReplicationFactor != Integer.parseInt(vars.getOrDefault(KEY_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR, String.valueOf(DEFAULT_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR)))
                 ) {
             log.info("Diff: Kafka options changed");
-            diff.setDifferent(true);
-            diff.setRollingUpdate(true);
+            different = true;
+            rollingUpdate = true;
         }
 
         if (healthCheckInitialDelay != ss.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds()
                 || healthCheckTimeout != ss.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds()) {
             log.info("Diff: Kafka healthcheck timing changed");
-            diff.setDifferent(true);
-            diff.setRollingUpdate(true);
+            different = true;
+            rollingUpdate = true;
         }
 
         if (isMetricsEnabled != Boolean.parseBoolean(vars.getOrDefault(KEY_KAFKA_METRICS_ENABLED, String.valueOf(DEFAULT_KAFKA_METRICS_ENABLED)))) {
             log.info("Diff: Kafka metrics enabled/disabled");
-            diff.setMetricsChanged(true);
-            diff.setRollingUpdate(true);
+            metricsChanged = true;
+            rollingUpdate = true;
         } else {
             
             if (isMetricsEnabled) {
                 JsonObject metricsConfig = new JsonObject(metricsConfigMap.getData().get(METRICS_CONFIG_FILE));
                 if (!this.metricsConfig.equals(metricsConfig)) {
-                    diff.setMetricsChanged(true);
+                    metricsChanged = true;
                 }
             }
         }
@@ -267,13 +271,13 @@ public class KafkaCluster extends AbstractCluster {
         // only delete-claim flag can be changed
         if (!isStorageRejected && (storage.type() == Storage.StorageType.PERSISTENT_CLAIM)) {
             if (storageDiffResult.isDeleteClaim()) {
-                diff.setDifferent(true);
+                different = true;
             }
         } else if (isStorageRejected) {
             log.warn("Changing storage configuration other than delete-claim is not supported !");
         }
 
-        return diff;
+        return new ClusterDiffResult(different, rollingUpdate, scaleUp, scaleDown, metricsChanged);
     }
 
     /**
