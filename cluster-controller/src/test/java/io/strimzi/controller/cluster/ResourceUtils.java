@@ -59,8 +59,8 @@ public class ResourceUtils {
      * @param healthTimeout
      * @return
      */
-    public static ConfigMap createKafkaClusterConfigMap(String clusterCmNamespace, String clusterCmName, int replicas, String image, int healthDelay,
-                                                        int healthTimeout, String metricsCmJson) {
+    public static ConfigMap createKafkaClusterConfigMap(String clusterCmNamespace, String clusterCmName, int replicas,
+                                                        String image, int healthDelay, int healthTimeout, String metricsCmJson) {
         Map<String, String> cmData = new HashMap<>();
         cmData.put(KafkaCluster.KEY_REPLICAS, Integer.toString(replicas));
         cmData.put(KafkaCluster.KEY_IMAGE, image);
@@ -83,9 +83,11 @@ public class ResourceUtils {
     /**
      * Generate ConfigMap for Kafka Conect S2I cluster
      */
-    public static ConfigMap createKafkaConnectS2IClusterConfigMap(String clusterCmNamespace, String clusterCmName, int replicas, String image, int healthDelay,
-                                                        int healthTimeout, String bootstrapServers, String groupID, int configReplicationFactor, int offsetReplicationFactor,
-                                                                  int statusReplicationFactor, String keyConverter, String valueConverter, boolean keyConverterSchemas, boolean valuesConverterSchema) {
+    public static ConfigMap createKafkaConnectS2IClusterConfigMap(String clusterCmNamespace, String clusterCmName, int replicas,
+                                                                  String image, int healthDelay, int healthTimeout, String bootstrapServers,
+                                                                  String groupID, int configReplicationFactor, int offsetReplicationFactor,
+                                                                  int statusReplicationFactor, String keyConverter, String valueConverter,
+                                                                  boolean keyConverterSchemas, boolean valuesConverterSchema) {
         Map<String, String> cmData = new HashMap<>();
         cmData.put(KafkaConnectS2ICluster.KEY_IMAGE, image);
         cmData.put(KafkaConnectS2ICluster.KEY_REPLICAS, Integer.toString(replicas));
