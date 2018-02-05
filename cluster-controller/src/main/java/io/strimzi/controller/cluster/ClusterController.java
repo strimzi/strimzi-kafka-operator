@@ -536,17 +536,17 @@ public class ClusterController extends AbstractVerticle {
         String name = add.getMetadata().getName();
 
         if (getKafkaConnectS2IClusterOperations() != null) {
-            log.info("Adding Kafka Connect S2I cluster {}", name);
+            log.info("Adding Kafka Connect S2I cluster {} in namespace {}", name, namespace);
 
             getKafkaConnectS2IClusterOperations().create(namespace, name, res -> {
                 if (res.succeeded()) {
-                    log.info("Kafka Connect S2I cluster added {}", name);
+                    log.info("Kafka Connect S2I cluster added {} in namespace {}", name, namespace);
                 } else {
-                    log.error("Failed to add Kafka Connect S2I cluster {}.", name);
+                    log.error("Failed to add Kafka Connect S2I cluster {} in namespace {}.", name, namespace);
                 }
             });
         } else {
-            log.error("Cannot create Kafka Connect S2I cluster {}! Kafka Connect S2I clusters are supported only on OpenShift.", name);
+            log.error("Cannot create Kafka Connect S2I cluster {} in namespace {}! Kafka Connect S2I clusters are supported only on OpenShift.", name, namespace);
         }
     }
 
@@ -558,26 +558,26 @@ public class ClusterController extends AbstractVerticle {
 
             getKafkaConnectS2IClusterOperations().update(namespace, name, res -> {
                 if (res.succeeded()) {
-                    log.info("Kafka Connect S2I cluster updated {}", name);
+                    log.info("Kafka Connect S2I cluster {} in namespace {} updated", namem, namespace);
                 }
                 else {
-                    log.error("Failed to update Kafka Connect S2I cluster {}.", name);
+                    log.error("Failed to update Kafka Connect S2I cluster {} in namespace {}.", name, namespace);
                 }
             });
         } else {
-            log.error("Cannot update Kafka Connect S2I cluster {}! Kafka Connect S2I clusters are supported only on OpenShift.", name);
+            log.error("Cannot update Kafka Connect S2I cluster {} in namespace {}! Kafka Connect S2I clusters are supported only on OpenShift.", name, namespace);
         }
     }
 
     private void deleteKafkaConnectS2ICluster(DeploymentConfig dep)   {
         String name = dep.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL);
-        log.info("Deleting Kafka Connect S2I cluster {}", name);
+        log.info("Deleting Kafka Connect S2I cluster {} in namespace {}", name, namespace);
         deleteKafkaConnectS2ICluster(namespace, name);
     }
 
     private void deleteKafkaConnectS2ICluster(ConfigMap cm)   {
         String name = cm.getMetadata().getName();
-        log.info("Deleting cluster {}", name);
+        log.info("Deleting cluster {} in namespace {}", name, namespace);
         deleteKafkaConnectS2ICluster(namespace, name);
     }
 
@@ -585,14 +585,14 @@ public class ClusterController extends AbstractVerticle {
         if (getKafkaConnectS2IClusterOperations() != null) {
             getKafkaConnectS2IClusterOperations().delete(namespace, name, res -> {
                 if (res.succeeded()) {
-                    log.info("Kafka Connect S2I cluster deleted {}", name);
+                    log.info("Kafka Connect S2I cluster deleted {} in namespace {}", name, namespace);
                 }
                 else {
-                    log.error("Failed to delete Kafka Connect S2I cluster {}.", name);
+                    log.error("Failed to delete Kafka Connect S2I cluster {} in namespace {}.", name, namespace);
                 }
             });
         } else {
-            log.error("Cannot delete Kafka Connect S2I cluster {}! Kafka Connect S2I clusters are supported only on OpenShift.", name);
+            log.error("Cannot delete Kafka Connect S2I cluster {} in namespace {}! Kafka Connect S2I clusters are supported only on OpenShift.", name, namespace);
         }
     }
 
