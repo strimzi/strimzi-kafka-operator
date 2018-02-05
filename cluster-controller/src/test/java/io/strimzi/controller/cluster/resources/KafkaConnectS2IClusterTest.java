@@ -34,6 +34,7 @@ import io.fabric8.openshift.api.model.ImageLookupPolicyBuilder;
 import io.fabric8.openshift.api.model.ImageStream;
 import io.fabric8.openshift.api.model.ImageStreamBuilder;
 import io.fabric8.openshift.api.model.TagReference;
+import io.strimzi.controller.cluster.ClusterController;
 import io.strimzi.controller.cluster.ResourceUtils;
 import org.junit.Test;
 
@@ -174,8 +175,8 @@ public class KafkaConnectS2IClusterTest {
         Service svc = kc.generateService();
 
         assertEquals("ClusterIP", svc.getSpec().getType());
-        assertEquals(ResourceUtils.labels("strimzi.io/cluster", cluster, "strimzi.io/type", "kafka-connect-s2i", "strimzi.io/kind", "cluster", "strimzi.io/name", kc.kafkaConnectClusterName(cluster)), svc.getMetadata().getLabels());
-        assertEquals(ResourceUtils.labels("strimzi.io/cluster", cluster, "strimzi.io/type", "kafka-connect-s2i", "strimzi.io/kind", "cluster", "strimzi.io/name", kc.kafkaConnectClusterName(cluster)), svc.getSpec().getSelector());
+        assertEquals(ResourceUtils.labels(ClusterController.STRIMZI_CLUSTER_LABEL, cluster, ClusterController.STRIMZI_TYPE_LABEL, "kafka-connect-s2i", ClusterController.STRIMZI_KIND_LABEL, "cluster", "strimzi.io/name", kc.kafkaConnectClusterName(cluster)), svc.getMetadata().getLabels());
+        assertEquals(ResourceUtils.labels(ClusterController.STRIMZI_CLUSTER_LABEL, cluster, ClusterController.STRIMZI_TYPE_LABEL, "kafka-connect-s2i", ClusterController.STRIMZI_KIND_LABEL, "cluster", "strimzi.io/name", kc.kafkaConnectClusterName(cluster)), svc.getSpec().getSelector());
         assertEquals(1, svc.getSpec().getPorts().size());
         assertEquals(new Integer(KafkaConnectCluster.REST_API_PORT), svc.getSpec().getPorts().get(0).getPort());
         assertEquals(KafkaConnectCluster.REST_API_PORT_NAME, svc.getSpec().getPorts().get(0).getName());
@@ -196,8 +197,8 @@ public class KafkaConnectS2IClusterTest {
 
         Service svc = kc.patchService(orig);
 
-        assertEquals(ResourceUtils.labels("strimzi.io/cluster", cluster, "strimzi.io/type", "kafka-connect-s2i", "strimzi.io/kind", "cluster", "strimzi.io/name", kc.kafkaConnectClusterName(cluster)), svc.getMetadata().getLabels());
-        assertEquals(ResourceUtils.labels("strimzi.io/cluster", cluster, "strimzi.io/type", "kafka-connect-s2i", "strimzi.io/kind", "cluster", "strimzi.io/name", kc.kafkaConnectClusterName(cluster)), svc.getSpec().getSelector());
+        assertEquals(ResourceUtils.labels(ClusterController.STRIMZI_CLUSTER_LABEL, cluster, ClusterController.STRIMZI_TYPE_LABEL, "kafka-connect-s2i", ClusterController.STRIMZI_KIND_LABEL, "cluster", "strimzi.io/name", kc.kafkaConnectClusterName(cluster)), svc.getMetadata().getLabels());
+        assertEquals(ResourceUtils.labels(ClusterController.STRIMZI_CLUSTER_LABEL, cluster, ClusterController.STRIMZI_TYPE_LABEL, "kafka-connect-s2i", ClusterController.STRIMZI_KIND_LABEL, "cluster", "strimzi.io/name", kc.kafkaConnectClusterName(cluster)), svc.getSpec().getSelector());
     }
 
     @Test
@@ -206,9 +207,9 @@ public class KafkaConnectS2IClusterTest {
 
         assertEquals(kc.kafkaConnectClusterName(cluster), dep.getMetadata().getName());
         assertEquals(namespace, dep.getMetadata().getNamespace());
-        assertEquals(ResourceUtils.labels("strimzi.io/cluster", cluster, "strimzi.io/type", "kafka-connect-s2i", "strimzi.io/kind", "cluster", "strimzi.io/name", kc.kafkaConnectClusterName(cluster)), dep.getMetadata().getLabels());
+        assertEquals(ResourceUtils.labels(ClusterController.STRIMZI_CLUSTER_LABEL, cluster, ClusterController.STRIMZI_TYPE_LABEL, "kafka-connect-s2i", ClusterController.STRIMZI_KIND_LABEL, "cluster", "strimzi.io/name", kc.kafkaConnectClusterName(cluster)), dep.getMetadata().getLabels());
         assertEquals(new Integer(replicas), dep.getSpec().getReplicas());
-        assertEquals(ResourceUtils.labels("strimzi.io/cluster", cluster, "strimzi.io/type", "kafka-connect-s2i", "strimzi.io/kind", "cluster", "strimzi.io/name", kc.kafkaConnectClusterName(cluster)), dep.getSpec().getTemplate().getMetadata().getLabels());
+        assertEquals(ResourceUtils.labels(ClusterController.STRIMZI_CLUSTER_LABEL, cluster, ClusterController.STRIMZI_TYPE_LABEL, "kafka-connect-s2i", ClusterController.STRIMZI_KIND_LABEL, "cluster", "strimzi.io/name", kc.kafkaConnectClusterName(cluster)), dep.getSpec().getTemplate().getMetadata().getLabels());
         assertEquals(1, dep.getSpec().getTemplate().getSpec().getContainers().size());
         assertEquals(kc.kafkaConnectClusterName(cluster), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getName());
         assertEquals(kc.kafkaConnectClusterName(cluster) + ":latest", dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
@@ -240,9 +241,9 @@ public class KafkaConnectS2IClusterTest {
 
         DeploymentConfig dep = kc.patchDeploymentConfig(orig);
 
-        assertEquals(ResourceUtils.labels("strimzi.io/cluster", cluster, "strimzi.io/type", "kafka-connect-s2i", "strimzi.io/kind", "cluster", "strimzi.io/name", kc.kafkaConnectClusterName(cluster)), dep.getMetadata().getLabels());
+        assertEquals(ResourceUtils.labels(ClusterController.STRIMZI_CLUSTER_LABEL, cluster, ClusterController.STRIMZI_TYPE_LABEL, "kafka-connect-s2i", ClusterController.STRIMZI_KIND_LABEL, "cluster", "strimzi.io/name", kc.kafkaConnectClusterName(cluster)), dep.getMetadata().getLabels());
         assertEquals(new Integer(KafkaConnectS2ICluster.DEFAULT_REPLICAS), dep.getSpec().getReplicas());
-        assertEquals(ResourceUtils.labels("strimzi.io/cluster", cluster, "strimzi.io/type", "kafka-connect-s2i", "strimzi.io/kind", "cluster", "strimzi.io/name", kc.kafkaConnectClusterName(cluster)), dep.getSpec().getTemplate().getMetadata().getLabels());
+        assertEquals(ResourceUtils.labels(ClusterController.STRIMZI_CLUSTER_LABEL, cluster, ClusterController.STRIMZI_TYPE_LABEL, "kafka-connect-s2i", ClusterController.STRIMZI_KIND_LABEL, "cluster", "strimzi.io/name", kc.kafkaConnectClusterName(cluster)), dep.getSpec().getTemplate().getMetadata().getLabels());
         assertEquals(new Integer(healthDelay), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getInitialDelaySeconds());
         assertEquals(new Integer(healthTimeout), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getTimeoutSeconds());
         assertEquals(new Integer(healthDelay), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds());
@@ -256,7 +257,7 @@ public class KafkaConnectS2IClusterTest {
 
         assertEquals(kc.kafkaConnectClusterName(cluster), bc.getMetadata().getName());
         assertEquals(namespace, bc.getMetadata().getNamespace());
-        assertEquals(ResourceUtils.labels("strimzi.io/cluster", cluster, "strimzi.io/type", "kafka-connect-s2i", "strimzi.io/kind", "cluster", "strimzi.io/name", kc.kafkaConnectClusterName(cluster)), bc.getMetadata().getLabels());
+        assertEquals(ResourceUtils.labels(ClusterController.STRIMZI_CLUSTER_LABEL, cluster, ClusterController.STRIMZI_TYPE_LABEL, "kafka-connect-s2i", ClusterController.STRIMZI_KIND_LABEL, "cluster", "strimzi.io/name", kc.kafkaConnectClusterName(cluster)), bc.getMetadata().getLabels());
         assertEquals("ImageStreamTag", bc.getSpec().getOutput().getTo().getKind());
         assertEquals(kc.image, bc.getSpec().getOutput().getTo().getName());
         assertEquals("Serial", bc.getSpec().getRunPolicy());
@@ -282,38 +283,38 @@ public class KafkaConnectS2IClusterTest {
 
         BuildConfig orig = new BuildConfigBuilder()
                 .withNewMetadata()
-                .withName(kc.kafkaConnectClusterName(cluster))
-                .withNamespace(namespace)
+                    .withName(kc.kafkaConnectClusterName(cluster))
+                    .withNamespace(namespace)
                 .endMetadata()
                 .withNewSpec()
-                .withFailedBuildsHistoryLimit(5)
-                .withNewOutput()
-                .withNewTo()
-                .withKind("ImageStreamTag")
-                .withName(kc.image)
-                .endTo()
-                .endOutput()
-                .withRunPolicy("Serial")
-                .withNewSource()
-                .withType("Binary")
-                .withBinary(new BinaryBuildSource())
-                .endSource()
-                .withNewStrategy()
-                .withType("Source")
-                .withNewSourceStrategy()
-                .withNewFrom()
-                .withKind("ImageStreamTag")
-                .withName("someimage:latest")
-                .endFrom()
-                .endSourceStrategy()
-                .endStrategy()
-                .withTriggers(triggerConfigChange, triggerImageChange)
+                    .withFailedBuildsHistoryLimit(5)
+                    .withNewOutput()
+                        .withNewTo()
+                            .withKind("ImageStreamTag")
+                            .withName(kc.image)
+                        .endTo()
+                    .endOutput()
+                    .withRunPolicy("Serial")
+                    .withNewSource()
+                        .withType("Binary")
+                        .withBinary(new BinaryBuildSource())
+                    .endSource()
+                    .withNewStrategy()
+                        .withType("Source")
+                        .withNewSourceStrategy()
+                            .withNewFrom()
+                                .withKind("ImageStreamTag")
+                                .withName("someimage:latest")
+                            .endFrom()
+                        .endSourceStrategy()
+                    .endStrategy()
+                    .withTriggers(triggerConfigChange, triggerImageChange)
                 .endSpec()
                 .build();
 
         BuildConfig bc = kc.patchBuildConfig(orig);
 
-        assertEquals(ResourceUtils.labels("strimzi.io/cluster", cluster, "strimzi.io/type", "kafka-connect-s2i", "strimzi.io/kind", "cluster", "strimzi.io/name", kc.kafkaConnectClusterName(cluster)), bc.getMetadata().getLabels());
+        assertEquals(ResourceUtils.labels(ClusterController.STRIMZI_CLUSTER_LABEL, cluster, ClusterController.STRIMZI_TYPE_LABEL, "kafka-connect-s2i", ClusterController.STRIMZI_KIND_LABEL, "cluster", "strimzi.io/name", kc.kafkaConnectClusterName(cluster)), bc.getMetadata().getLabels());
         assertEquals(kc.getSourceImageStreamName() + ":" + kc.sourceImageTag, bc.getSpec().getStrategy().getSourceStrategy().getFrom().getName());
     }
 
@@ -323,7 +324,7 @@ public class KafkaConnectS2IClusterTest {
 
         assertEquals(kc.getSourceImageStreamName(), is.getMetadata().getName());
         assertEquals(namespace, is.getMetadata().getNamespace());
-        assertEquals(ResourceUtils.labels("strimzi.io/cluster", cluster, "strimzi.io/type", "kafka-connect-s2i", "strimzi.io/kind", "cluster", "strimzi.io/name", kc.getSourceImageStreamName()), is.getMetadata().getLabels());
+        assertEquals(ResourceUtils.labels(ClusterController.STRIMZI_CLUSTER_LABEL, cluster, ClusterController.STRIMZI_TYPE_LABEL, "kafka-connect-s2i", ClusterController.STRIMZI_KIND_LABEL, "cluster", "strimzi.io/name", kc.getSourceImageStreamName()), is.getMetadata().getLabels());
         assertEquals(false, is.getSpec().getLookupPolicy().getLocal());
         assertEquals(1, is.getSpec().getTags().size());
         assertEquals(image.substring(image.lastIndexOf(":") + 1), is.getSpec().getTags().get(0).getName());
@@ -337,7 +338,7 @@ public class KafkaConnectS2IClusterTest {
 
         assertEquals(kc.kafkaConnectClusterName(cluster), is.getMetadata().getName());
         assertEquals(namespace, is.getMetadata().getNamespace());
-        assertEquals(ResourceUtils.labels("strimzi.io/cluster", cluster, "strimzi.io/type", "kafka-connect-s2i", "strimzi.io/kind", "cluster", "strimzi.io/name", kc.kafkaConnectClusterName(cluster)), is.getMetadata().getLabels());
+        assertEquals(ResourceUtils.labels(ClusterController.STRIMZI_CLUSTER_LABEL, cluster, ClusterController.STRIMZI_TYPE_LABEL, "kafka-connect-s2i", ClusterController.STRIMZI_KIND_LABEL, "cluster", "strimzi.io/name", kc.kafkaConnectClusterName(cluster)), is.getMetadata().getLabels());
         assertEquals(true, is.getSpec().getLookupPolicy().getLocal());
     }
 
@@ -353,18 +354,18 @@ public class KafkaConnectS2IClusterTest {
 
         ImageStream orig = new ImageStreamBuilder()
                 .withNewMetadata()
-                .withName(kc.getSourceImageStreamName())
-                .withNamespace(namespace)
+                    .withName(kc.getSourceImageStreamName())
+                    .withNamespace(namespace)
                 .endMetadata()
                 .withNewSpec()
-                .withLookupPolicy(new ImageLookupPolicyBuilder().withLocal(false).build())
-                .withTags(sourceTag)
+                    .withLookupPolicy(new ImageLookupPolicyBuilder().withLocal(false).build())
+                    .withTags(sourceTag)
                 .endSpec()
                 .build();
 
         ImageStream is = kc.patchSourceImageStream(orig);
 
-        assertEquals(ResourceUtils.labels("strimzi.io/cluster", cluster, "strimzi.io/type", "kafka-connect-s2i", "strimzi.io/kind", "cluster", "strimzi.io/name", kc.getSourceImageStreamName()), is.getMetadata().getLabels());
+        assertEquals(ResourceUtils.labels(ClusterController.STRIMZI_CLUSTER_LABEL, cluster, ClusterController.STRIMZI_TYPE_LABEL, "kafka-connect-s2i", ClusterController.STRIMZI_KIND_LABEL, "cluster", "strimzi.io/name", kc.getSourceImageStreamName()), is.getMetadata().getLabels());
         assertEquals(image.substring(image.lastIndexOf(":") + 1), is.getSpec().getTags().get(0).getName());
         assertEquals(image, is.getSpec().getTags().get(0).getFrom().getName());
     }
@@ -373,16 +374,16 @@ public class KafkaConnectS2IClusterTest {
     public void testPatchTargetImageStream() {
         ImageStream orig = new ImageStreamBuilder()
                 .withNewMetadata()
-                .withName(kc.kafkaConnectClusterName(cluster))
-                .withNamespace(namespace)
+                    .withName(kc.kafkaConnectClusterName(cluster))
+                    .withNamespace(namespace)
                 .endMetadata()
                 .withNewSpec()
-                .withLookupPolicy(new ImageLookupPolicyBuilder().withLocal(false).build())
+                    .withLookupPolicy(new ImageLookupPolicyBuilder().withLocal(false).build())
                 .endSpec()
                 .build();
 
         ImageStream is = kc.patchTargetImageStream(orig);
 
-        assertEquals(ResourceUtils.labels("strimzi.io/cluster", cluster, "strimzi.io/type", "kafka-connect-s2i", "strimzi.io/kind", "cluster", "strimzi.io/name", kc.kafkaConnectClusterName(cluster)), is.getMetadata().getLabels());
+        assertEquals(ResourceUtils.labels(ClusterController.STRIMZI_CLUSTER_LABEL, cluster, ClusterController.STRIMZI_TYPE_LABEL, "kafka-connect-s2i", ClusterController.STRIMZI_KIND_LABEL, "cluster", "strimzi.io/name", kc.kafkaConnectClusterName(cluster)), is.getMetadata().getLabels());
     }
 }
