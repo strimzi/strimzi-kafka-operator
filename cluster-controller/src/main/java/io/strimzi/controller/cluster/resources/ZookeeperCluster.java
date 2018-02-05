@@ -175,36 +175,40 @@ public class ZookeeperCluster extends AbstractCluster {
         StatefulSet ss = statefulSetOperations.get(namespace, getName());
         ConfigMap metricsConfigMap = configMapOperations.get(namespace, getMetricsConfigName());
 
-        ClusterDiffResult diff = new ClusterDiffResult();
+        boolean scaleUp = false;
+        boolean scaleDown = false;
+        boolean rollingUpdate = false;
+        boolean different = false;
+        boolean metricsChanged = false;
 
         if (replicas > ss.getSpec().getReplicas()) {
             log.info("Diff: Expected replicas {}, actual replicas {}", replicas, ss.getSpec().getReplicas());
-            diff.setScaleUp(true);
-            diff.setRollingUpdate(true);
+            scaleUp = true;
+            rollingUpdate = true;
         }
         else if (replicas < ss.getSpec().getReplicas()) {
             log.info("Diff: Expected replicas {}, actual replicas {}", replicas, ss.getSpec().getReplicas());
-            diff.setScaleDown(true);
-            diff.setRollingUpdate(true);
+            scaleDown = true;
+            rollingUpdate = true;
         }
 
         if (!getLabelsWithName().equals(ss.getMetadata().getLabels()))    {
             log.info("Diff: Expected labels {}, actual labels {}", getLabelsWithName(), ss.getMetadata().getLabels());
-            diff.setDifferent(true);
-            diff.setRollingUpdate(true);
+            different = true;
+            rollingUpdate = true;
         }
 
         if (!image.equals(ss.getSpec().getTemplate().getSpec().getContainers().get(0).getImage())) {
             log.info("Diff: Expected image {}, actual image {}", image, ss.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
-            diff.setDifferent(true);
-            diff.setRollingUpdate(true);
+            different = true;
+            rollingUpdate = true;
         }
 
         if (healthCheckInitialDelay != ss.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds()
                 || healthCheckTimeout != ss.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds()) {
             log.info("Diff: Zookeeper healthcheck timing changed");
-            diff.setDifferent(true);
-            diff.setRollingUpdate(true);
+            different = true;
+            rollingUpdate = true;
         }
 
         Map<String, String> vars = ss.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream().collect(
@@ -212,14 +216,14 @@ public class ZookeeperCluster extends AbstractCluster {
 
         if (isMetricsEnabled != Boolean.parseBoolean(vars.getOrDefault(KEY_ZOOKEEPER_METRICS_ENABLED, String.valueOf(DEFAULT_ZOOKEEPER_METRICS_ENABLED)))) {
             log.info("Diff: Zookeeper metrics enabled/disabled");
-            diff.setMetricsChanged(true);
-            diff.setRollingUpdate(true);
+            metricsChanged = true;
+            rollingUpdate = true;
         } else {
 
             if (isMetricsEnabled) {
                 JsonObject metricsConfig = new JsonObject(metricsConfigMap.getData().get(METRICS_CONFIG_FILE));
                 if (!this.metricsConfig.equals(metricsConfig)) {
-                    diff.setMetricsChanged(true);
+                    metricsChanged = true;
                 }
             }
         }
@@ -247,13 +251,13 @@ public class ZookeeperCluster extends AbstractCluster {
         // only delete-claim flag can be changed
         if (!isStorageRejected && (storage.type() == Storage.StorageType.PERSISTENT_CLAIM)) {
             if (storageDiffResult.isDeleteClaim()) {
-                diff.setDifferent(true);
+                different = true;
             }
         } else if (isStorageRejected) {
             log.warn("Changing storage configuration other than delete-claim is not supported !");
         }
 
-        return diff;
+        return new ClusterDiffResult(different, rollingUpdate, scaleUp, scaleDown, metricsChanged);
     }
 
     public Service generateService() {

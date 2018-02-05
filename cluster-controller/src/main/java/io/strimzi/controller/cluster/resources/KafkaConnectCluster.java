@@ -169,26 +169,30 @@ public class KafkaConnectCluster extends AbstractCluster {
 
         Deployment dep = deploymentOperations.get(namespace, getName());
 
-        ClusterDiffResult diff = new ClusterDiffResult();
+        boolean scaleUp = false;
+        boolean scaleDown = false;
+        boolean different = false;
+        boolean metricsChanged = false;
+        boolean rollingUpdate = false;
 
         if (replicas > dep.getSpec().getReplicas()) {
             log.info("Diff: Expected replicas {}, actual replicas {}", replicas, dep.getSpec().getReplicas());
-            diff.setScaleUp(true);
+            scaleUp = true;
         }
         else if (replicas < dep.getSpec().getReplicas()) {
             log.info("Diff: Expected replicas {}, actual replicas {}", replicas, dep.getSpec().getReplicas());
-            diff.setScaleDown(true);
+            scaleDown = true;
         }
 
         if (!getLabelsWithName().equals(dep.getMetadata().getLabels()))    {
             log.info("Diff: Expected labels {}, actual labels {}", getLabelsWithName(), dep.getMetadata().getLabels());
-            diff.setDifferent(true);
+            different = true;
         }
 
         if (!getImage().equals(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage())) {
             log.info("Diff: Expected image {}, actual image {}", getImage(), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
-            diff.setDifferent(true);
-            diff.setRollingUpdate(true);
+            different = true;
+            rollingUpdate = true;
         }
 
         Map<String, String> vars = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream().collect(
@@ -205,18 +209,18 @@ public class KafkaConnectCluster extends AbstractCluster {
                 || statusStorageReplicationFactor != Integer.parseInt(vars.getOrDefault(KEY_STATUS_STORAGE_REPLICATION_FACTOR, String.valueOf(DEFAULT_STATUS_STORAGE_REPLICATION_FACTOR)))
                 ) {
             log.info("Diff: Kafka Connect options changed");
-            diff.setDifferent(true);
-            diff.setRollingUpdate(true);
+            different = true;
+            rollingUpdate = true;
         }
 
         if (healthCheckInitialDelay != dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds()
                 || healthCheckTimeout != dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds()) {
             log.info("Diff: Kafka Connect healthcheck timing changed");
-            diff.setDifferent(true);
-            diff.setRollingUpdate(true);
+            different = true;
+            rollingUpdate = true;
         }
 
-        return diff;
+        return new ClusterDiffResult(different, rollingUpdate, scaleUp, scaleDown, metricsChanged);
     }
 
     public Service generateService() {
