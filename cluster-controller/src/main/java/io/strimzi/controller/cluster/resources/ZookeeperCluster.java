@@ -43,12 +43,12 @@ public class ZookeeperCluster extends AbstractCluster {
     // N/A
 
     // Configuration keys
-    public static String KEY_IMAGE = "zookeeper-image";
-    public static String KEY_REPLICAS = "zookeeper-nodes";
-    public static String KEY_HEALTHCHECK_DELAY = "zookeeper-healthcheck-delay";
-    public static String KEY_HEALTHCHECK_TIMEOUT = "zookeeper-healthcheck-timeout";
-    public static String KEY_METRICS_CONFIG = "zookeeper-metrics-config";
-    public static String KEY_STORAGE = "zookeeper-storage";
+    public static final String KEY_IMAGE = "zookeeper-image";
+    public static final String KEY_REPLICAS = "zookeeper-nodes";
+    public static final String KEY_HEALTHCHECK_DELAY = "zookeeper-healthcheck-delay";
+    public static final String KEY_HEALTHCHECK_TIMEOUT = "zookeeper-healthcheck-timeout";
+    public static final String KEY_METRICS_CONFIG = "zookeeper-metrics-config";
+    public static final String KEY_STORAGE = "zookeeper-storage";
 
     // Zookeeper configuration keys
     private static String KEY_ZOOKEEPER_NODE_COUNT = "ZOOKEEPER_NODE_COUNT";
