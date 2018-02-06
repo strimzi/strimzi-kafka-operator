@@ -167,7 +167,7 @@ public class ZookeeperClusterOperations extends AbstractClusterOperations<Zookee
     private Future<Void> scaleDown(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
         Future<Void> scaleDown = Future.future();
 
-        if (diff.getScaleDown())    {
+        if (diff.isScaleDown())    {
             log.info("Scaling down stateful set {} in namespace {}", zk.getName(), namespace);
             statefulSetOperations.scaleDown(namespace, zk.getName(), zk.getReplicas(), scaleDown.completer());
         }
@@ -223,7 +223,7 @@ public class ZookeeperClusterOperations extends AbstractClusterOperations<Zookee
     private Future<Void> rollingUpdate(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
         Future<Void> rollingUpdate = Future.future();
 
-        if (diff.getRollingUpdate()) {
+        if (diff.isRollingUpdate()) {
             statefulSetOperations.rollingUpdate(namespace, zk.getName(),
                     rollingUpdate.completer());
         }
@@ -237,7 +237,7 @@ public class ZookeeperClusterOperations extends AbstractClusterOperations<Zookee
     private Future<Void> scaleUp(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
         Future<Void> scaleUp = Future.future();
 
-        if (diff.getScaleUp()) {
+        if (diff.isScaleUp()) {
             statefulSetOperations.scaleUp(namespace, zk.getName(), zk.getReplicas(), scaleUp.completer());
         }
         else {

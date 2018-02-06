@@ -1,5 +1,9 @@
 package io.strimzi.controller.cluster.resources;
 
+/**
+ * Describes the difference between two cluster states in terms of the kind of actions necessary
+ * to make them consistent.
+ */
 public class ClusterDiffResult {
     private final boolean different;
     private final boolean rollingUpdate;
@@ -36,15 +40,15 @@ public class ClusterDiffResult {
         return different;
     }
 
-    public boolean getRollingUpdate() {
+    public boolean isRollingUpdate() {
         return rollingUpdate;
     }
 
-    public boolean getScaleUp() {
+    public boolean isScaleUp() {
         return scaleUp;
     }
 
-    public boolean getScaleDown() {
+    public boolean isScaleDown() {
         return scaleDown;
     }
 

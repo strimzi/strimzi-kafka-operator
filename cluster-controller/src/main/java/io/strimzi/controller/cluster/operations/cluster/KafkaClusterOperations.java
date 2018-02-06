@@ -166,7 +166,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
     private Future<Void> scaleDown(KafkaCluster kafka, String namespace, ClusterDiffResult diff) {
         Future<Void> scaleDown = Future.future();
 
-        if (diff.getScaleDown())    {
+        if (diff.isScaleDown())    {
             log.info("Scaling down stateful set {} in namespace {}", kafka.getName(), namespace);
             statefulSetOperations.scaleDown(namespace, kafka.getName(), kafka.getReplicas(), scaleDown.completer());
         }
@@ -221,7 +221,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
     private Future<Void> rollingUpdate(KafkaCluster kafka, String namespace, ClusterDiffResult diff) {
         Future<Void> rollingUpdate = Future.future();
 
-        if (diff.getRollingUpdate()) {
+        if (diff.isRollingUpdate()) {
             statefulSetOperations.rollingUpdate(namespace, kafka.getName(),
                     rollingUpdate.completer());
         }
@@ -235,7 +235,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
     private Future<Void> scaleUp(KafkaCluster kafka, String namespace, ClusterDiffResult diff) {
         Future<Void> scaleUp = Future.future();
 
-        if (diff.getScaleUp()) {
+        if (diff.isScaleUp()) {
             statefulSetOperations.scaleUp(namespace, kafka.getName(), kafka.getReplicas(), scaleUp.completer());
         }
         else {

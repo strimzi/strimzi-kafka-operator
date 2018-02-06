@@ -159,7 +159,7 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
     private Future<Void> scaleDown(KafkaConnectS2ICluster connect, String namespace, ClusterDiffResult diff) {
         Future<Void> scaleDown = Future.future();
 
-        if (diff.getScaleDown())    {
+        if (diff.isScaleDown())    {
             log.info("Scaling down deployment {} in namespace {}", connect.getName(), namespace);
             deploymentConfigOperations.scaleDown(namespace, connect.getName(), connect.getReplicas(), scaleDown.completer());
         }
@@ -228,7 +228,7 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
     private Future<Void> scaleUp(KafkaConnectS2ICluster connect, String namespace, ClusterDiffResult diff) {
         Future<Void> scaleUp = Future.future();
 
-        if (diff.getScaleUp()) {
+        if (diff.isScaleUp()) {
             deploymentConfigOperations.scaleUp(namespace, connect.getName(), connect.getReplicas(), scaleUp.completer());
         }
         else {
