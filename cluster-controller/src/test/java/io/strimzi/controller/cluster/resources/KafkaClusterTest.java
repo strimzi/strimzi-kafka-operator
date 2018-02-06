@@ -127,9 +127,9 @@ public class KafkaClusterTest {
     public void testDiffNoDiffs() {
         ClusterDiffResult diff = kc.diff(kc.generateMetricsConfigMap(), kc.generateStatefulSet(true));
         assertFalse(diff.getDifferent());
-        assertFalse(diff.getScaleDown());
-        assertFalse(diff.getScaleUp());
-        assertFalse(diff.getRollingUpdate());
+        assertFalse(diff.isScaleDown());
+        assertFalse(diff.isScaleUp());
+        assertFalse(diff.isRollingUpdate());
         assertFalse(diff.isMetricsChanged());
     }
 
@@ -139,9 +139,9 @@ public class KafkaClusterTest {
                 replicas, image, healthDelay, healthTimeout,"{\"something\":\"different\"}"));
         ClusterDiffResult diff = kc.diff(other.generateMetricsConfigMap(), other.generateStatefulSet(true));
         assertFalse(diff.getDifferent());
-        assertFalse(diff.getScaleDown());
-        assertFalse(diff.getScaleUp());
-        assertFalse(diff.getRollingUpdate());
+        assertFalse(diff.isScaleDown());
+        assertFalse(diff.isScaleUp());
+        assertFalse(diff.isRollingUpdate());
         assertTrue(diff.isMetricsChanged());
     }
 
@@ -151,9 +151,9 @@ public class KafkaClusterTest {
                 replicas + 1, image, healthDelay, healthTimeout, metricsCmJson));
         ClusterDiffResult diff = kc.diff(other.generateMetricsConfigMap(), other.generateStatefulSet(true));
         assertFalse(diff.getDifferent());
-        assertTrue(diff.getScaleDown());
-        assertFalse(diff.getScaleUp());
-        assertFalse(diff.getRollingUpdate());
+        assertTrue(diff.isScaleDown());
+        assertFalse(diff.isScaleUp());
+        assertFalse(diff.isRollingUpdate());
         assertFalse(diff.isMetricsChanged());
     }
 
@@ -163,9 +163,9 @@ public class KafkaClusterTest {
                 replicas - 1, image, healthDelay, healthTimeout, metricsCmJson));
         ClusterDiffResult diff = kc.diff(other.generateMetricsConfigMap(), other.generateStatefulSet(true));
         assertFalse(diff.getDifferent());
-        assertFalse(diff.getScaleDown());
-        assertTrue(diff.getScaleUp());
-        assertFalse(diff.getRollingUpdate());
+        assertFalse(diff.isScaleDown());
+        assertTrue(diff.isScaleUp());
+        assertFalse(diff.isRollingUpdate());
         assertFalse(diff.isMetricsChanged());
     }
 
@@ -175,9 +175,9 @@ public class KafkaClusterTest {
                 replicas, "differentimage", healthDelay, healthTimeout, metricsCmJson));
         ClusterDiffResult diff = kc.diff(other.generateMetricsConfigMap(), other.generateStatefulSet(true));
         assertTrue(diff.getDifferent());
-        assertFalse(diff.getScaleDown());
-        assertFalse(diff.getScaleUp());
-        assertTrue(diff.getRollingUpdate());
+        assertFalse(diff.isScaleDown());
+        assertFalse(diff.isScaleUp());
+        assertTrue(diff.isRollingUpdate());
         assertFalse(diff.isMetricsChanged());
     }
 
@@ -187,9 +187,9 @@ public class KafkaClusterTest {
                 replicas, image, healthDelay+1, healthTimeout, metricsCmJson));
         ClusterDiffResult diff = kc.diff(other.generateMetricsConfigMap(), other.generateStatefulSet(true));
         assertTrue(diff.getDifferent());
-        assertFalse(diff.getScaleDown());
-        assertFalse(diff.getScaleUp());
-        assertTrue(diff.getRollingUpdate());
+        assertFalse(diff.isScaleDown());
+        assertFalse(diff.isScaleUp());
+        assertTrue(diff.isRollingUpdate());
         assertFalse(diff.isMetricsChanged());
     }
 
@@ -199,9 +199,9 @@ public class KafkaClusterTest {
                 replicas, image, healthDelay, healthTimeout+1, metricsCmJson));
         ClusterDiffResult diff = kc.diff(other.generateMetricsConfigMap(), other.generateStatefulSet(true));
         assertTrue(diff.getDifferent());
-        assertFalse(diff.getScaleDown());
-        assertFalse(diff.getScaleUp());
-        assertTrue(diff.getRollingUpdate());
+        assertFalse(diff.isScaleDown());
+        assertFalse(diff.isScaleUp());
+        assertTrue(diff.isRollingUpdate());
         assertFalse(diff.isMetricsChanged());
     }
 
