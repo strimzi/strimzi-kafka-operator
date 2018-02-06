@@ -44,18 +44,14 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster> {
     protected final int LOCK_TIMEOUT = 60000;
 
     protected final Vertx vertx;
-    private final String clusterType;
-    private final String operationType;
     protected final boolean isOpenShift;
 
     protected AbstractClusterOperations(Vertx vertx, boolean isOpenShift, String clusterType, String operationType) {
         this.vertx = vertx;
         this.isOpenShift = isOpenShift;
-        this.clusterType = clusterType;
-        this.operationType = operationType;
     }
 
-    protected final String getLockName(String namespace, String name) {
+    protected final String getLockName(String clusterType, String namespace, String name) {
         return "lock::"+ clusterType +"::" + namespace + "::" + name;
     }
 
@@ -89,8 +85,8 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster> {
         ClusterOperation<C> getCluster(String namespace, String name);
     }
 
-    protected final <C extends AbstractCluster> void execute(String namespace, String name, CompositeOperation<C> compositeOperation, Handler<AsyncResult<Void>> handler) {
-        final String lockName = getLockName(namespace, name);
+    protected final <C extends AbstractCluster> void execute(String clusterType, String operationType, String namespace, String name, CompositeOperation<C> compositeOperation, Handler<AsyncResult<Void>> handler) {
+        final String lockName = getLockName(clusterType, namespace, name);
         vertx.sharedData().getLockWithTimeout(lockName, LOCK_TIMEOUT, res -> {
             if (res.succeeded()) {
                 Lock lock = res.result();
@@ -125,22 +121,10 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster> {
         });
     }
 
-    protected abstract CompositeOperation<C> createOp();
+    public abstract void create(String namespace, String name, Handler<AsyncResult<Void>> handler);
 
-    public void create(String namespace, String name, Handler<AsyncResult<Void>> handler) {
-        execute(namespace, name, createOp(), handler);
-    }
+    public abstract void delete(String namespace, String name, Handler<AsyncResult<Void>> handler);
 
-    protected abstract CompositeOperation<C> deleteOp();
-
-    public void delete(String namespace, String name, Handler<AsyncResult<Void>> handler) {
-        execute(namespace, name, deleteOp(), handler);
-    }
-
-    protected abstract CompositeOperation<C> updateOp();
-
-    public void update(String namespace, String name, Handler<AsyncResult<Void>> handler) {
-        execute(namespace, name, updateOp(), handler);
-    }
+    public abstract void update(String namespace, String name, Handler<AsyncResult<Void>> handler);
 
 }

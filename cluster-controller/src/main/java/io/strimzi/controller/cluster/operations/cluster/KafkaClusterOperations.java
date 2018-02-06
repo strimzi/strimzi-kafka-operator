@@ -54,8 +54,8 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
     public void create(String namespace, String name, Handler<AsyncResult<Void>> handler) {
         // TODO Don't pass the same handler
-        execute(namespace, name, createZk, ar -> {});
-        execute(namespace, name, createKafka, handler);
+        execute("zookeeper", "create", namespace, name, createZk, ar -> {});
+        execute("kafka", "create", namespace, name, createKafka, handler);
     }
 
     private final CompositeOperation<KafkaCluster> createKafka = new CompositeOperation<KafkaCluster>() {
@@ -190,23 +190,8 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
     @Override
     public void delete(String namespace, String name, Handler<AsyncResult<Void>> handler) {
         // TODO don't pass the same handler
-        execute(namespace, name, deleteKafka, ar -> {});
-        execute(namespace, name, deleteZk, handler);
-    }
-
-    @Override
-    protected CompositeOperation<KafkaCluster> createOp() {
-        return createKafka;
-    }
-
-    @Override
-    protected CompositeOperation<KafkaCluster> deleteOp() {
-        return deleteKafka;
-    }
-
-    @Override
-    protected CompositeOperation<KafkaCluster> updateOp() {
-        return updateKafka;
+        execute("kafka", "delete", namespace, name, deleteKafka, ar -> {});
+        execute("zookeeper", "delete", namespace, name, deleteZk, handler);
     }
 
     private final CompositeOperation<KafkaCluster> updateKafka = new CompositeOperation<KafkaCluster>() {
@@ -434,8 +419,8 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
     public void update(String namespace, String name, Handler<AsyncResult<Void>> handler) {
         // TODO don't pass the same handler
-        execute(namespace, name, updateZk, ar -> {});
-        execute(namespace, name, updateKafka, handler);
+        execute("zookeeper", "update", namespace, name, updateZk, ar -> {});
+        execute("kafka", "update", namespace, name, updateKafka, handler);
     }
 
 }
