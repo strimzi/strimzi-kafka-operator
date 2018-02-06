@@ -89,7 +89,7 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster> {
         ClusterOperation<C> getCluster(String namespace, String name);
     }
 
-    private final void execute(String namespace, String name, CompositeOperation<C> compositeOperation, Handler<AsyncResult<Void>> handler) {
+    protected final <C extends AbstractCluster> void execute(String namespace, String name, CompositeOperation<C> compositeOperation, Handler<AsyncResult<Void>> handler) {
         final String lockName = getLockName(namespace, name);
         vertx.sharedData().getLockWithTimeout(lockName, LOCK_TIMEOUT, res -> {
             if (res.succeeded()) {
@@ -127,19 +127,19 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster> {
 
     protected abstract CompositeOperation<C> createOp();
 
-    public final void create(String namespace, String name, Handler<AsyncResult<Void>> handler) {
+    public void create(String namespace, String name, Handler<AsyncResult<Void>> handler) {
         execute(namespace, name, createOp(), handler);
     }
 
     protected abstract CompositeOperation<C> deleteOp();
 
-    public final void delete(String namespace, String name, Handler<AsyncResult<Void>> handler) {
+    public void delete(String namespace, String name, Handler<AsyncResult<Void>> handler) {
         execute(namespace, name, deleteOp(), handler);
     }
 
     protected abstract CompositeOperation<C> updateOp();
 
-    public final void update(String namespace, String name, Handler<AsyncResult<Void>> handler) {
+    public void update(String namespace, String name, Handler<AsyncResult<Void>> handler) {
         execute(namespace, name, updateOp(), handler);
     }
 

@@ -21,6 +21,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.strimzi.controller.cluster.resources.KafkaCluster;
 import io.strimzi.controller.cluster.resources.KafkaConnectS2ICluster;
+import io.strimzi.controller.cluster.resources.ZookeeperCluster;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -69,6 +70,12 @@ public class ResourceUtils {
         // TODO Take a Storage parameter for this
         cmData.put(KafkaCluster.KEY_STORAGE, "{\"type\": \"ephemeral\"}");
         cmData.put(KafkaCluster.KEY_METRICS_CONFIG, metricsCmJson);
+        cmData.put(ZookeeperCluster.KEY_REPLICAS, Integer.toString(replicas));
+        cmData.put(ZookeeperCluster.KEY_IMAGE, image+"-zk");
+        cmData.put(ZookeeperCluster.KEY_HEALTHCHECK_DELAY, Integer.toString(healthDelay));
+        cmData.put(ZookeeperCluster.KEY_HEALTHCHECK_TIMEOUT, Integer.toString(healthTimeout));
+        cmData.put(ZookeeperCluster.KEY_STORAGE, "{\"type\": \"ephemeral\"}");
+        cmData.put(ZookeeperCluster.KEY_METRICS_CONFIG, metricsCmJson);
         return new ConfigMapBuilder()
                 .withNewMetadata()
                 .withName(clusterCmName)
