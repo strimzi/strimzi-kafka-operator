@@ -36,8 +36,12 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
+import static java.util.Arrays.asList;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -102,21 +106,26 @@ public class KafkaClusterOperationsTest {
 
             // We expect a headless and headful service
             List<Service> capturedServices = serviceCaptor.getAllValues();
-            context.assertEquals(2, capturedServices.size());
-            int headfulIndex = (clusterCmName+"-kafka").equals(capturedServices.get(0).getMetadata().getName()) ? 0 : 1;
-            // The other service should be the headless one
-            Service headless = capturedServices.get(1 - headfulIndex);
-            context.assertEquals(clusterCmName+"-kafka-headless", headless.getMetadata().getName());
+            context.assertEquals(4, capturedServices.size());
+            context.assertEquals(set(clusterCmName + "-kafka",
+                    clusterCmName + "-kafka-headless",
+                    clusterCmName + "-zookeeper",
+                    clusterCmName + "-zookeeper-headless"), capturedServices.stream().map(svc -> svc.getMetadata().getName()).collect(Collectors.toSet()));
 
             // Assertions on the statefulset
             List<StatefulSet> capturedSs = ssCaptor.getAllValues();
-            // We expect a single statefulSet ...
-            context.assertEquals(1, capturedSs.size());
+            // We expect a statefulSet for kafka and zookeeper...
+            context.assertEquals(set(clusterCmName + "-kafka", clusterCmName + "-zookeeper"),
+                    capturedSs.stream().map(ss->ss.getMetadata().getName()).collect(Collectors.toSet()));
 
             // PvcOperations only used for deletion
             verifyNoMoreInteractions(mockPvcOps);
             async.complete();
         });
+    }
+
+    private static <T> Set<T> set(T... elements) {
+        return new HashSet<>(asList(elements));
     }
 
 }
