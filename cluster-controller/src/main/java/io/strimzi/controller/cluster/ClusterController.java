@@ -84,8 +84,8 @@ public class ClusterController extends AbstractVerticle {
         configMapOperations = new ConfigMapOperations(vertx, client);
         PvcOperations pvcOperations = new PvcOperations(vertx, client);
         deploymentOperations = new DeploymentOperations(vertx, client);
-        ImageStreamOperations imagesStreamOperations;
-        BuildConfigOperations buildConfigOperations;
+        ImageStreamOperations imagesStreamOperations = null;
+        BuildConfigOperations buildConfigOperations = null;
         boolean isOpenShift = Boolean.TRUE.equals(client.isAdaptable(OpenShiftClient.class));
         if (isOpenShift) {
             imagesStreamOperations = new ImageStreamOperations(vertx, client.adapt(OpenShiftClient.class));

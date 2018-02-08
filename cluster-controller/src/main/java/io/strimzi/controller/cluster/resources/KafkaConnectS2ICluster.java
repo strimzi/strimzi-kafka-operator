@@ -128,7 +128,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
      * @param bc    BuildConfig resource
      * @return  ClusterDiffResult instance with differences
      */
-    public ClusterDiffResult diff(String namespace, DeploymentConfig dep, ImageStream sis, ImageStream tis, BuildConfig bc) {
+    public ClusterDiffResult diff(DeploymentConfig dep, ImageStream sis, ImageStream tis, BuildConfig bc) {
         boolean scaleUp = false;
         boolean scaleDown = false;
         boolean different = false;
