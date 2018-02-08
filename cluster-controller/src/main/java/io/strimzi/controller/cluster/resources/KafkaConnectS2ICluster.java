@@ -122,7 +122,10 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
     /**
      * Return the differences between the current Kafka Connect cluster and the deployed one
      *
-     * @param namespace Kubernetes/OpenShift namespace where cluster resources belong to
+     * @param dep   DeploymentConfig resource
+     * @param sis   Source ImageStream resource
+     * @param tis   Target ImageStream resource
+     * @param bc    BuildConfig resource
      * @return  ClusterDiffResult instance with differences
      */
     public ClusterDiffResult diff(String namespace, DeploymentConfig dep, ImageStream sis, ImageStream tis, BuildConfig bc) {
@@ -177,19 +180,22 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
         }
 
         // S2I diff
-        if (!getLabels().equals(sis.getMetadata().getLabels())
-                || !getLabels().equals(tis.getMetadata().getLabels())
-                || !getLabels().equals(bc.getMetadata().getLabels())) {
+        if (!getLabelsWithName(getSourceImageStreamName()).equals(sis.getMetadata().getLabels())
+                || !getLabelsWithName().equals(tis.getMetadata().getLabels())
+                || !getLabelsWithName().equals(bc.getMetadata().getLabels())) {
+            log.info("Diff: Kafka Connect S2I labels do not match");
             different = true;
         }
 
         if (!image.equals(bc.getSpec().getOutput().getTo().getName())
                 || !(getSourceImageStreamName() + ":" + sourceImageTag).equals(bc.getSpec().getStrategy().getSourceStrategy().getFrom().getName()))    {
+            log.info("Diff: Kafka Connect S2I BuildConfig does not match");
             different = true;
         }
 
         if (!sourceImageTag.equals(sis.getSpec().getTags().get(0).getName())
-                || !sourceImageBaseName.equals(sis.getSpec().getTags().get(0).getFrom().getName()))   {
+                || !(sourceImageBaseName + ":" + sourceImageTag).equals(sis.getSpec().getTags().get(0).getFrom().getName()))   {
+            log.info("Diff: Kafka Connect S2I source image name in BuildConfig or source ImageStream do not match");
             different = true;
         }
 

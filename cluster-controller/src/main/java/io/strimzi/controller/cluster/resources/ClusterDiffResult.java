@@ -36,7 +36,7 @@ public class ClusterDiffResult {
      * This doesn't distinguish which resource, but patching unnecessarily ends up being a no-op.
      * @return true iff a resource needs to be updated/patched
      */
-    public boolean getDifferent() {
+    public boolean isDifferent() {
         return different;
     }
 

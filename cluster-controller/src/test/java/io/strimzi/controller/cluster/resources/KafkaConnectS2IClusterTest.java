@@ -23,7 +23,6 @@ import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.ObjectReference;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
-import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.openshift.api.model.BinaryBuildSource;
 import io.fabric8.openshift.api.model.BuildConfig;
 import io.fabric8.openshift.api.model.BuildConfigBuilder;
@@ -42,7 +41,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static io.strimzi.controller.cluster.ResourceUtils.labels;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -164,6 +162,17 @@ public class KafkaConnectS2IClusterTest {
     }
 
     // TODO: Test diff
+
+    @Test
+    public void testDiffNoDiffs() {
+        ClusterDiffResult diff = kc.diff(kc.generateDeploymentConfig(), kc.generateSourceImageStream(), kc.generateTargetImageStream(), kc.generateBuildConfig());
+
+        assertFalse(diff.isDifferent());
+        assertFalse(diff.isScaleDown());
+        assertFalse(diff.isScaleUp());
+        assertFalse(diff.isRollingUpdate());
+        assertFalse(diff.isMetricsChanged());
+    }
 
     @Test
     public void testEnvVars()   {

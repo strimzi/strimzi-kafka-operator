@@ -91,10 +91,6 @@ public class ClusterController extends AbstractVerticle {
             imagesStreamOperations = new ImageStreamOperations(vertx, client.adapt(OpenShiftClient.class));
             buildConfigOperations = new BuildConfigOperations(vertx, client.adapt(OpenShiftClient.class));
             deploymentConfigOperations = new DeploymentConfigOperations(vertx, client.adapt(OpenShiftClient.class));
-        } else {
-            imagesStreamOperations = null;
-            buildConfigOperations = null;
-            deploymentConfigOperations = null;
         }
         this.zookeeperClusterOperations = new ZookeeperClusterOperations(vertx, isOpenShift, configMapOperations, serviceOperations, statefulSetOperations, pvcOperations);
         this.kafkaClusterOperations = new KafkaClusterOperations(vertx, isOpenShift, configMapOperations, serviceOperations, statefulSetOperations, pvcOperations);

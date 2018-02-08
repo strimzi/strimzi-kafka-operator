@@ -126,7 +126,7 @@ public class KafkaClusterTest {
     @Test
     public void testDiffNoDiffs() {
         ClusterDiffResult diff = kc.diff(kc.generateMetricsConfigMap(), kc.generateStatefulSet(true));
-        assertFalse(diff.getDifferent());
+        assertFalse(diff.isDifferent());
         assertFalse(diff.isScaleDown());
         assertFalse(diff.isScaleUp());
         assertFalse(diff.isRollingUpdate());
@@ -138,7 +138,7 @@ public class KafkaClusterTest {
         KafkaCluster other = KafkaCluster.fromConfigMap(ResourceUtils.createKafkaClusterConfigMap(namespace, cluster,
                 replicas, image, healthDelay, healthTimeout,"{\"something\":\"different\"}"));
         ClusterDiffResult diff = kc.diff(other.generateMetricsConfigMap(), other.generateStatefulSet(true));
-        assertFalse(diff.getDifferent());
+        assertFalse(diff.isDifferent());
         assertFalse(diff.isScaleDown());
         assertFalse(diff.isScaleUp());
         assertFalse(diff.isRollingUpdate());
@@ -150,7 +150,7 @@ public class KafkaClusterTest {
         KafkaCluster other = KafkaCluster.fromConfigMap(ResourceUtils.createKafkaClusterConfigMap(namespace, cluster,
                 replicas + 1, image, healthDelay, healthTimeout, metricsCmJson));
         ClusterDiffResult diff = kc.diff(other.generateMetricsConfigMap(), other.generateStatefulSet(true));
-        assertFalse(diff.getDifferent());
+        assertFalse(diff.isDifferent());
         assertTrue(diff.isScaleDown());
         assertFalse(diff.isScaleUp());
         assertFalse(diff.isRollingUpdate());
@@ -162,7 +162,7 @@ public class KafkaClusterTest {
         KafkaCluster other = KafkaCluster.fromConfigMap(ResourceUtils.createKafkaClusterConfigMap(namespace, cluster,
                 replicas - 1, image, healthDelay, healthTimeout, metricsCmJson));
         ClusterDiffResult diff = kc.diff(other.generateMetricsConfigMap(), other.generateStatefulSet(true));
-        assertFalse(diff.getDifferent());
+        assertFalse(diff.isDifferent());
         assertFalse(diff.isScaleDown());
         assertTrue(diff.isScaleUp());
         assertFalse(diff.isRollingUpdate());
@@ -174,7 +174,7 @@ public class KafkaClusterTest {
         KafkaCluster other = KafkaCluster.fromConfigMap(ResourceUtils.createKafkaClusterConfigMap(namespace, cluster,
                 replicas, "differentimage", healthDelay, healthTimeout, metricsCmJson));
         ClusterDiffResult diff = kc.diff(other.generateMetricsConfigMap(), other.generateStatefulSet(true));
-        assertTrue(diff.getDifferent());
+        assertTrue(diff.isDifferent());
         assertFalse(diff.isScaleDown());
         assertFalse(diff.isScaleUp());
         assertTrue(diff.isRollingUpdate());
@@ -186,7 +186,7 @@ public class KafkaClusterTest {
         KafkaCluster other = KafkaCluster.fromConfigMap(ResourceUtils.createKafkaClusterConfigMap(namespace, cluster,
                 replicas, image, healthDelay+1, healthTimeout, metricsCmJson));
         ClusterDiffResult diff = kc.diff(other.generateMetricsConfigMap(), other.generateStatefulSet(true));
-        assertTrue(diff.getDifferent());
+        assertTrue(diff.isDifferent());
         assertFalse(diff.isScaleDown());
         assertFalse(diff.isScaleUp());
         assertTrue(diff.isRollingUpdate());
@@ -198,7 +198,7 @@ public class KafkaClusterTest {
         KafkaCluster other = KafkaCluster.fromConfigMap(ResourceUtils.createKafkaClusterConfigMap(namespace, cluster,
                 replicas, image, healthDelay, healthTimeout+1, metricsCmJson));
         ClusterDiffResult diff = kc.diff(other.generateMetricsConfigMap(), other.generateStatefulSet(true));
-        assertTrue(diff.getDifferent());
+        assertTrue(diff.isDifferent());
         assertFalse(diff.isScaleDown());
         assertFalse(diff.isScaleUp());
         assertTrue(diff.isRollingUpdate());
