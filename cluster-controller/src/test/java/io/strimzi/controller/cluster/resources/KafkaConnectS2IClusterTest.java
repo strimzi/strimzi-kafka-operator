@@ -48,7 +48,7 @@ import static org.junit.Assert.assertTrue;
 public class KafkaConnectS2IClusterTest {
     private final String namespace = "test";
     private final String cluster = "foo";
-    private final int replicas = 1;
+    private final int replicas = 2;
     private final String image = "my-image:latest";
     private final int healthDelay = 100;
     private final int healthTimeout = 10;
@@ -161,8 +161,6 @@ public class KafkaConnectS2IClusterTest {
         assertEquals(KafkaConnectS2ICluster.DEFAULT_VALUE_CONVERTER_SCHEMAS_EXAMPLE, newKc.valueConverterSchemasEnable);
     }
 
-    // TODO: Test diff
-
     @Test
     public void testDiffNoDiffs() {
         ClusterDiffResult diff = kc.diff(kc.generateDeploymentConfig(), kc.generateSourceImageStream(), kc.generateTargetImageStream(), kc.generateBuildConfig());
@@ -173,6 +171,214 @@ public class KafkaConnectS2IClusterTest {
         assertFalse(diff.isRollingUpdate());
         assertFalse(diff.isMetricsChanged());
     }
+
+    @Test
+    public void testDiffScaleUp() {
+        DeploymentConfig dep = kc.generateDeploymentConfig();
+        dep.getSpec().setReplicas(dep.getSpec().getReplicas()-1);
+        ClusterDiffResult diff = kc.diff(dep, kc.generateSourceImageStream(), kc.generateTargetImageStream(), kc.generateBuildConfig());
+
+        assertFalse(diff.isDifferent());
+        assertFalse(diff.isScaleDown());
+        assertTrue(diff.isScaleUp());
+        assertFalse(diff.isRollingUpdate());
+        assertFalse(diff.isMetricsChanged());
+    }
+
+    @Test
+    public void testDiffScaleDown() {
+        DeploymentConfig dep = kc.generateDeploymentConfig();
+        dep.getSpec().setReplicas(dep.getSpec().getReplicas()+1);
+        ClusterDiffResult diff = kc.diff(dep, kc.generateSourceImageStream(), kc.generateTargetImageStream(), kc.generateBuildConfig());
+
+        assertFalse(diff.isDifferent());
+        assertTrue(diff.isScaleDown());
+        assertFalse(diff.isScaleUp());
+        assertFalse(diff.isRollingUpdate());
+        assertFalse(diff.isMetricsChanged());
+    }
+
+    @Test
+    public void testDiffSourceImageStream() {
+        ImageStream sis = kc.generateSourceImageStream();
+        kc.setImage("some/image:latest");
+        ClusterDiffResult diff = kc.diff(kc.generateDeploymentConfig(), sis, kc.generateTargetImageStream(), kc.generateBuildConfig());
+        assertTrue(diff.isDifferent());
+        assertFalse(diff.isScaleDown());
+        assertFalse(diff.isScaleUp());
+        assertFalse(diff.isRollingUpdate());
+        assertFalse(diff.isMetricsChanged());
+    }
+
+    @Test
+    public void testDiffBuildConfig() {
+        BuildConfig bc = kc.generateBuildConfig();
+        kc.setImage("my-image:tag");
+        ClusterDiffResult diff = kc.diff(kc.generateDeploymentConfig(), kc.generateSourceImageStream(), kc.generateTargetImageStream(), bc);
+        assertTrue(diff.isDifferent());
+        assertFalse(diff.isScaleDown());
+        assertFalse(diff.isScaleUp());
+        assertFalse(diff.isRollingUpdate());
+        assertFalse(diff.isMetricsChanged());
+    }
+
+    @Test
+    public void testDiffLabels() {
+        ClusterDiffResult diff;
+
+        DeploymentConfig dep = kc.generateDeploymentConfig();
+        dep.getMetadata().setLabels(Collections.EMPTY_MAP);
+        diff = kc.diff(dep, kc.generateSourceImageStream(), kc.generateTargetImageStream(), kc.generateBuildConfig());
+        assertTrue(diff.isDifferent());
+        assertFalse(diff.isScaleDown());
+        assertFalse(diff.isScaleUp());
+        assertFalse(diff.isRollingUpdate());
+        assertFalse(diff.isMetricsChanged());
+
+        ImageStream sis = kc.generateSourceImageStream();
+        sis.getMetadata().setLabels(Collections.EMPTY_MAP);
+        diff = kc.diff(kc.generateDeploymentConfig(), sis, kc.generateTargetImageStream(), kc.generateBuildConfig());
+        assertTrue(diff.isDifferent());
+        assertFalse(diff.isScaleDown());
+        assertFalse(diff.isScaleUp());
+        assertFalse(diff.isRollingUpdate());
+        assertFalse(diff.isMetricsChanged());
+
+        ImageStream tis = kc.generateTargetImageStream();
+        tis.getMetadata().setLabels(Collections.EMPTY_MAP);
+        diff = kc.diff(kc.generateDeploymentConfig(), kc.generateSourceImageStream(), tis, kc.generateBuildConfig());
+        assertTrue(diff.isDifferent());
+        assertFalse(diff.isScaleDown());
+        assertFalse(diff.isScaleUp());
+        assertFalse(diff.isRollingUpdate());
+        assertFalse(diff.isMetricsChanged());
+
+        BuildConfig bc = kc.generateBuildConfig();
+        bc.getMetadata().setLabels(Collections.EMPTY_MAP);
+        diff = kc.diff(kc.generateDeploymentConfig(), kc.generateSourceImageStream(), kc.generateTargetImageStream(), bc);
+        assertTrue(diff.isDifferent());
+        assertFalse(diff.isScaleDown());
+        assertFalse(diff.isScaleUp());
+        assertFalse(diff.isRollingUpdate());
+        assertFalse(diff.isMetricsChanged());
+    }
+
+    @Test
+    public void testDiffConfigOptions() {
+        KafkaConnectS2ICluster newKc;
+        ClusterDiffResult diff;
+
+        newKc = KafkaConnectS2ICluster.fromConfigMap(true, ResourceUtils.createKafkaConnectS2IClusterConfigMap(namespace, cluster, replicas, image,
+                123, healthTimeout, bootstrapServers, groupID, configReplicationFactor, offsetReplicationFactor,
+                statusReplicationFactor, keyConverter, valueConverter, keyConverterSchemas, valuesConverterSchema));
+        diff = kc.diff(newKc.generateDeploymentConfig(), newKc.generateSourceImageStream(), newKc.generateTargetImageStream(), newKc.generateBuildConfig());
+        assertTrue(diff.isDifferent());
+        assertFalse(diff.isScaleDown());
+        assertFalse(diff.isScaleUp());
+        assertTrue(diff.isRollingUpdate());
+        assertFalse(diff.isMetricsChanged());
+
+        newKc = KafkaConnectS2ICluster.fromConfigMap(true, ResourceUtils.createKafkaConnectS2IClusterConfigMap(namespace, cluster, replicas, image,
+                healthDelay, 123, bootstrapServers, groupID, configReplicationFactor, offsetReplicationFactor,
+                statusReplicationFactor, keyConverter, valueConverter, keyConverterSchemas, valuesConverterSchema));
+        diff = kc.diff(newKc.generateDeploymentConfig(), newKc.generateSourceImageStream(), newKc.generateTargetImageStream(), newKc.generateBuildConfig());
+        assertTrue(diff.isDifferent());
+        assertFalse(diff.isScaleDown());
+        assertFalse(diff.isScaleUp());
+        assertTrue(diff.isRollingUpdate());
+        assertFalse(diff.isMetricsChanged());
+
+        newKc = KafkaConnectS2ICluster.fromConfigMap(true, ResourceUtils.createKafkaConnectS2IClusterConfigMap(namespace, cluster, replicas, image,
+                healthDelay, healthTimeout, "some-kafka-broker:9092", groupID, configReplicationFactor, offsetReplicationFactor,
+                statusReplicationFactor, keyConverter, valueConverter, keyConverterSchemas, valuesConverterSchema));
+        diff = kc.diff(newKc.generateDeploymentConfig(), newKc.generateSourceImageStream(), newKc.generateTargetImageStream(), newKc.generateBuildConfig());
+        assertTrue(diff.isDifferent());
+        assertFalse(diff.isScaleDown());
+        assertFalse(diff.isScaleUp());
+        assertTrue(diff.isRollingUpdate());
+        assertFalse(diff.isMetricsChanged());
+
+        newKc = KafkaConnectS2ICluster.fromConfigMap(true, ResourceUtils.createKafkaConnectS2IClusterConfigMap(namespace, cluster, replicas, image,
+                healthDelay, healthTimeout, bootstrapServers, "some-other-group-id", configReplicationFactor, offsetReplicationFactor,
+                statusReplicationFactor, keyConverter, valueConverter, keyConverterSchemas, valuesConverterSchema));
+        diff = kc.diff(newKc.generateDeploymentConfig(), newKc.generateSourceImageStream(), newKc.generateTargetImageStream(), newKc.generateBuildConfig());
+        assertTrue(diff.isDifferent());
+        assertFalse(diff.isScaleDown());
+        assertFalse(diff.isScaleUp());
+        assertTrue(diff.isRollingUpdate());
+        assertFalse(diff.isMetricsChanged());
+
+        newKc = KafkaConnectS2ICluster.fromConfigMap(true, ResourceUtils.createKafkaConnectS2IClusterConfigMap(namespace, cluster, replicas, image,
+                healthDelay, healthTimeout, bootstrapServers, groupID, 5, offsetReplicationFactor,
+                statusReplicationFactor, keyConverter, valueConverter, keyConverterSchemas, valuesConverterSchema));
+        diff = kc.diff(newKc.generateDeploymentConfig(), newKc.generateSourceImageStream(), newKc.generateTargetImageStream(), newKc.generateBuildConfig());
+        assertTrue(diff.isDifferent());
+        assertFalse(diff.isScaleDown());
+        assertFalse(diff.isScaleUp());
+        assertTrue(diff.isRollingUpdate());
+        assertFalse(diff.isMetricsChanged());
+
+        newKc = KafkaConnectS2ICluster.fromConfigMap(true, ResourceUtils.createKafkaConnectS2IClusterConfigMap(namespace, cluster, replicas, image,
+                healthDelay, healthTimeout, bootstrapServers, groupID, configReplicationFactor, 5,
+                statusReplicationFactor, keyConverter, valueConverter, keyConverterSchemas, valuesConverterSchema));
+        diff = kc.diff(newKc.generateDeploymentConfig(), newKc.generateSourceImageStream(), newKc.generateTargetImageStream(), newKc.generateBuildConfig());
+        assertTrue(diff.isDifferent());
+        assertFalse(diff.isScaleDown());
+        assertFalse(diff.isScaleUp());
+        assertTrue(diff.isRollingUpdate());
+        assertFalse(diff.isMetricsChanged());
+
+        newKc = KafkaConnectS2ICluster.fromConfigMap(true, ResourceUtils.createKafkaConnectS2IClusterConfigMap(namespace, cluster, replicas, image,
+                healthDelay, healthTimeout, bootstrapServers, groupID, configReplicationFactor, offsetReplicationFactor,
+                5, keyConverter, valueConverter, keyConverterSchemas, valuesConverterSchema));
+        diff = kc.diff(newKc.generateDeploymentConfig(), newKc.generateSourceImageStream(), newKc.generateTargetImageStream(), newKc.generateBuildConfig());
+        assertTrue(diff.isDifferent());
+        assertFalse(diff.isScaleDown());
+        assertFalse(diff.isScaleUp());
+        assertTrue(diff.isRollingUpdate());
+        assertFalse(diff.isMetricsChanged());
+
+        newKc = KafkaConnectS2ICluster.fromConfigMap(true, ResourceUtils.createKafkaConnectS2IClusterConfigMap(namespace, cluster, replicas, image,
+                healthDelay, healthTimeout, bootstrapServers, groupID, configReplicationFactor, offsetReplicationFactor,
+                statusReplicationFactor, "some-other-converter", valueConverter, keyConverterSchemas, valuesConverterSchema));
+        diff = kc.diff(newKc.generateDeploymentConfig(), newKc.generateSourceImageStream(), newKc.generateTargetImageStream(), newKc.generateBuildConfig());
+        assertTrue(diff.isDifferent());
+        assertFalse(diff.isScaleDown());
+        assertFalse(diff.isScaleUp());
+        assertTrue(diff.isRollingUpdate());
+        assertFalse(diff.isMetricsChanged());
+
+        newKc = KafkaConnectS2ICluster.fromConfigMap(true, ResourceUtils.createKafkaConnectS2IClusterConfigMap(namespace, cluster, replicas, image,
+                healthDelay, healthTimeout, bootstrapServers, groupID, configReplicationFactor, offsetReplicationFactor,
+                statusReplicationFactor, keyConverter, "some-other-converter", keyConverterSchemas, valuesConverterSchema));
+        diff = kc.diff(newKc.generateDeploymentConfig(), newKc.generateSourceImageStream(), newKc.generateTargetImageStream(), newKc.generateBuildConfig());
+        assertTrue(diff.isDifferent());
+        assertFalse(diff.isScaleDown());
+        assertFalse(diff.isScaleUp());
+        assertTrue(diff.isRollingUpdate());
+        assertFalse(diff.isMetricsChanged());
+
+        newKc = KafkaConnectS2ICluster.fromConfigMap(true, ResourceUtils.createKafkaConnectS2IClusterConfigMap(namespace, cluster, replicas, image,
+                healthDelay, healthTimeout, bootstrapServers, groupID, configReplicationFactor, offsetReplicationFactor,
+                statusReplicationFactor, keyConverter, valueConverter, true, valuesConverterSchema));
+        diff = kc.diff(newKc.generateDeploymentConfig(), newKc.generateSourceImageStream(), newKc.generateTargetImageStream(), newKc.generateBuildConfig());
+        assertTrue(diff.isDifferent());
+        assertFalse(diff.isScaleDown());
+        assertFalse(diff.isScaleUp());
+        assertTrue(diff.isRollingUpdate());
+        assertFalse(diff.isMetricsChanged());
+
+        newKc = KafkaConnectS2ICluster.fromConfigMap(true, ResourceUtils.createKafkaConnectS2IClusterConfigMap(namespace, cluster, replicas, image,
+                healthDelay, healthTimeout, bootstrapServers, groupID, configReplicationFactor, offsetReplicationFactor,
+                statusReplicationFactor, keyConverter, valueConverter, keyConverterSchemas, true));
+        diff = kc.diff(newKc.generateDeploymentConfig(), newKc.generateSourceImageStream(), newKc.generateTargetImageStream(), newKc.generateBuildConfig());
+        assertTrue(diff.isDifferent());
+        assertFalse(diff.isScaleDown());
+        assertFalse(diff.isScaleUp());
+        assertTrue(diff.isRollingUpdate());
+        assertFalse(diff.isMetricsChanged());
+    }
+
 
     @Test
     public void testEnvVars()   {

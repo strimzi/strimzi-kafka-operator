@@ -149,11 +149,6 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
             different = true;
         }
 
-        if (!getImage().equals(dep.getSpec().getTriggers().get(1).getImageChangeParams().getFrom().getName())) {
-            log.info("Diff: Expected trigger from {}, actual image {}", getImage(), dep.getSpec().getTriggers().get(1).getImageChangeParams().getFrom().getName());
-            different = true;
-        }
-
         Map<String, String> vars = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream().collect(
                 Collectors.toMap(EnvVar::getName, EnvVar::getValue));
 
@@ -180,6 +175,11 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
         }
 
         // S2I diff
+        if (!getImage().equals(dep.getSpec().getTriggers().get(1).getImageChangeParams().getFrom().getName())) {
+            log.info("Diff: Expected trigger from {}, actual image {}", getImage(), dep.getSpec().getTriggers().get(1).getImageChangeParams().getFrom().getName());
+            different = true;
+        }
+
         if (!getLabelsWithName(getSourceImageStreamName()).equals(sis.getMetadata().getLabels())
                 || !getLabelsWithName().equals(tis.getMetadata().getLabels())
                 || !getLabelsWithName().equals(bc.getMetadata().getLabels())) {
