@@ -165,17 +165,13 @@ public class ZookeeperClusterOperations extends AbstractClusterOperations<Zookee
     };
 
     private Future<Void> scaleDown(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
-        Future<Void> scaleDown = Future.future();
-
         if (diff.isScaleDown())    {
             log.info("Scaling down stateful set {} in namespace {}", zk.getName(), namespace);
-            statefulSetOperations.scaleDown(namespace, zk.getName(), zk.getReplicas(), scaleDown.completer());
+            return statefulSetOperations.scaleDown(namespace, zk.getName(), zk.getReplicas());
         }
         else {
-            scaleDown.complete();
+            return Future.succeededFuture();
         }
-
-        return scaleDown;
     }
 
     private Future<Void> patchService(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
@@ -235,15 +231,11 @@ public class ZookeeperClusterOperations extends AbstractClusterOperations<Zookee
     }
 
     private Future<Void> scaleUp(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
-        Future<Void> scaleUp = Future.future();
-
         if (diff.isScaleUp()) {
-            statefulSetOperations.scaleUp(namespace, zk.getName(), zk.getReplicas(), scaleUp.completer());
+            return statefulSetOperations.scaleUp(namespace, zk.getName(), zk.getReplicas());
         }
         else {
-            scaleUp.complete();
+            return Future.succeededFuture();
         }
-
-        return scaleUp;
     }
 }

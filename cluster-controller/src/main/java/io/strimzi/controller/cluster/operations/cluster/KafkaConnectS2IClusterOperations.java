@@ -157,17 +157,13 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
     };
 
     private Future<Void> scaleDown(KafkaConnectS2ICluster connect, String namespace, ClusterDiffResult diff) {
-        Future<Void> scaleDown = Future.future();
-
         if (diff.isScaleDown())    {
             log.info("Scaling down deployment {} in namespace {}", connect.getName(), namespace);
-            deploymentConfigOperations.scaleDown(namespace, connect.getName(), connect.getReplicas(), scaleDown.completer());
+            return deploymentConfigOperations.scaleDown(namespace, connect.getName(), connect.getReplicas());
         }
         else {
-            scaleDown.complete();
+            return Future.succeededFuture();
         }
-
-        return scaleDown;
     }
 
     private Future<Void> patchService(KafkaConnectS2ICluster connect, String namespace, ClusterDiffResult diff) {
@@ -226,15 +222,11 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
     }
 
     private Future<Void> scaleUp(KafkaConnectS2ICluster connect, String namespace, ClusterDiffResult diff) {
-        Future<Void> scaleUp = Future.future();
-
         if (diff.isScaleUp()) {
-            deploymentConfigOperations.scaleUp(namespace, connect.getName(), connect.getReplicas(), scaleUp.completer());
+            return deploymentConfigOperations.scaleUp(namespace, connect.getName(), connect.getReplicas());
         }
         else {
-            scaleUp.complete();
+            return Future.succeededFuture();
         }
-
-        return scaleUp;
     }
 }

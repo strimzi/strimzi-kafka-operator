@@ -42,13 +42,13 @@ public abstract class AbstractScalableOperations<C, T extends HasMetadata, L ext
 
     /**
      * Asynchronously scale up the resource given by {@code namespace} and {@code name} to have the scale given by
-     * {@code scaleTo}, calling the {@code handler} with the result.
+     * {@code scaleTo}, returning a future for the outcome..
      * @param namespace The namespace of the resource to scale.
      * @param name The name of the resource to scale.
      * @param scaleTo The desired scale.
-     * @param handler A handler for the result.
      */
-    public void scaleUp(String namespace, String name, int scaleTo, Handler<AsyncResult<Void>> handler) {
+    public Future<Void> scaleUp(String namespace, String name, int scaleTo) {
+        Future<Void> fut = Future.future();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
                     try {
@@ -62,28 +62,20 @@ public abstract class AbstractScalableOperations<C, T extends HasMetadata, L ext
                     }
                 },
                 false,
-                res -> {
-                    if (res.succeeded()) {
-                        log.info("Scaling up to {} replicas has been completed", scaleTo);
-                        handler.handle(Future.succeededFuture());
-                    }
-                    else {
-                        log.error("Scaling up has failed: {}", res.cause().toString());
-                        handler.handle(Future.failedFuture(res.cause()));
-                    }
-                }
+                fut.completer()
         );
+        return fut;
     }
 
     /**
      * Asynchronously scale down the resource given by {@code namespace} and {@code name} to have the scale given by
-     * {@code scaleTo}, calling the {@code handler} with the result.
+     * {@code scaleTo}, returning a future for the outcome.
      * @param namespace The namespace of the resource to scale.
      * @param name The name of the resource to scale.
      * @param scaleTo The desired scale.
-     * @param handler A handler for the result.
      */
-    public void scaleDown(String namespace, String name, int scaleTo, Handler<AsyncResult<Void>> handler) {
+    public Future<Void> scaleDown(String namespace, String name, int scaleTo) {
+        Future<Void> fut = Future.future();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
                     try {
@@ -115,16 +107,8 @@ public abstract class AbstractScalableOperations<C, T extends HasMetadata, L ext
                     }
                 },
                 false,
-                res -> {
-                    if (res.succeeded()) {
-                        log.info("Scaling down to {} replicas has been completed", scaleTo);
-                        handler.handle(Future.succeededFuture());
-                    }
-                    else {
-                        log.error("Scaling down has failed: {}", res.cause().toString());
-                        handler.handle(Future.failedFuture(res.cause()));
-                    }
-                }
+                fut.completer()
         );
+        return fut;
     }
 }
