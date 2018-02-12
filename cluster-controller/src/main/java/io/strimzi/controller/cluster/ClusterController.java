@@ -52,6 +52,7 @@ public class ClusterController extends AbstractVerticle {
     private final KubernetesClient client;
     private final Map<String, String> labels;
     private final String namespace;
+    private final long reconciliationInterval;
     private ConfigMapOperations configMapOperations;
     private StatefulSetOperations statefulSetOperations;
     private DeploymentOperations deploymentOperations;
@@ -69,6 +70,7 @@ public class ClusterController extends AbstractVerticle {
 
         this.namespace = config.getNamespace();
         this.labels = config.getLabels();
+        this.reconciliationInterval = config.getReconciliationInterval();
         this.client = new DefaultKubernetesClient();
     }
 
@@ -112,7 +114,7 @@ public class ClusterController extends AbstractVerticle {
                 configMapWatch = res.result();
 
                 log.info("Setting up periodical reconciliation");
-                this.reconcileTimer = vertx.setPeriodic(120000, res2 -> {
+                this.reconcileTimer = vertx.setPeriodic(this.reconciliationInterval, res2 -> {
                     log.info("Triggering periodic reconciliation ...");
                     reconcile();
                 });
