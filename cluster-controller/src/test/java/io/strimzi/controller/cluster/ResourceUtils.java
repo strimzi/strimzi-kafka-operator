@@ -20,6 +20,7 @@ package io.strimzi.controller.cluster;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.strimzi.controller.cluster.resources.KafkaCluster;
+import io.strimzi.controller.cluster.resources.KafkaConnectS2ICluster;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -58,8 +59,8 @@ public class ResourceUtils {
      * @param healthTimeout
      * @return
      */
-    public static ConfigMap createConfigMap(String clusterCmNamespace, String clusterCmName, int replicas, String image, int healthDelay,
-                                            int healthTimeout, String metricsCmJson) {
+    public static ConfigMap createKafkaClusterConfigMap(String clusterCmNamespace, String clusterCmName, int replicas,
+                                                        String image, int healthDelay, int healthTimeout, String metricsCmJson) {
         Map<String, String> cmData = new HashMap<>();
         cmData.put(KafkaCluster.KEY_REPLICAS, Integer.toString(replicas));
         cmData.put(KafkaCluster.KEY_IMAGE, image);
@@ -72,7 +73,53 @@ public class ResourceUtils {
                 .withNewMetadata()
                 .withName(clusterCmName)
                 .withNamespace(clusterCmNamespace)
-                .withLabels(singletonMap("strimzi.io/kind", "kafka-cluster"))
+                .withLabels(labels(ClusterController.STRIMZI_KIND_LABEL, "cluster", ClusterController.STRIMZI_TYPE_LABEL, "kafka"))
+                .endMetadata()
+                .withData(cmData)
+                .build();
+    }
+
+
+    /**
+     * Generate ConfigMap for Kafka Conect S2I cluster
+     */
+    public static ConfigMap createKafkaConnectS2IClusterConfigMap(String clusterCmNamespace, String clusterCmName, int replicas,
+                                                                  String image, int healthDelay, int healthTimeout, String bootstrapServers,
+                                                                  String groupID, int configReplicationFactor, int offsetReplicationFactor,
+                                                                  int statusReplicationFactor, String keyConverter, String valueConverter,
+                                                                  boolean keyConverterSchemas, boolean valuesConverterSchema) {
+        Map<String, String> cmData = new HashMap<>();
+        cmData.put(KafkaConnectS2ICluster.KEY_IMAGE, image);
+        cmData.put(KafkaConnectS2ICluster.KEY_REPLICAS, Integer.toString(replicas));
+        cmData.put(KafkaConnectS2ICluster.KEY_HEALTHCHECK_DELAY, Integer.toString(healthDelay));
+        cmData.put(KafkaConnectS2ICluster.KEY_HEALTHCHECK_TIMEOUT, Integer.toString(healthTimeout));
+        cmData.put(KafkaConnectS2ICluster.KEY_BOOTSTRAP_SERVERS, bootstrapServers);
+        cmData.put(KafkaConnectS2ICluster.KEY_GROUP_ID, groupID);
+        cmData.put(KafkaConnectS2ICluster.KEY_CONFIG_STORAGE_REPLICATION_FACTOR, Integer.toString(configReplicationFactor));
+        cmData.put(KafkaConnectS2ICluster.KEY_OFFSET_STORAGE_REPLICATION_FACTOR, Integer.toString(offsetReplicationFactor));
+        cmData.put(KafkaConnectS2ICluster.KEY_STATUS_STORAGE_REPLICATION_FACTOR, Integer.toString(statusReplicationFactor));
+        cmData.put(KafkaConnectS2ICluster.KEY_KEY_CONVERTER, keyConverter);
+        cmData.put(KafkaConnectS2ICluster.KEY_KEY_CONVERTER_SCHEMAS_EXAMPLE, Boolean.toString(keyConverterSchemas));
+        cmData.put(KafkaConnectS2ICluster.KEY_VALUE_CONVERTER, valueConverter);
+        cmData.put(KafkaConnectS2ICluster.KEY_VALUE_CONVERTER_SCHEMAS_EXAMPLE, Boolean.toString(valuesConverterSchema));
+
+        ConfigMap cm = createEmptyKafkaConnectS2IClusterConfigMap(clusterCmNamespace, clusterCmName);
+        cm.setData(cmData);
+
+        return cm;
+    }
+
+    /**
+     * Generate empty KafkaConnect S2I config map
+     */
+    public static ConfigMap createEmptyKafkaConnectS2IClusterConfigMap(String clusterCmNamespace, String clusterCmName) {
+        Map<String, String> cmData = new HashMap<>();
+
+        return new ConfigMapBuilder()
+                .withNewMetadata()
+                .withName(clusterCmName)
+                .withNamespace(clusterCmNamespace)
+                .withLabels(labels(ClusterController.STRIMZI_KIND_LABEL, "cluster", ClusterController.STRIMZI_TYPE_LABEL, "kafka-connect-s2i"))
                 .endMetadata()
                 .withData(cmData)
                 .build();

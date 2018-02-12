@@ -164,21 +164,17 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
     };
 
     private Future<Void> scaleDown(KafkaCluster kafka, String namespace, ClusterDiffResult diff) {
-        Future<Void> scaleDown = Future.future();
-
-        if (diff.getScaleDown())    {
+        if (diff.isScaleDown())    {
             log.info("Scaling down stateful set {} in namespace {}", kafka.getName(), namespace);
-            statefulSetOperations.scaleDown(namespace, kafka.getName(), kafka.getReplicas(), scaleDown.completer());
+            return statefulSetOperations.scaleDown(namespace, kafka.getName(), kafka.getReplicas());
         }
         else {
-            scaleDown.complete();
+            return Future.succeededFuture();
         }
-
-        return scaleDown;
     }
 
     private Future<Void> patchService(KafkaCluster kafka, String namespace, ClusterDiffResult diff) {
-        if (diff.getDifferent()) {
+        if (diff.isDifferent()) {
             return serviceOperations.patch(namespace, kafka.getName(), kafka.patchService(serviceOperations.get(namespace, kafka.getName())));
         }
         else
@@ -188,7 +184,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
     }
 
     private Future<Void> patchHeadlessService(KafkaCluster kafka, String namespace, ClusterDiffResult diff) {
-        if (diff.getDifferent()) {
+        if (diff.isDifferent()) {
             return serviceOperations.patch(namespace, kafka.getHeadlessName(),
                     kafka.patchHeadlessService(serviceOperations.get(namespace, kafka.getHeadlessName())));
         }
@@ -199,7 +195,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
     }
 
     private Future<Void> patchStatefulSet(KafkaCluster kafka, String namespace, ClusterDiffResult diff) {
-        if (diff.getDifferent()) {
+        if (diff.isDifferent()) {
             return statefulSetOperations.patch(namespace, kafka.getName(), false,
                     kafka.patchStatefulSet(statefulSetOperations.get(namespace, kafka.getName())));
         }
@@ -221,7 +217,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
     private Future<Void> rollingUpdate(KafkaCluster kafka, String namespace, ClusterDiffResult diff) {
         Future<Void> rollingUpdate = Future.future();
 
-        if (diff.getRollingUpdate()) {
+        if (diff.isRollingUpdate()) {
             statefulSetOperations.rollingUpdate(namespace, kafka.getName(),
                     rollingUpdate.completer());
         }
@@ -233,15 +229,11 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
     }
 
     private Future<Void> scaleUp(KafkaCluster kafka, String namespace, ClusterDiffResult diff) {
-        Future<Void> scaleUp = Future.future();
-
-        if (diff.getScaleUp()) {
-            statefulSetOperations.scaleUp(namespace, kafka.getName(), kafka.getReplicas(), scaleUp.completer());
+        if (diff.isScaleUp()) {
+            return statefulSetOperations.scaleUp(namespace, kafka.getName(), kafka.getReplicas());
         }
         else {
-            scaleUp.complete();
+            return Future.succeededFuture();
         }
-
-        return scaleUp;
     }
 }
