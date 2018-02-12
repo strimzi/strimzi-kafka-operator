@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.openshift.api.model.DeploymentConfig;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.strimzi.controller.cluster.operations.cluster.AbstractClusterOperations;
 import io.strimzi.controller.cluster.operations.cluster.KafkaClusterOperations;
 import io.strimzi.controller.cluster.operations.cluster.KafkaConnectClusterOperations;
 import io.strimzi.controller.cluster.operations.cluster.KafkaConnectS2IClusterOperations;
@@ -150,58 +151,35 @@ public class ClusterController extends AbstractVerticle {
                         @Override
                         public void eventReceived(Action action, ConfigMap cm) {
                             Map<String, String> labels = cm.getMetadata().getLabels();
-                            String type;
+                            String type = labels.get(ClusterController.STRIMZI_TYPE_LABEL);
 
-                            if (!labels.containsKey(ClusterController.STRIMZI_TYPE_LABEL)) {
+                            final AbstractClusterOperations<?,?> cluster;
+                            if (type == null) {
                                 log.warn("Missing type in Config Map {}", cm.getMetadata().getName());
                                 return;
-                            }
-                            else if (!labels.get(ClusterController.STRIMZI_TYPE_LABEL).equals(KafkaCluster.TYPE) &&
-                                     !labels.get(ClusterController.STRIMZI_TYPE_LABEL).equals(KafkaConnectCluster.TYPE) &&
-                                     !labels.get(ClusterController.STRIMZI_TYPE_LABEL).equals(KafkaConnectS2ICluster.TYPE)) {
+                            } else if (type.equals(KafkaCluster.TYPE)) {
+                                cluster = kafkaClusterOperations;
+                            } else if (type.equals(KafkaConnectCluster.TYPE)) {
+                                cluster = kafkaConnectClusterOperations;
+                            } else if (type.equals(KafkaConnectS2ICluster.TYPE)) {
+                                cluster = kafkaConnectS2IClusterOperations;
+                            } else {
                                 log.warn("Unknown type {} received in Config Map {}", labels.get(ClusterController.STRIMZI_TYPE_LABEL), cm.getMetadata().getName());
                                 return;
-                            }
-                            else {
-                                type = labels.get(ClusterController.STRIMZI_TYPE_LABEL);
                             }
 
                             switch (action) {
                                 case ADDED:
                                     log.info("New ConfigMap {}", cm.getMetadata().getName());
-                                    if (type.equals(KafkaCluster.TYPE)) {
-                                        kafkaClusterOperations.createByName(namespace, cm);
-                                    }
-                                    else if (type.equals(KafkaConnectCluster.TYPE)) {
-                                        kafkaConnectClusterOperations.createByName(namespace, cm);
-                                    }
-                                    else if (type.equals(KafkaConnectS2ICluster.TYPE)) {
-                                        kafkaConnectS2IClusterOperations.createByName(namespace, cm);
-                                    }
+                                    cluster.createByName(namespace, cm);
                                     break;
                                 case DELETED:
                                     log.info("Deleted ConfigMap {}", cm.getMetadata().getName());
-                                    if (type.equals(KafkaCluster.TYPE)) {
-                                        kafkaClusterOperations.deleteByName(namespace, cm);
-                                    }
-                                    else if (type.equals(KafkaConnectCluster.TYPE)) {
-                                        kafkaConnectClusterOperations.deleteByName(namespace, cm);
-                                    }
-                                    else if (type.equals(KafkaConnectS2ICluster.TYPE)) {
-                                        kafkaConnectS2IClusterOperations.deleteByName(namespace, cm);
-                                    }
+                                    cluster.deleteByName(namespace, cm);
                                     break;
                                 case MODIFIED:
                                     log.info("Modified ConfigMap {}", cm.getMetadata().getName());
-                                    if (type.equals(KafkaCluster.TYPE)) {
-                                        kafkaClusterOperations.updateByName(namespace, cm);
-                                    }
-                                    else if (type.equals(KafkaConnectCluster.TYPE)) {
-                                        kafkaConnectClusterOperations.updateByName(namespace, cm);
-                                    }
-                                    else if (type.equals(KafkaConnectS2ICluster.TYPE)) {
-                                        kafkaConnectS2IClusterOperations.updateByName(namespace, cm);
-                                    }
+                                    cluster.updateByName(namespace, cm);
                                     break;
                                 case ERROR:
                                     log.error("Failed ConfigMap {}", cm.getMetadata().getName());
