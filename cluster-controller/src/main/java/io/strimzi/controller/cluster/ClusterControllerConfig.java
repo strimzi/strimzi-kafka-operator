@@ -12,7 +12,7 @@ public class ClusterControllerConfig {
     public static final String STRIMZI_CONFIGMAP_LABELS = "STRIMZI_CONFIGMAP_LABELS";
     public static final String STRIMZI_FULL_RECONCILIATION_INTERVAL = "STRIMZI_FULL_RECONCILIATION_INTERVAL";
 
-    private static final long DEFAULT_FULL_RECONCILIATION_INTERVAL = 120000; // in ms (2 minutes)
+    private static final long DEFAULT_FULL_RECONCILIATION_INTERVAL = 120_000; // in ms (2 minutes)
 
     private Map<String, String> labels;
     private String namespace;
@@ -42,17 +42,18 @@ public class ClusterControllerConfig {
     }
 
     /**
-     * Loads configuration parameters from related environment variables
+     * Loads configuration parameters from a related map
      *
+     * @param map   map from which loading configuration parameters
      * @return  Cluster Controller configuration instance
      */
-    public static ClusterControllerConfig fromEnv() {
+    public static ClusterControllerConfig fromMap(Map<String, String> map) {
 
-        String namespace = System.getenv(ClusterControllerConfig.STRIMZI_NAMESPACE);
-        String stringLabels = System.getenv(ClusterControllerConfig.STRIMZI_CONFIGMAP_LABELS);
-        long reconciliationInterval = DEFAULT_FULL_RECONCILIATION_INTERVAL;
+        String namespace = map.get(ClusterControllerConfig.STRIMZI_NAMESPACE);
+        String stringLabels = map.get(ClusterControllerConfig.STRIMZI_CONFIGMAP_LABELS);
+        Long reconciliationInterval = DEFAULT_FULL_RECONCILIATION_INTERVAL;
 
-        String reconciliationIntervalEnvVar = System.getenv(ClusterControllerConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL);
+        String reconciliationIntervalEnvVar = map.get(ClusterControllerConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL);
         if (reconciliationIntervalEnvVar != null) {
             reconciliationInterval = Long.valueOf(reconciliationIntervalEnvVar);
         }
