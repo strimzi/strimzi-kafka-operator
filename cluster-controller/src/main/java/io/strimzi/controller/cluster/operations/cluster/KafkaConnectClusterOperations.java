@@ -47,7 +47,7 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
                                          ConfigMapOperations configMapOperations,
                                          DeploymentOperations deploymentOperations,
                                          ServiceOperations serviceOperations) {
-        super(vertx, isOpenShift);
+        super(vertx, isOpenShift, "Kafka Connect");
         this.serviceOperations = serviceOperations;
         this.deploymentOperations = deploymentOperations;
         this.configMapOperations = configMapOperations;

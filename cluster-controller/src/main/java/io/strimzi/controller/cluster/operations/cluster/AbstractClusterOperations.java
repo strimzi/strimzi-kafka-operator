@@ -40,10 +40,19 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
 
     protected final Vertx vertx;
     protected final boolean isOpenShift;
+    protected final String clusterDescription;
 
-    protected AbstractClusterOperations(Vertx vertx, boolean isOpenShift) {
+    /**
+     * @param vertx The vertx instance
+     * @param isOpenShift True iff running on OpenShift
+     * @param clusterDescription A description of the cluster, for logging. This is a high level description and different from
+     *                           the {@code clusterType} passed to {@link #getLockName(String, String, String)}
+     *                           and {@link #execute(String, String, String, String, CompositeOperation, Handler)}
+     */
+    protected AbstractClusterOperations(Vertx vertx, boolean isOpenShift, String clusterDescription) {
         this.vertx = vertx;
         this.isOpenShift = isOpenShift;
+        this.clusterDescription = clusterDescription;
     }
 
     protected final String getLockName(String clusterType, String namespace, String name) {
@@ -120,14 +129,14 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
 
     public void createByName(String namespace, ConfigMap add)   {
         String name = add.getMetadata().getName();
-        log.info("Adding cluster {}", name);
+        log.info("Adding {} cluster {}", clusterDescription, name);
 
         create(namespace, name, res -> {
             if (res.succeeded()) {
-                log.info("Kafka cluster added {}", name);
+                log.info("{} cluster added {}", clusterDescription, name);
             }
             else {
-                log.error("Failed to add Kafka cluster {}.", name);
+                log.error("Failed to add {} cluster {}.", clusterDescription, name);
             }
         });
     }
@@ -137,24 +146,24 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
     //@Override
     public void deleteByLabel(String namespace, R dep)   {
         String name = dep.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL);
-        log.info("Deleting cluster {} in namespace {}", name, namespace);
+        log.info("Deleting {}, cluster {} in namespace {}", clusterDescription, name, namespace);
         delete(namespace, name);
     }
 
     //@Override
     public void deleteByName(String namespace, ConfigMap cm)   {
         String name = cm.getMetadata().getName();
-        log.info("Deleting cluster {} in namespace {}", name, namespace);
+        log.info("Deleting {} cluster {} in namespace {}", clusterDescription, name, namespace);
         delete(namespace, name);
     }
 
     private void delete(String namespace, String name)   {
         delete(namespace, name, res -> {
             if (res.succeeded()) {
-                log.info("cluster deleted {} in namespace {}", name, namespace);
+                log.info("{} cluster deleted {} in namespace {}", clusterDescription, name, namespace);
             }
             else {
-                log.error("Failed to delete cluster {} in namespace {}", name, namespace);
+                log.error("Failed to delete {} cluster {} in namespace {}", clusterDescription, name, namespace);
             }
         });
     }
@@ -163,14 +172,14 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
 
     public void updateByName(String namespace, ConfigMap cm)   {
         String name = cm.getMetadata().getName();
-        log.info("Checking for updates in cluster {}", cm.getMetadata().getName());
+        log.info("Checking for updates in {} cluster {}", clusterDescription, cm.getMetadata().getName());
 
         update(namespace, name, res2 -> {
             if (res2.succeeded()) {
-                log.info("Kafka cluster updated {}", name);
+                log.info("{} cluster updated {}", clusterDescription, name);
             }
             else {
-                log.error("Failed to update Kafka cluster {}.", name);
+                log.error("Failed to update {} cluster {}.", clusterDescription, name);
             }
         });
     }

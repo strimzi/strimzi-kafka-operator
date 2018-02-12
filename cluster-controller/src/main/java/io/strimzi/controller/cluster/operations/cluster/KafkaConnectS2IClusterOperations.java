@@ -57,7 +57,7 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
                                             ServiceOperations serviceOperations,
                                             ImageStreamOperations imagesStreamOperations,
                                             BuildConfigOperations buildConfigOperations) {
-        super(vertx, isOpenShift);
+        super(vertx, isOpenShift, "Kafka Connect S2I");
         this.serviceOperations = serviceOperations;
         this.deploymentConfigOperations = deploymentConfigOperations;
         this.configMapOperations = configMapOperations;
@@ -161,7 +161,7 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
 
             if (connectConfigMap != null)    {
                 connect = KafkaConnectS2ICluster.fromConfigMap(isOpenShift, connectConfigMap);
-                log.info("Updating Kafka Connect cluster {} in namespace {}", connect.getName(), namespace);
+                log.info("Updating {} cluster {} in namespace {}", clusterDescription, connect.getName(), namespace);
                 DeploymentConfig dep = deploymentConfigOperations.get(namespace, connect.getName());
                 ImageStream sis = imagesStreamOperations.get(namespace, connect.getSourceImageStreamName());
                 ImageStream tis = imagesStreamOperations.get(namespace, connect.getName());
@@ -176,7 +176,7 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
 
         private Future<Void> scaleDown(KafkaConnectS2ICluster connect, String namespace, ClusterDiffResult diff) {
             if (diff.isScaleDown())    {
-                log.info("Scaling down deployment {} in namespace {}", connect.getName(), namespace);
+                log.info("Scaling down {} deployment {} in namespace {}", clusterDescription, connect.getName(), namespace);
                 return deploymentConfigOperations.scaleDown(namespace, connect.getName(), connect.getReplicas());
             }
             else {

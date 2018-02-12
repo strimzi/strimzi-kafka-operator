@@ -52,7 +52,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
                                   ServiceOperations serviceOperations,
                                   StatefulSetOperations statefulSetOperations,
                                   PvcOperations pvcOperations) {
-        super(vertx, isOpenShift);
+        super(vertx, isOpenShift, "Kafka");
         this.configMapOperations = configMapOperations;
         this.statefulSetOperations = statefulSetOperations;
         this.serviceOperations = serviceOperations;
