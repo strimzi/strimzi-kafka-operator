@@ -57,31 +57,25 @@ public class ClusterController extends AbstractVerticle {
     private final Map<String, String> labels;
     private final String namespace;
     private final long reconciliationInterval;
-    private ConfigMapOperations configMapOperations;
-    private StatefulSetOperations statefulSetOperations;
-    private DeploymentOperations deploymentOperations;
-    private DeploymentConfigOperations deploymentConfigOperations;
+    private final ConfigMapOperations configMapOperations;
+    private final StatefulSetOperations statefulSetOperations;
+    private final DeploymentOperations deploymentOperations;
+    private final DeploymentConfigOperations deploymentConfigOperations;
 
     private Watch configMapWatch;
 
     private long reconcileTimer;
-    private KafkaClusterOperations kafkaClusterOperations;
-    private KafkaConnectClusterOperations kafkaConnectClusterOperations;
-    private KafkaConnectS2IClusterOperations kafkaConnectS2IClusterOperations;
+    private final KafkaClusterOperations kafkaClusterOperations;
+    private final KafkaConnectClusterOperations kafkaConnectClusterOperations;
+    private final KafkaConnectS2IClusterOperations kafkaConnectS2IClusterOperations;
 
-    public ClusterController(ClusterControllerConfig config) {
+    public ClusterController(Vertx vertx, ClusterControllerConfig config) {
         log.info("Creating ClusterController");
 
         this.namespace = config.getNamespace();
         this.labels = config.getLabels();
         this.reconciliationInterval = config.getReconciliationInterval();
         this.client = new DefaultKubernetesClient();
-    }
-
-    /**
-     * Set up the operations needed for cluster manipulation
-     */
-    private void setupOperations() {
 
         ServiceOperations serviceOperations = new ServiceOperations(vertx, client);
         statefulSetOperations = new StatefulSetOperations(vertx, client);
@@ -91,24 +85,26 @@ public class ClusterController extends AbstractVerticle {
         ImageStreamOperations imagesStreamOperations = null;
         BuildConfigOperations buildConfigOperations = null;
         boolean isOpenShift = Boolean.TRUE.equals(client.isAdaptable(OpenShiftClient.class));
-        if (isOpenShift) {
-            imagesStreamOperations = new ImageStreamOperations(vertx, client.adapt(OpenShiftClient.class));
-            buildConfigOperations = new BuildConfigOperations(vertx, client.adapt(OpenShiftClient.class));
-            deploymentConfigOperations = new DeploymentConfigOperations(vertx, client.adapt(OpenShiftClient.class));
-        }
+
         this.kafkaClusterOperations = new KafkaClusterOperations(vertx, isOpenShift, configMapOperations, serviceOperations, statefulSetOperations, pvcOperations);
         this.kafkaConnectClusterOperations = new KafkaConnectClusterOperations(vertx, isOpenShift, configMapOperations, deploymentOperations, serviceOperations);
 
         if (isOpenShift) {
-            this.kafkaConnectS2IClusterOperations = new KafkaConnectS2IClusterOperations(vertx, isOpenShift, configMapOperations, deploymentConfigOperations, serviceOperations, imagesStreamOperations, buildConfigOperations);
+            imagesStreamOperations = new ImageStreamOperations(vertx, client.adapt(OpenShiftClient.class));
+            buildConfigOperations = new BuildConfigOperations(vertx, client.adapt(OpenShiftClient.class));
+            deploymentConfigOperations = new DeploymentConfigOperations(vertx, client.adapt(OpenShiftClient.class));
+            this.kafkaConnectS2IClusterOperations = new KafkaConnectS2IClusterOperations(vertx, isOpenShift,
+                    configMapOperations, deploymentConfigOperations,
+                    serviceOperations, imagesStreamOperations, buildConfigOperations);
+        } else {
+            this.deploymentConfigOperations = null;
+            this.kafkaConnectS2IClusterOperations = null;
         }
     }
 
     @Override
     public void start(Future<Void> start) {
         log.info("Starting ClusterController");
-
-        this.setupOperations();
 
         // Configure the executor here, but it is used only in other places
         getVertx().createSharedWorkerExecutor("kubernetes-ops-pool", 5, TimeUnit.SECONDS.toNanos(120));

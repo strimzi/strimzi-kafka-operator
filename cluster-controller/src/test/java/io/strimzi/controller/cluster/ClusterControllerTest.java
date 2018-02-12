@@ -37,7 +37,7 @@ public class ClusterControllerTest {
         String namespace = "ns";
         Map labels = singletonMap("strimzi.io/kind", "cluster");
         ClusterControllerConfig config = new ClusterControllerConfig(namespace, labels);
-        ClusterController cc = new ClusterController(config);
+        ClusterController cc = new ClusterController(vertx, config);
         vertx.deployVerticle(cc);
 
         //cc.

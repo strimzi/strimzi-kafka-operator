@@ -14,7 +14,7 @@ public class Main {
     public static void main(String args[]) {
         try {
             Vertx vertx = Vertx.vertx();
-            vertx.deployVerticle(new ClusterController(ClusterControllerConfig.fromMap(System.getenv())), res -> {
+            vertx.deployVerticle(new ClusterController(vertx, ClusterControllerConfig.fromMap(System.getenv())), res -> {
                 if (res.succeeded())    {
                     log.info("Cluster Controller verticle started");
                 }
