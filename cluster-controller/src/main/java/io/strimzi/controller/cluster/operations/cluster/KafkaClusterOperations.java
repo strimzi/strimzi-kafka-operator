@@ -6,6 +6,7 @@ package io.strimzi.controller.cluster.operations.cluster;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
+import io.strimzi.controller.cluster.ClusterController;
 import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
 import io.strimzi.controller.cluster.operations.resource.PvcOperations;
 import io.strimzi.controller.cluster.operations.resource.ServiceOperations;
@@ -28,7 +29,7 @@ import java.util.List;
 /**
  * CRUD-style operations on a Kafka cluster
  */
-public class KafkaClusterOperations extends AbstractClusterOperations<KafkaCluster> {
+public class KafkaClusterOperations extends AbstractClusterOperations<KafkaCluster, StatefulSet> {
     private static final Logger log = LoggerFactory.getLogger(KafkaClusterOperations.class.getName());
     private static final String CLUSTER_TYPE_ZOOKEEPER = "zookeeper";
     private static final String CLUSTER_TYPE_KAFKA = "kafka";
@@ -191,7 +192,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
     };
 
     @Override
-    public void delete(String namespace, String name, Handler<AsyncResult<Void>> handler) {
+    protected void delete(String namespace, String name, Handler<AsyncResult<Void>> handler) {
         // TODO don't pass the same handler
         execute(CLUSTER_TYPE_KAFKA, OP_DELETE, namespace, name, deleteKafka, ar -> {});
         execute(CLUSTER_TYPE_ZOOKEEPER, OP_DELETE, namespace, name, deleteZk, handler);
@@ -425,5 +426,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
         execute(CLUSTER_TYPE_ZOOKEEPER, OP_UPDATE, namespace, name, updateZk, ar -> {});
         execute(CLUSTER_TYPE_KAFKA, OP_UPDATE, namespace, name, updateKafka, handler);
     }
+
+
 
 }

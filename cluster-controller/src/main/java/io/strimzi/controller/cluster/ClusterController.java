@@ -92,14 +92,13 @@ public class ClusterController extends AbstractVerticle {
         if (isOpenShift) {
             imagesStreamOperations = new ImageStreamOperations(vertx, client.adapt(OpenShiftClient.class));
             buildConfigOperations = new BuildConfigOperations(vertx, client.adapt(OpenShiftClient.class));
-            deploymentConfigOperations = new DeploymentConfigOperations(vertx, client.adapt(OpenShiftClient.class));
-            this.kafkaConnectS2IClusterOperations = new KafkaConnectS2IClusterOperations(vertx, isOpenShift,
-                    configMapOperations, deploymentConfigOperations,
-                    serviceOperations, imagesStreamOperations, buildConfigOperations);
+            this.deploymentConfigOperations = new DeploymentConfigOperations(vertx, client.adapt(OpenShiftClient.class));
         } else {
             this.deploymentConfigOperations = null;
-            this.kafkaConnectS2IClusterOperations = null;
         }
+        this.kafkaConnectS2IClusterOperations = new KafkaConnectS2IClusterOperations(vertx, isOpenShift,
+                configMapOperations, deploymentConfigOperations,
+                serviceOperations, imagesStreamOperations, buildConfigOperations);
     }
 
     @Override
@@ -170,37 +169,37 @@ public class ClusterController extends AbstractVerticle {
                                 case ADDED:
                                     log.info("New ConfigMap {}", cm.getMetadata().getName());
                                     if (type.equals(KafkaCluster.TYPE)) {
-                                        addKafkaCluster(cm);
+                                        kafkaClusterOperations.createByName(namespace, cm);
                                     }
                                     else if (type.equals(KafkaConnectCluster.TYPE)) {
-                                        addKafkaConnectCluster(cm);
+                                        kafkaConnectClusterOperations.createByName(namespace, cm);
                                     }
                                     else if (type.equals(KafkaConnectS2ICluster.TYPE)) {
-                                        addKafkaConnectS2ICluster(cm);
+                                        kafkaConnectS2IClusterOperations.createByName(namespace, cm);
                                     }
                                     break;
                                 case DELETED:
                                     log.info("Deleted ConfigMap {}", cm.getMetadata().getName());
                                     if (type.equals(KafkaCluster.TYPE)) {
-                                        deleteKafkaCluster(cm);
+                                        kafkaClusterOperations.deleteByName(namespace, cm);
                                     }
                                     else if (type.equals(KafkaConnectCluster.TYPE)) {
-                                        deleteKafkaConnectCluster(cm);
+                                        kafkaConnectClusterOperations.deleteByName(namespace, cm);
                                     }
                                     else if (type.equals(KafkaConnectS2ICluster.TYPE)) {
-                                        deleteKafkaConnectS2ICluster(cm);
+                                        kafkaConnectS2IClusterOperations.deleteByName(namespace, cm);
                                     }
                                     break;
                                 case MODIFIED:
                                     log.info("Modified ConfigMap {}", cm.getMetadata().getName());
                                     if (type.equals(KafkaCluster.TYPE)) {
-                                        updateKafkaCluster(cm);
+                                        kafkaClusterOperations.updateByName(namespace, cm);
                                     }
                                     else if (type.equals(KafkaConnectCluster.TYPE)) {
-                                        updateKafkaConnectCluster(cm);
+                                        kafkaConnectClusterOperations.updateByName(namespace, cm);
                                     }
                                     else if (type.equals(KafkaConnectS2ICluster.TYPE)) {
-                                        updateKafkaConnectS2ICluster(cm);
+                                        kafkaConnectS2IClusterOperations.updateByName(namespace, cm);
                                     }
                                     break;
                                 case ERROR:
@@ -260,7 +259,7 @@ public class ClusterController extends AbstractVerticle {
         reconcileKafka();
         reconcileKafkaConnect();
 
-        if (getKafkaConnectS2IClusterOperations() != null) {
+        if (kafkaConnectS2IClusterOperations != null) {
             reconcileKafkaConnectS2I();
         }
     }
@@ -289,21 +288,21 @@ public class ClusterController extends AbstractVerticle {
     private void addKafkaClusters(List<ConfigMap> add)   {
         for (ConfigMap cm : add) {
             log.info("Reconciliation: Kafka cluster {} should be added", cm.getMetadata().getName());
-            addKafkaCluster(cm);
+            kafkaClusterOperations.createByName(namespace, cm);
         }
     }
 
     private void updateKafkaClusters(List<ConfigMap> update)   {
         for (ConfigMap cm : update) {
             log.info("Reconciliation: Kafka cluster {} should be checked for updates", cm.getMetadata().getName());
-            updateKafkaCluster(cm);
+            kafkaClusterOperations.updateByName(namespace, cm);
         }
     }
 
     private void deleteKafkaClusters(List<StatefulSet> delete)   {
         for (StatefulSet ss : delete) {
             log.info("Reconciliation: Kafka cluster {} should be deleted", ss.getMetadata().getName());
-            deleteKafkaCluster(ss);
+            kafkaClusterOperations.deleteByLabel(namespace, ss);
         }
     }
 
@@ -331,21 +330,21 @@ public class ClusterController extends AbstractVerticle {
     private void addKafkaConnectClusters(List<ConfigMap> add)   {
         for (ConfigMap cm : add) {
             log.info("Reconciliation: Kafka Connect cluster {} should be added", cm.getMetadata().getName());
-            addKafkaConnectCluster(cm);
+            kafkaConnectClusterOperations.createByName(namespace, cm);
         }
     }
 
     private void updateKafkaConnectClusters(List<ConfigMap> update)   {
         for (ConfigMap cm : update) {
             log.info("Reconciliation: Kafka Connect cluster {} should be checked for updates", cm.getMetadata().getName());
-            updateKafkaConnectCluster(cm);
+            kafkaConnectClusterOperations.updateByName(namespace, cm);
         }
     }
 
     private void deleteKafkaConnectClusters(List<Deployment> delete)   {
         for (Deployment dep : delete) {
             log.info("Reconciliation: Kafka Connect cluster {} should be deleted", dep.getMetadata().getName());
-            deleteKafkaConnectCluster(dep);
+            kafkaConnectClusterOperations.deleteByLabel(namespace, dep);
         }
     }
 
@@ -373,196 +372,21 @@ public class ClusterController extends AbstractVerticle {
     private void addKafkaConnectS2IClusters(List<ConfigMap> add)   {
         for (ConfigMap cm : add) {
             log.info("Reconciliation: Kafka Connect S2I cluster {} should be added", cm.getMetadata().getName());
-            addKafkaConnectS2ICluster(cm);
+            kafkaConnectS2IClusterOperations.createByName(namespace, cm);
         }
     }
 
     private void updateKafkaConnectS2IClusters(List<ConfigMap> update)   {
         for (ConfigMap cm : update) {
             log.info("Reconciliation: Kafka Connect S2I cluster {} should be checked for updates", cm.getMetadata().getName());
-            updateKafkaConnectS2ICluster(cm);
+            kafkaConnectS2IClusterOperations.updateByName(namespace, cm);
         }
     }
 
     private void deleteKafkaConnectS2IClusters(List<DeploymentConfig> delete)   {
         for (DeploymentConfig dep : delete) {
             log.info("Reconciliation: Kafka Connect S2I cluster {} should be deleted", dep.getMetadata().getName());
-            deleteKafkaConnectS2ICluster(dep);
-        }
-    }
-
-    /*
-      Kafka / Zookeeper cluster control
-     */
-    private void addKafkaCluster(ConfigMap add)   {
-        String name = add.getMetadata().getName();
-        log.info("Adding cluster {}", name);
-
-        getKafkaClusterOperations().create(namespace, name, res -> {
-            if (res.succeeded()) {
-                log.info("Kafka cluster added {}", name);
-            }
-            else {
-                log.error("Failed to add Kafka cluster {}.", name);
-            }
-        });
-    }
-
-    private void updateKafkaCluster(ConfigMap cm)   {
-        String name = cm.getMetadata().getName();
-        log.info("Checking for updates in cluster {}", cm.getMetadata().getName());
-
-        getKafkaClusterOperations().update(namespace, name, res2 -> {
-            if (res2.succeeded()) {
-                log.info("Kafka cluster updated {}", name);
-            }
-            else {
-                log.error("Failed to update Kafka cluster {}.", name);
-            }
-        });
-    }
-
-    private void deleteKafkaCluster(StatefulSet ss)   {
-        String name = ss.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL);
-        log.info("Deleting cluster {}", name);
-        deleteKafkaCluster(namespace, name);
-    }
-
-    private void deleteKafkaCluster(ConfigMap cm)   {
-        String name = cm.getMetadata().getName();
-        log.info("Deleting cluster {}", name);
-        deleteKafkaCluster(namespace, name);
-    }
-
-    private void deleteKafkaCluster(String namespace, String name)   {
-        getKafkaClusterOperations().delete(namespace, name, res -> {
-            if (res.succeeded()) {
-                log.info("Kafka cluster deleted {}", name);
-            }
-            else {
-                log.error("Failed to delete Kafka cluster {}. Skipping Zookeeper cluster deletion.", name);
-            }
-        });
-    }
-
-    /*
-      Kafka Connect cluster control
-     */
-    private void addKafkaConnectCluster(ConfigMap add)   {
-        String name = add.getMetadata().getName();
-        log.info("Adding Kafka Connect cluster {}", name);
-
-        getKafkaConnectClusterOperations().create(namespace, name, res -> {
-            if (res.succeeded()) {
-                log.info("Kafka Connect cluster added {}", name);
-            }
-            else {
-                log.error("Failed to add Kafka Connect cluster {}.", name);
-            }
-        });
-    }
-
-    private void updateKafkaConnectCluster(ConfigMap cm)   {
-        String name = cm.getMetadata().getName();
-        log.info("Checking for updates in Kafka Connect cluster {}", cm.getMetadata().getName());
-
-        getKafkaConnectClusterOperations().update(namespace, name, res -> {
-            if (res.succeeded()) {
-                log.info("Kafka Connect cluster updated {}", name);
-            }
-            else {
-                log.error("Failed to update Kafka Connect cluster {}.", name);
-            }
-        });
-    }
-
-    private void deleteKafkaConnectCluster(Deployment dep)   {
-        String name = dep.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL);
-        log.info("Deleting cluster {}", name);
-        deleteKafkaConnectCluster(namespace, name);
-    }
-
-    private void deleteKafkaConnectCluster(ConfigMap cm)   {
-        String name = cm.getMetadata().getName();
-        log.info("Deleting cluster {}", name);
-        deleteKafkaConnectCluster(namespace, name);
-    }
-
-    private void deleteKafkaConnectCluster(String namespace, String name)   {
-        getKafkaConnectClusterOperations().delete(namespace, name, res -> {
-            if (res.succeeded()) {
-                log.info("Kafka Connect cluster deleted {}", name);
-            }
-            else {
-                log.error("Failed to delete Kafka Connect cluster {}.", name);
-            }
-        });
-    }
-
-    /*
-      Kafka Connect S2I cluster control
-     */
-    private void addKafkaConnectS2ICluster(ConfigMap add)   {
-        String name = add.getMetadata().getName();
-
-        if (getKafkaConnectS2IClusterOperations() != null) {
-            log.info("Adding Kafka Connect S2I cluster {} in namespace {}", name, namespace);
-
-            getKafkaConnectS2IClusterOperations().create(namespace, name, res -> {
-                if (res.succeeded()) {
-                    log.info("Kafka Connect S2I cluster added {} in namespace {}", name, namespace);
-                } else {
-                    log.error("Failed to add Kafka Connect S2I cluster {} in namespace {}.", name, namespace);
-                }
-            });
-        } else {
-            log.error("Cannot create Kafka Connect S2I cluster {} in namespace {}! Kafka Connect S2I clusters are supported only on OpenShift.", name, namespace);
-        }
-    }
-
-    private void updateKafkaConnectS2ICluster(ConfigMap cm)   {
-        String name = cm.getMetadata().getName();
-
-        if (getKafkaConnectS2IClusterOperations() != null) {
-            log.info("Checking for updates in Kafka Connect S2I cluster {}", cm.getMetadata().getName());
-
-            getKafkaConnectS2IClusterOperations().update(namespace, name, res -> {
-                if (res.succeeded()) {
-                    log.info("Kafka Connect S2I cluster {} in namespace {} updated", name, namespace);
-                }
-                else {
-                    log.error("Failed to update Kafka Connect S2I cluster {} in namespace {}.", name, namespace);
-                }
-            });
-        } else {
-            log.error("Cannot update Kafka Connect S2I cluster {} in namespace {}! Kafka Connect S2I clusters are supported only on OpenShift.", name, namespace);
-        }
-    }
-
-    private void deleteKafkaConnectS2ICluster(DeploymentConfig dep)   {
-        String name = dep.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL);
-        log.info("Deleting Kafka Connect S2I cluster {} in namespace {}", name, namespace);
-        deleteKafkaConnectS2ICluster(namespace, name);
-    }
-
-    private void deleteKafkaConnectS2ICluster(ConfigMap cm)   {
-        String name = cm.getMetadata().getName();
-        log.info("Deleting cluster {} in namespace {}", name, namespace);
-        deleteKafkaConnectS2ICluster(namespace, name);
-    }
-
-    private void deleteKafkaConnectS2ICluster(String namespace, String name)   {
-        if (getKafkaConnectS2IClusterOperations() != null) {
-            getKafkaConnectS2IClusterOperations().delete(namespace, name, res -> {
-                if (res.succeeded()) {
-                    log.info("Kafka Connect S2I cluster deleted {} in namespace {}", name, namespace);
-                }
-                else {
-                    log.error("Failed to delete Kafka Connect S2I cluster {} in namespace {}.", name, namespace);
-                }
-            });
-        } else {
-            log.error("Cannot delete Kafka Connect S2I cluster {} in namespace {}! Kafka Connect S2I clusters are supported only on OpenShift.", name, namespace);
+            kafkaConnectS2IClusterOperations.deleteByLabel(namespace, dep);
         }
     }
 
@@ -583,15 +407,4 @@ public class ClusterController extends AbstractVerticle {
                 .listen(HEALTH_SERVER_PORT);
     }
 
-    private KafkaClusterOperations getKafkaClusterOperations() {
-        return kafkaClusterOperations;
-    }
-
-    private KafkaConnectClusterOperations getKafkaConnectClusterOperations() {
-        return kafkaConnectClusterOperations;
-    }
-
-    private KafkaConnectS2IClusterOperations getKafkaConnectS2IClusterOperations() {
-        return kafkaConnectS2IClusterOperations;
-    }
 }

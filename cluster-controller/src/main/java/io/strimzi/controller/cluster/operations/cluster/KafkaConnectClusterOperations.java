@@ -5,7 +5,9 @@
 package io.strimzi.controller.cluster.operations.cluster;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
+import io.strimzi.controller.cluster.ClusterController;
 import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
 import io.strimzi.controller.cluster.operations.resource.DeploymentOperations;
 import io.strimzi.controller.cluster.operations.resource.ServiceOperations;
@@ -25,7 +27,7 @@ import java.util.List;
 /**
  * CRUD-style operations on a Kafka Connect cluster
  */
-public class KafkaConnectClusterOperations extends AbstractClusterOperations<KafkaConnectCluster> {
+public class KafkaConnectClusterOperations extends AbstractClusterOperations<KafkaConnectCluster, Deployment> {
 
     private static final Logger log = LoggerFactory.getLogger(KafkaConnectClusterOperations.class.getName());
     private static final String CLUSTER_TYPE_CONNECT = "kafka-connect";
@@ -174,7 +176,7 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
     }
 
     @Override
-    public void delete(String namespace, String name, Handler<AsyncResult<Void>> handler) {
+    protected void delete(String namespace, String name, Handler<AsyncResult<Void>> handler) {
         execute(CLUSTER_TYPE_CONNECT, OP_DELETE, namespace, name, delete, handler);
     }
 

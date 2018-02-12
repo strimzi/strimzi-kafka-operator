@@ -4,6 +4,9 @@
  */
 package io.strimzi.controller.cluster.operations.cluster;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.strimzi.controller.cluster.ClusterController;
 import io.strimzi.controller.cluster.resources.AbstractCluster;
 import io.strimzi.controller.cluster.resources.ClusterDiffResult;
 import io.vertx.core.AsyncResult;
@@ -24,7 +27,8 @@ import org.slf4j.LoggerFactory;
  * can proceed at once.
  * @param <C> The type of Kubernetes client
  */
-public abstract class AbstractClusterOperations<C extends AbstractCluster> {
+public abstract class AbstractClusterOperations<C extends AbstractCluster,
+        R extends HasMetadata> {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractClusterOperations.class.getName());
 
@@ -112,10 +116,63 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster> {
         });
     }
 
-    public abstract void create(String namespace, String name, Handler<AsyncResult<Void>> handler);
+    protected abstract void create(String namespace, String name, Handler<AsyncResult<Void>> handler);
 
-    public abstract void delete(String namespace, String name, Handler<AsyncResult<Void>> handler);
+    public void createByName(String namespace, ConfigMap add)   {
+        String name = add.getMetadata().getName();
+        log.info("Adding cluster {}", name);
 
-    public abstract void update(String namespace, String name, Handler<AsyncResult<Void>> handler);
+        create(namespace, name, res -> {
+            if (res.succeeded()) {
+                log.info("Kafka cluster added {}", name);
+            }
+            else {
+                log.error("Failed to add Kafka cluster {}.", name);
+            }
+        });
+    }
+
+    protected abstract void delete(String namespace, String name, Handler<AsyncResult<Void>> handler);
+
+    //@Override
+    public void deleteByLabel(String namespace, R dep)   {
+        String name = dep.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL);
+        log.info("Deleting cluster {} in namespace {}", name, namespace);
+        delete(namespace, name);
+    }
+
+    //@Override
+    public void deleteByName(String namespace, ConfigMap cm)   {
+        String name = cm.getMetadata().getName();
+        log.info("Deleting cluster {} in namespace {}", name, namespace);
+        delete(namespace, name);
+    }
+
+    private void delete(String namespace, String name)   {
+        delete(namespace, name, res -> {
+            if (res.succeeded()) {
+                log.info("cluster deleted {} in namespace {}", name, namespace);
+            }
+            else {
+                log.error("Failed to delete cluster {} in namespace {}", name, namespace);
+            }
+        });
+    }
+
+    protected abstract void update(String namespace, String name, Handler<AsyncResult<Void>> handler);
+
+    public void updateByName(String namespace, ConfigMap cm)   {
+        String name = cm.getMetadata().getName();
+        log.info("Checking for updates in cluster {}", cm.getMetadata().getName());
+
+        update(namespace, name, res2 -> {
+            if (res2.succeeded()) {
+                log.info("Kafka cluster updated {}", name);
+            }
+            else {
+                log.error("Failed to update Kafka cluster {}.", name);
+            }
+        });
+    }
 
 }
