@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC
+        "-//Puppy Crawl//DTD Check Configuration 1.3//EN"
+        "http://checkstyle.sourceforge.net/dtds/configuration_1_3.dtd">
+
+<module name = "Checker">
+    <module name="Header">
+        <property name="headerFile" value="${checkstyle.header.file}"/>
+        <property name="ignoreLines" value="2"/><!-- includes copyright year -->
+        <property name="fileExtensions" value="java"/>
+    </module>
+</module>
+

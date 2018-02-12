@@ -13,12 +13,3 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.strimzi.controller.topic;
-
-import io.fabric8.kubernetes.api.model.HasMetadata;
-
-public class InvalidConfigMapException extends ControllerException {
-    public InvalidConfigMapException(HasMetadata involvedObject, String message) {
-        super(involvedObject, message);
-    }
-}
