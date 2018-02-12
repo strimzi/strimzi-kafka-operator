@@ -24,6 +24,7 @@ import java.util.List;
 public class KafkaConnectClusterOperations extends AbstractClusterOperations<KafkaConnectCluster> {
 
     private static final Logger log = LoggerFactory.getLogger(KafkaConnectClusterOperations.class.getName());
+    private static final String CLUSTER_TYPE_CONNECT = "kafka-connect";
     private final ServiceOperations serviceOperations;
     private final DeploymentOperations deploymentOperations;
     private final ConfigMapOperations configMapOperations;
@@ -40,7 +41,7 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
                                          ConfigMapOperations configMapOperations,
                                          DeploymentOperations deploymentOperations,
                                          ServiceOperations serviceOperations) {
-        super(vertx, isOpenShift, "kafka-connect", "create");
+        super(vertx, isOpenShift);
         this.serviceOperations = serviceOperations;
         this.deploymentOperations = deploymentOperations;
         this.configMapOperations = configMapOperations;
@@ -164,16 +165,16 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
 
     @Override
     public void create(String namespace, String name, Handler<AsyncResult<Void>> handler) {
-        execute("connect", "create", namespace, name, create, handler);
+        execute(CLUSTER_TYPE_CONNECT, OP_CREATE, namespace, name, create, handler);
     }
 
     @Override
     public void delete(String namespace, String name, Handler<AsyncResult<Void>> handler) {
-        execute("connect", "delete", namespace, name, delete, handler);
+        execute(CLUSTER_TYPE_CONNECT, OP_DELETE, namespace, name, delete, handler);
     }
 
     @Override
     public void update(String namespace, String name, Handler<AsyncResult<Void>> handler) {
-        execute("connect", "update", namespace, name, update, handler);
+        execute(CLUSTER_TYPE_CONNECT, OP_UPDATE, namespace, name, update, handler);
     }
 }

@@ -41,12 +41,17 @@ import org.slf4j.LoggerFactory;
 public abstract class AbstractClusterOperations<C extends AbstractCluster> {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractClusterOperations.class.getName());
+
+    protected static final String OP_CREATE = "create";
+    protected static final String OP_DELETE = "delete";
+    protected static final String OP_UPDATE = "update";
+
     protected final int LOCK_TIMEOUT = 60000;
 
     protected final Vertx vertx;
     protected final boolean isOpenShift;
 
-    protected AbstractClusterOperations(Vertx vertx, boolean isOpenShift, String clusterType, String operationType) {
+    protected AbstractClusterOperations(Vertx vertx, boolean isOpenShift) {
         this.vertx = vertx;
         this.isOpenShift = isOpenShift;
     }

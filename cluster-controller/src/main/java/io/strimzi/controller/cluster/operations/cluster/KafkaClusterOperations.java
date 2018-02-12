@@ -26,6 +26,8 @@ import java.util.List;
  */
 public class KafkaClusterOperations extends AbstractClusterOperations<KafkaCluster> {
     private static final Logger log = LoggerFactory.getLogger(KafkaClusterOperations.class.getName());
+    private static final String CLUSTER_TYPE_ZOOKEEPER = "zookeeper";
+    private static final String CLUSTER_TYPE_KAFKA = "kafka";
     private final ConfigMapOperations configMapOperations;
     private final StatefulSetOperations statefulSetOperations;
     private final ServiceOperations serviceOperations;
@@ -45,7 +47,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
                                   ServiceOperations serviceOperations,
                                   StatefulSetOperations statefulSetOperations,
                                   PvcOperations pvcOperations) {
-        super(vertx, isOpenShift, "kafka", "create");
+        super(vertx, isOpenShift);
         this.configMapOperations = configMapOperations;
         this.statefulSetOperations = statefulSetOperations;
         this.serviceOperations = serviceOperations;
@@ -54,8 +56,8 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
     public void create(String namespace, String name, Handler<AsyncResult<Void>> handler) {
         // TODO Don't pass the same handler
-        execute("zookeeper", "create", namespace, name, createZk, ar -> {});
-        execute("kafka", "create", namespace, name, createKafka, handler);
+        execute(CLUSTER_TYPE_ZOOKEEPER, OP_CREATE, namespace, name, createZk, ar -> {});
+        execute(CLUSTER_TYPE_KAFKA, OP_CREATE, namespace, name, createKafka, handler);
     }
 
     private final CompositeOperation<KafkaCluster> createKafka = new CompositeOperation<KafkaCluster>() {
@@ -111,9 +113,6 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
             return CompositeFuture.join(result);
         }
     };
-
-
-
 
     private final CompositeOperation<KafkaCluster> deleteKafka = new CompositeOperation<KafkaCluster>() {
         @Override
@@ -190,8 +189,8 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
     @Override
     public void delete(String namespace, String name, Handler<AsyncResult<Void>> handler) {
         // TODO don't pass the same handler
-        execute("kafka", "delete", namespace, name, deleteKafka, ar -> {});
-        execute("zookeeper", "delete", namespace, name, deleteZk, handler);
+        execute(CLUSTER_TYPE_KAFKA, OP_DELETE, namespace, name, deleteKafka, ar -> {});
+        execute(CLUSTER_TYPE_ZOOKEEPER, OP_DELETE, namespace, name, deleteZk, handler);
     }
 
     private final CompositeOperation<KafkaCluster> updateKafka = new CompositeOperation<KafkaCluster>() {
@@ -419,8 +418,8 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
     public void update(String namespace, String name, Handler<AsyncResult<Void>> handler) {
         // TODO don't pass the same handler
-        execute("zookeeper", "update", namespace, name, updateZk, ar -> {});
-        execute("kafka", "update", namespace, name, updateKafka, handler);
+        execute(CLUSTER_TYPE_ZOOKEEPER, OP_UPDATE, namespace, name, updateZk, ar -> {});
+        execute(CLUSTER_TYPE_KAFKA, OP_UPDATE, namespace, name, updateKafka, handler);
     }
 
 }
