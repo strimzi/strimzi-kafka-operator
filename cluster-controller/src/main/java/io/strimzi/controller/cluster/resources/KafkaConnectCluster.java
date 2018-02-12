@@ -139,7 +139,7 @@ public class KafkaConnectCluster extends AbstractCluster {
         kafkaConnect.setReplicas(dep.getSpec().getReplicas());
         kafkaConnect.setImage(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
         kafkaConnect.setHealthCheckInitialDelay(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds());
-        kafkaConnect.setHealthCheckInitialDelay(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds());
+        kafkaConnect.setHealthCheckTimeout(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds());
 
         Map<String, String> vars = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream().collect(
                 Collectors.toMap(EnvVar::getName, EnvVar::getValue));
@@ -160,14 +160,10 @@ public class KafkaConnectCluster extends AbstractCluster {
     /**
      * Return the differences between the current Kafka Connect cluster and the deployed one
      *
-     * @param namespace Kubernetes/OpenShift namespace where cluster resources belong to
+     * @param dep Deployment which should be diffed
      * @return  ClusterDiffResult instance with differences
      */
-    public ClusterDiffResult diff(
-            String namespace,
-            DeploymentOperations deploymentOperations) {
-
-        Deployment dep = deploymentOperations.get(namespace, getName());
+    public ClusterDiffResult diff(Deployment dep) {
 
         boolean scaleUp = false;
         boolean scaleDown = false;
@@ -235,8 +231,8 @@ public class KafkaConnectCluster extends AbstractCluster {
                 Collections.singletonList(createContainerPort(REST_API_PORT_NAME, REST_API_PORT, "TCP")),
                 createHttpProbe(healthCheckPath, REST_API_PORT_NAME, healthCheckInitialDelay, healthCheckTimeout),
                 createHttpProbe(healthCheckPath, REST_API_PORT_NAME, healthCheckInitialDelay, healthCheckTimeout),
-                null,
-                null
+                Collections.EMPTY_MAP,
+                Collections.EMPTY_MAP
                 );
     }
 
@@ -244,8 +240,8 @@ public class KafkaConnectCluster extends AbstractCluster {
         return patchDeployment(dep,
                 createHttpProbe(healthCheckPath, REST_API_PORT_NAME, healthCheckInitialDelay, healthCheckTimeout),
                 createHttpProbe(healthCheckPath, REST_API_PORT_NAME, healthCheckInitialDelay, healthCheckTimeout),
-                null,
-                null
+                Collections.EMPTY_MAP,
+                Collections.EMPTY_MAP
                 );
     }
 

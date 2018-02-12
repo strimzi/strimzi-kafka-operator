@@ -123,8 +123,9 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
 
             if (connectConfigMap != null)    {
                 connect = KafkaConnectCluster.fromConfigMap(isOpenShift, connectConfigMap);
+                Deployment dep = deploymentOperations.get(namespace, connect.getName());
                 log.info("Updating Kafka Connect cluster {} in namespace {}", connect.getName(), namespace);
-                diff = connect.diff(namespace, deploymentOperations);
+                diff = connect.diff(dep);
             } else  {
                 throw new IllegalStateException("ConfigMap " + name + " doesn't exist anymore in namespace " + namespace);
             }
