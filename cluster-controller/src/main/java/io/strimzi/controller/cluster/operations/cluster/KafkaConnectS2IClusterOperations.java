@@ -11,8 +11,10 @@ import io.strimzi.controller.cluster.operations.resource.ImageStreamOperations;
 import io.strimzi.controller.cluster.operations.resource.ServiceOperations;
 import io.strimzi.controller.cluster.resources.ClusterDiffResult;
 import io.strimzi.controller.cluster.resources.KafkaConnectS2ICluster;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +28,7 @@ import java.util.List;
 public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<KafkaConnectS2ICluster> {
 
     private static final Logger log = LoggerFactory.getLogger(KafkaConnectS2IClusterOperations.class.getName());
+    private static final String CLUSTER_TYPE = "kafka-connect-s2i";
     private final ServiceOperations serviceOperations;
     private final DeploymentConfigOperations deploymentConfigOperations;
     private final ConfigMapOperations configMapOperations;
@@ -34,13 +37,14 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
 
     /**
      * Constructor
-     * @param vertx The Vertx instance
-     * @param isOpenShift Whether we're running with OpenShift
-     * @param configMapOperations For operating on ConfigMaps
+     *
+     * @param vertx                      The Vertx instance
+     * @param isOpenShift                Whether we're running with OpenShift
+     * @param configMapOperations        For operating on ConfigMaps
      * @param deploymentConfigOperations For operating on Deployments
-     * @param serviceOperations For operating on Services
-     * @param imagesStreamOperations For operating on ImageStreams, may be null
-     * @param buildConfigOperations For operating on BuildConfigs, may be null
+     * @param serviceOperations          For operating on Services
+     * @param imagesStreamOperations     For operating on ImageStreams, may be null
+     * @param buildConfigOperations      For operating on BuildConfigs, may be null
      */
     public KafkaConnectS2IClusterOperations(Vertx vertx, boolean isOpenShift,
                                             ConfigMapOperations configMapOperations,
@@ -48,12 +52,16 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
                                             ServiceOperations serviceOperations,
                                             ImageStreamOperations imagesStreamOperations,
                                             BuildConfigOperations buildConfigOperations) {
-        super(vertx, isOpenShift, "kafka-connect", "create");
+        super(vertx, isOpenShift);
         this.serviceOperations = serviceOperations;
         this.deploymentConfigOperations = deploymentConfigOperations;
         this.configMapOperations = configMapOperations;
         this.imagesStreamOperations = imagesStreamOperations;
         this.buildConfigOperations = buildConfigOperations;
+    }
+
+    public void create(String namespace, String name, Handler<AsyncResult<Void>> handler) {
+        execute(CLUSTER_TYPE, OP_CREATE, namespace, name, create, handler);
     }
 
     private final CompositeOperation<KafkaConnectS2ICluster> create = new CompositeOperation<KafkaConnectS2ICluster>() {
@@ -77,9 +85,8 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
         }
     };
 
-    @Override
-    protected CompositeOperation<KafkaConnectS2ICluster> createOp() {
-        return create;
+    public void delete(String namespace, String name, Handler<AsyncResult<Void>> handler) {
+        execute(CLUSTER_TYPE, OP_DELETE, namespace, name, delete, handler);
     }
 
     private final CompositeOperation<KafkaConnectS2ICluster> delete = new CompositeOperation<KafkaConnectS2ICluster>() {
@@ -105,14 +112,8 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
         }
     };
 
-    @Override
-    protected CompositeOperation<KafkaConnectS2ICluster> deleteOp() {
-        return delete;
-    }
-
-    @Override
-    protected CompositeOperation<KafkaConnectS2ICluster> updateOp() {
-        return update;
+    public void update(String namespace, String name, Handler<AsyncResult<Void>> handler) {
+        execute(CLUSTER_TYPE, OP_UPDATE, namespace, name, update, handler);
     }
 
     private final CompositeOperation<KafkaConnectS2ICluster> update = new CompositeOperation<KafkaConnectS2ICluster>() {
@@ -154,79 +155,81 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
 
             return new ClusterOperation<>(connect, diff);
         }
+
+        private Future<Void> scaleDown(KafkaConnectS2ICluster connect, String namespace, ClusterDiffResult diff) {
+            if (diff.isScaleDown())    {
+                log.info("Scaling down deployment {} in namespace {}", connect.getName(), namespace);
+                return deploymentConfigOperations.scaleDown(namespace, connect.getName(), connect.getReplicas());
+            }
+            else {
+                return Future.succeededFuture();
+            }
+        }
+
+        private Future<Void> patchService(KafkaConnectS2ICluster connect, String namespace, ClusterDiffResult diff) {
+            if (diff.isDifferent()) {
+                return serviceOperations.patch(namespace, connect.getName(),
+                        connect.patchService(serviceOperations.get(namespace, connect.getName())));
+            }
+            else
+            {
+                return Future.succeededFuture();
+            }
+        }
+
+        private Future<Void> patchDeploymentConfig(KafkaConnectS2ICluster connect, String namespace, ClusterDiffResult diff) {
+            if (diff.isDifferent()) {
+                return deploymentConfigOperations.patch(namespace, connect.getName(),
+                        connect.patchDeploymentConfig(deploymentConfigOperations.get(namespace, connect.getName())));
+            }
+            else
+            {
+                return Future.succeededFuture();
+            }
+        }
+
+        private Future<Void> patchBuildConfig(KafkaConnectS2ICluster connect, String namespace, ClusterDiffResult diff) {
+            if (diff.isDifferent()) {
+                return buildConfigOperations.patch(namespace, connect.getName(),
+                        connect.patchBuildConfig(buildConfigOperations.get(namespace, connect.getName())));
+            }
+            else
+            {
+                return Future.succeededFuture();
+            }
+        }
+
+        private Future<Void> patchSourceImageStream(KafkaConnectS2ICluster connect, String namespace, ClusterDiffResult diff) {
+            if (diff.isDifferent()) {
+                return imagesStreamOperations.patch(namespace, connect.getSourceImageStreamName(),
+                        connect.patchSourceImageStream(imagesStreamOperations.get(namespace, connect.getSourceImageStreamName())));
+            }
+            else
+            {
+                return Future.succeededFuture();
+            }
+        }
+
+        private Future<Void> patchTargetImageStream(KafkaConnectS2ICluster connect, String namespace, ClusterDiffResult diff) {
+            if (diff.isDifferent()) {
+                return imagesStreamOperations.patch(namespace, connect.getName(),
+                        connect.patchTargetImageStream(imagesStreamOperations.get(namespace, connect.getName())));
+            }
+            else
+            {
+                return Future.succeededFuture();
+            }
+        }
+
+        private Future<Void> scaleUp(KafkaConnectS2ICluster connect, String namespace, ClusterDiffResult diff) {
+            if (diff.isScaleUp()) {
+                return deploymentConfigOperations.scaleUp(namespace, connect.getName(), connect.getReplicas());
+            }
+            else {
+                return Future.succeededFuture();
+            }
+        }
     };
 
-    private Future<Void> scaleDown(KafkaConnectS2ICluster connect, String namespace, ClusterDiffResult diff) {
-        if (diff.isScaleDown())    {
-            log.info("Scaling down deployment {} in namespace {}", connect.getName(), namespace);
-            return deploymentConfigOperations.scaleDown(namespace, connect.getName(), connect.getReplicas());
-        }
-        else {
-            return Future.succeededFuture();
-        }
-    }
 
-    private Future<Void> patchService(KafkaConnectS2ICluster connect, String namespace, ClusterDiffResult diff) {
-        if (diff.isDifferent()) {
-            return serviceOperations.patch(namespace, connect.getName(),
-                    connect.patchService(serviceOperations.get(namespace, connect.getName())));
-        }
-        else
-        {
-            return Future.succeededFuture();
-        }
-    }
-
-    private Future<Void> patchDeploymentConfig(KafkaConnectS2ICluster connect, String namespace, ClusterDiffResult diff) {
-        if (diff.isDifferent()) {
-            return deploymentConfigOperations.patch(namespace, connect.getName(),
-                    connect.patchDeploymentConfig(deploymentConfigOperations.get(namespace, connect.getName())));
-        }
-        else
-        {
-            return Future.succeededFuture();
-        }
-    }
-
-    private Future<Void> patchBuildConfig(KafkaConnectS2ICluster connect, String namespace, ClusterDiffResult diff) {
-        if (diff.isDifferent()) {
-            return buildConfigOperations.patch(namespace, connect.getName(),
-                    connect.patchBuildConfig(buildConfigOperations.get(namespace, connect.getName())));
-        }
-        else
-        {
-            return Future.succeededFuture();
-        }
-    }
-
-    private Future<Void> patchSourceImageStream(KafkaConnectS2ICluster connect, String namespace, ClusterDiffResult diff) {
-        if (diff.isDifferent()) {
-            return imagesStreamOperations.patch(namespace, connect.getSourceImageStreamName(),
-                    connect.patchSourceImageStream(imagesStreamOperations.get(namespace, connect.getSourceImageStreamName())));
-        }
-        else
-        {
-            return Future.succeededFuture();
-        }
-    }
-
-    private Future<Void> patchTargetImageStream(KafkaConnectS2ICluster connect, String namespace, ClusterDiffResult diff) {
-        if (diff.isDifferent()) {
-            return imagesStreamOperations.patch(namespace, connect.getName(),
-                    connect.patchTargetImageStream(imagesStreamOperations.get(namespace, connect.getName())));
-        }
-        else
-        {
-            return Future.succeededFuture();
-        }
-    }
-
-    private Future<Void> scaleUp(KafkaConnectS2ICluster connect, String namespace, ClusterDiffResult diff) {
-        if (diff.isScaleUp()) {
-            return deploymentConfigOperations.scaleUp(namespace, connect.getName(), connect.getReplicas());
-        }
-        else {
-            return Future.succeededFuture();
-        }
-    }
 }

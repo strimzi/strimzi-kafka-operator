@@ -7,8 +7,10 @@ import io.strimzi.controller.cluster.operations.resource.DeploymentOperations;
 import io.strimzi.controller.cluster.operations.resource.ServiceOperations;
 import io.strimzi.controller.cluster.resources.ClusterDiffResult;
 import io.strimzi.controller.cluster.resources.KafkaConnectCluster;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +24,7 @@ import java.util.List;
 public class KafkaConnectClusterOperations extends AbstractClusterOperations<KafkaConnectCluster> {
 
     private static final Logger log = LoggerFactory.getLogger(KafkaConnectClusterOperations.class.getName());
+    private static final String CLUSTER_TYPE_CONNECT = "kafka-connect";
     private final ServiceOperations serviceOperations;
     private final DeploymentOperations deploymentOperations;
     private final ConfigMapOperations configMapOperations;
@@ -38,7 +41,7 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
                                          ConfigMapOperations configMapOperations,
                                          DeploymentOperations deploymentOperations,
                                          ServiceOperations serviceOperations) {
-        super(vertx, isOpenShift, "kafka-connect", "create");
+        super(vertx, isOpenShift);
         this.serviceOperations = serviceOperations;
         this.deploymentOperations = deploymentOperations;
         this.configMapOperations = configMapOperations;
@@ -63,10 +66,6 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
         }
     };
 
-    @Override
-    protected CompositeOperation<KafkaConnectCluster> createOp() {
-        return create;
-    }
 
     private final CompositeOperation<KafkaConnectCluster> delete = new CompositeOperation<KafkaConnectCluster>() {
 
@@ -88,16 +87,6 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
             return new ClusterOperation<>(KafkaConnectCluster.fromDeployment(namespace, name, dep), null);
         }
     };
-
-    @Override
-    protected CompositeOperation<KafkaConnectCluster> deleteOp() {
-        return delete;
-    }
-
-    @Override
-    protected CompositeOperation<KafkaConnectCluster> updateOp() {
-        return update;
-    }
 
     private final CompositeOperation<KafkaConnectCluster> update = new CompositeOperation<KafkaConnectCluster>() {
         @Override
@@ -172,5 +161,20 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
         else {
             return Future.succeededFuture();
         }
+    }
+
+    @Override
+    public void create(String namespace, String name, Handler<AsyncResult<Void>> handler) {
+        execute(CLUSTER_TYPE_CONNECT, OP_CREATE, namespace, name, create, handler);
+    }
+
+    @Override
+    public void delete(String namespace, String name, Handler<AsyncResult<Void>> handler) {
+        execute(CLUSTER_TYPE_CONNECT, OP_DELETE, namespace, name, delete, handler);
+    }
+
+    @Override
+    public void update(String namespace, String name, Handler<AsyncResult<Void>> handler) {
+        execute(CLUSTER_TYPE_CONNECT, OP_UPDATE, namespace, name, update, handler);
     }
 }
