@@ -12,7 +12,7 @@ public class ClusterControllerConfig {
     public static final String STRIMZI_CONFIGMAP_LABELS = "STRIMZI_CONFIGMAP_LABELS";
     public static final String STRIMZI_FULL_RECONCILIATION_INTERVAL = "STRIMZI_FULL_RECONCILIATION_INTERVAL";
 
-    private static final long DEFAULT_FULL_RECONCILIATION_INTERVAL = 120_000; // in ms (2 minutes)
+    public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL = 120_000; // in ms (2 minutes)
 
     private Map<String, String> labels;
     private String namespace;
@@ -50,7 +50,13 @@ public class ClusterControllerConfig {
     public static ClusterControllerConfig fromMap(Map<String, String> map) {
 
         String namespace = map.get(ClusterControllerConfig.STRIMZI_NAMESPACE);
+        if (namespace == null) {
+            throw new IllegalArgumentException("Namespace cannot be null");
+        }
         String stringLabels = map.get(ClusterControllerConfig.STRIMZI_CONFIGMAP_LABELS);
+        if (stringLabels == null) {
+            throw new IllegalArgumentException("Labels to watch cannot be null");
+        }
         Long reconciliationInterval = DEFAULT_FULL_RECONCILIATION_INTERVAL;
 
         String reconciliationIntervalEnvVar = map.get(ClusterControllerConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL);
