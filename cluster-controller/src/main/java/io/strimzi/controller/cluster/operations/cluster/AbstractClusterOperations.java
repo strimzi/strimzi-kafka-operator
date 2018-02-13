@@ -143,14 +143,12 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
 
     protected abstract void delete(String namespace, String name, Handler<AsyncResult<Void>> handler);
 
-    //@Override
     public void deleteByLabel(String namespace, R dep)   {
         String name = dep.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL);
         log.info("Deleting {}, cluster {} in namespace {}", clusterDescription, name, namespace);
         delete(namespace, name);
     }
 
-    //@Override
     public void deleteByName(String namespace, ConfigMap cm)   {
         String name = cm.getMetadata().getName();
         log.info("Deleting {} cluster {} in namespace {}", clusterDescription, name, namespace);
