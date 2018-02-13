@@ -64,9 +64,14 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
     }
 
     public void create(String namespace, String name, Handler<AsyncResult<Void>> handler) {
-        // TODO Don't pass the same handler
-        execute(CLUSTER_TYPE_ZOOKEEPER, OP_CREATE, namespace, name, createZk, ar -> {});
-        execute(CLUSTER_TYPE_KAFKA, OP_CREATE, namespace, name, createKafka, handler);
+        execute(CLUSTER_TYPE_ZOOKEEPER, OP_CREATE, namespace, name, createZk, ar -> {
+            if (ar.failed()) {
+                handler.handle(ar);
+            } else {
+                execute(CLUSTER_TYPE_KAFKA, OP_CREATE, namespace, name, createKafka, handler);
+            }
+        });
+
     }
 
     private final CompositeOperation<KafkaCluster> createKafka = new CompositeOperation<KafkaCluster>() {
@@ -197,9 +202,14 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
     @Override
     protected void delete(String namespace, String name, Handler<AsyncResult<Void>> handler) {
-        // TODO don't pass the same handler
-        execute(CLUSTER_TYPE_KAFKA, OP_DELETE, namespace, name, deleteKafka, ar -> {});
-        execute(CLUSTER_TYPE_ZOOKEEPER, OP_DELETE, namespace, name, deleteZk, handler);
+        execute(CLUSTER_TYPE_KAFKA, OP_DELETE, namespace, name, deleteKafka, ar -> {
+            if (ar.failed()) {
+                handler.handle(ar);
+            } else {
+                execute(CLUSTER_TYPE_ZOOKEEPER, OP_DELETE, namespace, name, deleteZk, handler);
+            }
+        });
+
     }
 
     private final CompositeOperation<KafkaCluster> updateKafka = new CompositeOperation<KafkaCluster>() {
@@ -427,9 +437,13 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
     @Override
     public void update(String namespace, String name, Handler<AsyncResult<Void>> handler) {
-        // TODO don't pass the same handler
-        execute(CLUSTER_TYPE_ZOOKEEPER, OP_UPDATE, namespace, name, updateZk, ar -> {});
-        execute(CLUSTER_TYPE_KAFKA, OP_UPDATE, namespace, name, updateKafka, handler);
+        execute(CLUSTER_TYPE_ZOOKEEPER, OP_UPDATE, namespace, name, updateZk, ar -> {
+            if (ar.failed()) {
+                handler.handle(ar);
+            } else {
+                execute(CLUSTER_TYPE_KAFKA, OP_UPDATE, namespace, name, updateKafka, handler);
+            }
+        });
     }
 
     @Override

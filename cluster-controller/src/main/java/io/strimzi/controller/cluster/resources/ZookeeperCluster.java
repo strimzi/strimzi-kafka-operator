@@ -62,11 +62,11 @@ public class ZookeeperCluster extends AbstractCluster {
         return cluster + ZookeeperCluster.NAME_SUFFIX;
     }
 
-    private static String zookeeperMetricsName(String cluster) {
+    public static String zookeeperMetricsName(String cluster) {
         return cluster + ZookeeperCluster.METRICS_CONFIG_SUFFIX;
     }
 
-    private String zookeeperHeadlessName(String cluster) {
+    public static String zookeeperHeadlessName(String cluster) {
         return cluster + ZookeeperCluster.HEADLESS_NAME_SUFFIX;
     }
 
