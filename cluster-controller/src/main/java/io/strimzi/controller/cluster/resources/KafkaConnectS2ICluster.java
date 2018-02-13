@@ -1,3 +1,7 @@
+/*
+ * Copyright 2017-2018, Strimzi authors.
+ * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
+ */
 package io.strimzi.controller.cluster.resources;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
@@ -18,9 +22,6 @@ import io.fabric8.openshift.api.model.ImageLookupPolicyBuilder;
 import io.fabric8.openshift.api.model.ImageStream;
 import io.fabric8.openshift.api.model.ImageStreamBuilder;
 import io.fabric8.openshift.api.model.TagReference;
-import io.strimzi.controller.cluster.operations.resource.BuildConfigOperations;
-import io.strimzi.controller.cluster.operations.resource.DeploymentConfigOperations;
-import io.strimzi.controller.cluster.operations.resource.ImageStreamOperations;
 
 import java.util.Collections;
 import java.util.Map;

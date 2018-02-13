@@ -1,16 +1,18 @@
+/*
+ * Copyright 2017-2018, Strimzi authors.
+ * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
+ */
 package io.strimzi.controller.cluster.resources;
 
-import io.fabric8.kubernetes.api.model.*;
-import io.fabric8.kubernetes.api.model.extensions.*;
-import io.strimzi.controller.cluster.ClusterController;
-import io.strimzi.controller.cluster.operations.resource.BuildConfigOperations;
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.EnvVarBuilder;
+import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.strimzi.controller.cluster.operations.resource.DeploymentOperations;
-import io.strimzi.controller.cluster.operations.resource.ImageStreamOperations;
-import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
