@@ -4,9 +4,8 @@
         "http://checkstyle.sourceforge.net/dtds/configuration_1_3.dtd">
 
 <module name = "Checker">
-    <module name="Header">
+    <module name="RegexpHeader">
         <property name="headerFile" value="${checkstyle.header.file}"/>
-        <property name="ignoreLines" value="2"/><!-- includes copyright year -->
         <property name="fileExtensions" value="java"/>
     </module>
 </module>
