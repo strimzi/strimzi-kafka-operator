@@ -30,7 +30,7 @@ import java.util.List;
 /**
  * CRUD-style operations on a Kafka Connect cluster
  */
-public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<KafkaConnectS2ICluster, DeploymentConfig> {
+public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<KafkaConnectS2ICluster> {
 
     private static final Logger log = LoggerFactory.getLogger(KafkaConnectS2IClusterOperations.class.getName());
     private static final String CLUSTER_TYPE = "kafka-connect-s2i";

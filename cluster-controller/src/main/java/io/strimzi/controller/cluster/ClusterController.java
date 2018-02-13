@@ -144,6 +144,14 @@ public class ClusterController extends AbstractVerticle {
         stop.complete();
     }
 
+    private String name(HasMetadata resource) {
+        return resource.getMetadata().getName();
+    }
+
+    private String nameFromLabels(HasMetadata resource) {
+        return resource.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL);
+    }
+
     private void createConfigMapWatch(Handler<AsyncResult<Watch>> handler) {
         getVertx().executeBlocking(
                 future -> {
@@ -153,7 +161,7 @@ public class ClusterController extends AbstractVerticle {
                             Map<String, String> labels = cm.getMetadata().getLabels();
                             String type = labels.get(ClusterController.STRIMZI_TYPE_LABEL);
 
-                            final AbstractClusterOperations<?,?> cluster;
+                            final AbstractClusterOperations<?> cluster;
                             if (type == null) {
                                 log.warn("Missing type in Config Map {}", cm.getMetadata().getName());
                                 return;
@@ -171,15 +179,15 @@ public class ClusterController extends AbstractVerticle {
                             switch (action) {
                                 case ADDED:
                                     log.info("New ConfigMap {}", cm.getMetadata().getName());
-                                    cluster.createByName(namespace, cm);
+                                    cluster.create(namespace, name(cm));
                                     break;
                                 case DELETED:
                                     log.info("Deleted ConfigMap {}", cm.getMetadata().getName());
-                                    cluster.deleteByName(namespace, cm);
+                                    cluster.delete(namespace, name(cm));
                                     break;
                                 case MODIFIED:
                                     log.info("Modified ConfigMap {}", cm.getMetadata().getName());
-                                    cluster.updateByName(namespace, cm);
+                                    cluster.update(namespace, name(cm));
                                     break;
                                 case ERROR:
                                     log.error("Failed ConfigMap {}", cm.getMetadata().getName());
@@ -267,21 +275,21 @@ public class ClusterController extends AbstractVerticle {
     private void addKafkaClusters(List<ConfigMap> add)   {
         for (ConfigMap cm : add) {
             log.info("Reconciliation: Kafka cluster {} should be added", cm.getMetadata().getName());
-            kafkaClusterOperations.createByName(namespace, cm);
+            kafkaClusterOperations.create(namespace, name(cm));
         }
     }
 
     private void updateKafkaClusters(List<ConfigMap> update)   {
         for (ConfigMap cm : update) {
             log.info("Reconciliation: Kafka cluster {} should be checked for updates", cm.getMetadata().getName());
-            kafkaClusterOperations.updateByName(namespace, cm);
+            kafkaClusterOperations.update(namespace, name(cm));
         }
     }
 
     private void deleteKafkaClusters(List<StatefulSet> delete)   {
         for (StatefulSet ss : delete) {
             log.info("Reconciliation: Kafka cluster {} should be deleted", ss.getMetadata().getName());
-            kafkaClusterOperations.deleteByLabel(namespace, ss);
+            kafkaClusterOperations.delete(namespace, nameFromLabels(ss));
         }
     }
 
@@ -309,21 +317,21 @@ public class ClusterController extends AbstractVerticle {
     private void addKafkaConnectClusters(List<ConfigMap> add)   {
         for (ConfigMap cm : add) {
             log.info("Reconciliation: Kafka Connect cluster {} should be added", cm.getMetadata().getName());
-            kafkaConnectClusterOperations.createByName(namespace, cm);
+            kafkaConnectClusterOperations.create(namespace, name(cm));
         }
     }
 
     private void updateKafkaConnectClusters(List<ConfigMap> update)   {
         for (ConfigMap cm : update) {
             log.info("Reconciliation: Kafka Connect cluster {} should be checked for updates", cm.getMetadata().getName());
-            kafkaConnectClusterOperations.updateByName(namespace, cm);
+            kafkaConnectClusterOperations.update(namespace, name(cm));
         }
     }
 
     private void deleteKafkaConnectClusters(List<Deployment> delete)   {
         for (Deployment dep : delete) {
             log.info("Reconciliation: Kafka Connect cluster {} should be deleted", dep.getMetadata().getName());
-            kafkaConnectClusterOperations.deleteByLabel(namespace, dep);
+            kafkaConnectClusterOperations.delete(namespace, nameFromLabels(dep));
         }
     }
 
@@ -351,21 +359,21 @@ public class ClusterController extends AbstractVerticle {
     private void addKafkaConnectS2IClusters(List<ConfigMap> add)   {
         for (ConfigMap cm : add) {
             log.info("Reconciliation: Kafka Connect S2I cluster {} should be added", cm.getMetadata().getName());
-            kafkaConnectS2IClusterOperations.createByName(namespace, cm);
+            kafkaConnectS2IClusterOperations.create(namespace, name(cm));
         }
     }
 
     private void updateKafkaConnectS2IClusters(List<ConfigMap> update)   {
         for (ConfigMap cm : update) {
             log.info("Reconciliation: Kafka Connect S2I cluster {} should be checked for updates", cm.getMetadata().getName());
-            kafkaConnectS2IClusterOperations.updateByName(namespace, cm);
+            kafkaConnectS2IClusterOperations.update(namespace, name(cm));
         }
     }
 
     private void deleteKafkaConnectS2IClusters(List<DeploymentConfig> delete)   {
         for (DeploymentConfig dep : delete) {
             log.info("Reconciliation: Kafka Connect S2I cluster {} should be deleted", dep.getMetadata().getName());
-            kafkaConnectS2IClusterOperations.deleteByLabel(namespace, dep);
+            kafkaConnectS2IClusterOperations.delete(namespace, nameFromLabels(dep));
         }
     }
 

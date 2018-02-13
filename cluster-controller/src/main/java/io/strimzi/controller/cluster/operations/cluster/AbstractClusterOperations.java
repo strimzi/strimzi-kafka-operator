@@ -26,10 +26,8 @@ import org.slf4j.LoggerFactory;
  * This class manages a per-cluster-type and per-cluster locking strategy so only one operation per cluster
  * can proceed at once.
  * @param <C> The type of Kubernetes client
-*  @param <R> The type of labelled resource used for label-based operations
  */
-public abstract class AbstractClusterOperations<C extends AbstractCluster,
-        R extends HasMetadata> {
+public abstract class AbstractClusterOperations<C extends AbstractCluster> {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractClusterOperations.class.getName());
 
@@ -128,8 +126,7 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
 
     protected abstract void create(String namespace, String name, Handler<AsyncResult<Void>> handler);
 
-    public void createByName(String namespace, ConfigMap add)   {
-        String name = add.getMetadata().getName();
+    public void create(String namespace, String name)   {
         log.info("Adding {} cluster {}", clusterDescription, name);
 
         create(namespace, name, res -> {
@@ -144,19 +141,8 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
 
     protected abstract void delete(String namespace, String name, Handler<AsyncResult<Void>> handler);
 
-    public void deleteByLabel(String namespace, R dep)   {
-        String name = dep.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL);
-        log.info("Deleting {}, cluster {} in namespace {}", clusterDescription, name, namespace);
-        delete(namespace, name);
-    }
-
-    public void deleteByName(String namespace, ConfigMap cm)   {
-        String name = cm.getMetadata().getName();
+    public void delete(String namespace, String name)   {
         log.info("Deleting {} cluster {} in namespace {}", clusterDescription, name, namespace);
-        delete(namespace, name);
-    }
-
-    private void delete(String namespace, String name)   {
         delete(namespace, name, res -> {
             if (res.succeeded()) {
                 log.info("{} cluster deleted {} in namespace {}", clusterDescription, name, namespace);
@@ -169,10 +155,9 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
 
     protected abstract void update(String namespace, String name, Handler<AsyncResult<Void>> handler);
 
-    public void updateByName(String namespace, ConfigMap cm)   {
-        String name = cm.getMetadata().getName();
-        log.info("Checking for updates in {} cluster {}", clusterDescription, cm.getMetadata().getName());
+    public void update(String namespace, String name)   {
 
+        log.info("Checking for updates in {} cluster {}", clusterDescription, name);
         update(namespace, name, res2 -> {
             if (res2.succeeded()) {
                 log.info("{} cluster updated {}", clusterDescription, name);

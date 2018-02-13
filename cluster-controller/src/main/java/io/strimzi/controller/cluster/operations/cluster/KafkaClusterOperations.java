@@ -29,7 +29,7 @@ import java.util.List;
 /**
  * CRUD-style operations on a Kafka cluster
  */
-public class KafkaClusterOperations extends AbstractClusterOperations<KafkaCluster, StatefulSet> {
+public class KafkaClusterOperations extends AbstractClusterOperations<KafkaCluster> {
     private static final Logger log = LoggerFactory.getLogger(KafkaClusterOperations.class.getName());
     private static final String CLUSTER_TYPE_ZOOKEEPER = "zookeeper";
     private static final String CLUSTER_TYPE_KAFKA = "kafka";

@@ -27,7 +27,7 @@ import java.util.List;
 /**
  * CRUD-style operations on a Kafka Connect cluster
  */
-public class KafkaConnectClusterOperations extends AbstractClusterOperations<KafkaConnectCluster, Deployment> {
+public class KafkaConnectClusterOperations extends AbstractClusterOperations<KafkaConnectCluster> {
 
     private static final Logger log = LoggerFactory.getLogger(KafkaConnectClusterOperations.class.getName());
     private static final String CLUSTER_TYPE_CONNECT = "kafka-connect";
