@@ -7,6 +7,7 @@ package io.strimzi.controller.topic;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import io.strimzi.controller.topic.zk.Zk;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
@@ -25,6 +26,8 @@ import java.util.stream.Collectors;
 public class Session extends AbstractVerticle {
 
     private final static Logger logger = LoggerFactory.getLogger(Session.class);
+
+    private static final int HEALTH_SERVER_PORT = 8080;
 
     private final Config config;
     private final KubernetesClient kubeClient;
@@ -128,6 +131,10 @@ public class Session extends AbstractVerticle {
             logger.debug("Watching configmaps matching {}", cmPredicate);
             Session.this.topicCmWatch = kubeClient.configMaps().inNamespace(kubeClient.getNamespace()).watch(new ConfigMapWatcher(controller, cmPredicate));
             logger.debug("Watching setup");
+
+            // start the HTTP server for healthchecks
+            this.startHealthServer();
+
         }, "configmap-watcher");
         logger.debug("Starting {}", configMapThread);
         configMapThread.start();
@@ -190,4 +197,20 @@ public class Session extends AbstractVerticle {
         });
     }
 
+    /**
+     * Start an HTTP health server
+     */
+    private void startHealthServer() {
+
+        this.vertx.createHttpServer()
+                .requestHandler(request -> {
+
+                    if (request.path().equals("/healthy")) {
+                        request.response().setStatusCode(HttpResponseStatus.OK.code()).end();
+                    } else if (request.path().equals("/ready")) {
+                        request.response().setStatusCode(HttpResponseStatus.OK.code()).end();
+                    }
+                })
+                .listen(HEALTH_SERVER_PORT);
+    }
 }
