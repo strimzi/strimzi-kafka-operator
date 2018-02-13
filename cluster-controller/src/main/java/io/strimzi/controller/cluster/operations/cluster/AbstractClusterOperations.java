@@ -17,6 +17,8 @@ import io.vertx.core.shareddata.Lock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
+
 /**
  * Abstract cluster creation, update, read, delection, etc, for a generic cluster type {@code C}.
  * This class applies the template method pattern, first obtaining the desired cluster configuration
@@ -167,5 +169,15 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster> {
             }
         });
     }
+
+    protected String name(HasMetadata resource) {
+        return resource.getMetadata().getName();
+    }
+
+    protected String nameFromLabels(HasMetadata resource) {
+        return resource.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL);
+    }
+
+    public abstract void reconcile(String namespace, Map<String, String> labels);
 
 }

@@ -24,7 +24,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * CRUD-style operations on a Kafka cluster
@@ -421,12 +425,55 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
         }
     };
 
+    @Override
     public void update(String namespace, String name, Handler<AsyncResult<Void>> handler) {
         // TODO don't pass the same handler
         execute(CLUSTER_TYPE_ZOOKEEPER, OP_UPDATE, namespace, name, updateZk, ar -> {});
         execute(CLUSTER_TYPE_KAFKA, OP_UPDATE, namespace, name, updateKafka, handler);
     }
 
+    @Override
+    public void reconcile(String namespace, Map<String, String> labels) {
+        log.info("Reconciling Kafka clusters ...");
+
+        Map<String, String> kafkaLabels = new HashMap(labels);
+        kafkaLabels.put(ClusterController.STRIMZI_TYPE_LABEL, KafkaCluster.TYPE);
+
+        List<ConfigMap> cms = configMapOperations.list(namespace, kafkaLabels);
+        List<StatefulSet> sss = statefulSetOperations.list(namespace, kafkaLabels);
+
+        Set<String> cmsNames = cms.stream().map(cm -> cm.getMetadata().getName()).collect(Collectors.toSet());
+        Set<String> sssNames = sss.stream().map(cm -> cm.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL)).collect(Collectors.toSet());
+
+        List<ConfigMap> addList = cms.stream().filter(cm -> !sssNames.contains(cm.getMetadata().getName())).collect(Collectors.toList());
+        List<ConfigMap> updateList = cms.stream().filter(cm -> sssNames.contains(cm.getMetadata().getName())).collect(Collectors.toList());
+        List<StatefulSet> deletionList = sss.stream().filter(ss -> !cmsNames.contains(ss.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL))).collect(Collectors.toList());
+
+        add(namespace, addList);
+        delete(namespace, deletionList);
+        update(namespace, updateList);
+    }
+
+    private void add(String namespace, List<ConfigMap> add)   {
+        for (ConfigMap cm : add) {
+            log.info("Reconciliation: Kafka cluster {} should be added", cm.getMetadata().getName());
+            create(namespace, name(cm));
+        }
+    }
+
+    private void update(String namespace, List<ConfigMap> update)   {
+        for (ConfigMap cm : update) {
+            log.info("Reconciliation: Kafka cluster {} should be checked for updates", cm.getMetadata().getName());
+            update(namespace, name(cm));
+        }
+    }
+
+    private void delete(String namespace, List<StatefulSet> delete)   {
+        for (StatefulSet ss : delete) {
+            log.info("Reconciliation: Kafka cluster {} should be deleted", ss.getMetadata().getName());
+            delete(namespace, nameFromLabels(ss));
+        }
+    }
 
 
 }

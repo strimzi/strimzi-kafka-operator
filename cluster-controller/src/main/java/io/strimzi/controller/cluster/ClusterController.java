@@ -4,43 +4,29 @@
  */
 package io.strimzi.controller.cluster;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.openshift.api.model.DeploymentConfig;
-import io.fabric8.openshift.client.OpenShiftClient;
+import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.fabric8.kubernetes.client.Watch;
+import io.fabric8.kubernetes.client.Watcher;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.strimzi.controller.cluster.operations.cluster.AbstractClusterOperations;
 import io.strimzi.controller.cluster.operations.cluster.KafkaClusterOperations;
 import io.strimzi.controller.cluster.operations.cluster.KafkaConnectClusterOperations;
 import io.strimzi.controller.cluster.operations.cluster.KafkaConnectS2IClusterOperations;
-import io.strimzi.controller.cluster.operations.resource.BuildConfigOperations;
-import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
-import io.strimzi.controller.cluster.operations.resource.DeploymentConfigOperations;
-import io.strimzi.controller.cluster.operations.resource.DeploymentOperations;
-import io.strimzi.controller.cluster.operations.resource.ImageStreamOperations;
-import io.strimzi.controller.cluster.operations.resource.PvcOperations;
-import io.strimzi.controller.cluster.operations.resource.ServiceOperations;
-import io.strimzi.controller.cluster.operations.resource.StatefulSetOperations;
 import io.strimzi.controller.cluster.resources.KafkaCluster;
 import io.strimzi.controller.cluster.resources.KafkaConnectCluster;
-import io.fabric8.kubernetes.api.model.*;
-import io.fabric8.kubernetes.api.model.extensions.Deployment;
-import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.fabric8.kubernetes.client.Watch;
-import io.fabric8.kubernetes.client.Watcher;
 import io.strimzi.controller.cluster.resources.KafkaConnectS2ICluster;
-import io.vertx.core.*;
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 public class ClusterController extends AbstractVerticle {
 
@@ -59,11 +45,6 @@ public class ClusterController extends AbstractVerticle {
     private final Map<String, String> labels;
     private final String namespace;
     private final long reconciliationInterval;
-    private final ConfigMapOperations configMapOperations;
-    private final StatefulSetOperations statefulSetOperations;
-    private final DeploymentOperations deploymentOperations;
-    private final DeploymentConfigOperations deploymentConfigOperations;
-    private final boolean isOpenShift;
 
     private Watch configMapWatch;
 
@@ -72,36 +53,18 @@ public class ClusterController extends AbstractVerticle {
     private final KafkaConnectClusterOperations kafkaConnectClusterOperations;
     private final KafkaConnectS2IClusterOperations kafkaConnectS2IClusterOperations;
 
-    public ClusterController(Vertx vertx, ClusterControllerConfig config) {
+    public ClusterController(ClusterControllerConfig config,
+                             KafkaClusterOperations kafkaClusterOperations,
+                             KafkaConnectClusterOperations kafkaConnectClusterOperations,
+                             KafkaConnectS2IClusterOperations kafkaConnectS2IClusterOperations) {
         log.info("Creating ClusterController");
-
         this.namespace = config.getNamespace();
         this.labels = config.getLabels();
         this.reconciliationInterval = config.getReconciliationInterval();
         this.client = new DefaultKubernetesClient();
-
-        ServiceOperations serviceOperations = new ServiceOperations(vertx, client);
-        statefulSetOperations = new StatefulSetOperations(vertx, client);
-        configMapOperations = new ConfigMapOperations(vertx, client);
-        PvcOperations pvcOperations = new PvcOperations(vertx, client);
-        deploymentOperations = new DeploymentOperations(vertx, client);
-        ImageStreamOperations imagesStreamOperations = null;
-        BuildConfigOperations buildConfigOperations = null;
-        isOpenShift = Boolean.TRUE.equals(client.isAdaptable(OpenShiftClient.class));
-
-        this.kafkaClusterOperations = new KafkaClusterOperations(vertx, isOpenShift, configMapOperations, serviceOperations, statefulSetOperations, pvcOperations);
-        this.kafkaConnectClusterOperations = new KafkaConnectClusterOperations(vertx, isOpenShift, configMapOperations, deploymentOperations, serviceOperations);
-
-        if (isOpenShift) {
-            imagesStreamOperations = new ImageStreamOperations(vertx, client.adapt(OpenShiftClient.class));
-            buildConfigOperations = new BuildConfigOperations(vertx, client.adapt(OpenShiftClient.class));
-            this.deploymentConfigOperations = new DeploymentConfigOperations(vertx, client.adapt(OpenShiftClient.class));
-        } else {
-            this.deploymentConfigOperations = null;
-        }
-        this.kafkaConnectS2IClusterOperations = new KafkaConnectS2IClusterOperations(vertx, isOpenShift,
-                configMapOperations, deploymentConfigOperations,
-                serviceOperations, imagesStreamOperations, buildConfigOperations);
+        this.kafkaClusterOperations = kafkaClusterOperations;
+        this.kafkaConnectClusterOperations = kafkaConnectClusterOperations;
+        this.kafkaConnectS2IClusterOperations = kafkaConnectS2IClusterOperations;
     }
 
     @Override
@@ -145,14 +108,6 @@ public class ClusterController extends AbstractVerticle {
         stop.complete();
     }
 
-    private String name(HasMetadata resource) {
-        return resource.getMetadata().getName();
-    }
-
-    private String nameFromLabels(HasMetadata resource) {
-        return resource.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL);
-    }
-
     private void createConfigMapWatch(Handler<AsyncResult<Watch>> handler) {
         getVertx().executeBlocking(
                 future -> {
@@ -176,7 +131,7 @@ public class ClusterController extends AbstractVerticle {
                                 log.warn("Unknown type {} received in Config Map {}", labels.get(ClusterController.STRIMZI_TYPE_LABEL), cm.getMetadata().getName());
                                 return;
                             }
-                            String name = name(cm);
+                            String name = cm.getMetadata().getName();
                             switch (action) {
                                 case ADDED:
                                     log.info("New ConfigMap {}", name);
@@ -244,138 +199,9 @@ public class ClusterController extends AbstractVerticle {
       Periodical reconciliation (in case we lost some event)
      */
     private void reconcile() {
-        reconcileKafka();
-        reconcileKafkaConnect();
-
-        if (isOpenShift) {
-            reconcileKafkaConnectS2I();
-        }
-    }
-
-    private void reconcileKafka() {
-        log.info("Reconciling Kafka clusters ...");
-
-        Map<String, String> kafkaLabels = new HashMap(labels);
-        kafkaLabels.put(ClusterController.STRIMZI_TYPE_LABEL, KafkaCluster.TYPE);
-
-        List<ConfigMap> cms = configMapOperations.list(namespace, kafkaLabels);
-        List<StatefulSet> sss = statefulSetOperations.list(namespace, kafkaLabels);
-
-        Set<String> cmsNames = cms.stream().map(cm -> cm.getMetadata().getName()).collect(Collectors.toSet());
-        Set<String> sssNames = sss.stream().map(cm -> cm.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL)).collect(Collectors.toSet());
-
-        List<ConfigMap> addList = cms.stream().filter(cm -> !sssNames.contains(cm.getMetadata().getName())).collect(Collectors.toList());
-        List<ConfigMap> updateList = cms.stream().filter(cm -> sssNames.contains(cm.getMetadata().getName())).collect(Collectors.toList());
-        List<StatefulSet> deletionList = sss.stream().filter(ss -> !cmsNames.contains(ss.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL))).collect(Collectors.toList());
-
-        addKafkaClusters(addList);
-        deleteKafkaClusters(deletionList);
-        updateKafkaClusters(updateList);
-    }
-
-    private void addKafkaClusters(List<ConfigMap> add)   {
-        for (ConfigMap cm : add) {
-            log.info("Reconciliation: Kafka cluster {} should be added", cm.getMetadata().getName());
-            kafkaClusterOperations.create(namespace, name(cm));
-        }
-    }
-
-    private void updateKafkaClusters(List<ConfigMap> update)   {
-        for (ConfigMap cm : update) {
-            log.info("Reconciliation: Kafka cluster {} should be checked for updates", cm.getMetadata().getName());
-            kafkaClusterOperations.update(namespace, name(cm));
-        }
-    }
-
-    private void deleteKafkaClusters(List<StatefulSet> delete)   {
-        for (StatefulSet ss : delete) {
-            log.info("Reconciliation: Kafka cluster {} should be deleted", ss.getMetadata().getName());
-            kafkaClusterOperations.delete(namespace, nameFromLabels(ss));
-        }
-    }
-
-    private void reconcileKafkaConnect() {
-        log.info("Reconciling Kafka Connect clusters ...");
-
-        Map<String, String> kafkaLabels = new HashMap(labels);
-        kafkaLabels.put(ClusterController.STRIMZI_TYPE_LABEL, KafkaConnectCluster.TYPE);
-
-        List<ConfigMap> cms = configMapOperations.list(namespace, kafkaLabels);
-        List<Deployment> deps = deploymentOperations.list(namespace, kafkaLabels);
-
-        Set<String> cmsNames = cms.stream().map(cm -> cm.getMetadata().getName()).collect(Collectors.toSet());
-        Set<String> depsNames = deps.stream().map(cm -> cm.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL)).collect(Collectors.toSet());
-
-        List<ConfigMap> addList = cms.stream().filter(cm -> !depsNames.contains(cm.getMetadata().getName())).collect(Collectors.toList());
-        List<ConfigMap> updateList = cms.stream().filter(cm -> depsNames.contains(cm.getMetadata().getName())).collect(Collectors.toList());
-        List<Deployment> deletionList = deps.stream().filter(dep -> !cmsNames.contains(dep.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL))).collect(Collectors.toList());
-
-        addKafkaConnectClusters(addList);
-        deleteKafkaConnectClusters(deletionList);
-        updateKafkaConnectClusters(updateList);
-    }
-
-    private void addKafkaConnectClusters(List<ConfigMap> add)   {
-        for (ConfigMap cm : add) {
-            log.info("Reconciliation: Kafka Connect cluster {} should be added", cm.getMetadata().getName());
-            kafkaConnectClusterOperations.create(namespace, name(cm));
-        }
-    }
-
-    private void updateKafkaConnectClusters(List<ConfigMap> update)   {
-        for (ConfigMap cm : update) {
-            log.info("Reconciliation: Kafka Connect cluster {} should be checked for updates", cm.getMetadata().getName());
-            kafkaConnectClusterOperations.update(namespace, name(cm));
-        }
-    }
-
-    private void deleteKafkaConnectClusters(List<Deployment> delete)   {
-        for (Deployment dep : delete) {
-            log.info("Reconciliation: Kafka Connect cluster {} should be deleted", dep.getMetadata().getName());
-            kafkaConnectClusterOperations.delete(namespace, nameFromLabels(dep));
-        }
-    }
-
-    private void reconcileKafkaConnectS2I() {
-        log.info("Reconciling Kafka Connect S2I clusters ...");
-
-        Map<String, String> kafkaLabels = new HashMap(labels);
-        kafkaLabels.put(ClusterController.STRIMZI_TYPE_LABEL, KafkaConnectS2ICluster.TYPE);
-
-        List<ConfigMap> cms = configMapOperations.list(namespace, kafkaLabels);
-        List<DeploymentConfig> deps = deploymentConfigOperations.list(namespace, kafkaLabels);
-
-        Set<String> cmsNames = cms.stream().map(cm -> cm.getMetadata().getName()).collect(Collectors.toSet());
-        Set<String> depsNames = deps.stream().map(cm -> cm.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL)).collect(Collectors.toSet());
-
-        List<ConfigMap> addList = cms.stream().filter(cm -> !depsNames.contains(cm.getMetadata().getName())).collect(Collectors.toList());
-        List<ConfigMap> updateList = cms.stream().filter(cm -> depsNames.contains(cm.getMetadata().getName())).collect(Collectors.toList());
-        List<DeploymentConfig> deletionList = deps.stream().filter(dep -> !cmsNames.contains(dep.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL))).collect(Collectors.toList());
-
-        addKafkaConnectS2IClusters(addList);
-        deleteKafkaConnectS2IClusters(deletionList);
-        updateKafkaConnectS2IClusters(updateList);
-    }
-
-    private void addKafkaConnectS2IClusters(List<ConfigMap> add)   {
-        for (ConfigMap cm : add) {
-            log.info("Reconciliation: Kafka Connect S2I cluster {} should be added", cm.getMetadata().getName());
-            kafkaConnectS2IClusterOperations.create(namespace, name(cm));
-        }
-    }
-
-    private void updateKafkaConnectS2IClusters(List<ConfigMap> update)   {
-        for (ConfigMap cm : update) {
-            log.info("Reconciliation: Kafka Connect S2I cluster {} should be checked for updates", cm.getMetadata().getName());
-            kafkaConnectS2IClusterOperations.update(namespace, name(cm));
-        }
-    }
-
-    private void deleteKafkaConnectS2IClusters(List<DeploymentConfig> delete)   {
-        for (DeploymentConfig dep : delete) {
-            log.info("Reconciliation: Kafka Connect S2I cluster {} should be deleted", dep.getMetadata().getName());
-            kafkaConnectS2IClusterOperations.delete(namespace, nameFromLabels(dep));
-        }
+        kafkaClusterOperations.reconcile(namespace, labels);
+        kafkaConnectClusterOperations.reconcile(namespace, labels);
+        kafkaConnectS2IClusterOperations.reconcile(namespace, labels);
     }
 
     /**
