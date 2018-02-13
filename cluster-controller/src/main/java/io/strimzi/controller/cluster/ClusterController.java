@@ -63,6 +63,7 @@ public class ClusterController extends AbstractVerticle {
     private final StatefulSetOperations statefulSetOperations;
     private final DeploymentOperations deploymentOperations;
     private final DeploymentConfigOperations deploymentConfigOperations;
+    private final boolean isOpenShift;
 
     private Watch configMapWatch;
 
@@ -86,7 +87,7 @@ public class ClusterController extends AbstractVerticle {
         deploymentOperations = new DeploymentOperations(vertx, client);
         ImageStreamOperations imagesStreamOperations = null;
         BuildConfigOperations buildConfigOperations = null;
-        boolean isOpenShift = Boolean.TRUE.equals(client.isAdaptable(OpenShiftClient.class));
+        isOpenShift = Boolean.TRUE.equals(client.isAdaptable(OpenShiftClient.class));
 
         this.kafkaClusterOperations = new KafkaClusterOperations(vertx, isOpenShift, configMapOperations, serviceOperations, statefulSetOperations, pvcOperations);
         this.kafkaConnectClusterOperations = new KafkaConnectClusterOperations(vertx, isOpenShift, configMapOperations, deploymentOperations, serviceOperations);
@@ -175,26 +176,26 @@ public class ClusterController extends AbstractVerticle {
                                 log.warn("Unknown type {} received in Config Map {}", labels.get(ClusterController.STRIMZI_TYPE_LABEL), cm.getMetadata().getName());
                                 return;
                             }
-
+                            String name = name(cm);
                             switch (action) {
                                 case ADDED:
-                                    log.info("New ConfigMap {}", cm.getMetadata().getName());
-                                    cluster.create(namespace, name(cm));
+                                    log.info("New ConfigMap {}", name);
+                                    cluster.create(namespace, name);
                                     break;
                                 case DELETED:
-                                    log.info("Deleted ConfigMap {}", cm.getMetadata().getName());
-                                    cluster.delete(namespace, name(cm));
+                                    log.info("Deleted ConfigMap {}", name);
+                                    cluster.delete(namespace, name);
                                     break;
                                 case MODIFIED:
-                                    log.info("Modified ConfigMap {}", cm.getMetadata().getName());
-                                    cluster.update(namespace, name(cm));
+                                    log.info("Modified ConfigMap {}", name);
+                                    cluster.update(namespace, name);
                                     break;
                                 case ERROR:
-                                    log.error("Failed ConfigMap {}", cm.getMetadata().getName());
+                                    log.error("Failed ConfigMap {}", name);
                                     reconcile();
                                     break;
                                 default:
-                                    log.error("Unknown action: {}", cm.getMetadata().getName());
+                                    log.error("Unknown action: {}", name);
                                     reconcile();
                             }
                         }
@@ -246,7 +247,7 @@ public class ClusterController extends AbstractVerticle {
         reconcileKafka();
         reconcileKafkaConnect();
 
-        if (kafkaConnectS2IClusterOperations != null) {
+        if (isOpenShift) {
             reconcileKafkaConnectS2I();
         }
     }
