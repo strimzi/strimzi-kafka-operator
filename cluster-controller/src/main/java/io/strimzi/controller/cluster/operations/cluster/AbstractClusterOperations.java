@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
  * This class manages a per-cluster-type and per-cluster locking strategy so only one operation per cluster
  * can proceed at once.
  * @param <C> The type of Kubernetes client
+*  @param <R> The type of labelled resource used for label-based operations
  */
 public abstract class AbstractClusterOperations<C extends AbstractCluster,
         R extends HasMetadata> {
@@ -43,7 +44,7 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
     protected final String clusterDescription;
 
     /**
-     * @param vertx The vertx instance
+     * @param vertx The Vertx instance
      * @param isOpenShift True iff running on OpenShift
      * @param clusterDescription A description of the cluster, for logging. This is a high level description and different from
      *                           the {@code clusterType} passed to {@link #getLockName(String, String, String)}
