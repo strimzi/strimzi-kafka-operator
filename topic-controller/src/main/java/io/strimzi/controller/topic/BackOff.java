@@ -18,9 +18,9 @@ public class BackOff {
     }
 
     public BackOff(long scaleMs, int base, int maxAttempts) {
-        assert(scaleMs > 0);
-        assert(base > 0);
-        assert(maxAttempts > 0);
+        assert scaleMs > 0;
+        assert base > 0;
+        assert maxAttempts > 0;
         this.scaleMs = scaleMs;
         this.base = base;
         this.maxAttempts = maxAttempts;
@@ -47,7 +47,7 @@ public class BackOff {
         while (n-- > 1) {
             pow *= base;
         }
-        return scaleMs*pow;
+        return scaleMs * pow;
     }
 
     public long totalDelayMs() {

@@ -30,7 +30,7 @@ import java.util.concurrent.ExecutionException;
  */
 public class ZkImpl implements Zk {
 
-    private final static Logger logger = LoggerFactory.getLogger(ZkImpl.class);
+    private final static Logger LOGGER = LoggerFactory.getLogger(ZkImpl.class);
     public static final String PREFIX_DATA = "data:";
     public static final String PREFIX_CHILDREN = "children:";
     public static final String PREFIX_EXISTS = "exists:";
@@ -59,7 +59,7 @@ public class ZkImpl implements Zk {
                 // See https://wiki.apache.org/hadoop/ZooKeeper/FAQ
                 // for state transitions
                 Watcher.Event.KeeperState state = watchedEvent.getState();
-                logger.debug("In state {}", state);
+                LOGGER.debug("In state {}", state);
                 final Future<Zk> future;
                 final Handler<AsyncResult<Zk>> handler;
                 switch (state) {
@@ -75,7 +75,7 @@ public class ZkImpl implements Zk {
                         }
                         /* fall through */
                     case SyncConnected:
-                        logger.debug("Connected, session id {}", zk().getSessionId());
+                        LOGGER.debug("Connected, session id {}", zk().getSessionId());
                         f.complete(null);
                         break;
                     case Expired:
@@ -140,7 +140,7 @@ public class ZkImpl implements Zk {
     @Override
     public Zk create(String path, byte[] data, List<ACL> acls, CreateMode createMode, Handler<AsyncResult<Void>> handler) {
         ZooKeeper zookeeper;
-        synchronized(this) {
+        synchronized (this) {
             zookeeper = zk;
         }
         if (zookeeper == null) {
@@ -148,7 +148,7 @@ public class ZkImpl implements Zk {
             return this;
         }
         zookeeper.create(path, data == null ? new byte[0] : data, acls, createMode,
-        (rc, path2, ctx, name) -> invokeOnContext(handler, path, rc, null), null);
+            (rc, path2, ctx, name) -> invokeOnContext(handler, path, rc, null), null);
         return this;
     }
 
@@ -156,7 +156,7 @@ public class ZkImpl implements Zk {
     @Override
     public Zk setData(String path, byte[] data, int version, Handler<AsyncResult<Void>> handler) {
         ZooKeeper zookeeper;
-        synchronized(this) {
+        synchronized (this) {
             zookeeper = zk;
         }
         if (zookeeper == null) {
@@ -164,7 +164,7 @@ public class ZkImpl implements Zk {
             return this;
         }
         zookeeper.setData(path, data, version,
-                (int rc, String path2, Object ctx, Stat stat) -> invokeOnContext(handler, path, rc, null),
+            (int rc, String path2, Object ctx, Stat stat) -> invokeOnContext(handler, path, rc, null),
                 null);
         return this;
     }
@@ -177,7 +177,7 @@ public class ZkImpl implements Zk {
     @Override
     public Zk getData(String path, Handler<AsyncResult<byte[]>> handler) {
         ZooKeeper zookeeper;
-        synchronized(this) {
+        synchronized (this) {
             zookeeper = zk;
         }
         if (zookeeper == null) {
@@ -185,7 +185,7 @@ public class ZkImpl implements Zk {
             return this;
         }
         final AsyncCallback.DataCallback callback = (rc, path2, ctx, data, stat) -> {
-            Watcher.Event.EventType eventType = (Watcher.Event.EventType)ctx;
+            Watcher.Event.EventType eventType = (Watcher.Event.EventType) ctx;
             if (eventType == null // first time
                     || eventType == Watcher.Event.EventType.NodeDataChanged) {
                 Future<byte[]> future = mapResult(path2, rc, data);
@@ -221,15 +221,15 @@ public class ZkImpl implements Zk {
     }
 
     private Handler<AsyncResult<byte[]>> getDataWatchHandler(String path) {
-        return (Handler<AsyncResult<byte[]>>)watches.get(PREFIX_DATA + path);
+        return (Handler<AsyncResult<byte[]>>) watches.get(PREFIX_DATA + path);
     }
 
     private Handler<AsyncResult<List<String>>> getChildrenWatchHandler(String path) {
-        return (Handler<AsyncResult<List<String>>>)watches.get(PREFIX_CHILDREN + path);
+        return (Handler<AsyncResult<List<String>>>) watches.get(PREFIX_CHILDREN + path);
     }
 
     private Handler<AsyncResult<Stat>> getExistsWatchHandler(String path) {
-        return (Handler<AsyncResult<Stat>>)watches.get(PREFIX_EXISTS + path);
+        return (Handler<AsyncResult<Stat>>) watches.get(PREFIX_EXISTS + path);
     }
 
     @Override
@@ -247,7 +247,7 @@ public class ZkImpl implements Zk {
     @Override
     public Zk delete(String path, int version, Handler<AsyncResult<Void>> handler) {
         ZooKeeper zookeeper;
-        synchronized(this) {
+        synchronized (this) {
             zookeeper = zk;
         }
         if (zookeeper == null) {
@@ -262,7 +262,7 @@ public class ZkImpl implements Zk {
     @Override
     public Zk exists(String path, Handler<AsyncResult<Stat>> handler) {
         ZooKeeper zookeeper;
-        synchronized(this) {
+        synchronized (this) {
             zookeeper = zk;
         }
         if (zookeeper == null) {
@@ -322,7 +322,7 @@ public class ZkImpl implements Zk {
     @Override
     public Zk children(String path, Handler<AsyncResult<List<String>>> handler) {
         ZooKeeper zookeeper;
-        synchronized(this) {
+        synchronized (this) {
             zookeeper = zk;
         }
         if (zookeeper == null) {
@@ -330,9 +330,9 @@ public class ZkImpl implements Zk {
             return this;
         }
         final AsyncCallback.Children2Callback callback = (rc, path2, ctx, children, stat) -> {
-            Watcher.Event.EventType eventType = (Watcher.Event.EventType)ctx;
+            Watcher.Event.EventType eventType = (Watcher.Event.EventType) ctx;
             KeeperException.Code code = KeeperException.Code.get(rc);
-            logger.debug("{}: {} {}", path2, eventType, code);
+            LOGGER.debug("{}: {} {}", path2, eventType, code);
             if (eventType == null // first time
                     || eventType == Watcher.Event.EventType.NodeChildrenChanged
                     || code != KeeperException.Code.OK) {

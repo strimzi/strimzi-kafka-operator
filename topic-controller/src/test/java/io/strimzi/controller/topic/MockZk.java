@@ -18,10 +18,10 @@ import java.util.Map;
 
 class MockZk implements Zk {
 
-    public AsyncResult<Void> createResult = Future.failedFuture("Unexpected mock interaction. Configure " + getClass().getSimpleName()+".connectResult");
-    public AsyncResult<Void> setDataResult = Future.failedFuture("Unexpected mock interaction. Configure " + getClass().getSimpleName()+".setDataResult");
-    public AsyncResult<List<String>> childrenResult = Future.failedFuture("Unexpected mock interaction. Configure " + getClass().getSimpleName()+".childrenResult");
-    public AsyncResult<byte[]> dataResult = Future.failedFuture("Unexpected mock interaction. Configure " + getClass().getSimpleName()+".dataResult");
+    public AsyncResult<Void> createResult = Future.failedFuture("Unexpected mock interaction. Configure " + getClass().getSimpleName() + ".connectResult");
+    public AsyncResult<Void> setDataResult = Future.failedFuture("Unexpected mock interaction. Configure " + getClass().getSimpleName() + ".setDataResult");
+    public AsyncResult<List<String>> childrenResult = Future.failedFuture("Unexpected mock interaction. Configure " + getClass().getSimpleName() + ".childrenResult");
+    public AsyncResult<byte[]> dataResult = Future.failedFuture("Unexpected mock interaction. Configure " + getClass().getSimpleName() + ".dataResult");
     private Handler<AsyncResult<List<String>>> childrenHandler;
     private Map<String, Handler<AsyncResult<byte[]>>> dataHandlers = new HashMap<>();
 

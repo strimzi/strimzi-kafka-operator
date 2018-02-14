@@ -4,7 +4,8 @@
  */
 package io.strimzi.test;
 
-import static io.strimzi.test.Exec.*;
+import static io.strimzi.test.Exec.isExecutableOnPath;
+import static io.strimzi.test.Exec.exec;
 
 public class OpenShift implements KubeCluster {
 

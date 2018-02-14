@@ -23,14 +23,14 @@ public class LabelPredicateTest {
         try {
             new LabelPredicate("foo");
             fail();
-        } catch(IllegalArgumentException e) {
+        } catch (IllegalArgumentException e) {
 
         }
 
         try {
             new LabelPredicate("foo", "1", "bar");
             fail();
-        } catch(IllegalArgumentException e) {
+        } catch (IllegalArgumentException e) {
 
         }
     }

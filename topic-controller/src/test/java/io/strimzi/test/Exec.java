@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
 import static java.lang.String.join;
 
 class Exec {
-    private static final Logger logger = LoggerFactory.getLogger(Exec.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(Exec.class);
 
     /**
      * Executes the given command in a subprocess.
@@ -55,7 +55,7 @@ class Exec {
 
     private static String execOutput(File out, List<String> cmd) throws KubeClusterException {
         try {
-            logger.info("{}", join(" ", cmd));
+            LOGGER.info("{}", join(" ", cmd));
             ProcessBuilder pb = new ProcessBuilder(cmd);
             if (out == null) {
                 pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
@@ -66,7 +66,7 @@ class Exec {
             Process p = pb.start();
             int sc = p.waitFor();
             if (sc != 0) {
-                throw new KubeClusterException(sc, "`"+ join(" ", cmd) + "` got status code " + sc);
+                throw new KubeClusterException(sc, "`" + join(" ", cmd) + "` got status code " + sc);
             }
             return out == null ? null : new String(Files.readAllBytes(out.toPath()));
         } catch (IOException e) {

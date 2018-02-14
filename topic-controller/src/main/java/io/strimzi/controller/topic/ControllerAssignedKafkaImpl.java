@@ -46,7 +46,7 @@ import java.util.regex.Pattern;
  */
 public class ControllerAssignedKafkaImpl extends BaseKafkaImpl {
 
-    private final static Logger logger = LoggerFactory.getLogger(ControllerAssignedKafkaImpl.class);
+    private final static Logger LOGGER = LoggerFactory.getLogger(ControllerAssignedKafkaImpl.class);
     private final Config config;
 
     public ControllerAssignedKafkaImpl(AdminClient adminClient, Vertx vertx, Config config) {
@@ -70,7 +70,7 @@ public class ControllerAssignedKafkaImpl extends BaseKafkaImpl {
     public void createTopic(Topic topic, Handler<AsyncResult<Void>> handler) {
         NewTopic newTopic = TopicSerialization.toNewTopic(topic, null);
 
-        logger.debug("Creating topic {}", newTopic);
+        LOGGER.debug("Creating topic {}", newTopic);
         KafkaFuture<Void> future = adminClient.createTopics(
                 Collections.singleton(newTopic)).values().get(newTopic.name());
         queueWork(new UniWork<>("createTopic", future, handler));
@@ -79,7 +79,7 @@ public class ControllerAssignedKafkaImpl extends BaseKafkaImpl {
     @Override
     public void changeReplicationFactor(Topic topic, Handler<AsyncResult<Void>> handler) {
 
-        logger.info("Changing replication factor of topic {} to {}", topic.getTopicName(), topic.getNumReplicas());
+        LOGGER.info("Changing replication factor of topic {} to {}", topic.getTopicName(), topic.getNumReplicas());
 
         final String zookeeper = config.get(Config.ZOOKEEPER_CONNECT);
         Future<File> generateFuture = Future.future();
@@ -87,9 +87,9 @@ public class ControllerAssignedKafkaImpl extends BaseKafkaImpl {
         // generate a reassignment
         vertx.executeBlocking(fut -> {
             try {
-                logger.debug("Generating reassignment json for topic {}", topic.getTopicName());
+                LOGGER.debug("Generating reassignment json for topic {}", topic.getTopicName());
                 String reassignment = generateReassignment(topic, zookeeper);
-                logger.debug("Reassignment json for topic {}: {}", topic.getTopicName(), reassignment);
+                LOGGER.debug("Reassignment json for topic {}: {}", topic.getTopicName(), reassignment);
                 File reassignmentJsonFile = createTmpFile("-reassignment.json");
                 try (Writer w = new OutputStreamWriter(new FileOutputStream(reassignmentJsonFile), StandardCharsets.UTF_8)) {
                     w.write(reassignment);
@@ -99,37 +99,37 @@ public class ControllerAssignedKafkaImpl extends BaseKafkaImpl {
                 fut.fail(e);
             }
         },
-        generateFuture.completer());
+            generateFuture.completer());
 
         Future<File> executeFuture = Future.future();
 
-        generateFuture.compose(reassignmentJsonFile-> {
+        generateFuture.compose(reassignmentJsonFile -> {
             // execute the reassignment
-            vertx.executeBlocking((fut) -> {
+            vertx.executeBlocking(fut -> {
                 final Long throttle = config.get(Config.REASSIGN_THROTTLE);
                 try {
-                    logger.debug("Starting reassignment for topic {} with throttle {}", topic.getTopicName(), throttle);
+                    LOGGER.debug("Starting reassignment for topic {} with throttle {}", topic.getTopicName(), throttle);
                     executeReassignment(reassignmentJsonFile, zookeeper, throttle);
                     fut.complete(reassignmentJsonFile);
                 } catch (Exception e) {
                     fut.fail(e);
                 }
             },
-            executeFuture.completer());
+                executeFuture.completer());
         }, executeFuture);
 
         Future<Void> periodicFuture = Future.future();
         Future<Void> reassignmentFinishedFuture = Future.future();
 
-        executeFuture.compose(reassignmentJsonFile-> {
+        executeFuture.compose(reassignmentJsonFile -> {
             // Poll repeatedly, calling --verify to remove the throttle
             long timeout = 10_000;
             long first = System.currentTimeMillis();
             final Long periodMs = config.get(Config.REASSIGN_VERIFY_INTERVAL_MS);
-            logger.debug("Verifying reassignment every {} seconds", TimeUnit.SECONDS.convert(periodMs, TimeUnit.MILLISECONDS));
-            vertx.setPeriodic(periodMs, (timerId) ->
+            LOGGER.debug("Verifying reassignment every {} seconds", TimeUnit.SECONDS.convert(periodMs, TimeUnit.MILLISECONDS));
+            vertx.setPeriodic(periodMs, timerId ->
                 vertx.<Boolean>executeBlocking(fut -> {
-                    logger.debug(String.format("Verifying reassignment for topic {} (timer id=%s)", topic.getTopicName(), timerId));
+                    LOGGER.debug(String.format("Verifying reassignment for topic {} (timer id=%s)", topic.getTopicName(), timerId));
 
                     final Long throttle = config.get(Config.REASSIGN_THROTTLE);
                     final boolean reassignmentComplete;
@@ -140,33 +140,35 @@ public class ControllerAssignedKafkaImpl extends BaseKafkaImpl {
                         return;
                     }
                     fut.complete(reassignmentComplete);
-                }, ar -> {
-                    if (ar.succeeded()) {
-                        if (ar.result()) {
-                            logger.info("Reassignment complete");
-                            delete(reassignmentJsonFile);
-                            logger.debug("Cancelling timer " + timerId);
-                            vertx.cancelTimer(timerId);
-                            reassignmentFinishedFuture.complete();
-                        } else if (System.currentTimeMillis() - first > timeout) {
-                            logger.error("Reassignment timed out");
-                            delete(reassignmentJsonFile);
-                            logger.debug("Cancelling timer " + timerId);
-                            vertx.cancelTimer(timerId);
-                            reassignmentFinishedFuture.fail("Timeout");
+                },
+                    ar -> {
+                        if (ar.succeeded()) {
+                            if (ar.result()) {
+                                LOGGER.info("Reassignment complete");
+                                delete(reassignmentJsonFile);
+                                LOGGER.debug("Cancelling timer " + timerId);
+                                vertx.cancelTimer(timerId);
+                                reassignmentFinishedFuture.complete();
+                            } else if (System.currentTimeMillis() - first > timeout) {
+                                LOGGER.error("Reassignment timed out");
+                                delete(reassignmentJsonFile);
+                                LOGGER.debug("Cancelling timer " + timerId);
+                                vertx.cancelTimer(timerId);
+                                reassignmentFinishedFuture.fail("Timeout");
+                            }
+                        } else {
+                            //reassignmentFinishedFuture.fail(ar.cause());
+                            LOGGER.error("Error while verifying reassignment", ar.cause());
                         }
-                    } else {
-                        //reassignmentFinishedFuture.fail(ar.cause());
-                        logger.error("Error while verifying reassignment", ar.cause());
                     }
-                })
+                )
             );
             periodicFuture.complete();
         },
-        periodicFuture);
+            periodicFuture);
 
 
-        CompositeFuture.all(periodicFuture, reassignmentFinishedFuture).map((Void)null).setHandler(handler);
+        CompositeFuture.all(periodicFuture, reassignmentFinishedFuture).map((Void) null).setHandler(handler);
 
         // TODO The algorithm should really be more like this:
         // 1. Use the cmdline tool to generate an assignment
@@ -188,8 +190,8 @@ public class ControllerAssignedKafkaImpl extends BaseKafkaImpl {
 
     private static File createTmpFile(String suffix) throws IOException {
         File tmpFile = File.createTempFile(ControllerAssignedKafkaImpl.class.getName(), suffix);
-        if (logger.isTraceEnabled()) {
-            logger.trace("Created temporary file {}", tmpFile);
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("Created temporary file {}", tmpFile);
         }
         /*tmpFile.deleteOnExit();*/
         return tmpFile;
@@ -264,7 +266,7 @@ public class ControllerAssignedKafkaImpl extends BaseKafkaImpl {
 
         File topicsToMove = createTmpFile("-topics-to-move.json");
 
-        try (JsonGenerator gen = factory.createGenerator(topicsToMove, JsonEncoding.UTF8)){
+        try (JsonGenerator gen = factory.createGenerator(topicsToMove, JsonEncoding.UTF8)) {
             gen.writeStartObject();
             gen.writeNumberField("version", 1);
             gen.writeArrayFieldStart("topics");
@@ -308,7 +310,7 @@ public class ControllerAssignedKafkaImpl extends BaseKafkaImpl {
         // protected access only for testing purposes
 
         // use the same java executable that's executing this code
-        verifyArgs.add(System.getProperty("java.home")+"/bin/java");
+        verifyArgs.add(System.getProperty("java.home") + "/bin/java");
         // use the same classpath as we have
         verifyArgs.add("-cp");
         verifyArgs.add(System.getProperty("java.class.path"));
@@ -323,7 +325,7 @@ public class ControllerAssignedKafkaImpl extends BaseKafkaImpl {
         // so we need to parse its output, but we can't do that in an isolated way if we run it in our process
         // (System.setOut being global to the VM).
 
-        if(verifyArgs.isEmpty() || !new File(verifyArgs.get(0)).canExecute()) {
+        if (verifyArgs.isEmpty() || !new File(verifyArgs.get(0)).canExecute()) {
             throw new ControllerException("Command " + verifyArgs + " lacks an executable arg[0]");
         }
 
@@ -336,11 +338,11 @@ public class ControllerAssignedKafkaImpl extends BaseKafkaImpl {
         pb.redirectError(stderr);
         pb.redirectOutput(stdout);
         Process p = pb.start();
-        logger.info("Started process {} with command line {}", p, verifyArgs);
+        LOGGER.info("Started process {} with command line {}", p, verifyArgs);
         p.getOutputStream().close();
         int exitCode = p.waitFor();
         // TODO timeout on wait
-        logger.info("Process {}: exited with status {}", p, exitCode);
+        LOGGER.info("Process {}: exited with status {}", p, exitCode);
         return new ProcessResult(p, stdout, stderr);
     }
 
@@ -368,7 +370,7 @@ public class ControllerAssignedKafkaImpl extends BaseKafkaImpl {
                     new FileInputStream(file), Charset.defaultCharset()))) {
                 String line = reader.readLine();
                 while (line != null) {
-                    logger.debug("Process {}: stdout: {}", pid, line);
+                    LOGGER.debug("Process {}: stdout: {}", pid, line);
                     T result = fn.apply(line);
                     if (result != null) {
                         return result;

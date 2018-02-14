@@ -31,7 +31,7 @@ import java.util.concurrent.ExecutionException;
  */
 public abstract class BaseKafkaImpl implements Kafka {
 
-    private final static Logger logger = LoggerFactory.getLogger(BaseKafkaImpl.class);
+    private final static Logger LOGGER = LoggerFactory.getLogger(BaseKafkaImpl.class);
 
     protected final AdminClient adminClient;
 
@@ -85,29 +85,29 @@ public abstract class BaseKafkaImpl implements Kafka {
         @Override
         protected boolean complete() {
             if (this.future.isDone()) {
-                logger.trace("Future {} of work {} is done", future, this);
+                LOGGER.trace("Future {} of work {} is done", future, this);
                 try {
                     try {
                         T result = this.future.get();
-                        logger.debug("Future {} has result {}", future, result);
+                        LOGGER.debug("Future {} has result {}", future, result);
                         this.handler.handle(Future.succeededFuture(result));
-                        logger.debug("Handler for work {} executed ok", this);
+                        LOGGER.debug("Handler for work {} executed ok", this);
                     } catch (ExecutionException e) {
-                        logger.debug("Future {} threw {}", future, e.toString());
+                        LOGGER.debug("Future {} threw {}", future, e.toString());
                         this.handler.handle(Future.failedFuture(e.getCause()));
                     } catch (InterruptedException e) {
-                        logger.debug("Future {} threw {}", future, e.toString());
+                        LOGGER.debug("Future {} threw {}", future, e.toString());
                         this.handler.handle(Future.failedFuture(e));
                     }
                 } catch (ControllerException e) {
                     // TODO handler threw, but I have no context for creating a k8s error event
-                    logger.trace("Handler for work {} threw {}", this, e.toString());
+                    LOGGER.trace("Handler for work {} threw {}", this, e.toString());
                     e.printStackTrace();
                 }
                 return true;
             } else {
-                if (logger.isTraceEnabled()) {
-                    logger.trace("Future {} is not done", future);
+                if (LOGGER.isTraceEnabled()) {
+                    LOGGER.trace("Future {} is not done", future);
                 }
                 return false;
             }
@@ -147,12 +147,12 @@ public abstract class BaseKafkaImpl implements Kafka {
             T result;
             try {
                 result = future.get();
-                logger.trace("Future {} has result {}", future, result);
+                LOGGER.trace("Future {} has result {}", future, result);
             } catch (ExecutionException e) {
-                logger.debug("Future {} threw {}", future, e.toString());
+                LOGGER.debug("Future {} threw {}", future, e.toString());
                 if (e.getCause() instanceof UnknownTopicOrPartitionException) {
                     result = null;
-                } else{
+                } else {
                     if (!handled) {
                         handler.handle(Future.failedFuture(e.getCause()));
                     }
@@ -160,7 +160,7 @@ public abstract class BaseKafkaImpl implements Kafka {
                     return null;
                 }
             } catch (InterruptedException e) {
-                logger.debug("Future {} threw {}", future, e.toString());
+                LOGGER.debug("Future {} threw {}", future, e.toString());
                 if (!handled) {
                     handler.handle(Future.failedFuture(e));
                 }
@@ -185,15 +185,15 @@ public abstract class BaseKafkaImpl implements Kafka {
                     }
                     this.handler.handle(Future.succeededFuture(metadata));
                     this.handled = true;
-                    logger.trace("Handler for work {} executed ok", this);
+                    LOGGER.trace("Handler for work {} executed ok", this);
                 } else {
                 }
                 return handled;
             } else {
                 if (!this.descFuture.isDone())
-                    logger.trace("Description future {} is not done", descFuture);
+                    LOGGER.trace("Description future {} is not done", descFuture);
                 if (!this.configFuture.isDone())
-                    logger.trace("Config future {} is not done", configFuture);
+                    LOGGER.trace("Config future {} is not done", configFuture);
                 return false;
             }
         }
@@ -204,7 +204,7 @@ public abstract class BaseKafkaImpl implements Kafka {
      * when the future is ready.
      */
     protected void queueWork(Work work) {
-        logger.trace("Queuing work {} for immediate execution", work);
+        LOGGER.trace("Queuing work {} for immediate execution", work);
         vertx.runOnContext(work);
     }
 
@@ -214,7 +214,7 @@ public abstract class BaseKafkaImpl implements Kafka {
      */
     @Override
     public void deleteTopic(TopicName topicName, Handler<AsyncResult<Void>> handler) {
-        logger.debug("Deleting topic {}", topicName);
+        LOGGER.debug("Deleting topic {}", topicName);
         KafkaFuture<Void> future = adminClient.deleteTopics(
                 Collections.singleton(topicName.toString())).values().get(topicName.toString());
         queueWork(new UniWork<>("deleteTopic", future, handler));
@@ -233,20 +233,20 @@ public abstract class BaseKafkaImpl implements Kafka {
      */
     @Override
     public void topicMetadata(TopicName topicName, Handler<AsyncResult<TopicMetadata>> handler) {
-        logger.debug("Getting metadata for topic {}", topicName);
+        LOGGER.debug("Getting metadata for topic {}", topicName);
         ConfigResource resource = new ConfigResource(ConfigResource.Type.TOPIC, topicName.toString());
         KafkaFuture<TopicDescription> descriptionFuture = adminClient.describeTopics(
                 Collections.singleton(topicName.toString())).values().get(topicName.toString());
         KafkaFuture<Config> configFuture = adminClient.describeConfigs(
                 Collections.singleton(resource)).values().get(resource);
         queueWork(new MetadataWork(descriptionFuture,
-                    configFuture,
-                    result -> handler.handle(result)));
+            configFuture,
+            result -> handler.handle(result)));
     }
 
     @Override
     public void listTopics(Handler<AsyncResult<Set<String>>> handler) {
-        logger.debug("Listing topics");
+        LOGGER.debug("Listing topics");
         ListTopicsResult future = adminClient.listTopics();
         queueWork(new UniWork<>("listTopics", future.names(), handler));
     }

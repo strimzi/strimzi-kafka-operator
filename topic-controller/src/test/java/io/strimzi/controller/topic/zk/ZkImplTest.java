@@ -53,7 +53,7 @@ public class ZkImplTest {
         ZkImpl zkImpl = new ZkImpl(vertx, zkServer.getZkConnectString(), 60_000, false);
         zkServer.restart();
         Async async = context.async();
-        zkImpl.create("/foo", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, ar-> {
+        zkImpl.create("/foo", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, ar -> {
             context.assertTrue(ar.succeeded());
             async.complete();
         });
@@ -65,7 +65,7 @@ public class ZkImplTest {
         // TODO We also need to reset the watches on reconnection.
         Thread.sleep(2000);
         Async async2 = context.async();
-        zkImpl.create("/bar", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, ar-> {
+        zkImpl.create("/bar", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, ar -> {
             //ar.cause().printStackTrace();
             context.assertTrue(ar.succeeded(), ar.toString());
             async2.complete();
@@ -74,7 +74,7 @@ public class ZkImplTest {
 
     private ZkImpl connect(TestContext context) {
         Zk zk = new ZkImpl(vertx, zkServer.getZkConnectString(), 60_000, false);
-        return (ZkImpl)zk;
+        return (ZkImpl) zk;
     }
 
     @Test
@@ -82,7 +82,7 @@ public class ZkImplTest {
         ZkImpl zk = connect(context);
         // Create a node
         Async fooFuture = context.async();
-        zk.create("/foo", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, ar-> {
+        zk.create("/foo", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, ar -> {
             fooFuture.complete();
         });
         fooFuture.await();
@@ -99,7 +99,7 @@ public class ZkImplTest {
         });
         zk.children("/foo", lsResult -> {
             context.assertEquals(emptyList(), lsResult.result());
-            zk.create("/foo/bar", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, ig -> {});
+            zk.create("/foo/bar", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, ig -> { });
         });
         barFuture.await();
     }
@@ -110,7 +110,7 @@ public class ZkImplTest {
         // Create a node
         Async fooFuture = context.async();
         byte[] data1 = new byte[]{1};
-        zk.create("/foo", data1, AclBuilder.PUBLIC, CreateMode.PERSISTENT, ar-> {
+        zk.create("/foo", data1, AclBuilder.PUBLIC, CreateMode.PERSISTENT, ar -> {
             fooFuture.complete();
         });
         fooFuture.await();
@@ -134,14 +134,14 @@ public class ZkImplTest {
         // Create a node
         Async created = context.async(2);
         Async deleted = context.async(2);
-        zk.watchExists("/foo", existsResult-> {
+        zk.watchExists("/foo", existsResult -> {
             if (existsResult.result() != null) {
                 created.countDown();
             } else {
                 deleted.countDown();
             }
         }).exists("/foo", null);
-        zk.create("/foo", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, ar-> {
+        zk.create("/foo", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, ar -> {
             created.countDown();
         });
         created.await();
@@ -153,7 +153,7 @@ public class ZkImplTest {
 
         zk.unwatchExists("/foo");
         Async created2 = context.async();
-        zk.create("/foo", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, ar-> {
+        zk.create("/foo", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, ar -> {
             created2.complete();
         });
     }

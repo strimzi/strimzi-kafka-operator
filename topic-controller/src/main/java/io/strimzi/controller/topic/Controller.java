@@ -23,8 +23,8 @@ import static java.util.Collections.disjoint;
 
 public class Controller {
 
-    private final static Logger logger = LoggerFactory.getLogger(Controller.class);
-    private final static Logger eventLogger = LoggerFactory.getLogger("Event");
+    private final static Logger LOGGER = LoggerFactory.getLogger(Controller.class);
+    private final static Logger EVENT_LOGGER = LoggerFactory.getLogger("Event");
     private final Kafka kafka;
     private final K8s k8s;
     private final Vertx vertx;
@@ -83,17 +83,17 @@ public class Controller {
             io.fabric8.kubernetes.api.model.Event event = evtb.build();
             switch (eventType) {
                 case INFO:
-                    logger.info("{}", message);
+                    LOGGER.info("{}", message);
                     break;
                 case WARNING:
-                    logger.warn("{}", message);
+                    LOGGER.warn("{}", message);
                     break;
             }
             k8s.createEvent(event, handler);
         }
 
         public String toString() {
-            return "ErrorEvent(involvedObject="+involvedObject+", message="+message+")";
+            return "ErrorEvent(involvedObject=" + involvedObject + ", message=" + message + ")";
         }
     }
 
@@ -115,7 +115,7 @@ public class Controller {
 
         @Override
         public String toString() {
-            return "CreateConfigMap(topicName="+topic.getTopicName()+")";
+            return "CreateConfigMap(topicName=" + topic.getTopicName() + ")";
         }
     }
 
@@ -160,7 +160,7 @@ public class Controller {
 
         @Override
         public String toString() {
-            return "UpdateConfigMap(topicName="+topic.getTopicName()+")";
+            return "UpdateConfigMap(topicName=" + topic.getTopicName() + ")";
         }
     }
 
@@ -182,7 +182,7 @@ public class Controller {
         public void handle(Void v) throws ControllerException {
             kafka.createTopic(topic, ar -> {
                 if (ar.succeeded()) {
-                    logger.info("Created topic '{}' for ConfigMap '{}'", topic.getTopicName(), topic.getMapName());
+                    LOGGER.info("Created topic '{}' for ConfigMap '{}'", topic.getTopicName(), topic.getMapName());
                     handler.handle(ar);
                 } else {
                     handler.handle(ar);
@@ -197,7 +197,7 @@ public class Controller {
 
         @Override
         public String toString() {
-            return "CreateKafkaTopic(topicName="+ topic.getTopicName()+")";
+            return "CreateKafkaTopic(topicName=" + topic.getTopicName() + ")";
         }
     }
 
@@ -217,9 +217,9 @@ public class Controller {
 
         @Override
         public void handle(Void v) throws ControllerException {
-            kafka.updateTopicConfig(topic, ar-> {
+            kafka.updateTopicConfig(topic, ar -> {
                 if (ar.failed()) {
-                    enqueue(new Event(involvedObject, ar.cause().toString(), EventType.WARNING, eventResult -> {}));
+                    enqueue(new Event(involvedObject, ar.cause().toString(), EventType.WARNING, eventResult -> { }));
                 }
                 handler.handle(ar);
             });
@@ -228,7 +228,7 @@ public class Controller {
 
         @Override
         public String toString() {
-            return "UpdateKafkaConfig(topicName="+topic.getTopicName()+")";
+            return "UpdateKafkaConfig(topicName=" + topic.getTopicName() + ")";
         }
     }
 
@@ -248,9 +248,9 @@ public class Controller {
 
         @Override
         public void handle(Void v) throws ControllerException {
-            kafka.increasePartitions(topic, ar-> {
+            kafka.increasePartitions(topic, ar -> {
                 if (ar.failed()) {
-                    enqueue(new Event(involvedObject, ar.cause().toString(), EventType.WARNING, eventResult -> {}));
+                    enqueue(new Event(involvedObject, ar.cause().toString(), EventType.WARNING, eventResult -> { }));
                 }
                 handler.handle(ar);
             });
@@ -259,7 +259,7 @@ public class Controller {
 
         @Override
         public String toString() {
-            return "UpdateKafkaPartitions(topicName="+topic.getTopicName()+")";
+            return "UpdateKafkaPartitions(topicName=" + topic.getTopicName() + ")";
         }
     }
 
@@ -279,9 +279,9 @@ public class Controller {
 
         @Override
         public void handle(Void v) throws ControllerException {
-            kafka.changeReplicationFactor(topic, ar-> {
+            kafka.changeReplicationFactor(topic, ar -> {
                 if (ar.failed()) {
-                    enqueue(new Event(involvedObject, ar.cause().toString(), EventType.WARNING, eventResult -> {}));
+                    enqueue(new Event(involvedObject, ar.cause().toString(), EventType.WARNING, eventResult -> { }));
                 }
                 handler.handle(ar);
             });
@@ -290,7 +290,7 @@ public class Controller {
 
         @Override
         public String toString() {
-            return "ChangeReplicationFactor(topicName="+topic.getTopicName()+")";
+            return "ChangeReplicationFactor(topicName=" + topic.getTopicName() + ")";
         }
     }
 
@@ -307,13 +307,13 @@ public class Controller {
 
         @Override
         public void handle(Void v) throws ControllerException {
-            logger.info("Deleting topic '{}'", topicName);
+            LOGGER.info("Deleting topic '{}'", topicName);
             kafka.deleteTopic(topicName, handler);
         }
 
         @Override
         public String toString() {
-            return "DeleteKafkaTopic(topicName="+topicName+")";
+            return "DeleteKafkaTopic(topicName=" + topicName + ")";
         }
     }
 
@@ -346,9 +346,9 @@ public class Controller {
                 });
             });
         } catch (InvalidConfigMapException e) {
-            logger.error("Error reconciling ConfigMap {}: Invalid 'data' section: ", cm.getMetadata().getName(), e.getMessage());
+            LOGGER.error("Error reconciling ConfigMap {}: Invalid 'data' section: ", cm.getMetadata().getName(), e.getMessage());
         } catch (ControllerException e) {
-            logger.error("Error reconciling ConfigMap {}: ", cm.getMetadata().getName(), e);
+            LOGGER.error("Error reconciling ConfigMap {}: ", cm.getMetadata().getName(), e);
         }
     }
 
@@ -381,17 +381,17 @@ public class Controller {
 
         {
             TopicName topicName = k8sTopic != null ? k8sTopic.getTopicName() : kafkaTopic != null ? kafkaTopic.getTopicName() : privateTopic != null ? privateTopic.getTopicName() : null;
-            logger.info("Reconciling topic {}, k8sTopic:{}, kafkaTopic:{}, privateTopic:{}", topicName, k8sTopic==null?"null":"nonnull", kafkaTopic==null?"null":"nonnull", privateTopic==null?"null":"nonnull");
+            LOGGER.info("Reconciling topic {}, k8sTopic:{}, kafkaTopic:{}, privateTopic:{}", topicName, k8sTopic == null ? "null" : "nonnull", kafkaTopic == null ? "null" : "nonnull", privateTopic == null ? "null" : "nonnull");
         }
         if (privateTopic == null) {
             if (k8sTopic == null) {
                 if (kafkaTopic == null) {
                     // All three null: This happens reentrantly when a topic or configmap is deleted
-                    logger.debug("All three topics null during reconciliation.");
+                    LOGGER.debug("All three topics null during reconciliation.");
                     reconciliationResultHandler.handle(Future.succeededFuture());
                 } else {
                     // it's been created in Kafka => create in k8s and privateState
-                    logger.debug("topic created in kafka, will create cm in k8s and topicStore");
+                    LOGGER.debug("topic created in kafka, will create cm in k8s and topicStore");
                     enqueue(new CreateConfigMap(kafkaTopic, ar -> {
                         // In all cases, create in privateState
                         if (ar.succeeded()) {
@@ -403,7 +403,7 @@ public class Controller {
                 }
             } else if (kafkaTopic == null) {
                 // it's been created in k8s => create in Kafka and privateState
-                logger.debug("cm created in k8s, will create topic in kafka and topicStore");
+                LOGGER.debug("cm created in k8s, will create topic in kafka and topicStore");
                 enqueue(new CreateKafkaTopic(k8sTopic, involvedObject, ar -> {
                     // In all cases, create in privateState
                     if (ar.succeeded()) {
@@ -419,12 +419,12 @@ public class Controller {
             if (k8sTopic == null) {
                 if (kafkaTopic == null) {
                     // delete privateState
-                    logger.debug("cm deleted in k8s and topic deleted in kafka => delete from topicStore");
+                    LOGGER.debug("cm deleted in k8s and topic deleted in kafka => delete from topicStore");
                     enqueue(new DeleteFromTopicStore(privateTopic.getTopicName(), involvedObject, reconciliationResultHandler));
                     reconciliationResultHandler.handle(Future.succeededFuture());
                 } else {
                     // it was deleted in k8s so delete in kafka and privateState
-                    logger.debug("cm deleted in k8s => delete topic from kafka and from topicStore");
+                    LOGGER.debug("cm deleted in k8s => delete topic from kafka and from topicStore");
                     enqueue(new DeleteKafkaTopic(kafkaTopic.getTopicName(), ar -> {
                         if (ar.succeeded()) {
                             enqueue(new DeleteFromTopicStore(privateTopic.getTopicName(), involvedObject, reconciliationResultHandler));
@@ -436,7 +436,7 @@ public class Controller {
                 }
             } else if (kafkaTopic == null) {
                 // it was deleted in kafka so delete in k8s and privateState
-                logger.debug("topic deleted in kafkas => delete cm from k8s and from topicStore");
+                LOGGER.debug("topic deleted in kafkas => delete cm from k8s and from topicStore");
                 enqueue(new DeleteConfigMap(privateTopic.getOrAsMapName(), ar -> {
                     if (ar.succeeded()) {
                         enqueue(new DeleteFromTopicStore(privateTopic.getTopicName(), involvedObject, reconciliationResultHandler));
@@ -446,7 +446,7 @@ public class Controller {
                 }));
             } else {
                 // all three exist
-                logger.debug("3 way diff");
+                LOGGER.debug("3 way diff");
                 update3Way(involvedObject, k8sTopic, kafkaTopic, privateTopic, reconciliationResultHandler);
             }
         }
@@ -456,14 +456,14 @@ public class Controller {
         TopicDiff diff = TopicDiff.diff(kafkaTopic, k8sTopic);
         if (diff.isEmpty()) {
             // they're the same => do nothing, but stil create the private copy
-            logger.debug("cm created in k8s and topic created in kafka, but they're identical => just creating in topicStore");
-            logger.debug("k8s and kafka versions of topic '{}' are the same", kafkaTopic.getTopicName());
+            LOGGER.debug("cm created in k8s and topic created in kafka, but they're identical => just creating in topicStore");
+            LOGGER.debug("k8s and kafka versions of topic '{}' are the same", kafkaTopic.getTopicName());
             enqueue(new CreateInTopicStore(kafkaTopic, involvedObject, reconciliationResultHandler));
         } else if (!diff.changesReplicationFactor()
                 && !diff.changesNumPartitions()
                 && diff.changesConfig()
                 && disjoint(kafkaTopic.getConfig().keySet(), k8sTopic.getConfig().keySet())) {
-            logger.debug("cm created in k8s and topic created in kafka, they differ only in topic config, and those configs are disjoint: Updating k8s and kafka, and creating in topic store");
+            LOGGER.debug("cm created in k8s and topic created in kafka, they differ only in topic config, and those configs are disjoint: Updating k8s and kafka, and creating in topic store");
             Map mergedConfigs = new HashMap(kafkaTopic.getConfig());
             mergedConfigs.putAll(k8sTopic.getConfig());
             Topic mergedTopic = new Topic.Builder(kafkaTopic).withConfig(mergedConfigs).build();
@@ -482,7 +482,7 @@ public class Controller {
             }));
         } else {
             // Just use kafka version, but also create a warning event
-            logger.debug("cm created in k8s and topic created in kafka, and they are irreconcilably different => kafka version wins");
+            LOGGER.debug("cm created in k8s and topic created in kafka, and they are irreconcilably different => kafka version wins");
             enqueue(new Event(involvedObject, "ConfigMap is incompatible with the topic metadata. " +
                     "The topic metadata will be treated as canonical.", EventType.INFO, ar -> {
                 if (ar.succeeded()) {
@@ -504,49 +504,49 @@ public class Controller {
                             Handler<AsyncResult<Void>> reconciliationResultHandler) {
         if (!privateTopic.getMapName().equals(k8sTopic.getMapName())) {
             reconciliationResultHandler.handle(Future.failedFuture(new ControllerException(involvedObject,
-                    "Topic '"+ kafkaTopic.getTopicName() + "' is already managed via ConfigMap '" + privateTopic.getMapName() + "' it cannot also be managed via the ConfiMap '" + k8sTopic.getMapName() + "'")));
+                    "Topic '" + kafkaTopic.getTopicName() + "' is already managed via ConfigMap '" + privateTopic.getMapName() + "' it cannot also be managed via the ConfiMap '" + k8sTopic.getMapName() + "'")));
             return;
         }
         TopicDiff oursKafka = TopicDiff.diff(privateTopic, kafkaTopic);
-        logger.debug("topicStore->kafkaTopic: {}", oursKafka);
+        LOGGER.debug("topicStore->kafkaTopic: {}", oursKafka);
         TopicDiff oursK8s = TopicDiff.diff(privateTopic, k8sTopic);
-        logger.debug("topicStore->k8sTopic: {}", oursK8s);
+        LOGGER.debug("topicStore->k8sTopic: {}", oursK8s);
         String conflict = oursKafka.conflict(oursK8s);
         if (conflict != null) {
             final String message = "ConfigMap and Topic both changed in a conflicting way: " + conflict;
-            logger.error(message);
-            enqueue(new Event(involvedObject, message, EventType.INFO, eventResult -> {}));
+            LOGGER.error(message);
+            enqueue(new Event(involvedObject, message, EventType.INFO, eventResult -> { }));
             reconciliationResultHandler.handle(Future.failedFuture(new Exception(message)));
         } else {
             TopicDiff merged = oursKafka.merge(oursK8s);
-            logger.debug("Diffs do not conflict, merged diff: {}", merged);
+            LOGGER.debug("Diffs do not conflict, merged diff: {}", merged);
             if (merged.isEmpty()) {
-                logger.info("All three topics are identical");
+                LOGGER.info("All three topics are identical");
                 reconciliationResultHandler.handle(Future.succeededFuture());
             } else {
                 Topic result = merged.apply(privateTopic);
                 int partitionsDelta = merged.numPartitionsDelta();
                 if (partitionsDelta < 0) {
                     final String message = "Number of partitions cannot be decreased";
-                    logger.error(message);
+                    LOGGER.error(message);
                     enqueue(new Event(involvedObject, message, EventType.INFO, eventResult -> {
                     }));
                     reconciliationResultHandler.handle(Future.failedFuture(new Exception(message)));
                 } else {
                     if (merged.changesReplicationFactor()) {
-                        logger.error("Changes replication factor");
+                        LOGGER.error("Changes replication factor");
                         enqueue(new ChangeReplicationFactor(result, involvedObject, null));
                     }
                     // TODO What if we increase min.in.sync.replicas and the number of replicas,
                     // such that the old number of replicas < the new min isr? But likewise
                     // we could decrease, so order of tasks in the queue will need to change
                     // depending on what the diffs are.
-                    logger.debug("Updating cm, kafka topic and topicStore");
+                    LOGGER.debug("Updating cm, kafka topic and topicStore");
                     // TODO replace this with compose
                     enqueue(new UpdateConfigMap(result, ar -> {
                         Handler<Void> topicStoreHandler =
                                 ignored -> enqueue(new UpdateInTopicStore(
-                                        result, involvedObject, reconciliationResultHandler));
+                                    result, involvedObject, reconciliationResultHandler));
                         Handler<Void> partitionsHandler;
                         if (partitionsDelta > 0) {
                             partitionsHandler = ar4 -> enqueue(new IncreaseKafkaPartitions(result, involvedObject, ar2 -> topicStoreHandler.handle(null)));
@@ -565,7 +565,7 @@ public class Controller {
     }
 
     void enqueue(Handler<Void> event) {
-        logger.debug("Enqueuing event {}", event);
+        LOGGER.debug("Enqueuing event {}", event);
         vertx.runOnContext(event);
     }
 
@@ -619,7 +619,7 @@ public class Controller {
                                 if (topicResult.result().getNumPartitions() == kafkaTopic.getNumPartitions()) {
                                     retry();
                                 } else {
-                                    logger.info("Topic {} partitions changed to {}", topicName, kafkaTopic.getNumPartitions());
+                                    LOGGER.info("Topic {} partitions changed to {}", topicName, kafkaTopic.getNumPartitions());
                                     Controller.this.reconcileOnTopicChange(topicName, kafkaTopic, fut.completer());
                                 }
 
@@ -662,11 +662,11 @@ public class Controller {
                         Topic k8sTopic = TopicSerialization.fromConfigMap(cm);
                         reconcile(cm, k8sTopic, kafkaTopic, storeTopic, resultHandler);
                     } else {
-                        resultHandler.handle(kubeResult.<Void>map((Void)null));
+                        resultHandler.handle(kubeResult.<Void>map((Void) null));
                     }
                 });
             } else {
-                resultHandler.handle(storeResult.<Void>map((Void)null));
+                resultHandler.handle(storeResult.<Void>map((Void) null));
             }
         });
 /*
@@ -846,9 +846,9 @@ public class Controller {
 
         @Override
         public void handle(Void v) throws ControllerException {
-            topicStore.update(topic, ar-> {
+            topicStore.update(topic, ar -> {
                 if (ar.failed()) {
-                    enqueue(new Event(involvedObject, ar.cause().toString(), EventType.WARNING, eventResult -> {}));
+                    enqueue(new Event(involvedObject, ar.cause().toString(), EventType.WARNING, eventResult -> { }));
                 }
                 handler.handle(ar);
             });
@@ -856,7 +856,7 @@ public class Controller {
 
         @Override
         public String toString() {
-            return "UpdateInTopicStore(topicName="+topic.getTopicName()+")";
+            return "UpdateInTopicStore(topicName=" + topic.getTopicName() + ")";
         }
     }
 
@@ -874,14 +874,14 @@ public class Controller {
 
         @Override
         public void handle(Void v) throws ControllerException {
-            logger.debug("Executing {}", this);
-            topicStore.create(topic, ar-> {
-                logger.debug("Completing {}", this);
+            LOGGER.debug("Executing {}", this);
+            topicStore.create(topic, ar -> {
+                LOGGER.debug("Completing {}", this);
                 if (ar.failed()) {
-                    logger.debug("{} failed", this);
-                    enqueue(new Event(involvedObject, ar.cause().toString(), EventType.WARNING, eventResult -> {}));
+                    LOGGER.debug("{} failed", this);
+                    enqueue(new Event(involvedObject, ar.cause().toString(), EventType.WARNING, eventResult -> { }));
                 } else {
-                    logger.debug("{} succeeded", this);
+                    LOGGER.debug("{} succeeded", this);
                 }
                 handler.handle(ar);
             });
@@ -889,7 +889,7 @@ public class Controller {
 
         @Override
         public String toString() {
-            return "CreateInTopicStore(topicName="+topic.getTopicName()+")";
+            return "CreateInTopicStore(topicName=" + topic.getTopicName() + ")";
         }
     }
 
@@ -907,9 +907,9 @@ public class Controller {
 
         @Override
         public void handle(Void v) throws ControllerException {
-            topicStore.delete(topicName, ar-> {
+            topicStore.delete(topicName, ar -> {
                 if (ar.failed()) {
-                    enqueue(new Event(involvedObject, ar.cause().toString(), EventType.WARNING, eventResult -> {}));
+                    enqueue(new Event(involvedObject, ar.cause().toString(), EventType.WARNING, eventResult -> { }));
                 }
                 handler.handle(ar);
             });
@@ -917,7 +917,7 @@ public class Controller {
 
         @Override
         public String toString() {
-            return "DeleteFromTopicStore(topicName="+topicName+")";
+            return "DeleteFromTopicStore(topicName=" + topicName + ")";
         }
     }
 

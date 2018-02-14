@@ -61,7 +61,7 @@ public class TopicSerialization {
                 result = mapper.readValue(new StringReader(value) {
                     @Override
                     public String toString() {
-                        return "'config' key of 'data' section of ConfigMap '" +cm.getMetadata().getName() + "' in namespace '" + cm.getMetadata().getNamespace() + "'";
+                        return "'config' key of 'data' section of ConfigMap '" + cm.getMetadata().getName() + "' in namespace '" + cm.getMetadata().getNamespace() + "'";
                     }
                 }, Map.class);
             } catch (IOException e) {
@@ -83,14 +83,14 @@ public class TopicSerialization {
                 msg = "The value corresponding to the key must have a String value, not a value of type " + v.getClass();
             }
             if (!supportedConfigs.contains(key)) {
-                msg = "The allowed configs keys are "+ supportedConfigs;
+                msg = "The allowed configs keys are " + supportedConfigs;
             }
             if (msg != null) {
                 throw new InvalidConfigMapException(cm, "ConfigMap's 'data' section has invalid key '" +
-                        CM_KEY_CONFIG + "': The key '" + key +"' of the topic config is invalid: " + msg);
+                        CM_KEY_CONFIG + "': The key '" + key + "' of the topic config is invalid: " + msg);
             }
         }
-        return (Map)result;
+        return (Map) result;
     }
 
     private static Set<String> getSupportedTopicConfigs() {
@@ -193,7 +193,7 @@ public class TopicSerialization {
         try {
             mapData.put(CM_KEY_CONFIG, topicConfigToConfigMapString(topic.getConfig()));
         } catch (IOException e) {
-            throw new RuntimeException("Error converting topic config to a string, for topic '"+topic.getTopicName()+"'", e);
+            throw new RuntimeException("Error converting topic config to a string, for topic '" + topic.getTopicName() + "'", e);
         }
         MapName mapName = topic.getOrAsMapName();
         return new ConfigMapBuilder().withApiVersion("v1")
@@ -262,7 +262,7 @@ public class TopicSerialization {
         Topic.Builder builder = new Topic.Builder()
                 .withTopicName(meta.getDescription().name())
                 .withNumPartitions(meta.getDescription().partitions().size())
-                .withNumReplicas((short)meta.getDescription().partitions().get(0).replicas().size());
+                .withNumReplicas((short) meta.getDescription().partitions().get(0).replicas().size());
         for (ConfigEntry entry: meta.getConfig().entries()) {
             if (!entry.isDefault()) {
                 builder.withConfigEntry(entry.name(), entry.value());
@@ -311,11 +311,11 @@ public class TopicSerialization {
             throw new RuntimeException(e);
         }
         Topic.Builder builder = new Topic.Builder();
-        builder.withTopicName((String)root.get(JSON_KEY_TOPIC_NAME))
-                .withMapName((String)root.get(JSON_KEY_MAP_NAME))
-                .withNumPartitions((Integer)root.get(JSON_KEY_PARTITIONS))
-                .withNumReplicas(((Integer)root.get(JSON_KEY_REPLICAS)).shortValue());
-        Map<String, String> config = (Map)root.get(JSON_KEY_CONFIG);
+        builder.withTopicName((String) root.get(JSON_KEY_TOPIC_NAME))
+                .withMapName((String) root.get(JSON_KEY_MAP_NAME))
+                .withNumPartitions((Integer) root.get(JSON_KEY_PARTITIONS))
+                .withNumReplicas(((Integer) root.get(JSON_KEY_REPLICAS)).shortValue());
+        Map<String, String> config = (Map) root.get(JSON_KEY_CONFIG);
         for (Map.Entry<String, String> entry : config.entrySet()) {
             builder.withConfigEntry(entry.getKey(), entry.getValue());
         }

@@ -17,7 +17,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
-import static io.vertx.core.Future.*;
+import static io.vertx.core.Future.failedFuture;
+import static io.vertx.core.Future.succeededFuture;
 
 public class MockKafka implements Kafka {
 
@@ -25,13 +26,13 @@ public class MockKafka implements Kafka {
 
     private AsyncResult<Set<String>> topicsListResponse = Future.succeededFuture(Collections.emptySet());
     private Function<TopicName, AsyncResult<TopicMetadata>> topicMetadataRespose =
-            t -> failedFuture("Unexpected. Your test probably need to configure the MockKafka with a topicMetadataResponse.");
+        t -> failedFuture("Unexpected. Your test probably need to configure the MockKafka with a topicMetadataResponse.");
     private Function<String, AsyncResult<Void>> createTopicResponse =
-            t -> failedFuture("Unexpected. Your test probably need to configure the MockKafka with a createTopicResponse.");
+        t -> failedFuture("Unexpected. Your test probably need to configure the MockKafka with a createTopicResponse.");
     private Function<TopicName, AsyncResult<Void>> deleteTopicResponse =
-            t -> failedFuture("Unexpected. Your test probably need to configure the MockKafka with a deleteTopicResponse.");
+        t -> failedFuture("Unexpected. Your test probably need to configure the MockKafka with a deleteTopicResponse.");
     private Function<TopicName, AsyncResult<Void>> updateTopicResponse =
-            t -> failedFuture("Unexpected. Your test probably need to configure the MockKafka with a updateTopicResponse.");
+        t -> failedFuture("Unexpected. Your test probably need to configure the MockKafka with a updateTopicResponse.");
 
     public MockKafka setTopicsListResponse(AsyncResult<Set<String>> topicsListResponse) {
         this.topicsListResponse = topicsListResponse;

@@ -17,7 +17,7 @@ import java.util.Map;
 
 class ConfigMapWatcher implements Watcher<ConfigMap> {
 
-    private final static Logger logger = LoggerFactory.getLogger(ConfigMapWatcher.class);
+    private final static Logger LOGGER = LoggerFactory.getLogger(ConfigMapWatcher.class);
 
     private Controller controller;
     private final LabelPredicate cmPredicate;
@@ -32,21 +32,21 @@ class ConfigMapWatcher implements Watcher<ConfigMap> {
         Map<String, String> labels = metadata.getLabels();
         if (cmPredicate.test(configMap)) {
             String name = metadata.getName();
-            logger.info("ConfigMap watch received event {} on map {} with labels {}", action, name, labels);
+            LOGGER.info("ConfigMap watch received event {} on map {} with labels {}", action, name, labels);
             Handler<AsyncResult<Void>> resultHandler = ar -> {
                 if (ar.succeeded()) {
-                    logger.info("Success processing ConfigMap watch event {} on map {} with labels {}", action, name, labels);
+                    LOGGER.info("Success processing ConfigMap watch event {} on map {} with labels {}", action, name, labels);
                 } else {
                     String message;
                     if (ar.cause() instanceof InvalidConfigMapException) {
-                        message = "ConfigMap "+name+" has an invalid 'data' section: " + ar.cause().getMessage();
-                        logger.error("{}", message);
+                        message = "ConfigMap " + name + " has an invalid 'data' section: " + ar.cause().getMessage();
+                        LOGGER.error("{}", message);
 
                     } else {
-                        message = "Failure processing ConfigMap watch event " + action + " on map " + name + " with labels " + labels +": " + ar.cause().getMessage();
-                        logger.error("{}", message, ar.cause());
+                        message = "Failure processing ConfigMap watch event " + action + " on map " + name + " with labels " + labels + ": " + ar.cause().getMessage();
+                        LOGGER.error("{}", message, ar.cause());
                     }
-                    controller.enqueue(controller.new Event(configMap, message, Controller.EventType.WARNING, errorResult -> {}));
+                    controller.enqueue(controller.new Event(configMap, message, Controller.EventType.WARNING, errorResult -> { }));
                 }
             };
             switch (action) {
@@ -60,12 +60,12 @@ class ConfigMapWatcher implements Watcher<ConfigMap> {
                     controller.onConfigMapDeleted(configMap, resultHandler);
                     break;
                 case ERROR:
-                    logger.error("Watch received action=ERROR for ConfigMap " + name);
+                    LOGGER.error("Watch received action=ERROR for ConfigMap " + name);
             }
         }
     }
 
     public void onClose(KubernetesClientException e) {
-        logger.debug("Closing {}", this);
+        LOGGER.debug("Closing {}", this);
     }
 }

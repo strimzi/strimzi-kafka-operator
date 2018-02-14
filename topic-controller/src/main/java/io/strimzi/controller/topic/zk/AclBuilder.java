@@ -117,7 +117,7 @@ public class AclBuilder {
             a = new ACL();
             digests.put(username, a);
         }
-        a.setId(new Id("digest", username+":"+password));
+        a.setId(new Id("digest", username + ":" + password));
         a.setPerms(Permission.encode(permissions));
         return this;
     }
@@ -151,7 +151,7 @@ public class AclBuilder {
      */
     public AclBuilder addIp(String address, int bits, Permission... permissions) {
         Map<String, ACL> ips = getIps();
-        String cidr = address+"/"+bits;
+        String cidr = address + "/" + bits;
         ACL a = ips.get(cidr);
         if (a == null) {
             a = new ACL();

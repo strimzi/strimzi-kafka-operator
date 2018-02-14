@@ -19,7 +19,7 @@ import java.util.Set;
  */
 class TopicsWatcher {
 
-    private final static Logger logger = LoggerFactory.getLogger(TopicsWatcher.class);
+    private final static Logger LOGGER = LoggerFactory.getLogger(TopicsWatcher.class);
 
     private static final String TOPICS_ZNODE = "/brokers/topics";
 
@@ -67,7 +67,7 @@ class TopicsWatcher {
                 throw new RuntimeException(childResult.cause());
             }
             List<String> result = childResult.result();
-            logger.debug("znode {} now has children {}, previous children {}", TOPICS_ZNODE, result, this.children);
+            LOGGER.debug("znode {} now has children {}, previous children {}", TOPICS_ZNODE, result, this.children);
             Set<String> deleted = new HashSet(this.children);
             deleted.removeAll(result);
             Set<String> created = new HashSet(result);
@@ -75,30 +75,30 @@ class TopicsWatcher {
             this.children = result;
 
             if (!deleted.isEmpty()) {
-                logger.info("Deleted topics: {}", deleted);
+                LOGGER.info("Deleted topics: {}", deleted);
                 for (String topicName : deleted) {
                     tcw.removeChild(topicName);
                     tw.removeChild(topicName);
                     controller.onTopicDeleted(new TopicName(topicName), ar -> {
                         if (ar.succeeded()) {
-                            logger.debug("Success responding to deletion of topic {}", topicName);
+                            LOGGER.debug("Success responding to deletion of topic {}", topicName);
                         } else {
-                            logger.warn("Error responding to deletion of topic {}", topicName, ar.cause());
+                            LOGGER.warn("Error responding to deletion of topic {}", topicName, ar.cause());
                         }
                     });
                 }
             }
 
             if (!created.isEmpty()) {
-                logger.info("Created topics: {}", created);
+                LOGGER.info("Created topics: {}", created);
                 for (String topicName : created) {
                     tcw.addChild(topicName);
                     tw.addChild(topicName);
                     controller.onTopicCreated(new TopicName(topicName), ar -> {
                         if (ar.succeeded()) {
-                            logger.debug("Success responding to creation of topic {}", topicName);
+                            LOGGER.debug("Success responding to creation of topic {}", topicName);
                         } else {
-                            logger.warn("Error responding to creation of topic {}", topicName, ar.cause());
+                            LOGGER.warn("Error responding to creation of topic {}", topicName, ar.cause());
                         }
                     });
                 }
@@ -109,7 +109,7 @@ class TopicsWatcher {
                 throw new RuntimeException(childResult.cause());
             }
             List<String> result = childResult.result();
-            logger.debug("Setting initial children {}", result);
+            LOGGER.debug("Setting initial children {}", result);
             this.children = result;
             this.state = 1;
         });

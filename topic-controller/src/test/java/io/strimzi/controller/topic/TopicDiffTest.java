@@ -24,7 +24,7 @@ public class TopicDiffTest {
         config.put("b", "2");
         config.put("c", "3");
     }
-    Topic topicA = new Topic.Builder("test" , 2, config).build();
+    Topic topicA = new Topic.Builder("test", 2, config).build();
 
     {
         config.clear();
@@ -32,7 +32,7 @@ public class TopicDiffTest {
         config.put("c", "3");
         config.put("d", "4");
     }
-    Topic topicB = new Topic.Builder("test" , 3, config).build();
+    Topic topicB = new Topic.Builder("test", 3, config).build();
 
     @Test
     public void testDiff() {
@@ -42,7 +42,7 @@ public class TopicDiffTest {
         TopicDiff diffBA = TopicDiff.diff(topicB, topicA);
         assertEquals(topicA, diffBA.apply(topicB));
 
-        Topic topicWrongName = new Topic.Builder("another_name" , 3, config).build();
+        Topic topicWrongName = new Topic.Builder("another_name", 3, config).build();
         try {
             TopicDiff.diff(topicA, topicWrongName);
             fail("Should throw");
@@ -130,7 +130,7 @@ public class TopicDiffTest {
 
     @Test
     public void testChangesNumPartitions() {
-        Topic topicC = new Topic.Builder(topicB.getTopicName() , topicB.getNumPartitions(), topicB.getConfig()).build();
+        Topic topicC = new Topic.Builder(topicB.getTopicName(), topicB.getNumPartitions(), topicB.getConfig()).build();
         assertTrue(TopicDiff.diff(topicB, topicA).changesNumPartitions());
         assertEquals(-1, TopicDiff.diff(topicB, topicA).numPartitionsDelta());
         assertTrue(TopicDiff.diff(topicA, topicB).changesNumPartitions());
@@ -148,7 +148,7 @@ public class TopicDiffTest {
 
     @Test
     public void testChangesConfig() {
-        Topic topicC = new Topic.Builder(topicB.getTopicName() , topicB.getNumPartitions(), topicB.getConfig()).build();
+        Topic topicC = new Topic.Builder(topicB.getTopicName(), topicB.getNumPartitions(), topicB.getConfig()).build();
         assertTrue(TopicDiff.diff(topicB, topicA).changesConfig());
         assertTrue(TopicDiff.diff(topicA, topicB).changesConfig());
         assertFalse(TopicDiff.diff(topicB, topicC).changesConfig());
@@ -156,9 +156,9 @@ public class TopicDiffTest {
 
     @Test
     public void testChangesReplicationFactor() {
-        Topic topicC = new Topic.Builder(topicB.getTopicName() , topicB.getNumPartitions(), (short) 2, topicB.getConfig()).build();
-        Topic topicD = new Topic.Builder(topicB.getTopicName() , topicC.getNumPartitions()+1, (short) 2, topicB.getConfig()).build();
-        Topic topicE = new Topic.Builder(topicB.getTopicName() , topicB.getNumPartitions(), (short) 3, topicB.getConfig()).build();
+        Topic topicC = new Topic.Builder(topicB.getTopicName(), topicB.getNumPartitions(), (short) 2, topicB.getConfig()).build();
+        Topic topicD = new Topic.Builder(topicB.getTopicName(), topicC.getNumPartitions() + 1, (short) 2, topicB.getConfig()).build();
+        Topic topicE = new Topic.Builder(topicB.getTopicName(), topicB.getNumPartitions(), (short) 3, topicB.getConfig()).build();
         assertFalse(TopicDiff.diff(topicC, topicD).changesReplicationFactor());
         assertTrue(TopicDiff.diff(topicD, topicE).changesReplicationFactor());
         assertTrue(TopicDiff.diff(topicC, topicE).changesReplicationFactor());

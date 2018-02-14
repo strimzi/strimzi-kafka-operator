@@ -77,7 +77,7 @@ public class TopicDiff {
         public static final String ADDRESS = "numReplicas";
         private short newNumReplicas;
 
-        public NumReplicasDifference (short newNumReplicas) {
+        public NumReplicasDifference(short newNumReplicas) {
             this.newNumReplicas = newNumReplicas;
         }
 
@@ -118,14 +118,14 @@ public class TopicDiff {
         private final String configValue;
 
         public AddedConfigEntry(String configKey, String configValue) {
-            assert(configKey != null && configValue != null);
+            assert configKey != null && configValue != null;
             this.configKey = configKey;
             this.configValue = configValue;
         }
 
         @Override
         public String address() {
-            return ADDRESS_PREFIX +configKey;
+            return ADDRESS_PREFIX + configKey;
         }
 
         @Override
@@ -168,7 +168,7 @@ public class TopicDiff {
 
         @Override
         public String address() {
-            return ADDRESS_PREFIX +configKey;
+            return ADDRESS_PREFIX + configKey;
         }
 
         @Override
@@ -284,7 +284,7 @@ public class TopicDiff {
     }
 
     public int numPartitionsDelta() {
-        NumPartitionsDifference newP = (NumPartitionsDifference)this.differences.get(NumPartitionsDifference.ADDRESS);
+        NumPartitionsDifference newP = (NumPartitionsDifference) this.differences.get(NumPartitionsDifference.ADDRESS);
         return newP == null ? 0 : newP.numPartitionsChange();
     }
 

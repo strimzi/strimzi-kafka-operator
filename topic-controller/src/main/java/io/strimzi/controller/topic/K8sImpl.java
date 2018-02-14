@@ -18,7 +18,7 @@ import java.util.List;
 
 public class K8sImpl implements K8s {
 
-    private final static Logger logger = LoggerFactory.getLogger(Controller.class);
+    private final static Logger LOGGER = LoggerFactory.getLogger(Controller.class);
 
     private final LabelPredicate cmPredicate;
     private final String namespace;
@@ -72,7 +72,7 @@ public class K8sImpl implements K8s {
     }
 
     @Override
-    public void listMaps(Handler<AsyncResult<List<ConfigMap> >> handler) {
+    public void listMaps(Handler<AsyncResult<List<ConfigMap>>> handler) {
         vertx.executeBlocking(future -> {
             try {
                 future.complete(client.configMaps().inNamespace(namespace).withLabels(cmPredicate.labels()).list().getItems());
@@ -83,7 +83,7 @@ public class K8sImpl implements K8s {
     }
 
     @Override
-    public void getFromName(MapName mapName, Handler<AsyncResult<ConfigMap >> handler) {
+    public void getFromName(MapName mapName, Handler<AsyncResult<ConfigMap>> handler) {
         vertx.executeBlocking(future -> {
             try {
                 future.complete(client.configMaps().inNamespace(namespace).withName(mapName.toString()).get());
@@ -102,10 +102,10 @@ public class K8sImpl implements K8s {
         vertx.executeBlocking(future -> {
             try {
                 try {
-                    logger.debug("Creating event {}", event);
+                    LOGGER.debug("Creating event {}", event);
                     client.events().create(event);
                 } catch (KubernetesClientException e) {
-                    logger.error("Error creating event {}", event, e);
+                    LOGGER.error("Error creating event {}", event, e);
                 }
                 future.complete();
             } catch (Exception e) {

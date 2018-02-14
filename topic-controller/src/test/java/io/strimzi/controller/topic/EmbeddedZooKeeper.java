@@ -69,7 +69,7 @@ public class EmbeddedZooKeeper {
 
     public String getZkConnectString() {
         InetSocketAddress addr = factory.getLocalAddress();
-        return addr.getAddress().getHostAddress()+":"+addr.getPort();
+        return addr.getAddress().getHostAddress() + ":" + addr.getPort();
     }
 
 }

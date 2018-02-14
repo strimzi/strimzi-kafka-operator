@@ -56,21 +56,21 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 @RoleBinding(
-        name="strimzi-role-binding",
-        role="strimzi-role",
-        users="developer"
+        name = "strimzi-role-binding",
+        role = "strimzi-role",
+        users = "developer"
 )
 @Role(
-        name="strimzi-role",
+        name = "strimzi-role",
         permissions = {
-            @Permission(resource="cm", verbs={"get", "create", "watch", "list", "delete", "update"}),
-            @Permission(resource="events", verbs={"get", "create"})
+            @Permission(resource = "cm", verbs = {"get", "create", "watch", "list", "delete", "update"}),
+            @Permission(resource = "events", verbs = {"get", "create"})
         }
 )
 @RunWith(VertxUnitRunner.class)
 public class ControllerIntegrationTest {
 
-    private static final Logger logger = LoggerFactory.getLogger(ControllerIntegrationTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ControllerIntegrationTest.class);
 
     @ClassRule
     public static KubeClusterResource testCluster = new KubeClusterResource();
@@ -106,7 +106,7 @@ public class ControllerIntegrationTest {
 
     @Before
     public void setup(TestContext context) throws Exception {
-        logger.info("Setting up test");
+        LOGGER.info("Setting up test");
         Runtime.getRuntime().addShutdownHook(kafkaHook);
         kafkaCluster = new KafkaCluster();
         kafkaCluster.addBrokers(1);
@@ -117,10 +117,10 @@ public class ControllerIntegrationTest {
 
         kubeClient = new DefaultKubernetesClient();
         namespace = testCluster.defaultNamespace();
-        logger.info("Using namespace {}", namespace);
+        LOGGER.info("Using namespace {}", namespace);
         Map<String, String> m = new HashMap();
         m.put(Config.KAFKA_BOOTSTRAP_SERVERS.key, kafkaCluster.brokerList());
-        m.put(Config.ZOOKEEPER_CONNECT.key, "localhost:"+ zkPort(kafkaCluster));
+        m.put(Config.ZOOKEEPER_CONNECT.key, "localhost:" + zkPort(kafkaCluster));
         m.put(Config.NAMESPACE.key, testCluster.defaultNamespace());
         Session session = new Session(kubeClient, new Config(m));
 
@@ -153,7 +153,7 @@ public class ControllerIntegrationTest {
                 map(evt -> evt.getMetadata().getUid()).
                 collect(Collectors.toSet());
 
-        logger.info("Finished setting up test");
+        LOGGER.info("Finished setting up test");
     }
 
     private static int zkPort(KafkaCluster cluster) {
@@ -170,7 +170,7 @@ public class ControllerIntegrationTest {
 
     @After
     public void teardown(TestContext context) {
-        logger.info("Tearing down test");
+        LOGGER.info("Tearing down test");
 
         kubeClient.configMaps().inNamespace(namespace).delete();
 
@@ -186,7 +186,7 @@ public class ControllerIntegrationTest {
                 topicWatcher = null;
                 topicsWatcher = null;
                 if (ar.failed()) {
-                    logger.error("Error undeploying session", ar.cause());
+                    LOGGER.error("Error undeploying session", ar.cause());
                     context.fail("Error undeploying session");
                 }
                 async.complete();
@@ -197,7 +197,7 @@ public class ControllerIntegrationTest {
             kafkaCluster.shutdown();
         }
         Runtime.getRuntime().removeShutdownHook(kafkaHook);
-        logger.info("Finished tearing down test");
+        LOGGER.info("Finished tearing down test");
     }
 
 
@@ -207,7 +207,7 @@ public class ControllerIntegrationTest {
         kubeClient.configMaps().inNamespace(namespace).create(cm);
 
         // Wait for the topic to be created
-        waitFor(context, ()-> {
+        waitFor(context, () -> {
             try {
                 adminClient.describeTopics(singletonList(topicName)).values().get(topicName).get();
                 return true;
@@ -231,7 +231,7 @@ public class ControllerIntegrationTest {
     }
 
     private String createTopic(TestContext context, String topicName) throws InterruptedException, ExecutionException {
-        logger.info("Creating topic {}", topicName);
+        LOGGER.info("Creating topic {}", topicName);
         // Create a topic
         String configMapName = new TopicName(topicName).asMapName().toString();
         CreateTopicsResult crt = adminClient.createTopics(singletonList(new NewTopic(topicName, 1, (short) 1)));
@@ -240,11 +240,11 @@ public class ControllerIntegrationTest {
         // Wait for the configmap to be created
         waitFor(context, () -> {
             ConfigMap cm = kubeClient.configMaps().inNamespace(namespace).withName(configMapName).get();
-            logger.info("Polled configmap {} waiting for creation", configMapName);
+            LOGGER.info("Polled configmap {} waiting for creation", configMapName);
             return cm != null;
         }, timeout, "Expected the configmap to have been created by now");
 
-        logger.info("configmap {} has been created", configMapName);
+        LOGGER.info("configmap {} has been created", configMapName);
         return configMapName;
     }
 
@@ -266,7 +266,7 @@ public class ControllerIntegrationTest {
             changedValue = "snappy";
         }
         m.put(key, new ConfigEntry(key, changedValue));
-        logger.info("Changing topic config {} to {}", key, changedValue);
+        LOGGER.info("Changing topic config {} to {}", key, changedValue);
 
         // Update the topic config
         AlterConfigsResult cgf = adminClient.alterConfigs(singletonMap(configResource,
@@ -276,9 +276,9 @@ public class ControllerIntegrationTest {
         // Wait for the configmap to be modified
         waitFor(context, () -> {
             ConfigMap cm = kubeClient.configMaps().inNamespace(namespace).withName(configMapName).get();
-            logger.info("Polled configmap {}, waiting for config change", configMapName);
+            LOGGER.info("Polled configmap {}, waiting for config change", configMapName);
             String gotValue = TopicSerialization.fromConfigMap(cm).getConfig().get(key);
-            logger.info("Got value {}", gotValue);
+            LOGGER.info("Got value {}", gotValue);
             return changedValue.equals(gotValue);
         }, timeout, "Expected the configmap to have been deleted by now");
     }
@@ -296,10 +296,10 @@ public class ControllerIntegrationTest {
         // Wait for the configmap to be modified
         waitFor(context, () -> {
             ConfigMap cm = kubeClient.configMaps().inNamespace(namespace).withName(configMapName).get();
-            logger.info("Polled configmap {}, waiting for partitions change", configMapName);
+            LOGGER.info("Polled configmap {}, waiting for partitions change", configMapName);
             int gotValue = TopicSerialization.fromConfigMap(cm).getNumPartitions();
-            logger.info("Got value {}", gotValue);
-            return (changedValue == gotValue);
+            LOGGER.info("Got value {}", gotValue);
+            return changedValue == gotValue;
         }, timeout, "Expected the configmap to have been deleted by now");
     }
 
@@ -323,16 +323,16 @@ public class ControllerIntegrationTest {
     }
 
     private void deleteTopic(TestContext context, String topicName, String configMapName) throws InterruptedException, ExecutionException {
-        logger.info("Deleting topic {} (ConfigMap {})", topicName, configMapName);
+        LOGGER.info("Deleting topic {} (ConfigMap {})", topicName, configMapName);
         // Now we can delete the topic
         DeleteTopicsResult dlt = adminClient.deleteTopics(singletonList(topicName));
         dlt.all().get();
-        logger.info("Deleted topic {}", topicName);
+        LOGGER.info("Deleted topic {}", topicName);
 
         // Wait for the configmap to be deleted
         waitFor(context, () -> {
             ConfigMap cm = kubeClient.configMaps().inNamespace(namespace).withName(configMapName).get();
-            logger.info("Polled configmap {}, got {}, waiting for deletion", configMapName, cm);
+            LOGGER.info("Polled configmap {}, got {}, waiting for deletion", configMapName, cm);
             return cm == null;
         }, timeout, "Expected the configmap to have been deleted by now");
     }
@@ -352,7 +352,7 @@ public class ControllerIntegrationTest {
         Async async = context.async();
         long t0 = System.currentTimeMillis();
         Future<Void> fut = Future.future();
-        vertx.setPeriodic(3_000L, timerId-> {
+        vertx.setPeriodic(3_000L, timerId -> {
             // Wait for a configmap to be created
             boolean isFinished;
             try {
@@ -388,7 +388,7 @@ public class ControllerIntegrationTest {
                     && "ConfigMap".equals(evt.getInvolvedObject().getKind())
                     && cm.getMetadata().getName().equals(evt.getInvolvedObject().getName())).
                     collect(Collectors.toList());
-            logger.debug("Waiting for events: {}", filtered.stream().map(evt->evt.getMessage()).collect(Collectors.toList()));
+            LOGGER.debug("Waiting for events: {}", filtered.stream().map(evt -> evt.getMessage()).collect(Collectors.toList()));
             if (!filtered.isEmpty()) {
                 assertEquals(1, filtered.size());
                 Event event = filtered.get(0);
@@ -482,7 +482,7 @@ public class ControllerIntegrationTest {
         kubeClient.configMaps().inNamespace(namespace).withName(cm.getMetadata().getName()).delete();
 
         // Wait for the topic to be deleted
-        waitFor(context, ()-> {
+        waitFor(context, () -> {
             try {
                 adminClient.describeTopics(singletonList(topicName)).values().get(topicName).get();
                 return false;
@@ -510,11 +510,11 @@ public class ControllerIntegrationTest {
         kubeClient.configMaps().inNamespace(namespace).withName(cm.getMetadata().getName()).edit().addToData(TopicSerialization.CM_KEY_CONFIG, "{\"retention.ms\":\"12341234\"}").done();
 
         // Wait for that to be reflected in the topic
-        waitFor(context, ()-> {
+        waitFor(context, () -> {
             ConfigResource configResource = topicConfigResource(topicName);
             org.apache.kafka.clients.admin.Config config = getTopicConfig(configResource);
             String retention = config.get("retention.ms").value();
-            logger.debug("retention of {}, waiting for 12341234", retention);
+            LOGGER.debug("retention of {}, waiting for 12341234", retention);
             return "12341234".equals(retention);
         },  timeout, "Expected the topic to be updated");
     }
@@ -544,7 +544,7 @@ public class ControllerIntegrationTest {
 
         // now change the cm
         String changedName = topicName.toUpperCase(Locale.ENGLISH);
-        logger.info("Changing CM data.name from {} to {}", topicName, changedName);
+        LOGGER.info("Changing CM data.name from {} to {}", topicName, changedName);
         kubeClient.configMaps().inNamespace(namespace).withName(cm.getMetadata().getName()).edit().addToData(TopicSerialization.CM_KEY_NAME, changedName).done();
 
         // We expect this to cause a warning event
@@ -559,7 +559,7 @@ public class ControllerIntegrationTest {
         String topicName = "two-cms-one-topic";
         Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap()).build();
         ConfigMap cm = TopicSerialization.toConfigMap(topic, cmPredicate);
-        ConfigMap cm2 = new ConfigMapBuilder(cm).editMetadata().withName(topicName+"-1").endMetadata().build();
+        ConfigMap cm2 = new ConfigMapBuilder(cm).editMetadata().withName(topicName + "-1").endMetadata().build();
         // create one
         createCm(context, cm2);
         // create another
