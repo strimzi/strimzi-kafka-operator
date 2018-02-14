@@ -210,25 +210,4 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
         delete(namespace, deletionList);
         update(namespace, updateList);
     }
-
-    private void add(String namespace, List<ConfigMap> add)   {
-        for (ConfigMap cm : add) {
-            log.info("Reconciliation: Kafka Connect cluster {} should be added", cm.getMetadata().getName());
-            create(namespace, name(cm));
-        }
-    }
-
-    private void update(String namespace, List<ConfigMap> update)   {
-        for (ConfigMap cm : update) {
-            log.info("Reconciliation: Kafka Connect cluster {} should be checked for updates", cm.getMetadata().getName());
-            update(namespace, name(cm));
-        }
-    }
-
-    private void delete(String namespace, List<Deployment> delete)   {
-        for (Deployment dep : delete) {
-            log.info("Reconciliation: Kafka Connect cluster {} should be deleted", dep.getMetadata().getName());
-            delete(namespace, nameFromLabels(dep));
-        }
-    }
 }

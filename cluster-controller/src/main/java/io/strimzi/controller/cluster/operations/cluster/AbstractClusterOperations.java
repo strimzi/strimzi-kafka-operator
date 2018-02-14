@@ -17,6 +17,7 @@ import io.vertx.core.shareddata.Lock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -179,5 +180,26 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster> {
     }
 
     public abstract void reconcile(String namespace, Map<String, String> labels);
+
+    protected final void add(String namespace, List<ConfigMap> add)   {
+        for (ConfigMap cm : add) {
+            log.info("Reconciliation: {} cluster {} should be added", clusterDescription, cm.getMetadata().getName());
+            create(namespace, name(cm));
+        }
+    }
+
+    protected final void update(String namespace, List<ConfigMap> update)   {
+        for (ConfigMap cm : update) {
+            log.info("Reconciliation: {} cluster {} should be checked for updates", clusterDescription, cm.getMetadata().getName());
+            update(namespace, name(cm));
+        }
+    }
+
+    protected final <R extends HasMetadata> void delete(String namespace, List<R> delete)   {
+        for (R dep : delete) {
+            log.info("Reconciliation: {} cluster {} should be deleted", clusterDescription, dep.getMetadata().getName());
+            delete(namespace, nameFromLabels(dep));
+        }
+    }
 
 }
