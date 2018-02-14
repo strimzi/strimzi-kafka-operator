@@ -138,7 +138,8 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
                     List<Future> waitPodResult = new ArrayList<>(zk.getReplicas());
 
                     for (int i = 0; i < zk.getReplicas(); i++) {
-                        waitPodResult.add(podOperations.waitUntilReady(namespace, zk.getName() + "-" + i, 60, TimeUnit.SECONDS));
+                        String podName = zk.getName() + "-" + i;
+                        waitPodResult.add(podOperations.waitUntilReady(namespace, podName, 60, TimeUnit.SECONDS));
                     }
 
                     return CompositeFuture.join(waitPodResult);
