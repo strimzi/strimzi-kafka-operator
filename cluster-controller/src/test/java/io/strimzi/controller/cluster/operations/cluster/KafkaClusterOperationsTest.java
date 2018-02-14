@@ -32,8 +32,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.stubbing.Answer;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -43,6 +41,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.singleton;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -253,7 +252,7 @@ public class KafkaClusterOperationsTest {
                     ZookeeperCluster.zookeeperClusterName(clusterCmName),
                     KafkaCluster.kafkaClusterName(clusterCmName),
                     KafkaCluster.headlessName(clusterCmName)),
-                    new HashSet(serviceCaptor.getAllValues()));
+                    captured(serviceCaptor));
 
             // PvcOperations only used for deletion
             Set<String> expectedPvcDeletions = new HashSet<>();
@@ -471,7 +470,7 @@ public class KafkaClusterOperationsTest {
                 expectedPatchedServices.add(originalZookeeperCluster.getName());
                 expectedPatchedServices.add(originalZookeeperCluster.getHeadlessName());
             }
-            context.assertEquals(expectedPatchedServices, new HashSet(patchedServicesCaptor.getAllValues()));
+            context.assertEquals(expectedPatchedServices, captured(patchedServicesCaptor));
 
             // rolling restart
             Set<String> expectedRollingRestarts = set();
@@ -508,6 +507,71 @@ public class KafkaClusterOperationsTest {
             verifyNoMoreInteractions(mockPvcOps);
             async.complete();
         });
+    }
+
+    @Test
+    public void testReconcile(TestContext context) {
+        ConfigMap clusterCm = getConfigMap("bar");
+        reconcileCluster(context, getConfigMap("bar"), clusterCm);
+    }
+
+    private void reconcileCluster(TestContext context, ConfigMap originalCm, ConfigMap clusterCm) {
+
+        KafkaCluster originalKafkaCluster = KafkaCluster.fromConfigMap(originalCm);
+        KafkaCluster updatedKafkaCluster = KafkaCluster.fromConfigMap(clusterCm);
+        ZookeeperCluster originalZookeeperCluster = ZookeeperCluster.fromConfigMap(originalCm);
+        ZookeeperCluster updatedZookeeperCluster = ZookeeperCluster.fromConfigMap(clusterCm);
+
+        // create CM, Service, headless service, statefulset
+        ConfigMapOperations mockCmOps = mock(ConfigMapOperations.class);
+        ServiceOperations mockServiceOps = mock(ServiceOperations.class);
+        StatefulSetOperations mockSsOps = mock(StatefulSetOperations.class);
+        PvcOperations mockPvcOps = mock(PvcOperations.class);
+
+        String clusterCmName = clusterCm.getMetadata().getName();
+        String clusterCmNamespace = clusterCm.getMetadata().getNamespace();
+
+        ConfigMap foo = getConfigMap("foo");
+        ConfigMap bar = getConfigMap("bar");
+        ConfigMap baz = getConfigMap("baz");
+        when(mockCmOps.list(eq(clusterCmNamespace), any())).thenReturn(
+            asList(foo, bar)
+        );
+        when(mockSsOps.list(eq(clusterCmNamespace), any())).thenReturn(
+            asList(KafkaCluster.fromConfigMap(bar).generateStatefulSet(openShift),
+                    KafkaCluster.fromConfigMap(baz).generateStatefulSet(openShift))
+        );
+
+        Set<String> created = new HashSet<>();
+        Set<String> updated = new HashSet<>();
+        Set<String> deleted = new HashSet<>();
+
+        KafkaClusterOperations ops = new KafkaClusterOperations(vertx, openShift,
+                mockCmOps,
+                mockServiceOps, mockSsOps,
+                mockPvcOps) {
+            @Override
+            public void create(String namespace, String name) {
+                created.add(name);
+            }
+            @Override
+            public void update(String namespace, String name) {
+                updated.add(name);
+            }
+            @Override
+            public void delete(String namespace, String name) {
+                deleted.add(name);
+            }
+        };
+
+
+        // Now try to create a KafkaCluster based on this CM
+        ops.reconcile(clusterCmNamespace, Collections.emptyMap());
+
+        context.assertEquals(singleton("foo"), created);
+        context.assertEquals(singleton("bar"), updated);
+        context.assertEquals(singleton("baz"), deleted);
+
     }
 
 
