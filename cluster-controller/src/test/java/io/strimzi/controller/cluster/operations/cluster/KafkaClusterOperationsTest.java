@@ -13,9 +13,11 @@ import io.strimzi.controller.cluster.operations.resource.PvcOperations;
 import io.strimzi.controller.cluster.operations.resource.ServiceOperations;
 import io.strimzi.controller.cluster.operations.resource.StatefulSetOperations;
 import io.strimzi.controller.cluster.resources.KafkaCluster;
+import io.strimzi.controller.cluster.resources.Storage;
 import io.strimzi.controller.cluster.resources.ZookeeperCluster;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunnerWithParametersFactory;
@@ -27,7 +29,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.mockito.ArgumentCaptor;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -39,7 +41,6 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -51,6 +52,7 @@ public class KafkaClusterOperationsTest {
     private final boolean openShift;
     private final boolean metrics;
     private final String storage;
+    private final boolean deleteClaim;
 
     public static class Params {
         private final boolean openShift;
@@ -66,17 +68,34 @@ public class KafkaClusterOperationsTest {
 
     @Parameterized.Parameters
     public static Iterable<Params> data() {
-        String storage = "{\"type\": \"ephemeral\"}";
-        return Arrays.asList(new Params(false, false, storage),
-                new Params(false, true, storage),
-                new Params(true, false, storage),
-                new Params(true, true, storage));
+        boolean[] shiftiness = {true, false};
+        boolean[] metrics = {true, false};
+        String[] storageConfigs = {
+                "{\"type\": \"ephemeral\"}",
+                "{\"type\": \"persistent-claim\", " +
+                        "\"size\": \"123\", " +
+                        "\"class\": \"foo\"," +
+                        "\"delete-claim\": true}",
+                "{\"type\": \"local\", " +
+                        "\"size\": \"123\", " +
+                        "\"class\": \"foo\"}"
+        };
+        List<Params> result = new ArrayList();
+        for (boolean shift: shiftiness) {
+            for (boolean metric: metrics) {
+                for (String storage: storageConfigs) {
+                    result.add(new Params(shift, metric, storage));
+                }
+            }
+        }
+        return result;
     }
 
     public KafkaClusterOperationsTest(Params params) {
         this.openShift = params.openShift;
         this.metrics = params.metrics;
         this.storage = params.storage;
+        this.deleteClaim = Storage.fromJson(new JsonObject(params.storage)).isDeleteClaim();
     }
 
     protected static Vertx vertx;
@@ -191,6 +210,9 @@ public class KafkaClusterOperationsTest {
         when(mockServiceOps.delete(eq(clusterCmNamespace), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
         when(mockSsOps.delete(anyString(), anyString())).thenReturn(Future.succeededFuture());
 
+        ArgumentCaptor<String> pvcCaptor = ArgumentCaptor.forClass(String.class);
+        when(mockPvcOps.delete(eq(clusterCmNamespace), pvcCaptor.capture())).thenReturn(Future.succeededFuture());
+
         KafkaClusterOperations ops = new KafkaClusterOperations(vertx, openShift,
                 mockCmOps,
                 mockServiceOps, mockSsOps,
@@ -210,7 +232,6 @@ public class KafkaClusterOperationsTest {
             }
             context.assertEquals(metricsNames, new HashSet(metricsCaptor.getAllValues()));
             verify(mockSsOps).delete(eq(clusterCmNamespace), eq(ZookeeperCluster.zookeeperClusterName(clusterCmName)));
-            //verify(mockServiceOps, times(2)).delete(any(), any());
 
             context.assertEquals(set(
                     ZookeeperCluster.zookeeperHeadlessName(clusterCmName),
@@ -220,7 +241,8 @@ public class KafkaClusterOperationsTest {
                     new HashSet(serviceCaptor.getAllValues()));
 
             // PvcOperations only used for deletion
-            verifyNoMoreInteractions(mockPvcOps);
+            context.assertEquals(deleteClaim ? set("zookeeper-storage-" + clusterCmName + "-zookeeper-0",
+                    "kafka-storage-" + clusterCmName + "-kafka-0") : set(), new HashSet(pvcCaptor.getAllValues()));
             async.complete();
         });
     }
