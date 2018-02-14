@@ -39,9 +39,7 @@ import static java.util.Arrays.asList;
 @RunWith(VertxUnitRunner.class)
 public class ControllerTest {
 
-    private final LabelPredicate cmPredicate = new LabelPredicate(
-            "kind", "topic",
-            "app", "strimzi");
+    private final LabelPredicate cmPredicate = LabelPredicate.fromString("kind=topic,app=strimzi");
 
     private final TopicName topicName = new TopicName("my-topic");
     private final MapName mapName = topicName.asMapName();
@@ -128,10 +126,9 @@ public class ControllerTest {
     /** Test what happens when a non-topic config map gets created in kubernetes */
     @Test
     public void testOnConfigMapAdded_invalidCm(TestContext context) {
-        Map<String, String> data = new HashMap<>();
-        data.put(TopicSerialization.CM_KEY_REPLICAS, "1");
-        data.put(TopicSerialization.CM_KEY_PARTITIONS, "1");
-        data.put(TopicSerialization.CM_KEY_CONFIG, "{null:null}");
+        Map<String, String> data = map(TopicSerialization.CM_KEY_REPLICAS, "1",
+                TopicSerialization.CM_KEY_PARTITIONS, "1",
+                TopicSerialization.CM_KEY_CONFIG, "{null:null}");
         ConfigMap cm = new ConfigMapBuilder().withNewMetadata().withName("invalid").withLabels(cmPredicate.labels()).endMetadata().
                 withData(data).build();
 

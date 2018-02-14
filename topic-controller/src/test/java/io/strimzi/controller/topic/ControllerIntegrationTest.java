@@ -82,10 +82,7 @@ public class ControllerIntegrationTest {
 
     private final Vertx vertx = Vertx.vertx();
     private KafkaCluster kafkaCluster;
-    private volatile Controller controller;
-    private volatile ControllerAssignedKafkaImpl kafka;
     private volatile AdminClient adminClient;
-    private volatile K8sImpl k8s;
     private DefaultKubernetesClient kubeClient;
     private volatile TopicsWatcher topicsWatcher;
     private Thread kafkaHook = new Thread() {
@@ -99,7 +96,6 @@ public class ControllerIntegrationTest {
     private volatile TopicConfigsWatcher topicsConfigWatcher;
     private volatile TopicWatcher topicWatcher;
 
-    private Session session;
     private volatile String deploymentId;
     private Set<String> preExistingEvents;
 
@@ -129,9 +125,6 @@ public class ControllerIntegrationTest {
             if (ar.succeeded()) {
                 deploymentId = ar.result();
                 adminClient = session.adminClient;
-                kafka = session.kafka;
-                k8s = session.k8s;
-                controller = session.controller;
                 topicsConfigWatcher = session.topicConfigsWatcher;
                 topicWatcher = session.topicWatcher;
                 topicsWatcher = session.topicsWatcher;
@@ -179,9 +172,6 @@ public class ControllerIntegrationTest {
             vertx.undeploy(deploymentId, ar -> {
                 deploymentId = null;
                 adminClient = null;
-                kafka = null;
-                k8s = null;
-                controller = null;
                 topicsConfigWatcher = null;
                 topicWatcher = null;
                 topicsWatcher = null;
