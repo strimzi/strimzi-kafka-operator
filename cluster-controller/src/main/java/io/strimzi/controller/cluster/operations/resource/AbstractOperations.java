@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Abstract resource creation, for a generic resource type {@code R}.
@@ -92,7 +93,6 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
         Future fut = Future.future();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
-
                     if (operation().inNamespace(namespace).withName(name).get() != null) {
                         try {
                             log.info("Deleting {} {} in namespace {}", resourceKind, name, namespace);
@@ -165,4 +165,37 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
         return operation().inNamespace(namespace).withLabels(labels).list().getItems();
     }
 
+    /**
+     * Waits until resource is in the Ready state
+     *
+     * @param namespace The namespace
+     * @param name The resource name
+     * @param timeout Timeout in {@code timeUnit}
+     * @param timeUnit Time unit
+     */
+    public Future<Void> waitUntilReady(String namespace, String name, long timeout, TimeUnit timeUnit) {
+        Future<Void> fut = Future.future();
+        vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
+                future -> {
+                    try {
+                        if (operation().inNamespace(namespace).withName(name).get() != null) {
+                            log.info("Waiting for {} resource {} in namespace {} to get ready", resourceKind, name, namespace);
+                            operation().inNamespace(namespace).withName(name).waitUntilReady(timeout, timeUnit);
+                            log.info("{} {} in namespace {} is ready", resourceKind, name, namespace);
+                            future.complete();
+                        } else {
+                            log.error("{} {} in namespace {} doesn't exist - cannot wait until it is ready", resourceKind, name, namespace);
+                            future.fail("Resource doesn't exist - cannot wait until it is ready");
+                        }
+                    }
+                    catch (Exception e) {
+                        log.error("Caught exception while waiting got {} {} in namespace {} to get ready", resourceKind, name, namespace, e);
+                        future.fail(e);
+                    }
+                },
+                false,
+                fut.completer()
+        );
+        return fut;
+    }
 }

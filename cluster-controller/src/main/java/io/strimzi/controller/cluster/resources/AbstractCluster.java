@@ -322,11 +322,16 @@ public abstract class AbstractCluster {
     }
 
     protected Service createHeadlessService(String name, List<ServicePort> ports) {
+        return createHeadlessService(name, ports, Collections.EMPTY_MAP);
+    }
+
+    protected Service createHeadlessService(String name, List<ServicePort> ports, Map<String, String> annotations) {
         Service service = new ServiceBuilder()
                 .withNewMetadata()
                     .withName(name)
                     .withLabels(getLabelsWithName(name))
                     .withNamespace(namespace)
+                    .withAnnotations(annotations)
                 .endMetadata()
                 .withNewSpec()
                     .withType("ClusterIP")

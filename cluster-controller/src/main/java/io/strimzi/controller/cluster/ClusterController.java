@@ -72,7 +72,7 @@ public class ClusterController extends AbstractVerticle {
         log.info("Starting ClusterController");
 
         // Configure the executor here, but it is used only in other places
-        getVertx().createSharedWorkerExecutor("kubernetes-ops-pool", 5, TimeUnit.SECONDS.toNanos(120));
+        getVertx().createSharedWorkerExecutor("kubernetes-ops-pool", 10, TimeUnit.SECONDS.toNanos(120));
 
         createConfigMapWatch(res -> {
             if (res.succeeded())    {
