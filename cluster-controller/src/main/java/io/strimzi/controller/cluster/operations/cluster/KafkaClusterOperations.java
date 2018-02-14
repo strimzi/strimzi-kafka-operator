@@ -143,12 +143,12 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
                     return CompositeFuture.join(waitPodResult);
                 })
-                    .compose(res -> {
-                        List<Future> waitServiceResult = new ArrayList<>(1);
-                        waitServiceResult.add(serviceOperations.waitUntilReady(namespace, zk.getName(), 60, TimeUnit.SECONDS));
-                        waitServiceResult.add(serviceOperations.waitUntilReady(namespace, zk.getHeadlessName(), 60, TimeUnit.SECONDS));
-                        return CompositeFuture.join(waitServiceResult);
-                    })
+                .compose(res -> {
+                    List<Future> waitServiceResult = new ArrayList<>(2);
+                    waitServiceResult.add(serviceOperations.waitUntilReady(namespace, zk.getName(), 60, TimeUnit.SECONDS));
+                    waitServiceResult.add(serviceOperations.waitUntilReady(namespace, zk.getHeadlessName(), 60, TimeUnit.SECONDS));
+                    return CompositeFuture.join(waitServiceResult);
+                })
                 .compose(res -> {
                     fut.complete();
                 }, fut);
