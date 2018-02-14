@@ -426,7 +426,9 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
             if (zkConfigMap != null)    {
                 zk = ZookeeperCluster.fromConfigMap(zkConfigMap);
                 log.info("Updating Zookeeper cluster {} in namespace {}", zk.getName(), namespace);
-                diff = zk.diff(configMapOperations, statefulSetOperations, namespace);
+                StatefulSet ss = statefulSetOperations.get(namespace, zk.getName());
+                ConfigMap metricsConfigMap = configMapOperations.get(namespace, zk.getMetricsConfigName());
+                diff = zk.diff(metricsConfigMap, ss);
             } else {
                 throw new IllegalStateException("ConfigMap " + name + " doesn't exist anymore in namespace " + namespace);
             }
