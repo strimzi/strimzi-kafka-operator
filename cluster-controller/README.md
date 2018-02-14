@@ -1,17 +1,17 @@
 # Cluster Controller
 
 The cluster controller is in charge to deploy a Kafka cluster alongside a Zookeeper ensemble. It's also able to deploy a 
-Kafka Connect cluster which can connect to an already existing Kafka cluster.
+Kafka Connect cluster which connects to an already existing Kafka cluster.
 
 When up and running, it starts to "watch" for ConfigMaps containing the Kafka or Kafka Connect cluster configuration.
-Such a ConfigMaps have to have a specific label which by default is `strimzi.io/kind=cluster` (as described later) but 
-it can be changed through a corresponding environment variable.
+Such a ConfigMaps have to have a specific label which by default is `strimzi.io/kind=cluster` (as described later) that 
+can be changed through a corresponding environment variable.
 
 When a new ConfigMap is created on the Kubernetes/OpenShift cluster, the controller gets the deployment configuration from
 its `data` section and starts the creation process of a new cluster (Kafka or Kafka Connect). It's done creating a bunch 
 of Kubernetes/OpenShift resources needed for such a deployment, like StatefulSets, ConfigMaps, Services and so on.
 
-Every time the ConfigMap is edited and updated, due to some changes in the `data` section, the controller executes a related updating
+Every time the ConfigMap is updated by the user with some changes in the `data` section, the controller executes a related updating
 operation on the cluster (i.e. scale up/down, changing metrics configuration and so on). It means that some resources are 
 patched or deleted and then re-created for reflecting the changes in the cluster configuration. 
 
@@ -20,11 +20,20 @@ resources.
 
 ## Reconciliation
 
-TBD
+When the controller is up and running, it reacts at all notifications received from the Kubernetes/OpenShift cluster related 
+to the watched ConfigMaps when they are created, updated or deleted.
+
+It could happen that the cluster controller isn't working properly and the related pod is restarted. In that scenario,
+it could lost notifications about the cluster ConfigMaps; without any action there will be an inconsistent state comparing
+the ConfigMaps and what is actually deployed in the Kubernetes/OpenShift cluster.
+
+For fixing this kind of issues, a periodic reconciliation is executed by the cluster controller so that it can compare 
+how the ConfigMaps look like (and if they exist) with the current cluster deployment in order to have a consistent state 
+across all of them.
 
 ## Format of the cluster ConfigMap
 
-By default, the controller watches for ConfigMap(s) having the label `strimzi.io/kind=cluster` in order to find and get
+By default, the controller watches for ConfigMaps having the label `strimzi.io/kind=cluster` in order to find and get
 configuration for a Kafka or Kafka Connect cluster to deploy. The label is configurable through the `STRIMZI_CONFIGMAP_LABELS` 
 environment variable.
 
@@ -117,15 +126,15 @@ data:
 
 #### Storage
 
-Kafka needs to save information like data logs (messages), consumer offsets and so on in some way; the same is true for 
-Zookeeper about znodes values.
-Strimzi allows to save such a data in an "ephemeral" way so using `emptyDir` or in a "persistent-claim" way using persistent 
-volume claims.
-It's possible to provide the storage configuration in the related ConfigMap using a JSON string as value for fields 
-`kafka-storage` and `zookeeper-storage`.
+Kafka needs to save information like data logs (so received messages), consumer offsets and so on in some way; the same is true for 
+Zookeeper about znodes children and values.
+The Strimzi project allows to save such a data in an "ephemeral" way (using `emptyDir`) or in a "persistent-claim" way using persistent 
+volumes.
+It's possible to provide the storage configuration in the related ConfigMap using a JSON string as value for the 
+`kafka-storage` and `zookeeper-storage` fields.
 
 The JSON representation has a mandatory `type` field for specifying the type of storage to use ("ephemeral" or "persistent-claim").
-In case of "persistent-claim" type the following fields can be used as well :
+In case of "persistent-claim" type the following fields can be provided as well :
 
 * `size`: defines the size of the persistent volume claim (i.e 1Gi)
 * `class` : the Kubernetes/OpenShift storage class to use for dynamic volume allocation
@@ -156,7 +165,7 @@ A more complex configuration could use a storage class in the following way.
 }
 ```
 
-Finally, a selector can be used in order to select the needs for a specific labeled persistent volume.
+Finally, a selector can be used in order to select a specific labeled persistent volume which provides some needed features (i.e. an SSD)
 
 ```json
 {
