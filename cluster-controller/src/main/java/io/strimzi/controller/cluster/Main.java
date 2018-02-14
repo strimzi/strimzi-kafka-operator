@@ -13,6 +13,7 @@ import io.strimzi.controller.cluster.operations.resource.BuildConfigOperations;
 import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
 import io.strimzi.controller.cluster.operations.resource.DeploymentConfigOperations;
 import io.strimzi.controller.cluster.operations.resource.DeploymentOperations;
+import io.strimzi.controller.cluster.operations.resource.EndpointOperations;
 import io.strimzi.controller.cluster.operations.resource.ImageStreamOperations;
 import io.strimzi.controller.cluster.operations.resource.PodOperations;
 import io.strimzi.controller.cluster.operations.resource.PvcOperations;
@@ -36,9 +37,10 @@ public class Main {
             PvcOperations pvcOperations = new PvcOperations(vertx, client);
             DeploymentOperations deploymentOperations = new DeploymentOperations(vertx, client);
             PodOperations podOperations = new PodOperations(vertx, client);
+            EndpointOperations endpointOperations = new EndpointOperations(vertx, client);
 
             boolean isOpenShift = Boolean.TRUE.equals(client.isAdaptable(OpenShiftClient.class));
-            KafkaClusterOperations kafkaClusterOperations = new KafkaClusterOperations(vertx, isOpenShift, configMapOperations, serviceOperations, statefulSetOperations, pvcOperations, podOperations);
+            KafkaClusterOperations kafkaClusterOperations = new KafkaClusterOperations(vertx, isOpenShift, configMapOperations, serviceOperations, statefulSetOperations, pvcOperations, podOperations, endpointOperations);
             KafkaConnectClusterOperations kafkaConnectClusterOperations = new KafkaConnectClusterOperations(vertx, isOpenShift, configMapOperations, deploymentOperations, serviceOperations);
 
             DeploymentConfigOperations deploymentConfigOperations = null;

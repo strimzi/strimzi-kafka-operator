@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.internal.readiness.Readiness;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import org.slf4j.Logger;
@@ -16,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Abstract resource creation, for a generic resource type {@code R}.
@@ -175,27 +177,58 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
      */
     public Future<Void> waitUntilReady(String namespace, String name, long timeout, TimeUnit timeUnit) {
         Future<Void> fut = Future.future();
-        vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
-                future -> {
-                    try {
-                        if (operation().inNamespace(namespace).withName(name).get() != null) {
-                            log.info("Waiting for {} resource {} in namespace {} to get ready", resourceKind, name, namespace);
-                            operation().inNamespace(namespace).withName(name).waitUntilReady(timeout, timeUnit);
+        log.info("Waiting for {} resource {} in namespace {} to get ready", resourceKind, name, namespace);
+        AtomicInteger calls = new AtomicInteger(0);
+        long timer = 1000L;
+        long timeoutInMs = timeUnit.toMillis(timeout);
+
+        vertx.setPeriodic(timer, timerId -> {
+            calls.addAndGet(1);
+
+            vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
+                    future -> {
+                        try {
+                            R resourceOp = operation().inNamespace(namespace).withName(name);
+                            T resource = resourceOp.get();
+                            if (resource != null)   {
+                                if (Readiness.isReadinessApplicable(resource)) {
+                                    Boolean ready = resourceOp.isReady();
+
+                                    if (ready == true) {
+                                        future.complete();
+                                    } else {
+                                        future.fail("Not ready yet");
+                                    }
+                                } else {
+                                    future.complete();
+                                }
+                            } else {
+                                log.warn("{} {} in namespace {} doesn't exist", resourceKind, name, namespace);
+                                future.fail("Resource doesn't exist");
+                            }
+                        }
+                        catch (Exception e) {
+                            log.warn("Caught exception while waiting for {} {} in namespace {} to get ready", resourceKind, name, namespace, e);
+                            future.fail(e);
+                        }
+                    },
+                    false,
+                    res -> {
+                        if (res.succeeded())    {
+                            vertx.cancelTimer(timerId);
                             log.info("{} {} in namespace {} is ready", resourceKind, name, namespace);
-                            future.complete();
+                            fut.complete();
                         } else {
-                            log.error("{} {} in namespace {} doesn't exist - cannot wait until it is ready", resourceKind, name, namespace);
-                            future.fail("Resource doesn't exist - cannot wait until it is ready");
+                            if (calls.get() * timer > timeoutInMs)   {
+                                vertx.cancelTimer(timerId);
+                                log.error("Exceeded timeout of {} ms while waiting for {} {} in namespace {} to be ready", timeoutInMs, resourceKind, name, namespace);
+                                fut.fail("Timeout while waiting for resource to be ready");
+                            }
                         }
                     }
-                    catch (Exception e) {
-                        log.error("Caught exception while waiting got {} {} in namespace {} to get ready", resourceKind, name, namespace, e);
-                        future.fail(e);
-                    }
-                },
-                false,
-                fut.completer()
-        );
+            );
+        });
+
         return fut;
     }
 }

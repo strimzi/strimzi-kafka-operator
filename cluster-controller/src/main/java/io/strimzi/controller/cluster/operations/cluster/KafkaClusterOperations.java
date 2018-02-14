@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.controller.cluster.ClusterController;
 import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
+import io.strimzi.controller.cluster.operations.resource.EndpointOperations;
 import io.strimzi.controller.cluster.operations.resource.PodOperations;
 import io.strimzi.controller.cluster.operations.resource.PvcOperations;
 import io.strimzi.controller.cluster.operations.resource.ServiceOperations;
@@ -44,6 +45,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
     private final ServiceOperations serviceOperations;
     private final PvcOperations pvcOperations;
     private final PodOperations podOperations;
+    private final EndpointOperations endpointOperations;
 
     /**
      * Constructor
@@ -60,13 +62,15 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
                                   ServiceOperations serviceOperations,
                                   StatefulSetOperations statefulSetOperations,
                                   PvcOperations pvcOperations,
-                                  PodOperations podOperations) {
+                                  PodOperations podOperations,
+                                  EndpointOperations endpointOperations) {
         super(vertx, isOpenShift, "Kafka");
         this.configMapOperations = configMapOperations;
         this.statefulSetOperations = statefulSetOperations;
         this.serviceOperations = serviceOperations;
         this.pvcOperations = pvcOperations;
         this.podOperations = podOperations;
+        this.endpointOperations = endpointOperations;
     }
 
     public void create(String namespace, String name, Handler<AsyncResult<Void>> handler) {
@@ -145,10 +149,10 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
                     return CompositeFuture.join(waitPodResult);
                 })
                 .compose(res -> {
-                    List<Future> waitServiceResult = new ArrayList<>(2);
-                    waitServiceResult.add(serviceOperations.waitUntilReady(namespace, zk.getName(), 60, TimeUnit.SECONDS));
-                    waitServiceResult.add(serviceOperations.waitUntilReady(namespace, zk.getHeadlessName(), 60, TimeUnit.SECONDS));
-                    return CompositeFuture.join(waitServiceResult);
+                    List<Future> waitEndpointResult = new ArrayList<>(2);
+                    waitEndpointResult.add(endpointOperations.waitUntilReady(namespace, zk.getName(), 60, TimeUnit.SECONDS));
+                    waitEndpointResult.add(endpointOperations.waitUntilReady(namespace, zk.getHeadlessName(), 60, TimeUnit.SECONDS));
+                    return CompositeFuture.join(waitEndpointResult);
                 })
                 .compose(res -> {
                     fut.complete();

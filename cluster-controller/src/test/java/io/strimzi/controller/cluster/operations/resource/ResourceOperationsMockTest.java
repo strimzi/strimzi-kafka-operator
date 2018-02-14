@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.internal.readiness.Readiness;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
@@ -29,6 +30,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.matches;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -313,15 +315,11 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         AbstractOperations<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
         Async async = context.async();
-        Future<Void> fut = op.waitUntilReady(NAMESPACE, RESOURCE_NAME, 5, TimeUnit.SECONDS);
+        Future<Void> fut = op.waitUntilReady(NAMESPACE, RESOURCE_NAME, 2, TimeUnit.SECONDS);
         fut.setHandler(ar -> {
             assertTrue(ar.failed());
-            verify(mockResource).get();
-            try {
-                verify(mockResource, never()).waitUntilReady(anyLong(), any());
-            } catch (InterruptedException e) {
-                context.fail(e);
-            }
+            verify(mockResource, atLeastOnce()).get();
+            verify(mockResource, never()).isReady();
             async.complete();
         });
     }
@@ -346,14 +344,9 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         AbstractOperations<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
         Async async = context.async();
-        op.waitUntilReady(NAMESPACE, RESOURCE_NAME, 5, TimeUnit.SECONDS).setHandler(ar -> {
+        op.waitUntilReady(NAMESPACE, RESOURCE_NAME, 2, TimeUnit.SECONDS).setHandler(ar -> {
             assertTrue(ar.failed());
-            assertEquals(ex, ar.cause());
-            try {
-                verify(mockResource, never()).waitUntilReady(anyLong(), any());
-            } catch (InterruptedException e) {
-                context.fail(e);
-            }
+            verify(mockResource, never()).isReady();
             async.complete();
         });
     }
@@ -363,6 +356,7 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         T resource = resource();
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
+        when(mockResource.isReady()).thenReturn(Boolean.TRUE);
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(resource.getMetadata().getName()))).thenReturn(mockResource);
@@ -376,26 +370,28 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         AbstractOperations<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
         Async async = context.async();
-        op.waitUntilReady(NAMESPACE, RESOURCE_NAME, 5, TimeUnit.SECONDS).setHandler(ar -> {
+        op.waitUntilReady(NAMESPACE, RESOURCE_NAME, 2, TimeUnit.SECONDS).setHandler(ar -> {
             assertTrue(ar.succeeded());
             verify(mockResource).get();
-            try {
-                verify(mockResource).waitUntilReady(eq(5L), eq(TimeUnit.SECONDS));
-            } catch (InterruptedException e) {
-                context.fail(e);
+
+            if (Readiness.isReadinessApplicable(resource)) {
+                verify(mockResource).isReady();
             }
             async.complete();
         });
     }
 
     @Test
-    public void waitUntilReadyThrows(TestContext context) throws InterruptedException {
+    public void waitUntilReadyUnsuccessful(TestContext context) {
         T resource = resource();
-        RuntimeException ex = new RuntimeException();
+
+        if (!Readiness.isReadinessApplicable(resource))  {
+            return;
+        }
 
         Resource mockResource = mock(resourceType());
-        when(mockResource.get()).thenReturn(resource());
-        when(mockResource.waitUntilReady(anyLong(), any())).thenThrow(ex);
+        when(mockResource.get()).thenReturn(resource);
+        when(mockResource.isReady()).thenReturn(Boolean.FALSE);
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(resource.getMetadata().getName()))).thenReturn(mockResource);
@@ -409,9 +405,42 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         AbstractOperations<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
         Async async = context.async();
-        op.waitUntilReady(NAMESPACE, RESOURCE_NAME, 5, TimeUnit.SECONDS).setHandler(ar -> {
+        op.waitUntilReady(NAMESPACE, RESOURCE_NAME, 2, TimeUnit.SECONDS).setHandler(ar -> {
             assertTrue(ar.failed());
-            assertEquals(ex, ar.cause());
+            verify(mockResource, atLeastOnce()).get();
+            verify(mockResource, atLeastOnce()).isReady();
+            async.complete();
+        });
+    }
+
+    @Test
+    public void waitUntilReadyThrows(TestContext context) {
+        T resource = resource();
+
+        if (!Readiness.isReadinessApplicable(resource))  {
+            return;
+        }
+
+        RuntimeException ex = new RuntimeException();
+
+        Resource mockResource = mock(resourceType());
+        when(mockResource.get()).thenReturn(resource());
+        when(mockResource.isReady()).thenThrow(ex);
+
+        NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
+        when(mockNameable.withName(matches(resource.getMetadata().getName()))).thenReturn(mockResource);
+
+        MixedOperation mockCms = mock(MixedOperation.class);
+        when(mockCms.inNamespace(matches(resource.getMetadata().getNamespace()))).thenReturn(mockNameable);
+
+        C mockClient = mock(clientType());
+        mocker(mockClient, mockCms);
+
+        AbstractOperations<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
+
+        Async async = context.async();
+        op.waitUntilReady(NAMESPACE, RESOURCE_NAME, 2, TimeUnit.SECONDS).setHandler(ar -> {
+            assertTrue(ar.failed());
             async.complete();
         });
     }
