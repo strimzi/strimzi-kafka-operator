@@ -181,11 +181,60 @@ configuration file. For this reason, you can find more information on how to use
 
 ### Kafka Connect
 
-TBD
+In order to configure a Kafka Connect cluster deployment, it's possible to specify the following fields in the `data` section of 
+the related ConfigMap :
 
-### Kafka Connect S2I
+* `nodes`: number of Kafka Connect worker nodes
+* `image`: the Docker image to use for the Kafka Connect workers. Default is `strimzi/kafka-connect:latest`. If S2I is used 
+(only on OpenShift), then it should be the related S2I image.
+* `healthcheck-delay`: the initial delay for the liveness and readiness probes for each Kafka Connect worker node
+* `healthcheck-timeout`: the timeout on the liveness and readiness probes for each Kafka Connect worker node
+* `KAFKA_CONNECT_BOOTSTRAP_SERVERS`: a list of host/port pairs to use for establishing the initial connection to the Kafka cluster.
+It sets the `bootstrap.servers` property in the properties configuration file used by Kafka Connect worker nodes on startup
+* `KAFKA_CONNECT_GROUP_ID`: a unique string that identifies the Connect cluster group this worker belongs to.
+It sets the `group.id` property in the properties configuration file used by Kafka Connect worker nodes on startup
+* `KAFKA_CONNECT_KEY_CONVERTER`: converter class used to convert keys between Kafka Connect format and the serialized form 
+that is written to Kafka. It sets the `key.converter` property in the properties configuration file used by Kafka Connect 
+worker nodes on startup
+* `KAFKA_CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE`: if Kafka Connect transformation on keys are with or without schemas.
+It sets the `key.converter.schemas.enable` property in the properties configuration file used by Kafka Connect worker nodes on startup
+* `KAFKA_CONNECT_VALUE_CONVERTER`: converter class used to convert values between Kafka Connect format and the serialized form 
+that is written to Kafka. It sets the `value.converter` property in the properties configuration file used by Kafka Connect 
+worker nodes on startup
+* `KAFKA_CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE`: if Kafka Connect transformation on values are with or without schemas.
+It sets the `value.converter.schemas.enable` property in the properties configuration file used by Kafka Connect worker nodes on startup
+* `KAFKA_CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR`: replication factor used when creating the configuration storage topic.
+It sets the `config.storage.replication.factor` property in the properties configuration file used by Kafka Connect worker nodes on startup
+* `KAFKA_CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR`: replication factor used when creating the offset storage topic.
+It sets the `offset.storage.replication.factor` property in the properties configuration file used by Kafka Connect worker nodes on startup
+* `KAFKA_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR`: replication factor used when creating the status storage topic.
+It sets the `status.storage.replication.factor` property in the properties configuration file used by Kafka Connect worker nodes on startup
 
-TBD
+An example of cluster configuration ConfigMap is the following.
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-connect-cluster
+  labels:
+    strimzi.io/kind: cluster
+    strimzi.io/type: kafka-connect
+data:
+  nodes: "1"
+  image: "strimzi/kafka-connect:latest"
+  healthcheck-delay: "60"
+  healthcheck-timeout: "5"
+  KAFKA_CONNECT_BOOTSTRAP_SERVERS: "my-cluster-kafka:9092"
+  KAFKA_CONNECT_GROUP_ID: "my-connect-cluster"
+  KAFKA_CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+  KAFKA_CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE: "true"
+  KAFKA_CONNECT_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+  KAFKA_CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "true"
+  KAFKA_CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "3"
+  KAFKA_CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "3"
+  KAFKA_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "3"
+```
 
 ## Controller configuration
 
