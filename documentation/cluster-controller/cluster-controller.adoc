@@ -76,7 +76,7 @@ the related ConfigMap :
  
 An example of cluster configuration ConfigMap is the following.
 
-[source,options="nowrap"]
+[source,yaml,options="nowrap"]
 ----
 apiVersion: v1
 kind: ConfigMap
@@ -145,7 +145,7 @@ inner JSON object with key:value representing labels for selecting such a volume
 
 The "ephemeral" storage is really simple to configure and the related JSON string is something like this.
 
-[source]
+[source,json]
 ----
 { "type": "ephemeral" }
 
@@ -153,14 +153,14 @@ The "ephemeral" storage is really simple to configure and the related JSON strin
 
 The "persistent" storage has some more parameters but other than `type`, the `size` is the only mandatory one.
 
-[source]
+[source,json]
 ----
 { "type": "persistent-claim", "size": "1Gi" }
 ----
 
 A more complex configuration could use a storage class in the following way.
 
-[source]
+[source,json]
 ----
 {
   "type": "persistent-claim",
@@ -171,7 +171,7 @@ A more complex configuration could use a storage class in the following way.
 
 Finally, a selector can be used in order to select a specific labeled persistent volume which provides some needed features (i.e. an SSD)
 
-[source]
+[source,json]
 ----
 {
   "type": "persistent-claim",
@@ -226,7 +226,7 @@ It sets the `status.storage.replication.factor` property in the properties confi
 
 An example of cluster configuration ConfigMap is the following.
 
-[source,options="nowrap"]
+[source,yaml,options="nowrap"]
 ----
 apiVersion: v1
 kind: ConfigMap
