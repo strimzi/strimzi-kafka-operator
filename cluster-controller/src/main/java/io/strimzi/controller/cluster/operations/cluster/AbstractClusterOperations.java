@@ -4,6 +4,9 @@
  */
 package io.strimzi.controller.cluster.operations.cluster;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.strimzi.controller.cluster.ClusterController;
 import io.strimzi.controller.cluster.resources.AbstractCluster;
 import io.strimzi.controller.cluster.resources.ClusterDiffResult;
 import io.vertx.core.AsyncResult;
@@ -13,6 +16,8 @@ import io.vertx.core.Vertx;
 import io.vertx.core.shareddata.Lock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Map;
 
 /**
  * Abstract cluster creation, update, read, delection, etc, for a generic cluster type {@code C}.
@@ -36,10 +41,19 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster> {
 
     protected final Vertx vertx;
     protected final boolean isOpenShift;
+    protected final String clusterDescription;
 
-    protected AbstractClusterOperations(Vertx vertx, boolean isOpenShift) {
+    /**
+     * @param vertx The Vertx instance
+     * @param isOpenShift True iff running on OpenShift
+     * @param clusterDescription A description of the cluster, for logging. This is a high level description and different from
+     *                           the {@code clusterType} passed to {@link #getLockName(String, String, String)}
+     *                           and {@link #execute(String, String, String, String, CompositeOperation, Handler)}
+     */
+    protected AbstractClusterOperations(Vertx vertx, boolean isOpenShift, String clusterDescription) {
         this.vertx = vertx;
         this.isOpenShift = isOpenShift;
+        this.clusterDescription = clusterDescription;
     }
 
     protected final String getLockName(String clusterType, String namespace, String name) {
@@ -112,10 +126,58 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster> {
         });
     }
 
-    public abstract void create(String namespace, String name, Handler<AsyncResult<Void>> handler);
+    protected abstract void create(String namespace, String name, Handler<AsyncResult<Void>> handler);
 
-    public abstract void delete(String namespace, String name, Handler<AsyncResult<Void>> handler);
+    public void create(String namespace, String name)   {
+        log.info("Adding {} cluster {}", clusterDescription, name);
 
-    public abstract void update(String namespace, String name, Handler<AsyncResult<Void>> handler);
+        create(namespace, name, res -> {
+            if (res.succeeded()) {
+                log.info("{} cluster added {}", clusterDescription, name);
+            }
+            else {
+                log.error("Failed to add {} cluster {}.", clusterDescription, name);
+            }
+        });
+    }
+
+    protected abstract void delete(String namespace, String name, Handler<AsyncResult<Void>> handler);
+
+    public void delete(String namespace, String name)   {
+        log.info("Deleting {} cluster {} in namespace {}", clusterDescription, name, namespace);
+        delete(namespace, name, res -> {
+            if (res.succeeded()) {
+                log.info("{} cluster deleted {} in namespace {}", clusterDescription, name, namespace);
+            }
+            else {
+                log.error("Failed to delete {} cluster {} in namespace {}", clusterDescription, name, namespace);
+            }
+        });
+    }
+
+    protected abstract void update(String namespace, String name, Handler<AsyncResult<Void>> handler);
+
+    public void update(String namespace, String name)   {
+
+        log.info("Checking for updates in {} cluster {}", clusterDescription, name);
+        update(namespace, name, res2 -> {
+            if (res2.succeeded()) {
+                log.info("{} cluster updated {}", clusterDescription, name);
+            }
+            else {
+                log.error("Failed to update {} cluster {}.", clusterDescription, name);
+            }
+        });
+    }
+
+    protected String name(HasMetadata resource) {
+        return resource.getMetadata().getName();
+    }
+
+    protected String nameFromLabels(HasMetadata resource) {
+        return resource.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL);
+    }
+
+    public abstract void reconcile(String namespace, Map<String, String> labels);
 
 }

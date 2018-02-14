@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.openshift.api.model.BuildConfig;
 import io.fabric8.openshift.api.model.DeploymentConfig;
 import io.fabric8.openshift.api.model.ImageStream;
+import io.strimzi.controller.cluster.ClusterController;
 import io.strimzi.controller.cluster.operations.resource.BuildConfigOperations;
 import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
 import io.strimzi.controller.cluster.operations.resource.DeploymentConfigOperations;
@@ -24,7 +25,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * CRUD-style operations on a Kafka Connect cluster
@@ -56,7 +61,7 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
                                             ServiceOperations serviceOperations,
                                             ImageStreamOperations imagesStreamOperations,
                                             BuildConfigOperations buildConfigOperations) {
-        super(vertx, isOpenShift);
+        super(vertx, isOpenShift, "Kafka Connect S2I");
         this.serviceOperations = serviceOperations;
         this.deploymentConfigOperations = deploymentConfigOperations;
         this.configMapOperations = configMapOperations;
@@ -65,7 +70,11 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
     }
 
     public void create(String namespace, String name, Handler<AsyncResult<Void>> handler) {
-        execute(CLUSTER_TYPE, OP_CREATE, namespace, name, create, handler);
+        if (isOpenShift) {
+            execute(CLUSTER_TYPE, OP_CREATE, namespace, name, create, handler);
+        } else {
+            handler.handle(Future.failedFuture("S2I only available on OpenShift"));
+        }
     }
 
     private final CompositeOperation<KafkaConnectS2ICluster> create = new CompositeOperation<KafkaConnectS2ICluster>() {
@@ -89,8 +98,13 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
         }
     };
 
-    public void delete(String namespace, String name, Handler<AsyncResult<Void>> handler) {
-        execute(CLUSTER_TYPE, OP_DELETE, namespace, name, delete, handler);
+    @Override
+    protected void delete(String namespace, String name, Handler<AsyncResult<Void>> handler) {
+        if (isOpenShift) {
+            execute(CLUSTER_TYPE, OP_DELETE, namespace, name, delete, handler);
+        } else {
+            handler.handle(Future.failedFuture("S2I only available on OpenShift"));
+        }
     }
 
     private final CompositeOperation<KafkaConnectS2ICluster> delete = new CompositeOperation<KafkaConnectS2ICluster>() {
@@ -117,7 +131,11 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
     };
 
     public void update(String namespace, String name, Handler<AsyncResult<Void>> handler) {
-        execute(CLUSTER_TYPE, OP_UPDATE, namespace, name, update, handler);
+        if (isOpenShift) {
+            execute(CLUSTER_TYPE, OP_UPDATE, namespace, name, update, handler);
+        } else {
+            handler.handle(Future.failedFuture("S2I only available on OpenShift"));
+        }
     }
 
     private final CompositeOperation<KafkaConnectS2ICluster> update = new CompositeOperation<KafkaConnectS2ICluster>() {
@@ -147,7 +165,7 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
 
             if (connectConfigMap != null)    {
                 connect = KafkaConnectS2ICluster.fromConfigMap(isOpenShift, connectConfigMap);
-                log.info("Updating Kafka Connect cluster {} in namespace {}", connect.getName(), namespace);
+                log.info("Updating {} cluster {} in namespace {}", clusterDescription, connect.getName(), namespace);
                 DeploymentConfig dep = deploymentConfigOperations.get(namespace, connect.getName());
                 ImageStream sis = imagesStreamOperations.get(namespace, connect.getSourceImageStreamName());
                 ImageStream tis = imagesStreamOperations.get(namespace, connect.getName());
@@ -162,7 +180,7 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
 
         private Future<Void> scaleDown(KafkaConnectS2ICluster connect, String namespace, ClusterDiffResult diff) {
             if (diff.isScaleDown())    {
-                log.info("Scaling down deployment {} in namespace {}", connect.getName(), namespace);
+                log.info("Scaling down {} deployment {} in namespace {}", clusterDescription, connect.getName(), namespace);
                 return deploymentConfigOperations.scaleDown(namespace, connect.getName(), connect.getReplicas());
             }
             else {
@@ -235,5 +253,50 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
         }
     };
 
+    @Override
+    public void reconcile(String namespace, Map<String, String> labels) {
+        if (!isOpenShift) {
+            return;
+        }
+        log.info("Reconciling Kafka Connect S2I clusters ...");
+
+        Map<String, String> kafkaLabels = new HashMap(labels);
+        kafkaLabels.put(ClusterController.STRIMZI_TYPE_LABEL, KafkaConnectS2ICluster.TYPE);
+
+        List<ConfigMap> cms = configMapOperations.list(namespace, kafkaLabels);
+        List<DeploymentConfig> deps = deploymentConfigOperations.list(namespace, kafkaLabels);
+
+        Set<String> cmsNames = cms.stream().map(cm -> cm.getMetadata().getName()).collect(Collectors.toSet());
+        Set<String> depsNames = deps.stream().map(cm -> cm.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL)).collect(Collectors.toSet());
+
+        List<ConfigMap> addList = cms.stream().filter(cm -> !depsNames.contains(cm.getMetadata().getName())).collect(Collectors.toList());
+        List<ConfigMap> updateList = cms.stream().filter(cm -> depsNames.contains(cm.getMetadata().getName())).collect(Collectors.toList());
+        List<DeploymentConfig> deletionList = deps.stream().filter(dep -> !cmsNames.contains(dep.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL))).collect(Collectors.toList());
+
+        add(namespace, addList);
+        delete(namespace, deletionList);
+        update(namespace, updateList);
+    }
+
+    private void add(String namespace, List<ConfigMap> add)   {
+        for (ConfigMap cm : add) {
+            log.info("Reconciliation: Kafka Connect S2I cluster {} should be added", cm.getMetadata().getName());
+            create(namespace, name(cm));
+        }
+    }
+
+    private void update(String namespace, List<ConfigMap> update)   {
+        for (ConfigMap cm : update) {
+            log.info("Reconciliation: Kafka Connect S2I cluster {} should be checked for updates", cm.getMetadata().getName());
+            update(namespace, name(cm));
+        }
+    }
+
+    private void delete(String namespace, List<DeploymentConfig> delete)   {
+        for (DeploymentConfig dep : delete) {
+            log.info("Reconciliation: Kafka Connect S2I cluster {} should be deleted", dep.getMetadata().getName());
+            delete(namespace, nameFromLabels(dep));
+        }
+    }
 
 }
