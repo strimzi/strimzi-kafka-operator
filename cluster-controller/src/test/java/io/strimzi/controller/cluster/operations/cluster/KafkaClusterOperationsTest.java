@@ -265,7 +265,6 @@ public class KafkaClusterOperationsTest {
     @Test
     public void testDeleteCluster(TestContext context) {
         ConfigMap clusterCm = getConfigMap("baz");
-        createCluster(context, clusterCm);
         deleteCluster(context, clusterCm);
     }
 
