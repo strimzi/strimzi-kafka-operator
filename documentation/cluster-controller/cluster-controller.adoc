@@ -1,4 +1,4 @@
-# Cluster Controller
+= Cluster Controller
 
 The cluster controller is in charge to deploy a Kafka cluster alongside a Zookeeper ensemble. It's also able to deploy a 
 Kafka Connect cluster which connects to an already existing Kafka cluster.
@@ -18,7 +18,7 @@ patched or deleted and then re-created for reflecting the changes in the cluster
 Finally, if the ConfigMap is deleted, the controller starts to un-deploy the cluster deleting all the related Kubernets/OpenShift
 resources.
 
-## Reconciliation
+== Reconciliation
 
 When the controller is up and running, it reacts at all notifications received from the Kubernetes/OpenShift cluster related 
 to the watched ConfigMaps when they are created, updated or deleted.
@@ -31,7 +31,7 @@ For fixing this kind of issues, a periodic reconciliation is executed by the clu
 how the ConfigMaps look like (and if they exist) with the current cluster deployment in order to have a consistent state 
 across all of them.
 
-## Format of the cluster ConfigMap
+== Format of the cluster ConfigMap
 
 By default, the controller watches for ConfigMaps having the label `strimzi.io/kind=cluster` in order to find and get
 configuration for a Kafka or Kafka Connect cluster to deploy. The label is configurable through the `STRIMZI_CONFIGMAP_LABELS` 
@@ -48,7 +48,7 @@ features (works only with OpenShift)
 The `data` section of such ConfigMaps contains different keys depending on the "type" of deployment as described in the 
 following paragraphs.
 
-### Kafka
+=== Kafka
 
 In order to configure a Kafka cluster deployment, it's possible to specify the following fields in the `data` section of 
 the related ConfigMap :
@@ -76,7 +76,8 @@ the related ConfigMap :
  
 An example of cluster configuration ConfigMap is the following.
 
-```yaml
+[source,options="nowrap"]
+----
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -122,9 +123,9 @@ data:
     {
       "lowercaseOutputName": true
     }
-```
+----
 
-#### Storage
+==== Storage
 
 Kafka needs to save information like data logs (so received messages), consumer offsets and so on in some way; the same is true for 
 Zookeeper about znodes children and values.
@@ -144,30 +145,34 @@ inner JSON object with key:value representing labels for selecting such a volume
 
 The "ephemeral" storage is really simple to configure and the related JSON string is something like this.
 
-```json
+[source]
+----
 { "type": "ephemeral" }
 
-``` 
+----
 
 The "persistent" storage has some more parameters but other than `type`, the `size` is the only mandatory one.
 
-```json
+[source]
+----
 { "type": "persistent-claim", "size": "1Gi" }
-```
+----
 
 A more complex configuration could use a storage class in the following way.
 
-```json
+[source]
+----
 {
   "type": "persistent-claim",
   "size": "1Gi",
   "class": "my-storage-class"
 }
-```
+----
 
 Finally, a selector can be used in order to select a specific labeled persistent volume which provides some needed features (i.e. an SSD)
 
-```json
+[source]
+----
 {
   "type": "persistent-claim",
   "size": "1Gi",
@@ -180,15 +185,15 @@ Finally, a selector can be used in order to select a specific labeled persistent
   },
   "delete-claim": "true"
 }
-```
+----
 
-#### Metrics
+==== Metrics
 
 Because the Strimzi project uses the [JMX exporter](https://github.com/prometheus/jmx_exporter) in order to expose metrics 
 on each node, the JSON string used for metrics configuration in the cluster ConfigMap reflects the related JMX exporter 
 configuration file. For this reason, you can find more information on how to use it in the corresponding GitHub repo.
 
-### Kafka Connect
+=== Kafka Connect
 
 In order to configure a Kafka Connect cluster deployment, it's possible to specify the following fields in the `data` section of 
 the related ConfigMap :
@@ -221,7 +226,8 @@ It sets the `status.storage.replication.factor` property in the properties confi
 
 An example of cluster configuration ConfigMap is the following.
 
-```yaml
+[source,options="nowrap"]
+----
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -243,9 +249,9 @@ data:
   KAFKA_CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "3"
   KAFKA_CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "3"
   KAFKA_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "3"
-```
+----
 
-## Controller configuration
+== Controller configuration
 
 The controller itself can be configured through the following environment variables.
 
