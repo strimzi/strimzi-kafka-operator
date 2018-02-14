@@ -50,19 +50,23 @@ public class ResourceUtils {
      */
     public static ConfigMap createKafkaClusterConfigMap(String clusterCmNamespace, String clusterCmName, int replicas,
                                                         String image, int healthDelay, int healthTimeout, String metricsCmJson) {
+        return createKafkaClusterConfigMap(clusterCmNamespace, clusterCmName, replicas, image, healthDelay, healthTimeout, metricsCmJson,
+                "{\"type\": \"ephemeral\"}");
+    }
+    public static ConfigMap createKafkaClusterConfigMap(String clusterCmNamespace, String clusterCmName, int replicas,
+                                                        String image, int healthDelay, int healthTimeout, String metricsCmJson, String storage) {
         Map<String, String> cmData = new HashMap<>();
         cmData.put(KafkaCluster.KEY_REPLICAS, Integer.toString(replicas));
         cmData.put(KafkaCluster.KEY_IMAGE, image);
         cmData.put(KafkaCluster.KEY_HEALTHCHECK_DELAY, Integer.toString(healthDelay));
         cmData.put(KafkaCluster.KEY_HEALTHCHECK_TIMEOUT, Integer.toString(healthTimeout));
-        // TODO Take a Storage parameter for this
-        cmData.put(KafkaCluster.KEY_STORAGE, "{\"type\": \"ephemeral\"}");
+        cmData.put(KafkaCluster.KEY_STORAGE, storage);
         cmData.put(KafkaCluster.KEY_METRICS_CONFIG, metricsCmJson);
         cmData.put(ZookeeperCluster.KEY_REPLICAS, Integer.toString(replicas));
         cmData.put(ZookeeperCluster.KEY_IMAGE, image+"-zk");
         cmData.put(ZookeeperCluster.KEY_HEALTHCHECK_DELAY, Integer.toString(healthDelay));
         cmData.put(ZookeeperCluster.KEY_HEALTHCHECK_TIMEOUT, Integer.toString(healthTimeout));
-        cmData.put(ZookeeperCluster.KEY_STORAGE, "{\"type\": \"ephemeral\"}");
+        cmData.put(ZookeeperCluster.KEY_STORAGE, storage);
         cmData.put(ZookeeperCluster.KEY_METRICS_CONFIG, metricsCmJson);
         return new ConfigMapBuilder()
                 .withNewMetadata()
