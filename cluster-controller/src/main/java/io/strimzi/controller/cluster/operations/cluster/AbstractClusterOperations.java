@@ -100,7 +100,7 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster> {
                 try {
                     clusterOp = compositeOperation.getCluster(namespace, name);
                     log.info("{} {} cluster {} in namespace {}", operationType, clusterType, clusterOp.cluster().getName(), namespace);
-                } catch (Exception ex) {
+                } catch (Throwable ex) {
                     log.error("Error while getting required {} cluster state for {} operation", clusterType, operationType, ex);
                     handler.handle(Future.failedFuture("getCluster error"));
                     lock.release();
