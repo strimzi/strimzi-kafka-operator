@@ -175,11 +175,11 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
      * @param timeout Timeout in {@code timeUnit}
      * @param timeUnit Time unit
      */
-    public Future<Void> waitUntilReady(String namespace, String name, long timeout, TimeUnit timeUnit) {
+    public Future<Void> waitUntilReady(String namespace, String name, long pollInteral, long timeout, TimeUnit timeUnit) {
         Future<Void> fut = Future.future();
         log.info("Waiting for {} resource {} in namespace {} to get ready", resourceKind, name, namespace);
         long startTime = System.currentTimeMillis();
-        long timer = 1000L;
+        long timer = timeUnit.toMillis(pollInteral);
         long timeoutInMs = timeUnit.toMillis(timeout);
 
         vertx.setPeriodic(timer, timerId -> {
