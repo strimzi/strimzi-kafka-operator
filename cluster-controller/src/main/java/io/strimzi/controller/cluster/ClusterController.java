@@ -117,7 +117,7 @@ public class ClusterController extends AbstractVerticle {
                             Map<String, String> labels = cm.getMetadata().getLabels();
                             String type = labels.get(ClusterController.STRIMZI_TYPE_LABEL);
 
-                            final AbstractClusterOperations<?> cluster;
+                            final AbstractClusterOperations<?, ?> cluster;
                             if (type == null) {
                                 log.warn("Missing type in Config Map {}", cm.getMetadata().getName());
                                 return;

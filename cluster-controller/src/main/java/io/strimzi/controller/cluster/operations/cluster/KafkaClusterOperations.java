@@ -6,7 +6,6 @@ package io.strimzi.controller.cluster.operations.cluster;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
-import io.strimzi.controller.cluster.ClusterController;
 import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
 import io.strimzi.controller.cluster.operations.resource.EndpointOperations;
 import io.strimzi.controller.cluster.operations.resource.PodOperations;
@@ -26,21 +25,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 /**
  * CRUD-style operations on a Kafka cluster
  */
-public class KafkaClusterOperations extends AbstractClusterOperations<KafkaCluster> {
+public class KafkaClusterOperations extends AbstractClusterOperations<KafkaCluster, StatefulSet> {
     private static final Logger log = LoggerFactory.getLogger(KafkaClusterOperations.class.getName());
     private static final String CLUSTER_TYPE_ZOOKEEPER = "zookeeper";
     private static final String CLUSTER_TYPE_KAFKA = "kafka";
-    private final ConfigMapOperations configMapOperations;
+
     private final StatefulSetOperations statefulSetOperations;
     private final ServiceOperations serviceOperations;
     private final PvcOperations pvcOperations;
@@ -64,8 +60,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
                                   PvcOperations pvcOperations,
                                   PodOperations podOperations,
                                   EndpointOperations endpointOperations) {
-        super(vertx, isOpenShift, "Kafka");
-        this.configMapOperations = configMapOperations;
+        super(vertx, isOpenShift, "Kafka", configMapOperations);
         this.statefulSetOperations = statefulSetOperations;
         this.serviceOperations = serviceOperations;
         this.pvcOperations = pvcOperations;
@@ -484,24 +479,13 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
     @Override
     public void reconcile(String namespace, Map<String, String> labels) {
-        log.info("Reconciling Kafka clusters ...");
-
-        Map<String, String> kafkaLabels = new HashMap(labels);
-        kafkaLabels.put(ClusterController.STRIMZI_TYPE_LABEL, KafkaCluster.TYPE);
-
-        List<ConfigMap> cms = configMapOperations.list(namespace, kafkaLabels);
-        List<StatefulSet> sss = statefulSetOperations.list(namespace, kafkaLabels);
-
-        Set<String> cmsNames = cms.stream().map(cm -> cm.getMetadata().getName()).collect(Collectors.toSet());
-        Set<String> sssNames = sss.stream().map(cm -> cm.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL)).collect(Collectors.toSet());
-
-        List<ConfigMap> addList = cms.stream().filter(cm -> !sssNames.contains(cm.getMetadata().getName())).collect(Collectors.toList());
-        List<ConfigMap> updateList = cms.stream().filter(cm -> sssNames.contains(cm.getMetadata().getName())).collect(Collectors.toList());
-        List<StatefulSet> deletionList = sss.stream().filter(ss -> !cmsNames.contains(ss.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL))).collect(Collectors.toList());
-
-        add(namespace, addList);
-        delete(namespace, deletionList);
-        update(namespace, updateList);
+        reconcile(namespace, labels, CLUSTER_TYPE_KAFKA);
     }
+
+    @Override
+    protected List<StatefulSet> getResources(String namespace, Map<String, String> kafkaLabels) {
+        return statefulSetOperations.list(namespace, kafkaLabels);
+    }
+
 
 }
