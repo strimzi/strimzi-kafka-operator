@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.internal.readiness.Readiness;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
@@ -20,11 +21,18 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.TimeUnit;
+
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.matches;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -101,7 +109,6 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
             async.complete();
         });
     }
-
 
     @Test
     public void existenceCheckThrows(TestContext context) {
@@ -292,6 +299,156 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         });
     }
 
+    @Test
+    public void waitUntilReadyWhenDoesNotExist(TestContext context) {
+        T resource = resource();
+        Resource mockResource = mock(resourceType());
+        when(mockResource.get()).thenReturn(null);
 
+        NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
+        when(mockNameable.withName(matches(resource.getMetadata().getName()))).thenReturn(mockResource);
+
+        MixedOperation mockCms = mock(MixedOperation.class);
+        when(mockCms.inNamespace(matches(resource.getMetadata().getNamespace()))).thenReturn(mockNameable);
+
+        C mockClient = mock(clientType());
+        mocker(mockClient, mockCms);
+
+        AbstractOperations<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
+
+        Async async = context.async();
+        Future<Void> fut = op.waitUntilReady(NAMESPACE, RESOURCE_NAME, 2, TimeUnit.SECONDS);
+        fut.setHandler(ar -> {
+            assertTrue(ar.failed());
+            assertThat(ar.cause(), instanceOf(TimeoutException.class));
+            verify(mockResource, atLeastOnce()).get();
+            verify(mockResource, never()).isReady();
+            async.complete();
+        });
+    }
+
+    @Test
+    public void waitUntilReadyExistenceCheckThrows(TestContext context) {
+        T resource = resource();
+        RuntimeException ex = new RuntimeException();
+
+        Resource mockResource = mock(resourceType());
+        when(mockResource.get()).thenThrow(ex);
+
+        NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
+        when(mockNameable.withName(matches(resource.getMetadata().getName()))).thenReturn(mockResource);
+
+        MixedOperation mockCms = mock(MixedOperation.class);
+        when(mockCms.inNamespace(matches(resource.getMetadata().getNamespace()))).thenReturn(mockNameable);
+
+        C mockClient = mock(clientType());
+        mocker(mockClient, mockCms);
+
+        AbstractOperations<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
+
+        Async async = context.async();
+        op.waitUntilReady(NAMESPACE, RESOURCE_NAME, 2, TimeUnit.SECONDS).setHandler(ar -> {
+            assertTrue(ar.failed());
+            assertThat(ar.cause(), instanceOf(TimeoutException.class));
+            verify(mockResource, never()).isReady();
+            async.complete();
+        });
+    }
+
+    @Test
+    public void waitUntilReadySuccessful(TestContext context) {
+        T resource = resource();
+        Resource mockResource = mock(resourceType());
+        when(mockResource.get()).thenReturn(resource);
+        when(mockResource.isReady()).thenReturn(Boolean.TRUE);
+
+        NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
+        when(mockNameable.withName(matches(resource.getMetadata().getName()))).thenReturn(mockResource);
+
+        MixedOperation mockCms = mock(MixedOperation.class);
+        when(mockCms.inNamespace(matches(resource.getMetadata().getNamespace()))).thenReturn(mockNameable);
+
+        C mockClient = mock(clientType());
+        mocker(mockClient, mockCms);
+
+        AbstractOperations<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
+
+        Async async = context.async();
+        op.waitUntilReady(NAMESPACE, RESOURCE_NAME, 2, TimeUnit.SECONDS).setHandler(ar -> {
+            assertTrue(ar.succeeded());
+            verify(mockResource).get();
+
+            if (Readiness.isReadinessApplicable(resource)) {
+                verify(mockResource).isReady();
+            }
+            async.complete();
+        });
+    }
+
+    @Test
+    public void waitUntilReadyUnsuccessful(TestContext context) {
+        T resource = resource();
+
+        if (!Readiness.isReadinessApplicable(resource))  {
+            return;
+        }
+
+        Resource mockResource = mock(resourceType());
+        when(mockResource.get()).thenReturn(resource);
+        when(mockResource.isReady()).thenReturn(Boolean.FALSE);
+
+        NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
+        when(mockNameable.withName(matches(resource.getMetadata().getName()))).thenReturn(mockResource);
+
+        MixedOperation mockCms = mock(MixedOperation.class);
+        when(mockCms.inNamespace(matches(resource.getMetadata().getNamespace()))).thenReturn(mockNameable);
+
+        C mockClient = mock(clientType());
+        mocker(mockClient, mockCms);
+
+        AbstractOperations<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
+
+        Async async = context.async();
+        op.waitUntilReady(NAMESPACE, RESOURCE_NAME, 2, TimeUnit.SECONDS).setHandler(ar -> {
+            assertTrue(ar.failed());
+            assertThat(ar.cause(), instanceOf(TimeoutException.class));
+            verify(mockResource, atLeastOnce()).get();
+            verify(mockResource, atLeastOnce()).isReady();
+            async.complete();
+        });
+    }
+
+    @Test
+    public void waitUntilReadyThrows(TestContext context) {
+        T resource = resource();
+
+        if (!Readiness.isReadinessApplicable(resource))  {
+            return;
+        }
+
+        RuntimeException ex = new RuntimeException();
+
+        Resource mockResource = mock(resourceType());
+        when(mockResource.get()).thenReturn(resource());
+        when(mockResource.isReady()).thenThrow(ex);
+
+        NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
+        when(mockNameable.withName(matches(resource.getMetadata().getName()))).thenReturn(mockResource);
+
+        MixedOperation mockCms = mock(MixedOperation.class);
+        when(mockCms.inNamespace(matches(resource.getMetadata().getNamespace()))).thenReturn(mockNameable);
+
+        C mockClient = mock(clientType());
+        mocker(mockClient, mockCms);
+
+        AbstractOperations<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
+
+        Async async = context.async();
+        op.waitUntilReady(NAMESPACE, RESOURCE_NAME, 2, TimeUnit.SECONDS).setHandler(ar -> {
+            assertTrue(ar.failed());
+            assertThat(ar.cause(), instanceOf(TimeoutException.class));
+            async.complete();
+        });
+    }
 }
 

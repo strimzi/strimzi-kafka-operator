@@ -266,8 +266,8 @@ public class ZookeeperCluster extends AbstractCluster {
     }
 
     public Service generateHeadlessService() {
-
-        return createHeadlessService(headlessName, getServicePortList());
+        Map<String, String> annotations = Collections.singletonMap("service.alpha.kubernetes.io/tolerate-unready-endpoints", "true");
+        return createHeadlessService(headlessName, getServicePortList(), annotations);
     }
 
     public Service patchHeadlessService(Service svc) {

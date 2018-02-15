@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.internal.readiness.Readiness;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import org.slf4j.Logger;
@@ -15,6 +16,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Abstract resource creation, for a generic resource type {@code R}.
@@ -92,7 +95,6 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
         Future fut = Future.future();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
-
                     if (operation().inNamespace(namespace).withName(name).get() != null) {
                         try {
                             log.info("Deleting {} {} in namespace {}", resourceKind, name, namespace);
@@ -165,4 +167,73 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
         return operation().inNamespace(namespace).withLabels(labels).list().getItems();
     }
 
+    /**
+     * Waits until resource is in the Ready state
+     *
+     * @param namespace The namespace
+     * @param name The resource name
+     * @param timeout Timeout in {@code timeUnit}
+     * @param timeUnit Time unit
+     */
+    public Future<Void> waitUntilReady(String namespace, String name, long timeout, TimeUnit timeUnit) {
+        Future<Void> fut = Future.future();
+        log.info("Waiting for {} resource {} in namespace {} to get ready", resourceKind, name, namespace);
+        long startTime = System.currentTimeMillis();
+        long timer = 1000L;
+        long timeoutInMs = timeUnit.toMillis(timeout);
+
+        vertx.setPeriodic(timer, timerId -> {
+            vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
+                    future -> {
+                        try {
+                            if (isReady(namespace, name))   {
+                                future.complete();
+                            } else {
+                                future.fail("Not ready yet");
+                            }
+                        }
+                        catch (Exception e) {
+                            log.warn("Caught exception while waiting for {} {} in namespace {} to get ready", resourceKind, name, namespace, e);
+                            future.fail(e);
+                        }
+                    },
+                    false,
+                    res -> {
+                        if (res.succeeded())    {
+                            vertx.cancelTimer(timerId);
+                            log.info("{} {} in namespace {} is ready", resourceKind, name, namespace);
+                            fut.complete();
+                        } else {
+                            if (System.currentTimeMillis() - startTime > timeoutInMs)   {
+                                vertx.cancelTimer(timerId);
+                                log.error("Exceeded timeout of {} ms while waiting for {} {} in namespace {} to be ready", timeoutInMs, resourceKind, name, namespace);
+                                fut.fail(new TimeoutException());
+                            }
+                        }
+                    }
+            );
+        });
+
+        return fut;
+    }
+
+    public boolean isReady(String namespace, String name) {
+        R resourceOp = operation().inNamespace(namespace).withName(name);
+        T resource = resourceOp.get();
+        if (resource != null)   {
+            if (Readiness.isReadinessApplicable(resource)) {
+                Boolean ready = resourceOp.isReady();
+
+                if (Boolean.TRUE.equals(ready)) {
+                    return true;
+                } else {
+                    return false;
+                }
+            } else {
+                return true;
+            }
+        } else {
+            return false;
+        }
+    }
 }

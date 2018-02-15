@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
@@ -27,8 +28,11 @@ public class KafkaCluster extends AbstractCluster {
 
     public static final String TYPE = "kafka";
 
-    private static final int CLIENT_PORT = 9092;
-    private static final String CLIENT_PORT_NAME = "clients";
+    protected static final int CLIENT_PORT = 9092;
+    protected static final String CLIENT_PORT_NAME = "clients";
+
+    protected static final int REPLICATION_PORT = 9091;
+    protected static final String REPLICATION_PORT_NAME = "replication";
 
     private static String NAME_SUFFIX = "-kafka";
     private static String HEADLESS_NAME_SUFFIX = NAME_SUFFIX + "-headless";
@@ -289,14 +293,20 @@ public class KafkaCluster extends AbstractCluster {
         return new ClusterDiffResult(different, rollingUpdate, scaleUp, scaleDown, metricsChanged);
     }
 
+    private List<ServicePort> getServicePorts() {
+        List<ServicePort> ports = new ArrayList<>(2);
+        ports.add(createServicePort(CLIENT_PORT_NAME, CLIENT_PORT, CLIENT_PORT, "TCP"));
+        ports.add(createServicePort(REPLICATION_PORT_NAME, REPLICATION_PORT, REPLICATION_PORT, "TCP"));
+        return ports;
+    }
+
     /**
      * Generates a Service according to configured defaults
      * @return The generated Service
      */
     public Service generateService() {
 
-        return createService("ClusterIP",
-                Collections.singletonList(createServicePort(CLIENT_PORT_NAME, CLIENT_PORT, CLIENT_PORT, "TCP")));
+        return createService("ClusterIP", getServicePorts());
     }
 
     /**
@@ -306,7 +316,7 @@ public class KafkaCluster extends AbstractCluster {
     public Service generateHeadlessService() {
 
         return createHeadlessService(headlessName,
-                Collections.singletonList(createServicePort(CLIENT_PORT_NAME, CLIENT_PORT, CLIENT_PORT, "TCP")));
+                getServicePorts());
     }
 
     /**
@@ -380,8 +390,9 @@ public class KafkaCluster extends AbstractCluster {
     }
 
     private List<ContainerPort> getContainerPortList() {
-        List<ContainerPort> portList = new ArrayList<>();
+        List<ContainerPort> portList = new ArrayList<>(3);
         portList.add(createContainerPort(CLIENT_PORT_NAME, CLIENT_PORT, "TCP"));
+        portList.add(createContainerPort(REPLICATION_PORT_NAME, REPLICATION_PORT, "TCP"));
         if (isMetricsEnabled) {
             portList.add(createContainerPort(metricsPortName, metricsPort, "TCP"));
         }

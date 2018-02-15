@@ -46,9 +46,11 @@ public class KafkaClusterTest {
     private void checkService(Service headful) {
         assertEquals("ClusterIP", headful.getSpec().getType());
         assertEquals(ResourceUtils.labels("strimzi.io/cluster", cluster, "strimzi.io/type", "kafka", "strimzi.io/kind", "cluster", "strimzi.io/name", cluster + "-kafka"), headful.getSpec().getSelector());
-        assertEquals(1, headful.getSpec().getPorts().size());
-        assertEquals("clients", headful.getSpec().getPorts().get(0).getName());
-        assertEquals(new Integer(9092), headful.getSpec().getPorts().get(0).getPort());
+        assertEquals(2, headful.getSpec().getPorts().size());
+        assertEquals(KafkaCluster.CLIENT_PORT_NAME, headful.getSpec().getPorts().get(0).getName());
+        assertEquals(new Integer(KafkaCluster.CLIENT_PORT), headful.getSpec().getPorts().get(0).getPort());
+        assertEquals(KafkaCluster.REPLICATION_PORT_NAME, headful.getSpec().getPorts().get(1).getName());
+        assertEquals(new Integer(KafkaCluster.REPLICATION_PORT), headful.getSpec().getPorts().get(1).getPort());
         assertEquals("TCP", headful.getSpec().getPorts().get(0).getProtocol());
     }
 
@@ -63,9 +65,11 @@ public class KafkaClusterTest {
         assertEquals("ClusterIP", headless.getSpec().getType());
         assertEquals("None", headless.getSpec().getClusterIP());
         assertEquals(labels("strimzi.io/cluster", cluster, "strimzi.io/type", "kafka", "strimzi.io/kind", "cluster", "strimzi.io/name", KafkaCluster.kafkaClusterName(cluster)), headless.getSpec().getSelector());
-        assertEquals(1, headless.getSpec().getPorts().size());
-        assertEquals("clients", headless.getSpec().getPorts().get(0).getName());
-        assertEquals(new Integer(9092), headless.getSpec().getPorts().get(0).getPort());
+        assertEquals(2, headless.getSpec().getPorts().size());
+        assertEquals(KafkaCluster.CLIENT_PORT_NAME, headless.getSpec().getPorts().get(0).getName());
+        assertEquals(new Integer(KafkaCluster.CLIENT_PORT), headless.getSpec().getPorts().get(0).getPort());
+        assertEquals(KafkaCluster.REPLICATION_PORT_NAME, headless.getSpec().getPorts().get(1).getName());
+        assertEquals(new Integer(KafkaCluster.REPLICATION_PORT), headless.getSpec().getPorts().get(1).getPort());
         assertEquals("TCP", headless.getSpec().getPorts().get(0).getProtocol());
     }
 
