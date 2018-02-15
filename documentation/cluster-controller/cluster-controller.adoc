@@ -271,6 +271,21 @@ data:
   KAFKA_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "3"
 ----
 
+In order to add more connectors plugins to the Kafka Connect deployment, it's possible to use the Stream2Image feature if
+thr cluster is running on OpenShift. The cluster configuration is mostly the same as the above example but the following
+different type needs to be used.
+
+[source,yaml,options="nowrap"]
+----
+...
+metadata:
+  name: my-connect-cluster
+  labels:
+    strimzi.io/kind: cluster
+    strimzi.io/type: kafka-connect-s2i
+...
+----
+
 == Controller configuration
 
 The controller itself can be configured through the following environment variables.
