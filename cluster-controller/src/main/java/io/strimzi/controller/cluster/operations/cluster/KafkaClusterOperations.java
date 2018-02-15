@@ -426,7 +426,9 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
             if (zkConfigMap != null)    {
                 zk = ZookeeperCluster.fromConfigMap(zkConfigMap);
                 log.info("Updating Zookeeper cluster {} in namespace {}", zk.getName(), namespace);
-                diff = zk.diff(configMapOperations, statefulSetOperations, namespace);
+                StatefulSet ss = statefulSetOperations.get(namespace, zk.getName());
+                ConfigMap metricsConfigMap = configMapOperations.get(namespace, zk.getMetricsConfigName());
+                diff = zk.diff(metricsConfigMap, ss);
             } else {
                 throw new IllegalStateException("ConfigMap " + name + " doesn't exist anymore in namespace " + namespace);
             }
@@ -467,27 +469,5 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
         delete(namespace, deletionList);
         update(namespace, updateList);
     }
-
-    private void add(String namespace, List<ConfigMap> add)   {
-        for (ConfigMap cm : add) {
-            log.info("Reconciliation: Kafka cluster {} should be added", cm.getMetadata().getName());
-            create(namespace, name(cm));
-        }
-    }
-
-    private void update(String namespace, List<ConfigMap> update)   {
-        for (ConfigMap cm : update) {
-            log.info("Reconciliation: Kafka cluster {} should be checked for updates", cm.getMetadata().getName());
-            update(namespace, name(cm));
-        }
-    }
-
-    private void delete(String namespace, List<StatefulSet> delete)   {
-        for (StatefulSet ss : delete) {
-            log.info("Reconciliation: Kafka cluster {} should be deleted", ss.getMetadata().getName());
-            delete(namespace, nameFromLabels(ss));
-        }
-    }
-
 
 }

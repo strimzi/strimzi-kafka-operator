@@ -31,7 +31,7 @@ public abstract class AbstractCluster {
     private static final String VOLUME_MOUNT_HACK_NAME = "volume-mount-hack";
     private static final Long VOLUME_MOUNT_HACK_GROUPID = 1001L;
 
-    protected static final String METRICS_CONFIG_FILE = "config.yml";
+    public static final String METRICS_CONFIG_FILE = "config.yml";
 
     protected final String cluster;
     protected final String namespace;

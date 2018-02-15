@@ -170,15 +170,10 @@ public class ZookeeperCluster extends AbstractCluster {
     /**
      * Return the differences between the current Zookeeper cluster and the deployed one
      *
-     * @param namespace Kubernetes/OpenShift namespace where cluster resources belong to
      * @return  ClusterDiffResult instance with differences
      */
-    public ClusterDiffResult diff(ConfigMapOperations configMapOperations,
-                                  StatefulSetOperations statefulSetOperations,
-                                  String namespace)  {
-        StatefulSet ss = statefulSetOperations.get(namespace, getName());
-        ConfigMap metricsConfigMap = configMapOperations.get(namespace, getMetricsConfigName());
-
+    public ClusterDiffResult diff(ConfigMap metricsConfigMap,
+                                  StatefulSet ss)  {
         boolean scaleUp = false;
         boolean scaleDown = false;
         boolean rollingUpdate = false;
