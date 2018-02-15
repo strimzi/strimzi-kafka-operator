@@ -384,6 +384,7 @@ public class KafkaClusterOperationsTest {
         StatefulSetOperations mockSsOps = mock(StatefulSetOperations.class);
         PvcOperations mockPvcOps = mock(PvcOperations.class);
         PodOperations mockPodOps = mock(PodOperations.class);
+        EndpointOperations mockEndpointOps = mock(EndpointOperations.class);
 
         String clusterCmName = clusterCm.getMetadata().getName();
         String clusterCmNamespace = clusterCm.getMetadata().getNamespace();
@@ -461,7 +462,7 @@ public class KafkaClusterOperationsTest {
         KafkaClusterOperations ops = new KafkaClusterOperations(vertx, openShift,
                 mockCmOps,
                 mockServiceOps, mockSsOps,
-                mockPvcOps, mockPodOps);
+                mockPvcOps, mockPodOps, mockEndpointOps);
 
         // Now try to create a KafkaCluster based on this CM
         Async async = context.async();
@@ -547,6 +548,7 @@ public class KafkaClusterOperationsTest {
         StatefulSetOperations mockSsOps = mock(StatefulSetOperations.class);
         PvcOperations mockPvcOps = mock(PvcOperations.class);
         PodOperations mockPodOps = mock(PodOperations.class);
+        EndpointOperations mockEndpointOps = mock(EndpointOperations.class);
 
         String clusterCmName = clusterCm.getMetadata().getName();
         String clusterCmNamespace = clusterCm.getMetadata().getNamespace();
@@ -569,7 +571,7 @@ public class KafkaClusterOperationsTest {
         KafkaClusterOperations ops = new KafkaClusterOperations(vertx, openShift,
                 mockCmOps,
                 mockServiceOps, mockSsOps,
-                mockPvcOps, mockPodOps) {
+                mockPvcOps, mockPodOps, mockEndpointOps) {
             @Override
             public void create(String namespace, String name) {
                 created.add(name);
