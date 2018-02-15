@@ -170,19 +170,17 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
     /**
      * Waits until resource is in the Ready state
      *
-     * @param namespace The namespace
-     * @param name The resource name
-     * @param timeout Timeout in {@code timeUnit}
-     * @param timeUnit Time unit
+     * @param namespace The namespace.
+     * @param name The resource name.
+     * @param pollInteralMs The poll interval in milliseconds.
+     * @param timeoutMs The timeout, in milliseconds.
      */
-    public Future<Void> waitUntilReady(String namespace, String name, long pollInteral, long timeout, TimeUnit timeUnit) {
+    public Future<Void> waitUntilReady(String namespace, String name, long pollInteralMs, long timeoutMs) {
         Future<Void> fut = Future.future();
         log.info("Waiting for {} resource {} in namespace {} to get ready", resourceKind, name, namespace);
         long startTime = System.currentTimeMillis();
-        long timer = timeUnit.toMillis(pollInteral);
-        long timeoutInMs = timeUnit.toMillis(timeout);
 
-        vertx.setPeriodic(timer, timerId -> {
+        vertx.setPeriodic(pollInteralMs, timerId -> {
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                     future -> {
                         try {
@@ -204,9 +202,9 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
                             log.info("{} {} in namespace {} is ready", resourceKind, name, namespace);
                             fut.complete();
                         } else {
-                            if (System.currentTimeMillis() - startTime > timeoutInMs)   {
+                            if (System.currentTimeMillis() - startTime > timeoutMs)   {
                                 vertx.cancelTimer(timerId);
-                                log.error("Exceeded timeout of {} ms while waiting for {} {} in namespace {} to be ready", timeoutInMs, resourceKind, name, namespace);
+                                log.error("Exceeded timeoutMs of {} ms while waiting for {} {} in namespace {} to be ready", timeoutMs, resourceKind, name, namespace);
                                 fut.fail(new TimeoutException());
                             }
                         }

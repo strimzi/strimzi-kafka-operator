@@ -150,10 +150,10 @@ public class KafkaClusterOperationsTest {
         when(mockServiceOps.create(serviceCaptor.capture())).thenReturn(Future.succeededFuture());
         ArgumentCaptor<StatefulSet> ssCaptor = ArgumentCaptor.forClass(StatefulSet.class);
         when(mockSsOps.create(ssCaptor.capture())).thenReturn(Future.succeededFuture());
-        when(mockSsOps.waitUntilReady(any(), any(), anyLong(), anyLong(), any())).thenReturn(Future.succeededFuture());
+        when(mockSsOps.waitUntilReady(any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
-        when(mockPodOps.waitUntilReady(any(), any(), anyLong(), anyLong(), any())).thenReturn(Future.succeededFuture());
-        when(mockEndpointOps.waitUntilReady(any(), any(), anyLong(), anyLong(), any())).thenReturn(Future.succeededFuture());
+        when(mockPodOps.waitUntilReady(any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockEndpointOps.waitUntilReady(any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         KafkaCluster kafkaCluster = KafkaCluster.fromConfigMap(clusterCm);
         ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromConfigMap(clusterCm);
@@ -200,9 +200,9 @@ public class KafkaClusterOperationsTest {
                     capturedSs.stream().map(ss->ss.getMetadata().getName()).collect(Collectors.toSet()));
 
             // Verify that we wait for readiness
-            verify(mockEndpointOps, times(2)).waitUntilReady(any(), any(), anyLong(), anyLong(), any());
-            verify(mockSsOps).waitUntilReady(any(), any(), anyLong(), anyLong(), any());
-            verify(mockPodOps, times(zookeeperCluster.getReplicas())).waitUntilReady(any(), any(), anyLong(), anyLong(), any());
+            verify(mockEndpointOps, times(2)).waitUntilReady(any(), any(), anyLong(), anyLong());
+            verify(mockSsOps).waitUntilReady(any(), any(), anyLong(), anyLong());
+            verify(mockPodOps, times(zookeeperCluster.getReplicas())).waitUntilReady(any(), any(), anyLong(), anyLong());
 
             // PvcOperations only used for deletion
             verifyNoMoreInteractions(mockPvcOps);
