@@ -47,6 +47,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - ""
+  resources:
+  - endpoints
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - "extensions"
   resources:
   - deployments
@@ -76,7 +84,20 @@ rules:
   - patch
   - update
 - apiGroups:
-  - ""
+  - apps.openshift.io
+  resources:
+  - deploymentconfigs
+  - deploymentconfigs/scale
+  - deploymentconfigs/status
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+  - patch
+  - update
+- apiGroups:
   - build.openshift.io
   resources:
   - buildconfigs
@@ -89,7 +110,6 @@ rules:
   - patch
   - update
 - apiGroups:
-  - ""
   - build.openshift.io
   attributeRestrictions: null
   resources:
@@ -98,7 +118,6 @@ rules:
   verbs:
   - create
 - apiGroups:
-  - ""
   - image.openshift.io
   attributeRestrictions: null
   resources:
@@ -115,7 +134,6 @@ rules:
   - patch
   - update
 - apiGroups:
-  - ""
   - image.openshift.io
   attributeRestrictions: null
   resources:
@@ -125,7 +143,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - ""
   - image.openshift.io
   attributeRestrictions: null
   resources:
@@ -134,7 +151,6 @@ rules:
   - get
   - update
 - apiGroups:
-  - ""
   - image.openshift.io
   attributeRestrictions: null
   resources:
