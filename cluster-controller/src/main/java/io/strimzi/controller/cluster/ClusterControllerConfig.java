@@ -39,7 +39,7 @@ public class ClusterControllerConfig {
      * @param reconciliationInterval    specify every how many milliseconds the reconciliation runs
      */
     public ClusterControllerConfig(Set<String> namespaces, Map<String, String> labels, long reconciliationInterval) {
-        this.namespaces = unmodifiableSet(new HashSet<>(namespaces));
+        this.namespaces = namespaces == null ? null : unmodifiableSet(new HashSet<>(namespaces));
         this.labels = labels;
         this.reconciliationInterval = reconciliationInterval;
     }
@@ -60,12 +60,12 @@ public class ClusterControllerConfig {
      * @param map   map from which loading configuration parameters
      * @return  Cluster Controller configuration instance
      */
-    public static ClusterControllerConfig fromMap(Map<String, String> map, KubernetesClient client) {
+    public static ClusterControllerConfig fromMap(Map<String, String> map) {
 
         String namespacesList = map.get(ClusterControllerConfig.STRIMZI_NAMESPACE);
         Set<String> namespaces;
         if (namespacesList == null) {
-            namespaces = client.namespaces().list().getItems().stream().map(ns -> ns.getMetadata().getName()).collect(Collectors.toSet());
+            namespaces = null;
         } else {
             namespaces = new HashSet(asList(namespacesList.trim().split("\\s*,+\\s*")));
         }

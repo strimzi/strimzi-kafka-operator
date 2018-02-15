@@ -56,24 +56,15 @@ public class Main {
                     configMapOperations, deploymentConfigOperations,
                     serviceOperations, imagesStreamOperations, buildConfigOperations);
 
-            ClusterControllerConfig config = ClusterControllerConfig.fromMap(System.getenv(), client);
-            for (String namespace : config.getNamespaces()) {
-                ClusterController controller = new ClusterController(namespace,
-                        config.getLabels(),
-                        config.getReconciliationInterval(),
-                        client,
-                        kafkaClusterOperations,
-                        kafkaConnectClusterOperations,
-                        kafkaConnectS2IClusterOperations);
-                vertx.deployVerticle(controller,
-                    res -> {
-                        if (res.succeeded()) {
-                            log.info("Cluster Controller verticle started");
-                        } else {
-                            log.error("Cluster Controller verticle failed to start", res.cause());
-                            System.exit(1);
-                        }
-                    });
+            ClusterControllerConfig config = ClusterControllerConfig.fromMap(System.getenv());
+            if (config.getNamespaces() == null) {
+                deployController(vertx, client, kafkaClusterOperations, kafkaConnectClusterOperations,
+                        kafkaConnectS2IClusterOperations, config, null);
+            } else {
+                for (String namespace : config.getNamespaces()) {
+                    deployController(vertx, client, kafkaClusterOperations, kafkaConnectClusterOperations,
+                            kafkaConnectS2IClusterOperations, config, namespace);
+                }
             }
         } catch (IllegalArgumentException e) {
             log.error("Unable to parse arguments", e);
@@ -82,5 +73,40 @@ public class Main {
             log.error("Error starting cluster controller:", e);
             System.exit(1);
         }
+    }
+
+    /**
+     * Deploy a {@link ClusterController} in Vertx
+     * @param vertx The vertx instance
+     * @param client The kubernetes client
+     * @param kafkaClusterOperations Operations for Kafka clusters.
+     * @param kafkaConnectClusterOperations Operations for Connect clusters.
+     * @param kafkaConnectS2IClusterOperations Operations for Connect S2I clusters.
+     * @param config The controller config
+     * @param namespace The namespace to watch, or null to watch all namespaces in the Kubenetes/OpenShift cluster.
+     */
+    private static void deployController(Vertx vertx, DefaultKubernetesClient client,
+                                         KafkaClusterOperations kafkaClusterOperations,
+                                         KafkaConnectClusterOperations kafkaConnectClusterOperations,
+                                         KafkaConnectS2IClusterOperations kafkaConnectS2IClusterOperations,
+                                         ClusterControllerConfig config,
+                                         String namespace) {
+        ClusterController controller = new ClusterController(namespace,
+                config.getLabels(),
+                config.getReconciliationInterval(),
+                client,
+                kafkaClusterOperations,
+                kafkaConnectClusterOperations,
+                kafkaConnectS2IClusterOperations);
+        vertx.deployVerticle(controller,
+                res -> {
+                    String description = namespace == null ? "all namespaces" : "namespace" + namespace;
+                    if (res.succeeded()) {
+                        log.info("ClusterController started for {}", description);
+                    } else {
+                        log.error("ClusterController for {} failed to start", description, res.cause());
+                        System.exit(1);
+                    }
+                });
     }
 }
