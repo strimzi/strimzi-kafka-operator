@@ -167,7 +167,7 @@ In case of "persistent-claim" type the following fields can be provided as well 
 for dynamic volume allocation - optional
 * `selector`: allows to select a specific persistent volume to use. It contains a `matchLabels` field which defines an
 inner JSON object with key:value representing labels for selecting such a volume - optional
-* `delete-claim`: specifies if the persistent volume claim has to be deleted when the cluster is un-deployed.
+* `delete-claim`: boolean value which specifies if the persistent volume claim has to be deleted when the cluster is un-deployed.
 Default is `false` - optional
 
 .Persistent storage JSON with 1Gi as size
@@ -203,7 +203,7 @@ Finally, a selector can be used in order to select a specific labeled persistent
       "hdd-type": "ssd"
     }
   },
-  "delete-claim": "true"
+  "delete-claim": true
 }
 ----
 
