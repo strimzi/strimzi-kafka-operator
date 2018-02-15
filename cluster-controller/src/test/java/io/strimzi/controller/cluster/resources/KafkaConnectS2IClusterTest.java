@@ -162,7 +162,7 @@ public class KafkaConnectS2IClusterTest {
     @Test
     public void testDiffScaleUp() {
         DeploymentConfig dep = kc.generateDeploymentConfig();
-        dep.getSpec().setReplicas(dep.getSpec().getReplicas()-1);
+        dep.getSpec().setReplicas(dep.getSpec().getReplicas() - 1);
         ClusterDiffResult diff = kc.diff(dep, kc.generateSourceImageStream(), kc.generateTargetImageStream(), kc.generateBuildConfig());
 
         assertFalse(diff.isDifferent());
@@ -175,7 +175,7 @@ public class KafkaConnectS2IClusterTest {
     @Test
     public void testDiffScaleDown() {
         DeploymentConfig dep = kc.generateDeploymentConfig();
-        dep.getSpec().setReplicas(dep.getSpec().getReplicas()+1);
+        dep.getSpec().setReplicas(dep.getSpec().getReplicas() + 1);
         ClusterDiffResult diff = kc.diff(dep, kc.generateSourceImageStream(), kc.generateTargetImageStream(), kc.generateBuildConfig());
 
         assertFalse(diff.isDifferent());

@@ -16,7 +16,7 @@ import io.vertx.core.Vertx;
 
 import static org.mockito.Mockito.when;
 
-public class DeploymentConfigOperationsMockTest extends ResourceOperationsMockTest<OpenShiftClient,DeploymentConfig,DeploymentConfigList,DoneableDeploymentConfig,DeployableScalableResource<DeploymentConfig,DoneableDeploymentConfig>> {
+public class DeploymentConfigOperationsMockTest extends ResourceOperationsMockTest<OpenShiftClient, DeploymentConfig, DeploymentConfigList, DoneableDeploymentConfig,DeployableScalableResource<DeploymentConfig,DoneableDeploymentConfig>> {
 
     @Override
     protected Class<OpenShiftClient> clientType() {

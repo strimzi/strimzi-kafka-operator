@@ -14,8 +14,6 @@ import io.strimzi.controller.cluster.resources.ZookeeperCluster;
 import java.util.HashMap;
 import java.util.Map;
 
-import static java.util.Collections.singletonMap;
-
 public class ResourceUtils {
 
     private ResourceUtils() {
@@ -27,13 +25,13 @@ public class ResourceUtils {
      * @param pairs (key, value) pairs. There must be an even number, obviously.
      * @return a map of labels
      */
-    public static Map<String,String> labels(String... pairs) {
+    public static Map<String, String> labels(String... pairs) {
         if (pairs.length % 2 != 0) {
             throw new IllegalArgumentException();
         }
         HashMap<String, String> map = new HashMap<>();
-        for (int i = 0; i < pairs.length; i+=2) {
-            map.put(pairs[i], pairs[i+1]);
+        for (int i = 0; i < pairs.length; i += 2) {
+            map.put(pairs[i], pairs[i + 1]);
         }
         return map;
     }
@@ -63,7 +61,7 @@ public class ResourceUtils {
         cmData.put(KafkaCluster.KEY_STORAGE, storage);
         cmData.put(KafkaCluster.KEY_METRICS_CONFIG, metricsCmJson);
         cmData.put(ZookeeperCluster.KEY_REPLICAS, Integer.toString(replicas));
-        cmData.put(ZookeeperCluster.KEY_IMAGE, image+"-zk");
+        cmData.put(ZookeeperCluster.KEY_IMAGE, image + "-zk");
         cmData.put(ZookeeperCluster.KEY_HEALTHCHECK_DELAY, Integer.toString(healthDelay));
         cmData.put(ZookeeperCluster.KEY_HEALTHCHECK_TIMEOUT, Integer.toString(healthTimeout));
         cmData.put(ZookeeperCluster.KEY_STORAGE, storage);
