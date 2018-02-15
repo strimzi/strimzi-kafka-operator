@@ -4,7 +4,6 @@
  */
 package io.strimzi.controller.cluster.operations.cluster;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.strimzi.controller.cluster.ClusterController;
 import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
@@ -45,7 +44,7 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
     protected static final String OP_DELETE = "delete";
     protected static final String OP_UPDATE = "update";
 
-    protected final int LOCK_TIMEOUT = 60000;
+    protected static final int LOCK_TIMEOUT = 60000;
 
     protected final Vertx vertx;
     protected final boolean isOpenShift;
@@ -68,7 +67,7 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
     }
 
     protected final String getLockName(String clusterType, String namespace, String name) {
-        return "lock::"+ clusterType +"::" + namespace + "::" + name;
+        return "lock::" + clusterType + "::" + namespace + "::" + name;
     }
 
     protected static class ClusterOperation<C extends AbstractCluster> {
@@ -132,7 +131,7 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
                 });
             } else {
                 log.error("Failed to acquire lock to {} {} cluster {}", operationType, clusterType, lockName);
-                handler.handle(Future.failedFuture("Failed to acquire lock to " + operationType + " "+ clusterType + " cluster"));
+                handler.handle(Future.failedFuture("Failed to acquire lock to " + operationType + " " + clusterType + " cluster"));
             }
         });
     }
@@ -145,8 +144,7 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
         create(namespace, name, res -> {
             if (res.succeeded()) {
                 log.info("{} cluster added {}", clusterDescription, name);
-            }
-            else {
+            } else {
                 log.error("Failed to add {} cluster {}.", clusterDescription, name);
             }
         });
@@ -159,8 +157,7 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
         delete(namespace, name, res -> {
             if (res.succeeded()) {
                 log.info("{} cluster deleted {} in namespace {}", clusterDescription, name, namespace);
-            }
-            else {
+            } else {
                 log.error("Failed to delete {} cluster {} in namespace {}", clusterDescription, name, namespace);
             }
         });
@@ -174,8 +171,7 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
         update(namespace, name, res2 -> {
             if (res2.succeeded()) {
                 log.info("{} cluster updated {}", clusterDescription, name);
-            }
-            else {
+            } else {
                 log.error("Failed to update {} cluster {}.", clusterDescription, name);
             }
         });

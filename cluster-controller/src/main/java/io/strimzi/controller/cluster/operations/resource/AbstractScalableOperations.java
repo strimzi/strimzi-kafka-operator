@@ -52,19 +52,18 @@ public abstract class AbstractScalableOperations<C, T extends HasMetadata, L ext
     public Future<Void> scaleUp(String namespace, String name, int scaleTo) {
         Future<Void> fut = Future.future();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
-                future -> {
-                    try {
-                        log.info("Scaling up to {} replicas", scaleTo);
-                        resource(namespace, name).scale(scaleTo, true);
-                        future.complete();
-                    }
-                    catch (Exception e) {
-                        log.error("Caught exception while scaling up", e);
-                        future.fail(e);
-                    }
-                },
-                false,
-                fut.completer()
+            future -> {
+                try {
+                    log.info("Scaling up to {} replicas", scaleTo);
+                    resource(namespace, name).scale(scaleTo, true);
+                    future.complete();
+                } catch (Exception e) {
+                    log.error("Caught exception while scaling up", e);
+                    future.fail(e);
+                }
+            },
+            false,
+            fut.completer()
         );
         return fut;
     }
@@ -79,37 +78,36 @@ public abstract class AbstractScalableOperations<C, T extends HasMetadata, L ext
     public Future<Void> scaleDown(String namespace, String name, int scaleTo) {
         Future<Void> fut = Future.future();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
-                future -> {
-                    try {
-                        Object gettable = resource(namespace, name).get();
-                        int nextReplicas;
+            future -> {
+                try {
+                    Object gettable = resource(namespace, name).get();
+                    int nextReplicas;
 
-                        if (gettable instanceof StatefulSet) {
-                            nextReplicas = ((StatefulSet) resource(namespace, name).get()).getSpec().getReplicas();
-                        } else if (gettable instanceof Deployment) {
-                            nextReplicas = ((Deployment) resource(namespace, name).get()).getSpec().getReplicas();
-                        } else if (gettable instanceof DeploymentConfig) {
-                            nextReplicas = ((DeploymentConfig) resource(namespace, name).get()).getSpec().getReplicas();
-                        } else {
-                            future.fail("Unknown resource type: " + gettable.getClass().getCanonicalName());
-                            return;
-                        }
-
-                        while (nextReplicas > scaleTo) {
-                            nextReplicas--;
-                            log.info("Scaling down from {} to {}", nextReplicas+1, nextReplicas);
-                            resource(namespace, name).scale(nextReplicas, true);
-                        }
-
-                        future.complete();
+                    if (gettable instanceof StatefulSet) {
+                        nextReplicas = ((StatefulSet) resource(namespace, name).get()).getSpec().getReplicas();
+                    } else if (gettable instanceof Deployment) {
+                        nextReplicas = ((Deployment) resource(namespace, name).get()).getSpec().getReplicas();
+                    } else if (gettable instanceof DeploymentConfig) {
+                        nextReplicas = ((DeploymentConfig) resource(namespace, name).get()).getSpec().getReplicas();
+                    } else {
+                        future.fail("Unknown resource type: " + gettable.getClass().getCanonicalName());
+                        return;
                     }
-                    catch (Exception e) {
-                        log.error("Caught exception while scaling down", e);
-                        future.fail(e);
+
+                    while (nextReplicas > scaleTo) {
+                        nextReplicas--;
+                        log.info("Scaling down from {} to {}", nextReplicas + 1, nextReplicas);
+                        resource(namespace, name).scale(nextReplicas, true);
                     }
-                },
-                false,
-                fut.completer()
+
+                    future.complete();
+                } catch (Exception e) {
+                    log.error("Caught exception while scaling down", e);
+                    future.fail(e);
+                }
+            },
+            false,
+            fut.completer()
         );
         return fut;
     }

@@ -139,8 +139,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
         if (replicas > dep.getSpec().getReplicas()) {
             log.info("Diff: Expected replicas {}, actual replicas {}", replicas, dep.getSpec().getReplicas());
             scaleUp = true;
-        }
-        else if (replicas < dep.getSpec().getReplicas()) {
+        } else if (replicas < dep.getSpec().getReplicas()) {
             log.info("Diff: Expected replicas {}, actual replicas {}", replicas, dep.getSpec().getReplicas());
             scaleDown = true;
         }
@@ -161,8 +160,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                 || keyConverterSchemasEnable != Boolean.parseBoolean(vars.getOrDefault(KEY_VALUE_CONVERTER_SCHEMAS_EXAMPLE, String.valueOf(DEFAULT_VALUE_CONVERTER_SCHEMAS_EXAMPLE)))
                 || configStorageReplicationFactor != Integer.parseInt(vars.getOrDefault(KEY_CONFIG_STORAGE_REPLICATION_FACTOR, String.valueOf(DEFAULT_CONFIG_STORAGE_REPLICATION_FACTOR)))
                 || offsetStorageReplicationFactor != Integer.parseInt(vars.getOrDefault(KEY_OFFSET_STORAGE_REPLICATION_FACTOR, String.valueOf(DEFAULT_OFFSET_STORAGE_REPLICATION_FACTOR)))
-                || statusStorageReplicationFactor != Integer.parseInt(vars.getOrDefault(KEY_STATUS_STORAGE_REPLICATION_FACTOR, String.valueOf(DEFAULT_STATUS_STORAGE_REPLICATION_FACTOR)))
-                ) {
+                || statusStorageReplicationFactor != Integer.parseInt(vars.getOrDefault(KEY_STATUS_STORAGE_REPLICATION_FACTOR, String.valueOf(DEFAULT_STATUS_STORAGE_REPLICATION_FACTOR)))) {
             log.info("Diff: Kafka Connect options changed");
             different = true;
             rollingUpdate = true;

@@ -34,9 +34,9 @@ public class KafkaCluster extends AbstractCluster {
     protected static final int REPLICATION_PORT = 9091;
     protected static final String REPLICATION_PORT_NAME = "replication";
 
-    private static String NAME_SUFFIX = "-kafka";
-    private static String HEADLESS_NAME_SUFFIX = NAME_SUFFIX + "-headless";
-    private static String METRICS_CONFIG_SUFFIX = NAME_SUFFIX + "-metrics-config";
+    private static final String NAME_SUFFIX = "-kafka";
+    private static final String HEADLESS_NAME_SUFFIX = NAME_SUFFIX + "-headless";
+    private static final String METRICS_CONFIG_SUFFIX = NAME_SUFFIX + "-metrics-config";
 
     // Kafka configuration
     private String zookeeperConnect = DEFAULT_KAFKA_ZOOKEEPER_CONNECT;
@@ -45,17 +45,17 @@ public class KafkaCluster extends AbstractCluster {
     private int transactionStateLogReplicationFactor = DEFAULT_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR;
 
     // Configuration defaults
-    private static String DEFAULT_IMAGE = "strimzi/kafka:latest";
-    private static int DEFAULT_REPLICAS = 3;
-    private static int DEFAULT_HEALTHCHECK_DELAY = 15;
-    private static int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
-    private static boolean DEFAULT_KAFKA_METRICS_ENABLED = false;
+    private static final String DEFAULT_IMAGE = "strimzi/kafka:latest";
+    private static final int DEFAULT_REPLICAS = 3;
+    private static final int DEFAULT_HEALTHCHECK_DELAY = 15;
+    private static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
+    private static final boolean DEFAULT_KAFKA_METRICS_ENABLED = false;
 
     // Kafka configuration defaults
-    private static String DEFAULT_KAFKA_ZOOKEEPER_CONNECT = "zookeeper:2181";
-    private static int DEFAULT_KAFKA_DEFAULT_REPLICATION_FACTOR = 3;
-    private static int DEFAULT_KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR = 3;
-    private static int DEFAULT_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR = 3;
+    private static final String DEFAULT_KAFKA_ZOOKEEPER_CONNECT = "zookeeper:2181";
+    private static final int DEFAULT_KAFKA_DEFAULT_REPLICATION_FACTOR = 3;
+    private static final int DEFAULT_KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR = 3;
+    private static final int DEFAULT_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR = 3;
 
     // Configuration keys
     public static final String KEY_IMAGE = "kafka-image";
@@ -66,11 +66,11 @@ public class KafkaCluster extends AbstractCluster {
     public static final String KEY_STORAGE = "kafka-storage";
 
     // Kafka configuration keys
-    private static String KEY_KAFKA_ZOOKEEPER_CONNECT = "KAFKA_ZOOKEEPER_CONNECT";
-    private static String KEY_KAFKA_DEFAULT_REPLICATION_FACTOR = "KAFKA_DEFAULT_REPLICATION_FACTOR";
-    private static String KEY_KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR = "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR";
-    private static String KEY_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR = "KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR";
-    private static String KEY_KAFKA_METRICS_ENABLED = "KAFKA_METRICS_ENABLED";
+    private static final String KEY_KAFKA_ZOOKEEPER_CONNECT = "KAFKA_ZOOKEEPER_CONNECT";
+    private static final String KEY_KAFKA_DEFAULT_REPLICATION_FACTOR = "KAFKA_DEFAULT_REPLICATION_FACTOR";
+    private static final String KEY_KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR = "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR";
+    private static final String KEY_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR = "KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR";
+    private static final String KEY_KAFKA_METRICS_ENABLED = "KAFKA_METRICS_ENABLED";
 
     /**
      * Constructor
@@ -208,8 +208,7 @@ public class KafkaCluster extends AbstractCluster {
         if (replicas > ss.getSpec().getReplicas()) {
             log.info("Diff: Expected replicas {}, actual replicas {}", replicas, ss.getSpec().getReplicas());
             scaleUp = true;
-        }
-        else if (replicas < ss.getSpec().getReplicas()) {
+        } else if (replicas < ss.getSpec().getReplicas()) {
             log.info("Diff: Expected replicas {}, actual replicas {}", replicas, ss.getSpec().getReplicas());
             scaleDown = true;
         }
@@ -233,8 +232,7 @@ public class KafkaCluster extends AbstractCluster {
         if (!zookeeperConnect.equals(vars.getOrDefault(KEY_KAFKA_ZOOKEEPER_CONNECT, DEFAULT_KAFKA_ZOOKEEPER_CONNECT))
                 || defaultReplicationFactor != Integer.parseInt(vars.getOrDefault(KEY_KAFKA_DEFAULT_REPLICATION_FACTOR, String.valueOf(DEFAULT_KAFKA_DEFAULT_REPLICATION_FACTOR)))
                 || offsetsTopicReplicationFactor != Integer.parseInt(vars.getOrDefault(KEY_KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR, String.valueOf(DEFAULT_KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR)))
-                || transactionStateLogReplicationFactor != Integer.parseInt(vars.getOrDefault(KEY_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR, String.valueOf(DEFAULT_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR)))
-                ) {
+                || transactionStateLogReplicationFactor != Integer.parseInt(vars.getOrDefault(KEY_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR, String.valueOf(DEFAULT_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR)))) {
             log.info("Diff: Kafka options changed");
             different = true;
             rollingUpdate = true;
@@ -278,8 +276,8 @@ public class KafkaCluster extends AbstractCluster {
         Storage.StorageDiffResult storageDiffResult = storage.diff(ssStorage);
 
         // check for all the not allowed changes to the storage
-        boolean isStorageRejected = (storageDiffResult.isType() || storageDiffResult.isSize() ||
-                storageDiffResult.isStorageClass() || storageDiffResult.isSelector());
+        boolean isStorageRejected = storageDiffResult.isType() || storageDiffResult.isSize() ||
+                storageDiffResult.isStorageClass() || storageDiffResult.isSelector();
 
         // only delete-claim flag can be changed
         if (!isStorageRejected && (storage.type() == Storage.StorageType.PERSISTENT_CLAIM)) {

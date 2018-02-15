@@ -82,12 +82,12 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
     private final CompositeOperation<KafkaCluster> createKafka = new CompositeOperation<KafkaCluster>() {
 
         @Override
-        public ClusterOperation<KafkaCluster> getCluster(String namespace, String name){
+        public ClusterOperation<KafkaCluster> getCluster(String namespace, String name) {
             return new ClusterOperation<>(KafkaCluster.fromConfigMap(configMapOperations.get(namespace, name)), null);
         }
 
         @Override
-        public Future<?> composite(String namespace, ClusterOperation<KafkaCluster> clusterOp){
+        public Future<?> composite(String namespace, ClusterOperation<KafkaCluster> clusterOp) {
             KafkaCluster kafka = clusterOp.cluster();
             List<Future> result = new ArrayList<>(4);
             // start creating configMap operation only if metrics are enabled,
@@ -281,11 +281,10 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
 
         private Future<Void> scaleDown(KafkaCluster kafka, String namespace, ClusterDiffResult diff) {
-            if (diff.isScaleDown())    {
+            if (diff.isScaleDown()) {
                 log.info("Scaling down stateful set {} in namespace {}", kafka.getName(), namespace);
                 return statefulSetOperations.scaleDown(namespace, kafka.getName(), kafka.getReplicas());
-            }
-            else {
+            } else {
                 return Future.succeededFuture();
             }
         }
@@ -293,9 +292,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
         private Future<Void> patchService(KafkaCluster kafka, String namespace, ClusterDiffResult diff) {
             if (diff.isDifferent()) {
                 return serviceOperations.patch(namespace, kafka.getName(), kafka.patchService(serviceOperations.get(namespace, kafka.getName())));
-            }
-            else
-            {
+            } else {
                 return Future.succeededFuture();
             }
         }
@@ -304,9 +301,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
             if (diff.isDifferent()) {
                 return serviceOperations.patch(namespace, kafka.getHeadlessName(),
                         kafka.patchHeadlessService(serviceOperations.get(namespace, kafka.getHeadlessName())));
-            }
-            else
-            {
+            } else {
                 return Future.succeededFuture();
             }
         }
@@ -335,8 +330,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
             if (diff.isRollingUpdate()) {
                 statefulSetOperations.rollingUpdate(namespace, kafka.getName(),
                         rollingUpdate.completer());
-            }
-            else {
+            } else {
                 rollingUpdate.complete();
             }
 
@@ -346,8 +340,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
         private Future<Void> scaleUp(KafkaCluster kafka, String namespace, ClusterDiffResult diff) {
             if (diff.isScaleUp()) {
                 return statefulSetOperations.scaleUp(namespace, kafka.getName(), kafka.getReplicas());
-            }
-            else {
+            } else {
                 return Future.succeededFuture();
             }
         }
@@ -373,11 +366,10 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
         }
 
         private Future<Void> scaleDown(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
-            if (diff.isScaleDown())    {
+            if (diff.isScaleDown()) {
                 log.info("Scaling down stateful set {} in namespace {}", zk.getName(), namespace);
                 return statefulSetOperations.scaleDown(namespace, zk.getName(), zk.getReplicas());
-            }
-            else {
+            } else {
                 return Future.succeededFuture();
             }
         }
@@ -386,9 +378,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
             if (diff.isDifferent()) {
                 return serviceOperations.patch(namespace, zk.getName(),
                         zk.patchService(serviceOperations.get(namespace, zk.getName())));
-            }
-            else
-            {
+            } else {
                 return Future.succeededFuture();
             }
         }
@@ -397,9 +387,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
             if (diff.isDifferent()) {
                 return serviceOperations.patch(namespace, zk.getHeadlessName(),
                         zk.patchHeadlessService(serviceOperations.get(namespace, zk.getHeadlessName())));
-            }
-            else
-            {
+            } else {
                 return Future.succeededFuture();
             }
         }
@@ -408,9 +396,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
             if (diff.isDifferent()) {
                 return statefulSetOperations.patch(namespace, zk.getName(), false,
                         zk.patchStatefulSet(statefulSetOperations.get(namespace, zk.getName())));
-            }
-            else
-            {
+            } else {
                 return Future.succeededFuture();
             }
         }
@@ -430,8 +416,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
             if (diff.isRollingUpdate()) {
                 statefulSetOperations.rollingUpdate(namespace, zk.getName(),
                         rollingUpdate.completer());
-            }
-            else {
+            } else {
                 rollingUpdate.complete();
             }
 
@@ -441,8 +426,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
         private Future<Void> scaleUp(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
             if (diff.isScaleUp()) {
                 return statefulSetOperations.scaleUp(namespace, zk.getName(), zk.getReplicas());
-            }
-            else {
+            } else {
                 return Future.succeededFuture();
             }
         }

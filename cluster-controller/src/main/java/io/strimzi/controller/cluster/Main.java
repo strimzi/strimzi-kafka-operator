@@ -19,14 +19,14 @@ import io.strimzi.controller.cluster.operations.resource.PodOperations;
 import io.strimzi.controller.cluster.operations.resource.PvcOperations;
 import io.strimzi.controller.cluster.operations.resource.ServiceOperations;
 import io.strimzi.controller.cluster.operations.resource.StatefulSetOperations;
-import io.vertx.core.*;
+import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class Main {
     private static final Logger log = LoggerFactory.getLogger(Main.class.getName());
 
-    public static void main(String args[]) {
+    public static void main(String[] args) {
         try {
             Vertx vertx = Vertx.vertx();
             DefaultKubernetesClient client = new DefaultKubernetesClient();
@@ -57,15 +57,15 @@ public class Main {
 
             ClusterControllerConfig config = ClusterControllerConfig.fromMap(System.getenv());
             vertx.deployVerticle(new ClusterController(config, kafkaClusterOperations,
-                    kafkaConnectClusterOperations, kafkaConnectS2IClusterOperations), res -> {
-                if (res.succeeded())    {
-                    log.info("Cluster Controller verticle started");
-                }
-                else {
-                    log.error("Cluster Controller verticle failed to start", res.cause());
-                    System.exit(1);
-                }
-            });
+                kafkaConnectClusterOperations, kafkaConnectS2IClusterOperations),
+                res -> {
+                    if (res.succeeded())    {
+                        log.info("Cluster Controller verticle started");
+                    } else {
+                        log.error("Cluster Controller verticle failed to start", res.cause());
+                        System.exit(1);
+                    }
+                });
         } catch (IllegalArgumentException e) {
             log.error("Unable to parse arguments", e);
             System.exit(1);

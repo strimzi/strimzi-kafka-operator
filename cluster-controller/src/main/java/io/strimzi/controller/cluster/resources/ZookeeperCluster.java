@@ -4,7 +4,15 @@
  */
 package io.strimzi.controller.cluster.resources;
 
-import io.fabric8.kubernetes.api.model.*;
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ContainerPort;
+import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.EnvVarBuilder;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
+import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.ServicePort;
+import io.fabric8.kubernetes.api.model.Volume;
+import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.controller.cluster.ClusterController;
 import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
@@ -29,19 +37,19 @@ public class ZookeeperCluster extends AbstractCluster {
     private static final int LEADER_ELECTION_PORT = 3888;
     private static final String LEADER_ELECTION_PORT_NAME = "leader-election";
 
-    private static String NAME_SUFFIX = "-zookeeper";
-    private static String HEADLESS_NAME_SUFFIX = NAME_SUFFIX + "-headless";
-    private static String METRICS_CONFIG_SUFFIX = NAME_SUFFIX + "-metrics-config";
+    private static final String NAME_SUFFIX = "-zookeeper";
+    private static final String HEADLESS_NAME_SUFFIX = NAME_SUFFIX + "-headless";
+    private static final String METRICS_CONFIG_SUFFIX = NAME_SUFFIX + "-metrics-config";
 
     // Zookeeper configuration
     // N/A
 
     // Configuration defaults
-    private static String DEFAULT_IMAGE = "strimzi/zookeeper:latest";
-    private static int DEFAULT_REPLICAS = 3;
-    private static int DEFAULT_HEALTHCHECK_DELAY = 15;
-    private static int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
-    private static boolean DEFAULT_ZOOKEEPER_METRICS_ENABLED = false;
+    private static final String DEFAULT_IMAGE = "strimzi/zookeeper:latest";
+    private static final int DEFAULT_REPLICAS = 3;
+    private static final int DEFAULT_HEALTHCHECK_DELAY = 15;
+    private static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
+    private static final boolean DEFAULT_ZOOKEEPER_METRICS_ENABLED = false;
 
     // Zookeeper configuration defaults
     // N/A
@@ -55,8 +63,8 @@ public class ZookeeperCluster extends AbstractCluster {
     public static final String KEY_STORAGE = "zookeeper-storage";
 
     // Zookeeper configuration keys
-    private static String KEY_ZOOKEEPER_NODE_COUNT = "ZOOKEEPER_NODE_COUNT";
-    private static String KEY_ZOOKEEPER_METRICS_ENABLED = "ZOOKEEPER_METRICS_ENABLED";
+    private static final String KEY_ZOOKEEPER_NODE_COUNT = "ZOOKEEPER_NODE_COUNT";
+    private static final String KEY_ZOOKEEPER_METRICS_ENABLED = "ZOOKEEPER_METRICS_ENABLED";
 
     public static String zookeeperClusterName(String cluster) {
         return cluster + ZookeeperCluster.NAME_SUFFIX;
@@ -184,8 +192,7 @@ public class ZookeeperCluster extends AbstractCluster {
             log.info("Diff: Expected replicas {}, actual replicas {}", replicas, ss.getSpec().getReplicas());
             scaleUp = true;
             rollingUpdate = true;
-        }
-        else if (replicas < ss.getSpec().getReplicas()) {
+        } else if (replicas < ss.getSpec().getReplicas()) {
             log.info("Diff: Expected replicas {}, actual replicas {}", replicas, ss.getSpec().getReplicas());
             scaleDown = true;
             rollingUpdate = true;
@@ -244,8 +251,8 @@ public class ZookeeperCluster extends AbstractCluster {
         Storage.StorageDiffResult storageDiffResult = storage.diff(ssStorage);
 
         // check for all the not allowed changes to the storage
-        boolean isStorageRejected = (storageDiffResult.isType() || storageDiffResult.isSize() ||
-                storageDiffResult.isStorageClass() || storageDiffResult.isSelector());
+        boolean isStorageRejected = storageDiffResult.isType() || storageDiffResult.isSize() ||
+                storageDiffResult.isStorageClass() || storageDiffResult.isSelector();
 
         // only delete-claim flag can be changed
         if (!isStorageRejected && (storage.type() == Storage.StorageType.PERSISTENT_CLAIM)) {
@@ -336,7 +343,7 @@ public class ZookeeperCluster extends AbstractCluster {
         List<ContainerPort> portList = new ArrayList<>();
         portList.add(createContainerPort(CLIENT_PORT_NAME, CLIENT_PORT, "TCP"));
         portList.add(createContainerPort(CLUSTERING_PORT_NAME, CLUSTERING_PORT, "TCP"));
-        portList.add(createContainerPort(LEADER_ELECTION_PORT_NAME, LEADER_ELECTION_PORT,"TCP"));
+        portList.add(createContainerPort(LEADER_ELECTION_PORT_NAME, LEADER_ELECTION_PORT, "TCP"));
         if (isMetricsEnabled) {
             portList.add(createContainerPort(metricsPortName, metricsPort, "TCP"));
         }
