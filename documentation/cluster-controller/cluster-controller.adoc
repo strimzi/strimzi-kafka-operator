@@ -176,7 +176,7 @@ Default is `false` - optional
 { "type": "persistent-claim", "size": "1Gi" }
 ----
 
-A more complex configuration could use a storage class in the following way.
+This example demonstrates use of a storage class.
 
 .Persistent storage JSON using "storage class"
 [source,json]
@@ -288,20 +288,10 @@ data:
   KAFKA_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "3"
 ----
 
-In order to add more connectors plugins to the Kafka Connect deployment, it's possible to use the Stream2Image feature if
-thr cluster is running on OpenShift. The cluster configuration is mostly the same as the above example but the following
-different type needs to be used.
+The resources created by the cluster controller into the Kubernetes/OpenShift cluster will be the following :
 
-[source,yaml,options="nowrap"]
-----
-...
-metadata:
-  name: my-connect-cluster
-  labels:
-    strimzi.io/kind: cluster
-    strimzi.io/type: kafka-connect-s2i
-...
-----
+* [connect-cluster-name]-connect Deployment which is in charge to create the Kafka Connect worker node pods
+* [connect-cluster-name]-connect Service which exposes the REST interface for managing the Kafka Connect cluster
 
 == Controller configuration
 
