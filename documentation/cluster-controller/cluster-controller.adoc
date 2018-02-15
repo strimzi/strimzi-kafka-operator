@@ -24,13 +24,12 @@ resources.
 When the controller is up and running, it reacts at all notifications received from the Kubernetes/OpenShift cluster related 
 to the watched ConfigMaps when they are created, updated or deleted.
 
-It could happen that the cluster controller isn't working properly and the related pod is restarted. In that scenario,
-it could lose notifications about the cluster ConfigMaps; without any action there will be an inconsistent state comparing
-the ConfigMaps and what is actually deployed in the Kubernetes/OpenShift cluster.
+For different reasons, it could lose notifications about the cluster ConfigMaps; without any action there will be an
+inconsistent state comparing to the ConfigMaps and what is actually deployed in the Kubernetes/OpenShift cluster.
 
-For fixing this kind of issues, a periodic reconciliation is executed by the cluster controller so that it can compare 
-how the ConfigMaps look like (and if they exist) with the current cluster deployment in order to have a consistent state 
-across all of them.
+In order to handle failovers in a proper way, a periodic reconciliation process is executed by the cluster controller so
+that it can compare how the ConfigMaps look like (and if they exist) with the current cluster deployment in order to have
+a consistent state across all of them.
 
 == Format of the cluster ConfigMap
 
