@@ -4,7 +4,7 @@ The cluster controller is in charge of deploying a Kafka cluster alongside a Zoo
 Kafka Connect cluster which connects to an existing Kafka cluster. Such a cluster can be deployed using the Source2Image OpenShift
 feature as well in order to include more connectors plugins.
 
-When the cluster controller is up and running, it starts to "watch" for ConfigMaps containing the Kafka or Kafka Connect
+When the cluster controller is up, it starts to "watch" for ConfigMaps containing the Kafka or Kafka Connect
 cluster configuration. Such ConfigMaps need to have a specific label which is, by default, `strimzi.io/kind=cluster`
 (as described <<Format of the cluster ConfigMap,later>>) that can be changed through a corresponding environment variable.
 
@@ -17,17 +17,14 @@ updates on the Kubernetes/OpenShift resources which make up the Kafka or Kafka C
 or deleted and then re-created in order to make the Kafka or Kafka Connect cluster reflect the state of the cluster ConfigMap.
 This might cause a rolling update which might lead to service disruption.
 
-Finally, if the ConfigMap is deleted, the controller starts to un-deploy the cluster deleting all the related Kubernets/OpenShift
+Finally, when the ConfigMap is deleted, the controller starts to un-deploy the cluster deleting all the related Kubernets/OpenShift
 resources.
 
 == Reconciliation
 
-When the controller is running it reacts to all notifications about the cluster ConfigMaps received from the Kubernetes/OpenShift cluster.
-However if the controller is not running, or if a notification is not received for any reason it could lose notifications
-about the cluster ConfigMaps.
-
-For different reasons, it could lose notifications about the cluster ConfigMaps; without any action there will be an
-inconsistency between the cluster ConfigMaps and the state of the running Kubernetes/OpenShift cluster.
+Although the controller reacts to all notifications about the cluster ConfigMaps received from the Kubernetes/OpenShift cluster,
+if the controller is not running, or if a notification is not received for any reason, the ConfigMaps will get out of sync
+with the state of the running Kubernetes/OpenShift cluster.
 
 In order to handle failovers properly, a periodic reconciliation process is executed by the cluster controller so
 that it can compare the state of the ConfigMaps with the current cluster deployment in order to have
@@ -128,20 +125,33 @@ data:
     }
 ----
 
+The resources created by the cluster controller into the Kubernetes/OpenShift cluster will be the following :
+
+* `[cluster-name]-zookeeper` StatefulSet which is in charge to create the Zookeeper node pods
+* `[cluster-name]-kafka` StatefulSet which is in charge to create the Kafka broker pods
+* `[cluster-name]-zookeeper-headless` Service needed to have DNS resolve the Zookeeper pods IP addresses directly
+* `[cluster-name]-kafka-headless` Service needed to have DNS resolve the Kafka broker pods IP addresses directly
+* `[cluster-name]-zookeeper` Service used by Kafka brokers to connect to Zookeeper nodes as clients
+* `[cluster-name]-kafka` Service can be used as bootstrap servers for Kafka clients
+* `[cluster-name]-zookeeper-metrics-config` ConfigMap which contains the Zookeeper metrics configuration and mounted as
+a volume by the Zookeeper node pods
+* `[cluster-name]-kafka-metrics-config` ConfigMap which contains the Kafka metrics configuration and mounted as
+a volume by the Kafka broker pods
+
 ==== Storage
 
 Both Kafka and Zookeeper save data to files.
 
-The Strimzi allows to save such a data in an "ephemeral" way (using `emptyDir`) or in a "persistent-claim" way using persistent
+Strimzi allows to save such data in an "ephemeral" way (using `emptyDir`) or in a "persistent-claim" way using persistent
 volumes.
 It's possible to provide the storage configuration in the related ConfigMap using a JSON string as value for the 
 `kafka-storage` and `zookeeper-storage` fields.
 
-IMPORTANT: The `kafka-storage` and `zookeeper-storage` fields can't be changed when the cluster is up and running.
+IMPORTANT: The `kafka-storage` and `zookeeper-storage` fields can't be changed when the cluster is up.
 
 The JSON representation has a mandatory `type` field for specifying the type of storage to use ("ephemeral" or "persistent-claim").
 
-The "ephemeral" storage is really simple to configure and the related JSON string is something like this.
+The "ephemeral" storage is really simple to configure and the related JSON string has the following structure.
 
 .Ephemeral storage JSON
 [source,json]
@@ -152,13 +162,13 @@ The "ephemeral" storage is really simple to configure and the related JSON strin
 
 In case of "persistent-claim" type the following fields can be provided as well :
 
-* `size`: defines the size of the persistent volume claim (i.e 1Gi)
-* `class` : the Kubernetes/OpenShift https://kubernetes.io/docs/concepts/storage/storage-classes/[storage class] to use for dynamic volume allocation
+* `size`: defines the size of the persistent volume claim (i.e 1Gi) - mandatory
+* `class` : the Kubernetes/OpenShift https://kubernetes.io/docs/concepts/storage/storage-classes/[storage class] to use
+for dynamic volume allocation - optional
 * `selector`: allows to select a specific persistent volume to use. It contains a `matchLabels` field which defines an
-inner JSON object with key:value representing labels for selecting such a volume.
-* `delete-claim`: specifies if the persistent volume claim has to be deleted when the cluster is un-deployed. Default is `false`
-
-Other than `type`, the `size` is the only mandatory one.
+inner JSON object with key:value representing labels for selecting such a volume - optional
+* `delete-claim`: specifies if the persistent volume claim has to be deleted when the cluster is un-deployed.
+Default is `false` - optional
 
 .Persistent storage JSON with 1Gi as size
 [source,json]
@@ -196,6 +206,13 @@ Finally, a selector can be used in order to select a specific labeled persistent
   "delete-claim": "true"
 }
 ----
+
+When the "persistent-claim" is used, other than the resources already described in the <<Kafka>> section, the following resources
+are generated :
+
+* `kafka-storage-[cluster-name]-kafka-[idx]` Persistent Volume Claim for the volume used for storing data for the Kafka broker pod `[idx]`
+* `zookeeper-storage-[cluster-name]-zookeeper-[idx]` Persistent Volume Claim for the volume used for storing data for the
+Zookeeper node pod `[idx]`
 
 ==== Metrics
 
