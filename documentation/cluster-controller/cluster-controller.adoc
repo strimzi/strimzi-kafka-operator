@@ -1,0 +1,303 @@
+= Cluster Controller
+
+The cluster controller is in charge of deploying a Kafka cluster alongside a Zookeeper ensemble. It's also able to deploy a
+Kafka Connect cluster which connects to an existing Kafka cluster. Such a cluster can be deployed using the Source2Image OpenShift
+feature as well in order to include more connectors plugins.
+
+When the cluster controller is up, it starts to "watch" for ConfigMaps containing the Kafka or Kafka Connect
+cluster configuration. Such ConfigMaps need to have a specific label which is, by default, `strimzi.io/kind=cluster`
+(as described <<Format of the cluster ConfigMap,later>>) that can be changed through a corresponding environment variable.
+
+When a new ConfigMap is created in the Kubernetes/OpenShift cluster, the controller gets the cluster configuration from
+its `data` section and starts creating a new Kafka or Kafka Connect cluster by creating the necessary Kubernetes/OpenShift
+resources, such as StatefulSets, ConfigMaps, Services etc.
+
+Every time the ConfigMap is updated by the user with some changes in the `data` section, the controller performs corresponding
+updates on the Kubernetes/OpenShift resources which make up the Kafka or Kafka Connect cluster. Resources are either patched
+or deleted and then re-created in order to make the Kafka or Kafka Connect cluster reflect the state of the cluster ConfigMap.
+This might cause a rolling update which might lead to service disruption.
+
+Finally, when the ConfigMap is deleted, the controller starts to un-deploy the cluster deleting all the related Kubernets/OpenShift
+resources.
+
+== Reconciliation
+
+Although the controller reacts to all notifications about the cluster ConfigMaps received from the Kubernetes/OpenShift cluster,
+if the controller is not running, or if a notification is not received for any reason, the ConfigMaps will get out of sync
+with the state of the running Kubernetes/OpenShift cluster.
+
+In order to handle failovers properly, a periodic reconciliation process is executed by the cluster controller so
+that it can compare the state of the ConfigMaps with the current cluster deployment in order to have
+a consistent state across all of them.
+
+== Format of the cluster ConfigMap
+
+By default, the controller watches for ConfigMaps having the label `strimzi.io/kind=cluster` in order to find and get
+configuration for a Kafka or Kafka Connect cluster to deploy. The label is configurable through the `STRIMZI_CONFIGMAP_LABELS` 
+environment variable.
+
+In order to distinguish which "type" of cluster to deploy, Kafka or Kafka Connect, the controller checks the
+`strimzi.io/type` label which can have one of the the following values :
+
+* `kafka`: the ConfigMap provides configuration for a Kafka cluster (with Zookeeper ensemble) deployment
+* `kafka-connect`: the ConfigMap provides configuration for a Kafka Connect cluster deployment
+* `kafka-connect-s2i`: the ConfigMap provides configuration for a Kafka Connect cluster deployment using Build and Source2Image
+features (works only with OpenShift)
+
+The `data` section of such ConfigMaps contains different keys depending on the "type" of deployment as described in the 
+following sections.
+
+=== Kafka
+
+In order to configure a Kafka cluster deployment, it's possible to specify the following fields in the `data` section of 
+the related ConfigMap :
+
+* `kafka-nodes`: number of Kafka broker nodes. Default is 3
+* `kafka-image`: the Docker image to use for the Kafka brokers. Default is `strimzi/kafka:latest`
+* `kafka-healthcheck-delay`: the initial delay for the liveness and readiness probes for each Kafka broker node. Default is 15
+* `kafka-healthcheck-timeout`: the timeout on the liveness and readiness probes for each Kafka broker node. Default is 5
+* `zookeeper-nodes`: number of Zookeeper nodes
+* `zookeeper-image`: the Docker image to use for the Zookeeper nodes. Default is `strimzi/zookeeper:latest`
+* `zookeeper-healthcheck-delay`: the initial delay for the liveness and readiness probes for each Zookeeper node. Default is 15
+* `zookeeper-healthcheck-timeout`: the timeout on the liveness and readiness probes for each Zookeeper node. Default is 5
+* `KAFKA_DEFAULT_REPLICATION_FACTOR`: the default replication factors for automatically created topics. It sets the 
+`default.replication.factor` property in the properties configuration file used by Kafka broker nodes on startup. Default is 3
+* `KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR`: the replication factor for the offsets topic. It sets the  
+`offsets.topic.replication.factor` property in the properties configuration file used by Kafka broker nodes on startup. Default is 3
+* `KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR`: the replication factor for the transaction topic. It sets the 
+`transaction.state.log.replication.factor` property in the properties configuration file used by Kafka broker nodes on startup. Default is 3
+* `kafka-storage`: a JSON string representing the storage configuration for the Kafka broker nodes. See related section
+* `zookeeper-storage`: a JSON string representing the storage configuration for the Zookeeper nodes. See related section
+* `kafka-metrics-config`: a JSON string representing the JMX exporter configuration for exposing metrics from Kafka broker nodes.
+ Removing this field means having no metrics exposed.
+* `zookeeper-metrics-config`: a JSON string representing the JMX exporter configuration for exposing metrics from Zookeeper nodes.
+ Removing this field means having no metrics exposed.
+ 
+The following is an example of a ConfigMap for a Kakfa cluster.
+
+.Example Kafka cluster ConfigMap
+[source,yaml,options="nowrap"]
+----
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-cluster
+  labels:
+    strimzi.io/kind: cluster
+    strimzi.io/type: kafka
+data:
+  kafka-nodes: "3"
+  kafka-image: "strimzi/kafka:latest"
+  kafka-healthcheck-delay: "15"
+  kafka-healthcheck-timeout: "5"
+  zookeeper-nodes: "1"
+  zookeeper-image: "strimzi/zookeeper:latest"
+  zookeeper-healthcheck-delay: "15"
+  zookeeper-healthcheck-timeout: "5"
+  KAFKA_DEFAULT_REPLICATION_FACTOR: "3"
+  KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "3"
+  KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "3"
+  kafka-storage: |-
+    { "type": "ephemeral" }
+  zookeeper-storage: |-
+    { "type": "ephemeral" }
+  kafka-metrics-config: |-
+    {
+      "lowercaseOutputName": true,
+      "rules": [
+          {
+            "pattern": "kafka.server<type=(.+), name=(.+)PerSec\\w*><>Count",
+            "name": "kafka_server_$1_$2_total"
+          },
+          {
+            "pattern": "kafka.server<type=(.+), name=(.+)PerSec\\w*, topic=(.+)><>Count",
+            "name": "kafka_server_$1_$2_total",
+            "labels":
+            {
+              "topic": "$3"
+            }
+          }
+      ]
+    }
+  zookeeper-metrics-config: |-
+    {
+      "lowercaseOutputName": true
+    }
+----
+
+The resources created by the cluster controller into the Kubernetes/OpenShift cluster will be the following :
+
+* `[cluster-name]-zookeeper` StatefulSet which is in charge to create the Zookeeper node pods
+* `[cluster-name]-kafka` StatefulSet which is in charge to create the Kafka broker pods
+* `[cluster-name]-zookeeper-headless` Service needed to have DNS resolve the Zookeeper pods IP addresses directly
+* `[cluster-name]-kafka-headless` Service needed to have DNS resolve the Kafka broker pods IP addresses directly
+* `[cluster-name]-zookeeper` Service used by Kafka brokers to connect to Zookeeper nodes as clients
+* `[cluster-name]-kafka` Service can be used as bootstrap servers for Kafka clients
+* `[cluster-name]-zookeeper-metrics-config` ConfigMap which contains the Zookeeper metrics configuration and mounted as
+a volume by the Zookeeper node pods
+* `[cluster-name]-kafka-metrics-config` ConfigMap which contains the Kafka metrics configuration and mounted as
+a volume by the Kafka broker pods
+
+==== Storage
+
+Both Kafka and Zookeeper save data to files.
+
+Strimzi allows to save such data in an "ephemeral" way (using `emptyDir`) or in a "persistent-claim" way using persistent
+volumes.
+It's possible to provide the storage configuration in the related ConfigMap using a JSON string as value for the 
+`kafka-storage` and `zookeeper-storage` fields.
+
+IMPORTANT: The `kafka-storage` and `zookeeper-storage` fields can't be changed when the cluster is up.
+
+The JSON representation has a mandatory `type` field for specifying the type of storage to use ("ephemeral" or "persistent-claim").
+
+The "ephemeral" storage is really simple to configure and the related JSON string has the following structure.
+
+.Ephemeral storage JSON
+[source,json]
+----
+{ "type": "ephemeral" }
+
+----
+
+In case of "persistent-claim" type the following fields can be provided as well :
+
+* `size`: defines the size of the persistent volume claim (i.e 1Gi) - mandatory
+* `class` : the Kubernetes/OpenShift https://kubernetes.io/docs/concepts/storage/storage-classes/[storage class] to use
+for dynamic volume allocation - optional
+* `selector`: allows to select a specific persistent volume to use. It contains a `matchLabels` field which defines an
+inner JSON object with key:value representing labels for selecting such a volume - optional
+* `delete-claim`: specifies if the persistent volume claim has to be deleted when the cluster is un-deployed.
+Default is `false` - optional
+
+.Persistent storage JSON with 1Gi as size
+[source,json]
+----
+{ "type": "persistent-claim", "size": "1Gi" }
+----
+
+This example demonstrates use of a storage class.
+
+.Persistent storage JSON using "storage class"
+[source,json]
+----
+{
+  "type": "persistent-claim",
+  "size": "1Gi",
+  "class": "my-storage-class"
+}
+----
+
+Finally, a selector can be used in order to select a specific labeled persistent volume which provides some needed features (i.e. an SSD)
+
+.Persistent storage JSON with "match labels" selector
+[source,json]
+----
+{
+  "type": "persistent-claim",
+  "size": "1Gi",
+  "selector":
+  {
+    "matchLabels":
+    {
+      "hdd-type": "ssd"
+    }
+  },
+  "delete-claim": "true"
+}
+----
+
+When the "persistent-claim" is used, other than the resources already described in the <<Kafka>> section, the following resources
+are generated :
+
+* `kafka-storage-[cluster-name]-kafka-[idx]` Persistent Volume Claim for the volume used for storing data for the Kafka broker pod `[idx]`
+* `zookeeper-storage-[cluster-name]-zookeeper-[idx]` Persistent Volume Claim for the volume used for storing data for the
+Zookeeper node pod `[idx]`
+
+==== Metrics
+
+Because the Strimzi project uses the [JMX exporter](https://github.com/prometheus/jmx_exporter) in order to expose metrics 
+on each node, the JSON string used for metrics configuration in the cluster ConfigMap reflects the related JMX exporter 
+configuration file. For this reason, you can find more information on how to use it in the corresponding GitHub repo.
+
+For more information on how metrics work, the related documentation is available link:../../metrics/METRICS.md[here]
+
+=== Kafka Connect
+
+In order to configure a Kafka Connect cluster deployment, it's possible to specify the following fields in the `data` section of 
+the related ConfigMap:
+
+* `nodes`: number of Kafka Connect worker nodes. Default is 1
+* `image`: the Docker image to use for the Kafka Connect workers. Default is `strimzi/kafka-connect:latest`. If S2I is used 
+(only on OpenShift), then it should be the related S2I image.
+* `healthcheck-delay`: the initial delay for the liveness and readiness probes for each Kafka Connect worker node. Default is 60
+* `healthcheck-timeout`: the timeout on the liveness and readiness probes for each Kafka Connect worker node. Default is 5
+* `KAFKA_CONNECT_BOOTSTRAP_SERVERS`: a list of host/port pairs to use for establishing the initial connection to the Kafka cluster.
+It sets the `bootstrap.servers` property in the properties configuration file used by Kafka Connect worker nodes on startup.
+Default is `my-cluster-kafka:9092`
+* `KAFKA_CONNECT_GROUP_ID`: a unique string that identifies the Connect cluster group this worker belongs to.
+It sets the `group.id` property in the properties configuration file used by Kafka Connect worker nodes on startup.
+Default is `my-connect-cluster`
+* `KAFKA_CONNECT_KEY_CONVERTER`: converter class used to convert keys between Kafka Connect format and the serialized form 
+that is written to Kafka. It sets the `key.converter` property in the properties configuration file used by Kafka Connect 
+worker nodes on startup. Default is `org.apache.kafka.connect.json.JsonConverter`
+* `KAFKA_CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE`: if Kafka Connect transformation on keys are with or without schemas.
+It sets the `key.converter.schemas.enable` property in the properties configuration file used by Kafka Connect worker nodes on startup.
+Default is true
+* `KAFKA_CONNECT_VALUE_CONVERTER`: converter class used to convert values between Kafka Connect format and the serialized form 
+that is written to Kafka. It sets the `value.converter` property in the properties configuration file used by Kafka Connect 
+worker nodes on startup. Default is `org.apache.kafka.connect.json.JsonConverter`
+* `KAFKA_CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE`: if Kafka Connect transformation on values are with or without schemas.
+It sets the `value.converter.schemas.enable` property in the properties configuration file used by Kafka Connect worker nodes on startup.
+Default is true
+* `KAFKA_CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR`: replication factor used when creating the configuration storage topic.
+It sets the `config.storage.replication.factor` property in the properties configuration file used by Kafka Connect worker nodes on startup.
+Default is 3
+* `KAFKA_CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR`: replication factor used when creating the offset storage topic.
+It sets the `offset.storage.replication.factor` property in the properties configuration file used by Kafka Connect worker nodes on startup.
+Default is 3
+* `KAFKA_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR`: replication factor used when creating the status storage topic.
+It sets the `status.storage.replication.factor` property in the properties configuration file used by Kafka Connect worker nodes on startup.
+Default is 3
+
+The following is an example of cluster configuration ConfigMap is the following.
+
+.Example Kafka Connect cluster ConfigMap
+[source,yaml,options="nowrap"]
+----
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-connect-cluster
+  labels:
+    strimzi.io/kind: cluster
+    strimzi.io/type: kafka-connect
+data:
+  nodes: "1"
+  image: "strimzi/kafka-connect:latest"
+  healthcheck-delay: "60"
+  healthcheck-timeout: "5"
+  KAFKA_CONNECT_BOOTSTRAP_SERVERS: "my-cluster-kafka:9092"
+  KAFKA_CONNECT_GROUP_ID: "my-connect-cluster"
+  KAFKA_CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+  KAFKA_CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE: "true"
+  KAFKA_CONNECT_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+  KAFKA_CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "true"
+  KAFKA_CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "3"
+  KAFKA_CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "3"
+  KAFKA_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "3"
+----
+
+The resources created by the cluster controller into the Kubernetes/OpenShift cluster will be the following :
+
+* [connect-cluster-name]-connect Deployment which is in charge to create the Kafka Connect worker node pods
+* [connect-cluster-name]-connect Service which exposes the REST interface for managing the Kafka Connect cluster
+
+== Controller configuration
+
+The controller itself can be configured through the following environment variables.
+
+* `STRIMZI_CONFIGMAP_LABELS`: the Kubernetes/OpenShift label selector used to identify ConfigMaps to be managed by the controller.
+Default: `strimzi.io/kind=cluster`.  
+* `STRIMZI_FULL_RECONCILIATION_INTERVAL` : the interval between periodic reconciliations.
+Default: 120000 ms
