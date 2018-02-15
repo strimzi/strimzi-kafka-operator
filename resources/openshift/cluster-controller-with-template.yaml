@@ -60,6 +60,7 @@ rules:
   - deployments
   - deployments/scale
   - replicasets
+  - replicationcontrollers
   verbs:
   - get
   - list
@@ -89,6 +90,7 @@ rules:
   - deploymentconfigs
   - deploymentconfigs/scale
   - deploymentconfigs/status
+  - deploymentconfigs/finalizers
   verbs:
   - get
   - list
@@ -108,55 +110,33 @@ rules:
   - get
   - list
   - patch
+  - watch
   - update
 - apiGroups:
-  - build.openshift.io
-  attributeRestrictions: null
-  resources:
-  - buildconfigs/instantiate
-  - buildconfigs/instantiatebinary
-  verbs:
-  - create
-- apiGroups:
   - image.openshift.io
-  attributeRestrictions: null
   resources:
-  - imagestreamimages
-  - imagestreammappings
   - imagestreams
-  - imagestreamtags
+  - imagestreams/status
   verbs:
   - create
   - delete
-  - deletecollection
   - get
   - list
+  - watch
   - patch
   - update
 - apiGroups:
-  - image.openshift.io
-  attributeRestrictions: null
+  - ""
   resources:
-  - imagestreams/status
+  - replicationcontrollers
   verbs:
   - get
   - list
   - watch
-- apiGroups:
-  - image.openshift.io
-  attributeRestrictions: null
-  resources:
-  - imagestreams/layers
-  verbs:
-  - get
-  - update
-- apiGroups:
-  - image.openshift.io
-  attributeRestrictions: null
-  resources:
-  - imagestreamimports
-  verbs:
   - create
+  - delete
+  - patch
+  - update
 ---
 apiVersion: v1
 kind: RoleBinding
