@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+
+<!DOCTYPE suppressions PUBLIC
+        "-//Puppy Crawl//DTD Suppressions 1.1//EN"
+        "http://www.puppycrawl.com/dtds/suppressions_1_1.dtd">
+
+<suppressions>
+
+    <!-- Note that [/\\] must be used as the path separator for cross-platform support -->
+
+    <suppress checks="ParameterNumber"
+              files="ResourceUtils.java"/>
+
+    <suppress checks="MethodLength"
+              files="KafkaClusterOperationsTest.java"/>
+
+    <suppress checks="NPathComplexity"
+              files="KafkaClusterOperationsTest.java"/>
+</suppressions>
