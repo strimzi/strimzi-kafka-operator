@@ -5,8 +5,8 @@ Kafka Connect cluster which connects to an existing Kafka cluster. Such a cluste
 feature as well in order to include more connectors plugins.
 
 When the cluster controller is up and running, it starts to "watch" for ConfigMaps containing the Kafka or Kafka Connect
-cluster configuration. Such ConfigMaps need to have a specific label which is, by default, `strimzi.io/kind=cluster` (as described later)
-that can be changed through a corresponding environment variable.
+cluster configuration. Such ConfigMaps need to have a specific label which is, by default, `strimzi.io/kind=cluster`
+(as described <<Format of the cluster ConfigMap,later>>) that can be changed through a corresponding environment variable.
 
 When a new ConfigMap is created in the Kubernetes/OpenShift cluster, the controller gets the cluster configuration from
 its `data` section and starts creating a new Kafka or Kafka Connect cluster by creating the necessary Kubernetes/OpenShift
@@ -203,7 +203,7 @@ Because the Strimzi project uses the [JMX exporter](https://github.com/prometheu
 on each node, the JSON string used for metrics configuration in the cluster ConfigMap reflects the related JMX exporter 
 configuration file. For this reason, you can find more information on how to use it in the corresponding GitHub repo.
 
-For more information on how metrics work, the related documentation is available link:../metrics/Metrics.MD[here]
+For more information on how metrics work, the related documentation is available link:../../metrics/METRICS.md[here]
 
 === Kafka Connect
 
