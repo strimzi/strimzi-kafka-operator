@@ -56,16 +56,21 @@ public class Main {
                     serviceOperations, imagesStreamOperations, buildConfigOperations);
 
             ClusterControllerConfig config = ClusterControllerConfig.fromMap(System.getenv());
-            vertx.deployVerticle(new ClusterController(config, kafkaClusterOperations,
-                kafkaConnectClusterOperations, kafkaConnectS2IClusterOperations),
-                res -> {
-                    if (res.succeeded())    {
-                        log.info("Cluster Controller verticle started");
-                    } else {
-                        log.error("Cluster Controller verticle failed to start", res.cause());
-                        System.exit(1);
-                    }
-                });
+            vertx.deployVerticle(new ClusterController(config.getNamespace(),
+                    config.getLabels(),
+                    config.getReconciliationInterval(),
+                    kafkaClusterOperations,
+                    kafkaConnectClusterOperations,
+                    kafkaConnectS2IClusterOperations),
+                    res -> {
+                if (res.succeeded())    {
+                    log.info("Cluster Controller verticle started");
+                }
+                else {
+                    log.error("Cluster Controller verticle failed to start", res.cause());
+                    System.exit(1);
+                }
+            });
         } catch (IllegalArgumentException e) {
             log.error("Unable to parse arguments", e);
             System.exit(1);

@@ -53,14 +53,16 @@ public class ClusterController extends AbstractVerticle {
     private final KafkaConnectClusterOperations kafkaConnectClusterOperations;
     private final KafkaConnectS2IClusterOperations kafkaConnectS2IClusterOperations;
 
-    public ClusterController(ClusterControllerConfig config,
+    public ClusterController(String namespace,
+                             Map<String, String> labels,
+                             long reconciliationInterval,
                              KafkaClusterOperations kafkaClusterOperations,
                              KafkaConnectClusterOperations kafkaConnectClusterOperations,
                              KafkaConnectS2IClusterOperations kafkaConnectS2IClusterOperations) {
         log.info("Creating ClusterController");
-        this.namespace = config.getNamespace();
-        this.labels = config.getLabels();
-        this.reconciliationInterval = config.getReconciliationInterval();
+        this.namespace = namespace;
+        this.labels = labels;
+        this.reconciliationInterval = reconciliationInterval;
         this.client = new DefaultKubernetesClient();
         this.kafkaClusterOperations = kafkaClusterOperations;
         this.kafkaConnectClusterOperations = kafkaConnectClusterOperations;
