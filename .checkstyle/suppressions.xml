@@ -9,11 +9,11 @@
     <!-- Note that [/\\] must be used as the path separator for cross-platform support -->
 
     <suppress checks="ParameterNumber"
-              files="ResourceUtils.java"/>
+              files="io[/\\]strimzi[/\\]controller[/\\]cluster[/\\]ResourceUtils.java"/>
 
     <suppress checks="MethodLength"
-              files="KafkaClusterOperationsTest.java"/>
+              files="io[/\\]strimzi[/\\]controller[/\\]cluster[/\\]operations[/\\]cluster[/\\]KafkaClusterOperationsTest.java"/>
 
     <suppress checks="NPathComplexity"
-              files="KafkaClusterOperationsTest.java"/>
+              files="io[/\\]strimzi[/\\]controller[/\\]cluster[/\\]operations[/\\]cluster[/\\]KafkaClusterOperationsTest.java"/>
 </suppressions>
