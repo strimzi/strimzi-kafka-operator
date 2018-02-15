@@ -189,6 +189,18 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
         return resource.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL);
     }
 
+    /**
+     * Reconcile cluster resources in the given namespace having the given labels.
+     * Reconciliation works by getting the cluster ConfigMaps in the given namespace with the given labels and
+     * comparing with the corresponding {@linkplain #getResources(String, Map) resource}.
+     * <ul>
+     * <li>A cluster will be {@linkplain #create(String, String) created} for all ConfigMaps without same-named resources</li>
+     * <li>A cluster will be {@linkplain #delete(String, String) deleted} for all resources without same-named ConfigMaps</li>
+     * <li>A cluster will be {@linkplain #update(String, String) updated} if it has a cluster ConfigMap and a resource with the same name.</li>
+     * </ul>
+     * @param namespace The namespace
+     * @param labels The labels
+     */
     public abstract void reconcile(String namespace, Map<String, String> labels);
 
     protected void reconcile(String namespace, Map<String, String> labels, String type) {
@@ -201,10 +213,10 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
         List<R> resources = getResources(namespace, kafkaLabels);
 
         Set<String> cmsNames = cms.stream().map(cm -> cm.getMetadata().getName()).collect(Collectors.toSet());
-        Set<String> depsNames = resources.stream().map(cm -> cm.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL)).collect(Collectors.toSet());
+        Set<String> resourceNames = resources.stream().map(cm -> cm.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL)).collect(Collectors.toSet());
 
-        List<ConfigMap> addList = cms.stream().filter(cm -> !depsNames.contains(cm.getMetadata().getName())).collect(Collectors.toList());
-        List<ConfigMap> updateList = cms.stream().filter(cm -> depsNames.contains(cm.getMetadata().getName())).collect(Collectors.toList());
+        List<ConfigMap> addList = cms.stream().filter(cm -> !resourceNames.contains(cm.getMetadata().getName())).collect(Collectors.toList());
+        List<ConfigMap> updateList = cms.stream().filter(cm -> resourceNames.contains(cm.getMetadata().getName())).collect(Collectors.toList());
         List<R> deletionList = resources.stream().filter(dep -> !cmsNames.contains(dep.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL))).collect(Collectors.toList());
 
         add(namespace, addList);
@@ -212,7 +224,13 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
         update(namespace, updateList);
     }
 
-
+    /**
+     * Gets the resources in the given namespace and with the given labels
+     * from which an AbstractCluster representing the current state of the cluster can be obtained.
+     * @param namespace The namespace
+     * @param kafkaLabels The labels
+     * @return The matching resources.
+     */
     protected abstract List<R> getResources(String namespace, Map<String, String> kafkaLabels);
 
     protected final void add(String namespace, List<ConfigMap> add)   {
@@ -230,9 +248,9 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
     }
 
     protected final void delete(String namespace, List<R> delete)   {
-        for (R dep : delete) {
-            log.info("Reconciliation: {} cluster {} should be deleted", clusterDescription, dep.getMetadata().getName());
-            delete(namespace, nameFromLabels(dep));
+        for (R resource : delete) {
+            log.info("Reconciliation: {} cluster {} should be deleted", clusterDescription, resource.getMetadata().getName());
+            delete(namespace, nameFromLabels(resource));
         }
     }
 
