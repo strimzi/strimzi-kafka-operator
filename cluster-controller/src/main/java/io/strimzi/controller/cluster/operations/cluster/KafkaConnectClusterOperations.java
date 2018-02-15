@@ -5,9 +5,7 @@
 package io.strimzi.controller.cluster.operations.cluster;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
-import io.strimzi.controller.cluster.ClusterController;
 import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
 import io.strimzi.controller.cluster.operations.resource.DeploymentOperations;
 import io.strimzi.controller.cluster.operations.resource.ServiceOperations;
@@ -22,22 +20,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * CRUD-style operations on a Kafka Connect cluster
  */
-public class KafkaConnectClusterOperations extends AbstractClusterOperations<KafkaConnectCluster> {
+public class KafkaConnectClusterOperations extends AbstractClusterOperations<KafkaConnectCluster, Deployment> {
 
     private static final Logger log = LoggerFactory.getLogger(KafkaConnectClusterOperations.class.getName());
     private static final String CLUSTER_TYPE_CONNECT = "kafka-connect";
     private final ServiceOperations serviceOperations;
     private final DeploymentOperations deploymentOperations;
-    private final ConfigMapOperations configMapOperations;
 
     /**
      * Constructor
@@ -51,10 +45,9 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
                                          ConfigMapOperations configMapOperations,
                                          DeploymentOperations deploymentOperations,
                                          ServiceOperations serviceOperations) {
-        super(vertx, isOpenShift, "Kafka Connect");
+        super(vertx, isOpenShift, "Kafka Connect", configMapOperations);
         this.serviceOperations = serviceOperations;
         this.deploymentOperations = deploymentOperations;
-        this.configMapOperations = configMapOperations;
     }
 
     private final CompositeOperation<KafkaConnectCluster> create = new CompositeOperation<KafkaConnectCluster>() {
@@ -191,23 +184,11 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
 
     @Override
     public void reconcile(String namespace, Map<String, String> labels) {
-        log.info("Reconciling Kafka Connect clusters ...");
+        reconcile(namespace, labels, CLUSTER_TYPE_CONNECT);
+    }
 
-        Map<String, String> kafkaLabels = new HashMap(labels);
-        kafkaLabels.put(ClusterController.STRIMZI_TYPE_LABEL, KafkaConnectCluster.TYPE);
-
-        List<ConfigMap> cms = configMapOperations.list(namespace, kafkaLabels);
-        List<Deployment> deps = deploymentOperations.list(namespace, kafkaLabels);
-
-        Set<String> cmsNames = cms.stream().map(cm -> cm.getMetadata().getName()).collect(Collectors.toSet());
-        Set<String> depsNames = deps.stream().map(cm -> cm.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL)).collect(Collectors.toSet());
-
-        List<ConfigMap> addList = cms.stream().filter(cm -> !depsNames.contains(cm.getMetadata().getName())).collect(Collectors.toList());
-        List<ConfigMap> updateList = cms.stream().filter(cm -> depsNames.contains(cm.getMetadata().getName())).collect(Collectors.toList());
-        List<Deployment> deletionList = deps.stream().filter(dep -> !cmsNames.contains(dep.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL))).collect(Collectors.toList());
-
-        add(namespace, addList);
-        delete(namespace, deletionList);
-        update(namespace, updateList);
+    @Override
+    protected List<Deployment> getResources(String namespace, Map<String, String> kafkaLabels) {
+        return deploymentOperations.list(namespace, kafkaLabels);
     }
 }

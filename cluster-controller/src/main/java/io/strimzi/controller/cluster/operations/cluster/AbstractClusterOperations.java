@@ -7,8 +7,10 @@ package io.strimzi.controller.cluster.operations.cluster;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.strimzi.controller.cluster.ClusterController;
+import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
 import io.strimzi.controller.cluster.resources.AbstractCluster;
 import io.strimzi.controller.cluster.resources.ClusterDiffResult;
+import io.strimzi.controller.cluster.resources.KafkaConnectS2ICluster;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -17,8 +19,11 @@ import io.vertx.core.shareddata.Lock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Abstract cluster creation, update, read, delection, etc, for a generic cluster type {@code C}.
@@ -29,8 +34,10 @@ import java.util.Map;
  * This class manages a per-cluster-type and per-cluster locking strategy so only one operation per cluster
  * can proceed at once.
  * @param <C> The type of Kubernetes client
+ * @param <R> The type of resource from which the cluster state can be recovered
  */
-public abstract class AbstractClusterOperations<C extends AbstractCluster> {
+public abstract class AbstractClusterOperations<C extends AbstractCluster,
+        R extends HasMetadata> {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractClusterOperations.class.getName());
 
@@ -43,6 +50,7 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster> {
     protected final Vertx vertx;
     protected final boolean isOpenShift;
     protected final String clusterDescription;
+    protected final ConfigMapOperations configMapOperations;
 
     /**
      * @param vertx The Vertx instance
@@ -51,10 +59,12 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster> {
      *                           the {@code clusterType} passed to {@link #getLockName(String, String, String)}
      *                           and {@link #execute(String, String, String, String, CompositeOperation, Handler)}
      */
-    protected AbstractClusterOperations(Vertx vertx, boolean isOpenShift, String clusterDescription) {
+    protected AbstractClusterOperations(Vertx vertx, boolean isOpenShift, String clusterDescription,
+                                        ConfigMapOperations configMapOperations) {
         this.vertx = vertx;
         this.isOpenShift = isOpenShift;
         this.clusterDescription = clusterDescription;
+        this.configMapOperations = configMapOperations;
     }
 
     protected final String getLockName(String clusterType, String namespace, String name) {
@@ -175,11 +185,53 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster> {
         return resource.getMetadata().getName();
     }
 
-    protected String nameFromLabels(HasMetadata resource) {
+    protected String nameFromLabels(R resource) {
         return resource.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL);
     }
 
+    /**
+     * Reconcile cluster resources in the given namespace having the given labels.
+     * Reconciliation works by getting the cluster ConfigMaps in the given namespace with the given labels and
+     * comparing with the corresponding {@linkplain #getResources(String, Map) resource}.
+     * <ul>
+     * <li>A cluster will be {@linkplain #create(String, String) created} for all ConfigMaps without same-named resources</li>
+     * <li>A cluster will be {@linkplain #delete(String, String) deleted} for all resources without same-named ConfigMaps</li>
+     * <li>A cluster will be {@linkplain #update(String, String) updated} if it has a cluster ConfigMap and a resource with the same name.</li>
+     * </ul>
+     * @param namespace The namespace
+     * @param labels The labels
+     */
     public abstract void reconcile(String namespace, Map<String, String> labels);
+
+    protected void reconcile(String namespace, Map<String, String> labels, String type) {
+        log.info("Reconciling {} clusters ...", clusterDescription);
+
+        Map<String, String> kafkaLabels = new HashMap(labels);
+        kafkaLabels.put(ClusterController.STRIMZI_TYPE_LABEL, type);
+
+        List<ConfigMap> cms = configMapOperations.list(namespace, kafkaLabels);
+        List<R> resources = getResources(namespace, kafkaLabels);
+
+        Set<String> cmsNames = cms.stream().map(cm -> cm.getMetadata().getName()).collect(Collectors.toSet());
+        Set<String> resourceNames = resources.stream().map(cm -> cm.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL)).collect(Collectors.toSet());
+
+        List<ConfigMap> addList = cms.stream().filter(cm -> !resourceNames.contains(cm.getMetadata().getName())).collect(Collectors.toList());
+        List<ConfigMap> updateList = cms.stream().filter(cm -> resourceNames.contains(cm.getMetadata().getName())).collect(Collectors.toList());
+        List<R> deletionList = resources.stream().filter(dep -> !cmsNames.contains(dep.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL))).collect(Collectors.toList());
+
+        add(namespace, addList);
+        delete(namespace, deletionList);
+        update(namespace, updateList);
+    }
+
+    /**
+     * Gets the resources in the given namespace and with the given labels
+     * from which an AbstractCluster representing the current state of the cluster can be obtained.
+     * @param namespace The namespace
+     * @param kafkaLabels The labels
+     * @return The matching resources.
+     */
+    protected abstract List<R> getResources(String namespace, Map<String, String> kafkaLabels);
 
     protected final void add(String namespace, List<ConfigMap> add)   {
         for (ConfigMap cm : add) {
@@ -195,10 +247,10 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster> {
         }
     }
 
-    protected final <R extends HasMetadata> void delete(String namespace, List<R> delete)   {
-        for (R dep : delete) {
-            log.info("Reconciliation: {} cluster {} should be deleted", clusterDescription, dep.getMetadata().getName());
-            delete(namespace, nameFromLabels(dep));
+    protected final void delete(String namespace, List<R> delete)   {
+        for (R resource : delete) {
+            log.info("Reconciliation: {} cluster {} should be deleted", clusterDescription, resource.getMetadata().getName());
+            delete(namespace, nameFromLabels(resource));
         }
     }
 

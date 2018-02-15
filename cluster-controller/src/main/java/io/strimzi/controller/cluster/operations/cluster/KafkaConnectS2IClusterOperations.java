@@ -34,13 +34,12 @@ import java.util.stream.Collectors;
 /**
  * CRUD-style operations on a Kafka Connect cluster
  */
-public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<KafkaConnectS2ICluster> {
+public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<KafkaConnectS2ICluster, DeploymentConfig> {
 
     private static final Logger log = LoggerFactory.getLogger(KafkaConnectS2IClusterOperations.class.getName());
     private static final String CLUSTER_TYPE = "kafka-connect-s2i";
     private final ServiceOperations serviceOperations;
     private final DeploymentConfigOperations deploymentConfigOperations;
-    private final ConfigMapOperations configMapOperations;
     private final ImageStreamOperations imagesStreamOperations;
     private final BuildConfigOperations buildConfigOperations;
 
@@ -61,10 +60,9 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
                                             ServiceOperations serviceOperations,
                                             ImageStreamOperations imagesStreamOperations,
                                             BuildConfigOperations buildConfigOperations) {
-        super(vertx, isOpenShift, "Kafka Connect S2I");
+        super(vertx, isOpenShift, "Kafka Connect S2I", configMapOperations);
         this.serviceOperations = serviceOperations;
         this.deploymentConfigOperations = deploymentConfigOperations;
-        this.configMapOperations = configMapOperations;
         this.imagesStreamOperations = imagesStreamOperations;
         this.buildConfigOperations = buildConfigOperations;
     }
@@ -258,24 +256,11 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
         if (!isOpenShift) {
             return;
         }
-        log.info("Reconciling Kafka Connect S2I clusters ...");
+        reconcile(namespace, labels, CLUSTER_TYPE);
+    }
 
-        Map<String, String> kafkaLabels = new HashMap(labels);
-        kafkaLabels.put(ClusterController.STRIMZI_TYPE_LABEL, KafkaConnectS2ICluster.TYPE);
-
-        List<ConfigMap> cms = configMapOperations.list(namespace, kafkaLabels);
-        List<DeploymentConfig> deps = deploymentConfigOperations.list(namespace, kafkaLabels);
-
-        Set<String> cmsNames = cms.stream().map(cm -> cm.getMetadata().getName()).collect(Collectors.toSet());
-        Set<String> depsNames = deps.stream().map(cm -> cm.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL)).collect(Collectors.toSet());
-
-        List<ConfigMap> addList = cms.stream().filter(cm -> !depsNames.contains(cm.getMetadata().getName())).collect(Collectors.toList());
-        List<ConfigMap> updateList = cms.stream().filter(cm -> depsNames.contains(cm.getMetadata().getName())).collect(Collectors.toList());
-        List<DeploymentConfig> deletionList = deps.stream().filter(dep -> !cmsNames.contains(dep.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL))).collect(Collectors.toList());
-
-        add(namespace, addList);
-        delete(namespace, deletionList);
-        update(namespace, updateList);
+    protected List<DeploymentConfig> getResources(String namespace, Map<String, String> kafkaLabels) {
+        return deploymentConfigOperations.list(namespace, kafkaLabels);
     }
 
 }

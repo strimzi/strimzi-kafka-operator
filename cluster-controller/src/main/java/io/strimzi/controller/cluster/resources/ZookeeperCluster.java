@@ -377,8 +377,7 @@ public class ZookeeperCluster extends AbstractCluster {
     protected void setLabels(Map<String, String> labels) {
         Map<String, String> newLabels = new HashMap<>(labels);
 
-        if (newLabels.containsKey(ClusterController.STRIMZI_TYPE_LABEL) &&
-                newLabels.get(ClusterController.STRIMZI_TYPE_LABEL).equals(KafkaCluster.TYPE)) {
+        if (KafkaCluster.TYPE.equals(newLabels.get(ClusterController.STRIMZI_TYPE_LABEL))) {
             newLabels.put(ClusterController.STRIMZI_TYPE_LABEL, ZookeeperCluster.TYPE);
         }
 
