@@ -178,33 +178,18 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
     public Future<Void> waitUntilReady(String namespace, String name, long timeout, TimeUnit timeUnit) {
         Future<Void> fut = Future.future();
         log.info("Waiting for {} resource {} in namespace {} to get ready", resourceKind, name, namespace);
-        AtomicInteger calls = new AtomicInteger(0);
+        long startTime = System.currentTimeMillis();
         long timer = 1000L;
         long timeoutInMs = timeUnit.toMillis(timeout);
 
         vertx.setPeriodic(timer, timerId -> {
-            calls.addAndGet(1);
-
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                     future -> {
                         try {
-                            R resourceOp = operation().inNamespace(namespace).withName(name);
-                            T resource = resourceOp.get();
-                            if (resource != null)   {
-                                if (Readiness.isReadinessApplicable(resource)) {
-                                    Boolean ready = resourceOp.isReady();
-
-                                    if (ready == true) {
-                                        future.complete();
-                                    } else {
-                                        future.fail("Not ready yet");
-                                    }
-                                } else {
-                                    future.complete();
-                                }
+                            if (isReady(namespace, name))   {
+                                future.complete();
                             } else {
-                                log.warn("{} {} in namespace {} doesn't exist", resourceKind, name, namespace);
-                                future.fail("Resource doesn't exist");
+                                future.fail("Not ready yet");
                             }
                         }
                         catch (Exception e) {
@@ -219,10 +204,10 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
                             log.info("{} {} in namespace {} is ready", resourceKind, name, namespace);
                             fut.complete();
                         } else {
-                            if (calls.get() * timer > timeoutInMs)   {
+                            if (System.currentTimeMillis() - startTime > timeoutInMs)   {
                                 vertx.cancelTimer(timerId);
                                 log.error("Exceeded timeout of {} ms while waiting for {} {} in namespace {} to be ready", timeoutInMs, resourceKind, name, namespace);
-                                fut.fail("Timeout while waiting for resource to be ready");
+                                fut.fail(new TimeoutException());
                             }
                         }
                     }
@@ -230,5 +215,25 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
         });
 
         return fut;
+    }
+
+    public boolean isReady(String namespace, String name) {
+        R resourceOp = operation().inNamespace(namespace).withName(name);
+        T resource = resourceOp.get();
+        if (resource != null)   {
+            if (Readiness.isReadinessApplicable(resource)) {
+                Boolean ready = resourceOp.isReady();
+
+                if (Boolean.TRUE.equals(ready)) {
+                    return true;
+                } else {
+                    return false;
+                }
+            } else {
+                return true;
+            }
+        } else {
+            return false;
+        }
     }
 }

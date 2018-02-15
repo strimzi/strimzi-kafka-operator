@@ -23,8 +23,10 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.TimeUnit;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -318,6 +320,7 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         Future<Void> fut = op.waitUntilReady(NAMESPACE, RESOURCE_NAME, 2, TimeUnit.SECONDS);
         fut.setHandler(ar -> {
             assertTrue(ar.failed());
+            assertThat(ar.cause(), instanceOf(TimeoutException.class));
             verify(mockResource, atLeastOnce()).get();
             verify(mockResource, never()).isReady();
             async.complete();
@@ -346,6 +349,7 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         Async async = context.async();
         op.waitUntilReady(NAMESPACE, RESOURCE_NAME, 2, TimeUnit.SECONDS).setHandler(ar -> {
             assertTrue(ar.failed());
+            assertThat(ar.cause(), instanceOf(TimeoutException.class));
             verify(mockResource, never()).isReady();
             async.complete();
         });
@@ -407,6 +411,7 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         Async async = context.async();
         op.waitUntilReady(NAMESPACE, RESOURCE_NAME, 2, TimeUnit.SECONDS).setHandler(ar -> {
             assertTrue(ar.failed());
+            assertThat(ar.cause(), instanceOf(TimeoutException.class));
             verify(mockResource, atLeastOnce()).get();
             verify(mockResource, atLeastOnce()).isReady();
             async.complete();
@@ -441,6 +446,7 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         Async async = context.async();
         op.waitUntilReady(NAMESPACE, RESOURCE_NAME, 2, TimeUnit.SECONDS).setHandler(ar -> {
             assertTrue(ar.failed());
+            assertThat(ar.cause(), instanceOf(TimeoutException.class));
             async.complete();
         });
     }

@@ -1,6 +1,6 @@
 FROM strimzi/kafka-base:latest
 
-EXPOSE 9092
+EXPOSE 9091 9092
 
 # copy configuration files
 COPY ./config/ $KAFKA_HOME/config/

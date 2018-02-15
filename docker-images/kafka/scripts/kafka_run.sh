@@ -34,12 +34,41 @@ fi
 # directory avoids trying to create it (and logging a permission denied error)
 export LOG_DIR="$KAFKA_HOME"
 
+# Write the config file
+cat > /tmp/strimzi.properties <<EOF
+broker.id=${KAFKA_BROKER_ID}
+# Listeners
+listeners=CLIENT://:9092,REPLICATION://:9091
+advertised.listeners=REPLICATION:$(hostname -I)//:9091
+listener.security.protocol.map=CLIENT:PLAINTEXT,REPLICATION:PLAINTEXT
+inter.broker.listener.name=REPLICATION
+# Zookeeper
+zookeeper.connect=${KAFKA_ZOOKEEPER_CONNECT:-zookeeper:2181}
+zookeeper.connection.timeout.ms=6000
+# Logs
+log.dirs=${KAFKA_LOG_DIRS}
+num.partitions=1
+num.recovery.threads.per.data.dir=1
+default.replication.factor=${KAFKA_DEFAULT_REPLICATION_FACTOR:-1}
+offsets.topic.replication.factor=${KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR:-3}
+transaction.state.log.replication.factor=${KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR:-3}
+transaction.state.log.min.isr=1
+log.retention.hours=168
+log.segment.bytes=1073741824
+log.retention.check.interval.ms=300000
+# Network
+num.network.threads=3
+num.io.threads=8
+socket.send.buffer.bytes=102400
+socket.receive.buffer.bytes=102400
+socket.request.max.bytes=104857600
+# Other
+group.initial.rebalance.delay.ms=0
+EOF
+
+echo "Starting Kafka with configuration:"
+cat /tmp/strimzi.properties
+echo ""
+
 # starting Kafka server with final configuration
-exec $KAFKA_HOME/bin/kafka-server-start.sh $KAFKA_HOME/config/server.properties \
---override broker.id=$KAFKA_BROKER_ID \
---override advertised.host.name=$(hostname -I) \
---override zookeeper.connect=${KAFKA_ZOOKEEPER_CONNECT:-zookeeper:2181}  \
---override log.dirs=$KAFKA_LOG_DIRS \
---override default.replication.factor=${KAFKA_DEFAULT_REPLICATION_FACTOR:-1} \
---override offsets.topic.replication.factor=${KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR:-3} \
---override transaction.state.log.replication.factor=${KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR:-3}
+exec $KAFKA_HOME/bin/kafka-server-start.sh /tmp/strimzi.properties
