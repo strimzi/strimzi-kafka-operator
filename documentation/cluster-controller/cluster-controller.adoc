@@ -1,34 +1,36 @@
 = Cluster Controller
 
 The cluster controller is in charge of deploying a Kafka cluster alongside a Zookeeper ensemble. It's also able to deploy a
-Kafka Connect cluster which connects to an existing Kafka cluster.
+Kafka Connect cluster which connects to an existing Kafka cluster. Such a cluster can be deployed using the Source2Image OpenShift
+feature as well in order to include more connectors plugins.
 
 When the cluster controller is up and running, it starts to "watch" for ConfigMaps containing the Kafka or Kafka Connect
-cluster configuration. Such ConfigMaps need to have a specific label which by default is `strimzi.io/kind=cluster` (as described later)
+cluster configuration. Such ConfigMaps need to have a specific label which is, by default, `strimzi.io/kind=cluster` (as described later)
 that can be changed through a corresponding environment variable.
 
-When a new ConfigMap is created on the Kubernetes/OpenShift cluster, the controller gets the cluster configuration from
-its `data` section and starts the creation process of a new cluster (Kafka or Kafka Connect). It's done creating a set
-of Kubernetes/OpenShift resources needed for such a cluster, like StatefulSets, ConfigMaps, Services and so on.
+When a new ConfigMap is created in the Kubernetes/OpenShift cluster, the controller gets the cluster configuration from
+its `data` section and starts creating a new Kafka or Kafka Connect cluster by creating the necessary Kubernetes/OpenShift
+resources, such as StatefulSets, ConfigMaps, Services etc.
 
-Every time the ConfigMap is updated by the user with some changes in the `data` section, the controller executes a related updating
-operation on the cluster (i.e. scale up/down, changing metrics configuration and so on). It means that some resources are 
-patched or deleted and then re-created for reflecting the changes in the cluster configuration.
-This might cause rolling update which might lead to service disruption.
+Every time the ConfigMap is updated by the user with some changes in the `data` section, the controller performs corresponding
+updates on the Kubernetes/OpenShift resources which make up the Kafka or Kafka Connect cluster. Resources are either patched
+or deleted and then re-created in order to make the Kafka or Kafka Connect cluster reflect the state of the cluster ConfigMap.
+This might cause a rolling update which might lead to service disruption.
 
 Finally, if the ConfigMap is deleted, the controller starts to un-deploy the cluster deleting all the related Kubernets/OpenShift
 resources.
 
 == Reconciliation
 
-When the controller is up and running, it reacts at all notifications received from the Kubernetes/OpenShift cluster related 
-to the watched ConfigMaps when they are created, updated or deleted.
+When the controller is running it reacts to all notifications about the cluster ConfigMaps received from the Kubernetes/OpenShift cluster.
+However if the controller is not running, or if a notification is not received for any reason it could lose notifications
+about the cluster ConfigMaps.
 
 For different reasons, it could lose notifications about the cluster ConfigMaps; without any action there will be an
-inconsistent state comparing to the ConfigMaps and what is actually deployed in the Kubernetes/OpenShift cluster.
+inconsistency between the cluster ConfigMaps and the state of the running Kubernetes/OpenShift cluster.
 
-In order to handle failovers in a proper way, a periodic reconciliation process is executed by the cluster controller so
-that it can compare how the ConfigMaps look like (and if they exist) with the current cluster deployment in order to have
+In order to handle failovers properly, a periodic reconciliation process is executed by the cluster controller so
+that it can compare the state of the ConfigMaps with the current cluster deployment in order to have
 a consistent state across all of them.
 
 == Format of the cluster ConfigMap
@@ -38,7 +40,7 @@ configuration for a Kafka or Kafka Connect cluster to deploy. The label is confi
 environment variable.
 
 In order to distinguish which "type" of cluster to deploy, Kafka or Kafka Connect, the controller checks the
-`strimzi.io/type` label which can have the following values :
+`strimzi.io/type` label which can have one of the the following values :
 
 * `kafka`: the ConfigMap provides configuration for a Kafka cluster (with Zookeeper ensemble) deployment
 * `kafka-connect`: the ConfigMap provides configuration for a Kafka Connect cluster deployment
@@ -46,7 +48,7 @@ In order to distinguish which "type" of cluster to deploy, Kafka or Kafka Connec
 features (works only with OpenShift)
 
 The `data` section of such ConfigMaps contains different keys depending on the "type" of deployment as described in the 
-following paragraphs.
+following sections.
 
 === Kafka
 
@@ -74,9 +76,9 @@ the related ConfigMap :
 * `zookeeper-metrics-config`: a JSON string representing the JMX exporter configuration for exposing metrics from Zookeeper nodes.
  Removing this field means having no metrics exposed.
  
-An example of cluster configuration ConfigMap is the following.
+The following is an example of a ConfigMap for a Kakfa cluster.
 
-.Kafka cluster ConfigMap
+.Example Kafka cluster ConfigMap
 [source,yaml,options="nowrap"]
 ----
 apiVersion: v1
@@ -128,22 +130,16 @@ data:
 
 ==== Storage
 
-Kafka needs to save information like data logs (so received messages), consumer offsets and so on in some way; the same is true for 
-Zookeeper about znodes children and values.
-The Strimzi project allows to save such a data in an "ephemeral" way (using `emptyDir`) or in a "persistent-claim" way using persistent 
+Both Kafka and Zookeeper save data to files.
+
+The Strimzi allows to save such a data in an "ephemeral" way (using `emptyDir`) or in a "persistent-claim" way using persistent
 volumes.
 It's possible to provide the storage configuration in the related ConfigMap using a JSON string as value for the 
-`kafka-storage` and `zookeeper-storage` fields. It's important to mention that such a storage configuration can't be changed
-when the cluster is up and running.
+`kafka-storage` and `zookeeper-storage` fields.
+
+IMPORTANT: The `kafka-storage` and `zookeeper-storage` fields can't be changed when the cluster is up and running.
 
 The JSON representation has a mandatory `type` field for specifying the type of storage to use ("ephemeral" or "persistent-claim").
-In case of "persistent-claim" type the following fields can be provided as well :
-
-* `size`: defines the size of the persistent volume claim (i.e 1Gi)
-* `class` : the Kubernetes/OpenShift storage class to use for dynamic volume allocation
-* `selector`: allows to select a specific persistent volume to use. It contains a `matchLabels` field which defines an 
-inner JSON object with key:value representing labels for selecting such a volume.
-* `delete-claim`: specifies if the persistent volume claim has to be deleted when the cluster is un-deployed. Default is `false`
 
 The "ephemeral" storage is really simple to configure and the related JSON string is something like this.
 
@@ -154,7 +150,15 @@ The "ephemeral" storage is really simple to configure and the related JSON strin
 
 ----
 
-The "persistent" storage has some more parameters but other than `type`, the `size` is the only mandatory one.
+In case of "persistent-claim" type the following fields can be provided as well :
+
+* `size`: defines the size of the persistent volume claim (i.e 1Gi)
+* `class` : the Kubernetes/OpenShift https://kubernetes.io/docs/concepts/storage/storage-classes/[storage class] to use for dynamic volume allocation
+* `selector`: allows to select a specific persistent volume to use. It contains a `matchLabels` field which defines an
+inner JSON object with key:value representing labels for selecting such a volume.
+* `delete-claim`: specifies if the persistent volume claim has to be deleted when the cluster is un-deployed. Default is `false`
+
+Other than `type`, the `size` is the only mandatory one.
 
 .Persistent storage JSON with 1Gi as size
 [source,json]
@@ -204,7 +208,7 @@ For more information on how metrics work, the related documentation is available
 === Kafka Connect
 
 In order to configure a Kafka Connect cluster deployment, it's possible to specify the following fields in the `data` section of 
-the related ConfigMap :
+the related ConfigMap:
 
 * `nodes`: number of Kafka Connect worker nodes. Default is 1
 * `image`: the Docker image to use for the Kafka Connect workers. Default is `strimzi/kafka-connect:latest`. If S2I is used 
@@ -239,9 +243,9 @@ Default is 3
 It sets the `status.storage.replication.factor` property in the properties configuration file used by Kafka Connect worker nodes on startup.
 Default is 3
 
-An example of cluster configuration ConfigMap is the following.
+The following is an example of cluster configuration ConfigMap is the following.
 
-.Kafka Connect cluster ConfigMap
+.Example Kafka Connect cluster ConfigMap
 [source,yaml,options="nowrap"]
 ----
 apiVersion: v1
