@@ -2,8 +2,8 @@
 
 _Select the type of your PR_
 
-- [ ] Bugfix
-- [ ] Enhancement / new feature
+- Bugfix
+- Enhancement / new feature
 
 
 ### Description
