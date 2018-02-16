@@ -545,8 +545,8 @@ public class Controller {
                     // TODO replace this with compose
                     enqueue(new UpdateConfigMap(result, ar -> {
                         Handler<Void> topicStoreHandler =
-                                ignored -> enqueue(new UpdateInTopicStore(
-                                    result, involvedObject, reconciliationResultHandler));
+                            ignored -> enqueue(new UpdateInTopicStore(
+                                result, involvedObject, reconciliationResultHandler));
                         Handler<Void> partitionsHandler;
                         if (partitionsDelta > 0) {
                             partitionsHandler = ar4 -> enqueue(new IncreaseKafkaPartitions(result, involvedObject, ar2 -> topicStoreHandler.handle(null)));

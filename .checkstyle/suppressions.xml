@@ -8,12 +8,23 @@
 
     <!-- Note that [/\\] must be used as the path separator for cross-platform support -->
 
+    <!-- cluster-controller -->
     <suppress checks="ParameterNumber"
               files="io[/\\]strimzi[/\\]controller[/\\]cluster[/\\]ResourceUtils.java"/>
 
-    <suppress checks="MethodLength"
+    <suppress checks="MethodLength|NPathComplexity"
               files="io[/\\]strimzi[/\\]controller[/\\]cluster[/\\]operations[/\\]cluster[/\\]KafkaClusterOperationsTest.java"/>
 
-    <suppress checks="NPathComplexity"
-              files="io[/\\]strimzi[/\\]controller[/\\]cluster[/\\]operations[/\\]cluster[/\\]KafkaClusterOperationsTest.java"/>
+    <suppress checks="CyclomaticComplexity|NPathComplexity"
+              files="io[/\\]strimzi[/\\]controller[/\\]cluster[/\\]resources[/\\].*Cluster.java"/>
+
+    <suppress checks="BooleanExpressionComplexity"
+              files="io[/\\]strimzi[/\\]controller[/\\]cluster[/\\]resources[/\\]KafkaConnect(S2I)?Cluster.java"/>
+
+    <!-- topic controller -->
+    <suppress checks="NPathComplexity|CyclomaticComplexity"
+              files="io[/\\]strimzi[/\\]controller[/\\]topic[/\\]Controller.java"/>
+
+    <suppress checks="NPathComplexity|CyclomaticComplexity"
+              files="io[/\\]strimzi[/\\]controller[/\\]topic[/\\]TopicName.java"/>
 </suppressions>
