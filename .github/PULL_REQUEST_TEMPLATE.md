@@ -12,7 +12,7 @@ _Please describe your pull request_
 
 ### Checklist
 
-_Please go through this checklist and make sure all aplicable tasks have been done
+_Please go through this checklist and make sure all aplicable tasks have been done_
 
 - [ ] Write tests!
 - [ ] Make sure all tests pass!
