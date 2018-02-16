@@ -45,7 +45,7 @@
                 <executions>
                     <execution>
                         <id>process-annotations</id>
-                        <phase>generate-sources</phase>
+                        <phase>pre-site</phase>
                         <goals>
                             <goal>compile</goal>
                         </goals>

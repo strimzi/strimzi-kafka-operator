@@ -297,7 +297,4 @@ The resources created by the cluster controller into the Kubernetes/OpenShift cl
 
 The controller itself can be configured through the following environment variables.
 
-* `STRIMZI_CONFIGMAP_LABELS`: the Kubernetes/OpenShift label selector used to identify ConfigMaps to be managed by the controller.
-Default: `strimzi.io/kind=cluster`.  
-* `STRIMZI_FULL_RECONCILIATION_INTERVAL` : the interval between periodic reconciliations.
-Default: 120000 ms
+include::EnvVar.ClusterControllerConfig.adoc[]
