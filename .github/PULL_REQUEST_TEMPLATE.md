@@ -12,12 +12,12 @@ _Please describe your pull request_
 
 ### Checklist
 
-_Please go through this checklist and make sure all aplicable tasks have been done_
+_Please go through this checklist and make sure all applicable tasks have been done_
 
-- [ ] Write tests!
-- [ ] Make sure all tests pass!
-- [ ] Check coding style!
-- [ ] Update documentation!
-- [ ] Check RBAC rights for Kubernetes / OpenShift roles!
-- [ ] Try your changes from Pod inside your Kubernetes and OpenShift cluster, not just locally!
+- [ ] Write tests
+- [ ] Make sure all tests pass
+- [ ] Check coding style
+- [ ] Update documentation
+- [ ] Check RBAC rights for Kubernetes / OpenShift roles
+- [ ] Try your changes from Pod inside your Kubernetes and OpenShift cluster, not just locally
 
