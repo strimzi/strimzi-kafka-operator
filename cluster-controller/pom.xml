@@ -10,6 +10,18 @@
     <artifactId>cluster-controller</artifactId>
     <dependencies>
         <dependency>
+            <groupId>io.strimzi.docgen</groupId>
+            <artifactId>docgen-processor</artifactId>
+            <version>${docgen.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.strimzi</groupId>
+            <artifactId>common</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
             <groupId>io.fabric8</groupId>
             <artifactId>openshift-client</artifactId>
             <version>${fabric8.kubernetes-client.version}</version>
@@ -61,6 +73,36 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven.compiler.version}</version>
+                <executions>
+                    <execution>
+                        <configuration>
+                            <annotationProcessorPaths>
+                                <path>
+                                    <groupId>io.strimzi.docgen</groupId>
+                                    <artifactId>docgen-processor</artifactId>
+                                    <version>${docgen.version}</version>
+                                </path>
+                                <!-- ... more ... -->
+                            </annotationProcessorPaths>
+                            <forceJavacCompilerUse>true</forceJavacCompilerUse>
+                            <verbose>true</verbose>
+                        </configuration>
+
+                    </execution>
+                </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>io.strimzi.docgen</groupId>
+                        <artifactId>docgen-processor</artifactId>
+                        <version>${docgen.version}</version>
+                        <scope>compile</scope>
+                    </dependency>
+                </dependencies>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>

@@ -4,6 +4,8 @@
  */
 package io.strimzi.controller.cluster;
 
+import io.strimzi.common.doc.EnvVar;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -12,8 +14,22 @@ import java.util.Map;
  */
 public class ClusterControllerConfig {
 
+    @EnvVar(name = "STRIMZI_NAMESPACE",
+            doc = "A comma-separated list of Kubernetes/OpenShift namespaces in which to watch for cluster ConfigMaps." +
+                    "If this is not given or is empty then watch all namespaces.",
+            defaultValue = "")
     public static final String STRIMZI_NAMESPACE = "STRIMZI_NAMESPACE";
+
+    @EnvVar(name = "STRIMZI_CONFIGMAP_LABELS",
+            doc = " The Kubernetes/OpenShift label selector used to identify ConfigMaps to be managed by the controller.",
+            defaultValue = "`strimzi.io/kind=cluster`",
+            required = true)
+
     public static final String STRIMZI_CONFIGMAP_LABELS = "STRIMZI_CONFIGMAP_LABELS";
+
+    @EnvVar(name = "STRIMZI_FULL_RECONCILIATION_INTERVAL",
+            doc = "The interval in milliseconds between full reconciliations.",
+            defaultValue = "120000")
     public static final String STRIMZI_FULL_RECONCILIATION_INTERVAL = "STRIMZI_FULL_RECONCILIATION_INTERVAL";
 
     public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL = 120_000; // in ms (2 minutes)

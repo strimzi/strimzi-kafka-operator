@@ -2,13 +2,12 @@
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>io.strimzi</groupId>
-    <artifactId>strimzi</artifactId>
+    <groupId>io.strimzi.docgen</groupId>
+    <artifactId>docgen</artifactId>
     <packaging>pom</packaging>
     <version>1.0-SNAPSHOT</version>
 
     <properties>
-        <maven.compiler.version>3.7.0</maven.compiler.version>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven.surefire.version>2.20.1</maven.surefire.version>
@@ -24,84 +23,16 @@
         <fasterxml.jackson.version>2.7.7</fasterxml.jackson.version>
         <kafka.version>1.0.0</kafka.version>
         <zookeeper.version>3.4.10</zookeeper.version>
-        <docgen.version>1.0-SNAPSHOT</docgen.version>
     </properties>
 
 
     <modules>
-        <module>common</module>
-
-        <module>cluster-controller</module>
-        <module>topic-controller</module>
+        <module>docgen-processor</module>
+        <module>docgen-annotations</module>
     </modules>
-
 
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.5</version>
-                <executions>
-                    <execution>
-                        <id>process-annotations</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>compile</goal>
-                        </goals>
-                        <configuration>
-                            <compilerArgs>
-                                <arg>-proc:only</arg>
-                                <arg>-processor</arg>
-                                <arg>io.strimzi.docgen.processor.TableProcessor</arg>
-                            </compilerArgs>
-                            <verbose>true</verbose>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>default-compile</id> <!-- using an id of default-compile will override the default execution -->
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>compile</goal>
-                        </goals>
-                        <configuration>
-                            <compilerArgs>
-                                <arg>-proc:none</arg>
-                            </compilerArgs>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <!--<plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>${maven.compiler.version}</version>
-                <executions>
-                    <execution>
-                        <configuration>
-                            <annotationProcessorPaths>
-                                <path>
-                                    <groupId>io.strimzi.docgen</groupId>
-                                    <artifactId>docgen-processor</artifactId>
-                                    <version>${docgen.version}</version>
-                                </path>
-
-                            </annotationProcessorPaths>
-                            <forceJavacCompilerUse>true</forceJavacCompilerUse>
-                            <verbose>true</verbose>
-                        </configuration>
-
-                    </execution>
-                </executions>
-                <dependencies>
-                    <dependency>
-                        <groupId>io.strimzi.docgen</groupId>
-                        <artifactId>docgen-processor</artifactId>
-                        <version>${docgen.version}</version>
-                        <scope>compile</scope>
-                    </dependency>
-                </dependencies>
-            </plugin>-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
@@ -118,8 +49,8 @@
                         <id>validate</id>
                         <phase>validate</phase>
                         <configuration>
-                            <configLocation>.checkstyle/checkstyle.xml</configLocation>
-                            <headerLocation>.checkstyle/java.header</headerLocation>
+                            <configLocation>../.checkstyle/checkstyle.xml</configLocation>
+                            <headerLocation>../.checkstyle/java.header</headerLocation>
                             <includeTestSourceDirectory>true</includeTestSourceDirectory>
                             <encoding>UTF-8</encoding>
                             <consoleOutput>true</consoleOutput>

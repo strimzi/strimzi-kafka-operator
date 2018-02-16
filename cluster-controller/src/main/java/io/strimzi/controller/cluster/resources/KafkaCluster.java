@@ -14,6 +14,7 @@ import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
+import io.strimzi.common.doc.CmKey;
 import io.strimzi.controller.cluster.ClusterController;
 import io.vertx.core.json.JsonObject;
 
@@ -45,11 +46,11 @@ public class KafkaCluster extends AbstractCluster {
     private int transactionStateLogReplicationFactor = DEFAULT_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR;
 
     // Configuration defaults
-    private static String DEFAULT_IMAGE = "strimzi/kafka:latest";
-    private static int DEFAULT_REPLICAS = 3;
-    private static int DEFAULT_HEALTHCHECK_DELAY = 15;
-    private static int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
-    private static boolean DEFAULT_KAFKA_METRICS_ENABLED = false;
+    private static final String DEFAULT_IMAGE = "strimzi/kafka:latest";
+    private static final int DEFAULT_REPLICAS = 3;
+    private static final int DEFAULT_HEALTHCHECK_DELAY = 15;
+    private static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
+    private static final boolean DEFAULT_KAFKA_METRICS_ENABLED = false;
 
     // Kafka configuration defaults
     private static String DEFAULT_KAFKA_ZOOKEEPER_CONNECT = "zookeeper:2181";
@@ -58,11 +59,36 @@ public class KafkaCluster extends AbstractCluster {
     private static int DEFAULT_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR = 3;
 
     // Configuration keys
+    @CmKey(name = "kafka-image",
+            doc = "The image to use for Kafka pods.",
+            defaultValue = DEFAULT_IMAGE,
+            required = true)
     public static final String KEY_IMAGE = "kafka-image";
+
+    @CmKey(name = "kafka-nodes",
+            doc = "The number of Kafka broker nodes.",
+            defaultValue = DEFAULT_IMAGE,
+            required = true)
     public static final String KEY_REPLICAS = "kafka-nodes";
+
+    @CmKey(name = "kafka-healthcheck-delay",
+            doc = "The initial delay for the liveliness and readiness probes for each Kafka broker node.",
+            defaultValue = ""+DEFAULT_HEALTHCHECK_DELAY,
+            required = true)
     public static final String KEY_HEALTHCHECK_DELAY = "kafka-healthcheck-delay";
+
+    @CmKey(name = "kafka-healthcheck-timeout",
+            doc = "The timeout on the liveness and readiness probes for each Kafka broker node.",
+            defaultValue = ""+DEFAULT_HEALTHCHECK_TIMEOUT,
+            required = true)
     public static final String KEY_HEALTHCHECK_TIMEOUT = "kafka-healthcheck-timeout";
+
+    @CmKey(name = "kafka-metrics-config",
+            doc = "A JSON string representing the JMX exporter configuration for exposing metrics from Kafka broker nodes. Removing this field means having no metrics exposed.")
     public static final String KEY_METRICS_CONFIG = "kafka-metrics-config";
+
+    @CmKey(name = "kafka-storage",
+            doc = "A JSON string representing the storage configuration for the Zookeeper nodes. See related section.")
     public static final String KEY_STORAGE = "kafka-storage";
 
     // Kafka configuration keys
