@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * CRUD-style operations on a Kafka Connect cluster
+ * Cluster operations for a Kafka Connect cluster
  */
 public class KafkaConnectClusterOperations extends AbstractClusterOperations<KafkaConnectCluster, Deployment> {
 
@@ -34,7 +34,6 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
     private final DeploymentOperations deploymentOperations;
 
     /**
-     * Constructor
      * @param vertx The Vertx instance
      * @param isOpenShift Whether we're running with OpenShift
      * @param configMapOperations For operating on ConfigMaps
@@ -168,7 +167,7 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
     }
 
     @Override
-    public void create(String namespace, String name, Handler<AsyncResult<Void>> handler) {
+    protected void create(String namespace, String name, Handler<AsyncResult<Void>> handler) {
         execute(CLUSTER_TYPE_CONNECT, OP_CREATE, namespace, name, create, handler);
     }
 
@@ -178,7 +177,7 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
     }
 
     @Override
-    public void update(String namespace, String name, Handler<AsyncResult<Void>> handler) {
+    protected void update(String namespace, String name, Handler<AsyncResult<Void>> handler) {
         execute(CLUSTER_TYPE_CONNECT, OP_UPDATE, namespace, name, update, handler);
     }
 

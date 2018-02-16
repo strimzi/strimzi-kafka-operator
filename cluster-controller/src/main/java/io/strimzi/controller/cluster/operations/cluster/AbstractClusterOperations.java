@@ -271,6 +271,15 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
      */
     public abstract void reconcile(String namespace, Map<String, String> labels);
 
+    /**
+     * This is provided for subclasses to help them implement the public {@link #reconcile(String, Map)}.
+     * It obtains a list of ConfigMaps (the desired state of the cluster)
+     * and a list of other resources (of type {@link R}) (the actual state of the cluster) and determines,
+     * by comparing their names which clusters need to be created, updated or deleted.
+     * @param namespace The namespace
+     * @param labels The labels to use to select the ConfigMap and other resources to be compared.
+     * @param type The {@code strimzi.io/type} of the ConfigMaps and other resources
+     */
     protected void reconcile(String namespace, Map<String, String> labels, String type) {
         log.info("Reconciling {} clusters ...", clusterDescription);
 
