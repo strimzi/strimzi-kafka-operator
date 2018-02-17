@@ -1,4 +1,4 @@
-= Topic Controller
+== Topic Controller
 
 The role of the topic controller is to keep in-sync a set of K8s ConfigMaps describing Kafka topics, 
 and those Kafka topics. 
@@ -25,7 +25,7 @@ Should the topic be reconfigured, reassigned to different Kafka nodes etc,
 the ConfigMap will always be up to date.
 
 
-== Reconciliation
+=== Reconciliation
 
 A fundamental problem that the controller has to solve is that there is no 
 single source of truth: 
@@ -60,7 +60,7 @@ then Kafka itself cannot run, so the controller will be no less available
 than it would even if it was stateless. 
 
 
-== Usage Recommendations
+=== Usage Recommendations
 
 . Try to either always operate on ConfigMaps or always operate directly on topics.
 . When creating a ConfigMap:
@@ -75,7 +75,7 @@ than it would even if it was stateless.
       the corresponding ConfigMap.
 
     
-== Format of the ConfigMap
+=== Format of the ConfigMap
 
 By default, the controller only considers ConfigMaps having the label `strimzi.io/kind=topic`, 
 but this is configurable via the `STRIMZI_CONFIGMAP_LABELS` environment variable.
@@ -88,7 +88,7 @@ The `data` of such ConfigMaps supports the following keys:
 * `config` A string in JSON format representing the https://kafka.apache.org/documentation/#topicconfigs[topic configuration]. Optional, defaulting to the empty set.
  
 
-== Example
+=== Example
 
 Suppose you want to create a topic called "orders" with 10 partitions and 2 replicas. 
 
@@ -151,7 +151,7 @@ And use `oc update -f` or `kubectl update -f` to up update the ConfigMap
 in OpenShift/Kubernetes.
 
 
-== Unsupported operations
+=== Unsupported operations
 
 * You can't change the `data.name` key in a ConfigMap, because Kafka doesn't support changing topic names.
 * You can't decrease the `data.partitions`, because Kafka doesn't support this.
@@ -159,7 +159,7 @@ in OpenShift/Kubernetes.
   how records are partitioned. 
 
     
-== Controller environment
+=== Controller environment
 
 The controller is configured from environment variables:
 

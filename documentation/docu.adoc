@@ -1,0 +1,27 @@
+= Strimzi: Kafka as a Service running on Kubernetes and OpenShift
+Version 0.1
+:sectnums:
+:toc: preamble
+:toclevels: 3
+:toc-title: Content
+:imagesdir: ./img
+
+This guide describes how to install and use Strimzi. Strimzi provides a way to run an Apache Kafka cluster on Kubernetes
+or OpenShift in various deployment configurations.
+
+== Overview
+
+Apache Kafka is a popular platform for streaming data delivery and processing. For more details about Apache Kafka it
+self, visit http://kafka.apache.org[Apache Kafka website]. Strimzi is a project which aims to make it easier to run
+Apache Kafka on top of Kubernetes and OpenShift.
+
+Strimzi consists from 2 main components:
+
+Cluster Controller:: Responsible for deploying and managing Apache Kafka clusters
+Topic Controller:: Responsible for managing Kafka Topics
+
+include::getting-started.adoc[]
+
+include::cluster-controller.adoc[]
+
+include::topic-controller.adoc[]

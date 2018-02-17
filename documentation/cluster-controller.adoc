@@ -1,4 +1,4 @@
-= Cluster Controller
+== Cluster Controller
 
 The cluster controller is in charge of deploying a Kafka cluster alongside a Zookeeper ensemble. It's also able to deploy a
 Kafka Connect cluster which connects to an existing Kafka cluster. Such a cluster can be deployed using the Source2Image OpenShift
@@ -20,7 +20,7 @@ This might cause a rolling update which might lead to service disruption.
 Finally, when the ConfigMap is deleted, the controller starts to un-deploy the cluster deleting all the related Kubernets/OpenShift
 resources.
 
-== Reconciliation
+=== Reconciliation
 
 Although the controller reacts to all notifications about the cluster ConfigMaps received from the Kubernetes/OpenShift cluster,
 if the controller is not running, or if a notification is not received for any reason, the ConfigMaps will get out of sync
@@ -30,7 +30,7 @@ In order to handle failovers properly, a periodic reconciliation process is exec
 that it can compare the state of the ConfigMaps with the current cluster deployment in order to have
 a consistent state across all of them.
 
-== Format of the cluster ConfigMap
+=== Format of the cluster ConfigMap
 
 By default, the controller watches for ConfigMaps having the label `strimzi.io/kind=cluster` in order to find and get
 configuration for a Kafka or Kafka Connect cluster to deploy. The label is configurable through the `STRIMZI_CONFIGMAP_LABELS` 
@@ -47,7 +47,7 @@ features (works only with OpenShift)
 The `data` section of such ConfigMaps contains different keys depending on the "type" of deployment as described in the 
 following sections.
 
-=== Kafka
+==== Kafka
 
 In order to configure a Kafka cluster deployment, it's possible to specify the following fields in the `data` section of 
 the related ConfigMap :
@@ -138,7 +138,7 @@ a volume by the Zookeeper node pods
 * `[cluster-name]-kafka-metrics-config` ConfigMap which contains the Kafka metrics configuration and mounted as
 a volume by the Kafka broker pods
 
-==== Storage
+===== Storage
 
 Both Kafka and Zookeeper save data to files.
 
@@ -214,7 +214,7 @@ are generated :
 * `zookeeper-storage-[cluster-name]-zookeeper-[idx]` Persistent Volume Claim for the volume used for storing data for the
 Zookeeper node pod `[idx]`
 
-==== Metrics
+===== Metrics
 
 Because the Strimzi project uses the [JMX exporter](https://github.com/prometheus/jmx_exporter) in order to expose metrics 
 on each node, the JSON string used for metrics configuration in the cluster ConfigMap reflects the related JMX exporter 
@@ -222,7 +222,7 @@ configuration file. For this reason, you can find more information on how to use
 
 For more information on how metrics work, the related documentation is available link:../../metrics/METRICS.md[here]
 
-=== Kafka Connect
+==== Kafka Connect
 
 In order to configure a Kafka Connect cluster deployment, it's possible to specify the following fields in the `data` section of 
 the related ConfigMap:
@@ -293,7 +293,7 @@ The resources created by the cluster controller into the Kubernetes/OpenShift cl
 * [connect-cluster-name]-connect Deployment which is in charge to create the Kafka Connect worker node pods
 * [connect-cluster-name]-connect Service which exposes the REST interface for managing the Kafka Connect cluster
 
-== Controller configuration
+=== Controller configuration
 
 The controller itself can be configured through the following environment variables.
 
