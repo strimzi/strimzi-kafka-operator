@@ -5,7 +5,6 @@ _Select the type of your PR_
 - Bugfix
 - Enhancement / new feature
 
-
 ### Description
 
 _Please describe your pull request_
