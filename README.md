@@ -1,6 +1,7 @@
-[![Build Status](https://travis-ci.org/strimzi/strimzi.svg?branch=master)](https://travis-ci.org/strimzi/strimzi)
+# Strimzi : Kafka as a Service
 
-# Kafka as a Service
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0)
+[![Build Status](https://travis-ci.org/strimzi/strimzi.svg?branch=master)](https://travis-ci.org/strimzi/strimzi)
 
 Strimzi provides a way to run an [Apache Kafka][kafka] cluster on 
 [Kubernetes][k8s] or [OpenShift][os] in various deployment configurations.
