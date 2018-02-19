@@ -115,6 +115,8 @@
             <!-- default is 200 -->
             <property name="max" value="500"/>
         </module>
+
+        <module name="MissingOverride"/>
     </module>
 
     <module name="SuppressionFilter">
