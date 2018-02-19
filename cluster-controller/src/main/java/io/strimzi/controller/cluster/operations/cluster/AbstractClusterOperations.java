@@ -25,13 +25,13 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Abstract cluster creation, update, read, delection, etc, for a generic cluster type {@code C}.
- * This class applies the template method pattern, first obtaining the desired cluster configuration
+ * <p>Abstract cluster creation, update, read, delection, etc, for a generic cluster type {@code C}.
+ * This class applies the "template method" pattern, first obtaining the desired cluster configuration
  * ({@link CompositeOperation#getCluster(String, String)}),
- * then creating resources to match ({@link CompositeOperation#composite(String, ClusterOperation)}.
+ * then creating resources to match ({@link CompositeOperation#composite(String, ClusterOperation)}.</p>
  *
- * This class manages a per-cluster-type and per-cluster locking strategy so only one operation per cluster
- * can proceed at once.
+ * <p>This class manages a per-cluster-type and per-cluster locking strategy so only one operation per cluster
+ * can proceed at once.</p>
  * @param <C> The type of Kubernetes client
  * @param <R> The type of resource from which the cluster state can be recovered
  */
@@ -66,14 +66,31 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
         this.configMapOperations = configMapOperations;
     }
 
+    /**
+     * Gets the name of the lock to be used for operating on the given {@code clusterType}, {@code namespace} and
+     * cluster {@code name}
+     * @param clusterType
+     * @param namespace
+     * @param name
+     */
     protected final String getLockName(String clusterType, String namespace, String name) {
         return "lock::" + clusterType + "::" + namespace + "::" + name;
     }
 
+    /**
+     * Represents the desired state of a cluster, possibly including
+     * how it differs from the current state.
+     * @param <C> The type of cluster.
+     */
     protected static class ClusterOperation<C extends AbstractCluster> {
         private final C cluster;
         private final ClusterDiffResult diff;
 
+        /**
+         * @param cluster A cluster representing the target state (i.e.
+         *                a cluster obtained from a cluster ConfigMap).
+         * @param diff The diff if this is an update, otherwise null.
+         */
         public ClusterOperation(C cluster, ClusterDiffResult diff) {
             this.cluster = cluster;
             this.diff = diff;
@@ -89,6 +106,11 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
 
     }
 
+    /**
+     * An operation in the resources which make up a cluster to make it conform to
+     * a particular {@linkplain ClusterOperation desired state}.
+     * @param <C> The type of cluster.
+     */
     protected interface CompositeOperation<C extends AbstractCluster> {
         /**
          * Create the resources in Kubernetes according to the given {@code cluster},
@@ -96,10 +118,27 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
          */
         Future<?> composite(String namespace, ClusterOperation<C> operation);
 
-        /** Get the desired Cluster instance */
+        /**
+         * Get the desired Cluster instance (by getting the corresponding ConfigMap and
+         * creating the appropriate {@link AbstractCluster} subclass from it.
+         */
         ClusterOperation<C> getCluster(String namespace, String name);
     }
 
+    /**
+     * <p>Execute the resource operations necessary to make a cluster conform to a particular desired state.</p>
+     *
+     * <p>The desired cluster state is obtained from {@link CompositeOperation#getCluster(String, String)} and the
+     * resource operations are executed via {@link CompositeOperation#composite(String, ClusterOperation)}.</p>
+     *
+     * @param clusterType The type of cluster
+     * @param operationType The kind of operation
+     * @param namespace The namespace containing the cluster.
+     * @param name The name of the cluster
+     * @param compositeOperation The operation to execute
+     * @param handler A completion handler
+     * @param <C> The type of cluster.
+     */
     protected final <C extends AbstractCluster> void execute(String clusterType, String operationType, String namespace, String name, CompositeOperation<C> compositeOperation, Handler<AsyncResult<Void>> handler) {
         final String lockName = getLockName(clusterType, namespace, name);
         vertx.sharedData().getLockWithTimeout(lockName, LOCK_TIMEOUT, res -> {
@@ -136,6 +175,13 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
         });
     }
 
+    /**
+     * Subclasses implement this method to create the cluster. The implementation usually just has to call
+     * {@link #execute(String, String, String, String, CompositeOperation, Handler)} with appropriate arguments.
+     * @param namespace The namespace containing the cluster.
+     * @param name The name of the cluster.
+     * @param handler Completion handler
+     */
     protected abstract void create(String namespace, String name, Handler<AsyncResult<Void>> handler);
 
     public void create(String namespace, String name)   {
@@ -150,6 +196,13 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
         });
     }
 
+    /**
+     * Subclasses implement this method to delete the cluster. The implementation usually just has to call
+     * {@link #execute(String, String, String, String, CompositeOperation, Handler)} with appropriate arguments.
+     * @param namespace The namespace containing the cluster.
+     * @param name The name of the cluster.
+     * @param handler Completion handler
+     */
     protected abstract void delete(String namespace, String name, Handler<AsyncResult<Void>> handler);
 
     public void delete(String namespace, String name)   {
@@ -163,6 +216,13 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
         });
     }
 
+    /**
+     * Subclasses implement this method to update the cluster. The implementation usually just has to call
+     * {@link #execute(String, String, String, String, CompositeOperation, Handler)} with appropriate arguments.
+     * @param namespace The namespace containing the cluster.
+     * @param name The name of the cluster.
+     * @param handler Completion handler
+     */
     protected abstract void update(String namespace, String name, Handler<AsyncResult<Void>> handler);
 
     public void update(String namespace, String name)   {
@@ -177,10 +237,18 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
         });
     }
 
+    /**
+     * The name of the given {@code resource}, as read from its metadata.
+     * @param resource The resource
+     */
     protected String name(HasMetadata resource) {
         return resource.getMetadata().getName();
     }
 
+    /**
+     * The name of the given {@code resource}, as read from its {@code strimzi.io/cluster} label.
+     * @param resource The resource
+     */
     protected String nameFromLabels(R resource) {
         return resource.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL);
     }
@@ -199,6 +267,15 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
      */
     public abstract void reconcile(String namespace, Map<String, String> labels);
 
+    /**
+     * This is provided for subclasses to help them implement the public {@link #reconcile(String, Map)}.
+     * It obtains a list of ConfigMaps (the desired state of the cluster)
+     * and a list of other resources (of type {@link R}) (the actual state of the cluster) and determines,
+     * by comparing their names which clusters need to be created, updated or deleted.
+     * @param namespace The namespace
+     * @param labels The labels to use to select the ConfigMap and other resources to be compared.
+     * @param type The {@code strimzi.io/type} of the ConfigMaps and other resources
+     */
     protected void reconcile(String namespace, Map<String, String> labels, String type) {
         log.info("Reconciling {} clusters ...", clusterDescription);
 

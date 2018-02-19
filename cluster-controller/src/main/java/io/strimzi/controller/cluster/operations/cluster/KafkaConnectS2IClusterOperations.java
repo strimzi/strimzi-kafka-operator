@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * CRUD-style operations on a Kafka Connect cluster
+ * Cluster operations for a Kafka Connect cluster
  */
 public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<KafkaConnectS2ICluster, DeploymentConfig> {
 
@@ -40,8 +40,6 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
     private final BuildConfigOperations buildConfigOperations;
 
     /**
-     * Constructor
-     *
      * @param vertx                      The Vertx instance
      * @param isOpenShift                Whether we're running with OpenShift
      * @param configMapOperations        For operating on ConfigMaps

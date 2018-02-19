@@ -29,7 +29,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * CRUD-style operations on a Kafka cluster
+ * <p>Cluster operations for a "Kafka" cluster. A KafkaClusterOperations is
+ * an AbstractClusterOperations that really manages two clusters,
+ * for of Kafka nodes and another of ZooKeeper nodes.</p>
  */
 public class KafkaClusterOperations extends AbstractClusterOperations<KafkaCluster, StatefulSet> {
     private static final Logger log = LoggerFactory.getLogger(KafkaClusterOperations.class.getName());
@@ -43,7 +45,6 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
     private final EndpointOperations endpointOperations;
 
     /**
-     * Constructor
      * @param vertx The Vertx instance
      * @param isOpenShift Whether we're running with OpenShift
      * @param configMapOperations For operating on ConfigMaps
