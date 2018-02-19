@@ -37,7 +37,7 @@ public class PodOperations extends AbstractOperations<KubernetesClient, Pod, Pod
      * Returns whether the pod given by {@code namespace} and {@code name} is ready
      * @param namespace The namespace.
      * @param name The name.
-     * @return True iff the pod is ready.
+     * @return True if the pod is ready.
      */
     public boolean isPodReady(String namespace, String name) {
         return operation().inNamespace(namespace).withName(name).isReady();
