@@ -116,14 +116,23 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
     /**
      * Asynchronously patch the resource with the given {@code name} in the given {@code namespace}
      * with reflect the state given in the {@code patch}, returning a future for the outcome.
+     * The patch is applied to the related resource in cascade as well.
      * @param namespace The namespace of the resource to patch.
      * @param name The name of the resource to patch.
-     * @param patch The desired state of the resource..
+     * @param patch The desired state of the resource.
      */
     public Future<Void> patch(String namespace, String name, T patch) {
         return patch(namespace, name, true, patch);
     }
 
+    /**
+     * Asynchronously patch the resource with the given {@code name} in the given {@code namespace}
+     * with reflect the state given in the {@code patch}, returning a future for the outcome.
+     * @param namespace The namespace of the resource to patch.
+     * @param name  The name of the resource to patch.
+     * @param cascading If the patch applies to the related resource in cascade
+     * @param patch The desired state of the resource.
+     */
     public Future<Void> patch(String namespace, String name, boolean cascading, T patch) {
         Future<Void> fut = Future.future();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
