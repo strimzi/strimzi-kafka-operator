@@ -116,7 +116,7 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
     /**
      * Asynchronously patch the resource with the given {@code name} in the given {@code namespace}
      * to reflect the state given in the {@code patch}, returning a future for the outcome.
-     * The patch cascades to related resources
+     * The patch cascades to related resources.
      * @param namespace The namespace of the resource to patch.
      * @param name The name of the resource to patch.
      * @param patch The desired state of the resource.
@@ -130,7 +130,7 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
      * to reflect the state given in the {@code patch}, returning a future for the outcome.
      * @param namespace The namespace of the resource to patch.
      * @param name The name of the resource to patch.
-     * @param cascading If the patch applies to the related resource in cascade
+     * @param cascading If the patch applies to the related resource in cascade.
      * @param patch The desired state of the resource.
      */
     public Future<Void> patch(String namespace, String name, boolean cascading, T patch) {
@@ -223,7 +223,7 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
     }
 
     /**
-     * Check if a resource is in the Ready state
+     * Check if a resource is in the Ready state.
      *
      * @param namespace The namespace.
      * @param name The resource name.
