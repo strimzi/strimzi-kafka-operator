@@ -60,18 +60,18 @@ public class ClusterControllerConfig {
      * @param map   map from which loading configuration parameters
      * @return  Cluster Controller configuration instance
      */
-    public static ClusterControllerConfig fromMap(Map<String, String> map, KubernetesClient client) {
+    public static ClusterControllerConfig fromMap(Map<String, String> map) {
 
         String namespacesList = map.get(ClusterControllerConfig.STRIMZI_NAMESPACE);
         Set<String> namespaces;
-        if (namespacesList == null) {
-            namespaces = client.namespaces().list().getItems().stream().map(ns -> ns.getMetadata().getName()).collect(Collectors.toSet());
+        if (namespacesList == null || namespacesList.isEmpty()) {
+            throw new IllegalArgumentException(ClusterControllerConfig.STRIMZI_NAMESPACE + " cannot be null");
         } else {
             namespaces = new HashSet(asList(namespacesList.trim().split("\\s*,+\\s*")));
         }
         String stringLabels = map.get(ClusterControllerConfig.STRIMZI_CONFIGMAP_LABELS);
-        if (stringLabels == null) {
-            throw new IllegalArgumentException("Labels to watch cannot be null");
+        if (stringLabels == null || stringLabels.isEmpty()) {
+            throw new IllegalArgumentException(ClusterControllerConfig.STRIMZI_CONFIGMAP_LABELS + " cannot be null");
         }
         Long reconciliationInterval = DEFAULT_FULL_RECONCILIATION_INTERVAL;
 

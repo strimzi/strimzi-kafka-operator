@@ -56,7 +56,7 @@ public class Main {
                     configMapOperations, deploymentConfigOperations,
                     serviceOperations, imagesStreamOperations, buildConfigOperations);
 
-            ClusterControllerConfig config = ClusterControllerConfig.fromMap(System.getenv(), client);
+            ClusterControllerConfig config = ClusterControllerConfig.fromMap(System.getenv());
             for (String namespace : config.getNamespaces()) {
                 ClusterController controller = new ClusterController(namespace,
                         config.getLabels(),
