@@ -4,14 +4,10 @@
  */
 package io.strimzi.controller.cluster;
 
-import io.fabric8.kubernetes.client.KubernetesClient;
-
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.unmodifiableSet;
