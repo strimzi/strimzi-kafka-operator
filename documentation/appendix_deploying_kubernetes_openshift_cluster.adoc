@@ -1,16 +1,16 @@
 [appendix]
 == Installing Kubernetes and OpenShift cluster
 
-The easiest way how to get started with Kubernetes or OpenShift is using the `Minikube`, `Minishift` or `oc cluster up`
-utilities. This section provides a simple guide how to start using them. More details are provided on the websites of
-the tools it self.
+The easiest way to get started with Kubernetes or OpenShift is using the `Minikube`, `Minishift` or `oc cluster up`
+utilities. This section provides a basic guidance on how to use them. More details are provided on the websites of
+the tools themselves.
 
 === Kubernetes
 
 In order to interact with a Kubernetes cluster the https://kubernetes.io/docs/tasks/tools/install-kubectl/[`kubectl`]
 utility needs to be installed.
 
-The easiest way how to get a running Kubernetes cluster is using `Minikube`. `Minikube` can be downloaded and installed
+The easiest way to get a running Kubernetes cluster is using `Minikube`. `Minikube` can be downloaded and installed
 from https://kubernetes.io/docs/getting-started-guides/minikube/[Kubernetes website]. Once installed, it can be started
 using:
 
@@ -21,7 +21,7 @@ minikube start
 
 In order to interact with an OpenShift cluster,the https://github.com/openshift/origin/releases[`oc`] utility is needed.
 
-OpenShift cluster can be started in two different ways. The `oc` utility can start the cluster locally using the
+An OpenShift cluster can be started in two different ways. The `oc` utility can start the cluster locally using the
 command:
 
 [source]

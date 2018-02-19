@@ -3,8 +3,8 @@
 === Prerequisites
 
 Kubernetes or OpenShift cluster are required to deploy Strimzi. Strimzi supports all kind of clusters - from public and
-private clouds up to local deployments designed for development purposes. This guide expects that a Kubernetes or
-OpenShift clusters are available and the `kubectl` or `oc` command line tools are installed and configured to connect
+private clouds up to local deployments intended for development purposes. This guide expects that a Kubernetes or
+OpenShift cluster is available and the `kubectl` or `oc` command line tools are installed and configured to connect
 to the running cluster.
 
 When no Kubernetes or OpenShift cluster is available, `Minikube` or `Minishift` can be used. More details can be found
@@ -13,18 +13,19 @@ in <<_installing_kubernetes_and_openshift_cluster>>
 
 === Cluster Controller
 
-Strimzi is using process called Cluster Controller to deploy and manage Kafka (including Zookeeper) and Kafka Connect
-clusters. Cluster Controller is a process which is running inside your Kubernetes or OpenShift cluster. To deploy a
-Kafka cluster, a ConfigMap with the cluster configuration has to be created. By default, the ConfigMap needs to be
-labeled with following labels:
+Strimzi uses a component called the Cluster Controller to deploy and manage Kafka (including Zookeeper) and Kafka Connect
+clusters. The Cluster Controller is deployed as a process running inside your Kubernetes or OpenShift cluster. To deploy a
+Kafka cluster, a ConfigMap with the cluster configuration has to be created. Based on the information in that ConfigMap,
+the Cluster Controller will deploy a corresponding Kafka cluster. By default, the ConfigMap needs to be labeled with
+following labels:
 
 [source,yaml]
 strimzi.io/type: kafka
 strimzi.io/kind: cluster
 
-and contain the cluster configuration in specific format.
+and contain the cluster configuration in a specific format.
 
-Strimzi project contains example YAML files which make deploying of Cluster Controller easier.
+The Strimzi project contains example YAML files which make deploying of Cluster Controller easier.
 
 ==== Deploying to Kubernetes
 
@@ -54,7 +55,7 @@ oc describe all
 
 === Kafka broker
 
-Strimzi uses StatefulSets (previously known as _PetSets_) feature to deploy Kafka brokers on Kubernetes/OpenShift.
+Strimzi uses StatefulSets feature to deploy Kafka brokers on Kubernetes/OpenShift.
 With StatefulSets, the pods receive a unique name and network identity and that makes it easier to identify the
 individual Kafka broker pods and set their identity (broker ID). The deployment uses **regular** and **headless**
 services:
@@ -63,20 +64,20 @@ services:
 - headless services are needed to have DNS resolve the pods IP addresses directly
 
 Together with Kafka, Strimzi also installs a Zookeeper cluster and configures the Kafka brokers to connect to it. The
-Zookeeper cluster is also using StatefulSets.
+Zookeeper cluster also uses StatefulSets.
 
 Strimzi provides two flavors of Kafka broker deployment: **ephemeral** and **persistent**.
 
 The **ephemeral** flavour is suitable only for development and testing purposes and not for production. The
-ephemeral flavour is using `emptyDir` volumes for storing broker information (Zookeeper) and topics/partitions
+ephemeral flavour uses `emptyDir` volumes for storing broker information (Zookeeper) and topics/partitions
 (Kafka). Using `emptyDir` volume means that its content is strictly related to the pod life cycle (it is
 deleted when the pod goes down). This makes the in-memory deployment well-suited to development and testing because
 you don't have to provide persistent volumes.
 
-The **persistent** flavour is using PersistentVolumes to store Zookeeper and Kafka data. The PersistentVolume is
-acquired using PersistentVolumeClaim – that makes it independent on the actual type of the PersistentVolume. For
+The **persistent** flavour uses PersistentVolumes to store Zookeeper and Kafka data. The PersistentVolume is
+acquired using a PersistentVolumeClaim – that makes it independent on the actual type of the PersistentVolume. For
 example, it can use HostPath volumes on Minikube or Amazon EBS volumes in Amazon AWS deployments without any
-changes in the YAML files. The PersistentVolumeClaim can use StorageClass to trigger automatic volume provisioning.
+changes in the YAML files. The PersistentVolumeClaim can use a StorageClass to trigger automatic volume provisioning.
 
 To deploy a Kafka cluster, a ConfigMap with the cluster configuration has to be created. By default, the ConfigMap
 should have the following labels:
@@ -90,7 +91,7 @@ Example ConfigMaps and the details about the ConfigMap format are in <<kafka_con
 ==== Deploying to Kubernetes
 
 To deploy Kafka broker on Kubernetes, the corresponding ConfigMap has to be created. To create the ephemeral
-cluster using the provided example ConfigMap, following command should be executed:
+cluster using the provided example ConfigMap, the following command should be executed:
 
 [source]
 kubectl apply -f resources/kubernetes/kafka-ephemeral.yaml
@@ -102,20 +103,21 @@ kubectl apply -f resources/kubernetes/kafka-persistent.yaml
 
 ==== Deploying to OpenShift
 
-For OpenShift, Kafka broker is provided in the form of a template. The cluster can be deployed from the template either
-using command line or using the OpenShift console. To create the ephemeral cluster, following command should be executed:
+For OpenShift, the Kafka broker is provided in the form of a template. The cluster can be deployed from the template either
+using the command line or using the OpenShift console. To create the ephemeral cluster, the following command should be
+executed:
 
 [source]
 oc new-app strimzi-ephemeral
 
-Similarly to deploy persistent KAfka cluster, following command should be run:
+Similarly, to deploy persistent Kafka cluster the following command should be run:
 
 [source]
 oc new-app strimzi-persistent
 
 === Kafka Connect
 
-The Cluster Controller can also deploy a https://kafka.apache.org/documentation/#connect[Kafka Connect] clusters which
+The Cluster Controller can also deploy a https://kafka.apache.org/documentation/#connect[Kafka Connect] cluster which
 can be used with either of the Kafka broker deployments described above. It is implemented as a Deployment with a
 configurable number of workers. The default image currently contains only the Connectors distributed with Apache Kafka
 Connect -`FileStreamSinkConnector` and `FileStreamSourceConnector`. The REST interface for managing the Kafka Connect
@@ -127,7 +129,7 @@ Example ConfigMaps and the details about the ConfigMap format for deploying Kafk
 ==== Deploying to Kubernetes
 
 To deploy Kafka Connect on Kubernetes, the corresponding ConfigMap has to be created. An example ConfigMap can be
-created using following command:
+created using the following command:
 
 [source]
 kubectl apply -f resources/kubernetes/kafka-connect.yaml
@@ -135,7 +137,7 @@ kubectl apply -f resources/kubernetes/kafka-connect.yaml
 ==== Deploying to OpenShift
 
 On OpenShift, Kafka Connect is provided in the form of a template. It can be deployed from the template either
-using command line or using the OpenShift console. To create Kafka Connect cluster from the command line, following
+using the command line or using the OpenShift console. To create Kafka Connect cluster from the command line, the following
 command should be run:
 
 [source]
@@ -143,22 +145,23 @@ oc new-app strimzi-connect
 
 ==== Using Kafka Connect with additional plugins
 
-Strimzi Docker images for Kafka Connect contain by default only the `FileStreamSinkConnector` and
+Strimzi Docker images for Kafka Connect contain, by default, only the `FileStreamSinkConnector` and
 `FileStreamSourceConnector` connectors which are part of the Apache Kafka project.
 
-But they configure Kafka Connect to automatically load all plugins/connectors which are present in the
-`/opt/kafka/plugins` directory during startup. There are two ways how to add custom plugins into this directory:
+To facilitate deployment with 3rd party connectors, Kafka Connect is configured to automatically load all
+plugins/connectors which are present in the `/opt/kafka/plugins` directory during startup. There are two ways how to add
+custom plugins into this directory:
 
-- Using custom Docker image
-- Using OpenShift build system and with the Strimzi S2I image
+- Using a custom Docker image
+- Using the OpenShift build system with the Strimzi S2I image
 
 ===== Create a new image based on `strimzi/kafka-connect`
 
 Strimzi provides its own Docker image for running Kafka Connect which can be found on Docker Hub as
 https://hub.docker.com/r/strimzi/kafka-connect/[`strimzi/kafka-connect`]. This image could be used as a base image for
-building a new custom image with additional plugins. Following steps describe the process for creating the custom image:
+building a new custom image with additional plugins. The following steps describe the process for creating such a custom image:
 
-1. Create a new `Dockerfile` which uses `strimzi/kafka-connect` as base image
+1. Create a new `Dockerfile` which uses `strimzi/kafka-connect` as the base image
 
 [source,Dockerfile]
 FROM strimzi/kafka-connect:latest
@@ -166,11 +169,11 @@ USER root:root
 COPY ./my-plugin/ /opt/kafka/plugins/
 USER kafka:kafka
 
-2. Build the Docker image and upload it to your Docker repository
+2. Build the Docker image and upload it to the appropriate Docker repository
 3. To use the new Docker image in the Kafka Connect deployment,
   - On OpenShift, the template parameters `IMAGE_REPO_NAME`, `IMAGE_NAME` and `IMAGE_TAG` can be changed to point to the
-  new image when the KAfka Connect cluster is being deployer
-  - On Kubernetes, the ConfigMap has to be modified to use the new image
+  new image when the Kafka Connect cluster is being deployed
+  - On Kubernetes, the Kafka Connect ConfigMap has to be modified to use the new image
 
 ===== Using OpenShift Build and S2I image
 
@@ -178,19 +181,19 @@ OpenShift supports https://docs.openshift.org/3.6/dev_guide/builds/index.html[Bu
 https://docs.openshift.org/3.6/creating_images/s2i.html#creating-images-s2i[Source-to-Image (S2I)] framework to create
 new Docker images. OpenShift Build takes a builder image with the S2I support together with source code and/or binaries
 provided by the user and uses them to build a new Docker image. The newly created Docker Image will be stored in
-OpenShift's local Docker repository and can be used in deployments. The Strimzi project provides a Kafka Connect S2I
-builder image https://hub.docker.com/r/strimzi/kafka-connect-s2i/[`strimzi/kafka-connect-s2i`] which takes user-provided
+OpenShift's local Docker repository and can then be used in deployments. The Strimzi project provides a Kafka Connect builder
+image https://hub.docker.com/r/strimzi/kafka-connect-s2i/[`strimzi/kafka-connect-s2i`] with S2I support. It takes user-provided
 binaries (with plugins and connectors) and creates a new Kafka Connect image. This enhanced Kafka Connect image can be
 used with our Kafka Connect deployment.
 
-The S2I deployment is again provided as an OpenShift template. It can be deployed from the template either using command
-line or using the OpenShift console. To create Kafka Connect S2I cluster from the command line, following command should
+The S2I deployment is again provided as an OpenShift template. It can be deployed from the template either using the command
+line or using the OpenShift console. To create Kafka Connect S2I cluster from the command line, the following command should
 be run:
 
 [source]
 oc new-app strimzi-connect-s2i
 
-Once the cluster is deployed, a new Builds can be triggered from the command line:
+Once the cluster is deployed, a new Build can be triggered from the command line:
 
 1. A directory with Kafka Connect plugins has to be prepared first. For example:
 +
@@ -232,11 +235,11 @@ $ tree ./my-plugins/
     └── README.md
 ----
 
-2. To start new image build using the prepared directory, following command has to be run:
+2. To start a new image build using the prepared directory, the following command has to be run:
 +
 [source]
 oc start-build my-connect-cluster-connect --from-dir ./my-plugins/
 +
 _The name of the build should be changed according to the cluster name of the deployed Kafka Connect cluster._
 
-3. Once the build is finished, the new image will be automatically used by the Kafka Connect deployment.
+3. Once the build is finished, the new image will be used automatically by the Kafka Connect deployment.
