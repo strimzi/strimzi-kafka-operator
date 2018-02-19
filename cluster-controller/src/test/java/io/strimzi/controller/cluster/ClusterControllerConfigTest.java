@@ -4,25 +4,16 @@
  */
 package io.strimzi.controller.cluster;
 
-import io.fabric8.kubernetes.api.model.NamespaceBuilder;
-import io.fabric8.kubernetes.api.model.NamespaceList;
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import org.junit.Test;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
-import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class ClusterControllerConfigTest {
 
@@ -35,20 +26,6 @@ public class ClusterControllerConfigTest {
         envVars.put(ClusterControllerConfig.STRIMZI_NAMESPACE, "namespace");
         envVars.put(ClusterControllerConfig.STRIMZI_CONFIGMAP_LABELS, "strimzi.io/kind=cluster");
         envVars.put(ClusterControllerConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL, "30000");
-    }
-
-    static KubernetesClient client(Set<String> namespaces) {
-        NamespaceList mockNsList = mock(NamespaceList.class);
-        when(mockNsList.getItems()).thenReturn(namespaces.stream().map(name ->
-                new NamespaceBuilder().withNewMetadata()
-                        .withName(name)
-                        .withNamespace(name)
-                        .endMetadata().build()).collect(Collectors.toList()));
-        NonNamespaceOperation mockNs = mock(NonNamespaceOperation.class);
-        when(mockNs.list()).thenReturn(mockNsList);
-        KubernetesClient mockKube = mock(KubernetesClient.class);
-        when(mockKube.namespaces()).thenReturn(mockNs);
-        return mockKube;
     }
 
     @Test
@@ -74,7 +51,7 @@ public class ClusterControllerConfigTest {
     @Test
     public void testEnvVars() {
 
-        ClusterControllerConfig config = ClusterControllerConfig.fromMap(envVars, client(emptySet()));
+        ClusterControllerConfig config = ClusterControllerConfig.fromMap(envVars);
 
         assertEquals(singleton("namespace"), config.getNamespaces());
         assertEquals(labels, config.getLabels());
@@ -88,7 +65,7 @@ public class ClusterControllerConfigTest {
         envVars.put(ClusterControllerConfig.STRIMZI_NAMESPACE, "namespace");
         envVars.put(ClusterControllerConfig.STRIMZI_CONFIGMAP_LABELS, "strimzi.io/kind=cluster");
 
-        ClusterControllerConfig config = ClusterControllerConfig.fromMap(envVars, client(emptySet()));
+        ClusterControllerConfig config = ClusterControllerConfig.fromMap(envVars);
 
         assertEquals(singleton("namespace"), config.getNamespaces());
         assertEquals(labels, config.getLabels());
@@ -101,22 +78,19 @@ public class ClusterControllerConfigTest {
         Map<String, String> envVars = new HashMap<>(ClusterControllerConfigTest.envVars);
         envVars.put(ClusterControllerConfig.STRIMZI_NAMESPACE, "foo, bar ,, baz , ");
 
-        ClusterControllerConfig config = ClusterControllerConfig.fromMap(envVars, client(singleton("namespace")));
-        assertEquals(new HashSet(asList("foo","bar", "baz")), config.getNamespaces());
+        ClusterControllerConfig config = ClusterControllerConfig.fromMap(envVars);
+        assertEquals(new HashSet<>(asList("foo", "bar", "baz")), config.getNamespaces());
         assertEquals(labels, config.getLabels());
         assertEquals(30000, config.getReconciliationInterval());
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException.class)
     public void testNoNamespace() {
 
         Map<String, String> envVars = new HashMap<>(ClusterControllerConfigTest.envVars);
         envVars.remove(ClusterControllerConfig.STRIMZI_NAMESPACE);
 
-        ClusterControllerConfig config = ClusterControllerConfig.fromMap(envVars, client(singleton("namespace")));
-        assertEquals(singleton("namespace"), config.getNamespaces());
-        assertEquals(labels, config.getLabels());
-        assertEquals(30000, config.getReconciliationInterval());
+        ClusterControllerConfig.fromMap(envVars);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -125,12 +99,12 @@ public class ClusterControllerConfigTest {
         Map<String, String> envVars = new HashMap<>(ClusterControllerConfigTest.envVars);
         envVars.remove(ClusterControllerConfig.STRIMZI_CONFIGMAP_LABELS);
 
-        ClusterControllerConfig.fromMap(envVars, client(singleton("namespace")));
+        ClusterControllerConfig.fromMap(envVars);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testEmptyEnvVars() {
 
-        ClusterControllerConfig.fromMap(Collections.emptyMap(), client(singleton("namespace")));
+        ClusterControllerConfig.fromMap(Collections.emptyMap());
     }
 }
