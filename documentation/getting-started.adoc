@@ -96,7 +96,7 @@ cluster using the provided example ConfigMap, the following command should be ex
 [source]
 kubectl apply -f resources/kubernetes/kafka-ephemeral.yaml
 
-Another example ConfigMap is provided for persistent Kafka cluster. To deploy it, following command should be run:
+Another example ConfigMap is provided for persistent Kafka cluster. To deploy it, the following command should be run:
 
 [source]
 kubectl apply -f resources/kubernetes/kafka-persistent.yaml
@@ -179,7 +179,7 @@ USER kafka:kafka
 
 OpenShift supports https://docs.openshift.org/3.6/dev_guide/builds/index.html[Builds] which can be used together with
 https://docs.openshift.org/3.6/creating_images/s2i.html#creating-images-s2i[Source-to-Image (S2I)] framework to create
-new Docker images. OpenShift Build takes a builder image with the S2I support together with source code and/or binaries
+new Docker images. OpenShift Build takes a builder image with S2I support together with source code and/or binaries
 provided by the user and uses them to build a new Docker image. The newly created Docker Image will be stored in
 OpenShift's local Docker repository and can then be used in deployments. The Strimzi project provides a Kafka Connect builder
 image https://hub.docker.com/r/strimzi/kafka-connect-s2i/[`strimzi/kafka-connect-s2i`] with S2I support. It takes user-provided
