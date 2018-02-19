@@ -2,7 +2,7 @@
 
 === Prerequisites
 
-Kubernetes or OpenShift cluster are required to deploy Strimzi. Strimzi supports all kind of clusters - from public and
+Kubernetes or OpenShift cluster is required to deploy Strimzi. Strimzi supports all kind of clusters - from public and
 private clouds up to local deployments intended for development purposes. This guide expects that a Kubernetes or
 OpenShift cluster is available and the `kubectl` or `oc` command line tools are installed and configured to connect
 to the running cluster.
