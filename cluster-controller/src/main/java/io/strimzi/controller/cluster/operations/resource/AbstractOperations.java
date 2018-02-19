@@ -16,8 +16,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Abstract resource creation, for a generic resource type {@code R}.
@@ -172,15 +170,15 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
      *
      * @param namespace The namespace.
      * @param name The resource name.
-     * @param pollInteralMs The poll interval in milliseconds.
+     * @param pollIntervalMs The poll interval in milliseconds.
      * @param timeoutMs The timeout, in milliseconds.
      */
-    public Future<Void> waitUntilReady(String namespace, String name, long pollInteralMs, long timeoutMs) {
+    public Future<Void> waitUntilReady(String namespace, String name, long pollIntervalMs, long timeoutMs) {
         Future<Void> fut = Future.future();
         log.info("Waiting for {} resource {} in namespace {} to get ready", resourceKind, name, namespace);
         long startTime = System.currentTimeMillis();
 
-        vertx.setPeriodic(pollInteralMs, timerId -> {
+        vertx.setPeriodic(pollIntervalMs, timerId -> {
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                     future -> {
                         try {
@@ -215,18 +213,19 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
         return fut;
     }
 
+    /**
+     * Check if a resource is in the Ready state
+     *
+     * @param namespace The namespace.
+     * @param name  The resource name.
+     * @return  if it's in the Ready state
+     */
     public boolean isReady(String namespace, String name) {
         R resourceOp = operation().inNamespace(namespace).withName(name);
         T resource = resourceOp.get();
         if (resource != null)   {
             if (Readiness.isReadinessApplicable(resource)) {
-                Boolean ready = resourceOp.isReady();
-
-                if (Boolean.TRUE.equals(ready)) {
-                    return true;
-                } else {
-                    return false;
-                }
+                return Boolean.TRUE.equals(resourceOp.isReady());
             } else {
                 return true;
             }
