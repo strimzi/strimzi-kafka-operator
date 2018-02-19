@@ -30,6 +30,7 @@ In order to handle failovers properly, a periodic reconciliation process is exec
 that it can compare the state of the ConfigMaps with the current cluster deployment in order to have
 a consistent state across all of them.
 
+[[config_map_details]]
 === Format of the cluster ConfigMap
 
 By default, the controller watches for ConfigMaps having the label `strimzi.io/kind=cluster` in order to find and get
