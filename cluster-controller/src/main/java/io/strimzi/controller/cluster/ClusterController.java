@@ -5,15 +5,11 @@
 package io.strimzi.controller.cluster;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.ConfigMapList;
-import io.fabric8.kubernetes.api.model.DoneableConfigMap;
+import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
-import io.fabric8.kubernetes.client.dsl.FilterWatchListMultiDeletable;
-import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.Resource;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.strimzi.controller.cluster.operations.cluster.AbstractClusterOperations;
 import io.strimzi.controller.cluster.operations.cluster.KafkaClusterOperations;
@@ -29,12 +25,8 @@ import io.vertx.core.Handler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
-
-import static java.util.Collections.singleton;
 
 public class ClusterController extends AbstractVerticle {
 
@@ -61,15 +53,6 @@ public class ClusterController extends AbstractVerticle {
     private final KafkaConnectClusterOperations kafkaConnectClusterOperations;
     private final KafkaConnectS2IClusterOperations kafkaConnectS2IClusterOperations;
 
-    /**
-     * @param namespace The namespace to watch, or null for all namespaces in the Kubernetes/OpenShift cluster.
-     * @param labels The labels that watched-for ConfigMaps must have.
-     * @param reconciliationInterval The interval between periodic reconciliations.
-     * @param client The kubernetes client.
-     * @param kafkaClusterOperations Operations for Kafka clusters.
-     * @param kafkaConnectClusterOperations Operations for Connect clusters.
-     * @param kafkaConnectS2IClusterOperations Operations for Connect S2I clusters.
-     */
     public ClusterController(String namespace,
                              Map<String, String> labels,
                              long reconciliationInterval,
@@ -130,14 +113,7 @@ public class ClusterController extends AbstractVerticle {
     private void createConfigMapWatch(Handler<AsyncResult<Watch>> handler) {
         getVertx().executeBlocking(
             future -> {
-                MixedOperation<ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> cmOperation = client.configMaps();
-                FilterWatchListMultiDeletable<ConfigMap, ConfigMapList, Boolean, Watch, Watcher<ConfigMap>> cmWatchList;
-                if (namespace != null) {
-                    cmWatchList = cmOperation.inNamespace(namespace);
-                } else {
-                    cmWatchList = cmOperation.inAnyNamespace();
-                }
-                Watch watch = cmWatchList.withLabels(labels).watch(new Watcher<ConfigMap>() {
+                Watch watch = client.configMaps().inNamespace(namespace).withLabels(labels).watch(new Watcher<ConfigMap>() {
                     @Override
                     public void eventReceived(Action action, ConfigMap cm) {
                         Map<String, String> labels = cm.getMetadata().getLabels();
@@ -158,7 +134,6 @@ public class ClusterController extends AbstractVerticle {
                             return;
                         }
                         String name = cm.getMetadata().getName();
-                        String namespace = cm.getMetadata().getNamespace();
                         switch (action) {
                             case ADDED:
                                 log.info("New ConfigMap {}", name);
@@ -194,8 +169,7 @@ public class ClusterController extends AbstractVerticle {
                     }
                 });
                 future.complete(watch);
-            },
-            res -> {
+            }, res -> {
                 if (res.succeeded())    {
                     log.info("ConfigMap watcher up and running for labels {}", labels);
                     handler.handle(Future.succeededFuture((Watch) res.result()));
@@ -224,17 +198,9 @@ public class ClusterController extends AbstractVerticle {
       Periodical reconciliation (in case we lost some event)
      */
     private void reconcile() {
-        Set<String> namespaces;
-        if (namespace == null) {
-            namespaces = new HashSet(client.namespaces().list().getItems());
-        } else {
-            namespaces = singleton(namespace);
-        }
-        for (String namespace : namespaces) {
-            kafkaClusterOperations.reconcile(namespace, labels);
-            kafkaConnectClusterOperations.reconcile(namespace, labels);
-            kafkaConnectS2IClusterOperations.reconcile(namespace, labels);
-        }
+        kafkaClusterOperations.reconcile(namespace, labels);
+        kafkaConnectClusterOperations.reconcile(namespace, labels);
+        kafkaConnectS2IClusterOperations.reconcile(namespace, labels);
     }
 
     /**

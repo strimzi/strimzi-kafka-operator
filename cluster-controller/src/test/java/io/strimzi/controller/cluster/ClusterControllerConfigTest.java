@@ -37,6 +37,20 @@ public class ClusterControllerConfigTest {
         envVars.put(ClusterControllerConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL, "30000");
     }
 
+    static KubernetesClient client(Set<String> namespaces) {
+        NamespaceList mockNsList = mock(NamespaceList.class);
+        when(mockNsList.getItems()).thenReturn(namespaces.stream().map(name ->
+                new NamespaceBuilder().withNewMetadata()
+                        .withName(name)
+                        .withNamespace(name)
+                        .endMetadata().build()).collect(Collectors.toList()));
+        NonNamespaceOperation mockNs = mock(NonNamespaceOperation.class);
+        when(mockNs.list()).thenReturn(mockNsList);
+        KubernetesClient mockKube = mock(KubernetesClient.class);
+        when(mockKube.namespaces()).thenReturn(mockNs);
+        return mockKube;
+    }
+
     @Test
     public void testDefaultConfig() {
 
@@ -60,7 +74,7 @@ public class ClusterControllerConfigTest {
     @Test
     public void testEnvVars() {
 
-        ClusterControllerConfig config = ClusterControllerConfig.fromMap(envVars);
+        ClusterControllerConfig config = ClusterControllerConfig.fromMap(envVars, client(emptySet()));
 
         assertEquals(singleton("namespace"), config.getNamespaces());
         assertEquals(labels, config.getLabels());
@@ -74,7 +88,7 @@ public class ClusterControllerConfigTest {
         envVars.put(ClusterControllerConfig.STRIMZI_NAMESPACE, "namespace");
         envVars.put(ClusterControllerConfig.STRIMZI_CONFIGMAP_LABELS, "strimzi.io/kind=cluster");
 
-        ClusterControllerConfig config = ClusterControllerConfig.fromMap(envVars);
+        ClusterControllerConfig config = ClusterControllerConfig.fromMap(envVars, client(emptySet()));
 
         assertEquals(singleton("namespace"), config.getNamespaces());
         assertEquals(labels, config.getLabels());
@@ -87,7 +101,7 @@ public class ClusterControllerConfigTest {
         Map<String, String> envVars = new HashMap<>(ClusterControllerConfigTest.envVars);
         envVars.put(ClusterControllerConfig.STRIMZI_NAMESPACE, "foo, bar ,, baz , ");
 
-        ClusterControllerConfig config = ClusterControllerConfig.fromMap(envVars);
+        ClusterControllerConfig config = ClusterControllerConfig.fromMap(envVars, client(singleton("namespace")));
         assertEquals(new HashSet(asList("foo","bar", "baz")), config.getNamespaces());
         assertEquals(labels, config.getLabels());
         assertEquals(30000, config.getReconciliationInterval());
@@ -99,8 +113,8 @@ public class ClusterControllerConfigTest {
         Map<String, String> envVars = new HashMap<>(ClusterControllerConfigTest.envVars);
         envVars.remove(ClusterControllerConfig.STRIMZI_NAMESPACE);
 
-        ClusterControllerConfig config = ClusterControllerConfig.fromMap(envVars);
-        assertEquals(null, config.getNamespaces());
+        ClusterControllerConfig config = ClusterControllerConfig.fromMap(envVars, client(singleton("namespace")));
+        assertEquals(singleton("namespace"), config.getNamespaces());
         assertEquals(labels, config.getLabels());
         assertEquals(30000, config.getReconciliationInterval());
     }
@@ -111,12 +125,12 @@ public class ClusterControllerConfigTest {
         Map<String, String> envVars = new HashMap<>(ClusterControllerConfigTest.envVars);
         envVars.remove(ClusterControllerConfig.STRIMZI_CONFIGMAP_LABELS);
 
-        ClusterControllerConfig.fromMap(envVars);
+        ClusterControllerConfig.fromMap(envVars, client(singleton("namespace")));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testEmptyEnvVars() {
 
-        ClusterControllerConfig.fromMap(Collections.emptyMap());
+        ClusterControllerConfig.fromMap(Collections.emptyMap(), client(singleton("namespace")));
     }
 }
