@@ -5,6 +5,7 @@
 package io.strimzi.controller.cluster;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
@@ -24,9 +25,7 @@ import io.vertx.core.Handler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 public class ClusterController extends AbstractVerticle {
@@ -44,7 +43,7 @@ public class ClusterController extends AbstractVerticle {
 
     private final KubernetesClient client;
     private final Map<String, String> labels;
-    private final Set<String> namespaces;
+    private final String namespace;
     private final long reconciliationInterval;
 
     private Watch configMapWatch;
@@ -54,7 +53,7 @@ public class ClusterController extends AbstractVerticle {
     private final KafkaConnectClusterOperations kafkaConnectClusterOperations;
     private final KafkaConnectS2IClusterOperations kafkaConnectS2IClusterOperations;
 
-    public ClusterController(Set<String> namespaces,
+    public ClusterController(String namespace,
                              Map<String, String> labels,
                              long reconciliationInterval,
                              KubernetesClient client,
@@ -62,7 +61,7 @@ public class ClusterController extends AbstractVerticle {
                              KafkaConnectClusterOperations kafkaConnectClusterOperations,
                              KafkaConnectS2IClusterOperations kafkaConnectS2IClusterOperations) {
         log.info("Creating ClusterController");
-        this.namespaces = namespaces;
+        this.namespace = namespace;
         this.labels = labels;
         this.reconciliationInterval = reconciliationInterval;
         this.client = client;
@@ -84,13 +83,11 @@ public class ClusterController extends AbstractVerticle {
 
                 log.info("Setting up periodical reconciliation");
                 this.reconcileTimer = vertx.setPeriodic(this.reconciliationInterval, res2 -> {
-                    for (String namespace: namespaces) {
-                        log.info("Triggering periodic reconciliation for namespace {}...", namespace);
-                        reconcile(namespace);
-                    }
+                    log.info("Triggering periodic reconciliation ...");
+                    reconcile();
                 });
 
-                log.info("ClusterController running");
+                log.info("ClusterController up and running");
 
                 // start the HTTP server for healthchecks
                 this.startHealthServer();
@@ -116,67 +113,62 @@ public class ClusterController extends AbstractVerticle {
     private void createConfigMapWatch(Handler<AsyncResult<Watch>> handler) {
         getVertx().executeBlocking(
             future -> {
-                Set<Watch> watches = new HashSet<>(namespaces.size());
-                for (String namespace: namespaces) {
-                    Watch watch = client.configMaps().inNamespace(namespace).withLabels(labels).watch(new Watcher<ConfigMap>() {
-                        @Override
-                        public void eventReceived(Action action, ConfigMap cm) {
-                            Map<String, String> labels = cm.getMetadata().getLabels();
-                            String type = labels.get(ClusterController.STRIMZI_TYPE_LABEL);
+                Watch watch = client.configMaps().inNamespace(namespace).withLabels(labels).watch(new Watcher<ConfigMap>() {
+                    @Override
+                    public void eventReceived(Action action, ConfigMap cm) {
+                        Map<String, String> labels = cm.getMetadata().getLabels();
+                        String type = labels.get(ClusterController.STRIMZI_TYPE_LABEL);
 
-                            final AbstractClusterOperations<?, ?> cluster;
-                            if (type == null) {
-                                log.warn("Missing type in Config Map {}", cm.getMetadata().getName());
-                                return;
-                            } else if (type.equals(KafkaCluster.TYPE)) {
-                                cluster = kafkaClusterOperations;
-                            } else if (type.equals(KafkaConnectCluster.TYPE)) {
-                                cluster = kafkaConnectClusterOperations;
-                            } else if (type.equals(KafkaConnectS2ICluster.TYPE)) {
-                                cluster = kafkaConnectS2IClusterOperations;
-                            } else {
-                                log.warn("Unknown type {} received in Config Map {}", labels.get(ClusterController.STRIMZI_TYPE_LABEL), cm.getMetadata().getName());
-                                return;
-                            }
-                            String name = cm.getMetadata().getName();
-                            switch (action) {
-                                case ADDED:
-                                    log.info("New ConfigMap {}", name);
-                                    cluster.create(namespace, name);
-                                    break;
-                                case DELETED:
-                                    log.info("Deleted ConfigMap {}", name);
-                                    cluster.delete(namespace, name);
-                                    break;
-                                case MODIFIED:
-                                    log.info("Modified ConfigMap {}", name);
-                                    cluster.update(namespace, name);
-                                    break;
-                                case ERROR:
-                                    log.error("Failed ConfigMap {}", name);
-                                    reconcile(namespace);
-                                    break;
-                                default:
-                                    log.error("Unknown action: {}", name);
-                                    reconcile(namespace);
-                            }
+                        final AbstractClusterOperations<?, ?> cluster;
+                        if (type == null) {
+                            log.warn("Missing type in Config Map {}", cm.getMetadata().getName());
+                            return;
+                        } else if (type.equals(KafkaCluster.TYPE)) {
+                            cluster = kafkaClusterOperations;
+                        } else if (type.equals(KafkaConnectCluster.TYPE)) {
+                            cluster = kafkaConnectClusterOperations;
+                        } else if (type.equals(KafkaConnectS2ICluster.TYPE)) {
+                            cluster = kafkaConnectS2IClusterOperations;
+                        } else {
+                            log.warn("Unknown type {} received in Config Map {}", labels.get(ClusterController.STRIMZI_TYPE_LABEL), cm.getMetadata().getName());
+                            return;
+                        }
+                        String name = cm.getMetadata().getName();
+                        switch (action) {
+                            case ADDED:
+                                log.info("New ConfigMap {}", name);
+                                cluster.create(namespace, name);
+                                break;
+                            case DELETED:
+                                log.info("Deleted ConfigMap {}", name);
+                                cluster.delete(namespace, name);
+                                break;
+                            case MODIFIED:
+                                log.info("Modified ConfigMap {}", name);
+                                cluster.update(namespace, name);
+                                break;
+                            case ERROR:
+                                log.error("Failed ConfigMap {}", name);
+                                reconcile();
+                                break;
+                            default:
+                                log.error("Unknown action: {}", name);
+                                reconcile();
+                        }
+                    }
+
+                    @Override
+                    public void onClose(KubernetesClientException e) {
+                        if (e != null) {
+                            log.error("Watcher closed with exception", e);
+                        } else {
+                            log.error("Watcher closed");
                         }
 
-
-                        @Override
-                        public void onClose(KubernetesClientException e) {
-                            if (e != null) {
-                                log.error("Watcher closed with exception", e);
-                            } else {
-                                log.error("Watcher closed");
-                            }
-
-                            recreateConfigMapWatch();
-                        }
-                    });
-                    watches.add(watch);
-                }
-                future.complete(watches);
+                        recreateConfigMapWatch();
+                    }
+                });
+                future.complete(watch);
             }, res -> {
                 if (res.succeeded())    {
                     log.info("ConfigMap watcher up and running for labels {}", labels);
@@ -205,7 +197,7 @@ public class ClusterController extends AbstractVerticle {
     /*
       Periodical reconciliation (in case we lost some event)
      */
-    private void reconcile(String namespace) {
+    private void reconcile() {
         kafkaClusterOperations.reconcile(namespace, labels);
         kafkaConnectClusterOperations.reconcile(namespace, labels);
         kafkaConnectS2IClusterOperations.reconcile(namespace, labels);
