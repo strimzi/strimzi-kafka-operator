@@ -67,6 +67,7 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
         this.buildConfigOperations = buildConfigOperations;
     }
 
+    @Override
     public void create(String namespace, String name, Handler<AsyncResult<Void>> handler) {
         if (isOpenShift) {
             execute(CLUSTER_TYPE, OP_CREATE, namespace, name, create, handler);
@@ -128,6 +129,7 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
         }
     };
 
+    @Override
     public void update(String namespace, String name, Handler<AsyncResult<Void>> handler) {
         if (isOpenShift) {
             execute(CLUSTER_TYPE, OP_UPDATE, namespace, name, update, handler);
@@ -259,6 +261,7 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
         reconcile(namespace, labels, CLUSTER_TYPE);
     }
 
+    @Override
     protected List<DeploymentConfig> getResources(String namespace, Map<String, String> kafkaLabels) {
         return deploymentConfigOperations.list(namespace, kafkaLabels);
     }
