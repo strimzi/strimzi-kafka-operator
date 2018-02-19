@@ -148,7 +148,7 @@ public class KafkaConnectClusterTest {
     @Test
     public void testDiffScaleUp() {
         Deployment dep = kc.generateDeployment();
-        dep.getSpec().setReplicas(dep.getSpec().getReplicas()-1);
+        dep.getSpec().setReplicas(dep.getSpec().getReplicas() - 1);
         ClusterDiffResult diff = kc.diff(dep);
 
         assertFalse(diff.isDifferent());
@@ -161,7 +161,7 @@ public class KafkaConnectClusterTest {
     @Test
     public void testDiffScaleDown() {
         Deployment dep = kc.generateDeployment();
-        dep.getSpec().setReplicas(dep.getSpec().getReplicas()+1);
+        dep.getSpec().setReplicas(dep.getSpec().getReplicas() + 1);
         ClusterDiffResult diff = kc.diff(dep);
 
         assertFalse(diff.isDifferent());

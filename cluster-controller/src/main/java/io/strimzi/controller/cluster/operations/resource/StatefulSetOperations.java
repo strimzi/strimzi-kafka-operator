@@ -48,54 +48,52 @@ public class StatefulSetOperations extends AbstractScalableOperations<Kubernetes
     public void rollingUpdate(String namespace, String name, Handler<AsyncResult<Void>> handler) {
         final int replicas = get(namespace, name).getSpec().getReplicas();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
-                future -> {
-                    try {
-                        log.info("Doing rolling update of stateful set {} in namespace {}", name, namespace);
+            future -> {
+                try {
+                    log.info("Doing rolling update of stateful set {} in namespace {}", name, namespace);
 
-                        for (int i = 0; i < replicas; i++) {
-                            String podName = name + "-" + i;
-                            log.info("Rolling pod {}", podName);
-                            Future deleted = Future.future();
-                            Watcher<Pod> watcher = new RollingUpdateWatcher(deleted);
+                    for (int i = 0; i < replicas; i++) {
+                        String podName = name + "-" + i;
+                        log.info("Rolling pod {}", podName);
+                        Future deleted = Future.future();
+                        Watcher<Pod> watcher = new RollingUpdateWatcher(deleted);
 
-                            Watch watch = podOperations.watch(namespace, podName, watcher);
-                            Future fut = podOperations.delete(namespace, podName);
+                        Watch watch = podOperations.watch(namespace, podName, watcher);
+                        Future fut = podOperations.delete(namespace, podName);
 
-                            // TODO do this async
-                            while (!fut.isComplete() && !deleted.isComplete()) {
-                                log.info("Waiting for pod {} to be deleted", podName);
-                                Thread.sleep(1000);
-                            }
-                            // TODO Check success of fut and deleted futures
+                        // TODO do this async
+                        while (!fut.isComplete() && !deleted.isComplete()) {
+                            log.info("Waiting for pod {} to be deleted", podName);
+                            Thread.sleep(1000);
+                        }
+                        // TODO Check success of fut and deleted futures
 
-                            watch.close();
+                        watch.close();
 
-                            while (!podOperations.isPodReady(namespace, podName)) {
-                                log.info("Waiting for pod {} to get ready", podName);
-                                Thread.sleep(1000);
-                            };
-
-                            log.info("Pod {} rolling update complete", podName);
+                        while (!podOperations.isPodReady(namespace, podName)) {
+                            log.info("Waiting for pod {} to get ready", podName);
+                            Thread.sleep(1000);
                         }
 
-                        future.complete();
+                        log.info("Pod {} rolling update complete", podName);
                     }
-                    catch (Exception e) {
-                        log.error("Caught exception while doing manual rolling update of stateful set {} in namespace {}", name, namespace);
-                        future.fail(e);
-                    }
-                },
-                false,
-                res -> {
-                    if (res.succeeded()) {
-                        log.info("Stateful set {} in namespace {} has been rolled", name, namespace);
-                        handler.handle(Future.succeededFuture());
-                    }
-                    else {
-                        log.error("Failed to do rolling update of stateful set {} in namespace {}: {}", name, namespace, res.cause().toString());
-                        handler.handle(Future.failedFuture(res.cause()));
-                    }
+
+                    future.complete();
+                } catch (Exception e) {
+                    log.error("Caught exception while doing manual rolling update of stateful set {} in namespace {}", name, namespace);
+                    future.fail(e);
                 }
+            },
+            false,
+            res -> {
+                if (res.succeeded()) {
+                    log.info("Stateful set {} in namespace {} has been rolled", name, namespace);
+                    handler.handle(Future.succeededFuture());
+                } else {
+                    log.error("Failed to do rolling update of stateful set {} in namespace {}: {}", name, namespace, res.cause().toString());
+                    handler.handle(Future.failedFuture(res.cause()));
+                }
+            }
         );
     }
 
@@ -131,8 +129,7 @@ public class StatefulSetOperations extends AbstractScalableOperations<Kubernetes
             if (e != null && !deleted.isComplete()) {
                 log.error("Kubernetes watcher has been closed with exception!", e);
                 deleted.fail(e);
-            }
-            else {
+            } else {
                 log.info("Kubernetes watcher has been closed!");
             }
         }

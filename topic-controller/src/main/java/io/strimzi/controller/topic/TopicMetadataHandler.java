@@ -73,7 +73,7 @@ public abstract class TopicMetadataHandler implements Handler<AsyncResult<TopicM
             vertx.runOnContext(timerId -> kafka.topicMetadata(topicName, this));
         } else {
             vertx.setTimer(TimeUnit.MILLISECONDS.convert(delay, TimeUnit.MILLISECONDS),
-                    timerId -> kafka.topicMetadata(topicName, this));
+                timerId -> kafka.topicMetadata(topicName, this));
         }
     }
 

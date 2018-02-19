@@ -8,7 +8,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static io.strimzi.test.Exec.*;
+import static io.strimzi.test.Exec.isExecutableOnPath;
+import static io.strimzi.test.Exec.exec;
 
 /**
  * A {@link KubeClient} implementation wrapping {@code oc}.
@@ -32,7 +33,7 @@ public class Oc implements KubeClient {
                 cmd.add("--resource=" + resource);
             }
             for (int i = 0; i < p.verbs().length; i++) {
-                cmd.add("--verb="+p.verbs()[i]);
+                cmd.add("--verb=" + p.verbs()[i]);
             }
         }
         exec(cmd);
@@ -43,9 +44,9 @@ public class Oc implements KubeClient {
     public void createRoleBinding(String bindingName, String roleName, String... user) {
         exec(OC, "login", "-u", "system:admin");
         List<String> cmd = new ArrayList<>();
-        cmd.addAll(Arrays.asList(OC, "create", "rolebinding", bindingName, "--role="+roleName));
+        cmd.addAll(Arrays.asList(OC, "create", "rolebinding", bindingName, "--role=" + roleName));
         for (int i = 0; i < user.length; i++) {
-            cmd.add("--user="+user[i]);
+            cmd.add("--user=" + user[i]);
         }
         exec(cmd);
         exec(OC, "login", "-u", "developer");

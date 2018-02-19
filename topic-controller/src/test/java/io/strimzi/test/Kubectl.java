@@ -8,7 +8,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static io.strimzi.test.Exec.*;
+import static io.strimzi.test.Exec.isExecutableOnPath;
+import static io.strimzi.test.Exec.exec;
 
 /**
  * A {@link KubeClient} wrapping {@code kubectl}.
@@ -31,7 +32,7 @@ public class Kubectl implements KubeClient {
                 cmd.add("--resource=" + resource);
             }
             for (int i = 0; i < p.verbs().length; i++) {
-                cmd.add("--verb="+p.verbs()[i]);
+                cmd.add("--verb=" + p.verbs()[i]);
             }
         }
         exec(cmd);
@@ -40,9 +41,9 @@ public class Kubectl implements KubeClient {
     @Override
     public void createRoleBinding(String bindingName, String roleName, String... users) {
         List<String> cmd = new ArrayList<>();
-        cmd.addAll(Arrays.asList(KUBECTL, "create", "rolebinding", bindingName, "--role="+roleName));
+        cmd.addAll(Arrays.asList(KUBECTL, "create", "rolebinding", bindingName, "--role=" + roleName));
         for (int i = 0; i < users.length; i++) {
-            cmd.add("--user="+users[i]);
+            cmd.add("--user=" + users[i]);
         }
         exec(cmd);
     }

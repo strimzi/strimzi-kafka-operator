@@ -19,7 +19,7 @@ import java.util.Map;
  */
 public class Main {
 
-    private final static Logger logger = LoggerFactory.getLogger(Main.class);
+    private final static Logger LOGGER = LoggerFactory.getLogger(Main.class);
 
     public static void main(String[] args) {
         Main main = new Main();
@@ -39,9 +39,9 @@ public class Main {
         Session session = new Session(kubeClient, config);
         vertx.deployVerticle(session, ar -> {
             if (ar.succeeded()) {
-                logger.info("Session deployed");
+                LOGGER.info("Session deployed");
             } else {
-                logger.error("Error deploying Session", ar.cause());
+                LOGGER.error("Error deploying Session", ar.cause());
             }
         });
     }

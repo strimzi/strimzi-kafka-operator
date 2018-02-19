@@ -84,19 +84,19 @@ public class KafkaClusterOperationsTest {
         }
     }
 
-    @Parameterized.Parameters( name = "{0}" )
+    @Parameterized.Parameters(name = "{0}")
     public static Iterable<Params> data() {
         boolean[] shiftiness = {true, false};
         boolean[] metrics = {true, false};
         String[] storageConfigs = {
-                "{\"type\": \"ephemeral\"}",
-                "{\"type\": \"persistent-claim\", " +
-                        "\"size\": \"123\", " +
-                        "\"class\": \"foo\"," +
-                        "\"delete-claim\": true}",
-                "{\"type\": \"local\", " +
-                        "\"size\": \"123\", " +
-                        "\"class\": \"foo\"}"
+            "{\"type\": \"ephemeral\"}",
+            "{\"type\": \"persistent-claim\", " +
+                    "\"size\": \"123\", " +
+                    "\"class\": \"foo\"," +
+                    "\"delete-claim\": true}",
+            "{\"type\": \"local\", " +
+                    "\"size\": \"123\", " +
+                    "\"class\": \"foo\"}"
         };
         List<Params> result = new ArrayList();
         for (boolean shift: shiftiness) {
@@ -197,7 +197,7 @@ public class KafkaClusterOperationsTest {
             List<StatefulSet> capturedSs = ssCaptor.getAllValues();
             // We expect a statefulSet for kafka and zookeeper...
             context.assertEquals(set(KafkaCluster.kafkaClusterName(clusterCmName), ZookeeperCluster.zookeeperClusterName(clusterCmName)),
-                    capturedSs.stream().map(ss->ss.getMetadata().getName()).collect(Collectors.toSet()));
+                    capturedSs.stream().map(ss -> ss.getMetadata().getName()).collect(Collectors.toSet()));
 
             // Verify that we wait for readiness
             verify(mockEndpointOps, times(2)).waitUntilReady(any(), any(), anyLong(), anyLong());

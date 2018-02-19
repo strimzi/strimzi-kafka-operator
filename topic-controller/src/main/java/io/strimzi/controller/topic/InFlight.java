@@ -38,7 +38,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 class InFlight<T> {
 
-    private final static Logger logger = LoggerFactory.getLogger(InFlight.class);
+    private final static Logger LOGGER = LoggerFactory.getLogger(InFlight.class);
 
     private final Vertx vertx;
 
@@ -55,11 +55,11 @@ class InFlight<T> {
         public InflightHandler(T key, String fur, Handler<AsyncResult<Void>> h1) {
             this.fur = fur;
             this.h1 = h1;
-            this.h2 = x-> {
+            this.h2 = x -> {
                 // remove from map if fut is the current key
-                map.compute(key, (k2, v)-> {
+                map.compute(key, (k2, v) -> {
                     if (v == this) {
-                        logger.debug("Removing finished action {}", this);
+                        LOGGER.debug("Removing finished action {}", this);
                         return null;
                     } else {
                         return v;
@@ -103,18 +103,18 @@ class InFlight<T> {
      */
     public void enqueue(T key, Handler<AsyncResult<Void>> resultHandler, Handler<Future<Void>> action) {
         InflightHandler fut = new InflightHandler(key, action.toString(), resultHandler);
-        logger.debug("resultHandler:{}, action:{}, fut:{}", resultHandler, action, fut);
+        LOGGER.debug("resultHandler:{}, action:{}, fut:{}", resultHandler, action, fut);
         map.compute(key, (k, current) -> {
             if (current == null) {
-                logger.debug("Queueing {} for immediate execution", action);
-                vertx.runOnContext(ignored-> action.handle(fut.fut));
+                LOGGER.debug("Queueing {} for immediate execution", action);
+                vertx.runOnContext(ignored -> action.handle(fut.fut));
                 return fut;
             } else {
-                logger.debug("Queueing {} for deferred execution after {}", action, current);
+                LOGGER.debug("Queueing {} for deferred execution after {}", action, current);
                 current.setHandler(ar -> {
-                    logger.debug("Queueing {} after deferred execution", action);
+                    LOGGER.debug("Queueing {} after deferred execution", action);
                     vertx.runOnContext(ar2 ->
-                            action.handle(fut.fut) );
+                            action.handle(fut.fut));
                 });
                 return fut;
             }

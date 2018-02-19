@@ -23,7 +23,7 @@ import java.util.List;
  */
 public class ZkTopicStore implements TopicStore {
 
-    private final static Logger logger = LoggerFactory.getLogger(ZkTopicStore.class);
+    private final static Logger LOGGER = LoggerFactory.getLogger(ZkTopicStore.class);
     public static final String TOPICS_PATH = "/strimzi/topics";
 
     private final Zk zk;
@@ -41,7 +41,7 @@ public class ZkTopicStore implements TopicStore {
         zk.create(path, null, acl, CreateMode.PERSISTENT, result -> {
             if (result.failed()) {
                 if (!(result.cause() instanceof KeeperException.NodeExistsException)) {
-                    logger.error("Error creating {}", path, result.cause());
+                    LOGGER.error("Error creating {}", path, result.cause());
                     throw new RuntimeException(result.cause());
                 }
             }
@@ -56,7 +56,7 @@ public class ZkTopicStore implements TopicStore {
     @Override
     public void read(TopicName topicName, Handler<AsyncResult<Topic>> handler) {
         String topicPath = getTopicPath(topicName);
-        logger.debug("read znode {}", topicPath);
+        LOGGER.debug("read znode {}", topicPath);
         zk.getData(topicPath, result -> {
             final AsyncResult<Topic> fut;
             if (result.succeeded()) {
@@ -65,7 +65,7 @@ public class ZkTopicStore implements TopicStore {
                 if (result.cause() instanceof KeeperException.NoNodeException) {
                     fut = Future.succeededFuture(null);
                 } else {
-                    fut = result.map((Topic)null);
+                    fut = result.map((Topic) null);
                 }
             }
             handler.handle(fut);
@@ -76,7 +76,7 @@ public class ZkTopicStore implements TopicStore {
     public void create(Topic topic, Handler<AsyncResult<Void>> handler) {
         byte[] data = TopicSerialization.toJson(topic);
         String topicPath = getTopicPath(topic.getTopicName());
-        logger.debug("create znode {}", topicPath);
+        LOGGER.debug("create znode {}", topicPath);
         zk.create(topicPath, data, acl, CreateMode.PERSISTENT, result -> {
             if (result.failed() && result.cause() instanceof KeeperException.NodeExistsException) {
                 handler.handle(Future.failedFuture(new EntityExistsException()));
@@ -91,7 +91,7 @@ public class ZkTopicStore implements TopicStore {
         byte[] data = TopicSerialization.toJson(topic);
         // TODO pass a non-zero version
         String topicPath = getTopicPath(topic.getTopicName());
-        logger.debug("update znode {}", topicPath);
+        LOGGER.debug("update znode {}", topicPath);
         zk.setData(topicPath, data, -1, handler);
     }
 
@@ -99,7 +99,7 @@ public class ZkTopicStore implements TopicStore {
     public void delete(TopicName topicName, Handler<AsyncResult<Void>> handler) {
         // TODO pass a non-zero version
         String topicPath = getTopicPath(topicName);
-        logger.debug("delete znode {}", topicPath);
+        LOGGER.debug("delete znode {}", topicPath);
         zk.delete(topicPath, -1, result -> {
             if (result.failed() && result.cause() instanceof KeeperException.NoNodeException) {
                 handler.handle(Future.failedFuture(new NoSuchEntityExistsException()));

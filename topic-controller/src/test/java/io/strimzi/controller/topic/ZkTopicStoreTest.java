@@ -51,7 +51,7 @@ public class ZkTopicStoreTest {
     @Test
     public void testCrud(TestContext context) throws ExecutionException, InterruptedException {
         Topic topic = new Topic.Builder("my_topic", 2,
-                (short)3, Collections.singletonMap("foo", "bar")).build();
+                (short) 3, Collections.singletonMap("foo", "bar")).build();
 
 
 
@@ -80,7 +80,7 @@ public class ZkTopicStoreTest {
         assertEquals(topic.getConfig(), readTopic.getConfig());
 
         // try to create it again: assert an error
-        store.create(topic, ar-> {
+        store.create(topic, ar -> {
             if (ar.succeeded()) {
                 context.fail("Should throw");
             } else {
@@ -95,7 +95,7 @@ public class ZkTopicStoreTest {
         Topic updated = new Topic.Builder(topic)
                 .withNumPartitions(3)
                 .withConfigEntry("fruit", "apple").build();
-        store.update(updated, ar->async2.complete());
+        store.update(updated, ar -> async2.complete());
         async2.await();
 
         // re-read it and assert equal
@@ -116,12 +116,12 @@ public class ZkTopicStoreTest {
 
         // delete it
         Async async4 = context.async();
-        store.delete(updated.getTopicName(), ar-> async4.complete());
+        store.delete(updated.getTopicName(), ar -> async4.complete());
         async4.await();
 
         // assert we can't read it again
         Async async5 = context.async();
-        store.read(new TopicName("my_topic"), ar-> {
+        store.read(new TopicName("my_topic"), ar -> {
             async5.complete();
             if (ar.succeeded()) {
                 context.assertNull(ar.result());
@@ -133,13 +133,13 @@ public class ZkTopicStoreTest {
 
         // delete it again: assert an error
         Async async6 = context.async();
-        store.delete(updated.getTopicName(), ar-> {
+        store.delete(updated.getTopicName(), ar -> {
             async6.complete();
             if (ar.succeeded()) {
                 context.fail("Should throw");
             } else {
                 if (!(ar.cause() instanceof TopicStore.NoSuchEntityExistsException)) {
-                    context.fail("Unexpected exception "+ar.cause());
+                    context.fail("Unexpected exception " + ar.cause());
                 }
             }
         });

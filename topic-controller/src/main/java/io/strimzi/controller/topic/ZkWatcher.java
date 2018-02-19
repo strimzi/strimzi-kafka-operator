@@ -23,7 +23,7 @@ public abstract class ZkWatcher {
     private volatile ZkWatcherState state = ZkWatcherState.NOT_STARTED;
     private volatile Zk zk;
 
-    private final ConcurrentHashMap<String,Boolean> children = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Boolean> children = new ConcurrentHashMap<>();
     private final String rootZNode;
 
     /**

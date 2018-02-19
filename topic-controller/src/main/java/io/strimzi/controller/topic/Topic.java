@@ -22,19 +22,19 @@ public class Topic {
         }
 
         public Builder(String topicName, int numPartitions) {
-            this(new TopicName(topicName), numPartitions, (short)-1, null);
+            this(new TopicName(topicName), numPartitions, (short) -1, null);
         }
 
         public Builder(TopicName topicName, int numPartitions) {
-            this(topicName, numPartitions, (short)-1, null);
+            this(topicName, numPartitions, (short) -1, null);
         }
 
         public Builder(String topicName, int numPartitions, Map<String, String> config) {
-            this(new TopicName(topicName), numPartitions, (short)-1, config);
+            this(new TopicName(topicName), numPartitions, (short) -1, config);
         }
 
         public Builder(TopicName topicName, int numPartitions, Map<String, String> config) {
-            this(topicName, numPartitions, (short)-1, config);
+            this(topicName, numPartitions, (short) -1, config);
         }
 
         public Builder(String topicName, int numPartitions, short numReplicas, Map<String, String> config) {

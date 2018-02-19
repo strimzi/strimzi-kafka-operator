@@ -54,7 +54,7 @@ public class TopicSerializationTest {
         assertEquals(wroteTopic.getTopicName().toString(), cm.getData().get(TopicSerialization.CM_KEY_NAME));
         assertEquals("2", cm.getData().get(TopicSerialization.CM_KEY_PARTITIONS));
         assertEquals("1", cm.getData().get(TopicSerialization.CM_KEY_REPLICAS));
-        assertEquals("{\"cleanup.policy\":\"bar\"}" , cm.getData().get(TopicSerialization.CM_KEY_CONFIG));
+        assertEquals("{\"cleanup.policy\":\"bar\"}", cm.getData().get(TopicSerialization.CM_KEY_CONFIG));
 
         Topic readTopic = TopicSerialization.fromConfigMap(cm);
         assertEquals(wroteTopic, readTopic);
@@ -89,7 +89,7 @@ public class TopicSerializationTest {
                 .withTopicName("test-topic")
                 .withConfigEntry("foo", "bar")
                 .withNumPartitions(3)
-                .withNumReplicas((short)2)
+                .withNumReplicas((short) 2)
                 .withMapName("gee")
                 .build();
         NewTopic newTopic = TopicSerialization.toNewTopic(topic, null);
@@ -101,7 +101,7 @@ public class TopicSerializationTest {
         // and only provides a package-access method to convert to topic details
         Method m = NewTopic.class.getDeclaredMethod("convertToTopicDetails");
         m.setAccessible(true);
-        CreateTopicsRequest.TopicDetails details = (CreateTopicsRequest.TopicDetails)m.invoke(newTopic);
+        CreateTopicsRequest.TopicDetails details = (CreateTopicsRequest.TopicDetails) m.invoke(newTopic);
         assertEquals(singletonMap("foo", "bar"), details.configs);
     }
 
@@ -111,7 +111,7 @@ public class TopicSerializationTest {
                 .withTopicName("test-topic")
                 .withConfigEntry("foo", "bar")
                 .withNumPartitions(3)
-                .withNumReplicas((short)2)
+                .withNumReplicas((short) 2)
                 .withMapName("gee")
                 .build();
         Map<ConfigResource, Config> config = TopicSerialization.toTopicConfig(topic);

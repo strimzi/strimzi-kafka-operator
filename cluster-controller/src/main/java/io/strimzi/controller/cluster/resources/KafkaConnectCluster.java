@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
-import io.strimzi.controller.cluster.operations.resource.DeploymentOperations;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,7 +24,7 @@ public class KafkaConnectCluster extends AbstractCluster {
     protected static final int REST_API_PORT = 8083;
     protected static final String REST_API_PORT_NAME = "rest-api";
 
-    private static String NAME_SUFFIX = "-connect";
+    private static final String NAME_SUFFIX = "-connect";
 
     // Kafka Connect configuration
     protected String bootstrapServers = DEFAULT_BOOTSTRAP_SERVERS;
@@ -128,7 +127,6 @@ public class KafkaConnectCluster extends AbstractCluster {
      * @param namespace Kubernetes/OpenShift namespace where cluster resources belong to
      * @param cluster   overall cluster name
      * @param dep The deployment from which to recover the cluster state
-     * @param imageStreamOperations ImageStream operations (may be null)
      * @return  Kafka Connect cluster instance
      */
     public static KafkaConnectCluster fromDeployment(
@@ -176,8 +174,7 @@ public class KafkaConnectCluster extends AbstractCluster {
         if (replicas > dep.getSpec().getReplicas()) {
             log.info("Diff: Expected replicas {}, actual replicas {}", replicas, dep.getSpec().getReplicas());
             scaleUp = true;
-        }
-        else if (replicas < dep.getSpec().getReplicas()) {
+        } else if (replicas < dep.getSpec().getReplicas()) {
             log.info("Diff: Expected replicas {}, actual replicas {}", replicas, dep.getSpec().getReplicas());
             scaleDown = true;
         }
@@ -201,11 +198,10 @@ public class KafkaConnectCluster extends AbstractCluster {
                 || !keyConverter.equals(vars.getOrDefault(KEY_KEY_CONVERTER, DEFAULT_KEY_CONVERTER))
                 || keyConverterSchemasEnable != Boolean.parseBoolean(vars.getOrDefault(KEY_KEY_CONVERTER_SCHEMAS_EXAMPLE, String.valueOf(DEFAULT_KEY_CONVERTER_SCHEMAS_EXAMPLE)))
                 || !valueConverter.equals(vars.getOrDefault(KEY_VALUE_CONVERTER, DEFAULT_VALUE_CONVERTER))
-                || keyConverterSchemasEnable != Boolean.parseBoolean(vars.getOrDefault(KEY_VALUE_CONVERTER_SCHEMAS_EXAMPLE, String.valueOf(DEFAULT_VALUE_CONVERTER_SCHEMAS_EXAMPLE)))
+                || valueConverterSchemasEnable != Boolean.parseBoolean(vars.getOrDefault(KEY_VALUE_CONVERTER_SCHEMAS_EXAMPLE, String.valueOf(DEFAULT_VALUE_CONVERTER_SCHEMAS_EXAMPLE)))
                 || configStorageReplicationFactor != Integer.parseInt(vars.getOrDefault(KEY_CONFIG_STORAGE_REPLICATION_FACTOR, String.valueOf(DEFAULT_CONFIG_STORAGE_REPLICATION_FACTOR)))
                 || offsetStorageReplicationFactor != Integer.parseInt(vars.getOrDefault(KEY_OFFSET_STORAGE_REPLICATION_FACTOR, String.valueOf(DEFAULT_OFFSET_STORAGE_REPLICATION_FACTOR)))
-                || statusStorageReplicationFactor != Integer.parseInt(vars.getOrDefault(KEY_STATUS_STORAGE_REPLICATION_FACTOR, String.valueOf(DEFAULT_STATUS_STORAGE_REPLICATION_FACTOR)))
-                ) {
+                || statusStorageReplicationFactor != Integer.parseInt(vars.getOrDefault(KEY_STATUS_STORAGE_REPLICATION_FACTOR, String.valueOf(DEFAULT_STATUS_STORAGE_REPLICATION_FACTOR)))) {
             log.info("Diff: Kafka Connect options changed");
             different = true;
             rollingUpdate = true;

@@ -57,27 +57,26 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
     public Future<Void> create(T resource) {
         Future<Void> fut = Future.future();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
-                future -> {
-                    String namespace = resource.getMetadata().getNamespace();
-                    String name = resource.getMetadata().getName();
-                    if (operation().inNamespace(namespace).withName(name).get() == null) {
-                        try {
-                            log.info("Creating {} {} in namespace {}", resourceKind, name, namespace);
-                            operation().createOrReplace(resource);
-                            log.info("{} {} in namespace {} has been created", resourceKind, name, namespace);
-                            future.complete();
-                        } catch (Exception e) {
-                            log.error("Caught exception while creating {} {} in namespace {}", resourceKind, name, namespace, e);
-                            future.fail(e);
-                        }
-                    }
-                    else {
-                        log.warn("{} {} in namespace {} already exists", resourceKind, name, namespace);
+            future -> {
+                String namespace = resource.getMetadata().getNamespace();
+                String name = resource.getMetadata().getName();
+                if (operation().inNamespace(namespace).withName(name).get() == null) {
+                    try {
+                        log.info("Creating {} {} in namespace {}", resourceKind, name, namespace);
+                        operation().createOrReplace(resource);
+                        log.info("{} {} in namespace {} has been created", resourceKind, name, namespace);
                         future.complete();
+                    } catch (Exception e) {
+                        log.error("Caught exception while creating {} {} in namespace {}", resourceKind, name, namespace, e);
+                        future.fail(e);
                     }
-                },
-                false,
-                fut.completer()
+                } else {
+                    log.warn("{} {} in namespace {} already exists", resourceKind, name, namespace);
+                    future.complete();
+                }
+            },
+            false,
+            fut.completer()
         );
         return fut;
     }
@@ -92,23 +91,23 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
     public Future<Void> delete(String namespace, String name) {
         Future fut = Future.future();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
-                future -> {
-                    if (operation().inNamespace(namespace).withName(name).get() != null) {
-                        try {
-                            log.info("Deleting {} {} in namespace {}", resourceKind, name, namespace);
-                            operation().inNamespace(namespace).withName(name).delete();
-                            log.info("{} {} in namespace {} has been deleted", resourceKind, name, namespace);
-                            future.complete();
-                        } catch (Exception e) {
-                            log.error("Caught exception while deleting {} {} in namespace {}", resourceKind, name, namespace, e);
-                            future.fail(e);
-                        }
-                    } else {
-                        log.warn("{} {} in namespace {} doesn't exist, so cannot be deleted", resourceKind, name, namespace);
+            future -> {
+                if (operation().inNamespace(namespace).withName(name).get() != null) {
+                    try {
+                        log.info("Deleting {} {} in namespace {}", resourceKind, name, namespace);
+                        operation().inNamespace(namespace).withName(name).delete();
+                        log.info("{} {} in namespace {} has been deleted", resourceKind, name, namespace);
                         future.complete();
+                    } catch (Exception e) {
+                        log.error("Caught exception while deleting {} {} in namespace {}", resourceKind, name, namespace, e);
+                        future.fail(e);
                     }
-                }, false,
-                fut.completer()
+                } else {
+                    log.warn("{} {} in namespace {} doesn't exist, so cannot be deleted", resourceKind, name, namespace);
+                    future.complete();
+                }
+            }, false,
+            fut.completer()
         );
         return fut;
     }
@@ -136,20 +135,19 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
     public Future<Void> patch(String namespace, String name, boolean cascading, T patch) {
         Future<Void> fut = Future.future();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
-                future -> {
-                    try {
-                        log.info("Patching {} resource {} in namespace {} with {}", resourceKind, name, namespace, patch);
-                        operation().inNamespace(namespace).withName(name).cascading(cascading).patch(patch);
-                        log.info("{} {} in namespace {} has been patched", resourceKind, name, namespace);
-                        future.complete();
-                    }
-                    catch (Exception e) {
-                        log.error("Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
-                        future.fail(e);
-                    }
-                },
-                true,
-                fut.completer()
+            future -> {
+                try {
+                    log.info("Patching {} resource {} in namespace {} with {}", resourceKind, name, namespace, patch);
+                    operation().inNamespace(namespace).withName(name).cascading(cascading).patch(patch);
+                    log.info("{} {} in namespace {} has been patched", resourceKind, name, namespace);
+                    future.complete();
+                } catch (Exception e) {
+                    log.error("Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
+                    future.fail(e);
+                }
+            },
+            true,
+            fut.completer()
         );
         return fut;
     }
@@ -189,33 +187,32 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
 
         vertx.setPeriodic(pollIntervalMs, timerId -> {
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
-                    future -> {
-                        try {
-                            if (isReady(namespace, name))   {
-                                future.complete();
-                            } else {
-                                future.fail("Not ready yet");
-                            }
-                        }
-                        catch (Exception e) {
-                            log.warn("Caught exception while waiting for {} {} in namespace {} to get ready", resourceKind, name, namespace, e);
-                            future.fail(e);
-                        }
-                    },
-                    false,
-                    res -> {
-                        if (res.succeeded())    {
-                            vertx.cancelTimer(timerId);
-                            log.info("{} {} in namespace {} is ready", resourceKind, name, namespace);
-                            fut.complete();
+                future -> {
+                    try {
+                        if (isReady(namespace, name))   {
+                            future.complete();
                         } else {
-                            if (System.currentTimeMillis() - startTime > timeoutMs)   {
-                                vertx.cancelTimer(timerId);
-                                log.error("Exceeded timeoutMs of {} ms while waiting for {} {} in namespace {} to be ready", timeoutMs, resourceKind, name, namespace);
-                                fut.fail(new TimeoutException());
-                            }
+                            future.fail("Not ready yet");
+                        }
+                    } catch (Exception e) {
+                        log.warn("Caught exception while waiting for {} {} in namespace {} to get ready", resourceKind, name, namespace, e);
+                        future.fail(e);
+                    }
+                },
+                false,
+                res -> {
+                    if (res.succeeded())    {
+                        vertx.cancelTimer(timerId);
+                        log.info("{} {} in namespace {} is ready", resourceKind, name, namespace);
+                        fut.complete();
+                    } else {
+                        if (System.currentTimeMillis() - startTime > timeoutMs)   {
+                            vertx.cancelTimer(timerId);
+                            log.error("Exceeded timeoutMs of {} ms while waiting for {} {} in namespace {} to be ready", timeoutMs, resourceKind, name, namespace);
+                            fut.fail(new TimeoutException());
                         }
                     }
+                }
             );
         });
 

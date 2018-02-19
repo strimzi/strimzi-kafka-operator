@@ -25,7 +25,7 @@ public class Config {
     }
 
     /** A java string */
-    private static Type<? extends String> STRING = new Type<String>() {
+    private static final Type<? extends String> STRING = new Type<String>() {
         @Override
         public String parse(String s) {
             return s;
@@ -33,7 +33,7 @@ public class Config {
     };
 
     /** A java Long */
-    private static Type<? extends Long> LONG = new Type<Long>() {
+    private static final Type<? extends Long> LONG = new Type<Long>() {
         @Override
         public Long parse(String s) {
             return Long.parseLong(s);
@@ -44,7 +44,7 @@ public class Config {
      * A time duration composed of a non-negative integer quantity and time unit taken from {@link TimeUnit}.
      * For example '5 seconds'.
      */
-    private static Type<? extends Long> DURATION = new Type<Long>() {
+    private static final Type<? extends Long> DURATION = new Type<Long>() {
 
         private final Pattern pattern = Pattern.compile("([0-9]+) *([a-z]+)", Pattern.CASE_INSENSITIVE);
 
@@ -65,7 +65,7 @@ public class Config {
     /**
      * A kubernetes selector.
      */
-    private static Type<? extends LabelPredicate> LABEL_PREDICATE = new Type<LabelPredicate>() {
+    private static final Type<? extends LabelPredicate> LABEL_PREDICATE = new Type<LabelPredicate>() {
         @Override
         public LabelPredicate parse(String s) {
             return LabelPredicate.fromString(s);
@@ -107,7 +107,7 @@ public class Config {
     private static final Set<Type> TYPES = new HashSet<>();
 
     /** A comma-separated list of key=value pairs for selecting ConfigMaps that describe topics. */
-    public static final Value<LabelPredicate> LABELS = new Value(TC_CM_LABELS, LABEL_PREDICATE,"strimzi.io/kind=topic");
+    public static final Value<LabelPredicate> LABELS = new Value(TC_CM_LABELS, LABEL_PREDICATE, "strimzi.io/kind=topic");
 
     /** A comma-separated list of kafka bootstrap servers. */
     public static final Value<String> KAFKA_BOOTSTRAP_SERVERS = new Value(TC_KAFKA_BOOTSTRAP_SERVERS, STRING, true);
@@ -196,11 +196,11 @@ public class Config {
     }
 
     public <T> T get(Value<T> value, T defaultValue) {
-        return (T)this.map.getOrDefault(value.key, defaultValue);
+        return (T) this.map.getOrDefault(value.key, defaultValue);
     }
 
     public <T> T get(Value<T> value) {
-        return (T)this.map.get(value.key);
+        return (T) this.map.get(value.key);
     }
 
     @Override

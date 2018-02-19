@@ -19,7 +19,6 @@ import java.util.Map;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
-import static java.util.Collections.singletonMap;
 
 @RunWith(VertxUnitRunner.class)
 public class ControllerAssignedKafkaImplTest {
@@ -56,7 +55,7 @@ public class ControllerAssignedKafkaImplTest {
         }
 
         static List<String> verifyInProgress(String... partitions) {
-            List<String> result = new ArrayList(2*partitions.length);
+            List<String> result = new ArrayList(2 * partitions.length);
             for (String partition: partitions) {
                 result.add("--verify-in-progress");
                 result.add(partition);
@@ -65,7 +64,7 @@ public class ControllerAssignedKafkaImplTest {
         }
 
         static List<String> verifySuccess(String... partitions) {
-            List<String> result = new ArrayList(2*partitions.length);
+            List<String> result = new ArrayList(2 * partitions.length);
             for (String partition: partitions) {
                 result.add("--verify-success");
                 result.add(partition);

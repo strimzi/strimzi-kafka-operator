@@ -23,9 +23,9 @@ public class LabelPredicate implements Predicate<HasMetadata> {
         if (labels.length % 2 != 0) {
             throw new IllegalArgumentException();
         }
-        this.labels = new HashMap<>(labels.length/2);
-        for (int i = 0; i < labels.length; i+=2) {
-            this.labels.put(labels[i], labels[i+1]);
+        this.labels = new HashMap<>(labels.length / 2);
+        for (int i = 0; i < labels.length; i += 2) {
+            this.labels.put(labels[i], labels[i + 1]);
         }
         checkLabels(this.labels);
     }
@@ -77,7 +77,7 @@ public class LabelPredicate implements Predicate<HasMetadata> {
         Matcher keyMatcher = keyPattern.matcher(key);
         if (keyMatcher.matches()) {
             String prefix = keyMatcher.group(1);
-            if (prefix != null && !isSubdomain(prefix.substring(0, prefix.length()-1))) {
+            if (prefix != null && !isSubdomain(prefix.substring(0, prefix.length() - 1))) {
                 throw new IllegalArgumentException("The label prefix " + prefix + " is not a valid subdomain");
             }
             String name = keyMatcher.group(2);

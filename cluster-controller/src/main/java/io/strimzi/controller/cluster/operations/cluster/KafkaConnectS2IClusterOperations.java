@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.openshift.api.model.BuildConfig;
 import io.fabric8.openshift.api.model.DeploymentConfig;
 import io.fabric8.openshift.api.model.ImageStream;
-import io.strimzi.controller.cluster.ClusterController;
 import io.strimzi.controller.cluster.operations.resource.BuildConfigOperations;
 import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
 import io.strimzi.controller.cluster.operations.resource.DeploymentConfigOperations;
@@ -25,11 +24,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * CRUD-style operations on a Kafka Connect cluster
@@ -182,8 +178,7 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
             if (diff.isScaleDown())    {
                 log.info("Scaling down {} deployment {} in namespace {}", clusterDescription, connect.getName(), namespace);
                 return deploymentConfigOperations.scaleDown(namespace, connect.getName(), connect.getReplicas());
-            }
-            else {
+            } else {
                 return Future.succeededFuture();
             }
         }
@@ -192,9 +187,7 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
             if (diff.isDifferent()) {
                 return serviceOperations.patch(namespace, connect.getName(),
                         connect.patchService(serviceOperations.get(namespace, connect.getName())));
-            }
-            else
-            {
+            } else {
                 return Future.succeededFuture();
             }
         }
@@ -203,9 +196,7 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
             if (diff.isDifferent()) {
                 return deploymentConfigOperations.patch(namespace, connect.getName(),
                         connect.patchDeploymentConfig(deploymentConfigOperations.get(namespace, connect.getName())));
-            }
-            else
-            {
+            } else {
                 return Future.succeededFuture();
             }
         }
@@ -214,9 +205,7 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
             if (diff.isDifferent()) {
                 return buildConfigOperations.patch(namespace, connect.getName(),
                         connect.patchBuildConfig(buildConfigOperations.get(namespace, connect.getName())));
-            }
-            else
-            {
+            } else {
                 return Future.succeededFuture();
             }
         }
@@ -225,9 +214,7 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
             if (diff.isDifferent()) {
                 return imagesStreamOperations.patch(namespace, connect.getSourceImageStreamName(),
                         connect.patchSourceImageStream(imagesStreamOperations.get(namespace, connect.getSourceImageStreamName())));
-            }
-            else
-            {
+            } else {
                 return Future.succeededFuture();
             }
         }
@@ -236,9 +223,7 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
             if (diff.isDifferent()) {
                 return imagesStreamOperations.patch(namespace, connect.getName(),
                         connect.patchTargetImageStream(imagesStreamOperations.get(namespace, connect.getName())));
-            }
-            else
-            {
+            } else {
                 return Future.succeededFuture();
             }
         }
@@ -246,8 +231,7 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
         private Future<Void> scaleUp(KafkaConnectS2ICluster connect, String namespace, ClusterDiffResult diff) {
             if (diff.isScaleUp()) {
                 return deploymentConfigOperations.scaleUp(namespace, connect.getName(), connect.getReplicas());
-            }
-            else {
+            } else {
                 return Future.succeededFuture();
             }
         }

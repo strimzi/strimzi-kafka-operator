@@ -33,7 +33,7 @@ import java.util.Arrays;
  */
 public class KubeClusterResource extends ExternalResource {
 
-    private static final Logger logger = LoggerFactory.getLogger(KubeClusterResource.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(KubeClusterResource.class);
     private final boolean shouldStartCluster = System.getenv("CI") == null;
     private final KubeCluster cluster;
     private final KubeClient client;
@@ -46,22 +46,22 @@ public class KubeClusterResource extends ExternalResource {
         KubeCluster cluster = null;
         for (KubeCluster kc : new KubeCluster[]{new OpenShift(), Minikube.minikube(), Minikube.minishift()}) {
             if (kc.isAvailable()) {
-                logger.debug("Cluster {} is installed", kc);
+                LOGGER.debug("Cluster {} is installed", kc);
                 if (shouldStartCluster) {
-                    logger.debug("Using cluster {}", kc);
+                    LOGGER.debug("Using cluster {}", kc);
                     cluster = kc;
                     break;
                 } else {
                     if (kc.isClusterUp()) {
-                        logger.debug("Cluster {} is running", kc);
+                        LOGGER.debug("Cluster {} is running", kc);
                         cluster = kc;
                         break;
                     } else {
-                        logger.debug("Cluster {} is not running", kc);
+                        LOGGER.debug("Cluster {} is not running", kc);
                     }
                 }
             } else {
-                logger.debug("Cluster {} is not installed", kc );
+                LOGGER.debug("Cluster {} is not installed", kc);
             }
         }
         this.cluster = cluster;
@@ -91,7 +91,7 @@ public class KubeClusterResource extends ExternalResource {
             if (cluster.isClusterUp()) {
                 throw new RuntimeException("Cluster " + cluster + " is already up");
             }
-            logger.info("Starting cluster {}", cluster);
+            LOGGER.info("Starting cluster {}", cluster);
             // It can happen that if the VM exits abnormally the cluster remains up, and further tests don't work because
             // it appears there are two brokers with id 1, so use a shutdown hook to kill the cluster.
             startedCluster = true;
@@ -133,7 +133,7 @@ public class KubeClusterResource extends ExternalResource {
         if (startedCluster) {
             startedCluster = false;
             try {
-                logger.info("Executing oc cluster down");
+                LOGGER.info("Executing oc cluster down");
                 cluster.clusterDown();
             } catch (Exception e) {
                 e.printStackTrace();

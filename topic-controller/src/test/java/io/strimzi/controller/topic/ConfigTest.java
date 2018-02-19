@@ -15,12 +15,12 @@ import static org.junit.Assert.fail;
 
 public class ConfigTest {
 
-    private static final Map<String, String> mandatory = new HashMap<>();
+    private static final Map<String, String> MANDATORY = new HashMap<>();
 
     static {
-        mandatory.put(Config.ZOOKEEPER_CONNECT.key, "localhost:2181");
-        mandatory.put(Config.KAFKA_BOOTSTRAP_SERVERS.key, "localhost:9092");
-        mandatory.put(Config.NAMESPACE.key, "default");
+        MANDATORY.put(Config.ZOOKEEPER_CONNECT.key, "localhost:2181");
+        MANDATORY.put(Config.KAFKA_BOOTSTRAP_SERVERS.key, "localhost:9092");
+        MANDATORY.put(Config.NAMESPACE.key, "default");
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -35,14 +35,14 @@ public class ConfigTest {
 
     @Test
     public void defaults() {
-        Map<String, String> map = new HashMap<>(mandatory);
+        Map<String, String> map = new HashMap<>(MANDATORY);
         Config c = new Config(map);
         assertEquals(20_000, c.get(Config.ZOOKEEPER_SESSION_TIMEOUT_MS).intValue());
     }
 
     @Test
     public void override() {
-        Map<String, String> map = new HashMap<>(mandatory);
+        Map<String, String> map = new HashMap<>(MANDATORY);
         map.put(Config.ZOOKEEPER_SESSION_TIMEOUT_MS.key, "13 seconds");
 
         Config c = new Config(map);
@@ -51,7 +51,7 @@ public class ConfigTest {
 
     @Test
     public void intervals() {
-        Map<String, String> map = new HashMap<>(mandatory);
+        Map<String, String> map = new HashMap<>(MANDATORY);
 
         map.put(Config.ZOOKEEPER_SESSION_TIMEOUT_MS.key, "13 seconds");
         new Config(map);

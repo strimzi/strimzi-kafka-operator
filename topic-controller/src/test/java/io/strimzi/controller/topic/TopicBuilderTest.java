@@ -49,7 +49,7 @@ public class TopicBuilderTest {
         topic = builder.build();
         assertEquals(new TopicName("my_topic"), topic.getTopicName());
         assertEquals(1, topic.getNumPartitions());
-        assertEquals(-1, topic.getNumReplicas());;
+        assertEquals(-1, topic.getNumReplicas());
         assertEquals(singletonMap("foo", "bar"), topic.getConfig());
     }
 
@@ -75,7 +75,7 @@ public class TopicBuilderTest {
         topic = builder.build();
         assertEquals(new TopicName("my_topic"), topic.getTopicName());
         assertEquals(1, topic.getNumPartitions());
-        assertEquals(-1, topic.getNumReplicas());;
+        assertEquals(-1, topic.getNumReplicas());
         assertEquals(singletonMap("foo", "bar"), topic.getConfig());
     }
 
