@@ -13,7 +13,7 @@ This guide describes how to install and use Strimzi.
 == Overview
 
 Apache Kafka is a popular platform for streaming data delivery and processing. For more details about Apache Kafka
-itself visit http://kafka.apache.org[Apache Kafka website]. The aim of the Strimzi project is to make it easy to run
+itself visit http://kafka.apache.org[Apache Kafka website]. The aim of Strimzi is to make it easy to run
 Apache Kafka on Kubernetes and OpenShift.
 
 Strimzi consists of 2 main components:

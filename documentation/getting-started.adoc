@@ -25,7 +25,7 @@ strimzi.io/kind: cluster
 
 and contain the cluster configuration in a specific format. The ConfigMap format is described in <<config_map_details>>.
 
-The Strimzi project contains example YAML files which make deploying a Cluster Controller easier.
+Strimzi contains example YAML files which make deploying a Cluster Controller easier.
 
 ==== Deploying to Kubernetes
 
@@ -146,7 +146,7 @@ oc new-app strimzi-connect
 ==== Using Kafka Connect with additional plugins
 
 Strimzi Docker images for Kafka Connect contain, by default, only the `FileStreamSinkConnector` and
-`FileStreamSourceConnector` connectors which are part of the Apache Kafka project.
+`FileStreamSourceConnector` connectors which are part of Apache Kafka.
 
 To facilitate deployment with 3rd party connectors, Kafka Connect is configured to automatically load all
 plugins/connectors which are present in the `/opt/kafka/plugins` directory during startup. There are two ways of adding
@@ -181,7 +181,7 @@ OpenShift supports https://docs.openshift.org/3.6/dev_guide/builds/index.html[Bu
 https://docs.openshift.org/3.6/creating_images/s2i.html#creating-images-s2i[Source-to-Image (S2I)] framework to create
 new Docker images. OpenShift Build takes a builder image with S2I support together with source code and/or binaries
 provided by the user and uses them to build a new Docker image. The newly created Docker Image will be stored in
-OpenShift's local Docker repository and can then be used in deployments. The Strimzi project provides a Kafka Connect builder
+OpenShift's local Docker repository and can then be used in deployments. Strimzi provides a Kafka Connect builder
 image https://hub.docker.com/r/strimzi/kafka-connect-s2i/[`strimzi/kafka-connect-s2i`] with such S2I support. It takes user-provided
 binaries (with plugins and connectors) and creates a new Kafka Connect image. This enhanced Kafka Connect image can be
 used with our Kafka Connect deployment.

@@ -218,7 +218,7 @@ Zookeeper node pod `[idx]`
 
 ===== Metrics
 
-Because the Strimzi project uses the [JMX exporter](https://github.com/prometheus/jmx_exporter) in order to expose metrics 
+Because Strimzi uses the [JMX exporter](https://github.com/prometheus/jmx_exporter) in order to expose metrics
 on each node, the JSON string used for metrics configuration in the cluster ConfigMap reflects the related JMX exporter 
 configuration file. For this reason, you can find more information on how to use it in the corresponding GitHub repo.
 
