@@ -115,8 +115,8 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
 
     /**
      * Asynchronously patch the resource with the given {@code name} in the given {@code namespace}
-     * with reflect the state given in the {@code patch}, returning a future for the outcome.
-     * The patch is applied to the related resource in cascade as well.
+     * to reflect the state given in the {@code patch}, returning a future for the outcome.
+     * The patch cascades to related resources
      * @param namespace The namespace of the resource to patch.
      * @param name The name of the resource to patch.
      * @param patch The desired state of the resource.
@@ -127,9 +127,9 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
 
     /**
      * Asynchronously patch the resource with the given {@code name} in the given {@code namespace}
-     * with reflect the state given in the {@code patch}, returning a future for the outcome.
+     * to reflect the state given in the {@code patch}, returning a future for the outcome.
      * @param namespace The namespace of the resource to patch.
-     * @param name  The name of the resource to patch.
+     * @param name The name of the resource to patch.
      * @param cascading If the patch applies to the related resource in cascade
      * @param patch The desired state of the resource.
      */
@@ -226,8 +226,7 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
      * Check if a resource is in the Ready state
      *
      * @param namespace The namespace.
-     * @param name  The resource name.
-     * @return  if it's in the Ready state
+     * @param name The resource name.
      */
     public boolean isReady(String namespace, String name) {
         R resourceOp = operation().inNamespace(namespace).withName(name);
