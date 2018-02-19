@@ -5,6 +5,7 @@ Version 0.1
 :toclevels: 3
 :toc-title: Content
 :imagesdir: ./img
+:xrefstyle: full
 
 This guide describes how to install and use Strimzi. Strimzi provides a way to run an Apache Kafka cluster on Kubernetes
 or OpenShift in various deployment configurations.
@@ -25,3 +26,5 @@ include::getting-started.adoc[]
 include::cluster-controller.adoc[]
 
 include::topic-controller.adoc[]
+
+include::appendix_deploying_kubernetes_openshift_cluster.adoc[]

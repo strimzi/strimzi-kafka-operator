@@ -47,6 +47,7 @@ features (works only with OpenShift)
 The `data` section of such ConfigMaps contains different keys depending on the "type" of deployment as described in the 
 following sections.
 
+[[kafka_config_map_details]]
 ==== Kafka
 
 In order to configure a Kafka cluster deployment, it's possible to specify the following fields in the `data` section of 
@@ -222,6 +223,7 @@ configuration file. For this reason, you can find more information on how to use
 
 For more information on how metrics work, the related documentation is available link:../../metrics/METRICS.md[here]
 
+[[kafka_connect_config_map_details]]
 ==== Kafka Connect
 
 In order to configure a Kafka Connect cluster deployment, it's possible to specify the following fields in the `data` section of 
