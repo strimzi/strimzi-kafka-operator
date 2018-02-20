@@ -51,6 +51,7 @@ public class ClusterController extends AbstractVerticle {
     private final KafkaClusterOperations kafkaClusterOperations;
     private final KafkaConnectClusterOperations kafkaConnectClusterOperations;
     private final KafkaConnectS2IClusterOperations kafkaConnectS2IClusterOperations;
+    private boolean stopping;
 
     public ClusterController(String namespace,
                              Map<String, String> labels,
@@ -101,7 +102,8 @@ public class ClusterController extends AbstractVerticle {
 
     @Override
     public void stop(Future<Void> stop) {
-
+        stopping = true;
+        log.info("Stopping ClusterController for namespace {}", namespace);
         vertx.cancelTimer(reconcileTimer);
         configMapWatch.close();
         client.close();
@@ -159,9 +161,9 @@ public class ClusterController extends AbstractVerticle {
                     @Override
                     public void onClose(KubernetesClientException e) {
                         if (e != null) {
-                            log.error("Watcher closed with exception", e);
+                            log.error("Watcher closed with exception in namespace {}", namespace, e);
                         } else {
-                            log.error("Watcher closed");
+                            log.info("Watcher closed in namespace {}", namespace);
                         }
 
                         recreateConfigMapWatch();
@@ -181,6 +183,9 @@ public class ClusterController extends AbstractVerticle {
     }
 
     private void recreateConfigMapWatch() {
+        if (stopping) {
+            return;
+        }
         configMapWatch.close();
 
         createConfigMapWatch(res -> {
