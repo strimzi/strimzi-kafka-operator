@@ -173,7 +173,7 @@ public class ClusterController extends AbstractVerticle {
                     log.info("ConfigMap watcher running for labels {}", labels);
                     handler.handle(Future.succeededFuture((Watch) res.result()));
                 } else {
-                    log.info("ConfigMap watcher failed to start");
+                    log.info("ConfigMap watcher failed to start", res.cause());
                     handler.handle(Future.failedFuture("ConfigMap watcher failed to start"));
                 }
             }
