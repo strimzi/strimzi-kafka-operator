@@ -42,7 +42,7 @@ public class KafkaConnectClusterTest {
     private final ConfigMap cm = ResourceUtils.createKafkaConnectClusterConfigMap(namespace, cluster, replicas, image,
             healthDelay, healthTimeout, bootstrapServers, groupID, configReplicationFactor, offsetReplicationFactor,
             statusReplicationFactor, keyConverter, valueConverter, keyConverterSchemas, valuesConverterSchema);
-    private final KafkaConnectCluster kc = KafkaConnectCluster.fromConfigMap(true, cm);
+    private final KafkaConnectCluster kc = KafkaConnectCluster.fromConfigMap(cm);
 
     protected List<EnvVar> getExpectedEnvVars() {
         List<EnvVar> expected = new ArrayList<EnvVar>();
@@ -61,7 +61,7 @@ public class KafkaConnectClusterTest {
 
     @Test
     public void testDefaultValues() {
-        KafkaConnectCluster kc = KafkaConnectCluster.fromConfigMap(true, ResourceUtils.createEmptyKafkaConnectClusterConfigMap(namespace, cluster));
+        KafkaConnectCluster kc = KafkaConnectCluster.fromConfigMap(ResourceUtils.createEmptyKafkaConnectClusterConfigMap(namespace, cluster));
 
         assertEquals(KafkaConnectCluster.DEFAULT_IMAGE, kc.image);
         assertEquals(KafkaConnectCluster.DEFAULT_REPLICAS, kc.replicas);
@@ -116,7 +116,7 @@ public class KafkaConnectClusterTest {
 
     @Test
     public void testFromDeploymentWithDefaultValues() {
-        KafkaConnectCluster defaultsKc = KafkaConnectCluster.fromConfigMap(true, ResourceUtils.createEmptyKafkaConnectClusterConfigMap(namespace, cluster));
+        KafkaConnectCluster defaultsKc = KafkaConnectCluster.fromConfigMap(ResourceUtils.createEmptyKafkaConnectClusterConfigMap(namespace, cluster));
         KafkaConnectCluster newKc = KafkaConnectCluster.fromDeployment(namespace, cluster, defaultsKc.generateDeployment());
 
         assertEquals(KafkaConnectCluster.DEFAULT_REPLICAS, newKc.replicas);
@@ -190,7 +190,7 @@ public class KafkaConnectClusterTest {
         KafkaConnectCluster newKc;
         ClusterDiffResult diff;
 
-        newKc = KafkaConnectCluster.fromConfigMap(true, ResourceUtils.createKafkaConnectClusterConfigMap(namespace, cluster, replicas, image,
+        newKc = KafkaConnectCluster.fromConfigMap(ResourceUtils.createKafkaConnectClusterConfigMap(namespace, cluster, replicas, image,
                 123, healthTimeout, bootstrapServers, groupID, configReplicationFactor, offsetReplicationFactor,
                 statusReplicationFactor, keyConverter, valueConverter, keyConverterSchemas, valuesConverterSchema));
         diff = kc.diff(newKc.generateDeployment());
@@ -200,7 +200,7 @@ public class KafkaConnectClusterTest {
         assertTrue(diff.isRollingUpdate());
         assertFalse(diff.isMetricsChanged());
 
-        newKc = KafkaConnectCluster.fromConfigMap(true, ResourceUtils.createKafkaConnectClusterConfigMap(namespace, cluster, replicas, image,
+        newKc = KafkaConnectCluster.fromConfigMap(ResourceUtils.createKafkaConnectClusterConfigMap(namespace, cluster, replicas, image,
                 healthDelay, 123, bootstrapServers, groupID, configReplicationFactor, offsetReplicationFactor,
                 statusReplicationFactor, keyConverter, valueConverter, keyConverterSchemas, valuesConverterSchema));
         diff = kc.diff(newKc.generateDeployment());
@@ -210,7 +210,7 @@ public class KafkaConnectClusterTest {
         assertTrue(diff.isRollingUpdate());
         assertFalse(diff.isMetricsChanged());
 
-        newKc = KafkaConnectCluster.fromConfigMap(true, ResourceUtils.createKafkaConnectClusterConfigMap(namespace, cluster, replicas, image,
+        newKc = KafkaConnectCluster.fromConfigMap(ResourceUtils.createKafkaConnectClusterConfigMap(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout, "some-kafka-broker:9092", groupID, configReplicationFactor, offsetReplicationFactor,
                 statusReplicationFactor, keyConverter, valueConverter, keyConverterSchemas, valuesConverterSchema));
         diff = kc.diff(newKc.generateDeployment());
@@ -220,7 +220,7 @@ public class KafkaConnectClusterTest {
         assertTrue(diff.isRollingUpdate());
         assertFalse(diff.isMetricsChanged());
 
-        newKc = KafkaConnectCluster.fromConfigMap(true, ResourceUtils.createKafkaConnectClusterConfigMap(namespace, cluster, replicas, image,
+        newKc = KafkaConnectCluster.fromConfigMap(ResourceUtils.createKafkaConnectClusterConfigMap(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout, bootstrapServers, "some-other-group-id", configReplicationFactor, offsetReplicationFactor,
                 statusReplicationFactor, keyConverter, valueConverter, keyConverterSchemas, valuesConverterSchema));
         diff = kc.diff(newKc.generateDeployment());
@@ -230,7 +230,7 @@ public class KafkaConnectClusterTest {
         assertTrue(diff.isRollingUpdate());
         assertFalse(diff.isMetricsChanged());
 
-        newKc = KafkaConnectCluster.fromConfigMap(true, ResourceUtils.createKafkaConnectClusterConfigMap(namespace, cluster, replicas, image,
+        newKc = KafkaConnectCluster.fromConfigMap(ResourceUtils.createKafkaConnectClusterConfigMap(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout, bootstrapServers, groupID, 5, offsetReplicationFactor,
                 statusReplicationFactor, keyConverter, valueConverter, keyConverterSchemas, valuesConverterSchema));
         diff = kc.diff(newKc.generateDeployment());
@@ -240,7 +240,7 @@ public class KafkaConnectClusterTest {
         assertTrue(diff.isRollingUpdate());
         assertFalse(diff.isMetricsChanged());
 
-        newKc = KafkaConnectCluster.fromConfigMap(true, ResourceUtils.createKafkaConnectClusterConfigMap(namespace, cluster, replicas, image,
+        newKc = KafkaConnectCluster.fromConfigMap(ResourceUtils.createKafkaConnectClusterConfigMap(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout, bootstrapServers, groupID, configReplicationFactor, 5,
                 statusReplicationFactor, keyConverter, valueConverter, keyConverterSchemas, valuesConverterSchema));
         diff = kc.diff(newKc.generateDeployment());
@@ -250,7 +250,7 @@ public class KafkaConnectClusterTest {
         assertTrue(diff.isRollingUpdate());
         assertFalse(diff.isMetricsChanged());
 
-        newKc = KafkaConnectCluster.fromConfigMap(true, ResourceUtils.createKafkaConnectClusterConfigMap(namespace, cluster, replicas, image,
+        newKc = KafkaConnectCluster.fromConfigMap(ResourceUtils.createKafkaConnectClusterConfigMap(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout, bootstrapServers, groupID, configReplicationFactor, offsetReplicationFactor,
                 5, keyConverter, valueConverter, keyConverterSchemas, valuesConverterSchema));
         diff = kc.diff(newKc.generateDeployment());
@@ -260,7 +260,7 @@ public class KafkaConnectClusterTest {
         assertTrue(diff.isRollingUpdate());
         assertFalse(diff.isMetricsChanged());
 
-        newKc = KafkaConnectCluster.fromConfigMap(true, ResourceUtils.createKafkaConnectClusterConfigMap(namespace, cluster, replicas, image,
+        newKc = KafkaConnectCluster.fromConfigMap(ResourceUtils.createKafkaConnectClusterConfigMap(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout, bootstrapServers, groupID, configReplicationFactor, offsetReplicationFactor,
                 statusReplicationFactor, "some-other-converter", valueConverter, keyConverterSchemas, valuesConverterSchema));
         diff = kc.diff(newKc.generateDeployment());
@@ -270,7 +270,7 @@ public class KafkaConnectClusterTest {
         assertTrue(diff.isRollingUpdate());
         assertFalse(diff.isMetricsChanged());
 
-        newKc = KafkaConnectCluster.fromConfigMap(true, ResourceUtils.createKafkaConnectClusterConfigMap(namespace, cluster, replicas, image,
+        newKc = KafkaConnectCluster.fromConfigMap(ResourceUtils.createKafkaConnectClusterConfigMap(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout, bootstrapServers, groupID, configReplicationFactor, offsetReplicationFactor,
                 statusReplicationFactor, keyConverter, "some-other-converter", keyConverterSchemas, valuesConverterSchema));
         diff = kc.diff(newKc.generateDeployment());
@@ -280,7 +280,7 @@ public class KafkaConnectClusterTest {
         assertTrue(diff.isRollingUpdate());
         assertFalse(diff.isMetricsChanged());
 
-        newKc = KafkaConnectCluster.fromConfigMap(true, ResourceUtils.createKafkaConnectClusterConfigMap(namespace, cluster, replicas, image,
+        newKc = KafkaConnectCluster.fromConfigMap(ResourceUtils.createKafkaConnectClusterConfigMap(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout, bootstrapServers, groupID, configReplicationFactor, offsetReplicationFactor,
                 statusReplicationFactor, keyConverter, valueConverter, true, valuesConverterSchema));
         diff = kc.diff(newKc.generateDeployment());
@@ -290,7 +290,7 @@ public class KafkaConnectClusterTest {
         assertTrue(diff.isRollingUpdate());
         assertFalse(diff.isMetricsChanged());
 
-        newKc = KafkaConnectCluster.fromConfigMap(true, ResourceUtils.createKafkaConnectClusterConfigMap(namespace, cluster, replicas, image,
+        newKc = KafkaConnectCluster.fromConfigMap(ResourceUtils.createKafkaConnectClusterConfigMap(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout, bootstrapServers, groupID, configReplicationFactor, offsetReplicationFactor,
                 statusReplicationFactor, keyConverter, valueConverter, keyConverterSchemas, true));
         diff = kc.diff(newKc.generateDeployment());
@@ -363,7 +363,7 @@ public class KafkaConnectClusterTest {
 
     @Test
     public void testPatchDeployment()   {
-        Deployment orig = KafkaConnectCluster.fromConfigMap(true, ResourceUtils.createEmptyKafkaConnectClusterConfigMap(namespace, cluster)).generateDeployment();
+        Deployment orig = KafkaConnectCluster.fromConfigMap(ResourceUtils.createEmptyKafkaConnectClusterConfigMap(namespace, cluster)).generateDeployment();
         orig.getMetadata().setLabels(Collections.EMPTY_MAP);
         orig.getSpec().getTemplate().getMetadata().setLabels(Collections.EMPTY_MAP);
 

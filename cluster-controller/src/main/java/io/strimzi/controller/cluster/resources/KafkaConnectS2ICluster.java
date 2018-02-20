@@ -53,11 +53,10 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
     /**
      * Create a Kafka Connect cluster from the related ConfigMap resource
      *
-     * @param isOpenShift    Whether we're running with OpenShift
-     * @param cm    ConfigMap with cluster configuration
-     * @return  Kafka Connect cluster instance
+     * @param cm ConfigMap with cluster configuration
+     * @return Kafka Connect cluster instance
      */
-    public static KafkaConnectS2ICluster fromConfigMap(boolean isOpenShift, ConfigMap cm) {
+    public static KafkaConnectS2ICluster fromConfigMap(ConfigMap cm) {
         KafkaConnectS2ICluster kafkaConnect = new KafkaConnectS2ICluster(cm.getMetadata().getNamespace(), cm.getMetadata().getName());
 
         kafkaConnect.setLabels(cm.getMetadata().getLabels());

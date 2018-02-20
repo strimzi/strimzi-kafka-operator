@@ -74,7 +74,7 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
 
         @Override
         public ClusterOperation<KafkaConnectS2ICluster> getCluster(String namespace, String name) {
-            return new ClusterOperation<>(KafkaConnectS2ICluster.fromConfigMap(isOpenShift, configMapOperations.get(namespace, name)), null);
+            return new ClusterOperation<>(KafkaConnectS2ICluster.fromConfigMap(configMapOperations.get(namespace, name)), null);
         }
 
         @Override
@@ -158,7 +158,7 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
             ConfigMap connectConfigMap = configMapOperations.get(namespace, name);
 
             if (connectConfigMap != null)    {
-                connect = KafkaConnectS2ICluster.fromConfigMap(isOpenShift, connectConfigMap);
+                connect = KafkaConnectS2ICluster.fromConfigMap(connectConfigMap);
                 log.info("Updating {} cluster {} in namespace {}", clusterDescription, connect.getName(), namespace);
                 DeploymentConfig dep = deploymentConfigOperations.get(namespace, connect.getName());
                 ImageStream sis = imagesStreamOperations.get(namespace, connect.getSourceImageStreamName());

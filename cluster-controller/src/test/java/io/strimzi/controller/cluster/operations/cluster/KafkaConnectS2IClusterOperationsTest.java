@@ -77,7 +77,7 @@ public class KafkaConnectS2IClusterOperationsTest {
         KafkaConnectS2IClusterOperations ops = new KafkaConnectS2IClusterOperations(vertx, true,
                 mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps);
 
-        KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromConfigMap(true, clusterCm);
+        KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromConfigMap(clusterCm);
 
         Async async = context.async();
         ops.create(clusterCmNamespace, clusterCmName, createResult -> {
@@ -134,7 +134,7 @@ public class KafkaConnectS2IClusterOperationsTest {
         String clusterCmNamespace = "test";
 
         ConfigMap clusterCm = ResourceUtils.createEmptyKafkaConnectS2IClusterConfigMap(clusterCmNamespace, clusterCmName);
-        KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromConfigMap(true, clusterCm);
+        KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromConfigMap(clusterCm);
         when(mockCmOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
         when(mockServiceOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateService());
         when(mockDcOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateDeploymentConfig());
@@ -215,7 +215,7 @@ public class KafkaConnectS2IClusterOperationsTest {
         String clusterCmNamespace = "test";
 
         ConfigMap clusterCm = ResourceUtils.createEmptyKafkaConnectS2IClusterConfigMap(clusterCmNamespace, clusterCmName);
-        KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromConfigMap(true, clusterCm);
+        KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromConfigMap(clusterCm);
         clusterCm.getData().put("image", "some/different:image"); // Change the image to generate some diff
 
         when(mockCmOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
@@ -262,7 +262,7 @@ public class KafkaConnectS2IClusterOperationsTest {
         ops.update(clusterCmNamespace, clusterCmName, createResult -> {
             context.assertTrue(createResult.succeeded());
 
-            KafkaConnectS2ICluster compareTo = KafkaConnectS2ICluster.fromConfigMap(true, clusterCm);
+            KafkaConnectS2ICluster compareTo = KafkaConnectS2ICluster.fromConfigMap(clusterCm);
 
             // Vertify service
             List<Service> capturedServices = serviceCaptor.getAllValues();
@@ -319,7 +319,7 @@ public class KafkaConnectS2IClusterOperationsTest {
         String clusterCmNamespace = "test";
 
         ConfigMap clusterCm = ResourceUtils.createEmptyKafkaConnectS2IClusterConfigMap(clusterCmNamespace, clusterCmName);
-        KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromConfigMap(true, clusterCm);
+        KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromConfigMap(clusterCm);
         clusterCm.getData().put("image", "some/different:image"); // Change the image to generate some diff
 
         when(mockCmOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
@@ -384,7 +384,7 @@ public class KafkaConnectS2IClusterOperationsTest {
         String clusterCmNamespace = "test";
 
         ConfigMap clusterCm = ResourceUtils.createEmptyKafkaConnectS2IClusterConfigMap(clusterCmNamespace, clusterCmName);
-        KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromConfigMap(true, clusterCm);
+        KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromConfigMap(clusterCm);
         clusterCm.getData().put(KafkaConnectCluster.KEY_REPLICAS, newReplicas); // Change replicas to create ScaleUp
 
         when(mockCmOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
@@ -474,7 +474,7 @@ public class KafkaConnectS2IClusterOperationsTest {
         String clusterCmNamespace = "test";
 
         ConfigMap clusterCm = ResourceUtils.createEmptyKafkaConnectS2IClusterConfigMap(clusterCmNamespace, clusterCmName);
-        KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromConfigMap(true, clusterCm);
+        KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromConfigMap(clusterCm);
         clusterCm.getData().put(KafkaConnectCluster.KEY_REPLICAS, newReplicas); // Change replicas to create ScaleDown
 
         when(mockCmOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
@@ -561,7 +561,7 @@ public class KafkaConnectS2IClusterOperationsTest {
         String clusterCmName = "foo";
         String clusterCmNamespace = "test";
 
-        KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromConfigMap(true, ResourceUtils.createEmptyKafkaConnectS2IClusterConfigMap(clusterCmNamespace, clusterCmName));
+        KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromConfigMap(ResourceUtils.createEmptyKafkaConnectS2IClusterConfigMap(clusterCmNamespace, clusterCmName));
 
         when(mockDcOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateDeploymentConfig());
         when(mockIsOps.get(clusterCmNamespace, connect.getSourceImageStreamName())).thenReturn(connect.generateSourceImageStream());
