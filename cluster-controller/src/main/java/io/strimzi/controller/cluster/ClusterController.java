@@ -170,7 +170,7 @@ public class ClusterController extends AbstractVerticle {
                 future.complete(watch);
             }, res -> {
                 if (res.succeeded())    {
-                    log.info("ConfigMap watcher up and running for labels {}", labels);
+                    log.info("ConfigMap watcher running for labels {}", labels);
                     handler.handle(Future.succeededFuture((Watch) res.result()));
                 } else {
                     log.info("ConfigMap watcher failed to start");
@@ -185,10 +185,10 @@ public class ClusterController extends AbstractVerticle {
 
         createConfigMapWatch(res -> {
             if (res.succeeded())    {
-                log.info("ConfigMap watch recreated");
+                log.info("ConfigMap watch recreated in namespace {}", namespace);
                 configMapWatch = res.result();
             } else {
-                log.error("Failed to recreate ConfigMap watch");
+                log.error("Failed to recreate ConfigMap watch in namespace {}", namespace);
             }
         });
     }
