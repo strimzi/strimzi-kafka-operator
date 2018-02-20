@@ -59,7 +59,7 @@ public class ClusterController extends AbstractVerticle {
                              KafkaClusterOperations kafkaClusterOperations,
                              KafkaConnectClusterOperations kafkaConnectClusterOperations,
                              KafkaConnectS2IClusterOperations kafkaConnectS2IClusterOperations) {
-        log.info("Creating ClusterController");
+        log.info("Creating ClusterController for namespace {}", namespace);
         this.namespace = namespace;
         this.labels = labels;
         this.reconciliationInterval = reconciliationInterval;
@@ -94,13 +94,13 @@ public class ClusterController extends AbstractVerticle {
                 start.complete();
             } else {
                 log.error("ClusterController startup failed for namespace {}", namespace, res.cause());
-                start.fail("ClusterController startup failed for namesapce " + namespace);
+                start.fail("ClusterController startup failed for namespace " + namespace);
             }
         });
     }
 
     @Override
-    public void stop(Future<Void> stop) throws Exception {
+    public void stop(Future<Void> stop) {
 
         vertx.cancelTimer(reconcileTimer);
         configMapWatch.close();
