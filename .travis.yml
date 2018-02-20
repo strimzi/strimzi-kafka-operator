@@ -1,7 +1,6 @@
 sudo: required
 language: java
 notifications:
-  email: false
   irc:
     template:
     - "%{repository}#%{build_number} (%{branch} - %{commit} : %{author}): %{message}"
