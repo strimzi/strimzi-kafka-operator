@@ -25,14 +25,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * <p>Abstract cluster creation, update, read, deletion, etc, for a generic cluster type {@code C}.
+ * <p>Abstract cluster creation, update, read, delection, etc, for a generic cluster type {@code C}.
  * This class applies the "template method" pattern, first obtaining the desired cluster configuration
  * ({@link CompositeOperation#getCluster(String, String)}),
  * then creating resources to match ({@link CompositeOperation#composite(String, ClusterOperation)}.</p>
  *
  * <p>This class manages a per-cluster-type and per-cluster locking strategy so only one operation per cluster
  * can proceed at once.</p>
- * @param <C> The type of cluster.
+ * @param <C> The type of cluster
  * @param <R> The type of resource from which the cluster state can be recovered
  */
 public abstract class AbstractClusterOperations<C extends AbstractCluster,

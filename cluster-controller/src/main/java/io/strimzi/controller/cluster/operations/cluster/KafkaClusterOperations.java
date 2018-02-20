@@ -7,6 +7,7 @@ package io.strimzi.controller.cluster.operations.cluster;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
+import io.strimzi.controller.cluster.operations.resource.DeploymentOperations;
 import io.strimzi.controller.cluster.operations.resource.EndpointOperations;
 import io.strimzi.controller.cluster.operations.resource.PodOperations;
 import io.strimzi.controller.cluster.operations.resource.PvcOperations;
@@ -15,6 +16,7 @@ import io.strimzi.controller.cluster.operations.resource.StatefulSetOperations;
 import io.strimzi.controller.cluster.resources.ClusterDiffResult;
 import io.strimzi.controller.cluster.resources.KafkaCluster;
 import io.strimzi.controller.cluster.resources.Storage;
+import io.strimzi.controller.cluster.resources.TopicController;
 import io.strimzi.controller.cluster.resources.ZookeeperCluster;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
@@ -37,12 +39,14 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
     private static final Logger log = LoggerFactory.getLogger(KafkaClusterOperations.class.getName());
     private static final String CLUSTER_TYPE_ZOOKEEPER = "zookeeper";
     private static final String CLUSTER_TYPE_KAFKA = "kafka";
+    private static final String CLUSTER_TYPE_TOPIC_CONTROLLER = "topic-controller";
 
     private final StatefulSetOperations statefulSetOperations;
     private final ServiceOperations serviceOperations;
     private final PvcOperations pvcOperations;
     private final PodOperations podOperations;
     private final EndpointOperations endpointOperations;
+    private final DeploymentOperations deploymentOperations;
 
     /**
      * @param vertx The Vertx instance
@@ -52,6 +56,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
      * @param statefulSetOperations For operating on StatefulSets
      * @param pvcOperations For operating on PersistentVolumeClaims
      * @param podOperations For operating on Pods
+     * @param deploymentOperations For operating on Deployments
      */
     public KafkaClusterOperations(Vertx vertx, boolean isOpenShift,
                                   ConfigMapOperations configMapOperations,
@@ -59,22 +64,35 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
                                   StatefulSetOperations statefulSetOperations,
                                   PvcOperations pvcOperations,
                                   PodOperations podOperations,
-                                  EndpointOperations endpointOperations) {
+                                  EndpointOperations endpointOperations,
+                                  DeploymentOperations deploymentOperations) {
         super(vertx, isOpenShift, "Kafka", configMapOperations);
         this.statefulSetOperations = statefulSetOperations;
         this.serviceOperations = serviceOperations;
         this.pvcOperations = pvcOperations;
         this.podOperations = podOperations;
         this.endpointOperations = endpointOperations;
+        this.deploymentOperations = deploymentOperations;
     }
 
     @Override
     public void create(String namespace, String name, Handler<AsyncResult<Void>> handler) {
-        execute(CLUSTER_TYPE_ZOOKEEPER, OP_CREATE, namespace, name, createZk, ar -> {
-            if (ar.failed()) {
-                handler.handle(ar);
+        execute(CLUSTER_TYPE_ZOOKEEPER, OP_CREATE, namespace, name, createZk, zookeeperDone -> {
+            if (zookeeperDone.failed()) {
+                handler.handle(zookeeperDone);
             } else {
-                execute(CLUSTER_TYPE_KAFKA, OP_CREATE, namespace, name, createKafka, handler);
+                execute(CLUSTER_TYPE_KAFKA, OP_CREATE, namespace, name, createKafka, kafkaDone -> {
+                    if (kafkaDone.failed()) {
+                        handler.handle(kafkaDone);
+                    } else {
+                        ClusterOperation<TopicController> clusterOp = createTopicController.getCluster(namespace, name);
+                        if (clusterOp.cluster() != null) {
+                            execute(CLUSTER_TYPE_TOPIC_CONTROLLER, OP_CREATE, namespace, name, createTopicController, handler);
+                        } else {
+                            handler.handle(kafkaDone);
+                        }
+                    }
+                });
             }
         });
     }
@@ -88,6 +106,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
         @Override
         public Future<?> composite(String namespace, ClusterOperation<KafkaCluster> clusterOp) {
+            Future<Void> fut = Future.future();
             KafkaCluster kafka = clusterOp.cluster();
             List<Future> result = new ArrayList<>(4);
             // start creating configMap operation only if metrics are enabled,
@@ -102,7 +121,35 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
             result.add(statefulSetOperations.create(kafka.generateStatefulSet(isOpenShift)));
 
-            return CompositeFuture.join(result);
+            // TODO :
+            // waiting for Kafka pods is needed only if the topic controller is going to be deployed
+            // should we have the "waiting" only if topic controller deployment is enabled ?
+            // a new "isTopicControllerEnabled" could be useful in the KafkaCluster definition
+
+            CompositeFuture
+                .join(result)
+                .compose(res -> statefulSetOperations.waitUntilReady(namespace, kafka.getName(), 1_000, 60_000))
+                .compose(res -> {
+                    List<Future> waitPodResult = new ArrayList<>(kafka.getReplicas());
+
+                    for (int i = 0; i < kafka.getReplicas(); i++) {
+                        String podName = kafka.getName() + "-" + i;
+                        waitPodResult.add(podOperations.waitUntilReady(namespace, podName, 1_000, 60_000));
+                    }
+
+                    return CompositeFuture.join(waitPodResult);
+                })
+                .compose(res -> {
+                    List<Future> waitEndpointResult = new ArrayList<>(2);
+                    waitEndpointResult.add(endpointOperations.waitUntilReady(namespace, kafka.getName(), 1_000, 60_000));
+                    waitEndpointResult.add(endpointOperations.waitUntilReady(namespace, kafka.getHeadlessName(), 1_000, 60_000));
+                    return CompositeFuture.join(waitEndpointResult);
+                })
+                .compose(res -> {
+                    fut.complete();
+                }, fut);
+
+            return fut;
         }
     };
 
@@ -119,7 +166,6 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
             Future<Void> fut = Future.future();
             ZookeeperCluster zk = clusterOp.cluster();
             List<Future> createResult = new ArrayList<>(4);
-
 
             if (zk.isMetricsEnabled()) {
                 createResult.add(configMapOperations.create(zk.generateMetricsConfigMap()));
@@ -153,6 +199,23 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
                 .compose(res -> {
                     fut.complete();
                 }, fut);
+
+            return fut;
+        }
+    };
+
+    private final CompositeOperation<TopicController> createTopicController  = new CompositeOperation<TopicController>() {
+
+        @Override
+        public ClusterOperation<TopicController> getCluster(String namespace, String name) {
+            return new ClusterOperation<>(TopicController.fromConfigMap(configMapOperations.get(namespace, name)), null);
+        }
+
+        @Override
+        public Future<?> composite(String namespace, ClusterOperation<TopicController> clusterOp) {
+
+            TopicController topicController = clusterOp.cluster();
+            Future<Void> fut = deploymentOperations.create(topicController.generateDeployment());
 
             return fut;
         }
