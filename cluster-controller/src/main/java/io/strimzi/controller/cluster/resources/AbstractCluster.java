@@ -217,6 +217,10 @@ public abstract class AbstractCluster {
         return this.image;
     }
 
+    protected String getServiceAccountName() {
+        return null;
+    }
+
     protected VolumeMount createVolumeMount(String name, String path) {
         VolumeMount volumeMount = new VolumeMountBuilder()
                 .withName(name)
@@ -482,6 +486,7 @@ public abstract class AbstractCluster {
                 .withAnnotations(podAnnotations)
                 .endMetadata()
                 .withNewSpec()
+                .withServiceAccountName(getServiceAccountName())
                 .withContainers(container)
                 .endSpec()
                 .endTemplate()

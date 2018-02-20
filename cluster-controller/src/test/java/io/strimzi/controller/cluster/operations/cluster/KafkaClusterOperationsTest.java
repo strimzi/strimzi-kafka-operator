@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.controller.cluster.ResourceUtils;
 import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
+import io.strimzi.controller.cluster.operations.resource.DeploymentOperations;
 import io.strimzi.controller.cluster.operations.resource.EndpointOperations;
 import io.strimzi.controller.cluster.operations.resource.PodOperations;
 import io.strimzi.controller.cluster.operations.resource.PvcOperations;
@@ -141,6 +142,7 @@ public class KafkaClusterOperationsTest {
         PvcOperations mockPvcOps = mock(PvcOperations.class);
         PodOperations mockPodOps = mock(PodOperations.class);
         EndpointOperations mockEndpointOps = mock(EndpointOperations.class);
+        DeploymentOperations mockDepOps = mock(DeploymentOperations.class);
 
         // Create a CM
         String clusterCmName = clusterCm.getMetadata().getName();
@@ -164,7 +166,7 @@ public class KafkaClusterOperationsTest {
         KafkaClusterOperations ops = new KafkaClusterOperations(vertx, openShift,
                 mockCmOps,
                 mockServiceOps, mockSsOps,
-                mockPvcOps, mockPodOps, mockEndpointOps);
+                mockPvcOps, mockPodOps, mockEndpointOps, mockDepOps);
 
         // Now try to create a KafkaCluster based on this CM
         Async async = context.async();
@@ -221,6 +223,7 @@ public class KafkaClusterOperationsTest {
         PvcOperations mockPvcOps = mock(PvcOperations.class);
         PodOperations mockPodOps = mock(PodOperations.class);
         EndpointOperations mockEndpointOps = mock(EndpointOperations.class);
+        DeploymentOperations mockDepOps = mock(DeploymentOperations.class);
 
         String clusterCmName = clusterCm.getMetadata().getName();
         String clusterCmNamespace = clusterCm.getMetadata().getNamespace();
@@ -248,7 +251,7 @@ public class KafkaClusterOperationsTest {
                 mockCmOps,
                 mockServiceOps, mockSsOps,
                 mockPvcOps,
-                mockPodOps, mockEndpointOps);
+                mockPodOps, mockEndpointOps, mockDepOps);
 
         // Now try to create a KafkaCluster based on this CM
         Async async = context.async();
@@ -385,6 +388,7 @@ public class KafkaClusterOperationsTest {
         PvcOperations mockPvcOps = mock(PvcOperations.class);
         PodOperations mockPodOps = mock(PodOperations.class);
         EndpointOperations mockEndpointOps = mock(EndpointOperations.class);
+        DeploymentOperations mockDepOps = mock(DeploymentOperations.class);
 
         String clusterCmName = clusterCm.getMetadata().getName();
         String clusterCmNamespace = clusterCm.getMetadata().getNamespace();
@@ -462,7 +466,7 @@ public class KafkaClusterOperationsTest {
         KafkaClusterOperations ops = new KafkaClusterOperations(vertx, openShift,
                 mockCmOps,
                 mockServiceOps, mockSsOps,
-                mockPvcOps, mockPodOps, mockEndpointOps);
+                mockPvcOps, mockPodOps, mockEndpointOps, mockDepOps);
 
         // Now try to create a KafkaCluster based on this CM
         Async async = context.async();
@@ -549,6 +553,7 @@ public class KafkaClusterOperationsTest {
         PvcOperations mockPvcOps = mock(PvcOperations.class);
         PodOperations mockPodOps = mock(PodOperations.class);
         EndpointOperations mockEndpointOps = mock(EndpointOperations.class);
+        DeploymentOperations mockDepOps = mock(DeploymentOperations.class);
 
         String clusterCmName = clusterCm.getMetadata().getName();
         String clusterCmNamespace = clusterCm.getMetadata().getNamespace();
@@ -571,7 +576,7 @@ public class KafkaClusterOperationsTest {
         KafkaClusterOperations ops = new KafkaClusterOperations(vertx, openShift,
                 mockCmOps,
                 mockServiceOps, mockSsOps,
-                mockPvcOps, mockPodOps, mockEndpointOps) {
+                mockPvcOps, mockPodOps, mockEndpointOps, mockDepOps) {
             @Override
             public void create(String namespace, String name) {
                 created.add(name);

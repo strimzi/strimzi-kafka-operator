@@ -52,7 +52,7 @@ public class Main {
         EndpointOperations endpointOperations = new EndpointOperations(vertx, client);
 
         boolean isOpenShift = Boolean.TRUE.equals(client.isAdaptable(OpenShiftClient.class));
-        KafkaClusterOperations kafkaClusterOperations = new KafkaClusterOperations(vertx, isOpenShift, configMapOperations, serviceOperations, statefulSetOperations, pvcOperations, podOperations, endpointOperations);
+        KafkaClusterOperations kafkaClusterOperations = new KafkaClusterOperations(vertx, isOpenShift, configMapOperations, serviceOperations, statefulSetOperations, pvcOperations, podOperations, endpointOperations, deploymentOperations);
         KafkaConnectClusterOperations kafkaConnectClusterOperations = new KafkaConnectClusterOperations(vertx, isOpenShift, configMapOperations, deploymentOperations, serviceOperations);
 
         DeploymentConfigOperations deploymentConfigOperations = null;
@@ -66,7 +66,6 @@ public class Main {
         KafkaConnectS2IClusterOperations kafkaConnectS2IClusterOperations = new KafkaConnectS2IClusterOperations(vertx, isOpenShift,
                 configMapOperations, deploymentConfigOperations,
                 serviceOperations, imagesStreamOperations, buildConfigOperations);
-
 
         ClusterControllerConfig config = ClusterControllerConfig.fromMap(env);
         List<Future> futures = new ArrayList<>();
