@@ -53,7 +53,7 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
 
         @Override
         public ClusterOperation<KafkaConnectCluster> getCluster(String namespace, String name) {
-            return new ClusterOperation<>(KafkaConnectCluster.fromConfigMap(isOpenShift, configMapOperations.get(namespace, name)), null);
+            return new ClusterOperation<>(KafkaConnectCluster.fromConfigMap(configMapOperations.get(namespace, name)), null);
         }
 
         @Override
@@ -113,7 +113,7 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
             ConfigMap connectConfigMap = configMapOperations.get(namespace, name);
 
             if (connectConfigMap != null)    {
-                connect = KafkaConnectCluster.fromConfigMap(isOpenShift, connectConfigMap);
+                connect = KafkaConnectCluster.fromConfigMap(connectConfigMap);
                 Deployment dep = deploymentOperations.get(namespace, connect.getName());
                 log.info("Updating Kafka Connect cluster {} in namespace {}", connect.getName(), namespace);
                 diff = connect.diff(dep);
