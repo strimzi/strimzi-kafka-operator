@@ -229,8 +229,8 @@ public class KafkaConnectCluster extends AbstractCluster {
                 Collections.singletonList(createContainerPort(REST_API_PORT_NAME, REST_API_PORT, "TCP")),
                 createHttpProbe(healthCheckPath, REST_API_PORT_NAME, healthCheckInitialDelay, healthCheckTimeout),
                 createHttpProbe(healthCheckPath, REST_API_PORT_NAME, healthCheckInitialDelay, healthCheckTimeout),
-                Collections.EMPTY_MAP,
-                Collections.EMPTY_MAP
+                Collections.emptyMap(),
+                Collections.emptyMap()
                 );
     }
 
@@ -238,8 +238,8 @@ public class KafkaConnectCluster extends AbstractCluster {
         return patchDeployment(dep,
                 createHttpProbe(healthCheckPath, REST_API_PORT_NAME, healthCheckInitialDelay, healthCheckTimeout),
                 createHttpProbe(healthCheckPath, REST_API_PORT_NAME, healthCheckInitialDelay, healthCheckTimeout),
-                Collections.EMPTY_MAP,
-                Collections.EMPTY_MAP
+                Collections.emptyMap(),
+                Collections.emptyMap()
                 );
     }
 
