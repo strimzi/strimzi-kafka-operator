@@ -1,5 +1,5 @@
-= Strimzi: Kafka as a Service running on Kubernetes and OpenShift
-Version 0.1
+= Strimzi: Documentation
+Version master
 :sectnums:
 :toc: preamble
 :toclevels: 3

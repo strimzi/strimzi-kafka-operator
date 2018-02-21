@@ -37,7 +37,7 @@ kubectl create -f resources/kubernetes/cluster-controller.yaml
 To verify whether the Cluster Controller has been deployed successfully, the Kubernetes Dashboard or the following
 command can be used:
 
-[soruce]
+[source]
 kubectl describe all
 
 ==== Deploying to OpenShift
@@ -50,7 +50,7 @@ oc create -f resources/openshift/cluster-controller-with-template.yaml
 To verify whether the Cluster Controller has been deployed successfully, the OpenShift console or the following command
 can be used:
 
-[soruce]
+[source]
 oc describe all
 
 === Kafka broker
@@ -162,13 +162,14 @@ https://hub.docker.com/r/strimzi/kafka-connect/[`strimzi/kafka-connect`]. This i
 building a new custom image with additional plugins. The following steps describe the process for creating such a custom image:
 
 1. Create a new `Dockerfile` which uses `strimzi/kafka-connect` as the base image
-
++
 [source,Dockerfile]
+----
 FROM strimzi/kafka-connect:latest
 USER root:root
 COPY ./my-plugin/ /opt/kafka/plugins/
 USER kafka:kafka
-
+----
 2. Build the Docker image and upload it to the appropriate Docker repository
 3. Use the new Docker image in the Kafka Connect deployment:
   - On OpenShift, the template parameters `IMAGE_REPO_NAME`, `IMAGE_NAME` and `IMAGE_TAG` can be changed to point to the
