@@ -28,6 +28,7 @@
 
 
     <modules>
+        <module>common-test</module>
         <module>topic-controller</module>
         <module>cluster-controller</module>
     </modules>

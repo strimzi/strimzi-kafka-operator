@@ -10,10 +10,10 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.strimzi.test.KubeClusterResource;
-import io.strimzi.test.Permission;
-import io.strimzi.test.Role;
-import io.strimzi.test.RoleBinding;
+import io.strimzi.test.k8s.KubeClusterResource;
+import io.strimzi.test.k8s.Permission;
+import io.strimzi.test.k8s.Role;
+import io.strimzi.test.k8s.RoleBinding;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
@@ -86,6 +86,7 @@ public class ControllerIntegrationTest {
     private DefaultKubernetesClient kubeClient;
     private volatile TopicsWatcher topicsWatcher;
     private Thread kafkaHook = new Thread() {
+        @Override
         public void run() {
             if (kafkaCluster != null) {
                 kafkaCluster.shutdown();

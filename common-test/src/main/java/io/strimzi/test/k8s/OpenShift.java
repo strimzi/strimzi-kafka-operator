@@ -2,10 +2,9 @@
  * Copyright 2017-2018, Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.test;
+package io.strimzi.test.k8s;
 
-import static io.strimzi.test.Exec.isExecutableOnPath;
-import static io.strimzi.test.Exec.exec;
+import static io.strimzi.test.k8s.Exec.exec;
 
 public class OpenShift implements KubeCluster {
 
@@ -13,13 +12,13 @@ public class OpenShift implements KubeCluster {
 
     @Override
     public boolean isAvailable() {
-        return isExecutableOnPath(OC);
+        return Exec.isExecutableOnPath(OC);
     }
 
     @Override
     public boolean isClusterUp() {
         try {
-            exec(OC, "cluster", "status");
+            Exec.exec(OC, "cluster", "status");
             return true;
         } catch (KubeClusterException e) {
             if (e.statusCode == 1) {
@@ -31,12 +30,12 @@ public class OpenShift implements KubeCluster {
 
     @Override
     public void clusterUp() {
-        exec(OC, "cluster", "up");
+        Exec.exec(OC, "cluster", "up");
     }
 
     @Override
     public void clusterDown() {
-        exec(OC, "cluster", "down");
+        Exec.exec(OC, "cluster", "down");
     }
 
     @Override

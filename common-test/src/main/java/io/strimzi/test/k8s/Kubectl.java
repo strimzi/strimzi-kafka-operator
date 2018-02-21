@@ -2,14 +2,13 @@
  * Copyright 2017-2018, Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.test;
+package io.strimzi.test.k8s;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static io.strimzi.test.Exec.isExecutableOnPath;
-import static io.strimzi.test.Exec.exec;
+import static io.strimzi.test.k8s.Exec.exec;
 
 /**
  * A {@link KubeClient} wrapping {@code kubectl}.
@@ -20,7 +19,7 @@ public class Kubectl implements KubeClient {
 
     @Override
     public boolean clientAvailable() {
-        return isExecutableOnPath(KUBECTL);
+        return Exec.isExecutableOnPath(KUBECTL);
     }
 
     @Override
@@ -35,7 +34,7 @@ public class Kubectl implements KubeClient {
                 cmd.add("--verb=" + p.verbs()[i]);
             }
         }
-        exec(cmd);
+        Exec.exec(cmd);
     }
 
     @Override
@@ -45,17 +44,17 @@ public class Kubectl implements KubeClient {
         for (int i = 0; i < users.length; i++) {
             cmd.add("--user=" + users[i]);
         }
-        exec(cmd);
+        Exec.exec(cmd);
     }
 
     @Override
     public void deleteRoleBinding(String bindingName) {
-        exec(KUBECTL, "delete", "rolebinding", bindingName);
+        Exec.exec(KUBECTL, "delete", "rolebinding", bindingName);
     }
 
     @Override
     public void deleteRole(String roleName) {
-        exec(KUBECTL, "delete", "role", roleName);
+        Exec.exec(KUBECTL, "delete", "role", roleName);
     }
 
     @Override
