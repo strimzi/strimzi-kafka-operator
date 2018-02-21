@@ -11,29 +11,33 @@ import io.vertx.core.json.JsonObject;
  */
 public class TopicControllerConfig {
 
-    public static final String BOOTSTRAP_SERVERS_FIELD = "bootstrapServers";
-    public static final String ZOOKEEPER_CONNECT_FIELD = "zookeeperConnect";
-    public static final String TOPIC_NAMESPACE_FIELD = "topicNamespace";
+    public static final String NAMESPACE_FIELD = "namespace";
     public static final String IMAGE_FIELD = "image";
+    public static final String RECONCILIATION_INTERVAL_FIELD = "reconciliationInterval";
+    public static final String ZOOKEEPER_SESSION_TIMEOUT_FIELD = "zookeeperSessionTimeout";
 
-    private String bootstrapServers;
+    // Kafka bootstrap servers and Zookeeper nodes can't be specified in the JSON
+    private String kafkaBootstrapServers;
     private String zookeeperConnect;
-    private String topicNamespace;
+
+    private String namespace;
     private String image;
+    private String reconciliationInterval;
+    private String zookeeperSessionTimeout;
 
     /**
-     * Specify the bootstrap servers
+     * Specify the Kafka bootstrap servers
      *
-     * @param bootstrapServers the bootstrap servers
+     * @param kafkaBootstrapServers the bootstrap servers
      * @return current TopicControllerConfig instance
      */
-    public TopicControllerConfig withBootstrapServers(String bootstrapServers) {
-        this.bootstrapServers = bootstrapServers;
+    public TopicControllerConfig withKafkaBootstrapServers(String kafkaBootstrapServers) {
+        this.kafkaBootstrapServers = kafkaBootstrapServers;
         return this;
     }
 
     /**
-     * Specify the zookeeper connect
+     * Specify the Zookeeper connect
      *
      * @param zookeeperConnect the zookeeper connect
      * @return current TopicControllerConfig instance
@@ -46,11 +50,11 @@ public class TopicControllerConfig {
     /**
      * Specify the namespace in which watching for topics ConfigMap
      *
-     * @param topicNamespace the namespace in which watching for topics ConfigMap
+     * @param namespace the namespace in which watching for topics ConfigMap
      * @return current TopicControllerConfig instance
      */
-    public TopicControllerConfig withTopicNamespace(String topicNamespace) {
-        this.topicNamespace = topicNamespace;
+    public TopicControllerConfig withNamespace(String namespace) {
+        this.namespace = namespace;
         return this;
     }
 
@@ -62,7 +66,29 @@ public class TopicControllerConfig {
      */
     public TopicControllerConfig withImage(String image) {
         this.image = image;
-        return  this;
+        return this;
+    }
+
+    /**
+     * Specify the interval between periodic reconciliations
+     *
+     * @param reconciliationInterval the interval between periodic reconciliations
+     * @return current TopicControllerConfig instance
+     */
+    public TopicControllerConfig withReconciliationInterval(String reconciliationInterval) {
+        this.reconciliationInterval = reconciliationInterval;
+        return this;
+    }
+
+    /**
+     * Specify the Zookeeper session timeout
+     *
+     * @param zookeeperSessionTimeout the Zookeeper session timeout
+     * @return current TopicControllerConfig instance
+     */
+    public TopicControllerConfig withZookeeperSessionTimeout(String zookeeperSessionTimeout) {
+        this.zookeeperSessionTimeout = zookeeperSessionTimeout;
+        return this;
     }
 
     /**
@@ -71,12 +97,72 @@ public class TopicControllerConfig {
      * @param json  topic controller configuration JSON representation
      * @return  TopicControllerConfig instance
      */
-    public static TopicControllerConfig fromJson(JsonObject json) {
+    public static TopicControllerConfig fromJson(TopicControllerConfig config, JsonObject json) {
 
-        TopicControllerConfig config = new TopicControllerConfig();
+        String image = json.getString(TopicControllerConfig.IMAGE_FIELD);
+        if (image != null) {
+            config.withImage(image);
+        }
 
-        // TODO : filling configuration from JSON
+        String namespace = json.getString(TopicControllerConfig.NAMESPACE_FIELD);
+        if (namespace != null) {
+            config.withNamespace(namespace);
+        }
+
+        String reconciliationInterval = json.getString(TopicControllerConfig.RECONCILIATION_INTERVAL_FIELD);
+        if (reconciliationInterval != null) {
+            // TODO : add parsing and validation
+            config.withReconciliationInterval(reconciliationInterval);
+        }
+
+        String zookeeperSessionTimeout = json.getString(TopicControllerConfig.ZOOKEEPER_SESSION_TIMEOUT_FIELD);
+        if (zookeeperSessionTimeout != null) {
+            // TODO : add parsing and validation
+            config.withZookeeperSessionTimeout(zookeeperSessionTimeout);
+        }
 
         return config;
+    }
+
+    /**
+     * @return the bootstrap servers
+     */
+    public String kafkaBootstrapServers() {
+        return this.kafkaBootstrapServers;
+    }
+
+    /**
+     * @return the zookeeper connect
+     */
+    public String zookeeperConnect() {
+        return this.zookeeperConnect;
+    }
+
+    /**
+     * @return the namespace in which watching for topics ConfigMap
+     */
+    public String namespace() {
+        return this.namespace;
+    }
+
+    /**
+     * @return the Docker image to use for the Topic Controller
+     */
+    public String image() {
+        return this.image;
+    }
+
+    /**
+     * @return the interval between periodic reconciliations
+     */
+    public String reconciliationInterval() {
+        return this.reconciliationInterval;
+    }
+
+    /**
+     * @return the Zookeeper session timeout
+     */
+    public String zookeeperSessionTimeout() {
+        return this.zookeeperSessionTimeout;
     }
 }
