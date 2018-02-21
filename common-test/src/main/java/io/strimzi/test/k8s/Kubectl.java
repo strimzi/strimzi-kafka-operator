@@ -4,59 +4,25 @@
  */
 package io.strimzi.test.k8s;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 /**
  * A {@link KubeClient} wrapping {@code kubectl}.
  */
-public class Kubectl implements KubeClient {
+public class Kubectl extends BaseKubeClient<Kubectl> {
 
     public static final String KUBECTL = "kubectl";
 
     @Override
-    public boolean clientAvailable() {
-        return Exec.isExecutableOnPath(KUBECTL);
-    }
-
-    @Override
-    public void createRole(String roleName, Permission... permissions) {
-        List<String> cmd = new ArrayList<>();
-        cmd.addAll(Arrays.asList(KUBECTL, "create", "role", roleName));
-        for (Permission p: permissions) {
-            for (String resource: p.resource()) {
-                cmd.add("--resource=" + resource);
-            }
-            for (int i = 0; i < p.verbs().length; i++) {
-                cmd.add("--verb=" + p.verbs()[i]);
-            }
-        }
-        Exec.exec(cmd);
-    }
-
-    @Override
-    public void createRoleBinding(String bindingName, String roleName, String... users) {
-        List<String> cmd = new ArrayList<>();
-        cmd.addAll(Arrays.asList(KUBECTL, "create", "rolebinding", bindingName, "--role=" + roleName));
-        for (int i = 0; i < users.length; i++) {
-            cmd.add("--user=" + users[i]);
-        }
-        Exec.exec(cmd);
-    }
-
-    @Override
-    public void deleteRoleBinding(String bindingName) {
-        Exec.exec(KUBECTL, "delete", "rolebinding", bindingName);
-    }
-
-    @Override
-    public void deleteRole(String roleName) {
-        Exec.exec(KUBECTL, "delete", "role", roleName);
-    }
-
-    @Override
     public String defaultNamespace() {
         return "default";
+    }
+
+    @Override
+    protected String cmd() {
+        return KUBECTL;
+    }
+
+    @Override
+    public Kubectl clientWithAdmin() {
+        return this;
     }
 }

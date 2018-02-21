@@ -19,7 +19,7 @@ public class OpenShift implements KubeCluster {
             Exec.exec(OC, "cluster", "status");
             return true;
         } catch (KubeClusterException e) {
-            if (e.statusCode == 1) {
+            if (e.result.exitStatus() == 1) {
                 return false;
             }
             throw e;

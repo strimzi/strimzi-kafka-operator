@@ -33,10 +33,14 @@ public class Minikube implements KubeCluster {
 
     @Override
     public boolean isClusterUp() {
-        String output = Exec.execOutput(cmd, "status");
-        return output.contains("minikube: Running")
-                && output.contains("cluster: Running")
-                && output.contains("kubectl: Correctly Configured:");
+        try {
+            String output = Exec.exec(cmd, "status").out();
+            return output.contains("minikube: Running")
+                    && output.contains("cluster: Running")
+                    && output.contains("kubectl: Correctly Configured:");
+        } catch (KubeClusterException e) {
+            return false;
+        }
     }
 
     @Override

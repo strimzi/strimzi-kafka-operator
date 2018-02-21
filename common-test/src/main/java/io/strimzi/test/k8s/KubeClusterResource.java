@@ -43,41 +43,16 @@ public class KubeClusterResource extends ExternalResource {
 
     public KubeClusterResource() {
 
-        KubeCluster cluster = null;
-        for (KubeCluster kc : new KubeCluster[]{new OpenShift(), Minikube.minikube(), Minikube.minishift()}) {
-            if (kc.isAvailable()) {
-                LOGGER.debug("Cluster {} is installed", kc);
-                if (shouldStartCluster) {
-                    LOGGER.debug("Using cluster {}", kc);
-                    cluster = kc;
-                    break;
-                } else {
-                    if (kc.isClusterUp()) {
-                        LOGGER.debug("Cluster {} is running", kc);
-                        cluster = kc;
-                        break;
-                    } else {
-                        LOGGER.debug("Cluster {} is not running", kc);
-                    }
-                }
-            } else {
-                LOGGER.debug("Cluster {} is not installed", kc);
-            }
-        }
-        if (cluster == null) {
-            throw new RuntimeException("Unable to find a cluster");
-        }
-        this.cluster = cluster;
+        this.cluster = KubeCluster.bootstrap();
         this.clusterHook = new Thread(() -> {
-            after();
+            cleanup(true);
         });
-        KubeClient client = null;
-        for (KubeClient kc: Arrays.asList(cluster.defaultClient(), new Kubectl(), new Oc())) {
-            if (kc.clientAvailable()) {
-                client = kc;
-                break;
-            }
-        }
+        this.client = KubeClient.findClient(cluster);
+    }
+
+    public KubeClusterResource(KubeCluster cluster, Thread clusterHook, KubeClient client) {
+        this.cluster = cluster;
+        this.clusterHook = clusterHook;
         this.client = client;
     }
 
@@ -100,7 +75,7 @@ public class KubeClusterResource extends ExternalResource {
             startedCluster = true;
             cluster.clusterUp();
         } else if (cluster == null) {
-            throw new KubeClusterException(-1, "I'm running in CI mode, so I can't start a cluster, " +
+            throw new KubeClusterException(null, "I'm running in CI mode, so I can't start a cluster, " +
                     "but no clusters are running");
         }
 
@@ -116,6 +91,9 @@ public class KubeClusterResource extends ExternalResource {
 
     @Override
     protected void after() {
+        cleanup(false);
+    }
+    protected void cleanup(boolean isHook) {
         try {
             RoleBinding binding = testClass.getAnnotation(RoleBinding.class);
             if (binding != null) {
@@ -142,11 +120,21 @@ public class KubeClusterResource extends ExternalResource {
                 e.printStackTrace();
             }
         }
-        Runtime.getRuntime().removeShutdownHook(clusterHook);
+        if (!isHook) {
+            Runtime.getRuntime().removeShutdownHook(clusterHook);
+        }
     }
 
     /** Gets the namespace in use */
     public String defaultNamespace() {
-        return client.defaultNamespace();
+        return client().defaultNamespace();
+    }
+
+    public KubeClient client() {
+        return client;
+    }
+
+    public KubeCluster cluster() {
+        return cluster;
     }
 }

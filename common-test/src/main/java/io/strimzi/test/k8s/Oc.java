@@ -4,63 +4,65 @@
  */
 package io.strimzi.test.k8s;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Predicate;
+
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyMap;
 
 /**
  * A {@link KubeClient} implementation wrapping {@code oc}.
  */
-public class Oc implements KubeClient {
+public class Oc extends BaseKubeClient<Oc> {
 
-    public static final String OC = "oc";
+    private static final Logger LOGGER = LoggerFactory.getLogger(Oc.class);
 
-    @Override
-    public boolean clientAvailable() {
-        return Exec.isExecutableOnPath(OC);
+    private static final String OC = "oc";
+
+    public Oc() {
+
     }
 
     @Override
-    public void createRole(String roleName, Permission... permissions) {
-        Exec.exec(OC, "login", "-u", "system:admin");
-        List<String> cmd = new ArrayList<>();
-        cmd.addAll(Arrays.asList(OC, "create", "role", roleName));
-        for (Permission p: permissions) {
-            for (String resource: p.resource()) {
-                cmd.add("--resource=" + resource);
+    protected Context adminContext() {
+        String previous = Exec.exec(Oc.OC, "whoami").out().trim();
+        String admin = "system:admin";
+        LOGGER.trace("Switching from login {} to {}", previous, admin);
+        Exec.exec(Oc.OC, "login", "-u", admin);
+        return new Context() {
+            @Override
+            public void close() {
+                LOGGER.trace("Switching back to login {} from {}", previous, admin);
+                Exec.exec(Oc.OC, "login", "-u", previous, "-p", "foo");
             }
-            for (int i = 0; i < p.verbs().length; i++) {
-                cmd.add("--verb=" + p.verbs()[i]);
+        };
+    }
+
+    @Override
+    public Oc clientWithAdmin() {
+        return new Oc() {
+
+            @Override
+            protected Context defaultContext() {
+                return adminContext();
             }
-        }
-        Exec.exec(cmd);
-        Exec.exec(OC, "login", "-u", "developer");
-    }
 
-    @Override
-    public void createRoleBinding(String bindingName, String roleName, String... user) {
-        Exec.exec(OC, "login", "-u", "system:admin");
-        List<String> cmd = new ArrayList<>();
-        cmd.addAll(Arrays.asList(OC, "create", "rolebinding", bindingName, "--role=" + roleName));
-        for (int i = 0; i < user.length; i++) {
-            cmd.add("--user=" + user[i]);
-        }
-        Exec.exec(cmd);
-        Exec.exec(OC, "login", "-u", "developer");
-    }
-
-    @Override
-    public void deleteRoleBinding(String bindingName) {
-        Exec.exec(OC, "login", "-u", "system:admin");
-        Exec.exec(OC, "delete", "rolebinding", bindingName);
-        Exec.exec(OC, "login", "-u", "developer");
-    }
-
-    @Override
-    public void deleteRole(String roleName) {
-        Exec.exec(OC, "login", "-u", "system:admin");
-        Exec.exec(OC, "delete", "role", roleName);
-        Exec.exec(OC, "login", "-u", "developer");
+            @Override
+            public Oc clientWithAdmin() {
+                return this;
+            }
+        };
     }
 
     @Override
@@ -68,4 +70,37 @@ public class Oc implements KubeClient {
         return "myproject";
     }
 
+    @Override
+    public Oc createNamespace(String name) {
+        try (Context context = defaultContext()) {
+            Exec.exec(cmd(), "new-project", name);
+        }
+        return this;
+    }
+
+    public Oc newApp(String template) {
+        return newApp(template, emptyMap());
+    }
+
+    public Oc newApp(String template, Map<String, String> params) {
+        List<String> cmd = new ArrayList<>(params.size() + 3);
+        cmd.addAll(asList(OC, "new-app", template));
+        for (Map.Entry<String, String> entry : params.entrySet()) {
+            cmd.add("-p");
+            cmd.add(entry.getKey() + "=" + entry.getValue());
+        }
+
+        Exec.exec(cmd);
+        return this;
+    }
+
+    public Oc newProject(String name) {
+        Exec.exec(OC, "new-project", name);
+        return this;
+    }
+
+    @Override
+    protected String cmd() {
+        return OC;
+    }
 }
