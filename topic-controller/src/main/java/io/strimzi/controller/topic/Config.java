@@ -8,7 +8,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -103,39 +102,38 @@ public class Config {
     public static final String TC_REASSIGN_THROTTLE = "STRIMZI_REASSIGN_THROTTLE";
     public static final String TC_REASSIGN_VERIFY_INTERVAL = "STRIMZI_REASSIGN_VERIFY_INTERVAL";
 
-    private static final Map<String, Value> CONFIG_VALUES = new HashMap<>();
-    private static final Set<Type> TYPES = new HashSet<>();
+    private static final Map<String, Value<?>> CONFIG_VALUES = new HashMap<>();
 
     /** A comma-separated list of key=value pairs for selecting ConfigMaps that describe topics. */
-    public static final Value<LabelPredicate> LABELS = new Value(TC_CM_LABELS, LABEL_PREDICATE, "strimzi.io/kind=topic");
+    public static final Value<LabelPredicate> LABELS = new Value<>(TC_CM_LABELS, LABEL_PREDICATE, "strimzi.io/kind=topic");
 
     /** A comma-separated list of kafka bootstrap servers. */
-    public static final Value<String> KAFKA_BOOTSTRAP_SERVERS = new Value(TC_KAFKA_BOOTSTRAP_SERVERS, STRING, true);
+    public static final Value<String> KAFKA_BOOTSTRAP_SERVERS = new Value<>(TC_KAFKA_BOOTSTRAP_SERVERS, STRING, true);
 
     /** The kubernetes namespace in which to operate. */
-    public static final Value<String> NAMESPACE = new Value(TC_NAMESPACE, STRING, true);
+    public static final Value<String> NAMESPACE = new Value<>(TC_NAMESPACE, STRING, true);
 
     /** The zookeeper connection string. */
-    public static final Value<String> ZOOKEEPER_CONNECT = new Value(TC_ZK_CONNECT, STRING, true);
+    public static final Value<String> ZOOKEEPER_CONNECT = new Value<>(TC_ZK_CONNECT, STRING, true);
 
     /** The zookeeper session timeout. */
-    public static final Value<Long> ZOOKEEPER_SESSION_TIMEOUT_MS = new Value(TC_ZK_SESSION_TIMEOUT, DURATION, "20 seconds");
+    public static final Value<Long> ZOOKEEPER_SESSION_TIMEOUT_MS = new Value<>(TC_ZK_SESSION_TIMEOUT, DURATION, "20 seconds");
 
     /** The period between full reconciliations. */
-    public static final Value<Long> FULL_RECONCILIATION_INTERVAL_MS = new Value(TC_PERIODIC_INTERVAL, DURATION, "15 minutes");
+    public static final Value<Long> FULL_RECONCILIATION_INTERVAL_MS = new Value<>(TC_PERIODIC_INTERVAL, DURATION, "15 minutes");
 
     /** The interbroker throttled rate to use when a topic change requires partition reassignment. */
-    public static final Value<Long> REASSIGN_THROTTLE = new Value(TC_REASSIGN_THROTTLE, LONG, Long.toString(Long.MAX_VALUE));
+    public static final Value<Long> REASSIGN_THROTTLE = new Value<>(TC_REASSIGN_THROTTLE, LONG, Long.toString(Long.MAX_VALUE));
 
     /**
      * The interval between verification executions (as in {@code kafka-reassign-partitions.sh --verify ...})
      * when a topic change requires partition reassignment.
      */
-    public static final Value<Long> REASSIGN_VERIFY_INTERVAL_MS = new Value(TC_REASSIGN_VERIFY_INTERVAL, DURATION, "2 minutes");
+    public static final Value<Long> REASSIGN_VERIFY_INTERVAL_MS = new Value<>(TC_REASSIGN_VERIFY_INTERVAL, DURATION, "2 minutes");
 
 
     static {
-        Map<String, Value> configValues = CONFIG_VALUES;
+        Map<String, Value<?>> configValues = CONFIG_VALUES;
         addConfigValue(configValues, LABELS);
         addConfigValue(configValues, KAFKA_BOOTSTRAP_SERVERS);
         addConfigValue(configValues, NAMESPACE);
@@ -146,11 +144,10 @@ public class Config {
         addConfigValue(configValues, REASSIGN_VERIFY_INTERVAL_MS);
     }
 
-    static void addConfigValue(Map<String, Value> configValues, Value cv) {
+    static void addConfigValue(Map<String, Value<?>> configValues, Value<?> cv) {
         if (configValues.put(cv.key, cv) != null) {
             throw new RuntimeException();
         }
-        TYPES.add(cv.type);
     }
 
     private final Map<String, Object> map;
@@ -158,21 +155,21 @@ public class Config {
     public Config(Map<String, String> map) {
         this.map = new HashMap<>(map.size());
         for (Map.Entry<String, String> entry : map.entrySet()) {
-            final Value configValue = CONFIG_VALUES.get(entry.getKey());
+            final Value<?> configValue = CONFIG_VALUES.get(entry.getKey());
             if (configValue == null) {
                 throw new IllegalArgumentException("Unknown config key " + entry.getKey());
             }
             this.map.put(configValue.key, get(map, configValue));
         }
         // now add all those config (with default value) that weren't in the given map
-        Map<String, Value> x = new HashMap(CONFIG_VALUES);
+        Map<String, Value> x = new HashMap<>(CONFIG_VALUES);
         x.keySet().removeAll(map.keySet());
-        for (Value value : x.values()) {
+        for (Value<?> value : x.values()) {
             this.map.put(value.key, get(map, value));
         }
     }
 
-    public static Collection<Value> keys() {
+    public static Collection<Value<?>> keys() {
         return Collections.unmodifiableCollection(CONFIG_VALUES.values());
     }
 
@@ -195,10 +192,12 @@ public class Config {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public <T> T get(Value<T> value, T defaultValue) {
         return (T) this.map.getOrDefault(value.key, defaultValue);
     }
 
+    @SuppressWarnings("unchecked")
     public <T> T get(Value<T> value) {
         return (T) this.map.get(value.key);
     }

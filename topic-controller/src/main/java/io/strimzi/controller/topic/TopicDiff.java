@@ -325,11 +325,11 @@ public class TopicDiff {
      * Return true if this TopicDiff conflicts with the given other TopicDiff
      */
     public String conflict(TopicDiff other) {
-        Set<String> intersection = new HashSet(this.differences.keySet());
+        Set<String> intersection = new HashSet<>(this.differences.keySet());
         intersection.retainAll(other.differences.keySet());
         // they could still be OK if they're applying the _same_ differences
         StringBuilder sb = new StringBuilder();
-        for (Object address : intersection) {
+        for (String address : intersection) {
             Difference difference = this.differences.get(address);
             Difference otherDifference = other.differences.get(address);
             if (!difference.equals(otherDifference)) {
@@ -355,7 +355,7 @@ public class TopicDiff {
         if (confict != null) {
             throw new IllegalArgumentException("Conflict: " + confict);
         }
-        Map<String, Difference> union = new HashMap(this.differences);
+        Map<String, Difference> union = new HashMap<>(this.differences);
         union.putAll(other.differences);
         return new TopicDiff(union);
     }

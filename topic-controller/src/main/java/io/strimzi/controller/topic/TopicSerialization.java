@@ -49,10 +49,11 @@ public class TopicSerialization {
     public static final String JSON_KEY_REPLICAS = "replicas";
     public static final String JSON_KEY_CONFIG = "config";
 
+    @SuppressWarnings("unchecked")
     private static Map<String, String> topicConfigFromConfigMapString(ConfigMap cm) {
         Map<String, String> mapData = cm.getData();
         String value = mapData.get(CM_KEY_CONFIG);
-        Map<Object, Object> result;
+        Map<?, ?> result;
         if (value == null || value.isEmpty()) {
             result = Collections.emptyMap();
         } else {
@@ -70,7 +71,7 @@ public class TopicSerialization {
             }
         }
         Set<String> supportedConfigs = getSupportedTopicConfigs();
-        for (Map.Entry<Object, Object> entry : result.entrySet()) {
+        for (Map.Entry<?, ?> entry : result.entrySet()) {
             Object key = entry.getKey();
             String msg = null;
             if (!(key instanceof String)) {
@@ -90,7 +91,7 @@ public class TopicSerialization {
                         CM_KEY_CONFIG + "': The key '" + key + "' of the topic config is invalid: " + msg);
             }
         }
-        return (Map) result;
+        return (Map<String, String>) result;
     }
 
     private static Set<String> getSupportedTopicConfigs() {
@@ -302,6 +303,7 @@ public class TopicSerialization {
      * Returns the Topic represented by the given UTF-8 encoded JSON.
      * This is what is stored in the znodes owned by the {@link ZkTopicStore}.
      */
+    @SuppressWarnings("unchecked")
     public static Topic fromJson(byte[] json) {
         ObjectMapper mapper = objectMapper();
         Map<String, Object> root = null;
