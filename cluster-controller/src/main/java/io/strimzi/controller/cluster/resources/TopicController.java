@@ -156,6 +156,38 @@ public class TopicController extends AbstractCluster {
         return topicController;
     }
 
+    /**
+     * Return the differences between the current Topic Controller and the deployed one
+     *
+     * @param dep Deployment which should be diffed
+     * @return  ClusterDiffResult instance with differences
+     */
+    public ClusterDiffResult diff(Deployment dep) {
+
+        String image = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage();
+
+        Map<String, String> vars = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream().collect(
+                Collectors.toMap(EnvVar::getName, EnvVar::getValue));
+
+        // get the current (deployed) topic controller configuration
+        TopicControllerConfig depConfig = new TopicControllerConfig();
+
+        depConfig.withKafkaBootstrapServers(vars.getOrDefault(KEY_KAFKA_BOOTSTRAP_SERVERS, defaultBootstrapServers(cluster)))
+                .withZookeeperConnect(vars.getOrDefault(KEY_ZOOKEEPER_CONNECT, defaultZookeeperConnect(cluster)))
+                .withNamespace(vars.getOrDefault(KEY_NAMESPACE, namespace))
+                .withReconciliationInterval(vars.getOrDefault(KEY_FULL_RECONCILIATION_INTERVAL, DEFAULT_FULL_RECONCILIATION_INTERVAL))
+                .withZookeeperSessionTimeout(vars.getOrDefault(KEY_ZOOKEEPER_SESSION_TIMEOUT, DEFAULT_ZOOKEEPER_SESSION_TIMEOUT))
+                .withImage(image);
+
+        // compute the differences with the requested configuration (from the updated ConfigMap)
+        TopicControllerConfig.TopicControllerConfigResult configDiffResult = config.diff(depConfig);
+
+        boolean isDifferent = configDiffResult.isImage() || configDiffResult.isNamespace() ||
+                configDiffResult.isReconciliationInterval() || configDiffResult.isZookeeperSessionTimeout();
+
+        return new ClusterDiffResult(isDifferent);
+    }
+
     public Deployment generateDeployment() {
 
         return createDeployment(
@@ -164,6 +196,15 @@ public class TopicController extends AbstractCluster {
                 createHttpProbe(healthCheckPath + "ready", HEALTHCHECK_PORT_NAME, DEFAULT_HEALTHCHECK_DELAY, DEFAULT_HEALTHCHECK_TIMEOUT),
                 Collections.emptyMap(),
                 Collections.emptyMap());
+    }
+
+    public Deployment patchDeployment(Deployment dep) {
+        return patchDeployment(dep,
+                createHttpProbe(healthCheckPath + "healthy", HEALTHCHECK_PORT_NAME, healthCheckInitialDelay, healthCheckTimeout),
+                createHttpProbe(healthCheckPath + "ready", HEALTHCHECK_PORT_NAME, healthCheckInitialDelay, healthCheckTimeout),
+                Collections.emptyMap(),
+                Collections.emptyMap()
+        );
     }
 
     @Override

@@ -125,6 +125,120 @@ public class TopicControllerConfig {
     }
 
     /**
+     * Compute the difference between two TopicControllerConfig instances
+     *
+     * @param other the other instance to compare with
+     * @return the result with all differences
+     */
+    public TopicControllerConfigResult diff(TopicControllerConfig other) {
+
+        TopicControllerConfigResult diffResult = new TopicControllerConfigResult();
+
+        diffResult
+                .withIsNamespace(!this.compareStringsWithNull(this.namespace, other.namespace()))
+                .withIsImage(!this.compareStringsWithNull(this.image, other.image()))
+                .withIsReconciliationInterval(!this.compareStringsWithNull(this.reconciliationInterval, other.reconciliationInterval()))
+                .withIsZookeeperSessionTimeout(!this.compareStringsWithNull(this.zookeeperSessionTimeout, other.zookeeperSessionTimeout()));
+
+        return diffResult;
+    }
+
+    /**
+     * Compare two String values for null as well
+     *
+     * @param one the first String
+     * @param other the other String
+     * @return  if the compared Strings are equals
+     */
+    private boolean compareStringsWithNull(String one, String other) {
+
+        return one == null ? other == null : one.equals(other);
+    }
+
+    /**
+     * Result after comparing two TopicControllerConfig instances
+     */
+    public static class TopicControllerConfigResult {
+
+        private boolean isNamespace;
+        private boolean isImage;
+        private boolean isReconciliationInterval;
+        private boolean isZookeeperSessionTimeout;
+
+        /**
+         * @return if the namespace in which watching for topics ConfigMap is different
+         */
+        public boolean isNamespace() {
+            return this.isNamespace;
+        }
+
+        /**
+         * @return if the Docker image to use for the Topic Controller is different
+         */
+        public boolean isImage() {
+            return this.isImage;
+        }
+
+        /**
+         * @return if the interval between periodic reconciliations is different
+         */
+        public boolean isReconciliationInterval() {
+            return this.isReconciliationInterval;
+        }
+
+        /**
+         * @return if the Zookeeper session timeout is different
+         */
+        public boolean isZookeeperSessionTimeout() {
+            return this.isZookeeperSessionTimeout;
+        }
+
+        /**
+         * Set if the namespace in which watching for topics ConfigMap is different
+         *
+         * @param isNamespace if the namespace in which watching for topics ConfigMap is different
+         * @return current TopicControllerConfigResult instance
+         */
+        public TopicControllerConfigResult withIsNamespace(boolean isNamespace) {
+            this.isNamespace = isNamespace;
+            return this;
+        }
+
+        /**
+         * Set if the Docker image to use for the Topic Controller is different
+         *
+         * @param isImage if the Docker image to use for the Topic Controller is different
+         * @return current TopicControllerConfigResult instance
+         */
+        public TopicControllerConfigResult withIsImage(boolean isImage) {
+            this.isImage = isImage;
+            return this;
+        }
+
+        /**
+         * Set if the interval between periodic reconciliations is different
+         *
+         * @param isReconciliationInterval if the interval between periodic reconciliations is different
+         * @return current TopicControllerConfigResult instance
+         */
+        public TopicControllerConfigResult withIsReconciliationInterval(boolean isReconciliationInterval) {
+            this.isReconciliationInterval = isReconciliationInterval;
+            return this;
+        }
+
+        /**
+         * Set if the Zookeeper session timeout is different
+         *
+         * @param isZookeeperSessionTimeout if the Zookeeper session timeout is different
+         * @return current TopicControllerConfigResult instance
+         */
+        public TopicControllerConfigResult withIsZookeeperSessionTimeout(boolean isZookeeperSessionTimeout) {
+            this.isZookeeperSessionTimeout = isZookeeperSessionTimeout;
+            return this;
+        }
+    }
+
+    /**
      * @return the bootstrap servers
      */
     public String kafkaBootstrapServers() {
