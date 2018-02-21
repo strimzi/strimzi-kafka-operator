@@ -537,13 +537,59 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
         }
     };
 
+    private final CompositeOperation<TopicController> updateTopicController = new CompositeOperation<TopicController>() {
+
+        @Override
+        public Future<?> composite(String namespace, ClusterOperation<TopicController> operation) {
+            TopicController topicController = operation.cluster();
+            ClusterDiffResult diff = operation.diff();
+
+            Future<Void> fut = patchDeployment(topicController, namespace, diff);
+
+            return fut;
+        }
+
+        @Override
+        public ClusterOperation<TopicController> getCluster(String namespace, String name) {
+            ClusterDiffResult diff;
+            TopicController topicController;
+            ConfigMap tcConfigMap = configMapOperations.get(namespace, name);
+
+            if (tcConfigMap != null) {
+                topicController = TopicController.fromConfigMap(tcConfigMap);
+                log.info("Updating Topic Controller {} in namespace {}", topicController.getName(), namespace);
+                Deployment dep = deploymentOperations.get(namespace, topicController.getName());
+                diff = topicController.diff(dep);
+            } else {
+                throw new IllegalStateException("ConfigMap " + name + " doesn't exist anymore in namespace " + namespace);
+            }
+
+            return new ClusterOperation<>(topicController, diff);
+        }
+
+        private Future<Void> patchDeployment(TopicController topicController, String namespace, ClusterDiffResult diff) {
+            if (diff.isDifferent()) {
+                return deploymentOperations.patch(namespace, topicController.getName(),
+                        topicController.patchDeployment(deploymentOperations.get(namespace, topicController.getName())));
+            } else {
+                return Future.succeededFuture();
+            }
+        }
+    };
+
     @Override
     public void update(String namespace, String name, Handler<AsyncResult<Void>> handler) {
-        execute(CLUSTER_TYPE_ZOOKEEPER, OP_UPDATE, namespace, name, updateZk, ar -> {
-            if (ar.failed()) {
-                handler.handle(ar);
+        execute(CLUSTER_TYPE_ZOOKEEPER, OP_UPDATE, namespace, name, updateZk, zookeeperDone -> {
+            if (zookeeperDone.failed()) {
+                handler.handle(zookeeperDone);
             } else {
-                execute(CLUSTER_TYPE_KAFKA, OP_UPDATE, namespace, name, updateKafka, handler);
+                execute(CLUSTER_TYPE_KAFKA, OP_UPDATE, namespace, name, updateKafka, kafkaDone -> {
+                    if (kafkaDone.failed()) {
+                        handler.handle(kafkaDone);
+                    } else {
+                        execute(CLUSTER_TYPE_TOPIC_CONTROLLER, OP_UPDATE, namespace, name, updateTopicController, handler);
+                    }
+                });
             }
         });
     }
