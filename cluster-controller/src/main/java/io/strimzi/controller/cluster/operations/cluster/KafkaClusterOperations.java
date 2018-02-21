@@ -122,11 +122,6 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
             result.add(statefulSetOperations.create(kafka.generateStatefulSet(isOpenShift)));
 
-            // TODO :
-            // waiting for Kafka pods is needed only if the topic controller is going to be deployed
-            // should we have the "waiting" only if topic controller deployment is enabled ?
-            // a new "isTopicControllerEnabled" could be useful in the KafkaCluster definition
-
             CompositeFuture
                 .join(result)
                 .compose(res -> statefulSetOperations.waitUntilReady(namespace, kafka.getName(), 1_000, 60_000))
@@ -312,20 +307,19 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
     @Override
     protected void delete(String namespace, String name, Handler<AsyncResult<Void>> handler) {
-        execute(CLUSTER_TYPE_KAFKA, OP_DELETE, namespace, name, deleteKafka, kafkaDone -> {
-            if (kafkaDone.failed()) {
-                handler.handle(kafkaDone);
+        execute(CLUSTER_TYPE_TOPIC_CONTROLLER, OP_DELETE, namespace, name, deleteTopicController, topicControllerDone -> {
+            if (topicControllerDone.failed()) {
+                handler.handle(topicControllerDone);
             } else {
-                execute(CLUSTER_TYPE_ZOOKEEPER, OP_DELETE, namespace, name, deleteZk, zookeeperDone -> {
-                    if (zookeeperDone.failed()) {
-                        handler.handle(zookeeperDone);
+                execute(CLUSTER_TYPE_KAFKA, OP_DELETE, namespace, name, deleteKafka, kafkaDone -> {
+                    if (kafkaDone.failed()) {
+                        handler.handle(kafkaDone);
                     } else {
-                        execute(CLUSTER_TYPE_TOPIC_CONTROLLER, OP_DELETE, namespace, name, deleteTopicController, handler);
+                        execute(CLUSTER_TYPE_ZOOKEEPER, OP_DELETE, namespace, name, deleteZk, handler);
                     }
                 });
             }
         });
-
     }
 
     private final CompositeOperation<KafkaCluster> updateKafka = new CompositeOperation<KafkaCluster>() {
