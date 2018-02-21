@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.List;
@@ -46,7 +47,9 @@ class Exec {
                 tmp.deleteOnExit();
                 return execOutput(tmp, Arrays.asList(cmd));
             } finally {
-                tmp.delete();
+                if (!tmp.delete()) {
+                    LOGGER.error("Unable to delete temporary file {}", tmp.getPath());
+                }
             }
         } catch (IOException e) {
             throw new KubeClusterException(e);
@@ -68,7 +71,7 @@ class Exec {
             if (sc != 0) {
                 throw new KubeClusterException(sc, "`" + join(" ", cmd) + "` got status code " + sc);
             }
-            return out == null ? null : new String(Files.readAllBytes(out.toPath()));
+            return out == null ? null : new String(Files.readAllBytes(out.toPath()), Charset.defaultCharset());
         } catch (IOException e) {
             throw new KubeClusterException(e);
         } catch (InterruptedException e) {

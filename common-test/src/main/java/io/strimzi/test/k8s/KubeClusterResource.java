@@ -64,6 +64,9 @@ public class KubeClusterResource extends ExternalResource {
                 LOGGER.debug("Cluster {} is not installed", kc);
             }
         }
+        if (cluster == null) {
+            throw new RuntimeException("Unable to find a cluster");
+        }
         this.cluster = cluster;
         this.clusterHook = new Thread(() -> {
             after();

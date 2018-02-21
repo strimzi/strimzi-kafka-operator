@@ -4,8 +4,6 @@
  */
 package io.strimzi.test.k8s;
 
-import static io.strimzi.test.k8s.Exec.exec;
-
 public class OpenShift implements KubeCluster {
 
     private static final String OC = "oc";

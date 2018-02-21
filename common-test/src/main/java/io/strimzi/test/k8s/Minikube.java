@@ -4,8 +4,6 @@
  */
 package io.strimzi.test.k8s;
 
-import static io.strimzi.test.k8s.Exec.exec;
-
 /**
  * A {@link KubeCluster} implementation for {@code minikube} and {@code minishift}.
  */

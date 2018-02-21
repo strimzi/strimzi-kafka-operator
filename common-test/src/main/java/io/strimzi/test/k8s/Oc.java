@@ -8,8 +8,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static io.strimzi.test.k8s.Exec.exec;
-
 /**
  * A {@link KubeClient} implementation wrapping {@code oc}.
  */
