@@ -47,7 +47,7 @@ public class Session extends AbstractVerticle {
         this.kubeClient = kubeClient;
         this.config = config;
         StringBuilder sb = new StringBuilder(System.lineSeparator());
-        for (Config.Value v: config.keys()) {
+        for (Config.Value<?> v: Config.keys()) {
             sb.append("\t").append(v.key).append(": ").append(config.get(v)).append(System.lineSeparator());
         }
         LOGGER.info("Using config:{}", sb.toString());
@@ -56,6 +56,7 @@ public class Session extends AbstractVerticle {
     /**
      * Stop the controller.
      */
+    @Override
     public void stop(Future<Void> stopFuture) throws Exception {
         this.stopped = true;
         vertx.executeBlocking(blockingResult -> {

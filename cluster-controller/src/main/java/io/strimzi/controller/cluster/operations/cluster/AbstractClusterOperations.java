@@ -279,7 +279,7 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
     protected void reconcile(String namespace, Map<String, String> labels, String type) {
         log.info("Reconciling {} clusters ...", clusterDescription);
 
-        Map<String, String> kafkaLabels = new HashMap(labels);
+        Map<String, String> kafkaLabels = new HashMap<>(labels);
         kafkaLabels.put(ClusterController.STRIMZI_TYPE_LABEL, type);
 
         List<ConfigMap> cms = configMapOperations.list(namespace, kafkaLabels);

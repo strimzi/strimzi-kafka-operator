@@ -180,7 +180,7 @@ public class AclBuilder {
         if (auth != null) {
             result.add(auth);
         }
-        for (Map<String, ACL> m : new Map[]{digests, hosts, ips}) {
+        for (Map<String, ACL> m : asList(digests, hosts, ips)) {
             if (m != null) {
                 result.addAll(m.values());
             }

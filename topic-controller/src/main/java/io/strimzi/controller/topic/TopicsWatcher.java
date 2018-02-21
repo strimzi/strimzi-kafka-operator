@@ -68,9 +68,9 @@ class TopicsWatcher {
             }
             List<String> result = childResult.result();
             LOGGER.debug("znode {} now has children {}, previous children {}", TOPICS_ZNODE, result, this.children);
-            Set<String> deleted = new HashSet(this.children);
+            Set<String> deleted = new HashSet<>(this.children);
             deleted.removeAll(result);
-            Set<String> created = new HashSet(result);
+            Set<String> created = new HashSet<>(result);
             created.removeAll(this.children);
             this.children = result;
 

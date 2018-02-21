@@ -31,7 +31,7 @@ public class Controller {
     private final LabelPredicate cmPredicate;
     private final String namespace;
     private TopicStore topicStore;
-    private final InFlight inFlight;
+    private final InFlight<TopicName> inFlight;
 
     enum EventType {
         INFO("Info"),
@@ -327,7 +327,7 @@ public class Controller {
         this.vertx = vertx;
         this.cmPredicate = cmPredicate;
         this.topicStore = topicStore;
-        this.inFlight = new InFlight(vertx);
+        this.inFlight = new InFlight<>(vertx);
         this.namespace = namespace;
     }
 
@@ -464,7 +464,7 @@ public class Controller {
                 && diff.changesConfig()
                 && disjoint(kafkaTopic.getConfig().keySet(), k8sTopic.getConfig().keySet())) {
             LOGGER.debug("cm created in k8s and topic created in kafka, they differ only in topic config, and those configs are disjoint: Updating k8s and kafka, and creating in topic store");
-            Map mergedConfigs = new HashMap(kafkaTopic.getConfig());
+            Map<String, String> mergedConfigs = new HashMap<>(kafkaTopic.getConfig());
             mergedConfigs.putAll(k8sTopic.getConfig());
             Topic mergedTopic = new Topic.Builder(kafkaTopic).withConfig(mergedConfigs).build();
             enqueue(new UpdateConfigMap(mergedTopic, ar -> {
@@ -797,8 +797,8 @@ public class Controller {
 
     private void reconcileOnCmChange(ConfigMap configMap, Topic k8sTopic, boolean isModify, Handler<AsyncResult<Void>> handler) {
         TopicName topicName = new TopicName(configMap);
-        Future f1 = Future.future();
-        Future f2 = Future.future();
+        Future<TopicMetadata> f1 = Future.future();
+        Future<Topic> f2 = Future.future();
         kafka.topicMetadata(topicName, f1.completer());
         topicStore.read(topicName, f2.completer());
         CompositeFuture.all(f1, f2).setHandler(ar -> {

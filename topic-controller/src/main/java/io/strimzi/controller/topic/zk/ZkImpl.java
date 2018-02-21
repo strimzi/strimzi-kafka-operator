@@ -53,7 +53,7 @@ public class ZkImpl implements Zk {
         this.zkConnectionString = zkConnectionString;
         this.sessionTimeout = sessionTimeout;
         this.readOnly = readOnly;
-        CompletableFuture f = new CompletableFuture();
+        CompletableFuture<Void> f = new CompletableFuture<>();
         try {
             zk = new ZooKeeper(zkConnectionString, sessionTimeout, watchedEvent -> {
                 // See https://wiki.apache.org/hadoop/ZooKeeper/FAQ
@@ -220,14 +220,17 @@ public class ZkImpl implements Zk {
         return this;
     }
 
+    @SuppressWarnings("unchecked")
     private Handler<AsyncResult<byte[]>> getDataWatchHandler(String path) {
         return (Handler<AsyncResult<byte[]>>) watches.get(PREFIX_DATA + path);
     }
 
+    @SuppressWarnings("unchecked")
     private Handler<AsyncResult<List<String>>> getChildrenWatchHandler(String path) {
         return (Handler<AsyncResult<List<String>>>) watches.get(PREFIX_CHILDREN + path);
     }
 
+    @SuppressWarnings("unchecked")
     private Handler<AsyncResult<Stat>> getExistsWatchHandler(String path) {
         return (Handler<AsyncResult<Stat>>) watches.get(PREFIX_EXISTS + path);
     }

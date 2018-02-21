@@ -347,7 +347,7 @@ public abstract class AbstractCluster {
     }
 
     protected Service createHeadlessService(String name, List<ServicePort> ports) {
-        return createHeadlessService(name, ports, Collections.EMPTY_MAP);
+        return createHeadlessService(name, ports, Collections.emptyMap());
     }
 
     protected Service createHeadlessService(String name, List<ServicePort> ports, Map<String, String> annotations) {

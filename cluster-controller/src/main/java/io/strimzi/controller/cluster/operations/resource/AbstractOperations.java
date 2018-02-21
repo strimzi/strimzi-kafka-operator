@@ -54,6 +54,7 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
      * If the resource with that name already exists the future completes successfully.
      * @param resource The resource to create.
      */
+    @SuppressWarnings("unchecked")
     public Future<Void> create(T resource) {
         Future<Void> fut = Future.future();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
@@ -89,7 +90,7 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
      * @param name The name of the resource to delete.
      */
     public Future<Void> delete(String namespace, String name) {
-        Future fut = Future.future();
+        Future<Void> fut = Future.future();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
             future -> {
                 if (operation().inNamespace(namespace).withName(name).get() != null) {
@@ -168,6 +169,7 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
      * @param labels The labels.
      * @return A list of matching resources.
      */
+    @SuppressWarnings("unchecked")
     public List<T> list(String namespace, Map<String, String> labels) {
         return operation().inNamespace(namespace).withLabels(labels).list().getItems();
     }
