@@ -13,6 +13,8 @@ import io.vertx.core.json.JsonObject;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Represents the topic controller deployment
@@ -33,7 +35,7 @@ public class TopicController extends AbstractCluster {
     private static final int DEFAULT_REPLICAS = 1;
     private static final int DEFAULT_HEALTHCHECK_DELAY = 10;
     private static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
-    // TODO : we need the period for topic controller healthcheck or we are going to use a default one ?
+    // TODO : we need the period for topic controller healthcheck or we are going to use the default one ?
     private static final int DEFAULT_ZOOKEEPER_PORT = 2181;
     private static final int DEFAULT_BOOTSTRAP_SERVERS_PORT = 9092;
     private static final String DEFAULT_FULL_RECONCILIATION_INTERVAL = "15 minutes";
@@ -119,6 +121,41 @@ public class TopicController extends AbstractCluster {
         return topicController;
     }
 
+    /**
+     * Create a Topic Controller from the deployed Deployment resource
+     *
+     * @param namespace Kubernetes/OpenShift namespace where cluster resources are going to be created
+     * @param cluster overall cluster name
+     * @param dep the deployment from which to recover the topic controller state
+     * @return Topic Controller instance
+     */
+    public static TopicController fromDeployment(String namespace, String cluster, Deployment dep) {
+
+        TopicController topicController = new TopicController(namespace, cluster);
+
+        topicController.setLabels(dep.getMetadata().getLabels());
+        topicController.setReplicas(dep.getSpec().getReplicas());
+        topicController.setImage(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
+        topicController.setHealthCheckInitialDelay(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds());
+        topicController.setHealthCheckTimeout(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds());
+
+        Map<String, String> vars = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream().collect(
+                Collectors.toMap(EnvVar::getName, EnvVar::getValue));
+
+        TopicControllerConfig config = new TopicControllerConfig();
+
+        config.withImage(topicController.getImage())
+                .withKafkaBootstrapServers(vars.getOrDefault(KEY_KAFKA_BOOTSTRAP_SERVERS, defaultBootstrapServers(cluster)))
+                .withZookeeperConnect(vars.getOrDefault(KEY_ZOOKEEPER_CONNECT, defaultZookeeperConnect(cluster)))
+                .withNamespace(vars.getOrDefault(KEY_NAMESPACE, namespace))
+                .withReconciliationInterval(vars.getOrDefault(KEY_FULL_RECONCILIATION_INTERVAL, DEFAULT_FULL_RECONCILIATION_INTERVAL))
+                .withZookeeperSessionTimeout(vars.getOrDefault(KEY_ZOOKEEPER_SESSION_TIMEOUT, DEFAULT_ZOOKEEPER_SESSION_TIMEOUT));
+
+        topicController.setConfig(config);
+
+        return topicController;
+    }
+
     public Deployment generateDeployment() {
 
         return createDeployment(
@@ -143,6 +180,7 @@ public class TopicController extends AbstractCluster {
 
     @Override
     protected String getServiceAccountName() {
+        // TODO : maybe it should not be hardcoded
         return "strimzi-cluster-controller";
     }
 }

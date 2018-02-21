@@ -5,6 +5,7 @@
 package io.strimzi.controller.cluster.operations.cluster;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
 import io.strimzi.controller.cluster.operations.resource.DeploymentOperations;
@@ -293,13 +294,35 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
         }
     };
 
+    private final CompositeOperation<TopicController> deleteTopicController = new CompositeOperation<TopicController>() {
+
+        @Override
+        public Future<?> composite(String namespace, ClusterOperation<TopicController> clusterOp) {
+            TopicController topicController = clusterOp.cluster();
+            Future<Void> fut = deploymentOperations.delete(namespace, topicController.getName());
+            return fut;
+        }
+
+        @Override
+        public ClusterOperation<TopicController> getCluster(String namespace, String name) {
+            Deployment dep = deploymentOperations.get(namespace, TopicController.topicControllerName(name));
+            return new ClusterOperation<>(TopicController.fromDeployment(namespace, name, dep), null);
+        }
+    };
+
     @Override
     protected void delete(String namespace, String name, Handler<AsyncResult<Void>> handler) {
-        execute(CLUSTER_TYPE_KAFKA, OP_DELETE, namespace, name, deleteKafka, ar -> {
-            if (ar.failed()) {
-                handler.handle(ar);
+        execute(CLUSTER_TYPE_KAFKA, OP_DELETE, namespace, name, deleteKafka, kafkaDone -> {
+            if (kafkaDone.failed()) {
+                handler.handle(kafkaDone);
             } else {
-                execute(CLUSTER_TYPE_ZOOKEEPER, OP_DELETE, namespace, name, deleteZk, handler);
+                execute(CLUSTER_TYPE_ZOOKEEPER, OP_DELETE, namespace, name, deleteZk, zookeeperDone -> {
+                    if (zookeeperDone.failed()) {
+                        handler.handle(zookeeperDone);
+                    } else {
+                        execute(CLUSTER_TYPE_TOPIC_CONTROLLER, OP_DELETE, namespace, name, deleteTopicController, handler);
+                    }
+                });
             }
         });
 
