@@ -83,9 +83,9 @@ public class Main {
             vertx.deployVerticle(controller,
                 res -> {
                     if (res.succeeded()) {
-                        log.info("Cluster Controller verticle started");
+                        log.info("Cluster Controller verticle started in namespace {}", namespace);
                     } else {
-                        log.error("Cluster Controller verticle failed to start", res.cause());
+                        log.error("Cluster Controller verticle in namespace {} failed to start", namespace, res.cause());
                         System.exit(1);
                     }
                     fut.completer().handle(res);
