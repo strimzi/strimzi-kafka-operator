@@ -83,7 +83,7 @@ you can push the images to OpenShift's Docker repo like this:
    specify the Docker repo, otherwise OpenShift will still try to pull 
    the image from docker.io:
    
-        oc new-app strimzi -p IMAGE_REPO_NAME=172.30.1.1:5000/myproject
+        oc new-app strimzi-ephemeral -p IMAGE_REPO_NAME=172.30.1.1:5000/myproject
 
 
 ## Release

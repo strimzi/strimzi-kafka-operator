@@ -5,7 +5,12 @@
 package io.strimzi.controller.cluster;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+
+import static java.util.Arrays.asList;
+import static java.util.Collections.unmodifiableSet;
 
 /**
  * Cluster Controller configuration
@@ -19,18 +24,18 @@ public class ClusterControllerConfig {
     public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL = 120_000; // in ms (2 minutes)
 
     private Map<String, String> labels;
-    private String namespace;
+    private Set<String> namespaces;
     private long reconciliationInterval;
 
     /**
      * Constructor
      *
-     * @param namespace namespace in which the controller will run and create resources
+     * @param namespaces namespace in which the controller will run and create resources
      * @param labels    labels used for watching the cluster ConfigMap
      * @param reconciliationInterval    specify every how many milliseconds the reconciliation runs
      */
-    public ClusterControllerConfig(String namespace, Map<String, String> labels, long reconciliationInterval) {
-        this.namespace = namespace;
+    public ClusterControllerConfig(Set<String> namespaces, Map<String, String> labels, long reconciliationInterval) {
+        this.namespaces = unmodifiableSet(new HashSet<>(namespaces));
         this.labels = labels;
         this.reconciliationInterval = reconciliationInterval;
     }
@@ -38,11 +43,11 @@ public class ClusterControllerConfig {
     /**
      * Constructor which provide a configuration with a default (120000 ms) reconciliation interval
      *
-     * @param namespace namespace in which the controller will run and create resources
+     * @param namespaces namespace in which the controller will run and create resources
      * @param labels    labels used for watching the cluster ConfigMap
      */
-    public ClusterControllerConfig(String namespace, Map<String, String> labels) {
-        this(namespace, labels, DEFAULT_FULL_RECONCILIATION_INTERVAL);
+    public ClusterControllerConfig(Set<String> namespaces, Map<String, String> labels) {
+        this(namespaces, labels, DEFAULT_FULL_RECONCILIATION_INTERVAL);
     }
 
     /**
@@ -53,13 +58,16 @@ public class ClusterControllerConfig {
      */
     public static ClusterControllerConfig fromMap(Map<String, String> map) {
 
-        String namespace = map.get(ClusterControllerConfig.STRIMZI_NAMESPACE);
-        if (namespace == null) {
-            throw new IllegalArgumentException("Namespace cannot be null");
+        String namespacesList = map.get(ClusterControllerConfig.STRIMZI_NAMESPACE);
+        Set<String> namespaces;
+        if (namespacesList == null || namespacesList.isEmpty()) {
+            throw new IllegalArgumentException(ClusterControllerConfig.STRIMZI_NAMESPACE + " cannot be null");
+        } else {
+            namespaces = new HashSet(asList(namespacesList.trim().split("\\s*,+\\s*")));
         }
         String stringLabels = map.get(ClusterControllerConfig.STRIMZI_CONFIGMAP_LABELS);
-        if (stringLabels == null) {
-            throw new IllegalArgumentException("Labels to watch cannot be null");
+        if (stringLabels == null || stringLabels.isEmpty()) {
+            throw new IllegalArgumentException(ClusterControllerConfig.STRIMZI_CONFIGMAP_LABELS + " cannot be null");
         }
         Long reconciliationInterval = DEFAULT_FULL_RECONCILIATION_INTERVAL;
 
@@ -76,7 +84,7 @@ public class ClusterControllerConfig {
             labelsMap.put(fields[0].trim(), fields[1].trim());
         }
 
-        return new ClusterControllerConfig(namespace, labelsMap, reconciliationInterval);
+        return new ClusterControllerConfig(namespaces, labelsMap, reconciliationInterval);
     }
 
     /**
@@ -96,19 +104,10 @@ public class ClusterControllerConfig {
     }
 
     /**
-     * @return  namespace in which the controller runs and creates resources
+     * @return  namespaces in which the controller runs and creates resources
      */
-    public String getNamespace() {
-        return namespace;
-    }
-
-    /**
-     * Set the namespace in which the controller runs and creates resources
-     *
-     * @param namespace namespace in which the controller runs and creates resources
-     */
-    public void setNamespace(String namespace) {
-        this.namespace = namespace;
+    public Set<String> getNamespaces() {
+        return namespaces;
     }
 
     /**
@@ -118,19 +117,10 @@ public class ClusterControllerConfig {
         return reconciliationInterval;
     }
 
-    /**
-     * Set how many milliseconds the reconciliation runs
-     *
-     * @param reconciliationInterval    how many milliseconds the reconciliation runs
-     */
-    public void setReconciliationInterval(long reconciliationInterval) {
-        this.reconciliationInterval = reconciliationInterval;
-    }
-
     @Override
     public String toString() {
         return "ClusterControllerConfig(" +
-                "namespace=" + namespace +
+                "namespaces=" + namespaces +
                 ",labels=" + labels +
                 ",reconciliationInterval=" + reconciliationInterval +
                 ")";

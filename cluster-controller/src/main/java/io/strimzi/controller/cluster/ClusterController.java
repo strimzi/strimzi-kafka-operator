@@ -5,7 +5,6 @@
 package io.strimzi.controller.cluster;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
@@ -52,16 +51,20 @@ public class ClusterController extends AbstractVerticle {
     private final KafkaClusterOperations kafkaClusterOperations;
     private final KafkaConnectClusterOperations kafkaConnectClusterOperations;
     private final KafkaConnectS2IClusterOperations kafkaConnectS2IClusterOperations;
+    private boolean stopping;
 
-    public ClusterController(ClusterControllerConfig config,
+    public ClusterController(String namespace,
+                             Map<String, String> labels,
+                             long reconciliationInterval,
+                             KubernetesClient client,
                              KafkaClusterOperations kafkaClusterOperations,
                              KafkaConnectClusterOperations kafkaConnectClusterOperations,
                              KafkaConnectS2IClusterOperations kafkaConnectS2IClusterOperations) {
-        log.info("Creating ClusterController");
-        this.namespace = config.getNamespace();
-        this.labels = config.getLabels();
-        this.reconciliationInterval = config.getReconciliationInterval();
-        this.client = new DefaultKubernetesClient();
+        log.info("Creating ClusterController for namespace {}", namespace);
+        this.namespace = namespace;
+        this.labels = labels;
+        this.reconciliationInterval = reconciliationInterval;
+        this.client = client;
         this.kafkaClusterOperations = kafkaClusterOperations;
         this.kafkaConnectClusterOperations = kafkaConnectClusterOperations;
         this.kafkaConnectS2IClusterOperations = kafkaConnectS2IClusterOperations;
@@ -69,7 +72,7 @@ public class ClusterController extends AbstractVerticle {
 
     @Override
     public void start(Future<Void> start) {
-        log.info("Starting ClusterController");
+        log.info("Starting ClusterController for namespace {}", namespace);
 
         // Configure the executor here, but it is used only in other places
         getVertx().createSharedWorkerExecutor("kubernetes-ops-pool", 10, TimeUnit.SECONDS.toNanos(120));
@@ -78,28 +81,29 @@ public class ClusterController extends AbstractVerticle {
             if (res.succeeded())    {
                 configMapWatch = res.result();
 
-                log.info("Setting up periodical reconciliation");
+                log.info("Setting up periodical reconciliation for namespace {}", namespace);
                 this.reconcileTimer = vertx.setPeriodic(this.reconciliationInterval, res2 -> {
-                    log.info("Triggering periodic reconciliation ...");
+                    log.info("Triggering periodic reconciliation for namespace {}...", namespace);
                     reconcile();
                 });
 
-                log.info("ClusterController up and running");
+                log.info("ClusterController running for namespace {}", namespace);
 
                 // start the HTTP server for healthchecks
                 this.startHealthServer();
 
                 start.complete();
             } else {
-                log.error("ClusterController startup failed");
-                start.fail("ClusterController startup failed");
+                log.error("ClusterController startup failed for namespace {}", namespace, res.cause());
+                start.fail("ClusterController startup failed for namespace " + namespace);
             }
         });
     }
 
     @Override
-    public void stop(Future<Void> stop) throws Exception {
-
+    public void stop(Future<Void> stop) {
+        stopping = true;
+        log.info("Stopping ClusterController for namespace {}", namespace);
         vertx.cancelTimer(reconcileTimer);
         configMapWatch.close();
         client.close();
@@ -118,7 +122,7 @@ public class ClusterController extends AbstractVerticle {
 
                         final AbstractClusterOperations<?, ?> cluster;
                         if (type == null) {
-                            log.warn("Missing type in Config Map {}", cm.getMetadata().getName());
+                            log.warn("Missing label {} in Config Map {} in namespace {}", ClusterController.STRIMZI_TYPE_LABEL, cm.getMetadata().getName(), namespace);
                             return;
                         } else if (type.equals(KafkaCluster.TYPE)) {
                             cluster = kafkaClusterOperations;
@@ -127,29 +131,29 @@ public class ClusterController extends AbstractVerticle {
                         } else if (type.equals(KafkaConnectS2ICluster.TYPE)) {
                             cluster = kafkaConnectS2IClusterOperations;
                         } else {
-                            log.warn("Unknown type {} received in Config Map {}", labels.get(ClusterController.STRIMZI_TYPE_LABEL), cm.getMetadata().getName());
+                            log.warn("Unknown type {} received in Config Map {} in namespace {}", labels.get(ClusterController.STRIMZI_TYPE_LABEL), cm.getMetadata().getName(), namespace);
                             return;
                         }
                         String name = cm.getMetadata().getName();
                         switch (action) {
                             case ADDED:
-                                log.info("New ConfigMap {}", name);
+                                log.info("New ConfigMap {} in namespace {}", name, namespace);
                                 cluster.create(namespace, name);
                                 break;
                             case DELETED:
-                                log.info("Deleted ConfigMap {}", name);
+                                log.info("Deleted ConfigMap {} in namespace {}", name, namespace);
                                 cluster.delete(namespace, name);
                                 break;
                             case MODIFIED:
-                                log.info("Modified ConfigMap {}", name);
+                                log.info("Modified ConfigMap {} in namespace {}", name, namespace);
                                 cluster.update(namespace, name);
                                 break;
                             case ERROR:
-                                log.error("Failed ConfigMap {}", name);
+                                log.error("Failed ConfigMap {} in namespace{} ", name, namespace);
                                 reconcile();
                                 break;
                             default:
-                                log.error("Unknown action: {}", name);
+                                log.error("Unknown action: {} in namespace {}", name, namespace);
                                 reconcile();
                         }
                     }
@@ -157,9 +161,9 @@ public class ClusterController extends AbstractVerticle {
                     @Override
                     public void onClose(KubernetesClientException e) {
                         if (e != null) {
-                            log.error("Watcher closed with exception", e);
+                            log.error("Watcher closed with exception in namespace {}", namespace, e);
                         } else {
-                            log.error("Watcher closed");
+                            log.info("Watcher closed in namespace {}", namespace);
                         }
 
                         recreateConfigMapWatch();
@@ -168,10 +172,10 @@ public class ClusterController extends AbstractVerticle {
                 future.complete(watch);
             }, res -> {
                 if (res.succeeded())    {
-                    log.info("ConfigMap watcher up and running for labels {}", labels);
+                    log.info("ConfigMap watcher running for labels {}", labels);
                     handler.handle(Future.succeededFuture((Watch) res.result()));
                 } else {
-                    log.info("ConfigMap watcher failed to start");
+                    log.info("ConfigMap watcher failed to start", res.cause());
                     handler.handle(Future.failedFuture("ConfigMap watcher failed to start"));
                 }
             }
@@ -179,14 +183,17 @@ public class ClusterController extends AbstractVerticle {
     }
 
     private void recreateConfigMapWatch() {
+        if (stopping) {
+            return;
+        }
         configMapWatch.close();
 
         createConfigMapWatch(res -> {
             if (res.succeeded())    {
-                log.info("ConfigMap watch recreated");
+                log.info("ConfigMap watch recreated in namespace {}", namespace);
                 configMapWatch = res.result();
             } else {
-                log.error("Failed to recreate ConfigMap watch");
+                log.error("Failed to recreate ConfigMap watch in namespace {}", namespace);
             }
         });
     }

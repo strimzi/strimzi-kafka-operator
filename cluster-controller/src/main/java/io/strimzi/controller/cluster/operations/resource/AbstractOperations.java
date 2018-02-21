@@ -64,7 +64,7 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
                 if (operation().inNamespace(namespace).withName(name).get() == null) {
                     try {
                         log.info("Creating {} {} in namespace {}", resourceKind, name, namespace);
-                        operation().createOrReplace(resource);
+                        operation().inNamespace(namespace).createOrReplace(resource);
                         log.info("{} {} in namespace {} has been created", resourceKind, name, namespace);
                         future.complete();
                     } catch (Exception e) {
