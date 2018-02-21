@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
+import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -20,10 +21,8 @@ public class TopicController extends AbstractCluster {
 
     private static final String NAME_SUFFIX = "-topic-controller";
 
-    // Kafka Connect configuration
-    protected String bootstrapServers;
-    protected String zookeeperConnect;
-    protected String topicNamespace;
+    // Topic Controller configuration
+    protected TopicControllerConfig config;
 
     // Port configuration
     private static final int HEALTHCHECK_PORT = 8080;
@@ -37,14 +36,18 @@ public class TopicController extends AbstractCluster {
     // TODO : we need the period for topic controller healthcheck or we are going to use a default one ?
     private static final int DEFAULT_ZOOKEEPER_PORT = 2181;
     private static final int DEFAULT_BOOTSTRAP_SERVERS_PORT = 9092;
+    private static final String DEFAULT_FULL_RECONCILIATION_INTERVAL = "15 minutes";
+    private static final String DEFAULT_ZOOKEEPER_SESSION_TIMEOUT = "20 seconds";
 
     // Configuration keys
     public static final String KEY_CONFIG = "topic-controller-config";
 
     // Topic Controller configuration keys
-    public static final String KEY_BOOTSTRAP_SERVERS = "STRIMZI_KAFKA_BOOTSTRAP_SERVERS";
+    public static final String KEY_KAFKA_BOOTSTRAP_SERVERS = "STRIMZI_KAFKA_BOOTSTRAP_SERVERS";
     public static final String KEY_ZOOKEEPER_CONNECT = "STRIMZI_ZOOKEEPER_CONNECT";
-    public static final String KEY_TOPIC_NAMESPACE = "STRIMZI_NAMESPACE";
+    public static final String KEY_NAMESPACE = "STRIMZI_NAMESPACE";
+    public static final String KEY_FULL_RECONCILIATION_INTERVAL = "STRIMZI_FULL_RECONCILIATION_INTERVAL";
+    public static final String KEY_ZOOKEEPER_SESSION_TIMEOUT = "STRIMZI_ZOOKEEPER_SESSION_TIMEOUT";
 
     /**
      * Constructor
@@ -61,9 +64,16 @@ public class TopicController extends AbstractCluster {
         this.healthCheckPath = "/";
         this.healthCheckTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
         this.healthCheckInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
-        this.zookeeperConnect = defaultZookeeperConnect(cluster);
-        this.bootstrapServers = defaultBootstrapServers(cluster);
-        this.topicNamespace = namespace;
+
+        // create a default configuration
+        this.config = new TopicControllerConfig();
+        this.config
+                .withImage(DEFAULT_IMAGE)
+                .withKafkaBootstrapServers(defaultBootstrapServers(cluster))
+                .withZookeeperConnect(defaultZookeeperConnect(cluster))
+                .withNamespace(namespace)
+                .withReconciliationInterval(DEFAULT_FULL_RECONCILIATION_INTERVAL)
+                .withZookeeperSessionTimeout(DEFAULT_ZOOKEEPER_SESSION_TIMEOUT);
     }
 
     public static String topicControllerName(String cluster) {
@@ -80,6 +90,14 @@ public class TopicController extends AbstractCluster {
         return cluster + "-kafka" + ":" + DEFAULT_BOOTSTRAP_SERVERS_PORT;
     }
 
+    public void setConfig(TopicControllerConfig config) {
+        this.config = config;
+    }
+
+    public TopicControllerConfig getConfig() {
+        return this.config;
+    }
+
     /**
      * Create a Topic Controller from the related ConfigMap resource
      *
@@ -92,9 +110,10 @@ public class TopicController extends AbstractCluster {
 
         String config = cm.getData().get(KEY_CONFIG);
         if (config != null) {
-
             topicController = new TopicController(cm.getMetadata().getNamespace(), cm.getMetadata().getName());
-            // TODO : building the topic controller instance with the provided configuration
+
+            TopicControllerConfig.fromJson(topicController.getConfig(), new JsonObject(config));
+            topicController.setImage(topicController.getConfig().image());
         }
 
         return topicController;
@@ -113,9 +132,11 @@ public class TopicController extends AbstractCluster {
     @Override
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
-        varList.add(new EnvVarBuilder().withName(KEY_BOOTSTRAP_SERVERS).withValue(bootstrapServers).build());
-        varList.add(new EnvVarBuilder().withName(KEY_ZOOKEEPER_CONNECT).withValue(zookeeperConnect).build());
-        varList.add(new EnvVarBuilder().withName(KEY_TOPIC_NAMESPACE).withValue(topicNamespace).build());
+        varList.add(new EnvVarBuilder().withName(KEY_KAFKA_BOOTSTRAP_SERVERS).withValue(this.config.kafkaBootstrapServers()).build());
+        varList.add(new EnvVarBuilder().withName(KEY_ZOOKEEPER_CONNECT).withValue(this.config.zookeeperConnect()).build());
+        varList.add(new EnvVarBuilder().withName(KEY_NAMESPACE).withValue(this.config.namespace()).build());
+        varList.add(new EnvVarBuilder().withName(KEY_FULL_RECONCILIATION_INTERVAL).withValue(this.config.reconciliationInterval()).build());
+        varList.add(new EnvVarBuilder().withName(KEY_ZOOKEEPER_SESSION_TIMEOUT).withValue(this.config.zookeeperSessionTimeout()).build());
 
         return varList;
     }
