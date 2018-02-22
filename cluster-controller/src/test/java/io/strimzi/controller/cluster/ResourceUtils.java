@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.strimzi.controller.cluster.resources.KafkaCluster;
 import io.strimzi.controller.cluster.resources.KafkaConnectCluster;
 import io.strimzi.controller.cluster.resources.KafkaConnectS2ICluster;
+import io.strimzi.controller.cluster.resources.TopicController;
 import io.strimzi.controller.cluster.resources.ZookeeperCluster;
 
 import java.util.HashMap;
@@ -49,10 +50,17 @@ public class ResourceUtils {
     public static ConfigMap createKafkaClusterConfigMap(String clusterCmNamespace, String clusterCmName, int replicas,
                                                         String image, int healthDelay, int healthTimeout, String metricsCmJson) {
         return createKafkaClusterConfigMap(clusterCmNamespace, clusterCmName, replicas, image, healthDelay, healthTimeout, metricsCmJson,
-                "{\"type\": \"ephemeral\"}");
+                "{\"type\": \"ephemeral\"}", null);
     }
     public static ConfigMap createKafkaClusterConfigMap(String clusterCmNamespace, String clusterCmName, int replicas,
                                                         String image, int healthDelay, int healthTimeout, String metricsCmJson, String storage) {
+        return createKafkaClusterConfigMap(clusterCmNamespace, clusterCmName, replicas, image, healthDelay, healthTimeout, metricsCmJson,
+                storage, null);
+    }
+
+    public static ConfigMap createKafkaClusterConfigMap(String clusterCmNamespace, String clusterCmName, int replicas,
+                                                        String image, int healthDelay, int healthTimeout, String metricsCmJson,
+                                                        String storage, String topicController) {
         Map<String, String> cmData = new HashMap<>();
         cmData.put(KafkaCluster.KEY_REPLICAS, Integer.toString(replicas));
         cmData.put(KafkaCluster.KEY_IMAGE, image);
@@ -66,6 +74,9 @@ public class ResourceUtils {
         cmData.put(ZookeeperCluster.KEY_HEALTHCHECK_TIMEOUT, Integer.toString(healthTimeout));
         cmData.put(ZookeeperCluster.KEY_STORAGE, storage);
         cmData.put(ZookeeperCluster.KEY_METRICS_CONFIG, metricsCmJson);
+        if (topicController != null) {
+            cmData.put(TopicController.KEY_CONFIG, topicController);
+        }
         return new ConfigMapBuilder()
                 .withNewMetadata()
                 .withName(clusterCmName)
@@ -78,7 +89,7 @@ public class ResourceUtils {
 
 
     /**
-     * Generate ConfigMap for Kafka Conect S2I cluster
+     * Generate ConfigMap for Kafka Connect S2I cluster
      */
     public static ConfigMap createKafkaConnectS2IClusterConfigMap(String clusterCmNamespace, String clusterCmName, int replicas,
                                                                   String image, int healthDelay, int healthTimeout, String bootstrapServers,
@@ -107,7 +118,7 @@ public class ResourceUtils {
     }
 
     /**
-     * Generate empty KafkaConnect S2I config map
+     * Generate empty Kafka Connect S2I config map
      */
     public static ConfigMap createEmptyKafkaConnectS2IClusterConfigMap(String clusterCmNamespace, String clusterCmName) {
         Map<String, String> cmData = new HashMap<>();
@@ -123,7 +134,7 @@ public class ResourceUtils {
     }
 
     /**
-     * Generate ConfigMap for Kafka Conect cluster
+     * Generate ConfigMap for Kafka Connect cluster
      */
     public static ConfigMap createKafkaConnectClusterConfigMap(String clusterCmNamespace, String clusterCmName, int replicas,
                                                                   String image, int healthDelay, int healthTimeout, String bootstrapServers,
@@ -152,7 +163,7 @@ public class ResourceUtils {
     }
 
     /**
-     * Generate empty KafkaConnect config map
+     * Generate empty Kafka Connect config map
      */
     public static ConfigMap createEmptyKafkaConnectClusterConfigMap(String clusterCmNamespace, String clusterCmName) {
         Map<String, String> cmData = new HashMap<>();
