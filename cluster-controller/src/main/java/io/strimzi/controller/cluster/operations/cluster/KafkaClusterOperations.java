@@ -599,6 +599,8 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
                         ClusterOperation<TopicController> clusterOp = updateTopicController.getCluster(namespace, name);
                         if (clusterOp.cluster() != null) {
                             execute(CLUSTER_TYPE_TOPIC_CONTROLLER, OP_UPDATE, namespace, name, updateTopicController, handler);
+                        } else {
+                            handler.handle(kafkaDone);
                         }
                     }
                 });
