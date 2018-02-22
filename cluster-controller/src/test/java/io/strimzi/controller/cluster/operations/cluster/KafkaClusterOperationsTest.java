@@ -7,6 +7,7 @@ package io.strimzi.controller.cluster.operations.cluster;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.controller.cluster.ResourceUtils;
 import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
@@ -20,6 +21,7 @@ import io.strimzi.controller.cluster.resources.AbstractCluster;
 import io.strimzi.controller.cluster.resources.ClusterDiffResult;
 import io.strimzi.controller.cluster.resources.KafkaCluster;
 import io.strimzi.controller.cluster.resources.Storage;
+import io.strimzi.controller.cluster.resources.TopicController;
 import io.strimzi.controller.cluster.resources.ZookeeperCluster;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -67,21 +69,27 @@ public class KafkaClusterOperationsTest {
     private final boolean openShift;
     private final boolean metrics;
     private final String storage;
+    private final String tcConfig;
     private final boolean deleteClaim;
 
     public static class Params {
         private final boolean openShift;
         private final boolean metrics;
         private final String storage;
+        private final String tcConfig;
 
-        public Params(boolean openShift, boolean metrics, String storage) {
+        public Params(boolean openShift, boolean metrics, String storage, String tcConfig) {
             this.openShift = openShift;
             this.metrics = metrics;
             this.storage = storage;
+            this.tcConfig = tcConfig;
         }
 
         public String toString() {
-            return "openShift=" + openShift + ",metrics=" + metrics + ",storage=" + storage;
+            return "openShift=" + openShift +
+                    ",metrics=" + metrics +
+                    ",storage=" + storage +
+                    ",tcConfig=" + tcConfig;
         }
     }
 
@@ -99,11 +107,19 @@ public class KafkaClusterOperationsTest {
                     "\"size\": \"123\", " +
                     "\"class\": \"foo\"}"
         };
+        String[] tcConfigs = {
+            null,
+            "{ }",
+            "{\"reconciliationInterval\": \"10 minutes\", " +
+                    "\"zookeeperSessionTimeout\": \"10 seconds\"}"
+        };
         List<Params> result = new ArrayList();
         for (boolean shift: shiftiness) {
             for (boolean metric: metrics) {
                 for (String storage: storageConfigs) {
-                    result.add(new Params(shift, metric, storage));
+                    for (String tcConfig: tcConfigs) {
+                        result.add(new Params(shift, metric, storage, tcConfig));
+                    }
                 }
             }
         }
@@ -114,6 +130,7 @@ public class KafkaClusterOperationsTest {
         this.openShift = params.openShift;
         this.metrics = params.metrics;
         this.storage = params.storage;
+        this.tcConfig = params.tcConfig;
         this.deleteClaim = Storage.fromJson(new JsonObject(params.storage)).isDeleteClaim();
     }
 
@@ -135,7 +152,7 @@ public class KafkaClusterOperationsTest {
     }
 
     private void createCluster(TestContext context, ConfigMap clusterCm) {
-        // create CM, Service, headless service, statefulset
+        // create CM, Service, headless service, statefulset and so on
         ConfigMapOperations mockCmOps = mock(ConfigMapOperations.class);
         ServiceOperations mockServiceOps = mock(ServiceOperations.class);
         StatefulSetOperations mockSsOps = mock(StatefulSetOperations.class);
@@ -152,13 +169,16 @@ public class KafkaClusterOperationsTest {
         when(mockServiceOps.create(serviceCaptor.capture())).thenReturn(Future.succeededFuture());
         ArgumentCaptor<StatefulSet> ssCaptor = ArgumentCaptor.forClass(StatefulSet.class);
         when(mockSsOps.create(ssCaptor.capture())).thenReturn(Future.succeededFuture());
-        when(mockSsOps.waitUntilReady(any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        ArgumentCaptor<Deployment> depCaptor = ArgumentCaptor.forClass(Deployment.class);
+        when(mockDepOps.create(depCaptor.capture())).thenReturn(Future.succeededFuture());
 
+        when(mockSsOps.waitUntilReady(any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockPodOps.waitUntilReady(any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockEndpointOps.waitUntilReady(any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         KafkaCluster kafkaCluster = KafkaCluster.fromConfigMap(clusterCm);
         ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromConfigMap(clusterCm);
+        TopicController topicController = TopicController.fromConfigMap(clusterCm);
         ArgumentCaptor<ConfigMap> metricsCaptor = ArgumentCaptor.forClass(ConfigMap.class);
         when(mockCmOps.create(metricsCaptor.capture())).thenReturn(Future.succeededFuture());
 
@@ -296,7 +316,7 @@ public class KafkaClusterOperationsTest {
         int healthDelay = 120;
         int healthTimeout = 30;
         String metricsCmJson = metrics ? METRICS_CONFIG : null;
-        return ResourceUtils.createKafkaClusterConfigMap(clusterCmNamespace, clusterCmName, replicas, image, healthDelay, healthTimeout, metricsCmJson, storage);
+        return ResourceUtils.createKafkaClusterConfigMap(clusterCmNamespace, clusterCmName, replicas, image, healthDelay, healthTimeout, metricsCmJson, storage, tcConfig);
     }
 
     private static <T> Set<T> set(T... elements) {
@@ -374,6 +394,8 @@ public class KafkaClusterOperationsTest {
         KafkaCluster updatedKafkaCluster = KafkaCluster.fromConfigMap(clusterCm);
         ZookeeperCluster originalZookeeperCluster = ZookeeperCluster.fromConfigMap(originalCm);
         ZookeeperCluster updatedZookeeperCluster = ZookeeperCluster.fromConfigMap(clusterCm);
+        TopicController originalTopicController = TopicController.fromConfigMap(originalCm);
+        TopicController updatedTopicController = TopicController.fromConfigMap(clusterCm);
 
         ClusterDiffResult kafkaDiff = updatedKafkaCluster.diff(
                 originalKafkaCluster.isMetricsEnabled() ? originalKafkaCluster.generateMetricsConfigMap() : null,
@@ -381,6 +403,10 @@ public class KafkaClusterOperationsTest {
         ClusterDiffResult zkDiff = updatedZookeeperCluster.diff(
                 originalZookeeperCluster.isMetricsEnabled() ? originalZookeeperCluster.generateMetricsConfigMap() : null,
                 originalZookeeperCluster.generateStatefulSet(openShift));
+        ClusterDiffResult tcDiff = null;
+        if ((updatedTopicController != null) && (originalTopicController != null)) {
+            updatedTopicController.diff(originalTopicController.generateDeployment());
+        }
 
         // create CM, Service, headless service, statefulset
         ConfigMapOperations mockCmOps = mock(ConfigMapOperations.class);
@@ -433,6 +459,13 @@ public class KafkaClusterOperationsTest {
         when(mockSsOps.get(clusterCmNamespace, ZookeeperCluster.zookeeperClusterName(clusterCmName))).thenReturn(
                 originalZookeeperCluster.generateStatefulSet(openShift)
         );
+
+        // Mock Deployment get
+        if (originalTopicController != null) {
+            when(mockDepOps.get(clusterCmNamespace, TopicController.topicControllerName(clusterCmName))).thenReturn(
+                    originalTopicController.generateDeployment()
+            );
+        }
 
         // Mock CM patch
         Set<String> metricsCms = set();
