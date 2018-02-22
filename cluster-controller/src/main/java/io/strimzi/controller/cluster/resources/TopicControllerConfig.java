@@ -6,6 +6,8 @@ package io.strimzi.controller.cluster.resources;
 
 import io.vertx.core.json.JsonObject;
 
+import java.util.Objects;
+
 /**
  * Represents the configuration for the Topic Controller to deploy
  */
@@ -135,24 +137,12 @@ public class TopicControllerConfig {
         TopicControllerConfigResult diffResult = new TopicControllerConfigResult();
 
         diffResult
-                .withIsNamespace(!this.compareStringsWithNull(this.namespace, other.namespace()))
-                .withIsImage(!this.compareStringsWithNull(this.image, other.image()))
-                .withIsReconciliationInterval(!this.compareStringsWithNull(this.reconciliationInterval, other.reconciliationInterval()))
-                .withIsZookeeperSessionTimeout(!this.compareStringsWithNull(this.zookeeperSessionTimeout, other.zookeeperSessionTimeout()));
+                .withIsNamespace(!Objects.equals(this.namespace, other.namespace()))
+                .withIsImage(!Objects.equals(this.image, other.image()))
+                .withIsReconciliationInterval(!Objects.equals(this.reconciliationInterval, other.reconciliationInterval()))
+                .withIsZookeeperSessionTimeout(!Objects.equals(this.zookeeperSessionTimeout, other.zookeeperSessionTimeout()));
 
         return diffResult;
-    }
-
-    /**
-     * Compare two String values for null as well
-     *
-     * @param one the first String
-     * @param other the other String
-     * @return  if the compared Strings are equals
-     */
-    private boolean compareStringsWithNull(String one, String other) {
-
-        return one == null ? other == null : one.equals(other);
     }
 
     /**
