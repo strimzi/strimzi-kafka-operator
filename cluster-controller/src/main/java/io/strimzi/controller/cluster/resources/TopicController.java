@@ -27,19 +27,19 @@ public class TopicController extends AbstractCluster {
     protected TopicControllerConfig config;
 
     // Port configuration
-    private static final int HEALTHCHECK_PORT = 8080;
-    private static final String HEALTHCHECK_PORT_NAME = "hcheck-port";
+    protected static final int HEALTHCHECK_PORT = 8080;
+    protected static final String HEALTHCHECK_PORT_NAME = "hcheck-port";
 
     // Configuration defaults
-    private static final String DEFAULT_IMAGE = "strimzi/topic-controller:latest";
-    private static final int DEFAULT_REPLICAS = 1;
-    private static final int DEFAULT_HEALTHCHECK_DELAY = 10;
-    private static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
+    protected static final String DEFAULT_IMAGE = "strimzi/topic-controller:latest";
+    protected static final int DEFAULT_REPLICAS = 1;
+    protected static final int DEFAULT_HEALTHCHECK_DELAY = 10;
+    protected static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
     // TODO : we need the period for topic controller healthcheck or we are going to use the default one ?
-    private static final int DEFAULT_ZOOKEEPER_PORT = 2181;
-    private static final int DEFAULT_BOOTSTRAP_SERVERS_PORT = 9092;
-    private static final String DEFAULT_FULL_RECONCILIATION_INTERVAL = "15 minutes";
-    private static final String DEFAULT_ZOOKEEPER_SESSION_TIMEOUT = "20 seconds";
+    protected static final int DEFAULT_ZOOKEEPER_PORT = 2181;
+    protected static final int DEFAULT_BOOTSTRAP_SERVERS_PORT = 9092;
+    protected static final String DEFAULT_FULL_RECONCILIATION_INTERVAL = "15 minutes";
+    protected static final String DEFAULT_ZOOKEEPER_SESSION_TIMEOUT = "20 seconds";
 
     // Configuration keys
     public static final String KEY_CONFIG = "topic-controller-config";
@@ -82,12 +82,12 @@ public class TopicController extends AbstractCluster {
         return cluster + TopicController.NAME_SUFFIX;
     }
 
-    private static String defaultZookeeperConnect(String cluster) {
+    protected static String defaultZookeeperConnect(String cluster) {
         // TODO : exposing the ZookeeperCluster.NAME_SUFFIX as public
         return cluster + "-zookeeper" + ":" + DEFAULT_ZOOKEEPER_PORT;
     }
 
-    private static String defaultBootstrapServers(String cluster) {
+    protected static String defaultBootstrapServers(String cluster) {
         // TODO : exposing the KafkaCluster.NAME_SUFFIX as public
         return cluster + "-kafka" + ":" + DEFAULT_BOOTSTRAP_SERVERS_PORT;
     }
