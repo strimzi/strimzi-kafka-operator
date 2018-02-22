@@ -202,9 +202,10 @@ public class KafkaClusterOperationsTest {
                     capturedSs.stream().map(ss -> ss.getMetadata().getName()).collect(Collectors.toSet()));
 
             // Verify that we wait for readiness
-            verify(mockEndpointOps, times(2)).waitUntilReady(any(), any(), anyLong(), anyLong());
-            verify(mockSsOps).waitUntilReady(any(), any(), anyLong(), anyLong());
-            verify(mockPodOps, times(zookeeperCluster.getReplicas())).waitUntilReady(any(), any(), anyLong(), anyLong());
+            verify(mockEndpointOps, times(4)).waitUntilReady(any(), any(), anyLong(), anyLong());
+            verify(mockSsOps, times(2)).waitUntilReady(any(), any(), anyLong(), anyLong());
+            verify(mockPodOps, times(zookeeperCluster.getReplicas() + kafkaCluster.getReplicas()))
+                    .waitUntilReady(any(), any(), anyLong(), anyLong());
 
             // PvcOperations only used for deletion
             verifyNoMoreInteractions(mockPvcOps);
