@@ -104,7 +104,7 @@ public class TopicController extends AbstractCluster {
      * Create a Topic Controller from the related ConfigMap resource
      *
      * @param cm ConfigMap with topic controller configuration
-     * @return Topic Controller instance
+     * @return Topic Controller instance, null if not configured in the ConfigMap
      */
     public static TopicController fromConfigMap(ConfigMap cm) {
 
@@ -127,31 +127,36 @@ public class TopicController extends AbstractCluster {
      * @param namespace Kubernetes/OpenShift namespace where cluster resources are going to be created
      * @param cluster overall cluster name
      * @param dep the deployment from which to recover the topic controller state
-     * @return Topic Controller instance
+     * @return Topic Controller instance, null if the corresponding Deployment doesn't exist
      */
     public static TopicController fromDeployment(String namespace, String cluster, Deployment dep) {
 
-        TopicController topicController = new TopicController(namespace, cluster);
+        TopicController topicController = null;
 
-        topicController.setLabels(dep.getMetadata().getLabels());
-        topicController.setReplicas(dep.getSpec().getReplicas());
-        topicController.setImage(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
-        topicController.setHealthCheckInitialDelay(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds());
-        topicController.setHealthCheckTimeout(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds());
+        if (dep != null) {
 
-        Map<String, String> vars = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream().collect(
-                Collectors.toMap(EnvVar::getName, EnvVar::getValue));
+            topicController = new TopicController(namespace, cluster);
 
-        TopicControllerConfig config = new TopicControllerConfig();
+            topicController.setLabels(dep.getMetadata().getLabels());
+            topicController.setReplicas(dep.getSpec().getReplicas());
+            topicController.setImage(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
+            topicController.setHealthCheckInitialDelay(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds());
+            topicController.setHealthCheckTimeout(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds());
 
-        config.withImage(topicController.getImage())
-                .withKafkaBootstrapServers(vars.getOrDefault(KEY_KAFKA_BOOTSTRAP_SERVERS, defaultBootstrapServers(cluster)))
-                .withZookeeperConnect(vars.getOrDefault(KEY_ZOOKEEPER_CONNECT, defaultZookeeperConnect(cluster)))
-                .withNamespace(vars.getOrDefault(KEY_NAMESPACE, namespace))
-                .withReconciliationInterval(vars.getOrDefault(KEY_FULL_RECONCILIATION_INTERVAL, DEFAULT_FULL_RECONCILIATION_INTERVAL))
-                .withZookeeperSessionTimeout(vars.getOrDefault(KEY_ZOOKEEPER_SESSION_TIMEOUT, DEFAULT_ZOOKEEPER_SESSION_TIMEOUT));
+            Map<String, String> vars = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream().collect(
+                    Collectors.toMap(EnvVar::getName, EnvVar::getValue));
 
-        topicController.setConfig(config);
+            TopicControllerConfig config = new TopicControllerConfig();
+
+            config.withImage(topicController.getImage())
+                    .withKafkaBootstrapServers(vars.getOrDefault(KEY_KAFKA_BOOTSTRAP_SERVERS, defaultBootstrapServers(cluster)))
+                    .withZookeeperConnect(vars.getOrDefault(KEY_ZOOKEEPER_CONNECT, defaultZookeeperConnect(cluster)))
+                    .withNamespace(vars.getOrDefault(KEY_NAMESPACE, namespace))
+                    .withReconciliationInterval(vars.getOrDefault(KEY_FULL_RECONCILIATION_INTERVAL, DEFAULT_FULL_RECONCILIATION_INTERVAL))
+                    .withZookeeperSessionTimeout(vars.getOrDefault(KEY_ZOOKEEPER_SESSION_TIMEOUT, DEFAULT_ZOOKEEPER_SESSION_TIMEOUT));
+
+            topicController.setConfig(config);
+        }
 
         return topicController;
     }

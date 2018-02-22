@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * <p>Cluster operations for a "Kafka" cluster. A KafkaClusterOperations is
@@ -307,19 +308,31 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
     @Override
     protected void delete(String namespace, String name, Handler<AsyncResult<Void>> handler) {
-        execute(CLUSTER_TYPE_TOPIC_CONTROLLER, OP_DELETE, namespace, name, deleteTopicController, topicControllerDone -> {
-            if (topicControllerDone.failed()) {
-                handler.handle(topicControllerDone);
-            } else {
-                execute(CLUSTER_TYPE_KAFKA, OP_DELETE, namespace, name, deleteKafka, kafkaDone -> {
-                    if (kafkaDone.failed()) {
-                        handler.handle(kafkaDone);
-                    } else {
-                        execute(CLUSTER_TYPE_ZOOKEEPER, OP_DELETE, namespace, name, deleteZk, handler);
-                    }
-                });
-            }
-        });
+
+        Consumer<Void> execute = v -> {
+
+            execute(CLUSTER_TYPE_KAFKA, OP_DELETE, namespace, name, deleteKafka, kafkaDone -> {
+                if (kafkaDone.failed()) {
+                    handler.handle(kafkaDone);
+                } else {
+                    execute(CLUSTER_TYPE_ZOOKEEPER, OP_DELETE, namespace, name, deleteZk, handler);
+                }
+            });
+        };
+
+        // first check if the topic controller was really deployed
+        ClusterOperation<TopicController> clusterOp = deleteTopicController.getCluster(namespace, name);
+        if (clusterOp.cluster() != null) {
+            execute(CLUSTER_TYPE_TOPIC_CONTROLLER, OP_DELETE, namespace, name, deleteTopicController, topicControllerDone -> {
+                if (topicControllerDone.failed()) {
+                    handler.handle(topicControllerDone);
+                } else {
+                    execute.accept(null);
+                }
+            });
+        } else {
+            execute.accept(null);
+        }
     }
 
     private final CompositeOperation<KafkaCluster> updateKafka = new CompositeOperation<KafkaCluster>() {
@@ -545,15 +558,17 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
         @Override
         public ClusterOperation<TopicController> getCluster(String namespace, String name) {
-            ClusterDiffResult diff;
-            TopicController topicController;
+            ClusterDiffResult diff = null;
+            TopicController topicController = null;
             ConfigMap tcConfigMap = configMapOperations.get(namespace, name);
 
             if (tcConfigMap != null) {
                 topicController = TopicController.fromConfigMap(tcConfigMap);
-                log.info("Updating Topic Controller {} in namespace {}", topicController.getName(), namespace);
-                Deployment dep = deploymentOperations.get(namespace, topicController.getName());
-                diff = topicController.diff(dep);
+                if (topicController != null) {
+                    log.info("Updating Topic Controller {} in namespace {}", topicController.getName(), namespace);
+                    Deployment dep = deploymentOperations.get(namespace, topicController.getName());
+                    diff = topicController.diff(dep);
+                }
             } else {
                 throw new IllegalStateException("ConfigMap " + name + " doesn't exist anymore in namespace " + namespace);
             }
@@ -581,7 +596,10 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
                     if (kafkaDone.failed()) {
                         handler.handle(kafkaDone);
                     } else {
-                        execute(CLUSTER_TYPE_TOPIC_CONTROLLER, OP_UPDATE, namespace, name, updateTopicController, handler);
+                        ClusterOperation<TopicController> clusterOp = updateTopicController.getCluster(namespace, name);
+                        if (clusterOp.cluster() != null) {
+                            execute(CLUSTER_TYPE_TOPIC_CONTROLLER, OP_UPDATE, namespace, name, updateTopicController, handler);
+                        }
                     }
                 });
             }
