@@ -6,8 +6,8 @@ metadata:
   labels:
     app: strimzi
 ---
-apiVersion: v1
-kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: Role
 metadata:
   name: strimzi-cluster-controller-role
   labels:
@@ -60,7 +60,6 @@ rules:
   - deployments
   - deployments/scale
   - replicasets
-  - replicationcontrollers
   verbs:
   - get
   - list
@@ -76,6 +75,19 @@ rules:
   - deployments/scale
   - deployments/status
   - statefulsets
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+  - patch
+  - update
+# OpenShift S2I requirements
+- apiGroups:
+  - "extensions"
+  resources:
+  - replicationcontrollers
   verbs:
   - get
   - list
@@ -138,7 +150,7 @@ rules:
   - patch
   - update
 ---
-apiVersion: v1
+apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: RoleBinding
 metadata:
   name: strimzi-cluster-controller-binding
@@ -148,9 +160,9 @@ subjects:
   - kind: ServiceAccount
     name: strimzi-cluster-controller
 roleRef:
-  kind: ClusterRole
+  kind: Role
   name: strimzi-cluster-controller-role
-  apiGroup: v1
+  apiGroup: rbac.authorization.k8s.io
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
