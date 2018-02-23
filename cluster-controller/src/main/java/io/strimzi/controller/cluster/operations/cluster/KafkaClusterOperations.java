@@ -78,19 +78,19 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
     @Override
     public void create(String namespace, String name, Handler<AsyncResult<Void>> handler) {
-        execute(CLUSTER_TYPE_ZOOKEEPER, OP_CREATE, namespace, name, createZk, zookeeperDone -> {
-            if (zookeeperDone.failed()) {
-                handler.handle(zookeeperDone);
+        execute(CLUSTER_TYPE_ZOOKEEPER, OP_CREATE, namespace, name, createZk, zookeeperResult -> {
+            if (zookeeperResult.failed()) {
+                handler.handle(zookeeperResult);
             } else {
-                execute(CLUSTER_TYPE_KAFKA, OP_CREATE, namespace, name, createKafka, kafkaDone -> {
-                    if (kafkaDone.failed()) {
-                        handler.handle(kafkaDone);
+                execute(CLUSTER_TYPE_KAFKA, OP_CREATE, namespace, name, createKafka, kafkaResult -> {
+                    if (kafkaResult.failed()) {
+                        handler.handle(kafkaResult);
                     } else {
                         ClusterOperation<TopicController> clusterOp = createTopicController.getCluster(namespace, name);
                         if (clusterOp.cluster() != null) {
                             execute(CLUSTER_TYPE_TOPIC_CONTROLLER, OP_CREATE, namespace, name, createTopicController, handler);
                         } else {
-                            handler.handle(kafkaDone);
+                            handler.handle(kafkaResult);
                         }
                     }
                 });
@@ -308,9 +308,9 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
         // first check if the topic controller was really deployed
         ClusterOperation<TopicController> clusterOp = deleteTopicController.getCluster(namespace, name);
         if (clusterOp.cluster() != null) {
-            execute(CLUSTER_TYPE_TOPIC_CONTROLLER, OP_DELETE, namespace, name, deleteTopicController, topicControllerDone -> {
-                if (topicControllerDone.failed()) {
-                    handler.handle(topicControllerDone);
+            execute(CLUSTER_TYPE_TOPIC_CONTROLLER, OP_DELETE, namespace, name, deleteTopicController, topicControllerResult -> {
+                if (topicControllerResult.failed()) {
+                    handler.handle(topicControllerResult);
                 } else {
                     deleteKafkaAndZookeeper(namespace, name, handler);
                 }
@@ -322,9 +322,9 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
     private void deleteKafkaAndZookeeper(String namespace, String name, Handler<AsyncResult<Void>> handler) {
 
-        execute(CLUSTER_TYPE_KAFKA, OP_DELETE, namespace, name, deleteKafka, kafkaDone -> {
-            if (kafkaDone.failed()) {
-                handler.handle(kafkaDone);
+        execute(CLUSTER_TYPE_KAFKA, OP_DELETE, namespace, name, deleteKafka, kafkaResult -> {
+            if (kafkaResult.failed()) {
+                handler.handle(kafkaResult);
             } else {
                 execute(CLUSTER_TYPE_ZOOKEEPER, OP_DELETE, namespace, name, deleteZk, handler);
             }
@@ -592,19 +592,19 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
     @Override
     public void update(String namespace, String name, Handler<AsyncResult<Void>> handler) {
-        execute(CLUSTER_TYPE_ZOOKEEPER, OP_UPDATE, namespace, name, updateZk, zookeeperDone -> {
-            if (zookeeperDone.failed()) {
-                handler.handle(zookeeperDone);
+        execute(CLUSTER_TYPE_ZOOKEEPER, OP_UPDATE, namespace, name, updateZk, zookeeperResult -> {
+            if (zookeeperResult.failed()) {
+                handler.handle(zookeeperResult);
             } else {
-                execute(CLUSTER_TYPE_KAFKA, OP_UPDATE, namespace, name, updateKafka, kafkaDone -> {
-                    if (kafkaDone.failed()) {
-                        handler.handle(kafkaDone);
+                execute(CLUSTER_TYPE_KAFKA, OP_UPDATE, namespace, name, updateKafka, kafkaResult -> {
+                    if (kafkaResult.failed()) {
+                        handler.handle(kafkaResult);
                     } else {
                         ClusterOperation<TopicController> clusterOp = updateTopicController.getCluster(namespace, name);
                         if (clusterOp.cluster() != null) {
                             execute(CLUSTER_TYPE_TOPIC_CONTROLLER, OP_UPDATE, namespace, name, updateTopicController, handler);
                         } else {
-                            handler.handle(kafkaDone);
+                            handler.handle(kafkaResult);
                         }
                     }
                 });

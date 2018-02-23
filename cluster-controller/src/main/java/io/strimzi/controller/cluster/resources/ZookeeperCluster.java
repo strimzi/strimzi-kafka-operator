@@ -35,7 +35,7 @@ public class ZookeeperCluster extends AbstractCluster {
     private static final int LEADER_ELECTION_PORT = 3888;
     private static final String LEADER_ELECTION_PORT_NAME = "leader-election";
 
-    protected static final String NAME_SUFFIX = "-zookeeper";
+    private static final String NAME_SUFFIX = "-zookeeper";
     private static final String HEADLESS_NAME_SUFFIX = NAME_SUFFIX + "-headless";
     private static final String METRICS_CONFIG_SUFFIX = NAME_SUFFIX + "-metrics-config";
 

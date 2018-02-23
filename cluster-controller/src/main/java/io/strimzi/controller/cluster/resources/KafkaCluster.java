@@ -34,7 +34,7 @@ public class KafkaCluster extends AbstractCluster {
     protected static final int REPLICATION_PORT = 9091;
     protected static final String REPLICATION_PORT_NAME = "replication";
 
-    protected static final String NAME_SUFFIX = "-kafka";
+    private static final String NAME_SUFFIX = "-kafka";
     private static final String HEADLESS_NAME_SUFFIX = NAME_SUFFIX + "-headless";
     private static final String METRICS_CONFIG_SUFFIX = NAME_SUFFIX + "-metrics-config";
 

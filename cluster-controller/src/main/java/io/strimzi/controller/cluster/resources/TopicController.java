@@ -84,11 +84,11 @@ public class TopicController extends AbstractCluster {
     }
 
     protected static String defaultZookeeperConnect(String cluster) {
-        return cluster + ZookeeperCluster.NAME_SUFFIX + ":" + DEFAULT_ZOOKEEPER_PORT;
+        return ZookeeperCluster.zookeeperClusterName(cluster) + ":" + DEFAULT_ZOOKEEPER_PORT;
     }
 
     protected static String defaultBootstrapServers(String cluster) {
-        return cluster + KafkaCluster.NAME_SUFFIX + ":" + DEFAULT_BOOTSTRAP_SERVERS_PORT;
+        return KafkaCluster.kafkaClusterName(cluster) + ":" + DEFAULT_BOOTSTRAP_SERVERS_PORT;
     }
 
     public void setConfig(TopicControllerConfig config) {
