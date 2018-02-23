@@ -1,9 +1,9 @@
 == Cluster Controller
 
 The cluster controller is in charge of deploying a Kafka cluster alongside a Zookeeper ensemble. As part of the Kafka cluster,
-it can also deploy the topic controller which provides a way for topics management through ConfigMaps.
+it can also deploy the topic controller which provides operator-style topic management via ConfigMaps.
 The cluster controller is also able to deploy a Kafka Connect cluster which connects to an existing Kafka cluster.
-Such a cluster can be deployed using the Source2Image OpenShift feature as well in order to include more connectors plugins.
+On OpenShift such a cluster can be deployed using the Source2Image feature, providing an easy way of including more connectors.
 
 When the cluster controller is up, it starts to "watch" for ConfigMaps containing the Kafka or Kafka Connect
 cluster configuration. Such ConfigMaps need to have a specific label which is, by default, `strimzi.io/kind=cluster`
@@ -75,8 +75,8 @@ the related ConfigMap :
  Removing this field means having no metrics exposed.
 * `zookeeper-metrics-config`: a JSON string representing the JMX exporter configuration for exposing metrics from Zookeeper nodes.
  Removing this field means having no metrics exposed.
-* `topic-controller-config`: a JSON string representing the topic controller configuration. See related section for that.
-More info about the topic controller in the related <<Topic Controller>> documentation page.
+* `topic-controller-config`: a JSON string representing the topic controller configuration. See the <<Topic controller>> documentation
+for further details. More info about the topic controller in the related <<Topic Controller>> documentation page.
  
 The following is an example of a ConfigMap for a Kakfa cluster.
 
@@ -229,14 +229,14 @@ For more information on how metrics work, the related documentation is available
 
 ===== Topic controller
 
-Alongside the Kafka cluster and the Zookeeper ensemble, the cluster controller can deploy the topic controller as well.
-In order to do that, the 'topic-controller-config` field has to be put into the data section of the cluster ConfigMap
-containing a JSON string with the topic controller configuration.
-Without this field, the cluster controller doesn't deploy the topic controller and the user has to do that using the
-corresponding YAML files.
+Alongside the Kafka cluster and the Zookeeper ensemble, the cluster controller can also deploy the topic controller.
+In order to do that, the 'topic-controller-config` field has to be put into the data section of the cluster ConfigMap.
+This field is a JSON string containing the topic controller configuration.
+Without this field, the cluster controller doesn't deploy the topic controller. It is still possible to deploy the topic
+controller by creating appropriate Kubernates/OpenShift resources.
 
-The JSON representation of the 'topic-controller-config` has no mandatory fields and if empty (just "{ }"), the cluster
-controller will deploy the topic controller with a default configuration.
+The JSON representation of the 'topic-controller-config` has no mandatory fields and if the value is an empty object
+(just "{ }"), the cluster controller will deploy the topic controller with a default configuration.
 
 The configurable fields are the following :
 
@@ -246,14 +246,13 @@ Default is the namespace where the topic controller is running
 * `reconciliationInterval`: the interval between periodic reconciliations. Default is "15 minutes"
 * `zookeeperSessionTimeout`: the Zookeeper session timeout. Default is "20 seconds"
 
-.Topic Controller JSON configuration
+.Example Topic Controller JSON configuration
 [source,json]
 ----
 { "reconciliationInterval": "10 minutes", "zookeeperSessionTimeout": "10 seconds" }
 ----
 
-More info about these configuration parameters in the related <<Topic Controller>> documentation page.
-
+More information about these configuration parameters in the related <<Topic Controller>> documentation page.
 
 [[kafka_connect_config_map_details]]
 ==== Kafka Connect

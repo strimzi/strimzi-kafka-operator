@@ -217,6 +217,9 @@ public abstract class AbstractCluster {
         return this.image;
     }
 
+    /**
+     * @return the service account used by the deployed cluster for Kubernetes/OpenShift API operations
+     */
     protected String getServiceAccountName() {
         return null;
     }
