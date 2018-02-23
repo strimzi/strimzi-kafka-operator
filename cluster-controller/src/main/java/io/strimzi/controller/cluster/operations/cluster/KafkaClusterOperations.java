@@ -550,7 +550,15 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
             TopicController topicController = operation.cluster();
             ClusterDiffResult diff = operation.diff();
 
-            Future<Void> fut = patchDeployment(topicController, namespace, diff);
+            Future<Void> fut;
+            if (diff != null) {
+                fut = patchDeployment(topicController, namespace, diff);
+            } else {
+                // that's the case we are moving from no topic controller deployed to an updated cluster ConfigMap
+                // which contains topic controller configuration for deploying it (so there is no Deployment to patch
+                // but to create)
+                fut = deploymentOperations.create(topicController.generateDeployment());
+            }
 
             return fut;
         }

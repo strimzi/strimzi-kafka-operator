@@ -171,28 +171,32 @@ public class TopicController extends AbstractCluster {
      */
     public ClusterDiffResult diff(Deployment dep) {
 
-        String image = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage();
+        if (dep != null) {
+            String image = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage();
 
-        Map<String, String> vars = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream().collect(
-                Collectors.toMap(EnvVar::getName, EnvVar::getValue));
+            Map<String, String> vars = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream().collect(
+                    Collectors.toMap(EnvVar::getName, EnvVar::getValue));
 
-        // get the current (deployed) topic controller configuration
-        TopicControllerConfig depConfig = new TopicControllerConfig();
+            // get the current (deployed) topic controller configuration
+            TopicControllerConfig depConfig = new TopicControllerConfig();
 
-        depConfig.withKafkaBootstrapServers(vars.getOrDefault(KEY_KAFKA_BOOTSTRAP_SERVERS, defaultBootstrapServers(cluster)))
-                .withZookeeperConnect(vars.getOrDefault(KEY_ZOOKEEPER_CONNECT, defaultZookeeperConnect(cluster)))
-                .withNamespace(vars.getOrDefault(KEY_NAMESPACE, namespace))
-                .withReconciliationInterval(vars.getOrDefault(KEY_FULL_RECONCILIATION_INTERVAL, DEFAULT_FULL_RECONCILIATION_INTERVAL))
-                .withZookeeperSessionTimeout(vars.getOrDefault(KEY_ZOOKEEPER_SESSION_TIMEOUT, DEFAULT_ZOOKEEPER_SESSION_TIMEOUT))
-                .withImage(image);
+            depConfig.withKafkaBootstrapServers(vars.getOrDefault(KEY_KAFKA_BOOTSTRAP_SERVERS, defaultBootstrapServers(cluster)))
+                    .withZookeeperConnect(vars.getOrDefault(KEY_ZOOKEEPER_CONNECT, defaultZookeeperConnect(cluster)))
+                    .withNamespace(vars.getOrDefault(KEY_NAMESPACE, namespace))
+                    .withReconciliationInterval(vars.getOrDefault(KEY_FULL_RECONCILIATION_INTERVAL, DEFAULT_FULL_RECONCILIATION_INTERVAL))
+                    .withZookeeperSessionTimeout(vars.getOrDefault(KEY_ZOOKEEPER_SESSION_TIMEOUT, DEFAULT_ZOOKEEPER_SESSION_TIMEOUT))
+                    .withImage(image);
 
-        // compute the differences with the requested configuration (from the updated ConfigMap)
-        TopicControllerConfig.TopicControllerConfigResult configDiffResult = config.diff(depConfig);
+            // compute the differences with the requested configuration (from the updated ConfigMap)
+            TopicControllerConfig.TopicControllerConfigResult configDiffResult = config.diff(depConfig);
 
-        boolean isDifferent = configDiffResult.isImage() || configDiffResult.isNamespace() ||
-                configDiffResult.isReconciliationInterval() || configDiffResult.isZookeeperSessionTimeout();
+            boolean isDifferent = configDiffResult.isImage() || configDiffResult.isNamespace() ||
+                    configDiffResult.isReconciliationInterval() || configDiffResult.isZookeeperSessionTimeout();
 
-        return new ClusterDiffResult(isDifferent);
+            return new ClusterDiffResult(isDifferent);
+        } else {
+            return null;
+        }
     }
 
     public Deployment generateDeployment() {
