@@ -413,6 +413,15 @@ public class KafkaClusterOperationsTest {
         updateCluster(context, getConfigMap("bar"), clusterCm);
     }
 
+    @Test
+    public void testUpdateTopicControllerConfig(TestContext context) {
+        ConfigMap clusterCm = getConfigMap("bar");
+        if (tcConfig != null) {
+            clusterCm.getData().put(TopicController.KEY_CONFIG, "{\"something\":\"changed\"}");
+            updateCluster(context, getConfigMap("bar"), clusterCm);
+        }
+    }
+
     private void updateCluster(TestContext context, ConfigMap originalCm, ConfigMap clusterCm) {
 
         KafkaCluster originalKafkaCluster = KafkaCluster.fromConfigMap(originalCm);
@@ -522,7 +531,7 @@ public class KafkaClusterOperationsTest {
 
         // Mock Deployment patch
         ArgumentCaptor<String> depCaptor = ArgumentCaptor.forClass(String.class);
-        when(mockDepOps.patch(anyString(), depCaptor.capture(), anyBoolean(), any())).thenReturn(Future.succeededFuture());
+        when(mockDepOps.patch(anyString(), depCaptor.capture(), any())).thenReturn(Future.succeededFuture());
 
         KafkaClusterOperations ops = new KafkaClusterOperations(vertx, openShift,
                 mockCmOps,
