@@ -8,10 +8,12 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
+import io.strimzi.controller.cluster.ClusterController;
 import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -20,6 +22,8 @@ import java.util.stream.Collectors;
  * Represents the topic controller deployment
  */
 public class TopicController extends AbstractCluster {
+
+    public static final String KIND = "topic";
 
     private static final String NAME_SUFFIX = "-topic-controller";
 
@@ -35,7 +39,6 @@ public class TopicController extends AbstractCluster {
     protected static final int DEFAULT_REPLICAS = 1;
     protected static final int DEFAULT_HEALTHCHECK_DELAY = 10;
     protected static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
-    // TODO : we need the period for topic controller healthcheck or we are going to use the default one ?
     protected static final int DEFAULT_ZOOKEEPER_PORT = 2181;
     protected static final int DEFAULT_BOOTSTRAP_SERVERS_PORT = 9092;
     protected static final String DEFAULT_FULL_RECONCILIATION_INTERVAL = "15 minutes";
@@ -83,13 +86,11 @@ public class TopicController extends AbstractCluster {
     }
 
     protected static String defaultZookeeperConnect(String cluster) {
-        // TODO : exposing the ZookeeperCluster.NAME_SUFFIX as public
-        return cluster + "-zookeeper" + ":" + DEFAULT_ZOOKEEPER_PORT;
+        return cluster + ZookeeperCluster.NAME_SUFFIX + ":" + DEFAULT_ZOOKEEPER_PORT;
     }
 
     protected static String defaultBootstrapServers(String cluster) {
-        // TODO : exposing the KafkaCluster.NAME_SUFFIX as public
-        return cluster + "-kafka" + ":" + DEFAULT_BOOTSTRAP_SERVERS_PORT;
+        return cluster + KafkaCluster.NAME_SUFFIX + ":" + DEFAULT_BOOTSTRAP_SERVERS_PORT;
     }
 
     public void setConfig(TopicControllerConfig config) {
@@ -113,6 +114,7 @@ public class TopicController extends AbstractCluster {
         String config = cm.getData().get(KEY_CONFIG);
         if (config != null) {
             topicController = new TopicController(cm.getMetadata().getNamespace(), cm.getMetadata().getName());
+            topicController.setLabels(cm.getMetadata().getLabels());
 
             TopicControllerConfig.fromJson(topicController.getConfig(), new JsonObject(config));
             topicController.setImage(topicController.getConfig().image());
@@ -226,7 +228,14 @@ public class TopicController extends AbstractCluster {
 
     @Override
     protected String getServiceAccountName() {
-        // TODO : maybe it should not be hardcoded
-        return "strimzi-cluster-controller";
+        return ClusterController.STRMIZI_CONTROLLER_SERVICE_ACCOUNT;
+    }
+
+    @Override
+    protected void setLabels(Map<String, String> labels) {
+        Map<String, String> newLabels = new HashMap<>(labels);
+        newLabels.put(ClusterController.STRIMZI_KIND_LABEL, TopicController.KIND);
+        newLabels.remove(ClusterController.STRIMZI_TYPE_LABEL);
+        super.setLabels(newLabels);
     }
 }
