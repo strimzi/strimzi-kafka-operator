@@ -104,17 +104,17 @@ public class TopicController extends AbstractCluster {
     /**
      * Create a Topic Controller from the related ConfigMap resource
      *
-     * @param cm ConfigMap with topic controller configuration
+     * @param kafkaClusterCm ConfigMap with cluster configuration containing the topic controller one
      * @return Topic Controller instance, null if not configured in the ConfigMap
      */
-    public static TopicController fromConfigMap(ConfigMap cm) {
+    public static TopicController fromConfigMap(ConfigMap kafkaClusterCm) {
 
         TopicController topicController = null;
 
-        String config = cm.getData().get(KEY_CONFIG);
+        String config = kafkaClusterCm.getData().get(KEY_CONFIG);
         if (config != null) {
-            topicController = new TopicController(cm.getMetadata().getNamespace(), cm.getMetadata().getName());
-            topicController.setLabels(cm.getMetadata().getLabels());
+            topicController = new TopicController(kafkaClusterCm.getMetadata().getNamespace(), kafkaClusterCm.getMetadata().getName());
+            topicController.setLabels(kafkaClusterCm.getMetadata().getLabels());
 
             TopicControllerConfig.fromJson(topicController.getConfig(), new JsonObject(config));
             topicController.setImage(topicController.getConfig().image());

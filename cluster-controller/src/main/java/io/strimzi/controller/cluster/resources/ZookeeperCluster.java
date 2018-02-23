@@ -105,27 +105,27 @@ public class ZookeeperCluster extends AbstractCluster {
     /**
      * Create a Zookeeper cluster from the related ConfigMap resource
      *
-     * @param cm    ConfigMap with cluster configuration
-     * @return  Zookeeper cluster instance
+     * @param kafkaClusterCm ConfigMap with cluster configuration
+     * @return Zookeeper cluster instance
      */
-    public static ZookeeperCluster fromConfigMap(ConfigMap cm) {
+    public static ZookeeperCluster fromConfigMap(ConfigMap kafkaClusterCm) {
 
-        ZookeeperCluster zk = new ZookeeperCluster(cm.getMetadata().getNamespace(), cm.getMetadata().getName());
+        ZookeeperCluster zk = new ZookeeperCluster(kafkaClusterCm.getMetadata().getNamespace(), kafkaClusterCm.getMetadata().getName());
 
-        zk.setLabels(cm.getMetadata().getLabels());
+        zk.setLabels(kafkaClusterCm.getMetadata().getLabels());
 
-        zk.setReplicas(Integer.parseInt(cm.getData().getOrDefault(KEY_REPLICAS, String.valueOf(DEFAULT_REPLICAS))));
-        zk.setImage(cm.getData().getOrDefault(KEY_IMAGE, DEFAULT_IMAGE));
-        zk.setHealthCheckInitialDelay(Integer.parseInt(cm.getData().getOrDefault(KEY_HEALTHCHECK_DELAY, String.valueOf(DEFAULT_HEALTHCHECK_DELAY))));
-        zk.setHealthCheckTimeout(Integer.parseInt(cm.getData().getOrDefault(KEY_HEALTHCHECK_TIMEOUT, String.valueOf(DEFAULT_HEALTHCHECK_TIMEOUT))));
+        zk.setReplicas(Integer.parseInt(kafkaClusterCm.getData().getOrDefault(KEY_REPLICAS, String.valueOf(DEFAULT_REPLICAS))));
+        zk.setImage(kafkaClusterCm.getData().getOrDefault(KEY_IMAGE, DEFAULT_IMAGE));
+        zk.setHealthCheckInitialDelay(Integer.parseInt(kafkaClusterCm.getData().getOrDefault(KEY_HEALTHCHECK_DELAY, String.valueOf(DEFAULT_HEALTHCHECK_DELAY))));
+        zk.setHealthCheckTimeout(Integer.parseInt(kafkaClusterCm.getData().getOrDefault(KEY_HEALTHCHECK_TIMEOUT, String.valueOf(DEFAULT_HEALTHCHECK_TIMEOUT))));
 
-        String metricsConfig = cm.getData().get(KEY_METRICS_CONFIG);
+        String metricsConfig = kafkaClusterCm.getData().get(KEY_METRICS_CONFIG);
         zk.setMetricsEnabled(metricsConfig != null);
         if (zk.isMetricsEnabled()) {
             zk.setMetricsConfig(new JsonObject(metricsConfig));
         }
 
-        String storageConfig = cm.getData().get(KEY_STORAGE);
+        String storageConfig = kafkaClusterCm.getData().get(KEY_STORAGE);
         zk.setStorage(Storage.fromJson(new JsonObject(storageConfig)));
 
         return zk;

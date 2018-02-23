@@ -30,7 +30,6 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 
 /**
  * <p>Cluster operations for a "Kafka" cluster. A KafkaClusterOperations is
@@ -309,17 +308,6 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
     @Override
     protected void delete(String namespace, String name, Handler<AsyncResult<Void>> handler) {
 
-        Consumer<Void> execute = v -> {
-
-            execute(CLUSTER_TYPE_KAFKA, OP_DELETE, namespace, name, deleteKafka, kafkaDone -> {
-                if (kafkaDone.failed()) {
-                    handler.handle(kafkaDone);
-                } else {
-                    execute(CLUSTER_TYPE_ZOOKEEPER, OP_DELETE, namespace, name, deleteZk, handler);
-                }
-            });
-        };
-
         // first check if the topic controller was really deployed
         ClusterOperation<TopicController> clusterOp = deleteTopicController.getCluster(namespace, name);
         if (clusterOp.cluster() != null) {
@@ -327,12 +315,23 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
                 if (topicControllerDone.failed()) {
                     handler.handle(topicControllerDone);
                 } else {
-                    execute.accept(null);
+                    deleteKafkaAndZookeeper(namespace, name, handler);
                 }
             });
         } else {
-            execute.accept(null);
+            deleteKafkaAndZookeeper(namespace, name, handler);
         }
+    }
+
+    private void deleteKafkaAndZookeeper(String namespace, String name, Handler<AsyncResult<Void>> handler) {
+
+        execute(CLUSTER_TYPE_KAFKA, OP_DELETE, namespace, name, deleteKafka, kafkaDone -> {
+            if (kafkaDone.failed()) {
+                handler.handle(kafkaDone);
+            } else {
+                execute(CLUSTER_TYPE_ZOOKEEPER, OP_DELETE, namespace, name, deleteZk, handler);
+            }
+        });
     }
 
     private final CompositeOperation<KafkaCluster> updateKafka = new CompositeOperation<KafkaCluster>() {

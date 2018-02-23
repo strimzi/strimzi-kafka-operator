@@ -112,31 +112,31 @@ public class KafkaCluster extends AbstractCluster {
     /**
      * Create a Kafka cluster from the related ConfigMap resource
      *
-     * @param cm    ConfigMap with cluster configuration
-     * @return   Kafka cluster instance
+     * @param kafkaClusterCm ConfigMap with cluster configuration
+     * @return Kafka cluster instance
      */
-    public static KafkaCluster fromConfigMap(ConfigMap cm) {
+    public static KafkaCluster fromConfigMap(ConfigMap kafkaClusterCm) {
 
-        KafkaCluster kafka = new KafkaCluster(cm.getMetadata().getNamespace(), cm.getMetadata().getName());
-        kafka.setLabels(cm.getMetadata().getLabels());
+        KafkaCluster kafka = new KafkaCluster(kafkaClusterCm.getMetadata().getNamespace(), kafkaClusterCm.getMetadata().getName());
+        kafka.setLabels(kafkaClusterCm.getMetadata().getLabels());
 
-        kafka.setReplicas(Integer.parseInt(cm.getData().getOrDefault(KEY_REPLICAS, String.valueOf(DEFAULT_REPLICAS))));
-        kafka.setImage(cm.getData().getOrDefault(KEY_IMAGE, DEFAULT_IMAGE));
-        kafka.setHealthCheckInitialDelay(Integer.parseInt(cm.getData().getOrDefault(KEY_HEALTHCHECK_DELAY, String.valueOf(DEFAULT_HEALTHCHECK_DELAY))));
-        kafka.setHealthCheckTimeout(Integer.parseInt(cm.getData().getOrDefault(KEY_HEALTHCHECK_TIMEOUT, String.valueOf(DEFAULT_HEALTHCHECK_TIMEOUT))));
+        kafka.setReplicas(Integer.parseInt(kafkaClusterCm.getData().getOrDefault(KEY_REPLICAS, String.valueOf(DEFAULT_REPLICAS))));
+        kafka.setImage(kafkaClusterCm.getData().getOrDefault(KEY_IMAGE, DEFAULT_IMAGE));
+        kafka.setHealthCheckInitialDelay(Integer.parseInt(kafkaClusterCm.getData().getOrDefault(KEY_HEALTHCHECK_DELAY, String.valueOf(DEFAULT_HEALTHCHECK_DELAY))));
+        kafka.setHealthCheckTimeout(Integer.parseInt(kafkaClusterCm.getData().getOrDefault(KEY_HEALTHCHECK_TIMEOUT, String.valueOf(DEFAULT_HEALTHCHECK_TIMEOUT))));
 
-        kafka.setZookeeperConnect(cm.getData().getOrDefault(KEY_KAFKA_ZOOKEEPER_CONNECT, cm.getMetadata().getName() + "-zookeeper:2181"));
-        kafka.setDefaultReplicationFactor(Integer.parseInt(cm.getData().getOrDefault(KEY_KAFKA_DEFAULT_REPLICATION_FACTOR, String.valueOf(DEFAULT_KAFKA_DEFAULT_REPLICATION_FACTOR))));
-        kafka.setOffsetsTopicReplicationFactor(Integer.parseInt(cm.getData().getOrDefault(KEY_KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR, String.valueOf(DEFAULT_KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR))));
-        kafka.setTransactionStateLogReplicationFactor(Integer.parseInt(cm.getData().getOrDefault(KEY_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR, String.valueOf(DEFAULT_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR))));
+        kafka.setZookeeperConnect(kafkaClusterCm.getData().getOrDefault(KEY_KAFKA_ZOOKEEPER_CONNECT, kafkaClusterCm.getMetadata().getName() + "-zookeeper:2181"));
+        kafka.setDefaultReplicationFactor(Integer.parseInt(kafkaClusterCm.getData().getOrDefault(KEY_KAFKA_DEFAULT_REPLICATION_FACTOR, String.valueOf(DEFAULT_KAFKA_DEFAULT_REPLICATION_FACTOR))));
+        kafka.setOffsetsTopicReplicationFactor(Integer.parseInt(kafkaClusterCm.getData().getOrDefault(KEY_KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR, String.valueOf(DEFAULT_KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR))));
+        kafka.setTransactionStateLogReplicationFactor(Integer.parseInt(kafkaClusterCm.getData().getOrDefault(KEY_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR, String.valueOf(DEFAULT_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR))));
 
-        String metricsConfig = cm.getData().get(KEY_METRICS_CONFIG);
+        String metricsConfig = kafkaClusterCm.getData().get(KEY_METRICS_CONFIG);
         kafka.setMetricsEnabled(metricsConfig != null);
         if (kafka.isMetricsEnabled()) {
             kafka.setMetricsConfig(new JsonObject(metricsConfig));
         }
 
-        String storageConfig = cm.getData().get(KEY_STORAGE);
+        String storageConfig = kafkaClusterCm.getData().get(KEY_STORAGE);
         kafka.setStorage(Storage.fromJson(new JsonObject(storageConfig)));
 
         return kafka;
