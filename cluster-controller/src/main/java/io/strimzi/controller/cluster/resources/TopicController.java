@@ -32,7 +32,7 @@ public class TopicController extends AbstractCluster {
 
     // Port configuration
     protected static final int HEALTHCHECK_PORT = 8080;
-    protected static final String HEALTHCHECK_PORT_NAME = "hcheck-port";
+    protected static final String HEALTHCHECK_PORT_NAME = "healthcheck";
 
     // Configuration defaults
     protected static final String DEFAULT_IMAGE = "strimzi/topic-controller:latest";
@@ -55,8 +55,6 @@ public class TopicController extends AbstractCluster {
     public static final String KEY_ZOOKEEPER_SESSION_TIMEOUT = "STRIMZI_ZOOKEEPER_SESSION_TIMEOUT";
 
     /**
-     * Constructor
-     *
      * @param namespace Kubernetes/OpenShift namespace where cluster resources are going to be created
      * @param cluster   overall cluster name
      */
@@ -232,7 +230,7 @@ public class TopicController extends AbstractCluster {
 
     @Override
     protected String getServiceAccountName() {
-        return ClusterController.STRMIZI_CONTROLLER_SERVICE_ACCOUNT;
+        return ClusterController.STRIMZI_CLUSTER_CONTROLLER_SERVICE_ACCOUNT;
     }
 
     @Override

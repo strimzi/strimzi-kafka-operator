@@ -200,7 +200,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
         }
     };
 
-    private final CompositeOperation<TopicController> createTopicController  = new CompositeOperation<TopicController>() {
+    private final CompositeOperation<TopicController> createTopicController = new CompositeOperation<TopicController>() {
 
         @Override
         public ClusterOperation<TopicController> getCluster(String namespace, String name) {
@@ -211,9 +211,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
         public Future<?> composite(String namespace, ClusterOperation<TopicController> clusterOp) {
 
             TopicController topicController = clusterOp.cluster();
-            Future<Void> fut = deploymentOperations.create(topicController.generateDeployment());
-
-            return fut;
+            return deploymentOperations.create(topicController.generateDeployment());
         }
     };
 
@@ -294,8 +292,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
         @Override
         public Future<?> composite(String namespace, ClusterOperation<TopicController> clusterOp) {
             TopicController topicController = clusterOp.cluster();
-            Future<Void> fut = deploymentOperations.delete(namespace, topicController.getName());
-            return fut;
+            return deploymentOperations.delete(namespace, topicController.getName());
         }
 
         @Override

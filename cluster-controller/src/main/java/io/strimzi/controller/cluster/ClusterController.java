@@ -37,7 +37,7 @@ public class ClusterController extends AbstractVerticle {
     public static final String STRIMZI_TYPE_LABEL = STRIMZI_DOMAIN + "/type";
     public static final String STRIMZI_CLUSTER_LABEL = STRIMZI_DOMAIN + "/cluster";
     public static final String STRIMZI_NAME_LABEL = STRIMZI_DOMAIN + "/name";
-    public static final String STRMIZI_CONTROLLER_SERVICE_ACCOUNT = "strimzi-cluster-controller";
+    public static final String STRIMZI_CLUSTER_CONTROLLER_SERVICE_ACCOUNT = "strimzi-cluster-controller";
 
     private static final int HEALTH_SERVER_PORT = 8080;
 
