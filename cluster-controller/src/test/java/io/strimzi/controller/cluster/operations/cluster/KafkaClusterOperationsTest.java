@@ -227,6 +227,13 @@ public class KafkaClusterOperationsTest {
             verify(mockPodOps, times(zookeeperCluster.getReplicas() + kafkaCluster.getReplicas()))
                     .waitUntilReady(any(), any(), anyLong(), anyLong());
 
+            // if topic controller configuration was defined in the CM
+            if (topicController != null) {
+                List<Deployment> capturedDeps = depCaptor.getAllValues();
+                context.assertEquals(1, capturedDeps.size());
+                context.assertEquals(TopicController.topicControllerName(clusterCmName), capturedDeps.get(0).getMetadata().getName());
+            }
+
             // PvcOperations only used for deletion
             verifyNoMoreInteractions(mockPvcOps);
             async.complete();
@@ -237,6 +244,7 @@ public class KafkaClusterOperationsTest {
 
         ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromConfigMap(clusterCm);
         KafkaCluster kafkaCluster = KafkaCluster.fromConfigMap(clusterCm);
+        TopicController topicController = TopicController.fromConfigMap(clusterCm);
         // create CM, Service, headless service, statefulset
         ConfigMapOperations mockCmOps = mock(ConfigMapOperations.class);
         ServiceOperations mockServiceOps = mock(ServiceOperations.class);
@@ -248,7 +256,7 @@ public class KafkaClusterOperationsTest {
 
         String clusterCmName = clusterCm.getMetadata().getName();
         String clusterCmNamespace = clusterCm.getMetadata().getNamespace();
-        StatefulSet kafkaSs = KafkaCluster.fromConfigMap(clusterCm).generateStatefulSet(true);
+        StatefulSet kafkaSs = kafkaCluster.generateStatefulSet(true);
 
         StatefulSet zkSs = zookeeperCluster.generateStatefulSet(true);
         when(mockSsOps.get(clusterCmNamespace, KafkaCluster.kafkaClusterName(clusterCmName))).thenReturn(kafkaSs);
@@ -256,17 +264,23 @@ public class KafkaClusterOperationsTest {
 
         when(mockCmOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
         ArgumentCaptor<String> serviceCaptor = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<StatefulSet> ssCaptor = ArgumentCaptor.forClass(StatefulSet.class);
-        when(mockSsOps.create(ssCaptor.capture())).thenReturn(Future.succeededFuture());
+        ArgumentCaptor<String> ssCaptor = ArgumentCaptor.forClass(String.class);
 
         ArgumentCaptor<String> metricsCaptor = ArgumentCaptor.forClass(String.class);
         when(mockCmOps.delete(eq(clusterCmNamespace), metricsCaptor.capture())).thenReturn(Future.succeededFuture());
 
         when(mockServiceOps.delete(eq(clusterCmNamespace), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
-        when(mockSsOps.delete(anyString(), anyString())).thenReturn(Future.succeededFuture());
+        when(mockSsOps.delete(anyString(), ssCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> pvcCaptor = ArgumentCaptor.forClass(String.class);
         when(mockPvcOps.delete(eq(clusterCmNamespace), pvcCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        ArgumentCaptor<String> depCaptor = ArgumentCaptor.forClass(String.class);
+        when(mockDepOps.delete(eq(clusterCmNamespace), depCaptor.capture())).thenReturn(Future.succeededFuture());
+        if (topicController != null) {
+            Deployment tcDep = topicController.generateDeployment();
+            when(mockDepOps.get(clusterCmNamespace, TopicController.topicControllerName(clusterCmName))).thenReturn(tcDep);
+        }
 
         KafkaClusterOperations ops = new KafkaClusterOperations(vertx, openShift,
                 mockCmOps,
@@ -274,7 +288,7 @@ public class KafkaClusterOperationsTest {
                 mockPvcOps,
                 mockPodOps, mockEndpointOps, mockDepOps);
 
-        // Now try to create a KafkaCluster based on this CM
+        // Now try to delete a KafkaCluster based on this CM
         Async async = context.async();
         ops.delete(clusterCmNamespace, clusterCmName, createResult -> {
             context.assertTrue(createResult.succeeded());
@@ -296,6 +310,9 @@ public class KafkaClusterOperationsTest {
                     KafkaCluster.headlessName(clusterCmName)),
                     captured(serviceCaptor));
 
+            // verify deleted Statefulsets
+            context.assertEquals(set(zookeeperCluster.getName(), kafkaCluster.getName()), captured(ssCaptor));
+
             // PvcOperations only used for deletion
             Set<String> expectedPvcDeletions = new HashSet<>();
             for (int i = 0; deleteClaim && i < kafkaCluster.getReplicas(); i++) {
@@ -305,6 +322,14 @@ public class KafkaClusterOperationsTest {
                 expectedPvcDeletions.add("zookeeper-storage-" + clusterCmName + "-zookeeper-" + i);
             }
             context.assertEquals(expectedPvcDeletions, captured(pvcCaptor));
+
+            // if topic controller configuration was defined in the CM
+            if (topicController != null) {
+                Set<String> expectedDepNames = new HashSet<>();
+                expectedDepNames.add(TopicController.topicControllerName(clusterCmName));
+                context.assertEquals(expectedDepNames, captured(depCaptor));
+            }
+
             async.complete();
         });
     }
@@ -403,12 +428,10 @@ public class KafkaClusterOperationsTest {
         ClusterDiffResult zkDiff = updatedZookeeperCluster.diff(
                 originalZookeeperCluster.isMetricsEnabled() ? originalZookeeperCluster.generateMetricsConfigMap() : null,
                 originalZookeeperCluster.generateStatefulSet(openShift));
-        ClusterDiffResult tcDiff = null;
-        if ((updatedTopicController != null) && (originalTopicController != null)) {
-            updatedTopicController.diff(originalTopicController.generateDeployment());
-        }
+        ClusterDiffResult tcDiff = ((originalTopicController != null) && (updatedTopicController != null)) ?
+                updatedTopicController.diff(originalTopicController.generateDeployment()) : new ClusterDiffResult();
 
-        // create CM, Service, headless service, statefulset
+        // create CM, Service, headless service, statefulset and so on
         ConfigMapOperations mockCmOps = mock(ConfigMapOperations.class);
         ServiceOperations mockServiceOps = mock(ServiceOperations.class);
         StatefulSetOperations mockSsOps = mock(StatefulSetOperations.class);
@@ -497,12 +520,16 @@ public class KafkaClusterOperationsTest {
                 Future.succeededFuture()
         );
 
+        // Mock Deployment patch
+        ArgumentCaptor<String> depCaptor = ArgumentCaptor.forClass(String.class);
+        when(mockDepOps.patch(anyString(), depCaptor.capture(), anyBoolean(), any())).thenReturn(Future.succeededFuture());
+
         KafkaClusterOperations ops = new KafkaClusterOperations(vertx, openShift,
                 mockCmOps,
                 mockServiceOps, mockSsOps,
                 mockPvcOps, mockPodOps, mockEndpointOps, mockDepOps);
 
-        // Now try to create a KafkaCluster based on this CM
+        // Now try to update a KafkaCluster based on this CM
         Async async = context.async();
         ops.update(clusterCmNamespace, clusterCmName, createResult -> {
             if (createResult.failed()) createResult.cause().printStackTrace();
@@ -559,6 +586,15 @@ public class KafkaClusterOperationsTest {
                 expectedScaleUp.add(originalZookeeperCluster.getName());
             }
             context.assertEquals(expectedScaleUp, captured(scaledUpCaptor));
+
+
+            if ((originalTopicController != null) && (updatedTopicController != null)) {
+                Set<String> expectedDeps = set();
+                if (tcDiff.isDifferent()) {
+                    expectedDeps.add(originalTopicController.getName());
+                }
+                context.assertEquals(expectedDeps, captured(depCaptor));
+            }
 
             // No metrics config  => no CMs created
             verify(mockCmOps, never()).create(any());
