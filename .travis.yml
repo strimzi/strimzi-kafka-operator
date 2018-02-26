@@ -22,8 +22,6 @@ before_script:
 - "./.travis/setup-kubernetes.sh"
 script:
 - "./.travis/build.sh"
-after_script:
-- "./.travis/docu.sh"
 env:
   global:
   - PULL_REQUEST=${TRAVIS_PULL_REQUEST}
