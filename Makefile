@@ -1,6 +1,6 @@
 RELEASE_VERSION ?= latest
 
-SUBDIRS=docker-images cluster-controller topic-controller systemtest examples
+SUBDIRS=docker-images common-test cluster-controller topic-controller systemtest examples
 DOCKER_TARGETS=docker_build docker_push docker_tag
 
 all: $(SUBDIRS)

@@ -96,7 +96,7 @@ public class KafkaClusterTest {
     }
 
     @Test
-    @Resources("../examples/resources/kafka-ephemeral.yaml")
+    @Resources("../examples/resources/cluster-controller/kafka-ephemeral.yaml")
     public void testKafkaScaleUpScaleDown() {
         // kafka cluster already deployed via annotation
         String clusterName = "my-cluster";
@@ -144,7 +144,7 @@ public class KafkaClusterTest {
     }
 
     @Test
-    @Resources("../examples/resources/kafka-ephemeral.yaml")
+    @Resources("../examples/resources/cluster-controller/kafka-ephemeral.yaml")
     public void testZookeeperScaleUpScaleDown() {
         // kafka cluster already deployed via annotation
         String clusterName = "my-cluster";
@@ -179,7 +179,7 @@ public class KafkaClusterTest {
     }
 
     private void waitForZkMntr(String pod, Pattern pattern) {
-        long timeoutMs = 30_000;
+        long timeoutMs = 30_000L;
         long pollMs = 1_000L;
         long t0 = System.currentTimeMillis();
         String output;

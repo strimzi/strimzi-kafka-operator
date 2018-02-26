@@ -69,6 +69,9 @@ public class StrimziRunnerTest {
 
     @Test
     public void test0() {
+        if (System.getenv(StrimziRunner.NOTEARDOWN) != null) {
+            return;
+        }
         Result r =  jUnitCore.run(Request.method(ClsWithClusterResource.class, "test0"));
         if (!r.wasSuccessful()) {
             r.getFailures().get(0).getException().printStackTrace();
@@ -82,6 +85,9 @@ public class StrimziRunnerTest {
 
     @Test
     public void test1() {
+        if (System.getenv(StrimziRunner.NOTEARDOWN) != null) {
+            return;
+        }
         Result r =  jUnitCore.run(Request.method(ClsWithClusterResource.class, "test1"));
         if (!r.wasSuccessful()) {
             r.getFailures().get(0).getException().printStackTrace();

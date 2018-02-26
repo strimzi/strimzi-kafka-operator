@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.NoSuchFileException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -148,7 +149,7 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
                         }
                     }
                 }
-            } else {
+            } else if (f.isDirectory()) {
                 File[] children = f.listFiles();
                 if (children != null) {
                     Arrays.sort(children, cmp);
@@ -157,6 +158,8 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
                         error = e;
                     }
                 }
+            } else if (!f.exists()) {
+                throw new RuntimeException(new NoSuchFileException(f.getPath()));
             }
         }
         return error;
@@ -215,20 +218,20 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
         LOGGER.debug("Waiting for {} {}", resource, name);
         long timeoutMs = 120_000L;
         long pollMs = 1_000L;
-        long t0 = System.currentTimeMillis();
+        long deadline = System.currentTimeMillis() + timeoutMs;
         ObjectMapper mapper = new ObjectMapper();
         outer: while (true) {
+            if (System.currentTimeMillis() > deadline) {
+                throw new RuntimeException("Timeout waiting for " + resource + " " + name + " to be ready");
+            }
+            String jsonString;
             try {
-                String jsonString = Exec.exec(cmd(), "get", resource, name, "-o", "json").out();
+                jsonString = Exec.exec(cmd(), "get", resource, name, "-o", "json").out();
                 LOGGER.trace("{}", jsonString);
                 JsonNode actualObj = mapper.readTree(jsonString);
 
                 if (ready.test(actualObj)) {
                     break;
-                }
-
-                if (System.currentTimeMillis() - t0 > timeoutMs) {
-                    throw new RuntimeException("Timeout waiting for " + resource + " " + name + " to be ready");
                 }
 
                 try {
