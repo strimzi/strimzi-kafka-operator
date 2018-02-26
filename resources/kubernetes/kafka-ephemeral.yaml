@@ -43,3 +43,5 @@ data:
     {
       "lowercaseOutputName": true
     }
+  topic-controller-config: |-
+    { }
