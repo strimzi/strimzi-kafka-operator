@@ -4,19 +4,12 @@
  */
 package io.strimzi.test.k8s;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Predicate;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
@@ -51,18 +44,7 @@ public class Oc extends BaseKubeClient<Oc> {
 
     @Override
     public Oc clientWithAdmin() {
-        return new Oc() {
-
-            @Override
-            protected Context defaultContext() {
-                return adminContext();
-            }
-
-            @Override
-            public Oc clientWithAdmin() {
-                return this;
-            }
-        };
+        return new AdminOc();
     }
 
     @Override
@@ -102,5 +84,21 @@ public class Oc extends BaseKubeClient<Oc> {
     @Override
     protected String cmd() {
         return OC;
+    }
+
+    /**
+     * An {@code Oc} which uses the admin context.
+     */
+    private static class AdminOc extends Oc {
+
+        @Override
+        protected Context defaultContext() {
+            return adminContext();
+        }
+
+        @Override
+        public Oc clientWithAdmin() {
+            return this;
+        }
     }
 }

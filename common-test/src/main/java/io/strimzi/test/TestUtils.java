@@ -19,7 +19,7 @@ public final class TestUtils {
         }
         Map<T, T> result = new HashMap<>(pairs.length / 2);
         for (int i = 0; i < pairs.length; i += 2) {
-            result.put(pairs[i], pairs[i+1]);
+            result.put(pairs[i], pairs[i + 1]);
         }
         return result;
     }

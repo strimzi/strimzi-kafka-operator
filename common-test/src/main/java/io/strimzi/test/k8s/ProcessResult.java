@@ -4,7 +4,12 @@
  */
 package io.strimzi.test.k8s;
 
-public class ProcessResult {
+import java.io.Serializable;
+
+public class ProcessResult implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     private final int sc;
     private final String out;
     private final String err;

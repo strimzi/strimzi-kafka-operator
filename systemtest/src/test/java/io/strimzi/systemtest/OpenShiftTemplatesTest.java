@@ -43,7 +43,7 @@ public class OpenShiftTemplatesTest {
 
     @Test
     public void testStrimziEphemeral() throws IOException {
-        Oc oc = (Oc)cluster.client();
+        Oc oc = (Oc) cluster.client();
         String clusterName = "foo";
         oc.newApp("strimzi-ephemeral", map("CLUSTER_NAME", clusterName,
                 "ZOOKEEPER_NODE_COUNT", "1",
@@ -61,7 +61,7 @@ public class OpenShiftTemplatesTest {
 
     @Test
     public void testStrimziPersistent() throws IOException {
-        Oc oc = (Oc)cluster.client();
+        Oc oc = (Oc) cluster.client();
         String clusterName = "bar";
         oc.newApp("strimzi-persistent", map("CLUSTER_NAME", clusterName,
                 "ZOOKEEPER_NODE_COUNT", "1",
@@ -79,7 +79,7 @@ public class OpenShiftTemplatesTest {
 
     @Test
     public void testConnect() throws IOException {
-        Oc oc = (Oc)cluster.client();
+        Oc oc = (Oc) cluster.client();
         String clusterName = "test-connect";
         oc.newApp("strimzi-connect", map("CLUSTER_NAME", clusterName,
                 "INSTANCES", "1"));
@@ -93,7 +93,7 @@ public class OpenShiftTemplatesTest {
 
     @Test
     public void testS2i() throws IOException {
-        Oc oc = (Oc)cluster.client();
+        Oc oc = (Oc) cluster.client();
         String clusterName = "test-s2i";
         oc.newApp("strimzi-connect-s2i", map("CLUSTER_NAME", clusterName,
                 "INSTANCES", "1"));

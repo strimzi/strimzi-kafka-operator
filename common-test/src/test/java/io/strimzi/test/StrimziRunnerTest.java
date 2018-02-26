@@ -21,7 +21,7 @@ import static org.mockito.Mockito.verify;
 
 public class StrimziRunnerTest {
 
-    private static final KubeClient mockClient = mock(KubeClient.class);
+    private static final KubeClient MOCK_KUBE_CLIENT = mock(KubeClient.class);
 
     static class MockKubeClusterResource extends KubeClusterResource {
         public MockKubeClusterResource() {
@@ -38,7 +38,7 @@ public class StrimziRunnerTest {
 
         @Override
         public KubeClient<?> client() {
-            return mockClient;
+            return MOCK_KUBE_CLIENT;
         }
     }
 
@@ -74,10 +74,10 @@ public class StrimziRunnerTest {
             r.getFailures().get(0).getException().printStackTrace();
         }
         assertTrue(r.wasSuccessful());
-        verify(mockClient).createNamespace(eq("test"));
-        verify(mockClient).create(eq("foo"));
-        verify(mockClient).deleteNamespace(eq("test"));
-        verify(mockClient).delete(eq("foo"));
+        verify(MOCK_KUBE_CLIENT).createNamespace(eq("test"));
+        verify(MOCK_KUBE_CLIENT).create(eq("foo"));
+        verify(MOCK_KUBE_CLIENT).deleteNamespace(eq("test"));
+        verify(MOCK_KUBE_CLIENT).delete(eq("foo"));
     }
 
     @Test
@@ -87,9 +87,9 @@ public class StrimziRunnerTest {
             r.getFailures().get(0).getException().printStackTrace();
         }
         assertTrue(r.wasSuccessful());
-        verify(mockClient, times(2)).createNamespace(eq("test"));
-        verify(mockClient, times(2)).create(eq("foo"));
-        verify(mockClient, times(2)).deleteNamespace(eq("test"));
-        verify(mockClient, times(2)).delete(eq("foo"));
+        verify(MOCK_KUBE_CLIENT, times(2)).createNamespace(eq("test"));
+        verify(MOCK_KUBE_CLIENT, times(2)).create(eq("foo"));
+        verify(MOCK_KUBE_CLIENT, times(2)).deleteNamespace(eq("test"));
+        verify(MOCK_KUBE_CLIENT, times(2)).delete(eq("foo"));
     }
 }

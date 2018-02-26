@@ -139,48 +139,6 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         }
     }
 
-    private Statement withS2iCluster(Annotatable element,
-                                         Statement statement) {
-        Statement last = statement;
-        for (S2iCluster cluster : annotations(element, S2iCluster.class)) {
-            last = new Bracket(last) {
-                @Override
-                protected void before() {
-                    // Here we record the state of the cluster
-                    LOGGER.info("Creating {} S2I cluster {}", name(element), cluster.value());
-                }
-
-                @Override
-                protected void after() {
-                    LOGGER.info("Destroying {} S2I cluster {}", name(element), cluster.value());
-                    // Here we verify the cluster is in the same state
-                }
-            };
-        }
-        return last;
-    }
-
-    private Statement withConnectCluster(Annotatable element,
-                                       Statement statement) {
-        Statement last = statement;
-        for (ConnectCluster cluster : annotations(element, ConnectCluster.class)) {
-            last = new Bracket(last) {
-                @Override
-                protected void before() {
-                    // Here we record the state of the cluster
-                    LOGGER.info("Creating {} Connect cluster {}", name(element), cluster.value());
-                }
-
-                @Override
-                protected void after() {
-                    LOGGER.info("Destroying {} Connect cluster {}", name(element), cluster.value());
-                    // Here we verify the cluster is in the same state
-                }
-            };
-        }
-        return last;
-    }
-
     private Statement withKafkaCluster(Annotatable element,
                                        Statement statement) {
         Statement last = statement;
@@ -212,9 +170,9 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         if (a instanceof TestClass) {
             return "class " + ((TestClass) a).getJavaClass().getSimpleName();
         } else if (a instanceof FrameworkMethod) {
-            return "method "+ ((FrameworkMethod)a).getName();
+            return "method " + ((FrameworkMethod) a).getName();
         } else if (a instanceof FrameworkField) {
-            return "field " + ((FrameworkField)a).getName();
+            return "field " + ((FrameworkField) a).getName();
         } else {
             return a.toString();
         }

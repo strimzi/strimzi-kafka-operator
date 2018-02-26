@@ -17,7 +17,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static java.lang.String.join;
 import static java.util.Arrays.asList;
@@ -66,17 +65,19 @@ class Exec {
             String stdout = new String(Files.readAllBytes(out.toPath()), Charset.defaultCharset());
             ProcessResult result = new ProcessResult(sc, stdout, stderr);
             if (sc != 0) {
-                String msg = "`" + join(" ", cmd) + "` got status code " + sc + " and stderr:\n------\n" + stderr + "\n------\nand stdout:\n------\n" + stdout+"\n------";
+                String msg = "`" + join(" ", cmd) + "` got status code " + sc + " and stderr:\n------\n" + stderr + "\n------\nand stdout:\n------\n" + stdout + "\n------";
                 Pattern re = Pattern.compile("Error from server \\(([a-zA-Z0-9]+)\\):");
                 Matcher matcher = re.matcher(stderr);
                 KubeClusterException t = null;
                 if (matcher.find()) {
-                    switch(matcher.group(1)) {
+                    switch (matcher.group(1)) {
                         case "NotFound":
                             t = new KubeClusterException.NotFound(result, msg);
                             break;
                         case "AlreadyExists":
                             t = new KubeClusterException.AlreadyExists(result, msg);
+                            break;
+                        default:
                             break;
                     }
                 }
@@ -94,10 +95,14 @@ class Exec {
             throw new KubeClusterException(e);
         } finally {
             if (out != null) {
-                out.delete();
+                if (!out.delete()) {
+                    LOGGER.error("Failed to delete temporary file");
+                }
             }
             if (err != null) {
-                err.delete();
+                if (!err.delete()) {
+                    LOGGER.error("Failed to delete temporary file");
+                }
             }
         }
     }
@@ -128,7 +133,10 @@ class Exec {
                 result.add("-f");
                 result.add(f.getAbsolutePath());
             } else if (f.isDirectory()) {
-                filesAsStrings(asList(f.listFiles()), result);
+                File[] children = f.listFiles();
+                if (children != null) {
+                    filesAsStrings(asList(children), result);
+                }
             }
         }
         return result;

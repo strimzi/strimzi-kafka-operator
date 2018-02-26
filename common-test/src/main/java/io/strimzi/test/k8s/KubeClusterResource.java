@@ -10,8 +10,6 @@ import org.junit.runners.model.Statement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-
 /**
  * A Junit resource for using with {@code @ClassRule} (or {@code Rule},
  * but since starting and stopping a cluster is really slow, it's better to pay that cost as infrequently as possible).

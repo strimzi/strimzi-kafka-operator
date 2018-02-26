@@ -71,7 +71,7 @@ public class KafkaClusterTest {
     @Test
     @OpenShiftOnly
     public void testDeployKafkaClusterViaTemplate() {
-        Oc oc = (Oc)this.kubeClient;
+        Oc oc = (Oc) this.kubeClient;
         String clusterName = "openshift-my-cluster";
         oc.newApp("strimzi-ephemeral", map("CLUSTER_NAME", clusterName));
         oc.waitForStatefulSet(zookeeperStatefulSetName(clusterName), true);
@@ -112,7 +112,7 @@ public class KafkaClusterTest {
         final int newPodId = initialReplicas;
         final int newBrokerId = newPodId;
         final String newPodName = kafkaPodName(clusterName,  newPodId);
-        final String firstPodName = kafkaPodName(clusterName,  0);;
+        final String firstPodName = kafkaPodName(clusterName,  0);
         LOGGER.info("Scaling up to {}", scaleTo);
         replaceCm(clusterName, "kafka-nodes", String.valueOf(initialReplicas + 1));
         kubeClient.waitForStatefulSet(kafkaStatefulSetName(clusterName), true);
@@ -137,7 +137,7 @@ public class KafkaClusterTest {
         versions = kubeClient.exec(firstPodName,
                 "/opt/kafka/bin/kafka-broker-api-versions.sh", "--bootstrap-server", "localhost:9092").out();
 
-        assertTrue("Expect the added broker, "+newBrokerId+",  to no longer be present in output of kafka-broker-api-versions.sh",
+        assertTrue("Expect the added broker, " + newBrokerId + ",  to no longer be present in output of kafka-broker-api-versions.sh",
                 versions.indexOf("(id: " + newBrokerId + " rack: ") == -1);
         // TODO Check for k8s events, logs for errors
     }
@@ -196,11 +196,11 @@ public class KafkaClusterTest {
                 LOGGER.trace("Exception while waiting for ZK to become leader/follower, ignoring", e);
             }
             if (System.currentTimeMillis() - t0 > timeoutMs) {
-                fail("Timeout after " + timeoutMs + "ms waiting for ZK in pod " +pod+" to become leader/follower");
+                fail("Timeout after " + timeoutMs + "ms waiting for ZK in pod " + pod + " to become leader/follower");
             }
             try {
                 Thread.sleep(pollMs);
-            } catch (InterruptedException e2){
+            } catch (InterruptedException e2) {
                 break;
             }
         }

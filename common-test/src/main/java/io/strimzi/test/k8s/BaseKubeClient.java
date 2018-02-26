@@ -149,11 +149,13 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
                     }
                 }
             } else {
-                File[] s = f.listFiles();
-                Arrays.sort(s, cmp);
-                KubeClusterException e = execRecursive(subcommand, s, cmp);
-                if (error == null) {
-                    error = e;
+                File[] children = f.listFiles();
+                if (children != null) {
+                    Arrays.sort(children, cmp);
+                    KubeClusterException e = execRecursive(subcommand, children, cmp);
+                    if (error == null) {
+                        error = e;
+                    }
                 }
             }
         }
@@ -270,33 +272,33 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
     @Override
     public K waitForPod(String name) {
         return waitFor("pod", name,
-                actualObj -> "Running".equals(actualObj.get("status").get("phase").asText()));
+            actualObj -> "Running".equals(actualObj.get("status").get("phase").asText()));
     }
 
     @Override
     public K waitForStatefulSet(String name, boolean waitForPods) {
         return waitFor("statefulset", name,
-                actualObj -> {
-                    int rep = actualObj.get("status").get("replicas").asInt();
-                    JsonNode currentReplicas = actualObj.get("status").get("currentReplicas");
+            actualObj -> {
+                int rep = actualObj.get("status").get("replicas").asInt();
+                JsonNode currentReplicas = actualObj.get("status").get("currentReplicas");
 
-                    if (currentReplicas != null && rep == currentReplicas.asInt()) {
-                        LOGGER.debug("Waiting for pods of statefulset {}", name);
-                        if (waitForPods) {
-                            for (int ii = 0; ii < rep; ii++) {
-                                waitForPod(name + "-" + ii);
-                            }
+                if (currentReplicas != null && rep == currentReplicas.asInt()) {
+                    LOGGER.debug("Waiting for pods of statefulset {}", name);
+                    if (waitForPods) {
+                        for (int ii = 0; ii < rep; ii++) {
+                            waitForPod(name + "-" + ii);
                         }
-                        return true;
                     }
-                    return false;
-                });
+                    return true;
+                }
+                return false;
+            });
     }
 
     @Override
     public K waitForResourceDeletion(String resourceType, String resourceName) {
         return waitFor(resourceType, resourceName,
-                x -> false,
-                ex -> ex instanceof KubeClusterException.NotFound ? ExType.BREAK: ExType.THROW);
+            x -> false,
+            ex -> ex instanceof KubeClusterException.NotFound ? ExType.BREAK : ExType.THROW);
     }
 }
