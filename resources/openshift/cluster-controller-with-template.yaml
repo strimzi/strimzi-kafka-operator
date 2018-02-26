@@ -325,6 +325,8 @@ objects:
       {
         "lowercaseOutputName": true
       }
+    topic-controller-config: |-
+      { }
 ---
 apiVersion: v1
 kind: Template
@@ -458,6 +460,8 @@ objects:
       {
         "lowercaseOutputName": true
       }
+    topic-controller-config: |-
+      { }
 ---
 apiVersion: v1
 kind: Template
