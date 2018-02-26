@@ -248,16 +248,15 @@ _The name of the build should be changed according to the cluster name of the de
 === Topic Controller
 
 Strimzi uses a component called the Topic Controller to manage topics in the Kafka cluster. The Topic Controller
-is deployed as a process running inside your Kubernetes or OpenShift cluster. To create a new Kafka topic, a ConfigMap
+is deployed as a process running inside a Kubernetes/OpenShift cluster. To create a new Kafka topic, a ConfigMap
 with the related configuration (name, partitions, replication factor, ...) has to be created. Based on the information
 in that ConfigMap, the Topic Controller will create a corresponding Kafka topic in the cluster.
 
 Deleting a topic ConfigMap raises the deletion of the corresponding Kafka topic as well.
 
-Strimzi allows to deploy the Topic Controller through the Cluster Controller. The cluster ConfigMap contains the Topic
-Controller configuration for doing that.
-
-Furthermore, Strimzi contains example YAML files for deploying the Topic Controller not through the Cluster Controller as well.
+The Cluster Controller is able to deploy a Topic Controller, which can be configured in the cluster ConfigMap.
+Alternatively, it is possible to deploy a Topic Controller manually, rather than having it deployed
+by the Cluster Controller.
 
 ==== Deploying through the Cluster Controller
 
@@ -300,13 +299,13 @@ oc describe all
 
 ==== Topic ConfigMap
 
-By default, deploying the Topic Controller through the Cluster Controller needs the topic ConfigMap being labeled with
-following labels:
+When the Topic Controller is deployed by the Cluster Controller it will be configured to watch
+for "topic ConfigMaps" which are those with the following labels:
 
 [source,yaml]
 strimzi.io/cluster: <cluster-name>
 strimzi.io/kind: topic
 
-Deploying the Topic Controller "manually" through the provided YAML files needs just the `strimzi.io/kind: topic` label.
+When the Topic Controller is deployed manually the `strimzi.io/cluster` label is not necessary.
 
 The topic ConfigMap contains the topic configuration in a specific format. The ConfigMap format is described in <<topic_config_map_details>>.
