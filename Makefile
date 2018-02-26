@@ -1,7 +1,6 @@
 RELEASE_VERSION ?= latest
 
-SUBDIRS=docker-images cluster-controller topic-controller resources
-#SUBDIRS=docker-images/kafka-base docker-images/zookeeper docker-images/kafka docker-images/kafka-connect docker-images/kafka-connect/s2i cluster-controller topic-controller examples
+SUBDIRS=docker-images cluster-controller topic-controller examples
 DOCKER_TARGETS=docker_build docker_push docker_tag
 
 all: $(SUBDIRS)
