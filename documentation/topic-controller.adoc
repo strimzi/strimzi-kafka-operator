@@ -74,7 +74,7 @@ than it would even if it was stateless.
       otherwise the controller will have to sanitize the name when creating 
       the corresponding ConfigMap.
 
-    
+[[topic_config_map_details]]
 === Format of the ConfigMap
 
 By default, the controller only considers ConfigMaps having the label `strimzi.io/kind=topic`, 
@@ -165,7 +165,7 @@ The controller is configured from environment variables:
 
 * `STRIMZI_CONFIGMAP_LABELS` 
 – The Kubernetes label selector used to identify ConfigMaps to be managed by the controller.
-  Default: `strimzi.io/kind=topic`.  
+  Default: `strimzi.io/kind=topic`.
 * `STRIMZI_ZOOKEEPER_SESSION_TIMEOUT`
 – The Zookeeper session timeout. For example `10 seconds`. Default: `20 seconds`.
 * `STRIMZI_KAFKA_BOOTSTRAP_SERVERS`

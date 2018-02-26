@@ -53,6 +53,68 @@ can be used:
 [source]
 oc describe all
 
+=== Topic Controller
+
+Strimzi uses a component called the Topic Controller to handle manage topics in the Kafka cluster. The Topic Controller
+is deployed as a process running inside your Kubernetes or OpenShift cluster. To create a new Kafka topic, a ConfigMap
+with the related configuration (name, partitions, replication factor, ...) has to be created. Based on the information
+in that ConfigMap, the Topic Controller will create a corresponding Kafka topic in the cluster.
+
+Deleting a topic ConfigMap raises the deletion of the corresponding Kafka topic as well.
+
+Strimzi allows to deploy the Topic Controller through the Cluster Controller. The cluster ConfigMap contains the Topic
+Controller configuration for doing that.
+
+Furthermore, Strimzi contains example YAML files for deploying the Topic Controller not through the Cluster Controller as well.
+
+==== Deploying through the Cluster Controller
+
+To deploy the Topic Controller through the Cluster Controller, its configuration needs to be provided in the cluster
+ConfigMap in the `topic-controller-config` field as a JSON string.
+
+For more information on the JSON configuration format see <<topic_controller_json_config>>.
+
+Of course, such a deployment comes "out of box" from deploying the Cluster Controller as explained in <<Cluster Controller>>.
+
+==== Deploying to Kubernetes
+
+To deploy the Topic Controller on Kubernetes (not through the Cluster Controller), the following command should be executed:
+
+[source]
+kubectl create -f resources/kubernetes/topic-controller.yaml
+
+To verify whether the Topic Controller has been deployed successfully, the Kubernetes Dashboard or the following
+command can be used:
+
+[source]
+kubectl describe all
+
+==== Deploying to OpenShift
+
+To deploy the Topic Controller on OpenShift (not through the Cluster Controller), the following command should be executed:
+
+[source]
+oc create -f resources/openshift/topic-controller-with-template.yaml
+
+To verify whether the Topic Controller has been deployed successfully, the OpenShift console or the following command
+can be used:
+
+[source]
+oc describe all
+
+==== Topic ConfigMap
+
+By default, deploying the Topic Controller through the Cluster Controller needs the topic ConfigMap being labeled with
+following labels:
+
+[source,yaml]
+strimzi.io/cluster: <cluster-name>
+strimzi.io/kind: topic
+
+Deploying the Topic Controller "manually" through the provided YAML files needs just the `strimzi.io/kind: topic` label.
+
+The topic ConfigMap contains the topic configuration in a specific format. The ConfigMap format is described in <<topic_config_map_details>>.
+
 === Kafka broker
 
 Strimzi uses StatefulSets feature of Kubernetes/OpenShift to deploy Kafka brokers.
