@@ -12,10 +12,12 @@ jdk:
 - oraclejdk8
 services:
 - docker
-addons:
-  apt:
-    packages:
-      - asciidoctor
+#addons:
+#  apt:
+#    packages:
+#      - asciidoctor
+before_install:
+- gem install asciidoctor
 before_script:
 - "./.travis/setup-kubernetes.sh"
 script:
