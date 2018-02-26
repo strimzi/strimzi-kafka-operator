@@ -1,16 +1,20 @@
 apiVersion: v1
 kind: Template
 metadata:
-  name: strimzi-persistent
+  name: strimzi-ephemeral
   annotations:
-    openshift.io/display-name: "Apache Kafka (Persistent storage)"
+    openshift.io/display-name: "Apache Kafka (Ephemeral storage)"
     description: >-
       This template installs Apache Zookeeper and Apache Kafka clusters. For more information
       about using this template see http://strimzi.io
+
+
+      WARNING: Any data stored will be lost upon pod destruction. Only use this
+      template for testing."
     tags: "messaging,datastore"
     iconClass: "fa fa-share-alt fa-flip-horizontal"
     template.openshift.io/documentation-url: "http://strimzi.io"
-message: "Use 'my-cluster-kafka:9092' as bootstrap server in your application"
+message: "Kafka cluster ${CLUSTER_NAME} is being deployed. Use '${CLUSTER_NAME}:9092' as bootstrap server in your application"
 parameters:
 - description: All Kubernetes resources will be named after the cluster name
   displayName: Name of the cluster
@@ -20,22 +24,12 @@ parameters:
   displayName: Number of Zookeper cluster nodes (odd number of nodes is recomended)
   name: ZOOKEEPER_NODE_COUNT
   required: true
-  value: "3"
+  value: "1"
 - description: Number of Kafka cluster nodes which will be deployed
   displayName: Number of Kafka cluster nodes
   name: KAFKA_NODE_COUNT
   required: true
   value: "3"
-- description: Volume space available for Zookeeper data, e.g. 512Mi, 2Gi.
-  displayName: Zookeeper Volume Capacity
-  name: ZOOKEEPER_VOLUME_CAPACITY
-  required: true
-  value: 1Gi
-- description: Volume space available for Kafka data, e.g. 512Mi, 2Gi.
-  displayName: Kafka Volume Capacity
-  name: KAFKA_VOLUME_CAPACITY
-  required: true
-  value: 1Gi
 - description: Image repository name
   displayName: Repository Name
   name: IMAGE_REPO_NAME
@@ -105,9 +99,9 @@ objects:
     KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "${KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR}"
     KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "${KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR}"
     kafka-storage: |-
-      { "type": "persistent-claim", "size": "${KAFKA_VOLUME_CAPACITY}", "delete-claim": false }
+      { "type": "ephemeral" }
     zookeeper-storage: |-
-      { "type": "persistent-claim", "size": "${ZOOKEEPER_VOLUME_CAPACITY}", "delete-claim": false }
+      { "type": "ephemeral" }
     kafka-metrics-config: |-
       {
         "lowercaseOutputName": true,
@@ -130,3 +124,5 @@ objects:
       {
         "lowercaseOutputName": true
       }
+    topic-controller-config: |-
+      { }

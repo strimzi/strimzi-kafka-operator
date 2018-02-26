@@ -34,7 +34,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(StrimziRunner.class)
 @Namespace(KafkaClusterTest.NAMESPACE)
-@Resources(value = "../resources/openshift/cluster-controller", asAdmin = true)
+@Resources(value = "../examples/install/cluster-controller", asAdmin = true)
 public class KafkaClusterTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaClusterTest.class);
@@ -69,6 +69,7 @@ public class KafkaClusterTest {
     }
 
     @Test
+    @Resources(value = "../examples/openshift/cluster-controller", asAdmin = true)
     @OpenShiftOnly
     public void testDeployKafkaClusterViaTemplate() {
         Oc oc = (Oc) this.kubeClient;
@@ -95,7 +96,7 @@ public class KafkaClusterTest {
     }
 
     @Test
-    @Resources("../resources/kubernetes/kafka-ephemeral.yaml")
+    @Resources("../examples/resources/kafka-ephemeral.yaml")
     public void testKafkaScaleUpScaleDown() {
         // kafka cluster already deployed via annotation
         String clusterName = "my-cluster";
@@ -143,7 +144,7 @@ public class KafkaClusterTest {
     }
 
     @Test
-    @Resources("../resources/kubernetes/kafka-ephemeral.yaml")
+    @Resources("../examples/resources/kafka-ephemeral.yaml")
     public void testZookeeperScaleUpScaleDown() {
         // kafka cluster already deployed via annotation
         String clusterName = "my-cluster";

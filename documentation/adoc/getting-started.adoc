@@ -32,7 +32,7 @@ Strimzi contains example YAML files which make deploying a Cluster Controller ea
 To deploy the Cluster Controller on Kubernetes, the following command should be executed:
 
 [source]
-kubectl create -f resources/kubernetes/cluster-controller.yaml
+kubectl create -f examples/install/cluster-controller
 
 To verify whether the Cluster Controller has been deployed successfully, the Kubernetes Dashboard or the following
 command can be used:
@@ -42,10 +42,11 @@ kubectl describe all
 
 ==== Deploying to OpenShift
 
-To deploy the Cluster Controller on OpenShift, the following command should be executed:
+To deploy the Cluster Controller on OpenShift, the following commands should be executed:
 
 [source]
-oc create -f resources/openshift/cluster-controller-with-template.yaml
+oc create -f examples/install/cluster-controller
+oc create -f examples/openshift/cluster-controller
 
 To verify whether the Cluster Controller has been deployed successfully, the OpenShift console or the following command
 can be used:
@@ -94,12 +95,12 @@ To deploy a Kafka broker on Kubernetes, the corresponding ConfigMap has to be cr
 cluster using the provided example ConfigMap, the following command should be executed:
 
 [source]
-kubectl apply -f resources/kubernetes/kafka-ephemeral.yaml
+kubectl apply -f examples/resources/cluster-controller/kafka-ephemeral.yaml
 
 Another example ConfigMap is provided for persistent Kafka cluster. To deploy it, the following command should be run:
 
 [source]
-kubectl apply -f resources/kubernetes/kafka-persistent.yaml
+kubectl apply -f examples/resources/cluster-controller/kafka-persistent.yaml
 
 ==== Deploying to OpenShift
 
@@ -132,7 +133,7 @@ To deploy Kafka Connect on Kubernetes, the corresponding ConfigMap has to be cre
 created using the following command:
 
 [source]
-kubectl apply -f resources/kubernetes/kafka-connect.yaml
+kubectl apply -f examples/resources/cluster-controller/kafka-connect.yaml
 
 ==== Deploying to OpenShift
 

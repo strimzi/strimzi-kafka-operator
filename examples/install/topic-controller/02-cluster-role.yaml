@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ClusterRole
+metadata:
+  name: strimzi-topic-controller-role
+  labels:
+    app: strimzi
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - patch
+  - update
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create

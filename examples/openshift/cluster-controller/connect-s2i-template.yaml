@@ -11,7 +11,7 @@ metadata:
     tags: "messaging"
     iconClass: "fa fa-exchange"
     template.openshift.io/documentation-url: "http://strimzi.io"
-message: "Use 'my-connect-cluster-connect:8083' to access Kafka Connect REST API."
+message: "Kafka Connect S2I cluster ${CLUSTER_NAME} is being deployed. Use '${CLUSTER_NAME}:8083' to access Kafka Connect REST API."
 parameters:
 - description: All Kubernetes resources will be named after the cluster name
   displayName: Name of the cluster

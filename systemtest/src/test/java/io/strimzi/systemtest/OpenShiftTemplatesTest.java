@@ -26,12 +26,15 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 /**
- * Basic tests for the OpenShift templates
+ * Basic tests for the OpenShift templates.
+ * This only tests that the template create the appropriate resource,
+ * not that the created resource is processed by controller(s) in the appropriate way.
  */
 @RunWith(StrimziRunner.class)
 @OpenShiftOnly
 @Namespace(OpenShiftTemplatesTest.NAMESPACE)
-@Resources(value = "../resources/openshift/cluster-controller", asAdmin = true)
+@Resources(value = "../examples/openshift/cluster-controller", asAdmin = true)
+@Resources(value = "../examples/openshift/topic-controller", asAdmin = true)
 public class OpenShiftTemplatesTest {
 
     public static final String NAMESPACE = "template-test";
@@ -78,7 +81,7 @@ public class OpenShiftTemplatesTest {
     }
 
     @Test
-    public void testConnect() throws IOException {
+    public void testConnect() {
         Oc oc = (Oc) cluster.client();
         String clusterName = "test-connect";
         oc.newApp("strimzi-connect", map("CLUSTER_NAME", clusterName,
@@ -92,7 +95,7 @@ public class OpenShiftTemplatesTest {
     }
 
     @Test
-    public void testS2i() throws IOException {
+    public void testS2i() {
         Oc oc = (Oc) cluster.client();
         String clusterName = "test-s2i";
         oc.newApp("strimzi-connect-s2i", map("CLUSTER_NAME", clusterName,
@@ -103,5 +106,25 @@ public class OpenShiftTemplatesTest {
         assertNotNull(cm);
         Map<String, String> cmData = cm.getData();
         assertEquals("1", cmData.get("nodes"));
+    }
+
+    @Test
+    public void testTopicController() {
+        Oc oc = (Oc) cluster.client();
+        String topicName = "test-topic-cm";
+        String mapName = "test-topic-cm-foo";
+        oc.newApp("strimzi-topic", map(
+                "MAP_NAME", mapName,
+                "TOPIC_NAME", topicName,
+                "TOPIC_PARTITIONS", "10",
+                "TOPIC_REPLICAS", "2"));
+
+        KubernetesClient client = new DefaultKubernetesClient();
+        ConfigMap cm = client.configMaps().inNamespace("template-test").withName(mapName).get();
+        assertNotNull(cm);
+        Map<String, String> cmData = cm.getData();
+        assertEquals(topicName, cmData.get("name"));
+        assertEquals("10", cmData.get("partitions"));
+        assertEquals("2", cmData.get("replicas"));
     }
 }

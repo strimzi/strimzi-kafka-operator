@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: RoleBinding
+metadata:
+  name: strimzi-topic-controller-binding
+  labels:
+    app: strimzi
+subjects:
+  - kind: ServiceAccount
+    name: strimzi-topic-controller
+roleRef:
+  kind: ClusterRole
+  name: strimzi-topic-controller-role
+apiGroup: v1
