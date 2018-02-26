@@ -227,6 +227,7 @@ configuration file. For this reason, you can find more information on how to use
 
 For more information on how metrics work, the related documentation is available link:../../metrics/METRICS.md[here]
 
+[[topic_controller_json_config]]
 ===== Topic controller
 
 Alongside the Kafka cluster and the Zookeeper ensemble, the cluster controller can also deploy the topic controller.
