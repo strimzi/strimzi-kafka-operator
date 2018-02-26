@@ -150,9 +150,9 @@ public class TopicController extends AbstractCluster {
     }
 
     protected static String defaultTopicConfigMapLabels(String cluster) {
-        String clusterLabel = String.format("%s=%s", ClusterController.STRIMZI_CLUSTER_LABEL, cluster);
-        String topicLabel = String.format("%s=%s", ClusterController.STRIMZI_KIND_LABEL, TopicController.KIND);
-        return clusterLabel + "," + topicLabel;
+        return String.format("%s=%s,%s=%s",
+                ClusterController.STRIMZI_CLUSTER_LABEL, cluster,
+                ClusterController.STRIMZI_KIND_LABEL, TopicController.KIND);
     }
 
     /**
