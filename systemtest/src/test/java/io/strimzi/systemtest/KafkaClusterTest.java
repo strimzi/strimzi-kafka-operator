@@ -156,7 +156,6 @@ public class KafkaClusterTest {
         // scale up
         final int scaleTo = initialReplicas + 1;
         final int newPodId = initialReplicas;
-        final int newBrokerId = newPodId;
         final String newPodName = zookeeperPodName(clusterName,  newPodId);
         final String firstPodName = zookeeperPodName(clusterName,  0);
         LOGGER.info("Scaling up to {}", scaleTo);

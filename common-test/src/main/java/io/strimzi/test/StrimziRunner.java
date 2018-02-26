@@ -67,7 +67,6 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
     @Override
     protected Statement methodBlock(FrameworkMethod method) {
         Statement statement = super.methodBlock(method);
-        statement = withKafkaCluster(method, statement);
         statement = withResources(method, statement);
         statement = withNamespaces(method, statement);
         return statement;
@@ -137,33 +136,6 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 after();
             }
         }
-    }
-
-    private Statement withKafkaCluster(Annotatable element,
-                                       Statement statement) {
-        Statement last = statement;
-        for (KafkaCluster cluster : annotations(element, KafkaCluster.class)) {
-            /*YAMLMapper mapper = new YAMLMapper();
-            JsonNode node = mapper.readTree("");
-            ((ObjectNode)node.get("metadata")).put("name", cluster.name());
-            ((ObjectNode)node.get("data")).put("kafka-nodes", Integer.toString(cluster.kafkaNodes()));
-            ((ObjectNode)node.get("data")).put("zookeeper-nodes", Integer.toString(cluster.zkNodes()));
-            */
-            last = new Bracket(last) {
-                @Override
-                protected void before() {
-                    // Here we record the state of the cluster
-                    LOGGER.info("Creating {} Kafka cluster {}", name(element), cluster.name());
-                }
-
-                @Override
-                protected void after() {
-                    LOGGER.info("Destroying {} Kafka cluster {}", name(element), cluster.name());
-                    // Here we verify the cluster is in the same state
-                }
-            };
-        }
-        return last;
     }
 
     String name(Annotatable a) {
@@ -245,7 +217,6 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         Statement statement = super.classBlock(notifier);
         TestClass testClass = getTestClass();
         if (!areAllChildrenIgnored()) {
-            statement = withKafkaCluster(testClass, statement);
             statement = withResources(testClass, statement);
             statement = withNamespaces(testClass, statement);
         }
