@@ -18,7 +18,7 @@ Apache Kafka on Kubernetes and OpenShift.
 
 Strimzi consists of 2 main components:
 
-Cluster Controller:: Responsible for deploying and managing Apache Kafka clusters within a Kuberentes or OpenShift
+Cluster Controller:: Responsible for deploying and managing Apache Kafka clusters within a Kubernetes or OpenShift
 cluster
 Topic Controller:: Responsible for managing Kafka Topics within a Kafka cluster running within Kubernetes or OpenShift
 
