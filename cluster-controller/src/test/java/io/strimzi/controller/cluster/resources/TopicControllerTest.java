@@ -48,6 +48,7 @@ public class TopicControllerTest {
 
     private List<EnvVar> getExpectedEnvVars() {
         List<EnvVar> expected = new ArrayList<>();
+        expected.add(new EnvVarBuilder().withName(TopicController.KEY_CONFIGMAP_LABELS).withValue(TopicController.defaultTopicConfigMapLabels(cluster)).build());
         expected.add(new EnvVarBuilder().withName(TopicController.KEY_KAFKA_BOOTSTRAP_SERVERS).withValue(TopicController.defaultBootstrapServers(cluster)).build());
         expected.add(new EnvVarBuilder().withName(TopicController.KEY_ZOOKEEPER_CONNECT).withValue(TopicController.defaultZookeeperConnect(cluster)).build());
         expected.add(new EnvVarBuilder().withName(TopicController.KEY_NAMESPACE).withValue(tcNamespace).build());
@@ -78,6 +79,7 @@ public class TopicControllerTest {
         assertEquals(TopicController.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT, tc.getZookeeperSessionTimeout());
         assertEquals(TopicController.defaultBootstrapServers(cluster), tc.getKafkaBootstrapServers());
         assertEquals(TopicController.defaultZookeeperConnect(cluster), tc.getZookeeperConnect());
+        assertEquals(TopicController.defaultTopicConfigMapLabels(cluster), tc.getTopicConfigMapLabels());
     }
 
     @Test
@@ -95,6 +97,7 @@ public class TopicControllerTest {
         assertEquals(tcZookeeperSessionTimeout, tc.getZookeeperSessionTimeout());
         assertEquals(TopicController.defaultBootstrapServers(cluster), tc.getKafkaBootstrapServers());
         assertEquals(TopicController.defaultZookeeperConnect(cluster), tc.getZookeeperConnect());
+        assertEquals(TopicController.defaultTopicConfigMapLabels(cluster), tc.getTopicConfigMapLabels());
     }
 
     @Test
@@ -114,6 +117,7 @@ public class TopicControllerTest {
         assertEquals(tc.getZookeeperSessionTimeout(), tcFromDep.getZookeeperSessionTimeout());
         assertEquals(tc.getKafkaBootstrapServers(), tcFromDep.getKafkaBootstrapServers());
         assertEquals(tc.getZookeeperConnect(), tcFromDep.getZookeeperConnect());
+        assertEquals(tc.getTopicConfigMapLabels(), tcFromDep.getTopicConfigMapLabels());
     }
 
     @Test

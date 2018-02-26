@@ -50,6 +50,7 @@ public class TopicController extends AbstractCluster {
     public static final String KEY_CONFIG = "topic-controller-config";
 
     // Topic Controller configuration keys
+    public static final String KEY_CONFIGMAP_LABELS = "STRIMZI_CONFIGMAP_LABELS";
     public static final String KEY_KAFKA_BOOTSTRAP_SERVERS = "STRIMZI_KAFKA_BOOTSTRAP_SERVERS";
     public static final String KEY_ZOOKEEPER_CONNECT = "STRIMZI_ZOOKEEPER_CONNECT";
     public static final String KEY_NAMESPACE = "STRIMZI_NAMESPACE";
@@ -63,6 +64,7 @@ public class TopicController extends AbstractCluster {
     private String topicNamespace;
     private String reconciliationInterval;
     private String zookeeperSessionTimeout;
+    private String topicConfigMapLabels;
 
     /**
      * @param namespace Kubernetes/OpenShift namespace where cluster resources are going to be created
@@ -84,6 +86,7 @@ public class TopicController extends AbstractCluster {
         this.topicNamespace = namespace;
         this.reconciliationInterval = DEFAULT_FULL_RECONCILIATION_INTERVAL;
         this.zookeeperSessionTimeout = DEFAULT_ZOOKEEPER_SESSION_TIMEOUT;
+        this.topicConfigMapLabels = defaultTopicConfigMapLabels(cluster);
     }
 
     public void setTopicNamespace(String topicNamespace) {
@@ -92,6 +95,14 @@ public class TopicController extends AbstractCluster {
 
     public String getTopicNamespace() {
         return topicNamespace;
+    }
+
+    public void setTopicConfigMapLabels(String topicConfigMapLabels) {
+        this.topicConfigMapLabels = topicConfigMapLabels;
+    }
+
+    public String getTopicConfigMapLabels() {
+        return topicConfigMapLabels;
     }
 
     public void setReconciliationInterval(String reconciliationInterval) {
@@ -136,6 +147,12 @@ public class TopicController extends AbstractCluster {
 
     protected static String defaultBootstrapServers(String cluster) {
         return KafkaCluster.kafkaClusterName(cluster) + ":" + DEFAULT_BOOTSTRAP_SERVERS_PORT;
+    }
+
+    protected static String defaultTopicConfigMapLabels(String cluster) {
+        String clusterLabel = String.format("%s=%s", ClusterController.STRIMZI_CLUSTER_LABEL, cluster);
+        String topicLabel = String.format("%s=%s", ClusterController.STRIMZI_KIND_LABEL, TopicController.KIND);
+        return clusterLabel + "," + topicLabel;
     }
 
     /**
@@ -211,6 +228,7 @@ public class TopicController extends AbstractCluster {
             topicController.setTopicNamespace(vars.getOrDefault(KEY_NAMESPACE, namespace));
             topicController.setReconciliationInterval(vars.getOrDefault(KEY_FULL_RECONCILIATION_INTERVAL, DEFAULT_FULL_RECONCILIATION_INTERVAL));
             topicController.setZookeeperSessionTimeout(vars.getOrDefault(KEY_ZOOKEEPER_SESSION_TIMEOUT, DEFAULT_ZOOKEEPER_SESSION_TIMEOUT));
+            topicController.setTopicConfigMapLabels(vars.getOrDefault(KEY_CONFIGMAP_LABELS, defaultTopicConfigMapLabels(cluster)));
         }
 
         return topicController;
@@ -289,6 +307,7 @@ public class TopicController extends AbstractCluster {
     @Override
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
+        varList.add(new EnvVarBuilder().withName(KEY_CONFIGMAP_LABELS).withValue(topicConfigMapLabels).build());
         varList.add(new EnvVarBuilder().withName(KEY_KAFKA_BOOTSTRAP_SERVERS).withValue(kafkaBootstrapServers).build());
         varList.add(new EnvVarBuilder().withName(KEY_ZOOKEEPER_CONNECT).withValue(zookeeperConnect).build());
         varList.add(new EnvVarBuilder().withName(KEY_NAMESPACE).withValue(topicNamespace).build());
