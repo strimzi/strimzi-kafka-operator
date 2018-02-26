@@ -55,7 +55,7 @@ oc describe all
 
 === Topic Controller
 
-Strimzi uses a component called the Topic Controller to handle manage topics in the Kafka cluster. The Topic Controller
+Strimzi uses a component called the Topic Controller to manage topics in the Kafka cluster. The Topic Controller
 is deployed as a process running inside your Kubernetes or OpenShift cluster. To create a new Kafka topic, a ConfigMap
 with the related configuration (name, partitions, replication factor, ...) has to be created. Based on the information
 in that ConfigMap, the Topic Controller will create a corresponding Kafka topic in the cluster.
