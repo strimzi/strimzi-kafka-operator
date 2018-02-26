@@ -75,8 +75,8 @@ the related ConfigMap :
  Removing this field means having no metrics exposed.
 * `zookeeper-metrics-config`: a JSON string representing the JMX exporter configuration for exposing metrics from Zookeeper nodes.
  Removing this field means having no metrics exposed.
-* `topic-controller-config`: a JSON string representing the topic controller configuration. See the <<Topic controller>> documentation
-for further details. More info about the topic controller in the related <<Topic Controller>> documentation page.
+* `topic-controller-config`: a JSON string representing the topic controller configuration. See the <<topic_controller_json_config>>
+documentation for further details. More info about the topic controller in the related <<Topic Controller>> documentation page.
  
 The following is an example of a ConfigMap for a Kakfa cluster.
 
