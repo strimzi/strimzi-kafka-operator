@@ -27,8 +27,10 @@ public class TopicController extends AbstractCluster {
 
     private static final String NAME_SUFFIX = "-topic-controller";
 
-    // Topic Controller configuration
-    protected TopicControllerConfig config;
+    private static final String NAMESPACE_FIELD = "namespace";
+    private static final String IMAGE_FIELD = "image";
+    private static final String RECONCILIATION_INTERVAL_FIELD = "reconciliationInterval";
+    private static final String ZOOKEEPER_SESSION_TIMEOUT_FIELD = "zookeeperSessionTimeout";
 
     // Port configuration
     protected static final int HEALTHCHECK_PORT = 8080;
@@ -54,6 +56,14 @@ public class TopicController extends AbstractCluster {
     public static final String KEY_FULL_RECONCILIATION_INTERVAL = "STRIMZI_FULL_RECONCILIATION_INTERVAL";
     public static final String KEY_ZOOKEEPER_SESSION_TIMEOUT = "STRIMZI_ZOOKEEPER_SESSION_TIMEOUT";
 
+    // Kafka bootstrap servers and Zookeeper nodes can't be specified in the JSON
+    private String kafkaBootstrapServers;
+    private String zookeeperConnect;
+
+    private String topicNamespace;
+    private String reconciliationInterval;
+    private String zookeeperSessionTimeout;
+
     /**
      * @param namespace Kubernetes/OpenShift namespace where cluster resources are going to be created
      * @param cluster   overall cluster name
@@ -69,14 +79,51 @@ public class TopicController extends AbstractCluster {
         this.healthCheckInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
 
         // create a default configuration
-        this.config = new TopicControllerConfig();
-        this.config
-                .withImage(DEFAULT_IMAGE)
-                .withKafkaBootstrapServers(defaultBootstrapServers(cluster))
-                .withZookeeperConnect(defaultZookeeperConnect(cluster))
-                .withNamespace(namespace)
-                .withReconciliationInterval(DEFAULT_FULL_RECONCILIATION_INTERVAL)
-                .withZookeeperSessionTimeout(DEFAULT_ZOOKEEPER_SESSION_TIMEOUT);
+        this.kafkaBootstrapServers = defaultBootstrapServers(cluster);
+        this.zookeeperConnect = defaultZookeeperConnect(cluster);
+        this.topicNamespace = namespace;
+        this.reconciliationInterval = DEFAULT_FULL_RECONCILIATION_INTERVAL;
+        this.zookeeperSessionTimeout = DEFAULT_ZOOKEEPER_SESSION_TIMEOUT;
+    }
+
+    public void setTopicNamespace(String topicNamespace) {
+        this.topicNamespace = topicNamespace;
+    }
+
+    public String getTopicNamespace() {
+        return topicNamespace;
+    }
+
+    public void setReconciliationInterval(String reconciliationInterval) {
+        this.reconciliationInterval = reconciliationInterval;
+    }
+
+    public String getReconciliationInterval() {
+        return reconciliationInterval;
+    }
+
+    public void setZookeeperSessionTimeout(String zookeeperSessionTimeout) {
+        this.zookeeperSessionTimeout = zookeeperSessionTimeout;
+    }
+
+    public String getZookeeperSessionTimeout() {
+        return zookeeperSessionTimeout;
+    }
+
+    public void setKafkaBootstrapServers(String kafkaBootstrapServers) {
+        this.kafkaBootstrapServers = kafkaBootstrapServers;
+    }
+
+    public String getKafkaBootstrapServers() {
+        return kafkaBootstrapServers;
+    }
+
+    public void setZookeeperConnect(String zookeeperConnect) {
+        this.zookeeperConnect = zookeeperConnect;
+    }
+
+    public String getZookeeperConnect() {
+        return zookeeperConnect;
     }
 
     public static String topicControllerName(String cluster) {
@@ -89,14 +136,6 @@ public class TopicController extends AbstractCluster {
 
     protected static String defaultBootstrapServers(String cluster) {
         return KafkaCluster.kafkaClusterName(cluster) + ":" + DEFAULT_BOOTSTRAP_SERVERS_PORT;
-    }
-
-    public void setConfig(TopicControllerConfig config) {
-        this.config = config;
-    }
-
-    public TopicControllerConfig getConfig() {
-        return this.config;
     }
 
     /**
@@ -114,8 +153,29 @@ public class TopicController extends AbstractCluster {
             topicController = new TopicController(kafkaClusterCm.getMetadata().getNamespace(), kafkaClusterCm.getMetadata().getName());
             topicController.setLabels(kafkaClusterCm.getMetadata().getLabels());
 
-            TopicControllerConfig.fromJson(topicController.getConfig(), new JsonObject(config));
-            topicController.setImage(topicController.getConfig().image());
+            JsonObject json = new JsonObject(config);
+
+            String image = json.getString(TopicController.IMAGE_FIELD);
+            if (image != null) {
+                topicController.setImage(image);
+            }
+
+            String topicNamespace = json.getString(TopicController.NAMESPACE_FIELD);
+            if (topicNamespace != null) {
+                topicController.setTopicNamespace(topicNamespace);
+            }
+
+            String reconciliationInterval = json.getString(TopicController.RECONCILIATION_INTERVAL_FIELD);
+            if (reconciliationInterval != null) {
+                // TODO : add parsing and validation
+                topicController.setReconciliationInterval(reconciliationInterval);
+            }
+
+            String zookeeperSessionTimeout = json.getString(TopicController.ZOOKEEPER_SESSION_TIMEOUT_FIELD);
+            if (zookeeperSessionTimeout != null) {
+                // TODO : add parsing and validation
+                topicController.setZookeeperSessionTimeout(zookeeperSessionTimeout);
+            }
         }
 
         return topicController;
@@ -146,16 +206,11 @@ public class TopicController extends AbstractCluster {
             Map<String, String> vars = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream().collect(
                     Collectors.toMap(EnvVar::getName, EnvVar::getValue));
 
-            TopicControllerConfig config = new TopicControllerConfig();
-
-            config.withImage(topicController.getImage())
-                    .withKafkaBootstrapServers(vars.getOrDefault(KEY_KAFKA_BOOTSTRAP_SERVERS, defaultBootstrapServers(cluster)))
-                    .withZookeeperConnect(vars.getOrDefault(KEY_ZOOKEEPER_CONNECT, defaultZookeeperConnect(cluster)))
-                    .withNamespace(vars.getOrDefault(KEY_NAMESPACE, namespace))
-                    .withReconciliationInterval(vars.getOrDefault(KEY_FULL_RECONCILIATION_INTERVAL, DEFAULT_FULL_RECONCILIATION_INTERVAL))
-                    .withZookeeperSessionTimeout(vars.getOrDefault(KEY_ZOOKEEPER_SESSION_TIMEOUT, DEFAULT_ZOOKEEPER_SESSION_TIMEOUT));
-
-            topicController.setConfig(config);
+            topicController.setKafkaBootstrapServers(vars.getOrDefault(KEY_KAFKA_BOOTSTRAP_SERVERS, defaultBootstrapServers(cluster)));
+            topicController.setZookeeperConnect(vars.getOrDefault(KEY_ZOOKEEPER_CONNECT, defaultZookeeperConnect(cluster)));
+            topicController.setTopicNamespace(vars.getOrDefault(KEY_NAMESPACE, namespace));
+            topicController.setReconciliationInterval(vars.getOrDefault(KEY_FULL_RECONCILIATION_INTERVAL, DEFAULT_FULL_RECONCILIATION_INTERVAL));
+            topicController.setZookeeperSessionTimeout(vars.getOrDefault(KEY_ZOOKEEPER_SESSION_TIMEOUT, DEFAULT_ZOOKEEPER_SESSION_TIMEOUT));
         }
 
         return topicController;
@@ -170,26 +225,41 @@ public class TopicController extends AbstractCluster {
     public ClusterDiffResult diff(Deployment dep) {
 
         if (dep != null) {
-            String image = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage();
+
+            boolean isDifferent = false;
+
+            if (!image.equals(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage())) {
+                log.info("Diff: Expected image {}, actual image {}", image, dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
+                isDifferent = true;
+            }
 
             Map<String, String> vars = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream().collect(
                     Collectors.toMap(EnvVar::getName, EnvVar::getValue));
 
-            // get the current (deployed) topic controller configuration
-            TopicControllerConfig depConfig = new TopicControllerConfig();
+            if (!kafkaBootstrapServers.equals(vars.getOrDefault(KEY_KAFKA_BOOTSTRAP_SERVERS, defaultBootstrapServers(cluster)))) {
+                log.info("Diff: Kafka bootstrap servers changed");
+                isDifferent = true;
+            }
 
-            depConfig.withKafkaBootstrapServers(vars.getOrDefault(KEY_KAFKA_BOOTSTRAP_SERVERS, defaultBootstrapServers(cluster)))
-                    .withZookeeperConnect(vars.getOrDefault(KEY_ZOOKEEPER_CONNECT, defaultZookeeperConnect(cluster)))
-                    .withNamespace(vars.getOrDefault(KEY_NAMESPACE, namespace))
-                    .withReconciliationInterval(vars.getOrDefault(KEY_FULL_RECONCILIATION_INTERVAL, DEFAULT_FULL_RECONCILIATION_INTERVAL))
-                    .withZookeeperSessionTimeout(vars.getOrDefault(KEY_ZOOKEEPER_SESSION_TIMEOUT, DEFAULT_ZOOKEEPER_SESSION_TIMEOUT))
-                    .withImage(image);
+            if (!zookeeperConnect.equals(vars.getOrDefault(KEY_ZOOKEEPER_CONNECT, defaultZookeeperConnect(cluster)))) {
+                log.info("Diff: Zookeeper connect changed");
+                isDifferent = true;
+            }
 
-            // compute the differences with the requested configuration (from the updated ConfigMap)
-            TopicControllerConfig.TopicControllerConfigResult configDiffResult = config.diff(depConfig);
+            if (!topicNamespace.equals(vars.getOrDefault(KEY_NAMESPACE, namespace))) {
+                log.info("Diff: Namespace in which watching for topics changed");
+                isDifferent = true;
+            }
 
-            boolean isDifferent = configDiffResult.isImage() || configDiffResult.isNamespace() ||
-                    configDiffResult.isReconciliationInterval() || configDiffResult.isZookeeperSessionTimeout();
+            if (!reconciliationInterval.equals(vars.getOrDefault(KEY_FULL_RECONCILIATION_INTERVAL, DEFAULT_FULL_RECONCILIATION_INTERVAL))) {
+                log.info("Diff: Reconciliation interval changed");
+                isDifferent = true;
+            }
+
+            if (!zookeeperSessionTimeout.equals(vars.getOrDefault(KEY_ZOOKEEPER_SESSION_TIMEOUT, DEFAULT_ZOOKEEPER_SESSION_TIMEOUT))) {
+                log.info("Diff: Zookeeper session timeout changed");
+                isDifferent = true;
+            }
 
             return new ClusterDiffResult(isDifferent);
         } else {
@@ -219,11 +289,11 @@ public class TopicController extends AbstractCluster {
     @Override
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
-        varList.add(new EnvVarBuilder().withName(KEY_KAFKA_BOOTSTRAP_SERVERS).withValue(this.config.kafkaBootstrapServers()).build());
-        varList.add(new EnvVarBuilder().withName(KEY_ZOOKEEPER_CONNECT).withValue(this.config.zookeeperConnect()).build());
-        varList.add(new EnvVarBuilder().withName(KEY_NAMESPACE).withValue(this.config.namespace()).build());
-        varList.add(new EnvVarBuilder().withName(KEY_FULL_RECONCILIATION_INTERVAL).withValue(this.config.reconciliationInterval()).build());
-        varList.add(new EnvVarBuilder().withName(KEY_ZOOKEEPER_SESSION_TIMEOUT).withValue(this.config.zookeeperSessionTimeout()).build());
+        varList.add(new EnvVarBuilder().withName(KEY_KAFKA_BOOTSTRAP_SERVERS).withValue(kafkaBootstrapServers).build());
+        varList.add(new EnvVarBuilder().withName(KEY_ZOOKEEPER_CONNECT).withValue(zookeeperConnect).build());
+        varList.add(new EnvVarBuilder().withName(KEY_NAMESPACE).withValue(topicNamespace).build());
+        varList.add(new EnvVarBuilder().withName(KEY_FULL_RECONCILIATION_INTERVAL).withValue(reconciliationInterval).build());
+        varList.add(new EnvVarBuilder().withName(KEY_ZOOKEEPER_SESSION_TIMEOUT).withValue(zookeeperSessionTimeout).build());
 
         return varList;
     }

@@ -72,12 +72,12 @@ public class TopicControllerTest {
         ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, storageJson, "{ }");
         TopicController tc = TopicController.fromConfigMap(cm);
 
-        assertEquals(TopicController.DEFAULT_IMAGE, tc.getConfig().image());
-        assertEquals(namespace, tc.getConfig().namespace());
-        assertEquals(TopicController.DEFAULT_FULL_RECONCILIATION_INTERVAL, tc.getConfig().reconciliationInterval());
-        assertEquals(TopicController.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT, tc.getConfig().zookeeperSessionTimeout());
-        assertEquals(TopicController.defaultBootstrapServers(cluster), tc.getConfig().kafkaBootstrapServers());
-        assertEquals(TopicController.defaultZookeeperConnect(cluster), tc.getConfig().zookeeperConnect());
+        assertEquals(TopicController.DEFAULT_IMAGE, tc.getImage());
+        assertEquals(namespace, tc.getTopicNamespace());
+        assertEquals(TopicController.DEFAULT_FULL_RECONCILIATION_INTERVAL, tc.getReconciliationInterval());
+        assertEquals(TopicController.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT, tc.getZookeeperSessionTimeout());
+        assertEquals(TopicController.defaultBootstrapServers(cluster), tc.getKafkaBootstrapServers());
+        assertEquals(TopicController.defaultZookeeperConnect(cluster), tc.getZookeeperConnect());
     }
 
     @Test
@@ -89,12 +89,12 @@ public class TopicControllerTest {
         assertEquals(TopicController.DEFAULT_REPLICAS, tc.replicas);
         assertEquals(TopicController.DEFAULT_HEALTHCHECK_DELAY, tc.healthCheckInitialDelay);
         assertEquals(TopicController.DEFAULT_HEALTHCHECK_TIMEOUT, tc.healthCheckTimeout);
-        assertEquals(tcImage, tc.getConfig().image());
-        assertEquals(tcNamespace, tc.getConfig().namespace());
-        assertEquals(tcReconciliationInterval, tc.getConfig().reconciliationInterval());
-        assertEquals(tcZookeeperSessionTimeout, tc.getConfig().zookeeperSessionTimeout());
-        assertEquals(TopicController.defaultBootstrapServers(cluster), tc.getConfig().kafkaBootstrapServers());
-        assertEquals(TopicController.defaultZookeeperConnect(cluster), tc.getConfig().zookeeperConnect());
+        assertEquals(tcImage, tc.getImage());
+        assertEquals(tcNamespace, tc.getTopicNamespace());
+        assertEquals(tcReconciliationInterval, tc.getReconciliationInterval());
+        assertEquals(tcZookeeperSessionTimeout, tc.getZookeeperSessionTimeout());
+        assertEquals(TopicController.defaultBootstrapServers(cluster), tc.getKafkaBootstrapServers());
+        assertEquals(TopicController.defaultZookeeperConnect(cluster), tc.getZookeeperConnect());
     }
 
     @Test
@@ -108,12 +108,12 @@ public class TopicControllerTest {
         assertEquals(tc.replicas, tcFromDep.replicas);
         assertEquals(tc.healthCheckInitialDelay, tcFromDep.healthCheckInitialDelay);
         assertEquals(tc.healthCheckTimeout, tcFromDep.healthCheckTimeout);
-        assertEquals(tc.getConfig().image(), tcFromDep.getConfig().image());
-        assertEquals(tc.getConfig().namespace(), tcFromDep.getConfig().namespace());
-        assertEquals(tc.getConfig().reconciliationInterval(), tcFromDep.getConfig().reconciliationInterval());
-        assertEquals(tc.getConfig().zookeeperSessionTimeout(), tcFromDep.getConfig().zookeeperSessionTimeout());
-        assertEquals(tc.getConfig().kafkaBootstrapServers(), tcFromDep.getConfig().kafkaBootstrapServers());
-        assertEquals(tc.getConfig().zookeeperConnect(), tcFromDep.getConfig().zookeeperConnect());
+        assertEquals(tc.getImage(), tcFromDep.getImage());
+        assertEquals(tc.getTopicNamespace(), tcFromDep.getTopicNamespace());
+        assertEquals(tc.getReconciliationInterval(), tcFromDep.getReconciliationInterval());
+        assertEquals(tc.getZookeeperSessionTimeout(), tcFromDep.getZookeeperSessionTimeout());
+        assertEquals(tc.getKafkaBootstrapServers(), tcFromDep.getKafkaBootstrapServers());
+        assertEquals(tc.getZookeeperConnect(), tcFromDep.getZookeeperConnect());
     }
 
     @Test
