@@ -1,11 +1,11 @@
 == Topic Controller
 
-The Topic Controller is in charge to manage topics in the Kafka cluster. The Topic Controller is deployed as a process
-running inside your Kubernetes or OpenShift cluster.
+The Topic Controller is in charge of managing topics in a Kafka cluster. The Topic Controller is deployed as a process
+running inside a Kubernetes/OpenShift cluster.
 It can be deployed through the Cluster Controller or "manually" through provided YAML files.
 
-The role of the topic controller is to keep in-sync a set of K8s ConfigMaps describing Kafka topics,
-and those Kafka topics. 
+The role of the topic controller is to keep a set of Kubernetes ConfigMaps describing Kafka topics in-sync with
+corresponding Kafka topics.
 
 Specifically:
  
