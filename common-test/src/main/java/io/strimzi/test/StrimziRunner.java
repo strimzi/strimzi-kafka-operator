@@ -34,6 +34,12 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
+/**
+ * A test runner which sets up Strimzi resources in a Kubernetes cluster
+ * according to annotations ({@link Namespace}, {@link Resources}, {@link ClusterController}, {@link KafkaCluster})
+ * on the test class and/or test methods. {@link OpenShiftOnly} can be used to ignore tests when not running on
+ * OpenShift (if the thing under test is OpenShift-specific).
+ */
 public class StrimziRunner extends BlockJUnit4ClassRunner {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(StrimziRunner.class);
@@ -197,7 +203,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     // delete cm
                     kubeClient().deleteContent(yaml);
                     // wait for ss to go
-                    TestUtils.waitFor("kafka cluster " + cluster.name() + " deletion", 1_000L, 120_000L, () -> {
+                    TestUtils.waitFor("kafka cluster " + cluster.name() + " statefulset removal", 1_000L, 120_000L, () -> {
                         try {
                             kubeClient().get("statefulset", cluster.name() + "-zookeeper");
                             return false;
@@ -233,7 +239,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     LOGGER.info("Deleting {} cluster controller", name(element));
                     // Here we verify the cluster is in the same state
                     kubeClient().delete("../examples/install/cluster-controller");
-                    TestUtils.waitFor("", 1_000L, 120_000L, () -> {
+                    TestUtils.waitFor("cluster controller deployment removal", 1_000L, 120_000L, () -> {
                         try {
                             kubeClient().get("deployment", "strimzi-cluster-controller");
                             return false;
