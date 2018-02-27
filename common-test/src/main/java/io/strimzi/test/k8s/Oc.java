@@ -7,11 +7,9 @@ package io.strimzi.test.k8s;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 
 /**
@@ -65,8 +63,7 @@ public class Oc extends BaseKubeClient<Oc> {
     }
 
     public Oc newApp(String template, Map<String, String> params) {
-        List<String> cmd = new ArrayList<>(params.size() + 3);
-        cmd.addAll(asList(OC, "new-app", template));
+        List<String> cmd = namespacedCommand("new-app", template);
         for (Map.Entry<String, String> entry : params.entrySet()) {
             cmd.add("-p");
             cmd.add(entry.getKey() + "=" + entry.getValue());
@@ -77,7 +74,7 @@ public class Oc extends BaseKubeClient<Oc> {
     }
 
     public Oc newProject(String name) {
-        Exec.exec(OC, "new-project", name);
+        Exec.exec(namespacedCommand("new-project", name));
         return this;
     }
 
@@ -89,7 +86,12 @@ public class Oc extends BaseKubeClient<Oc> {
     /**
      * An {@code Oc} which uses the admin context.
      */
-    private static class AdminOc extends Oc {
+    private class AdminOc extends Oc {
+
+        @Override
+        public String namespace() {
+            return Oc.this.namespace();
+        }
 
         @Override
         protected Context defaultContext() {

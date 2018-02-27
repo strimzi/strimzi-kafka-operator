@@ -53,6 +53,10 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
         return previous;
     }
 
+    public String namespace() {
+        return namespace;
+    }
+
     @Override
     public abstract K clientWithAdmin();
 
@@ -72,8 +76,7 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
     @Override
     public K createRole(String roleName, Permission... permissions) {
         try (Context context = adminContext()) {
-            List<String> cmd = namespacedCommand();
-            cmd.addAll(asList(cmd(), CREATE, "role", roleName));
+            List<String> cmd = namespacedCommand(CREATE, "role", roleName);
             for (Permission p : permissions) {
                 for (String resource : p.resource()) {
                     cmd.add("--resource=" + resource);
@@ -88,7 +91,7 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
 
     }
 
-    private List<String> namespacedCommand(String... rest) {
+    protected List<String> namespacedCommand(String... rest) {
         return namespacedCommand(asList(rest));
     }
 
@@ -96,7 +99,7 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
         List<String> result = new ArrayList<>();
         result.add(cmd());
         result.add("--namespace");
-        result.add(namespace);
+        result.add(namespace());
         result.addAll(rest);
         return result;
     }

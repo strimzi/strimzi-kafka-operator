@@ -73,6 +73,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
     @Override
     protected Statement methodBlock(FrameworkMethod method) {
         Statement statement = super.methodBlock(method);
+        statement = withKafkaClusters(method, statement);
         statement = withResources(method, statement);
         statement = withNamespaces(method, statement);
         return statement;
@@ -166,10 +167,10 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
             try {
                 JsonNode node = mapper.readTree(new File("../examples/resources/cluster-controller/kafka-ephemeral.yaml"));
                 JsonNode metadata = node.get("metadata");
-                ((ObjectNode)metadata).put("name", cluster.name());
+                ((ObjectNode) metadata).put("name", cluster.name());
                 JsonNode data = node.get("data");
-                ((ObjectNode)data).put("kafka-nodes", cluster.kafkaNodes());
-                ((ObjectNode)data).put("zookeeper-nodes", cluster.zkNodes());
+                ((ObjectNode) data).put("kafka-nodes", cluster.kafkaNodes());
+                ((ObjectNode) data).put("zookeeper-nodes", cluster.zkNodes());
                 yaml = mapper.writeValueAsString(node);
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -281,6 +282,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         Statement statement = super.classBlock(notifier);
         TestClass testClass = getTestClass();
         if (!areAllChildrenIgnored()) {
+            statement = withKafkaClusters(testClass, statement);
             statement = withResources(testClass, statement);
             statement = withNamespaces(testClass, statement);
         }

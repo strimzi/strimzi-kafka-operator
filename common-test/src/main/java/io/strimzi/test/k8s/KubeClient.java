@@ -68,6 +68,10 @@ public interface KubeClient<K extends KubeClient<K>> {
     /** Returns an equivalent client, but logged in as cluster admin. */
     K clientWithAdmin();
 
+    K createContent(String yamlContent);
+
+    K deleteContent(String yamlContent);
+
     K createNamespace(String name);
 
     K deleteNamespace(String name);
