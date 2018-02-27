@@ -4,7 +4,11 @@
  */
 package io.strimzi.test;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.strimzi.test.k8s.KubeClient;
+import io.strimzi.test.k8s.KubeClusterException;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.OpenShift;
 import org.junit.ClassRule;
@@ -19,6 +23,8 @@ import org.junit.runners.model.TestClass;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Repeatable;
 import java.lang.reflect.Method;
@@ -148,6 +154,59 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         } else {
             return a.toString();
         }
+    }
+
+    private Statement withKafkaClusters(Annotatable element,
+                                    Statement statement) {
+        Statement last = statement;
+        for (KafkaCluster cluster : annotations(element, KafkaCluster.class)) {
+            // use the example kafka-ephemeral as a template, but modify it according to the annotation
+            YAMLMapper mapper = new YAMLMapper();
+            String yaml;
+            try {
+                JsonNode node = mapper.readTree(new File("../examples/resources/cluster-controller/kafka-ephemeral.yaml"));
+                JsonNode metadata = node.get("metadata");
+                ((ObjectNode)metadata).put("name", cluster.name());
+                JsonNode data = node.get("data");
+                ((ObjectNode)data).put("kafka-nodes", cluster.kafkaNodes());
+                ((ObjectNode)data).put("zookeeper-nodes", cluster.zkNodes());
+                yaml = mapper.writeValueAsString(node);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            last = new Bracket(last) {
+
+                @Override
+                protected void before() {
+                    LOGGER.info("Creating {} kafka cluster {}", name(element), cluster.name());
+                    // create cm
+                    kubeClient().createContent(yaml);
+                    // wait for ss
+                    kubeClient().waitForStatefulSet(cluster.name() + "-kafka", cluster.kafkaNodes());
+                }
+
+                private KubeClient kubeClient() {
+                    return clusterResource().client();
+                }
+
+                @Override
+                protected void after() {
+                    LOGGER.info("Deleting {} cluster {}", name(element), cluster.name());
+                    // delete cm
+                    kubeClient().deleteContent(yaml);
+                    // wait for ss to go
+                    TestUtils.waitFor("kafka cluster " + cluster.name() + " deletion", 1_000L, 120_000L, () -> {
+                        try {
+                            kubeClient().get("statefulset", cluster.name() + "-zookeeper");
+                            return false;
+                        } catch (KubeClusterException.NotFound e) {
+                            return true;
+                        }
+                    });
+                }
+            };
+        }
+        return last;
     }
 
     private Statement withResources(Annotatable element,

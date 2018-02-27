@@ -203,6 +203,22 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
     }
 
     @Override
+    public K createContent(String yamlContent) {
+        try (Context context = defaultContext()) {
+            Exec.exec(yamlContent, namespacedCommand(CREATE, "-f", "-"));
+            return (K) this;
+        }
+    }
+
+    @Override
+    public K deleteContent(String yamlContent) {
+        try (Context context = defaultContext()) {
+            Exec.exec(yamlContent, namespacedCommand(DELETE, "-f", "-"));
+            return (K) this;
+        }
+    }
+
+    @Override
     public K createNamespace(String name) {
         try (Context context = adminContext()) {
             Exec.exec(namespacedCommand(CREATE, "namespace", name));
