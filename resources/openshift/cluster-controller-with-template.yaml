@@ -215,7 +215,7 @@ metadata:
     tags: "messaging,datastore"
     iconClass: "fa fa-share-alt fa-flip-horizontal"
     template.openshift.io/documentation-url: "http://strimzi.io"
-message: "Kafka cluster S2I ${CLUSTER_NAME} is deploying. Use '${CLUSTER_NAME}:9092' as bootstrap server in your application"
+message: "Kafka cluster ${CLUSTER_NAME} is being deployed. Use '${CLUSTER_NAME}:9092' as bootstrap server in your application"
 parameters:
 - description: All Kubernetes resources will be named after the cluster name
   displayName: Name of the cluster
@@ -340,7 +340,7 @@ metadata:
     tags: "messaging,datastore"
     iconClass: "fa fa-share-alt fa-flip-horizontal"
     template.openshift.io/documentation-url: "http://strimzi.io"
-message: "Kafka cluster ${CLUSTER_NAME} is deploying. Use '${CLUSTER_NAME}:9092' as bootstrap server in your application."
+message: "Kafka cluster ${CLUSTER_NAME} is being deployed. Use '${CLUSTER_NAME}:9092' as bootstrap server in your application."
 parameters:
 - description: All Kubernetes resources will be named after the cluster name
   displayName: Name of the cluster
@@ -475,7 +475,7 @@ metadata:
     tags: "messaging"
     iconClass: "fa fa-exchange"
     template.openshift.io/documentation-url: "http://strimzi.io"
-message: "Kafka Connect cluster ${CLUSTER_NAME} is deploying. Use '${CLUSTER_NAME}:8083' to access Kafka Connect REST API."
+message: "Kafka Connect cluster ${CLUSTER_NAME} is being deployed. Use '${CLUSTER_NAME}:8083' to access Kafka Connect REST API."
 parameters:
 - description: All Kubernetes resources will be named after the cluster name
   displayName: Name of the cluster
@@ -582,7 +582,7 @@ metadata:
     tags: "messaging"
     iconClass: "fa fa-exchange"
     template.openshift.io/documentation-url: "http://strimzi.io"
-message: "Kafka Connect cluster ${CLUSTER_NAME} is deploying. Use '${CLUSTER_NAME}:8083' to access Kafka Connect REST API."
+message: "Kafka Connect S2I cluster ${CLUSTER_NAME} is being deployed. Use '${CLUSTER_NAME}:8083' to access Kafka Connect REST API."
 parameters:
 - description: All Kubernetes resources will be named after the cluster name
   displayName: Name of the cluster
