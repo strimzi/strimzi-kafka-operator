@@ -74,6 +74,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
     protected Statement methodBlock(FrameworkMethod method) {
         Statement statement = super.methodBlock(method);
         statement = withKafkaClusters(method, statement);
+        statement = withClusterController(method, statement);
         statement = withResources(method, statement);
         statement = withNamespaces(method, statement);
         return statement;
@@ -169,8 +170,8 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 JsonNode metadata = node.get("metadata");
                 ((ObjectNode) metadata).put("name", cluster.name());
                 JsonNode data = node.get("data");
-                ((ObjectNode) data).put("kafka-nodes", cluster.kafkaNodes());
-                ((ObjectNode) data).put("zookeeper-nodes", cluster.zkNodes());
+                ((ObjectNode) data).put("kafka-nodes", String.valueOf(cluster.kafkaNodes()));
+                ((ObjectNode) data).put("zookeeper-nodes", String.valueOf(cluster.zkNodes()));
                 yaml = mapper.writeValueAsString(node);
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -199,6 +200,42 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     TestUtils.waitFor("kafka cluster " + cluster.name() + " deletion", 1_000L, 120_000L, () -> {
                         try {
                             kubeClient().get("statefulset", cluster.name() + "-zookeeper");
+                            return false;
+                        } catch (KubeClusterException.NotFound e) {
+                            return true;
+                        }
+                    });
+                }
+            };
+        }
+        return last;
+    }
+
+    private Statement withClusterController(Annotatable element,
+                                    Statement statement) {
+        Statement last = statement;
+        for (ClusterController resources : annotations(element, ClusterController.class)) {
+            last = new Bracket(last) {
+                @Override
+                protected void before() {
+                    // Here we record the state of the cluster
+                    LOGGER.info("Creating {} cluster controller {}", name(element), resources);
+                    kubeClient().create("../examples/install/cluster-controller");
+                    kubeClient().waitForDeployment("strimzi-cluster-controller");
+                }
+
+                private KubeClient kubeClient() {
+                    return clusterResource().client().clientWithAdmin();
+                }
+
+                @Override
+                protected void after() {
+                    LOGGER.info("Deleting {} cluster controller", name(element));
+                    // Here we verify the cluster is in the same state
+                    kubeClient().delete("../examples/install/cluster-controller");
+                    TestUtils.waitFor("", 1_000L, 120_000L, () -> {
+                        try {
+                            kubeClient().get("deployment", "strimzi-cluster-controller");
                             return false;
                         } catch (KubeClusterException.NotFound e) {
                             return true;
@@ -283,6 +320,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         TestClass testClass = getTestClass();
         if (!areAllChildrenIgnored()) {
             statement = withKafkaClusters(testClass, statement);
+            statement = withClusterController(testClass, statement);
             statement = withResources(testClass, statement);
             statement = withNamespaces(testClass, statement);
         }

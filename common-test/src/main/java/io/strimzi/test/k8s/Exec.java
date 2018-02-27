@@ -55,6 +55,7 @@ class Exec {
             Process p = pb.start();
             OutputStream outputStream = p.getOutputStream();
             if (input != null) {
+                LOGGER.trace("With stdin {}", input);
                 outputStream.write(input.getBytes(Charset.defaultCharset()));
             }
             // Close subprocess' stdin

@@ -9,6 +9,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.strimzi.test.ClusterController;
+import io.strimzi.test.KafkaCluster;
 import io.strimzi.test.Namespace;
 import io.strimzi.test.OpenShiftOnly;
 import io.strimzi.test.Resources;
@@ -35,7 +37,8 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(StrimziRunner.class)
 @Namespace(KafkaClusterTest.NAMESPACE)
-@Resources(value = "../examples/install/cluster-controller", asAdmin = true)
+//@Resources(value = "../examples/install/cluster-controller", asAdmin = true)
+@ClusterController
 public class KafkaClusterTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaClusterTest.class);
@@ -66,7 +69,7 @@ public class KafkaClusterTest {
     @BeforeClass
     public static void waitForCc() {
         // TODO Build this into the annos, or get rid of the annos
-        cluster.client().waitForDeployment("strimzi-cluster-controller");
+        //cluster.client().waitForDeployment("strimzi-cluster-controller");
     }
 
     @Test
@@ -97,13 +100,14 @@ public class KafkaClusterTest {
     }
 
     @Test
-    @Resources("../examples/resources/cluster-controller/kafka-ephemeral.yaml")
+    //@Resources("../examples/resources/cluster-controller/kafka-ephemeral.yaml")
+    @KafkaCluster(name = "my-cluster", kafkaNodes = 3)
     public void testKafkaScaleUpScaleDown() {
         // kafka cluster already deployed via annotation
         String clusterName = "my-cluster";
         LOGGER.info("Running kafkaScaleUpScaleDown {}", clusterName);
 
-        kubeClient.waitForStatefulSet(kafkaStatefulSetName(clusterName), 3);
+        //kubeClient.waitForStatefulSet(kafkaStatefulSetName(clusterName), 3);
         KubernetesClient client = new DefaultKubernetesClient();
 
         final int initialReplicas = client.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaStatefulSetName(clusterName)).get().getStatus().getReplicas();
@@ -159,12 +163,13 @@ public class KafkaClusterTest {
     }
 
     @Test
-    @Resources("../examples/resources/cluster-controller/kafka-ephemeral.yaml")
+    //@Resources("../examples/resources/cluster-controller/kafka-ephemeral.yaml")
+    @KafkaCluster(name = "my-cluster", kafkaNodes = 1, zkNodes = 1)
     public void testZookeeperScaleUpScaleDown() {
         // kafka cluster already deployed via annotation
         String clusterName = "my-cluster";
         LOGGER.info("Running zookeeperScaleUpScaleDown with cluster {}", clusterName);
-        kubeClient.waitForStatefulSet(zookeeperStatefulSetName(clusterName), 1);
+        //kubeClient.waitForStatefulSet(zookeeperStatefulSetName(clusterName), 1);
         KubernetesClient client = new DefaultKubernetesClient();
         final int initialReplicas = client.apps().statefulSets().inNamespace(NAMESPACE).withName(zookeeperStatefulSetName(clusterName)).get().getStatus().getReplicas();
         assertEquals(1, initialReplicas);
