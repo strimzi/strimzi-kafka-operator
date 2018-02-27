@@ -18,6 +18,7 @@ import io.vertx.core.shareddata.Lock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -140,37 +141,25 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
      * @param <C> The type of cluster.
      */
     protected final <C extends AbstractCluster> void execute(String clusterType, String operationType, String namespace, String name, CompositeOperation<C> compositeOperation, Handler<AsyncResult<Void>> handler) {
-        final String lockName = getLockName(clusterType, namespace, name);
-        vertx.sharedData().getLockWithTimeout(lockName, LOCK_TIMEOUT, res -> {
-            if (res.succeeded()) {
-                Lock lock = res.result();
 
-                ClusterOperation<C> clusterOp;
-                try {
-                    clusterOp = compositeOperation.getCluster(namespace, name);
-                    log.info("{} {} cluster {} in namespace {}", operationType, clusterType, clusterOp.cluster().getName(), namespace);
-                } catch (Throwable ex) {
-                    log.error("Error while getting required {} cluster state for {} operation", clusterType, operationType, ex);
-                    handler.handle(Future.failedFuture("getCluster error"));
-                    lock.release();
-                    return;
-                }
-                Future<?> composite = compositeOperation.composite(namespace, clusterOp);
+        ClusterOperation<C> clusterOp;
+        try {
+            clusterOp = compositeOperation.getCluster(namespace, name);
+            log.info("{} {} cluster {} in namespace {}", operationType, clusterType, clusterOp.cluster().getName(), namespace);
+        } catch (Throwable ex) {
+            log.error("Error while getting required {} cluster state for {} operation", clusterType, operationType, ex);
+            handler.handle(Future.failedFuture("getCluster error"));
+            return;
+        }
+        Future<?> composite = compositeOperation.composite(namespace, clusterOp);
 
-                composite.setHandler(ar -> {
-                    if (ar.succeeded()) {
-                        log.info("{} cluster {} in namespace {}: successful {}", clusterType, clusterOp.cluster().getName(), namespace, operationType);
-                        handler.handle(Future.succeededFuture());
-                        lock.release();
-                    } else {
-                        log.error("{} cluster {} in namespace {}: failed to {}", clusterType, clusterOp.cluster().getName(), namespace, operationType);
-                        handler.handle(Future.failedFuture("Failed to execute cluster operation"));
-                        lock.release();
-                    }
-                });
+        composite.setHandler(ar -> {
+            if (ar.succeeded()) {
+                log.info("{} cluster {} in namespace {}: successful {}", clusterType, clusterOp.cluster().getName(), namespace, operationType);
+                handler.handle(Future.succeededFuture());
             } else {
-                log.error("Failed to acquire lock to {} {} cluster {}", operationType, clusterType, lockName);
-                handler.handle(Future.failedFuture("Failed to acquire lock to " + operationType + " " + clusterType + " cluster"));
+                log.error("{} cluster {} in namespace {}: failed to {}", clusterType, clusterOp.cluster().getName(), namespace, operationType);
+                handler.handle(Future.failedFuture("Failed to execute cluster operation"));
             }
         });
     }
@@ -184,7 +173,7 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
      */
     protected abstract void create(String namespace, String name, Handler<AsyncResult<Void>> handler);
 
-    public void create(String namespace, String name)   {
+    protected void create(String namespace, String name)   {
         log.info("Adding {} cluster {}", clusterDescription, name);
 
         create(namespace, name, res -> {
@@ -205,7 +194,7 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
      */
     protected abstract void delete(String namespace, String name, Handler<AsyncResult<Void>> handler);
 
-    public void delete(String namespace, String name)   {
+    protected void delete(String namespace, String name)   {
         log.info("Deleting {} cluster {} in namespace {}", clusterDescription, name, namespace);
         delete(namespace, name, res -> {
             if (res.succeeded()) {
@@ -225,7 +214,7 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
      */
     protected abstract void update(String namespace, String name, Handler<AsyncResult<Void>> handler);
 
-    public void update(String namespace, String name)   {
+    protected void update(String namespace, String name)   {
 
         log.info("Checking for updates in {} cluster {}", clusterDescription, name);
         update(namespace, name, res2 -> {
@@ -254,6 +243,67 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
     }
 
     /**
+     * Reconcile cluster resources in the given namespace having the given cluster name.
+     * Reconciliation works by getting the cluster ConfigMap in the given namespace with the given name and
+     * comparing with the corresponding {@linkplain #getResources(String, Map) resource}.
+     * <ul>
+     * <li>A cluster will be {@linkplain #create(String, String) created} if ConfigMap is without same-named resources</li>
+     * <li>A cluster will be {@linkplain #delete(String, String) deleted} if resources without same-named ConfigMap</li>
+     * <li>A cluster will be {@linkplain #update(String, String) updated} if it has a cluster ConfigMap and a resource with the same name.</li>
+     * </ul>
+     * @param namespace The namespace
+     * @param name The name of the cluster
+     */
+    public abstract void reconcile(String namespace, String name);
+
+    /**
+     * This is provided for subclasses to help them implement the public {@link #reconcile(String, String)}.
+     * It works on a single cluster providing the corresponding name and type in a namespace.
+     * It obtains the corresponding ConfigMap (the desired state of the cluster)
+     * and a list of other resources (of type {@link R}) (the actual state of the cluster) and determines
+     * if the cluster needs to be created, updated or deleted
+     * @param namespace The namespace
+     * @param name The name of the cluster
+     * @param clusterType The {@code strimzi.io/type} of the ConfigMaps and other resources
+     */
+    protected void reconcile(String namespace, String name, String clusterType) {
+
+        final String lockName = getLockName(clusterType, namespace, name);
+        vertx.sharedData().getLockWithTimeout(lockName, LOCK_TIMEOUT, res -> {
+            if (res.succeeded()) {
+                Lock lock = res.result();
+
+                try {
+                    log.info("Reconciling {} clusters ...", clusterDescription);
+
+                    ConfigMap cm = configMapOperations.get(namespace, name);
+                    Map<String, String> labels = new HashMap<>();
+                    labels.put(ClusterController.STRIMZI_CLUSTER_LABEL, name);
+                    List<R> resources = getResources(namespace, labels);
+
+                    if (cm != null) {
+                        if (resources.size() > 0) {
+                            update(namespace, Collections.singletonList(cm));
+                        } else {
+                            add(namespace, Collections.singletonList(cm));
+                        }
+                    } else if (resources.size() > 0) {
+                        delete(namespace, resources);
+                    }
+
+                } catch (Throwable ex) {
+                    log.error("Error while reconciling {} cluster", clusterDescription, ex);
+                } finally {
+                    lock.release();
+                }
+
+            } else {
+                log.error("Failed to acquire lock for {} cluster {}", clusterType, lockName);
+            }
+        });
+    }
+
+    /**
      * Reconcile cluster resources in the given namespace having the given labels.
      * Reconciliation works by getting the cluster ConfigMaps in the given namespace with the given labels and
      * comparing with the corresponding {@linkplain #getResources(String, Map) resource}.
@@ -265,36 +315,36 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
      * @param namespace The namespace
      * @param labels The labels
      */
-    public abstract void reconcile(String namespace, Map<String, String> labels);
+    public abstract void reconcileAll(String namespace, Map<String, String> labels);
 
     /**
-     * This is provided for subclasses to help them implement the public {@link #reconcile(String, Map)}.
+     * This is provided for subclasses to help them implement the public {@link #reconcileAll(String, Map)}.
      * It obtains a list of ConfigMaps (the desired state of the cluster)
-     * and a list of other resources (of type {@link R}) (the actual state of the cluster) and determines,
-     * by comparing their names which clusters need to be created, updated or deleted.
+     * and a list of other resources (of type {@link R}) (the actual state of the cluster) and then calls,
+     * for each obtained cluster name, the corresponding {@link #reconcile(String, String, String)}
+     *
      * @param namespace The namespace
-     * @param labels The labels to use to select the ConfigMap and other resources to be compared.
-     * @param type The {@code strimzi.io/type} of the ConfigMaps and other resources
+     * @param labels The labels
+     * @param clusterType The type of the cluster
      */
-    protected void reconcile(String namespace, Map<String, String> labels, String type) {
-        log.info("Reconciling {} clusters ...", clusterDescription);
+    protected void reconcileAll(String namespace, Map<String, String> labels, String clusterType) {
 
-        Map<String, String> kafkaLabels = new HashMap<>(labels);
-        kafkaLabels.put(ClusterController.STRIMZI_TYPE_LABEL, type);
+        Map<String, String> newLabels = new HashMap<>(labels);
+        newLabels.put(ClusterController.STRIMZI_TYPE_LABEL, clusterType);
 
-        List<ConfigMap> cms = configMapOperations.list(namespace, kafkaLabels);
-        List<R> resources = getResources(namespace, kafkaLabels);
-
+        // get ConfigMap for the corresponding cluster name
+        List<ConfigMap> cms = configMapOperations.list(namespace, newLabels);
         Set<String> cmsNames = cms.stream().map(cm -> cm.getMetadata().getName()).collect(Collectors.toSet());
+
+        // get StatefulSets for the corresponding cluster name (they are part of)
+        List<R> resources = getResources(namespace, newLabels);
         Set<String> resourceNames = resources.stream().map(cm -> cm.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL)).collect(Collectors.toSet());
 
-        List<ConfigMap> addList = cms.stream().filter(cm -> !resourceNames.contains(cm.getMetadata().getName())).collect(Collectors.toList());
-        List<ConfigMap> updateList = cms.stream().filter(cm -> resourceNames.contains(cm.getMetadata().getName())).collect(Collectors.toList());
-        List<R> deletionList = resources.stream().filter(dep -> !cmsNames.contains(dep.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL))).collect(Collectors.toList());
+        cmsNames.addAll(resourceNames);
 
-        add(namespace, addList);
-        delete(namespace, deletionList);
-        update(namespace, updateList);
+        for (String name: cmsNames) {
+            reconcile(namespace, name, clusterType);
+        }
     }
 
     /**

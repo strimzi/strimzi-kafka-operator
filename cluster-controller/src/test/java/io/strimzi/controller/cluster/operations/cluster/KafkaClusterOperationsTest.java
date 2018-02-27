@@ -672,7 +672,7 @@ public class KafkaClusterOperationsTest {
 
 
         // Now try to create a KafkaCluster based on this CM
-        ops.reconcile(clusterCmNamespace, Collections.emptyMap());
+        ops.reconcile(clusterCmNamespace, clusterCmName);
 
         context.assertEquals(singleton("foo"), created);
         context.assertEquals(singleton("bar"), updated);
