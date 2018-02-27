@@ -136,18 +136,12 @@ public class ClusterController extends AbstractVerticle {
                             return;
                         }
                         String name = cm.getMetadata().getName();
+                        log.info("ConfigMap {} in namespace {} {}", name, namespace, action);
                         switch (action) {
                             case ADDED:
-                                log.info("New ConfigMap {} in namespace {}", name, namespace);
-                                cluster.create(namespace, name);
-                                break;
                             case DELETED:
-                                log.info("Deleted ConfigMap {} in namespace {}", name, namespace);
-                                cluster.delete(namespace, name);
-                                break;
                             case MODIFIED:
-                                log.info("Modified ConfigMap {} in namespace {}", name, namespace);
-                                cluster.update(namespace, name);
+                                cluster.reconcile(namespace, name);
                                 break;
                             case ERROR:
                                 log.error("Failed ConfigMap {} in namespace{} ", name, namespace);
@@ -199,13 +193,14 @@ public class ClusterController extends AbstractVerticle {
         });
     }
 
-    /*
+    /**
       Periodical reconciliation (in case we lost some event)
      */
     private void reconcile() {
-        kafkaClusterOperations.reconcile(namespace, labels);
-        kafkaConnectClusterOperations.reconcile(namespace, labels);
-        kafkaConnectS2IClusterOperations.reconcile(namespace, labels);
+
+        kafkaClusterOperations.reconcileAll(namespace, labels);
+        kafkaConnectClusterOperations.reconcileAll(namespace, labels);
+        kafkaConnectS2IClusterOperations.reconcileAll(namespace, labels);
     }
 
     /**
