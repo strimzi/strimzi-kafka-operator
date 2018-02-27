@@ -251,10 +251,6 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
     }
 
     private K waitFor(String resource, String name, Predicate<JsonNode> ready) {
-        return waitFor(resource, name, ready, ex -> ex instanceof KubeClusterException.NotFound ? ExType.CONTINUE : ExType.THROW);
-    }
-
-    private K waitFor(String resource, String name, Predicate<JsonNode> ready, Function<KubeClusterException, ExType> shouldBreak) {
         long timeoutMs = 240_000L;
         long pollMs = 1_000L;
         ObjectMapper mapper = new ObjectMapper();
@@ -264,17 +260,8 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
                 LOGGER.trace("{}", jsonString);
                 JsonNode actualObj = mapper.readTree(jsonString);
                 return ready.test(actualObj);
-            } catch (KubeClusterException e) {
-                /* keep polling till it exists */
-                switch (shouldBreak.apply(e)) {
-                    case BREAK:
-                        return true;
-                    case CONTINUE:
-                        return false;
-                    case THROW:
-                        throw e;
-                }
-                throw e;
+            } catch (KubeClusterException.NotFound e) {
+                return false;
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -327,8 +314,15 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
 
     @Override
     public K waitForResourceDeletion(String resourceType, String resourceName) {
-        return waitFor(resourceType, resourceName,
-            x -> false,
-            ex -> ex instanceof KubeClusterException.NotFound ? ExType.BREAK : ExType.THROW);
+        TestUtils.waitFor(resourceType + " "+ resourceName + " removal",
+            1_000L, 240_000L, () -> {
+                try {
+                    get(resourceType, resourceName);
+                    return false;
+                } catch (KubeClusterException.NotFound e) {
+                    return true;
+                }
+            });
+        return (K) this;
     }
 }
