@@ -13,6 +13,7 @@ import io.strimzi.test.Namespace;
 import io.strimzi.test.OpenShiftOnly;
 import io.strimzi.test.Resources;
 import io.strimzi.test.StrimziRunner;
+import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterException;
 import io.strimzi.test.k8s.KubeClusterResource;
@@ -25,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import static io.strimzi.test.TestUtils.map;
@@ -75,8 +77,8 @@ public class KafkaClusterTest {
         Oc oc = (Oc) this.kubeClient;
         String clusterName = "openshift-my-cluster";
         oc.newApp("strimzi-ephemeral", map("CLUSTER_NAME", clusterName));
-        oc.waitForStatefulSet(zookeeperStatefulSetName(clusterName), true);
-        oc.waitForStatefulSet(kafkaStatefulSetName(clusterName), true);
+        oc.waitForStatefulSet(zookeeperStatefulSetName(clusterName), 1);
+        oc.waitForStatefulSet(kafkaStatefulSetName(clusterName), 3);
         oc.deleteByName("cm", clusterName);
         oc.waitForResourceDeletion("statefulset", kafkaStatefulSetName(clusterName));
         oc.waitForResourceDeletion("statefulset", zookeeperStatefulSetName(clusterName));
@@ -102,7 +104,7 @@ public class KafkaClusterTest {
         String clusterName = "my-cluster";
         LOGGER.info("Running kafkaScaleUpScaleDown {}", clusterName);
 
-        kubeClient.waitForStatefulSet(kafkaStatefulSetName(clusterName), true);
+        kubeClient.waitForStatefulSet(kafkaStatefulSetName(clusterName), 3);
         KubernetesClient client = new DefaultKubernetesClient();
 
         final int initialReplicas = client.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaStatefulSetName(clusterName)).get().getStatus().getReplicas();
@@ -116,12 +118,11 @@ public class KafkaClusterTest {
         final String firstPodName = kafkaPodName(clusterName,  0);
         LOGGER.info("Scaling up to {}", scaleTo);
         replaceCm(clusterName, "kafka-nodes", String.valueOf(initialReplicas + 1));
-        kubeClient.waitForStatefulSet(kafkaStatefulSetName(clusterName), true);
+        kubeClient.waitForStatefulSet(kafkaStatefulSetName(clusterName), initialReplicas + 1);
 
         // Test that the new broker has joined the kafka cluster by checking it knows about all the other broker's API versions
         // (execute bash because we want the env vars expanded in the pod)
-        String versions = kubeClient.exec(newPodName,
-                "/opt/kafka/bin/kafka-broker-api-versions.sh", "--bootstrap-server", "localhost:9092").out();
+        String versions = getBrokerApiVersions(newPodName);
         for (int brokerId = 0; brokerId < scaleTo; brokerId++) {
             assertTrue(versions.indexOf("(id: " + brokerId + " rack: ") >= 0);
         }
@@ -131,16 +132,31 @@ public class KafkaClusterTest {
         LOGGER.info("Scaling down");
         //client.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaStatefulSetName(clusterName)).scale(initialReplicas, true);
         replaceCm(clusterName, "kafka-nodes", String.valueOf(initialReplicas));
-        kubeClient.waitForStatefulSet(kafkaStatefulSetName(clusterName), true);
+        kubeClient.waitForStatefulSet(kafkaStatefulSetName(clusterName), initialReplicas);
 
         final int finalReplicas = client.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaStatefulSetName(clusterName)).get().getStatus().getReplicas();
         assertEquals(initialReplicas, finalReplicas);
-        versions = kubeClient.exec(firstPodName,
-                "/opt/kafka/bin/kafka-broker-api-versions.sh", "--bootstrap-server", "localhost:9092").out();
+        versions = getBrokerApiVersions(firstPodName);
 
         assertTrue("Expect the added broker, " + newBrokerId + ",  to no longer be present in output of kafka-broker-api-versions.sh",
                 versions.indexOf("(id: " + newBrokerId + " rack: ") == -1);
         // TODO Check for k8s events, logs for errors
+    }
+
+    private String getBrokerApiVersions(String podName) {
+        AtomicReference<String> versions = new AtomicReference<>();
+        TestUtils.waitFor("kafka-broker-api-versions.sh success", 1_000L, 30_000L, () -> {
+            try {
+                String output = kubeClient.exec(podName,
+                        "/opt/kafka/bin/kafka-broker-api-versions.sh", "--bootstrap-server", "localhost:9092").out();
+                versions.set(output);
+                return true;
+            } catch (KubeClusterException e) {
+                LOGGER.trace("/opt/kafka/bin/kafka-broker-api-versions.sh: {}", e.getMessage());
+                return false;
+            }
+        });
+        return versions.get();
     }
 
     @Test
@@ -149,7 +165,7 @@ public class KafkaClusterTest {
         // kafka cluster already deployed via annotation
         String clusterName = "my-cluster";
         LOGGER.info("Running zookeeperScaleUpScaleDown with cluster {}", clusterName);
-        kubeClient.waitForStatefulSet(zookeeperStatefulSetName(clusterName), true);
+        kubeClient.waitForStatefulSet(zookeeperStatefulSetName(clusterName), 1);
         KubernetesClient client = new DefaultKubernetesClient();
         final int initialReplicas = client.apps().statefulSets().inNamespace(NAMESPACE).withName(zookeeperStatefulSetName(clusterName)).get().getStatus().getReplicas();
         assertEquals(1, initialReplicas);
@@ -181,29 +197,19 @@ public class KafkaClusterTest {
     private void waitForZkMntr(String pod, Pattern pattern) {
         long timeoutMs = 30_000L;
         long pollMs = 1_000L;
-        long t0 = System.currentTimeMillis();
-        String output;
-        while (true) {
+        TestUtils.waitFor("", pollMs, timeoutMs, () -> {
             try {
-                output = kubeClient.exec(pod,
+                String output = kubeClient.exec(pod,
                         "/bin/bash", "-c", "echo mntr | nc localhost 2181").out();
 
                 if (pattern.matcher(output).find()) {
-                    break;
+                    return true;
                 }
-                LOGGER.debug("Output, but it's not what's expected: {}", output);
             } catch (KubeClusterException e) {
                 LOGGER.trace("Exception while waiting for ZK to become leader/follower, ignoring", e);
             }
-            if (System.currentTimeMillis() - t0 > timeoutMs) {
-                fail("Timeout after " + timeoutMs + "ms waiting for ZK in pod " + pod + " to become leader/follower");
-            }
-            try {
-                Thread.sleep(pollMs);
-            } catch (InterruptedException e2) {
-                break;
-            }
-        }
+            return false;
+        });
     }
 
 }

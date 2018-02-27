@@ -187,16 +187,21 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         Statement last = statement;
         for (Namespace namespace : annotations(element, Namespace.class)) {
             last = new Bracket(last) {
+                String previousNamespace = null;
                 @Override
                 protected void before() {
                     LOGGER.info("Creating {} namespace {}", name(element), namespace.value());
-                    clusterResource().client().createNamespace(namespace.value());
+                    KubeClient client = clusterResource().client();
+                    client.createNamespace(namespace.value());
+                    previousNamespace = client.namespace(namespace.value());
                 }
 
                 @Override
                 protected void after() {
                     LOGGER.info("Deleting {} namespace {}", name(element), namespace.value());
-                    clusterResource().client().deleteNamespace(namespace.value());
+                    KubeClient client = clusterResource().client();
+                    client.deleteNamespace(namespace.value());
+                    client.namespace(previousNamespace);
                 }
             };
         }

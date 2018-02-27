@@ -37,6 +37,8 @@ public interface KubeClient<K extends KubeClient<K>> {
 
     String defaultNamespace();
 
+    String namespace(String namespace);
+
     boolean clientAvailable();
 
     /** Creates the resources in the given files. */
@@ -99,7 +101,7 @@ public interface KubeClient<K extends KubeClient<K>> {
      * wait for the pods to be in the ready state.
      * * @return This kube client.
      */
-    K waitForStatefulSet(String name, boolean waitForPods);
+    K waitForStatefulSet(String name, int expectPods);
 
     /**
      * Get the content of the given {@code resource} with the given {@code name} as YAML.

@@ -6,6 +6,7 @@ package io.strimzi.test.k8s;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.strimzi.test.TestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,6 +28,7 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
 
     public static final String CREATE = "create";
     public static final String DELETE = "delete";
+    private String namespace = defaultNamespace();
 
     protected abstract String cmd();
 
@@ -43,6 +45,13 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
     }
 
     private static final Context NOOP = new Context();
+
+    @Override
+    public String namespace(String namespace) {
+        String previous = this.namespace;
+        this.namespace = namespace;
+        return previous;
+    }
 
     @Override
     public abstract K clientWithAdmin();
@@ -63,7 +72,7 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
     @Override
     public K createRole(String roleName, Permission... permissions) {
         try (Context context = adminContext()) {
-            List<String> cmd = new ArrayList<>();
+            List<String> cmd = namespacedCommand();
             cmd.addAll(asList(cmd(), CREATE, "role", roleName));
             for (Permission p : permissions) {
                 for (String resource : p.resource()) {
@@ -79,11 +88,23 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
 
     }
 
+    private List<String> namespacedCommand(String... rest) {
+        return namespacedCommand(asList(rest));
+    }
+
+    private List<String> namespacedCommand(List<String> rest) {
+        List<String> result = new ArrayList<>();
+        result.add(cmd());
+        result.add("--namespace");
+        result.add(namespace);
+        result.addAll(rest);
+        return result;
+    }
+
     @Override
     public K createRoleBinding(String bindingName, String roleName, String... user) {
         try (Context context = adminContext()) {
-            List<String> cmd = new ArrayList<>();
-            cmd.addAll(asList(cmd(), CREATE, "rolebinding", bindingName, "--role=" + roleName));
+            List<String> cmd = namespacedCommand(CREATE, "rolebinding", bindingName, "--role=" + roleName);
             for (int i = 0; i < user.length; i++) {
                 cmd.add("--user=" + user[i]);
             }
@@ -95,7 +116,7 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
     @Override
     public K deleteRoleBinding(String bindingName) {
         try (Context context = adminContext()) {
-            Exec.exec(cmd(), DELETE, "rolebinding", bindingName);
+            Exec.exec(namespacedCommand(DELETE, "rolebinding", bindingName));
             return (K) this;
         }
     }
@@ -103,7 +124,7 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
     @Override
     public K deleteRole(String roleName) {
         try (Context context = adminContext()) {
-            Exec.exec(cmd(), DELETE, "role", roleName);
+            Exec.exec(namespacedCommand(DELETE, "role", roleName));
             return (K) this;
         }
     }
@@ -111,7 +132,7 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
 
     @Override
     public String get(String resource, String resourceName) {
-        return Exec.exec(cmd(), "get", resource, resourceName, "-o", "yaml").out();
+        return Exec.exec(namespacedCommand("get", resource, resourceName, "-o", "yaml")).out();
     }
 
     @Override
@@ -142,7 +163,7 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
             if (f.isFile()) {
                 if (f.getName().endsWith(".yaml")) {
                     try {
-                        Exec.exec(cmd(), subcommand, "-f", f.getAbsolutePath());
+                        Exec.exec(namespacedCommand(subcommand, "-f", f.getAbsolutePath()));
                     } catch (KubeClusterException e) {
                         if (error == null) {
                             error = e;
@@ -176,7 +197,7 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
     @Override
     public K replaceContent(String yamlContent) {
         try (Context context = defaultContext()) {
-            Exec.exec(yamlContent, asList(cmd(), "replace", "-f", "-"));
+            Exec.exec(yamlContent, namespacedCommand("replace", "-f", "-"));
             return (K) this;
         }
     }
@@ -184,7 +205,7 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
     @Override
     public K createNamespace(String name) {
         try (Context context = adminContext()) {
-            Exec.exec(cmd(), CREATE, "namespace", name);
+            Exec.exec(namespacedCommand(CREATE, "namespace", name));
         }
         return (K) this;
     }
@@ -192,14 +213,14 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
     @Override
     public K deleteNamespace(String name) {
         try (Context context = adminContext()) {
-            Exec.exec(cmd(), DELETE, "namespace", name);
+            Exec.exec(namespacedCommand(DELETE, "namespace", name));
         }
         return (K) this;
     }
 
     @Override
     public ProcessResult exec(String pod, String... command) {
-        List<String> cmd = new ArrayList<>(asList(cmd(), "exec", pod, "--"));
+        List<String> cmd = namespacedCommand("exec", pod, "--");
         cmd.addAll(asList(command));
         return Exec.exec(cmd);
     }
@@ -215,37 +236,22 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
     }
 
     private K waitFor(String resource, String name, Predicate<JsonNode> ready, Function<KubeClusterException, ExType> shouldBreak) {
-        LOGGER.debug("Waiting for {} {}", resource, name);
-        long timeoutMs = 120_000L;
+        long timeoutMs = 240_000L;
         long pollMs = 1_000L;
-        long deadline = System.currentTimeMillis() + timeoutMs;
         ObjectMapper mapper = new ObjectMapper();
-        outer: while (true) {
-            if (System.currentTimeMillis() > deadline) {
-                throw new RuntimeException("Timeout waiting for " + resource + " " + name + " to be ready");
-            }
-            String jsonString;
+        TestUtils.waitFor(resource + " " + name, pollMs, timeoutMs, () -> {
             try {
-                jsonString = Exec.exec(cmd(), "get", resource, name, "-o", "json").out();
+                String jsonString = Exec.exec(namespacedCommand("get", resource, name, "-o", "json")).out();
                 LOGGER.trace("{}", jsonString);
                 JsonNode actualObj = mapper.readTree(jsonString);
-
-                if (ready.test(actualObj)) {
-                    break;
-                }
-
-                try {
-                    Thread.sleep(pollMs);
-                } catch (InterruptedException e) {
-                    break;
-                }
+                return ready.test(actualObj);
             } catch (KubeClusterException e) {
                 /* keep polling till it exists */
                 switch (shouldBreak.apply(e)) {
                     case BREAK:
-                        break outer;
+                        return true;
                     case CONTINUE:
-                        continue outer;
+                        return false;
                     case THROW:
                         throw e;
                 }
@@ -253,7 +259,7 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-        }
+        });
         return (K) this;
     }
 
@@ -279,16 +285,18 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
     }
 
     @Override
-    public K waitForStatefulSet(String name, boolean waitForPods) {
+    public K waitForStatefulSet(String name, int expectPods) {
         return waitFor("statefulset", name,
             actualObj -> {
                 int rep = actualObj.get("status").get("replicas").asInt();
                 JsonNode currentReplicas = actualObj.get("status").get("currentReplicas");
 
-                if (currentReplicas != null && rep == currentReplicas.asInt()) {
+                if (currentReplicas != null &&
+                        (expectPods >= 0 && expectPods == currentReplicas.asInt() && expectPods == rep
+                        || expectPods < 0 && rep == currentReplicas.asInt())) {
                     LOGGER.debug("Waiting for pods of statefulset {}", name);
-                    if (waitForPods) {
-                        for (int ii = 0; ii < rep; ii++) {
+                    if (expectPods >= 0) {
+                        for (int ii = 0; ii < expectPods; ii++) {
                             waitForPod(name + "-" + ii);
                         }
                     }
