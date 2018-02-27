@@ -370,7 +370,7 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         AbstractOperations<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
         Async async = context.async();
-        op.waitUntilReady(NAMESPACE, RESOURCE_NAME, 20, 100).setHandler(ar -> {
+        op.waitUntilReady(NAMESPACE, RESOURCE_NAME, 20, 5_000).setHandler(ar -> {
             assertTrue(ar.succeeded());
             verify(mockResource).get();
 
