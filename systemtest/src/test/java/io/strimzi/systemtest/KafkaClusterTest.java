@@ -100,7 +100,6 @@ public class KafkaClusterTest {
     }
 
     @Test
-    //@Resources("../examples/resources/cluster-controller/kafka-ephemeral.yaml")
     @KafkaCluster(name = "my-cluster", kafkaNodes = 3)
     public void testKafkaScaleUpScaleDown() {
         // kafka cluster already deployed via annotation
@@ -163,7 +162,6 @@ public class KafkaClusterTest {
     }
 
     @Test
-    //@Resources("../examples/resources/cluster-controller/kafka-ephemeral.yaml")
     @KafkaCluster(name = "my-cluster", kafkaNodes = 1, zkNodes = 1)
     public void testZookeeperScaleUpScaleDown() {
         // kafka cluster already deployed via annotation

@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.strimzi.test.k8s.KubeClient;
-import io.strimzi.test.k8s.KubeClusterException;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.OpenShift;
 import org.junit.ClassRule;
@@ -203,14 +202,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     // delete cm
                     kubeClient().deleteContent(yaml);
                     // wait for ss to go
-                    TestUtils.waitFor("kafka cluster " + cluster.name() + " statefulset removal", 1_000L, 120_000L, () -> {
-                        try {
-                            kubeClient().get("statefulset", cluster.name() + "-zookeeper");
-                            return false;
-                        } catch (KubeClusterException.NotFound e) {
-                            return true;
-                        }
-                    });
+                    kubeClient().waitForResourceDeletion("statefulset", cluster.name() + "-zookeeper");
                 }
             };
         }
@@ -239,14 +231,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     LOGGER.info("Deleting {} cluster controller", name(element));
                     // Here we verify the cluster is in the same state
                     kubeClient().delete("../examples/install/cluster-controller");
-                    TestUtils.waitFor("cluster controller deployment removal", 1_000L, 120_000L, () -> {
-                        try {
-                            kubeClient().get("deployment", "strimzi-cluster-controller");
-                            return false;
-                        } catch (KubeClusterException.NotFound e) {
-                            return true;
-                        }
-                    });
+                    kubeClient().waitForResourceDeletion("deployment", "strimzi-cluster-controller");
                 }
             };
         }

@@ -311,8 +311,8 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
                 JsonNode currentReplicas = actualObj.get("status").get("currentReplicas");
 
                 if (currentReplicas != null &&
-                        (expectPods >= 0 && expectPods == currentReplicas.asInt() && expectPods == rep
-                        || expectPods < 0 && rep == currentReplicas.asInt())) {
+                        ((expectPods >= 0 && expectPods == currentReplicas.asInt() && expectPods == rep)
+                        || (expectPods < 0 && rep == currentReplicas.asInt()))) {
                     LOGGER.debug("Waiting for pods of statefulset {}", name);
                     if (expectPods >= 0) {
                         for (int ii = 0; ii < expectPods; ii++) {
