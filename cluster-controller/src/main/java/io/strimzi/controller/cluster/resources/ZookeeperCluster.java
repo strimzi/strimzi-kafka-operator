@@ -320,6 +320,7 @@ public class ZookeeperCluster extends AbstractCluster {
                 annotations);
     }
 
+    @Override
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(new EnvVarBuilder().withName(KEY_ZOOKEEPER_NODE_COUNT).withValue(Integer.toString(replicas)).build());
@@ -379,6 +380,7 @@ public class ZookeeperCluster extends AbstractCluster {
         return volumeMountList;
     }
 
+    @Override
     protected void setLabels(Map<String, String> labels) {
         Map<String, String> newLabels = new HashMap<>(labels);
 

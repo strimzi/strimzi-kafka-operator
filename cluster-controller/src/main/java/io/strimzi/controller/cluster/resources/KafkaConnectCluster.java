@@ -5,6 +5,7 @@
 package io.strimzi.controller.cluster.resources;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.Service;
@@ -136,11 +137,12 @@ public class KafkaConnectCluster extends AbstractCluster {
 
         kafkaConnect.setLabels(dep.getMetadata().getLabels());
         kafkaConnect.setReplicas(dep.getSpec().getReplicas());
-        kafkaConnect.setImage(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
-        kafkaConnect.setHealthCheckInitialDelay(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds());
-        kafkaConnect.setHealthCheckTimeout(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds());
+        Container container = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
+        kafkaConnect.setImage(container.getImage());
+        kafkaConnect.setHealthCheckInitialDelay(container.getReadinessProbe().getInitialDelaySeconds());
+        kafkaConnect.setHealthCheckTimeout(container.getReadinessProbe().getTimeoutSeconds());
 
-        Map<String, String> vars = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream().collect(
+        Map<String, String> vars = container.getEnv().stream().collect(
                 Collectors.toMap(EnvVar::getName, EnvVar::getValue));
 
         kafkaConnect.setBootstrapServers(vars.getOrDefault(KEY_BOOTSTRAP_SERVERS, DEFAULT_BOOTSTRAP_SERVERS));
@@ -183,13 +185,14 @@ public class KafkaConnectCluster extends AbstractCluster {
             different = true;
         }
 
-        if (!getImage().equals(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage())) {
-            log.info("Diff: Expected image {}, actual image {}", getImage(), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
+        Container container = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
+        if (!getImage().equals(container.getImage())) {
+            log.info("Diff: Expected image {}, actual image {}", getImage(), container.getImage());
             different = true;
             rollingUpdate = true;
         }
 
-        Map<String, String> vars = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream().collect(
+        Map<String, String> vars = container.getEnv().stream().collect(
                 Collectors.toMap(EnvVar::getName, EnvVar::getValue));
 
         if (!bootstrapServers.equals(vars.getOrDefault(KEY_BOOTSTRAP_SERVERS, DEFAULT_BOOTSTRAP_SERVERS))
@@ -206,8 +209,8 @@ public class KafkaConnectCluster extends AbstractCluster {
             rollingUpdate = true;
         }
 
-        if (healthCheckInitialDelay != dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds()
-                || healthCheckTimeout != dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds()) {
+        if (healthCheckInitialDelay != container.getReadinessProbe().getInitialDelaySeconds()
+                || healthCheckTimeout != container.getReadinessProbe().getTimeoutSeconds()) {
             log.info("Diff: Kafka Connect healthcheck timing changed");
             different = true;
             rollingUpdate = true;
@@ -242,6 +245,7 @@ public class KafkaConnectCluster extends AbstractCluster {
                 );
     }
 
+    @Override
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(new EnvVarBuilder().withName(KEY_BOOTSTRAP_SERVERS).withValue(bootstrapServers).build());

@@ -522,10 +522,11 @@ public abstract class AbstractCluster {
         statefulSet.getMetadata().getAnnotations().putAll(annotations);
         statefulSet.getSpec().setSelector(new LabelSelectorBuilder().withMatchLabels(getLabelsWithName()).build());
         statefulSet.getSpec().getTemplate().getMetadata().setLabels(getLabelsWithName());
-        statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(getImage());
-        statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).setLivenessProbe(livenessProbe);
-        statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).setReadinessProbe(readinessProbe);
-        statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(getEnvVars());
+        Container container = statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0);
+        container.setImage(getImage());
+        container.setLivenessProbe(livenessProbe);
+        container.setReadinessProbe(readinessProbe);
+        container.setEnv(getEnvVars());
 
         return statefulSet;
     }
@@ -540,10 +541,11 @@ public abstract class AbstractCluster {
         dep.getMetadata().setAnnotations(deploymentAnnotations);
         dep.getSpec().getTemplate().getMetadata().setLabels(getLabelsWithName());
         dep.getSpec().getTemplate().getMetadata().setAnnotations(podAnnotations);
-        dep.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(getImage());
-        dep.getSpec().getTemplate().getSpec().getContainers().get(0).setLivenessProbe(livenessProbe);
-        dep.getSpec().getTemplate().getSpec().getContainers().get(0).setReadinessProbe(readinessProbe);
-        dep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(getEnvVars());
+        Container container = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
+        container.setImage(getImage());
+        container.setLivenessProbe(livenessProbe);
+        container.setReadinessProbe(readinessProbe);
+        container.setEnv(getEnvVars());
 
         return dep;
     }
