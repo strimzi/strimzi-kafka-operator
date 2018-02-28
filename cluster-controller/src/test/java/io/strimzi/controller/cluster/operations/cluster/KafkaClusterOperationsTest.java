@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
+import io.strimzi.controller.cluster.ClusterController;
 import io.strimzi.controller.cluster.ResourceUtils;
 import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
 import io.strimzi.controller.cluster.operations.resource.DeploymentOperations;
@@ -40,8 +41,10 @@ import org.mockito.ArgumentCaptor;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -620,10 +623,7 @@ public class KafkaClusterOperationsTest {
 
     private void reconcileCluster(TestContext context, ConfigMap originalCm, ConfigMap clusterCm) {
 
-        KafkaCluster originalKafkaCluster = KafkaCluster.fromConfigMap(originalCm);
-        KafkaCluster updatedKafkaCluster = KafkaCluster.fromConfigMap(clusterCm);
-        ZookeeperCluster originalZookeeperCluster = ZookeeperCluster.fromConfigMap(originalCm);
-        ZookeeperCluster updatedZookeeperCluster = ZookeeperCluster.fromConfigMap(clusterCm);
+        Async async = context.async(3);
 
         // create CM, Service, headless service, statefulset
         ConfigMapOperations mockCmOps = mock(ConfigMapOperations.class);
@@ -634,7 +634,6 @@ public class KafkaClusterOperationsTest {
         EndpointOperations mockEndpointOps = mock(EndpointOperations.class);
         DeploymentOperations mockDepOps = mock(DeploymentOperations.class);
 
-        String clusterCmName = clusterCm.getMetadata().getName();
         String clusterCmNamespace = clusterCm.getMetadata().getNamespace();
 
         ConfigMap foo = getConfigMap("foo");
@@ -643,10 +642,32 @@ public class KafkaClusterOperationsTest {
         when(mockCmOps.list(eq(clusterCmNamespace), any())).thenReturn(
             asList(foo, bar)
         );
-        when(mockSsOps.list(eq(clusterCmNamespace), any())).thenReturn(
-            asList(KafkaCluster.fromConfigMap(bar).generateStatefulSet(openShift),
-                    KafkaCluster.fromConfigMap(baz).generateStatefulSet(openShift))
+        // when requested ConfigMap for a specific Kafka cluster
+        when(mockCmOps.get(eq(clusterCmNamespace), eq("foo"))).thenReturn(foo);
+        when(mockCmOps.get(eq(clusterCmNamespace), eq("bar"))).thenReturn(bar);
+
+
+        // providing the list of ALL StatefulSets for all the Kafka clusters
+        Map<String, String> newLabels = new HashMap<>();
+        newLabels.put(ClusterController.STRIMZI_TYPE_LABEL, "kafka");
+        when(mockSsOps.list(eq(clusterCmNamespace), eq(newLabels))).thenReturn(
+                asList(KafkaCluster.fromConfigMap(bar).generateStatefulSet(openShift),
+                        KafkaCluster.fromConfigMap(baz).generateStatefulSet(openShift))
         );
+
+        // providing the list StatefulSets for already "existing" Kafka clusters
+        Map<String, String> barLabels = new HashMap<>();
+        barLabels.put(ClusterController.STRIMZI_CLUSTER_LABEL, "bar");
+        when(mockSsOps.list(eq(clusterCmNamespace), eq(barLabels))).thenReturn(
+                asList(KafkaCluster.fromConfigMap(bar).generateStatefulSet(openShift))
+        );
+
+        Map<String, String> bazLabels = new HashMap<>();
+        bazLabels.put(ClusterController.STRIMZI_CLUSTER_LABEL, "baz");
+        when(mockSsOps.list(eq(clusterCmNamespace), eq(bazLabels))).thenReturn(
+                asList(KafkaCluster.fromConfigMap(baz).generateStatefulSet(openShift))
+        );
+
 
         Set<String> created = new HashSet<>();
         Set<String> updated = new HashSet<>();
@@ -659,25 +680,29 @@ public class KafkaClusterOperationsTest {
             @Override
             public void create(String namespace, String name) {
                 created.add(name);
+                async.countDown();
             }
             @Override
             public void update(String namespace, String name) {
                 updated.add(name);
+                async.countDown();
             }
             @Override
             public void delete(String namespace, String name) {
                 deleted.add(name);
+                async.countDown();
             }
         };
 
 
-        // Now try to create a KafkaCluster based on this CM
-        ops.reconcile(clusterCmNamespace, clusterCmName);
+        // Now try to reconcile all the Kafka clusters
+        ops.reconcileAll(clusterCmNamespace, Collections.emptyMap());
+
+        async.await();
 
         context.assertEquals(singleton("foo"), created);
         context.assertEquals(singleton("bar"), updated);
         context.assertEquals(singleton("baz"), deleted);
-
     }
 
 
