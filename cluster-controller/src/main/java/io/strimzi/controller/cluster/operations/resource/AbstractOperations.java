@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.internal.readiness.Readiness;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -185,38 +186,50 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
     public Future<Void> waitUntilReady(String namespace, String name, long pollIntervalMs, long timeoutMs) {
         Future<Void> fut = Future.future();
         log.info("Waiting for {} resource {} in namespace {} to get ready", resourceKind, name, namespace);
-        long startTime = System.currentTimeMillis();
+        long deadline = System.currentTimeMillis() + timeoutMs;
 
-        vertx.setPeriodic(pollIntervalMs, timerId -> {
-            vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
-                future -> {
-                    try {
-                        if (isReady(namespace, name))   {
-                            future.complete();
+        Handler<Long> handler = new Handler<Long>() {
+            @Override
+            public void handle(Long timerId) {
+
+                vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
+                    future -> {
+                        try {
+                            if (isReady(namespace, name))   {
+                                future.complete();
+                            } else {
+                                if (log.isTraceEnabled()) {
+                                    log.trace("{} {} in namespace {} is not ready", resourceKind, name, namespace);
+                                }
+                                future.fail("Not ready yet");
+                            }
+                        } catch (Exception e) {
+                            log.warn("Caught exception while waiting for {} {} in namespace {} to get ready", resourceKind, name, namespace, e);
+                            future.fail(e);
+                        }
+                    },
+                    false,
+                    res -> {
+                        if (res.succeeded()) {
+                            log.info("{} {} in namespace {} is ready", resourceKind, name, namespace);
+                            fut.complete();
                         } else {
-                            future.fail("Not ready yet");
-                        }
-                    } catch (Exception e) {
-                        log.warn("Caught exception while waiting for {} {} in namespace {} to get ready", resourceKind, name, namespace, e);
-                        future.fail(e);
-                    }
-                },
-                false,
-                res -> {
-                    if (res.succeeded())    {
-                        vertx.cancelTimer(timerId);
-                        log.info("{} {} in namespace {} is ready", resourceKind, name, namespace);
-                        fut.complete();
-                    } else {
-                        if (System.currentTimeMillis() - startTime > timeoutMs)   {
-                            vertx.cancelTimer(timerId);
-                            log.error("Exceeded timeoutMs of {} ms while waiting for {} {} in namespace {} to be ready", timeoutMs, resourceKind, name, namespace);
-                            fut.fail(new TimeoutException());
+                            long timeLeft = deadline - System.currentTimeMillis();
+                            if (timeLeft <= 0) {
+                                log.error("Exceeded timeoutMs of {} ms while waiting for {} {} in namespace {} to be ready", timeoutMs, resourceKind, name, namespace);
+                                fut.fail(new TimeoutException());
+                            } else {
+                                // Schedule ourselves to run again
+                                vertx.setTimer(Math.min(pollIntervalMs, timeLeft), this);
+                            }
                         }
                     }
-                }
-            );
-        });
+                );
+            }
+        };
+
+        // Call the handler ourselves the first time
+        handler.handle(null);
 
         return fut;
     }

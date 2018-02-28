@@ -18,6 +18,7 @@ import static org.mockito.Mockito.when;
 
 public class ConfigMapOperationsTest extends ResourceOperationsMockTest<KubernetesClient, ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> {
 
+    @Override
     protected void  mocker(KubernetesClient mockClient, MixedOperation mockCms) {
         when(mockClient.configMaps()).thenReturn(mockCms);
     }
