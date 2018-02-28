@@ -136,11 +136,11 @@ public class ClusterController extends AbstractVerticle {
                             return;
                         }
                         String name = cm.getMetadata().getName();
-                        log.info("ConfigMap {} in namespace {} {}", name, namespace, action);
                         switch (action) {
                             case ADDED:
                             case DELETED:
                             case MODIFIED:
+                                log.info("ConfigMap {} in namespace {} was {}", name, namespace, action);
                                 cluster.reconcile(namespace, name);
                                 break;
                             case ERROR:
