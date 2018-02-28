@@ -237,12 +237,12 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
 
     @Override
     public void reconcileAll(String namespace, Map<String, String> labels) {
-        reconcileAll(namespace, labels, CLUSTER_TYPE_CONNECT_S2I);
+        reconcileAll(CLUSTER_TYPE_CONNECT_S2I, namespace, labels);
     }
 
     @Override
     public void reconcile(String namespace, String name) {
-        reconcile(namespace, name, CLUSTER_TYPE_CONNECT_S2I);
+        reconcile(CLUSTER_TYPE_CONNECT_S2I, namespace, name);
     }
 
     @Override

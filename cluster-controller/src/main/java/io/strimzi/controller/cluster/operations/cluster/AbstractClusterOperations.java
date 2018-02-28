@@ -261,11 +261,11 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
      * It obtains the corresponding ConfigMap (the desired state of the cluster)
      * and a list of other resources (of type {@link R}) (the actual state of the cluster) and determines
      * if the cluster needs to be created, updated or deleted
+     * @param clusterType The {@code strimzi.io/type} of the ConfigMaps and other resources
      * @param namespace The namespace
      * @param name The name of the cluster
-     * @param clusterType The {@code strimzi.io/type} of the ConfigMaps and other resources
      */
-    protected void reconcile(String namespace, String name, String clusterType) {
+    protected void reconcile(String clusterType, String namespace, String name) {
 
         final String lockName = getLockName(clusterType, namespace, name);
         vertx.sharedData().getLockWithTimeout(lockName, LOCK_TIMEOUT, res -> {
@@ -324,11 +324,11 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
      * and a list of other resources (of type {@link R}) (the actual state of the cluster) and then calls,
      * for each obtained cluster name, the corresponding {@link #reconcile(String, String, String)}
      *
+     * @param clusterType The type of the cluster
      * @param namespace The namespace
      * @param labels The labels
-     * @param clusterType The type of the cluster
      */
-    protected void reconcileAll(String namespace, Map<String, String> labels, String clusterType) {
+    protected void reconcileAll(String clusterType, String namespace, Map<String, String> labels) {
 
         Map<String, String> newLabels = new HashMap<>(labels);
         newLabels.put(ClusterController.STRIMZI_TYPE_LABEL, clusterType);
@@ -337,14 +337,14 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
         List<ConfigMap> cms = configMapOperations.list(namespace, newLabels);
         Set<String> cmsNames = cms.stream().map(cm -> cm.getMetadata().getName()).collect(Collectors.toSet());
 
-        // get StatefulSets for the corresponding cluster name (they are part of)
+        // get resources for the corresponding cluster name (they are part of)
         List<R> resources = getResources(namespace, newLabels);
         Set<String> resourceNames = resources.stream().map(res -> res.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL)).collect(Collectors.toSet());
 
         cmsNames.addAll(resourceNames);
 
         for (String name: cmsNames) {
-            reconcile(namespace, name, clusterType);
+            reconcile(clusterType, namespace, name);
         }
     }
 
