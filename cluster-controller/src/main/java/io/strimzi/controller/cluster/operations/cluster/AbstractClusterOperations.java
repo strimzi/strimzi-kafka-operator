@@ -284,12 +284,17 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
 
                     if (cm != null) {
                         if (resources.size() > 0) {
-                            update(namespace, cm);
+                            log.info("Reconciliation: {} cluster {} should be checked for updates", clusterDescription, cm.getMetadata().getName());
+                            update(namespace, name(cm));
                         } else {
-                            create(namespace, cm);
+                            log.info("Reconciliation: {} cluster {} should be created", clusterDescription, cm.getMetadata().getName());
+                            create(namespace, name(cm));
                         }
                     } else if (resources.size() > 0) {
-                        delete(namespace, resources);
+                        for (R resource : resources) {
+                            log.info("Reconciliation: {} cluster {} should be deleted", clusterDescription, resource.getMetadata().getName());
+                            delete(namespace, nameFromLabels(resource));
+                        }
                     }
 
                 } catch (Throwable ex) {
@@ -356,22 +361,5 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
      * @return The matching resources.
      */
     protected abstract List<R> getResources(String namespace, Map<String, String> kafkaLabels);
-
-    protected final void create(String namespace, ConfigMap cm)   {
-        log.info("Reconciliation: {} cluster {} should be created", clusterDescription, cm.getMetadata().getName());
-        create(namespace, name(cm));
-    }
-
-    protected final void update(String namespace, ConfigMap cm)   {
-        log.info("Reconciliation: {} cluster {} should be checked for updates", clusterDescription, cm.getMetadata().getName());
-        update(namespace, name(cm));
-    }
-
-    protected final void delete(String namespace, List<R> resources)   {
-        for (R resource : resources) {
-            log.info("Reconciliation: {} cluster {} should be deleted", clusterDescription, resource.getMetadata().getName());
-            delete(namespace, nameFromLabels(resource));
-        }
-    }
 
 }
