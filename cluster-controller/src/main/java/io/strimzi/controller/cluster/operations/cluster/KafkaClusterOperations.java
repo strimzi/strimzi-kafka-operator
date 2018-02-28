@@ -134,21 +134,21 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
             CompositeFuture
                 .join(result)
-                .compose(res -> statefulSetOperations.waitUntilReady(namespace, kafka.getName(), 1_000, 60_000))
+                .compose(res -> statefulSetOperations.readiness(namespace, kafka.getName(), 1_000, 60_000))
                 .compose(res -> {
                     List<Future> waitPodResult = new ArrayList<>(kafka.getReplicas());
 
                     for (int i = 0; i < kafka.getReplicas(); i++) {
                         String podName = kafka.getName() + "-" + i;
-                        waitPodResult.add(podOperations.waitUntilReady(namespace, podName, 1_000, 60_000));
+                        waitPodResult.add(podOperations.readiness(namespace, podName, 1_000, 60_000));
                     }
 
                     return CompositeFuture.join(waitPodResult);
                 })
                 .compose(res -> {
                     List<Future> waitEndpointResult = new ArrayList<>(2);
-                    waitEndpointResult.add(endpointOperations.waitUntilReady(namespace, kafka.getName(), 1_000, 60_000));
-                    waitEndpointResult.add(endpointOperations.waitUntilReady(namespace, kafka.getHeadlessName(), 1_000, 60_000));
+                    waitEndpointResult.add(endpointOperations.readiness(namespace, kafka.getName(), 1_000, 60_000));
+                    waitEndpointResult.add(endpointOperations.readiness(namespace, kafka.getHeadlessName(), 1_000, 60_000));
                     return CompositeFuture.join(waitEndpointResult);
                 })
                 .compose(res -> {
@@ -195,21 +195,21 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
             CompositeFuture
                 .join(createResult)
-                .compose(res -> statefulSetOperations.waitUntilReady(namespace, zk.getName(), 1_000, 60_000))
+                .compose(res -> statefulSetOperations.readiness(namespace, zk.getName(), 1_000, 60_000))
                 .compose(res -> {
                     List<Future> waitPodResult = new ArrayList<>(zk.getReplicas());
 
                     for (int i = 0; i < zk.getReplicas(); i++) {
                         String podName = zk.getName() + "-" + i;
-                        waitPodResult.add(podOperations.waitUntilReady(namespace, podName, 1_000, 60_000));
+                        waitPodResult.add(podOperations.readiness(namespace, podName, 1_000, 60_000));
                     }
 
                     return CompositeFuture.join(waitPodResult);
                 })
                 .compose(res -> {
                     List<Future> waitEndpointResult = new ArrayList<>(2);
-                    waitEndpointResult.add(endpointOperations.waitUntilReady(namespace, zk.getName(), 1_000, 60_000));
-                    waitEndpointResult.add(endpointOperations.waitUntilReady(namespace, zk.getHeadlessName(), 1_000, 60_000));
+                    waitEndpointResult.add(endpointOperations.readiness(namespace, zk.getName(), 1_000, 60_000));
+                    waitEndpointResult.add(endpointOperations.readiness(namespace, zk.getHeadlessName(), 1_000, 60_000));
                     return CompositeFuture.join(waitEndpointResult);
                 })
                 .compose(res -> {
