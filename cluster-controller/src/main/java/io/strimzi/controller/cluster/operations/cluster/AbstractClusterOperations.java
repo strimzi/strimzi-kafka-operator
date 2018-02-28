@@ -172,18 +172,6 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
      */
     protected abstract void create(String namespace, String name, Handler<AsyncResult<Void>> handler);
 
-    protected void create(String namespace, String name)   {
-        log.info("Adding {} cluster {}", clusterDescription, name);
-
-        create(namespace, name, res -> {
-            if (res.succeeded()) {
-                log.info("{} cluster added {}", clusterDescription, name);
-            } else {
-                log.error("Failed to add {} cluster {}.", clusterDescription, name);
-            }
-        });
-    }
-
     /**
      * Subclasses implement this method to delete the cluster. The implementation usually just has to call
      * {@link #execute(String, String, String, String, CompositeOperation, Handler)} with appropriate arguments.
@@ -193,17 +181,6 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
      */
     protected abstract void delete(String namespace, String name, Handler<AsyncResult<Void>> handler);
 
-    protected void delete(String namespace, String name)   {
-        log.info("Deleting {} cluster {} in namespace {}", clusterDescription, name, namespace);
-        delete(namespace, name, res -> {
-            if (res.succeeded()) {
-                log.info("{} cluster deleted {} in namespace {}", clusterDescription, name, namespace);
-            } else {
-                log.error("Failed to delete {} cluster {} in namespace {}", clusterDescription, name, namespace);
-            }
-        });
-    }
-
     /**
      * Subclasses implement this method to update the cluster. The implementation usually just has to call
      * {@link #execute(String, String, String, String, CompositeOperation, Handler)} with appropriate arguments.
@@ -212,18 +189,6 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
      * @param handler Completion handler
      */
     protected abstract void update(String namespace, String name, Handler<AsyncResult<Void>> handler);
-
-    protected void update(String namespace, String name)   {
-
-        log.info("Checking for updates in {} cluster {}", clusterDescription, name);
-        update(namespace, name, res2 -> {
-            if (res2.succeeded()) {
-                log.info("{} cluster updated {}", clusterDescription, name);
-            } else {
-                log.error("Failed to update {} cluster {}.", clusterDescription, name);
-            }
-        });
-    }
 
     /**
      * The name of the given {@code resource}, as read from its metadata.
@@ -283,17 +248,40 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
                     List<R> resources = getResources(namespace, labels);
 
                     if (cm != null) {
+                        String nameFromCm = name(cm);
                         if (resources.size() > 0) {
                             log.info("Reconciliation: {} cluster {} should be checked for updates", clusterDescription, cm.getMetadata().getName());
-                            update(namespace, name(cm));
+                            log.info("Checking for updates in {} cluster {}", clusterDescription, nameFromCm);
+                            update(namespace, nameFromCm, updateResult -> {
+                                if (updateResult.succeeded()) {
+                                    log.info("{} cluster updated {}", clusterDescription, nameFromCm);
+                                } else {
+                                    log.error("Failed to update {} cluster {}.", clusterDescription, nameFromCm);
+                                }
+                            });
                         } else {
                             log.info("Reconciliation: {} cluster {} should be created", clusterDescription, cm.getMetadata().getName());
-                            create(namespace, name(cm));
+                            log.info("Adding {} cluster {}", clusterDescription, nameFromCm);
+                            create(namespace, nameFromCm, createResult -> {
+                                if (createResult.succeeded()) {
+                                    log.info("{} cluster added {}", clusterDescription, nameFromCm);
+                                } else {
+                                    log.error("Failed to add {} cluster {}.", clusterDescription, nameFromCm);
+                                }
+                            });
                         }
                     } else if (resources.size() > 0) {
                         for (R resource : resources) {
                             log.info("Reconciliation: {} cluster {} should be deleted", clusterDescription, resource.getMetadata().getName());
-                            delete(namespace, nameFromLabels(resource));
+                            String nameFromResource = nameFromLabels(resource);
+                            log.info("Deleting {} cluster {} in namespace {}", clusterDescription, nameFromResource, namespace);
+                            delete(namespace, nameFromResource, deleteResult -> {
+                                if (deleteResult.succeeded()) {
+                                    log.info("{} cluster deleted {} in namespace {}", clusterDescription, nameFromResource, namespace);
+                                } else {
+                                    log.error("Failed to delete {} cluster {} in namespace {}", clusterDescription, nameFromResource, namespace);
+                                }
+                            });
                         }
                     }
 

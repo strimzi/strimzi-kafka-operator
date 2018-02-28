@@ -678,17 +678,17 @@ public class KafkaClusterOperationsTest {
                 mockServiceOps, mockSsOps,
                 mockPvcOps, mockPodOps, mockEndpointOps, mockDepOps) {
             @Override
-            public void create(String namespace, String name) {
+            public void create(String namespace, String name, Handler h) {
                 created.add(name);
                 async.countDown();
             }
             @Override
-            public void update(String namespace, String name) {
+            public void update(String namespace, String name, Handler h) {
                 updated.add(name);
                 async.countDown();
             }
             @Override
-            public void delete(String namespace, String name) {
+            public void delete(String namespace, String name, Handler h) {
                 deleted.add(name);
                 async.countDown();
             }
