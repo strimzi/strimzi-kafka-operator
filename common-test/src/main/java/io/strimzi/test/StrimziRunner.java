@@ -84,6 +84,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
     @Override
     protected Statement methodBlock(FrameworkMethod method) {
         Statement statement = super.methodBlock(method);
+        statement = withConnectClusters(method, statement);
         statement = withKafkaClusters(method, statement);
         statement = withClusterController(method, statement);
         statement = withResources(method, statement);
@@ -355,6 +356,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         Statement statement = super.classBlock(notifier);
         TestClass testClass = getTestClass();
         if (!areAllChildrenIgnored()) {
+            statement = withConnectClusters(testClass, statement);
             statement = withKafkaClusters(testClass, statement);
             statement = withClusterController(testClass, statement);
             statement = withResources(testClass, statement);
