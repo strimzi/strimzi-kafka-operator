@@ -19,6 +19,7 @@ import static org.mockito.Mockito.when;
 public class BuildConfigOperationsMockTest extends ResourceOperationsMockTest<OpenShiftClient, BuildConfig,
         BuildConfigList, DoneableBuildConfig, BuildConfigResource<BuildConfig, DoneableBuildConfig, Void, Build>> {
 
+    @Override
     protected void mocker(OpenShiftClient mockClient, MixedOperation mockCms) {
         when(mockClient.buildConfigs()).thenReturn(mockCms);
     }

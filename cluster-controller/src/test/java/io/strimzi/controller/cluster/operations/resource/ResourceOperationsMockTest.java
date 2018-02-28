@@ -21,6 +21,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
@@ -31,6 +33,7 @@ import static org.mockito.ArgumentMatchers.matches;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -352,11 +355,36 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
     }
 
     @Test
-    public void waitUntilReadySuccessful(TestContext context) {
+    public void waitUntilReadySuccessfulImmediately(TestContext context) {
+        waitUntilReadySuccessful(context, 0);
+    }
+
+    @Test
+    public void waitUntilReadySuccessfulAfterOneCall(TestContext context) {
+        waitUntilReadySuccessful(context, 1);
+    }
+
+    @Test
+    public void waitUntilReadySuccessfulAfterTwoCalls(TestContext context) {
+        waitUntilReadySuccessful(context, 2);
+    }
+
+    public void waitUntilReadySuccessful(TestContext context, int unreadyCount) {
         T resource = resource();
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
-        when(mockResource.isReady()).thenReturn(Boolean.TRUE);
+        AtomicInteger count = new AtomicInteger();
+        when(mockResource.isReady()).then(invocation -> {
+            int cnt = count.getAndIncrement();
+            if (cnt < unreadyCount) {
+                return Boolean.FALSE;
+            } else if (cnt == unreadyCount) {
+                return Boolean.TRUE;
+            } else {
+                context.fail("The resource has already been ready once!");
+            }
+            throw new RuntimeException();
+        });
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(resource.getMetadata().getName()))).thenReturn(mockResource);
@@ -372,10 +400,10 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         Async async = context.async();
         op.waitUntilReady(NAMESPACE, RESOURCE_NAME, 20, 5_000).setHandler(ar -> {
             assertTrue(ar.succeeded());
-            verify(mockResource).get();
+            verify(mockResource, times(unreadyCount + 1)).get();
 
             if (Readiness.isReadinessApplicable(resource)) {
-                verify(mockResource).isReady();
+                verify(mockResource, times(unreadyCount + 1)).isReady();
             }
             async.complete();
         });

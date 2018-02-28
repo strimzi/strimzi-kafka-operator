@@ -198,6 +198,9 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
                             if (isReady(namespace, name))   {
                                 future.complete();
                             } else {
+                                if (log.isTraceEnabled()) {
+                                    log.trace("{} {} in namespace {} is not ready", resourceKind, name, namespace);
+                                }
                                 future.fail("Not ready yet");
                             }
                         } catch (Exception e) {
