@@ -45,7 +45,7 @@ public class ConnectClusterTest {
         Oc oc = (Oc) this.kubeClient;
         String clusterName = "openshift-my-connect-cluster";
         oc.newApp("strimzi-connect", map("CLUSTER_NAME", clusterName,
-                "KAFKA_CONNECT_BOOTSTRAP_SERVERS", KAFKA_CLUSTER_NAME+"-kafka:9092"));
+                "KAFKA_CONNECT_BOOTSTRAP_SERVERS", KAFKA_CLUSTER_NAME + "-kafka:9092"));
         String deploymentName = clusterName + "-connect";
         oc.waitForDeployment(deploymentName);
         oc.deleteByName("cm", clusterName);
