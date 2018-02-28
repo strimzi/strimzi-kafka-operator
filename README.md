@@ -38,7 +38,6 @@ If you want to get in touch with us first before contributing, you can use:
 - [Strimzi mailing list](https://www.redhat.com/mailman/listinfo/strimzi)
 - [#strimzi IRC channel](https://webchat.freenode.net/?randomnick=1&channels=strimzi&uio=d4) on Freenode
 
-
 ## License
 Strimzi is licensed under the Apache License, Version 2.0
 

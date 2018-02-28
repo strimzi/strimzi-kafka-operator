@@ -46,7 +46,7 @@ To deploy the Cluster Controller on OpenShift, the following commands should be 
 
 [source]
 oc create -f examples/install/cluster-controller
-oc create -f examples/openshift/cluster-controller
+oc create -f examples/templates/cluster-controller
 
 To verify whether the Cluster Controller has been deployed successfully, the OpenShift console or the following command
 can be used:
@@ -95,12 +95,12 @@ To deploy a Kafka broker on Kubernetes, the corresponding ConfigMap has to be cr
 cluster using the provided example ConfigMap, the following command should be executed:
 
 [source]
-kubectl apply -f examples/resources/cluster-controller/kafka-ephemeral.yaml
+kubectl apply -f examples/configmaps/cluster-controller/kafka-ephemeral.yaml
 
 Another example ConfigMap is provided for persistent Kafka cluster. To deploy it, the following command should be run:
 
 [source]
-kubectl apply -f examples/resources/cluster-controller/kafka-persistent.yaml
+kubectl apply -f examples/configmaps/cluster-controller/kafka-persistent.yaml
 
 ==== Deploying to OpenShift
 
@@ -133,7 +133,7 @@ To deploy Kafka Connect on Kubernetes, the corresponding ConfigMap has to be cre
 created using the following command:
 
 [source]
-kubectl apply -f examples/resources/cluster-controller/kafka-connect.yaml
+kubectl apply -f examples/configmaps/cluster-controller/kafka-connect.yaml
 
 ==== Deploying to OpenShift
 
@@ -277,7 +277,7 @@ In that case you can still leverage on the Topic Controller features of managing
 To deploy the Topic Controller on Kubernetes (not through the Cluster Controller), the following command should be executed:
 
 [source]
-kubectl create -f resources/kubernetes/topic-controller.yaml
+kubectl create -f examples/configmaps/topic-controller.yaml
 
 To verify whether the Topic Controller has been deployed successfully, the Kubernetes Dashboard or the following
 command can be used:
@@ -290,7 +290,7 @@ kubectl describe all
 To deploy the Topic Controller on OpenShift (not through the Cluster Controller), the following command should be executed:
 
 [source]
-oc create -f resources/openshift/topic-controller-with-template.yaml
+oc create -f examples/openshift/topic-controller-with-template.yaml
 
 To verify whether the Topic Controller has been deployed successfully, the OpenShift console or the following command
 can be used:
