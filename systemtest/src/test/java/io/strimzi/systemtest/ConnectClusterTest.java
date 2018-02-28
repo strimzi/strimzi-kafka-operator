@@ -25,13 +25,14 @@ import static io.strimzi.test.TestUtils.map;
 @RunWith(StrimziRunner.class)
 @Namespace(ConnectClusterTest.NAMESPACE)
 @ClusterController
-@KafkaCluster(name = ConnectClusterTest.KAFKA_CLUSTER_NAME, kafkaNodes = 1, zkNodes = 1)
+@KafkaCluster(name = ConnectClusterTest.KAFKA_CLUSTER_NAME)
 public class ConnectClusterTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectClusterTest.class);
 
     public static final String NAMESPACE = "connect-cluster-test";
     public static final String KAFKA_CLUSTER_NAME = "connect-tests";
+    public static final String BOOTSTRAP_SERVERS = KAFKA_CLUSTER_NAME + "-kafka:9092";
 
     @ClassRule
     public static KubeClusterResource cluster = new KubeClusterResource();
@@ -45,7 +46,7 @@ public class ConnectClusterTest {
         Oc oc = (Oc) this.kubeClient;
         String clusterName = "openshift-my-connect-cluster";
         oc.newApp("strimzi-connect", map("CLUSTER_NAME", clusterName,
-                "KAFKA_CONNECT_BOOTSTRAP_SERVERS", KAFKA_CLUSTER_NAME + "-kafka:9092"));
+                "KAFKA_CONNECT_BOOTSTRAP_SERVERS", BOOTSTRAP_SERVERS));
         String deploymentName = clusterName + "-connect";
         oc.waitForDeployment(deploymentName);
         oc.deleteByName("cm", clusterName);
@@ -53,7 +54,7 @@ public class ConnectClusterTest {
     }
 
     @Test
-    @ConnectCluster(name = "my-cluster")
+    @ConnectCluster(name = "my-cluster", bootstrapServers = BOOTSTRAP_SERVERS)
     public void testDeployUndeploy() {
         LOGGER.info("Looks like the connect cluster my-cluster deployed OK");
     }

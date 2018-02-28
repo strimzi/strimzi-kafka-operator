@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Repeatable;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.List;
 
 import static java.util.Arrays.asList;
@@ -189,6 +190,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 ((ObjectNode) metadata).put("name", cluster.name());
                 JsonNode data = node.get("data");
                 ((ObjectNode) data).put("nodes", String.valueOf(cluster.nodes()));
+                ((ObjectNode) data).put("KAFKA_CONNECT_BOOTSTRAP_SERVERS", cluster.bootstrapServers());
                 yaml = mapper.writeValueAsString(node);
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -197,7 +199,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 private final String deploymentName = cluster.name() + "-connect";
                 @Override
                 protected void before() {
-                    LOGGER.info("Creating {} connect cluster {}", name(element), cluster.name());
+                    LOGGER.info("Creating connect cluster '{}' before test per @ConnectCluster annotation on {}", cluster.name(), name(element));
                     // create cm
                     kubeClient().createContent(yaml);
                     // wait for deployment
@@ -206,7 +208,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
 
                 @Override
                 protected void after() {
-                    LOGGER.info("Deleting {} cluster {}", name(element), cluster.name());
+                    LOGGER.info("Deleting connect cluster '{}' after test per @ConnectCluster annotation on {}", cluster.name(), name(element));
                     // delete cm
                     kubeClient().deleteContent(yaml);
                     // wait for ss to go
@@ -240,7 +242,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 private final String zkStatefulSetName = cluster.name() + "-zookeeper";
                 @Override
                 protected void before() {
-                    LOGGER.info("Creating {} kafka cluster {}", name(element), cluster.name());
+                    LOGGER.info("Creating kafka cluster '{}' before test per @KafkaCluster annotation on {}", cluster.name(), name(element));
                     // create cm
                     kubeClient().createContent(yaml);
                     // wait for ss
@@ -249,7 +251,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
 
                 @Override
                 protected void after() {
-                    LOGGER.info("Deleting {} cluster {}", name(element), cluster.name());
+                    LOGGER.info("Deleting kafka cluster '{}' after test per @KafkaCluster annotation on {}", cluster.name(), name(element));
                     // delete cm
                     kubeClient().deleteContent(yaml);
                     // wait for ss to go
@@ -268,7 +270,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 @Override
                 protected void before() {
                     // Here we record the state of the cluster
-                    LOGGER.info("Creating {} cluster controller {}", name(element), resources);
+                    LOGGER.info("Creating cluster controller before test per @ClusterController annotation on {}", name(element));
                     kubeClient().clientWithAdmin().create(CC_INSTALL_PATH);
                     kubeClient().waitForDeployment(CC_DEPLOYMENT_NAME);
                 }
@@ -276,7 +278,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
 
                 @Override
                 protected void after() {
-                    LOGGER.info("Deleting {} cluster controller", name(element));
+                    LOGGER.info("Deleting cluster controller after test per @ClusterController annotation on {}", name(element));
                     // Here we verify the cluster is in the same state
                     kubeClient().clientWithAdmin().delete(CC_INSTALL_PATH);
                     kubeClient().waitForResourceDeletion("deployment", CC_DEPLOYMENT_NAME);
@@ -294,7 +296,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 @Override
                 protected void before() {
                     // Here we record the state of the cluster
-                    LOGGER.info("Creating {} resources {}", name(element), resources.value());
+                    LOGGER.info("Creating resources {}, before test per @Resources annotation on {}", Arrays.toString(resources.value()), name(element));
 
                     kubeClient().create(resources.value());
                 }
@@ -309,7 +311,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
 
                 @Override
                 protected void after() {
-                    LOGGER.info("Deleting {} resources {}", name(element), resources.value());
+                    LOGGER.info("Deleting resources {}, after test per @Resources annotation on {}", Arrays.toString(resources.value()), name(element));
                     // Here we verify the cluster is in the same state
                     kubeClient().delete(resources.value());
                 }
@@ -326,14 +328,14 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 String previousNamespace = null;
                 @Override
                 protected void before() {
-                    LOGGER.info("Creating {} namespace {}", name(element), namespace.value());
+                    LOGGER.info("Creating namespace '{}' before test per @Namespace annotation on {}", namespace.value(), name(element));
                     kubeClient().createNamespace(namespace.value());
                     previousNamespace = kubeClient().namespace(namespace.value());
                 }
 
                 @Override
                 protected void after() {
-                    LOGGER.info("Deleting {} namespace {}", name(element), namespace.value());
+                    LOGGER.info("Deleting namespace '{}' after test per @Namespace annotation on {}", namespace.value(), name(element));
                     kubeClient().deleteNamespace(namespace.value());
                     kubeClient().namespace(previousNamespace);
                 }
