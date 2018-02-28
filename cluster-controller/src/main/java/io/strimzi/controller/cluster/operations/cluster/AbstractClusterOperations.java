@@ -246,9 +246,9 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
      * Reconciliation works by getting the cluster ConfigMap in the given namespace with the given name and
      * comparing with the corresponding {@linkplain #getResources(String, Map) resource}.
      * <ul>
-     * <li>A cluster will be {@linkplain #create(String, String) created} if ConfigMap is without same-named resources</li>
-     * <li>A cluster will be {@linkplain #delete(String, String) deleted} if resources without same-named ConfigMap</li>
-     * <li>A cluster will be {@linkplain #update(String, String) updated} if it has a cluster ConfigMap and a resource with the same name.</li>
+     * <li>A cluster will be {@linkplain #create(String, String, Handler) created} if ConfigMap is without same-named resources</li>
+     * <li>A cluster will be {@linkplain #delete(String, String, Handler) deleted} if resources without same-named ConfigMap</li>
+     * <li>A cluster will be {@linkplain #update(String, String, Handler) updated} if it has a cluster ConfigMap and a resource with the same name.</li>
      * </ul>
      * @param namespace The namespace
      * @param name The name of the cluster
@@ -314,9 +314,9 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
      * Reconciliation works by getting the cluster ConfigMaps in the given namespace with the given labels and
      * comparing with the corresponding {@linkplain #getResources(String, Map) resource}.
      * <ul>
-     * <li>A cluster will be {@linkplain #create(String, String) created} for all ConfigMaps without same-named resources</li>
-     * <li>A cluster will be {@linkplain #delete(String, String) deleted} for all resources without same-named ConfigMaps</li>
-     * <li>A cluster will be {@linkplain #update(String, String) updated} if it has a cluster ConfigMap and a resource with the same name.</li>
+     * <li>A cluster will be {@linkplain #create(String, String, Handler) created} for all ConfigMaps without same-named resources</li>
+     * <li>A cluster will be {@linkplain #delete(String, String, Handler) deleted} for all resources without same-named ConfigMaps</li>
+     * <li>A cluster will be {@linkplain #update(String, String, Handler) updated} if it has a cluster ConfigMap and a resource with the same name.</li>
      * </ul>
      * @param namespace The namespace
      * @param labels The labels
