@@ -52,6 +52,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
      */
     public static final String NOTEARDOWN = "NOTEARDOWN";
     public static final String KAFKA_EPHEMERAL_CM = "../examples/configmaps/cluster-controller/kafka-ephemeral.yaml";
+    public static final String KAFKA_CONNECT_CM = "../examples/configmaps/cluster-controller/kafka-connect.yaml";
     public static final String CC_INSTALL_PATH = "../examples/install/cluster-controller";
     public static final String CC_DEPLOYMENT_NAME = "strimzi-cluster-controller";
 
@@ -156,6 +157,10 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         }
     }
 
+    protected KubeClient kubeClient() {
+        return clusterResource().client();
+    }
+
     String name(Annotatable a) {
         if (a instanceof TestClass) {
             return "class " + ((TestClass) a).getJavaClass().getSimpleName();
@@ -168,6 +173,47 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         } else {
             return a.toString();
         }
+    }
+
+    private Statement withConnectClusters(Annotatable element,
+                                        Statement statement) {
+        Statement last = statement;
+        for (ConnectCluster cluster : annotations(element, ConnectCluster.class)) {
+            // use the example kafka-connect.yaml as a template, but modify it according to the annotation
+            YAMLMapper mapper = new YAMLMapper();
+            String yaml;
+            try {
+                JsonNode node = mapper.readTree(new File(KAFKA_CONNECT_CM));
+                JsonNode metadata = node.get("metadata");
+                ((ObjectNode) metadata).put("name", cluster.name());
+                JsonNode data = node.get("data");
+                ((ObjectNode) data).put("nodes", String.valueOf(cluster.nodes()));
+                yaml = mapper.writeValueAsString(node);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            last = new Bracket(last) {
+                private final String deploymentName = cluster.name() + "-connect";
+                @Override
+                protected void before() {
+                    LOGGER.info("Creating {} connect cluster {}", name(element), cluster.name());
+                    // create cm
+                    kubeClient().createContent(yaml);
+                    // wait for deployment
+                    kubeClient().waitForDeployment(deploymentName);
+                }
+
+                @Override
+                protected void after() {
+                    LOGGER.info("Deleting {} cluster {}", name(element), cluster.name());
+                    // delete cm
+                    kubeClient().deleteContent(yaml);
+                    // wait for ss to go
+                    kubeClient().waitForResourceDeletion("deployment", deploymentName);
+                }
+            };
+        }
+        return last;
     }
 
     private Statement withKafkaClusters(Annotatable element,
@@ -200,10 +246,6 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     kubeClient().waitForStatefulSet(kafkaStatefulSetName, cluster.kafkaNodes());
                 }
 
-                private KubeClient kubeClient() {
-                    return clusterResource().client();
-                }
-
                 @Override
                 protected void after() {
                     LOGGER.info("Deleting {} cluster {}", name(element), cluster.name());
@@ -226,19 +268,16 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 protected void before() {
                     // Here we record the state of the cluster
                     LOGGER.info("Creating {} cluster controller {}", name(element), resources);
-                    kubeClient().create(CC_INSTALL_PATH);
+                    kubeClient().clientWithAdmin().create(CC_INSTALL_PATH);
                     kubeClient().waitForDeployment(CC_DEPLOYMENT_NAME);
                 }
 
-                private KubeClient kubeClient() {
-                    return clusterResource().client().clientWithAdmin();
-                }
 
                 @Override
                 protected void after() {
                     LOGGER.info("Deleting {} cluster controller", name(element));
                     // Here we verify the cluster is in the same state
-                    kubeClient().delete(CC_INSTALL_PATH);
+                    kubeClient().clientWithAdmin().delete(CC_INSTALL_PATH);
                     kubeClient().waitForResourceDeletion("deployment", CC_DEPLOYMENT_NAME);
                 }
             };
@@ -260,7 +299,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 }
 
                 private KubeClient kubeClient() {
-                    KubeClient client = clusterResource().client();
+                    KubeClient client = StrimziRunner.this.kubeClient();
                     if (resources.asAdmin()) {
                         client = client.clientWithAdmin();
                     }
@@ -287,17 +326,15 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 @Override
                 protected void before() {
                     LOGGER.info("Creating {} namespace {}", name(element), namespace.value());
-                    KubeClient client = clusterResource().client();
-                    client.createNamespace(namespace.value());
-                    previousNamespace = client.namespace(namespace.value());
+                    kubeClient().createNamespace(namespace.value());
+                    previousNamespace = kubeClient().namespace(namespace.value());
                 }
 
                 @Override
                 protected void after() {
                     LOGGER.info("Deleting {} namespace {}", name(element), namespace.value());
-                    KubeClient client = clusterResource().client();
-                    client.deleteNamespace(namespace.value());
-                    client.namespace(previousNamespace);
+                    kubeClient().deleteNamespace(namespace.value());
+                    kubeClient().namespace(previousNamespace);
                 }
             };
         }
@@ -341,6 +378,4 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         }
         return clusterResource;
     }
-
-
 }
