@@ -218,9 +218,10 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
                             if (timeLeft <= 0) {
                                 log.error("Exceeded timeoutMs of {} ms while waiting for {} {} in namespace {} to be ready", timeoutMs, resourceKind, name, namespace);
                                 fut.fail(new TimeoutException());
+                            } else {
+                                // Schedule ourselves to run again
+                                vertx.setTimer(Math.min(pollIntervalMs, timeLeft), this);
                             }
-                            // Schedule ourselves to run again
-                            vertx.setTimer(Math.min(pollIntervalMs, timeLeft), this);
                         }
                     }
                 );
