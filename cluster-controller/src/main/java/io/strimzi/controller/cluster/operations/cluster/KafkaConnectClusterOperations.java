@@ -50,6 +50,15 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
     }
 
     private final CompositeOperation<KafkaConnectCluster> create = new CompositeOperation<KafkaConnectCluster>() {
+        @Override
+        public String operationType() {
+            return OP_CREATE;
+        }
+
+        @Override
+        public String clusterType() {
+            return CLUSTER_TYPE_CONNECT;
+        }
 
         @Override
         public ClusterOperation<KafkaConnectCluster> getCluster(String namespace, String name) {
@@ -70,7 +79,15 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
 
 
     private final CompositeOperation<KafkaConnectCluster> delete = new CompositeOperation<KafkaConnectCluster>() {
+        @Override
+        public String operationType() {
+            return OP_DELETE;
+        }
 
+        @Override
+        public String clusterType() {
+            return CLUSTER_TYPE_CONNECT;
+        }
         @Override
         public Future<?> composite(String namespace, ClusterOperation<KafkaConnectCluster> clusterOp) {
             KafkaConnectCluster connect = clusterOp.cluster();
@@ -91,6 +108,15 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
     };
 
     private final CompositeOperation<KafkaConnectCluster> update = new CompositeOperation<KafkaConnectCluster>() {
+        @Override
+        public String operationType() {
+            return OP_UPDATE;
+        }
+
+        @Override
+        public String clusterType() {
+            return CLUSTER_TYPE_CONNECT;
+        }
         @Override
         public Future<?> composite(String namespace, ClusterOperation<KafkaConnectCluster> operation) {
             KafkaConnectCluster connect = operation.cluster();
@@ -162,17 +188,17 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
 
     @Override
     protected void create(String namespace, String name, Handler<AsyncResult<Void>> handler) {
-        execute(CLUSTER_TYPE_CONNECT, OP_CREATE, namespace, name, create, handler);
+        execute(namespace, name, create, handler);
     }
 
     @Override
     protected void delete(String namespace, String name, Handler<AsyncResult<Void>> handler) {
-        execute(CLUSTER_TYPE_CONNECT, OP_DELETE, namespace, name, delete, handler);
+        execute(namespace, name, delete, handler);
     }
 
     @Override
     protected void update(String namespace, String name, Handler<AsyncResult<Void>> handler) {
-        execute(CLUSTER_TYPE_CONNECT, OP_UPDATE, namespace, name, update, handler);
+        execute(namespace, name, update, handler);
     }
 
     @Override

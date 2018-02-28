@@ -112,6 +112,8 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
      * @param <C> The type of cluster.
      */
     protected interface CompositeOperation<C extends AbstractCluster> {
+        String operationType();
+        String clusterType();
         /**
          * Create the resources in Kubernetes according to the given {@code cluster},
          * returning a composite future for when the overall operation is done
@@ -131,16 +133,15 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
      * <p>The desired cluster state is obtained from {@link CompositeOperation#getCluster(String, String)} and the
      * resource operations are executed via {@link CompositeOperation#composite(String, ClusterOperation)}.</p>
      *
-     * @param clusterType The type of cluster
-     * @param operationType The kind of operation
      * @param namespace The namespace containing the cluster.
      * @param name The name of the cluster
      * @param compositeOperation The operation to execute
      * @param handler A completion handler
      * @param <C> The type of cluster.
      */
-    protected final <C extends AbstractCluster> void execute(String clusterType, String operationType, String namespace, String name, CompositeOperation<C> compositeOperation, Handler<AsyncResult<Void>> handler) {
-
+    protected final <C extends AbstractCluster> void execute(String namespace, String name, CompositeOperation<C> compositeOperation, Handler<AsyncResult<Void>> handler) {
+        String clusterType = compositeOperation.clusterType();
+        String operationType = compositeOperation.operationType();
         ClusterOperation<C> clusterOp;
         try {
             clusterOp = compositeOperation.getCluster(namespace, name);
@@ -165,7 +166,7 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
 
     /**
      * Subclasses implement this method to create the cluster. The implementation usually just has to call
-     * {@link #execute(String, String, String, String, CompositeOperation, Handler)} with appropriate arguments.
+     * {@link #execute(String, String, CompositeOperation, Handler)} with appropriate arguments.
      * @param namespace The namespace containing the cluster.
      * @param name The name of the cluster.
      * @param handler Completion handler
@@ -174,7 +175,7 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
 
     /**
      * Subclasses implement this method to delete the cluster. The implementation usually just has to call
-     * {@link #execute(String, String, String, String, CompositeOperation, Handler)} with appropriate arguments.
+     * {@link #execute(String, String, CompositeOperation, Handler)} with appropriate arguments.
      * @param namespace The namespace containing the cluster.
      * @param name The name of the cluster.
      * @param handler Completion handler
@@ -183,7 +184,7 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
 
     /**
      * Subclasses implement this method to update the cluster. The implementation usually just has to call
-     * {@link #execute(String, String, String, String, CompositeOperation, Handler)} with appropriate arguments.
+     * {@link #execute(String, String, CompositeOperation, Handler)} with appropriate arguments.
      * @param namespace The namespace containing the cluster.
      * @param name The name of the cluster.
      * @param handler Completion handler
