@@ -8,12 +8,13 @@ eval `ssh-agent -s`
 ssh-add github_deploy_key
 
 git clone git@github.com:strimzi/strimzi.github.io.git /tmp/website
-cp documentation/htmlnoheader/master.html /tmp/website/docs/master/master.html
-cp -r documentation/adoc/images /tmp/website/docs/master/images
+cp -v documentation/htmlnoheader/master.html /tmp/website/docs/master/master.html
+rm -rf /tmp/website/docs/master/images
+cp -vr documentation/adoc/images /tmp/website/docs/master/images
 
 pushd /tmp/website
 
-if git diff --quiet; then
+if [[ -z $(git status -s) ]]; then
     echo "No changes to the output on this push; exiting."
     exit 0
 fi
@@ -22,7 +23,7 @@ git config user.name "Travis CI"
 git config user.email "ci@travis.tld"
 
 git add -A
-git commit -m "Update documentation (Travis CI build ${TRAVIS_BUILD_NUMBER})"
+git commit -m "Update documentation (Travis CI build ${TRAVIS_BUILD_NUMBER})" --allow-empty
 git push origin master
 
 popd
