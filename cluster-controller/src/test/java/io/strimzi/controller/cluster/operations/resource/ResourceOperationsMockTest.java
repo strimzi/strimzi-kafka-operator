@@ -400,7 +400,7 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         Async async = context.async();
         op.waitUntilReady(NAMESPACE, RESOURCE_NAME, 20, 5_000).setHandler(ar -> {
             assertTrue(ar.succeeded());
-            verify(mockResource, times(unreadyCount + 1)).get();
+            verify(mockResource, times(Readiness.isReadinessApplicable(resource) ? unreadyCount + 1 : 1)).get();
 
             if (Readiness.isReadinessApplicable(resource)) {
                 verify(mockResource, times(unreadyCount + 1)).isReady();
