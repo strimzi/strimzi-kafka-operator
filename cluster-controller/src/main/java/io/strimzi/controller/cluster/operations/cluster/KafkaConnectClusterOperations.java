@@ -176,13 +176,8 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
     }
 
     @Override
-    public void reconcileAll(String namespace, Map<String, String> labels) {
-        reconcileAll(CLUSTER_TYPE_CONNECT, namespace, labels);
-    }
-
-    @Override
-    public void reconcile(String namespace, String name) {
-        reconcile(CLUSTER_TYPE_CONNECT, namespace, name);
+    public String clusterType() {
+        return CLUSTER_TYPE_CONNECT;
     }
 
     @Override

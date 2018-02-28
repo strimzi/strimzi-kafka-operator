@@ -206,6 +206,8 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
         return resource.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL);
     }
 
+    protected abstract String clusterType();
+
     /**
      * Reconcile cluster resources in the given namespace having the given cluster name.
      * Reconciliation works by getting the cluster ConfigMap in the given namespace with the given name and
@@ -218,19 +220,8 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
      * @param namespace The namespace
      * @param name The name of the cluster
      */
-    public abstract void reconcile(String namespace, String name);
-
-    /**
-     * This is provided for subclasses to help them implement the public {@link #reconcile(String, String)}.
-     * It works on a single cluster providing the corresponding name and type in a namespace.
-     * It obtains the corresponding ConfigMap (the desired state of the cluster)
-     * and a list of other resources (of type {@link R}) (the actual state of the cluster) and determines
-     * if the cluster needs to be created, updated or deleted
-     * @param clusterType The {@code strimzi.io/type} of the ConfigMaps and other resources
-     * @param namespace The namespace
-     * @param name The name of the cluster
-     */
-    protected void reconcile(String clusterType, String namespace, String name) {
+    public final void reconcile(String namespace, String name) {
+        String clusterType = clusterType();
 
         final String lockName = getLockName(clusterType, namespace, name);
         vertx.sharedData().getLockWithTimeout(lockName, LOCK_TIMEOUT, res -> {
@@ -309,20 +300,8 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
      * @param namespace The namespace
      * @param labels The labels
      */
-    public abstract void reconcileAll(String namespace, Map<String, String> labels);
-
-    /**
-     * This is provided for subclasses to help them implement the public {@link #reconcileAll(String, Map)}.
-     * It obtains a list of ConfigMaps (the desired state of the cluster)
-     * and a list of other resources (of type {@link R}) (the actual state of the cluster) and then calls,
-     * for each obtained cluster name, the corresponding {@link #reconcile(String, String, String)}
-     *
-     * @param clusterType The type of the cluster
-     * @param namespace The namespace
-     * @param labels The labels
-     */
-    protected void reconcileAll(String clusterType, String namespace, Map<String, String> labels) {
-
+    public final void reconcileAll(String namespace, Map<String, String> labels) {
+        String clusterType = clusterType();
         Map<String, String> newLabels = new HashMap<>(labels);
         newLabels.put(ClusterController.STRIMZI_TYPE_LABEL, clusterType);
 
@@ -337,7 +316,7 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
         cmsNames.addAll(resourceNames);
 
         for (String name: cmsNames) {
-            reconcile(clusterType, namespace, name);
+            reconcile(namespace, name);
         }
     }
 

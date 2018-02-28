@@ -613,13 +613,8 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
     }
 
     @Override
-    public void reconcileAll(String namespace, Map<String, String> labels) {
-        reconcileAll(CLUSTER_TYPE_KAFKA, namespace, labels);
-    }
-
-    @Override
-    public void reconcile(String namespace, String name) {
-        reconcile(CLUSTER_TYPE_KAFKA, namespace, name);
+    public String clusterType() {
+        return CLUSTER_TYPE_KAFKA;
     }
 
     @Override
