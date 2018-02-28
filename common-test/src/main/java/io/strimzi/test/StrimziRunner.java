@@ -265,12 +265,12 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
     private Statement withClusterController(Annotatable element,
                                     Statement statement) {
         Statement last = statement;
-        for (ClusterController resources : annotations(element, ClusterController.class)) {
+        for (ClusterController cc : annotations(element, ClusterController.class)) {
             last = new Bracket(last) {
                 @Override
                 protected void before() {
                     // Here we record the state of the cluster
-                    LOGGER.info("Creating cluster controller before test per @ClusterController annotation on {}", name(element));
+                    LOGGER.info("Creating cluster controller {} before test per @ClusterController annotation on {}", cc, name(element));
                     kubeClient().clientWithAdmin().create(CC_INSTALL_PATH);
                     kubeClient().waitForDeployment(CC_DEPLOYMENT_NAME);
                 }
@@ -278,7 +278,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
 
                 @Override
                 protected void after() {
-                    LOGGER.info("Deleting cluster controller after test per @ClusterController annotation on {}", name(element));
+                    LOGGER.info("Deleting cluster controller {} after test per @ClusterController annotation on {}", cc, name(element));
                     // Here we verify the cluster is in the same state
                     kubeClient().clientWithAdmin().delete(CC_INSTALL_PATH);
                     kubeClient().waitForResourceDeletion("deployment", CC_DEPLOYMENT_NAME);
