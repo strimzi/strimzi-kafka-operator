@@ -37,7 +37,6 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(StrimziRunner.class)
 @Namespace(KafkaClusterTest.NAMESPACE)
-//@Resources(value = "../examples/install/cluster-controller", asAdmin = true)
 @ClusterController
 public class KafkaClusterTest {
 
@@ -73,7 +72,7 @@ public class KafkaClusterTest {
     }
 
     @Test
-    @Resources(value = "../examples/openshift/cluster-controller", asAdmin = true)
+    @Resources(value = "../examples/templates/cluster-controller", asAdmin = true)
     @OpenShiftOnly
     public void testDeployKafkaClusterViaTemplate() {
         Oc oc = (Oc) this.kubeClient;

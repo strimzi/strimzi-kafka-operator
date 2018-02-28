@@ -49,6 +49,9 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
      * in the state it was in when the test failed.
      */
     public static final String NOTEARDOWN = "NOTEARDOWN";
+    public static final String KAFKA_EPHEMERAL_CM = "../examples/configmaps/cluster-controller/kafka-ephemeral.yaml";
+    public static final String CC_INSTALL_PATH = "../examples/install/cluster-controller";
+    public static final String CC_DEPLOYMENT_NAME = "strimzi-cluster-controller";
 
     private KubeClusterResource clusterResource;
 
@@ -171,7 +174,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
             YAMLMapper mapper = new YAMLMapper();
             String yaml;
             try {
-                JsonNode node = mapper.readTree(new File("../examples/resources/cluster-controller/kafka-ephemeral.yaml"));
+                JsonNode node = mapper.readTree(new File(KAFKA_EPHEMERAL_CM));
                 JsonNode metadata = node.get("metadata");
                 ((ObjectNode) metadata).put("name", cluster.name());
                 JsonNode data = node.get("data");
@@ -182,14 +185,15 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 throw new RuntimeException(e);
             }
             last = new Bracket(last) {
-
+                private final String kafkaStatefulSetName = cluster.name() + "-kafka";
+                private final String zkStatefulSetName = cluster.name() + "-zookeeper";
                 @Override
                 protected void before() {
                     LOGGER.info("Creating {} kafka cluster {}", name(element), cluster.name());
                     // create cm
                     kubeClient().createContent(yaml);
                     // wait for ss
-                    kubeClient().waitForStatefulSet(cluster.name() + "-kafka", cluster.kafkaNodes());
+                    kubeClient().waitForStatefulSet(kafkaStatefulSetName, cluster.kafkaNodes());
                 }
 
                 private KubeClient kubeClient() {
@@ -202,7 +206,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     // delete cm
                     kubeClient().deleteContent(yaml);
                     // wait for ss to go
-                    kubeClient().waitForResourceDeletion("statefulset", cluster.name() + "-zookeeper");
+                    kubeClient().waitForResourceDeletion("statefulset", zkStatefulSetName);
                 }
             };
         }
@@ -218,8 +222,8 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 protected void before() {
                     // Here we record the state of the cluster
                     LOGGER.info("Creating {} cluster controller {}", name(element), resources);
-                    kubeClient().create("../examples/install/cluster-controller");
-                    kubeClient().waitForDeployment("strimzi-cluster-controller");
+                    kubeClient().create(CC_INSTALL_PATH);
+                    kubeClient().waitForDeployment(CC_DEPLOYMENT_NAME);
                 }
 
                 private KubeClient kubeClient() {
@@ -230,8 +234,8 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 protected void after() {
                     LOGGER.info("Deleting {} cluster controller", name(element));
                     // Here we verify the cluster is in the same state
-                    kubeClient().delete("../examples/install/cluster-controller");
-                    kubeClient().waitForResourceDeletion("deployment", "strimzi-cluster-controller");
+                    kubeClient().delete(CC_INSTALL_PATH);
+                    kubeClient().waitForResourceDeletion("deployment", CC_DEPLOYMENT_NAME);
                 }
             };
         }

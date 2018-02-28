@@ -33,8 +33,8 @@ import static org.junit.Assert.assertNotNull;
 @RunWith(StrimziRunner.class)
 @OpenShiftOnly
 @Namespace(OpenShiftTemplatesTest.NAMESPACE)
-@Resources(value = "../examples/openshift/cluster-controller", asAdmin = true)
-@Resources(value = "../examples/openshift/topic-controller", asAdmin = true)
+@Resources(value = "../examples/templates/cluster-controller", asAdmin = true)
+@Resources(value = "../examples/templates/topic-controller", asAdmin = true)
 public class OpenShiftTemplatesTest {
 
     public static final String NAMESPACE = "template-test";
