@@ -176,14 +176,15 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
     }
 
     /**
-     * Waits until resource is in the Ready state
+     * Returns a future that completes when the resource identified by the given {@code namespace} and {@code name}
+     * is ready.
      *
      * @param namespace The namespace.
      * @param name The resource name.
      * @param pollIntervalMs The poll interval in milliseconds.
      * @param timeoutMs The timeout, in milliseconds.
      */
-    public Future<Void> waitUntilReady(String namespace, String name, long pollIntervalMs, long timeoutMs) {
+    public Future<Void> readiness(String namespace, String name, long pollIntervalMs, long timeoutMs) {
         Future<Void> fut = Future.future();
         log.info("Waiting for {} resource {} in namespace {} to get ready", resourceKind, name, namespace);
         long deadline = System.currentTimeMillis() + timeoutMs;

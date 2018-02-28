@@ -175,9 +175,9 @@ public class KafkaClusterOperationsTest {
         ArgumentCaptor<Deployment> depCaptor = ArgumentCaptor.forClass(Deployment.class);
         when(mockDepOps.create(depCaptor.capture())).thenReturn(Future.succeededFuture());
 
-        when(mockSsOps.waitUntilReady(any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockPodOps.waitUntilReady(any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockEndpointOps.waitUntilReady(any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockSsOps.readiness(any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockPodOps.readiness(any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockEndpointOps.readiness(any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         KafkaCluster kafkaCluster = KafkaCluster.fromConfigMap(clusterCm);
         ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromConfigMap(clusterCm);
@@ -225,10 +225,10 @@ public class KafkaClusterOperationsTest {
                     capturedSs.stream().map(ss -> ss.getMetadata().getName()).collect(Collectors.toSet()));
 
             // Verify that we wait for readiness
-            verify(mockEndpointOps, times(4)).waitUntilReady(any(), any(), anyLong(), anyLong());
-            verify(mockSsOps, times(2)).waitUntilReady(any(), any(), anyLong(), anyLong());
+            verify(mockEndpointOps, times(4)).readiness(any(), any(), anyLong(), anyLong());
+            verify(mockSsOps, times(2)).readiness(any(), any(), anyLong(), anyLong());
             verify(mockPodOps, times(zookeeperCluster.getReplicas() + kafkaCluster.getReplicas()))
-                    .waitUntilReady(any(), any(), anyLong(), anyLong());
+                    .readiness(any(), any(), anyLong(), anyLong());
 
             // if topic controller configuration was defined in the CM
             if (topicController != null) {
