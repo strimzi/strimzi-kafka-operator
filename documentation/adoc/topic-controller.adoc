@@ -4,6 +4,8 @@ The Topic Controller is in charge of managing topics in a Kafka cluster. The Top
 running inside a Kubernetes/OpenShift cluster.
 It can be deployed through the Cluster Controller or "manually" through provided YAML files.
 
+image::topic_controller.png[Topic Controller]
+
 The role of the topic controller is to keep a set of Kubernetes ConfigMaps describing Kafka topics in-sync with
 corresponding Kafka topics.
 
