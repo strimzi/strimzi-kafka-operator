@@ -4,7 +4,7 @@ Version master
 :toc: preamble
 :toclevels: 3
 :toc-title: Content
-:imagesdir: ./img
+:imagesdir: ./images
 :xrefstyle: full
 
 Strimzi provides a way to run an Apache Kafka cluster on Kubernetes or OpenShift in various deployment configurations.
