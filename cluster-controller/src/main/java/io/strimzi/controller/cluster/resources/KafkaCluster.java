@@ -5,6 +5,7 @@
 package io.strimzi.controller.cluster.resources;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
@@ -156,11 +157,12 @@ public class KafkaCluster extends AbstractCluster {
 
         kafka.setLabels(ss.getMetadata().getLabels());
         kafka.setReplicas(ss.getSpec().getReplicas());
-        kafka.setImage(ss.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
-        kafka.setHealthCheckInitialDelay(ss.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds());
-        kafka.setHealthCheckTimeout(ss.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds());
+        Container container = ss.getSpec().getTemplate().getSpec().getContainers().get(0);
+        kafka.setImage(container.getImage());
+        kafka.setHealthCheckInitialDelay(container.getReadinessProbe().getInitialDelaySeconds());
+        kafka.setHealthCheckTimeout(container.getReadinessProbe().getTimeoutSeconds());
 
-        Map<String, String> vars = ss.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream().collect(
+        Map<String, String> vars = container.getEnv().stream().collect(
                 Collectors.toMap(EnvVar::getName, EnvVar::getValue));
 
         kafka.setZookeeperConnect(vars.getOrDefault(KEY_KAFKA_ZOOKEEPER_CONNECT, ss.getMetadata().getName() + "-zookeeper:2181"));
@@ -220,13 +222,14 @@ public class KafkaCluster extends AbstractCluster {
             rollingUpdate = true;
         }
 
-        if (!image.equals(ss.getSpec().getTemplate().getSpec().getContainers().get(0).getImage())) {
-            log.info("Diff: Expected image {}, actual image {}", image, ss.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
+        Container container = ss.getSpec().getTemplate().getSpec().getContainers().get(0);
+        if (!image.equals(container.getImage())) {
+            log.info("Diff: Expected image {}, actual image {}", image, container.getImage());
             different = true;
             rollingUpdate = true;
         }
 
-        Map<String, String> vars = ss.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream().collect(
+        Map<String, String> vars = container.getEnv().stream().collect(
                 Collectors.toMap(EnvVar::getName, EnvVar::getValue));
 
         if (!zookeeperConnect.equals(vars.getOrDefault(KEY_KAFKA_ZOOKEEPER_CONNECT, DEFAULT_KAFKA_ZOOKEEPER_CONNECT))
@@ -238,8 +241,8 @@ public class KafkaCluster extends AbstractCluster {
             rollingUpdate = true;
         }
 
-        if (healthCheckInitialDelay != ss.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds()
-                || healthCheckTimeout != ss.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds()) {
+        if (healthCheckInitialDelay != container.getReadinessProbe().getInitialDelaySeconds()
+                || healthCheckTimeout != container.getReadinessProbe().getTimeoutSeconds()) {
             log.info("Diff: Kafka healthcheck timing changed");
             different = true;
             rollingUpdate = true;
@@ -427,6 +430,7 @@ public class KafkaCluster extends AbstractCluster {
         return volumeMountList;
     }
 
+    @Override
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(new EnvVarBuilder().withName(KEY_KAFKA_ZOOKEEPER_CONNECT).withValue(zookeeperConnect).build());

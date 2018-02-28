@@ -5,6 +5,7 @@
 package io.strimzi.controller.cluster.resources;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
@@ -216,11 +217,12 @@ public class TopicController extends AbstractCluster {
 
             topicController.setLabels(dep.getMetadata().getLabels());
             topicController.setReplicas(dep.getSpec().getReplicas());
-            topicController.setImage(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
-            topicController.setHealthCheckInitialDelay(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds());
-            topicController.setHealthCheckTimeout(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds());
+            Container container = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
+            topicController.setImage(container.getImage());
+            topicController.setHealthCheckInitialDelay(container.getReadinessProbe().getInitialDelaySeconds());
+            topicController.setHealthCheckTimeout(container.getReadinessProbe().getTimeoutSeconds());
 
-            Map<String, String> vars = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream().collect(
+            Map<String, String> vars = container.getEnv().stream().collect(
                     Collectors.toMap(EnvVar::getName, EnvVar::getValue));
 
             topicController.setKafkaBootstrapServers(vars.getOrDefault(KEY_KAFKA_BOOTSTRAP_SERVERS, defaultBootstrapServers(cluster)));
@@ -246,12 +248,13 @@ public class TopicController extends AbstractCluster {
 
             boolean isDifferent = false;
 
-            if (!image.equals(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage())) {
-                log.info("Diff: Expected image {}, actual image {}", image, dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
+            Container container = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
+            if (!image.equals(container.getImage())) {
+                log.info("Diff: Expected image {}, actual image {}", image, container.getImage());
                 isDifferent = true;
             }
 
-            Map<String, String> vars = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream().collect(
+            Map<String, String> vars = container.getEnv().stream().collect(
                     Collectors.toMap(EnvVar::getName, EnvVar::getValue));
 
             if (!kafkaBootstrapServers.equals(vars.getOrDefault(KEY_KAFKA_BOOTSTRAP_SERVERS, defaultBootstrapServers(cluster)))) {

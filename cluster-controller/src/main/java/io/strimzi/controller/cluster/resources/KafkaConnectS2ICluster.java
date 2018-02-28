@@ -426,6 +426,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
         return baseName + "-source";
     }
 
+    @Override
     protected void setImage(String image) {
         this.sourceImageBaseName = image.substring(0, image.lastIndexOf(":"));
         this.sourceImageTag = image.substring(image.lastIndexOf(":") + 1);
