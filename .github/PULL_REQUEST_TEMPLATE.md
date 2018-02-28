@@ -4,6 +4,7 @@ _Select the type of your PR_
 
 - Bugfix
 - Enhancement / new feature
+- Refactoring
 
 ### Description
 
@@ -15,7 +16,6 @@ _Please go through this checklist and make sure all applicable tasks have been d
 
 - [ ] Write tests
 - [ ] Make sure all tests pass
-- [ ] Check coding style
 - [ ] Update documentation
 - [ ] Check RBAC rights for Kubernetes / OpenShift roles
 - [ ] Try your changes from Pod inside your Kubernetes and OpenShift cluster, not just locally
