@@ -9,6 +9,7 @@ ssh-add github_deploy_key
 
 git clone git@github.com:strimzi/strimzi.github.io.git /tmp/website
 cp documentation/htmlnoheader/master.html /tmp/website/docs/master/master.html
+cp -r documentation/adoc/images /tmp/website/docs/master/images
 
 pushd /tmp/website
 
@@ -20,7 +21,7 @@ fi
 git config user.name "Travis CI"
 git config user.email "ci@travis.tld"
 
-git add docs/master/master.html
+git add -A
 git commit -m "Update documentation (Travis CI build ${TRAVIS_BUILD_NUMBER})"
 git push origin master
 
