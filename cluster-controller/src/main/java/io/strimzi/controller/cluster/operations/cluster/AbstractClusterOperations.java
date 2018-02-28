@@ -18,7 +18,6 @@ import io.vertx.core.shareddata.Lock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -276,16 +275,18 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
                 try {
                     log.info("Reconciling {} clusters ...", clusterDescription);
 
+                    // get ConfigMap and related resources for the specific cluster
                     ConfigMap cm = configMapOperations.get(namespace, name);
+
                     Map<String, String> labels = new HashMap<>();
                     labels.put(ClusterController.STRIMZI_CLUSTER_LABEL, name);
                     List<R> resources = getResources(namespace, labels);
 
                     if (cm != null) {
                         if (resources.size() > 0) {
-                            update(namespace, Collections.singletonList(cm));
+                            update(namespace, cm);
                         } else {
-                            add(namespace, Collections.singletonList(cm));
+                            create(namespace, cm);
                         }
                     } else if (resources.size() > 0) {
                         delete(namespace, resources);
@@ -332,13 +333,13 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
         Map<String, String> newLabels = new HashMap<>(labels);
         newLabels.put(ClusterController.STRIMZI_TYPE_LABEL, clusterType);
 
-        // get ConfigMap for the corresponding cluster name
+        // get ConfigMap for the corresponding cluster type
         List<ConfigMap> cms = configMapOperations.list(namespace, newLabels);
         Set<String> cmsNames = cms.stream().map(cm -> cm.getMetadata().getName()).collect(Collectors.toSet());
 
         // get StatefulSets for the corresponding cluster name (they are part of)
         List<R> resources = getResources(namespace, newLabels);
-        Set<String> resourceNames = resources.stream().map(cm -> cm.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL)).collect(Collectors.toSet());
+        Set<String> resourceNames = resources.stream().map(res -> res.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL)).collect(Collectors.toSet());
 
         cmsNames.addAll(resourceNames);
 
@@ -356,22 +357,18 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
      */
     protected abstract List<R> getResources(String namespace, Map<String, String> kafkaLabels);
 
-    protected final void add(String namespace, List<ConfigMap> add)   {
-        for (ConfigMap cm : add) {
-            log.info("Reconciliation: {} cluster {} should be added", clusterDescription, cm.getMetadata().getName());
-            create(namespace, name(cm));
-        }
+    protected final void create(String namespace, ConfigMap cm)   {
+        log.info("Reconciliation: {} cluster {} should be created", clusterDescription, cm.getMetadata().getName());
+        create(namespace, name(cm));
     }
 
-    protected final void update(String namespace, List<ConfigMap> update)   {
-        for (ConfigMap cm : update) {
-            log.info("Reconciliation: {} cluster {} should be checked for updates", clusterDescription, cm.getMetadata().getName());
-            update(namespace, name(cm));
-        }
+    protected final void update(String namespace, ConfigMap cm)   {
+        log.info("Reconciliation: {} cluster {} should be checked for updates", clusterDescription, cm.getMetadata().getName());
+        update(namespace, name(cm));
     }
 
-    protected final void delete(String namespace, List<R> delete)   {
-        for (R resource : delete) {
+    protected final void delete(String namespace, List<R> resources)   {
+        for (R resource : resources) {
             log.info("Reconciliation: {} cluster {} should be deleted", clusterDescription, resource.getMetadata().getName());
             delete(namespace, nameFromLabels(resource));
         }
