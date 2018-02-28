@@ -277,7 +277,7 @@ In that case you can still leverage on the Topic Controller features of managing
 To deploy the Topic Controller on Kubernetes (not through the Cluster Controller), the following command should be executed:
 
 [source]
-kubectl create -f examples/configmaps/topic-controller.yaml
+kubectl create -f examples/install/topic-controller.yaml
 
 To verify whether the Topic Controller has been deployed successfully, the Kubernetes Dashboard or the following
 command can be used:
@@ -290,7 +290,7 @@ kubectl describe all
 To deploy the Topic Controller on OpenShift (not through the Cluster Controller), the following command should be executed:
 
 [source]
-oc create -f examples/openshift/topic-controller-with-template.yaml
+oc create -f examples/install/topic-controller.yaml
 
 To verify whether the Topic Controller has been deployed successfully, the OpenShift console or the following command
 can be used:
