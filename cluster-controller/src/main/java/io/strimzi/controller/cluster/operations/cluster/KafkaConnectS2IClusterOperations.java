@@ -64,7 +64,7 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
     @Override
     public void create(String namespace, String name, Handler<AsyncResult<Void>> handler) {
         if (isOpenShift) {
-            execute(CLUSTER_TYPE_CONNECT_S2I, OP_CREATE, namespace, name, create, handler);
+            execute(namespace, name, create, handler);
         } else {
             handler.handle(Future.failedFuture("S2I only available on OpenShift"));
         }
@@ -75,6 +75,16 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
         @Override
         public ClusterOperation<KafkaConnectS2ICluster> getCluster(String namespace, String name) {
             return new ClusterOperation<>(KafkaConnectS2ICluster.fromConfigMap(configMapOperations.get(namespace, name)), null);
+        }
+
+        @Override
+        public String operationType() {
+            return OP_CREATE;
+        }
+
+        @Override
+        public String clusterType() {
+            return CLUSTER_TYPE_CONNECT_S2I;
         }
 
         @Override
@@ -94,13 +104,23 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
     @Override
     protected void delete(String namespace, String name, Handler<AsyncResult<Void>> handler) {
         if (isOpenShift) {
-            execute(CLUSTER_TYPE_CONNECT_S2I, OP_DELETE, namespace, name, delete, handler);
+            execute(namespace, name, delete, handler);
         } else {
             handler.handle(Future.failedFuture("S2I only available on OpenShift"));
         }
     }
 
     private final CompositeOperation<KafkaConnectS2ICluster> delete = new CompositeOperation<KafkaConnectS2ICluster>() {
+
+        @Override
+        public String operationType() {
+            return OP_DELETE;
+        }
+
+        @Override
+        public String clusterType() {
+            return CLUSTER_TYPE_CONNECT_S2I;
+        }
 
         @Override
         public Future<?> composite(String namespace, ClusterOperation<KafkaConnectS2ICluster> clusterOp) {
@@ -126,13 +146,23 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
     @Override
     public void update(String namespace, String name, Handler<AsyncResult<Void>> handler) {
         if (isOpenShift) {
-            execute(CLUSTER_TYPE_CONNECT_S2I, OP_UPDATE, namespace, name, update, handler);
+            execute(namespace, name, update, handler);
         } else {
             handler.handle(Future.failedFuture("S2I only available on OpenShift"));
         }
     }
 
     private final CompositeOperation<KafkaConnectS2ICluster> update = new CompositeOperation<KafkaConnectS2ICluster>() {
+        @Override
+        public String operationType() {
+            return CLUSTER_TYPE_CONNECT_S2I;
+        }
+
+        @Override
+        public String clusterType() {
+            return OP_UPDATE;
+        }
+
         @Override
         public Future<?> composite(String namespace, ClusterOperation<KafkaConnectS2ICluster> operation) {
             KafkaConnectS2ICluster connect = operation.cluster();
@@ -236,13 +266,8 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
     };
 
     @Override
-    public void reconcileAll(String namespace, Map<String, String> labels) {
-        reconcileAll(CLUSTER_TYPE_CONNECT_S2I, namespace, labels);
-    }
-
-    @Override
-    public void reconcile(String namespace, String name) {
-        reconcile(CLUSTER_TYPE_CONNECT_S2I, namespace, name);
+    public String clusterType() {
+        return CLUSTER_TYPE_CONNECT_S2I;
     }
 
     @Override
