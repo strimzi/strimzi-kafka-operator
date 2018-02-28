@@ -207,6 +207,9 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
         return resource.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL);
     }
 
+    /**
+     * The type of cluster, used as a component of the lock.
+     */
     protected abstract String clusterType();
 
     /**
