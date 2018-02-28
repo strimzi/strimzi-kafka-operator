@@ -56,7 +56,7 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
      * @param isOpenShift True iff running on OpenShift
      * @param clusterDescription A description of the cluster, for logging. This is a high level description and different from
      *                           the {@code clusterType} passed to {@link #getLockName(String, String, String)}
-     *                           and {@link #execute(String, String, String, String, CompositeOperation, Handler)}
+     *                           and {@link #execute(String, String, CompositeOperation, Handler)}
      */
     protected AbstractClusterOperations(Vertx vertx, boolean isOpenShift, String clusterDescription,
                                         ConfigMapOperations configMapOperations) {
