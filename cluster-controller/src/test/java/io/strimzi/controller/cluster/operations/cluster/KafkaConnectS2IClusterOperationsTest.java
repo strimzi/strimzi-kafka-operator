@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.openshift.api.model.BuildConfig;
 import io.fabric8.openshift.api.model.DeploymentConfig;
 import io.fabric8.openshift.api.model.ImageStream;
+import io.strimzi.controller.cluster.ClusterController;
 import io.strimzi.controller.cluster.ResourceUtils;
 import io.strimzi.controller.cluster.operations.resource.BuildConfigOperations;
 import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
@@ -18,6 +19,7 @@ import io.strimzi.controller.cluster.operations.resource.ServiceOperations;
 import io.strimzi.controller.cluster.resources.KafkaConnectCluster;
 import io.strimzi.controller.cluster.resources.KafkaConnectS2ICluster;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -28,8 +30,17 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.singleton;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -616,6 +627,81 @@ public class KafkaConnectS2IClusterOperationsTest {
 
             async.complete();
         });
+    }
+
+    @Test
+    public void testReconcile(TestContext context) {
+        ConfigMapOperations mockCmOps = mock(ConfigMapOperations.class);
+        ServiceOperations mockServiceOps = mock(ServiceOperations.class);
+        DeploymentConfigOperations mockDcOps = mock(DeploymentConfigOperations.class);
+        BuildConfigOperations mockBcOps = mock(BuildConfigOperations.class);
+        ImageStreamOperations mockIsOps = mock(ImageStreamOperations.class);
+
+
+        String clusterCmNamespace = "test";
+
+        ConfigMap foo = ResourceUtils.createEmptyKafkaConnectClusterConfigMap(clusterCmNamespace, "foo");
+        ConfigMap bar = ResourceUtils.createEmptyKafkaConnectClusterConfigMap(clusterCmNamespace, "bar");
+        ConfigMap baz = ResourceUtils.createEmptyKafkaConnectClusterConfigMap(clusterCmNamespace, "baz");
+        when(mockCmOps.list(eq(clusterCmNamespace), any())).thenReturn(asList(foo, bar));
+        // when requested ConfigMap for a specific Kafka Connect S2I cluster
+        when(mockCmOps.get(eq(clusterCmNamespace), eq("foo"))).thenReturn(foo);
+        when(mockCmOps.get(eq(clusterCmNamespace), eq("bar"))).thenReturn(bar);
+
+        // providing the list of ALL DeploymentConfigs for all the Kafka Connect S2I clusters
+        Map<String, String> newLabels = new HashMap<>();
+        newLabels.put(ClusterController.STRIMZI_TYPE_LABEL, "kafka-connect-s2i");
+        when(mockDcOps.list(eq(clusterCmNamespace), eq(newLabels))).thenReturn(
+                asList(KafkaConnectS2ICluster.fromConfigMap(bar).generateDeploymentConfig(),
+                        KafkaConnectS2ICluster.fromConfigMap(baz).generateDeploymentConfig()));
+
+        // providing the list DeploymentConfigs for already "existing" Kafka Connect S2I clusters
+        Map<String, String> barLabels = new HashMap<>();
+        barLabels.put(ClusterController.STRIMZI_CLUSTER_LABEL, "bar");
+        when(mockDcOps.list(eq(clusterCmNamespace), eq(barLabels))).thenReturn(
+                asList(KafkaConnectS2ICluster.fromConfigMap(bar).generateDeploymentConfig())
+        );
+
+        Map<String, String> bazLabels = new HashMap<>();
+        bazLabels.put(ClusterController.STRIMZI_CLUSTER_LABEL, "baz");
+        when(mockDcOps.list(eq(clusterCmNamespace), eq(bazLabels))).thenReturn(
+                asList(KafkaConnectS2ICluster.fromConfigMap(baz).generateDeploymentConfig())
+        );
+
+
+        Set<String> created = new HashSet<>();
+        Set<String> updated = new HashSet<>();
+        Set<String> deleted = new HashSet<>();
+
+        Async async = context.async(3);
+        KafkaConnectS2IClusterOperations ops = new KafkaConnectS2IClusterOperations(vertx, true,
+                mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps) {
+
+            @Override
+            public void create(String namespace, String name, Handler h) {
+                created.add(name);
+                async.countDown();
+            }
+            @Override
+            public void update(String namespace, String name, Handler h) {
+                updated.add(name);
+                async.countDown();
+            }
+            @Override
+            public void delete(String namespace, String name, Handler h) {
+                deleted.add(name);
+                async.countDown();
+            }
+        };
+
+        // Now try to reconcile all the Kafka Connect S2I clusters
+        ops.reconcileAll(clusterCmNamespace, Collections.emptyMap());
+
+        async.await();
+
+        context.assertEquals(singleton("foo"), created);
+        context.assertEquals(singleton("bar"), updated);
+        context.assertEquals(singleton("baz"), deleted);
     }
 
 }

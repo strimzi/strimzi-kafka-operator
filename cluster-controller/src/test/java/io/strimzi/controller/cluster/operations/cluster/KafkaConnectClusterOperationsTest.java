@@ -473,7 +473,7 @@ public class KafkaConnectClusterOperationsTest {
                 asList(KafkaConnectCluster.fromConfigMap(bar).generateDeployment(),
                         KafkaConnectCluster.fromConfigMap(baz).generateDeployment()));
 
-        // providing the list StatefulSets for already "existing" Kafka clusters
+        // providing the list Deployments for already "existing" Kafka Connect clusters
         Map<String, String> barLabels = new HashMap<>();
         barLabels.put(ClusterController.STRIMZI_CLUSTER_LABEL, "bar");
         when(mockDcOps.list(eq(clusterCmNamespace), eq(barLabels))).thenReturn(
