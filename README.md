@@ -22,8 +22,8 @@ If you encounter any issues while using Strimzi, you can get help using:
 ## Contributing
 
 You can contribute by:
-- Raising issues
-- Fixing issues and open Pull Requests
+- Raising any issues you find using Strimzi
+- Fixing issues by opening Pull Requests
 - Talking about Strimzi
 
 All bugs, tasks or enhancements are tracked as [GitHub issues](https://github.com/strimzi/strimzi/issues). Issues which 
