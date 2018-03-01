@@ -7,10 +7,15 @@ package io.strimzi.test.k8s;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
+import java.util.Locale;
+
 /**
  * Abstraction for a Kubernetes cluster, for example {@code oc cluster up} or {@code minikube}.
  */
 public interface KubeCluster {
+
+    String ENV_VAR_TEST_CLUSTER = "TEST_CLUSTER";
 
     /** Return true iff this kind of cluster installed on the local machine. */
     boolean isAvailable();
@@ -27,32 +32,52 @@ public interface KubeCluster {
     /** Return a default client for this kind of cluster. */
     KubeClient defaultClient();
 
+    /**
+     * Returns the cluster named by the TEST_CLUSTER environment variable, if set, otherwise finds a cluster that's
+     * both installed and running.
+     * @return The cluster.
+     * @throws RuntimeException If no running cluster was found.
+     */
     static KubeCluster bootstrap() {
         Logger logger = LoggerFactory.getLogger(KubeCluster.class);
-        final boolean shouldStartCluster = System.getenv("CI") == null;
+
+        KubeCluster[] clusters = null;
+        String clusterName = System.getenv(ENV_VAR_TEST_CLUSTER);
+        if (clusterName != null) {
+            switch (clusterName.toLowerCase(Locale.ENGLISH)) {
+                case "oc":
+                    clusters = new KubeCluster[]{new OpenShift()};
+                    break;
+                case "minikube":
+                    clusters = new KubeCluster[]{Minikube.minikube()};
+                    break;
+                case "minishift":
+                    clusters = new KubeCluster[]{Minikube.minishift()};
+                    break;
+                default:
+                    throw new IllegalArgumentException(ENV_VAR_TEST_CLUSTER+"=" + clusterName + " is not a supported cluster type");
+            }
+        }
+        if (clusters == null) {
+            clusters = new KubeCluster[]{new OpenShift(), Minikube.minikube(), Minikube.minishift()};
+        }
         KubeCluster cluster = null;
-        for (KubeCluster kc : new KubeCluster[]{new OpenShift(), Minikube.minikube(), Minikube.minishift()}) {
+        for (KubeCluster kc : clusters) {
             if (kc.isAvailable()) {
                 logger.debug("Cluster {} is installed", kc);
-                if (shouldStartCluster) {
-                    logger.debug("Using cluster {}", kc);
+                if (kc.isClusterUp()) {
+                    logger.debug("Cluster {} is running", kc);
                     cluster = kc;
                     break;
                 } else {
-                    if (kc.isClusterUp()) {
-                        logger.debug("Cluster {} is running", kc);
-                        cluster = kc;
-                        break;
-                    } else {
-                        logger.debug("Cluster {} is not running", kc);
-                    }
+                    logger.debug("Cluster {} is not running", kc);
                 }
             } else {
                 logger.debug("Cluster {} is not installed", kc);
             }
         }
         if (cluster == null) {
-            throw new RuntimeException("Unable to find a cluster");
+            throw new RuntimeException("Unable to find a cluster; tried " + Arrays.toString(clusters));
         }
         return cluster;
     }

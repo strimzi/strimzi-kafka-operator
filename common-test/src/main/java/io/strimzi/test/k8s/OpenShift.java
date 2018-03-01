@@ -40,4 +40,8 @@ public class OpenShift implements KubeCluster {
     public KubeClient defaultClient() {
         return new Oc();
     }
+
+    public String toString() {
+        return OC;
+    }
 }

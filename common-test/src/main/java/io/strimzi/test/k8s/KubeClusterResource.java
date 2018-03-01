@@ -19,24 +19,18 @@ import org.slf4j.LoggerFactory;
  *     public static KubeClusterResource testCluster;
  * </code></pre>
  *
- * If the {@code CI} environment variable is set, we assume a cluster has already been setup by CI
- *
  * Otherwise:
  * <ol>
- * <li>we search for binaries oc, minikube, minishift on the $PATH, using the first one found</li>
- * <li>we start that cluster (e.g. {code oc cluster up})</li>
+ * <li>we search for binaries oc, minikube, minishift on the $PATH, using the first one that's both on the $PATH and running</li>
  * </ol>
  *
  * We then setup {@link Role @Role}s and {@link RoleBinding @RoleBinding}s.
  */
 public class KubeClusterResource extends ExternalResource {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(KubeClusterResource.class);
-    private final boolean shouldStartCluster = System.getenv("CI") == null;
     private final KubeCluster cluster;
     private final KubeClient client;
     private final Thread clusterHook;
-    private boolean startedCluster = false;
     private Class<?> testClass;
 
     public KubeClusterResource() {
@@ -63,19 +57,6 @@ public class KubeClusterResource extends ExternalResource {
     @Override
     protected void before() {
         Runtime.getRuntime().addShutdownHook(clusterHook);
-        if (shouldStartCluster) {
-            if (cluster.isClusterUp()) {
-                throw new RuntimeException("Cluster " + cluster + " is already up");
-            }
-            LOGGER.info("Starting cluster {}", cluster);
-            // It can happen that if the VM exits abnormally the cluster remains up, and further tests don't work because
-            // it appears there are two brokers with id 1, so use a shutdown hook to kill the cluster.
-            startedCluster = true;
-            cluster.clusterUp();
-        } else if (cluster == null) {
-            throw new KubeClusterException(null, "I'm running in CI mode, so I can't start a cluster, " +
-                    "but no clusters are running");
-        }
 
         Role role = testClass.getAnnotation(Role.class);
         if (role != null) {
@@ -109,15 +90,6 @@ public class KubeClusterResource extends ExternalResource {
             e.printStackTrace();
         }
 
-        if (startedCluster) {
-            startedCluster = false;
-            try {
-                LOGGER.info("Executing oc cluster down");
-                cluster.clusterDown();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
         if (!isHook) {
             Runtime.getRuntime().removeShutdownHook(clusterHook);
         }

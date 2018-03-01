@@ -23,6 +23,8 @@ before_script:
 script:
 - "./.travis/build.sh"
 env:
+  - TEST_CLUSTER=minikube
+  - TEST_CLUSTER=minishift
   global:
   - PULL_REQUEST=${TRAVIS_PULL_REQUEST}
   - COMMIT=${TRAVIS_COMMIT::8}
