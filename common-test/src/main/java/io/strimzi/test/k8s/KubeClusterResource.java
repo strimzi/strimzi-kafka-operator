@@ -7,8 +7,6 @@ package io.strimzi.test.k8s;
 import org.junit.rules.ExternalResource;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A Junit resource for using with {@code @ClassRule} (or {@code Rule},

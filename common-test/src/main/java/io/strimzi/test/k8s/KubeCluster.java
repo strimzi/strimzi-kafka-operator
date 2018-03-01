@@ -55,7 +55,7 @@ public interface KubeCluster {
                     clusters = new KubeCluster[]{Minikube.minishift()};
                     break;
                 default:
-                    throw new IllegalArgumentException(ENV_VAR_TEST_CLUSTER+"=" + clusterName + " is not a supported cluster type");
+                    throw new IllegalArgumentException(ENV_VAR_TEST_CLUSTER + "=" + clusterName + " is not a supported cluster type");
             }
         }
         if (clusters == null) {
