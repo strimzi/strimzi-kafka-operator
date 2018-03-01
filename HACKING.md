@@ -23,7 +23,7 @@ Strimzi project. You can build all Strimzi Docker images by calling
 `make docker_build` from the root of the Strimzi repository. Or you can build 
 an individual Docker image by running `make docker_build` from the 
 subdirectories with their respective Dockerfiles - e.g. `kafka_base`, 
-`kafka_statefulsets` etc.
+`kafka` etc.
 
 The `docker_build` target will always build the images under the 
 `strimzi` organization. This is necessary in order to be able to reuse 
@@ -90,7 +90,21 @@ you can push the images to OpenShift's Docker repo like this:
 
 `make release` target can be used to create a release. Environment variable 
 `RELEASE_VERSION` (default value `latest`) can be used to define the release 
-version. The `release` target will create an archive with the Kubernetes and 
-OpenShift YAML files which can be used for deployment. It will not build the 
-Docker images - they should be built and pushed automatically by Travis CI 
-when the release is tagged in the GitHub repsoitory.
+version. The `release` target will:
+* Update all tags of Docker images to `RELEASE_VERSION`
+* Update documentation version to `RELEASE_VERSION`
+* Set version of the main Maven projects (`topic-controller` and `clutser-controller`) to `RELEASE_VERSION` 
+* Create TAR.GZ and ZIP archives with the Kubernetes and OpenShift YAML files which can be used for deployment
+and documentation in HTML format.
+ 
+The `release` target will not build the Docker images - they should be built and pushed automatically by Travis CI 
+when the release is tagged in the GitHub repository. It also doesn't deploy the Java artifacts anywhere. They are only 
+used to create the Docker images.
+
+The release process should normally look like this:
+1. Create a release branch
+2. Export the desired version into the environment variable `RELEASE_VERSION`
+3. Run `make release`
+4. Commit the changes to the existing files (do not add the TAR.GZ and ZIP archives into Git)
+5. Push the changes to GitHub
+6. Create a GitHub release and tag based on the release branch. Attach the TAR.GZ and ZIP archives to the release
