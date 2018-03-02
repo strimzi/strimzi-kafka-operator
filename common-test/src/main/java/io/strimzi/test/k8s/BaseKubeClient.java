@@ -273,4 +273,9 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
             });
         return (K) this;
     }
+
+    @Override
+    public String toString() {
+        return cmd();
+    }
 }

@@ -9,7 +9,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterResource;
-import io.strimzi.test.k8s.Minikube;
 import io.strimzi.test.k8s.Minishift;
 import io.strimzi.test.k8s.OpenShift;
 import org.junit.ClassRule;
