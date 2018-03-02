@@ -110,10 +110,6 @@ public class KafkaCluster extends AbstractCluster {
         return cluster + KafkaCluster.HEADLESS_NAME_SUFFIX;
     }
 
-    public static String kafkaPodName(String cluster, int podId) {
-        return kafkaClusterName(cluster) + "-" + podId;
-    }
-
     /**
      * Create a Kafka cluster from the related ConfigMap resource
      *

@@ -232,8 +232,11 @@ public abstract class AbstractCluster {
     }
 
     public String getPersistentVolumeClaimName(int podId) {
-
         return volumeName + "-" + name + "-" + podId;
+    }
+
+    public String getPodName(int podId) {
+        return name + "-" + podId;
     }
 
     protected VolumeMount createVolumeMount(String name, String path) {

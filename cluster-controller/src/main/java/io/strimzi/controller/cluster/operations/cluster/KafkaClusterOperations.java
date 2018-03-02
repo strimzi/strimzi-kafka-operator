@@ -139,7 +139,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
                     List<Future> waitPodResult = new ArrayList<>(kafka.getReplicas());
 
                     for (int i = 0; i < kafka.getReplicas(); i++) {
-                        String podName = KafkaCluster.kafkaPodName(kafka.getCluster(), i);
+                        String podName = kafka.getPodName(i);
                         waitPodResult.add(podOperations.readiness(namespace, podName, 1_000, 60_000));
                     }
 
@@ -200,7 +200,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
                     List<Future> waitPodResult = new ArrayList<>(zk.getReplicas());
 
                     for (int i = 0; i < zk.getReplicas(); i++) {
-                        String podName = ZookeeperCluster.zookeeperPodName(zk.getCluster(), i);
+                        String podName = zk.getPodName(i);
                         waitPodResult.add(podOperations.readiness(namespace, podName, 1_000, 60_000));
                     }
 
