@@ -76,10 +76,6 @@ public class ZookeeperCluster extends AbstractCluster {
         return cluster + ZookeeperCluster.HEADLESS_NAME_SUFFIX;
     }
 
-    public static String zookeeperPodName(String cluster, int podId) {
-        return zookeeperClusterName(cluster) + "-" + podId;
-    }
-
     /**
      * Constructor
      *
