@@ -17,15 +17,16 @@ import org.junit.rules.ExternalResource;
  */
 public class KubeClusterResource extends ExternalResource {
 
-    private final KubeCluster cluster;
-    private final KubeClient client;
+    private final boolean bootstrap;
+    private KubeCluster cluster;
+    private KubeClient client;
 
     public KubeClusterResource() {
-        this.cluster = KubeCluster.bootstrap();
-        this.client = KubeClient.findClient(cluster);
+        bootstrap = true;
     }
 
     public KubeClusterResource(KubeCluster cluster, KubeClient client) {
+        bootstrap = false;
         this.cluster = cluster;
         this.client = client;
     }
@@ -41,5 +42,17 @@ public class KubeClusterResource extends ExternalResource {
 
     public KubeCluster cluster() {
         return cluster;
+    }
+
+    @Override
+    protected void before() {
+        if (bootstrap) {
+            if (cluster == null) {
+                this.cluster = KubeCluster.bootstrap();
+            }
+            if (client == null) {
+                this.client = KubeClient.findClient(cluster);
+            }
+        }
     }
 }

@@ -196,9 +196,9 @@ public class KafkaClusterTest {
     }
 
     private void waitForZkMntr(String pod, Pattern pattern) {
-        long timeoutMs = 30_000L;
+        long timeoutMs = 60_000L;
         long pollMs = 1_000L;
-        TestUtils.waitFor("", pollMs, timeoutMs, () -> {
+        TestUtils.waitFor("mntr", pollMs, timeoutMs, () -> {
             try {
                 String output = kubeClient.exec(pod,
                         "/bin/bash", "-c", "echo mntr | nc localhost 2181").out();

@@ -55,7 +55,6 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
 
     private KubeClusterResource clusterResource;
 
-
     public StrimziRunner(Class<?> klass) throws InitializationError {
         super(klass);
     }
@@ -73,7 +72,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         boolean result = annotated.getAnnotation(OpenShiftOnly.class) != null
                 && !(clusterResource().cluster() instanceof OpenShift);
         if (result) {
-            LOGGER.info("{} is @OpenShiftOnly, but the running cluster is not OpenShift: Ignoring {}", name(annotated), test.getDeclaringClass().getSimpleName() + "." + test.getName() + "()");
+            LOGGER.info("{} is @OpenShiftOnly, but the running cluster is not OpenShift: Ignoring {}", name(annotated), name(test));
         }
         return result;
     }
@@ -158,9 +157,11 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         if (a instanceof TestClass) {
             return "class " + ((TestClass) a).getJavaClass().getSimpleName();
         } else if (a instanceof FrameworkMethod) {
-            return "method " + ((FrameworkMethod) a).getName();
+            FrameworkMethod method = (FrameworkMethod) a;
+            return "method " + method.getDeclaringClass().getSimpleName() + "." + method.getName() + "()";
         } else if (a instanceof FrameworkField) {
-            return "field " + ((FrameworkField) a).getName();
+            FrameworkField field = (FrameworkField) a;
+            return "field " + field.getDeclaringClass().getSimpleName() + "." + field.getName();
         } else {
             return a.toString();
         }
