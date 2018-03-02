@@ -49,17 +49,17 @@ public interface KubeCluster {
                     clusters = new KubeCluster[]{new OpenShift()};
                     break;
                 case "minikube":
-                    clusters = new KubeCluster[]{Minikube.minikube()};
+                    clusters = new KubeCluster[]{new Minikube()};
                     break;
                 case "minishift":
-                    clusters = new KubeCluster[]{Minikube.minishift()};
+                    clusters = new KubeCluster[]{new Minishift()};
                     break;
                 default:
                     throw new IllegalArgumentException(ENV_VAR_TEST_CLUSTER + "=" + clusterName + " is not a supported cluster type");
             }
         }
         if (clusters == null) {
-            clusters = new KubeCluster[]{new OpenShift(), Minikube.minikube(), Minikube.minishift()};
+            clusters = new KubeCluster[]{new OpenShift(), new Minikube(), new Minishift()};
         }
         KubeCluster cluster = null;
         for (KubeCluster kc : clusters) {

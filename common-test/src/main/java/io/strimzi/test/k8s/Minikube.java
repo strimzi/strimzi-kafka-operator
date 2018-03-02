@@ -9,33 +9,18 @@ package io.strimzi.test.k8s;
  */
 public class Minikube implements KubeCluster {
 
-    public static final String MINIKUBE = "minikube";
-    public static final String MINISHIFT = "minishift";
-
-    private final String cmd;
-
-    private Minikube(String cmd) {
-        this.cmd = cmd;
-    }
-
-    public static Minikube minikube() {
-        return new Minikube(MINIKUBE);
-    }
-
-    public static Minikube minishift() {
-        return new Minikube(MINISHIFT);
-    }
+    public static final String CMD = "minikube";
 
     @Override
     public boolean isAvailable() {
-        return Exec.isExecutableOnPath(cmd);
+        return Exec.isExecutableOnPath(CMD);
     }
 
     @Override
     public boolean isClusterUp() {
         try {
-            String output = Exec.exec(cmd, "status").out();
-            return output.contains(isMinikube() ? "minikube: Running" : "minishift: Running")
+            String output = Exec.exec(CMD, "status").out();
+            return output.contains("minikube: Running")
                     && output.contains("cluster: Running")
                     && output.contains("kubectl: Correctly Configured:");
         } catch (KubeClusterException e) {
@@ -45,24 +30,21 @@ public class Minikube implements KubeCluster {
 
     @Override
     public void clusterUp() {
-        Exec.exec(cmd, "start");
+        Exec.exec(CMD, "start");
     }
 
     @Override
     public void clusterDown() {
-        Exec.exec(cmd, "stop");
+        Exec.exec(CMD, "stop");
     }
 
     @Override
     public KubeClient defaultClient() {
-        return isMinikube() ? new Kubectl() : new Oc();
-    }
-
-    private boolean isMinikube() {
-        return MINIKUBE.equals(cmd);
+        return new Kubectl();
     }
 
     public String toString() {
-        return cmd;
+        return CMD;
     }
+
 }

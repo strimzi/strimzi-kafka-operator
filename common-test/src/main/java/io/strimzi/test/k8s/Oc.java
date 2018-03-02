@@ -35,7 +35,7 @@ public class Oc extends BaseKubeClient<Oc> {
             @Override
             public void close() {
                 LOGGER.trace("Switching back to login {} from {}", previous, admin);
-                Exec.exec(Oc.OC, "login", "-u", previous, "-p", "foo");
+                Exec.exec(Oc.OC, "login", "-u", previous);
             }
         };
     }

@@ -27,14 +27,6 @@ public interface KubeClient<K extends KubeClient<K>> {
         return client;
     }
 
-    K createRole(String roleName, Permission... permissions);
-
-    K createRoleBinding(String bindingName, String roleName, String... users);
-
-    K deleteRoleBinding(String bindingName);
-
-    K deleteRole(String roleName);
-
     String defaultNamespace();
 
     String namespace(String namespace);

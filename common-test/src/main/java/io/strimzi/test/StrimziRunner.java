@@ -65,15 +65,15 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         if (super.isIgnored(child)) {
             return true;
         } else {
-            return isWrongClusterType(getTestClass()) || isWrongClusterType(child);
+            return isWrongClusterType(getTestClass(), child) || isWrongClusterType(child, child);
         }
     }
 
-    private boolean isWrongClusterType(Annotatable child) {
-        boolean result = child.getAnnotation(OpenShiftOnly.class) != null
+    private boolean isWrongClusterType(Annotatable annotated, FrameworkMethod test) {
+        boolean result = annotated.getAnnotation(OpenShiftOnly.class) != null
                 && !(clusterResource().cluster() instanceof OpenShift);
         if (result) {
-            LOGGER.info("{} is @OpenShiftOnly, but the running cluster is not OpenShift: Ignoring", name(child));
+            LOGGER.info("{} is @OpenShiftOnly, but the running cluster is not OpenShift: Ignoring {}", name(annotated), test.getDeclaringClass().getSimpleName() + "." + test.getName() + "()");
         }
         return result;
     }

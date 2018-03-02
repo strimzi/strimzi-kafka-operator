@@ -25,7 +25,7 @@ public class StrimziRunnerTest {
 
     static class MockKubeClusterResource extends KubeClusterResource {
         public MockKubeClusterResource() {
-            super(null, null, null);
+            super(null, null);
         }
 
         @Override

@@ -1,0 +1,53 @@
+#@RoleBinding(
+#        name = "strimzi-role-binding",
+#        role = "strimzi-role",
+#        users = "developer"
+#)
+#@Role(
+#        name = "strimzi-role",
+#        permissions = {
+#            @Permission(resource = "cm", verbs = {"get", "create", "watch", "list", "delete", "update"}),
+#            @Permission(resource = "events", verbs = {"get", "create"})
+#        }
+#)
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: Role
+metadata:
+  name: strimzi-topic-controller-role
+  labels:
+    app: strimzi
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: RoleBinding
+metadata:
+  name: strimzi-topic-controller-binding
+  labels:
+    app: strimzi
+subjects:
+  - kind: Account
+    name: developer
+roleRef:
+  kind: Role
+  name: strimzi-topic-controller-role
+apiGroup: rbac.authorization.k8s.io
+---

@@ -38,7 +38,7 @@ elif [ "$TEST_CLUSTER" = "minishift" ]; then
     docker run -d -p 5000:5000 registry
 
     export KUBECONFIG=$HOME/.kube/config
-    sudo -E minishift start --vm-driver=none --insecure-registry localhost:5000
+    sudo -E minishift start
     sudo -E minishift addons enable default-storageclass
 elif [ "$TEST_CLUSTER" = "oc" ]; then
     mkdir -p /tmp/openshift

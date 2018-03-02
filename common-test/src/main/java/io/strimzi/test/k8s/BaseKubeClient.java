@@ -72,24 +72,6 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
         return Exec.isExecutableOnPath(cmd());
     }
 
-    @Override
-    public K createRole(String roleName, Permission... permissions) {
-        try (Context context = adminContext()) {
-            List<String> cmd = namespacedCommand(CREATE, "role", roleName);
-            for (Permission p : permissions) {
-                for (String resource : p.resource()) {
-                    cmd.add("--resource=" + resource);
-                }
-                for (int i = 0; i < p.verbs().length; i++) {
-                    cmd.add("--verb=" + p.verbs()[i]);
-                }
-            }
-            Exec.exec(cmd);
-            return (K) this;
-        }
-
-    }
-
     protected List<String> namespacedCommand(String... rest) {
         return namespacedCommand(asList(rest));
     }
@@ -102,35 +84,6 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
         result.addAll(rest);
         return result;
     }
-
-    @Override
-    public K createRoleBinding(String bindingName, String roleName, String... user) {
-        try (Context context = adminContext()) {
-            List<String> cmd = namespacedCommand(CREATE, "rolebinding", bindingName, "--role=" + roleName);
-            for (int i = 0; i < user.length; i++) {
-                cmd.add("--user=" + user[i]);
-            }
-            Exec.exec(cmd);
-            return (K) this;
-        }
-    }
-
-    @Override
-    public K deleteRoleBinding(String bindingName) {
-        try (Context context = adminContext()) {
-            Exec.exec(namespacedCommand(DELETE, "rolebinding", bindingName));
-            return (K) this;
-        }
-    }
-
-    @Override
-    public K deleteRole(String roleName) {
-        try (Context context = adminContext()) {
-            Exec.exec(namespacedCommand(DELETE, "role", roleName));
-            return (K) this;
-        }
-    }
-
 
     @Override
     public String get(String resource, String resourceName) {
