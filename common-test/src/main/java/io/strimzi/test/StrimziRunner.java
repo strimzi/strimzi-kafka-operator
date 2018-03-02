@@ -375,6 +375,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
             }
             if (fieldValues == null || fieldValues.isEmpty()) {
                 clusterResource = new KubeClusterResource();
+                clusterResource.before();
             } else {
                 clusterResource = fieldValues.get(0);
             }

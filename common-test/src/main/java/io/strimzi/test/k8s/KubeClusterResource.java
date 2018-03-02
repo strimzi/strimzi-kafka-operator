@@ -45,7 +45,7 @@ public class KubeClusterResource extends ExternalResource {
     }
 
     @Override
-    protected void before() {
+    public void before() {
         if (bootstrap) {
             if (cluster == null) {
                 this.cluster = KubeCluster.bootstrap();
