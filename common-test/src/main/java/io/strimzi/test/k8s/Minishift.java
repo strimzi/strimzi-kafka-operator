@@ -4,7 +4,7 @@
  */
 package io.strimzi.test.k8s;
 
-class Minishift implements KubeCluster {
+public class Minishift implements KubeCluster {
     public static final String CMD = "minishift";
 
     @Override

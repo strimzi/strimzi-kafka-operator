@@ -9,6 +9,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterResource;
+import io.strimzi.test.k8s.Minikube;
+import io.strimzi.test.k8s.Minishift;
 import io.strimzi.test.k8s.OpenShift;
 import org.junit.ClassRule;
 import org.junit.runner.notification.RunNotifier;
@@ -70,7 +72,8 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
 
     private boolean isWrongClusterType(Annotatable annotated, FrameworkMethod test) {
         boolean result = annotated.getAnnotation(OpenShiftOnly.class) != null
-                && !(clusterResource().cluster() instanceof OpenShift);
+                && !(clusterResource().cluster() instanceof OpenShift
+                    || clusterResource().cluster() instanceof Minishift);
         if (result) {
             LOGGER.info("{} is @OpenShiftOnly, but the running cluster is not OpenShift: Ignoring {}", name(annotated), name(test));
         }
