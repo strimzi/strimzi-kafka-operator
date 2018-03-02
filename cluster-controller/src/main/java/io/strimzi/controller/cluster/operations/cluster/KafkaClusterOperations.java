@@ -139,7 +139,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
                     List<Future> waitPodResult = new ArrayList<>(kafka.getReplicas());
 
                     for (int i = 0; i < kafka.getReplicas(); i++) {
-                        String podName = kafka.getName() + "-" + i;
+                        String podName = KafkaCluster.kafkaPodName(kafka.getCluster(), i);
                         waitPodResult.add(podOperations.readiness(namespace, podName, 1_000, 60_000));
                     }
 
@@ -200,7 +200,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
                     List<Future> waitPodResult = new ArrayList<>(zk.getReplicas());
 
                     for (int i = 0; i < zk.getReplicas(); i++) {
-                        String podName = zk.getName() + "-" + i;
+                        String podName = ZookeeperCluster.zookeeperPodName(zk.getCluster(), i);
                         waitPodResult.add(podOperations.readiness(namespace, podName, 1_000, 60_000));
                     }
 
@@ -275,7 +275,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
             if (deleteClaims) {
                 for (int i = 0; i < kafka.getReplicas(); i++) {
-                    result.add(pvcOperations.delete(namespace, kafka.getVolumeName() + "-" + kafka.getName() + "-" + i));
+                    result.add(pvcOperations.delete(namespace, kafka.getPersistentVolumeClaimName(i)));
                 }
             }
 
@@ -324,7 +324,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
             if (deleteClaims) {
                 for (int i = 0; i < zk.getReplicas(); i++) {
-                    result.add(pvcOperations.delete(namespace, zk.getVolumeName() + "-" + zk.getName() + "-" + i));
+                    result.add(pvcOperations.delete(namespace, zk.getPersistentVolumeClaimName(i)));
                 }
             }
 

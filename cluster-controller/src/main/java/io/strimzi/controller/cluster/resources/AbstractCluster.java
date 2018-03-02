@@ -224,6 +224,18 @@ public abstract class AbstractCluster {
         return null;
     }
 
+    /**
+     * @return the cluster name
+     */
+    public String getCluster() {
+        return cluster;
+    }
+
+    public String getPersistentVolumeClaimName(int podId) {
+
+        return volumeName + "-" + name + "-" + podId;
+    }
+
     protected VolumeMount createVolumeMount(String name, String path) {
         VolumeMount volumeMount = new VolumeMountBuilder()
                 .withName(name)
