@@ -10,10 +10,9 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.strimzi.test.KubeClusterResource;
-import io.strimzi.test.Permission;
-import io.strimzi.test.Role;
-import io.strimzi.test.RoleBinding;
+import io.strimzi.test.Namespace;
+import io.strimzi.test.Resources;
+import io.strimzi.test.k8s.KubeClusterResource;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
@@ -55,18 +54,8 @@ import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-@RoleBinding(
-        name = "strimzi-role-binding",
-        role = "strimzi-role",
-        users = "developer"
-)
-@Role(
-        name = "strimzi-role",
-        permissions = {
-            @Permission(resource = "cm", verbs = {"get", "create", "watch", "list", "delete", "update"}),
-            @Permission(resource = "events", verbs = {"get", "create"})
-        }
-)
+@Namespace("topic-controller-it")
+@Resources("src/test/resources/ControllerIntegrationTest-rbac.yaml")
 @RunWith(VertxUnitRunner.class)
 public class ControllerIntegrationTest {
 
@@ -86,6 +75,7 @@ public class ControllerIntegrationTest {
     private DefaultKubernetesClient kubeClient;
     private volatile TopicsWatcher topicsWatcher;
     private Thread kafkaHook = new Thread() {
+        @Override
         public void run() {
             if (kafkaCluster != null) {
                 kafkaCluster.shutdown();
@@ -98,7 +88,6 @@ public class ControllerIntegrationTest {
 
     private volatile String deploymentId;
     private Set<String> preExistingEvents;
-
 
     @Before
     public void setup(TestContext context) throws Exception {

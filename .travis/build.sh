@@ -23,3 +23,6 @@ else
     make docker_push
     make docu_pushtowebsite
 fi
+
+echo "Running systemtests"
+./systemtest/scripts/run_tests.sh ${SYSTEMTEST_ARGS}

@@ -5,7 +5,7 @@
 
 java_build:
 	echo "Building JAR file ..."
-	mvn package
+	mvn -DtrimStackTrace=false package
 
 java_clean:
 	echo "Cleaning Maven build ..."

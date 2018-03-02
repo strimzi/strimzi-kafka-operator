@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-topic
+  labels:
+    strimzi.io/kind: topic
+data:
+  name: my-topic
+  partitions: "1"
+  replicas: "1"
+  config: "{}"
