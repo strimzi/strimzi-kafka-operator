@@ -37,10 +37,16 @@ public class KubeClusterResource extends ExternalResource {
     }
 
     public KubeClient client() {
+        if (bootstrap && client == null) {
+            this.client = KubeClient.findClient(cluster());
+        }
         return client;
     }
 
     public KubeCluster cluster() {
+        if (bootstrap && cluster == null) {
+            this.cluster = KubeCluster.bootstrap();
+        }
         return cluster;
     }
 
