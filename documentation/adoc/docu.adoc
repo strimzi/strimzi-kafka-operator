@@ -28,4 +28,6 @@ include::cluster-controller.adoc[]
 
 include::topic-controller.adoc[]
 
+include::faq.adoc[]
+
 include::appendix_deploying_kubernetes_openshift_cluster.adoc[]

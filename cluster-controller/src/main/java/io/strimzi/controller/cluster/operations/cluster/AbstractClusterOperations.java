@@ -287,7 +287,7 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
                 }
 
             } else {
-                log.error("Failed to acquire lock for {} cluster {}", clusterType, lockName);
+                log.warn("Failed to acquire lock for {} cluster {}.", clusterType, lockName);
             }
         });
     }
