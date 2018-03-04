@@ -253,6 +253,7 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
                                 } else {
                                     log.error("Failed to update {} cluster {}.", clusterDescription, nameFromCm);
                                 }
+                                lock.release();
                             });
                         } else {
                             log.info("Reconciliation: {} cluster {} should be created", clusterDescription, cm.getMetadata().getName());
@@ -263,6 +264,7 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
                                 } else {
                                     log.error("Failed to add {} cluster {}.", clusterDescription, nameFromCm);
                                 }
+                                lock.release();
                             });
                         }
                     } else if (resources.size() > 0) {
@@ -276,16 +278,14 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
                                 } else {
                                     log.error("Failed to delete {} cluster {} in namespace {}", clusterDescription, nameFromResource, namespace);
                                 }
+                                lock.release();
                             });
                         }
                     }
-
                 } catch (Throwable ex) {
                     log.error("Error while reconciling {} cluster", clusterDescription, ex);
-                } finally {
                     lock.release();
                 }
-
             } else {
                 log.error("Failed to acquire lock for {} cluster {}", clusterType, lockName);
             }

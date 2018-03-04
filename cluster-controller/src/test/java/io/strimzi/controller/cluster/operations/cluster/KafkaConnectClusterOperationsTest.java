@@ -499,16 +499,19 @@ public class KafkaConnectClusterOperationsTest {
             public void create(String namespace, String name, Handler h) {
                 created.add(name);
                 async.countDown();
+                h.handle(Future.succeededFuture());
             }
             @Override
             public void update(String namespace, String name, Handler h) {
                 updated.add(name);
                 async.countDown();
+                h.handle(Future.succeededFuture());
             }
             @Override
             public void delete(String namespace, String name, Handler h) {
                 deleted.add(name);
                 async.countDown();
+                h.handle(Future.succeededFuture());
             }
         };
 
