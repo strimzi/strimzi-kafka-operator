@@ -1,0 +1,31 @@
+[appendix]
+== Frequently Asked Questions
+
+=== Cluster Controller
+
+==== Log contains warnings about failing to acquire lock
+
+For each cluster, the Cluster Controller always executes only one operation at a time. Cluster Controller is using locks
+to make sure that there are never two parallel operations running for the same cluster. In case an operation requires
+more time to complete, other operations will wait until it is completed and the lock is released.
+
+INFO:: Examples of cluster operations are _cluster creation_, _rolling update_, _scale down_ or _scale up_ etc.
+
+If the waiting for the lock takes too much time, the operation timeouts and following warning message will be printed to
+the log:
+
+[source]
+---
+2018-03-04 17:09:24 WARNING AbstractClusterOperations:290 - Failed to acquire lock for kafka cluster lock::kafka::myproject::my-cluster
+---
+
+Depending on the exact configuration of `STRIMZI_FULL_RECONCILIATION_INTERVAL` and `STRIMZI_OPERATION_TIMEOUT`, this
+warning message may appear regularly without indicating any problems. The operations which time out will be picked up by
+the next periodic reconciliation. It will try to acquire the lock again and execute.
+
+Should this message appear periodically even in situation when there should be no other operations running for given
+cluster, it might indicate that due to some error the lock was not properly released. In such case it is recommended to
+restart the cluster controller.
+
+
+
