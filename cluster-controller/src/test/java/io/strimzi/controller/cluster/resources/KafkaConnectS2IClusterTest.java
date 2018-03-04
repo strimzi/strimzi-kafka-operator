@@ -432,6 +432,9 @@ public class KafkaConnectS2IClusterTest {
         assertEquals(kc.kafkaConnectClusterName(cluster), dep.getSpec().getTriggers().get(1).getImageChangeParams().getContainerNames().get(0));
         assertEquals(kc.kafkaConnectClusterName(cluster) + ":latest", dep.getSpec().getTriggers().get(1).getImageChangeParams().getFrom().getName());
         assertEquals("ImageStreamTag", dep.getSpec().getTriggers().get(1).getImageChangeParams().getFrom().getKind());
+        assertEquals("Rolling", dep.getSpec().getStrategy().getType());
+        assertEquals(new Integer(1), dep.getSpec().getStrategy().getRollingParams().getMaxSurge().getIntVal());
+        assertEquals(new Integer(0), dep.getSpec().getStrategy().getRollingParams().getMaxUnavailable().getIntVal());
     }
 
     @Test

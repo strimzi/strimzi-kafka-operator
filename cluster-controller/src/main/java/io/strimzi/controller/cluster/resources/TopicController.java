@@ -9,6 +9,8 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
+import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategy;
+import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategyBuilder;
 import io.strimzi.controller.cluster.ClusterController;
 import io.vertx.core.json.JsonObject;
 
@@ -289,11 +291,15 @@ public class TopicController extends AbstractCluster {
     }
 
     public Deployment generateDeployment() {
+        DeploymentStrategy updateStrategy = new DeploymentStrategyBuilder()
+                .withType("Recreate")
+                .build();
 
         return createDeployment(
                 Collections.singletonList(createContainerPort(HEALTHCHECK_PORT_NAME, HEALTHCHECK_PORT, "TCP")),
                 createHttpProbe(healthCheckPath + "healthy", HEALTHCHECK_PORT_NAME, DEFAULT_HEALTHCHECK_DELAY, DEFAULT_HEALTHCHECK_TIMEOUT),
                 createHttpProbe(healthCheckPath + "ready", HEALTHCHECK_PORT_NAME, DEFAULT_HEALTHCHECK_DELAY, DEFAULT_HEALTHCHECK_TIMEOUT),
+                updateStrategy,
                 Collections.emptyMap(),
                 Collections.emptyMap());
     }

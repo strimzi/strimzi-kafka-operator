@@ -40,3 +40,5 @@ spec:
               port: 8080
             initialDelaySeconds: 10
             periodSeconds: 30
+  strategy:
+    type: Recreate
