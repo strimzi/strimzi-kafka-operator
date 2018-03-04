@@ -390,6 +390,9 @@ Default: 120000 ms
 should operate in. This is a required environment variable, but the example YAML resources
 supplied with Strimzi use the namespace in which the controller itself is deployed as a
 default value. See the following section.
+* `STRIMZI_OPERATION_TIMEOUT` : Timeout for internal operations specified in milliseconds. This value should be
+increased when using Strimzi on clusters where regular Kubernetes operations take longer than usually (for example
+because of slow downloading of Docker images etc.). Default value is 60000 ms.
 
 [[multi-namespace]]
 ==== Watching multiple namespaces
