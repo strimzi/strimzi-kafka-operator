@@ -20,10 +20,10 @@ spec:
               value: my-cluster-kafka:9092
             - name: STRIMZI_ZOOKEEPER_CONNECT
               value: my-cluster-zookeeper:2181
-            - name: STRIMZI_ZOOKEEPER_SESSION_TIMEOUT
-              value: 20seconds
-            - name: STRIMZI_PERIODIC_INTERVAL
-              value: 10minutes
+            - name: STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS
+              value: "20000"
+            - name: STRIMZI_PERIODIC_INTERVAL_MS
+              value: "900000"
             - name: STRIMZI_NAMESPACE
               valueFrom:
                 fieldRef:
