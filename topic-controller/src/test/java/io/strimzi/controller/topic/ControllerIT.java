@@ -57,9 +57,9 @@ import static org.junit.Assert.assertNotNull;
 @Namespace("topic-controller-it")
 @Resources("src/test/resources/ControllerIntegrationTest-rbac.yaml")
 @RunWith(VertxUnitRunner.class)
-public class ControllerIntegrationTest {
+public class ControllerIT {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ControllerIntegrationTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ControllerIT.class);
 
     @ClassRule
     public static KubeClusterResource testCluster = new KubeClusterResource();
