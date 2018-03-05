@@ -72,7 +72,7 @@ parameters:
 - description: Image tag
   displayName: Image tag
   name: IMAGE_TAG
-  value: latest
+  value: 0.2.0-rc1
 - description: Number of seconds after the container has started before healthcheck probes are initiated.
   displayName: Kafka Connect healthcheck initial delay
   name: HEALTHCHECK_DELAY
