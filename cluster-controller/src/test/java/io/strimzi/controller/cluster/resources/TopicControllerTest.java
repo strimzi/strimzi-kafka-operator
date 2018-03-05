@@ -33,8 +33,8 @@ public class TopicControllerTest {
 
     private final String tcNamespace = "my-topic-namespace";
     private final String tcImage = "my-topic-controller-image";
-    private final String tcReconciliationInterval = "600000";
-    private final String tcZookeeperSessionTimeout = "10000";
+    private final String tcReconciliationInterval = "900000";
+    private final String tcZookeeperSessionTimeout = "20000";
 
     private final String topicControllerJson = "{ " +
             "\"namespace\":\"" + tcNamespace + "\", " +
@@ -182,7 +182,7 @@ public class TopicControllerTest {
     @Test
     public void testDiffZookeeperSessionTimeout() {
 
-        testDiffEnvVar(TopicController.KEY_ZOOKEEPER_SESSION_TIMEOUT_MS, "20000");
+        testDiffEnvVar(TopicController.KEY_ZOOKEEPER_SESSION_TIMEOUT_MS, "10000");
     }
 
     private void testDiffEnvVar(String name, String value) {
