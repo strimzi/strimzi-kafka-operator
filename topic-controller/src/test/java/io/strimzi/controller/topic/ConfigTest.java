@@ -43,7 +43,7 @@ public class ConfigTest {
     @Test
     public void override() {
         Map<String, String> map = new HashMap<>(MANDATORY);
-        map.put(Config.ZOOKEEPER_SESSION_TIMEOUT_MS.key, "13 seconds");
+        map.put(Config.ZOOKEEPER_SESSION_TIMEOUT_MS.key, "13000");
 
         Config c = new Config(map);
         assertEquals(13_000, c.get(Config.ZOOKEEPER_SESSION_TIMEOUT_MS).intValue());
@@ -53,14 +53,12 @@ public class ConfigTest {
     public void intervals() {
         Map<String, String> map = new HashMap<>(MANDATORY);
 
-        map.put(Config.ZOOKEEPER_SESSION_TIMEOUT_MS.key, "13 seconds");
+        map.put(Config.ZOOKEEPER_SESSION_TIMEOUT_MS.key, "13000");
         new Config(map);
 
-        map.put(Config.ZOOKEEPER_SESSION_TIMEOUT_MS.key, "13seconds");
-        new Config(map);
 
         try {
-            map.put(Config.ZOOKEEPER_SESSION_TIMEOUT_MS.key, "13foos");
+            map.put(Config.ZOOKEEPER_SESSION_TIMEOUT_MS.key, "foos");
             new Config(map);
             fail();
         } catch (IllegalArgumentException e) {

@@ -40,24 +40,13 @@ public class Config {
     };
 
     /**
-     * A time duration composed of a non-negative integer quantity and time unit taken from {@link TimeUnit}.
-     * For example '5 seconds'.
+     * A time duration.
      */
     private static final Type<? extends Long> DURATION = new Type<Long>() {
 
-        private final Pattern pattern = Pattern.compile("([0-9]+) *([a-z]+)", Pattern.CASE_INSENSITIVE);
-
         @Override
         public Long parse(String s) {
-            Matcher m = pattern.matcher(s);
-            if (m.matches()) {
-                final TimeUnit unit = TimeUnit.valueOf(m.group(2).toUpperCase(Locale.ENGLISH));
-                final String quantity = m.group(1);
-                return TimeUnit.MILLISECONDS.convert(Long.parseLong(quantity), unit);
-            } else {
-                throw new IllegalArgumentException("Invalid duration: Expected an integer followed by one of " + Arrays.toString(TimeUnit.values()) + " e.g. '5 MINUTES'");
-            }
-
+            return Long.parseLong(s);
         }
     };
 
@@ -117,10 +106,10 @@ public class Config {
     public static final Value<String> ZOOKEEPER_CONNECT = new Value<>(TC_ZK_CONNECT, STRING, true);
 
     /** The zookeeper session timeout. */
-    public static final Value<Long> ZOOKEEPER_SESSION_TIMEOUT_MS = new Value<>(TC_ZK_SESSION_TIMEOUT, DURATION, "20 seconds");
+    public static final Value<Long> ZOOKEEPER_SESSION_TIMEOUT_MS = new Value<>(TC_ZK_SESSION_TIMEOUT, DURATION, "20000");
 
     /** The period between full reconciliations. */
-    public static final Value<Long> FULL_RECONCILIATION_INTERVAL_MS = new Value<>(TC_PERIODIC_INTERVAL, DURATION, "15 minutes");
+    public static final Value<Long> FULL_RECONCILIATION_INTERVAL_MS = new Value<>(TC_PERIODIC_INTERVAL, DURATION, "900000");
 
     /** The interbroker throttled rate to use when a topic change requires partition reassignment. */
     public static final Value<Long> REASSIGN_THROTTLE = new Value<>(TC_REASSIGN_THROTTLE, LONG, Long.toString(Long.MAX_VALUE));
@@ -129,7 +118,7 @@ public class Config {
      * The interval between verification executions (as in {@code kafka-reassign-partitions.sh --verify ...})
      * when a topic change requires partition reassignment.
      */
-    public static final Value<Long> REASSIGN_VERIFY_INTERVAL_MS = new Value<>(TC_REASSIGN_VERIFY_INTERVAL, DURATION, "2 minutes");
+    public static final Value<Long> REASSIGN_VERIFY_INTERVAL_MS = new Value<>(TC_REASSIGN_VERIFY_INTERVAL, DURATION, "120000");
 
 
     static {
