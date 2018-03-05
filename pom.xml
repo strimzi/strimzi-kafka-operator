@@ -100,6 +100,7 @@
                         <ENV_VAR_EXISTS>value</ENV_VAR_EXISTS>
                         <ENV_VAR_EXISTS_BOOLEAN>true</ENV_VAR_EXISTS_BOOLEAN>
                     </environmentVariables>
+                    <trimStackTrace>false</trimStackTrace>
                 </configuration>
             </plugin>
             <plugin>
