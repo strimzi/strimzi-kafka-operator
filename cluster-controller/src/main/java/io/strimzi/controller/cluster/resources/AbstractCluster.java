@@ -13,7 +13,6 @@ import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.ContainerPortBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
@@ -32,8 +31,7 @@ import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentBuilder;
-import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategyBuilder;
-import io.fabric8.kubernetes.api.model.extensions.RollingUpdateDeploymentBuilder;
+import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategy;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSetUpdateStrategyBuilder;
@@ -476,6 +474,7 @@ public abstract class AbstractCluster {
             List<ContainerPort> ports,
             Probe livenessProbe,
             Probe readinessProbe,
+            DeploymentStrategy updateStrategy,
             Map<String, String> deploymentAnnotations,
             Map<String, String> podAnnotations) {
 
@@ -496,7 +495,7 @@ public abstract class AbstractCluster {
                 .withAnnotations(deploymentAnnotations)
                 .endMetadata()
                 .withNewSpec()
-                .withStrategy(new DeploymentStrategyBuilder().withType("RollingUpdate").withRollingUpdate(new RollingUpdateDeploymentBuilder().withMaxSurge(new IntOrString(1)).withMaxUnavailable(new IntOrString(0)).build()).build())
+                .withStrategy(updateStrategy)
                 .withReplicas(replicas)
                 .withNewTemplate()
                 .withNewMetadata()

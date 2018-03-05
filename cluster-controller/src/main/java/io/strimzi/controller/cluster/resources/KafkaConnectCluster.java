@@ -8,8 +8,12 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
+import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
+import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategy;
+import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategyBuilder;
+import io.fabric8.kubernetes.api.model.extensions.RollingUpdateDeploymentBuilder;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -226,11 +230,19 @@ public class KafkaConnectCluster extends AbstractCluster {
     }
 
     public Deployment generateDeployment() {
+        DeploymentStrategy updateStrategy = new DeploymentStrategyBuilder()
+                .withType("RollingUpdate")
+                .withRollingUpdate(new RollingUpdateDeploymentBuilder()
+                        .withMaxSurge(new IntOrString(1))
+                        .withMaxUnavailable(new IntOrString(0))
+                        .build())
+                .build();
 
         return createDeployment(
                 Collections.singletonList(createContainerPort(REST_API_PORT_NAME, REST_API_PORT, "TCP")),
                 createHttpProbe(healthCheckPath, REST_API_PORT_NAME, healthCheckInitialDelay, healthCheckTimeout),
                 createHttpProbe(healthCheckPath, REST_API_PORT_NAME, healthCheckInitialDelay, healthCheckTimeout),
+                updateStrategy,
                 Collections.emptyMap(),
                 Collections.emptyMap()
                 );

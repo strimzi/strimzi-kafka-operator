@@ -140,6 +140,7 @@ public class TopicControllerTest {
         assertEquals(new Integer(TopicController.HEALTHCHECK_PORT), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().get(0).getContainerPort());
         assertEquals(TopicController.HEALTHCHECK_PORT_NAME, dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().get(0).getName());
         assertEquals("TCP", dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().get(0).getProtocol());
+        assertEquals("Recreate", dep.getSpec().getStrategy().getType());
     }
 
     @Test

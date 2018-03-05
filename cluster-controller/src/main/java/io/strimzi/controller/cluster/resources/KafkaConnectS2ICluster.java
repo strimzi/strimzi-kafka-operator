@@ -8,7 +8,10 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.ObjectReference;
+import io.fabric8.openshift.api.model.DeploymentStrategy;
+import io.fabric8.openshift.api.model.DeploymentStrategyBuilder;
 import io.fabric8.openshift.api.model.BinaryBuildSource;
 import io.fabric8.openshift.api.model.BuildConfig;
 import io.fabric8.openshift.api.model.BuildConfigBuilder;
@@ -231,6 +234,14 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                 .endImageChangeParams()
                 .build();
 
+        DeploymentStrategy updateStrategy = new DeploymentStrategyBuilder()
+                .withType("Rolling")
+                .withNewRollingParams()
+                    .withMaxSurge(new IntOrString(1))
+                    .withMaxUnavailable(new IntOrString(0))
+                .endRollingParams()
+                .build();
+
         DeploymentConfig dc = new DeploymentConfigBuilder()
                 .withNewMetadata()
                     .withName(name)
@@ -248,6 +259,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                         .endSpec()
                     .endTemplate()
                     .withTriggers(configChangeTrigger, imageChangeTrigger)
+                .withStrategy(updateStrategy)
                 .endSpec()
                 .build();
 
