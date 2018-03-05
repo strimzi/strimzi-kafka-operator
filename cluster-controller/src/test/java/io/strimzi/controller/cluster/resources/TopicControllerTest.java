@@ -33,8 +33,8 @@ public class TopicControllerTest {
 
     private final String tcNamespace = "my-topic-namespace";
     private final String tcImage = "my-topic-controller-image";
-    private final String tcReconciliationInterval = "10 minutes";
-    private final String tcZookeeperSessionTimeout = "10 seconds";
+    private final String tcReconciliationInterval = "600000";
+    private final String tcZookeeperSessionTimeout = "10000";
 
     private final String topicControllerJson = "{ " +
             "\"namespace\":\"" + tcNamespace + "\", " +
@@ -52,8 +52,8 @@ public class TopicControllerTest {
         expected.add(new EnvVarBuilder().withName(TopicController.KEY_KAFKA_BOOTSTRAP_SERVERS).withValue(TopicController.defaultBootstrapServers(cluster)).build());
         expected.add(new EnvVarBuilder().withName(TopicController.KEY_ZOOKEEPER_CONNECT).withValue(TopicController.defaultZookeeperConnect(cluster)).build());
         expected.add(new EnvVarBuilder().withName(TopicController.KEY_NAMESPACE).withValue(tcNamespace).build());
-        expected.add(new EnvVarBuilder().withName(TopicController.KEY_FULL_RECONCILIATION_INTERVAL).withValue(tcReconciliationInterval).build());
-        expected.add(new EnvVarBuilder().withName(TopicController.KEY_ZOOKEEPER_SESSION_TIMEOUT).withValue(tcZookeeperSessionTimeout).build());
+        expected.add(new EnvVarBuilder().withName(TopicController.KEY_FULL_RECONCILIATION_INTERVAL_MS).withValue(tcReconciliationInterval).build());
+        expected.add(new EnvVarBuilder().withName(TopicController.KEY_ZOOKEEPER_SESSION_TIMEOUT_MS).withValue(tcZookeeperSessionTimeout).build());
 
         return expected;
     }
@@ -75,8 +75,8 @@ public class TopicControllerTest {
 
         assertEquals(TopicController.DEFAULT_IMAGE, tc.getImage());
         assertEquals(namespace, tc.getTopicNamespace());
-        assertEquals(TopicController.DEFAULT_FULL_RECONCILIATION_INTERVAL, tc.getReconciliationInterval());
-        assertEquals(TopicController.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT, tc.getZookeeperSessionTimeout());
+        assertEquals(TopicController.DEFAULT_FULL_RECONCILIATION_INTERVAL_MS, tc.getReconciliationIntervalMs());
+        assertEquals(TopicController.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_MS, tc.getZookeeperSessionTimeoutMs());
         assertEquals(TopicController.defaultBootstrapServers(cluster), tc.getKafkaBootstrapServers());
         assertEquals(TopicController.defaultZookeeperConnect(cluster), tc.getZookeeperConnect());
         assertEquals(TopicController.defaultTopicConfigMapLabels(cluster), tc.getTopicConfigMapLabels());
@@ -93,8 +93,8 @@ public class TopicControllerTest {
         assertEquals(TopicController.DEFAULT_HEALTHCHECK_TIMEOUT, tc.healthCheckTimeout);
         assertEquals(tcImage, tc.getImage());
         assertEquals(tcNamespace, tc.getTopicNamespace());
-        assertEquals(tcReconciliationInterval, tc.getReconciliationInterval());
-        assertEquals(tcZookeeperSessionTimeout, tc.getZookeeperSessionTimeout());
+        assertEquals(tcReconciliationInterval, tc.getReconciliationIntervalMs());
+        assertEquals(tcZookeeperSessionTimeout, tc.getZookeeperSessionTimeoutMs());
         assertEquals(TopicController.defaultBootstrapServers(cluster), tc.getKafkaBootstrapServers());
         assertEquals(TopicController.defaultZookeeperConnect(cluster), tc.getZookeeperConnect());
         assertEquals(TopicController.defaultTopicConfigMapLabels(cluster), tc.getTopicConfigMapLabels());
@@ -113,8 +113,8 @@ public class TopicControllerTest {
         assertEquals(tc.healthCheckTimeout, tcFromDep.healthCheckTimeout);
         assertEquals(tc.getImage(), tcFromDep.getImage());
         assertEquals(tc.getTopicNamespace(), tcFromDep.getTopicNamespace());
-        assertEquals(tc.getReconciliationInterval(), tcFromDep.getReconciliationInterval());
-        assertEquals(tc.getZookeeperSessionTimeout(), tcFromDep.getZookeeperSessionTimeout());
+        assertEquals(tc.getReconciliationIntervalMs(), tcFromDep.getReconciliationIntervalMs());
+        assertEquals(tc.getZookeeperSessionTimeoutMs(), tcFromDep.getZookeeperSessionTimeoutMs());
         assertEquals(tc.getKafkaBootstrapServers(), tcFromDep.getKafkaBootstrapServers());
         assertEquals(tc.getZookeeperConnect(), tcFromDep.getZookeeperConnect());
         assertEquals(tc.getTopicConfigMapLabels(), tcFromDep.getTopicConfigMapLabels());
@@ -176,13 +176,13 @@ public class TopicControllerTest {
     @Test
     public void testDiffReconciliationInterval() {
 
-        testDiffEnvVar(TopicController.KEY_FULL_RECONCILIATION_INTERVAL, "20 minutes");
+        testDiffEnvVar(TopicController.KEY_FULL_RECONCILIATION_INTERVAL_MS, "1200000");
     }
 
     @Test
     public void testDiffZookeeperSessionTimeout() {
 
-        testDiffEnvVar(TopicController.KEY_ZOOKEEPER_SESSION_TIMEOUT, "20 seconds");
+        testDiffEnvVar(TopicController.KEY_ZOOKEEPER_SESSION_TIMEOUT_MS, "20000");
     }
 
     private void testDiffEnvVar(String name, String value) {

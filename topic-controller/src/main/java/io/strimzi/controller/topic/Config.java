@@ -4,17 +4,12 @@
  */
 package io.strimzi.controller.topic;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class Config {
 
@@ -86,10 +81,10 @@ public class Config {
     public static final String TC_KAFKA_BOOTSTRAP_SERVERS = "STRIMZI_KAFKA_BOOTSTRAP_SERVERS";
     public static final String TC_NAMESPACE = "STRIMZI_NAMESPACE";
     public static final String TC_ZK_CONNECT = "STRIMZI_ZOOKEEPER_CONNECT";
-    public static final String TC_ZK_SESSION_TIMEOUT = "STRIMZI_ZOOKEEPER_SESSION_TIMEOUT";
-    public static final String TC_PERIODIC_INTERVAL = "STRIMZI_FULL_RECONCILIATION_INTERVAL";
+    public static final String TC_ZK_SESSION_TIMEOUT_MS = "STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS";
+    public static final String TC_PERIODIC_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
     public static final String TC_REASSIGN_THROTTLE = "STRIMZI_REASSIGN_THROTTLE";
-    public static final String TC_REASSIGN_VERIFY_INTERVAL = "STRIMZI_REASSIGN_VERIFY_INTERVAL";
+    public static final String TC_REASSIGN_VERIFY_INTERVAL_MS = "STRIMZI_REASSIGN_VERIFY_INTERVAL_MS";
 
     private static final Map<String, Value<?>> CONFIG_VALUES = new HashMap<>();
 
@@ -106,10 +101,10 @@ public class Config {
     public static final Value<String> ZOOKEEPER_CONNECT = new Value<>(TC_ZK_CONNECT, STRING, true);
 
     /** The zookeeper session timeout. */
-    public static final Value<Long> ZOOKEEPER_SESSION_TIMEOUT_MS = new Value<>(TC_ZK_SESSION_TIMEOUT, DURATION, "20000");
+    public static final Value<Long> ZOOKEEPER_SESSION_TIMEOUT_MS = new Value<>(TC_ZK_SESSION_TIMEOUT_MS, DURATION, "20000");
 
     /** The period between full reconciliations. */
-    public static final Value<Long> FULL_RECONCILIATION_INTERVAL_MS = new Value<>(TC_PERIODIC_INTERVAL, DURATION, "900000");
+    public static final Value<Long> FULL_RECONCILIATION_INTERVAL_MS = new Value<>(TC_PERIODIC_INTERVAL_MS, DURATION, "900000");
 
     /** The interbroker throttled rate to use when a topic change requires partition reassignment. */
     public static final Value<Long> REASSIGN_THROTTLE = new Value<>(TC_REASSIGN_THROTTLE, LONG, Long.toString(Long.MAX_VALUE));
@@ -118,7 +113,7 @@ public class Config {
      * The interval between verification executions (as in {@code kafka-reassign-partitions.sh --verify ...})
      * when a topic change requires partition reassignment.
      */
-    public static final Value<Long> REASSIGN_VERIFY_INTERVAL_MS = new Value<>(TC_REASSIGN_VERIFY_INTERVAL, DURATION, "120000");
+    public static final Value<Long> REASSIGN_VERIFY_INTERVAL_MS = new Value<>(TC_REASSIGN_VERIFY_INTERVAL_MS, DURATION, "120000");
 
 
     static {
