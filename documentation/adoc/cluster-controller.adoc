@@ -252,7 +252,7 @@ Default is the namespace where the topic controller is running
 .Example Topic Controller JSON configuration
 [source,json]
 ----
-{ "reconciliationIntervalMs": "10 minutes", "zookeeperSessionTimeout": "10 seconds" }
+{ "reconciliationInterval": "10 minutes", "zookeeperSessionTimeout": "10 seconds" }
 ----
 
 More information about these configuration parameters in the related <<Topic Controller>> documentation page.
