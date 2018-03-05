@@ -43,6 +43,8 @@ public class Main {
     }
 
     static CompositeFuture run(Vertx vertx, KubernetesClient client, Map<String, String> env) {
+        ClusterControllerConfig config = ClusterControllerConfig.fromMap(env);
+
         ServiceOperations serviceOperations = new ServiceOperations(vertx, client);
         StatefulSetOperations statefulSetOperations = new StatefulSetOperations(vertx, client);
         ConfigMapOperations configMapOperations = new ConfigMapOperations(vertx, client);
@@ -52,7 +54,7 @@ public class Main {
         EndpointOperations endpointOperations = new EndpointOperations(vertx, client);
 
         boolean isOpenShift = Boolean.TRUE.equals(client.isAdaptable(OpenShiftClient.class));
-        KafkaClusterOperations kafkaClusterOperations = new KafkaClusterOperations(vertx, isOpenShift, configMapOperations, serviceOperations, statefulSetOperations, pvcOperations, podOperations, endpointOperations, deploymentOperations);
+        KafkaClusterOperations kafkaClusterOperations = new KafkaClusterOperations(vertx, isOpenShift, config.getOperationTimeoutMs(), configMapOperations, serviceOperations, statefulSetOperations, pvcOperations, podOperations, endpointOperations, deploymentOperations);
         KafkaConnectClusterOperations kafkaConnectClusterOperations = new KafkaConnectClusterOperations(vertx, isOpenShift, configMapOperations, deploymentOperations, serviceOperations);
 
         DeploymentConfigOperations deploymentConfigOperations = null;
@@ -67,14 +69,13 @@ public class Main {
                 configMapOperations, deploymentConfigOperations,
                 serviceOperations, imagesStreamOperations, buildConfigOperations);
 
-        ClusterControllerConfig config = ClusterControllerConfig.fromMap(env);
         List<Future> futures = new ArrayList<>();
         for (String namespace : config.getNamespaces()) {
             Future<String> fut = Future.future();
             futures.add(fut);
             ClusterController controller = new ClusterController(namespace,
                     config.getLabels(),
-                    config.getReconciliationInterval(),
+                    config.getReconciliationIntervalMs(),
                     client,
                     kafkaClusterOperations,
                     kafkaConnectClusterOperations,

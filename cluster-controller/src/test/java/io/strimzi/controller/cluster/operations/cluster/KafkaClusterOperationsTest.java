@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.controller.cluster.ClusterController;
+import io.strimzi.controller.cluster.ClusterControllerConfig;
 import io.strimzi.controller.cluster.ResourceUtils;
 import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
 import io.strimzi.controller.cluster.operations.resource.DeploymentOperations;
@@ -187,6 +188,7 @@ public class KafkaClusterOperationsTest {
 
 
         KafkaClusterOperations ops = new KafkaClusterOperations(vertx, openShift,
+                ClusterControllerConfig.DEFAULT_OPERATION_TIMEOUT_MS,
                 mockCmOps,
                 mockServiceOps, mockSsOps,
                 mockPvcOps, mockPodOps, mockEndpointOps, mockDepOps);
@@ -286,6 +288,7 @@ public class KafkaClusterOperationsTest {
         }
 
         KafkaClusterOperations ops = new KafkaClusterOperations(vertx, openShift,
+                ClusterControllerConfig.DEFAULT_OPERATION_TIMEOUT_MS,
                 mockCmOps,
                 mockServiceOps, mockSsOps,
                 mockPvcOps,
@@ -537,6 +540,7 @@ public class KafkaClusterOperationsTest {
         when(mockDepOps.patch(anyString(), depCaptor.capture(), any())).thenReturn(Future.succeededFuture());
 
         KafkaClusterOperations ops = new KafkaClusterOperations(vertx, openShift,
+                ClusterControllerConfig.DEFAULT_OPERATION_TIMEOUT_MS,
                 mockCmOps,
                 mockServiceOps, mockSsOps,
                 mockPvcOps, mockPodOps, mockEndpointOps, mockDepOps);
@@ -668,6 +672,7 @@ public class KafkaClusterOperationsTest {
         Set<String> deleted = new HashSet<>();
 
         KafkaClusterOperations ops = new KafkaClusterOperations(vertx, openShift,
+                ClusterControllerConfig.DEFAULT_OPERATION_TIMEOUT_MS,
                 mockCmOps,
                 mockServiceOps, mockSsOps,
                 mockPvcOps, mockPodOps, mockEndpointOps, mockDepOps) {

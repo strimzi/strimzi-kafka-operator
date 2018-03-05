@@ -18,14 +18,15 @@ import static org.junit.Assert.assertEquals;
 public class ClusterControllerConfigTest {
 
     private static Map<String, String> labels = new HashMap<>(1);
-    private static Map<String, String> envVars = new HashMap<>(3);
+    private static Map<String, String> envVars = new HashMap<>(4);
 
     static {
         labels.put("strimzi.io/kind", "cluster");
 
         envVars.put(ClusterControllerConfig.STRIMZI_NAMESPACE, "namespace");
         envVars.put(ClusterControllerConfig.STRIMZI_CONFIGMAP_LABELS, "strimzi.io/kind=cluster");
-        envVars.put(ClusterControllerConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL, "30000");
+        envVars.put(ClusterControllerConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, "30000");
+        envVars.put(ClusterControllerConfig.STRIMZI_OPERATION_TIMEOUT_MS, "30000");
     }
 
     @Test
@@ -35,17 +36,19 @@ public class ClusterControllerConfigTest {
 
         assertEquals(singleton("namespace"), config.getNamespaces());
         assertEquals(labels, config.getLabels());
-        assertEquals(ClusterControllerConfig.DEFAULT_FULL_RECONCILIATION_INTERVAL, config.getReconciliationInterval());
+        assertEquals(ClusterControllerConfig.DEFAULT_FULL_RECONCILIATION_INTERVAL_MS, config.getReconciliationIntervalMs());
+        assertEquals(ClusterControllerConfig.DEFAULT_OPERATION_TIMEOUT_MS, config.getOperationTimeoutMs());
     }
 
     @Test
     public void testReconciliationInterval() {
 
-        ClusterControllerConfig config = new ClusterControllerConfig(singleton("namespace"), labels, 60000);
+        ClusterControllerConfig config = new ClusterControllerConfig(singleton("namespace"), labels, 60_000, 30_000);
 
         assertEquals(singleton("namespace"), config.getNamespaces());
         assertEquals(labels, config.getLabels());
-        assertEquals(60_000, config.getReconciliationInterval());
+        assertEquals(60_000, config.getReconciliationIntervalMs());
+        assertEquals(30_000, config.getOperationTimeoutMs());
     }
 
     @Test
@@ -55,7 +58,8 @@ public class ClusterControllerConfigTest {
 
         assertEquals(singleton("namespace"), config.getNamespaces());
         assertEquals(labels, config.getLabels());
-        assertEquals(30_000, config.getReconciliationInterval());
+        assertEquals(30_000, config.getReconciliationIntervalMs());
+        assertEquals(30_000, config.getOperationTimeoutMs());
     }
 
     @Test
@@ -69,7 +73,8 @@ public class ClusterControllerConfigTest {
 
         assertEquals(singleton("namespace"), config.getNamespaces());
         assertEquals(labels, config.getLabels());
-        assertEquals(ClusterControllerConfig.DEFAULT_FULL_RECONCILIATION_INTERVAL, config.getReconciliationInterval());
+        assertEquals(ClusterControllerConfig.DEFAULT_FULL_RECONCILIATION_INTERVAL_MS, config.getReconciliationIntervalMs());
+        assertEquals(ClusterControllerConfig.DEFAULT_OPERATION_TIMEOUT_MS, config.getOperationTimeoutMs());
     }
 
     @Test
@@ -81,7 +86,8 @@ public class ClusterControllerConfigTest {
         ClusterControllerConfig config = ClusterControllerConfig.fromMap(envVars);
         assertEquals(new HashSet<>(asList("foo", "bar", "baz")), config.getNamespaces());
         assertEquals(labels, config.getLabels());
-        assertEquals(30000, config.getReconciliationInterval());
+        assertEquals(30_000, config.getReconciliationIntervalMs());
+        assertEquals(30_000, config.getOperationTimeoutMs());
     }
 
     @Test(expected = IllegalArgumentException.class)
