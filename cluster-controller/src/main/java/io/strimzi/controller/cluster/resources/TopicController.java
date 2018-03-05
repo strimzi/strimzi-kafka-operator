@@ -32,8 +32,8 @@ public class TopicController extends AbstractCluster {
 
     private static final String NAMESPACE_FIELD = "namespace";
     private static final String IMAGE_FIELD = "image";
-    private static final String RECONCILIATION_INTERVAL_FIELD = "reconciliationInterval";
-    private static final String ZOOKEEPER_SESSION_TIMEOUT_FIELD = "zookeeperSessionTimeout";
+    private static final String RECONCILIATION_INTERVAL_FIELD_MS = "reconciliationIntervalMs";
+    private static final String ZOOKEEPER_SESSION_TIMEOUT_FIELD_MS = "zookeeperSessionTimeoutMs";
 
     // Port configuration
     protected static final int HEALTHCHECK_PORT = 8080;
@@ -46,8 +46,8 @@ public class TopicController extends AbstractCluster {
     protected static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
     protected static final int DEFAULT_ZOOKEEPER_PORT = 2181;
     protected static final int DEFAULT_BOOTSTRAP_SERVERS_PORT = 9092;
-    protected static final String DEFAULT_FULL_RECONCILIATION_INTERVAL = "15 minutes";
-    protected static final String DEFAULT_ZOOKEEPER_SESSION_TIMEOUT = "20 seconds";
+    protected static final String DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = "900000";
+    protected static final String DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_MS = "20000";
 
     // Configuration keys
     public static final String KEY_CONFIG = "topic-controller-config";
@@ -57,16 +57,16 @@ public class TopicController extends AbstractCluster {
     public static final String KEY_KAFKA_BOOTSTRAP_SERVERS = "STRIMZI_KAFKA_BOOTSTRAP_SERVERS";
     public static final String KEY_ZOOKEEPER_CONNECT = "STRIMZI_ZOOKEEPER_CONNECT";
     public static final String KEY_NAMESPACE = "STRIMZI_NAMESPACE";
-    public static final String KEY_FULL_RECONCILIATION_INTERVAL = "STRIMZI_FULL_RECONCILIATION_INTERVAL";
-    public static final String KEY_ZOOKEEPER_SESSION_TIMEOUT = "STRIMZI_ZOOKEEPER_SESSION_TIMEOUT";
+    public static final String KEY_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
+    public static final String KEY_ZOOKEEPER_SESSION_TIMEOUT_MS = "STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS";
 
     // Kafka bootstrap servers and Zookeeper nodes can't be specified in the JSON
     private String kafkaBootstrapServers;
     private String zookeeperConnect;
 
     private String topicNamespace;
-    private String reconciliationInterval;
-    private String zookeeperSessionTimeout;
+    private String reconciliationIntervalMs;
+    private String zookeeperSessionTimeoutMs;
     private String topicConfigMapLabels;
 
     /**
@@ -87,8 +87,8 @@ public class TopicController extends AbstractCluster {
         this.kafkaBootstrapServers = defaultBootstrapServers(cluster);
         this.zookeeperConnect = defaultZookeeperConnect(cluster);
         this.topicNamespace = namespace;
-        this.reconciliationInterval = DEFAULT_FULL_RECONCILIATION_INTERVAL;
-        this.zookeeperSessionTimeout = DEFAULT_ZOOKEEPER_SESSION_TIMEOUT;
+        this.reconciliationIntervalMs = DEFAULT_FULL_RECONCILIATION_INTERVAL_MS;
+        this.zookeeperSessionTimeoutMs = DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_MS;
         this.topicConfigMapLabels = defaultTopicConfigMapLabels(cluster);
     }
 
@@ -108,20 +108,20 @@ public class TopicController extends AbstractCluster {
         return topicConfigMapLabels;
     }
 
-    public void setReconciliationInterval(String reconciliationInterval) {
-        this.reconciliationInterval = reconciliationInterval;
+    public void setReconciliationIntervalMs(String reconciliationIntervalMs) {
+        this.reconciliationIntervalMs = reconciliationIntervalMs;
     }
 
-    public String getReconciliationInterval() {
-        return reconciliationInterval;
+    public String getReconciliationIntervalMs() {
+        return reconciliationIntervalMs;
     }
 
-    public void setZookeeperSessionTimeout(String zookeeperSessionTimeout) {
-        this.zookeeperSessionTimeout = zookeeperSessionTimeout;
+    public void setZookeeperSessionTimeoutMs(String zookeeperSessionTimeoutMs) {
+        this.zookeeperSessionTimeoutMs = zookeeperSessionTimeoutMs;
     }
 
-    public String getZookeeperSessionTimeout() {
-        return zookeeperSessionTimeout;
+    public String getZookeeperSessionTimeoutMs() {
+        return zookeeperSessionTimeoutMs;
     }
 
     public void setKafkaBootstrapServers(String kafkaBootstrapServers) {
@@ -185,16 +185,16 @@ public class TopicController extends AbstractCluster {
                 topicController.setTopicNamespace(topicNamespace);
             }
 
-            String reconciliationInterval = json.getString(TopicController.RECONCILIATION_INTERVAL_FIELD);
-            if (reconciliationInterval != null) {
+            String reconciliationIntervalMs = json.getString(TopicController.RECONCILIATION_INTERVAL_FIELD_MS);
+            if (reconciliationIntervalMs != null) {
                 // TODO : add parsing and validation
-                topicController.setReconciliationInterval(reconciliationInterval);
+                topicController.setReconciliationIntervalMs(reconciliationIntervalMs);
             }
 
-            String zookeeperSessionTimeout = json.getString(TopicController.ZOOKEEPER_SESSION_TIMEOUT_FIELD);
-            if (zookeeperSessionTimeout != null) {
+            String zookeeperSessionTimeoutMs = json.getString(TopicController.ZOOKEEPER_SESSION_TIMEOUT_FIELD_MS);
+            if (zookeeperSessionTimeoutMs != null) {
                 // TODO : add parsing and validation
-                topicController.setZookeeperSessionTimeout(zookeeperSessionTimeout);
+                topicController.setZookeeperSessionTimeoutMs(zookeeperSessionTimeoutMs);
             }
         }
 
@@ -230,8 +230,8 @@ public class TopicController extends AbstractCluster {
             topicController.setKafkaBootstrapServers(vars.getOrDefault(KEY_KAFKA_BOOTSTRAP_SERVERS, defaultBootstrapServers(cluster)));
             topicController.setZookeeperConnect(vars.getOrDefault(KEY_ZOOKEEPER_CONNECT, defaultZookeeperConnect(cluster)));
             topicController.setTopicNamespace(vars.getOrDefault(KEY_NAMESPACE, namespace));
-            topicController.setReconciliationInterval(vars.getOrDefault(KEY_FULL_RECONCILIATION_INTERVAL, DEFAULT_FULL_RECONCILIATION_INTERVAL));
-            topicController.setZookeeperSessionTimeout(vars.getOrDefault(KEY_ZOOKEEPER_SESSION_TIMEOUT, DEFAULT_ZOOKEEPER_SESSION_TIMEOUT));
+            topicController.setReconciliationIntervalMs(vars.getOrDefault(KEY_FULL_RECONCILIATION_INTERVAL_MS, DEFAULT_FULL_RECONCILIATION_INTERVAL_MS));
+            topicController.setZookeeperSessionTimeoutMs(vars.getOrDefault(KEY_ZOOKEEPER_SESSION_TIMEOUT_MS, DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_MS));
             topicController.setTopicConfigMapLabels(vars.getOrDefault(KEY_CONFIGMAP_LABELS, defaultTopicConfigMapLabels(cluster)));
         }
 
@@ -274,12 +274,12 @@ public class TopicController extends AbstractCluster {
                 isDifferent = true;
             }
 
-            if (!reconciliationInterval.equals(vars.getOrDefault(KEY_FULL_RECONCILIATION_INTERVAL, DEFAULT_FULL_RECONCILIATION_INTERVAL))) {
+            if (!reconciliationIntervalMs.equals(vars.getOrDefault(KEY_FULL_RECONCILIATION_INTERVAL_MS, DEFAULT_FULL_RECONCILIATION_INTERVAL_MS))) {
                 log.info("Diff: Reconciliation interval changed");
                 isDifferent = true;
             }
 
-            if (!zookeeperSessionTimeout.equals(vars.getOrDefault(KEY_ZOOKEEPER_SESSION_TIMEOUT, DEFAULT_ZOOKEEPER_SESSION_TIMEOUT))) {
+            if (!zookeeperSessionTimeoutMs.equals(vars.getOrDefault(KEY_ZOOKEEPER_SESSION_TIMEOUT_MS, DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_MS))) {
                 log.info("Diff: Zookeeper session timeout changed");
                 isDifferent = true;
             }
@@ -320,8 +320,8 @@ public class TopicController extends AbstractCluster {
         varList.add(new EnvVarBuilder().withName(KEY_KAFKA_BOOTSTRAP_SERVERS).withValue(kafkaBootstrapServers).build());
         varList.add(new EnvVarBuilder().withName(KEY_ZOOKEEPER_CONNECT).withValue(zookeeperConnect).build());
         varList.add(new EnvVarBuilder().withName(KEY_NAMESPACE).withValue(topicNamespace).build());
-        varList.add(new EnvVarBuilder().withName(KEY_FULL_RECONCILIATION_INTERVAL).withValue(reconciliationInterval).build());
-        varList.add(new EnvVarBuilder().withName(KEY_ZOOKEEPER_SESSION_TIMEOUT).withValue(zookeeperSessionTimeout).build());
+        varList.add(new EnvVarBuilder().withName(KEY_FULL_RECONCILIATION_INTERVAL_MS).withValue(reconciliationIntervalMs).build());
+        varList.add(new EnvVarBuilder().withName(KEY_ZOOKEEPER_SESSION_TIMEOUT_MS).withValue(zookeeperSessionTimeoutMs).build());
 
         return varList;
     }
