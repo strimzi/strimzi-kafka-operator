@@ -22,7 +22,7 @@ release_version:
 
 release_maven:
 	echo "Update pom versions to $(RELEASE_VERSION)"
-	mvn versions:set -DnewVersion=$(RELEASE_VERSION)
+	mvn versions:set -DnewVersion=$(shell echo $(RELEASE_VERSION) | tr a-z A-Z)
 	mvn versions:commit
 
 release_pkg:
