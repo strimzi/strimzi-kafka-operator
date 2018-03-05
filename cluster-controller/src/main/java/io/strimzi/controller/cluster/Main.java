@@ -54,7 +54,7 @@ public class Main {
         EndpointOperations endpointOperations = new EndpointOperations(vertx, client);
 
         boolean isOpenShift = Boolean.TRUE.equals(client.isAdaptable(OpenShiftClient.class));
-        KafkaClusterOperations kafkaClusterOperations = new KafkaClusterOperations(vertx, isOpenShift, config.getOperationTimeout(), configMapOperations, serviceOperations, statefulSetOperations, pvcOperations, podOperations, endpointOperations, deploymentOperations);
+        KafkaClusterOperations kafkaClusterOperations = new KafkaClusterOperations(vertx, isOpenShift, config.getOperationTimeoutMs(), configMapOperations, serviceOperations, statefulSetOperations, pvcOperations, podOperations, endpointOperations, deploymentOperations);
         KafkaConnectClusterOperations kafkaConnectClusterOperations = new KafkaConnectClusterOperations(vertx, isOpenShift, configMapOperations, deploymentOperations, serviceOperations);
 
         DeploymentConfigOperations deploymentConfigOperations = null;
@@ -75,7 +75,7 @@ public class Main {
             futures.add(fut);
             ClusterController controller = new ClusterController(namespace,
                     config.getLabels(),
-                    config.getReconciliationInterval(),
+                    config.getReconciliationIntervalMs(),
                     client,
                     kafkaClusterOperations,
                     kafkaConnectClusterOperations,

@@ -20,9 +20,9 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-            - name: STRIMZI_FULL_RECONCILIATION_INTERVAL
+            - name: STRIMZI_FULL_RECONCILIATION_INTERVAL_MS
               value: "120000"
-            - name: STRIMZI_OPERATION_TIMEOUT
+            - name: STRIMZI_OPERATION_TIMEOUT_MS
               value: "60000"
           livenessProbe:
             httpGet:

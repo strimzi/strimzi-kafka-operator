@@ -87,7 +87,7 @@ public class ClusterControllerTest {
         Map<String, String> env = new HashMap<>();
         env.put(ClusterControllerConfig.STRIMZI_NAMESPACE, namespaces);
         env.put(ClusterControllerConfig.STRIMZI_CONFIGMAP_LABELS, STRIMZI_IO_KIND_CLUSTER);
-        env.put(ClusterControllerConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL, "120000");
+        env.put(ClusterControllerConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, "120000");
         Main.run(vertx, client, env).setHandler(ar -> {
             context.assertNull(ar.cause(), "Expected all verticles to start OK");
             async.complete();

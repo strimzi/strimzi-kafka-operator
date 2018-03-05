@@ -19,30 +19,30 @@ public class ClusterControllerConfig {
 
     public static final String STRIMZI_NAMESPACE = "STRIMZI_NAMESPACE";
     public static final String STRIMZI_CONFIGMAP_LABELS = "STRIMZI_CONFIGMAP_LABELS";
-    public static final String STRIMZI_FULL_RECONCILIATION_INTERVAL = "STRIMZI_FULL_RECONCILIATION_INTERVAL";
-    public static final String STRIMZI_OPERATION_TIMEOUT = "STRIMZI_OPERATION_TIMEOUT";
+    public static final String STRIMZI_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
+    public static final String STRIMZI_OPERATION_TIMEOUT_MS = "STRIMZI_OPERATION_TIMEOUT_MS";
 
-    public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL = 120_000; // in ms (2 minutes)
-    public static final long DEFAULT_OPERATION_TIMEOUT = 60_000; // in ms (1 minute)
+    public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = 120_000;
+    public static final long DEFAULT_OPERATION_TIMEOUT_MS = 60_000;
 
     private Map<String, String> labels;
     private Set<String> namespaces;
-    private long reconciliationInterval;
-    private long operationTimeout;
+    private long reconciliationIntervalMs;
+    private long operationTimeoutMs;
 
     /**
      * Constructor
      *
      * @param namespaces namespace in which the controller will run and create resources
      * @param labels    labels used for watching the cluster ConfigMap
-     * @param reconciliationInterval    specify every how many milliseconds the reconciliation runs
-     * @param operationTimeout    timeout for internal operations specified in milliseconds
+     * @param reconciliationIntervalMs    specify every how many milliseconds the reconciliation runs
+     * @param operationTimeoutMs    timeout for internal operations specified in milliseconds
      */
-    public ClusterControllerConfig(Set<String> namespaces, Map<String, String> labels, long reconciliationInterval, long operationTimeout) {
+    public ClusterControllerConfig(Set<String> namespaces, Map<String, String> labels, long reconciliationIntervalMs, long operationTimeoutMs) {
         this.namespaces = unmodifiableSet(new HashSet<>(namespaces));
         this.labels = labels;
-        this.reconciliationInterval = reconciliationInterval;
-        this.operationTimeout = operationTimeout;
+        this.reconciliationIntervalMs = reconciliationIntervalMs;
+        this.operationTimeoutMs = operationTimeoutMs;
     }
 
     /**
@@ -52,7 +52,7 @@ public class ClusterControllerConfig {
      * @param labels    labels used for watching the cluster ConfigMap
      */
     public ClusterControllerConfig(Set<String> namespaces, Map<String, String> labels) {
-        this(namespaces, labels, DEFAULT_FULL_RECONCILIATION_INTERVAL, DEFAULT_OPERATION_TIMEOUT);
+        this(namespaces, labels, DEFAULT_FULL_RECONCILIATION_INTERVAL_MS, DEFAULT_OPERATION_TIMEOUT_MS);
     }
 
     /**
@@ -75,16 +75,16 @@ public class ClusterControllerConfig {
             throw new IllegalArgumentException(ClusterControllerConfig.STRIMZI_CONFIGMAP_LABELS + " cannot be null");
         }
 
-        Long reconciliationInterval = DEFAULT_FULL_RECONCILIATION_INTERVAL;
-        String reconciliationIntervalEnvVar = map.get(ClusterControllerConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL);
+        long reconciliationInterval = DEFAULT_FULL_RECONCILIATION_INTERVAL_MS;
+        String reconciliationIntervalEnvVar = map.get(ClusterControllerConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS);
         if (reconciliationIntervalEnvVar != null) {
-            reconciliationInterval = Long.valueOf(reconciliationIntervalEnvVar);
+            reconciliationInterval = Long.parseLong(reconciliationIntervalEnvVar);
         }
 
-        Long operationTimeout = DEFAULT_OPERATION_TIMEOUT;
-        String operationTimeoutEnvVar = map.get(ClusterControllerConfig.STRIMZI_OPERATION_TIMEOUT);
+        long operationTimeout = DEFAULT_OPERATION_TIMEOUT_MS;
+        String operationTimeoutEnvVar = map.get(ClusterControllerConfig.STRIMZI_OPERATION_TIMEOUT_MS);
         if (operationTimeoutEnvVar != null) {
-            operationTimeout = Long.valueOf(operationTimeoutEnvVar);
+            operationTimeout = Long.parseLong(operationTimeoutEnvVar);
         }
 
         Map<String, String> labelsMap = new HashMap<>();
@@ -124,15 +124,15 @@ public class ClusterControllerConfig {
     /**
      * @return  how many milliseconds the reconciliation runs
      */
-    public long getReconciliationInterval() {
-        return reconciliationInterval;
+    public long getReconciliationIntervalMs() {
+        return reconciliationIntervalMs;
     }
 
     /**
      * @return  how many milliseconds should we wait for Kubernetes operations
      */
-    public long getOperationTimeout() {
-        return operationTimeout;
+    public long getOperationTimeoutMs() {
+        return operationTimeoutMs;
     }
 
     @Override
@@ -140,7 +140,7 @@ public class ClusterControllerConfig {
         return "ClusterControllerConfig(" +
                 "namespaces=" + namespaces +
                 ",labels=" + labels +
-                ",reconciliationInterval=" + reconciliationInterval +
+                ",reconciliationIntervalMs=" + reconciliationIntervalMs +
                 ")";
     }
 }

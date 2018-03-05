@@ -42,7 +42,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
     private static final String CLUSTER_TYPE_KAFKA = "kafka";
     private static final String CLUSTER_TYPE_TOPIC_CONTROLLER = "topic-controller";
 
-    private final long operationTimeout;
+    private final long operationTimeoutMs;
 
     private final StatefulSetOperations statefulSetOperations;
     private final ServiceOperations serviceOperations;
@@ -62,7 +62,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
      * @param deploymentOperations For operating on Deployments
      */
     public KafkaClusterOperations(Vertx vertx, boolean isOpenShift,
-                                  long operationTimeout,
+                                  long operationTimeoutMs,
                                   ConfigMapOperations configMapOperations,
                                   ServiceOperations serviceOperations,
                                   StatefulSetOperations statefulSetOperations,
@@ -71,7 +71,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
                                   EndpointOperations endpointOperations,
                                   DeploymentOperations deploymentOperations) {
         super(vertx, isOpenShift, "Kafka", configMapOperations);
-        this.operationTimeout = operationTimeout;
+        this.operationTimeoutMs = operationTimeoutMs;
         this.statefulSetOperations = statefulSetOperations;
         this.serviceOperations = serviceOperations;
         this.pvcOperations = pvcOperations;
@@ -138,21 +138,21 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
             CompositeFuture
                 .join(result)
-                .compose(res -> statefulSetOperations.readiness(namespace, kafka.getName(), 1_000, operationTimeout))
+                .compose(res -> statefulSetOperations.readiness(namespace, kafka.getName(), 1_000, operationTimeoutMs))
                 .compose(res -> {
                     List<Future> waitPodResult = new ArrayList<>(kafka.getReplicas());
 
                     for (int i = 0; i < kafka.getReplicas(); i++) {
                         String podName = kafka.getPodName(i);
-                        waitPodResult.add(podOperations.readiness(namespace, podName, 1_000, operationTimeout));
+                        waitPodResult.add(podOperations.readiness(namespace, podName, 1_000, operationTimeoutMs));
                     }
 
                     return CompositeFuture.join(waitPodResult);
                 })
                 .compose(res -> {
                     List<Future> waitEndpointResult = new ArrayList<>(2);
-                    waitEndpointResult.add(endpointOperations.readiness(namespace, kafka.getName(), 1_000, operationTimeout));
-                    waitEndpointResult.add(endpointOperations.readiness(namespace, kafka.getHeadlessName(), 1_000, operationTimeout));
+                    waitEndpointResult.add(endpointOperations.readiness(namespace, kafka.getName(), 1_000, operationTimeoutMs));
+                    waitEndpointResult.add(endpointOperations.readiness(namespace, kafka.getHeadlessName(), 1_000, operationTimeoutMs));
                     return CompositeFuture.join(waitEndpointResult);
                 })
                 .compose(res -> {
@@ -199,21 +199,21 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
             CompositeFuture
                 .join(createResult)
-                .compose(res -> statefulSetOperations.readiness(namespace, zk.getName(), 1_000, operationTimeout))
+                .compose(res -> statefulSetOperations.readiness(namespace, zk.getName(), 1_000, operationTimeoutMs))
                 .compose(res -> {
                     List<Future> waitPodResult = new ArrayList<>(zk.getReplicas());
 
                     for (int i = 0; i < zk.getReplicas(); i++) {
                         String podName = zk.getPodName(i);
-                        waitPodResult.add(podOperations.readiness(namespace, podName, 1_000, operationTimeout));
+                        waitPodResult.add(podOperations.readiness(namespace, podName, 1_000, operationTimeoutMs));
                     }
 
                     return CompositeFuture.join(waitPodResult);
                 })
                 .compose(res -> {
                     List<Future> waitEndpointResult = new ArrayList<>(2);
-                    waitEndpointResult.add(endpointOperations.readiness(namespace, zk.getName(), 1_000, operationTimeout));
-                    waitEndpointResult.add(endpointOperations.readiness(namespace, zk.getHeadlessName(), 1_000, operationTimeout));
+                    waitEndpointResult.add(endpointOperations.readiness(namespace, zk.getName(), 1_000, operationTimeoutMs));
+                    waitEndpointResult.add(endpointOperations.readiness(namespace, zk.getHeadlessName(), 1_000, operationTimeoutMs));
                     return CompositeFuture.join(waitEndpointResult);
                 })
                 .compose(res -> {

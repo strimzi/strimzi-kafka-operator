@@ -246,13 +246,13 @@ The configurable fields are the following :
 * `image`: Docker image to use for the topic controller. Default is `strimzi/topic-controller:latest`
 * `namespace`: the Kubernetes namespace (OpenShift project) in which the topic controller watches for topic ConfigMaps.
 Default is the namespace where the topic controller is running
-* `reconciliationInterval`: the interval between periodic reconciliations. Default is "15 minutes"
+* `reconciliationIntervalMs`: the interval between periodic reconciliations. Default is "15 minutes"
 * `zookeeperSessionTimeout`: the Zookeeper session timeout. Default is "20 seconds"
 
 .Example Topic Controller JSON configuration
 [source,json]
 ----
-{ "reconciliationInterval": "10 minutes", "zookeeperSessionTimeout": "10 seconds" }
+{ "reconciliationIntervalMs": "10 minutes", "zookeeperSessionTimeout": "10 seconds" }
 ----
 
 More information about these configuration parameters in the related <<Topic Controller>> documentation page.
@@ -382,15 +382,18 @@ include::../../examples/install/cluster-controller/03-role-binding.yaml[]
 
 The controller itself can be configured through the following environment variables.
 
-* `STRIMZI_CONFIGMAP_LABELS`: the Kubernetes/OpenShift label selector used to identify ConfigMaps to be managed by the controller.
-Default: `strimzi.io/kind=cluster`.  
-* `STRIMZI_FULL_RECONCILIATION_INTERVAL` : the interval between periodic reconciliations.
+`STRIMZI_CONFIGMAP_LABELS`:: the Kubernetes/OpenShift label selector used to identify ConfigMaps to be managed by the controller.
+Default: `strimzi.io/kind=cluster`.
+
+`STRIMZI_FULL_RECONCILIATION_INTERVAL_MS`:: the interval between periodic reconciliations.
 Default: 120000 ms
- * `STRIMZI_NAMESPACE`: A comma-separated list of namespaces that the controller
+
+`STRIMZI_NAMESPACE`:: A comma-separated list of namespaces that the controller
 should operate in. This is a required environment variable, but the example YAML resources
 supplied with Strimzi use the namespace in which the controller itself is deployed as a
 default value. See the following section.
-* `STRIMZI_OPERATION_TIMEOUT` : Timeout for internal operations specified in milliseconds. This value should be
+
+`STRIMZI_OPERATION_TIMEOUT_MS`:: Timeout for internal operations specified in milliseconds. This value should be
 increased when using Strimzi on clusters where regular Kubernetes operations take longer than usually (for example
 because of slow downloading of Docker images etc.). Default value is 60000 ms.
 
