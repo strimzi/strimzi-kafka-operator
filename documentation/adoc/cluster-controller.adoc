@@ -333,7 +333,7 @@ The resources created by the cluster controller into the Kubernetes/OpenShift cl
 
 For the controller to function it needs permission within the Kubernetes/OpenShift cluster to interact with
 the resources it manages (ConfigMaps, Pods, Deployments, StatefulSets, Services etc).
-These permissions are described in terms of Kubernetes/OpenShift role-based access controls.
+Such permission is described in terms of Kubernetes/OpenShift role-based access controls.
 
 ==== Using a ServiceAccount
 
@@ -345,7 +345,7 @@ The controller is best run using a ServiceAccount:
 include::../../examples/install/cluster-controller/01-service-account.yaml[]
 ----
 
-The Deployment of the controller then needs to specify this in the `serviceAccountName` of it's `template`´s
+The Deployment of the controller then needs to specify this in the `serviceAccountName` of its `template`´s
  `spec`:
 
 [source,yaml,numbered,options="nowrap",highlight='12']
@@ -387,7 +387,7 @@ Default: `strimzi.io/kind=cluster`.
 * `STRIMZI_FULL_RECONCILIATION_INTERVAL` : the interval between periodic reconciliations.
 Default: 120000 ms
  * `STRIMZI_NAMESPACE`: A comma-separated list of namespaces that the controller
-should operate in. This is a required environment variable, but the exmple YAML resources
+should operate in. This is a required environment variable, but the example YAML resources
 supplied with Strimzi use the namespace in which the controller itself is deployed as a
 default value. See the following section.
 
@@ -420,7 +420,7 @@ subjects:
     name: strimzi-cluster-controller
     namespace: foo
 roleRef:
-  kind: ClusterRole
+  kind: Role
   name: strimzi-cluster-controller-role
   apiGroup: v1
 ----
