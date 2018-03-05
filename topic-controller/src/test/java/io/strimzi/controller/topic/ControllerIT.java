@@ -10,8 +10,8 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.test.Namespace;
-import io.strimzi.test.Resources;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -29,7 +29,9 @@ import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -54,8 +56,7 @@ import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-@Namespace("topic-controller-it")
-@Resources("src/test/resources/ControllerIntegrationTest-rbac.yaml")
+@Namespace(ControllerIT.NAMESPACE)
 @RunWith(VertxUnitRunner.class)
 public class ControllerIT {
 
@@ -63,16 +64,17 @@ public class ControllerIT {
 
     @ClassRule
     public static KubeClusterResource testCluster = new KubeClusterResource();
+    private static String oldNamespace;
 
     private final LabelPredicate cmPredicate = LabelPredicate.fromString(
             "strimzi.io/kind=topic");
 
-    private String namespace;
+    public static final String NAMESPACE = "topic-controller-it";
 
     private final Vertx vertx = Vertx.vertx();
     private KafkaCluster kafkaCluster;
     private volatile AdminClient adminClient;
-    private DefaultKubernetesClient kubeClient;
+    private KubernetesClient kubeClient;
     private volatile TopicsWatcher topicsWatcher;
     private Thread kafkaHook = new Thread() {
         @Override
@@ -82,12 +84,31 @@ public class ControllerIT {
             }
         }
     };
-    private final long timeout = 60_000L;
+    private final long timeout = 120_000L;
     private volatile TopicConfigsWatcher topicsConfigWatcher;
     private volatile TopicWatcher topicWatcher;
 
     private volatile String deploymentId;
     private Set<String> preExistingEvents;
+
+    @BeforeClass
+    public static void setupKubeCluster() {
+        testCluster.client().clientWithAdmin()
+                .createNamespace(NAMESPACE);
+        oldNamespace = testCluster.client().namespace(NAMESPACE);
+        testCluster.client().clientWithAdmin()
+                .create("../examples/install/topic-controller/02-role.yaml")
+                .create("src/test/resources/ControllerIT-rbac.yaml");
+    }
+
+    @AfterClass
+    public static void teardownKubeCluster() {
+        testCluster.client().clientWithAdmin()
+                .delete("src/test/resources/ControllerIT-rbac.yaml")
+                .delete("../examples/install/topic-controller/02-role.yaml")
+                .deleteNamespace(NAMESPACE);
+        testCluster.client().clientWithAdmin().namespace(oldNamespace);
+    }
 
     @Before
     public void setup(TestContext context) throws Exception {
@@ -100,13 +121,12 @@ public class ControllerIT {
         kafkaCluster.usingDirectory(Files.createTempDirectory("controller-integration-test").toFile());
         kafkaCluster.startup();
 
-        kubeClient = new DefaultKubernetesClient();
-        namespace = testCluster.defaultNamespace();
-        LOGGER.info("Using namespace {}", namespace);
+        kubeClient = new DefaultKubernetesClient().inNamespace(NAMESPACE);
+        LOGGER.info("Using namespace {}", NAMESPACE);
         Map<String, String> m = new HashMap();
         m.put(Config.KAFKA_BOOTSTRAP_SERVERS.key, kafkaCluster.brokerList());
         m.put(Config.ZOOKEEPER_CONNECT.key, "localhost:" + zkPort(kafkaCluster));
-        m.put(Config.NAMESPACE.key, testCluster.defaultNamespace());
+        m.put(Config.NAMESPACE.key, NAMESPACE);
         Session session = new Session(kubeClient, new Config(m));
 
         Async async = context.async();
@@ -130,7 +150,7 @@ public class ControllerIT {
 
         // We can't delete events, so record the events which exist at the start of the test
         // and then waitForEvents() can ignore those
-        preExistingEvents = kubeClient.events().inNamespace(namespace).withLabels(cmPredicate.labels()).list().
+        preExistingEvents = kubeClient.events().inNamespace(NAMESPACE).withLabels(cmPredicate.labels()).list().
                 getItems().stream().
                 map(evt -> evt.getMetadata().getUid()).
                 collect(Collectors.toSet());
@@ -154,7 +174,7 @@ public class ControllerIT {
     public void teardown(TestContext context) {
         LOGGER.info("Tearing down test");
 
-        kubeClient.configMaps().inNamespace(namespace).delete();
+        kubeClient.configMaps().inNamespace(NAMESPACE).delete();
 
         Async async = context.async();
         if (deploymentId != null) {
@@ -183,7 +203,7 @@ public class ControllerIT {
     private ConfigMap createCm(TestContext context, ConfigMap cm) {
         String topicName = new TopicName(cm).toString();
         // Create a CM
-        kubeClient.configMaps().inNamespace(namespace).create(cm);
+        kubeClient.configMaps().inNamespace(NAMESPACE).create(cm);
 
         // Wait for the topic to be created
         waitFor(context, () -> {
@@ -218,7 +238,7 @@ public class ControllerIT {
 
         // Wait for the configmap to be created
         waitFor(context, () -> {
-            ConfigMap cm = kubeClient.configMaps().inNamespace(namespace).withName(configMapName).get();
+            ConfigMap cm = kubeClient.configMaps().inNamespace(NAMESPACE).withName(configMapName).get();
             LOGGER.info("Polled configmap {} waiting for creation", configMapName);
             return cm != null;
         }, timeout, "Expected the configmap to have been created by now");
@@ -254,7 +274,7 @@ public class ControllerIT {
 
         // Wait for the configmap to be modified
         waitFor(context, () -> {
-            ConfigMap cm = kubeClient.configMaps().inNamespace(namespace).withName(configMapName).get();
+            ConfigMap cm = kubeClient.configMaps().inNamespace(NAMESPACE).withName(configMapName).get();
             LOGGER.info("Polled configmap {}, waiting for config change", configMapName);
             String gotValue = TopicSerialization.fromConfigMap(cm).getConfig().get(key);
             LOGGER.info("Got value {}", gotValue);
@@ -274,7 +294,7 @@ public class ControllerIT {
 
         // Wait for the configmap to be modified
         waitFor(context, () -> {
-            ConfigMap cm = kubeClient.configMaps().inNamespace(namespace).withName(configMapName).get();
+            ConfigMap cm = kubeClient.configMaps().inNamespace(NAMESPACE).withName(configMapName).get();
             LOGGER.info("Polled configmap {}, waiting for partitions change", configMapName);
             int gotValue = TopicSerialization.fromConfigMap(cm).getNumPartitions();
             LOGGER.info("Got value {}", gotValue);
@@ -310,7 +330,7 @@ public class ControllerIT {
 
         // Wait for the configmap to be deleted
         waitFor(context, () -> {
-            ConfigMap cm = kubeClient.configMaps().inNamespace(namespace).withName(configMapName).get();
+            ConfigMap cm = kubeClient.configMaps().inNamespace(NAMESPACE).withName(configMapName).get();
             LOGGER.info("Polled configmap {}, got {}, waiting for deletion", configMapName, cm);
             return cm == null;
         }, timeout, "Expected the configmap to have been deleted by now");
@@ -361,7 +381,7 @@ public class ControllerIT {
 
     private void waitForEvent(TestContext context, ConfigMap cm, String expectedMessage, Controller.EventType expectedType) {
         waitFor(context, () -> {
-            List<Event> items = kubeClient.events().inNamespace(namespace).withLabels(cmPredicate.labels()).list().getItems();
+            List<Event> items = kubeClient.events().inNamespace(NAMESPACE).withLabels(cmPredicate.labels()).list().getItems();
             List<Event> filtered = items.stream().
                     filter(evt -> !preExistingEvents.contains(evt.getMetadata().getUid())
                     && "ConfigMap".equals(evt.getInvolvedObject().getKind())
@@ -440,7 +460,7 @@ public class ControllerIT {
         cm.getData().put(TopicSerialization.CM_KEY_PARTITIONS, "foo");
 
         // Create a CM
-        kubeClient.configMaps().inNamespace(namespace).create(cm);
+        kubeClient.configMaps().inNamespace(NAMESPACE).create(cm);
 
         // Wait for the warning event
         waitForEvent(context, cm,
@@ -458,7 +478,7 @@ public class ControllerIT {
         ConfigMap cm = createCm(context, topicName);
 
         // can now delete the cm
-        kubeClient.configMaps().inNamespace(namespace).withName(cm.getMetadata().getName()).delete();
+        kubeClient.configMaps().inNamespace(NAMESPACE).withName(cm.getMetadata().getName()).delete();
 
         // Wait for the topic to be deleted
         waitFor(context, () -> {
@@ -486,7 +506,7 @@ public class ControllerIT {
         ConfigMap cm = createCm(context, topicName);
 
         // now change the cm
-        kubeClient.configMaps().inNamespace(namespace).withName(cm.getMetadata().getName()).edit().addToData(TopicSerialization.CM_KEY_CONFIG, "{\"retention.ms\":\"12341234\"}").done();
+        kubeClient.configMaps().inNamespace(NAMESPACE).withName(cm.getMetadata().getName()).edit().addToData(TopicSerialization.CM_KEY_CONFIG, "{\"retention.ms\":\"12341234\"}").done();
 
         // Wait for that to be reflected in the topic
         waitFor(context, () -> {
@@ -505,7 +525,7 @@ public class ControllerIT {
         ConfigMap cm = createCm(context, topicName);
 
         // now change the cm
-        kubeClient.configMaps().inNamespace(namespace).withName(cm.getMetadata().getName()).edit().addToData(TopicSerialization.CM_KEY_PARTITIONS, "foo").done();
+        kubeClient.configMaps().inNamespace(NAMESPACE).withName(cm.getMetadata().getName()).edit().addToData(TopicSerialization.CM_KEY_PARTITIONS, "foo").done();
 
         // Wait for that to be reflected in the topic
         waitForEvent(context, cm,
@@ -524,7 +544,7 @@ public class ControllerIT {
         // now change the cm
         String changedName = topicName.toUpperCase(Locale.ENGLISH);
         LOGGER.info("Changing CM data.name from {} to {}", topicName, changedName);
-        kubeClient.configMaps().inNamespace(namespace).withName(cm.getMetadata().getName()).edit().addToData(TopicSerialization.CM_KEY_NAME, changedName).done();
+        kubeClient.configMaps().inNamespace(NAMESPACE).withName(cm.getMetadata().getName()).edit().addToData(TopicSerialization.CM_KEY_NAME, changedName).done();
 
         // We expect this to cause a warning event
         waitForEvent(context, cm,
@@ -542,7 +562,7 @@ public class ControllerIT {
         // create one
         createCm(context, cm2);
         // create another
-        kubeClient.configMaps().inNamespace(namespace).create(cm);
+        kubeClient.configMaps().inNamespace(NAMESPACE).create(cm);
 
         waitForEvent(context, cm,
                 "Failure processing ConfigMap watch event ADDED on map two-cms-one-topic with labels {strimzi.io/kind=topic}: " +
