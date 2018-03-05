@@ -617,12 +617,6 @@ public class KafkaClusterOperationsTest {
 
     @Test
     public void testReconcile(TestContext context) {
-        ConfigMap clusterCm = getConfigMap("bar");
-        reconcileCluster(context, getConfigMap("bar"), clusterCm);
-    }
-
-    private void reconcileCluster(TestContext context, ConfigMap originalCm, ConfigMap clusterCm) {
-
         Async async = context.async(3);
 
         // create CM, Service, headless service, statefulset
@@ -634,7 +628,7 @@ public class KafkaClusterOperationsTest {
         EndpointOperations mockEndpointOps = mock(EndpointOperations.class);
         DeploymentOperations mockDepOps = mock(DeploymentOperations.class);
 
-        String clusterCmNamespace = clusterCm.getMetadata().getNamespace();
+        String clusterCmNamespace = "myNamespace";
 
         ConfigMap foo = getConfigMap("foo");
         ConfigMap bar = getConfigMap("bar");
@@ -681,19 +675,21 @@ public class KafkaClusterOperationsTest {
             public void create(String namespace, String name, Handler h) {
                 created.add(name);
                 async.countDown();
+                h.handle(Future.succeededFuture());
             }
             @Override
             public void update(String namespace, String name, Handler h) {
                 updated.add(name);
                 async.countDown();
+                h.handle(Future.succeededFuture());
             }
             @Override
             public void delete(String namespace, String name, Handler h) {
                 deleted.add(name);
                 async.countDown();
+                h.handle(Future.succeededFuture());
             }
         };
-
 
         // Now try to reconcile all the Kafka clusters
         ops.reconcileAll(clusterCmNamespace, Collections.emptyMap());
@@ -704,6 +700,4 @@ public class KafkaClusterOperationsTest {
         context.assertEquals(singleton("bar"), updated);
         context.assertEquals(singleton("baz"), deleted);
     }
-
-
 }
