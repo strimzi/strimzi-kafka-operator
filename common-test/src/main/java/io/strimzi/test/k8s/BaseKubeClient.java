@@ -289,4 +289,19 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
     public String toString() {
         return cmd();
     }
+
+    @Override
+    public List<String> list(String resourceType) {
+        return asList(Exec.exec(namespacedCommand("get", resourceType, "-o", "jsonpath={range .items[*]}{.metadata.name} ")).out().trim().split(" "));
+    }
+
+    @Override
+    public String describe(String resourceType, String resourceName) {
+        return Exec.exec(namespacedCommand("describe", resourceType, resourceName)).out();
+    }
+
+    @Override
+    public String logs(String pod) {
+        return Exec.exec(namespacedCommand("logs", pod)).out();
+    }
 }

@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.map;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
@@ -210,7 +211,12 @@ public class KafkaClusterTest {
                 LOGGER.trace("Exception while waiting for ZK to become leader/follower, ignoring", e);
             }
             return false;
-        });
+        },
+            () -> LOGGER.info("zookeeper `mntr` output at the point of timeout does not match {}:{}{}",
+                pattern.pattern(),
+                System.lineSeparator(),
+                indent(kubeClient.exec(pod, "/bin/bash", "-c", "echo mntr | nc localhost 2181").out()))
+        );
     }
 
 }
