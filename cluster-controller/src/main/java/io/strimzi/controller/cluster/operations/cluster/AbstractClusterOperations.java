@@ -226,8 +226,9 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
      * @param namespace The namespace
      * @param name The name of the cluster
      */
-    public final void reconcile(String namespace, String name) {
+    public final Future<Void> reconcile(String namespace, String name) {
         String clusterType = clusterType();
+        Future<Void> fut = Future.future();
 
         final String lockName = getLockName(clusterType, namespace, name);
         vertx.sharedData().getLockWithTimeout(lockName, LOCK_TIMEOUT, res -> {
@@ -258,6 +259,7 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
                                 }
                                 lock.release();
                                 log.debug("Lock {} released", lockName);
+                                fut.complete();
                             });
                         } else {
                             log.info("Reconciliation: {} cluster {} should be created", clusterDescription, cm.getMetadata().getName());
@@ -270,6 +272,7 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
                                 }
                                 lock.release();
                                 log.debug("Lock {} released", lockName);
+                                fut.complete();
                             });
                         }
                     } else {
@@ -295,17 +298,22 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
                         CompositeFuture.join(result).setHandler(res2 -> {
                             lock.release();
                             log.debug("Lock {} released", lockName);
+                            fut.complete();
                         });
                     }
                 } catch (Throwable ex) {
                     log.error("Error while reconciling {} cluster", clusterDescription, ex);
                     lock.release();
                     log.debug("Lock {} released", lockName);
+                    fut.complete();
                 }
             } else {
                 log.warn("Failed to acquire lock for {} cluster {}.", clusterType, lockName);
+                fut.complete();
             }
         });
+
+        return fut;
     }
 
     /**
@@ -320,7 +328,7 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
      * @param namespace The namespace
      * @param labels The labels
      */
-    public final void reconcileAll(String namespace, Map<String, String> labels) {
+    public final Future<?> reconcileAll(String namespace, Map<String, String> labels) {
         String clusterType = clusterType();
         Map<String, String> newLabels = new HashMap<>(labels);
         newLabels.put(ClusterController.STRIMZI_TYPE_LABEL, clusterType);
@@ -335,9 +343,12 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
 
         cmsNames.addAll(resourceNames);
 
+        List<Future> result = new ArrayList<>(cmsNames.size());
         for (String name: cmsNames) {
-            reconcile(namespace, name);
+            result.add(reconcile(namespace, name));
         }
+
+        return CompositeFuture.join(result);
     }
 
     /**
