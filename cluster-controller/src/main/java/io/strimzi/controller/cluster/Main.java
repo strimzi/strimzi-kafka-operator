@@ -130,11 +130,12 @@ public class Main {
 
         httpClient.getNow("/oapi", res -> {
             if (res.statusCode() == HttpResponseStatus.OK.code()) {
-                log.info("{} returned {}. We should be in OpenShift. It is safe to check 'isAdaptable'", res.request().absoluteURI(), res.statusCode());
+                log.debug("{} returned {}. We are on OpenShift.", res.request().absoluteURI(), res.statusCode());
+                // We should be on OpenShift based on the /oapi result. We can now safely try isAdaptable() to be 100% sure.
                 Boolean isOpenShift = Boolean.TRUE.equals(client.isAdaptable(OpenShiftClient.class));
                 fut.complete(isOpenShift);
             } else {
-                log.info("{} returned {}. We are not on OpenShift.", res.request().absoluteURI(), res.statusCode());
+                log.debug("{} returned {}. We are not on OpenShift.", res.request().absoluteURI(), res.statusCode());
                 fut.complete(Boolean.FALSE);
             }
         });
