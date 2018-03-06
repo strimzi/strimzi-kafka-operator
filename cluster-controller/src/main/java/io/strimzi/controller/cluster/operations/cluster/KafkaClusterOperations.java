@@ -16,6 +16,7 @@ import io.strimzi.controller.cluster.operations.resource.ServiceOperations;
 import io.strimzi.controller.cluster.operations.resource.StatefulSetOperations;
 import io.strimzi.controller.cluster.resources.ClusterDiffResult;
 import io.strimzi.controller.cluster.resources.KafkaCluster;
+import io.strimzi.controller.cluster.resources.Labels;
 import io.strimzi.controller.cluster.resources.Storage;
 import io.strimzi.controller.cluster.resources.TopicController;
 import io.strimzi.controller.cluster.resources.ZookeeperCluster;
@@ -711,7 +712,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
     }
 
     @Override
-    protected List<StatefulSet> getResources(String namespace, Map<String, String> kafkaLabels) {
+    protected List<StatefulSet> getResources(String namespace, Labels kafkaLabels) {
         return statefulSetOperations.list(namespace, kafkaLabels);
     }
 

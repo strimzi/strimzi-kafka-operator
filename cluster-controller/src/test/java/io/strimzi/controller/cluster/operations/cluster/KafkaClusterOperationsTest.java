@@ -22,6 +22,7 @@ import io.strimzi.controller.cluster.operations.resource.StatefulSetOperations;
 import io.strimzi.controller.cluster.resources.AbstractCluster;
 import io.strimzi.controller.cluster.resources.ClusterDiffResult;
 import io.strimzi.controller.cluster.resources.KafkaCluster;
+import io.strimzi.controller.cluster.resources.Labels;
 import io.strimzi.controller.cluster.resources.Storage;
 import io.strimzi.controller.cluster.resources.TopicController;
 import io.strimzi.controller.cluster.resources.ZookeeperCluster;
@@ -646,22 +647,19 @@ public class KafkaClusterOperationsTest {
 
 
         // providing the list of ALL StatefulSets for all the Kafka clusters
-        Map<String, String> newLabels = new HashMap<>();
-        newLabels.put(ClusterController.STRIMZI_TYPE_LABEL, "kafka");
+        Labels newLabels = Labels.type("kafka");
         when(mockSsOps.list(eq(clusterCmNamespace), eq(newLabels))).thenReturn(
                 asList(KafkaCluster.fromConfigMap(bar).generateStatefulSet(openShift),
                         KafkaCluster.fromConfigMap(baz).generateStatefulSet(openShift))
         );
 
         // providing the list StatefulSets for already "existing" Kafka clusters
-        Map<String, String> barLabels = new HashMap<>();
-        barLabels.put(ClusterController.STRIMZI_CLUSTER_LABEL, "bar");
+        Labels barLabels = Labels.cluster("bar");
         when(mockSsOps.list(eq(clusterCmNamespace), eq(barLabels))).thenReturn(
                 asList(KafkaCluster.fromConfigMap(bar).generateStatefulSet(openShift))
         );
 
-        Map<String, String> bazLabels = new HashMap<>();
-        bazLabels.put(ClusterController.STRIMZI_CLUSTER_LABEL, "baz");
+        Labels bazLabels = Labels.cluster("baz");
         when(mockSsOps.list(eq(clusterCmNamespace), eq(bazLabels))).thenReturn(
                 asList(KafkaCluster.fromConfigMap(baz).generateStatefulSet(openShift))
         );
@@ -697,7 +695,7 @@ public class KafkaClusterOperationsTest {
         };
 
         // Now try to reconcile all the Kafka clusters
-        ops.reconcileAll(clusterCmNamespace, Collections.emptyMap());
+        ops.reconcileAll(clusterCmNamespace, Labels.EMPTY);
 
         async.await();
 

@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
@@ -82,9 +83,9 @@ public class ZookeeperCluster extends AbstractCluster {
      * @param namespace Kubernetes/OpenShift namespace where Zookeeper cluster resources are going to be created
      * @param cluster   overall cluster name
      */
-    private ZookeeperCluster(String namespace, String cluster) {
+    private ZookeeperCluster(String namespace, String cluster, Labels labels) {
 
-        super(namespace, cluster);
+        super(namespace, cluster, KafkaCluster.TYPE.equals(labels.type()) ? labels.withType(ZookeeperCluster.TYPE) : labels);
         this.name = zookeeperClusterName(cluster);
         this.headlessName = zookeeperHeadlessName(cluster);
         this.metricsConfigName = zookeeperMetricsName(cluster);
@@ -109,10 +110,8 @@ public class ZookeeperCluster extends AbstractCluster {
      * @return Zookeeper cluster instance
      */
     public static ZookeeperCluster fromConfigMap(ConfigMap kafkaClusterCm) {
-
-        ZookeeperCluster zk = new ZookeeperCluster(kafkaClusterCm.getMetadata().getNamespace(), kafkaClusterCm.getMetadata().getName());
-
-        zk.setLabels(kafkaClusterCm.getMetadata().getLabels());
+        ZookeeperCluster zk = new ZookeeperCluster(kafkaClusterCm.getMetadata().getNamespace(), kafkaClusterCm.getMetadata().getName(),
+                Labels.fromResource(kafkaClusterCm));
 
         zk.setReplicas(Integer.parseInt(kafkaClusterCm.getData().getOrDefault(KEY_REPLICAS, String.valueOf(DEFAULT_REPLICAS))));
         zk.setImage(kafkaClusterCm.getData().getOrDefault(KEY_IMAGE, DEFAULT_IMAGE));
@@ -140,10 +139,9 @@ public class ZookeeperCluster extends AbstractCluster {
      */
     public static ZookeeperCluster fromStatefulSet(StatefulSet ss,
                                                    String namespace, String cluster) {
+        ZookeeperCluster zk =  new ZookeeperCluster(namespace, cluster,
+                Labels.fromResource(ss));
 
-        ZookeeperCluster zk =  new ZookeeperCluster(namespace, cluster);
-
-        zk.setLabels(ss.getMetadata().getLabels());
         zk.setReplicas(ss.getSpec().getReplicas());
         zk.setImage(ss.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
         zk.setHealthCheckInitialDelay(ss.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds());
@@ -380,14 +378,4 @@ public class ZookeeperCluster extends AbstractCluster {
         return volumeMountList;
     }
 
-    @Override
-    protected void setLabels(Map<String, String> labels) {
-        Map<String, String> newLabels = new HashMap<>(labels);
-
-        if (KafkaCluster.TYPE.equals(newLabels.get(ClusterController.STRIMZI_TYPE_LABEL))) {
-            newLabels.put(ClusterController.STRIMZI_TYPE_LABEL, ZookeeperCluster.TYPE);
-        }
-
-        super.setLabels(newLabels);
-    }
 }

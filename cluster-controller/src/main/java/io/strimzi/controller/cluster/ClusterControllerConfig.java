@@ -4,6 +4,8 @@
  */
 package io.strimzi.controller.cluster;
 
+import io.strimzi.controller.cluster.resources.Labels;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -25,10 +27,10 @@ public class ClusterControllerConfig {
     public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = 120_000;
     public static final long DEFAULT_OPERATION_TIMEOUT_MS = 60_000;
 
-    private Map<String, String> labels;
-    private Set<String> namespaces;
-    private long reconciliationIntervalMs;
-    private long operationTimeoutMs;
+    private final Labels labels;
+    private final Set<String> namespaces;
+    private final long reconciliationIntervalMs;
+    private final long operationTimeoutMs;
 
     /**
      * Constructor
@@ -38,7 +40,7 @@ public class ClusterControllerConfig {
      * @param reconciliationIntervalMs    specify every how many milliseconds the reconciliation runs
      * @param operationTimeoutMs    timeout for internal operations specified in milliseconds
      */
-    public ClusterControllerConfig(Set<String> namespaces, Map<String, String> labels, long reconciliationIntervalMs, long operationTimeoutMs) {
+    public ClusterControllerConfig(Set<String> namespaces, Labels labels, long reconciliationIntervalMs, long operationTimeoutMs) {
         this.namespaces = unmodifiableSet(new HashSet<>(namespaces));
         this.labels = labels;
         this.reconciliationIntervalMs = reconciliationIntervalMs;
@@ -51,7 +53,7 @@ public class ClusterControllerConfig {
      * @param namespaces namespace in which the controller will run and create resources
      * @param labels    labels used for watching the cluster ConfigMap
      */
-    public ClusterControllerConfig(Set<String> namespaces, Map<String, String> labels) {
+    public ClusterControllerConfig(Set<String> namespaces, Labels labels) {
         this(namespaces, labels, DEFAULT_FULL_RECONCILIATION_INTERVAL_MS, DEFAULT_OPERATION_TIMEOUT_MS);
     }
 
@@ -95,23 +97,14 @@ public class ClusterControllerConfig {
             labelsMap.put(fields[0].trim(), fields[1].trim());
         }
 
-        return new ClusterControllerConfig(namespaces, labelsMap, reconciliationInterval, operationTimeout);
+        return new ClusterControllerConfig(namespaces, Labels.userLabels(labelsMap), reconciliationInterval, operationTimeout);
     }
 
     /**
      * @return  labels used for watching the cluster ConfigMap
      */
-    public Map<String, String> getLabels() {
+    public Labels getLabels() {
         return labels;
-    }
-
-    /**
-     * Set the labels used for watching the cluster ConfigMap
-     *
-     * @param labels    labels used for watching the cluster ConfigMap
-     */
-    public void setLabels(Map<String, String> labels) {
-        this.labels = labels;
     }
 
     /**

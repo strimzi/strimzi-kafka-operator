@@ -58,7 +58,7 @@ public abstract class AbstractCluster {
 
     protected final String cluster;
     protected final String namespace;
-    protected Map<String, String> labels = new HashMap<>();
+    protected final Labels labels;
 
     // Docker image configuration
     protected String image;
@@ -93,18 +93,14 @@ public abstract class AbstractCluster {
      * @param namespace Kubernetes/OpenShift namespace where cluster resources are going to be created
      * @param cluster   overall cluster name
      */
-    protected AbstractCluster(String namespace, String cluster) {
+    protected AbstractCluster(String namespace, String cluster, Labels labels) {
         this.cluster = cluster;
         this.namespace = namespace;
+        this.labels = labels.withCluster(cluster);
     }
 
-    public Map<String, String> getLabels() {
+    public Labels getLabels() {
         return labels;
-    }
-
-    protected void setLabels(Map<String, String> newLabels) {
-        newLabels.put(ClusterController.STRIMZI_CLUSTER_LABEL, cluster);
-        this.labels = new HashMap<>(newLabels);
     }
 
     public int getReplicas() {
@@ -145,9 +141,7 @@ public abstract class AbstractCluster {
     }
 
     protected Map<String, String> getLabelsWithName(String name) {
-        Map<String, String> labelsWithName = new HashMap<>(labels);
-        labelsWithName.put(ClusterController.STRIMZI_NAME_LABEL, name);
-        return labelsWithName;
+        return labels.withName(name).toMap();
     }
 
     /**
@@ -317,8 +311,9 @@ public abstract class AbstractCluster {
 
         ConfigMap cm = new ConfigMapBuilder()
                 .withNewMetadata()
-                .withName(name)
-                .withNamespace(namespace)
+                    .withName(name)
+                    .withNamespace(namespace)
+                    .withLabels(labels.toMap())
                 .endMetadata()
                 .withData(data)
                 .build();

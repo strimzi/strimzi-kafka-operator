@@ -17,6 +17,7 @@ import io.strimzi.controller.cluster.operations.cluster.KafkaConnectS2IClusterOp
 import io.strimzi.controller.cluster.resources.KafkaCluster;
 import io.strimzi.controller.cluster.resources.KafkaConnectCluster;
 import io.strimzi.controller.cluster.resources.KafkaConnectS2ICluster;
+import io.strimzi.controller.cluster.resources.Labels;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -31,18 +32,13 @@ public class ClusterController extends AbstractVerticle {
 
     private static final Logger log = LoggerFactory.getLogger(ClusterController.class.getName());
 
-    public static final String STRIMZI_DOMAIN = "strimzi.io";
     public static final String STRIMZI_CLUSTER_CONTROLLER_DOMAIN = "cluster.controller.strimzi.io";
-    public static final String STRIMZI_KIND_LABEL = STRIMZI_DOMAIN + "/kind";
-    public static final String STRIMZI_TYPE_LABEL = STRIMZI_DOMAIN + "/type";
-    public static final String STRIMZI_CLUSTER_LABEL = STRIMZI_DOMAIN + "/cluster";
-    public static final String STRIMZI_NAME_LABEL = STRIMZI_DOMAIN + "/name";
     public static final String STRIMZI_CLUSTER_CONTROLLER_SERVICE_ACCOUNT = "strimzi-cluster-controller";
 
     private static final int HEALTH_SERVER_PORT = 8080;
 
     private final KubernetesClient client;
-    private final Map<String, String> labels;
+    private final Labels labels;
     private final String namespace;
     private final long reconciliationInterval;
 
@@ -55,7 +51,7 @@ public class ClusterController extends AbstractVerticle {
     private boolean stopping;
 
     public ClusterController(String namespace,
-                             Map<String, String> labels,
+                             Labels labels,
                              long reconciliationInterval,
                              KubernetesClient client,
                              KafkaClusterOperations kafkaClusterOperations,
@@ -115,15 +111,15 @@ public class ClusterController extends AbstractVerticle {
     private void createConfigMapWatch(Handler<AsyncResult<Watch>> handler) {
         getVertx().executeBlocking(
             future -> {
-                Watch watch = client.configMaps().inNamespace(namespace).withLabels(labels).watch(new Watcher<ConfigMap>() {
+                Watch watch = client.configMaps().inNamespace(namespace).withLabels(labels.toMap()).watch(new Watcher<ConfigMap>() {
                     @Override
                     public void eventReceived(Action action, ConfigMap cm) {
-                        Map<String, String> labels = cm.getMetadata().getLabels();
-                        String type = labels.get(ClusterController.STRIMZI_TYPE_LABEL);
+                        Labels labels = Labels.fromResource(cm);
+                        String type = labels.type();
 
                         final AbstractClusterOperations<?, ?> cluster;
                         if (type == null) {
-                            log.warn("Missing label {} in Config Map {} in namespace {}", ClusterController.STRIMZI_TYPE_LABEL, cm.getMetadata().getName(), namespace);
+                            log.warn("Missing label {} in Config Map {} in namespace {}", Labels.STRIMZI_TYPE_LABEL, cm.getMetadata().getName(), namespace);
                             return;
                         } else if (type.equals(KafkaCluster.TYPE)) {
                             cluster = kafkaClusterOperations;
@@ -137,7 +133,7 @@ public class ClusterController extends AbstractVerticle {
                                 return;
                             }
                         } else {
-                            log.warn("Unknown type {} received in Config Map {} in namespace {}", labels.get(ClusterController.STRIMZI_TYPE_LABEL), cm.getMetadata().getName(), namespace);
+                            log.warn("Unknown type {} received in Config Map {} in namespace {}", type, cm.getMetadata().getName(), namespace);
                             return;
                         }
                         String name = cm.getMetadata().getName();

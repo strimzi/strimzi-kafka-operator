@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.client.server.mock.OpenShiftServer;
+import io.strimzi.controller.cluster.resources.Labels;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -37,12 +38,12 @@ public class PodOperationsMockTest extends ResourceOperationsMockTest<Kubernetes
         KubernetesClient client = server.getKubernetesClient();
         PodOperations pr = new PodOperations(vertx, client);
 
-        context.assertEquals(emptyList(), pr.list(NAMESPACE, emptyMap()));
+        context.assertEquals(emptyList(), pr.list(NAMESPACE, Labels.EMPTY));
 
         Async async = context.async(1);
         pr.create(resource()).setHandler(createResult -> {
             context.assertTrue(createResult.succeeded());
-            context.assertEquals(singletonList(RESOURCE_NAME), pr.list(NAMESPACE, emptyMap()).stream()
+            context.assertEquals(singletonList(RESOURCE_NAME), pr.list(NAMESPACE, Labels.EMPTY).stream()
                         .map(p -> p.getMetadata().getName())
                         .collect(Collectors.toList()));
             //Pod got = pr.get(NAMESPACE, RESOURCE_NAME);

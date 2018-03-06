@@ -79,9 +79,9 @@ public class KafkaCluster extends AbstractCluster {
      * @param namespace Kubernetes/OpenShift namespace where Kafka cluster resources are going to be created
      * @param cluster  overall cluster name
      */
-    private KafkaCluster(String namespace, String cluster) {
+    private KafkaCluster(String namespace, String cluster, Labels labels) {
 
-        super(namespace, cluster);
+        super(namespace, cluster, labels);
         this.name = kafkaClusterName(cluster);
         this.headlessName = headlessName(cluster);
         this.metricsConfigName = metricConfigsName(cluster);
@@ -118,8 +118,9 @@ public class KafkaCluster extends AbstractCluster {
      */
     public static KafkaCluster fromConfigMap(ConfigMap kafkaClusterCm) {
 
-        KafkaCluster kafka = new KafkaCluster(kafkaClusterCm.getMetadata().getNamespace(), kafkaClusterCm.getMetadata().getName());
-        kafka.setLabels(kafkaClusterCm.getMetadata().getLabels());
+        KafkaCluster kafka = new KafkaCluster(kafkaClusterCm.getMetadata().getNamespace(),
+                kafkaClusterCm.getMetadata().getName(),
+                Labels.fromResource(kafkaClusterCm));
 
         kafka.setReplicas(Integer.parseInt(kafkaClusterCm.getData().getOrDefault(KEY_REPLICAS, String.valueOf(DEFAULT_REPLICAS))));
         kafka.setImage(kafkaClusterCm.getData().getOrDefault(KEY_IMAGE, DEFAULT_IMAGE));
@@ -153,9 +154,8 @@ public class KafkaCluster extends AbstractCluster {
      */
     public static KafkaCluster fromStatefulSet(StatefulSet ss, String namespace, String cluster) {
 
-        KafkaCluster kafka =  new KafkaCluster(namespace, cluster);
+        KafkaCluster kafka =  new KafkaCluster(namespace, cluster, Labels.fromResource(ss));
 
-        kafka.setLabels(ss.getMetadata().getLabels());
         kafka.setReplicas(ss.getSpec().getReplicas());
         Container container = ss.getSpec().getTemplate().getSpec().getContainers().get(0);
         kafka.setImage(container.getImage());

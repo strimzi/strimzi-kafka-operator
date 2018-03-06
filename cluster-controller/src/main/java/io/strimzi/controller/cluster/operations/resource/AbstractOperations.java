@@ -6,9 +6,11 @@ package io.strimzi.controller.cluster.operations.resource;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.internal.readiness.Readiness;
+import io.strimzi.controller.cluster.resources.Labels;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -171,8 +173,8 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
      * @return A list of matching resources.
      */
     @SuppressWarnings("unchecked")
-    public List<T> list(String namespace, Map<String, String> labels) {
-        return operation().inNamespace(namespace).withLabels(labels).list().getItems();
+    public List<T> list(String namespace, Labels labels) {
+        return operation().inNamespace(namespace).withLabels(labels.toMap()).list().getItems();
     }
 
     /**

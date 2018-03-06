@@ -11,6 +11,7 @@ import io.strimzi.controller.cluster.operations.resource.DeploymentOperations;
 import io.strimzi.controller.cluster.operations.resource.ServiceOperations;
 import io.strimzi.controller.cluster.resources.ClusterDiffResult;
 import io.strimzi.controller.cluster.resources.KafkaConnectCluster;
+import io.strimzi.controller.cluster.resources.Labels;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -207,7 +208,7 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
     }
 
     @Override
-    protected List<Deployment> getResources(String namespace, Map<String, String> kafkaLabels) {
+    protected List<Deployment> getResources(String namespace, Labels kafkaLabels) {
         return deploymentOperations.list(namespace, kafkaLabels);
     }
 }

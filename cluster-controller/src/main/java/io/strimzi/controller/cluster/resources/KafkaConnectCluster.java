@@ -86,8 +86,8 @@ public class KafkaConnectCluster extends AbstractCluster {
      * @param namespace Kubernetes/OpenShift namespace where Kafka Connect cluster resources are going to be created
      * @param cluster   overall cluster name
      */
-    protected KafkaConnectCluster(String namespace, String cluster) {
-        super(namespace, cluster);
+    protected KafkaConnectCluster(String namespace, String cluster, Labels labels) {
+        super(namespace, cluster, labels);
         this.name = kafkaConnectClusterName(cluster);
         this.image = DEFAULT_IMAGE;
         this.replicas = DEFAULT_REPLICAS;
@@ -103,9 +103,9 @@ public class KafkaConnectCluster extends AbstractCluster {
      * @return Kafka Connect cluster instance
      */
     public static KafkaConnectCluster fromConfigMap(ConfigMap cm) {
-        KafkaConnectCluster kafkaConnect = new KafkaConnectCluster(cm.getMetadata().getNamespace(), cm.getMetadata().getName());
-
-        kafkaConnect.setLabels(cm.getMetadata().getLabels());
+        KafkaConnectCluster kafkaConnect = new KafkaConnectCluster(cm.getMetadata().getNamespace(),
+                cm.getMetadata().getName(),
+                Labels.fromResource(cm));
 
         kafkaConnect.setReplicas(Integer.parseInt(cm.getData().getOrDefault(KEY_REPLICAS, String.valueOf(DEFAULT_REPLICAS))));
         kafkaConnect.setImage(cm.getData().getOrDefault(KEY_IMAGE, DEFAULT_IMAGE));
@@ -137,9 +137,8 @@ public class KafkaConnectCluster extends AbstractCluster {
             String namespace, String cluster,
             Deployment dep) {
 
-        KafkaConnectCluster kafkaConnect =  new KafkaConnectCluster(namespace, cluster);
+        KafkaConnectCluster kafkaConnect =  new KafkaConnectCluster(namespace, cluster, Labels.fromResource(dep));
 
-        kafkaConnect.setLabels(dep.getMetadata().getLabels());
         kafkaConnect.setReplicas(dep.getSpec().getReplicas());
         Container container = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
         kafkaConnect.setImage(container.getImage());

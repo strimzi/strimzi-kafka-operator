@@ -13,6 +13,7 @@ import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
 import io.strimzi.controller.cluster.operations.resource.DeploymentOperations;
 import io.strimzi.controller.cluster.operations.resource.ServiceOperations;
 import io.strimzi.controller.cluster.resources.KafkaConnectCluster;
+import io.strimzi.controller.cluster.resources.Labels;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -467,21 +468,18 @@ public class KafkaConnectClusterOperationsTest {
         when(mockCmOps.get(eq(clusterCmNamespace), eq("bar"))).thenReturn(bar);
 
         // providing the list of ALL Deployments for all the Kafka Connect clusters
-        Map<String, String> newLabels = new HashMap<>();
-        newLabels.put(ClusterController.STRIMZI_TYPE_LABEL, "kafka-connect");
+        Labels newLabels = Labels.type("kafka-connect");
         when(mockDcOps.list(eq(clusterCmNamespace), eq(newLabels))).thenReturn(
                 asList(KafkaConnectCluster.fromConfigMap(bar).generateDeployment(),
                         KafkaConnectCluster.fromConfigMap(baz).generateDeployment()));
 
         // providing the list Deployments for already "existing" Kafka Connect clusters
-        Map<String, String> barLabels = new HashMap<>();
-        barLabels.put(ClusterController.STRIMZI_CLUSTER_LABEL, "bar");
+        Labels barLabels = Labels.cluster("bar");
         when(mockDcOps.list(eq(clusterCmNamespace), eq(barLabels))).thenReturn(
                 asList(KafkaConnectCluster.fromConfigMap(bar).generateDeployment())
         );
 
-        Map<String, String> bazLabels = new HashMap<>();
-        bazLabels.put(ClusterController.STRIMZI_CLUSTER_LABEL, "baz");
+        Labels bazLabels = Labels.cluster("baz");
         when(mockDcOps.list(eq(clusterCmNamespace), eq(bazLabels))).thenReturn(
                 asList(KafkaConnectCluster.fromConfigMap(baz).generateDeployment())
         );
@@ -516,7 +514,7 @@ public class KafkaConnectClusterOperationsTest {
         };
 
         // Now try to reconcile all the Kafka Connect clusters
-        ops.reconcileAll(clusterCmNamespace, Collections.emptyMap());
+        ops.reconcileAll(clusterCmNamespace, Labels.EMPTY);
 
         async.await();
 

@@ -4,6 +4,7 @@
  */
 package io.strimzi.controller.cluster;
 
+import io.strimzi.controller.cluster.resources.Labels;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -17,11 +18,11 @@ import static org.junit.Assert.assertEquals;
 
 public class ClusterControllerConfigTest {
 
-    private static Map<String, String> labels = new HashMap<>(1);
+    private static Labels labels;
     private static Map<String, String> envVars = new HashMap<>(4);
 
     static {
-        labels.put("strimzi.io/kind", "cluster");
+        labels = Labels.kind("cluster");
 
         envVars.put(ClusterControllerConfig.STRIMZI_NAMESPACE, "namespace");
         envVars.put(ClusterControllerConfig.STRIMZI_CONFIGMAP_LABELS, "strimzi.io/kind=cluster");
