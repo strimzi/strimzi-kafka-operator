@@ -272,7 +272,7 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
                                 log.debug("Lock {} released", lockName);
                             });
                         }
-                    } else if (resources.size() > 0) {
+                    } else {
 
                         List<Future> result = new ArrayList<>(resources.size());
                         for (R resource : resources) {
