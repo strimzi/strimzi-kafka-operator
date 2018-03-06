@@ -25,7 +25,11 @@ import java.util.stream.Collectors;
  */
 public class TopicController extends AbstractCluster {
 
-    public static final String KIND = "topic";
+    /**
+     * The default kind of CMs that the Topic Controller will be configured to watch for
+     */
+    public static final String TOPIC_CM_KIND = "topic";
+    private static final String TYPE = "topic";
 
     private static final String NAME_SUFFIX = "-topic-controller";
 
@@ -74,7 +78,7 @@ public class TopicController extends AbstractCluster {
      */
     protected TopicController(String namespace, String cluster, Labels labels) {
 
-        super(namespace, cluster, labels.withKind(TopicController.KIND).withoutType());
+        super(namespace, cluster, labels.withType(TopicController.TYPE).withoutType());
         this.name = topicControllerName(cluster);
         this.image = DEFAULT_IMAGE;
         this.replicas = DEFAULT_REPLICAS;
@@ -154,7 +158,7 @@ public class TopicController extends AbstractCluster {
     protected static String defaultTopicConfigMapLabels(String cluster) {
         return String.format("%s=%s,%s=%s",
                 Labels.STRIMZI_CLUSTER_LABEL, cluster,
-                Labels.STRIMZI_KIND_LABEL, TopicController.KIND);
+                Labels.STRIMZI_KIND_LABEL, TopicController.TOPIC_CM_KIND);
     }
 
     /**

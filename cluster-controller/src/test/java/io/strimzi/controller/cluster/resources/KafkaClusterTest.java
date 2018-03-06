@@ -45,7 +45,10 @@ public class KafkaClusterTest {
 
     private void checkService(Service headful) {
         assertEquals("ClusterIP", headful.getSpec().getType());
-        assertEquals(ResourceUtils.labels("strimzi.io/cluster", cluster, "strimzi.io/type", "kafka", "strimzi.io/kind", "cluster", "strimzi.io/name", cluster + "-kafka"), headful.getSpec().getSelector());
+        assertEquals(ResourceUtils.labels(Labels.STRIMZI_CLUSTER_LABEL, cluster,
+                Labels.STRIMZI_TYPE_LABEL, "kafka",
+                "my-user-label", "cromulent",
+                Labels.STRIMZI_NAME_LABEL, KafkaCluster.kafkaClusterName(cluster)), headful.getSpec().getSelector());
         assertEquals(2, headful.getSpec().getPorts().size());
         assertEquals(KafkaCluster.CLIENT_PORT_NAME, headful.getSpec().getPorts().get(0).getName());
         assertEquals(new Integer(KafkaCluster.CLIENT_PORT), headful.getSpec().getPorts().get(0).getPort());
@@ -64,7 +67,10 @@ public class KafkaClusterTest {
         assertEquals(KafkaCluster.headlessName(cluster), headless.getMetadata().getName());
         assertEquals("ClusterIP", headless.getSpec().getType());
         assertEquals("None", headless.getSpec().getClusterIP());
-        assertEquals(labels("strimzi.io/cluster", cluster, "strimzi.io/type", "kafka", "strimzi.io/kind", "cluster", "strimzi.io/name", KafkaCluster.kafkaClusterName(cluster)), headless.getSpec().getSelector());
+        assertEquals(labels(Labels.STRIMZI_CLUSTER_LABEL, cluster,
+                Labels.STRIMZI_TYPE_LABEL, "kafka",
+                "my-user-label", "cromulent",
+                Labels.STRIMZI_NAME_LABEL, KafkaCluster.kafkaClusterName(cluster)), headless.getSpec().getSelector());
         assertEquals(2, headless.getSpec().getPorts().size());
         assertEquals(KafkaCluster.CLIENT_PORT_NAME, headless.getSpec().getPorts().get(0).getName());
         assertEquals(new Integer(KafkaCluster.CLIENT_PORT), headless.getSpec().getPorts().get(0).getPort());
@@ -87,7 +93,7 @@ public class KafkaClusterTest {
         // ... with these labels
         assertEquals(labels("strimzi.io/cluster", cluster,
                 "strimzi.io/type", "kafka",
-                "strimzi.io/kind", "cluster",
+                "my-user-label", "cromulent",
                 "strimzi.io/name", KafkaCluster.kafkaClusterName(cluster)),
                 ss.getMetadata().getLabels());
 

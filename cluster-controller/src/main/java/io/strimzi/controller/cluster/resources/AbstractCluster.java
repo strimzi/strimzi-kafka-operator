@@ -96,7 +96,7 @@ public abstract class AbstractCluster {
     protected AbstractCluster(String namespace, String cluster, Labels labels) {
         this.cluster = cluster;
         this.namespace = namespace;
-        this.labels = labels.withCluster(cluster);
+        this.labels = labels.withoutKind().withCluster(cluster);
     }
 
     public Labels getLabels() {

@@ -149,6 +149,13 @@ public class Labels {
     }
 
     /**
+     * The same labels as this instance, but without any {@code strimzi.io/kind} key.
+     */
+    public Labels withoutKind() {
+        return without(STRIMZI_KIND_LABEL);
+    }
+
+    /**
      * The same labels as this instance, but with the given {@code cluster} for the {@code strimzi.io/cluster} key.
      */
     public Labels withCluster(String cluster) {

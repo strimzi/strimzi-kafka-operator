@@ -13,8 +13,11 @@ import io.strimzi.controller.cluster.resources.Labels;
 import io.strimzi.controller.cluster.resources.TopicController;
 import io.strimzi.controller.cluster.resources.ZookeeperCluster;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+import static java.util.Collections.singletonMap;
 
 public class ResourceUtils {
 
@@ -80,9 +83,9 @@ public class ResourceUtils {
         }
         return new ConfigMapBuilder()
                 .withNewMetadata()
-                .withName(clusterCmName)
-                .withNamespace(clusterCmNamespace)
-                .withLabels(Labels.EMPTY.withKind("cluster").withType("kafka").toMap())
+                    .withName(clusterCmName)
+                    .withNamespace(clusterCmNamespace)
+                    .withLabels(Labels.userLabels(singletonMap("my-user-label", "cromulent")).withKind("cluster").withType("kafka").toMap())
                 .endMetadata()
                 .withData(cmData)
                 .build();
@@ -128,7 +131,9 @@ public class ResourceUtils {
                 .withNewMetadata()
                 .withName(clusterCmName)
                 .withNamespace(clusterCmNamespace)
-                .withLabels(labels(Labels.STRIMZI_KIND_LABEL, "cluster", Labels.STRIMZI_TYPE_LABEL, "kafka-connect-s2i"))
+                .withLabels(labels(Labels.STRIMZI_KIND_LABEL, "cluster",
+                        Labels.STRIMZI_TYPE_LABEL, "kafka-connect-s2i",
+                        "my-user-label", "cromulent"))
                 .endMetadata()
                 .withData(cmData)
                 .build();
@@ -173,7 +178,9 @@ public class ResourceUtils {
                 .withNewMetadata()
                 .withName(clusterCmName)
                 .withNamespace(clusterCmNamespace)
-                .withLabels(labels(Labels.STRIMZI_KIND_LABEL, "cluster", Labels.STRIMZI_TYPE_LABEL, "kafka-connect"))
+                .withLabels(labels(Labels.STRIMZI_KIND_LABEL, "cluster",
+                        Labels.STRIMZI_TYPE_LABEL, "kafka-connect",
+                        "my-user-label", "cromulent"))
                 .endMetadata()
                 .withData(cmData)
                 .build();

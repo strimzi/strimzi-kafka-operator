@@ -17,6 +17,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -312,8 +313,12 @@ public class KafkaConnectClusterTest {
         Service svc = kc.generateService();
 
         assertEquals("ClusterIP", svc.getSpec().getType());
-        assertEquals(ResourceUtils.labels(Labels.STRIMZI_CLUSTER_LABEL, cluster, Labels.STRIMZI_TYPE_LABEL, "kafka-connect", Labels.STRIMZI_KIND_LABEL, "cluster", "strimzi.io/name", kc.kafkaConnectClusterName(cluster)), svc.getMetadata().getLabels());
-        assertEquals(ResourceUtils.labels(Labels.STRIMZI_CLUSTER_LABEL, cluster, Labels.STRIMZI_TYPE_LABEL, "kafka-connect", Labels.STRIMZI_KIND_LABEL, "cluster", "strimzi.io/name", kc.kafkaConnectClusterName(cluster)), svc.getSpec().getSelector());
+        Map<String, String> expectedLabels = ResourceUtils.labels(Labels.STRIMZI_CLUSTER_LABEL, this.cluster,
+                Labels.STRIMZI_TYPE_LABEL, "kafka-connect",
+                "my-user-label", "cromulent",
+                Labels.STRIMZI_NAME_LABEL, kc.kafkaConnectClusterName(cluster));
+        assertEquals(expectedLabels, svc.getMetadata().getLabels());
+        assertEquals(expectedLabels, svc.getSpec().getSelector());
         assertEquals(1, svc.getSpec().getPorts().size());
         assertEquals(new Integer(KafkaConnectCluster.REST_API_PORT), svc.getSpec().getPorts().get(0).getPort());
         assertEquals(KafkaConnectCluster.REST_API_PORT_NAME, svc.getSpec().getPorts().get(0).getName());
@@ -334,8 +339,12 @@ public class KafkaConnectClusterTest {
 
         Service svc = kc.patchService(orig);
 
-        assertEquals(ResourceUtils.labels(Labels.STRIMZI_CLUSTER_LABEL, cluster, Labels.STRIMZI_TYPE_LABEL, "kafka-connect", Labels.STRIMZI_KIND_LABEL, "cluster", "strimzi.io/name", kc.kafkaConnectClusterName(cluster)), svc.getMetadata().getLabels());
-        assertEquals(ResourceUtils.labels(Labels.STRIMZI_CLUSTER_LABEL, cluster, Labels.STRIMZI_TYPE_LABEL, "kafka-connect", Labels.STRIMZI_KIND_LABEL, "cluster", "strimzi.io/name", kc.kafkaConnectClusterName(cluster)), svc.getSpec().getSelector());
+        Map<String, String> expectedLabels = ResourceUtils.labels(Labels.STRIMZI_CLUSTER_LABEL, this.cluster,
+                Labels.STRIMZI_TYPE_LABEL, "kafka-connect",
+                "my-user-label", "cromulent",
+                Labels.STRIMZI_NAME_LABEL, kc.kafkaConnectClusterName(cluster));
+        assertEquals(expectedLabels, svc.getMetadata().getLabels());
+        assertEquals(expectedLabels, svc.getSpec().getSelector());
     }
 
     @Test
@@ -344,11 +353,15 @@ public class KafkaConnectClusterTest {
 
         assertEquals(kc.kafkaConnectClusterName(cluster), dep.getMetadata().getName());
         assertEquals(namespace, dep.getMetadata().getNamespace());
-        assertEquals(ResourceUtils.labels(Labels.STRIMZI_CLUSTER_LABEL, cluster, Labels.STRIMZI_TYPE_LABEL, "kafka-connect", Labels.STRIMZI_KIND_LABEL, "cluster", "strimzi.io/name", kc.kafkaConnectClusterName(cluster)), dep.getMetadata().getLabels());
+        Map<String, String> expectedLabels = ResourceUtils.labels(Labels.STRIMZI_CLUSTER_LABEL, this.cluster,
+                Labels.STRIMZI_TYPE_LABEL, "kafka-connect",
+                "my-user-label", "cromulent",
+                Labels.STRIMZI_NAME_LABEL, kc.kafkaConnectClusterName(cluster));
+        assertEquals(expectedLabels, dep.getMetadata().getLabels());
         assertEquals(new Integer(replicas), dep.getSpec().getReplicas());
-        assertEquals(ResourceUtils.labels(Labels.STRIMZI_CLUSTER_LABEL, cluster, Labels.STRIMZI_TYPE_LABEL, "kafka-connect", Labels.STRIMZI_KIND_LABEL, "cluster", "strimzi.io/name", kc.kafkaConnectClusterName(cluster)), dep.getSpec().getTemplate().getMetadata().getLabels());
+        assertEquals(expectedLabels, dep.getSpec().getTemplate().getMetadata().getLabels());
         assertEquals(1, dep.getSpec().getTemplate().getSpec().getContainers().size());
-        assertEquals(kc.kafkaConnectClusterName(cluster), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getName());
+        assertEquals(kc.kafkaConnectClusterName(this.cluster), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getName());
         assertEquals(kc.image, dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
         assertEquals(getExpectedEnvVars(), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv());
         assertEquals(new Integer(healthDelay), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getInitialDelaySeconds());
@@ -370,12 +383,15 @@ public class KafkaConnectClusterTest {
         orig.getMetadata().setLabels(Collections.EMPTY_MAP);
         orig.getSpec().getTemplate().getMetadata().setLabels(Collections.EMPTY_MAP);
 
-
         Deployment dep = kc.patchDeployment(orig);
 
-        assertEquals(ResourceUtils.labels(Labels.STRIMZI_CLUSTER_LABEL, cluster, Labels.STRIMZI_TYPE_LABEL, "kafka-connect", Labels.STRIMZI_KIND_LABEL, "cluster", "strimzi.io/name", kc.kafkaConnectClusterName(cluster)), dep.getMetadata().getLabels());
+        Map<String, String> expectedLabels = ResourceUtils.labels(Labels.STRIMZI_CLUSTER_LABEL, this.cluster,
+                Labels.STRIMZI_TYPE_LABEL, "kafka-connect",
+                "my-user-label", "cromulent",
+                Labels.STRIMZI_NAME_LABEL, kc.kafkaConnectClusterName(cluster));
+        assertEquals(expectedLabels, dep.getMetadata().getLabels());
         assertEquals(new Integer(KafkaConnectCluster.DEFAULT_REPLICAS), dep.getSpec().getReplicas());
-        assertEquals(ResourceUtils.labels(Labels.STRIMZI_CLUSTER_LABEL, cluster, Labels.STRIMZI_TYPE_LABEL, "kafka-connect", Labels.STRIMZI_KIND_LABEL, "cluster", "strimzi.io/name", kc.kafkaConnectClusterName(cluster)), dep.getSpec().getTemplate().getMetadata().getLabels());
+        assertEquals(expectedLabels, dep.getSpec().getTemplate().getMetadata().getLabels());
         assertEquals(new Integer(healthDelay), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getInitialDelaySeconds());
         assertEquals(new Integer(healthTimeout), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getTimeoutSeconds());
         assertEquals(new Integer(healthDelay), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds());
