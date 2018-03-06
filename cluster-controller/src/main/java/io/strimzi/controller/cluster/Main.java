@@ -60,14 +60,15 @@ public class Main {
         DeploymentConfigOperations deploymentConfigOperations = null;
         ImageStreamOperations imagesStreamOperations = null;
         BuildConfigOperations buildConfigOperations = null;
+        KafkaConnectS2IClusterOperations kafkaConnectS2IClusterOperations = null;
         if (isOpenShift) {
             imagesStreamOperations = new ImageStreamOperations(vertx, client.adapt(OpenShiftClient.class));
             buildConfigOperations = new BuildConfigOperations(vertx, client.adapt(OpenShiftClient.class));
             deploymentConfigOperations = new DeploymentConfigOperations(vertx, client.adapt(OpenShiftClient.class));
+            kafkaConnectS2IClusterOperations = new KafkaConnectS2IClusterOperations(vertx, isOpenShift,
+                    configMapOperations, deploymentConfigOperations,
+                    serviceOperations, imagesStreamOperations, buildConfigOperations);
         }
-        KafkaConnectS2IClusterOperations kafkaConnectS2IClusterOperations = new KafkaConnectS2IClusterOperations(vertx, isOpenShift,
-                configMapOperations, deploymentConfigOperations,
-                serviceOperations, imagesStreamOperations, buildConfigOperations);
 
         List<Future> futures = new ArrayList<>();
         for (String namespace : config.getNamespaces()) {
