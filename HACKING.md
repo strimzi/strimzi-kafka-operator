@@ -106,5 +106,8 @@ The release process should normally look like this:
 2. Export the desired version into the environment variable `RELEASE_VERSION`
 3. Run `make release`
 4. Commit the changes to the existing files (do not add the TAR.GZ and ZIP archives into Git)
-5. Push the changes to GitHub
-6. Create a GitHub release and tag based on the release branch. Attach the TAR.GZ and ZIP archives to the release
+5. Push the changes to the release branch on GitHub
+6. Create the tag and push it to GitHub. Tag name determines the tag of the resulting Docker images. Therefore the Git 
+tag name has to be the same as the `RELEASE_VERSION`,
+7. Once the CI build for the tag is finished and the Docker imaghes are pushed to Docker Hub, Create a GitHub release 
+and tag based on the release branch. Attach the TAR.GZ and ZIP archives to the release
