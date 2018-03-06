@@ -11,6 +11,7 @@ import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
 import io.strimzi.controller.cluster.resources.AbstractCluster;
 import io.strimzi.controller.cluster.resources.ClusterDiffResult;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -18,6 +19,7 @@ import io.vertx.core.shareddata.Lock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -230,6 +232,7 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
         final String lockName = getLockName(clusterType, namespace, name);
         vertx.sharedData().getLockWithTimeout(lockName, LOCK_TIMEOUT, res -> {
             if (res.succeeded()) {
+                log.debug("Lock {} acquired", lockName);
                 Lock lock = res.result();
 
                 try {
@@ -254,6 +257,7 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
                                     log.error("Failed to update {} cluster {}.", clusterDescription, nameFromCm);
                                 }
                                 lock.release();
+                                log.debug("Lock {} released", lockName);
                             });
                         } else {
                             log.info("Reconciliation: {} cluster {} should be created", clusterDescription, cm.getMetadata().getName());
@@ -265,26 +269,38 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
                                     log.error("Failed to add {} cluster {}.", clusterDescription, nameFromCm);
                                 }
                                 lock.release();
+                                log.debug("Lock {} released", lockName);
                             });
                         }
                     } else if (resources.size() > 0) {
+
+                        List<Future> result = new ArrayList<>(resources.size());
                         for (R resource : resources) {
                             log.info("Reconciliation: {} cluster {} should be deleted", clusterDescription, resource.getMetadata().getName());
                             String nameFromResource = nameFromLabels(resource);
                             log.info("Deleting {} cluster {} in namespace {}", clusterDescription, nameFromResource, namespace);
+
+                            Future<Void> deleteFuture = Future.future();
+                            result.add(deleteFuture);
                             delete(namespace, nameFromResource, deleteResult -> {
                                 if (deleteResult.succeeded()) {
                                     log.info("{} cluster deleted {} in namespace {}", clusterDescription, nameFromResource, namespace);
                                 } else {
                                     log.error("Failed to delete {} cluster {} in namespace {}", clusterDescription, nameFromResource, namespace);
                                 }
-                                lock.release();
+                                deleteFuture.complete();
                             });
                         }
+
+                        CompositeFuture.join(result).setHandler(res2 -> {
+                            lock.release();
+                            log.debug("Lock {} released", lockName);
+                        });
                     }
                 } catch (Throwable ex) {
                     log.error("Error while reconciling {} cluster", clusterDescription, ex);
                     lock.release();
+                    log.debug("Lock {} released", lockName);
                 }
             } else {
                 log.warn("Failed to acquire lock for {} cluster {}.", clusterType, lockName);
