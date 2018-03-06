@@ -95,8 +95,8 @@ public class ZookeeperCluster extends AbstractCluster {
         this.healthCheckInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
         this.isMetricsEnabled = DEFAULT_ZOOKEEPER_METRICS_ENABLED;
 
-        this.mounthPath = "/var/lib/zookeeper";
-        this.volumeName = "zookeeper-storage";
+        this.mountPath = "/var/lib/zookeeper";
+        this.volumeName = "data";
         this.metricsConfigVolumeName = "zookeeper-metrics-config";
         this.metricsConfigMountPath = "/opt/prometheus/config/";
     }
@@ -372,7 +372,7 @@ public class ZookeeperCluster extends AbstractCluster {
 
     private List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> volumeMountList = new ArrayList<>();
-        volumeMountList.add(createVolumeMount(volumeName, mounthPath));
+        volumeMountList.add(createVolumeMount(volumeName, mountPath));
         if (isMetricsEnabled) {
             volumeMountList.add(createVolumeMount(metricsConfigVolumeName, metricsConfigMountPath));
         }
