@@ -130,7 +130,12 @@ public class ClusterController extends AbstractVerticle {
                         } else if (type.equals(KafkaConnectCluster.TYPE)) {
                             cluster = kafkaConnectClusterOperations;
                         } else if (type.equals(KafkaConnectS2ICluster.TYPE)) {
-                            cluster = kafkaConnectS2IClusterOperations;
+                            if (kafkaConnectS2IClusterOperations != null)   {
+                                cluster = kafkaConnectS2IClusterOperations;
+                            } else {
+                                log.warn("Cluster type {} cannot be used outside of OpenShift as requested by Config Map {} in namespace {}", type, cm.getMetadata().getName(), namespace);
+                                return;
+                            }
                         } else {
                             log.warn("Unknown type {} received in Config Map {} in namespace {}", labels.get(ClusterController.STRIMZI_TYPE_LABEL), cm.getMetadata().getName(), namespace);
                             return;
@@ -197,10 +202,12 @@ public class ClusterController extends AbstractVerticle {
       Periodical reconciliation (in case we lost some event)
      */
     private void reconcile() {
-
         kafkaClusterOperations.reconcileAll(namespace, labels);
         kafkaConnectClusterOperations.reconcileAll(namespace, labels);
-        kafkaConnectS2IClusterOperations.reconcileAll(namespace, labels);
+
+        if (kafkaConnectS2IClusterOperations != null) {
+            kafkaConnectS2IClusterOperations.reconcileAll(namespace, labels);
+        }
     }
 
     /**
