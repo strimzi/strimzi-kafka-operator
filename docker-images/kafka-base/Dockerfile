@@ -22,9 +22,7 @@ ARG version=latest
 ENV VERSION ${version}
 
 # Downloading/extracting Apache Kafka
-
-#RUN curl -O https://www.apache.org/dist/kafka/$KAFKA_VERSION/kafka_$SCALA_VERSION-$KAFKA_VERSION.tgz \
-RUN curl -O http://home.apache.org/~ewencp/kafka-${KAFKA_VERSION}-rc2/kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz \
+RUN curl -O https://www.apache.org/dist/kafka/$KAFKA_VERSION/kafka_$SCALA_VERSION-$KAFKA_VERSION.tgz \
     && echo $KAFKA_CHECKSUM > kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz.sha512 \
     && sha512sum --check kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz.sha512 \
     && mkdir $KAFKA_HOME \
