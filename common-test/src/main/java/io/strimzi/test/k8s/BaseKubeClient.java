@@ -203,7 +203,7 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
     }
 
     private K waitFor(String resource, String name, Predicate<JsonNode> ready) {
-        long timeoutMs = 600_000L;
+        long timeoutMs = 570_000L;
         long pollMs = 1_000L;
         ObjectMapper mapper = new ObjectMapper();
         TestUtils.waitFor(resource + " " + name, pollMs, timeoutMs, () -> {
