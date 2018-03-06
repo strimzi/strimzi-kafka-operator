@@ -34,7 +34,9 @@ import java.util.regex.Pattern;
 import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.map;
 import static junit.framework.TestCase.assertTrue;
+import static matchers.Matchers.valueOfCmEqualsTo;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 
 @RunWith(StrimziRunner.class)
 @Namespace(KafkaClusterTest.NAMESPACE)
@@ -225,4 +227,30 @@ public class KafkaClusterTest {
         );
     }
 
+    @Test
+    @KafkaCluster(name = "my-cluster",
+            cmConfiguration = {@KafkaCluster.CmConfiguration(key = "zookeeper-healthcheck-delay", value = "30"),
+                    @KafkaCluster.CmConfiguration(key = "zookeeper-healthcheck-timeout", value = "10"),
+                    @KafkaCluster.CmConfiguration(key = "kafka-healthcheck-delay", value = "30"),
+                    @KafkaCluster.CmConfiguration(key = "kafka-healthcheck-timeout", value = "10"),
+                    @KafkaCluster.CmConfiguration(key = "KAFKA_DEFAULT_REPLICATION_FACTOR", value = "2"),
+                    @KafkaCluster.CmConfiguration(key = "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", value = "5"),
+                    @KafkaCluster.CmConfiguration(key = "KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", value = "5")
+            })
+    public void testClusterWithCustomParameters() {
+        // kafka cluster already deployed via annotation
+        String clusterName = "my-cluster";
+        LOGGER.info("Running clusterWithCustomParameters with cluster {}", clusterName);
+
+        String jsonString = kubeClient.get("cm", clusterName);
+
+        assertThat(jsonString, valueOfCmEqualsTo("zookeeper-healthcheck-delay", "30"));
+        assertThat(jsonString, valueOfCmEqualsTo("zookeeper-healthcheck-timeout", "10"));
+        assertThat(jsonString, valueOfCmEqualsTo("kafka-healthcheck-delay", "30"));
+        assertThat(jsonString, valueOfCmEqualsTo("kafka-healthcheck-timeout", "30"));
+        assertThat(jsonString, valueOfCmEqualsTo("KAFKA_DEFAULT_REPLICATION_FACTOR", "2"));
+        assertThat(jsonString, valueOfCmEqualsTo("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "5"));
+        assertThat(jsonString, valueOfCmEqualsTo("KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", "5"));
+
+    }
 }

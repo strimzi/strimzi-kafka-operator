@@ -257,6 +257,11 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 JsonNode data = node.get("data");
                 ((ObjectNode) data).put("kafka-nodes", String.valueOf(cluster.kafkaNodes()));
                 ((ObjectNode) data).put("zookeeper-nodes", String.valueOf(cluster.zkNodes()));
+                // updates values for config map
+                Arrays.stream(cluster.cmConfiguration())
+                        .forEach(config ->
+                            ((ObjectNode) data).put(config.key(), String.valueOf(config.value()))
+                        );
                 yaml = mapper.writeValueAsString(node);
             } catch (IOException e) {
                 throw new RuntimeException(e);
