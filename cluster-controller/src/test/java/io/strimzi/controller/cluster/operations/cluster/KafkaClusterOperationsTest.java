@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
-import io.strimzi.controller.cluster.ClusterController;
 import io.strimzi.controller.cluster.ClusterControllerConfig;
 import io.strimzi.controller.cluster.ResourceUtils;
 import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
@@ -43,7 +42,6 @@ import org.mockito.ArgumentCaptor;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;

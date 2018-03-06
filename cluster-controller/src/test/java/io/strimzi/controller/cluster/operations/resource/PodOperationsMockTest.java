@@ -23,7 +23,6 @@ import org.junit.Test;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
-import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static org.mockito.Mockito.when;
 

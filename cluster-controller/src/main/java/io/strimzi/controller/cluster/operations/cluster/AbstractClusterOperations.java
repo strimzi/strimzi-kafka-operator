@@ -6,7 +6,6 @@ package io.strimzi.controller.cluster.operations.cluster;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.strimzi.controller.cluster.ClusterController;
 import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
 import io.strimzi.controller.cluster.resources.AbstractCluster;
 import io.strimzi.controller.cluster.resources.ClusterDiffResult;
@@ -21,9 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 

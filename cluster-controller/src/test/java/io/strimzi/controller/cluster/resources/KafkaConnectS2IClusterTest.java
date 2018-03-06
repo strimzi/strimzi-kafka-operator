@@ -20,7 +20,6 @@ import io.fabric8.openshift.api.model.ImageLookupPolicyBuilder;
 import io.fabric8.openshift.api.model.ImageStream;
 import io.fabric8.openshift.api.model.ImageStreamBuilder;
 import io.fabric8.openshift.api.model.TagReference;
-import io.strimzi.controller.cluster.ClusterController;
 import io.strimzi.controller.cluster.ResourceUtils;
 import org.junit.Test;
 

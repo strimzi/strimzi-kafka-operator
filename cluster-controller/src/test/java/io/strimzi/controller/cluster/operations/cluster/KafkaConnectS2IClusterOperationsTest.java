@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.openshift.api.model.BuildConfig;
 import io.fabric8.openshift.api.model.DeploymentConfig;
 import io.fabric8.openshift.api.model.ImageStream;
-import io.strimzi.controller.cluster.ClusterController;
 import io.strimzi.controller.cluster.ResourceUtils;
 import io.strimzi.controller.cluster.operations.resource.BuildConfigOperations;
 import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
@@ -31,11 +30,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import static java.util.Arrays.asList;

@@ -25,7 +25,6 @@ import io.vertx.core.Handler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class ClusterController extends AbstractVerticle {

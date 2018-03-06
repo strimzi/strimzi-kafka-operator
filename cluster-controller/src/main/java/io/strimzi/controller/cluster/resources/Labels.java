@@ -7,12 +7,9 @@ package io.strimzi.controller.cluster.resources;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 
-import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 import static java.util.Collections.unmodifiableMap;
@@ -115,7 +112,7 @@ public class Labels {
     }
 
     private Labels with(String label, String value) {
-        Map<String, String> newLabels = new HashMap<>(labels.size()+1);
+        Map<String, String> newLabels = new HashMap<>(labels.size() + 1);
         newLabels.putAll(labels);
         newLabels.put(label, value);
         return new Labels(newLabels);

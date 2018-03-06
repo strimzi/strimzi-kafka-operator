@@ -10,7 +10,6 @@ import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
-import io.strimzi.controller.cluster.ClusterController;
 import io.strimzi.controller.cluster.ResourceUtils;
 import org.junit.Test;
 
