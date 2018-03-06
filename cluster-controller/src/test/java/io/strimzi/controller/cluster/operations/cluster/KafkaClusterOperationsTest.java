@@ -322,10 +322,10 @@ public class KafkaClusterOperationsTest {
             // PvcOperations only used for deletion
             Set<String> expectedPvcDeletions = new HashSet<>();
             for (int i = 0; deleteClaim && i < kafkaCluster.getReplicas(); i++) {
-                expectedPvcDeletions.add("kafka-storage-" + clusterCmName + "-kafka-" + i);
+                expectedPvcDeletions.add("data-" + clusterCmName + "-kafka-" + i);
             }
             for (int i = 0; deleteClaim && i < zookeeperCluster.getReplicas(); i++) {
-                expectedPvcDeletions.add("zookeeper-storage-" + clusterCmName + "-zookeeper-" + i);
+                expectedPvcDeletions.add("data-" + clusterCmName + "-zookeeper-" + i);
             }
             context.assertEquals(expectedPvcDeletions, captured(pvcCaptor));
 

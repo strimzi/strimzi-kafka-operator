@@ -92,8 +92,8 @@ public class KafkaCluster extends AbstractCluster {
         this.healthCheckInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
         this.isMetricsEnabled = DEFAULT_KAFKA_METRICS_ENABLED;
 
-        this.mounthPath = "/var/lib/kafka";
-        this.volumeName = "kafka-storage";
+        this.mountPath = "/var/lib/kafka";
+        this.volumeName = "data";
         this.metricsConfigVolumeName = "kafka-metrics-config";
         this.metricsConfigMountPath = "/opt/prometheus/config/";
     }
@@ -422,7 +422,7 @@ public class KafkaCluster extends AbstractCluster {
 
     private List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> volumeMountList = new ArrayList<>();
-        volumeMountList.add(createVolumeMount(volumeName, mounthPath));
+        volumeMountList.add(createVolumeMount(volumeName, mountPath));
         if (isMetricsEnabled) {
             volumeMountList.add(createVolumeMount(metricsConfigVolumeName, metricsConfigMountPath));
         }
