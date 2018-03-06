@@ -22,7 +22,7 @@ import static java.util.Collections.unmodifiableMap;
  */
 public class Labels {
 
-    public static final String STRIMZI_DOMAIN = "strimzi.io";
+    public static final String STRIMZI_DOMAIN = "strimzi.io/";
 
     /**
      * The kind of a ConfigMap:
@@ -35,19 +35,19 @@ public class Labels {
      *         by the topic controller.</li>
      * </ul>
      */
-    public static final String STRIMZI_KIND_LABEL = STRIMZI_DOMAIN + "/kind";
+    public static final String STRIMZI_KIND_LABEL = STRIMZI_DOMAIN + "kind";
     /**
      * The type of Strimzi component:
      * E.g: {@code kafka}, {@code zookeeper}, {@code topic-controller},
      *      {@code connect}, {@code connect-s2i}
      */
-    public static final String STRIMZI_TYPE_LABEL = STRIMZI_DOMAIN + "/type";
+    public static final String STRIMZI_TYPE_LABEL = STRIMZI_DOMAIN + "type";
 
     /**
      * The Strimzi cluster the resource is part of.
      * The value is the cluster name (i.e. the name of the cluster CM)
      */
-    public static final String STRIMZI_CLUSTER_LABEL = STRIMZI_DOMAIN + "/cluster";
+    public static final String STRIMZI_CLUSTER_LABEL = STRIMZI_DOMAIN + "cluster";
 
     /**
      * The name of the K8S resource.
@@ -55,9 +55,7 @@ public class Labels {
      * (i.e. the same as {@code strimzi.io/cluster})
      * but is different in some cases (e.g. headful and headless services)
      */
-    public static final String STRIMZI_NAME_LABEL = STRIMZI_DOMAIN + "/name";
-
-    private static final Set<String> STRIMZI_LABELS = new HashSet(asList(STRIMZI_KIND_LABEL, STRIMZI_TYPE_LABEL, STRIMZI_CLUSTER_LABEL, STRIMZI_NAME_LABEL));
+    public static final String STRIMZI_NAME_LABEL = STRIMZI_DOMAIN + "name";
 
     /**
      * The empty set of labels.
@@ -96,8 +94,10 @@ public class Labels {
 
     public static Labels userLabels(Map<String, String> userLabels) {
         for (String key : userLabels.keySet()) {
-            if (STRIMZI_LABELS.contains(key)) {
-                //throw new IllegalArgumentException("User labels includes a Strimzi label: " + key);
+            if (key.startsWith(STRIMZI_DOMAIN)
+                    && !key.equals(STRIMZI_KIND_LABEL)) {
+                throw new IllegalArgumentException("User labels includes a Strimzi label that is not "
+                        + STRIMZI_KIND_LABEL + ": " + key);
             }
         }
         return new Labels(userLabels);
