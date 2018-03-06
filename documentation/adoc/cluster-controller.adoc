@@ -382,16 +382,24 @@ include::../../examples/install/cluster-controller/03-role-binding.yaml[]
 
 The controller itself can be configured through the following environment variables.
 
-`STRIMZI_CONFIGMAP_LABELS`:: the Kubernetes/OpenShift label selector used to identify ConfigMaps to be managed by the controller.
-Default: `strimzi.io/kind=cluster`.
+`STRIMZI_CONFIGMAP_LABELS`:: the Kubernetes/OpenShift label selector used to identify ConfigMaps to be managed by the
+controller. This is a required variable.
+
+`STRIMZI_NAMESPACE`:: A comma-separated list of namespaces that the controller should operate in. This is a required
+environment variable. The Cluster Controller deployment might use the https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#the-downward-api[Kubernetes Downward API]
+to set this automatically to the namespace the Cluster Controller is deployed in. See the example below:
++
+[source,yaml,options="nowrap"]
+----
+env:
+  - name: STRIMZI_NAMESPACE
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.namespace
+----
 
 `STRIMZI_FULL_RECONCILIATION_INTERVAL_MS`:: the interval between periodic reconciliations.
 Default: 120000 ms
-
-`STRIMZI_NAMESPACE`:: A comma-separated list of namespaces that the controller
-should operate in. This is a required environment variable, but the example YAML resources
-supplied with Strimzi use the namespace in which the controller itself is deployed as a
-default value. See the following section.
 
 `STRIMZI_OPERATION_TIMEOUT_MS`:: Timeout for internal operations specified in milliseconds. This value should be
 increased when using Strimzi on clusters where regular Kubernetes operations take longer than usually (for example
