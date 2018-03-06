@@ -196,7 +196,7 @@ public class KafkaClusterTest {
     }
 
     private void waitForZkMntr(String pod, Pattern pattern) {
-        long timeoutMs = 60_000L;
+        long timeoutMs = 120_000L;
         long pollMs = 1_000L;
         TestUtils.waitFor("mntr", pollMs, timeoutMs, () -> {
             try {
