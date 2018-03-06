@@ -20,7 +20,7 @@ public class CmMatcher extends BaseMatcher<String> {
     private String key;
     private String value;
 
-    public CmMatcher(String key, String value){
+    public CmMatcher(String key, String value) {
         this.key = key;
         this.value = value;
     }

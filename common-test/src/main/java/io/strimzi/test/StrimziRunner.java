@@ -261,7 +261,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 Arrays.stream(cluster.cmConfiguration())
                         .forEach(config ->
                             ((ObjectNode) data).put(config.key(), String.valueOf(config.value()))
-                        );
+                    );
                 yaml = mapper.writeValueAsString(node);
             } catch (IOException e) {
                 throw new RuntimeException(e);

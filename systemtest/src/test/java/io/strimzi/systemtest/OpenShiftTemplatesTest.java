@@ -79,7 +79,7 @@ public class OpenShiftTemplatesTest {
     }
 
     @Test
-    public void testStrimziEphemeralWithCustomParameters(){
+    public void testStrimziEphemeralWithCustomParameters() {
         String clusterName = "test-ephemeral-with-custom-parameters";
         oc.newApp("strimzi-ephemeral", map("CLUSTER_NAME", clusterName,
                 "ZOOKEEPER_HEALTHCHECK_DELAY", "30",

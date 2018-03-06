@@ -32,7 +32,7 @@ public @interface KafkaCluster {
         KafkaCluster[] value();
     }
 
-    @interface CmConfiguration{
+    @interface CmConfiguration {
         String key();
         String value();
     }
