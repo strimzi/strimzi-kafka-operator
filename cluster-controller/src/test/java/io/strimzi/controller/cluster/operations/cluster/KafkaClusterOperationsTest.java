@@ -48,6 +48,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
@@ -210,8 +211,22 @@ public class KafkaClusterOperationsTest {
             if (zookeeperCluster.isMetricsEnabled()) {
                 metricsNames.add(ZookeeperCluster.zookeeperMetricsName(clusterCmName));
             }
-            context.assertEquals(metricsNames, metricsCaptor.getAllValues().stream().map(cm -> cm.getMetadata().getName()).collect(Collectors.toSet()),
+            Map<String, ConfigMap> cmsByName = metricsCaptor.getAllValues().stream().collect(Collectors.toMap(cm -> cm.getMetadata().getName(), Function.identity()));
+            context.assertEquals(metricsNames, cmsByName.keySet(),
                     "Unexpected metrics ConfigMaps");
+            if (kafkaCluster.isMetricsEnabled()) {
+                ConfigMap kafkaMetricsCm = cmsByName.get(KafkaCluster.metricConfigsName(clusterCmName));
+                context.assertEquals(ResourceUtils.labels(Labels.STRIMZI_TYPE_LABEL, "kafka",
+                        Labels.STRIMZI_CLUSTER_LABEL, clusterCmName,
+                        "my-user-label", "cromulent"), kafkaMetricsCm.getMetadata().getLabels());
+            }
+            if (zookeeperCluster.isMetricsEnabled()) {
+                ConfigMap zookeeperMetricsCm = cmsByName.get(ZookeeperCluster.zookeeperMetricsName(clusterCmName));
+                context.assertEquals(ResourceUtils.labels(Labels.STRIMZI_TYPE_LABEL, "zookeeper",
+                        Labels.STRIMZI_CLUSTER_LABEL, clusterCmName,
+                        "my-user-label", "cromulent"), zookeeperMetricsCm.getMetadata().getLabels());
+            }
+
 
             // We expect a headless and headful service
             List<Service> capturedServices = serviceCaptor.getAllValues();
