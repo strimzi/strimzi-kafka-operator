@@ -7,6 +7,7 @@ package io.strimzi.controller.cluster;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.openshift.client.OpenShiftClient;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import io.strimzi.controller.cluster.operations.cluster.KafkaClusterOperations;
 import io.strimzi.controller.cluster.operations.cluster.KafkaConnectClusterOperations;
 import io.strimzi.controller.cluster.operations.cluster.KafkaConnectS2IClusterOperations;
@@ -128,8 +129,8 @@ public class Main {
         HttpClient httpClient = vertx.createHttpClient(httpClientOptions);
 
         httpClient.getNow("/oapi", res -> {
-            if (res.statusCode() == 200) {
-                log.info("{} returned 200. We should be in OpenShift. It is safe to check 'isAdaptable'", res.request().absoluteURI());
+            if (res.statusCode() == HttpResponseStatus.OK.code()) {
+                log.info("{} returned {}. We should be in OpenShift. It is safe to check 'isAdaptable'", res.request().absoluteURI(), res.statusCode());
                 Boolean isOpenShift = Boolean.TRUE.equals(client.isAdaptable(OpenShiftClient.class));
                 fut.complete(isOpenShift);
             } else {
