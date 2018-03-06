@@ -208,7 +208,7 @@ public class KafkaClusterTest {
     public void testPvcNames() {
 
         for (int i = 0; i < replicas; i++) {
-            assertEquals("kafka-storage-" + KafkaCluster.kafkaClusterName(cluster) + "-" + i, kc.getPersistentVolumeClaimName(i));
+            assertEquals(kc.volumeName + "-" + KafkaCluster.kafkaClusterName(cluster) + "-" + i, kc.getPersistentVolumeClaimName(i));
         }
     }
 

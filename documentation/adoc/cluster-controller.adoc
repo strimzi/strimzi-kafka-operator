@@ -217,8 +217,8 @@ Finally, a selector can be used in order to select a specific labeled persistent
 When the "persistent-claim" is used, other than the resources already described in the <<Kafka>> section, the following resources
 are generated :
 
-* `kafka-storage-[cluster-name]-kafka-[idx]` Persistent Volume Claim for the volume used for storing data for the Kafka broker pod `[idx]`
-* `zookeeper-storage-[cluster-name]-zookeeper-[idx]` Persistent Volume Claim for the volume used for storing data for the
+* `data-[cluster-name]-kafka-[idx]` Persistent Volume Claim for the volume used for storing data for the Kafka broker pod `[idx]`
+* `data-[cluster-name]-zookeeper-[idx]` Persistent Volume Claim for the volume used for storing data for the
 Zookeeper node pod `[idx]`
 
 ===== Metrics

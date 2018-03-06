@@ -82,7 +82,7 @@ public abstract class AbstractCluster {
 
     protected Storage storage;
 
-    protected String mounthPath;
+    protected String mountPath;
     protected String volumeName;
     protected String metricsConfigVolumeName;
     protected String metricsConfigMountPath;
