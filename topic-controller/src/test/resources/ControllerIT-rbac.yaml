@@ -13,7 +13,6 @@ rules:
   - events
   verbs:
   - list
-  - watch
   - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
