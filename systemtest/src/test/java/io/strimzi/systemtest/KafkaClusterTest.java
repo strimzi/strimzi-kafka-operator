@@ -173,16 +173,22 @@ public class KafkaClusterTest {
         assertEquals(1, initialReplicas);
 
         // scale up
-        final int scaleTo = initialReplicas + 1;
-        final int newPodId = initialReplicas;
-        final String newPodName = zookeeperPodName(clusterName,  newPodId);
+        final int scaleTo = initialReplicas + 2;
+        final int[] newPodIds = {initialReplicas, initialReplicas + 1};
+        final String[] newPodName = {
+                zookeeperPodName(clusterName,  newPodIds[0]),
+                zookeeperPodName(clusterName,  newPodIds[1])
+        };
         final String firstPodName = zookeeperPodName(clusterName,  0);
         LOGGER.info("Scaling up to {}", scaleTo);
-        replaceCm(clusterName, "zookeeper-nodes", String.valueOf(initialReplicas + 1));
-        kubeClient.waitForPod(newPodName);
+        replaceCm(clusterName, "zookeeper-nodes", String.valueOf(scaleTo));
+        kubeClient.waitForPod(newPodName[0]);
+        kubeClient.waitForPod(newPodName[1]);
 
         // check the new node is either in leader or follower state
-        waitForZkMntr(newPodName, Pattern.compile("zk_server_state\\s+(leader|follower)"));
+        waitForZkMntr(firstPodName, Pattern.compile("zk_server_state\\s+(leader|follower)"));
+        waitForZkMntr(newPodName[0], Pattern.compile("zk_server_state\\s+(leader|follower)"));
+        waitForZkMntr(newPodName[1], Pattern.compile("zk_server_state\\s+(leader|follower)"));
 
         // TODO Check for k8s events, logs for errors
 
