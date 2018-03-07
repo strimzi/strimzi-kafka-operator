@@ -234,8 +234,19 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
 
     @Override
     public K waitForPod(String name) {
+        // wait when all pods are ready
         return waitFor("pod", name,
-            actualObj -> "Running".equals(actualObj.get("status").get("phase").asText()));
+            actualObj -> {
+                JsonNode containerStatuses = actualObj.get("status").get("containerStatuses");
+                if (containerStatuses != null && containerStatuses.isArray()) {
+                    for (final JsonNode objNode : containerStatuses) {
+                        if (!objNode.get("ready").asBoolean()) return false;
+                    }
+                    return true;
+                }
+                return false;
+            }
+        );
     }
 
     @Override
