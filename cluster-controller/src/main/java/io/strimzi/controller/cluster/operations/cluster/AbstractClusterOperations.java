@@ -71,12 +71,12 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
     /**
      * Gets the name of the lock to be used for operating on the given {@code clusterType}, {@code namespace} and
      * cluster {@code name}
-     * @param clusterType
-     * @param namespace
-     * @param name
+     * @param clusterType The type of cluster
+     * @param namespace The namespace containing the cluster
+     * @param name The name of the cluster
      */
     protected final String getLockName(String clusterType, String namespace, String name) {
-        return "lock::" + clusterType + "::" + namespace + "::" + name;
+        return "lock::" + namespace + "::" + clusterType + "::" + name;
     }
 
     /**
