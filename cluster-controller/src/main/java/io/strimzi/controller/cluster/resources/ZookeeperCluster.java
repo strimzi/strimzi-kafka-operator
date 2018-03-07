@@ -84,7 +84,7 @@ public class ZookeeperCluster extends AbstractCluster {
      */
     private ZookeeperCluster(String namespace, String cluster, Labels labels) {
 
-        super(namespace, cluster, KafkaCluster.TYPE.equals(labels.type()) ? labels.withType(ZookeeperCluster.TYPE) : labels);
+        super(namespace, cluster, labels.withType(ZookeeperCluster.TYPE));
         this.name = zookeeperClusterName(cluster);
         this.headlessName = zookeeperHeadlessName(cluster);
         this.metricsConfigName = zookeeperMetricsName(cluster);
