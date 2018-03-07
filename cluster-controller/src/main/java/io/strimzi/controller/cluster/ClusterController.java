@@ -19,11 +19,14 @@ import io.strimzi.controller.cluster.resources.KafkaConnectCluster;
 import io.strimzi.controller.cluster.resources.KafkaConnectS2ICluster;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -83,10 +86,21 @@ public class ClusterController extends AbstractVerticle {
                 configMapWatch = res.result();
 
                 log.info("Setting up periodical reconciliation for namespace {}", namespace);
-                this.reconcileTimer = vertx.setPeriodic(this.reconciliationInterval, res2 -> {
-                    log.info("Triggering periodic reconciliation for namespace {}...", namespace);
-                    reconcile();
-                });
+
+                Handler<Long> handler = new Handler<Long>() {
+
+                    @Override
+                    public void handle(Long timerId) {
+
+                        log.info("Triggering periodic reconciliation for namespace {}...", namespace);
+                        Future<?> fut = reconcile();
+                        fut.setHandler(reconcileResult -> {
+
+                            reconcileTimer = vertx.setTimer(reconciliationInterval, this);
+                        });
+                    }
+                };
+                this.reconcileTimer = vertx.setTimer(this.reconciliationInterval, handler);
 
                 log.info("ClusterController running for namespace {}", namespace);
 
@@ -201,13 +215,18 @@ public class ClusterController extends AbstractVerticle {
     /**
       Periodical reconciliation (in case we lost some event)
      */
-    private void reconcile() {
-        kafkaClusterOperations.reconcileAll(namespace, labels);
-        kafkaConnectClusterOperations.reconcileAll(namespace, labels);
+    private Future<?> reconcile() {
+
+        List<Future> result = new ArrayList<>(3);
+
+        result.add(kafkaClusterOperations.reconcileAll(namespace, labels));
+        result.add(kafkaConnectClusterOperations.reconcileAll(namespace, labels));
 
         if (kafkaConnectS2IClusterOperations != null) {
-            kafkaConnectS2IClusterOperations.reconcileAll(namespace, labels);
+            result.add(kafkaConnectS2IClusterOperations.reconcileAll(namespace, labels));
         }
+
+        return CompositeFuture.join(result);
     }
 
     /**
