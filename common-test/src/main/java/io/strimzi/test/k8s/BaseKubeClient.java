@@ -237,17 +237,14 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
         // wait when all pods are ready
         return waitFor("pod", name,
             actualObj -> {
-                try {
-                    JsonNode containerStatuses = actualObj.get("status").get("containerStatuses");
-                    if (containerStatuses.isArray()) {
-                        for (final JsonNode objNode : containerStatuses) {
-                            if (!objNode.get("ready").asBoolean()) return false;
-                        }
+                JsonNode containerStatuses = actualObj.get("status").get("containerStatuses");
+                if (containerStatuses != null && containerStatuses.isArray()) {
+                    for(final JsonNode objNode : containerStatuses) {
+                        if (!objNode.get("ready").asBoolean()) return false;
                     }
                     return true;
-                } catch (NullPointerException e) {
-                    return false;
                 }
+                return false;
             }
         );
     }
