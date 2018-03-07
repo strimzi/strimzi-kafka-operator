@@ -22,7 +22,7 @@ ARG version=latest
 ENV VERSION ${version}
 
 # Downloading/extracting Apache Kafka
-RUN curl -O https://www.apache.org/dist/kafka/$KAFKA_VERSION/kafka_$SCALA_VERSION-$KAFKA_VERSION.tgz \
+RUN curl -O https://www.apache.org/dist/kafka/${KAFKA_VERSION}/kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz \
     && echo $KAFKA_CHECKSUM > kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz.sha512 \
     && sha512sum --check kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz.sha512 \
     && mkdir $KAFKA_HOME \
@@ -30,13 +30,13 @@ RUN curl -O https://www.apache.org/dist/kafka/$KAFKA_VERSION/kafka_$SCALA_VERSIO
     && rm -f kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz*
 
 # Downloading Prometheus JMX exporter
-RUN curl -O https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/$JMX_EXPORTER_VERSION/jmx_prometheus_javaagent-$JMX_EXPORTER_VERSION.jar \
-    && echo $JMX_EXPORTER_CHECKSUM > jmx_prometheus_javaagent-$JMX_EXPORTER_VERSION.jar.sha1 \
-    && sha1sum --check jmx_prometheus_javaagent-$JMX_EXPORTER_VERSION.jar.sha1 \
+RUN curl -O https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/${JMX_EXPORTER_VERSION}/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar \
+    && echo $JMX_EXPORTER_CHECKSUM > jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar.sha1 \
+    && sha1sum --check jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar.sha1 \
     && mkdir /opt/prometheus \
     && mkdir /opt/prometheus/config \
-    && mv jmx_prometheus_javaagent-$JMX_EXPORTER_VERSION.jar /opt/prometheus/jmx_prometheus_javaagent.jar \
-    && rm -rf jmx_prometheus_javaagent-$JMX_EXPORTER_VERSION.*
+    && mv jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar /opt/prometheus/jmx_prometheus_javaagent.jar \
+    && rm -rf jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.*
 
 # exposed port for the JMX exporter
 EXPOSE 9404
