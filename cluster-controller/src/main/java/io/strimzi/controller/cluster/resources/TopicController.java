@@ -78,7 +78,7 @@ public class TopicController extends AbstractCluster {
      */
     protected TopicController(String namespace, String cluster, Labels labels) {
 
-        super(namespace, cluster, labels.withType(TopicController.TYPE).withoutType());
+        super(namespace, cluster, labels.withType(TopicController.TYPE));
         this.name = topicControllerName(cluster);
         this.image = DEFAULT_IMAGE;
         this.replicas = DEFAULT_REPLICAS;
