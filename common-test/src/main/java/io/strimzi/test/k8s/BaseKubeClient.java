@@ -240,7 +240,9 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
                 JsonNode containerStatuses = actualObj.get("status").get("containerStatuses");
                 if (containerStatuses != null && containerStatuses.isArray()) {
                     for (final JsonNode objNode : containerStatuses) {
-                        if (!objNode.get("ready").asBoolean()) return false;
+                        if (!objNode.get("ready").asBoolean()) {
+                            return false;
+                        }
                     }
                     return true;
                 }
