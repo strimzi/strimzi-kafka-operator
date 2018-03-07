@@ -243,8 +243,9 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
                     for (final JsonNode objNode : containerStatuses) {
                         ready.add(objNode.get("ready").asBoolean());
                     }
+                    return !ready.contains(false);
                 }
-                return !ready.contains(false);
+                return false;
             }
         );
     }
