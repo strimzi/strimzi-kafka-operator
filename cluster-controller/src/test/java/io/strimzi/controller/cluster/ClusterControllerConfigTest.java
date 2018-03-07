@@ -22,7 +22,7 @@ public class ClusterControllerConfigTest {
     private static Map<String, String> envVars = new HashMap<>(4);
 
     static {
-        labels = Labels.kind("cluster");
+        labels = Labels.forKind("cluster");
 
         envVars.put(ClusterControllerConfig.STRIMZI_NAMESPACE, "namespace");
         envVars.put(ClusterControllerConfig.STRIMZI_CONFIGMAP_LABELS, "strimzi.io/kind=cluster");

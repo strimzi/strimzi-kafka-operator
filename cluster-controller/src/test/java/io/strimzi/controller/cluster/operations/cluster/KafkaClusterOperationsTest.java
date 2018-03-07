@@ -660,19 +660,19 @@ public class KafkaClusterOperationsTest {
 
 
         // providing the list of ALL StatefulSets for all the Kafka clusters
-        Labels newLabels = Labels.type("kafka");
+        Labels newLabels = Labels.forType("kafka");
         when(mockSsOps.list(eq(clusterCmNamespace), eq(newLabels))).thenReturn(
                 asList(KafkaCluster.fromConfigMap(bar).generateStatefulSet(openShift),
                         KafkaCluster.fromConfigMap(baz).generateStatefulSet(openShift))
         );
 
         // providing the list StatefulSets for already "existing" Kafka clusters
-        Labels barLabels = Labels.cluster("bar");
+        Labels barLabels = Labels.forCluster("bar");
         when(mockSsOps.list(eq(clusterCmNamespace), eq(barLabels))).thenReturn(
                 asList(KafkaCluster.fromConfigMap(bar).generateStatefulSet(openShift))
         );
 
-        Labels bazLabels = Labels.cluster("baz");
+        Labels bazLabels = Labels.forCluster("baz");
         when(mockSsOps.list(eq(clusterCmNamespace), eq(bazLabels))).thenReturn(
                 asList(KafkaCluster.fromConfigMap(baz).generateStatefulSet(openShift))
         );

@@ -204,7 +204,7 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
      * @param resource The resource
      */
     protected String nameFromLabels(R resource) {
-        return Labels.clusterLabel(resource);
+        return Labels.cluster(resource);
     }
 
     /**
@@ -239,7 +239,7 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
                     // get ConfigMap and related resources for the specific cluster
                     ConfigMap cm = configMapOperations.get(namespace, name);
 
-                    Labels labels = Labels.cluster(name);
+                    Labels labels = Labels.forCluster(name);
                     List<R> resources = getResources(namespace, labels);
 
                     if (cm != null) {
@@ -327,7 +327,7 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
 
         // get resources for the corresponding cluster name (they are part of)
         List<R> resources = getResources(namespace, newLabels);
-        Set<String> resourceNames = resources.stream().map(Labels::clusterLabel).collect(Collectors.toSet());
+        Set<String> resourceNames = resources.stream().map(Labels::cluster).collect(Collectors.toSet());
 
         cmsNames.addAll(resourceNames);
 

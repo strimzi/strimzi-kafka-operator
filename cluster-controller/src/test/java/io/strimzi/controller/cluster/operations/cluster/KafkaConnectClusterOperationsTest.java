@@ -464,18 +464,18 @@ public class KafkaConnectClusterOperationsTest {
         when(mockCmOps.get(eq(clusterCmNamespace), eq("bar"))).thenReturn(bar);
 
         // providing the list of ALL Deployments for all the Kafka Connect clusters
-        Labels newLabels = Labels.type("kafka-connect");
+        Labels newLabels = Labels.forType("kafka-connect");
         when(mockDcOps.list(eq(clusterCmNamespace), eq(newLabels))).thenReturn(
                 asList(KafkaConnectCluster.fromConfigMap(bar).generateDeployment(),
                         KafkaConnectCluster.fromConfigMap(baz).generateDeployment()));
 
         // providing the list Deployments for already "existing" Kafka Connect clusters
-        Labels barLabels = Labels.cluster("bar");
+        Labels barLabels = Labels.forCluster("bar");
         when(mockDcOps.list(eq(clusterCmNamespace), eq(barLabels))).thenReturn(
                 asList(KafkaConnectCluster.fromConfigMap(bar).generateDeployment())
         );
 
-        Labels bazLabels = Labels.cluster("baz");
+        Labels bazLabels = Labels.forCluster("baz");
         when(mockDcOps.list(eq(clusterCmNamespace), eq(bazLabels))).thenReturn(
                 asList(KafkaConnectCluster.fromConfigMap(baz).generateDeployment())
         );

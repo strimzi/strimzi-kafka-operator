@@ -646,18 +646,18 @@ public class KafkaConnectS2IClusterOperationsTest {
         when(mockCmOps.get(eq(clusterCmNamespace), eq("bar"))).thenReturn(bar);
 
         // providing the list of ALL DeploymentConfigs for all the Kafka Connect S2I clusters
-        Labels newLabels = Labels.type("kafka-connect-s2i");
+        Labels newLabels = Labels.forType("kafka-connect-s2i");
         when(mockDcOps.list(eq(clusterCmNamespace), eq(newLabels))).thenReturn(
                 asList(KafkaConnectS2ICluster.fromConfigMap(bar).generateDeploymentConfig(),
                         KafkaConnectS2ICluster.fromConfigMap(baz).generateDeploymentConfig()));
 
         // providing the list DeploymentConfigs for already "existing" Kafka Connect S2I clusters
-        Labels barLabels = Labels.cluster("bar");
+        Labels barLabels = Labels.forCluster("bar");
         when(mockDcOps.list(eq(clusterCmNamespace), eq(barLabels))).thenReturn(
                 asList(KafkaConnectS2ICluster.fromConfigMap(bar).generateDeploymentConfig())
         );
 
-        Labels bazLabels = Labels.cluster("baz");
+        Labels bazLabels = Labels.forCluster("baz");
         when(mockDcOps.list(eq(clusterCmNamespace), eq(bazLabels))).thenReturn(
                 asList(KafkaConnectS2ICluster.fromConfigMap(baz).generateDeploymentConfig())
         );

@@ -64,28 +64,28 @@ public class Labels {
     /**
      * Returns the value of the {@code strimzi.io/cluster} label of the given {@code resource}.
      */
-    public static String clusterLabel(HasMetadata resource) {
+    public static String cluster(HasMetadata resource) {
         return resource.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
     }
 
     /**
      * Returns the value of the {@code strimzi.io/type} label of the given {@code resource}.
      */
-    public static String typeLabel(HasMetadata resource) {
+    public static String type(HasMetadata resource) {
         return resource.getMetadata().getLabels().get(Labels.STRIMZI_TYPE_LABEL);
     }
 
     /**
      * Returns the value of the {@code strimzi.io/name} label of the given {@code resource}.
      */
-    public static String nameLabel(HasMetadata resource) {
+    public static String name(HasMetadata resource) {
         return resource.getMetadata().getLabels().get(Labels.STRIMZI_NAME_LABEL);
     }
 
     /**
      * Returns the value of the {@code strimzi.io/kind} label of the given {@code resource}.
      */
-    public static String kindLabel(HasMetadata resource) {
+    public static String kind(HasMetadata resource) {
         return resource.getMetadata().getLabels().get(Labels.STRIMZI_KIND_LABEL);
     }
 
@@ -176,21 +176,21 @@ public class Labels {
     /**
      * A singleton instance with the given {@code cluster} for the {@code strimzi.io/cluster} key.
      */
-    public static Labels cluster(String cluster) {
+    public static Labels forCluster(String cluster) {
         return new Labels(singletonMap(STRIMZI_CLUSTER_LABEL, cluster));
     }
 
     /**
      * A singleton instance with the given {@code type} for the {@code strimzi.io/type} key.
      */
-    public static Labels type(String type) {
+    public static Labels forType(String type) {
         return new Labels(singletonMap(STRIMZI_TYPE_LABEL, type));
     }
 
     /**
      * A singleton instance with the given {@code kind} for the {@code strimzi.io/kind} key.
      */
-    public static Labels kind(String kind) {
+    public static Labels forKind(String kind) {
         return new Labels(singletonMap(STRIMZI_KIND_LABEL, kind));
     }
 
