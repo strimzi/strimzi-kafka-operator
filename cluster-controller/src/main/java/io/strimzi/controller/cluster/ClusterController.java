@@ -85,7 +85,7 @@ public class ClusterController extends AbstractVerticle {
                 log.info("Setting up periodical reconciliation for namespace {}", namespace);
                 this.reconcileTimer = vertx.setPeriodic(this.reconciliationInterval, res2 -> {
                     log.info("Triggering periodic reconciliation for namespace {}...", namespace);
-                    reconcile();
+                    reconcileAllClusters();
                 });
 
                 log.info("ClusterController running for namespace {}", namespace);
@@ -146,15 +146,15 @@ public class ClusterController extends AbstractVerticle {
                             case DELETED:
                             case MODIFIED:
                                 log.info("ConfigMap {} in namespace {} was {}", name, namespace, action);
-                                cluster.reconcile(namespace, name);
+                                cluster.reconcileCluster(namespace, name);
                                 break;
                             case ERROR:
                                 log.error("Failed ConfigMap {} in namespace{} ", name, namespace);
-                                reconcile();
+                                reconcileAllClusters();
                                 break;
                             default:
                                 log.error("Unknown action: {} in namespace {}", name, namespace);
-                                reconcile();
+                                reconcileAllClusters();
                         }
                     }
 
@@ -201,7 +201,7 @@ public class ClusterController extends AbstractVerticle {
     /**
       Periodical reconciliation (in case we lost some event)
      */
-    private void reconcile() {
+    private void reconcileAllClusters() {
         kafkaClusterOperations.reconcileAll(namespace, labels);
         kafkaConnectClusterOperations.reconcileAll(namespace, labels);
 

@@ -71,12 +71,12 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
     /**
      * Gets the name of the lock to be used for operating on the given {@code clusterType}, {@code namespace} and
      * cluster {@code name}
-     * @param clusterType
-     * @param namespace
-     * @param name
+     * @param clusterType The type of cluster
+     * @param namespace The namespace containing the cluster
+     * @param name The name of the cluster
      */
     protected final String getLockName(String clusterType, String namespace, String name) {
-        return "lock::" + clusterType + "::" + namespace + "::" + name;
+        return "lock::" + namespace + "::" + clusterType + "::" + name;
     }
 
     /**
@@ -226,7 +226,7 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
      * @param namespace The namespace
      * @param name The name of the cluster
      */
-    public final void reconcile(String namespace, String name) {
+    public final void reconcileCluster(String namespace, String name) {
         String clusterType = clusterType();
 
         final String lockName = getLockName(clusterType, namespace, name);
@@ -336,7 +336,7 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
         cmsNames.addAll(resourceNames);
 
         for (String name: cmsNames) {
-            reconcile(namespace, name);
+            reconcileCluster(namespace, name);
         }
     }
 
