@@ -217,7 +217,7 @@ public class ClusterController extends AbstractVerticle {
      */
     private Future<?> reconcile() {
 
-        List<Future> result = new ArrayList<>(2 + (kafkaConnectS2IClusterOperations != null ? 1 : 0));
+        List<Future> result = new ArrayList<>(3);
 
         result.add(kafkaClusterOperations.reconcileAll(namespace, labels));
         result.add(kafkaConnectClusterOperations.reconcileAll(namespace, labels));
