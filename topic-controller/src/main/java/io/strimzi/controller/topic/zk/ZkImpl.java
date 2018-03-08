@@ -169,6 +169,7 @@ public class ZkImpl implements Zk {
         return this;
     }
 
+    @Override
     public Zk disconnect() throws InterruptedException {
         zk.close();
         return this;
