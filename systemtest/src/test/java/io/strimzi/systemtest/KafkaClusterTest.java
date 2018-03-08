@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.map;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
@@ -172,16 +173,22 @@ public class KafkaClusterTest {
         assertEquals(1, initialReplicas);
 
         // scale up
-        final int scaleTo = initialReplicas + 1;
-        final int newPodId = initialReplicas;
-        final String newPodName = zookeeperPodName(clusterName,  newPodId);
+        final int scaleTo = initialReplicas + 2;
+        final int[] newPodIds = {initialReplicas, initialReplicas + 1};
+        final String[] newPodName = {
+                zookeeperPodName(clusterName,  newPodIds[0]),
+                zookeeperPodName(clusterName,  newPodIds[1])
+        };
         final String firstPodName = zookeeperPodName(clusterName,  0);
         LOGGER.info("Scaling up to {}", scaleTo);
-        replaceCm(clusterName, "zookeeper-nodes", String.valueOf(initialReplicas + 1));
-        kubeClient.waitForPod(newPodName);
+        replaceCm(clusterName, "zookeeper-nodes", String.valueOf(scaleTo));
+        kubeClient.waitForPod(newPodName[0]);
+        kubeClient.waitForPod(newPodName[1]);
 
         // check the new node is either in leader or follower state
-        waitForZkMntr(newPodName, Pattern.compile("zk_server_state\\s+(leader|follower)"));
+        waitForZkMntr(firstPodName, Pattern.compile("zk_server_state\\s+(leader|follower)"));
+        waitForZkMntr(newPodName[0], Pattern.compile("zk_server_state\\s+(leader|follower)"));
+        waitForZkMntr(newPodName[1], Pattern.compile("zk_server_state\\s+(leader|follower)"));
 
         // TODO Check for k8s events, logs for errors
 
@@ -210,7 +217,12 @@ public class KafkaClusterTest {
                 LOGGER.trace("Exception while waiting for ZK to become leader/follower, ignoring", e);
             }
             return false;
-        });
+        },
+            () -> LOGGER.info("zookeeper `mntr` output at the point of timeout does not match {}:{}{}",
+                pattern.pattern(),
+                System.lineSeparator(),
+                indent(kubeClient.exec(pod, "/bin/bash", "-c", "echo mntr | nc localhost 2181").out()))
+        );
     }
 
 }

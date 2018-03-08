@@ -38,6 +38,10 @@ public final class TestUtils {
      * (helpful if you have several calls which need to share a common timeout),
      * */
     public static long waitFor(String description, long pollIntervalMs, long timeoutMs, BooleanSupplier ready) {
+        return waitFor(description, pollIntervalMs, timeoutMs, ready, () -> { });
+    }
+
+    public static long waitFor(String description, long pollIntervalMs, long timeoutMs, BooleanSupplier ready, Runnable onTimeout) {
         LOGGER.debug("Waiting for {}", description);
         long deadline = System.currentTimeMillis() + timeoutMs;
         while (true) {
@@ -47,6 +51,7 @@ public final class TestUtils {
                 return timeLeft;
             }
             if (timeLeft <= 0) {
+                onTimeout.run();
                 throw new TimeoutException("Timeout after " + timeoutMs + " ms waiting for " + description + " to be ready");
             }
             long sleepTime = Math.min(pollIntervalMs, timeLeft);
@@ -59,5 +64,14 @@ public final class TestUtils {
                 return deadline - System.currentTimeMillis();
             }
         }
+    }
+
+    public static String indent(String s) {
+        StringBuilder sb = new StringBuilder();
+        String[] lines = s.split("[\n\r]");
+        for (String line : lines) {
+            sb.append("    ").append(line).append(System.lineSeparator());
+        }
+        return sb.toString();
     }
 }

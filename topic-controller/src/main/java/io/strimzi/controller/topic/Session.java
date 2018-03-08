@@ -175,18 +175,22 @@ public class Session extends AbstractVerticle {
                 LOGGER.debug("Reconciling configmaps");
                 // Then those in k8s which aren't in kafka
                 k8s.listMaps(ar -> {
-                    List<ConfigMap> configMaps = ar.result();
-                    Map<String, ConfigMap> configMapsMap = configMaps.stream().collect(Collectors.toMap(
-                        cm -> cm.getMetadata().getName(),
-                        cm -> cm));
-                    configMapsMap.keySet().removeAll(kafkaTopics);
-                    LOGGER.debug("Reconciling configmaps: {}", configMapsMap.keySet());
-                    for (ConfigMap cm : configMapsMap.values()) {
-                        LOGGER.debug("{} reconciliation of configmap {}", reconciliationType, cm.getMetadata().getName());
-                        // TODO need to check inflight
-                        // TODO And need to prevent pileup of inflight periodic reconciliations
-                        TopicName topicName = new TopicName(cm);
-                        controller.reconcile(cm, topicName);
+                    if (ar.succeeded()) {
+                        List<ConfigMap> configMaps = ar.result();
+                        Map<String, ConfigMap> configMapsMap = configMaps.stream().collect(Collectors.toMap(
+                            cm -> cm.getMetadata().getName(),
+                            cm -> cm));
+                        configMapsMap.keySet().removeAll(kafkaTopics);
+                        LOGGER.debug("Reconciling configmaps: {}", configMapsMap.keySet());
+                        for (ConfigMap cm : configMapsMap.values()) {
+                            LOGGER.debug("{} reconciliation of configmap {}", reconciliationType, cm.getMetadata().getName());
+                            // TODO need to check inflight
+                            // TODO And need to prevent pileup of inflight periodic reconciliations
+                            TopicName topicName = new TopicName(cm);
+                            controller.reconcile(cm, topicName);
+                        }
+                    } else {
+                        LOGGER.error("Unable to list ConfigMaps", ar.cause());
                     }
 
                     // Finally those in private store which we've not dealt with so far...

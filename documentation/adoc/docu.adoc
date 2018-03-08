@@ -16,11 +16,11 @@ Apache Kafka is a popular platform for streaming data delivery and processing. F
 itself visit http://kafka.apache.org[Apache Kafka website]. The aim of Strimzi is to make it easy to run
 Apache Kafka on Kubernetes and OpenShift.
 
-Strimzi consists of 2 main components:
+Strimzi consists of two main components:
 
 Cluster Controller:: Responsible for deploying and managing Apache Kafka clusters within a Kubernetes or OpenShift
 cluster
-Topic Controller:: Responsible for managing Kafka Topics within a Kafka cluster running within Kubernetes or OpenShift
+Topic Controller:: Responsible for managing Kafka topics within a Kafka cluster running within Kubernetes or OpenShift
 
 include::getting-started.adoc[]
 

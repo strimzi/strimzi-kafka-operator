@@ -103,7 +103,7 @@ public class K8sImpl implements K8s {
             try {
                 try {
                     LOGGER.debug("Creating event {}", event);
-                    client.events().create(event);
+                    client.events().inNamespace(namespace).create(event);
                 } catch (KubernetesClientException e) {
                     LOGGER.error("Error creating event {}", event, e);
                 }
