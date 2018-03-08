@@ -50,7 +50,6 @@ public class ClusterController extends AbstractVerticle {
     private boolean stopping;
 
     public ClusterController(String namespace,
-                             Labels labels,
                              long reconciliationInterval,
                              KubernetesClient client,
                              KafkaClusterOperations kafkaClusterOperations,
@@ -58,7 +57,7 @@ public class ClusterController extends AbstractVerticle {
                              KafkaConnectS2IClusterOperations kafkaConnectS2IClusterOperations) {
         log.info("Creating ClusterController for namespace {}", namespace);
         this.namespace = namespace;
-        this.labels = labels;
+        this.labels = Labels.forKind("cluster");
         this.reconciliationInterval = reconciliationInterval;
         this.client = client;
         this.kafkaClusterOperations = kafkaClusterOperations;

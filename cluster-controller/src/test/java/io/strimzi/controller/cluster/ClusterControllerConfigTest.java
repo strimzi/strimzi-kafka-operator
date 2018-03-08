@@ -33,10 +33,13 @@ public class ClusterControllerConfigTest {
     @Test
     public void testDefaultConfig() {
 
-        ClusterControllerConfig config = new ClusterControllerConfig(singleton("namespace"), labels);
+        Map<String, String> envVars = new HashMap<>(ClusterControllerConfigTest.envVars);
+        envVars.remove(ClusterControllerConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS);
+        envVars.remove(ClusterControllerConfig.STRIMZI_OPERATION_TIMEOUT_MS);
+
+        ClusterControllerConfig config = ClusterControllerConfig.fromMap(envVars);
 
         assertEquals(singleton("namespace"), config.getNamespaces());
-        assertEquals(labels, config.getLabels());
         assertEquals(ClusterControllerConfig.DEFAULT_FULL_RECONCILIATION_INTERVAL_MS, config.getReconciliationIntervalMs());
         assertEquals(ClusterControllerConfig.DEFAULT_OPERATION_TIMEOUT_MS, config.getOperationTimeoutMs());
     }
@@ -44,10 +47,9 @@ public class ClusterControllerConfigTest {
     @Test
     public void testReconciliationInterval() {
 
-        ClusterControllerConfig config = new ClusterControllerConfig(singleton("namespace"), labels, 60_000, 30_000);
+        ClusterControllerConfig config = new ClusterControllerConfig(singleton("namespace"), 60_000, 30_000);
 
         assertEquals(singleton("namespace"), config.getNamespaces());
-        assertEquals(labels, config.getLabels());
         assertEquals(60_000, config.getReconciliationIntervalMs());
         assertEquals(30_000, config.getOperationTimeoutMs());
     }
@@ -58,7 +60,6 @@ public class ClusterControllerConfigTest {
         ClusterControllerConfig config = ClusterControllerConfig.fromMap(envVars);
 
         assertEquals(singleton("namespace"), config.getNamespaces());
-        assertEquals(labels, config.getLabels());
         assertEquals(30_000, config.getReconciliationIntervalMs());
         assertEquals(30_000, config.getOperationTimeoutMs());
     }
@@ -73,7 +74,6 @@ public class ClusterControllerConfigTest {
         ClusterControllerConfig config = ClusterControllerConfig.fromMap(envVars);
 
         assertEquals(singleton("namespace"), config.getNamespaces());
-        assertEquals(labels, config.getLabels());
         assertEquals(ClusterControllerConfig.DEFAULT_FULL_RECONCILIATION_INTERVAL_MS, config.getReconciliationIntervalMs());
         assertEquals(ClusterControllerConfig.DEFAULT_OPERATION_TIMEOUT_MS, config.getOperationTimeoutMs());
     }
@@ -86,7 +86,6 @@ public class ClusterControllerConfigTest {
 
         ClusterControllerConfig config = ClusterControllerConfig.fromMap(envVars);
         assertEquals(new HashSet<>(asList("foo", "bar", "baz")), config.getNamespaces());
-        assertEquals(labels, config.getLabels());
         assertEquals(30_000, config.getReconciliationIntervalMs());
         assertEquals(30_000, config.getOperationTimeoutMs());
     }
@@ -96,15 +95,6 @@ public class ClusterControllerConfigTest {
 
         Map<String, String> envVars = new HashMap<>(ClusterControllerConfigTest.envVars);
         envVars.remove(ClusterControllerConfig.STRIMZI_NAMESPACE);
-
-        ClusterControllerConfig.fromMap(envVars);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testNoLabels() {
-
-        Map<String, String> envVars = new HashMap<>(ClusterControllerConfigTest.envVars);
-        envVars.remove(ClusterControllerConfig.STRIMZI_CONFIGMAP_LABELS);
 
         ClusterControllerConfig.fromMap(envVars);
     }
