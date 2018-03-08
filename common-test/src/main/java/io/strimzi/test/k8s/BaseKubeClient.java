@@ -203,7 +203,7 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
     }
 
     private K waitFor(String resource, String name, Predicate<JsonNode> ready) {
-        long timeoutMs = 600_000L;
+        long timeoutMs = 570_000L;
         long pollMs = 1_000L;
         ObjectMapper mapper = new ObjectMapper();
         TestUtils.waitFor(resource + " " + name, pollMs, timeoutMs, () -> {
@@ -240,7 +240,9 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
                 JsonNode containerStatuses = actualObj.get("status").get("containerStatuses");
                 if (containerStatuses != null && containerStatuses.isArray()) {
                     for (final JsonNode objNode : containerStatuses) {
-                        if (!objNode.get("ready").asBoolean()) return false;
+                        if (!objNode.get("ready").asBoolean()) {
+                            return false;
+                        }
                     }
                     return true;
                 }
@@ -288,5 +290,20 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
     @Override
     public String toString() {
         return cmd();
+    }
+
+    @Override
+    public List<String> list(String resourceType) {
+        return asList(Exec.exec(namespacedCommand("get", resourceType, "-o", "jsonpath={range .items[*]}{.metadata.name} ")).out().trim().split(" +"));
+    }
+
+    @Override
+    public String describe(String resourceType, String resourceName) {
+        return Exec.exec(namespacedCommand("describe", resourceType, resourceName)).out();
+    }
+
+    @Override
+    public String logs(String pod) {
+        return Exec.exec(namespacedCommand("logs", pod)).out();
     }
 }

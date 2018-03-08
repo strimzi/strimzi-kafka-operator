@@ -113,4 +113,10 @@ public interface KubeClient<K extends KubeClient<K>> {
     String get(String resource, String resourceName);
 
     K waitForResourceDeletion(String resourceType, String resourceName);
+
+    List<String> list(String resourceType);
+
+    String describe(String resourceType, String resourceName);
+
+    String logs(String pod);
 }
