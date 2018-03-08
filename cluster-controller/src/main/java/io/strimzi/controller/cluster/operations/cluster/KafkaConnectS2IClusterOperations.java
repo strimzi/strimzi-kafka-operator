@@ -271,8 +271,8 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
     }
 
     @Override
-    protected List<DeploymentConfig> getResources(String namespace, Labels kafkaLabels) {
-        return deploymentConfigOperations.list(namespace, kafkaLabels);
+    protected List<DeploymentConfig> getResources(String namespace, Labels selector) {
+        return deploymentConfigOperations.list(namespace, selector);
     }
 
 }

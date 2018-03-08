@@ -207,7 +207,7 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
     }
 
     @Override
-    protected List<Deployment> getResources(String namespace, Labels kafkaLabels) {
-        return deploymentOperations.list(namespace, kafkaLabels);
+    protected List<Deployment> getResources(String namespace, Labels selector) {
+        return deploymentOperations.list(namespace, selector);
     }
 }

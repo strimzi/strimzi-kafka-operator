@@ -165,14 +165,14 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
     }
 
     /**
-     * Synchronously list the resources in the given {@code namespace} with the given {@code labels}.
+     * Synchronously list the resources in the given {@code namespace} with the given {@code selector}.
      * @param namespace The namespace.
-     * @param labels The labels.
+     * @param selector The selector.
      * @return A list of matching resources.
      */
     @SuppressWarnings("unchecked")
-    public List<T> list(String namespace, Labels labels) {
-        return operation().inNamespace(namespace).withLabels(labels.toMap()).list().getItems();
+    public List<T> list(String namespace, Labels selector) {
+        return operation().inNamespace(namespace).withLabels(selector.toMap()).list().getItems();
     }
 
     /**

@@ -239,8 +239,7 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
                     // get ConfigMap and related resources for the specific cluster
                     ConfigMap cm = configMapOperations.get(namespace, name);
 
-                    Labels labels = Labels.forCluster(name);
-                    List<R> resources = getResources(namespace, labels);
+                    List<R> resources = getResources(namespace, Labels.forCluster(name));
 
                     if (cm != null) {
                         String nameFromCm = name(cm);
@@ -306,8 +305,8 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
     }
 
     /**
-     * Reconcile cluster resources in the given namespace having the given labels.
-     * Reconciliation works by getting the cluster ConfigMaps in the given namespace with the given labels and
+     * Reconcile cluster resources in the given namespace having the given selector.
+     * Reconciliation works by getting the cluster ConfigMaps in the given namespace with the given selector and
      * comparing with the corresponding {@linkplain #getResources(String, Labels) resource}.
      * <ul>
      * <li>A cluster will be {@linkplain #create(String, String, Handler) created} for all ConfigMaps without same-named resources</li>
@@ -315,18 +314,18 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
      * <li>A cluster will be {@linkplain #update(String, String, Handler) updated} if it has a cluster ConfigMap and a resource with the same name.</li>
      * </ul>
      * @param namespace The namespace
-     * @param labels The labels
+     * @param selector The selector
      */
-    public final void reconcileAll(String namespace, Labels labels) {
+    public final void reconcileAll(String namespace, Labels selector) {
         String clusterType = clusterType();
-        Labels newLabels = labels.withType(clusterType);
+        Labels selectorWithCluster = selector.withType(clusterType);
 
         // get ConfigMap for the corresponding cluster type
-        List<ConfigMap> cms = configMapOperations.list(namespace, newLabels);
+        List<ConfigMap> cms = configMapOperations.list(namespace, selectorWithCluster);
         Set<String> cmsNames = cms.stream().map(cm -> cm.getMetadata().getName()).collect(Collectors.toSet());
 
         // get resources for the corresponding cluster name (they are part of)
-        List<R> resources = getResources(namespace, newLabels);
+        List<R> resources = getResources(namespace, selectorWithCluster);
         Set<String> resourceNames = resources.stream().map(Labels::cluster).collect(Collectors.toSet());
 
         cmsNames.addAll(resourceNames);
@@ -340,9 +339,9 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
      * Gets the resources in the given namespace and with the given labels
      * from which an AbstractCluster representing the current state of the cluster can be obtained.
      * @param namespace The namespace
-     * @param kafkaLabels The labels
+     * @param selector The labels
      * @return The matching resources.
      */
-    protected abstract List<R> getResources(String namespace, Labels kafkaLabels);
+    protected abstract List<R> getResources(String namespace, Labels selector);
 
 }

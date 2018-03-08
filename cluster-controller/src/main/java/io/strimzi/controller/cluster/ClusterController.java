@@ -37,7 +37,7 @@ public class ClusterController extends AbstractVerticle {
     private static final int HEALTH_SERVER_PORT = 8080;
 
     private final KubernetesClient client;
-    private final Labels labels;
+    private final Labels selector;
     private final String namespace;
     private final long reconciliationInterval;
 
@@ -57,7 +57,7 @@ public class ClusterController extends AbstractVerticle {
                              KafkaConnectS2IClusterOperations kafkaConnectS2IClusterOperations) {
         log.info("Creating ClusterController for namespace {}", namespace);
         this.namespace = namespace;
-        this.labels = Labels.forKind("cluster");
+        this.selector = Labels.forKind("cluster");
         this.reconciliationInterval = reconciliationInterval;
         this.client = client;
         this.kafkaClusterOperations = kafkaClusterOperations;
@@ -109,7 +109,7 @@ public class ClusterController extends AbstractVerticle {
     private void createConfigMapWatch(Handler<AsyncResult<Watch>> handler) {
         getVertx().executeBlocking(
             future -> {
-                Watch watch = client.configMaps().inNamespace(namespace).withLabels(labels.toMap()).watch(new Watcher<ConfigMap>() {
+                Watch watch = client.configMaps().inNamespace(namespace).withLabels(selector.toMap()).watch(new Watcher<ConfigMap>() {
                     @Override
                     public void eventReceived(Action action, ConfigMap cm) {
                         Labels labels = Labels.fromResource(cm);
@@ -166,7 +166,7 @@ public class ClusterController extends AbstractVerticle {
                 future.complete(watch);
             }, res -> {
                 if (res.succeeded())    {
-                    log.info("ConfigMap watcher running for labels {}", labels);
+                    log.info("ConfigMap watcher running for labels {}", selector);
                     handler.handle(Future.succeededFuture((Watch) res.result()));
                 } else {
                     log.info("ConfigMap watcher failed to start", res.cause());
@@ -196,11 +196,11 @@ public class ClusterController extends AbstractVerticle {
       Periodical reconciliation (in case we lost some event)
      */
     private void reconcileAllClusters() {
-        kafkaClusterOperations.reconcileAll(namespace, labels);
-        kafkaConnectClusterOperations.reconcileAll(namespace, labels);
+        kafkaClusterOperations.reconcileAll(namespace, selector);
+        kafkaConnectClusterOperations.reconcileAll(namespace, selector);
 
         if (kafkaConnectS2IClusterOperations != null) {
-            kafkaConnectS2IClusterOperations.reconcileAll(namespace, labels);
+            kafkaConnectS2IClusterOperations.reconcileAll(namespace, selector);
         }
     }
 

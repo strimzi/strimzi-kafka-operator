@@ -711,8 +711,8 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
     }
 
     @Override
-    protected List<StatefulSet> getResources(String namespace, Labels kafkaLabels) {
-        return statefulSetOperations.list(namespace, kafkaLabels);
+    protected List<StatefulSet> getResources(String namespace, Labels selector) {
+        return statefulSetOperations.list(namespace, selector);
     }
 
 
