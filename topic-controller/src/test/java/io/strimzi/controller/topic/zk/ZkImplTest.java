@@ -30,6 +30,7 @@ public class ZkImplTest {
     private EmbeddedZooKeeper zkServer;
 
     private Vertx vertx = Vertx.vertx();
+    private ZkImpl zk;
 
     @Before
     public void setup()
@@ -37,10 +38,12 @@ public class ZkImplTest {
             TimeoutException, ExecutionException {
         this.zkServer = new EmbeddedZooKeeper();
 
+        zk = new ZkImpl(vertx, zkServer.getZkConnectString(), 60_000, false);
     }
 
     @After
-    public void teardown() {
+    public void teardown() throws InterruptedException {
+        zk.disconnect();
         if (this.zkServer != null) {
             this.zkServer.close();
         }
@@ -72,14 +75,8 @@ public class ZkImplTest {
         });
     }
 
-    private ZkImpl connect(TestContext context) {
-        Zk zk = new ZkImpl(vertx, zkServer.getZkConnectString(), 60_000, false);
-        return (ZkImpl) zk;
-    }
-
     @Test
     public void testWatchUnwatchChildren(TestContext context) {
-        ZkImpl zk = connect(context);
         // Create a node
         Async fooFuture = context.async();
         zk.create("/foo", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, ar -> {
@@ -106,7 +103,6 @@ public class ZkImplTest {
 
     @Test
     public void testWatchUnwatchData(TestContext context) {
-        ZkImpl zk = connect(context);
         // Create a node
         Async fooFuture = context.async();
         byte[] data1 = new byte[]{1};
@@ -130,7 +126,6 @@ public class ZkImplTest {
 
     @Test
     public void testWatchUnwatchExists(TestContext context) {
-        ZkImpl zk = connect(context);
         // Create a node
         Async created = context.async(2);
         Async deleted = context.async(2);

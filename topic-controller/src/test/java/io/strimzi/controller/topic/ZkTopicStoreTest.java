@@ -30,18 +30,20 @@ public class ZkTopicStoreTest {
     private Vertx vertx = Vertx.vertx();
 
     private ZkTopicStore store;
+    private ZkImpl zk;
 
     @Before
     public void setup()
             throws IOException, InterruptedException,
             TimeoutException, ExecutionException {
         this.zkServer = new EmbeddedZooKeeper();
-        ZkImpl zk = new ZkImpl(vertx, zkServer.getZkConnectString(), 60000, false);
+        zk = new ZkImpl(vertx, zkServer.getZkConnectString(), 60000, false);
         this.store = new ZkTopicStore(zk);
     }
 
     @After
-    public void teardown() {
+    public void teardown() throws InterruptedException {
+        zk.disconnect();
         if (this.zkServer != null) {
             this.zkServer.close();
         }

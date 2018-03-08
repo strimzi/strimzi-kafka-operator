@@ -12,6 +12,7 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven.surefire.version>2.20.1</maven.surefire.version>
+        <maven.failsafe.version>2.20.1</maven.failsafe.version>
         <fabric8.kubernetes-client.version>3.1.0</fabric8.kubernetes-client.version>
         <vertx.version>3.5.0</vertx.version>
         <slf4j.version>1.7.21</slf4j.version>
@@ -99,7 +100,24 @@
                         <ENV_VAR_EXISTS>value</ENV_VAR_EXISTS>
                         <ENV_VAR_EXISTS_BOOLEAN>true</ENV_VAR_EXISTS_BOOLEAN>
                     </environmentVariables>
+                    <trimStackTrace>false</trimStackTrace>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>${maven.failsafe.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                        <configuration>
+                            <trimStackTrace>false</trimStackTrace>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>com.mycila</groupId>
