@@ -20,7 +20,7 @@ updates on the Kubernetes/OpenShift resources which make up the Kafka or Kafka C
 or deleted and then re-created in order to make the Kafka or Kafka Connect cluster reflect the state of the cluster ConfigMap.
 This might cause a rolling update which might lead to service disruption.
 
-Finally, when the ConfigMap is deleted, the controller starts to un-deploy the cluster deleting all the related Kubernets/OpenShift
+Finally, when the ConfigMap is deleted, the controller starts to un-deploy the cluster deleting all the related Kubernetes/OpenShift
 resources.
 
 === Reconciliation
@@ -80,7 +80,7 @@ the related ConfigMap :
 * `topic-controller-config`: a JSON string representing the topic controller configuration. See the <<topic_controller_json_config>>
 documentation for further details. More info about the topic controller in the related <<Topic Controller>> documentation page.
  
-The following is an example of a ConfigMap for a Kakfa cluster.
+The following is an example of a ConfigMap for a Kafka cluster.
 
 .Example Kafka cluster ConfigMap
 [source,yaml,options="nowrap"]
@@ -236,7 +236,7 @@ Alongside the Kafka cluster and the Zookeeper ensemble, the cluster controller c
 In order to do that, the 'topic-controller-config` field has to be put into the data section of the cluster ConfigMap.
 This field is a JSON string containing the topic controller configuration.
 Without this field, the cluster controller doesn't deploy the topic controller. It is still possible to deploy the topic
-controller by creating appropriate Kubernates/OpenShift resources.
+controller by creating appropriate Kubernetes/OpenShift resources.
 
 The JSON representation of the 'topic-controller-config` has no mandatory fields and if the value is an empty object
 (just "{ }"), the cluster controller will deploy the topic controller with a default configuration.
