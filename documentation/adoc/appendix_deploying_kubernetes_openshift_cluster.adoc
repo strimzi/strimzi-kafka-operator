@@ -11,11 +11,13 @@ In order to interact with a Kubernetes cluster the https://kubernetes.io/docs/ta
 utility needs to be installed.
 
 The easiest way to get a running Kubernetes cluster is using `Minikube`. `Minikube` can be downloaded and installed
-from the https://kubernetes.io/docs/getting-started-guides/minikube/[Kubernetes website]. Once installed, it can be started
-using:
+from the https://kubernetes.io/docs/getting-started-guides/minikube/[Kubernetes website]. Depending on the number of brokers
+you want to deploy inside the cluster and if you need Kafka Connect running as well, it could be worth running `Minikube`
+at least with 4 GB of RAM instead of the default 2 GB.
+Once installed, it can be started using:
 
 [source]
-minikube start
+minikube start --memory 4096
 
 === OpenShift
 
@@ -31,8 +33,10 @@ This command requires Docker to be installed. More information about this way ca
 https://github.com/openshift/origin/blob/master/docs/cluster_up_down.md[here].
 
 Another option is to use `Minishift`. `MiniShift` is an OpenShift installation within a VM. It can be downloaded and
-installed from the https://docs.openshift.org/latest/minishift/index.html[Minishift website]. Once installed,
-`Minishift` can be started using the following command:
+installed from the https://docs.openshift.org/latest/minishift/index.html[Minishift website]. Depending on the number of brokers
+you want to deploy inside the cluster and if you need Kafka Connect running as well, it could be worth running `Minikube`
+at least with 4 GB of RAM instead of the default 2 GB.
+Once installed, `Minishift` can be started using the following command:
 
 [source]
-minishift start
+minishift start --memory 4GB
