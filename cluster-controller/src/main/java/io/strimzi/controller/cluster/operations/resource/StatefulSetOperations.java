@@ -62,7 +62,7 @@ public class StatefulSetOperations extends AbstractScalableOperations<Kubernetes
                         Future fut = podOperations.delete(namespace, podName);
 
                         // TODO do this async
-                        while (!fut.isComplete() && !deleted.isComplete()) {
+                        while (!fut.isComplete() || !deleted.isComplete()) {
                             log.info("Waiting for pod {} to be deleted", podName);
                             Thread.sleep(1000);
                         }
