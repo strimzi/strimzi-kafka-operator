@@ -36,9 +36,8 @@ a consistent state across all of them.
 [[config_map_details]]
 === Format of the cluster ConfigMap
 
-By default, the controller watches for ConfigMaps having the label `strimzi.io/kind=cluster` in order to find and get
-configuration for a Kafka or Kafka Connect cluster to deploy. The label is configurable through the `STRIMZI_CONFIGMAP_LABELS` 
-environment variable.
+The controller watches for ConfigMaps having the label `strimzi.io/kind=cluster` in order to find and get
+configuration for a Kafka or Kafka Connect cluster to deploy.
 
 In order to distinguish which "type" of cluster to deploy, Kafka or Kafka Connect, the controller checks the
 `strimzi.io/type` label which can have one of the the following values :
@@ -47,6 +46,10 @@ In order to distinguish which "type" of cluster to deploy, Kafka or Kafka Connec
 * `kafka-connect`: the ConfigMap provides configuration for a Kafka Connect cluster deployment
 * `kafka-connect-s2i`: the ConfigMap provides configuration for a Kafka Connect cluster deployment using Build and Source2Image
 features (works only with OpenShift)
+
+Whatever other labels are applied to the ConfigMap will also be applied to the Kubernetes/OpenShift resources making
+up the Kafka or Kafka Connect cluster. This provides a convenient mechanism for those resource to be labelled
+in whatever way the user requires.
 
 The `data` section of such ConfigMaps contains different keys depending on the "type" of deployment as described in the 
 following sections.
@@ -381,9 +384,6 @@ include::../../examples/install/cluster-controller/03-role-binding.yaml[]
 === Controller configuration
 
 The controller itself can be configured through the following environment variables.
-
-`STRIMZI_CONFIGMAP_LABELS`:: Required. The Kubernetes/OpenShift label selector used to identify ConfigMaps to be managed by the
-controller.
 
 `STRIMZI_NAMESPACE`:: Required. A comma-separated list of namespaces that the controller should operate in. The Cluster Controller deployment might use the https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#the-downward-api[Kubernetes Downward API]
 to set this automatically to the namespace the Cluster Controller is deployed in. See the example below:
