@@ -34,7 +34,7 @@ https://github.com/openshift/origin/blob/master/docs/cluster_up_down.md[here].
 
 Another option is to use `Minishift`. `MiniShift` is an OpenShift installation within a VM. It can be downloaded and
 installed from the https://docs.openshift.org/latest/minishift/index.html[Minishift website]. Depending on the number of brokers
-you want to deploy inside the cluster and if you need Kafka Connect running as well, it could be worth running `Minikube`
+you want to deploy inside the cluster and if you need Kafka Connect running as well, it could be worth running `Minishift`
 at least with 4 GB of RAM instead of the default 2 GB.
 Once installed, `Minishift` can be started using the following command:
 
