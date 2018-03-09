@@ -14,6 +14,7 @@ import io.strimzi.test.KafkaCluster;
 import io.strimzi.test.Namespace;
 import io.strimzi.test.OpenShiftOnly;
 import io.strimzi.test.Resources;
+import io.strimzi.test.CmData;
 import io.strimzi.test.StrimziRunner;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClient;
@@ -34,7 +35,7 @@ import java.util.regex.Pattern;
 import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.map;
 import static junit.framework.TestCase.assertTrue;
-import static matchers.Matchers.valueOfCmEqualsTo;
+import static matchers.Matchers.valueOfCmEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
@@ -228,15 +229,14 @@ public class KafkaClusterTest {
     }
 
     @Test
-    @KafkaCluster(name = "my-cluster",
-            cmConfiguration = {@KafkaCluster.CmConfiguration(key = "zookeeper-healthcheck-delay", value = "30"),
-                    @KafkaCluster.CmConfiguration(key = "zookeeper-healthcheck-timeout", value = "10"),
-                    @KafkaCluster.CmConfiguration(key = "kafka-healthcheck-delay", value = "30"),
-                    @KafkaCluster.CmConfiguration(key = "kafka-healthcheck-timeout", value = "10"),
-                    @KafkaCluster.CmConfiguration(key = "KAFKA_DEFAULT_REPLICATION_FACTOR", value = "2"),
-                    @KafkaCluster.CmConfiguration(key = "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", value = "5"),
-                    @KafkaCluster.CmConfiguration(key = "KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", value = "5")
-            })
+    @KafkaCluster(name = "my-cluster", kafkaNodes = 1)
+    @CmData(key = "zookeeper-healthcheck-delay", value = "30")
+    @CmData(key = "zookeeper-healthcheck-timeout", value = "10")
+    @CmData(key = "kafka-healthcheck-delay", value = "30")
+    @CmData(key = "kafka-healthcheck-timeout", value = "10")
+    @CmData(key = "KAFKA_DEFAULT_REPLICATION_FACTOR", value = "2")
+    @CmData(key = "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", value = "5")
+    @CmData(key = "KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", value = "5")
     public void testClusterWithCustomParameters() {
         // kafka cluster already deployed via annotation
         String clusterName = "my-cluster";
@@ -244,13 +244,13 @@ public class KafkaClusterTest {
 
         String jsonString = kubeClient.get("cm", clusterName);
 
-        assertThat(jsonString, valueOfCmEqualsTo("zookeeper-healthcheck-delay", "30"));
-        assertThat(jsonString, valueOfCmEqualsTo("zookeeper-healthcheck-timeout", "10"));
-        assertThat(jsonString, valueOfCmEqualsTo("kafka-healthcheck-delay", "30"));
-        assertThat(jsonString, valueOfCmEqualsTo("kafka-healthcheck-timeout", "30"));
-        assertThat(jsonString, valueOfCmEqualsTo("KAFKA_DEFAULT_REPLICATION_FACTOR", "2"));
-        assertThat(jsonString, valueOfCmEqualsTo("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "5"));
-        assertThat(jsonString, valueOfCmEqualsTo("KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", "5"));
+        assertThat(jsonString, valueOfCmEquals("zookeeper-healthcheck-delay", "30"));
+        assertThat(jsonString, valueOfCmEquals("zookeeper-healthcheck-timeout", "10"));
+        assertThat(jsonString, valueOfCmEquals("kafka-healthcheck-delay", "30"));
+        assertThat(jsonString, valueOfCmEquals("kafka-healthcheck-timeout", "10"));
+        assertThat(jsonString, valueOfCmEquals("KAFKA_DEFAULT_REPLICATION_FACTOR", "2"));
+        assertThat(jsonString, valueOfCmEquals("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "5"));
+        assertThat(jsonString, valueOfCmEquals("KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", "5"));
 
     }
 }

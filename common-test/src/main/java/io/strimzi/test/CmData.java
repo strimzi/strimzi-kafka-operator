@@ -12,21 +12,19 @@ import java.lang.annotation.Target;
 
 /**
  * Annotation for test classes or methods run via {@code @RunWith(StrimziRunner.class)}
- * which causes that runner to create kafka clusters before, and delete kafka clusters after,
- * the tests.
+ * which causes that runner to update config map before tests
  */
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-@Repeatable(KafkaCluster.Container.class)
-public @interface KafkaCluster {
+@Repeatable(CmData.Container.class)
+public @interface CmData {
 
-    String name();
-    int kafkaNodes() default 3;
-    int zkNodes() default 1;
+    String key();
+    String value();
 
     @Target({ElementType.METHOD, ElementType.TYPE})
     @Retention(RetentionPolicy.RUNTIME)
     @interface Container {
-        KafkaCluster[] value();
+        CmData[] value();
     }
 }

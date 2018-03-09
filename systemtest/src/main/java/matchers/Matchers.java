@@ -16,7 +16,7 @@ public class Matchers {
      * @param key - key of config map
      * @param value - expected value for the key
      */
-    public static Matcher<String> valueOfCmEqualsTo(String key, String value) {
+    public static Matcher<String> valueOfCmEquals(String key, String value) {
         return new CmMatcher(key, value);
     }
 }
