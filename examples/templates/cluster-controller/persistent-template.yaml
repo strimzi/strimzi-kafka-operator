@@ -47,7 +47,7 @@ parameters:
 - description: Kafka image tag
   displayName: Kafka image tag
   name: KAFKA_IMAGE_TAG
-  value: 0.2.0-rc3
+  value: 0.2.0
 - description: Zookeeper image name
   displayName: Zookeeper image Name
   name: ZOOKEEPER_IMAGE_NAME
@@ -55,7 +55,7 @@ parameters:
 - description: Zookeeper image tag
   displayName: Zookeeper image tag
   name: ZOOKEEPER_IMAGE_TAG
-  value: 0.2.0-rc3
+  value: 0.2.0
 - description: Number of seconds after the container has started before healthcheck probes are initiated.
   displayName: Zookeeper healthcheck initial delay
   name: ZOOKEEPER_HEALTHCHECK_DELAY

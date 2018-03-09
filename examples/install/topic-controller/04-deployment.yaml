@@ -12,7 +12,7 @@ spec:
       serviceAccountName: strimzi-topic-controller
       containers:
         - name: strimzi-topic-controller
-          image: strimzi/topic-controller:0.2.0-rc3
+          image: strimzi/topic-controller:0.2.0
           env:
             - name: STRIMZI_CONFIGMAP_LABELS
               value: "strimzi.io/kind=topic"

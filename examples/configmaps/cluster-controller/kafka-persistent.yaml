@@ -7,11 +7,11 @@ metadata:
     strimzi.io/type: kafka
 data:
   kafka-nodes: "3"
-  kafka-image: "strimzi/kafka:0.2.0-rc3"
+  kafka-image: "strimzi/kafka:0.2.0"
   kafka-healthcheck-delay: "15"
   kafka-healthcheck-timeout: "5"
   zookeeper-nodes: "3"
-  zookeeper-image: "strimzi/zookeeper:0.2.0-rc3"
+  zookeeper-image: "strimzi/zookeeper:0.2.0"
   zookeeper-healthcheck-delay: "15"
   zookeeper-healthcheck-timeout: "5"
   KAFKA_DEFAULT_REPLICATION_FACTOR: "3"

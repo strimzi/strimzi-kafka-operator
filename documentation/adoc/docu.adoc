@@ -1,5 +1,5 @@
 = Strimzi: Documentation
-:revnumber: 0.2.0-rc3
+:revnumber: 0.2.0
 :sectnums:
 :toc: preamble
 :toclevels: 3
