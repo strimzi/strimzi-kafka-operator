@@ -339,11 +339,16 @@ public class Controller {
             kafka.topicMetadata(topicName, metadataResult.completer());
             topicStore.read(topicName, topicResult.completer());
             CompositeFuture.all(topicResult, metadataResult).setHandler(ar -> {
-                Topic privateTopic = ar.result().resultAt(0);
-                TopicMetadata kafkaTopicMeta = ar.result().resultAt(1);
-                Topic kafkaTopic = TopicSerialization.fromTopicMetadata(kafkaTopicMeta);
-                reconcile(cm, k8sTopic, kafkaTopic, privateTopic, reconcileResult -> {
-                });
+
+                if (ar.succeeded()) {
+                    Topic privateTopic = ar.result().resultAt(0);
+                    TopicMetadata kafkaTopicMeta = ar.result().resultAt(1);
+                    Topic kafkaTopic = TopicSerialization.fromTopicMetadata(kafkaTopicMeta);
+                    reconcile(cm, k8sTopic, kafkaTopic, privateTopic, reconcileResult -> {
+                    });
+                } else {
+                    LOGGER.error("Error reconciling ConfigMap {}: ", cm.getMetadata().getName(), ar.cause());
+                }
             });
         } catch (InvalidConfigMapException e) {
             LOGGER.error("Error reconciling ConfigMap {}: Invalid 'data' section: ", cm.getMetadata().getName(), e.getMessage());
