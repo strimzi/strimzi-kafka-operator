@@ -48,13 +48,23 @@ public class ControllerTest {
     private MockTopicStore mockTopicStore = new MockTopicStore();
     private MockK8s mockK8s = new MockK8s();
     private Controller controller;
+    private io.strimzi.controller.topic.Config config;
+
+    private static final Map<String, String> MANDATORY_CONFIG = new HashMap<>();
+
+    static {
+        MANDATORY_CONFIG.put(io.strimzi.controller.topic.Config.ZOOKEEPER_CONNECT.key, "localhost:2181");
+        MANDATORY_CONFIG.put(io.strimzi.controller.topic.Config.KAFKA_BOOTSTRAP_SERVERS.key, "localhost:9092");
+        MANDATORY_CONFIG.put(io.strimzi.controller.topic.Config.NAMESPACE.key, "default");
+    }
 
     @Before
     public void setup() {
         mockKafka = new MockKafka();
         mockTopicStore = new MockTopicStore();
         mockK8s = new MockK8s();
-        controller = new Controller(vertx, mockKafka, mockK8s, mockTopicStore, cmPredicate, "default-namespace");
+        config = new io.strimzi.controller.topic.Config(new HashMap<>(MANDATORY_CONFIG));
+        controller = new Controller(vertx, mockKafka, mockK8s, mockTopicStore, cmPredicate, "default-namespace", config);
     }
 
     @After
