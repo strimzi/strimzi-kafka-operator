@@ -83,7 +83,7 @@ acquired using a PersistentVolumeClaim – that makes it independent of the actu
 example, it can use HostPath volumes on Minikube or Amazon EBS volumes in Amazon AWS deployments without any
 changes in the YAML files. The PersistentVolumeClaim can use a StorageClass to trigger automatic volume provisioning.
 
-To deploy a Kafka cluster, a ConfigMap with the cluster configuration has to be created. By default, the ConfigMap
+To deploy a Kafka cluster, a ConfigMap with the cluster configuration has to be created. The ConfigMap
 should have the following labels:
 
 [source,yaml]
