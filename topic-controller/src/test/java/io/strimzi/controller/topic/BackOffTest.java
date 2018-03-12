@@ -45,4 +45,19 @@ public class BackOffTest {
 
         assertEquals(1111L, b.totalDelayMs());
     }
+
+    @Test
+    public void testMaxAttemptsOnlyBackOff() {
+        BackOff b = new BackOff(3);
+        assertEquals(0, b.delayMs());
+        assertEquals(200L, b.delayMs());
+        assertEquals(400L, b.delayMs());
+        try {
+            b.delayMs();
+            fail("Should throw");
+        } catch (MaxAttemptsExceededException e) {
+
+        }
+        assertEquals(600L, b.totalDelayMs());
+    }
 }
