@@ -37,6 +37,7 @@ public class TopicController extends AbstractCluster {
     private static final String IMAGE_FIELD = "image";
     private static final String RECONCILIATION_INTERVAL_FIELD_MS = "reconciliationIntervalMs";
     private static final String ZOOKEEPER_SESSION_TIMEOUT_FIELD_MS = "zookeeperSessionTimeoutMs";
+    private static final String TOPIC_METADATA_MAX_ATTEMPTS_FIELD = "topicMetadataMaxAttempts";
 
     // Port configuration
     protected static final int HEALTHCHECK_PORT = 8080;
@@ -51,6 +52,7 @@ public class TopicController extends AbstractCluster {
     protected static final int DEFAULT_BOOTSTRAP_SERVERS_PORT = 9092;
     protected static final String DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = "900000";
     protected static final String DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_MS = "20000";
+    protected static final int DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS = 4;
 
     // Configuration keys
     public static final String KEY_CONFIG = "topic-controller-config";
@@ -62,6 +64,7 @@ public class TopicController extends AbstractCluster {
     public static final String KEY_NAMESPACE = "STRIMZI_NAMESPACE";
     public static final String KEY_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
     public static final String KEY_ZOOKEEPER_SESSION_TIMEOUT_MS = "STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS";
+    public static final String KEY_TOPIC_METADATA_MAX_ATTEMPTS = "STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS";
 
     // Kafka bootstrap servers and Zookeeper nodes can't be specified in the JSON
     private String kafkaBootstrapServers;
@@ -71,6 +74,7 @@ public class TopicController extends AbstractCluster {
     private String reconciliationIntervalMs;
     private String zookeeperSessionTimeoutMs;
     private String topicConfigMapLabels;
+    private int topicMetadataMaxAttempts;
 
     /**
      * @param namespace Kubernetes/OpenShift namespace where cluster resources are going to be created
@@ -93,6 +97,7 @@ public class TopicController extends AbstractCluster {
         this.reconciliationIntervalMs = DEFAULT_FULL_RECONCILIATION_INTERVAL_MS;
         this.zookeeperSessionTimeoutMs = DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_MS;
         this.topicConfigMapLabels = defaultTopicConfigMapLabels(cluster);
+        this.topicMetadataMaxAttempts = DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS;
     }
 
     public void setTopicNamespace(String topicNamespace) {
@@ -141,6 +146,14 @@ public class TopicController extends AbstractCluster {
 
     public String getZookeeperConnect() {
         return zookeeperConnect;
+    }
+
+    public void setTopicMetadataMaxAttempts(int topicMetadataMaxAttempts) {
+        this.topicMetadataMaxAttempts = topicMetadataMaxAttempts;
+    }
+
+    public int getTopicMetadataMaxAttempts() {
+        return topicMetadataMaxAttempts;
     }
 
     public static String topicControllerName(String cluster) {
@@ -200,6 +213,11 @@ public class TopicController extends AbstractCluster {
                 // TODO : add parsing and validation
                 topicController.setZookeeperSessionTimeoutMs(zookeeperSessionTimeoutMs);
             }
+
+            Integer topicMetadataMaxAttempts = json.getInteger(TopicController.TOPIC_METADATA_MAX_ATTEMPTS_FIELD);
+            if (topicMetadataMaxAttempts != null) {
+                topicController.setTopicMetadataMaxAttempts(topicMetadataMaxAttempts);
+            }
         }
 
         return topicController;
@@ -236,6 +254,7 @@ public class TopicController extends AbstractCluster {
             topicController.setReconciliationIntervalMs(vars.getOrDefault(KEY_FULL_RECONCILIATION_INTERVAL_MS, DEFAULT_FULL_RECONCILIATION_INTERVAL_MS));
             topicController.setZookeeperSessionTimeoutMs(vars.getOrDefault(KEY_ZOOKEEPER_SESSION_TIMEOUT_MS, DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_MS));
             topicController.setTopicConfigMapLabels(vars.getOrDefault(KEY_CONFIGMAP_LABELS, defaultTopicConfigMapLabels(cluster)));
+            topicController.setTopicMetadataMaxAttempts(Integer.parseInt(vars.getOrDefault(KEY_TOPIC_METADATA_MAX_ATTEMPTS, String.valueOf(DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS))));
         }
 
         return topicController;
@@ -288,6 +307,12 @@ public class TopicController extends AbstractCluster {
                 isDifferent = true;
             }
 
+            if (topicMetadataMaxAttempts !=
+                    Integer.parseInt(vars.getOrDefault(KEY_TOPIC_METADATA_MAX_ATTEMPTS, String.valueOf(DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS)))) {
+                log.info("Diff: Topic metadata max attempts changed");
+                isDifferent = true;
+            }
+
             return new ClusterDiffResult(isDifferent);
         } else {
             return null;
@@ -326,6 +351,7 @@ public class TopicController extends AbstractCluster {
         varList.add(new EnvVarBuilder().withName(KEY_NAMESPACE).withValue(topicNamespace).build());
         varList.add(new EnvVarBuilder().withName(KEY_FULL_RECONCILIATION_INTERVAL_MS).withValue(reconciliationIntervalMs).build());
         varList.add(new EnvVarBuilder().withName(KEY_ZOOKEEPER_SESSION_TIMEOUT_MS).withValue(zookeeperSessionTimeoutMs).build());
+        varList.add(new EnvVarBuilder().withName(KEY_TOPIC_METADATA_MAX_ATTEMPTS).withValue(String.valueOf(topicMetadataMaxAttempts)).build());
 
         return varList;
     }
