@@ -34,6 +34,14 @@ public class Config {
         }
     };
 
+    /** A Java Integer */
+    private static final Type<? extends Integer> INTEGER = new Type<Integer>() {
+        @Override
+        Integer parse(String s) {
+            return Integer.parseInt(s);
+        }
+    };
+
     /**
      * A time duration.
      */
@@ -85,6 +93,7 @@ public class Config {
     public static final String TC_PERIODIC_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
     public static final String TC_REASSIGN_THROTTLE = "STRIMZI_REASSIGN_THROTTLE";
     public static final String TC_REASSIGN_VERIFY_INTERVAL_MS = "STRIMZI_REASSIGN_VERIFY_INTERVAL_MS";
+    public static final String TC_TOPIC_METADATA_MAX_ATTEMPTS = "STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS";
 
     private static final Map<String, Value<?>> CONFIG_VALUES = new HashMap<>();
 
@@ -115,6 +124,8 @@ public class Config {
      */
     public static final Value<Long> REASSIGN_VERIFY_INTERVAL_MS = new Value<>(TC_REASSIGN_VERIFY_INTERVAL_MS, DURATION, "120000");
 
+    /** The maximum number of retries for getting topic metadata from the Kafka cluster */
+    public static final Value<Integer> TOPIC_METADATA_MAX_ATTEMPTS = new Value<>(TC_TOPIC_METADATA_MAX_ATTEMPTS, INTEGER, "4");
 
     static {
         Map<String, Value<?>> configValues = CONFIG_VALUES;
@@ -126,6 +137,7 @@ public class Config {
         addConfigValue(configValues, FULL_RECONCILIATION_INTERVAL_MS);
         addConfigValue(configValues, REASSIGN_THROTTLE);
         addConfigValue(configValues, REASSIGN_VERIFY_INTERVAL_MS);
+        addConfigValue(configValues, TOPIC_METADATA_MAX_ATTEMPTS);
     }
 
     static void addConfigValue(Map<String, Value<?>> configValues, Value<?> cv) {

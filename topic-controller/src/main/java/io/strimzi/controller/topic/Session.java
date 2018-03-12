@@ -117,7 +117,7 @@ public class Session extends AbstractVerticle {
         ZkTopicStore topicStore = new ZkTopicStore(zk);
         LOGGER.debug("Using TopicStore {}", topicStore);
 
-        this.controller = new Controller(vertx, kafka, k8s, topicStore, cmPredicate, namespace);
+        this.controller = new Controller(vertx, kafka, k8s, topicStore, cmPredicate, namespace, config);
         LOGGER.debug("Using Controller {}", controller);
 
         this.topicConfigsWatcher = new TopicConfigsWatcher(controller);

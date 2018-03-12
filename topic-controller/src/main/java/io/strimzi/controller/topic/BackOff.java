@@ -17,6 +17,10 @@ public class BackOff {
         this(200L, 2, 4);
     }
 
+    public BackOff(int maxAttempts) {
+        this(200L, 2, maxAttempts);
+    }
+
     public BackOff(long scaleMs, int base, int maxAttempts) {
         assert scaleMs > 0;
         assert base > 0;

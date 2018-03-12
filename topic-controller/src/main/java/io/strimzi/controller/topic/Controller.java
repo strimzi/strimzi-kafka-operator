@@ -32,6 +32,7 @@ public class Controller {
     private final String namespace;
     private TopicStore topicStore;
     private final InFlight<TopicName> inFlight;
+    private final Config config;
 
     enum EventType {
         INFO("Info"),
@@ -321,7 +322,8 @@ public class Controller {
                       K8s k8s,
                       TopicStore topicStore,
                       LabelPredicate cmPredicate,
-                      String namespace) {
+                      String namespace,
+                      Config config) {
         this.kafka = kafka;
         this.k8s = k8s;
         this.vertx = vertx;
@@ -329,6 +331,7 @@ public class Controller {
         this.topicStore = topicStore;
         this.inFlight = new InFlight<>(vertx);
         this.namespace = namespace;
+        this.config = config;
     }
 
     void reconcile(ConfigMap cm, TopicName topicName) {
@@ -611,7 +614,7 @@ public class Controller {
                 // getting topic information from the private store
                 topicStore.read(topicName, topicResult -> {
 
-                    TopicMetadataHandler handler = new TopicMetadataHandler(vertx, kafka, topicName) {
+                    TopicMetadataHandler handler = new TopicMetadataHandler(vertx, kafka, topicName, new BackOff(config.get(Config.TOPIC_METADATA_MAX_ATTEMPTS))) {
                         @Override
                         public void handle(AsyncResult<TopicMetadata> metadataResult) {
 
@@ -707,7 +710,7 @@ public class Controller {
             @Override
             public void handle(Future<Void> fut) {
 
-                TopicMetadataHandler handler = new TopicMetadataHandler(vertx, kafka, topicName) {
+                TopicMetadataHandler handler = new TopicMetadataHandler(vertx, kafka, topicName, new BackOff(config.get(Config.TOPIC_METADATA_MAX_ATTEMPTS))) {
 
                     @Override
                     public void handle(AsyncResult<TopicMetadata> metadataResult) {
