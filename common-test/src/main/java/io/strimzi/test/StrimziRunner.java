@@ -217,7 +217,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 ((ObjectNode) data).put("KAFKA_CONNECT_BOOTSTRAP_SERVERS", cluster.bootstrapServers());
                 yaml = mapper.writeValueAsString(node);
                 // updates values for config map
-                for (CmData cmData : annotations(element, CmData.class)) {
+                for (CmData cmData : cluster.config()) {
                     ((ObjectNode) data).put(cmData.key(), cmData.value());
                 }
             } catch (IOException e) {
@@ -262,7 +262,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 ((ObjectNode) data).put("kafka-nodes", String.valueOf(cluster.kafkaNodes()));
                 ((ObjectNode) data).put("zookeeper-nodes", String.valueOf(cluster.zkNodes()));
                 // updates values for config map
-                for (CmData cmData : annotations(element, CmData.class)) {
+                for (CmData cmData : cluster.config()) {
                     ((ObjectNode) data).put(cmData.key(), cmData.value());
                 }
                 yaml = mapper.writeValueAsString(node);

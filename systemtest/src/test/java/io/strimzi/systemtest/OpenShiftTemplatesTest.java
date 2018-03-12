@@ -90,6 +90,7 @@ public class OpenShiftTemplatesTest {
                 "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "5",
                 "KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", "5"));
 
+        //TODO Add assertions to check that Kafka brokers have a custom configuration
         ConfigMap cm = client.configMaps().inNamespace(NAMESPACE).withName(clusterName).get();
         assertNotNull(cm);
         Map<String, String> cmData = cm.getData();
@@ -116,6 +117,7 @@ public class OpenShiftTemplatesTest {
                 "ZOOKEEPER_VOLUME_CAPACITY", "2Gi",
                 "KAFKA_VOLUME_CAPACITY", "2Gi"));
 
+        //TODO Add assertions to check that Kafka brokers have a custom configuration
         ConfigMap cm = client.configMaps().inNamespace(NAMESPACE).withName(clusterName).get();
         assertNotNull(cm);
         Map<String, String> cmData = cm.getData();

@@ -229,21 +229,22 @@ public class KafkaClusterTest {
     }
 
     @Test
-    @KafkaCluster(name = "my-cluster", kafkaNodes = 1)
-    @CmData(key = "zookeeper-healthcheck-delay", value = "30")
-    @CmData(key = "zookeeper-healthcheck-timeout", value = "10")
-    @CmData(key = "kafka-healthcheck-delay", value = "30")
-    @CmData(key = "kafka-healthcheck-timeout", value = "10")
-    @CmData(key = "KAFKA_DEFAULT_REPLICATION_FACTOR", value = "2")
-    @CmData(key = "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", value = "5")
-    @CmData(key = "KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", value = "5")
+    @KafkaCluster(name = "my-cluster", kafkaNodes = 1, config = {
+        @CmData(key = "zookeeper-healthcheck-delay", value = "30"),
+        @CmData(key = "zookeeper-healthcheck-timeout", value = "10"),
+        @CmData(key = "kafka-healthcheck-delay", value = "30"),
+        @CmData(key = "kafka-healthcheck-timeout", value = "10"),
+        @CmData(key = "KAFKA_DEFAULT_REPLICATION_FACTOR", value = "2"),
+        @CmData(key = "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", value = "5"),
+        @CmData(key = "KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", value = "5")
+    })
     public void testClusterWithCustomParameters() {
         // kafka cluster already deployed via annotation
         String clusterName = "my-cluster";
         LOGGER.info("Running clusterWithCustomParameters with cluster {}", clusterName);
 
+        //TODO Add assertions to check that Kafka brokers have a custom configuration
         String jsonString = kubeClient.get("cm", clusterName);
-
         assertThat(jsonString, valueOfCmEquals("zookeeper-healthcheck-delay", "30"));
         assertThat(jsonString, valueOfCmEquals("zookeeper-healthcheck-timeout", "10"));
         assertThat(jsonString, valueOfCmEquals("kafka-healthcheck-delay", "30"));
@@ -251,6 +252,5 @@ public class KafkaClusterTest {
         assertThat(jsonString, valueOfCmEquals("KAFKA_DEFAULT_REPLICATION_FACTOR", "2"));
         assertThat(jsonString, valueOfCmEquals("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "5"));
         assertThat(jsonString, valueOfCmEquals("KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", "5"));
-
     }
 }

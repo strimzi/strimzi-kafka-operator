@@ -22,6 +22,7 @@ public @interface ConnectCluster {
     String name();
     String bootstrapServers();
     int nodes() default 1;
+    CmData[] config() default {};
 
     @Target({ElementType.METHOD, ElementType.TYPE})
     @Retention(RetentionPolicy.RUNTIME)
