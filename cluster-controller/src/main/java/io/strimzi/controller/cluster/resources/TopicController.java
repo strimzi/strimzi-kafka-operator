@@ -16,7 +16,6 @@ import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -26,7 +25,11 @@ import java.util.stream.Collectors;
  */
 public class TopicController extends AbstractCluster {
 
-    public static final String KIND = "topic";
+    /**
+     * The default kind of CMs that the Topic Controller will be configured to watch for
+     */
+    public static final String TOPIC_CM_KIND = "topic";
+    private static final String TYPE = "topic";
 
     private static final String NAME_SUFFIX = "-topic-controller";
 
@@ -73,9 +76,9 @@ public class TopicController extends AbstractCluster {
      * @param namespace Kubernetes/OpenShift namespace where cluster resources are going to be created
      * @param cluster   overall cluster name
      */
-    protected TopicController(String namespace, String cluster) {
+    protected TopicController(String namespace, String cluster, Labels labels) {
 
-        super(namespace, cluster);
+        super(namespace, cluster, labels.withType(TopicController.TYPE));
         this.name = topicControllerName(cluster);
         this.image = DEFAULT_IMAGE;
         this.replicas = DEFAULT_REPLICAS;
@@ -154,8 +157,8 @@ public class TopicController extends AbstractCluster {
 
     protected static String defaultTopicConfigMapLabels(String cluster) {
         return String.format("%s=%s,%s=%s",
-                ClusterController.STRIMZI_CLUSTER_LABEL, cluster,
-                ClusterController.STRIMZI_KIND_LABEL, TopicController.KIND);
+                Labels.STRIMZI_CLUSTER_LABEL, cluster,
+                Labels.STRIMZI_KIND_LABEL, TopicController.TOPIC_CM_KIND);
     }
 
     /**
@@ -170,8 +173,9 @@ public class TopicController extends AbstractCluster {
 
         String config = kafkaClusterCm.getData().get(KEY_CONFIG);
         if (config != null) {
-            topicController = new TopicController(kafkaClusterCm.getMetadata().getNamespace(), kafkaClusterCm.getMetadata().getName());
-            topicController.setLabels(kafkaClusterCm.getMetadata().getLabels());
+            topicController = new TopicController(kafkaClusterCm.getMetadata().getNamespace(),
+                    kafkaClusterCm.getMetadata().getName(),
+                    Labels.fromResource(kafkaClusterCm));
 
             JsonObject json = new JsonObject(config);
 
@@ -215,9 +219,8 @@ public class TopicController extends AbstractCluster {
 
         if (dep != null) {
 
-            topicController = new TopicController(namespace, cluster);
-
-            topicController.setLabels(dep.getMetadata().getLabels());
+            topicController = new TopicController(namespace, cluster,
+                    Labels.fromResource(dep));
             topicController.setReplicas(dep.getSpec().getReplicas());
             Container container = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
             topicController.setImage(container.getImage());
@@ -237,6 +240,7 @@ public class TopicController extends AbstractCluster {
 
         return topicController;
     }
+
 
     /**
      * Return the differences between the current Topic Controller and the deployed one
@@ -329,13 +333,5 @@ public class TopicController extends AbstractCluster {
     @Override
     protected String getServiceAccountName() {
         return ClusterController.STRIMZI_CLUSTER_CONTROLLER_SERVICE_ACCOUNT;
-    }
-
-    @Override
-    protected void setLabels(Map<String, String> labels) {
-        Map<String, String> newLabels = new HashMap<>(labels);
-        newLabels.put(ClusterController.STRIMZI_KIND_LABEL, TopicController.KIND);
-        newLabels.remove(ClusterController.STRIMZI_TYPE_LABEL);
-        super.setLabels(newLabels);
     }
 }

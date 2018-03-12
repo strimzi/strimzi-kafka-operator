@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
-import io.strimzi.controller.cluster.ClusterController;
 import io.strimzi.controller.cluster.ClusterControllerConfig;
 import io.strimzi.controller.cluster.ResourceUtils;
 import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
@@ -22,6 +21,7 @@ import io.strimzi.controller.cluster.operations.resource.StatefulSetOperations;
 import io.strimzi.controller.cluster.resources.AbstractCluster;
 import io.strimzi.controller.cluster.resources.ClusterDiffResult;
 import io.strimzi.controller.cluster.resources.KafkaCluster;
+import io.strimzi.controller.cluster.resources.Labels;
 import io.strimzi.controller.cluster.resources.Storage;
 import io.strimzi.controller.cluster.resources.TopicController;
 import io.strimzi.controller.cluster.resources.ZookeeperCluster;
@@ -42,11 +42,11 @@ import org.mockito.ArgumentCaptor;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
@@ -209,8 +209,22 @@ public class KafkaClusterOperationsTest {
             if (zookeeperCluster.isMetricsEnabled()) {
                 metricsNames.add(ZookeeperCluster.zookeeperMetricsName(clusterCmName));
             }
-            context.assertEquals(metricsNames, metricsCaptor.getAllValues().stream().map(cm -> cm.getMetadata().getName()).collect(Collectors.toSet()),
+            Map<String, ConfigMap> cmsByName = metricsCaptor.getAllValues().stream().collect(Collectors.toMap(cm -> cm.getMetadata().getName(), Function.identity()));
+            context.assertEquals(metricsNames, cmsByName.keySet(),
                     "Unexpected metrics ConfigMaps");
+            if (kafkaCluster.isMetricsEnabled()) {
+                ConfigMap kafkaMetricsCm = cmsByName.get(KafkaCluster.metricConfigsName(clusterCmName));
+                context.assertEquals(ResourceUtils.labels(Labels.STRIMZI_TYPE_LABEL, "kafka",
+                        Labels.STRIMZI_CLUSTER_LABEL, clusterCmName,
+                        "my-user-label", "cromulent"), kafkaMetricsCm.getMetadata().getLabels());
+            }
+            if (zookeeperCluster.isMetricsEnabled()) {
+                ConfigMap zookeeperMetricsCm = cmsByName.get(ZookeeperCluster.zookeeperMetricsName(clusterCmName));
+                context.assertEquals(ResourceUtils.labels(Labels.STRIMZI_TYPE_LABEL, "zookeeper",
+                        Labels.STRIMZI_CLUSTER_LABEL, clusterCmName,
+                        "my-user-label", "cromulent"), zookeeperMetricsCm.getMetadata().getLabels());
+            }
+
 
             // We expect a headless and headful service
             List<Service> capturedServices = serviceCaptor.getAllValues();
@@ -646,22 +660,19 @@ public class KafkaClusterOperationsTest {
 
 
         // providing the list of ALL StatefulSets for all the Kafka clusters
-        Map<String, String> newLabels = new HashMap<>();
-        newLabels.put(ClusterController.STRIMZI_TYPE_LABEL, "kafka");
+        Labels newLabels = Labels.forType("kafka");
         when(mockSsOps.list(eq(clusterCmNamespace), eq(newLabels))).thenReturn(
                 asList(KafkaCluster.fromConfigMap(bar).generateStatefulSet(openShift),
                         KafkaCluster.fromConfigMap(baz).generateStatefulSet(openShift))
         );
 
         // providing the list StatefulSets for already "existing" Kafka clusters
-        Map<String, String> barLabels = new HashMap<>();
-        barLabels.put(ClusterController.STRIMZI_CLUSTER_LABEL, "bar");
+        Labels barLabels = Labels.forCluster("bar");
         when(mockSsOps.list(eq(clusterCmNamespace), eq(barLabels))).thenReturn(
                 asList(KafkaCluster.fromConfigMap(bar).generateStatefulSet(openShift))
         );
 
-        Map<String, String> bazLabels = new HashMap<>();
-        bazLabels.put(ClusterController.STRIMZI_CLUSTER_LABEL, "baz");
+        Labels bazLabels = Labels.forCluster("baz");
         when(mockSsOps.list(eq(clusterCmNamespace), eq(bazLabels))).thenReturn(
                 asList(KafkaCluster.fromConfigMap(baz).generateStatefulSet(openShift))
         );
@@ -697,7 +708,7 @@ public class KafkaClusterOperationsTest {
         };
 
         // Now try to reconcile all the Kafka clusters
-        ops.reconcileAll(clusterCmNamespace, Collections.emptyMap());
+        ops.reconcileAll(clusterCmNamespace, Labels.EMPTY);
 
         async.await();
 

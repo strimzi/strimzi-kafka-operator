@@ -4,7 +4,6 @@
  */
 package io.strimzi.controller.cluster;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -25,34 +24,21 @@ public class ClusterControllerConfig {
     public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = 120_000;
     public static final long DEFAULT_OPERATION_TIMEOUT_MS = 60_000;
 
-    private Map<String, String> labels;
-    private Set<String> namespaces;
-    private long reconciliationIntervalMs;
-    private long operationTimeoutMs;
+    private final Set<String> namespaces;
+    private final long reconciliationIntervalMs;
+    private final long operationTimeoutMs;
 
     /**
      * Constructor
      *
      * @param namespaces namespace in which the controller will run and create resources
-     * @param labels    labels used for watching the cluster ConfigMap
      * @param reconciliationIntervalMs    specify every how many milliseconds the reconciliation runs
      * @param operationTimeoutMs    timeout for internal operations specified in milliseconds
      */
-    public ClusterControllerConfig(Set<String> namespaces, Map<String, String> labels, long reconciliationIntervalMs, long operationTimeoutMs) {
+    public ClusterControllerConfig(Set<String> namespaces, long reconciliationIntervalMs, long operationTimeoutMs) {
         this.namespaces = unmodifiableSet(new HashSet<>(namespaces));
-        this.labels = labels;
         this.reconciliationIntervalMs = reconciliationIntervalMs;
         this.operationTimeoutMs = operationTimeoutMs;
-    }
-
-    /**
-     * Constructor which provide a configuration with a default (120000 ms) reconciliation interval
-     *
-     * @param namespaces namespace in which the controller will run and create resources
-     * @param labels    labels used for watching the cluster ConfigMap
-     */
-    public ClusterControllerConfig(Set<String> namespaces, Map<String, String> labels) {
-        this(namespaces, labels, DEFAULT_FULL_RECONCILIATION_INTERVAL_MS, DEFAULT_OPERATION_TIMEOUT_MS);
     }
 
     /**
@@ -70,10 +56,6 @@ public class ClusterControllerConfig {
         } else {
             namespaces = new HashSet(asList(namespacesList.trim().split("\\s*,+\\s*")));
         }
-        String stringLabels = map.get(ClusterControllerConfig.STRIMZI_CONFIGMAP_LABELS);
-        if (stringLabels == null || stringLabels.isEmpty()) {
-            throw new IllegalArgumentException(ClusterControllerConfig.STRIMZI_CONFIGMAP_LABELS + " cannot be null");
-        }
 
         long reconciliationInterval = DEFAULT_FULL_RECONCILIATION_INTERVAL_MS;
         String reconciliationIntervalEnvVar = map.get(ClusterControllerConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS);
@@ -87,32 +69,9 @@ public class ClusterControllerConfig {
             operationTimeout = Long.parseLong(operationTimeoutEnvVar);
         }
 
-        Map<String, String> labelsMap = new HashMap<>();
-
-        String[] labels = stringLabels.split(",");
-        for (String label : labels) {
-            String[] fields = label.split("=");
-            labelsMap.put(fields[0].trim(), fields[1].trim());
-        }
-
-        return new ClusterControllerConfig(namespaces, labelsMap, reconciliationInterval, operationTimeout);
+        return new ClusterControllerConfig(namespaces, reconciliationInterval, operationTimeout);
     }
 
-    /**
-     * @return  labels used for watching the cluster ConfigMap
-     */
-    public Map<String, String> getLabels() {
-        return labels;
-    }
-
-    /**
-     * Set the labels used for watching the cluster ConfigMap
-     *
-     * @param labels    labels used for watching the cluster ConfigMap
-     */
-    public void setLabels(Map<String, String> labels) {
-        this.labels = labels;
-    }
 
     /**
      * @return  namespaces in which the controller runs and creates resources
@@ -139,7 +98,6 @@ public class ClusterControllerConfig {
     public String toString() {
         return "ClusterControllerConfig(" +
                 "namespaces=" + namespaces +
-                ",labels=" + labels +
                 ",reconciliationIntervalMs=" + reconciliationIntervalMs +
                 ")";
     }

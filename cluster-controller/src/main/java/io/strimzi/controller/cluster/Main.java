@@ -88,7 +88,6 @@ public class Main {
             Future<String> fut = Future.future();
             futures.add(fut);
             ClusterController controller = new ClusterController(namespace,
-                    config.getLabels(),
                     config.getReconciliationIntervalMs(),
                     client,
                     kafkaClusterOperations,

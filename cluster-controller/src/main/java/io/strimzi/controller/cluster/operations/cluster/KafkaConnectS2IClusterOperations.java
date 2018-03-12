@@ -15,6 +15,7 @@ import io.strimzi.controller.cluster.operations.resource.ImageStreamOperations;
 import io.strimzi.controller.cluster.operations.resource.ServiceOperations;
 import io.strimzi.controller.cluster.resources.ClusterDiffResult;
 import io.strimzi.controller.cluster.resources.KafkaConnectS2ICluster;
+import io.strimzi.controller.cluster.resources.Labels;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -25,7 +26,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Cluster operations for a Kafka Connect cluster
@@ -271,8 +271,8 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
     }
 
     @Override
-    protected List<DeploymentConfig> getResources(String namespace, Map<String, String> kafkaLabels) {
-        return deploymentConfigOperations.list(namespace, kafkaLabels);
+    protected List<DeploymentConfig> getResources(String namespace, Labels selector) {
+        return deploymentConfigOperations.list(namespace, selector);
     }
 
 }

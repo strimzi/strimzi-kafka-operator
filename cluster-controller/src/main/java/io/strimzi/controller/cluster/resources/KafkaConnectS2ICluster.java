@@ -48,8 +48,8 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
      * @param namespace Kubernetes/OpenShift namespace where Kafka Connect cluster resources are going to be created
      * @param cluster   overall cluster name
      */
-    private KafkaConnectS2ICluster(String namespace, String cluster) {
-        super(namespace, cluster);
+    private KafkaConnectS2ICluster(String namespace, String cluster, Labels labels) {
+        super(namespace, cluster, labels);
         setImage(DEFAULT_IMAGE);
     }
 
@@ -60,9 +60,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
      * @return Kafka Connect cluster instance
      */
     public static KafkaConnectS2ICluster fromConfigMap(ConfigMap cm) {
-        KafkaConnectS2ICluster kafkaConnect = new KafkaConnectS2ICluster(cm.getMetadata().getNamespace(), cm.getMetadata().getName());
-
-        kafkaConnect.setLabels(cm.getMetadata().getLabels());
+        KafkaConnectS2ICluster kafkaConnect = new KafkaConnectS2ICluster(cm.getMetadata().getNamespace(), cm.getMetadata().getName(), Labels.fromResource(cm));
 
         kafkaConnect.setReplicas(Integer.parseInt(cm.getData().getOrDefault(KEY_REPLICAS, String.valueOf(DEFAULT_REPLICAS))));
         kafkaConnect.setImage(cm.getData().getOrDefault(KEY_IMAGE, DEFAULT_IMAGE));
@@ -96,9 +94,8 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
             DeploymentConfig dep,
             ImageStream sis) {
 
-        KafkaConnectS2ICluster kafkaConnect =  new KafkaConnectS2ICluster(namespace, cluster);
+        KafkaConnectS2ICluster kafkaConnect =  new KafkaConnectS2ICluster(namespace, cluster, Labels.fromResource(dep));
 
-        kafkaConnect.setLabels(dep.getMetadata().getLabels());
         kafkaConnect.setReplicas(dep.getSpec().getReplicas());
         kafkaConnect.setHealthCheckInitialDelay(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds());
         kafkaConnect.setHealthCheckTimeout(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds());

@@ -16,6 +16,7 @@ import io.strimzi.controller.cluster.operations.resource.ServiceOperations;
 import io.strimzi.controller.cluster.operations.resource.StatefulSetOperations;
 import io.strimzi.controller.cluster.resources.ClusterDiffResult;
 import io.strimzi.controller.cluster.resources.KafkaCluster;
+import io.strimzi.controller.cluster.resources.Labels;
 import io.strimzi.controller.cluster.resources.Storage;
 import io.strimzi.controller.cluster.resources.TopicController;
 import io.strimzi.controller.cluster.resources.ZookeeperCluster;
@@ -29,7 +30,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * <p>Cluster operations for a "Kafka" cluster. A KafkaClusterOperations is
@@ -711,8 +711,8 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
     }
 
     @Override
-    protected List<StatefulSet> getResources(String namespace, Map<String, String> kafkaLabels) {
-        return statefulSetOperations.list(namespace, kafkaLabels);
+    protected List<StatefulSet> getResources(String namespace, Labels selector) {
+        return statefulSetOperations.list(namespace, selector);
     }
 
 

@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.openshift.api.model.BuildConfig;
 import io.fabric8.openshift.api.model.DeploymentConfig;
 import io.fabric8.openshift.api.model.ImageStream;
-import io.strimzi.controller.cluster.ClusterController;
 import io.strimzi.controller.cluster.ResourceUtils;
 import io.strimzi.controller.cluster.operations.resource.BuildConfigOperations;
 import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
@@ -18,6 +17,7 @@ import io.strimzi.controller.cluster.operations.resource.ImageStreamOperations;
 import io.strimzi.controller.cluster.operations.resource.ServiceOperations;
 import io.strimzi.controller.cluster.resources.KafkaConnectCluster;
 import io.strimzi.controller.cluster.resources.KafkaConnectS2ICluster;
+import io.strimzi.controller.cluster.resources.Labels;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -30,11 +30,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import static java.util.Arrays.asList;
@@ -649,21 +646,18 @@ public class KafkaConnectS2IClusterOperationsTest {
         when(mockCmOps.get(eq(clusterCmNamespace), eq("bar"))).thenReturn(bar);
 
         // providing the list of ALL DeploymentConfigs for all the Kafka Connect S2I clusters
-        Map<String, String> newLabels = new HashMap<>();
-        newLabels.put(ClusterController.STRIMZI_TYPE_LABEL, "kafka-connect-s2i");
+        Labels newLabels = Labels.forType("kafka-connect-s2i");
         when(mockDcOps.list(eq(clusterCmNamespace), eq(newLabels))).thenReturn(
                 asList(KafkaConnectS2ICluster.fromConfigMap(bar).generateDeploymentConfig(),
                         KafkaConnectS2ICluster.fromConfigMap(baz).generateDeploymentConfig()));
 
         // providing the list DeploymentConfigs for already "existing" Kafka Connect S2I clusters
-        Map<String, String> barLabels = new HashMap<>();
-        barLabels.put(ClusterController.STRIMZI_CLUSTER_LABEL, "bar");
+        Labels barLabels = Labels.forCluster("bar");
         when(mockDcOps.list(eq(clusterCmNamespace), eq(barLabels))).thenReturn(
                 asList(KafkaConnectS2ICluster.fromConfigMap(bar).generateDeploymentConfig())
         );
 
-        Map<String, String> bazLabels = new HashMap<>();
-        bazLabels.put(ClusterController.STRIMZI_CLUSTER_LABEL, "baz");
+        Labels bazLabels = Labels.forCluster("baz");
         when(mockDcOps.list(eq(clusterCmNamespace), eq(bazLabels))).thenReturn(
                 asList(KafkaConnectS2ICluster.fromConfigMap(baz).generateDeploymentConfig())
         );
@@ -698,7 +692,7 @@ public class KafkaConnectS2IClusterOperationsTest {
         };
 
         // Now try to reconcile all the Kafka Connect S2I clusters
-        ops.reconcileAll(clusterCmNamespace, Collections.emptyMap());
+        ops.reconcileAll(clusterCmNamespace, Labels.EMPTY);
 
         async.await();
 

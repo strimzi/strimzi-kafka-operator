@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.internal.readiness.Readiness;
+import io.strimzi.controller.cluster.resources.Labels;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -16,7 +17,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Abstract resource creation, for a generic resource type {@code R}.
@@ -165,14 +165,14 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
     }
 
     /**
-     * Synchronously list the resources in the given {@code namespace} with the given {@code labels}.
+     * Synchronously list the resources in the given {@code namespace} with the given {@code selector}.
      * @param namespace The namespace.
-     * @param labels The labels.
+     * @param selector The selector.
      * @return A list of matching resources.
      */
     @SuppressWarnings("unchecked")
-    public List<T> list(String namespace, Map<String, String> labels) {
-        return operation().inNamespace(namespace).withLabels(labels).list().getItems();
+    public List<T> list(String namespace, Labels selector) {
+        return operation().inNamespace(namespace).withLabels(selector.toMap()).list().getItems();
     }
 
     /**

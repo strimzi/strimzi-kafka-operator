@@ -6,10 +6,10 @@ package io.strimzi.controller.cluster.operations.cluster;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.strimzi.controller.cluster.ClusterController;
 import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
 import io.strimzi.controller.cluster.resources.AbstractCluster;
 import io.strimzi.controller.cluster.resources.ClusterDiffResult;
+import io.strimzi.controller.cluster.resources.Labels;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -20,9 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -206,7 +204,7 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
      * @param resource The resource
      */
     protected String nameFromLabels(R resource) {
-        return resource.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL);
+        return Labels.cluster(resource);
     }
 
     /**
@@ -217,7 +215,7 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
     /**
      * Reconcile cluster resources in the given namespace having the given cluster name.
      * Reconciliation works by getting the cluster ConfigMap in the given namespace with the given name and
-     * comparing with the corresponding {@linkplain #getResources(String, Map) resource}.
+     * comparing with the corresponding {@linkplain #getResources(String, Labels) resource}.
      * <ul>
      * <li>A cluster will be {@linkplain #create(String, String, Handler) created} if ConfigMap is without same-named resources</li>
      * <li>A cluster will be {@linkplain #delete(String, String, Handler) deleted} if resources without same-named ConfigMap</li>
@@ -241,9 +239,7 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
                     // get ConfigMap and related resources for the specific cluster
                     ConfigMap cm = configMapOperations.get(namespace, name);
 
-                    Map<String, String> labels = new HashMap<>();
-                    labels.put(ClusterController.STRIMZI_CLUSTER_LABEL, name);
-                    List<R> resources = getResources(namespace, labels);
+                    List<R> resources = getResources(namespace, Labels.forCluster(name));
 
                     if (cm != null) {
                         String nameFromCm = name(cm);
@@ -309,29 +305,28 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
     }
 
     /**
-     * Reconcile cluster resources in the given namespace having the given labels.
-     * Reconciliation works by getting the cluster ConfigMaps in the given namespace with the given labels and
-     * comparing with the corresponding {@linkplain #getResources(String, Map) resource}.
+     * Reconcile cluster resources in the given namespace having the given selector.
+     * Reconciliation works by getting the cluster ConfigMaps in the given namespace with the given selector and
+     * comparing with the corresponding {@linkplain #getResources(String, Labels) resource}.
      * <ul>
      * <li>A cluster will be {@linkplain #create(String, String, Handler) created} for all ConfigMaps without same-named resources</li>
      * <li>A cluster will be {@linkplain #delete(String, String, Handler) deleted} for all resources without same-named ConfigMaps</li>
      * <li>A cluster will be {@linkplain #update(String, String, Handler) updated} if it has a cluster ConfigMap and a resource with the same name.</li>
      * </ul>
      * @param namespace The namespace
-     * @param labels The labels
+     * @param selector The selector
      */
-    public final void reconcileAll(String namespace, Map<String, String> labels) {
+    public final void reconcileAll(String namespace, Labels selector) {
         String clusterType = clusterType();
-        Map<String, String> newLabels = new HashMap<>(labels);
-        newLabels.put(ClusterController.STRIMZI_TYPE_LABEL, clusterType);
+        Labels selectorWithCluster = selector.withType(clusterType);
 
         // get ConfigMap for the corresponding cluster type
-        List<ConfigMap> cms = configMapOperations.list(namespace, newLabels);
+        List<ConfigMap> cms = configMapOperations.list(namespace, selectorWithCluster);
         Set<String> cmsNames = cms.stream().map(cm -> cm.getMetadata().getName()).collect(Collectors.toSet());
 
         // get resources for the corresponding cluster name (they are part of)
-        List<R> resources = getResources(namespace, newLabels);
-        Set<String> resourceNames = resources.stream().map(res -> res.getMetadata().getLabels().get(ClusterController.STRIMZI_CLUSTER_LABEL)).collect(Collectors.toSet());
+        List<R> resources = getResources(namespace, selectorWithCluster);
+        Set<String> resourceNames = resources.stream().map(Labels::cluster).collect(Collectors.toSet());
 
         cmsNames.addAll(resourceNames);
 
@@ -344,9 +339,9 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
      * Gets the resources in the given namespace and with the given labels
      * from which an AbstractCluster representing the current state of the cluster can be obtained.
      * @param namespace The namespace
-     * @param kafkaLabels The labels
+     * @param selector The labels
      * @return The matching resources.
      */
-    protected abstract List<R> getResources(String namespace, Map<String, String> kafkaLabels);
+    protected abstract List<R> getResources(String namespace, Labels selector);
 
 }
