@@ -14,7 +14,7 @@ public class BackOff {
     private int attempt = 0;
 
     public BackOff() {
-        this(200L, 2, 4);
+        this(200L, 2, 6);
     }
 
     public BackOff(int maxAttempts) {

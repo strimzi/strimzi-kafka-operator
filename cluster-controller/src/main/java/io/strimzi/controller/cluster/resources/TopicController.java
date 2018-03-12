@@ -52,7 +52,7 @@ public class TopicController extends AbstractCluster {
     protected static final int DEFAULT_BOOTSTRAP_SERVERS_PORT = 9092;
     protected static final String DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = "900000";
     protected static final String DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_MS = "20000";
-    protected static final int DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS = 4;
+    protected static final int DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS = 6;
 
     // Configuration keys
     public static final String KEY_CONFIG = "topic-controller-config";
