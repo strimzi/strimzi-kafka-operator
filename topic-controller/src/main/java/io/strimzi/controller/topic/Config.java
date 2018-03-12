@@ -125,7 +125,7 @@ public class Config {
     public static final Value<Long> REASSIGN_VERIFY_INTERVAL_MS = new Value<>(TC_REASSIGN_VERIFY_INTERVAL_MS, DURATION, "120000");
 
     /** The maximum number of retries for getting topic metadata from the Kafka cluster */
-    public static final Value<Integer> TOPIC_METADATA_MAX_ATTEMPTS = new Value<>(TC_TOPIC_METADATA_MAX_ATTEMPTS, INTEGER, "4");
+    public static final Value<Integer> TOPIC_METADATA_MAX_ATTEMPTS = new Value<>(TC_TOPIC_METADATA_MAX_ATTEMPTS, INTEGER, "6");
 
     static {
         Map<String, Value<?>> configValues = CONFIG_VALUES;

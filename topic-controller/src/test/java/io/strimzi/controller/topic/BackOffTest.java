@@ -19,13 +19,15 @@ public class BackOffTest {
         assertEquals(200L, b.delayMs());
         assertEquals(400L, b.delayMs());
         assertEquals(800L, b.delayMs());
+        assertEquals(1600L, b.delayMs());
+        assertEquals(3200L, b.delayMs());
         try {
             b.delayMs();
             fail("Should throw");
         } catch (MaxAttemptsExceededException e) {
 
         }
-        assertEquals(1400L, b.totalDelayMs());
+        assertEquals(6200L, b.totalDelayMs());
     }
 
     @Test
