@@ -251,6 +251,7 @@ The configurable fields are the following :
 Default is the namespace where the topic controller is running
 `reconciliationIntervalMs`:: The interval between periodic reconciliations in milliseconds. Default is 900000 (15 minutes).
 `zookeeperSessionTimeoutMs`:: The Zookeeper session timeout in milliseconds. Default is 20000 milliseconds (20 seconds).
+`topicMetadataMaxAttempts`:: The number of attempts for getting topics metadata. Default `4`.
 
 .Example Topic Controller JSON configuration
 [source,json]
