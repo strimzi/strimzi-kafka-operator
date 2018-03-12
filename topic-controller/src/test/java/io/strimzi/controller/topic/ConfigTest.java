@@ -65,4 +65,14 @@ public class ConfigTest {
 
         }
     }
+
+    @Test
+    public void topicMetadataMaxAttempts() {
+
+        Map<String, String> map = new HashMap<>(MANDATORY);
+        map.put(Config.TC_TOPIC_METADATA_MAX_ATTEMPTS, "3");
+
+        Config c = new Config(map);
+        assertEquals(3, c.get(Config.TOPIC_METADATA_MAX_ATTEMPTS).intValue());
+    }
 }
