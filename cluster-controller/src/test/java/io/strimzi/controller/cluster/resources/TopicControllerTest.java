@@ -35,12 +35,14 @@ public class TopicControllerTest {
     private final String tcImage = "my-topic-controller-image";
     private final String tcReconciliationInterval = "900000";
     private final String tcZookeeperSessionTimeout = "20000";
+    private final int tcTopicMetadataMaxAttempts = 3;
 
     private final String topicControllerJson = "{ " +
             "\"namespace\":\"" + tcNamespace + "\", " +
             "\"image\":\"" + tcImage + "\", " +
             "\"reconciliationInterval\":\"" + tcReconciliationInterval + "\", " +
-            "\"zookeeperSessionTimeout\":\"" + tcZookeeperSessionTimeout + "\"" +
+            "\"zookeeperSessionTimeout\":\"" + tcZookeeperSessionTimeout + "\"," +
+            "\"topicMetadataMaxAttempts\":" + tcTopicMetadataMaxAttempts +
             " }";
 
     private final ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, storageJson, topicControllerJson);
@@ -54,6 +56,7 @@ public class TopicControllerTest {
         expected.add(new EnvVarBuilder().withName(TopicController.KEY_NAMESPACE).withValue(tcNamespace).build());
         expected.add(new EnvVarBuilder().withName(TopicController.KEY_FULL_RECONCILIATION_INTERVAL_MS).withValue(tcReconciliationInterval).build());
         expected.add(new EnvVarBuilder().withName(TopicController.KEY_ZOOKEEPER_SESSION_TIMEOUT_MS).withValue(tcZookeeperSessionTimeout).build());
+        expected.add(new EnvVarBuilder().withName(TopicController.KEY_TOPIC_METADATA_MAX_ATTEMPTS).withValue(String.valueOf(tcTopicMetadataMaxAttempts)).build());
 
         return expected;
     }
@@ -80,6 +83,7 @@ public class TopicControllerTest {
         assertEquals(TopicController.defaultBootstrapServers(cluster), tc.getKafkaBootstrapServers());
         assertEquals(TopicController.defaultZookeeperConnect(cluster), tc.getZookeeperConnect());
         assertEquals(TopicController.defaultTopicConfigMapLabels(cluster), tc.getTopicConfigMapLabels());
+        assertEquals(TopicController.DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS, tc.getTopicMetadataMaxAttempts());
     }
 
     @Test
@@ -98,6 +102,7 @@ public class TopicControllerTest {
         assertEquals(TopicController.defaultBootstrapServers(cluster), tc.getKafkaBootstrapServers());
         assertEquals(TopicController.defaultZookeeperConnect(cluster), tc.getZookeeperConnect());
         assertEquals(TopicController.defaultTopicConfigMapLabels(cluster), tc.getTopicConfigMapLabels());
+        assertEquals(tcTopicMetadataMaxAttempts, tc.getTopicMetadataMaxAttempts());
     }
 
     @Test
@@ -118,6 +123,7 @@ public class TopicControllerTest {
         assertEquals(tc.getKafkaBootstrapServers(), tcFromDep.getKafkaBootstrapServers());
         assertEquals(tc.getZookeeperConnect(), tcFromDep.getZookeeperConnect());
         assertEquals(tc.getTopicConfigMapLabels(), tcFromDep.getTopicConfigMapLabels());
+        assertEquals(tc.getTopicMetadataMaxAttempts(), tcFromDep.getTopicMetadataMaxAttempts());
     }
 
     @Test
@@ -183,6 +189,12 @@ public class TopicControllerTest {
     public void testDiffZookeeperSessionTimeout() {
 
         testDiffEnvVar(TopicController.KEY_ZOOKEEPER_SESSION_TIMEOUT_MS, "10000");
+    }
+
+    @Test
+    public void testDiffTopicMetadataMaxAttempts() {
+
+        testDiffEnvVar(TopicController.KEY_TOPIC_METADATA_MAX_ATTEMPTS, "5");
     }
 
     private void testDiffEnvVar(String name, String value) {
