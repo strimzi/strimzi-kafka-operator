@@ -574,7 +574,7 @@ public abstract class AbstractCluster {
      * @param value The value of the environment variable
      * @return The environment variable instance
      */
-    protected EnvVar buildEnvVar(String name, String value) {
+    protected static EnvVar buildEnvVar(String name, String value) {
         return new EnvVarBuilder().withName(name).withValue(value).build();
     }
 }
