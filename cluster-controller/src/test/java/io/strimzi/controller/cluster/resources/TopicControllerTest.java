@@ -31,14 +31,14 @@ public class TopicControllerTest {
     private final String metricsCmJson = "{\"animal\":\"wombat\"}";
     private final String storageJson = "{\"type\": \"ephemeral\"}";
 
-    private final String tcNamespace = "my-topic-namespace";
+    private final String tcWatchedNamespace = "my-topic-namespace";
     private final String tcImage = "my-topic-controller-image";
     private final String tcReconciliationInterval = "900000";
     private final String tcZookeeperSessionTimeout = "20000";
     private final int tcTopicMetadataMaxAttempts = 3;
 
     private final String topicControllerJson = "{ " +
-            "\"namespace\":\"" + tcNamespace + "\", " +
+            "\"watchedNamespace\":\"" + tcWatchedNamespace + "\", " +
             "\"image\":\"" + tcImage + "\", " +
             "\"reconciliationInterval\":\"" + tcReconciliationInterval + "\", " +
             "\"zookeeperSessionTimeout\":\"" + tcZookeeperSessionTimeout + "\"," +
@@ -53,7 +53,7 @@ public class TopicControllerTest {
         expected.add(new EnvVarBuilder().withName(TopicController.KEY_CONFIGMAP_LABELS).withValue(TopicController.defaultTopicConfigMapLabels(cluster)).build());
         expected.add(new EnvVarBuilder().withName(TopicController.KEY_KAFKA_BOOTSTRAP_SERVERS).withValue(TopicController.defaultBootstrapServers(cluster)).build());
         expected.add(new EnvVarBuilder().withName(TopicController.KEY_ZOOKEEPER_CONNECT).withValue(TopicController.defaultZookeeperConnect(cluster)).build());
-        expected.add(new EnvVarBuilder().withName(TopicController.KEY_NAMESPACE).withValue(tcNamespace).build());
+        expected.add(new EnvVarBuilder().withName(TopicController.KEY_WATCHED_NAMESPACE).withValue(tcWatchedNamespace).build());
         expected.add(new EnvVarBuilder().withName(TopicController.KEY_FULL_RECONCILIATION_INTERVAL_MS).withValue(tcReconciliationInterval).build());
         expected.add(new EnvVarBuilder().withName(TopicController.KEY_ZOOKEEPER_SESSION_TIMEOUT_MS).withValue(tcZookeeperSessionTimeout).build());
         expected.add(new EnvVarBuilder().withName(TopicController.KEY_TOPIC_METADATA_MAX_ATTEMPTS).withValue(String.valueOf(tcTopicMetadataMaxAttempts)).build());
@@ -77,7 +77,7 @@ public class TopicControllerTest {
         TopicController tc = TopicController.fromConfigMap(cm);
 
         assertEquals(TopicController.DEFAULT_IMAGE, tc.getImage());
-        assertEquals(namespace, tc.getTopicNamespace());
+        assertEquals(namespace, tc.getWatchedNamespace());
         assertEquals(TopicController.DEFAULT_FULL_RECONCILIATION_INTERVAL_MS, tc.getReconciliationIntervalMs());
         assertEquals(TopicController.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_MS, tc.getZookeeperSessionTimeoutMs());
         assertEquals(TopicController.defaultBootstrapServers(cluster), tc.getKafkaBootstrapServers());
@@ -96,7 +96,7 @@ public class TopicControllerTest {
         assertEquals(TopicController.DEFAULT_HEALTHCHECK_DELAY, tc.healthCheckInitialDelay);
         assertEquals(TopicController.DEFAULT_HEALTHCHECK_TIMEOUT, tc.healthCheckTimeout);
         assertEquals(tcImage, tc.getImage());
-        assertEquals(tcNamespace, tc.getTopicNamespace());
+        assertEquals(tcWatchedNamespace, tc.getWatchedNamespace());
         assertEquals(tcReconciliationInterval, tc.getReconciliationIntervalMs());
         assertEquals(tcZookeeperSessionTimeout, tc.getZookeeperSessionTimeoutMs());
         assertEquals(TopicController.defaultBootstrapServers(cluster), tc.getKafkaBootstrapServers());
@@ -117,7 +117,7 @@ public class TopicControllerTest {
         assertEquals(tc.healthCheckInitialDelay, tcFromDep.healthCheckInitialDelay);
         assertEquals(tc.healthCheckTimeout, tcFromDep.healthCheckTimeout);
         assertEquals(tc.getImage(), tcFromDep.getImage());
-        assertEquals(tc.getTopicNamespace(), tcFromDep.getTopicNamespace());
+        assertEquals(tc.getWatchedNamespace(), tcFromDep.getWatchedNamespace());
         assertEquals(tc.getReconciliationIntervalMs(), tcFromDep.getReconciliationIntervalMs());
         assertEquals(tc.getZookeeperSessionTimeoutMs(), tcFromDep.getZookeeperSessionTimeoutMs());
         assertEquals(tc.getKafkaBootstrapServers(), tcFromDep.getKafkaBootstrapServers());
@@ -176,7 +176,7 @@ public class TopicControllerTest {
     @Test
     public void testDiffNamespace() {
 
-        testDiffEnvVar(TopicController.KEY_NAMESPACE, "diff-tc-namespace");
+        testDiffEnvVar(TopicController.KEY_WATCHED_NAMESPACE, "diff-tc-namespace");
     }
 
     @Test

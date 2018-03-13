@@ -247,7 +247,7 @@ The JSON representation of the 'topic-controller-config` has no mandatory fields
 The configurable fields are the following :
 
 `image`:: Docker image to use for the topic controller. Default is `strimzi/topic-controller:latest`
-`namespace`:: The Kubernetes namespace (OpenShift project) in which the topic controller watches for topic ConfigMaps.
+`watchedNamespace`:: The Kubernetes namespace (OpenShift project) in which the topic controller watches for topic ConfigMaps.
 Default is the namespace where the topic controller is running
 `reconciliationIntervalMs`:: The interval between periodic reconciliations in milliseconds. Default is 900000 (15 minutes).
 `zookeeperSessionTimeoutMs`:: The Zookeeper session timeout in milliseconds. Default is 20000 milliseconds (20 seconds).

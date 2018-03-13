@@ -32,7 +32,7 @@ public class TopicController extends AbstractCluster {
 
     private static final String NAME_SUFFIX = "-topic-controller";
 
-    private static final String NAMESPACE_FIELD = "namespace";
+    private static final String WATCHED_NAMESPACE_FIELD = "watchedNamespace";
     private static final String IMAGE_FIELD = "image";
     private static final String RECONCILIATION_INTERVAL_FIELD_MS = "reconciliationIntervalMs";
     private static final String ZOOKEEPER_SESSION_TIMEOUT_FIELD_MS = "zookeeperSessionTimeoutMs";
@@ -60,7 +60,7 @@ public class TopicController extends AbstractCluster {
     public static final String KEY_CONFIGMAP_LABELS = "STRIMZI_CONFIGMAP_LABELS";
     public static final String KEY_KAFKA_BOOTSTRAP_SERVERS = "STRIMZI_KAFKA_BOOTSTRAP_SERVERS";
     public static final String KEY_ZOOKEEPER_CONNECT = "STRIMZI_ZOOKEEPER_CONNECT";
-    public static final String KEY_NAMESPACE = "STRIMZI_NAMESPACE";
+    public static final String KEY_WATCHED_NAMESPACE = "STRIMZI_NAMESPACE";
     public static final String KEY_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
     public static final String KEY_ZOOKEEPER_SESSION_TIMEOUT_MS = "STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS";
     public static final String KEY_TOPIC_METADATA_MAX_ATTEMPTS = "STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS";
@@ -69,7 +69,7 @@ public class TopicController extends AbstractCluster {
     private String kafkaBootstrapServers;
     private String zookeeperConnect;
 
-    private String topicNamespace;
+    private String watchedNamespace;
     private String reconciliationIntervalMs;
     private String zookeeperSessionTimeoutMs;
     private String topicConfigMapLabels;
@@ -92,19 +92,19 @@ public class TopicController extends AbstractCluster {
         // create a default configuration
         this.kafkaBootstrapServers = defaultBootstrapServers(cluster);
         this.zookeeperConnect = defaultZookeeperConnect(cluster);
-        this.topicNamespace = namespace;
+        this.watchedNamespace = namespace;
         this.reconciliationIntervalMs = DEFAULT_FULL_RECONCILIATION_INTERVAL_MS;
         this.zookeeperSessionTimeoutMs = DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_MS;
         this.topicConfigMapLabels = defaultTopicConfigMapLabels(cluster);
         this.topicMetadataMaxAttempts = DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS;
     }
 
-    public void setTopicNamespace(String topicNamespace) {
-        this.topicNamespace = topicNamespace;
+    public void setWatchedNamespace(String watchedNamespace) {
+        this.watchedNamespace = watchedNamespace;
     }
 
-    public String getTopicNamespace() {
-        return topicNamespace;
+    public String getWatchedNamespace() {
+        return watchedNamespace;
     }
 
     public void setTopicConfigMapLabels(String topicConfigMapLabels) {
@@ -193,7 +193,7 @@ public class TopicController extends AbstractCluster {
             JsonObject json = new JsonObject(config);
 
             topicController.setImage(json.getString(TopicController.IMAGE_FIELD, DEFAULT_IMAGE));
-            topicController.setTopicNamespace(json.getString(TopicController.NAMESPACE_FIELD, namespace));
+            topicController.setWatchedNamespace(json.getString(TopicController.WATCHED_NAMESPACE_FIELD, namespace));
             topicController.setReconciliationIntervalMs(json.getString(TopicController.RECONCILIATION_INTERVAL_FIELD_MS, DEFAULT_FULL_RECONCILIATION_INTERVAL_MS));
             topicController.setZookeeperSessionTimeoutMs(json.getString(TopicController.ZOOKEEPER_SESSION_TIMEOUT_FIELD_MS, DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_MS));
             topicController.setTopicMetadataMaxAttempts(json.getInteger(TopicController.TOPIC_METADATA_MAX_ATTEMPTS_FIELD, DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS));
@@ -229,7 +229,7 @@ public class TopicController extends AbstractCluster {
 
             topicController.setKafkaBootstrapServers(vars.getOrDefault(KEY_KAFKA_BOOTSTRAP_SERVERS, defaultBootstrapServers(cluster)));
             topicController.setZookeeperConnect(vars.getOrDefault(KEY_ZOOKEEPER_CONNECT, defaultZookeeperConnect(cluster)));
-            topicController.setTopicNamespace(vars.getOrDefault(KEY_NAMESPACE, namespace));
+            topicController.setWatchedNamespace(vars.getOrDefault(KEY_WATCHED_NAMESPACE, namespace));
             topicController.setReconciliationIntervalMs(vars.getOrDefault(KEY_FULL_RECONCILIATION_INTERVAL_MS, DEFAULT_FULL_RECONCILIATION_INTERVAL_MS));
             topicController.setZookeeperSessionTimeoutMs(vars.getOrDefault(KEY_ZOOKEEPER_SESSION_TIMEOUT_MS, DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_MS));
             topicController.setTopicConfigMapLabels(vars.getOrDefault(KEY_CONFIGMAP_LABELS, defaultTopicConfigMapLabels(cluster)));
@@ -271,7 +271,7 @@ public class TopicController extends AbstractCluster {
                 isDifferent = true;
             }
 
-            if (!topicNamespace.equals(vars.getOrDefault(KEY_NAMESPACE, namespace))) {
+            if (!watchedNamespace.equals(vars.getOrDefault(KEY_WATCHED_NAMESPACE, namespace))) {
                 log.info("Diff: Namespace in which watching for topics changed");
                 isDifferent = true;
             }
@@ -327,7 +327,7 @@ public class TopicController extends AbstractCluster {
         varList.add(buildEnvVar(KEY_CONFIGMAP_LABELS, topicConfigMapLabels));
         varList.add(buildEnvVar(KEY_KAFKA_BOOTSTRAP_SERVERS, kafkaBootstrapServers));
         varList.add(buildEnvVar(KEY_ZOOKEEPER_CONNECT, zookeeperConnect));
-        varList.add(buildEnvVar(KEY_NAMESPACE, topicNamespace));
+        varList.add(buildEnvVar(KEY_WATCHED_NAMESPACE, watchedNamespace));
         varList.add(buildEnvVar(KEY_FULL_RECONCILIATION_INTERVAL_MS, reconciliationIntervalMs));
         varList.add(buildEnvVar(KEY_ZOOKEEPER_SESSION_TIMEOUT_MS, zookeeperSessionTimeoutMs));
         varList.add(buildEnvVar(KEY_TOPIC_METADATA_MAX_ATTEMPTS, String.valueOf(topicMetadataMaxAttempts)));
