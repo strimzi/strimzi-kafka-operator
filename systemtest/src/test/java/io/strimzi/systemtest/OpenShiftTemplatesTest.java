@@ -42,17 +42,17 @@ public class OpenShiftTemplatesTest {
     @ClassRule
     public static KubeClusterResource cluster = new KubeClusterResource();
 
-    ObjectMapper mapper = new ObjectMapper();
+    private ObjectMapper mapper = new ObjectMapper();
+    private Oc oc = (Oc) cluster.client();
+    private KubernetesClient client = new DefaultKubernetesClient();
 
     @Test
     public void testStrimziEphemeral() throws IOException {
-        Oc oc = (Oc) cluster.client();
         String clusterName = "foo";
         oc.newApp("strimzi-ephemeral", map("CLUSTER_NAME", clusterName,
                 "ZOOKEEPER_NODE_COUNT", "1",
                 "KAFKA_NODE_COUNT", "1"));
 
-        KubernetesClient client = new DefaultKubernetesClient();
         ConfigMap cm = client.configMaps().inNamespace(NAMESPACE).withName(clusterName).get();
         assertNotNull(cm);
         Map<String, String> cmData = cm.getData();
@@ -64,14 +64,12 @@ public class OpenShiftTemplatesTest {
 
     @Test
     public void testStrimziPersistent() throws IOException {
-        Oc oc = (Oc) cluster.client();
         String clusterName = "bar";
         oc.newApp("strimzi-persistent", map("CLUSTER_NAME", clusterName,
                 "ZOOKEEPER_NODE_COUNT", "1",
                 "KAFKA_NODE_COUNT", "1"));
 
-        KubernetesClient client = new DefaultKubernetesClient();
-        ConfigMap cm = client.configMaps().inNamespace("template-test").withName(clusterName).get();
+        ConfigMap cm = client.configMaps().inNamespace(NAMESPACE).withName(clusterName).get();
         assertNotNull(cm);
         Map<String, String> cmData = cm.getData();
         assertEquals("1", cmData.get("kafka-nodes"));
@@ -81,14 +79,66 @@ public class OpenShiftTemplatesTest {
     }
 
     @Test
+    public void testStrimziEphemeralWithCustomParameters() {
+        String clusterName = "test-ephemeral-with-custom-parameters";
+        oc.newApp("strimzi-ephemeral", map("CLUSTER_NAME", clusterName,
+                "ZOOKEEPER_HEALTHCHECK_DELAY", "30",
+                "ZOOKEEPER_HEALTHCHECK_TIMEOUT", "10",
+                "KAFKA_HEALTHCHECK_DELAY", "30",
+                "KAFKA_HEALTHCHECK_TIMEOUT", "10",
+                "KAFKA_DEFAULT_REPLICATION_FACTOR", "2",
+                "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "5",
+                "KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", "5"));
+
+        //TODO Add assertions to check that Kafka brokers have a custom configuration
+        ConfigMap cm = client.configMaps().inNamespace(NAMESPACE).withName(clusterName).get();
+        assertNotNull(cm);
+        Map<String, String> cmData = cm.getData();
+        assertEquals("30", cmData.get("zookeeper-healthcheck-delay"));
+        assertEquals("10", cmData.get("zookeeper-healthcheck-timeout"));
+        assertEquals("30", cmData.get("kafka-healthcheck-delay"));
+        assertEquals("10", cmData.get("kafka-healthcheck-timeout"));
+        assertEquals("2", cmData.get("KAFKA_DEFAULT_REPLICATION_FACTOR"));
+        assertEquals("5", cmData.get("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR"));
+        assertEquals("5", cmData.get("KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR"));
+    }
+
+    @Test
+    public void testStrimziPersistentWithCustomParameters() throws IOException {
+        String clusterName = "test-persistent-with-custom-parameters";
+        oc.newApp("strimzi-persistent", map("CLUSTER_NAME", clusterName,
+                "ZOOKEEPER_HEALTHCHECK_DELAY", "30",
+                "ZOOKEEPER_HEALTHCHECK_TIMEOUT", "10",
+                "KAFKA_HEALTHCHECK_DELAY", "30",
+                "KAFKA_HEALTHCHECK_TIMEOUT", "10",
+                "KAFKA_DEFAULT_REPLICATION_FACTOR", "2",
+                "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "5",
+                "KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", "5",
+                "ZOOKEEPER_VOLUME_CAPACITY", "2Gi",
+                "KAFKA_VOLUME_CAPACITY", "2Gi"));
+
+        //TODO Add assertions to check that Kafka brokers have a custom configuration
+        ConfigMap cm = client.configMaps().inNamespace(NAMESPACE).withName(clusterName).get();
+        assertNotNull(cm);
+        Map<String, String> cmData = cm.getData();
+        assertEquals("30", cmData.get("zookeeper-healthcheck-delay"));
+        assertEquals("10", cmData.get("zookeeper-healthcheck-timeout"));
+        assertEquals("30", cmData.get("kafka-healthcheck-delay"));
+        assertEquals("10", cmData.get("kafka-healthcheck-timeout"));
+        assertEquals("2", cmData.get("KAFKA_DEFAULT_REPLICATION_FACTOR"));
+        assertEquals("5", cmData.get("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR"));
+        assertEquals("5", cmData.get("KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR"));
+        assertEquals("2Gi", mapper.readTree(cmData.get("kafka-storage")).get("size").asText());
+        assertEquals("2Gi", mapper.readTree(cmData.get("zookeeper-storage")).get("size").asText());
+    }
+
+    @Test
     public void testConnect() {
-        Oc oc = (Oc) cluster.client();
         String clusterName = "test-connect";
         oc.newApp("strimzi-connect", map("CLUSTER_NAME", clusterName,
                 "INSTANCES", "1"));
 
-        KubernetesClient client = new DefaultKubernetesClient();
-        ConfigMap cm = client.configMaps().inNamespace("template-test").withName(clusterName).get();
+        ConfigMap cm = client.configMaps().inNamespace(NAMESPACE).withName(clusterName).get();
         assertNotNull(cm);
         Map<String, String> cmData = cm.getData();
         assertEquals("1", cmData.get("nodes"));
@@ -96,13 +146,11 @@ public class OpenShiftTemplatesTest {
 
     @Test
     public void testS2i() {
-        Oc oc = (Oc) cluster.client();
         String clusterName = "test-s2i";
         oc.newApp("strimzi-connect-s2i", map("CLUSTER_NAME", clusterName,
                 "INSTANCES", "1"));
 
-        KubernetesClient client = new DefaultKubernetesClient();
-        ConfigMap cm = client.configMaps().inNamespace("template-test").withName(clusterName).get();
+        ConfigMap cm = client.configMaps().inNamespace(NAMESPACE).withName(clusterName).get();
         assertNotNull(cm);
         Map<String, String> cmData = cm.getData();
         assertEquals("1", cmData.get("nodes"));
@@ -110,7 +158,6 @@ public class OpenShiftTemplatesTest {
 
     @Test
     public void testTopicController() {
-        Oc oc = (Oc) cluster.client();
         String topicName = "test-topic-cm";
         String mapName = "test-topic-cm-foo";
         oc.newApp("strimzi-topic", map(
@@ -119,8 +166,7 @@ public class OpenShiftTemplatesTest {
                 "TOPIC_PARTITIONS", "10",
                 "TOPIC_REPLICAS", "2"));
 
-        KubernetesClient client = new DefaultKubernetesClient();
-        ConfigMap cm = client.configMaps().inNamespace("template-test").withName(mapName).get();
+        ConfigMap cm = client.configMaps().inNamespace(NAMESPACE).withName(mapName).get();
         assertNotNull(cm);
         Map<String, String> cmData = cm.getData();
         assertEquals(topicName, cmData.get("name"));

@@ -23,7 +23,7 @@ public @interface KafkaCluster {
     String name();
     int kafkaNodes() default 3;
     int zkNodes() default 1;
-
+    CmData[] config() default {};
 
     @Target({ElementType.METHOD, ElementType.TYPE})
     @Retention(RetentionPolicy.RUNTIME)
