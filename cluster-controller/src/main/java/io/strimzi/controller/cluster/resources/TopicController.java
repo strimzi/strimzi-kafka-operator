@@ -7,7 +7,6 @@ package io.strimzi.controller.cluster.resources;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategy;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategyBuilder;
@@ -325,13 +324,13 @@ public class TopicController extends AbstractCluster {
     @Override
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
-        varList.add(new EnvVarBuilder().withName(KEY_CONFIGMAP_LABELS).withValue(topicConfigMapLabels).build());
-        varList.add(new EnvVarBuilder().withName(KEY_KAFKA_BOOTSTRAP_SERVERS).withValue(kafkaBootstrapServers).build());
-        varList.add(new EnvVarBuilder().withName(KEY_ZOOKEEPER_CONNECT).withValue(zookeeperConnect).build());
-        varList.add(new EnvVarBuilder().withName(KEY_NAMESPACE).withValue(topicNamespace).build());
-        varList.add(new EnvVarBuilder().withName(KEY_FULL_RECONCILIATION_INTERVAL_MS).withValue(reconciliationIntervalMs).build());
-        varList.add(new EnvVarBuilder().withName(KEY_ZOOKEEPER_SESSION_TIMEOUT_MS).withValue(zookeeperSessionTimeoutMs).build());
-        varList.add(new EnvVarBuilder().withName(KEY_TOPIC_METADATA_MAX_ATTEMPTS).withValue(String.valueOf(topicMetadataMaxAttempts)).build());
+        varList.add(buildEnvVar(KEY_CONFIGMAP_LABELS, topicConfigMapLabels));
+        varList.add(buildEnvVar(KEY_KAFKA_BOOTSTRAP_SERVERS, kafkaBootstrapServers));
+        varList.add(buildEnvVar(KEY_ZOOKEEPER_CONNECT, zookeeperConnect));
+        varList.add(buildEnvVar(KEY_NAMESPACE, topicNamespace));
+        varList.add(buildEnvVar(KEY_FULL_RECONCILIATION_INTERVAL_MS, reconciliationIntervalMs));
+        varList.add(buildEnvVar(KEY_ZOOKEEPER_SESSION_TIMEOUT_MS, zookeeperSessionTimeoutMs));
+        varList.add(buildEnvVar(KEY_TOPIC_METADATA_MAX_ATTEMPTS, String.valueOf(topicMetadataMaxAttempts)));
 
         return varList;
     }

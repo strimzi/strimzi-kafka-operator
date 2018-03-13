@@ -35,10 +35,14 @@ public class Config {
     };
 
     /** A Java Integer */
-    private static final Type<? extends Integer> INTEGER = new Type<Integer>() {
+    private static final Type<? extends Integer> POSITIVE_INTEGER = new Type<Integer>() {
         @Override
         Integer parse(String s) {
-            return Integer.parseInt(s);
+            int value = Integer.parseInt(s);
+            if (value <= 0) {
+                throw new IllegalArgumentException("The value must be greater than zero");
+            }
+            return value;
         }
     };
 
@@ -125,7 +129,7 @@ public class Config {
     public static final Value<Long> REASSIGN_VERIFY_INTERVAL_MS = new Value<>(TC_REASSIGN_VERIFY_INTERVAL_MS, DURATION, "120000");
 
     /** The maximum number of retries for getting topic metadata from the Kafka cluster */
-    public static final Value<Integer> TOPIC_METADATA_MAX_ATTEMPTS = new Value<>(TC_TOPIC_METADATA_MAX_ATTEMPTS, INTEGER, "6");
+    public static final Value<Integer> TOPIC_METADATA_MAX_ATTEMPTS = new Value<>(TC_TOPIC_METADATA_MAX_ATTEMPTS, POSITIVE_INTEGER, "6");
 
     static {
         Map<String, Value<?>> configValues = CONFIG_VALUES;
