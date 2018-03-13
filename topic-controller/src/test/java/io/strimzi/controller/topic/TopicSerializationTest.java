@@ -9,9 +9,6 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.admin.NewTopic;
-import org.apache.kafka.clients.admin.TopicDescription;
-import org.apache.kafka.common.Node;
-import org.apache.kafka.common.TopicPartitionInfo;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.requests.CreateTopicsRequest;
 import org.junit.Test;
@@ -24,7 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.Arrays.asList;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -127,18 +123,10 @@ public class TopicSerializationTest {
 
     @Test
     public void testFromTopicMetadata() {
-        Node node0 = new Node(0, "host0", 1234);
-        Node node1 = new Node(1, "host1", 1234);
-        Node node2 = new Node(1, "host2", 1234);
-        List<Node> nodes02 = asList(node0, node1, node2);
-        TopicDescription desc = new TopicDescription("test-topic", false,
-                asList(
-                        new TopicPartitionInfo(0, node0, asList(node0, node1, node2), nodes02),
-                        new TopicPartitionInfo(1, node0, asList(node0, node1, node2), nodes02)));
         List<ConfigEntry> entries = new ArrayList<>();
         entries.add(new ConfigEntry("foo", "bar"));
         Config topicConfig = new Config(entries);
-        TopicMetadata meta = new TopicMetadata(desc, topicConfig);
+        TopicMetadata meta = Utils.getTopicMetadata("test-topic", topicConfig);
         Topic topic = TopicSerialization.fromTopicMetadata(meta);
         assertEquals(new TopicName("test-topic"), topic.getTopicName());
         // Null map name because Kafka doesn't know about the map
