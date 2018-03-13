@@ -4,16 +4,25 @@
  */
 package io.strimzi.test;
 
-import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation for test classes or methods run via {@code @RunWith(StrimziRunner.class)}
- * which causes that runner to update config map before tests
+ * Annotation is used in ({@link ClusterController}, {@link KafkaCluster})
+ * to configure a cluster with custom parameters and values.
+ * <p>
+ * An example would be:
+ * <pre>
+ * &#064;Test
+ * &#064;KafkaCluster(config = {
+ * &#064;CmData(key = "foo", value = "bar")
+ * })
+ * public void test() {
+ * }
+ * </pre>
  */
-@Target({ElementType.METHOD, ElementType.TYPE})
+@Target({})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface CmData {
 
