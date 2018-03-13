@@ -14,11 +14,6 @@ import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
-import org.apache.kafka.clients.admin.Config;
-import org.apache.kafka.clients.admin.ConfigEntry;
-import org.apache.kafka.clients.admin.TopicDescription;
-import org.apache.kafka.common.Node;
-import org.apache.kafka.common.TopicPartitionInfo;
 import org.apache.kafka.common.errors.ClusterAuthorizationException;
 import org.apache.kafka.common.errors.TopicExistsException;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
@@ -27,14 +22,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static java.util.Arrays.asList;
 
 @RunWith(VertxUnitRunner.class)
 public class ControllerTest {
@@ -85,37 +76,6 @@ public class ControllerTest {
             result.put(pairs[i], pairs[i + 1]);
         }
         return result;
-    }
-
-    private TopicMetadata getTopicMetadata() {
-        Node node0 = new Node(0, "host0", 1234);
-        Node node1 = new Node(1, "host1", 1234);
-        Node node2 = new Node(2, "host2", 1234);
-        List<Node> nodes02 = asList(node0, node1, node2);
-        TopicDescription desc = new TopicDescription(topicName.toString(), false, asList(
-                new TopicPartitionInfo(0, node0, nodes02, nodes02),
-                new TopicPartitionInfo(1, node0, nodes02, nodes02)
-        ));
-        Config config = new Config(Collections.emptyList());
-        return new TopicMetadata(desc, config);
-    }
-
-    private TopicMetadata getTopicMetadata(Topic kubeTopic) {
-        List<Node> nodes = new ArrayList<>();
-        for (int nodeId = 0; nodeId < kubeTopic.getNumReplicas(); nodeId++) {
-            nodes.add(new Node(nodeId, "localhost", 9092 + nodeId));
-        }
-        List<TopicPartitionInfo> partitions = new ArrayList<>();
-        for (int partitionId = 0; partitionId < kubeTopic.getNumPartitions(); partitionId++) {
-            partitions.add(new TopicPartitionInfo(partitionId, nodes.get(0), nodes, nodes));
-        }
-        List<ConfigEntry> configs = new ArrayList<>();
-        for (Map.Entry<String, String> entry: kubeTopic.getConfig().entrySet()) {
-            configs.add(new ConfigEntry(entry.getKey(), entry.getValue()));
-        }
-
-        return new TopicMetadata(new TopicDescription(kubeTopic.getTopicName().toString(), false,
-                partitions), new Config(configs));
     }
 
     /** Test what happens when a non-topic config map gets created in kubernetes */
@@ -261,7 +221,8 @@ public class ControllerTest {
      */
     @Test
     public void testOnTopicCreated(TestContext context) {
-        TopicMetadata topicMetadata = getTopicMetadata();
+        TopicMetadata topicMetadata = Utils.getTopicMetadata(topicName.toString(),
+                new org.apache.kafka.clients.admin.Config(Collections.emptyList()));
 
         mockTopicStore.setCreateTopicResponse(topicName, null);
         mockKafka.setTopicMetadataResponse(topicName, topicMetadata, null);
@@ -285,7 +246,8 @@ public class ControllerTest {
      */
     @Test
     public void testOnTopicCreated_retry(TestContext context) {
-        TopicMetadata topicMetadata = getTopicMetadata();
+        TopicMetadata topicMetadata = Utils.getTopicMetadata(topicName.toString(),
+                new org.apache.kafka.clients.admin.Config(Collections.emptyList()));
 
         mockTopicStore.setCreateTopicResponse(topicName, null);
         AtomicInteger counter = new AtomicInteger();
@@ -326,7 +288,6 @@ public class ControllerTest {
      */
     @Test
     public void testOnTopicCreated_retryTimeout(TestContext context) {
-        TopicMetadata topicMetadata = getTopicMetadata();
 
         mockKafka.setTopicMetadataResponse(topicName, null, null);
 
@@ -354,7 +315,7 @@ public class ControllerTest {
 
         mockKafka.setCreateTopicResponse(topicName.toString(), null)
                 .createTopic(kafkaTopic, ar -> { });
-        mockKafka.setTopicMetadataResponse(topicName, getTopicMetadata(kafkaTopic), null);
+        mockKafka.setTopicMetadataResponse(topicName, Utils.getTopicMetadata(kafkaTopic), null);
         //mockKafka.setUpdateTopicResponse(topicName -> Future.succeededFuture());
 
         mockTopicStore.setCreateTopicResponse(topicName, null)
@@ -696,7 +657,7 @@ public class ControllerTest {
 
         mockKafka.setCreateTopicResponse(topicName.toString(), null)
                 .createTopic(kafkaTopic, ar -> { });
-        mockKafka.setTopicMetadataResponse(topicName, getTopicMetadata(kubeTopic), null);
+        mockKafka.setTopicMetadataResponse(topicName, Utils.getTopicMetadata(kubeTopic), null);
         mockKafka.setDeleteTopicResponse(topicName, deleteTopicException);
 
         mockTopicStore.setCreateTopicResponse(topicName, null)
@@ -735,7 +696,7 @@ public class ControllerTest {
 
         mockKafka.setCreateTopicResponse(topicName.toString(), null)
                 .createTopic(kafkaTopic, ar -> { });
-        mockKafka.setTopicMetadataResponse(topicName, getTopicMetadata(kafkaTopic), null);
+        mockKafka.setTopicMetadataResponse(topicName, Utils.getTopicMetadata(kafkaTopic), null);
         mockKafka.setUpdateTopicResponse(topicName -> Future.succeededFuture());
 
         mockTopicStore.setCreateTopicResponse(topicName, null)
