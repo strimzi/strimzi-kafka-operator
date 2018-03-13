@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class KafkaConnectCluster extends AbstractCluster {
 
@@ -144,8 +143,7 @@ public class KafkaConnectCluster extends AbstractCluster {
         kafkaConnect.setHealthCheckInitialDelay(container.getReadinessProbe().getInitialDelaySeconds());
         kafkaConnect.setHealthCheckTimeout(container.getReadinessProbe().getTimeoutSeconds());
 
-        Map<String, String> vars = container.getEnv().stream().collect(
-                Collectors.toMap(EnvVar::getName, EnvVar::getValue));
+        Map<String, String> vars = containerEnv(container);
 
         kafkaConnect.setBootstrapServers(vars.getOrDefault(KEY_BOOTSTRAP_SERVERS, DEFAULT_BOOTSTRAP_SERVERS));
         kafkaConnect.setGroupId(vars.getOrDefault(KEY_GROUP_ID, DEFAULT_GROUP_ID));
@@ -194,8 +192,7 @@ public class KafkaConnectCluster extends AbstractCluster {
             rollingUpdate = true;
         }
 
-        Map<String, String> vars = container.getEnv().stream().collect(
-                Collectors.toMap(EnvVar::getName, EnvVar::getValue));
+        Map<String, String> vars = containerEnv(container);
 
         if (!bootstrapServers.equals(vars.getOrDefault(KEY_BOOTSTRAP_SERVERS, DEFAULT_BOOTSTRAP_SERVERS))
                 || !groupId.equals(vars.getOrDefault(KEY_GROUP_ID, DEFAULT_GROUP_ID))

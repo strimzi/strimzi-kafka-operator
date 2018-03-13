@@ -161,8 +161,7 @@ public class KafkaCluster extends AbstractCluster {
         kafka.setHealthCheckInitialDelay(container.getReadinessProbe().getInitialDelaySeconds());
         kafka.setHealthCheckTimeout(container.getReadinessProbe().getTimeoutSeconds());
 
-        Map<String, String> vars = container.getEnv().stream().collect(
-                Collectors.toMap(EnvVar::getName, EnvVar::getValue));
+        Map<String, String> vars = containerEnv(container);
 
         kafka.setZookeeperConnect(vars.getOrDefault(KEY_KAFKA_ZOOKEEPER_CONNECT, ss.getMetadata().getName() + "-zookeeper:2181"));
         kafka.setDefaultReplicationFactor(Integer.parseInt(vars.getOrDefault(KEY_KAFKA_DEFAULT_REPLICATION_FACTOR, String.valueOf(DEFAULT_KAFKA_DEFAULT_REPLICATION_FACTOR))));
