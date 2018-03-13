@@ -4,6 +4,7 @@ metadata:
   name: my-topic
   labels:
     strimzi.io/kind: topic
+    strimzi.io/cluster: my-cluster
 data:
   name: my-topic
   partitions: "1"

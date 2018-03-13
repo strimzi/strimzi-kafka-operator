@@ -13,6 +13,11 @@ metadata:
     iconClass: "fa fa-exchange"
     template.openshift.io/documentation-url: "http://strimzi.io"
 parameters:
+- name: CLUSTER_NAME
+  displayName: Name of the Kafka cluster
+  description: Specifies the name of the Kafka cluster in which the topic should be created.
+  required: true
+  value: my-cluster
 - name: MAP_NAME
   displayName: Name of the ConfigMap
   description: Specifies the name of the ConfigMap. If possible this should be the same as the TOPIC_NAME parameter.
@@ -48,6 +53,7 @@ objects:
     name: "${MAP_NAME}"
     labels:
       strimzi.io/kind: topic
+      strimzi.io/cluster: "${CLUSTER_NAME}"
   data:
     name: "${TOPIC_NAME}"
     partitions: "${TOPIC_PARTITIONS}"
