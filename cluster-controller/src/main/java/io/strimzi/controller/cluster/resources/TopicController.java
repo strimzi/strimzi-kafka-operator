@@ -186,38 +186,18 @@ public class TopicController extends AbstractCluster {
 
         String config = kafkaClusterCm.getData().get(KEY_CONFIG);
         if (config != null) {
-            topicController = new TopicController(kafkaClusterCm.getMetadata().getNamespace(),
+            String namespace = kafkaClusterCm.getMetadata().getNamespace();
+            topicController = new TopicController(namespace,
                     kafkaClusterCm.getMetadata().getName(),
                     Labels.fromResource(kafkaClusterCm));
 
             JsonObject json = new JsonObject(config);
 
-            String image = json.getString(TopicController.IMAGE_FIELD);
-            if (image != null) {
-                topicController.setImage(image);
-            }
-
-            String topicNamespace = json.getString(TopicController.NAMESPACE_FIELD);
-            if (topicNamespace != null) {
-                topicController.setTopicNamespace(topicNamespace);
-            }
-
-            String reconciliationIntervalMs = json.getString(TopicController.RECONCILIATION_INTERVAL_FIELD_MS);
-            if (reconciliationIntervalMs != null) {
-                // TODO : add parsing and validation
-                topicController.setReconciliationIntervalMs(reconciliationIntervalMs);
-            }
-
-            String zookeeperSessionTimeoutMs = json.getString(TopicController.ZOOKEEPER_SESSION_TIMEOUT_FIELD_MS);
-            if (zookeeperSessionTimeoutMs != null) {
-                // TODO : add parsing and validation
-                topicController.setZookeeperSessionTimeoutMs(zookeeperSessionTimeoutMs);
-            }
-
-            Integer topicMetadataMaxAttempts = json.getInteger(TopicController.TOPIC_METADATA_MAX_ATTEMPTS_FIELD);
-            if (topicMetadataMaxAttempts != null) {
-                topicController.setTopicMetadataMaxAttempts(topicMetadataMaxAttempts);
-            }
+            topicController.setImage(json.getString(TopicController.IMAGE_FIELD, DEFAULT_IMAGE));
+            topicController.setTopicNamespace(json.getString(TopicController.NAMESPACE_FIELD, namespace));
+            topicController.setReconciliationIntervalMs(json.getString(TopicController.RECONCILIATION_INTERVAL_FIELD_MS, DEFAULT_FULL_RECONCILIATION_INTERVAL_MS));
+            topicController.setZookeeperSessionTimeoutMs(json.getString(TopicController.ZOOKEEPER_SESSION_TIMEOUT_FIELD_MS, DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_MS));
+            topicController.setTopicMetadataMaxAttempts(json.getInteger(TopicController.TOPIC_METADATA_MAX_ATTEMPTS_FIELD, DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS));
         }
 
         return topicController;
