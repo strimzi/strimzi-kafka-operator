@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.ContainerPortBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
@@ -564,5 +565,16 @@ public abstract class AbstractCluster {
         cm.setData(data);
 
         return cm;
+    }
+
+    /**
+     * Build an environment variable instance with the provided name and value
+     *
+     * @param name The name of the environment variable
+     * @param value The value of the environment variable
+     * @return The environment variable instance
+     */
+    protected EnvVar buildEnvVar(String name, String value) {
+        return new EnvVarBuilder().withName(name).withValue(value).build();
     }
 }
