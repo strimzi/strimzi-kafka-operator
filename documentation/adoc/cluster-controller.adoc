@@ -251,7 +251,9 @@ The configurable fields are the following :
 Default is the namespace where the topic controller is running
 `reconciliationIntervalMs`:: The interval between periodic reconciliations in milliseconds. Default is 900000 (15 minutes).
 `zookeeperSessionTimeoutMs`:: The Zookeeper session timeout in milliseconds. Default is 20000 milliseconds (20 seconds).
-`topicMetadataMaxAttempts`:: The number of attempts for getting topics metadata. Default `6`.
+`topicMetadataMaxAttempts`:: The number of attempts for getting topics metadata from Kafka. The time between each attempt
+ is defined as an exponential back-off. You might want to increase this value when topic creation could take more time due
+ to its larger size (i.e. many partitions/replicas). Default `6`.
 
 .Example Topic Controller JSON configuration
 [source,json]
