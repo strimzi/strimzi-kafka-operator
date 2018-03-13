@@ -7,7 +7,6 @@ package io.strimzi.controller.cluster.resources;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
@@ -320,8 +319,8 @@ public class ZookeeperCluster extends AbstractCluster {
     @Override
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
-        varList.add(new EnvVarBuilder().withName(KEY_ZOOKEEPER_NODE_COUNT).withValue(Integer.toString(replicas)).build());
-        varList.add(new EnvVarBuilder().withName(KEY_ZOOKEEPER_METRICS_ENABLED).withValue(String.valueOf(isMetricsEnabled)).build());
+        varList.add(buildEnvVar(KEY_ZOOKEEPER_NODE_COUNT, Integer.toString(replicas)));
+        varList.add(buildEnvVar(KEY_ZOOKEEPER_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
 
         return varList;
     }

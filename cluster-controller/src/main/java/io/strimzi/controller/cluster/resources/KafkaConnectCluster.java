@@ -7,7 +7,6 @@ package io.strimzi.controller.cluster.resources;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
@@ -259,15 +258,15 @@ public class KafkaConnectCluster extends AbstractCluster {
     @Override
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
-        varList.add(new EnvVarBuilder().withName(KEY_BOOTSTRAP_SERVERS).withValue(bootstrapServers).build());
-        varList.add(new EnvVarBuilder().withName(KEY_GROUP_ID).withValue(groupId).build());
-        varList.add(new EnvVarBuilder().withName(KEY_KEY_CONVERTER).withValue(keyConverter).build());
-        varList.add(new EnvVarBuilder().withName(KEY_KEY_CONVERTER_SCHEMAS_EXAMPLE).withValue(String.valueOf(keyConverterSchemasEnable)).build());
-        varList.add(new EnvVarBuilder().withName(KEY_VALUE_CONVERTER).withValue(valueConverter).build());
-        varList.add(new EnvVarBuilder().withName(KEY_VALUE_CONVERTER_SCHEMAS_EXAMPLE).withValue(String.valueOf(valueConverterSchemasEnable)).build());
-        varList.add(new EnvVarBuilder().withName(KEY_CONFIG_STORAGE_REPLICATION_FACTOR).withValue(String.valueOf(configStorageReplicationFactor)).build());
-        varList.add(new EnvVarBuilder().withName(KEY_OFFSET_STORAGE_REPLICATION_FACTOR).withValue(String.valueOf(offsetStorageReplicationFactor)).build());
-        varList.add(new EnvVarBuilder().withName(KEY_STATUS_STORAGE_REPLICATION_FACTOR).withValue(String.valueOf(statusStorageReplicationFactor)).build());
+        varList.add(buildEnvVar(KEY_BOOTSTRAP_SERVERS, bootstrapServers));
+        varList.add(buildEnvVar(KEY_GROUP_ID, groupId));
+        varList.add(buildEnvVar(KEY_KEY_CONVERTER, keyConverter));
+        varList.add(buildEnvVar(KEY_KEY_CONVERTER_SCHEMAS_EXAMPLE, String.valueOf(keyConverterSchemasEnable)));
+        varList.add(buildEnvVar(KEY_VALUE_CONVERTER, valueConverter));
+        varList.add(buildEnvVar(KEY_VALUE_CONVERTER_SCHEMAS_EXAMPLE, String.valueOf(valueConverterSchemasEnable)));
+        varList.add(buildEnvVar(KEY_CONFIG_STORAGE_REPLICATION_FACTOR, String.valueOf(configStorageReplicationFactor)));
+        varList.add(buildEnvVar(KEY_OFFSET_STORAGE_REPLICATION_FACTOR, String.valueOf(offsetStorageReplicationFactor)));
+        varList.add(buildEnvVar(KEY_STATUS_STORAGE_REPLICATION_FACTOR, String.valueOf(statusStorageReplicationFactor)));
 
         return varList;
     }
