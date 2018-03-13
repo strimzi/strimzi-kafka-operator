@@ -181,7 +181,7 @@ The controller is configured from environment variables:
 * `STRIMZI_FULL_RECONCILIATION_INTERVAL_MS`
 – The interval between periodic reconciliations, in milliseconds.
 * `STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS`
-– The number of attempts for getting topics metadata. Default `4`.
+– The number of attempts for getting topics metadata. Default `6`.
 
 If the controller configuration needs to be changed the process must be killed and restarted.
 Since the controller is intended to execute within Kubernetes, this can be achieved

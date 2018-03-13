@@ -8,17 +8,22 @@ package io.strimzi.controller.topic;
  * Encapsulates computing delays for an exponential back-off.
  */
 public class BackOff {
+
+    private static final long DEFAULT_SCALE_MS = 200L;
+    private static final int DEFAULT_BASE = 2;
+    private static final int DEFAULT_MAX_ATTEMPTS = 6;
+
     private final long scaleMs;
     private final int base;
     private final int maxAttempts;
     private int attempt = 0;
 
     public BackOff() {
-        this(200L, 2, 6);
+        this(DEFAULT_SCALE_MS, DEFAULT_BASE, DEFAULT_MAX_ATTEMPTS);
     }
 
     public BackOff(int maxAttempts) {
-        this(200L, 2, maxAttempts);
+        this(DEFAULT_SCALE_MS, DEFAULT_BASE, maxAttempts);
     }
 
     public BackOff(long scaleMs, int base, int maxAttempts) {
