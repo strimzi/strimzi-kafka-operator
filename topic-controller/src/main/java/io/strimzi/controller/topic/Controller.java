@@ -614,7 +614,7 @@ public class Controller {
                 // getting topic information from the private store
                 topicStore.read(topicName, topicResult -> {
 
-                    TopicMetadataHandler handler = new TopicMetadataHandler(vertx, kafka, topicName, getBackOff()) {
+                    TopicMetadataHandler handler = new TopicMetadataHandler(vertx, kafka, topicName, topicMetadataBackOff()) {
                         @Override
                         public void handle(AsyncResult<TopicMetadata> metadataResult) {
 
@@ -710,7 +710,7 @@ public class Controller {
             @Override
             public void handle(Future<Void> fut) {
 
-                TopicMetadataHandler handler = new TopicMetadataHandler(vertx, kafka, topicName, getBackOff()) {
+                TopicMetadataHandler handler = new TopicMetadataHandler(vertx, kafka, topicName, topicMetadataBackOff()) {
 
                     @Override
                     public void handle(AsyncResult<TopicMetadata> metadataResult) {
@@ -934,9 +934,9 @@ public class Controller {
     }
 
     /**
-     * @return an instance of BackOff with configured topic metadata max attempts
+     * @return a new instance of BackOff with configured topic metadata max attempts
      */
-    private BackOff getBackOff() {
+    private BackOff topicMetadataBackOff() {
         return new BackOff(config.get(Config.TOPIC_METADATA_MAX_ATTEMPTS));
     }
 }
