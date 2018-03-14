@@ -17,7 +17,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Represents the topic controller deployment
@@ -257,8 +256,7 @@ public class TopicController extends AbstractCluster {
                 isDifferent = true;
             }
 
-            Map<String, String> vars = container.getEnv().stream().collect(
-                    Collectors.toMap(EnvVar::getName, EnvVar::getValue));
+            Map<String, String> vars = containerEnv(container);
 
             if (!kafkaBootstrapServers.equals(vars.getOrDefault(KEY_KAFKA_BOOTSTRAP_SERVERS, defaultBootstrapServers(cluster)))) {
                 log.info("Diff: Kafka bootstrap servers changed");

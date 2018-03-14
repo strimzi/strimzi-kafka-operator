@@ -22,7 +22,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class KafkaCluster extends AbstractCluster {
 
@@ -227,8 +226,7 @@ public class KafkaCluster extends AbstractCluster {
             rollingUpdate = true;
         }
 
-        Map<String, String> vars = container.getEnv().stream().collect(
-                Collectors.toMap(EnvVar::getName, EnvVar::getValue));
+        Map<String, String> vars = containerEnv(container);
 
         if (!zookeeperConnect.equals(vars.getOrDefault(KEY_KAFKA_ZOOKEEPER_CONNECT, DEFAULT_KAFKA_ZOOKEEPER_CONNECT))
                 || defaultReplicationFactor != Integer.parseInt(vars.getOrDefault(KEY_KAFKA_DEFAULT_REPLICATION_FACTOR, String.valueOf(DEFAULT_KAFKA_DEFAULT_REPLICATION_FACTOR)))
