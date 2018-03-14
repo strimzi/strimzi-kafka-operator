@@ -20,8 +20,8 @@ parameters:
   displayName: Name of the cluster
   name: CLUSTER_NAME
   value: my-cluster
-- description: Number of Zookeper cluster nodes which will be deployed (odd number of nodes is recomended)
-  displayName: Number of Zookeper cluster nodes (odd number of nodes is recomended)
+- description: Number of Zookeeper cluster nodes which will be deployed (odd number of nodes is recomended)
+  displayName: Number of Zookeeper cluster nodes (odd number of nodes is recomended)
   name: ZOOKEEPER_NODE_COUNT
   required: true
   value: "1"
