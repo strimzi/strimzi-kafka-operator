@@ -7,17 +7,16 @@ package io.strimzi.controller.cluster.resources;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
-import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.ObjectReference;
-import io.fabric8.openshift.api.model.DeploymentStrategy;
-import io.fabric8.openshift.api.model.DeploymentStrategyBuilder;
 import io.fabric8.openshift.api.model.BinaryBuildSource;
 import io.fabric8.openshift.api.model.BuildConfig;
 import io.fabric8.openshift.api.model.BuildConfigBuilder;
 import io.fabric8.openshift.api.model.BuildTriggerPolicy;
 import io.fabric8.openshift.api.model.DeploymentConfig;
 import io.fabric8.openshift.api.model.DeploymentConfigBuilder;
+import io.fabric8.openshift.api.model.DeploymentStrategy;
+import io.fabric8.openshift.api.model.DeploymentStrategyBuilder;
 import io.fabric8.openshift.api.model.DeploymentTriggerPolicy;
 import io.fabric8.openshift.api.model.DeploymentTriggerPolicyBuilder;
 import io.fabric8.openshift.api.model.ImageChangeTrigger;
@@ -28,7 +27,6 @@ import io.fabric8.openshift.api.model.TagReference;
 
 import java.util.Collections;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class KafkaConnectS2ICluster extends KafkaConnectCluster {
 
@@ -100,8 +98,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
         kafkaConnect.setHealthCheckInitialDelay(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds());
         kafkaConnect.setHealthCheckTimeout(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds());
 
-        Map<String, String> vars = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream().collect(
-                Collectors.toMap(EnvVar::getName, EnvVar::getValue));
+        Map<String, String> vars = containerEnvVars(dep.getSpec().getTemplate().getSpec().getContainers().get(0));
 
         kafkaConnect.setBootstrapServers(vars.getOrDefault(KEY_BOOTSTRAP_SERVERS, DEFAULT_BOOTSTRAP_SERVERS));
         kafkaConnect.setGroupId(vars.getOrDefault(KEY_GROUP_ID, DEFAULT_GROUP_ID));
@@ -148,8 +145,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
             different = true;
         }
 
-        Map<String, String> vars = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream().collect(
-                Collectors.toMap(EnvVar::getName, EnvVar::getValue));
+        Map<String, String> vars = containerEnvVars(dep.getSpec().getTemplate().getSpec().getContainers().get(0));
 
         if (!bootstrapServers.equals(vars.getOrDefault(KEY_BOOTSTRAP_SERVERS, DEFAULT_BOOTSTRAP_SERVERS))
                 || !groupId.equals(vars.getOrDefault(KEY_GROUP_ID, DEFAULT_GROUP_ID))

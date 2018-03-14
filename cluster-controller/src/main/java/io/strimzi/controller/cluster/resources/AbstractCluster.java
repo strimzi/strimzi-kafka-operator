@@ -46,6 +46,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public abstract class AbstractCluster {
 
@@ -576,5 +577,13 @@ public abstract class AbstractCluster {
      */
     protected static EnvVar buildEnvVar(String name, String value) {
         return new EnvVarBuilder().withName(name).withValue(value).build();
+    }
+
+    /**
+     * Gets the given container's environment.
+     */
+    protected static Map<String, String> containerEnvVars(Container container) {
+        return container.getEnv().stream().collect(
+                Collectors.toMap(EnvVar::getName, EnvVar::getValue));
     }
 }

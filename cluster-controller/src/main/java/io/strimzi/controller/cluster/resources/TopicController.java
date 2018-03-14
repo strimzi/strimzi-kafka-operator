@@ -17,7 +17,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Represents the topic controller deployment
@@ -224,8 +223,7 @@ public class TopicController extends AbstractCluster {
             topicController.setHealthCheckInitialDelay(container.getReadinessProbe().getInitialDelaySeconds());
             topicController.setHealthCheckTimeout(container.getReadinessProbe().getTimeoutSeconds());
 
-            Map<String, String> vars = container.getEnv().stream().collect(
-                    Collectors.toMap(EnvVar::getName, EnvVar::getValue));
+            Map<String, String> vars = containerEnvVars(container);
 
             topicController.setKafkaBootstrapServers(vars.getOrDefault(KEY_KAFKA_BOOTSTRAP_SERVERS, defaultBootstrapServers(cluster)));
             topicController.setZookeeperConnect(vars.getOrDefault(KEY_ZOOKEEPER_CONNECT, defaultZookeeperConnect(cluster)));
@@ -258,8 +256,7 @@ public class TopicController extends AbstractCluster {
                 isDifferent = true;
             }
 
-            Map<String, String> vars = container.getEnv().stream().collect(
-                    Collectors.toMap(EnvVar::getName, EnvVar::getValue));
+            Map<String, String> vars = containerEnvVars(container);
 
             if (!kafkaBootstrapServers.equals(vars.getOrDefault(KEY_KAFKA_BOOTSTRAP_SERVERS, defaultBootstrapServers(cluster)))) {
                 log.info("Diff: Kafka bootstrap servers changed");

@@ -7,7 +7,6 @@ package io.strimzi.controller.cluster.resources;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
@@ -22,7 +21,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class ZookeeperCluster extends AbstractCluster {
 
@@ -146,8 +144,7 @@ public class ZookeeperCluster extends AbstractCluster {
         zk.setHealthCheckInitialDelay(ss.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds());
         zk.setHealthCheckInitialDelay(ss.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds());
 
-        Map<String, String> vars = ss.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream().collect(
-                Collectors.toMap(EnvVar::getName, EnvVar::getValue));
+        Map<String, String> vars = containerEnvVars(ss.getSpec().getTemplate().getSpec().getContainers().get(0));
 
         zk.setMetricsEnabled(Boolean.parseBoolean(vars.getOrDefault(KEY_ZOOKEEPER_METRICS_ENABLED, String.valueOf(DEFAULT_ZOOKEEPER_METRICS_ENABLED))));
         if (zk.isMetricsEnabled()) {
@@ -212,8 +209,7 @@ public class ZookeeperCluster extends AbstractCluster {
             rollingUpdate = true;
         }
 
-        Map<String, String> vars = ss.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream().collect(
-                Collectors.toMap(EnvVar::getName, EnvVar::getValue));
+        Map<String, String> vars = containerEnvVars(ss.getSpec().getTemplate().getSpec().getContainers().get(0));
 
         if (isMetricsEnabled != Boolean.parseBoolean(vars.getOrDefault(KEY_ZOOKEEPER_METRICS_ENABLED, String.valueOf(DEFAULT_ZOOKEEPER_METRICS_ENABLED)))) {
             log.info("Diff: Zookeeper metrics enabled/disabled");
@@ -320,8 +316,8 @@ public class ZookeeperCluster extends AbstractCluster {
     @Override
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
-        varList.add(new EnvVarBuilder().withName(KEY_ZOOKEEPER_NODE_COUNT).withValue(Integer.toString(replicas)).build());
-        varList.add(new EnvVarBuilder().withName(KEY_ZOOKEEPER_METRICS_ENABLED).withValue(String.valueOf(isMetricsEnabled)).build());
+        varList.add(buildEnvVar(KEY_ZOOKEEPER_NODE_COUNT, Integer.toString(replicas)));
+        varList.add(buildEnvVar(KEY_ZOOKEEPER_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
 
         return varList;
     }
