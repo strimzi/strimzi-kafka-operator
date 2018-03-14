@@ -223,7 +223,7 @@ public class TopicController extends AbstractCluster {
             topicController.setHealthCheckInitialDelay(container.getReadinessProbe().getInitialDelaySeconds());
             topicController.setHealthCheckTimeout(container.getReadinessProbe().getTimeoutSeconds());
 
-            Map<String, String> vars = containerEnv(container);
+            Map<String, String> vars = containerEnvVars(container);
 
             topicController.setKafkaBootstrapServers(vars.getOrDefault(KEY_KAFKA_BOOTSTRAP_SERVERS, defaultBootstrapServers(cluster)));
             topicController.setZookeeperConnect(vars.getOrDefault(KEY_ZOOKEEPER_CONNECT, defaultZookeeperConnect(cluster)));
@@ -256,7 +256,7 @@ public class TopicController extends AbstractCluster {
                 isDifferent = true;
             }
 
-            Map<String, String> vars = containerEnv(container);
+            Map<String, String> vars = containerEnvVars(container);
 
             if (!kafkaBootstrapServers.equals(vars.getOrDefault(KEY_KAFKA_BOOTSTRAP_SERVERS, defaultBootstrapServers(cluster)))) {
                 log.info("Diff: Kafka bootstrap servers changed");

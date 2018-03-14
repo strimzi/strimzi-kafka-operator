@@ -98,7 +98,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
         kafkaConnect.setHealthCheckInitialDelay(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds());
         kafkaConnect.setHealthCheckTimeout(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds());
 
-        Map<String, String> vars = containerEnv(dep.getSpec().getTemplate().getSpec().getContainers().get(0));
+        Map<String, String> vars = containerEnvVars(dep.getSpec().getTemplate().getSpec().getContainers().get(0));
 
         kafkaConnect.setBootstrapServers(vars.getOrDefault(KEY_BOOTSTRAP_SERVERS, DEFAULT_BOOTSTRAP_SERVERS));
         kafkaConnect.setGroupId(vars.getOrDefault(KEY_GROUP_ID, DEFAULT_GROUP_ID));
@@ -145,7 +145,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
             different = true;
         }
 
-        Map<String, String> vars = containerEnv(dep.getSpec().getTemplate().getSpec().getContainers().get(0));
+        Map<String, String> vars = containerEnvVars(dep.getSpec().getTemplate().getSpec().getContainers().get(0));
 
         if (!bootstrapServers.equals(vars.getOrDefault(KEY_BOOTSTRAP_SERVERS, DEFAULT_BOOTSTRAP_SERVERS))
                 || !groupId.equals(vars.getOrDefault(KEY_GROUP_ID, DEFAULT_GROUP_ID))
