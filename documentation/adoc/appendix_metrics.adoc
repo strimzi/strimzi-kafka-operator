@@ -1,17 +1,11 @@
+[appendix]
 == Metrics
 
-This section describes how it's possible to deploy a Prometheus server for scraping metrics from the Kafka cluster and showing them using a Grafana dashboard. The provided resources for deploying can't be considered production grade; they are used just as an example to show how it's possible to use the metrics feature provided in this project.
+This section describes how to deploy a Prometheus server for scraping metrics from the Kafka cluster and showing them using a Grafana dashboard. The resources provided are examples to show how Kafka metrics can be stored in Prometheus: They are not a recommended configuration, and further support should be available from the Prometheus and Grafana communities.
 
-If you are going to use `minikube` or `minishift` for your Apache Kafka deployment adding Prometheus and Grafana servers, it would be better to increase the default amount of memory available to the virtual machine (i.e. not using the default 2 GB of RAM but 4 GB instead).
-For doing that, you can start the OpenShift cluster by running
+When using `minikube` or `minishift` for your Apache Kafka deployment adding Prometheus and Grafana servers, it would be better to increase the default amount of memory available to the virtual machine (i.e. not using the default 2 GB of RAM but 4 GB instead).
 
-[source]
-minishift start --memory 4GB
-
-In case you want to use Kubernetes instead, you can run
-
-[source]
-minikube start --memory 4096
+Information on how to increase the default amount of memory can be found in the following section <<_installing_kubernetes_and_openshift_cluster>>
 
 === Deploying on OpenShift
 
@@ -31,10 +25,10 @@ where `[namespace]` is the namespace/project where the Apache Kafka cluster was 
 
 After that, it's possible to deploy the Prometheus server in the cluster :
 
-. Create the https://github.com/strimzi/strimzi/blob/master/metrics/prometheus/openshift-template.yaml[provided "prometheus" template] by running
+. Create the https://github.com/strimzi/strimzi/blob/master/metrics/examples/prometheus/openshift-template.yaml[provided "prometheus" template] by running
 +
 [source]
-oc create -f metrics/prometheus/openshift-template.yaml
+oc create -f metrics/examples/prometheus/openshift-template.yaml
 
 . Create a new app using the "prometheus" template:
 +
@@ -43,9 +37,9 @@ oc new-app prometheus
 
 ==== Grafana
 
-A Grafana server is necessary only to get a UI for the Prometheus metrics. You can use the following https://github.com/OpenShiftDemos/grafana-openshift[project] which you need to clone locally.
+A Grafana server is necessary only to get a visualisation of the Prometheus metrics. The following https://github.com/OpenShiftDemos/grafana-openshift[project] can be used for visualisation which you need to clone locally.
 
-From the `grafana-openshift` directory, run
+From the cloned project directory, run
 
 [source]
 chmod +x root/usr/bin/fix-permissions
@@ -73,7 +67,7 @@ In order to have this feature working, it's necessary to provide access to the A
 [source]
 export NAMESPACE=[namespace]
 kubectl create sa prometheus-server
-kubectl create -f metrics/prometheus/cluster-reader.yaml
+kubectl create -f metrics/examples/prometheus/cluster-reader.yaml
 kubectl create clusterrolebinding read-pods-binding --clusterrole=cluster-reader --serviceaccount=${NAMESPACE}:prometheus-server
 
 where `[namespace]` is the namespace/project where the Apache Kafka cluster was deployed.
@@ -81,13 +75,13 @@ where `[namespace]` is the namespace/project where the Apache Kafka cluster was 
 Finally, create the Prometheus service by running
 
 [source]
-kubectl apply -f metrics/prometheus/kubernetes.yaml
+kubectl apply -f metrics/examples/prometheus/kubernetes.yaml
 
 ==== Grafana
 
-A Grafana server is necessary only to get a UI for the Prometheus metrics. You can use the following https://github.com/OpenShiftDemos/grafana-openshift[project] which you need to clone locally.
+A Grafana server is necessary only to get a visualisation of Prometheus metrics. The following https://github.com/OpenShiftDemos/grafana-openshift[project] can be used for visualisation which you need to clone locally.
 
-From the `grafana-openshift` directory, run
+From the cloned project directory, run
 
 [source]
 chmod +x root/usr/bin/fix-permissions
@@ -107,11 +101,11 @@ docker build -t strimzi/grafana:latest .
 Finally you can execute the actual deployment by running
 
 [source]
-kubectl apply -f metrics/grafana/kubernetes.yaml
+kubectl apply -f metrics/examples/grafana/kubernetes.yaml
 
 === Grafana dashboard
 
-As an example and in order to visualize the exported metrics in Grafana, the simple dashboard `kafka-dashboard.json` JSON file is provided.
+As an example and in order to visualize the exported metrics in Grafana, the simple dashboard https://github.com/strimzi/strimzi/blob/master/metrics/examples/grafana/kafka-dashboard.json[`kafka-dashboard.json`] JSON file is provided.
 Following these steps you'll be able to set up the Prometheus data source in Grafana and adding the above dashboard.
 
 NOTE: If your cluster is running using `minikube` or `minishift`, you can use the `port-forward` command for forwarding traffic from the Grafana pod to the host. For example, running `oc port-forward grafana-1-fbl7s 3000:3000` (or using `kubectl` instead of `oc`) you can access the Grafana UI opening your browser and pointing to the `http://localhost:3000`.
@@ -128,10 +122,10 @@ image::grafana_home.png[Grafana home]
 +
 image::grafana_prometheus_data_source.png[Add Prometheus data source]
 
-. From the top left menu, click on "Dashboards" and then "Import" for opening the "Import Dashboard" window where you can import the provided dashboard uploading the JSON file or copying/pastying its content.
+. From the top left menu, click on "Dashboards" and then "Import" for opening the "Import Dashboard" window where you can import the provided https://github.com/strimzi/strimzi/blob/master/metrics/examples/grafana/kafka-dashboard.json[`kafka-dashboard.json`] JSON file or copying/pastying its content.
 +
 image::grafana_import_dashboard.png[Add Grafana dashboard]
 
-. After importing the dashboard you should see it in your Grafan home with first metrics about CPU and JVM memory usage. You can start to use the Kafka cluster, creating topics and exchanging messages in order to see the other metrics like messages in, bytes in/out per topic.
+. After importing the dashboard you should see it in your Grafana home with first metrics about CPU and JVM memory usage. You can start to use the Kafka cluster, creating topics and exchanging messages in order to see the other metrics like messages in, bytes in/out per topic.
 +
 image::grafana_kafka_dashboard.png[Kafka dashboard]
