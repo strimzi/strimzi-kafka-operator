@@ -32,10 +32,13 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
 
     public static final String CREATE = "create";
     public static final String DELETE = "delete";
+    public static final String DEPLOYMENT = "deployment";
+    public static final String STATEFUL_SET = "statefulset";
     private String namespace = defaultNamespace();
 
     protected abstract String cmd();
 
+    @Override
     public K deleteByName(String resourceType, String resourceName) {
         Exec.exec(namespacedCommand(DELETE, resourceType, resourceName));
         return (K) this;
