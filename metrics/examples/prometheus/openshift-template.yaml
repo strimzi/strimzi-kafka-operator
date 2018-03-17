@@ -1,3 +1,6 @@
+# This is not a recommended configuration, and further support should be available
+# from the Prometheus and Grafana communities
+
 apiVersion: v1
 kind: Template
 metadata:

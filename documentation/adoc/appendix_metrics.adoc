@@ -28,7 +28,7 @@ After that, it's possible to deploy the Prometheus server in the cluster :
 . Create the https://github.com/strimzi/strimzi/blob/master/metrics/examples/prometheus/openshift-template.yaml[provided "prometheus" template] by running
 +
 [source]
-oc create -f metrics/examples/prometheus/openshift-template.yaml
+oc create -f https://raw.githubusercontent.com/strimzi/strimzi/master/metrics/examples/prometheus/openshift-template.yaml
 
 . Create a new app using the "prometheus" template:
 +
@@ -67,7 +67,7 @@ In order to have this feature working, it's necessary to provide access to the A
 [source]
 export NAMESPACE=[namespace]
 kubectl create sa prometheus-server
-kubectl create -f metrics/examples/prometheus/cluster-reader.yaml
+kubectl create -f https://raw.githubusercontent.com/strimzi/strimzi/master/metrics/examples/prometheus/cluster-reader.yaml
 kubectl create clusterrolebinding read-pods-binding --clusterrole=cluster-reader --serviceaccount=${NAMESPACE}:prometheus-server
 
 where `[namespace]` is the namespace/project where the Apache Kafka cluster was deployed.
@@ -75,7 +75,7 @@ where `[namespace]` is the namespace/project where the Apache Kafka cluster was 
 Finally, create the Prometheus service by running
 
 [source]
-kubectl apply -f metrics/examples/prometheus/kubernetes.yaml
+kubectl apply -f https://raw.githubusercontent.com/strimzi/strimzi/master/metrics/examples/prometheus/kubernetes.yaml
 
 ==== Grafana
 
@@ -101,7 +101,7 @@ docker build -t strimzi/grafana:latest .
 Finally you can execute the actual deployment by running
 
 [source]
-kubectl apply -f metrics/examples/grafana/kubernetes.yaml
+kubectl apply -f https://raw.githubusercontent.com/strimzi/strimzi/master/metrics/examples/grafana/kubernetes.yaml
 
 === Grafana dashboard
 
