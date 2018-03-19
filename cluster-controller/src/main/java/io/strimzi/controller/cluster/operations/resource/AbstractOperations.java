@@ -154,17 +154,6 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
     }
 
     /**
-     * Asynchronously delete the resource with the given {@code name} in the given {@code namespace},
-     * returning a future for the outcome.
-     * If the resource didn't exist the future completes successfully.
-     * @param namespace The namespace of the resource to delete.
-     * @param name The name of the resource to delete.
-     */
-    public Future<Void> delete(String namespace, String name) {
-        return reconcile(namespace, name, null);
-    }
-
-    /**
      * Synchronously gets the resource with the given {@code name} in the given {@code namespace}.
      * @param namespace The namespace.
      * @param name The name.
