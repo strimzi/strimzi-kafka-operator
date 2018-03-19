@@ -29,6 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
@@ -252,5 +253,35 @@ public class KafkaClusterTest {
         assertThat(jsonString, valueOfCmEquals("KAFKA_DEFAULT_REPLICATION_FACTOR", "2"));
         assertThat(jsonString, valueOfCmEquals("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "5"));
         assertThat(jsonString, valueOfCmEquals("KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", "5"));
+    }
+    @Test
+    @Resources(value = "../examples/templates/cluster-controller", asAdmin = true)
+    @OpenShiftOnly
+    public void testDeployKafkaOnPersistentStorage() {
+        int expectedZKPods = 3;
+        int expectedKafkaPods = 3;
+        Oc oc = (Oc) this.kubeClient;
+        String clusterName = "openshift-my-cluster";
+        oc.newApp("strimzi-persistent", map("CLUSTER_NAME", clusterName));
+        oc.waitForStatefulSet(zookeeperStatefulSetName(clusterName), expectedZKPods);
+        oc.waitForStatefulSet(kafkaStatefulSetName(clusterName), expectedKafkaPods);
+
+        List<String> volumes = oc.list("pvc");
+        assertTrue(volumes.size() == (expectedZKPods + expectedKafkaPods));
+
+        //Checking Persistent volumes for Zookeeper nodes
+        for (int i = 0; i < expectedZKPods; i++) {
+            String volumeName = "data-" + zookeeperStatefulSetName(clusterName) + "-" + i;
+            volumes.contains(volumeName);
+        }
+
+        //Checking Persistent volumes for Kafka nodes
+        for (int i = 0; i < expectedZKPods; i++) {
+            String volumeName = "data-" + kafkaStatefulSetName(clusterName) + "-" + i;
+            volumes.contains(volumeName);
+        }
+        oc.deleteByName("cm", clusterName);
+        oc.waitForResourceDeletion("statefulset", kafkaStatefulSetName(clusterName));
+        oc.waitForResourceDeletion("statefulset", zookeeperStatefulSetName(clusterName));
     }
 }
