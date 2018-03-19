@@ -25,10 +25,10 @@ where `[namespace]` is the namespace/project where the Apache Kafka cluster was 
 
 After that, it's possible to deploy the Prometheus server in the cluster :
 
-. Create the https://github.com/strimzi/strimzi/blob/master/metrics/examples/prometheus/openshift-template.yaml[provided "prometheus" template] by running
+. Create the https://github.com/strimzi/strimzi/blob/master/metrics/examples/prometheus/kubernetes.yaml[provided "prometheus" template] by running
 +
 [source]
-oc create -f https://raw.githubusercontent.com/strimzi/strimzi/master/metrics/examples/prometheus/openshift-template.yaml
+oc create -f https://raw.githubusercontent.com/strimzi/strimzi/master/metrics/examples/prometheus/kubernetes.yaml
 
 . Create a new app using the "prometheus" template:
 +
@@ -37,25 +37,12 @@ oc new-app prometheus
 
 ==== Grafana
 
-A Grafana server is necessary only to get a visualisation of the Prometheus metrics. The following https://github.com/OpenShiftDemos/grafana-openshift[project] can be used for visualisation which you need to clone locally.
+A Grafana server is necessary only to get a visualisation of the Prometheus metrics.
 
-From the cloned project directory, run
-
-[source]
-chmod +x root/usr/bin/fix-permissions
-chmod +x run.sh
-
-to set "execute" permissions on the above scripts and then run
+To deploy the Grafana on OpenShift, the following commands should be executed:
 
 [source]
-oc new-build --binary --name=grafana
-oc start-build grafana --from-dir=. --follow
-
-to start the image building process inside the OpenShift cluster.
-After a while, the grafana image will be available in the internal Docker registry of the OpenShift cluster and the last step is just creating a new application with the provided image.
-
-[source]
-oc new-app grafana
+oc create -f https://raw.githubusercontent.com/strimzi/strimzi/master/metrics/examples/grafana/kubernetes.yaml
 
 === Deploying on Kubernetes
 
@@ -79,26 +66,9 @@ kubectl apply -f https://raw.githubusercontent.com/strimzi/strimzi/master/metric
 
 ==== Grafana
 
-A Grafana server is necessary only to get a visualisation of Prometheus metrics. The following https://github.com/OpenShiftDemos/grafana-openshift[project] can be used for visualisation which you need to clone locally.
+A Grafana server is necessary only to get a visualisation of Prometheus metrics.
 
-From the cloned project directory, run
-
-[source]
-chmod +x root/usr/bin/fix-permissions
-chmod +x run.sh
-
-to set "execute" permissions on the above needed scripts.
-If you are using `minikube` for running the Kubernetes cluster then you have to build the Grafana image inside the cluster itself in order to have it available in the internal Docker registry. To use the Docker environment in `minikube` run
-
-[source]
-eval $(minikube docker-env)
-
-After that it's possible to build the image by running
-
-[source]
-docker build -t strimzi/grafana:latest .
-
-Finally you can execute the actual deployment by running
+To deploy the Grafana on Kubernetes, the following commands should be executed:
 
 [source]
 kubectl apply -f https://raw.githubusercontent.com/strimzi/strimzi/master/metrics/examples/grafana/kubernetes.yaml
