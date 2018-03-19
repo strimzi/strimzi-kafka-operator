@@ -32,12 +32,10 @@ public class PvcOperations extends AbstractOperations<KubernetesClient, Persiste
     }
 
     @Override
-    public Future<Void> create(PersistentVolumeClaim resource) {
-        throw new UnsupportedOperationException(); // should never happen
-    }
-
-    @Override
-    public Future<Void> patch(String namespace, String name, PersistentVolumeClaim patch) {
-        throw new UnsupportedOperationException(); // should never happen
+    public Future<Void> reconcile(String namespace, String name, PersistentVolumeClaim resource) {
+        if (resource != null) {
+            throw new UnsupportedOperationException(); // should never happen
+        }
+        return super.reconcile(namespace, name, resource);
     }
 }
