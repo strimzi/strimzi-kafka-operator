@@ -80,10 +80,14 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
     protected abstract AbstractOperations<C, T, L, D, R> createResourceOperations(Vertx vertx, C mockClient);
 
     @Test
-    public void createWhenExistsIsANop(TestContext context) {
+    public void createWhenExistsIsAPatch(TestContext context) {
+        createWhenExistsIsAPatch(context, true);
+    }
+    public void createWhenExistsIsAPatch(TestContext context, boolean cascade) {
         T resource = resource();
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
+        when(mockResource.cascading(cascade)).thenReturn(mockResource);
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(resource.getMetadata().getName()))).thenReturn(mockResource);
@@ -97,10 +101,11 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         AbstractOperations<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
         Async async = context.async();
-        Future<Void> fut = op.create(resource);
+        Future<Void> fut = op.createOrUpdate(resource);
         fut.setHandler(ar -> {
             assertTrue(ar.succeeded());
             verify(mockResource).get();
+            verify(mockResource).patch(any());
             verify(mockResource, never()).create(any());
             verify(mockResource, never()).createNew();
             verify(mockResource, never()).createOrReplace(any());
@@ -129,7 +134,7 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         AbstractOperations<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
         Async async = context.async();
-        op.create(resource).setHandler(ar -> {
+        op.createOrUpdate(resource).setHandler(ar -> {
             assertTrue(ar.failed());
             assertEquals(ex, ar.cause());
             async.complete();
@@ -154,7 +159,7 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         AbstractOperations<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
         Async async = context.async();
-        op.create(resource).setHandler(ar -> {
+        op.createOrUpdate(resource).setHandler(ar -> {
             assertTrue(ar.succeeded());
             verify(mockResource).get();
             verify(mockNameable).createOrReplace(eq(resource));
@@ -183,7 +188,7 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         AbstractOperations<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
         Async async = context.async();
-        op.create(resource).setHandler(ar -> {
+        op.createOrUpdate(resource).setHandler(ar -> {
             assertTrue(ar.failed());
             assertEquals(ex, ar.cause());
             async.complete();
@@ -194,7 +199,7 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
     public void deleteWhenResourceDoesNotExistIsANop(TestContext context) {
         T resource = resource();
         Resource mockResource = mock(resourceType());
-        when(mockResource.get()).thenReturn(null);
+        when(mockResource.get()).thenReturn(resource);
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(RESOURCE_NAME))).thenReturn(mockResource);
@@ -210,21 +215,17 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         Async async = context.async();
         op.delete(resource.getMetadata().getNamespace(), resource.getMetadata().getName()).setHandler(ar -> {
             assertTrue(ar.succeeded());
-            verify(mockResource).get();
-            verify(mockResource, never()).delete();
-            verify(mockCms, never()).delete();
+            verify(mockResource).delete();
             async.complete();
         });
     }
 
     @Test
-    public void deleteWhenResourceExistsThrows(TestContext context) {
+    public void deleteWhenResourceExistsStillDeletes(TestContext context) {
         T resource = resource();
-        RuntimeException ex = new RuntimeException();
 
         Resource mockResource = mock(resourceType());
-        when(mockResource.get()).thenThrow(ex);
-
+        
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(RESOURCE_NAME))).thenReturn(mockResource);
 
@@ -238,8 +239,8 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
 
         Async async = context.async();
         op.delete(resource.getMetadata().getNamespace(), resource.getMetadata().getName()).setHandler(ar -> {
-            assertTrue(ar.failed());
-            assertEquals(ex, ar.cause());
+            assertTrue(ar.succeeded());
+            verify(mockResource).delete();
             async.complete();
         });
     }
@@ -264,7 +265,6 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         Async async = context.async();
         op.delete(resource.getMetadata().getNamespace(), resource.getMetadata().getName()).setHandler(ar -> {
             assertTrue(ar.succeeded());
-            verify(mockResource).get();
             verify(mockResource).delete();
             async.complete();
         });

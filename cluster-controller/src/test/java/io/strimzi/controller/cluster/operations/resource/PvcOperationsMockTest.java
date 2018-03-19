@@ -46,8 +46,8 @@ public class PvcOperationsMockTest extends ResourceOperationsMockTest<Kubernetes
 
     @Override
     @Test(expected = UnsupportedOperationException.class)
-    public void createWhenExistsIsANop(TestContext context) {
-        super.createWhenExistsIsANop(context);
+    public void createWhenExistsIsAPatch(TestContext context) {
+        super.createWhenExistsIsAPatch(context);
     }
 
     @Override

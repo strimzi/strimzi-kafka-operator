@@ -40,7 +40,7 @@ public class PodOperationsMockTest extends ResourceOperationsMockTest<Kubernetes
         context.assertEquals(emptyList(), pr.list(NAMESPACE, Labels.EMPTY));
 
         Async async = context.async(1);
-        pr.create(resource()).setHandler(createResult -> {
+        pr.createOrUpdate(resource()).setHandler(createResult -> {
             context.assertTrue(createResult.succeeded());
             context.assertEquals(singletonList(RESOURCE_NAME), pr.list(NAMESPACE, Labels.EMPTY).stream()
                         .map(p -> p.getMetadata().getName())

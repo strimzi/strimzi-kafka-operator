@@ -170,11 +170,11 @@ public class KafkaClusterOperationsTest {
         String clusterCmNamespace = clusterCm.getMetadata().getNamespace();
         when(mockCmOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
-        when(mockServiceOps.create(serviceCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockServiceOps.createOrUpdate(serviceCaptor.capture())).thenReturn(Future.succeededFuture());
         ArgumentCaptor<StatefulSet> ssCaptor = ArgumentCaptor.forClass(StatefulSet.class);
-        when(mockSsOps.create(ssCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockSsOps.createOrUpdate(ssCaptor.capture())).thenReturn(Future.succeededFuture());
         ArgumentCaptor<Deployment> depCaptor = ArgumentCaptor.forClass(Deployment.class);
-        when(mockDepOps.create(depCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockDepOps.createOrUpdate(depCaptor.capture())).thenReturn(Future.succeededFuture());
 
         when(mockSsOps.readiness(any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockPodOps.readiness(any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
@@ -184,7 +184,7 @@ public class KafkaClusterOperationsTest {
         ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromConfigMap(clusterCm);
         TopicController topicController = TopicController.fromConfigMap(clusterCm);
         ArgumentCaptor<ConfigMap> metricsCaptor = ArgumentCaptor.forClass(ConfigMap.class);
-        when(mockCmOps.create(metricsCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockCmOps.createOrUpdate(metricsCaptor.capture())).thenReturn(Future.succeededFuture());
 
 
         KafkaClusterOperations ops = new KafkaClusterOperations(vertx, openShift,
@@ -627,7 +627,7 @@ public class KafkaClusterOperationsTest {
             }
 
             // No metrics config  => no CMs created
-            verify(mockCmOps, never()).create(any());
+            verify(mockCmOps, never()).createOrUpdate(any());
             verifyNoMoreInteractions(mockPvcOps);
             async.complete();
         });

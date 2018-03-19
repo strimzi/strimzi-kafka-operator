@@ -64,10 +64,10 @@ public class KafkaConnectClusterOperationsTest {
         when(mockCmOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
 
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
-        when(mockServiceOps.create(serviceCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockServiceOps.createOrUpdate(serviceCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<Deployment> dcCaptor = ArgumentCaptor.forClass(Deployment.class);
-        when(mockDcOps.create(dcCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.createOrUpdate(dcCaptor.capture())).thenReturn(Future.succeededFuture());
 
         KafkaConnectClusterOperations ops = new KafkaConnectClusterOperations(vertx, true,
                 mockCmOps, mockDcOps, mockServiceOps);

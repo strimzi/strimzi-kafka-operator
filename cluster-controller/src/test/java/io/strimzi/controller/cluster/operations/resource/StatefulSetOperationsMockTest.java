@@ -13,6 +13,8 @@ import io.fabric8.kubernetes.client.dsl.AppsAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.vertx.core.Vertx;
+import io.vertx.ext.unit.TestContext;
+import org.junit.Test;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -44,5 +46,11 @@ public class StatefulSetOperationsMockTest extends ResourceOperationsMockTest<Ku
     @Override
     protected StatefulSetOperations createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
         return new StatefulSetOperations(vertx, mockClient);
+    }
+
+    @Override
+    @Test
+    public void createWhenExistsIsAPatch(TestContext context) {
+        createWhenExistsIsAPatch(context, false);
     }
 }
