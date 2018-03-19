@@ -411,19 +411,26 @@ public class KafkaClusterTest {
 
     @Test
     @KafkaCluster(name = "my-cluster", kafkaNodes = 1)
-    public void testDeleteDeployments(){
+    public void testDeleteTopicControllerDeployment() {
         // kafka cluster already deployed via annotation
         String clusterName = "my-cluster";
         String topicControllerName = topicControllerDeploymentName(clusterName);
-        String clusterControllerName = "strimzi-cluster-controller";
-        LOGGER.info("Running deleteDeployments with cluster {}", clusterName);
-
+        LOGGER.info("Running deleteTopicControllerDeployment with cluster {}", clusterName);
 
         kubeClient.deleteByName(DEPLOYMENT, topicControllerName);
         kubeClient.waitForResourceDeletion(DEPLOYMENT, topicControllerName);
 
         // wait for reconciliation and check that deployment was recovered
         kubeClient.waitForDeployment(topicControllerName);
+    }
+
+    @Test
+    @KafkaCluster(name = "my-cluster", kafkaNodes = 1)
+    public void testDeleteClusterControllerDeployment() {
+        // kafka cluster already deployed via annotation
+        String clusterName = "my-cluster";
+        String clusterControllerName = "strimzi-cluster-controller";
+        LOGGER.info("Running deleteClusterControllerDeployment with cluster {}", clusterName);
 
         kubeClient.deleteByName(DEPLOYMENT, clusterControllerName);
         kubeClient.waitForResourceDeletion(DEPLOYMENT, clusterControllerName);
@@ -434,24 +441,34 @@ public class KafkaClusterTest {
 
     @Test
     @KafkaCluster(name = "my-cluster", kafkaNodes = 1)
-    public void testDeleteStatefulSets(){
+    public void testDeleteKafkaStatefulSet() {
         // kafka cluster already deployed via annotation
         String clusterName = "my-cluster";
         String kafkaStatefulSetName = kafkaStatefulSetName(clusterName);
-        String zookeeperStatefulSetName = zookeeperStatefulSetName(clusterName);
-        LOGGER.info("Running deleteStatefulSets with cluster {}", clusterName);
+
+        LOGGER.info("Running deleteKafkaStatefulSet with cluster {}", clusterName);
 
         kubeClient.deleteByName(STATEFUL_SET, kafkaStatefulSetName);
         kubeClient.waitForResourceDeletion(STATEFUL_SET, kafkaStatefulSetName);
 
         // wait for reconciliation and check that stateful set was recovered
-        kubeClient.waitForDeployment(kafkaStatefulSetName);
+        kubeClient.waitForStatefulSet(kafkaStatefulSetName, 1);
+    }
+
+    @Test
+    @KafkaCluster(name = "my-cluster", kafkaNodes = 1, zkNodes = 1)
+    public void testDeleteZookeeperStatefulSet() {
+        // kafka cluster already deployed via annotation
+        String clusterName = "my-cluster";
+        String zookeeperStatefulSetName = zookeeperStatefulSetName(clusterName);
+
+        LOGGER.info("Running deleteZookeeperStatefulSet with cluster {}", clusterName);
 
         kubeClient.deleteByName(STATEFUL_SET, zookeeperStatefulSetName);
         kubeClient.waitForResourceDeletion(STATEFUL_SET, zookeeperStatefulSetName);
 
         // wait for reconciliation and check that stateful set was recovered
-        kubeClient.waitForDeployment(zookeeperStatefulSetName);
+        kubeClient.waitForStatefulSet(zookeeperStatefulSetName, 1);
     }
 
     private String getValueFromJson(String json, String jsonPath) {
