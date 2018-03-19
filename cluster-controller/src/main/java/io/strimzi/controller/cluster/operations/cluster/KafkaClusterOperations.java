@@ -455,7 +455,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
         private Future<Void> patchService(KafkaCluster kafka, String namespace, ClusterDiffResult diff) {
             if (diff.isDifferent()) {
-                return serviceOperations.patch(namespace, kafka.getName(), kafka.patchService(serviceOperations.get(namespace, kafka.getName())));
+                return serviceOperations.reconcile(namespace, kafka.getName(), kafka.patchService(serviceOperations.get(namespace, kafka.getName())));
             } else {
                 return Future.succeededFuture();
             }
@@ -463,7 +463,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
         private Future<Void> patchHeadlessService(KafkaCluster kafka, String namespace, ClusterDiffResult diff) {
             if (diff.isDifferent()) {
-                return serviceOperations.patch(namespace, kafka.getHeadlessName(),
+                return serviceOperations.reconcile(namespace, kafka.getHeadlessName(),
                         kafka.patchHeadlessService(serviceOperations.get(namespace, kafka.getHeadlessName())));
             } else {
                 return Future.succeededFuture();
@@ -472,7 +472,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
         private Future<Void> patchStatefulSet(KafkaCluster kafka, String namespace, ClusterDiffResult diff) {
             if (diff.isDifferent()) {
-                return statefulSetOperations.patch(namespace, kafka.getName(), false,
+                return statefulSetOperations.reconcile(namespace, kafka.getName(),
                         kafka.patchStatefulSet(statefulSetOperations.get(namespace, kafka.getName())));
             } else {
                 return Future.succeededFuture();
@@ -481,7 +481,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
         private Future<Void> patchMetricsConfigMap(KafkaCluster kafka, String namespace, ClusterDiffResult diff) {
             if (diff.isMetricsChanged()) {
-                return configMapOperations.patch(namespace, kafka.getMetricsConfigName(),
+                return configMapOperations.reconcile(namespace, kafka.getMetricsConfigName(),
                         kafka.patchMetricsConfigMap(configMapOperations.get(namespace, kafka.getMetricsConfigName())));
             } else {
                 return Future.succeededFuture();
@@ -549,7 +549,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
         private Future<Void> patchService(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
             if (diff.isDifferent()) {
-                return serviceOperations.patch(namespace, zk.getName(),
+                return serviceOperations.reconcile(namespace, zk.getName(),
                         zk.patchService(serviceOperations.get(namespace, zk.getName())));
             } else {
                 return Future.succeededFuture();
@@ -558,7 +558,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
         private Future<Void> patchHeadlessService(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
             if (diff.isDifferent()) {
-                return serviceOperations.patch(namespace, zk.getHeadlessName(),
+                return serviceOperations.reconcile(namespace, zk.getHeadlessName(),
                         zk.patchHeadlessService(serviceOperations.get(namespace, zk.getHeadlessName())));
             } else {
                 return Future.succeededFuture();
@@ -567,7 +567,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
         private Future<Void> patchStatefulSet(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
             if (diff.isDifferent()) {
-                return statefulSetOperations.patch(namespace, zk.getName(), false,
+                return statefulSetOperations.reconcile(namespace, zk.getName(),
                         zk.patchStatefulSet(statefulSetOperations.get(namespace, zk.getName())));
             } else {
                 return Future.succeededFuture();
@@ -576,7 +576,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
         private Future<Void> patchMetricsConfigMap(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
             if (diff.isMetricsChanged()) {
-                return configMapOperations.patch(namespace, zk.getMetricsConfigName(),
+                return configMapOperations.reconcile(namespace, zk.getMetricsConfigName(),
                         zk.patchMetricsConfigMap(configMapOperations.get(namespace, zk.getMetricsConfigName())));
             } else {
                 return Future.succeededFuture();
@@ -675,7 +675,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
         private Future<Void> patchDeployment(TopicController topicController, String namespace, ClusterDiffResult diff) {
             if (diff.isDifferent()) {
-                return deploymentOperations.patch(namespace, topicController.getName(),
+                return deploymentOperations.reconcile(namespace, topicController.getName(),
                         topicController.patchDeployment(deploymentOperations.get(namespace, topicController.getName())));
             } else {
                 return Future.succeededFuture();

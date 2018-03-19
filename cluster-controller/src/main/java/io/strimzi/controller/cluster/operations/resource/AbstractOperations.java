@@ -165,47 +165,6 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
     }
 
     /**
-     * Asynchronously patch the resource with the given {@code name} in the given {@code namespace}
-     * to reflect the state given in the {@code patch}, returning a future for the outcome.
-     * The patch cascades to related resources.
-     * @param namespace The namespace of the resource to patch.
-     * @param name The name of the resource to patch.
-     * @param patch The desired state of the resource.
-     */
-    public Future<Void> patch(String namespace, String name, T patch) {
-        return reconcile(namespace, name, patch);
-    }
-
-    /**
-     * Asynchronously patch the resource with the given {@code name} in the given {@code namespace}
-     * to reflect the state given in the {@code patch}, returning a future for the outcome.
-     * @param namespace The namespace of the resource to patch.
-     * @param name The name of the resource to patch.
-     * @param cascading If the patch applies to the related resource in cascade.
-     * @param patch The desired state of the resource.
-     */
-    public Future<Void> patch(String namespace, String name, boolean cascading, T patch) {
-        // We can't delegate this one to reconcile because of cascading.
-        Future<Void> fut = Future.future();
-        vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
-            future -> {
-                try {
-                    log.info("Patching {} resource {} in namespace {} with {}", resourceKind, name, namespace, patch);
-                    operation().inNamespace(namespace).withName(name).cascading(cascading).patch(patch);
-                    log.info("{} {} in namespace {} has been patched", resourceKind, name, namespace);
-                    future.complete();
-                } catch (Exception e) {
-                    log.error("Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
-                    future.fail(e);
-                }
-            },
-            true,
-            fut.completer()
-        );
-        return fut;
-    }
-
-    /**
      * Synchronously gets the resource with the given {@code name} in the given {@code namespace}.
      * @param namespace The namespace.
      * @param name The name.
