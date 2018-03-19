@@ -30,11 +30,6 @@ After that, it's possible to deploy the Prometheus server in the cluster :
 [source]
 oc create -f https://raw.githubusercontent.com/strimzi/strimzi/master/metrics/examples/prometheus/kubernetes.yaml
 
-. Create a new app using the "prometheus" template:
-+
-[source]
-oc new-app prometheus
-
 ==== Grafana
 
 A Grafana server is necessary only to get a visualisation of the Prometheus metrics.
