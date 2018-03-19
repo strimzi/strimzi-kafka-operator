@@ -71,16 +71,16 @@ public class KafkaConnectS2IClusterOperationsTest {
         when(mockCmOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
 
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
-        when(mockServiceOps.create(serviceCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockServiceOps.createOrUpdate(serviceCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<DeploymentConfig> dcCaptor = ArgumentCaptor.forClass(DeploymentConfig.class);
-        when(mockDcOps.create(dcCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.createOrUpdate(dcCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<ImageStream> isCaptor = ArgumentCaptor.forClass(ImageStream.class);
-        when(mockIsOps.create(isCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockIsOps.createOrUpdate(isCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<BuildConfig> bcCaptor = ArgumentCaptor.forClass(BuildConfig.class);
-        when(mockBcOps.create(bcCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockBcOps.createOrUpdate(bcCaptor.capture())).thenReturn(Future.succeededFuture());
 
         KafkaConnectS2IClusterOperations ops = new KafkaConnectS2IClusterOperations(vertx, true,
                 mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps);
