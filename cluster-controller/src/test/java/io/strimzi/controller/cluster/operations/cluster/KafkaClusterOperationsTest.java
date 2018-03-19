@@ -524,13 +524,13 @@ public class KafkaClusterOperationsTest {
         doAnswer(invocation -> {
             metricsCms.add(invocation.getArgument(1));
             return Future.succeededFuture();
-        }).when(mockCmOps).patch(eq(clusterCmNamespace), anyString(), any());
+        }).when(mockCmOps).reconcile(eq(clusterCmNamespace), anyString(), any());
 
         // Mock Service patch (both service and headless service
         ArgumentCaptor<String> patchedServicesCaptor = ArgumentCaptor.forClass(String.class);
-        when(mockServiceOps.patch(eq(clusterCmNamespace), patchedServicesCaptor.capture(), any())).thenReturn(Future.succeededFuture());
+        when(mockServiceOps.reconcile(eq(clusterCmNamespace), patchedServicesCaptor.capture(), any())).thenReturn(Future.succeededFuture());
         // Mock StatefulSet patch
-        when(mockSsOps.patch(anyString(), anyString(), anyBoolean(), any())).thenReturn(Future.succeededFuture());
+        when(mockSsOps.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
         // Mock StatefulSet rollingUpdate
         Set<String> rollingRestarts = set();
         doAnswer(invocation -> {
@@ -551,7 +551,7 @@ public class KafkaClusterOperationsTest {
 
         // Mock Deployment patch
         ArgumentCaptor<String> depCaptor = ArgumentCaptor.forClass(String.class);
-        when(mockDepOps.patch(anyString(), depCaptor.capture(), any())).thenReturn(Future.succeededFuture());
+        when(mockDepOps.reconcile(anyString(), depCaptor.capture(), any())).thenReturn(Future.succeededFuture());
 
         KafkaClusterOperations ops = new KafkaClusterOperations(vertx, openShift,
                 ClusterControllerConfig.DEFAULT_OPERATION_TIMEOUT_MS,

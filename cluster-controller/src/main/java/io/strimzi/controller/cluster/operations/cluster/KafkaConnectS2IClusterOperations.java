@@ -213,7 +213,7 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
 
         private Future<Void> patchService(KafkaConnectS2ICluster connect, String namespace, ClusterDiffResult diff) {
             if (diff.isDifferent()) {
-                return serviceOperations.patch(namespace, connect.getName(),
+                return serviceOperations.reconcile(namespace, connect.getName(),
                         connect.patchService(serviceOperations.get(namespace, connect.getName())));
             } else {
                 return Future.succeededFuture();
@@ -222,7 +222,7 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
 
         private Future<Void> patchDeploymentConfig(KafkaConnectS2ICluster connect, String namespace, ClusterDiffResult diff) {
             if (diff.isDifferent()) {
-                return deploymentConfigOperations.patch(namespace, connect.getName(),
+                return deploymentConfigOperations.reconcile(namespace, connect.getName(),
                         connect.patchDeploymentConfig(deploymentConfigOperations.get(namespace, connect.getName())));
             } else {
                 return Future.succeededFuture();
@@ -231,7 +231,7 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
 
         private Future<Void> patchBuildConfig(KafkaConnectS2ICluster connect, String namespace, ClusterDiffResult diff) {
             if (diff.isDifferent()) {
-                return buildConfigOperations.patch(namespace, connect.getName(),
+                return buildConfigOperations.reconcile(namespace, connect.getName(),
                         connect.patchBuildConfig(buildConfigOperations.get(namespace, connect.getName())));
             } else {
                 return Future.succeededFuture();
@@ -240,7 +240,7 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
 
         private Future<Void> patchSourceImageStream(KafkaConnectS2ICluster connect, String namespace, ClusterDiffResult diff) {
             if (diff.isDifferent()) {
-                return imagesStreamOperations.patch(namespace, connect.getSourceImageStreamName(),
+                return imagesStreamOperations.reconcile(namespace, connect.getSourceImageStreamName(),
                         connect.patchSourceImageStream(imagesStreamOperations.get(namespace, connect.getSourceImageStreamName())));
             } else {
                 return Future.succeededFuture();
@@ -249,7 +249,7 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
 
         private Future<Void> patchTargetImageStream(KafkaConnectS2ICluster connect, String namespace, ClusterDiffResult diff) {
             if (diff.isDifferent()) {
-                return imagesStreamOperations.patch(namespace, connect.getName(),
+                return imagesStreamOperations.reconcile(namespace, connect.getName(),
                         connect.patchTargetImageStream(imagesStreamOperations.get(namespace, connect.getName())));
             } else {
                 return Future.succeededFuture();

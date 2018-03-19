@@ -162,7 +162,7 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
 
     private Future<Void> patchService(KafkaConnectCluster connect, String namespace, ClusterDiffResult diff) {
         if (diff.isDifferent()) {
-            return serviceOperations.patch(namespace, connect.getName(),
+            return serviceOperations.reconcile(namespace, connect.getName(),
                 connect.patchService(serviceOperations.get(namespace, connect.getName())));
         } else {
             return Future.succeededFuture();
@@ -171,7 +171,7 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
 
     private Future<Void> patchDeployment(KafkaConnectCluster connect, String namespace, ClusterDiffResult diff) {
         if (diff.isDifferent()) {
-            return deploymentOperations.patch(namespace, connect.getName(),
+            return deploymentOperations.reconcile(namespace, connect.getName(),
                     connect.patchDeployment(deploymentOperations.get(namespace, connect.getName())));
         } else {
             return Future.succeededFuture();
