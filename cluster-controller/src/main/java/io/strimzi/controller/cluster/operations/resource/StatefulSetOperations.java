@@ -134,4 +134,22 @@ public class StatefulSetOperations extends AbstractScalableOperations<Kubernetes
             }
         }
     }
+
+    /**
+     * Overridden to not cascade to dependent resources (e.g. pods).
+     *
+     * {@inheritDoc}
+     */
+    @Override
+    protected void internalPatch(String namespace, String name, StatefulSet desired, Future<Void> future) {
+        try {
+            log.info("Patching {} resource {} in namespace {} with {}", resourceKind, name, namespace, desired);
+            operation().inNamespace(namespace).withName(name).cascading(false).patch(desired);
+            log.info("{} {} in namespace {} has been patched", resourceKind, name, namespace);
+            future.complete();
+        } catch (Exception e) {
+            log.error("Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
+            future.fail(e);
+        }
+    }
 }
