@@ -91,11 +91,11 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
         public Future<?> composite(String namespace, ClusterOperation<KafkaConnectS2ICluster> clusterOp) {
             KafkaConnectS2ICluster connect = clusterOp.cluster();
             List<Future> result = new ArrayList<>(5);
-            result.add(serviceOperations.create(connect.generateService()));
-            result.add(deploymentConfigOperations.create(connect.generateDeploymentConfig()));
-            result.add(imagesStreamOperations.create(connect.generateSourceImageStream()));
-            result.add(imagesStreamOperations.create(connect.generateTargetImageStream()));
-            result.add(buildConfigOperations.create(connect.generateBuildConfig()));
+            result.add(serviceOperations.createOrUpdate(connect.generateService()));
+            result.add(deploymentConfigOperations.createOrUpdate(connect.generateDeploymentConfig()));
+            result.add(imagesStreamOperations.createOrUpdate(connect.generateSourceImageStream()));
+            result.add(imagesStreamOperations.createOrUpdate(connect.generateTargetImageStream()));
+            result.add(buildConfigOperations.createOrUpdate(connect.generateBuildConfig()));
 
             return CompositeFuture.join(result);
         }

@@ -127,14 +127,14 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
             // start creating configMap operation only if metrics are enabled,
             // otherwise the future is already complete (for the "join")
             if (kafka.isMetricsEnabled()) {
-                result.add(configMapOperations.create(kafka.generateMetricsConfigMap()));
+                result.add(configMapOperations.createOrUpdate(kafka.generateMetricsConfigMap()));
             }
 
-            result.add(serviceOperations.create(kafka.generateService()));
+            result.add(serviceOperations.createOrUpdate(kafka.generateService()));
 
-            result.add(serviceOperations.create(kafka.generateHeadlessService()));
+            result.add(serviceOperations.createOrUpdate(kafka.generateHeadlessService()));
 
-            result.add(statefulSetOperations.create(kafka.generateStatefulSet(isOpenShift)));
+            result.add(statefulSetOperations.createOrUpdate(kafka.generateStatefulSet(isOpenShift)));
 
             CompositeFuture
                 .join(result)
@@ -188,14 +188,14 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
             List<Future> createResult = new ArrayList<>(4);
 
             if (zk.isMetricsEnabled()) {
-                createResult.add(configMapOperations.create(zk.generateMetricsConfigMap()));
+                createResult.add(configMapOperations.createOrUpdate(zk.generateMetricsConfigMap()));
             }
 
-            createResult.add(serviceOperations.create(zk.generateService()));
+            createResult.add(serviceOperations.createOrUpdate(zk.generateService()));
 
-            createResult.add(serviceOperations.create(zk.generateHeadlessService()));
+            createResult.add(serviceOperations.createOrUpdate(zk.generateHeadlessService()));
 
-            createResult.add(statefulSetOperations.create(zk.generateStatefulSet(isOpenShift)));
+            createResult.add(statefulSetOperations.createOrUpdate(zk.generateStatefulSet(isOpenShift)));
 
             CompositeFuture
                 .join(createResult)
@@ -245,7 +245,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
         public Future<?> composite(String namespace, ClusterOperation<TopicController> clusterOp) {
 
             TopicController topicController = clusterOp.cluster();
-            return deploymentOperations.create(topicController.generateDeployment());
+            return deploymentOperations.createOrUpdate(topicController.generateDeployment());
         }
     };
 
@@ -647,7 +647,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
                 // that's the case we are moving from no topic controller deployed to an updated cluster ConfigMap
                 // which contains topic controller configuration for deploying it (so there is no Deployment to patch
                 // but to create)
-                fut = deploymentOperations.create(topicController.generateDeployment());
+                fut = deploymentOperations.createOrUpdate(topicController.generateDeployment());
             }
 
             return fut;
