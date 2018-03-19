@@ -420,7 +420,7 @@ public class KafkaClusterTest {
         kubeClient.deleteByName(DEPLOYMENT, topicControllerName);
         kubeClient.waitForResourceDeletion(DEPLOYMENT, topicControllerName);
 
-        // wait for reconciliation and check that deployment was recovered
+        LOGGER.info("Waiting to recovery {}", topicControllerName);
         kubeClient.waitForDeployment(topicControllerName);
     }
 
@@ -435,7 +435,7 @@ public class KafkaClusterTest {
         kubeClient.deleteByName(DEPLOYMENT, clusterControllerName);
         kubeClient.waitForResourceDeletion(DEPLOYMENT, clusterControllerName);
 
-        // wait for reconciliation and check that deployment was recovered
+        LOGGER.info("Waiting to recovery {}", clusterControllerName);
         kubeClient.waitForDeployment(clusterControllerName);
     }
 
@@ -451,7 +451,7 @@ public class KafkaClusterTest {
         kubeClient.deleteByName(STATEFUL_SET, kafkaStatefulSetName);
         kubeClient.waitForResourceDeletion(STATEFUL_SET, kafkaStatefulSetName);
 
-        // wait for reconciliation and check that stateful set was recovered
+        LOGGER.info("Waiting to recovery {}", kafkaStatefulSetName);
         kubeClient.waitForStatefulSet(kafkaStatefulSetName, 1);
     }
 
@@ -467,7 +467,7 @@ public class KafkaClusterTest {
         kubeClient.deleteByName(STATEFUL_SET, zookeeperStatefulSetName);
         kubeClient.waitForResourceDeletion(STATEFUL_SET, zookeeperStatefulSetName);
 
-        // wait for reconciliation and check that stateful set was recovered
+        LOGGER.info("Waiting to recovery {}", zookeeperStatefulSetName);
         kubeClient.waitForStatefulSet(zookeeperStatefulSetName, 1);
     }
 
