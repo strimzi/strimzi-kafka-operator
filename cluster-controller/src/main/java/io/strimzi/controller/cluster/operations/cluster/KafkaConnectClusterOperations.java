@@ -93,9 +93,9 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
             KafkaConnectCluster connect = clusterOp.cluster();
             List<Future> result = new ArrayList<>(3);
 
-            result.add(serviceOperations.delete(namespace, connect.getName()));
+            result.add(serviceOperations.reconcile(namespace, connect.getName(), null));
 
-            result.add(deploymentOperations.delete(namespace, connect.getName()));
+            result.add(deploymentOperations.reconcile(namespace, connect.getName(), null));
 
             return CompositeFuture.join(result);
         }

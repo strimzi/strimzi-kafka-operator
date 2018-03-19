@@ -268,18 +268,18 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
             List<Future> result = new ArrayList<>(4 + (deleteClaims ? kafka.getReplicas() : 0));
 
             if (kafka.isMetricsEnabled()) {
-                result.add(configMapOperations.delete(namespace, kafka.getMetricsConfigName()));
+                result.add(configMapOperations.reconcile(namespace, kafka.getMetricsConfigName(), null));
             }
 
-            result.add(serviceOperations.delete(namespace, kafka.getName()));
+            result.add(serviceOperations.reconcile(namespace, kafka.getName(), null));
 
-            result.add(serviceOperations.delete(namespace, kafka.getHeadlessName()));
+            result.add(serviceOperations.reconcile(namespace, kafka.getHeadlessName(), null));
 
-            result.add(statefulSetOperations.delete(namespace, kafka.getName()));
+            result.add(statefulSetOperations.reconcile(namespace, kafka.getName(), null));
 
             if (deleteClaims) {
                 for (int i = 0; i < kafka.getReplicas(); i++) {
-                    result.add(pvcOperations.delete(namespace, kafka.getPersistentVolumeClaimName(i)));
+                    result.add(pvcOperations.reconcile(namespace, kafka.getPersistentVolumeClaimName(i), null));
                 }
             }
 
@@ -316,19 +316,19 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
             // start deleting configMap operation only if metrics are enabled,
             // otherwise the future is already complete (for the "join")
             if (zk.isMetricsEnabled()) {
-                result.add(configMapOperations.delete(namespace, zk.getMetricsConfigName()));
+                result.add(configMapOperations.reconcile(namespace, zk.getMetricsConfigName(), null));
             }
 
-            result.add(serviceOperations.delete(namespace, zk.getName()));
+            result.add(serviceOperations.reconcile(namespace, zk.getName(), null));
 
-            result.add(serviceOperations.delete(namespace, zk.getHeadlessName()));
+            result.add(serviceOperations.reconcile(namespace, zk.getHeadlessName(), null));
 
-            result.add(statefulSetOperations.delete(namespace, zk.getName()));
+            result.add(statefulSetOperations.reconcile(namespace, zk.getName(), null));
 
 
             if (deleteClaims) {
                 for (int i = 0; i < zk.getReplicas(); i++) {
-                    result.add(pvcOperations.delete(namespace, zk.getPersistentVolumeClaimName(i)));
+                    result.add(pvcOperations.reconcile(namespace, zk.getPersistentVolumeClaimName(i), null));
                 }
             }
 
@@ -357,7 +357,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
         @Override
         public Future<?> composite(String namespace, ClusterOperation<TopicController> clusterOp) {
             TopicController topicController = clusterOp.cluster();
-            return deploymentOperations.delete(namespace, topicController.getName());
+            return deploymentOperations.reconcile(namespace, topicController.getName(), null);
         }
 
         @Override

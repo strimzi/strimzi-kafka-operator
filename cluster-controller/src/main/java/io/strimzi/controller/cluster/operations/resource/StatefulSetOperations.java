@@ -59,7 +59,7 @@ public class StatefulSetOperations extends AbstractScalableOperations<Kubernetes
                         Watcher<Pod> watcher = new RollingUpdateWatcher(deleted);
 
                         Watch watch = podOperations.watch(namespace, podName, watcher);
-                        Future fut = podOperations.delete(namespace, podName);
+                        Future fut = podOperations.reconcile(namespace, podName, null);
 
                         // TODO do this async
                         while (!fut.isComplete() || !deleted.isComplete()) {

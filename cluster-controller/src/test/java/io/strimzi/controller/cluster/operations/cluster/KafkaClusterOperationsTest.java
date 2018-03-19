@@ -57,6 +57,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -286,16 +287,16 @@ public class KafkaClusterOperationsTest {
         ArgumentCaptor<String> ssCaptor = ArgumentCaptor.forClass(String.class);
 
         ArgumentCaptor<String> metricsCaptor = ArgumentCaptor.forClass(String.class);
-        when(mockCmOps.delete(eq(clusterCmNamespace), metricsCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockCmOps.reconcile(eq(clusterCmNamespace), metricsCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
 
-        when(mockServiceOps.delete(eq(clusterCmNamespace), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
-        when(mockSsOps.delete(anyString(), ssCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockServiceOps.reconcile(eq(clusterCmNamespace), serviceCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
+        when(mockSsOps.reconcile(anyString(), ssCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> pvcCaptor = ArgumentCaptor.forClass(String.class);
-        when(mockPvcOps.delete(eq(clusterCmNamespace), pvcCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockPvcOps.reconcile(eq(clusterCmNamespace), pvcCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> depCaptor = ArgumentCaptor.forClass(String.class);
-        when(mockDepOps.delete(eq(clusterCmNamespace), depCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockDepOps.reconcile(eq(clusterCmNamespace), depCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
         if (topicController != null) {
             Deployment tcDep = topicController.generateDeployment();
             when(mockDepOps.get(clusterCmNamespace, TopicController.topicControllerName(clusterCmName))).thenReturn(tcDep);
@@ -321,7 +322,7 @@ public class KafkaClusterOperationsTest {
                 metricsNames.add(ZookeeperCluster.zookeeperMetricsName(clusterCmName));
             }
             context.assertEquals(metricsNames, captured(metricsCaptor));
-            verify(mockSsOps).delete(eq(clusterCmNamespace), eq(ZookeeperCluster.zookeeperClusterName(clusterCmName)));
+            verify(mockSsOps).reconcile(eq(clusterCmNamespace), eq(ZookeeperCluster.zookeeperClusterName(clusterCmName)), isNull());
 
             context.assertEquals(set(
                     ZookeeperCluster.zookeeperHeadlessName(clusterCmName),

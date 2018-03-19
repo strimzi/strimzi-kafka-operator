@@ -33,6 +33,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -419,11 +420,11 @@ public class KafkaConnectClusterOperationsTest {
 
         ArgumentCaptor<String> serviceNamespaceCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> serviceNameCaptor = ArgumentCaptor.forClass(String.class);
-        when(mockServiceOps.delete(serviceNamespaceCaptor.capture(), serviceNameCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockServiceOps.reconcile(serviceNamespaceCaptor.capture(), serviceNameCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> dcNamespaceCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> dcNameCaptor = ArgumentCaptor.forClass(String.class);
-        when(mockDcOps.delete(dcNamespaceCaptor.capture(), dcNameCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.reconcile(dcNamespaceCaptor.capture(), dcNameCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
 
         KafkaConnectClusterOperations ops = new KafkaConnectClusterOperations(vertx, true,
                 mockCmOps, mockDcOps, mockServiceOps);
