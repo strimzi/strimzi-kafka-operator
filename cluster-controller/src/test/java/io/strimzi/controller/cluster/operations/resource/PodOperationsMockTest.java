@@ -49,7 +49,7 @@ public class PodOperationsMockTest extends ResourceOperationsMockTest<Kubernetes
             //context.assertNotNull(got);
             //context.assertNotNull(got.getMetadata());
             //context.assertEquals(RESOURCE_NAME, got.getMetadata().getName());
-            context.assertFalse(pr.isPodReady(NAMESPACE, RESOURCE_NAME));
+            context.assertFalse(pr.isReady(NAMESPACE, RESOURCE_NAME));
             /*pr.watch(NAMESPACE, RESOURCE_NAME, new Watcher<Pod>() {
                 @Override
                 public void eventReceived(Action action, Pod resource) {
