@@ -70,7 +70,7 @@ public class StatefulSetOperations extends AbstractScalableOperations<Kubernetes
 
                         watch.close();
 
-                        while (!podOperations.isPodReady(namespace, podName)) {
+                        while (!podOperations.isReady(namespace, podName)) {
                             log.info("Waiting for pod {} to get ready", podName);
                             Thread.sleep(1000);
                         }

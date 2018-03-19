@@ -314,16 +314,17 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         mocker(mockClient, mockCms);
 
         AbstractOperations<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
-
-        Async async = context.async();
-        Future<Void> fut = op.readiness(NAMESPACE, RESOURCE_NAME, 20, 100);
-        fut.setHandler(ar -> {
-            assertTrue(ar.failed());
-            assertThat(ar.cause(), instanceOf(TimeoutException.class));
-            verify(mockResource, atLeastOnce()).get();
-            verify(mockResource, never()).isReady();
-            async.complete();
-        });
+        if (op instanceof AbstractReadyOperations<?, ?, ?, ? ,?>) {
+            Async async = context.async();
+            Future<Void> fut = ((AbstractReadyOperations<?, ?, ?, ? ,?>) op).readiness(NAMESPACE, RESOURCE_NAME, 20, 100);
+            fut.setHandler(ar -> {
+                assertTrue(ar.failed());
+                assertThat(ar.cause(), instanceOf(TimeoutException.class));
+                verify(mockResource, atLeastOnce()).get();
+                verify(mockResource, never()).isReady();
+                async.complete();
+            });
+        }
     }
 
     @Test
@@ -344,14 +345,15 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         mocker(mockClient, mockCms);
 
         AbstractOperations<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
-
-        Async async = context.async();
-        op.readiness(NAMESPACE, RESOURCE_NAME, 20, 100).setHandler(ar -> {
-            assertTrue(ar.failed());
-            assertThat(ar.cause(), instanceOf(TimeoutException.class));
-            verify(mockResource, never()).isReady();
-            async.complete();
-        });
+        if (op instanceof AbstractReadyOperations<?, ?, ?, ? ,?>) {
+            Async async = context.async();
+            ((AbstractReadyOperations<?, ?, ?, ? ,?>) op).readiness(NAMESPACE, RESOURCE_NAME, 20, 100).setHandler(ar -> {
+                assertTrue(ar.failed());
+                assertThat(ar.cause(), instanceOf(TimeoutException.class));
+                verify(mockResource, never()).isReady();
+                async.complete();
+            });
+        }
     }
 
     @Test
@@ -396,17 +398,18 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         mocker(mockClient, mockCms);
 
         AbstractOperations<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
+        if (op instanceof AbstractReadyOperations<?, ?, ?, ? ,?>) {
+            Async async = context.async();
+            ((AbstractReadyOperations<?, ?, ?, ? ,?>) op).readiness(NAMESPACE, RESOURCE_NAME, 20, 5_000).setHandler(ar -> {
+                assertTrue(ar.succeeded());
+                verify(mockResource, times(Readiness.isReadinessApplicable(resource) ? unreadyCount + 1 : 1)).get();
 
-        Async async = context.async();
-        op.readiness(NAMESPACE, RESOURCE_NAME, 20, 5_000).setHandler(ar -> {
-            assertTrue(ar.succeeded());
-            verify(mockResource, times(Readiness.isReadinessApplicable(resource) ? unreadyCount + 1 : 1)).get();
-
-            if (Readiness.isReadinessApplicable(resource)) {
-                verify(mockResource, times(unreadyCount + 1)).isReady();
-            }
-            async.complete();
-        });
+                if (Readiness.isReadinessApplicable(resource)) {
+                    verify(mockResource, times(unreadyCount + 1)).isReady();
+                }
+                async.complete();
+            });
+        }
     }
 
     @Test
@@ -431,15 +434,16 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         mocker(mockClient, mockCms);
 
         AbstractOperations<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
-
-        Async async = context.async();
-        op.readiness(NAMESPACE, RESOURCE_NAME, 20, 100).setHandler(ar -> {
-            assertTrue(ar.failed());
-            assertThat(ar.cause(), instanceOf(TimeoutException.class));
-            verify(mockResource, atLeastOnce()).get();
-            verify(mockResource, atLeastOnce()).isReady();
-            async.complete();
-        });
+        if (op instanceof AbstractReadyOperations<?, ?, ?, ? ,?>) {
+            Async async = context.async();
+            ((AbstractReadyOperations<?, ?, ?, ? ,?>) op).readiness(NAMESPACE, RESOURCE_NAME, 20, 100).setHandler(ar -> {
+                assertTrue(ar.failed());
+                assertThat(ar.cause(), instanceOf(TimeoutException.class));
+                verify(mockResource, atLeastOnce()).get();
+                verify(mockResource, atLeastOnce()).isReady();
+                async.complete();
+            });
+        }
     }
 
     @Test
@@ -466,13 +470,14 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         mocker(mockClient, mockCms);
 
         AbstractOperations<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
-
-        Async async = context.async();
-        op.readiness(NAMESPACE, RESOURCE_NAME, 20, 100).setHandler(ar -> {
-            assertTrue(ar.failed());
-            assertThat(ar.cause(), instanceOf(TimeoutException.class));
-            async.complete();
-        });
+        if (op instanceof AbstractReadyOperations<?, ?, ?, ? ,?>) {
+            Async async = context.async();
+            ((AbstractReadyOperations<?, ?, ?, ? ,?>) op).readiness(NAMESPACE, RESOURCE_NAME, 20, 100).setHandler(ar -> {
+                assertTrue(ar.failed());
+                assertThat(ar.cause(), instanceOf(TimeoutException.class));
+                async.complete();
+            });
+        }
     }
 }
 

@@ -15,7 +15,7 @@ import io.vertx.core.Vertx;
 /**
  * Operations for {@code Endpoint}s.
  */
-public class EndpointOperations extends AbstractOperations<KubernetesClient, Endpoints, EndpointsList, DoneableEndpoints, Resource<Endpoints, DoneableEndpoints>> {
+public class EndpointOperations extends AbstractReadyOperations<KubernetesClient, Endpoints, EndpointsList, DoneableEndpoints, Resource<Endpoints, DoneableEndpoints>> {
     /**
      * Constructor
      * @param vertx The Vertx instance

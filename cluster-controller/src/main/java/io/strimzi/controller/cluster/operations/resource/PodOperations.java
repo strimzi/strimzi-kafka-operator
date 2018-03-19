@@ -15,10 +15,10 @@ import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.vertx.core.Vertx;
 
 /**
- * Operations for {@code Pod}s, which support {@link #isPodReady(String, String)} and
+ * Operations for {@code Pod}s, which support {@link #isReady(String, String)} and
  * {@link #watch(String, String, Watcher)} in addition to the usual operations.
  */
-public class PodOperations extends AbstractOperations<KubernetesClient, Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> {
+public class PodOperations extends AbstractReadyOperations<KubernetesClient, Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> {
     /**
      * Constructor
      * @param vertx The Vertx instance
@@ -31,16 +31,6 @@ public class PodOperations extends AbstractOperations<KubernetesClient, Pod, Pod
     @Override
     protected MixedOperation<Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> operation() {
         return client.pods();
-    }
-
-    /**
-     * Returns whether the pod given by {@code namespace} and {@code name} is ready
-     * @param namespace The namespace.
-     * @param name The name.
-     * @return True if the pod is ready.
-     */
-    public boolean isPodReady(String namespace, String name) {
-        return operation().inNamespace(namespace).withName(name).isReady();
     }
 
     /**
