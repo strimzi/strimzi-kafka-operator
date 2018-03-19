@@ -33,7 +33,7 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
     private static final Logger log = LoggerFactory.getLogger(AbstractOperations.class);
     protected final Vertx vertx;
     protected final C client;
-    private final String resourceKind;
+    protected final String resourceKind;
 
     /**
      * Constructor.
@@ -57,30 +57,100 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
      */
     @SuppressWarnings("unchecked")
     public Future<Void> create(T resource) {
+      return createOrUpdate(resource);
+    }
+
+    /**
+     * Asynchronously create or update the given {@code resource} depending on whether it already exists,
+     * returning a future for the outcome.
+     * If the resource with that name already exists the future completes successfully.
+     * @param resource The resource to create.
+     */
+    public Future<Void> createOrUpdate(T resource) {
+        if (resource == null) {
+            throw new NullPointerException();
+        }
+        return reconcile(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), resource);
+    }
+
+    /**
+     * Asynchronously reconciles the resource with the given namespace and name to match the given
+     * desired resource, returning a future for the result.
+     */
+    public Future<Void> reconcile(String namespace, String name, T desired) {
         Future<Void> fut = Future.future();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
-            future -> {
-                String namespace = resource.getMetadata().getNamespace();
-                String name = resource.getMetadata().getName();
-                if (operation().inNamespace(namespace).withName(name).get() == null) {
-                    try {
-                        log.info("Creating {} {} in namespace {}", resourceKind, name, namespace);
-                        operation().inNamespace(namespace).createOrReplace(resource);
-                        log.info("{} {} in namespace {} has been created", resourceKind, name, namespace);
-                        future.complete();
-                    } catch (Exception e) {
-                        log.error("Caught exception while creating {} {} in namespace {}", resourceKind, name, namespace, e);
-                        future.fail(e);
+                future -> {
+                    if (desired != null) {
+                        if (!namespace.equals(desired.getMetadata().getNamespace())) {
+                            future.fail("Given namespace " + namespace + " incompatible with desired namespace " + desired.getMetadata().getNamespace());
+                        } else if (!name.equals(desired.getMetadata().getName())) {
+                            future.fail("Given name "+ name +" incompatible with desired name " + desired.getMetadata().getName());
+                        } else {
+                            T current = operation().inNamespace(namespace).withName(name).get();
+                            if (current == null) {
+                                internalCreate(namespace, name, desired, future);
+                            } else {
+                                internalPatch(namespace, name, desired, future);
+                            }
+                        }
+                    } else {
+                        // Deletion is desired
+                        internalDelete(namespace, name, future);
                     }
-                } else {
-                    log.warn("{} {} in namespace {} already exists", resourceKind, name, namespace);
-                    future.complete();
-                }
-            },
-            false,
-            fut.completer()
+                },
+                false,
+                fut.completer()
         );
         return fut;
+    }
+
+    /**
+     * Deletes the resource with the given namespace and name
+     * and completes the given future accordingly
+     */
+    protected void internalDelete(String namespace, String name, Future<Void> future) {
+        try {
+            log.info("Deleting {} {} in namespace {}", resourceKind, name, namespace);
+            operation().inNamespace(namespace).withName(name).delete();
+            log.info("{} {} in namespace {} has been deleted", resourceKind, name, namespace);
+            future.complete();
+        } catch (Exception e) {
+            log.error("Caught exception while deleting {} {} in namespace {}", resourceKind, name, namespace, e);
+            future.fail(e);
+        }
+    }
+
+    /**
+     * Patches the resource with the given namespace and name to match the given desired resource
+     * and completes the given future accordingly.
+     */
+    protected void internalPatch(String namespace, String name, T desired, Future<Void> future) {
+        try {
+            log.info("Patching {} resource {} in namespace {} with {}", resourceKind, name, namespace, desired);
+            operation().inNamespace(namespace).withName(name).cascading(true).patch(desired);
+            log.info("{} {} in namespace {} has been patched", resourceKind, name, namespace);
+            future.complete();
+        } catch (Exception e) {
+            log.error("Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
+            future.fail(e);
+        }
+    }
+
+    /**
+     * Creates a resource with the given namespace and name with the given desired state
+     * and completes the given future accordingly.
+     */
+    protected void internalCreate(String namespace, String name, T desired, Future<Void> future) {
+        try {
+            log.info("Creating {} {} in namespace {}", resourceKind, name, namespace);
+            operation().inNamespace(namespace).createOrReplace(desired);
+            log.info("{} {} in namespace {} has been created", resourceKind, name, namespace);
+            future.complete();
+        } catch (Exception e) {
+            log.error("Caught exception while creating {} {} in namespace {}", resourceKind, name, namespace, e);
+            future.fail(e);
+        }
     }
 
     /**
@@ -91,27 +161,7 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
      * @param name The name of the resource to delete.
      */
     public Future<Void> delete(String namespace, String name) {
-        Future<Void> fut = Future.future();
-        vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
-            future -> {
-                if (operation().inNamespace(namespace).withName(name).get() != null) {
-                    try {
-                        log.info("Deleting {} {} in namespace {}", resourceKind, name, namespace);
-                        operation().inNamespace(namespace).withName(name).delete();
-                        log.info("{} {} in namespace {} has been deleted", resourceKind, name, namespace);
-                        future.complete();
-                    } catch (Exception e) {
-                        log.error("Caught exception while deleting {} {} in namespace {}", resourceKind, name, namespace, e);
-                        future.fail(e);
-                    }
-                } else {
-                    log.warn("{} {} in namespace {} doesn't exist, so cannot be deleted", resourceKind, name, namespace);
-                    future.complete();
-                }
-            }, false,
-            fut.completer()
-        );
-        return fut;
+        return reconcile(namespace, name, null);
     }
 
     /**
@@ -123,7 +173,7 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
      * @param patch The desired state of the resource.
      */
     public Future<Void> patch(String namespace, String name, T patch) {
-        return patch(namespace, name, true, patch);
+        return reconcile(namespace, name, patch);
     }
 
     /**
@@ -135,6 +185,7 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
      * @param patch The desired state of the resource.
      */
     public Future<Void> patch(String namespace, String name, boolean cascading, T patch) {
+        // We can't delegate this one to reconcile because of cascading.
         Future<Void> fut = Future.future();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
             future -> {
