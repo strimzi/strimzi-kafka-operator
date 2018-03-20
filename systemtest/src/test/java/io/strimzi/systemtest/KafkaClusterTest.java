@@ -70,6 +70,14 @@ public class KafkaClusterTest {
         return zookeeperStatefulSetName(clusterName) + "-" + podId;
     }
 
+    private static String zookeeperPVCName(String clusterName, int podId) {
+        return "data-" + zookeeperStatefulSetName(clusterName) + "-" + podId;
+    }
+
+    private static String kafkaPVCName(String clusterName, int podId) {
+        return "data-" + kafkaStatefulSetName(clusterName) + "-" + podId;
+    }
+
     @BeforeClass
     public static void waitForCc() {
         // TODO Build this into the annos, or get rid of the annos
@@ -254,34 +262,46 @@ public class KafkaClusterTest {
         assertThat(jsonString, valueOfCmEquals("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "5"));
         assertThat(jsonString, valueOfCmEquals("KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", "5"));
     }
+
     @Test
-    @Resources(value = "../examples/templates/cluster-controller", asAdmin = true)
+    @KafkaCluster(name = "my-cluster-persistent", kafkaNodes = 2, zkNodes = 2, config = {
+        @CmData(key = "kafka-storage", value = "{ \"type\": \"persistent-claim\", \"size\": \"1Gi\", \"delete-claim\": false }"),
+        @CmData(key = "zookeeper-storage", value = "{ \"type\": \"persistent-claim\", \"size\": \"1Gi\", \"delete-claim\": false }"),
+        @CmData(key = "zookeeper-healthcheck-delay", value = "30"),
+        @CmData(key = "zookeeper-healthcheck-timeout", value = "15"),
+        @CmData(key = "kafka-healthcheck-delay", value = "30"),
+        @CmData(key = "kafka-healthcheck-timeout", value = "15"),
+        @CmData(key = "KAFKA_DEFAULT_REPLICATION_FACTOR", value = "2"),
+        @CmData(key = "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", value = "5"),
+        @CmData(key = "KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", value = "5")
+    })
     @OpenShiftOnly
     public void testDeployKafkaOnPersistentStorage() {
-        int expectedZKPods = 3;
-        int expectedKafkaPods = 3;
+        String clusterName = "my-cluster-persistent";
+        int expectedZKPods = 2;
+        int expectedKafkaPods = 2;
         Oc oc = (Oc) this.kubeClient;
-        String clusterName = "openshift-my-cluster";
-        oc.newApp("strimzi-persistent", map("CLUSTER_NAME", clusterName));
-        oc.waitForStatefulSet(zookeeperStatefulSetName(clusterName), expectedZKPods);
-        oc.waitForStatefulSet(kafkaStatefulSetName(clusterName), expectedKafkaPods);
 
-        List<String> volumes = oc.list("pvc");
-        assertTrue(volumes.size() == (expectedZKPods + expectedKafkaPods));
+        List<String> persistentVolumeClaimNames = oc.list("pvc");
+        assertTrue(persistentVolumeClaimNames.size() == (expectedZKPods + expectedKafkaPods));
 
-        //Checking Persistent volumes for Zookeeper nodes
+        //Checking Persistent volume claims for Zookeeper nodes
         for (int i = 0; i < expectedZKPods; i++) {
-            String volumeName = "data-" + zookeeperStatefulSetName(clusterName) + "-" + i;
-            volumes.contains(volumeName);
+            assertTrue(persistentVolumeClaimNames.contains(zookeeperPVCName(clusterName, i)));
         }
 
-        //Checking Persistent volumes for Kafka nodes
+        //Checking Persistent volume claims for Kafka nodes
         for (int i = 0; i < expectedZKPods; i++) {
-            String volumeName = "data-" + kafkaStatefulSetName(clusterName) + "-" + i;
-            volumes.contains(volumeName);
+            assertTrue(persistentVolumeClaimNames.contains(kafkaPVCName(clusterName, i)));
         }
-        oc.deleteByName("cm", clusterName);
-        oc.waitForResourceDeletion("statefulset", kafkaStatefulSetName(clusterName));
-        oc.waitForResourceDeletion("statefulset", zookeeperStatefulSetName(clusterName));
+
+        String configMap = kubeClient.get("cm", clusterName);
+        assertThat(configMap, valueOfCmEquals("zookeeper-healthcheck-delay", "30"));
+        assertThat(configMap, valueOfCmEquals("zookeeper-healthcheck-timeout", "15"));
+        assertThat(configMap, valueOfCmEquals("kafka-healthcheck-delay", "30"));
+        assertThat(configMap, valueOfCmEquals("kafka-healthcheck-timeout", "15"));
+        assertThat(configMap, valueOfCmEquals("KAFKA_DEFAULT_REPLICATION_FACTOR", "2"));
+        assertThat(configMap, valueOfCmEquals("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "5"));
+        assertThat(configMap, valueOfCmEquals("KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", "5"));
     }
 }
