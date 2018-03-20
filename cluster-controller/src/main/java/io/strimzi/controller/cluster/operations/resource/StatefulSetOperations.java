@@ -15,11 +15,15 @@ import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Operations for {@code StatefulSets}s, which supports {@link #rollingUpdate(String, String, Handler)}
@@ -133,6 +137,43 @@ public class StatefulSetOperations extends AbstractScalableOperations<Kubernetes
                 log.info("Kubernetes watcher has been closed!");
             }
         }
+    }
+
+    public String getPodName(StatefulSet desired, int podId) {
+        return desired.getMetadata().getName() + "-" + podId;
+    }
+
+    @Override
+    protected void internalCreate(String namespace, String name, StatefulSet desired, Future<Void> future) {
+        final int replicas = desired.getSpec().getReplicas();
+
+        // Create the SS...
+        Future crt = Future.future();
+        super.internalCreate(namespace, name, desired, crt);
+
+        long operationTimeoutMs = 60_000L;
+
+        crt
+        // ... then wait for the SS to be ready...
+        .compose(res -> readiness(namespace, desired.getMetadata().getName(), 1_000, operationTimeoutMs))
+        // ... then wait for all the pods to be ready
+        .compose(res -> podReadiness(namespace, desired, 1_000, operationTimeoutMs))
+        .compose(res -> {
+            future.complete();
+        }, future);
+    }
+
+    /**
+     * Returns a future that completes when all the pods [0..replicas-1] in the given statefulSet are ready.
+     */
+    protected Future<?> podReadiness(String namespace, StatefulSet desired, long pollInterval, long operationTimeoutMs) {
+        final int replicas = desired.getSpec().getReplicas();
+        List<Future> waitPodResult = new ArrayList<>(replicas);
+        for (int i = 0; i < replicas; i++) {
+            String podName = getPodName(desired, i);
+            waitPodResult.add(podOperations.readiness(namespace, podName, pollInterval, operationTimeoutMs));
+        }
+        return CompositeFuture.join(waitPodResult);
     }
 
     /**
