@@ -358,62 +358,6 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
     }
 
     /**
-     * Patches DeploymentConfig
-     *
-     * @param dep   Exsiting DeploymentConfig which should be patched
-     * @return      Source ImageStream resource definition
-     */
-    public DeploymentConfig patchDeploymentConfig(DeploymentConfig dep) {
-        // Do not update image or trigger image - it will cause problem with rolling updates
-        dep.getMetadata().setLabels(getLabelsWithName());
-        dep.getSpec().getTemplate().getMetadata().setLabels(getLabelsWithName());
-        dep.getSpec().getTemplate().getSpec().getContainers().get(0).setLivenessProbe(createHttpProbe(healthCheckPath, REST_API_PORT_NAME, healthCheckInitialDelay, healthCheckTimeout));
-        dep.getSpec().getTemplate().getSpec().getContainers().get(0).setReadinessProbe(createHttpProbe(healthCheckPath, REST_API_PORT_NAME, healthCheckInitialDelay, healthCheckTimeout));
-        dep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(getEnvVars());
-
-        return dep;
-    }
-
-    /**
-     * Patches existing source ImageStream with latest changes
-     *
-     * @param is    Existing source ImageStream which should be patched
-     * @return      Patched ImageStream resource definition
-     */
-    public ImageStream patchSourceImageStream(ImageStream is) {
-        is.getMetadata().setLabels(getLabelsWithName(getSourceImageStreamName()));
-        is.getSpec().getTags().get(0).setName(sourceImageTag);
-        is.getSpec().getTags().get(0).getFrom().setName(sourceImageBaseName + ":" + sourceImageTag);
-
-        return is;
-    }
-
-    /**
-     * Patches existing target ImageStream with latest changes
-     *
-     * @param is    Existing target ImageStream which should be patched
-     * @return      Patched ImageStream resource definition
-     */
-    public ImageStream patchTargetImageStream(ImageStream is) {
-        is.getMetadata().setLabels(getLabelsWithName());
-
-        return is;
-    }
-
-    /**
-     * Patches existing BuildConfig with latest changes
-     *
-     * @param bc    Existing BuildConfig which should be patched
-     * @return      Patched BuildConfig resource definition
-     */
-    public BuildConfig patchBuildConfig(BuildConfig bc) {
-        bc.getMetadata().setLabels(getLabelsWithName());
-        bc.getSpec().getStrategy().getSourceStrategy().getFrom().setName(getSourceImageStreamName() + ":" + sourceImageTag);
-
-        return bc;
-    }
-
-    /**
      * Generates the name of the source ImageStream
      *
      * @return               Name of the source ImageStream instance

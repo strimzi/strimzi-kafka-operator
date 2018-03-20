@@ -29,4 +29,14 @@ public class DeploymentOperations extends AbstractScalableOperations<KubernetesC
     protected MixedOperation<Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>> operation() {
         return client.extensions().deployments();
     }
+
+    @Override
+    protected Integer currentScale(String namespace, String name) {
+        Deployment deployment = get(namespace, name);
+        if (deployment != null) {
+            return deployment.getSpec().getReplicas();
+        } else {
+            return null;
+        }
+    }
 }

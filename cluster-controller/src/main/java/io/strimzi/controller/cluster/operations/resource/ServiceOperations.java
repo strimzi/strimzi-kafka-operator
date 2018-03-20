@@ -35,7 +35,7 @@ public class ServiceOperations extends AbstractOperations<KubernetesClient, Serv
         return client.services();
     }
 
-    public Future<?> endpointReadiness(String namespace, Service desired, long pollInterval, long operationTimeoutMs) {
+    public Future<Void> endpointReadiness(String namespace, Service desired, long pollInterval, long operationTimeoutMs) {
         return endpointOperations.readiness(namespace, desired.getMetadata().getName(), 1_000, operationTimeoutMs);
     }
 }

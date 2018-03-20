@@ -76,6 +76,16 @@ public class StatefulSetOperations extends AbstractScalableOperations<Kubernetes
         }
     }
 
+    @Override
+    protected Integer currentScale(String namespace, String name) {
+        StatefulSet statefulSet = get(namespace, name);
+        if (statefulSet != null) {
+            return statefulSet.getSpec().getReplicas();
+        } else {
+            return null;
+        }
+    }
+
     static class RollingUpdateWatcher implements Watcher<Pod> {
         //private static final Logger log = LoggerFactory.getLogger(RollingUpdateWatcher.class.getName());
         private final Future deleted;
