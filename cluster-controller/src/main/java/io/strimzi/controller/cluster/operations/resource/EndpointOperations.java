@@ -15,13 +15,13 @@ import io.vertx.core.Vertx;
 /**
  * Operations for {@code Endpoint}s.
  */
-public class EndpointOperations extends AbstractReadyOperations<KubernetesClient, Endpoints, EndpointsList, DoneableEndpoints, Resource<Endpoints, DoneableEndpoints>> {
+class EndpointOperations extends AbstractReadyOperations<KubernetesClient, Endpoints, EndpointsList, DoneableEndpoints, Resource<Endpoints, DoneableEndpoints>> {
     /**
      * Constructor
      * @param vertx The Vertx instance
      * @param client The Kubernetes client
      */
-    public EndpointOperations(Vertx vertx, KubernetesClient client) {
+    EndpointOperations(Vertx vertx, KubernetesClient client) {
         super(vertx, client, "Endpoints");
     }
 

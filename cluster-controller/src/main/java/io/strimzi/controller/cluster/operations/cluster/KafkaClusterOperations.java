@@ -5,12 +5,11 @@
 package io.strimzi.controller.cluster.operations.cluster;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
 import io.strimzi.controller.cluster.operations.resource.DeploymentOperations;
-import io.strimzi.controller.cluster.operations.resource.EndpointOperations;
-import io.strimzi.controller.cluster.operations.resource.PodOperations;
 import io.strimzi.controller.cluster.operations.resource.PvcOperations;
 import io.strimzi.controller.cluster.operations.resource.ServiceOperations;
 import io.strimzi.controller.cluster.operations.resource.StatefulSetOperations;
@@ -47,8 +46,6 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
     private final StatefulSetOperations statefulSetOperations;
     private final ServiceOperations serviceOperations;
     private final PvcOperations pvcOperations;
-    private final PodOperations podOperations;
-    private final EndpointOperations endpointOperations;
     private final DeploymentOperations deploymentOperations;
 
     /**
@@ -58,7 +55,6 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
      * @param serviceOperations For operating on Services
      * @param statefulSetOperations For operating on StatefulSets
      * @param pvcOperations For operating on PersistentVolumeClaims
-     * @param podOperations For operating on Pods
      * @param deploymentOperations For operating on Deployments
      */
     public KafkaClusterOperations(Vertx vertx, boolean isOpenShift,
@@ -67,16 +63,12 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
                                   ServiceOperations serviceOperations,
                                   StatefulSetOperations statefulSetOperations,
                                   PvcOperations pvcOperations,
-                                  PodOperations podOperations,
-                                  EndpointOperations endpointOperations,
                                   DeploymentOperations deploymentOperations) {
         super(vertx, isOpenShift, "Kafka", configMapOperations);
         this.operationTimeoutMs = operationTimeoutMs;
         this.statefulSetOperations = statefulSetOperations;
         this.serviceOperations = serviceOperations;
         this.pvcOperations = pvcOperations;
-        this.podOperations = podOperations;
-        this.endpointOperations = endpointOperations;
         this.deploymentOperations = deploymentOperations;
     }
 
@@ -130,18 +122,20 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
                 result.add(configMapOperations.createOrUpdate(kafka.generateMetricsConfigMap()));
             }
 
-            result.add(serviceOperations.createOrUpdate(kafka.generateService()));
+            Service service = kafka.generateService();
+            Service headlessService = kafka.generateHeadlessService();
+            StatefulSet statefulSet = kafka.generateStatefulSet(isOpenShift);
 
-            result.add(serviceOperations.createOrUpdate(kafka.generateHeadlessService()));
-
-            result.add(statefulSetOperations.createOrUpdate(kafka.generateStatefulSet(isOpenShift)));
+            result.add(serviceOperations.createOrUpdate(service));
+            result.add(serviceOperations.createOrUpdate(headlessService));
+            result.add(statefulSetOperations.createOrUpdate(statefulSet));
 
             CompositeFuture
                 .join(result)
                 .compose(res -> {
                     List<Future> waitEndpointResult = new ArrayList<>(2);
-                    waitEndpointResult.add(endpointOperations.readiness(namespace, kafka.getName(), 1_000, operationTimeoutMs));
-                    waitEndpointResult.add(endpointOperations.readiness(namespace, kafka.getHeadlessName(), 1_000, operationTimeoutMs));
+                    waitEndpointResult.add(serviceOperations.endpointReadiness(namespace, service, 1_000, operationTimeoutMs));
+                    waitEndpointResult.add(serviceOperations.endpointReadiness(namespace, headlessService, 1_000, operationTimeoutMs));
                     return CompositeFuture.join(waitEndpointResult);
                 })
                 .compose(res -> {
@@ -311,18 +305,20 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
                 createResult.add(configMapOperations.createOrUpdate(zk.generateMetricsConfigMap()));
             }
 
-            createResult.add(serviceOperations.createOrUpdate(zk.generateService()));
+            Service service = zk.generateService();
+            Service headlessService = zk.generateHeadlessService();
+            StatefulSet statefulSet = zk.generateStatefulSet(isOpenShift);
 
-            createResult.add(serviceOperations.createOrUpdate(zk.generateHeadlessService()));
-
-            createResult.add(statefulSetOperations.createOrUpdate(zk.generateStatefulSet(isOpenShift)));
+            createResult.add(serviceOperations.createOrUpdate(service));
+            createResult.add(serviceOperations.createOrUpdate(headlessService));
+            createResult.add(statefulSetOperations.createOrUpdate(statefulSet));
 
             CompositeFuture
                 .join(createResult)
                 .compose(res -> {
                     List<Future> waitEndpointResult = new ArrayList<>(2);
-                    waitEndpointResult.add(endpointOperations.readiness(namespace, zk.getName(), 1_000, operationTimeoutMs));
-                    waitEndpointResult.add(endpointOperations.readiness(namespace, zk.getHeadlessName(), 1_000, operationTimeoutMs));
+                    waitEndpointResult.add(serviceOperations.endpointReadiness(namespace, service, 1_000, operationTimeoutMs));
+                    waitEndpointResult.add(serviceOperations.endpointReadiness(namespace, headlessService, 1_000, operationTimeoutMs));
                     return CompositeFuture.join(waitEndpointResult);
                 })
                 .compose(res -> {
