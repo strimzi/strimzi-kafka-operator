@@ -14,10 +14,8 @@ import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,7 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Operations for {@code StatefulSets}s, which supports {@link #rollingUpdate(String, String, Handler)}
+ * Operations for {@code StatefulSets}s, which supports {@link #rollingUpdate(String, String)}
  * in addition to the usual operations.
  */
 public class StatefulSetOperations extends AbstractScalableOperations<KubernetesClient, StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> {
@@ -49,56 +47,33 @@ public class StatefulSetOperations extends AbstractScalableOperations<Kubernetes
         return client.apps().statefulSets();
     }
 
-    public void rollingUpdate(String namespace, String name, Handler<AsyncResult<Void>> handler) {
+    private void rollingUpdate(String namespace, String name) throws Exception {
         final int replicas = get(namespace, name).getSpec().getReplicas();
-        vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
-            future -> {
-                try {
-                    log.info("Doing rolling update of stateful set {} in namespace {}", name, namespace);
+        for (int i = 0; i < replicas; i++) {
+            String podName = name + "-" + i;
+            log.info("Rolling pod {}", podName);
+            Future deleted = Future.future();
+            Watcher<Pod> watcher = new RollingUpdateWatcher(deleted);
 
-                    for (int i = 0; i < replicas; i++) {
-                        String podName = name + "-" + i;
-                        log.info("Rolling pod {}", podName);
-                        Future deleted = Future.future();
-                        Watcher<Pod> watcher = new RollingUpdateWatcher(deleted);
+            Watch watch = podOperations.watch(namespace, podName, watcher);
+            Future fut = podOperations.reconcile(namespace, podName, null);
 
-                        Watch watch = podOperations.watch(namespace, podName, watcher);
-                        Future fut = podOperations.reconcile(namespace, podName, null);
-
-                        // TODO do this async
-                        while (!fut.isComplete() || !deleted.isComplete()) {
-                            log.info("Waiting for pod {} to be deleted", podName);
-                            Thread.sleep(1000);
-                        }
-                        // TODO Check success of fut and deleted futures
-
-                        watch.close();
-
-                        while (!podOperations.isReady(namespace, podName)) {
-                            log.info("Waiting for pod {} to get ready", podName);
-                            Thread.sleep(1000);
-                        }
-
-                        log.info("Pod {} rolling update complete", podName);
-                    }
-
-                    future.complete();
-                } catch (Exception e) {
-                    log.error("Caught exception while doing manual rolling update of stateful set {} in namespace {}", name, namespace);
-                    future.fail(e);
-                }
-            },
-            false,
-            res -> {
-                if (res.succeeded()) {
-                    log.info("Stateful set {} in namespace {} has been rolled", name, namespace);
-                    handler.handle(Future.succeededFuture());
-                } else {
-                    log.error("Failed to do rolling update of stateful set {} in namespace {}: {}", name, namespace, res.cause().toString());
-                    handler.handle(Future.failedFuture(res.cause()));
-                }
+            // TODO do this async
+            while (!fut.isComplete() || !deleted.isComplete()) {
+                log.info("Waiting for pod {} to be deleted", podName);
+                Thread.sleep(1000);
             }
-        );
+            // TODO Check success of fut and deleted futures
+
+            watch.close();
+
+            while (!podOperations.isReady(namespace, podName)) {
+                log.info("Waiting for pod {} to get ready", podName);
+                Thread.sleep(1000);
+            }
+
+            log.info("Pod {} rolling update complete", podName);
+        }
     }
 
     static class RollingUpdateWatcher implements Watcher<Pod> {
@@ -187,6 +162,7 @@ public class StatefulSetOperations extends AbstractScalableOperations<Kubernetes
             log.info("Patching {} resource {} in namespace {} with {}", resourceKind, name, namespace, desired);
             operation().inNamespace(namespace).withName(name).cascading(false).patch(desired);
             log.info("{} {} in namespace {} has been patched", resourceKind, name, namespace);
+            rollingUpdate(namespace, desired.getMetadata().getName());
             future.complete();
         } catch (Exception e) {
             log.error("Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
