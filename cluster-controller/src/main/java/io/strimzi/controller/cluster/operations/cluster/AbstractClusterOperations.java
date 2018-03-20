@@ -115,16 +115,17 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
         String operationType();
         String clusterType();
         /**
+         * Get the desired Cluster instance (by getting the corresponding ConfigMap and
+         * creating the appropriate {@link AbstractCluster} subclass from it.
+         */
+        ClusterOperation<C> getCluster(String namespace, String name);
+
+        /**
          * Create the resources in Kubernetes according to the given {@code cluster},
          * returning a composite future for when the overall operation is done
          */
         Future<?> composite(String namespace, ClusterOperation<C> operation);
 
-        /**
-         * Get the desired Cluster instance (by getting the corresponding ConfigMap and
-         * creating the appropriate {@link AbstractCluster} subclass from it.
-         */
-        ClusterOperation<C> getCluster(String namespace, String name);
     }
 
     /**

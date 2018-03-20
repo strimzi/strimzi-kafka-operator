@@ -77,6 +77,50 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
         }
     };
 
+    private final CompositeOperation<KafkaConnectCluster> update = new CompositeOperation<KafkaConnectCluster>() {
+        @Override
+        public String operationType() {
+            return OP_UPDATE;
+        }
+
+        @Override
+        public String clusterType() {
+            return CLUSTER_TYPE_CONNECT;
+        }
+
+        @Override
+        public ClusterOperation<KafkaConnectCluster> getCluster(String namespace, String name) {
+            ClusterDiffResult diff;
+            KafkaConnectCluster connect;
+            ConfigMap connectConfigMap = configMapOperations.get(namespace, name);
+
+            if (connectConfigMap != null)    {
+                connect = KafkaConnectCluster.fromConfigMap(connectConfigMap);
+                Deployment dep = deploymentOperations.get(namespace, connect.getName());
+                log.info("Updating Kafka Connect cluster {} in namespace {}", connect.getName(), namespace);
+                diff = connect.diff(dep);
+            } else  {
+                throw new IllegalStateException("ConfigMap " + name + " doesn't exist anymore in namespace " + namespace);
+            }
+
+            return new ClusterOperation<>(connect, diff);
+        }
+
+        @Override
+        public Future<?> composite(String namespace, ClusterOperation<KafkaConnectCluster> operation) {
+            KafkaConnectCluster connect = operation.cluster();
+            ClusterDiffResult diff = operation.diff();
+            Future<Void> chainFuture = Future.future();
+
+            scaleDown(connect, namespace, diff)
+                    .compose(i -> patchService(connect, namespace, diff))
+                    .compose(i -> patchDeployment(connect, namespace, diff))
+                    .compose(i -> scaleUp(connect, namespace, diff))
+                    .compose(chainFuture::complete, chainFuture);
+
+            return chainFuture;
+        }
+    };
 
     private final CompositeOperation<KafkaConnectCluster> delete = new CompositeOperation<KafkaConnectCluster>() {
         @Override
@@ -104,50 +148,6 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
         public ClusterOperation<KafkaConnectCluster> getCluster(String namespace, String name) {
             Deployment dep = deploymentOperations.get(namespace, KafkaConnectCluster.kafkaConnectClusterName(name));
             return new ClusterOperation<>(KafkaConnectCluster.fromDeployment(namespace, name, dep), null);
-        }
-    };
-
-    private final CompositeOperation<KafkaConnectCluster> update = new CompositeOperation<KafkaConnectCluster>() {
-        @Override
-        public String operationType() {
-            return OP_UPDATE;
-        }
-
-        @Override
-        public String clusterType() {
-            return CLUSTER_TYPE_CONNECT;
-        }
-        @Override
-        public Future<?> composite(String namespace, ClusterOperation<KafkaConnectCluster> operation) {
-            KafkaConnectCluster connect = operation.cluster();
-            ClusterDiffResult diff = operation.diff();
-            Future<Void> chainFuture = Future.future();
-
-            scaleDown(connect, namespace, diff)
-                    .compose(i -> patchService(connect, namespace, diff))
-                    .compose(i -> patchDeployment(connect, namespace, diff))
-                    .compose(i -> scaleUp(connect, namespace, diff))
-                    .compose(chainFuture::complete, chainFuture);
-
-            return chainFuture;
-        }
-
-        @Override
-        public ClusterOperation<KafkaConnectCluster> getCluster(String namespace, String name) {
-            ClusterDiffResult diff;
-            KafkaConnectCluster connect;
-            ConfigMap connectConfigMap = configMapOperations.get(namespace, name);
-
-            if (connectConfigMap != null)    {
-                connect = KafkaConnectCluster.fromConfigMap(connectConfigMap);
-                Deployment dep = deploymentOperations.get(namespace, connect.getName());
-                log.info("Updating Kafka Connect cluster {} in namespace {}", connect.getName(), namespace);
-                diff = connect.diff(dep);
-            } else  {
-                throw new IllegalStateException("ConfigMap " + name + " doesn't exist anymore in namespace " + namespace);
-            }
-
-            return new ClusterOperation<>(connect, diff);
         }
     };
 
