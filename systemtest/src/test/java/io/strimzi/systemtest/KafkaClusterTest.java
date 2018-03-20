@@ -29,6 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
@@ -67,6 +68,14 @@ public class KafkaClusterTest {
 
     private static String zookeeperPodName(String clusterName, int podId) {
         return zookeeperStatefulSetName(clusterName) + "-" + podId;
+    }
+
+    private static String zookeeperPVCName(String clusterName, int podId) {
+        return "data-" + zookeeperStatefulSetName(clusterName) + "-" + podId;
+    }
+
+    private static String kafkaPVCName(String clusterName, int podId) {
+        return "data-" + kafkaStatefulSetName(clusterName) + "-" + podId;
     }
 
     @BeforeClass
@@ -252,5 +261,47 @@ public class KafkaClusterTest {
         assertThat(jsonString, valueOfCmEquals("KAFKA_DEFAULT_REPLICATION_FACTOR", "2"));
         assertThat(jsonString, valueOfCmEquals("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "5"));
         assertThat(jsonString, valueOfCmEquals("KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", "5"));
+    }
+
+    @Test
+    @KafkaCluster(name = "my-cluster-persistent", kafkaNodes = 2, zkNodes = 2, config = {
+        @CmData(key = "kafka-storage", value = "{ \"type\": \"persistent-claim\", \"size\": \"1Gi\", \"delete-claim\": false }"),
+        @CmData(key = "zookeeper-storage", value = "{ \"type\": \"persistent-claim\", \"size\": \"1Gi\", \"delete-claim\": false }"),
+        @CmData(key = "zookeeper-healthcheck-delay", value = "30"),
+        @CmData(key = "zookeeper-healthcheck-timeout", value = "15"),
+        @CmData(key = "kafka-healthcheck-delay", value = "30"),
+        @CmData(key = "kafka-healthcheck-timeout", value = "15"),
+        @CmData(key = "KAFKA_DEFAULT_REPLICATION_FACTOR", value = "2"),
+        @CmData(key = "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", value = "5"),
+        @CmData(key = "KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", value = "5")
+    })
+    @OpenShiftOnly
+    public void testDeployKafkaOnPersistentStorage() {
+        String clusterName = "my-cluster-persistent";
+        int expectedZKPods = 2;
+        int expectedKafkaPods = 2;
+        Oc oc = (Oc) this.kubeClient;
+
+        List<String> persistentVolumeClaimNames = oc.list("pvc");
+        assertTrue(persistentVolumeClaimNames.size() == (expectedZKPods + expectedKafkaPods));
+
+        //Checking Persistent volume claims for Zookeeper nodes
+        for (int i = 0; i < expectedZKPods; i++) {
+            assertTrue(persistentVolumeClaimNames.contains(zookeeperPVCName(clusterName, i)));
+        }
+
+        //Checking Persistent volume claims for Kafka nodes
+        for (int i = 0; i < expectedZKPods; i++) {
+            assertTrue(persistentVolumeClaimNames.contains(kafkaPVCName(clusterName, i)));
+        }
+
+        String configMap = kubeClient.get("cm", clusterName);
+        assertThat(configMap, valueOfCmEquals("zookeeper-healthcheck-delay", "30"));
+        assertThat(configMap, valueOfCmEquals("zookeeper-healthcheck-timeout", "15"));
+        assertThat(configMap, valueOfCmEquals("kafka-healthcheck-delay", "30"));
+        assertThat(configMap, valueOfCmEquals("kafka-healthcheck-timeout", "15"));
+        assertThat(configMap, valueOfCmEquals("KAFKA_DEFAULT_REPLICATION_FACTOR", "2"));
+        assertThat(configMap, valueOfCmEquals("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "5"));
+        assertThat(configMap, valueOfCmEquals("KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", "5"));
     }
 }
