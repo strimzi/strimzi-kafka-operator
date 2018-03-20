@@ -334,30 +334,48 @@ public class Controller {
         this.config = config;
     }
 
-    void reconcile(ConfigMap cm, TopicName topicName) {
-        try {
-            Topic k8sTopic = cm != null ? TopicSerialization.fromConfigMap(cm) : null;
-            Future<Topic> topicResult = Future.future();
-            Future<TopicMetadata> metadataResult = Future.future();
-            kafka.topicMetadata(topicName, metadataResult.completer());
-            topicStore.read(topicName, topicResult.completer());
-            CompositeFuture.all(topicResult, metadataResult).setHandler(ar -> {
+    void reconcile(ConfigMap cm, TopicName topicName, Handler<AsyncResult<Void>> resultHandler) {
 
-                if (ar.succeeded()) {
-                    Topic privateTopic = ar.result().resultAt(0);
-                    TopicMetadata kafkaTopicMeta = ar.result().resultAt(1);
-                    Topic kafkaTopic = TopicSerialization.fromTopicMetadata(kafkaTopicMeta);
-                    reconcile(cm, k8sTopic, kafkaTopic, privateTopic, reconcileResult -> {
+        Handler<Future<Void>> futureHandler = new Reconciliation("reconcile") {
+            @Override
+            public void handle(Future<Void> fut) {
+
+                try {
+                    Topic k8sTopic = cm != null ? TopicSerialization.fromConfigMap(cm) : null;
+                    Future<Topic> topicResult = Future.future();
+                    Future<TopicMetadata> metadataResult = Future.future();
+                    kafka.topicMetadata(topicName, metadataResult.completer());
+                    topicStore.read(topicName, topicResult.completer());
+                    CompositeFuture.all(topicResult, metadataResult).setHandler(ar -> {
+
+                        if (ar.succeeded()) {
+                            Topic privateTopic = ar.result().resultAt(0);
+                            TopicMetadata kafkaTopicMeta = ar.result().resultAt(1);
+                            Topic kafkaTopic = TopicSerialization.fromTopicMetadata(kafkaTopicMeta);
+                            reconcile(cm, k8sTopic, kafkaTopic, privateTopic, reconcileResult -> {
+                                if (reconcileResult.succeeded()) {
+                                    LOGGER.info("Success reconciling ConfigMap {}: ", logConfigMap(cm));
+                                    fut.complete();
+                                } else {
+                                    LOGGER.error("Error reconciling ConfigMap {}: ", logConfigMap(cm), reconcileResult.cause());
+                                    fut.fail(reconcileResult.cause());
+                                }
+                            });
+                        } else {
+                            LOGGER.error("Error reconciling ConfigMap {}: ", logConfigMap(cm), ar.cause());
+                            fut.fail(ar.cause());
+                        }
                     });
-                } else {
-                    LOGGER.error("Error reconciling ConfigMap {}: ", cm.getMetadata().getName(), ar.cause());
+                } catch (InvalidConfigMapException e) {
+                    LOGGER.error("Error reconciling ConfigMap {}: Invalid 'data' section: ", logConfigMap(cm), e.getMessage());
+                    fut.fail(e);
+                } catch (ControllerException e) {
+                    LOGGER.error("Error reconciling ConfigMap {}: ", logConfigMap(cm), e);
+                    fut.fail(e);
                 }
-            });
-        } catch (InvalidConfigMapException e) {
-            LOGGER.error("Error reconciling ConfigMap {}: Invalid 'data' section: ", cm.getMetadata().getName(), e.getMessage());
-        } catch (ControllerException e) {
-            LOGGER.error("Error reconciling ConfigMap {}: ", cm.getMetadata().getName(), e);
-        }
+            }
+        };
+        inFlight.enqueue(topicName, resultHandler, futureHandler);
     }
 
     /**
@@ -938,6 +956,10 @@ public class Controller {
      */
     private BackOff topicMetadataBackOff() {
         return new BackOff(config.get(Config.TOPIC_METADATA_MAX_ATTEMPTS));
+    }
+
+    static String logConfigMap(ConfigMap cm) {
+        return cm != null ? cm.getMetadata().getNamespace() + "/" + cm.getMetadata().getName() : null;
     }
 }
 

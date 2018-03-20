@@ -166,9 +166,14 @@ public class Session extends AbstractVerticle {
                     TopicName topicName = new TopicName(name);
                     k8s.getFromName(topicName.asMapName(), ar -> {
                         ConfigMap cm = ar.result();
-                        // TODO need to check inflight
-                        // TODO And need to prevent pileup of inflight periodic reconciliations
-                        controller.reconcile(cm, topicName);
+
+                        controller.reconcile(cm, topicName, reconcileResult -> {
+                            if (reconcileResult.succeeded()) {
+                                LOGGER.info("Success reconciling topic {}", topicName);
+                            } else {
+                                LOGGER.error("Error reconciling topic {}", topicName, reconcileResult.cause());
+                            }
+                        });
                     });
                 }
 
@@ -184,10 +189,15 @@ public class Session extends AbstractVerticle {
                         LOGGER.debug("Reconciling configmaps: {}", configMapsMap.keySet());
                         for (ConfigMap cm : configMapsMap.values()) {
                             LOGGER.debug("{} reconciliation of configmap {}", reconciliationType, cm.getMetadata().getName());
-                            // TODO need to check inflight
-                            // TODO And need to prevent pileup of inflight periodic reconciliations
+
                             TopicName topicName = new TopicName(cm);
-                            controller.reconcile(cm, topicName);
+                            controller.reconcile(cm, topicName, reconcileResult -> {
+                                if (reconcileResult.succeeded()) {
+                                    LOGGER.info("Success reconciling ConfigMap {}", Controller.logConfigMap(cm));
+                                } else {
+                                    LOGGER.error("Error reconciling ConfigMap {}", Controller.logConfigMap(cm), reconcileResult.cause());
+                                }
+                            });
                         }
                     } else {
                         LOGGER.error("Unable to list ConfigMaps", ar.cause());
