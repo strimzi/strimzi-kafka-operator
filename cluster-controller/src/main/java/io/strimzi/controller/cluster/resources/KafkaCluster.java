@@ -317,16 +317,6 @@ public class KafkaCluster extends AbstractCluster {
     }
 
     /**
-     * Patches the given headless Service
-     * @param svc The service to patch
-     * @return The same service
-     */
-    public Service patchHeadlessService(Service svc) {
-
-        return patchHeadlessService(headlessName, svc);
-    }
-
-    /**
      * Generates a StatefulSet according to configured defaults
      * @param isOpenShift True iff this controller is operating within OpenShift.
      * @return The generate StatefulSet
@@ -349,24 +339,13 @@ public class KafkaCluster extends AbstractCluster {
      * @return The generated ConfigMap
      */
     public ConfigMap generateMetricsConfigMap() {
-
-        Map<String, String> data = new HashMap<>();
-        data.put(METRICS_CONFIG_FILE, metricsConfig.toString());
-
-        return createConfigMap(metricsConfigName, data);
-    }
-
-    /**
-     * Patches the given headless metrics ConfigMap
-     * @param cm The metrics ConfigMap to patch
-     * @return The same ConfigMap
-     */
-    public ConfigMap patchMetricsConfigMap(ConfigMap cm) {
-
-        Map<String, String> data = new HashMap<>();
-        data.put(METRICS_CONFIG_FILE, metricsConfig != null ? metricsConfig.toString() : null);
-
-        return patchConfigMap(cm, data);
+        if (isMetricsEnabled()) {
+            Map<String, String> data = new HashMap<>();
+            data.put(METRICS_CONFIG_FILE, getMetricsConfig().toString());
+            return createConfigMap(getMetricsConfigName(), data);
+        } else {
+            return null;
+        }
     }
 
     /**

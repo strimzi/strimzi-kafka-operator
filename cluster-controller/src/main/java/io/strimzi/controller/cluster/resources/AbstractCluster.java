@@ -517,13 +517,6 @@ public abstract class AbstractCluster {
         return svc;
     }
 
-    protected Service patchHeadlessService(String name, Service svc) {
-        svc.getMetadata().setLabels(getLabelsWithName(name));
-        svc.getSpec().setSelector(getLabelsWithName());
-        log.trace("Patched headless service {}", svc);
-        return svc;
-    }
-
     protected StatefulSet patchStatefulSet(StatefulSet statefulSet,
                                            Probe livenessProbe,
                                            Probe readinessProbe,

@@ -268,11 +268,6 @@ public class ZookeeperCluster extends AbstractCluster {
         return createHeadlessService(headlessName, getServicePortList(), annotations);
     }
 
-    public Service patchHeadlessService(Service svc) {
-
-        return patchHeadlessService(headlessName, svc);
-    }
-
     public StatefulSet generateStatefulSet(boolean isOpenShift) {
 
         return createStatefulSet(
@@ -286,19 +281,13 @@ public class ZookeeperCluster extends AbstractCluster {
     }
 
     public ConfigMap generateMetricsConfigMap() {
-
-        Map<String, String> data = new HashMap<>();
-        data.put(METRICS_CONFIG_FILE, metricsConfig.toString());
-
-        return createConfigMap(metricsConfigName, data);
-    }
-
-    public ConfigMap patchMetricsConfigMap(ConfigMap cm) {
-
-        Map<String, String> data = new HashMap<>();
-        data.put(METRICS_CONFIG_FILE, metricsConfig != null ? metricsConfig.toString() : null);
-
-        return patchConfigMap(cm, data);
+        if (isMetricsEnabled()) {
+            Map<String, String> data = new HashMap<>();
+            data.put(METRICS_CONFIG_FILE, getMetricsConfig().toString());
+            return createConfigMap(getMetricsConfigName(), data);
+        } else {
+            return null;
+        }
     }
 
     public StatefulSet patchStatefulSet(StatefulSet statefulSet) {
