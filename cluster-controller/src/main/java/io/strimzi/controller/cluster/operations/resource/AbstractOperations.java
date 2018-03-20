@@ -144,7 +144,7 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
     protected void internalCreate(String namespace, String name, T desired, Future<Void> future) {
         try {
             log.info("Creating {} {} in namespace {}", resourceKind, name, namespace);
-            operation().inNamespace(namespace).createOrReplace(desired);
+            operation().inNamespace(namespace).withName(name).create(desired);
             log.info("{} {} in namespace {} has been created", resourceKind, name, namespace);
             future.complete();
         } catch (Exception e) {
