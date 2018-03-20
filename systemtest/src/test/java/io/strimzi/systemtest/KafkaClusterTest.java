@@ -53,7 +53,9 @@ import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.valueOfCmEquals;
 import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.map;
+import static io.strimzi.test.k8s.BaseKubeClient.CM;
 import static io.strimzi.test.k8s.BaseKubeClient.DEPLOYMENT;
+import static io.strimzi.test.k8s.BaseKubeClient.SERVICE;
 import static io.strimzi.test.k8s.BaseKubeClient.STATEFUL_SET;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
@@ -68,6 +70,7 @@ public class KafkaClusterTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaClusterTest.class);
 
     public static final String NAMESPACE = "kafka-cluster-test";
+    private static final String CLUSTER_NAME = "my-cluster";
 
     @ClassRule
     public static KubeClusterResource cluster = new KubeClusterResource();
@@ -75,20 +78,38 @@ public class KafkaClusterTest {
     private KubeClient<?> kubeClient = cluster.client();
     private KubernetesClient client = new DefaultKubernetesClient();
 
-    private static String kafkaStatefulSetName(String clusterName) {
+    // can be used as kafka stateful set or service names
+    private static String kafkaClusterName(String clusterName) {
         return clusterName + "-kafka";
     }
 
     private static String kafkaPodName(String clusterName, int podId) {
-        return kafkaStatefulSetName(clusterName) + "-" + podId;
+        return kafkaClusterName(clusterName) + "-" + podId;
     }
 
-    private static String zookeeperStatefulSetName(String clusterName) {
+    private static String kafkaHeadlessServiceName(String clusterName) {
+        return kafkaClusterName(clusterName) + "-headless";
+    }
+
+    private static String kafkaMetricsConfigName(String clusterName) {
+        return kafkaClusterName(clusterName) + "-metrics-config";
+    }
+
+    // can be used as zookeeper stateful set or service names
+    private static String zookeeperClusterName(String clusterName) {
         return clusterName + "-zookeeper";
     }
 
     private static String zookeeperPodName(String clusterName, int podId) {
-        return zookeeperStatefulSetName(clusterName) + "-" + podId;
+        return zookeeperClusterName(clusterName) + "-" + podId;
+    }
+
+    private static String zookeeperHeadlessServiceName(String clusterName) {
+        return zookeeperClusterName(clusterName) + "-headless";
+    }
+
+    private static String zookeeperMetricsConfigName(String clusterName) {
+        return zookeeperClusterName(clusterName) + "-metrics-config";
     }
 
     private static String zookeeperPVCName(String clusterName, int podId) {
@@ -116,11 +137,11 @@ public class KafkaClusterTest {
         Oc oc = (Oc) this.kubeClient;
         String clusterName = "openshift-my-cluster";
         oc.newApp("strimzi-ephemeral", map("CLUSTER_NAME", clusterName));
-        oc.waitForStatefulSet(zookeeperStatefulSetName(clusterName), 1);
-        oc.waitForStatefulSet(kafkaStatefulSetName(clusterName), 3);
+        oc.waitForStatefulSet(zookeeperClusterName(clusterName), 1);
+        oc.waitForStatefulSet(kafkaClusterName(clusterName), 3);
         oc.deleteByName("cm", clusterName);
-        oc.waitForResourceDeletion("statefulset", kafkaStatefulSetName(clusterName));
-        oc.waitForResourceDeletion("statefulset", zookeeperStatefulSetName(clusterName));
+        oc.waitForResourceDeletion("statefulset", kafkaClusterName(clusterName));
+        oc.waitForResourceDeletion("statefulset", zookeeperClusterName(clusterName));
     }
 
     private void replaceCm(String cmName, String fieldName, String fieldValue) {
@@ -138,26 +159,25 @@ public class KafkaClusterTest {
     }
 
     @Test
-    @KafkaCluster(name = "my-cluster", kafkaNodes = 3)
+    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 3)
     public void testKafkaScaleUpScaleDown() {
         // kafka cluster already deployed via annotation
-        String clusterName = "my-cluster";
-        LOGGER.info("Running kafkaScaleUpScaleDown {}", clusterName);
+        LOGGER.info("Running kafkaScaleUpScaleDown {}", CLUSTER_NAME);
 
         //kubeClient.waitForStatefulSet(kafkaStatefulSetName(clusterName), 3);
 
-        final int initialReplicas = client.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaStatefulSetName(clusterName)).get().getStatus().getReplicas();
+        final int initialReplicas = client.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaClusterName(CLUSTER_NAME)).get().getStatus().getReplicas();
         assertEquals(3, initialReplicas);
 
         // scale up
         final int scaleTo = initialReplicas + 1;
         final int newPodId = initialReplicas;
         final int newBrokerId = newPodId;
-        final String newPodName = kafkaPodName(clusterName,  newPodId);
-        final String firstPodName = kafkaPodName(clusterName,  0);
-        LOGGER.info("Scaling Kafka up to {}", scaleTo);
-        replaceCm(clusterName, "kafka-nodes", String.valueOf(initialReplicas + 1));
-        kubeClient.waitForStatefulSet(kafkaStatefulSetName(clusterName), initialReplicas + 1);
+        final String newPodName = kafkaPodName(CLUSTER_NAME,  newPodId);
+        final String firstPodName = kafkaPodName(CLUSTER_NAME,  0);
+        LOGGER.info("Scaling up to {}", scaleTo);
+        replaceCm(CLUSTER_NAME, "kafka-nodes", String.valueOf(initialReplicas + 1));
+        kubeClient.waitForStatefulSet(kafkaClusterName(CLUSTER_NAME), initialReplicas + 1);
 
         // Test that the new broker has joined the kafka cluster by checking it knows about all the other broker's API versions
         // (execute bash because we want the env vars expanded in the pod)
@@ -175,11 +195,11 @@ public class KafkaClusterTest {
 
         // scale down
         LOGGER.info("Scaling down");
-        //client.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaStatefulSetName(clusterName)).scale(initialReplicas, true);
-        replaceCm(clusterName, "kafka-nodes", String.valueOf(initialReplicas));
-        kubeClient.waitForStatefulSet(kafkaStatefulSetName(clusterName), initialReplicas);
+        //client.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaStatefulSetName(CLUSTER_NAME)).scale(initialReplicas, true);
+        replaceCm(CLUSTER_NAME, "kafka-nodes", String.valueOf(initialReplicas));
+        kubeClient.waitForStatefulSet(kafkaClusterName(CLUSTER_NAME), initialReplicas);
 
-        final int finalReplicas = client.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaStatefulSetName(clusterName)).get().getStatus().getReplicas();
+        final int finalReplicas = client.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaClusterName(CLUSTER_NAME)).get().getStatus().getReplicas();
         assertEquals(initialReplicas, finalReplicas);
         versions = getBrokerApiVersions(firstPodName);
 
@@ -211,25 +231,25 @@ public class KafkaClusterTest {
     }
 
     @Test
-    @KafkaCluster(name = "my-cluster", kafkaNodes = 1, zkNodes = 1)
+    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 1, zkNodes = 1)
     public void testZookeeperScaleUpScaleDown() {
         // kafka cluster already deployed via annotation
-        String clusterName = "my-cluster";
-        LOGGER.info("Running zookeeperScaleUpScaleDown with cluster {}", clusterName);
-        //kubeClient.waitForStatefulSet(zookeeperStatefulSetName(clusterName), 1);
-        final int initialReplicas = client.apps().statefulSets().inNamespace(NAMESPACE).withName(zookeeperStatefulSetName(clusterName)).get().getStatus().getReplicas();
+        LOGGER.info("Running zookeeperScaleUpScaleDown with cluster {}", CLUSTER_NAME);
+        //kubeClient.waitForStatefulSet(zookeeperStatefulSetName(CLUSTER_NAME), 1);
+        KubernetesClient client = new DefaultKubernetesClient();
+        final int initialReplicas = client.apps().statefulSets().inNamespace(NAMESPACE).withName(zookeeperClusterName(CLUSTER_NAME)).get().getStatus().getReplicas();
         assertEquals(1, initialReplicas);
 
         // scale up
         final int scaleTo = initialReplicas + 2;
         final int[] newPodIds = {initialReplicas, initialReplicas + 1};
         final String[] newPodName = {
-                zookeeperPodName(clusterName,  newPodIds[0]),
-                zookeeperPodName(clusterName,  newPodIds[1])
+                zookeeperPodName(CLUSTER_NAME,  newPodIds[0]),
+                zookeeperPodName(CLUSTER_NAME,  newPodIds[1])
         };
-        final String firstPodName = zookeeperPodName(clusterName,  0);
-        LOGGER.info("Scaling zookeeper up to {}", scaleTo);
-        replaceCm(clusterName, "zookeeper-nodes", String.valueOf(scaleTo));
+        final String firstPodName = zookeeperPodName(CLUSTER_NAME,  0);
+        LOGGER.info("Scaling up to {}", scaleTo);
+        replaceCm(CLUSTER_NAME, "zookeeper-nodes", String.valueOf(scaleTo));
         kubeClient.waitForPod(newPodName[0]);
         kubeClient.waitForPod(newPodName[1]);
 
@@ -251,8 +271,8 @@ public class KafkaClusterTest {
 
         // scale down
         LOGGER.info("Scaling down");
-        replaceCm(clusterName, "zookeeper-nodes", String.valueOf(1));
-        kubeClient.waitForResourceDeletion("pod", zookeeperPodName(clusterName,  1));
+        replaceCm(CLUSTER_NAME, "zookeeper-nodes", String.valueOf(1));
+        kubeClient.waitForResourceDeletion("po", zookeeperPodName(CLUSTER_NAME,  1));
         // Wait for the one remaining node to enter standalone mode
         waitForZkMntr(firstPodName, Pattern.compile("zk_server_state\\s+standalone"));
 
@@ -287,22 +307,21 @@ public class KafkaClusterTest {
     }
 
     @Test
-    @KafkaCluster(name = "my-cluster", kafkaNodes = 1, config = {
-        @CmData(key = "zookeeper-healthcheck-delay", value = "30"),
-        @CmData(key = "zookeeper-healthcheck-timeout", value = "10"),
-        @CmData(key = "kafka-healthcheck-delay", value = "30"),
-        @CmData(key = "kafka-healthcheck-timeout", value = "10"),
-        @CmData(key = "KAFKA_DEFAULT_REPLICATION_FACTOR", value = "2"),
-        @CmData(key = "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", value = "5"),
-        @CmData(key = "KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", value = "5")
+    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 1, config = {
+            @CmData(key = "zookeeper-healthcheck-delay", value = "30"),
+            @CmData(key = "zookeeper-healthcheck-timeout", value = "10"),
+            @CmData(key = "kafka-healthcheck-delay", value = "30"),
+            @CmData(key = "kafka-healthcheck-timeout", value = "10"),
+            @CmData(key = "KAFKA_DEFAULT_REPLICATION_FACTOR", value = "2"),
+            @CmData(key = "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", value = "5"),
+            @CmData(key = "KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", value = "5")
     })
     public void testClusterWithCustomParameters() {
         // kafka cluster already deployed via annotation
-        String clusterName = "my-cluster";
-        LOGGER.info("Running clusterWithCustomParameters with cluster {}", clusterName);
+        LOGGER.info("Running clusterWithCustomParameters with cluster {}", CLUSTER_NAME);
 
         //TODO Add assertions to check that Kafka brokers have a custom configuration
-        String jsonString = kubeClient.get("cm", clusterName);
+        String jsonString = kubeClient.get("cm", CLUSTER_NAME);
         assertThat(jsonString, valueOfCmEquals("zookeeper-healthcheck-delay", "30"));
         assertThat(jsonString, valueOfCmEquals("zookeeper-healthcheck-timeout", "10"));
         assertThat(jsonString, valueOfCmEquals("kafka-healthcheck-delay", "30"));
@@ -410,43 +429,26 @@ public class KafkaClusterTest {
     }
 
     @Test
-    @KafkaCluster(name = "my-cluster", kafkaNodes = 1)
+    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 1)
     public void testDeleteTopicControllerDeployment() {
         // kafka cluster already deployed via annotation
-        String clusterName = "my-cluster";
-        String topicControllerName = topicControllerDeploymentName(clusterName);
-        LOGGER.info("Running deleteTopicControllerDeployment with cluster {}", clusterName);
+        String topicControllerDeploymentName = topicControllerDeploymentName(CLUSTER_NAME);
+        LOGGER.info("Running deleteTopicControllerDeployment with cluster {}", CLUSTER_NAME);
 
-        kubeClient.deleteByName(DEPLOYMENT, topicControllerName);
-        kubeClient.waitForResourceDeletion(DEPLOYMENT, topicControllerName);
+        kubeClient.deleteByName(DEPLOYMENT, topicControllerDeploymentName);
+        kubeClient.waitForResourceDeletion(DEPLOYMENT, topicControllerDeploymentName);
 
-        LOGGER.info("Waiting for recovery {}", topicControllerName);
-        kubeClient.waitForDeployment(topicControllerName);
+        LOGGER.info("Waiting for recovery {}", topicControllerDeploymentName);
+        kubeClient.waitForDeployment(topicControllerDeploymentName);
     }
 
     @Test
-    @KafkaCluster(name = "my-cluster", kafkaNodes = 1)
-    public void testDeleteClusterControllerDeployment() {
-        // kafka cluster already deployed via annotation
-        String clusterName = "my-cluster";
-        String clusterControllerName = "strimzi-cluster-controller";
-        LOGGER.info("Running deleteClusterControllerDeployment with cluster {}", clusterName);
-
-        kubeClient.deleteByName(DEPLOYMENT, clusterControllerName);
-        kubeClient.waitForResourceDeletion(DEPLOYMENT, clusterControllerName);
-
-        LOGGER.info("Waiting for recovery {}", clusterControllerName);
-        kubeClient.waitForDeployment(clusterControllerName);
-    }
-
-    @Test
-    @KafkaCluster(name = "my-cluster", kafkaNodes = 1)
+    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 1)
     public void testDeleteKafkaStatefulSet() {
         // kafka cluster already deployed via annotation
-        String clusterName = "my-cluster";
-        String kafkaStatefulSetName = kafkaStatefulSetName(clusterName);
+        String kafkaStatefulSetName = kafkaClusterName(CLUSTER_NAME);
 
-        LOGGER.info("Running deleteKafkaStatefulSet with cluster {}", clusterName);
+        LOGGER.info("Running deleteKafkaStatefulSet with cluster {}", CLUSTER_NAME);
 
         kubeClient.deleteByName(STATEFUL_SET, kafkaStatefulSetName);
         kubeClient.waitForResourceDeletion(STATEFUL_SET, kafkaStatefulSetName);
@@ -456,13 +458,12 @@ public class KafkaClusterTest {
     }
 
     @Test
-    @KafkaCluster(name = "my-cluster", kafkaNodes = 1, zkNodes = 1)
+    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 1, zkNodes = 1)
     public void testDeleteZookeeperStatefulSet() {
         // kafka cluster already deployed via annotation
-        String clusterName = "my-cluster";
-        String zookeeperStatefulSetName = zookeeperStatefulSetName(clusterName);
+        String zookeeperStatefulSetName = zookeeperClusterName(CLUSTER_NAME);
 
-        LOGGER.info("Running deleteZookeeperStatefulSet with cluster {}", clusterName);
+        LOGGER.info("Running deleteZookeeperStatefulSet with cluster {}", CLUSTER_NAME);
 
         kubeClient.deleteByName(STATEFUL_SET, zookeeperStatefulSetName);
         kubeClient.waitForResourceDeletion(STATEFUL_SET, zookeeperStatefulSetName);
@@ -479,6 +480,96 @@ public class KafkaClusterTest {
     private String globalVariableJsonPathBuilder(String variable) {
         String path = "$.spec.containers[*].env[?(@.name=='" + variable + "')].value";
         return path;
+    }
+
+    @Test
+    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 1)
+    public void testDeleteKafkaService() {
+        // kafka cluster already deployed via annotation
+        String kafkaServiceName = kafkaClusterName(CLUSTER_NAME);
+
+        LOGGER.info("Running deleteKafkaService with cluster {}", CLUSTER_NAME);
+
+        kubeClient.deleteByName(SERVICE, kafkaServiceName);
+        kubeClient.waitForResourceDeletion(SERVICE, kafkaServiceName);
+
+        LOGGER.info("Waiting for creation {}", kafkaServiceName);
+        kubeClient.waitForResourceCreation(SERVICE, kafkaServiceName);
+    }
+
+    @Test
+    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 1)
+    public void testDeleteZookeeperService() {
+        // kafka cluster already deployed via annotation
+        String zookeeperServiceName = zookeeperClusterName(CLUSTER_NAME);
+
+        LOGGER.info("Running deleteKafkaService with cluster {}", CLUSTER_NAME);
+
+        kubeClient.deleteByName(SERVICE, zookeeperServiceName);
+        kubeClient.waitForResourceDeletion(SERVICE, zookeeperServiceName);
+
+        LOGGER.info("Waiting for creation {}", zookeeperServiceName);
+        kubeClient.waitForResourceCreation(SERVICE, zookeeperServiceName);
+    }
+
+    @Test
+    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 1)
+    public void testDeleteKafkaHeadlessService() {
+        // kafka cluster already deployed via annotation
+        String kafkaHeadlessServiceName = kafkaHeadlessServiceName(CLUSTER_NAME);
+
+        LOGGER.info("Running deleteKafkaHeadlessService with cluster {}", CLUSTER_NAME);
+
+        kubeClient.deleteByName(SERVICE, kafkaHeadlessServiceName);
+        kubeClient.waitForResourceDeletion(SERVICE, kafkaHeadlessServiceName);
+
+        LOGGER.info("Waiting for creation {}", kafkaHeadlessServiceName);
+        kubeClient.waitForResourceCreation(SERVICE, kafkaHeadlessServiceName);
+    }
+
+    @Test
+    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 1)
+    public void testDeleteZookeeperHeadlessService() {
+        // kafka cluster already deployed via annotation
+        String zookeeperHeadlessServiceName = zookeeperHeadlessServiceName(CLUSTER_NAME);
+
+        LOGGER.info("Running deleteKafkaHeadlessService with cluster {}", CLUSTER_NAME);
+
+        kubeClient.deleteByName(SERVICE, zookeeperHeadlessServiceName);
+        kubeClient.waitForResourceDeletion(SERVICE, zookeeperHeadlessServiceName);
+
+        LOGGER.info("Waiting for creation {}", zookeeperHeadlessServiceName);
+        kubeClient.waitForResourceCreation(SERVICE, zookeeperHeadlessServiceName);
+    }
+
+    @Test
+    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 1)
+    public void testDeleteKafkaMetricsConfig() {
+        // kafka cluster already deployed via annotation
+        String kafkaMetricsConfigName = kafkaMetricsConfigName(CLUSTER_NAME);
+
+        LOGGER.info("Running deleteKafkaMetricsConfig with cluster {}", CLUSTER_NAME);
+
+        kubeClient.deleteByName(CM, kafkaMetricsConfigName);
+        kubeClient.waitForResourceDeletion(CM, kafkaMetricsConfigName);
+
+        LOGGER.info("Waiting for creation {}", kafkaMetricsConfigName);
+        kubeClient.waitForResourceCreation(CM, kafkaMetricsConfigName);
+    }
+
+    @Test
+    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 1)
+    public void testDeleteZookeeperMetricsConfig() {
+        // kafka cluster already deployed via annotation
+        String zookeeperMetricsConfigName = zookeeperMetricsConfigName(CLUSTER_NAME);
+
+        LOGGER.info("Running deleteZookeeperMetricsConfig with cluster {}", CLUSTER_NAME);
+
+        kubeClient.deleteByName(CM, zookeeperMetricsConfigName);
+        kubeClient.waitForResourceDeletion(CM, zookeeperMetricsConfigName);
+
+        LOGGER.info("Waiting for creation {}", zookeeperMetricsConfigName);
+        kubeClient.waitForResourceCreation(CM, zookeeperMetricsConfigName);
     }
 
     private List<Event> getEvents(String resourceType, String resourceName) {

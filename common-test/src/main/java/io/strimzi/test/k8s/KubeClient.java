@@ -112,6 +112,14 @@ public interface KubeClient<K extends KubeClient<K>> {
     K waitForStatefulSet(String name, int expectPods);
 
     /**
+     * Wait for the resource with the given {@code name} to be created.
+     * @param resourceType The resource type.
+     * @param resourceName The resource name.
+     * @return This kube client.
+     */
+    K waitForResourceCreation(String resourceType, String resourceName);
+
+    /**
      * Get the content of the given {@code resource} with the given {@code name} as YAML.
      * @param resource The type of resource (e.g. "cm").
      * @param resourceName The name of the resource.
