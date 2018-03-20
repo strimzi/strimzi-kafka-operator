@@ -37,6 +37,7 @@ import java.util.Set;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
@@ -72,16 +73,16 @@ public class KafkaConnectS2IClusterOperationsTest {
         when(mockCmOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
 
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
-        when(mockServiceOps.createOrUpdate(serviceCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockServiceOps.reconcile(anyString(), anyString(), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<DeploymentConfig> dcCaptor = ArgumentCaptor.forClass(DeploymentConfig.class);
-        when(mockDcOps.createOrUpdate(dcCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.reconcile(anyString(), anyString(), dcCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<ImageStream> isCaptor = ArgumentCaptor.forClass(ImageStream.class);
-        when(mockIsOps.createOrUpdate(isCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockIsOps.reconcile(anyString(), anyString(), isCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<BuildConfig> bcCaptor = ArgumentCaptor.forClass(BuildConfig.class);
-        when(mockBcOps.createOrUpdate(bcCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockBcOps.reconcile(anyString(), anyString(), bcCaptor.capture())).thenReturn(Future.succeededFuture());
 
         KafkaConnectS2IClusterOperations ops = new KafkaConnectS2IClusterOperations(vertx, true,
                 mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps);
@@ -598,7 +599,7 @@ public class KafkaConnectS2IClusterOperationsTest {
         ops.delete(clusterCmNamespace, clusterCmName, createResult -> {
             context.assertTrue(createResult.succeeded());
 
-            // Vertify service
+            // Verify service
             context.assertEquals(1, serviceNameCaptor.getAllValues().size());
             context.assertEquals(clusterCmNamespace, serviceNamespaceCaptor.getValue());
             context.assertEquals(connect.getName(), serviceNameCaptor.getValue());

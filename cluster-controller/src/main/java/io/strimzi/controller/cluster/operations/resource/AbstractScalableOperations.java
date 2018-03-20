@@ -44,7 +44,8 @@ public abstract class AbstractScalableOperations<C, T extends HasMetadata, L ext
 
     /**
      * Asynchronously scale up the resource given by {@code namespace} and {@code name} to have the scale given by
-     * {@code scaleTo}, returning a future for the outcome..
+     * {@code scaleTo}, returning a future for the outcome.
+     * If the resource does not exist, or has a current scale >= the given {@code scaleTo}, then complete successfully.
      * @param namespace The namespace of the resource to scale.
      * @param name The name of the resource to scale.
      * @param scaleTo The desired scale.
@@ -54,8 +55,11 @@ public abstract class AbstractScalableOperations<C, T extends HasMetadata, L ext
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
             future -> {
                 try {
-                    log.info("Scaling up to {} replicas", scaleTo);
-                    resource(namespace, name).scale(scaleTo, true);
+                    Integer currentScale = currentScale(namespace, name);
+                    if (currentScale != null && currentScale < scaleTo) {
+                        log.info("Scaling up to {} replicas", scaleTo);
+                        resource(namespace, name).scale(scaleTo, true);
+                    }
                     future.complete();
                 } catch (Exception e) {
                     log.error("Caught exception while scaling up", e);
@@ -68,9 +72,12 @@ public abstract class AbstractScalableOperations<C, T extends HasMetadata, L ext
         return fut;
     }
 
+    protected abstract Integer currentScale(String namespace, String name);
+
     /**
      * Asynchronously scale down the resource given by {@code namespace} and {@code name} to have the scale given by
      * {@code scaleTo}, returning a future for the outcome.
+     * If the resource does not exists, is has a current scale <= the given {@code scaleTo} then complete successfully.
      * @param namespace The namespace of the resource to scale.
      * @param name The name of the resource to scale.
      * @param scaleTo The desired scale.
@@ -80,26 +87,14 @@ public abstract class AbstractScalableOperations<C, T extends HasMetadata, L ext
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
             future -> {
                 try {
-                    Object gettable = resource(namespace, name).get();
-                    int nextReplicas;
-
-                    if (gettable instanceof StatefulSet) {
-                        nextReplicas = ((StatefulSet) resource(namespace, name).get()).getSpec().getReplicas();
-                    } else if (gettable instanceof Deployment) {
-                        nextReplicas = ((Deployment) resource(namespace, name).get()).getSpec().getReplicas();
-                    } else if (gettable instanceof DeploymentConfig) {
-                        nextReplicas = ((DeploymentConfig) resource(namespace, name).get()).getSpec().getReplicas();
-                    } else {
-                        future.fail("Unknown resource type: " + gettable.getClass().getCanonicalName());
-                        return;
+                    Integer nextReplicas = currentScale(namespace, name);
+                    if (nextReplicas != null) {
+                        while (nextReplicas > scaleTo) {
+                            nextReplicas--;
+                            log.info("Scaling down from {} to {}", nextReplicas + 1, nextReplicas);
+                            resource(namespace, name).scale(nextReplicas, true);
+                        }
                     }
-
-                    while (nextReplicas > scaleTo) {
-                        nextReplicas--;
-                        log.info("Scaling down from {} to {}", nextReplicas + 1, nextReplicas);
-                        resource(namespace, name).scale(nextReplicas, true);
-                    }
-
                     future.complete();
                 } catch (Exception e) {
                     log.error("Caught exception while scaling down", e);

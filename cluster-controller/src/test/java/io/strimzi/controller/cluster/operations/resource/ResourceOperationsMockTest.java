@@ -18,6 +18,7 @@ import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -160,6 +161,7 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
 
         Async async = context.async();
         op.createOrUpdate(resource).setHandler(ar -> {
+            if (ar.failed()) ar.cause().printStackTrace();
             assertTrue(ar.succeeded());
             verify(mockResource).get();
             verify(mockResource).create(eq(resource));

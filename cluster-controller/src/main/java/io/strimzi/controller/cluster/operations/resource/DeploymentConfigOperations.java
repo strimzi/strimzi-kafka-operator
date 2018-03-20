@@ -29,4 +29,14 @@ public class DeploymentConfigOperations extends AbstractScalableOperations<OpenS
     protected MixedOperation<DeploymentConfig, DeploymentConfigList, DoneableDeploymentConfig, DeployableScalableResource<DeploymentConfig, DoneableDeploymentConfig>> operation() {
         return client.deploymentConfigs();
     }
+
+    @Override
+    protected Integer currentScale(String namespace, String name) {
+        DeploymentConfig deploymentConfig = get(namespace, name);
+        if (deploymentConfig != null) {
+            return deploymentConfig.getSpec().getReplicas();
+        } else {
+            return null;
+        }
+    }
 }

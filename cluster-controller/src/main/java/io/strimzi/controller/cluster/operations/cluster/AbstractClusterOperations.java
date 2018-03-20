@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
  * <p>Abstract cluster creation, update, read, delection, etc, for a generic cluster type {@code C}.
  * This class applies the "template method" pattern, first obtaining the desired cluster configuration
  * ({@link CompositeOperation#getCluster(String, String)}),
- * then creating resources to match ({@link CompositeOperation#composite(String, ClusterOperation)}.</p>
+ * then creating resources to match ({@link CompositeOperation#composite(String, C)}.</p>
  *
  * <p>This class manages a per-cluster-type and per-cluster locking strategy so only one operation per cluster
  * can proceed at once.</p>
@@ -78,40 +78,6 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
         return "lock::" + namespace + "::" + clusterType + "::" + name;
     }
 
-    /**
-     * Represents the desired state of a cluster, possibly including
-     * how it differs from the current state.
-     * @param <C> The type of cluster.
-     */
-    protected static class ClusterOperation<C extends AbstractCluster> {
-        private final C cluster;
-        private final ClusterDiffResult diff;
-
-        /**
-         * @param cluster A cluster representing the target state (i.e.
-         *                a cluster obtained from a cluster ConfigMap).
-         * @param diff The diff if this is an update, otherwise null.
-         */
-        public ClusterOperation(C cluster, ClusterDiffResult diff) {
-            this.cluster = cluster;
-            this.diff = diff;
-        }
-
-        public C cluster() {
-            return cluster;
-        }
-
-        public ClusterDiffResult diff() {
-            return diff;
-        }
-
-    }
-
-    /**
-     * An operation in the resources which make up a cluster to make it conform to
-     * a particular {@linkplain ClusterOperation desired state}.
-     * @param <C> The type of cluster.
-     */
     protected interface CompositeOperation<C extends AbstractCluster> {
         String operationType();
         String clusterType();
@@ -119,13 +85,13 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
          * Get the desired Cluster instance (by getting the corresponding ConfigMap and
          * creating the appropriate {@link AbstractCluster} subclass from it.
          */
-        ClusterOperation<C> getCluster(String namespace, String name);
+        C getCluster(String namespace, String name);
 
         /**
          * Create the resources in Kubernetes according to the given {@code cluster},
          * returning a composite future for when the overall operation is done
          */
-        Future<?> composite(String namespace, ClusterOperation<C> operation);
+        Future<?> composite(String namespace, C operation);
 
     }
 
@@ -133,7 +99,7 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
      * <p>Execute the resource operations necessary to make a cluster conform to a particular desired state.</p>
      *
      * <p>The desired cluster state is obtained from {@link CompositeOperation#getCluster(String, String)} and the
-     * resource operations are executed via {@link CompositeOperation#composite(String, ClusterOperation)}.</p>
+     * resource operations are executed via {@link CompositeOperation#composite(String, C)}.</p>
      *
      * @param namespace The namespace containing the cluster.
      * @param name The name of the cluster
@@ -144,24 +110,24 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
     protected final <C extends AbstractCluster> void execute(String namespace, String name, CompositeOperation<C> compositeOperation, Handler<AsyncResult<Void>> handler) {
         String clusterType = compositeOperation.clusterType();
         String operationType = compositeOperation.operationType();
-        ClusterOperation<C> clusterOp;
+        C cluster;
         try {
-            clusterOp = compositeOperation.getCluster(namespace, name);
-            log.info("{} {} cluster {} in namespace {}", operationType, clusterType, clusterOp.cluster().getName(), namespace);
+            cluster = compositeOperation.getCluster(namespace, name);
+            log.info("{} {} cluster {} in namespace {}", operationType, clusterType, cluster.getName(), namespace);
         } catch (Throwable ex) {
             log.error("Error while getting required {} cluster state for {} operation", clusterType, operationType, ex);
             handler.handle(Future.failedFuture("getCluster error"));
             return;
         }
-        Future<?> composite = compositeOperation.composite(namespace, clusterOp);
+        Future<?> composite = compositeOperation.composite(namespace, cluster);
 
         composite.setHandler(ar -> {
             if (ar.succeeded()) {
-                log.info("{} cluster {} in namespace {}: successful {}", clusterType, clusterOp.cluster().getName(), namespace, operationType);
+                log.info("{} cluster {} in namespace {}: successful {}", clusterType, cluster.getName(), namespace, operationType);
                 handler.handle(Future.succeededFuture());
             } else {
-                log.error("{} cluster {} in namespace {}: failed to {}", clusterType, clusterOp.cluster().getName(), namespace, operationType);
-                handler.handle(Future.failedFuture("Failed to execute cluster operation"));
+                log.error("{} cluster {} in namespace {}: failed to {}", clusterType, cluster.getName(), namespace, operationType, ar.result());
+                handler.handle(ar.map((Void) null));
             }
         });
     }

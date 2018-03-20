@@ -61,18 +61,15 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
         }
 
         @Override
-        public ClusterOperation<KafkaConnectCluster> getCluster(String namespace, String name) {
-            return new ClusterOperation<>(KafkaConnectCluster.fromConfigMap(configMapOperations.get(namespace, name)), null);
+        public KafkaConnectCluster getCluster(String namespace, String name) {
+            return KafkaConnectCluster.fromConfigMap(configMapOperations.get(namespace, name));
         }
 
         @Override
-        public Future<?> composite(String namespace, ClusterOperation<KafkaConnectCluster> clusterOp) {
-            KafkaConnectCluster connect = clusterOp.cluster();
+        public Future<?> composite(String namespace, KafkaConnectCluster connect) {
             List<Future> result = new ArrayList<>(3);
-            result.add(serviceOperations.createOrUpdate(connect.generateService()));
-
-            result.add(deploymentOperations.createOrUpdate(connect.generateDeployment()));
-
+            result.add(serviceOperations.reconcile(namespace, connect.getName(), connect.generateService()));
+            result.add(deploymentOperations.reconcile(namespace, connect.getName(), connect.generateDeployment()));
             return CompositeFuture.join(result);
         }
     };
@@ -89,33 +86,27 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
         }
 
         @Override
-        public ClusterOperation<KafkaConnectCluster> getCluster(String namespace, String name) {
-            ClusterDiffResult diff;
+        public KafkaConnectCluster getCluster(String namespace, String name) {
             KafkaConnectCluster connect;
             ConfigMap connectConfigMap = configMapOperations.get(namespace, name);
-
             if (connectConfigMap != null)    {
                 connect = KafkaConnectCluster.fromConfigMap(connectConfigMap);
-                Deployment dep = deploymentOperations.get(namespace, connect.getName());
                 log.info("Updating Kafka Connect cluster {} in namespace {}", connect.getName(), namespace);
-                diff = connect.diff(dep);
             } else  {
                 throw new IllegalStateException("ConfigMap " + name + " doesn't exist anymore in namespace " + namespace);
             }
 
-            return new ClusterOperation<>(connect, diff);
+            return connect;
         }
 
         @Override
-        public Future<?> composite(String namespace, ClusterOperation<KafkaConnectCluster> operation) {
-            KafkaConnectCluster connect = operation.cluster();
-            ClusterDiffResult diff = operation.diff();
+        public Future<?> composite(String namespace, KafkaConnectCluster connect) {
             Future<Void> chainFuture = Future.future();
 
-            scaleDown(connect, namespace, diff)
-                    .compose(i -> patchService(connect, namespace, diff))
-                    .compose(i -> patchDeployment(connect, namespace, diff))
-                    .compose(i -> scaleUp(connect, namespace, diff))
+            deploymentOperations.scaleDown(namespace, connect.getName(), connect.getReplicas())
+                    .compose(i -> serviceOperations.reconcile(namespace, connect.getName(), connect.generateService()))
+                    .compose(i -> deploymentOperations.reconcile(namespace, connect.getName(), connect.generateDeployment()))
+                    .compose(i -> deploymentOperations.scaleUp(namespace, connect.getName(), connect.getReplicas()))
                     .compose(chainFuture::complete, chainFuture);
 
             return chainFuture;
@@ -133,58 +124,19 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
             return CLUSTER_TYPE_CONNECT;
         }
         @Override
-        public Future<?> composite(String namespace, ClusterOperation<KafkaConnectCluster> clusterOp) {
-            KafkaConnectCluster connect = clusterOp.cluster();
+        public Future<?> composite(String namespace, KafkaConnectCluster connect) {
             List<Future> result = new ArrayList<>(3);
-
             result.add(serviceOperations.reconcile(namespace, connect.getName(), null));
-
             result.add(deploymentOperations.reconcile(namespace, connect.getName(), null));
-
             return CompositeFuture.join(result);
         }
 
         @Override
-        public ClusterOperation<KafkaConnectCluster> getCluster(String namespace, String name) {
+        public KafkaConnectCluster getCluster(String namespace, String name) {
             Deployment dep = deploymentOperations.get(namespace, KafkaConnectCluster.kafkaConnectClusterName(name));
-            return new ClusterOperation<>(KafkaConnectCluster.fromDeployment(namespace, name, dep), null);
+            return KafkaConnectCluster.fromDeployment(namespace, name, dep);
         }
     };
-
-    private Future<Void> scaleDown(KafkaConnectCluster connect, String namespace, ClusterDiffResult diff) {
-        if (diff.isScaleDown())    {
-            log.info("Scaling down deployment {} in namespace {}", connect.getName(), namespace);
-            return deploymentOperations.scaleDown(namespace, connect.getName(), connect.getReplicas());
-        } else {
-            return Future.succeededFuture();
-        }
-    }
-
-    private Future<Void> patchService(KafkaConnectCluster connect, String namespace, ClusterDiffResult diff) {
-        if (diff.isDifferent()) {
-            return serviceOperations.reconcile(namespace, connect.getName(),
-                connect.patchService(serviceOperations.get(namespace, connect.getName())));
-        } else {
-            return Future.succeededFuture();
-        }
-    }
-
-    private Future<Void> patchDeployment(KafkaConnectCluster connect, String namespace, ClusterDiffResult diff) {
-        if (diff.isDifferent()) {
-            return deploymentOperations.reconcile(namespace, connect.getName(),
-                    connect.patchDeployment(deploymentOperations.get(namespace, connect.getName())));
-        } else {
-            return Future.succeededFuture();
-        }
-    }
-
-    private Future<Void> scaleUp(KafkaConnectCluster connect, String namespace, ClusterDiffResult diff) {
-        if (diff.isScaleUp()) {
-            return deploymentOperations.scaleUp(namespace, connect.getName(), connect.getReplicas());
-        } else {
-            return Future.succeededFuture();
-        }
-    }
 
     @Override
     protected void create(String namespace, String name, Handler<AsyncResult<Void>> handler) {

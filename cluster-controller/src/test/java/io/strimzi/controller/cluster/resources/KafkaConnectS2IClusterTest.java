@@ -451,29 +451,6 @@ public class KafkaConnectS2IClusterTest {
     }
 
     @Test
-    public void testPatchDeploymentConfig()   {
-        DeploymentConfig orig = KafkaConnectS2ICluster.fromConfigMap(ResourceUtils.createEmptyKafkaConnectS2IClusterConfigMap(namespace, cluster)).generateDeploymentConfig();
-        orig.getMetadata().setLabels(Collections.EMPTY_MAP);
-        orig.getSpec().getTemplate().getMetadata().setLabels(Collections.EMPTY_MAP);
-
-
-        DeploymentConfig dep = kc.patchDeploymentConfig(orig);
-
-        Map<String, String> expectedLabels = ResourceUtils.labels(Labels.STRIMZI_CLUSTER_LABEL, this.cluster,
-                Labels.STRIMZI_TYPE_LABEL, "kafka-connect-s2i",
-                "my-user-label", "cromulent",
-                Labels.STRIMZI_NAME_LABEL, kc.kafkaConnectClusterName(cluster));
-        assertEquals(expectedLabels, dep.getMetadata().getLabels());
-        assertEquals(new Integer(KafkaConnectS2ICluster.DEFAULT_REPLICAS), dep.getSpec().getReplicas());
-        assertEquals(expectedLabels, dep.getSpec().getTemplate().getMetadata().getLabels());
-        assertEquals(new Integer(healthDelay), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getInitialDelaySeconds());
-        assertEquals(new Integer(healthTimeout), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getTimeoutSeconds());
-        assertEquals(new Integer(healthDelay), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds());
-        assertEquals(new Integer(healthTimeout), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds());
-        assertEquals(getExpectedEnvVars(), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv());
-    }
-
-    @Test
     public void testGenerateBuildConfig() {
         BuildConfig bc = kc.generateBuildConfig();
 
@@ -495,55 +472,6 @@ public class KafkaConnectS2IClusterTest {
         assertEquals("ConfigChange", bc.getSpec().getTriggers().get(0).getType());
         assertEquals("ImageChange", bc.getSpec().getTriggers().get(1).getType());
         assertEquals(new ImageChangeTrigger(), bc.getSpec().getTriggers().get(1).getImageChange());
-    }
-
-    @Test
-    public void testPatchBuildConfig() {
-        BuildTriggerPolicy triggerConfigChange = new BuildTriggerPolicy();
-        triggerConfigChange.setType("ConfigChange");
-
-        BuildTriggerPolicy triggerImageChange = new BuildTriggerPolicy();
-        triggerImageChange.setType("ImageChange");
-        triggerImageChange.setImageChange(new ImageChangeTrigger());
-
-        BuildConfig orig = new BuildConfigBuilder()
-                .withNewMetadata()
-                    .withName(kc.kafkaConnectClusterName(cluster))
-                    .withNamespace(namespace)
-                .endMetadata()
-                .withNewSpec()
-                    .withFailedBuildsHistoryLimit(5)
-                    .withNewOutput()
-                        .withNewTo()
-                            .withKind("ImageStreamTag")
-                            .withName(kc.image)
-                        .endTo()
-                    .endOutput()
-                    .withRunPolicy("Serial")
-                    .withNewSource()
-                        .withType("Binary")
-                        .withBinary(new BinaryBuildSource())
-                    .endSource()
-                    .withNewStrategy()
-                        .withType("Source")
-                        .withNewSourceStrategy()
-                            .withNewFrom()
-                                .withKind("ImageStreamTag")
-                                .withName("someimage:latest")
-                            .endFrom()
-                        .endSourceStrategy()
-                    .endStrategy()
-                    .withTriggers(triggerConfigChange, triggerImageChange)
-                .endSpec()
-                .build();
-
-        BuildConfig bc = kc.patchBuildConfig(orig);
-
-        assertEquals(ResourceUtils.labels(Labels.STRIMZI_CLUSTER_LABEL, cluster,
-                Labels.STRIMZI_TYPE_LABEL, "kafka-connect-s2i",
-                "my-user-label", "cromulent",
-                "strimzi.io/name", kc.kafkaConnectClusterName(cluster)), bc.getMetadata().getLabels());
-        assertEquals(kc.getSourceImageStreamName() + ":" + kc.sourceImageTag, bc.getSpec().getStrategy().getSourceStrategy().getFrom().getName());
     }
 
     @Test
@@ -574,56 +502,5 @@ public class KafkaConnectS2IClusterTest {
                 "my-user-label", "cromulent",
                 Labels.STRIMZI_NAME_LABEL, kc.kafkaConnectClusterName(cluster)), is.getMetadata().getLabels());
         assertEquals(true, is.getSpec().getLookupPolicy().getLocal());
-    }
-
-    @Test
-    public void testPatchSourceImageStream() {
-        ObjectReference origImage = new ObjectReference();
-        origImage.setKind("DockerImage");
-        origImage.setName("something:else");
-
-        TagReference sourceTag = new TagReference();
-        sourceTag.setName("something");
-        sourceTag.setFrom(origImage);
-
-        ImageStream orig = new ImageStreamBuilder()
-                .withNewMetadata()
-                    .withName(kc.getSourceImageStreamName())
-                    .withNamespace(namespace)
-                .endMetadata()
-                .withNewSpec()
-                    .withLookupPolicy(new ImageLookupPolicyBuilder().withLocal(false).build())
-                    .withTags(sourceTag)
-                .endSpec()
-                .build();
-
-        ImageStream is = kc.patchSourceImageStream(orig);
-
-        assertEquals(ResourceUtils.labels(Labels.STRIMZI_CLUSTER_LABEL, cluster,
-                Labels.STRIMZI_TYPE_LABEL, "kafka-connect-s2i",
-                "my-user-label", "cromulent",
-                Labels.STRIMZI_NAME_LABEL, kc.getSourceImageStreamName()), is.getMetadata().getLabels());
-        assertEquals(image.substring(image.lastIndexOf(":") + 1), is.getSpec().getTags().get(0).getName());
-        assertEquals(image, is.getSpec().getTags().get(0).getFrom().getName());
-    }
-
-    @Test
-    public void testPatchTargetImageStream() {
-        ImageStream orig = new ImageStreamBuilder()
-                .withNewMetadata()
-                    .withName(kc.kafkaConnectClusterName(cluster))
-                    .withNamespace(namespace)
-                .endMetadata()
-                .withNewSpec()
-                    .withLookupPolicy(new ImageLookupPolicyBuilder().withLocal(false).build())
-                .endSpec()
-                .build();
-
-        ImageStream is = kc.patchTargetImageStream(orig);
-
-        assertEquals(ResourceUtils.labels(Labels.STRIMZI_CLUSTER_LABEL, cluster,
-                Labels.STRIMZI_TYPE_LABEL, "kafka-connect-s2i",
-                "my-user-label", "cromulent",
-                Labels.STRIMZI_NAME_LABEL, kc.kafkaConnectClusterName(cluster)), is.getMetadata().getLabels());
     }
 }
