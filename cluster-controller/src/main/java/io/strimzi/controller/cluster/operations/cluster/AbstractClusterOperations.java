@@ -6,6 +6,7 @@ package io.strimzi.controller.cluster.operations.cluster;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
 import io.strimzi.controller.cluster.resources.AbstractCluster;
 import io.strimzi.controller.cluster.resources.ClusterDiffResult;
@@ -196,8 +197,14 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
      * The name of the given {@code resource}, as read from its metadata.
      * @param resource The resource
      */
-    protected String name(HasMetadata resource) {
-        return resource.getMetadata().getName();
+    protected static String name(HasMetadata resource) {
+        if (resource != null) {
+            ObjectMeta metadata = resource.getMetadata();
+            if (metadata != null) {
+                return metadata.getName();
+            }
+        }
+        return null;
     }
 
     /**

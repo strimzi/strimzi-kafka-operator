@@ -118,17 +118,15 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
             List<Future> result = new ArrayList<>(4);
             // start creating configMap operation only if metrics are enabled,
             // otherwise the future is already complete (for the "join")
-            if (kafka.isMetricsEnabled()) {
-                result.add(configMapOperations.createOrUpdate(kafka.generateMetricsConfigMap()));
-            }
-
+            ConfigMap metricsConfigMap = kafka.generateMetricsConfigMap();
             Service service = kafka.generateService();
             Service headlessService = kafka.generateHeadlessService();
             StatefulSet statefulSet = kafka.generateStatefulSet(isOpenShift);
 
-            result.add(serviceOperations.createOrUpdate(service));
-            result.add(serviceOperations.createOrUpdate(headlessService));
-            result.add(statefulSetOperations.createOrUpdate(statefulSet));
+            result.add(configMapOperations.reconcile(namespace, kafka.getMetricsConfigName(), metricsConfigMap));
+            result.add(serviceOperations.reconcile(namespace, kafka.getName(), service));
+            result.add(serviceOperations.reconcile(namespace, kafka.getHeadlessName(), headlessService));
+            result.add(statefulSetOperations.reconcile(namespace, kafka.getName(), statefulSet));
 
             CompositeFuture
                 .join(result)
@@ -180,13 +178,17 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
             KafkaCluster kafka = clusterOp.cluster();
             ClusterDiffResult diff = clusterOp.diff();
 
+            Service service = kafka.generateService();
+            Service headlessService = kafka.generateHeadlessService();
+            ConfigMap metricsConfigMap = kafka.generateMetricsConfigMap();
+            StatefulSet statefulSet = kafka.generateStatefulSet(isOpenShift);
+
             Future<Void> chainFuture = Future.future();
             scaleDown(kafka, namespace, diff)
-                    .compose(i -> serviceOperations.reconcile(namespace, kafka.getName(), kafka.generateService()))
-                    .compose(i -> serviceOperations.reconcile(namespace, kafka.getHeadlessName(), kafka.generateHeadlessService()))
-                    .compose(i -> configMapOperations.reconcile(namespace, kafka.getMetricsConfigName(), kafka.generateMetricsConfigMap()))
-                    .compose(i -> patchStatefulSet(kafka, namespace, diff))
-                    .compose(i -> rollingUpdate(kafka, namespace, diff))
+                    .compose(i -> serviceOperations.reconcile(namespace, kafka.getName(), service))
+                    .compose(i -> serviceOperations.reconcile(namespace, kafka.getHeadlessName(), headlessService))
+                    .compose(i -> configMapOperations.reconcile(namespace, kafka.getMetricsConfigName(), metricsConfigMap))
+                    .compose(i -> statefulSetOperations.reconcile(namespace, kafka.getName(), statefulSet))
                     .compose(i -> scaleUp(kafka, namespace, diff))
                     .compose(chainFuture::complete, chainFuture);
 
@@ -200,28 +202,6 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
             } else {
                 return Future.succeededFuture();
             }
-        }
-
-        private Future<Void> patchStatefulSet(KafkaCluster kafka, String namespace, ClusterDiffResult diff) {
-            if (diff.isDifferent()) {
-                return statefulSetOperations.reconcile(namespace, kafka.getName(),
-                        kafka.patchStatefulSet(statefulSetOperations.get(namespace, kafka.getName())));
-            } else {
-                return Future.succeededFuture();
-            }
-        }
-
-        private Future<Void> rollingUpdate(KafkaCluster kafka, String namespace, ClusterDiffResult diff) {
-            Future<Void> rollingUpdate = Future.future();
-
-            if (diff.isRollingUpdate()) {
-                statefulSetOperations.rollingUpdate(namespace, kafka.getName(),
-                        rollingUpdate.completer());
-            } else {
-                rollingUpdate.complete();
-            }
-
-            return rollingUpdate;
         }
 
         private Future<Void> scaleUp(KafkaCluster kafka, String namespace, ClusterDiffResult diff) {
@@ -257,14 +237,9 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
                     && kafka.getStorage().isDeleteClaim();
             List<Future> result = new ArrayList<>(4 + (deleteClaims ? kafka.getReplicas() : 0));
 
-            if (kafka.isMetricsEnabled()) {
-                result.add(configMapOperations.reconcile(namespace, kafka.getMetricsConfigName(), null));
-            }
-
+            result.add(configMapOperations.reconcile(namespace, kafka.getMetricsConfigName(), null));
             result.add(serviceOperations.reconcile(namespace, kafka.getName(), null));
-
             result.add(serviceOperations.reconcile(namespace, kafka.getHeadlessName(), null));
-
             result.add(statefulSetOperations.reconcile(namespace, kafka.getName(), null));
 
             if (deleteClaims) {
@@ -301,17 +276,15 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
             ZookeeperCluster zk = clusterOp.cluster();
             List<Future> createResult = new ArrayList<>(4);
 
-            if (zk.isMetricsEnabled()) {
-                createResult.add(configMapOperations.createOrUpdate(zk.generateMetricsConfigMap()));
-            }
-
+            ConfigMap metricsConfigMap = zk.generateMetricsConfigMap();
             Service service = zk.generateService();
             Service headlessService = zk.generateHeadlessService();
             StatefulSet statefulSet = zk.generateStatefulSet(isOpenShift);
 
-            createResult.add(serviceOperations.createOrUpdate(service));
-            createResult.add(serviceOperations.createOrUpdate(headlessService));
-            createResult.add(statefulSetOperations.createOrUpdate(statefulSet));
+            createResult.add(configMapOperations.reconcile(namespace, zk.getMetricsConfigName(), metricsConfigMap));
+            createResult.add(serviceOperations.reconcile(namespace, zk.getName(), service));
+            createResult.add(serviceOperations.reconcile(namespace, zk.getHeadlessName(), headlessService));
+            createResult.add(statefulSetOperations.reconcile(namespace, zk.getName(), statefulSet));
 
             CompositeFuture
                 .join(createResult)
@@ -369,8 +342,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
                     .compose(i -> serviceOperations.reconcile(namespace, zk.getName(), zk.generateService()))
                     .compose(i -> serviceOperations.reconcile(namespace, zk.getHeadlessName(), zk.generateHeadlessService()))
                     .compose(i -> configMapOperations.reconcile(namespace, zk.getMetricsConfigName(), zk.generateMetricsConfigMap()))
-                    .compose(i -> patchStatefulSet(zk, namespace, diff))
-                    .compose(i -> rollingUpdate(zk, namespace, diff))
+                    .compose(i -> statefulSetOperations.reconcile(namespace, zk.getName(), zk.generateStatefulSet(isOpenShift)))
                     .compose(i -> scaleUp(zk, namespace, diff))
                     .compose(chainFuture::complete, chainFuture);
 
@@ -384,28 +356,6 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
             } else {
                 return Future.succeededFuture();
             }
-        }
-
-        private Future<Void> patchStatefulSet(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
-            if (diff.isDifferent()) {
-                return statefulSetOperations.reconcile(namespace, zk.getName(),
-                        zk.patchStatefulSet(statefulSetOperations.get(namespace, zk.getName())));
-            } else {
-                return Future.succeededFuture();
-            }
-        }
-
-        private Future<Void> rollingUpdate(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
-            Future<Void> rollingUpdate = Future.future();
-
-            if (diff.isRollingUpdate()) {
-                statefulSetOperations.rollingUpdate(namespace, zk.getName(),
-                        rollingUpdate.completer());
-            } else {
-                rollingUpdate.complete();
-            }
-
-            return rollingUpdate;
         }
 
         private Future<Void> scaleUp(ZookeeperCluster zk, String namespace, ClusterDiffResult diff) {
