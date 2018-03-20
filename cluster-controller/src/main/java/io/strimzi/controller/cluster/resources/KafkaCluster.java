@@ -91,7 +91,6 @@ public class KafkaCluster extends AbstractCluster {
         this.isMetricsEnabled = DEFAULT_KAFKA_METRICS_ENABLED;
 
         this.mountPath = "/var/lib/kafka";
-        this.volumeName = "data";
         this.metricsConfigVolumeName = "kafka-metrics-config";
         this.metricsConfigMountPath = "/opt/prometheus/config/";
     }

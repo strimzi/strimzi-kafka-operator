@@ -85,7 +85,7 @@ public abstract class AbstractCluster {
     protected Storage storage;
 
     protected String mountPath;
-    protected String volumeName;
+    protected String volumeName = "data";
     protected String metricsConfigVolumeName;
     protected String metricsConfigMountPath;
 
