@@ -94,7 +94,6 @@ public class ZookeeperCluster extends AbstractCluster {
         this.isMetricsEnabled = DEFAULT_ZOOKEEPER_METRICS_ENABLED;
 
         this.mountPath = "/var/lib/zookeeper";
-        this.volumeName = "data";
         this.metricsConfigVolumeName = "zookeeper-metrics-config";
         this.metricsConfigMountPath = "/opt/prometheus/config/";
     }
