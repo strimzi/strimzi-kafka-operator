@@ -230,7 +230,7 @@ Because Strimzi uses the [JMX exporter](https://github.com/prometheus/jmx_export
 on each node, the JSON string used for metrics configuration in the cluster ConfigMap reflects the related JMX exporter 
 configuration file. For this reason, you can find more information on how to use it in the corresponding GitHub repo.
 
-For more information on how metrics work, the related documentation is available link:../../metrics/METRICS.md[here]
+For more information about using the metrics with Prometheus and Grafana, see <<_metrics>>
 
 [[topic_controller_json_config]]
 ===== Topic controller

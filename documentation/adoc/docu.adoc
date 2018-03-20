@@ -31,3 +31,5 @@ include::topic-controller.adoc[]
 include::faq.adoc[]
 
 include::appendix_deploying_kubernetes_openshift_cluster.adoc[]
+
+include::appendix_metrics.adoc[]

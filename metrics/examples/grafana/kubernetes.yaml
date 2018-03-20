@@ -1,3 +1,6 @@
+# This is not a recommended configuration, and further support should be available
+# from the Prometheus and Grafana communities
+
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
@@ -11,7 +14,7 @@ spec:
     spec:
       containers:
       - name: grafana
-        image: strimzi/grafana:latest
+        image: strimzilab/grafana:latest
         imagePullPolicy: IfNotPresent
         ports:
         - name: grafana

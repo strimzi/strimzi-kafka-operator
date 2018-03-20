@@ -1,0 +1,92 @@
+[appendix]
+== Metrics
+
+This section describes how to deploy a Prometheus server for scraping metrics from the Kafka cluster and showing them using a Grafana dashboard. The resources provided are examples to show how Kafka metrics can be stored in Prometheus: They are not a recommended configuration, and further support should be available from the Prometheus and Grafana communities.
+
+When adding Prometheus and Grafana servers to an Apache Kafka deployment using `minikube` or `minishift`, the memory available to the virtual machine should be increased (to 4 GB of RAM, for example, instead of the default 2 GB). Information on how to increase the default amount of memory can be found in the following section <<_installing_kubernetes_and_openshift_cluster>>.
+
+=== Deploying on OpenShift
+
+==== Prometheus
+
+The Prometheus server configuration uses a service discovery feature in order to discover the pods in the cluster from which it gets metrics.
+In order to have this feature working, it's necessary for the service account used for running the Prometheus service pod to have access to the API server to get the pod list. By default the service account `prometheus-server` is used.
+
+[source]
+export NAMESPACE=[namespace]
+oc login -u system:admin
+oc create sa prometheus-server
+oc adm policy add-cluster-role-to-user cluster-reader system:serviceaccount:${NAMESPACE}:prometheus-server
+oc login -u developer
+
+where `[namespace]` is the namespace/project where the Apache Kafka cluster was deployed.
+
+Finally, create the Prometheus service by running
+
+[source]
+oc create -f https://raw.githubusercontent.com/strimzi/strimzi/master/metrics/examples/prometheus/kubernetes.yaml
+
+==== Grafana
+
+A Grafana server is necessary only to get a visualisation of the Prometheus metrics.
+
+To deploy Grafana on OpenShift, the following commands should be executed:
+
+[source]
+oc create -f https://raw.githubusercontent.com/strimzi/strimzi/master/metrics/examples/grafana/kubernetes.yaml
+
+=== Deploying on Kubernetes
+
+==== Prometheus
+
+The Prometheus server configuration uses a service discovery feature in order to discover the pods in the cluster from which it gets metrics.
+If the RBAC is enabled in your Kubernetes deployment then in order to have this feature working, it's necessary for the service account used for running the Prometheus service pod to have access to the API server to get the pod list. By default the service account `prometheus-server` is used.
+
+[source]
+export NAMESPACE=[namespace]
+kubectl create sa prometheus-server
+kubectl create -f https://raw.githubusercontent.com/strimzi/strimzi/master/metrics/examples/prometheus/cluster-reader.yaml
+kubectl create clusterrolebinding read-pods-binding --clusterrole=cluster-reader --serviceaccount=${NAMESPACE}:prometheus-server
+
+where `[namespace]` is the namespace/project where the Apache Kafka cluster was deployed.
+
+Finally, create the Prometheus service by running
+
+[source]
+kubectl apply -f https://raw.githubusercontent.com/strimzi/strimzi/master/metrics/examples/prometheus/kubernetes.yaml
+
+==== Grafana
+
+A Grafana server is necessary only to get a visualisation of Prometheus metrics.
+
+To deploy Grafana on Kubernetes, the following commands should be executed:
+
+[source]
+kubectl apply -f https://raw.githubusercontent.com/strimzi/strimzi/master/metrics/examples/grafana/kubernetes.yaml
+
+=== Grafana dashboard
+
+As an example, and in order to visualize the exported metrics in Grafana, the simple dashboard https://github.com/strimzi/strimzi/blob/master/metrics/examples/grafana/kafka-dashboard.json[`kafka-dashboard.json`] file is provided.
+The Prometheus data source, and the above dashboard, can be set up in Grafana by following these steps.
+
+NOTE: If your cluster is running using `minikube` or `minishift`, you can use the `port-forward` command for forwarding traffic from the Grafana pod to the host. For example, you can access the Grafana UI by running `oc port-forward grafana-1-fbl7s 3000:3000` (or using `kubectl` instead of `oc`) and then pointing a browser to `http://localhost:3000`.
+
+. Access to the Grafana UI using `admin/admin` credentials.
++
+image::grafana_login.png[Grafana login]
+
+. Click on the "Add data source" button from the Grafana home in order to add Prometheus as data source.
++
+image::grafana_home.png[Grafana home]
+
+. Fill in the information about the Prometheus data source, specifying a name and "Prometheus" as type. In the URL field, the connection string to the Prometheus server (i.e. `http://prometheus:9090`) should be specified. After "Add" is clicked, Grafana will test the connection to the data source.
++
+image::grafana_prometheus_data_source.png[Add Prometheus data source]
+
+. From the top left menu, click on "Dashboards" and then "Import" to open the "Import Dashboard" window where the provided https://github.com/strimzi/strimzi/blob/master/metrics/examples/grafana/kafka-dashboard.json[`kafka-dashboard.json`] file can be imported or its content pasted.
++
+image::grafana_import_dashboard.png[Add Grafana dashboard]
+
+. After importing the dashboard, the Grafana home should show with some initial metrics about CPU and JVM memory usage. When the Kafka cluster is used (creating topics and exchanging messages) the other metrics, like messages in and bytes in/out per topic, will be shown.
++
+image::grafana_kafka_dashboard.png[Kafka dashboard]
