@@ -162,7 +162,7 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         op.createOrUpdate(resource).setHandler(ar -> {
             assertTrue(ar.succeeded());
             verify(mockResource).get();
-            verify(mockNameable).createOrReplace(eq(resource));
+            verify(mockResource).create(eq(resource));
             async.complete();
         });
     }
@@ -180,7 +180,7 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
 
         MixedOperation mockCms = mock(MixedOperation.class);
         when(mockCms.inNamespace(matches(resource.getMetadata().getNamespace()))).thenReturn(mockNameable);
-        when(mockNameable.createOrReplace(any())).thenThrow(ex);
+        when(mockResource.create(any())).thenThrow(ex);
 
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
