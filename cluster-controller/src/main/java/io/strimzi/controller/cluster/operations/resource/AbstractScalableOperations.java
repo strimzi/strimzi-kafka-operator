@@ -49,9 +49,12 @@ public abstract class AbstractScalableOperations<C, T extends HasMetadata, L ext
      * @param namespace The namespace of the resource to scale.
      * @param name The name of the resource to scale.
      * @param scaleTo The desired scale.
+     * @return A future whose value is the scale after the operation.
+     * If the scale was initially > the given {@code scaleTo} then this value will be the original scale,
+     * The value will be null if the resource didn't exist (hence no scaling occurred).
      */
-    public Future<Void> scaleUp(String namespace, String name, int scaleTo) {
-        Future<Void> fut = Future.future();
+    public Future<Integer> scaleUp(String namespace, String name, int scaleTo) {
+        Future<Integer> fut = Future.future();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
             future -> {
                 try {
@@ -59,8 +62,9 @@ public abstract class AbstractScalableOperations<C, T extends HasMetadata, L ext
                     if (currentScale != null && currentScale < scaleTo) {
                         log.info("Scaling up to {} replicas", scaleTo);
                         resource(namespace, name).scale(scaleTo, true);
+                        currentScale = scaleTo;
                     }
-                    future.complete();
+                    future.complete(currentScale);
                 } catch (Exception e) {
                     log.error("Caught exception while scaling up", e);
                     future.fail(e);
@@ -81,9 +85,12 @@ public abstract class AbstractScalableOperations<C, T extends HasMetadata, L ext
      * @param namespace The namespace of the resource to scale.
      * @param name The name of the resource to scale.
      * @param scaleTo The desired scale.
+     * @return A future whose value is the scale after the operation.
+     * If the scale was initially < the given {@code scaleTo} then this value will be the original scale,
+     * The value will be null if the resource didn't exist (hence no scaling occurred).
      */
-    public Future<Void> scaleDown(String namespace, String name, int scaleTo) {
-        Future<Void> fut = Future.future();
+    public Future<Integer> scaleDown(String namespace, String name, int scaleTo) {
+        Future<Integer> fut = Future.future();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
             future -> {
                 try {
@@ -95,7 +102,7 @@ public abstract class AbstractScalableOperations<C, T extends HasMetadata, L ext
                             resource(namespace, name).scale(nextReplicas, true);
                         }
                     }
-                    future.complete();
+                    future.complete(nextReplicas);
                 } catch (Exception e) {
                     log.error("Caught exception while scaling down", e);
                     future.fail(e);

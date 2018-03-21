@@ -11,6 +11,7 @@ import io.strimzi.controller.cluster.operations.resource.BuildConfigOperations;
 import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
 import io.strimzi.controller.cluster.operations.resource.DeploymentConfigOperations;
 import io.strimzi.controller.cluster.operations.resource.ImageStreamOperations;
+import io.strimzi.controller.cluster.operations.resource.ReconcileResult;
 import io.strimzi.controller.cluster.operations.resource.ServiceOperations;
 import io.strimzi.controller.cluster.resources.KafkaConnectS2ICluster;
 import io.strimzi.controller.cluster.resources.Labels;
@@ -62,7 +63,7 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
     @Override
     public void create(String namespace, String name, Handler<AsyncResult<Void>> handler) {
         if (isOpenShift) {
-            execute(namespace, name, create, handler);
+            execute(namespace, name, update, handler);
         } else {
             handler.handle(Future.failedFuture("S2I only available on OpenShift"));
         }
@@ -163,7 +164,7 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
                     .compose(i -> imagesStreamOperations.reconcile(namespace, connect.getSourceImageStreamName(), connect.generateSourceImageStream()))
                     .compose(i -> imagesStreamOperations.reconcile(namespace, connect.getName(), connect.generateTargetImageStream()))
                     .compose(i -> buildConfigOperations.reconcile(namespace, connect.getName(), connect.generateBuildConfig()))
-                    .compose(i -> deploymentConfigOperations.scaleUp(namespace, connect.getName(), connect.getReplicas()))
+                    .compose(i -> deploymentConfigOperations.scaleUp(namespace, connect.getName(), connect.getReplicas()).map((Void) null))
                     .compose(chainFuture::complete, chainFuture);
 
             return chainFuture;

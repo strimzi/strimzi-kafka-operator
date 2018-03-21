@@ -441,7 +441,7 @@ public class KafkaConnectS2IClusterOperationsTest {
         ops.update(clusterCmNamespace, clusterCmName, createResult -> {
             context.assertTrue(createResult.succeeded());
 
-            // Vertify service
+            // Verify service
             List<Service> capturedServices = serviceCaptor.getAllValues();
             context.assertEquals(0, capturedServices.size());
 

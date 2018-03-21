@@ -18,7 +18,6 @@ import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -102,7 +101,7 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         AbstractOperations<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
 
         Async async = context.async();
-        Future<Void> fut = op.createOrUpdate(resource);
+        Future<ReconcileResult> fut = op.createOrUpdate(resource);
         fut.setHandler(ar -> {
             assertTrue(ar.succeeded());
             verify(mockResource).get();
@@ -201,7 +200,6 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
     public void deleteWhenResourceDoesNotExistIsANop(TestContext context) {
         T resource = resource();
         Resource mockResource = mock(resourceType());
-        when(mockResource.get()).thenReturn(resource);
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(RESOURCE_NAME))).thenReturn(mockResource);
@@ -217,7 +215,8 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         Async async = context.async();
         op.reconcile(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null).setHandler(ar -> {
             assertTrue(ar.succeeded());
-            verify(mockResource).delete();
+            verify(mockResource).get();
+            verify(mockResource, never()).delete();
             async.complete();
         });
     }
@@ -227,6 +226,7 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         T resource = resource();
 
         Resource mockResource = mock(resourceType());
+        when(mockResource.get()).thenReturn(resource);
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(RESOURCE_NAME))).thenReturn(mockResource);
@@ -266,6 +266,7 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
 
         Async async = context.async();
         op.reconcile(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null).setHandler(ar -> {
+            if (ar.failed()) ar.cause().printStackTrace();
             assertTrue(ar.succeeded());
             verify(mockResource).delete();
             async.complete();

@@ -55,7 +55,7 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
      * If the resource with that name already exists the future completes successfully.
      * @param resource The resource to create.
      */
-    public Future<Void> createOrUpdate(T resource) {
+    public Future<ReconcileResult> createOrUpdate(T resource) {
         if (resource == null) {
             throw new NullPointerException();
         }
@@ -66,26 +66,30 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
      * Asynchronously reconciles the resource with the given namespace and name to match the given
      * desired resource, returning a future for the result.
      */
-    public Future<Void> reconcile(String namespace, String name, T desired) {
-        Future<Void> fut = Future.future();
+    public Future<ReconcileResult> reconcile(String namespace, String name, T desired) {
+        Future<ReconcileResult> fut = Future.future();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
-                    if (desired != null) {
-                        if (!namespace.equals(desired.getMetadata().getNamespace())) {
-                            future.fail("Given namespace " + namespace + " incompatible with desired namespace " + desired.getMetadata().getNamespace());
-                        } else if (!name.equals(desired.getMetadata().getName())) {
-                            future.fail("Given name "+ name +" incompatible with desired name " + desired.getMetadata().getName());
-                        } else {
-                            T current = operation().inNamespace(namespace).withName(name).get();
+                    if (desired != null && !namespace.equals(desired.getMetadata().getNamespace())) {
+                        future.fail("Given namespace " + namespace + " incompatible with desired namespace " + desired.getMetadata().getNamespace());
+                    } else if (desired != null && !name.equals(desired.getMetadata().getName())) {
+                        future.fail("Given name "+ name +" incompatible with desired name " + desired.getMetadata().getName());
+                    } else {
+                        T current = operation().inNamespace(namespace).withName(name).get();
+                        if (desired != null) {
                             if (current == null) {
                                 internalCreate(namespace, name, desired, future);
                             } else {
                                 internalPatch(namespace, name, current, desired, future);
                             }
+                        } else {
+                            if (current != null) {
+                                // Deletion is desired
+                                internalDelete(namespace, name, future);
+                            } else {
+                                future.complete(ReconcileResult.noop());
+                            }
                         }
-                    } else {
-                        // Deletion is desired
-                        internalDelete(namespace, name, future);
                     }
                 },
                 false,
@@ -98,12 +102,12 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
      * Deletes the resource with the given namespace and name
      * and completes the given future accordingly
      */
-    protected void internalDelete(String namespace, String name, Future<Void> future) {
+    protected void internalDelete(String namespace, String name, Future<ReconcileResult> future) {
         try {
             log.info("Deleting {} {} in namespace {}", resourceKind, name, namespace);
             operation().inNamespace(namespace).withName(name).delete();
             log.info("{} {} in namespace {} has been deleted", resourceKind, name, namespace);
-            future.complete();
+            future.complete(ReconcileResult.deleted());
         } catch (Exception e) {
             log.error("Caught exception while deleting {} {} in namespace {}", resourceKind, name, namespace, e);
             future.fail(e);
@@ -114,12 +118,12 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
      * Patches the resource with the given namespace and name to match the given desired resource
      * and completes the given future accordingly.
      */
-    protected void internalPatch(String namespace, String name, T current, T desired, Future<Void> future) {
+    protected void internalPatch(String namespace, String name, T current, T desired, Future<ReconcileResult> future) {
         try {
             log.info("Patching {} resource {} in namespace {} with {}", resourceKind, name, namespace, desired);
             operation().inNamespace(namespace).withName(name).cascading(true).patch(desired);
             log.info("{} {} in namespace {} has been patched", resourceKind, name, namespace);
-            future.complete();
+            future.complete(ReconcileResult.patched());
         } catch (Exception e) {
             log.error("Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
             future.fail(e);
@@ -130,12 +134,12 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
      * Creates a resource with the given namespace and name with the given desired state
      * and completes the given future accordingly.
      */
-    protected void internalCreate(String namespace, String name, T desired, Future<Void> future) {
+    protected void internalCreate(String namespace, String name, T desired, Future<ReconcileResult> future) {
         try {
             log.info("Creating {} {} in namespace {}", resourceKind, name, namespace);
             operation().inNamespace(namespace).withName(name).create(desired);
             log.info("{} {} in namespace {} has been created", resourceKind, name, namespace);
-            future.complete();
+            future.complete(ReconcileResult.created());
         } catch (Exception e) {
             log.error("Caught exception while creating {} {} in namespace {}", resourceKind, name, namespace, e);
             future.fail(e);

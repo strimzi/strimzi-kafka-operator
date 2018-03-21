@@ -14,6 +14,7 @@ import io.strimzi.controller.cluster.ResourceUtils;
 import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
 import io.strimzi.controller.cluster.operations.resource.DeploymentOperations;
 import io.strimzi.controller.cluster.operations.resource.PvcOperations;
+import io.strimzi.controller.cluster.operations.resource.ReconcileResult;
 import io.strimzi.controller.cluster.operations.resource.ServiceOperations;
 import io.strimzi.controller.cluster.operations.resource.StatefulSetOperations;
 import io.strimzi.controller.cluster.resources.AbstractCluster;
@@ -168,14 +169,15 @@ public class KafkaClusterOperationsTest {
         String clusterCmNamespace = clusterCm.getMetadata().getNamespace();
         when(mockCmOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
-        when(mockServiceOps.reconcile(anyString(), anyString(), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockServiceOps.reconcile(anyString(), anyString(), serviceCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created()));
         when(mockServiceOps.endpointReadiness(anyString(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         ArgumentCaptor<StatefulSet> ssCaptor = ArgumentCaptor.forClass(StatefulSet.class);
-        when(mockSsOps.reconcile(anyString(), anyString(), ssCaptor.capture())).thenReturn(Future.succeededFuture());
-        when(mockSsOps.scaleDown(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture());
-        when(mockSsOps.scaleUp(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture());
+        when(mockSsOps.reconcile(anyString(), anyString(), ssCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created()));
+        when(mockSsOps.scaleDown(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(null));
+        when(mockSsOps.rollingUpdate(anyString(), anyString())).thenReturn(Future.succeededFuture());
+        when(mockSsOps.scaleUp(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         ArgumentCaptor<Deployment> depCaptor = ArgumentCaptor.forClass(Deployment.class);
-        when(mockDepOps.reconcile(anyString(), anyString(), depCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockDepOps.reconcile(anyString(), anyString(), depCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created()));
 
         //when(mockSsOps.readiness(any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         //when(mockPodOps.readiness(any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
@@ -186,7 +188,7 @@ public class KafkaClusterOperationsTest {
         TopicController topicController = TopicController.fromConfigMap(clusterCm);
         ArgumentCaptor<ConfigMap> metricsCaptor = ArgumentCaptor.forClass(ConfigMap.class);
         ArgumentCaptor<String> metricsNameCaptor = ArgumentCaptor.forClass(String.class);
-        when(mockCmOps.reconcile(anyString(), metricsNameCaptor.capture(), metricsCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockCmOps.reconcile(anyString(), metricsNameCaptor.capture(), metricsCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created()));
 
         KafkaClusterOperations ops = new KafkaClusterOperations(vertx, openShift,
                 ClusterControllerConfig.DEFAULT_OPERATION_TIMEOUT_MS,
@@ -543,11 +545,14 @@ public class KafkaClusterOperationsTest {
         // Mock StatefulSet scaleUp
         ArgumentCaptor<String> scaledUpCaptor = ArgumentCaptor.forClass(String.class);
         when(mockSsOps.scaleUp(anyString(), scaledUpCaptor.capture(), anyInt())).thenReturn(
-                Future.succeededFuture()
+                Future.succeededFuture(42)
         );
         // Mock StatefulSet scaleDown
         ArgumentCaptor<String> scaledDownCaptor = ArgumentCaptor.forClass(String.class);
         when(mockSsOps.scaleDown(anyString(), scaledDownCaptor.capture(), anyInt())).thenReturn(
+                Future.succeededFuture(42)
+        );
+        when(mockSsOps.rollingUpdate(anyString(), anyString())).thenReturn(
                 Future.succeededFuture()
         );
 

@@ -93,9 +93,9 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
             KafkaConnectCluster connect = getCluster(namespace, name);
             Future<Void> chainFuture = Future.future();
             deploymentOperations.scaleDown(namespace, connect.getName(), connect.getReplicas())
-                    .compose(i -> serviceOperations.reconcile(namespace, connect.getName(), connect.generateService()))
+                    .compose(scale -> serviceOperations.reconcile(namespace, connect.getName(), connect.generateService()))
                     .compose(i -> deploymentOperations.reconcile(namespace, connect.getName(), connect.generateDeployment()))
-                    .compose(i -> deploymentOperations.scaleUp(namespace, connect.getName(), connect.getReplicas()))
+                    .compose(i -> deploymentOperations.scaleUp(namespace, connect.getName(), connect.getReplicas()).map((Void) null))
                     .compose(chainFuture::complete, chainFuture);
 
             return chainFuture;
@@ -126,7 +126,7 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
 
     @Override
     protected void create(String namespace, String name, Handler<AsyncResult<Void>> handler) {
-        execute(namespace, name, create, handler);
+        execute(namespace, name, update, handler);
     }
 
     @Override
