@@ -169,9 +169,11 @@ public class Session extends AbstractVerticle {
 
                         controller.reconcile(cm, topicName, reconcileResult -> {
                             if (reconcileResult.succeeded()) {
-                                LOGGER.info("Success reconciling topic {}", topicName);
+                                LOGGER.info("Success {} reconciling ConfigMap {} topic {}",
+                                        reconciliationType, Controller.logConfigMap(cm), topicName);
                             } else {
-                                LOGGER.error("Error reconciling topic {}", topicName, reconcileResult.cause());
+                                LOGGER.error("Error {} reconciling ConfigMap {} topic {}",
+                                        reconciliationType, Controller.logConfigMap(cm), topicName, reconcileResult.cause());
                             }
                         });
                     });
@@ -193,9 +195,11 @@ public class Session extends AbstractVerticle {
                             TopicName topicName = new TopicName(cm);
                             controller.reconcile(cm, topicName, reconcileResult -> {
                                 if (reconcileResult.succeeded()) {
-                                    LOGGER.info("Success reconciling ConfigMap {}", Controller.logConfigMap(cm));
+                                    LOGGER.info("Success {} reconciling ConfigMap {}",
+                                            reconciliationType, Controller.logConfigMap(cm));
                                 } else {
-                                    LOGGER.error("Error reconciling ConfigMap {}", Controller.logConfigMap(cm), reconcileResult.cause());
+                                    LOGGER.error("Error {} reconciling ConfigMap {}",
+                                            reconciliationType, Controller.logConfigMap(cm), reconcileResult.cause());
                                 }
                             });
                         }
