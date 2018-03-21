@@ -61,13 +61,9 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
         }
 
         @Override
-        public KafkaConnectCluster getCluster(String namespace, String name) {
-            return KafkaConnectCluster.fromConfigMap(configMapOperations.get(namespace, name));
-        }
-
-        @Override
-        public Future<?> composite(String namespace, KafkaConnectCluster connect) {
-            List<Future> result = new ArrayList<>(3);
+        public Future<?> composite(String namespace, String name) {
+            KafkaConnectCluster connect = KafkaConnectCluster.fromConfigMap(configMapOperations.get(namespace, name));
+            List<Future> result = new ArrayList<>(2);
             result.add(serviceOperations.reconcile(namespace, connect.getName(), connect.generateService()));
             result.add(deploymentOperations.reconcile(namespace, connect.getName(), connect.generateDeployment()));
             return CompositeFuture.join(result);
@@ -85,24 +81,17 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
             return CLUSTER_TYPE_CONNECT;
         }
 
-        @Override
         public KafkaConnectCluster getCluster(String namespace, String name) {
-            KafkaConnectCluster connect;
             ConfigMap connectConfigMap = configMapOperations.get(namespace, name);
-            if (connectConfigMap != null)    {
-                connect = KafkaConnectCluster.fromConfigMap(connectConfigMap);
-                log.info("Updating Kafka Connect cluster {} in namespace {}", connect.getName(), namespace);
-            } else  {
-                throw new IllegalStateException("ConfigMap " + name + " doesn't exist anymore in namespace " + namespace);
-            }
-
+            KafkaConnectCluster connect = KafkaConnectCluster.fromConfigMap(connectConfigMap);
+            log.info("Updating Kafka Connect cluster {} in namespace {}", name, namespace);
             return connect;
         }
 
         @Override
-        public Future<?> composite(String namespace, KafkaConnectCluster connect) {
+        public Future<?> composite(String namespace, String name) {
+            KafkaConnectCluster connect = getCluster(namespace, name);
             Future<Void> chainFuture = Future.future();
-
             deploymentOperations.scaleDown(namespace, connect.getName(), connect.getReplicas())
                     .compose(i -> serviceOperations.reconcile(namespace, connect.getName(), connect.generateService()))
                     .compose(i -> deploymentOperations.reconcile(namespace, connect.getName(), connect.generateDeployment()))
@@ -124,18 +113,15 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
             return CLUSTER_TYPE_CONNECT;
         }
         @Override
-        public Future<?> composite(String namespace, KafkaConnectCluster connect) {
+        public Future<?> composite(String namespace, String name) {
+            Deployment dep = deploymentOperations.get(namespace, KafkaConnectCluster.kafkaConnectClusterName(name));
+            KafkaConnectCluster connect = KafkaConnectCluster.fromDeployment(namespace, name, dep);
             List<Future> result = new ArrayList<>(3);
             result.add(serviceOperations.reconcile(namespace, connect.getName(), null));
             result.add(deploymentOperations.reconcile(namespace, connect.getName(), null));
             return CompositeFuture.join(result);
         }
 
-        @Override
-        public KafkaConnectCluster getCluster(String namespace, String name) {
-            Deployment dep = deploymentOperations.get(namespace, KafkaConnectCluster.kafkaConnectClusterName(name));
-            return KafkaConnectCluster.fromDeployment(namespace, name, dep);
-        }
     };
 
     @Override

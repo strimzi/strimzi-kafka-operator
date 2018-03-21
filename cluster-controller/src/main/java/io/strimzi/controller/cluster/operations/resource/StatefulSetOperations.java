@@ -130,8 +130,6 @@ public class StatefulSetOperations extends AbstractScalableOperations<Kubernetes
 
     @Override
     protected void internalCreate(String namespace, String name, StatefulSet desired, Future<Void> future) {
-        final int replicas = desired.getSpec().getReplicas();
-
         // Create the SS...
         Future crt = Future.future();
         super.internalCreate(namespace, name, desired, crt);

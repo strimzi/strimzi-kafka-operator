@@ -35,7 +35,8 @@ public class PvcOperations extends AbstractOperations<KubernetesClient, Persiste
     public Future<Void> reconcile(String namespace, String name, PersistentVolumeClaim resource) {
         if (resource != null) {
             throw new UnsupportedOperationException(); // should never happen
+        } else {
+            return super.reconcile(namespace, name, null);
         }
-        return super.reconcile(namespace, name, resource);
     }
 }
