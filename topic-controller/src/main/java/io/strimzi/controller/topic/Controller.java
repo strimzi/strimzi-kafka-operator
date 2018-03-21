@@ -354,15 +354,15 @@ public class Controller {
                             Topic kafkaTopic = TopicSerialization.fromTopicMetadata(kafkaTopicMeta);
                             reconcile(cm, k8sTopic, kafkaTopic, privateTopic, reconcileResult -> {
                                 if (reconcileResult.succeeded()) {
-                                    LOGGER.info("Success reconciling ConfigMap {}: ", logConfigMap(cm));
+                                    LOGGER.info("Success reconciling ConfigMap {}", logConfigMap(cm));
                                     fut.complete();
                                 } else {
-                                    LOGGER.error("Error reconciling ConfigMap {}: ", logConfigMap(cm), reconcileResult.cause());
+                                    LOGGER.error("Error reconciling ConfigMap {}", logConfigMap(cm), reconcileResult.cause());
                                     fut.fail(reconcileResult.cause());
                                 }
                             });
                         } else {
-                            LOGGER.error("Error reconciling ConfigMap {}: ", logConfigMap(cm), ar.cause());
+                            LOGGER.error("Error reconciling ConfigMap {}", logConfigMap(cm), ar.cause());
                             fut.fail(ar.cause());
                         }
                     });
@@ -370,7 +370,7 @@ public class Controller {
                     LOGGER.error("Error reconciling ConfigMap {}: Invalid 'data' section: ", logConfigMap(cm), e.getMessage());
                     fut.fail(e);
                 } catch (ControllerException e) {
-                    LOGGER.error("Error reconciling ConfigMap {}: ", logConfigMap(cm), e);
+                    LOGGER.error("Error reconciling ConfigMap {}", logConfigMap(cm), e);
                     fut.fail(e);
                 }
             }
@@ -958,6 +958,10 @@ public class Controller {
         return new BackOff(config.get(Config.TOPIC_METADATA_MAX_ATTEMPTS));
     }
 
+    /**
+     * @param cm ConfigMap instance to log
+     * @return ConfigMap representation as namespace/name for logging purposes
+     */
     static String logConfigMap(ConfigMap cm) {
         return cm != null ? cm.getMetadata().getNamespace() + "/" + cm.getMetadata().getName() : null;
     }
