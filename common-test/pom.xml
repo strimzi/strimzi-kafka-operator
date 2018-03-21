@@ -50,6 +50,11 @@
             <artifactId>json-path</artifactId>
             <version>${jsonpath.version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.fabric8</groupId>
+            <artifactId>kubernetes-client</artifactId>
+            <version>${fabric8.kubernetes-client.version}</version>
+        </dependency>
     </dependencies>
 
 
