@@ -26,10 +26,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * <p>Abstract cluster creation, update, read, delection, etc, for a generic cluster type {@code C}.
- * This class applies the "template method" pattern, first obtaining the desired cluster configuration
- * ({@link CompositeOperation#getCluster(String, String)}),
- * then creating resources to match ({@link CompositeOperation#composite(String, C)}.</p>
+ * <p>Abstract cluster creation, update, read, delection, etc, for a generic cluster type {@code C}.</p>
  *
  * <p>This class manages a per-cluster-type and per-cluster locking strategy so only one operation per cluster
  * can proceed at once.</p>
@@ -93,9 +90,6 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
     /**
      * <p>Execute the resource operations necessary to make a cluster conform to a particular desired state.</p>
      *
-     * <p>The desired cluster state is obtained from {@link CompositeOperation#getCluster(String, String)} and the
-     * resource operations are executed via {@link CompositeOperation#composite(String, C)}.</p>
-     *
      * @param namespace The namespace containing the cluster.
      * @param name The name of the cluster
      * @param compositeOperation The operation to execute
@@ -105,23 +99,14 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
     protected final <C extends AbstractCluster> void execute(String namespace, String name, CompositeOperation<C> compositeOperation, Handler<AsyncResult<Void>> handler) {
         String clusterType = compositeOperation.clusterType();
         String operationType = compositeOperation.operationType();
-        C cluster;
-        try {
-            cluster = compositeOperation.getCluster(namespace, name);
-            log.info("{} {} cluster {} in namespace {}", operationType, clusterType, cluster.getName(), namespace);
-        } catch (Throwable ex) {
-            log.error("Error while getting required {} cluster state for {} operation", clusterType, operationType, ex);
-            handler.handle(Future.failedFuture("getCluster error"));
-            return;
-        }
-        Future<?> composite = compositeOperation.composite(namespace, cluster);
+        Future<?> composite = compositeOperation.composite(namespace, name);
 
         composite.setHandler(ar -> {
             if (ar.succeeded()) {
-                log.info("{} cluster {} in namespace {}: successful {}", clusterType, cluster.getName(), namespace, operationType);
+                log.info("{} cluster {} in namespace {}: successful {}", clusterType, name, namespace, operationType);
                 handler.handle(Future.succeededFuture());
             } else {
-                log.error("{} cluster {} in namespace {}: failed to {}", clusterType, cluster.getName(), namespace, operationType, ar.result());
+                log.error("{} cluster {} in namespace {}: failed to {}", clusterType, name, namespace, operationType, ar.result());
                 handler.handle(ar.map((Void) null));
             }
         });
