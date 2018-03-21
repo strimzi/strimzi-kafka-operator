@@ -81,12 +81,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
                     if (kafkaResult.failed()) {
                         handler.handle(kafkaResult);
                     } else {
-                        TopicController clusterOp = createTopicController.getCluster(namespace, name);
-                        if (clusterOp != null) {
-                            execute(namespace, name, createTopicController, handler);
-                        } else {
-                            handler.handle(kafkaResult);
-                        }
+                        execute(namespace, name, createTopicController, handler);
                     }
                 });
             }
@@ -106,12 +101,8 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
         }
 
         @Override
-        public KafkaCluster getCluster(String namespace, String name) {
-            return KafkaCluster.fromConfigMap(configMapOperations.get(namespace, name));
-        }
-
-        @Override
-        public Future<?> composite(String namespace, KafkaCluster kafka) {
+        public Future<?> composite(String namespace, String name) {
+            KafkaCluster kafka = KafkaCluster.fromConfigMap(configMapOperations.get(namespace, name));
             Future<Void> fut = Future.future();
             List<Future> result = new ArrayList<>(4);
             // start creating configMap operation only if metrics are enabled,
@@ -149,23 +140,11 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
             return CLUSTER_TYPE_KAFKA;
         }
 
+
         @Override
-        public KafkaCluster getCluster(String namespace, String name) {
-            KafkaCluster kafka;
+        public Future<?> composite(String namespace, String name) {
             ConfigMap kafkaConfigMap = configMapOperations.get(namespace, name);
-
-            if (kafkaConfigMap != null)    {
-                kafka = KafkaCluster.fromConfigMap(kafkaConfigMap);
-                log.info("Updating Kafka cluster {} in namespace {}", kafka.getName(), namespace);
-            } else {
-                throw new IllegalStateException("ConfigMap " + name + " doesn't exist anymore in namespace " + namespace);
-            }
-            return kafka;
-        }
-
-        @Override
-        public Future<?> composite(String namespace, KafkaCluster kafka) {
-
+            KafkaCluster kafka = KafkaCluster.fromConfigMap(kafkaConfigMap);
             Service service = kafka.generateService();
             Service headlessService = kafka.generateHeadlessService();
             ConfigMap metricsConfigMap = kafka.generateMetricsConfigMap();
@@ -198,13 +177,9 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
         }
 
         @Override
-        public KafkaCluster getCluster(String namespace, String name) {
+        public Future<?> composite(String namespace, String name) {
             StatefulSet ss = statefulSetOperations.get(namespace, KafkaCluster.kafkaClusterName(name));
-            return KafkaCluster.fromStatefulSet(ss, namespace, name);
-        }
-
-        @Override
-        public Future<?> composite(String namespace, KafkaCluster kafka) {
+            KafkaCluster kafka = KafkaCluster.fromStatefulSet(ss, namespace, name);
             boolean deleteClaims = kafka.getStorage().type() == Storage.StorageType.PERSISTENT_CLAIM
                     && kafka.getStorage().isDeleteClaim();
             List<Future> result = new ArrayList<>(4 + (deleteClaims ? kafka.getReplicas() : 0));
@@ -239,13 +214,10 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
             return CLUSTER_TYPE_ZOOKEEPER;
         }
 
-        @Override
-        public ZookeeperCluster getCluster(String namespace, String name) {
-            return ZookeeperCluster.fromConfigMap(configMapOperations.get(namespace, name));
-        }
 
         @Override
-        public Future<?> composite(String namespace, ZookeeperCluster zk) {
+        public Future<?> composite(String namespace, String name) {
+            ZookeeperCluster zk = ZookeeperCluster.fromConfigMap(configMapOperations.get(namespace, name));
             Future<Void> fut = Future.future();
             List<Future> createResult = new ArrayList<>(4);
 
@@ -286,21 +258,11 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
             return CLUSTER_TYPE_ZOOKEEPER;
         }
 
-        @Override
-        public ZookeeperCluster getCluster(String namespace, String name) {
-            ZookeeperCluster zk;
-            ConfigMap zkConfigMap = configMapOperations.get(namespace, name);
-            if (zkConfigMap != null)    {
-                zk = ZookeeperCluster.fromConfigMap(zkConfigMap);
-                log.info("Updating Zookeeper cluster {} in namespace {}", zk.getName(), namespace);
-            } else {
-                throw new IllegalStateException("ConfigMap " + name + " doesn't exist anymore in namespace " + namespace);
-            }
-            return zk;
-        }
 
         @Override
-        public Future<?> composite(String namespace, ZookeeperCluster zk) {
+        public Future<?> composite(String namespace, String name) {
+            ConfigMap zkConfigMap = configMapOperations.get(namespace, name);
+            ZookeeperCluster zk = ZookeeperCluster.fromConfigMap(zkConfigMap);
             Service service = zk.generateService();
             Service headlessService = zk.generateHeadlessService();
             Future<Void> chainFuture = Future.future();
@@ -329,14 +291,11 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
             return CLUSTER_TYPE_ZOOKEEPER;
         }
 
-        @Override
-        public ZookeeperCluster getCluster(String namespace, String name) {
-            StatefulSet ss = statefulSetOperations.get(namespace, ZookeeperCluster.zookeeperClusterName(name));
-            return ZookeeperCluster.fromStatefulSet(ss, namespace, name);
-        }
 
         @Override
-        public Future<?> composite(String namespace, ZookeeperCluster zk) {
+        public Future<?> composite(String namespace, String name) {
+            StatefulSet ss = statefulSetOperations.get(namespace, ZookeeperCluster.zookeeperClusterName(name));
+            ZookeeperCluster zk = ZookeeperCluster.fromStatefulSet(ss, namespace, name);
             boolean deleteClaims = zk.getStorage().type() == Storage.StorageType.PERSISTENT_CLAIM
                     && zk.getStorage().isDeleteClaim();
             List<Future> result = new ArrayList<>(4 + (deleteClaims ? zk.getReplicas() : 0));
@@ -372,12 +331,8 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
         }
 
         @Override
-        public TopicController getCluster(String namespace, String name) {
-            return TopicController.fromConfigMap(configMapOperations.get(namespace, name));
-        }
-
-        @Override
-        public Future<?> composite(String namespace, TopicController topicController) {
+        public Future<?> composite(String namespace, String name) {
+            TopicController topicController = TopicController.fromConfigMap(configMapOperations.get(namespace, name));
             return deploymentOperations.createOrUpdate(topicController.generateDeployment());
         }
     };
@@ -395,25 +350,10 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
         }
 
         @Override
-        public TopicController getCluster(String namespace, String name) {
-            TopicController topicController = null;
+        public Future<?> composite(String namespace, String name) {
             ConfigMap tcConfigMap = configMapOperations.get(namespace, name);
-
-            if (tcConfigMap != null) {
-                topicController = TopicController.fromConfigMap(tcConfigMap);
-                if (topicController != null) {
-                    log.info("Updating Topic Controller {} in namespace {}", topicController.getName(), namespace);
-                }
-            } else {
-                throw new IllegalStateException("ConfigMap " + name + " doesn't exist anymore in namespace " + namespace);
-            }
-
-            return topicController;
-        }
-
-        @Override
-        public Future<?> composite(String namespace, TopicController topicController) {
-            Deployment deployment = topicController.generateDeployment();
+            TopicController topicController = TopicController.fromConfigMap(tcConfigMap);
+            Deployment deployment = topicController != null ? topicController.generateDeployment() : null;
             return deploymentOperations.reconcile(namespace, deployment.getMetadata().getName(), deployment);
         }
     };
@@ -431,13 +371,9 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
         }
 
         @Override
-        public TopicController getCluster(String namespace, String name) {
+        public Future<?> composite(String namespace, String name) {
             Deployment dep = deploymentOperations.get(namespace, TopicController.topicControllerName(name));
-            return TopicController.fromDeployment(namespace, name, dep);
-        }
-
-        @Override
-        public Future<?> composite(String namespace, TopicController topicController) {
+            TopicController topicController = TopicController.fromDeployment(namespace, name, dep);
             return deploymentOperations.reconcile(namespace, topicController.getName(), null);
             // TODO wait for pod to disappear
         }
@@ -447,28 +383,17 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
     @Override
     protected void delete(String namespace, String name, Handler<AsyncResult<Void>> handler) {
 
-        // first check if the topic controller was really deployed
-        TopicController clusterOp = deleteTopicController.getCluster(namespace, name);
-        if (clusterOp != null) {
-            execute(namespace, name, deleteTopicController, topicControllerResult -> {
-                if (topicControllerResult.failed()) {
-                    handler.handle(topicControllerResult);
-                } else {
-                    deleteKafkaAndZookeeper(namespace, name, handler);
-                }
-            });
-        } else {
-            deleteKafkaAndZookeeper(namespace, name, handler);
-        }
-    }
-
-    private void deleteKafkaAndZookeeper(String namespace, String name, Handler<AsyncResult<Void>> handler) {
-
-        execute(namespace, name, deleteKafka, kafkaResult -> {
-            if (kafkaResult.failed()) {
-                handler.handle(kafkaResult);
+        execute(namespace, name, deleteTopicController, topicControllerResult -> {
+            if (topicControllerResult.failed()) {
+                handler.handle(topicControllerResult);
             } else {
-                execute(namespace, name, deleteZk, handler);
+                execute(namespace, name, deleteKafka, kafkaResult -> {
+                    if (kafkaResult.failed()) {
+                        handler.handle(kafkaResult);
+                    } else {
+                        execute(namespace, name, deleteZk, handler);
+                    }
+                });
             }
         });
     }
@@ -483,12 +408,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
                     if (kafkaResult.failed()) {
                         handler.handle(kafkaResult);
                     } else {
-                        TopicController clusterOp = updateTopicController.getCluster(namespace, name);
-                        if (clusterOp != null) {
-                            execute(namespace, name, updateTopicController, handler);
-                        } else {
-                            handler.handle(kafkaResult);
-                        }
+                        execute(namespace, name, updateTopicController, handler);
                     }
                 });
             }

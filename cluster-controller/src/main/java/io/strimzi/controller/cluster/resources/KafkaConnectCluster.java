@@ -102,6 +102,9 @@ public class KafkaConnectCluster extends AbstractCluster {
      * @return Kafka Connect cluster instance
      */
     public static KafkaConnectCluster fromConfigMap(ConfigMap cm) {
+        if (cm == null) {
+            return null;
+        }
         KafkaConnectCluster kafkaConnect = new KafkaConnectCluster(cm.getMetadata().getNamespace(),
                 cm.getMetadata().getName(),
                 Labels.fromResource(cm));
@@ -135,6 +138,9 @@ public class KafkaConnectCluster extends AbstractCluster {
     public static KafkaConnectCluster fromDeployment(
             String namespace, String cluster,
             Deployment dep) {
+        if (dep == null) {
+            return null;
+        }
 
         KafkaConnectCluster kafkaConnect =  new KafkaConnectCluster(namespace, cluster, Labels.fromResource(dep));
 

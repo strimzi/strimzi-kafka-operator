@@ -71,11 +71,6 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
     private final CompositeOperation<KafkaConnectS2ICluster> create = new CompositeOperation<KafkaConnectS2ICluster>() {
 
         @Override
-        public KafkaConnectS2ICluster getCluster(String namespace, String name) {
-            return KafkaConnectS2ICluster.fromConfigMap(configMapOperations.get(namespace, name));
-        }
-
-        @Override
         public String operationType() {
             return OP_CREATE;
         }
@@ -86,7 +81,8 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
         }
 
         @Override
-        public Future<?> composite(String namespace, KafkaConnectS2ICluster connect) {
+        public Future<?> composite(String namespace, String name) {
+            KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromConfigMap(configMapOperations.get(namespace, name));
             List<Future> result = new ArrayList<>(5);
             result.add(serviceOperations.reconcile(namespace, connect.getName(), connect.generateService()));
             result.add(deploymentConfigOperations.reconcile(namespace, connect.getName(), connect.generateDeploymentConfig()));
@@ -119,7 +115,10 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
         }
 
         @Override
-        public Future<?> composite(String namespace, KafkaConnectS2ICluster connect) {
+        public Future<?> composite(String namespace, String name) {
+            DeploymentConfig dep = deploymentConfigOperations.get(namespace, KafkaConnectS2ICluster.kafkaConnectClusterName(name));
+            ImageStream sis = imagesStreamOperations.get(namespace, KafkaConnectS2ICluster.getSourceImageStreamName(KafkaConnectS2ICluster.kafkaConnectClusterName(name)));
+            KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromDeployment(namespace, name, dep, sis);
             List<Future> result = new ArrayList<>(5);
             result.add(serviceOperations.reconcile(namespace, connect.getName(), null));
             result.add(deploymentConfigOperations.reconcile(namespace, connect.getName(), null));
@@ -130,12 +129,6 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
             return CompositeFuture.join(result);
         }
 
-        @Override
-        public KafkaConnectS2ICluster getCluster(String namespace, String name) {
-            DeploymentConfig dep = deploymentConfigOperations.get(namespace, KafkaConnectS2ICluster.kafkaConnectClusterName(name));
-            ImageStream sis = imagesStreamOperations.get(namespace, KafkaConnectS2ICluster.getSourceImageStreamName(KafkaConnectS2ICluster.kafkaConnectClusterName(name)));
-            return KafkaConnectS2ICluster.fromDeployment(namespace, name, dep, sis);
-        }
     };
 
     @Override
@@ -159,7 +152,9 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
         }
 
         @Override
-        public Future<?> composite(String namespace, KafkaConnectS2ICluster connect) {
+        public Future<?> composite(String namespace, String name) {
+            ConfigMap connectConfigMap = configMapOperations.get(namespace, name);
+            KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromConfigMap(connectConfigMap);
             Future<Void> chainFuture = Future.future();
 
             deploymentConfigOperations.scaleDown(namespace, connect.getName(), connect.getReplicas())
@@ -172,21 +167,6 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
                     .compose(chainFuture::complete, chainFuture);
 
             return chainFuture;
-        }
-
-        @Override
-        public KafkaConnectS2ICluster getCluster(String namespace, String name) {
-            KafkaConnectS2ICluster connect;
-            ConfigMap connectConfigMap = configMapOperations.get(namespace, name);
-
-            if (connectConfigMap != null)    {
-                connect = KafkaConnectS2ICluster.fromConfigMap(connectConfigMap);
-                log.info("Updating {} cluster {} in namespace {}", clusterDescription, connect.getName(), namespace);
-            } else  {
-                throw new IllegalStateException("ConfigMap " + name + " doesn't exist anymore in namespace " + namespace);
-            }
-
-            return connect;
         }
     };
 
