@@ -14,8 +14,8 @@ import io.strimzi.controller.cluster.ResourceUtils;
 import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
 import io.strimzi.controller.cluster.operations.resource.DeploymentOperations;
 import io.strimzi.controller.cluster.operations.resource.PvcOperations;
+import io.strimzi.controller.cluster.operations.resource.ReconcileResult;
 import io.strimzi.controller.cluster.operations.resource.ServiceOperations;
-import io.strimzi.controller.cluster.operations.resource.StatefulSetOperations;
 import io.strimzi.controller.cluster.resources.AbstractCluster;
 import io.strimzi.controller.cluster.resources.ClusterDiffResult;
 import io.strimzi.controller.cluster.resources.KafkaCluster;
@@ -23,7 +23,6 @@ import io.strimzi.controller.cluster.resources.Labels;
 import io.strimzi.controller.cluster.resources.Storage;
 import io.strimzi.controller.cluster.resources.TopicController;
 import io.strimzi.controller.cluster.resources.ZookeeperCluster;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -40,18 +39,13 @@ import org.mockito.ArgumentCaptor;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
-import static java.util.Collections.singletonList;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -159,7 +153,8 @@ public class KafkaClusterOperationsTest {
         // create CM, Service, headless service, statefulset and so on
         ConfigMapOperations mockCmOps = mock(ConfigMapOperations.class);
         ServiceOperations mockServiceOps = mock(ServiceOperations.class);
-        StatefulSetOperations mockSsOps = mock(StatefulSetOperations.class);
+        ZookeeperSetOperations mockZsOps = mock(ZookeeperSetOperations.class);
+        KafkaSetOperations mockKsOps = mock(KafkaSetOperations.class);
         PvcOperations mockPvcOps = mock(PvcOperations.class);
         DeploymentOperations mockDepOps = mock(DeploymentOperations.class);
 
@@ -168,14 +163,19 @@ public class KafkaClusterOperationsTest {
         String clusterCmNamespace = clusterCm.getMetadata().getNamespace();
         when(mockCmOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
-        when(mockServiceOps.reconcile(anyString(), anyString(), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockServiceOps.reconcile(anyString(), anyString(), serviceCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created()));
         when(mockServiceOps.endpointReadiness(anyString(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         ArgumentCaptor<StatefulSet> ssCaptor = ArgumentCaptor.forClass(StatefulSet.class);
-        when(mockSsOps.reconcile(anyString(), anyString(), ssCaptor.capture())).thenReturn(Future.succeededFuture());
-        when(mockSsOps.scaleDown(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture());
-        when(mockSsOps.scaleUp(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture());
+        when(mockZsOps.reconcile(anyString(), anyString(), ssCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created()));
+        when(mockZsOps.scaleDown(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(null));
+        when(mockZsOps.rollingUpdate(anyString(), anyString())).thenReturn(Future.succeededFuture());
+        when(mockZsOps.scaleUp(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
+        when(mockKsOps.reconcile(anyString(), anyString(), ssCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created()));
+        when(mockKsOps.scaleDown(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(null));
+        when(mockKsOps.rollingUpdate(anyString(), anyString())).thenReturn(Future.succeededFuture());
+        when(mockKsOps.scaleUp(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         ArgumentCaptor<Deployment> depCaptor = ArgumentCaptor.forClass(Deployment.class);
-        when(mockDepOps.reconcile(anyString(), anyString(), depCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockDepOps.reconcile(anyString(), anyString(), depCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created()));
 
         //when(mockSsOps.readiness(any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         //when(mockPodOps.readiness(any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
@@ -186,17 +186,17 @@ public class KafkaClusterOperationsTest {
         TopicController topicController = TopicController.fromConfigMap(clusterCm);
         ArgumentCaptor<ConfigMap> metricsCaptor = ArgumentCaptor.forClass(ConfigMap.class);
         ArgumentCaptor<String> metricsNameCaptor = ArgumentCaptor.forClass(String.class);
-        when(mockCmOps.reconcile(anyString(), metricsNameCaptor.capture(), metricsCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockCmOps.reconcile(anyString(), metricsNameCaptor.capture(), metricsCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created()));
 
         KafkaClusterOperations ops = new KafkaClusterOperations(vertx, openShift,
                 ClusterControllerConfig.DEFAULT_OPERATION_TIMEOUT_MS,
                 mockCmOps,
-                mockServiceOps, mockSsOps,
+                mockServiceOps, mockZsOps, mockKsOps,
                 mockPvcOps, mockDepOps);
 
         // Now try to create a KafkaCluster based on this CM
         Async async = context.async();
-        ops.create(clusterCmNamespace, clusterCmName, createResult -> {
+        ops.createOrUpdate(clusterCmNamespace, clusterCmName, createResult -> {
             if (createResult.failed()) {
                 createResult.cause().printStackTrace();
             }
@@ -273,7 +273,8 @@ public class KafkaClusterOperationsTest {
         // create CM, Service, headless service, statefulset
         ConfigMapOperations mockCmOps = mock(ConfigMapOperations.class);
         ServiceOperations mockServiceOps = mock(ServiceOperations.class);
-        StatefulSetOperations mockSsOps = mock(StatefulSetOperations.class);
+        ZookeeperSetOperations mockZsOps = mock(ZookeeperSetOperations.class);
+        KafkaSetOperations mockKsOps = mock(KafkaSetOperations.class);
         PvcOperations mockPvcOps = mock(PvcOperations.class);
         DeploymentOperations mockDepOps = mock(DeploymentOperations.class);
 
@@ -282,8 +283,8 @@ public class KafkaClusterOperationsTest {
         StatefulSet kafkaSs = kafkaCluster.generateStatefulSet(true);
 
         StatefulSet zkSs = zookeeperCluster.generateStatefulSet(true);
-        when(mockSsOps.get(clusterCmNamespace, KafkaCluster.kafkaClusterName(clusterCmName))).thenReturn(kafkaSs);
-        when(mockSsOps.get(clusterCmNamespace, ZookeeperCluster.zookeeperClusterName(clusterCmName))).thenReturn(zkSs);
+        when(mockKsOps.get(clusterCmNamespace, KafkaCluster.kafkaClusterName(clusterCmName))).thenReturn(kafkaSs);
+        when(mockZsOps.get(clusterCmNamespace, ZookeeperCluster.zookeeperClusterName(clusterCmName))).thenReturn(zkSs);
 
         when(mockCmOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
         ArgumentCaptor<String> serviceCaptor = ArgumentCaptor.forClass(String.class);
@@ -293,7 +294,8 @@ public class KafkaClusterOperationsTest {
         when(mockCmOps.reconcile(eq(clusterCmNamespace), metricsCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
 
         when(mockServiceOps.reconcile(eq(clusterCmNamespace), serviceCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
-        when(mockSsOps.reconcile(anyString(), ssCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
+        when(mockKsOps.reconcile(anyString(), ssCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
+        when(mockZsOps.reconcile(anyString(), ssCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> pvcCaptor = ArgumentCaptor.forClass(String.class);
         when(mockPvcOps.reconcile(eq(clusterCmNamespace), pvcCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
@@ -308,7 +310,7 @@ public class KafkaClusterOperationsTest {
         KafkaClusterOperations ops = new KafkaClusterOperations(vertx, openShift,
                 ClusterControllerConfig.DEFAULT_OPERATION_TIMEOUT_MS,
                 mockCmOps,
-                mockServiceOps, mockSsOps,
+                mockServiceOps, mockZsOps, mockKsOps,
                 mockPvcOps,
                 mockDepOps);
 
@@ -325,7 +327,7 @@ public class KafkaClusterOperationsTest {
                 metricsNames.add(ZookeeperCluster.zookeeperMetricsName(clusterCmName));
             }
             context.assertEquals(metricsNames, captured(metricsCaptor));*/
-            verify(mockSsOps).reconcile(eq(clusterCmNamespace), eq(ZookeeperCluster.zookeeperClusterName(clusterCmName)), isNull());
+            verify(mockZsOps).reconcile(eq(clusterCmNamespace), eq(ZookeeperCluster.zookeeperClusterName(clusterCmName)), isNull());
 
             context.assertEquals(set(
                     ZookeeperCluster.zookeeperHeadlessName(clusterCmName),
@@ -385,56 +387,63 @@ public class KafkaClusterOperationsTest {
     @Test
     public void testUpdateClusterNoop(TestContext context) {
         ConfigMap clusterCm = getConfigMap("bar");
-        updateCluster(context, getConfigMap("bar"), clusterCm);
+        updateCluster(context, getConfigMap("bar"), clusterCm, false, false);
     }
 
     @Test
     public void testUpdateKafkaClusterChangeImage(TestContext context) {
         ConfigMap clusterCm = getConfigMap("bar");
         clusterCm.getData().put(KafkaCluster.KEY_IMAGE, "a-changed-image");
-        updateCluster(context, getConfigMap("bar"), clusterCm);
+        updateCluster(context, getConfigMap("bar"), clusterCm, true, false);
     }
 
     @Test
     public void testUpdateZookeeperClusterChangeImage(TestContext context) {
         ConfigMap clusterCm = getConfigMap("bar");
         clusterCm.getData().put(ZookeeperCluster.KEY_IMAGE, "a-changed-image");
-        updateCluster(context, getConfigMap("bar"), clusterCm);
+        updateCluster(context, getConfigMap("bar"), clusterCm, false, true);
     }
 
     @Test
     public void testUpdateKafkaClusterScaleUp(TestContext context) {
         ConfigMap clusterCm = getConfigMap("bar");
         clusterCm.getData().put(KafkaCluster.KEY_REPLICAS, "4");
-        updateCluster(context, getConfigMap("bar"), clusterCm);
+        updateCluster(context, getConfigMap("bar"), clusterCm, false, false);
     }
 
     @Test
     public void testUpdateKafkaClusterScaleDown(TestContext context) {
         ConfigMap clusterCm = getConfigMap("bar");
         clusterCm.getData().put(KafkaCluster.KEY_REPLICAS, "2");
-        updateCluster(context, getConfigMap("bar"), clusterCm);
+        updateCluster(context, getConfigMap("bar"), clusterCm, false, false);
     }
 
     @Test
     public void testUpdateZookeeperClusterScaleUp(TestContext context) {
         ConfigMap clusterCm = getConfigMap("bar");
         clusterCm.getData().put(ZookeeperCluster.KEY_REPLICAS, "4");
-        updateCluster(context, getConfigMap("bar"), clusterCm);
+        updateCluster(context, getConfigMap("bar"), clusterCm, false, true);
     }
 
     @Test
     public void testUpdateZookeeperClusterScaleDown(TestContext context) {
         ConfigMap clusterCm = getConfigMap("bar");
         clusterCm.getData().put(ZookeeperCluster.KEY_REPLICAS, "2");
-        updateCluster(context, getConfigMap("bar"), clusterCm);
+        updateCluster(context, getConfigMap("bar"), clusterCm, false, true);
     }
 
     @Test
     public void testUpdateClusterMetricsConfig(TestContext context) {
         ConfigMap clusterCm = getConfigMap("bar");
         clusterCm.getData().put(KafkaCluster.KEY_METRICS_CONFIG, "{\"something\":\"changed\"}");
-        updateCluster(context, getConfigMap("bar"), clusterCm);
+        updateCluster(context, getConfigMap("bar"), clusterCm, false, false);
+    }
+
+    @Test
+    public void testUpdateZkClusterMetricsConfig(TestContext context) {
+        ConfigMap clusterCm = getConfigMap("bar");
+        clusterCm.getData().put(ZookeeperCluster.KEY_METRICS_CONFIG, "{\"something\":\"changed\"}");
+        updateCluster(context, getConfigMap("bar"), clusterCm, false, true);
     }
 
     @Test
@@ -442,11 +451,12 @@ public class KafkaClusterOperationsTest {
         ConfigMap clusterCm = getConfigMap("bar");
         if (tcConfig != null) {
             clusterCm.getData().put(TopicController.KEY_CONFIG, "{\"something\":\"changed\"}");
-            updateCluster(context, getConfigMap("bar"), clusterCm);
+            updateCluster(context, getConfigMap("bar"), clusterCm, false, false);
         }
     }
 
-    private void updateCluster(TestContext context, ConfigMap originalCm, ConfigMap clusterCm) {
+    private void updateCluster(TestContext context, ConfigMap originalCm, ConfigMap clusterCm,
+                               boolean kafkaRolling, boolean zkRolling) {
 
         KafkaCluster originalKafkaCluster = KafkaCluster.fromConfigMap(originalCm);
         KafkaCluster updatedKafkaCluster = KafkaCluster.fromConfigMap(clusterCm);
@@ -467,7 +477,8 @@ public class KafkaClusterOperationsTest {
         // create CM, Service, headless service, statefulset and so on
         ConfigMapOperations mockCmOps = mock(ConfigMapOperations.class);
         ServiceOperations mockServiceOps = mock(ServiceOperations.class);
-        StatefulSetOperations mockSsOps = mock(StatefulSetOperations.class);
+        ZookeeperSetOperations mockZsOps = mock(ZookeeperSetOperations.class);
+        KafkaSetOperations mockKsOps = mock(KafkaSetOperations.class);
         PvcOperations mockPvcOps = mock(PvcOperations.class);
         DeploymentOperations mockDepOps = mock(DeploymentOperations.class);
 
@@ -510,14 +521,14 @@ public class KafkaClusterOperationsTest {
         );
 
         // Mock StatefulSet get
-        when(mockSsOps.get(clusterCmNamespace, KafkaCluster.kafkaClusterName(clusterCmName))).thenReturn(
+        when(mockKsOps.get(clusterCmNamespace, KafkaCluster.kafkaClusterName(clusterCmName))).thenReturn(
                 originalKafkaCluster.generateStatefulSet(openShift)
         );
-        when(mockSsOps.get(clusterCmNamespace, ZookeeperCluster.zookeeperClusterName(clusterCmName))).thenReturn(
+        when(mockZsOps.get(clusterCmNamespace, ZookeeperCluster.zookeeperClusterName(clusterCmName))).thenReturn(
                 originalZookeeperCluster.generateStatefulSet(openShift)
         );
-        //when(mockSsOps.scaleDown(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture());
-        //when(mockSsOps.scaleUp(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture());
+        //when(mockZsOps.scaleDown(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture());
+        //when(mockZsOps.scaleUp(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture());
 
         // Mock Deployment get
         if (originalTopicController != null) {
@@ -537,19 +548,43 @@ public class KafkaClusterOperationsTest {
         ArgumentCaptor<String> patchedServicesCaptor = ArgumentCaptor.forClass(String.class);
         when(mockServiceOps.reconcile(eq(clusterCmNamespace), patchedServicesCaptor.capture(), any())).thenReturn(Future.succeededFuture());
         // Mock StatefulSet patch
-        when(mockSsOps.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+        when(mockZsOps.reconcile(anyString(), anyString(), any())).thenReturn(
+                Future.succeededFuture(ReconcileResult.patched(zkRolling)));
+        when(mockKsOps.reconcile(anyString(), anyString(), any())).thenReturn(
+                Future.succeededFuture(ReconcileResult.patched(kafkaRolling)));
         // Mock StatefulSet rollingUpdate
         Set<String> rollingRestarts = set();
         // Mock StatefulSet scaleUp
         ArgumentCaptor<String> scaledUpCaptor = ArgumentCaptor.forClass(String.class);
-        when(mockSsOps.scaleUp(anyString(), scaledUpCaptor.capture(), anyInt())).thenReturn(
-                Future.succeededFuture()
+        when(mockZsOps.scaleUp(anyString(), scaledUpCaptor.capture(), anyInt())).thenReturn(
+                Future.succeededFuture(42)
         );
         // Mock StatefulSet scaleDown
         ArgumentCaptor<String> scaledDownCaptor = ArgumentCaptor.forClass(String.class);
-        when(mockSsOps.scaleDown(anyString(), scaledDownCaptor.capture(), anyInt())).thenReturn(
-                Future.succeededFuture()
+        when(mockZsOps.scaleDown(anyString(), scaledDownCaptor.capture(), anyInt())).thenReturn(
+                Future.succeededFuture(42)
         );
+        when(mockZsOps.rollingUpdate(anyString(), anyString())).thenAnswer(i -> {
+            if (!zkRolling) {
+                context.fail("Unexpected rolling update");
+            }
+            return Future.succeededFuture();
+        });
+        //ArgumentCaptor<String> scaledUpCaptor = ArgumentCaptor.forClass(String.class);
+        when(mockKsOps.scaleUp(anyString(), scaledUpCaptor.capture(), anyInt())).thenReturn(
+                Future.succeededFuture(42)
+        );
+        // Mock StatefulSet scaleDown
+        //ArgumentCaptor<String> scaledDownCaptor = ArgumentCaptor.forClass(String.class);
+        when(mockKsOps.scaleDown(anyString(), scaledDownCaptor.capture(), anyInt())).thenReturn(
+                Future.succeededFuture(42)
+        );
+        when(mockKsOps.rollingUpdate(anyString(), anyString())).thenAnswer(i -> {
+            if (!kafkaRolling) {
+                context.fail("Unexpected rolling update");
+            }
+            return Future.succeededFuture();
+        });
 
         // Mock Deployment patch
         ArgumentCaptor<String> depCaptor = ArgumentCaptor.forClass(String.class);
@@ -558,12 +593,12 @@ public class KafkaClusterOperationsTest {
         KafkaClusterOperations ops = new KafkaClusterOperations(vertx, openShift,
                 ClusterControllerConfig.DEFAULT_OPERATION_TIMEOUT_MS,
                 mockCmOps,
-                mockServiceOps, mockSsOps,
+                mockServiceOps, mockZsOps, mockKsOps,
                 mockPvcOps, mockDepOps);
 
         // Now try to update a KafkaCluster based on this CM
         Async async = context.async();
-        ops.update(clusterCmNamespace, clusterCmName, createResult -> {
+        ops.createOrUpdate(clusterCmNamespace, clusterCmName, createResult -> {
             if (createResult.failed()) createResult.cause().printStackTrace();
             context.assertTrue(createResult.succeeded());
 
@@ -642,7 +677,8 @@ public class KafkaClusterOperationsTest {
         // create CM, Service, headless service, statefulset
         ConfigMapOperations mockCmOps = mock(ConfigMapOperations.class);
         ServiceOperations mockServiceOps = mock(ServiceOperations.class);
-        StatefulSetOperations mockSsOps = mock(StatefulSetOperations.class);
+        ZookeeperSetOperations mockZsOps = mock(ZookeeperSetOperations.class);
+        KafkaSetOperations mockKsOps = mock(KafkaSetOperations.class);
         PvcOperations mockPvcOps = mock(PvcOperations.class);
         DeploymentOperations mockDepOps = mock(DeploymentOperations.class);
 
@@ -661,41 +697,34 @@ public class KafkaClusterOperationsTest {
 
         // providing the list of ALL StatefulSets for all the Kafka clusters
         Labels newLabels = Labels.forType("kafka");
-        when(mockSsOps.list(eq(clusterCmNamespace), eq(newLabels))).thenReturn(
+        when(mockKsOps.list(eq(clusterCmNamespace), eq(newLabels))).thenReturn(
                 asList(KafkaCluster.fromConfigMap(bar).generateStatefulSet(openShift),
                         KafkaCluster.fromConfigMap(baz).generateStatefulSet(openShift))
         );
 
         // providing the list StatefulSets for already "existing" Kafka clusters
         Labels barLabels = Labels.forCluster("bar");
-        when(mockSsOps.list(eq(clusterCmNamespace), eq(barLabels))).thenReturn(
+        when(mockKsOps.list(eq(clusterCmNamespace), eq(barLabels))).thenReturn(
                 asList(KafkaCluster.fromConfigMap(bar).generateStatefulSet(openShift))
         );
 
         Labels bazLabels = Labels.forCluster("baz");
-        when(mockSsOps.list(eq(clusterCmNamespace), eq(bazLabels))).thenReturn(
+        when(mockKsOps.list(eq(clusterCmNamespace), eq(bazLabels))).thenReturn(
                 asList(KafkaCluster.fromConfigMap(baz).generateStatefulSet(openShift))
         );
 
 
-        Set<String> created = new HashSet<>();
-        Set<String> updated = new HashSet<>();
+        Set<String> createdOrUpdated = new HashSet<>();
         Set<String> deleted = new HashSet<>();
 
         KafkaClusterOperations ops = new KafkaClusterOperations(vertx, openShift,
                 ClusterControllerConfig.DEFAULT_OPERATION_TIMEOUT_MS,
                 mockCmOps,
-                mockServiceOps, mockSsOps,
+                mockServiceOps, mockZsOps, mockKsOps,
                 mockPvcOps, mockDepOps) {
             @Override
-            public void create(String namespace, String name, Handler h) {
-                created.add(name);
-                async.countDown();
-                h.handle(Future.succeededFuture());
-            }
-            @Override
-            public void update(String namespace, String name, Handler h) {
-                updated.add(name);
+            public void createOrUpdate(String namespace, String name, Handler h) {
+                createdOrUpdated.add(name);
                 async.countDown();
                 h.handle(Future.succeededFuture());
             }
@@ -712,8 +741,7 @@ public class KafkaClusterOperationsTest {
 
         async.await();
 
-        context.assertEquals(singleton("foo"), created);
-        context.assertEquals(singleton("bar"), updated);
+        context.assertEquals(new HashSet(asList("foo", "bar")), createdOrUpdated);
         context.assertEquals(singleton("baz"), deleted);
     }
 }
