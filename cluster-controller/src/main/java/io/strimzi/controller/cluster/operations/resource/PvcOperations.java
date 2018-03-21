@@ -16,7 +16,7 @@ import io.vertx.core.Vertx;
 /**
  * Operations for {@code PersistentVolumeClaim}s.
  */
-public class PvcOperations extends AbstractOperations<KubernetesClient, PersistentVolumeClaim, PersistentVolumeClaimList, DoneablePersistentVolumeClaim, Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim>> {
+public class PvcOperations extends AbstractOperations<KubernetesClient, PersistentVolumeClaim, PersistentVolumeClaimList, DoneablePersistentVolumeClaim, Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim>, Void> {
     /**
      * Constructor
      * @param vertx The Vertx instance
@@ -32,7 +32,7 @@ public class PvcOperations extends AbstractOperations<KubernetesClient, Persiste
     }
 
     @Override
-    public Future<ReconcileResult> reconcile(String namespace, String name, PersistentVolumeClaim resource) {
+    public Future<ReconcileResult<Void>> reconcile(String namespace, String name, PersistentVolumeClaim resource) {
         if (resource != null) {
             throw new UnsupportedOperationException(); // should never happen
         } else {

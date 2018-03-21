@@ -18,7 +18,7 @@ import io.vertx.core.Vertx;
  * Operations for {@code Pod}s, which support {@link #isReady(String, String)} and
  * {@link #watch(String, String, Watcher)} in addition to the usual operations.
  */
-class PodOperations extends AbstractReadyOperations<KubernetesClient, Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> {
+class PodOperations extends AbstractReadyOperations<KubernetesClient, Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>, Void> {
     /**
      * Constructor
      * @param vertx The Vertx instance

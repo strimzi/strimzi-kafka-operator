@@ -31,10 +31,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public abstract class ReadyResourceOperationsMockTest<C extends KubernetesClient, T extends HasMetadata,
-        L extends KubernetesResourceList, D, R extends Resource<T, D>> extends ResourceOperationsMockTest<C, T, L, D, R> {
+        L extends KubernetesResourceList, D, R extends Resource<T, D>, P> extends ResourceOperationsMockTest<C, T, L, D, R, P> {
 
     @Override
-    protected abstract AbstractReadyOperations<C, T, L, D, R> createResourceOperations(Vertx vertx, C mockClient);
+    protected abstract AbstractReadyOperations<C, T, L, D, R, P> createResourceOperations(Vertx vertx, C mockClient);
 
     @Test
     public void waitUntilReadyWhenDoesNotExist(TestContext context) {
@@ -51,7 +51,7 @@ public abstract class ReadyResourceOperationsMockTest<C extends KubernetesClient
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractReadyOperations<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
+        AbstractReadyOperations<C, T, L, D, R, P> op = createResourceOperations(vertx, mockClient);
         Async async = context.async();
         Future<Void> fut = op.readiness(NAMESPACE, RESOURCE_NAME, 20, 100);
         fut.setHandler(ar -> {
@@ -81,7 +81,7 @@ public abstract class ReadyResourceOperationsMockTest<C extends KubernetesClient
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractReadyOperations<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
+        AbstractReadyOperations<C, T, L, D, R, P> op = createResourceOperations(vertx, mockClient);
 
         Async async = context.async();
         op.readiness(NAMESPACE, RESOURCE_NAME, 20, 100).setHandler(ar -> {
@@ -133,7 +133,7 @@ public abstract class ReadyResourceOperationsMockTest<C extends KubernetesClient
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractReadyOperations<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
+        AbstractReadyOperations<C, T, L, D, R, P> op = createResourceOperations(vertx, mockClient);
 
         Async async = context.async();
         op.readiness(NAMESPACE, RESOURCE_NAME, 20, 5_000).setHandler(ar -> {
@@ -168,7 +168,7 @@ public abstract class ReadyResourceOperationsMockTest<C extends KubernetesClient
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractReadyOperations<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
+        AbstractReadyOperations<C, T, L, D, R, P> op = createResourceOperations(vertx, mockClient);
 
         Async async = context.async();
         op.readiness(NAMESPACE, RESOURCE_NAME, 20, 100).setHandler(ar -> {
@@ -203,7 +203,7 @@ public abstract class ReadyResourceOperationsMockTest<C extends KubernetesClient
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractReadyOperations<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
+        AbstractReadyOperations<C, T, L, D, R, P> op = createResourceOperations(vertx, mockClient);
 
         Async async = context.async();
         op.readiness(NAMESPACE, RESOURCE_NAME, 20, 100).setHandler(ar -> {

@@ -14,8 +14,8 @@ import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class AbstractReadyOperations<C, T extends HasMetadata, L extends KubernetesResourceList/*<T>*/, D, R extends Resource<T, D>>
-        extends AbstractOperations<C,T, L, D, R> {
+public abstract class AbstractReadyOperations<C, T extends HasMetadata, L extends KubernetesResourceList/*<T>*/, D, R extends Resource<T, D>, P>
+        extends AbstractOperations<C,T, L, D, R, P> {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractReadyOperations.class);
 

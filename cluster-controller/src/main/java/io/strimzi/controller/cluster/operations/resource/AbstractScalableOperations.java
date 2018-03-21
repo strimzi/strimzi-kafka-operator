@@ -23,8 +23,8 @@ import org.slf4j.LoggerFactory;
  * @param <D> The doneable variant of the Kubernetes resource type.
  * @param <R> The resource operations.
  */
-public abstract class AbstractScalableOperations<C, T extends HasMetadata, L extends KubernetesResourceList/*<T>*/, D, R extends ScalableResource<T, D>>
-        extends AbstractReadyOperations<C, T, L, D, R> {
+public abstract class AbstractScalableOperations<C, T extends HasMetadata, L extends KubernetesResourceList/*<T>*/, D, R extends ScalableResource<T, D>, P>
+        extends AbstractReadyOperations<C, T, L, D, R, P> {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractScalableOperations.class.getName());
 

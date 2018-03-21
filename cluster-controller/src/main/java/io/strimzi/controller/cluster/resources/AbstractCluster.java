@@ -575,7 +575,7 @@ public abstract class AbstractCluster {
     /**
      * Gets the given container's environment.
      */
-    protected static Map<String, String> containerEnvVars(Container container) {
+    public static Map<String, String> containerEnvVars(Container container) {
         return container.getEnv().stream().collect(
                 Collectors.toMap(EnvVar::getName, EnvVar::getValue));
     }

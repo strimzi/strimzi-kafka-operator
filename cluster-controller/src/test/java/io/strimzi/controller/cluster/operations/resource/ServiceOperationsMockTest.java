@@ -15,7 +15,7 @@ import io.vertx.core.Vertx;
 
 import static org.mockito.Mockito.when;
 
-public class ServiceOperationsMockTest extends ResourceOperationsMockTest<KubernetesClient, Service, ServiceList, DoneableService, Resource<Service, DoneableService>> {
+public class ServiceOperationsMockTest extends ResourceOperationsMockTest<KubernetesClient, Service, ServiceList, DoneableService, Resource<Service, DoneableService>, Void> {
 
     @Override
     protected Class<KubernetesClient> clientType() {

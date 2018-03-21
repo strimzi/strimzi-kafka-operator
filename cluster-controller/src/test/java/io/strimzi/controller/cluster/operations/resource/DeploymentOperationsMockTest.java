@@ -17,7 +17,9 @@ import io.vertx.core.Vertx;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class DeploymentOperationsMockTest extends ScalableResourceOperationsMockTest<KubernetesClient, Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>> {
+public class DeploymentOperationsMockTest extends
+        ScalableResourceOperationsMockTest<KubernetesClient, Deployment, DeploymentList,
+                DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>, Void> {
 
     @Override
     protected Class<KubernetesClient> clientType() {

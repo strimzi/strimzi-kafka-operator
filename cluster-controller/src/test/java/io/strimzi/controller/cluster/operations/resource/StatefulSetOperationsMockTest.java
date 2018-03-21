@@ -22,7 +22,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @Ignore
-public class StatefulSetOperationsMockTest extends ScalableResourceOperationsMockTest<KubernetesClient, StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> {
+public class StatefulSetOperationsMockTest<P>
+        extends ScalableResourceOperationsMockTest<KubernetesClient, StatefulSet, StatefulSetList,
+        DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>, P> {
 
     @Override
     protected Class<KubernetesClient> clientType() {

@@ -10,7 +10,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 
 public abstract class ScalableResourceOperationsMockTest<C extends KubernetesClient, T extends HasMetadata,
-        L extends KubernetesResourceList, D, R extends Resource<T, D>> extends ReadyResourceOperationsMockTest<C, T, L, D, R> {
+        L extends KubernetesResourceList, D, R extends Resource<T, D>, P> extends ReadyResourceOperationsMockTest<C, T, L, D, R, P> {
 
     // TODO Need to test that create waits for SS and pods
 }

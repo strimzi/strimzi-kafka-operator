@@ -11,6 +11,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.strimzi.controller.cluster.operations.cluster.KafkaClusterOperations;
 import io.strimzi.controller.cluster.operations.cluster.KafkaConnectClusterOperations;
 import io.strimzi.controller.cluster.operations.cluster.KafkaConnectS2IClusterOperations;
+import io.strimzi.controller.cluster.operations.cluster.KafkaSetOperations;
+import io.strimzi.controller.cluster.operations.cluster.ZookeeperSetOperations;
 import io.strimzi.controller.cluster.operations.resource.BuildConfigOperations;
 import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
 import io.strimzi.controller.cluster.operations.resource.DeploymentConfigOperations;
@@ -58,12 +60,13 @@ public class Main {
         ClusterControllerConfig config = ClusterControllerConfig.fromMap(env);
 
         ServiceOperations serviceOperations = new ServiceOperations(vertx, client);
-        StatefulSetOperations statefulSetOperations = new StatefulSetOperations(vertx, client);
+        ZookeeperSetOperations zookeeperSetOperations = new ZookeeperSetOperations(vertx, client);
+        KafkaSetOperations kafkaSetOperations = new KafkaSetOperations(vertx, client);
         ConfigMapOperations configMapOperations = new ConfigMapOperations(vertx, client);
         PvcOperations pvcOperations = new PvcOperations(vertx, client);
         DeploymentOperations deploymentOperations = new DeploymentOperations(vertx, client);
 
-        KafkaClusterOperations kafkaClusterOperations = new KafkaClusterOperations(vertx, isOpenShift, config.getOperationTimeoutMs(), configMapOperations, serviceOperations, statefulSetOperations, pvcOperations, deploymentOperations);
+        KafkaClusterOperations kafkaClusterOperations = new KafkaClusterOperations(vertx, isOpenShift, config.getOperationTimeoutMs(), configMapOperations, serviceOperations, zookeeperSetOperations, kafkaSetOperations, pvcOperations, deploymentOperations);
         KafkaConnectClusterOperations kafkaConnectClusterOperations = new KafkaConnectClusterOperations(vertx, isOpenShift, configMapOperations, deploymentOperations, serviceOperations);
 
         DeploymentConfigOperations deploymentConfigOperations = null;

@@ -18,7 +18,7 @@ import static org.mockito.Mockito.when;
 
 public class DeploymentConfigOperationsMockTest extends ScalableResourceOperationsMockTest<OpenShiftClient, DeploymentConfig,
         DeploymentConfigList, DoneableDeploymentConfig,
-        DeployableScalableResource<DeploymentConfig, DoneableDeploymentConfig>> {
+        DeployableScalableResource<DeploymentConfig, DoneableDeploymentConfig>, Void> {
 
     @Override
     protected Class<OpenShiftClient> clientType() {

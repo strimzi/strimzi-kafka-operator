@@ -28,7 +28,7 @@ import java.util.function.Predicate;
  * Operations for {@code StatefulSets}s, which supports {@link #rollingUpdate(String, String)}
  * in addition to the usual operations.
  */
-public class StatefulSetOperations extends AbstractScalableOperations<KubernetesClient, StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> {
+public class StatefulSetOperations<P> extends AbstractScalableOperations<KubernetesClient, StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>, P> {
 
     private static final Logger log = LoggerFactory.getLogger(StatefulSetOperations.class.getName());
     private final PodOperations podOperations;
@@ -158,21 +158,23 @@ public class StatefulSetOperations extends AbstractScalableOperations<Kubernetes
     }
 
     @Override
-    protected void internalCreate(String namespace, String name, StatefulSet desired, Future<ReconcileResult> future) {
+    protected Future<ReconcileResult<P>> internalCreate(String namespace, String name, StatefulSet desired) {
         // Create the SS...
-        Future crt = Future.future();
-        super.internalCreate(namespace, name, desired, crt);
+        Future<ReconcileResult<P>> result = Future.future();
+        Future<ReconcileResult<P>> crt = super.internalCreate(namespace, name, desired);
+
 
         long operationTimeoutMs = 60_000L;
 
-        crt
         // ... then wait for the SS to be ready...
-        .compose(res -> readiness(namespace, desired.getMetadata().getName(), 1_000, operationTimeoutMs))
+        crt.compose(res -> readiness(namespace, desired.getMetadata().getName(), 1_000, operationTimeoutMs).map(res))
         // ... then wait for all the pods to be ready
-        .compose(res -> podReadiness(namespace, desired, 1_000, operationTimeoutMs))
+        .compose(res -> podReadiness(namespace, desired, 1_000, operationTimeoutMs).map(res))
         .compose(res -> {
-            future.complete();
-        }, future);
+            result.complete(res);
+        }, result);
+        // TODO I need to block until things are ready
+        return result;
     }
 
     /**
@@ -194,15 +196,10 @@ public class StatefulSetOperations extends AbstractScalableOperations<Kubernetes
      * {@inheritDoc}
      */
     @Override
-    protected void internalPatch(String namespace, String name, StatefulSet current, StatefulSet desired, Future<ReconcileResult> future) {
-        try {
-            log.info("Patching {} resource {} in namespace {} with {}", resourceKind, name, namespace, desired);
-            operation().inNamespace(namespace).withName(name).cascading(false).patch(desired);
-            log.info("{} {} in namespace {} has been patched", resourceKind, name, namespace);
-            future.complete();
-        } catch (Exception e) {
-            log.error("Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
-            future.fail(e);
-        }
+    protected Future<ReconcileResult<P>> internalPatch(String namespace, String name, StatefulSet current, StatefulSet desired) {
+        log.info("Patching {} resource {} in namespace {} with {}", resourceKind, name, namespace, desired);
+        operation().inNamespace(namespace).withName(name).cascading(false).patch(desired);
+        log.info("{} {} in namespace {} has been patched", resourceKind, name, namespace);
+        return Future.succeededFuture(ReconcileResult.patched(null));
     }
 }

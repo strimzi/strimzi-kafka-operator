@@ -15,7 +15,7 @@ import io.vertx.core.Vertx;
 
 import static org.mockito.Mockito.when;
 
-public class EndpointOperationsMockTest extends ReadyResourceOperationsMockTest<KubernetesClient, Endpoints, EndpointsList, DoneableEndpoints, Resource<Endpoints, DoneableEndpoints>> {
+public class EndpointOperationsMockTest extends ReadyResourceOperationsMockTest<KubernetesClient, Endpoints, EndpointsList, DoneableEndpoints, Resource<Endpoints, DoneableEndpoints>, Void> {
 
     @Override
     protected Class<KubernetesClient> clientType() {
