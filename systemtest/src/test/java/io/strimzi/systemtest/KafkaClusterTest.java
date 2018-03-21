@@ -21,6 +21,8 @@ import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterException;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.Oc;
+import org.hamcrest.CoreMatchers;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -304,4 +306,36 @@ public class KafkaClusterTest {
         assertThat(configMap, valueOfCmEquals("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "5"));
         assertThat(configMap, valueOfCmEquals("KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", "5"));
     }
+
+    @Test
+    @KafkaCluster(name = "my-cluster", kafkaNodes = 1, zkNodes = 2, config = {
+            @CmData(key = "zookeeper-healthcheck-delay", value = "30"),
+            @CmData(key = "zookeeper-healthcheck-timeout", value = "10"),
+            @CmData(key = "kafka-healthcheck-delay", value = "30"),
+            @CmData(key = "kafka-healthcheck-timeout", value = "10"),
+            @CmData(key = "KAFKA_DEFAULT_REPLICATION_FACTOR", value = "2"),
+            @CmData(key = "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", value = "5"),
+            @CmData(key = "KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", value = "5")
+    })
+    @OpenShiftOnly
+    public void testForUpdateValuesInConfigMap() {
+        String clusterName = "my-cluster";
+        int expectedZKPods = 2;
+        Oc oc = (Oc) this.kubeClient;
+
+        replaceCm(clusterName, "zookeeper-healthcheck-delay", "23");
+        oc.waitForStatefulSet(zookeeperStatefulSetName(clusterName), expectedZKPods);
+
+        String configMap = kubeClient.get("cm", clusterName);
+        assertThat(configMap, valueOfCmEquals("zookeeper-healthcheck-delay", "23"));
+        assertThat(configMap, valueOfCmEquals("zookeeper-healthcheck-timeout", "10"));
+
+        List<String> ccPods = oc.listByLabel("pod", "strimzi-cluster-controller");
+        LOGGER.info("Count of Cluster controllers is: "+ ccPods.size());
+        for(int i=0; i<ccPods.size(); i++){
+            Assert.assertThat(oc.logs(ccPods.get(i)),
+                    CoreMatchers.containsString("Diff: Zookeeper healthcheck timing changed"));
+        }
+    }
+
 }
