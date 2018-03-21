@@ -16,7 +16,6 @@ import io.strimzi.controller.cluster.operations.resource.DeploymentOperations;
 import io.strimzi.controller.cluster.operations.resource.PvcOperations;
 import io.strimzi.controller.cluster.operations.resource.ReconcileResult;
 import io.strimzi.controller.cluster.operations.resource.ServiceOperations;
-import io.strimzi.controller.cluster.operations.resource.StatefulSetOperations;
 import io.strimzi.controller.cluster.resources.AbstractCluster;
 import io.strimzi.controller.cluster.resources.ClusterDiffResult;
 import io.strimzi.controller.cluster.resources.KafkaCluster;
@@ -24,7 +23,6 @@ import io.strimzi.controller.cluster.resources.Labels;
 import io.strimzi.controller.cluster.resources.Storage;
 import io.strimzi.controller.cluster.resources.TopicController;
 import io.strimzi.controller.cluster.resources.ZookeeperCluster;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -41,18 +39,13 @@ import org.mockito.ArgumentCaptor;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
-import static java.util.Collections.singletonList;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -203,7 +196,7 @@ public class KafkaClusterOperationsTest {
 
         // Now try to create a KafkaCluster based on this CM
         Async async = context.async();
-        ops.create(clusterCmNamespace, clusterCmName, createResult -> {
+        ops.createOrUpdate(clusterCmNamespace, clusterCmName, createResult -> {
             if (createResult.failed()) {
                 createResult.cause().printStackTrace();
             }
@@ -605,7 +598,7 @@ public class KafkaClusterOperationsTest {
 
         // Now try to update a KafkaCluster based on this CM
         Async async = context.async();
-        ops.update(clusterCmNamespace, clusterCmName, createResult -> {
+        ops.createOrUpdate(clusterCmNamespace, clusterCmName, createResult -> {
             if (createResult.failed()) createResult.cause().printStackTrace();
             context.assertTrue(createResult.succeeded());
 
@@ -721,8 +714,7 @@ public class KafkaClusterOperationsTest {
         );
 
 
-        Set<String> created = new HashSet<>();
-        Set<String> updated = new HashSet<>();
+        Set<String> createdOrUpdated = new HashSet<>();
         Set<String> deleted = new HashSet<>();
 
         KafkaClusterOperations ops = new KafkaClusterOperations(vertx, openShift,
@@ -731,14 +723,8 @@ public class KafkaClusterOperationsTest {
                 mockServiceOps, mockZsOps, mockKsOps,
                 mockPvcOps, mockDepOps) {
             @Override
-            public void create(String namespace, String name, Handler h) {
-                created.add(name);
-                async.countDown();
-                h.handle(Future.succeededFuture());
-            }
-            @Override
-            public void update(String namespace, String name, Handler h) {
-                updated.add(name);
+            public void createOrUpdate(String namespace, String name, Handler h) {
+                createdOrUpdated.add(name);
                 async.countDown();
                 h.handle(Future.succeededFuture());
             }
@@ -755,8 +741,7 @@ public class KafkaClusterOperationsTest {
 
         async.await();
 
-        context.assertEquals(singleton("foo"), created);
-        context.assertEquals(singleton("bar"), updated);
+        context.assertEquals(new HashSet(asList("foo", "bar")), createdOrUpdated);
         context.assertEquals(singleton("baz"), deleted);
     }
 }

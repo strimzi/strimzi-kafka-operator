@@ -31,14 +31,6 @@ import java.util.List;
 
 import static io.strimzi.controller.cluster.resources.TopicController.topicControllerName;
 
-
-/*
-TODO
-1. We need to cope with the dependency between labels/selectors/services
-2. Locking bug
-3. Tests
- */
-
 /**
  * <p>Cluster operations for a "Kafka" cluster. A KafkaClusterOperations is
  * an AbstractClusterOperations that really manages two clusters,
@@ -85,7 +77,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
     }
 
     @Override
-    public void create(String namespace, String name, Handler<AsyncResult<Void>> handler) {
+    public void createOrUpdate(String namespace, String name, Handler<AsyncResult<Void>> handler) {
         execute(namespace, name, updateZk, zookeeperResult -> {
             if (zookeeperResult.failed()) {
                 handler.handle(zookeeperResult);
@@ -101,18 +93,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
         });
     }
 
-    private final CompositeOperation<KafkaCluster> updateKafka = new CompositeOperation<KafkaCluster>() {
-        @Override
-        public String operationType() {
-            return OP_UPDATE;
-        }
-
-        @Override
-        public String clusterType() {
-            return CLUSTER_TYPE_KAFKA;
-        }
-
-
+    private final CompositeOperation updateKafka = new CompositeOperation(OP_CREATE_UPDATE, CLUSTER_TYPE_KAFKA) {
         @Override
         public Future<?> composite(String namespace, String name) {
             ConfigMap kafkaConfigMap = configMapOperations.get(namespace, name);
@@ -145,16 +126,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
         }
     };
 
-    private final CompositeOperation<KafkaCluster> deleteKafka = new CompositeOperation<KafkaCluster>() {
-        @Override
-        public String operationType() {
-            return OP_DELETE;
-        }
-
-        @Override
-        public String clusterType() {
-            return CLUSTER_TYPE_KAFKA;
-        }
+    private final CompositeOperation deleteKafka = new CompositeOperation(OP_DELETE, CLUSTER_TYPE_KAFKA) {
 
         @Override
         public Future<?> composite(String namespace, String name) {
@@ -182,18 +154,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
     };
 
-    private final CompositeOperation<ZookeeperCluster> updateZk = new CompositeOperation<ZookeeperCluster>() {
-        @Override
-        public String operationType() {
-            return OP_UPDATE;
-        }
-
-        @Override
-        public String clusterType() {
-            return CLUSTER_TYPE_ZOOKEEPER;
-        }
-
-
+    private final CompositeOperation updateZk = new CompositeOperation(OP_CREATE_UPDATE, CLUSTER_TYPE_ZOOKEEPER) {
         @Override
         public Future<?> composite(String namespace, String name) {
             ConfigMap zkConfigMap = configMapOperations.get(namespace, name);
@@ -223,19 +184,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
         }
     };
 
-    private final CompositeOperation<ZookeeperCluster> deleteZk = new CompositeOperation<ZookeeperCluster>() {
-
-        @Override
-        public String operationType() {
-            return OP_DELETE;
-        }
-
-        @Override
-        public String clusterType() {
-            return CLUSTER_TYPE_ZOOKEEPER;
-        }
-
-
+    private final CompositeOperation deleteZk = new CompositeOperation(OP_DELETE, CLUSTER_TYPE_ZOOKEEPER) {
         @Override
         public Future<?> composite(String namespace, String name) {
             StatefulSet ss = zkSetOperations.get(namespace, ZookeeperCluster.zookeeperClusterName(name));
@@ -262,17 +211,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
     };
 
-    private final CompositeOperation<TopicController> updateTopicController = new CompositeOperation<TopicController>() {
-        @Override
-        public String operationType() {
-            return OP_UPDATE;
-        }
-
-        @Override
-        public String clusterType() {
-            return CLUSTER_TYPE_TOPIC_CONTROLLER;
-        }
-
+    private final CompositeOperation updateTopicController = new CompositeOperation(OP_CREATE_UPDATE, CLUSTER_TYPE_TOPIC_CONTROLLER) {
         @Override
         public Future<?> composite(String namespace, String name) {
             ConfigMap tcConfigMap = configMapOperations.get(namespace, name);
@@ -282,22 +221,9 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
         }
     };
 
-    private final CompositeOperation<TopicController> deleteTopicController = new CompositeOperation<TopicController>() {
-
-        @Override
-        public String operationType() {
-            return OP_DELETE;
-        }
-
-        @Override
-        public String clusterType() {
-            return CLUSTER_TYPE_TOPIC_CONTROLLER;
-        }
-
+    private final CompositeOperation deleteTopicController = new CompositeOperation(OP_DELETE, CLUSTER_TYPE_TOPIC_CONTROLLER) {
         @Override
         public Future<?> composite(String namespace, String name) {
-            Deployment dep = deploymentOperations.get(namespace, topicControllerName(name));
-            TopicController topicController = TopicController.fromDeployment(namespace, name, dep);
             return deploymentOperations.reconcile(namespace, topicControllerName(name), null);
             // TODO wait for pod to disappear
         }
@@ -323,23 +249,6 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
     }
 
     @Override
-    public void update(String namespace, String name, Handler<AsyncResult<Void>> handler) {
-        execute(namespace, name, updateZk, zookeeperResult -> {
-            if (zookeeperResult.failed()) {
-                handler.handle(zookeeperResult);
-            } else {
-                execute(namespace, name, updateKafka, kafkaResult -> {
-                    if (kafkaResult.failed()) {
-                        handler.handle(kafkaResult);
-                    } else {
-                        execute(namespace, name, updateTopicController, handler);
-                    }
-                });
-            }
-        });
-    }
-
-    @Override
     public String clusterType() {
         return CLUSTER_TYPE_KAFKA;
     }
@@ -348,6 +257,4 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
     protected List<StatefulSet> getResources(String namespace, Labels selector) {
         return kafkaSetOperations.list(namespace, selector);
     }
-
-
 }

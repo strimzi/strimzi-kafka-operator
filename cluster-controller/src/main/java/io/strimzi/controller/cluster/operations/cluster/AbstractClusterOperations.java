@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
 import io.strimzi.controller.cluster.resources.AbstractCluster;
-import io.strimzi.controller.cluster.resources.ClusterDiffResult;
 import io.strimzi.controller.cluster.resources.Labels;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
@@ -38,9 +37,8 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
 
     private static final Logger log = LoggerFactory.getLogger(AbstractClusterOperations.class.getName());
 
-    protected static final String OP_CREATE = "create";
+    protected static final String OP_CREATE_UPDATE = "create/update";
     protected static final String OP_DELETE = "delete";
-    protected static final String OP_UPDATE = "update";
 
     protected static final int LOCK_TIMEOUT = 60000;
 
@@ -75,15 +73,21 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
         return "lock::" + namespace + "::" + clusterType + "::" + name;
     }
 
-    protected interface CompositeOperation<C extends AbstractCluster> {
-        String operationType();
-        String clusterType();
+    protected abstract class CompositeOperation {
+        final String operationType;
+        final String clusterType;
+
+        protected CompositeOperation(final String operationType,
+                final String clusterType) {
+            this.clusterType = clusterType;
+            this.operationType = operationType;
+        }
 
         /**
          * Create the resources in Kubernetes according to the given {@code cluster},
          * returning a composite future for when the overall operation is done
          */
-        Future<?> composite(String namespace, String name);
+        abstract Future<?> composite(String namespace, String name);
 
     }
 
@@ -94,14 +98,12 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
      * @param name The name of the cluster
      * @param compositeOperation The operation to execute
      * @param handler A completion handler
-     * @param <C> The type of cluster.
      */
-    protected final <C extends AbstractCluster> void execute(String namespace, String name, CompositeOperation<C> compositeOperation, Handler<AsyncResult<Void>> handler) {
-        String clusterType = compositeOperation.clusterType();
-        String operationType = compositeOperation.operationType();
+    protected final void execute(String namespace, String name, CompositeOperation compositeOperation, Handler<AsyncResult<Void>> handler) {
         Future<?> composite = compositeOperation.composite(namespace, name);
-
         composite.setHandler(ar -> {
+            String clusterType = compositeOperation.clusterType;
+            String operationType = compositeOperation.operationType;
             if (ar.succeeded()) {
                 log.info("{} cluster {} in namespace {}: successful {}", clusterType, name, namespace, operationType);
                 handler.handle(Future.succeededFuture());
@@ -119,7 +121,7 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
      * @param name The name of the cluster.
      * @param handler Completion handler
      */
-    protected abstract void create(String namespace, String name, Handler<AsyncResult<Void>> handler);
+    protected abstract void createOrUpdate(String namespace, String name, Handler<AsyncResult<Void>> handler);
 
     /**
      * Subclasses implement this method to delete the cluster. The implementation usually just has to call
@@ -129,15 +131,6 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
      * @param handler Completion handler
      */
     protected abstract void delete(String namespace, String name, Handler<AsyncResult<Void>> handler);
-
-    /**
-     * Subclasses implement this method to update the cluster. The implementation usually just has to call
-     * {@link #execute(String, String, CompositeOperation, Handler)} with appropriate arguments.
-     * @param namespace The namespace containing the cluster.
-     * @param name The name of the cluster.
-     * @param handler Completion handler
-     */
-    protected abstract void update(String namespace, String name, Handler<AsyncResult<Void>> handler);
 
     /**
      * The name of the given {@code resource}, as read from its metadata.
@@ -171,9 +164,8 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
      * Reconciliation works by getting the cluster ConfigMap in the given namespace with the given name and
      * comparing with the corresponding {@linkplain #getResources(String, Labels) resource}.
      * <ul>
-     * <li>A cluster will be {@linkplain #create(String, String, Handler) created} if ConfigMap is without same-named resources</li>
+     * <li>A cluster will be {@linkplain #createOrUpdate(String, String, Handler) created} if ConfigMap is without same-named resources</li>
      * <li>A cluster will be {@linkplain #delete(String, String, Handler) deleted} if resources without same-named ConfigMap</li>
-     * <li>A cluster will be {@linkplain #update(String, String, Handler) updated} if it has a cluster ConfigMap and a resource with the same name.</li>
      * </ul>
      * @param namespace The namespace
      * @param name The name of the cluster
@@ -197,31 +189,17 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
 
                     if (cm != null) {
                         String nameFromCm = name(cm);
-                        if (resources.size() > 0) {
-                            log.info("Reconciliation: {} cluster {} should be checked for updates", clusterDescription, cm.getMetadata().getName());
-                            log.info("Checking for updates in {} cluster {}", clusterDescription, nameFromCm);
-                            update(namespace, nameFromCm, updateResult -> {
-                                if (updateResult.succeeded()) {
-                                    log.info("{} cluster updated {}", clusterDescription, nameFromCm);
-                                } else {
-                                    log.error("Failed to update {} cluster {}.", clusterDescription, nameFromCm);
-                                }
-                                lock.release();
-                                log.debug("Lock {} released", lockName);
-                            });
-                        } else {
-                            log.info("Reconciliation: {} cluster {} should be created", clusterDescription, cm.getMetadata().getName());
-                            log.info("Adding {} cluster {}", clusterDescription, nameFromCm);
-                            create(namespace, nameFromCm, createResult -> {
-                                if (createResult.succeeded()) {
-                                    log.info("{} cluster added {}", clusterDescription, nameFromCm);
-                                } else {
-                                    log.error("Failed to add {} cluster {}.", clusterDescription, nameFromCm);
-                                }
-                                lock.release();
-                                log.debug("Lock {} released", lockName);
-                            });
-                        }
+                        log.info("Reconciliation: {} cluster {} should be created or updated", clusterDescription, cm.getMetadata().getName());
+                        log.info("Creating/updating {} cluster {}", clusterDescription, nameFromCm);
+                        createOrUpdate(namespace, nameFromCm, createResult -> {
+                            if (createResult.succeeded()) {
+                                log.info("{} cluster created/updated {}", clusterDescription, nameFromCm);
+                            } else {
+                                log.error("Failed to create/update {} cluster {}.", clusterDescription, nameFromCm);
+                            }
+                            lock.release();
+                            log.debug("Lock {} released", lockName);
+                        });
                     } else {
 
                         List<Future> result = new ArrayList<>(resources.size());
@@ -263,9 +241,8 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
      * Reconciliation works by getting the cluster ConfigMaps in the given namespace with the given selector and
      * comparing with the corresponding {@linkplain #getResources(String, Labels) resource}.
      * <ul>
-     * <li>A cluster will be {@linkplain #create(String, String, Handler) created} for all ConfigMaps without same-named resources</li>
+     * <li>A cluster will be {@linkplain #createOrUpdate(String, String, Handler) created} for all ConfigMaps without same-named resources</li>
      * <li>A cluster will be {@linkplain #delete(String, String, Handler) deleted} for all resources without same-named ConfigMaps</li>
-     * <li>A cluster will be {@linkplain #update(String, String, Handler) updated} if it has a cluster ConfigMap and a resource with the same name.</li>
      * </ul>
      * @param namespace The namespace
      * @param selector The selector

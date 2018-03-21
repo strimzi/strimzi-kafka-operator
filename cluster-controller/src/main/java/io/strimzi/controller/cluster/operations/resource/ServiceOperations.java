@@ -7,7 +7,6 @@ package io.strimzi.controller.cluster.operations.resource;
 import io.fabric8.kubernetes.api.model.DoneableService;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceList;
-import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;

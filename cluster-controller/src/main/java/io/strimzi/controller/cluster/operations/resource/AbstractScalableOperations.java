@@ -6,10 +6,7 @@ package io.strimzi.controller.cluster.operations.resource;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
-import io.fabric8.kubernetes.api.model.extensions.Deployment;
-import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.client.dsl.ScalableResource;
-import io.fabric8.openshift.api.model.DeploymentConfig;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import org.slf4j.Logger;

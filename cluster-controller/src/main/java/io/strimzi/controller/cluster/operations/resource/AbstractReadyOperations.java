@@ -15,7 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public abstract class AbstractReadyOperations<C, T extends HasMetadata, L extends KubernetesResourceList/*<T>*/, D, R extends Resource<T, D>, P>
-        extends AbstractOperations<C,T, L, D, R, P> {
+        extends AbstractOperations<C, T, L, D, R, P> {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractReadyOperations.class);
 
@@ -49,37 +49,37 @@ public abstract class AbstractReadyOperations<C, T extends HasMetadata, L extend
             public void handle(Long timerId) {
 
                 vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
-                        future -> {
-                            try {
-                                if (isReady(namespace, name))   {
-                                    future.complete();
-                                } else {
-                                    if (log.isTraceEnabled()) {
-                                        log.trace("{} {} in namespace {} is not ready", resourceKind, name, namespace);
-                                    }
-                                    future.fail("Not ready yet");
-                                }
-                            } catch (Exception e) {
-                                log.warn("Caught exception while waiting for {} {} in namespace {} to get ready", resourceKind, name, namespace, e);
-                                future.fail(e);
-                            }
-                        },
-                        false,
-                        res -> {
-                            if (res.succeeded()) {
-                                log.info("{} {} in namespace {} is ready", resourceKind, name, namespace);
-                                fut.complete();
+                    future -> {
+                        try {
+                            if (isReady(namespace, name))   {
+                                future.complete();
                             } else {
-                                long timeLeft = deadline - System.currentTimeMillis();
-                                if (timeLeft <= 0) {
-                                    log.error("Exceeded timeoutMs of {} ms while waiting for {} {} in namespace {} to be ready", timeoutMs, resourceKind, name, namespace);
-                                    fut.fail(new TimeoutException());
-                                } else {
-                                    // Schedule ourselves to run again
-                                    vertx.setTimer(Math.min(pollIntervalMs, timeLeft), this);
+                                if (log.isTraceEnabled()) {
+                                    log.trace("{} {} in namespace {} is not ready", resourceKind, name, namespace);
                                 }
+                                future.fail("Not ready yet");
+                            }
+                        } catch (Exception e) {
+                            log.warn("Caught exception while waiting for {} {} in namespace {} to get ready", resourceKind, name, namespace, e);
+                            future.fail(e);
+                        }
+                    },
+                    false,
+                    res -> {
+                        if (res.succeeded()) {
+                            log.info("{} {} in namespace {} is ready", resourceKind, name, namespace);
+                            fut.complete();
+                        } else {
+                            long timeLeft = deadline - System.currentTimeMillis();
+                            if (timeLeft <= 0) {
+                                log.error("Exceeded timeoutMs of {} ms while waiting for {} {} in namespace {} to be ready", timeoutMs, resourceKind, name, namespace);
+                                fut.fail(new TimeoutException());
+                            } else {
+                                // Schedule ourselves to run again
+                                vertx.setTimer(Math.min(pollIntervalMs, timeLeft), this);
                             }
                         }
+                    }
                 );
             }
         };

@@ -6,7 +6,6 @@ package io.strimzi.controller.cluster.operations.cluster;
 
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 
 import java.util.Iterator;
@@ -24,11 +23,6 @@ class Diffs {
                 || !a.getSpec().getReplicas().equals(b.getSpec().getReplicas());
     }
 
-    static boolean differingScale(Deployment a, Deployment b) {
-        return (a == null) != (b == null)
-                || !a.getSpec().getReplicas().equals(b.getSpec().getReplicas());
-    }
-
     static <T extends HasMetadata> boolean differingLabels(T a, T b) {
         return (a == null) != (b == null)
                 || !a.getMetadata().getLabels().equals(b.getMetadata().getLabels());
@@ -38,7 +32,7 @@ class Diffs {
         if ((a == null) != (b == null)) {
             return true;
         }
-        if (a == null && b == null) {
+        if (a == null) { // => b is null too
             return false;
         }
         if (a.size() != b.size()) {
@@ -55,13 +49,6 @@ class Diffs {
     }
 
     static boolean differingContainers(StatefulSet a, StatefulSet b) {
-        return (a == null) != (b == null)
-                || differingLists(a.getSpec().getTemplate().getSpec().getContainers(),
-                    b.getSpec().getTemplate().getSpec().getContainers(),
-                    Diffs::differingContainers);
-    }
-
-    static boolean differingContainers(Deployment a, Deployment b) {
         return (a == null) != (b == null)
                 || differingLists(a.getSpec().getTemplate().getSpec().getContainers(),
                     b.getSpec().getTemplate().getSpec().getContainers(),

@@ -30,14 +30,15 @@ import java.util.List;
 import java.util.Set;
 
 import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(VertxUnitRunner.class)
@@ -81,7 +82,7 @@ public class KafkaConnectClusterOperationsTest {
         KafkaConnectCluster connect = KafkaConnectCluster.fromConfigMap(clusterCm);
 
         Async async = context.async();
-        ops.create(clusterCmNamespace, clusterCmName, createResult -> {
+        ops.createOrUpdate(clusterCmNamespace, clusterCmName, createResult -> {
             context.assertTrue(createResult.succeeded());
 
             // Vertify service
@@ -137,20 +138,20 @@ public class KafkaConnectClusterOperationsTest {
                 mockCmOps, mockDcOps, mockServiceOps);
 
         Async async = context.async();
-        ops.update(clusterCmNamespace, clusterCmName, createResult -> {
+        ops.createOrUpdate(clusterCmNamespace, clusterCmName, createResult -> {
             context.assertTrue(createResult.succeeded());
 
             // Vertify service
             List<Service> capturedServices = serviceCaptor.getAllValues();
-            context.assertEquals(0, capturedServices.size());
+            context.assertEquals(1, capturedServices.size());
 
             // Verify Deployment Config
             List<Deployment> capturedDc = dcCaptor.getAllValues();
-            context.assertEquals(0, capturedDc.size());
+            context.assertEquals(1, capturedDc.size());
 
             // Verify scaleDown / scaleUp were not called
-            context.assertEquals(0, dcScaleDownNameCaptor.getAllValues().size());
-            context.assertEquals(0, dcScaleUpNameCaptor.getAllValues().size());
+            context.assertEquals(1, dcScaleDownNameCaptor.getAllValues().size());
+            context.assertEquals(1, dcScaleUpNameCaptor.getAllValues().size());
 
             async.complete();
         });
@@ -193,7 +194,7 @@ public class KafkaConnectClusterOperationsTest {
                 mockCmOps, mockDcOps, mockServiceOps);
 
         Async async = context.async();
-        ops.update(clusterCmNamespace, clusterCmName, createResult -> {
+        ops.createOrUpdate(clusterCmNamespace, clusterCmName, createResult -> {
             context.assertTrue(createResult.succeeded());
 
             KafkaConnectCluster compareTo = KafkaConnectCluster.fromConfigMap(clusterCm);
@@ -213,8 +214,8 @@ public class KafkaConnectClusterOperationsTest {
             context.assertEquals(compareTo.generateDeployment(), dc, "Deployments are not equal");
 
             // Verify scaleDown / scaleUp were not called
-            context.assertEquals(0, dcScaleDownNameCaptor.getAllValues().size());
-            context.assertEquals(0, dcScaleUpNameCaptor.getAllValues().size());
+            context.assertEquals(1, dcScaleDownNameCaptor.getAllValues().size());
+            context.assertEquals(1, dcScaleUpNameCaptor.getAllValues().size());
 
             async.complete();
         });
@@ -261,7 +262,7 @@ public class KafkaConnectClusterOperationsTest {
                 mockCmOps, mockDcOps, mockServiceOps);
 
         Async async = context.async();
-        ops.update(clusterCmNamespace, clusterCmName, createResult -> {
+        ops.createOrUpdate(clusterCmNamespace, clusterCmName, createResult -> {
             context.assertFalse(createResult.succeeded());
 
             async.complete();
@@ -270,7 +271,8 @@ public class KafkaConnectClusterOperationsTest {
 
     @Test
     public void testUpdateClusterScaleUp(TestContext context) {
-        String newReplicas = "4";
+        int scaleTo = 4;
+        String newReplicas = String.valueOf(scaleTo);
 
         ConfigMapOperations mockCmOps = mock(ConfigMapOperations.class);
         ServiceOperations mockServiceOps = mock(ServiceOperations.class);
@@ -287,44 +289,24 @@ public class KafkaConnectClusterOperationsTest {
         when(mockServiceOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateService());
         when(mockDcOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateDeployment());
 
-        ArgumentCaptor<String> serviceNameCaptor = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
-        when(mockServiceOps.reconcile(eq(clusterCmNamespace), serviceNameCaptor.capture(), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockServiceOps.reconcile(eq(clusterCmNamespace), any(), any())).thenReturn(Future.succeededFuture());
 
-        ArgumentCaptor<String> dcNameCaptor = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<Deployment> dcCaptor = ArgumentCaptor.forClass(Deployment.class);
-        when(mockDcOps.reconcile(eq(clusterCmNamespace), dcNameCaptor.capture(), dcCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.reconcile(eq(clusterCmNamespace), any(), any())).thenReturn(Future.succeededFuture());
 
-        ArgumentCaptor<String> dcScaleUpNameCaptor = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<Integer> dcScaleUpReplicasCaptor = ArgumentCaptor.forClass(Integer.class);
-        when(mockDcOps.scaleUp(eq(clusterCmNamespace), dcScaleUpNameCaptor.capture(), dcScaleUpReplicasCaptor.capture())).thenReturn(Future.succeededFuture());
+        doAnswer(i -> Future.succeededFuture(scaleTo))
+                .when(mockDcOps).scaleUp(clusterCmNamespace, connect.getName(), scaleTo);
 
-        ArgumentCaptor<String> dcScaleDownNameCaptor = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<Integer> dcScaleDownReplicasCaptor = ArgumentCaptor.forClass(Integer.class);
-        when(mockDcOps.scaleDown(eq(clusterCmNamespace), dcScaleDownNameCaptor.capture(), dcScaleDownReplicasCaptor.capture())).thenReturn(Future.succeededFuture());
+        doAnswer(i -> Future.succeededFuture(scaleTo))
+                .when(mockDcOps).scaleDown(clusterCmNamespace, connect.getName(), scaleTo);
 
         KafkaConnectClusterOperations ops = new KafkaConnectClusterOperations(vertx, true,
                 mockCmOps, mockDcOps, mockServiceOps);
 
         Async async = context.async();
-        ops.update(clusterCmNamespace, clusterCmName, createResult -> {
+        ops.createOrUpdate(clusterCmNamespace, clusterCmName, createResult -> {
             context.assertTrue(createResult.succeeded());
 
-            // Vertify service
-            List<Service> capturedServices = serviceCaptor.getAllValues();
-            context.assertEquals(emptyList(), capturedServices);
-
-            // Verify Deployment
-            List<Deployment> capturedDc = dcCaptor.getAllValues();
-            context.assertEquals(emptyList(), capturedDc);
-
-            // Verify ScaleUp
-            context.assertEquals(1, dcScaleUpNameCaptor.getAllValues().size());
-            context.assertEquals(connect.getName(), dcScaleUpNameCaptor.getValue());
-            context.assertEquals(newReplicas, dcScaleUpReplicasCaptor.getValue().toString());
-
-            // Verify scaleDown was not called
-            context.assertEquals(emptyList(), dcScaleDownNameCaptor.getAllValues());
+            verify(mockDcOps).scaleUp(clusterCmNamespace, connect.getName(), scaleTo);
 
             async.complete();
         });
@@ -332,7 +314,8 @@ public class KafkaConnectClusterOperationsTest {
 
     @Test
     public void testUpdateClusterScaleDown(TestContext context) {
-        String newReplicas = "2";
+        int scaleTo = 2;
+        String newReplicas = String.valueOf(scaleTo);
 
         ConfigMapOperations mockCmOps = mock(ConfigMapOperations.class);
         ServiceOperations mockServiceOps = mock(ServiceOperations.class);
@@ -349,44 +332,24 @@ public class KafkaConnectClusterOperationsTest {
         when(mockServiceOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateService());
         when(mockDcOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateDeployment());
 
-        ArgumentCaptor<String> serviceNameCaptor = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
-        when(mockServiceOps.reconcile(eq(clusterCmNamespace), serviceNameCaptor.capture(), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockServiceOps.reconcile(eq(clusterCmNamespace), any(), any())).thenReturn(Future.succeededFuture());
 
-        ArgumentCaptor<String> dcNameCaptor = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<Deployment> dcCaptor = ArgumentCaptor.forClass(Deployment.class);
-        when(mockDcOps.reconcile(eq(clusterCmNamespace), dcNameCaptor.capture(), dcCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.reconcile(eq(clusterCmNamespace), any(), any())).thenReturn(Future.succeededFuture());
 
-        ArgumentCaptor<String> dcScaleUpNameCaptor = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<Integer> dcScaleUpReplicasCaptor = ArgumentCaptor.forClass(Integer.class);
-        when(mockDcOps.scaleUp(eq(clusterCmNamespace), dcScaleUpNameCaptor.capture(), dcScaleUpReplicasCaptor.capture())).thenReturn(Future.succeededFuture());
+        doAnswer(i -> Future.succeededFuture(scaleTo))
+                .when(mockDcOps).scaleUp(clusterCmNamespace, connect.getName(), scaleTo);
 
-        ArgumentCaptor<String> dcScaleDownNameCaptor = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<Integer> dcScaleDownReplicasCaptor = ArgumentCaptor.forClass(Integer.class);
-        when(mockDcOps.scaleDown(eq(clusterCmNamespace), dcScaleDownNameCaptor.capture(), dcScaleDownReplicasCaptor.capture())).thenReturn(Future.succeededFuture());
+        doAnswer(i -> Future.succeededFuture(scaleTo))
+                .when(mockDcOps).scaleDown(clusterCmNamespace, connect.getName(), scaleTo);
 
         KafkaConnectClusterOperations ops = new KafkaConnectClusterOperations(vertx, true,
                 mockCmOps, mockDcOps, mockServiceOps);
 
         Async async = context.async();
-        ops.update(clusterCmNamespace, clusterCmName, createResult -> {
+        ops.createOrUpdate(clusterCmNamespace, clusterCmName, createResult -> {
             context.assertTrue(createResult.succeeded());
 
-            // Verify service
-            List<Service> capturedServices = serviceCaptor.getAllValues();
-            context.assertEquals(emptyList(), capturedServices);
-
-            // Verify Deployment
-            List<Deployment> capturedDc = dcCaptor.getAllValues();
-            context.assertEquals(emptyList(), capturedDc);
-
-            // Verify ScaleUp
-            context.assertEquals(emptyList(), dcScaleUpNameCaptor.getAllValues());
-
-            // Verify scaleDown
-            context.assertEquals(1, dcScaleDownNameCaptor.getAllValues().size());
-            context.assertEquals(connect.getName(), dcScaleDownNameCaptor.getValue());
-            context.assertEquals(newReplicas, dcScaleDownReplicasCaptor.getValue().toString());
+            verify(mockDcOps).scaleUp(clusterCmNamespace, connect.getName(), scaleTo);
 
             async.complete();
         });
@@ -468,9 +431,7 @@ public class KafkaConnectClusterOperationsTest {
                 asList(KafkaConnectCluster.fromConfigMap(baz).generateDeployment())
         );
 
-
-        Set<String> created = new HashSet<>();
-        Set<String> updated = new HashSet<>();
+        Set<String> createdOrUpdated = new HashSet<>();
         Set<String> deleted = new HashSet<>();
 
         Async async = context.async(3);
@@ -478,14 +439,8 @@ public class KafkaConnectClusterOperationsTest {
                 mockCmOps, mockDcOps, mockServiceOps) {
 
             @Override
-            public void create(String namespace, String name, Handler h) {
-                created.add(name);
-                async.countDown();
-                h.handle(Future.succeededFuture());
-            }
-            @Override
-            public void update(String namespace, String name, Handler h) {
-                updated.add(name);
+            public void createOrUpdate(String namespace, String name, Handler h) {
+                createdOrUpdated.add(name);
                 async.countDown();
                 h.handle(Future.succeededFuture());
             }
@@ -502,8 +457,7 @@ public class KafkaConnectClusterOperationsTest {
 
         async.await();
 
-        context.assertEquals(singleton("foo"), created);
-        context.assertEquals(singleton("bar"), updated);
+        context.assertEquals(new HashSet(asList("foo", "bar")), createdOrUpdated);
         context.assertEquals(singleton("baz"), deleted);
     }
 

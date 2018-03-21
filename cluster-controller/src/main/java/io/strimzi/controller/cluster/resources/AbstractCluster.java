@@ -577,6 +577,8 @@ public abstract class AbstractCluster {
      */
     public static Map<String, String> containerEnvVars(Container container) {
         return container.getEnv().stream().collect(
-                Collectors.toMap(EnvVar::getName, EnvVar::getValue));
+            Collectors.toMap(EnvVar::getName, EnvVar::getValue,
+                // On duplicates, last in wins
+                (u, v) -> v));
     }
 }

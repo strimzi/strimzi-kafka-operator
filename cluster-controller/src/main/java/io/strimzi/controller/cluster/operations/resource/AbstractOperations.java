@@ -8,10 +8,8 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.kubernetes.client.internal.readiness.Readiness;
 import io.strimzi.controller.cluster.resources.Labels;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,31 +70,31 @@ public abstract class AbstractOperations<C, T extends HasMetadata,
         if (desired != null && !namespace.equals(desired.getMetadata().getNamespace())) {
             return Future.failedFuture("Given namespace " + namespace + " incompatible with desired namespace " + desired.getMetadata().getNamespace());
         } else if (desired != null && !name.equals(desired.getMetadata().getName())) {
-            return Future.failedFuture("Given name "+ name +" incompatible with desired name " + desired.getMetadata().getName());
+            return Future.failedFuture("Given name " + name + " incompatible with desired name " + desired.getMetadata().getName());
         }
 
         Future<ReconcileResult<P>> fut = Future.future();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
-                future -> {
-                    T current = operation().inNamespace(namespace).withName(name).get();
-                    if (desired != null) {
-                        if (current == null) {
-                            future.handle(internalCreate(namespace, name, desired));
-                        } else {
-                            future.handle(internalPatch(namespace, name, current, desired));
-                        }
+            future -> {
+                T current = operation().inNamespace(namespace).withName(name).get();
+                if (desired != null) {
+                    if (current == null) {
+                        future.handle(internalCreate(namespace, name, desired));
                     } else {
-                        if (current != null) {
-                            // Deletion is desired
-                            future.handle(internalDelete(namespace, name));
-                        } else {
-                            future.complete(ReconcileResult.noop());
-                        }
+                        future.handle(internalPatch(namespace, name, current, desired));
                     }
+                } else {
+                    if (current != null) {
+                        // Deletion is desired
+                        future.handle(internalDelete(namespace, name));
+                    } else {
+                        future.complete(ReconcileResult.noop());
+                    }
+                }
 
-                },
-                false,
-                fut.completer()
+            },
+            false,
+            fut.completer()
         );
         return fut;
     }

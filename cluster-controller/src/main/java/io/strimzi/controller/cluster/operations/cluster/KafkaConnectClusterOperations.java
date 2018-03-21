@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
 import io.strimzi.controller.cluster.operations.resource.DeploymentOperations;
 import io.strimzi.controller.cluster.operations.resource.ServiceOperations;
-import io.strimzi.controller.cluster.resources.ClusterDiffResult;
 import io.strimzi.controller.cluster.resources.KafkaConnectCluster;
 import io.strimzi.controller.cluster.resources.Labels;
 import io.vertx.core.AsyncResult;
@@ -49,17 +48,7 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
         this.deploymentOperations = deploymentOperations;
     }
 
-    private final CompositeOperation<KafkaConnectCluster> update = new CompositeOperation<KafkaConnectCluster>() {
-        @Override
-        public String operationType() {
-            return OP_UPDATE;
-        }
-
-        @Override
-        public String clusterType() {
-            return CLUSTER_TYPE_CONNECT;
-        }
-
+    private final CompositeOperation update = new CompositeOperation(OP_CREATE_UPDATE, CLUSTER_TYPE_CONNECT) {
         public KafkaConnectCluster getCluster(String namespace, String name) {
             ConfigMap connectConfigMap = configMapOperations.get(namespace, name);
             KafkaConnectCluster connect = KafkaConnectCluster.fromConfigMap(connectConfigMap);
@@ -81,16 +70,7 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
         }
     };
 
-    private final CompositeOperation<KafkaConnectCluster> delete = new CompositeOperation<KafkaConnectCluster>() {
-        @Override
-        public String operationType() {
-            return OP_DELETE;
-        }
-
-        @Override
-        public String clusterType() {
-            return CLUSTER_TYPE_CONNECT;
-        }
+    private final CompositeOperation delete = new CompositeOperation(OP_DELETE, CLUSTER_TYPE_CONNECT) {
         @Override
         public Future<?> composite(String namespace, String name) {
             Deployment dep = deploymentOperations.get(namespace, KafkaConnectCluster.kafkaConnectClusterName(name));
@@ -104,18 +84,13 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
     };
 
     @Override
-    protected void create(String namespace, String name, Handler<AsyncResult<Void>> handler) {
+    protected void createOrUpdate(String namespace, String name, Handler<AsyncResult<Void>> handler) {
         execute(namespace, name, update, handler);
     }
 
     @Override
     protected void delete(String namespace, String name, Handler<AsyncResult<Void>> handler) {
         execute(namespace, name, delete, handler);
-    }
-
-    @Override
-    protected void update(String namespace, String name, Handler<AsyncResult<Void>> handler) {
-        execute(namespace, name, update, handler);
     }
 
     @Override

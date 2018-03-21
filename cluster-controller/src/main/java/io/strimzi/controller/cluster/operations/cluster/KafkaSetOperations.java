@@ -13,7 +13,10 @@ import io.vertx.core.Vertx;
 
 import java.util.HashSet;
 
-import static io.strimzi.controller.cluster.resources.KafkaCluster.*;
+import static io.strimzi.controller.cluster.resources.KafkaCluster.KEY_KAFKA_DEFAULT_REPLICATION_FACTOR;
+import static io.strimzi.controller.cluster.resources.KafkaCluster.KEY_KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR;
+import static io.strimzi.controller.cluster.resources.KafkaCluster.KEY_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR;
+import static io.strimzi.controller.cluster.resources.KafkaCluster.KEY_KAFKA_ZOOKEEPER_CONNECT;
 import static java.util.Arrays.asList;
 
 /**
@@ -45,7 +48,6 @@ public class KafkaSetOperations extends StatefulSetOperations<Boolean> {
 
     static boolean needsRollingUpdate(StatefulSet current, StatefulSet desired) {
         return Diffs.differingLabels(current, desired)
-                    || Diffs.differingContainers(current, desired)
                     || Diffs.differingContainers(
                             current.getSpec().getTemplate().getSpec().getContainers().get(0),
                             desired.getSpec().getTemplate().getSpec().getContainers().get(0))

@@ -55,7 +55,7 @@ public class StatefulSetOperations<P> extends AbstractScalableOperations<Kuberne
      * once the pod has been recreated and is ready the process proceeds with the pod with the next higher number.
      */
     public Future<Void> rollingUpdate(String namespace, String name) {
-        return rollingUpdate(namespace, name, (podName) -> podOperations.isReady(namespace, podName));
+        return rollingUpdate(namespace, name, podName -> podOperations.isReady(namespace, podName));
     }
 
     /**
@@ -169,10 +169,8 @@ public class StatefulSetOperations<P> extends AbstractScalableOperations<Kuberne
         // ... then wait for the SS to be ready...
         crt.compose(res -> readiness(namespace, desired.getMetadata().getName(), 1_000, operationTimeoutMs).map(res))
         // ... then wait for all the pods to be ready
-        .compose(res -> podReadiness(namespace, desired, 1_000, operationTimeoutMs).map(res))
-        .compose(res -> {
-            result.complete(res);
-        }, result);
+            .compose(res -> podReadiness(namespace, desired, 1_000, operationTimeoutMs).map(res))
+            .compose(res -> result.complete(res), result);
         // TODO I need to block until things are ready
         return result;
     }

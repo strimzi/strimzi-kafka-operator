@@ -12,14 +12,8 @@ import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
 import java.util.Collections;
-import java.util.HashSet;
 
-import static io.strimzi.controller.cluster.resources.KafkaCluster.KEY_KAFKA_DEFAULT_REPLICATION_FACTOR;
-import static io.strimzi.controller.cluster.resources.KafkaCluster.KEY_KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR;
-import static io.strimzi.controller.cluster.resources.KafkaCluster.KEY_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR;
-import static io.strimzi.controller.cluster.resources.KafkaCluster.KEY_KAFKA_ZOOKEEPER_CONNECT;
 import static io.strimzi.controller.cluster.resources.ZookeeperCluster.KEY_ZOOKEEPER_METRICS_ENABLED;
-import static java.util.Arrays.asList;
 
 /**
  * Specialization of {@link StatefulSetOperations} for StatefulSets of Zookeeper nodes

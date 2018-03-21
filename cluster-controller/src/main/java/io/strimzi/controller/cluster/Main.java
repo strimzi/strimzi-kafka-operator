@@ -20,7 +20,6 @@ import io.strimzi.controller.cluster.operations.resource.DeploymentOperations;
 import io.strimzi.controller.cluster.operations.resource.ImageStreamOperations;
 import io.strimzi.controller.cluster.operations.resource.PvcOperations;
 import io.strimzi.controller.cluster.operations.resource.ServiceOperations;
-import io.strimzi.controller.cluster.operations.resource.StatefulSetOperations;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
