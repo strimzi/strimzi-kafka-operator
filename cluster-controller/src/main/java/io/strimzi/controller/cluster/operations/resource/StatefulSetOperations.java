@@ -165,7 +165,7 @@ public class StatefulSetOperations extends AbstractScalableOperations<Kubernetes
      * {@inheritDoc}
      */
     @Override
-    protected void internalPatch(String namespace, String name, StatefulSet desired, Future<Void> future) {
+    protected void internalPatch(String namespace, String name, StatefulSet current, StatefulSet desired, Future<Void> future) {
         try {
             log.info("Patching {} resource {} in namespace {} with {}", resourceKind, name, namespace, desired);
             operation().inNamespace(namespace).withName(name).cascading(false).patch(desired);
