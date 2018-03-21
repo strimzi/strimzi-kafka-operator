@@ -175,7 +175,7 @@ public class KafkaClusterOperationsTest {
         when(mockSsOps.scaleDown(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture());
         when(mockSsOps.scaleUp(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture());
         ArgumentCaptor<Deployment> depCaptor = ArgumentCaptor.forClass(Deployment.class);
-        when(mockDepOps.createOrUpdate(depCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockDepOps.reconcile(anyString(), anyString(), depCaptor.capture())).thenReturn(Future.succeededFuture());
 
         //when(mockSsOps.readiness(any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         //when(mockPodOps.readiness(any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());

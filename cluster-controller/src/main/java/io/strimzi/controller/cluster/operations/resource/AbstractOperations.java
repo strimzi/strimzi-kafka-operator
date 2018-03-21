@@ -50,17 +50,6 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
     protected abstract MixedOperation<T, L, D, R> operation();
 
     /**
-     * Asynchronously create the given {@code resource} if it doesn't already exists,
-     * returning a future for the outcome.
-     * If the resource with that name already exists the future completes successfully.
-     * @param resource The resource to create.
-     */
-    @SuppressWarnings("unchecked")
-    public Future<Void> create(T resource) {
-      return createOrUpdate(resource);
-    }
-
-    /**
      * Asynchronously create or update the given {@code resource} depending on whether it already exists,
      * returning a future for the outcome.
      * If the resource with that name already exists the future completes successfully.

@@ -333,7 +333,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
         @Override
         public Future<?> composite(String namespace, String name) {
             TopicController topicController = TopicController.fromConfigMap(configMapOperations.get(namespace, name));
-            return deploymentOperations.createOrUpdate(topicController.generateDeployment());
+            return deploymentOperations.reconcile(namespace, topicControllerName(name), topicController == null ? null : topicController.generateDeployment());
         }
     };
 
@@ -354,7 +354,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
             ConfigMap tcConfigMap = configMapOperations.get(namespace, name);
             TopicController topicController = TopicController.fromConfigMap(tcConfigMap);
             Deployment deployment = topicController != null ? topicController.generateDeployment() : null;
-            return deploymentOperations.reconcile(namespace, deployment.getMetadata().getName(), deployment);
+            return deploymentOperations.reconcile(namespace, topicControllerName(name), deployment);
         }
     };
 
@@ -372,9 +372,9 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
         @Override
         public Future<?> composite(String namespace, String name) {
-            Deployment dep = deploymentOperations.get(namespace, TopicController.topicControllerName(name));
+            Deployment dep = deploymentOperations.get(namespace, topicControllerName(name));
             TopicController topicController = TopicController.fromDeployment(namespace, name, dep);
-            return deploymentOperations.reconcile(namespace, topicController.getName(), null);
+            return deploymentOperations.reconcile(namespace, topicControllerName(name), null);
             // TODO wait for pod to disappear
         }
 
