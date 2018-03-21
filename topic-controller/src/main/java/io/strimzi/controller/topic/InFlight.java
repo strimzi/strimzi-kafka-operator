@@ -101,7 +101,7 @@ class InFlight<T> {
      * When the given {@code action} is complete it must complete its argument future,
      * which will complete the given {@code resultHandler}.
      */
-    public void enqueue(T key, Handler<AsyncResult<Void>> resultHandler, Handler<Future<Void>> action) {
+    public void enqueue(T key, Handler<Future<Void>> action, Handler<AsyncResult<Void>> resultHandler) {
         InflightHandler fut = new InflightHandler(key, action.toString(), resultHandler);
         LOGGER.debug("resultHandler:{}, action:{}, fut:{}", resultHandler, action, fut);
         map.compute(key, (k, current) -> {
