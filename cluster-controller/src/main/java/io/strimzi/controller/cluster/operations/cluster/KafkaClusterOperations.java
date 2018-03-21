@@ -101,53 +101,12 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
                     if (kafkaResult.failed()) {
                         handler.handle(kafkaResult);
                     } else {
-                        execute(namespace, name, createTopicController, handler);
+                        execute(namespace, name, updateTopicController, handler);
                     }
                 });
             }
         });
     }
-
-    private final CompositeOperation<KafkaCluster> createKafka = new CompositeOperation<KafkaCluster>() {
-
-        @Override
-        public String operationType() {
-            return OP_CREATE;
-        }
-
-        @Override
-        public String clusterType() {
-            return CLUSTER_TYPE_KAFKA;
-        }
-
-        @Override
-        public Future<?> composite(String namespace, String name) {
-            KafkaCluster kafka = KafkaCluster.fromConfigMap(configMapOperations.get(namespace, name));
-            Future<Void> fut = Future.future();
-            List<Future> result = new ArrayList<>(4);
-            // start creating configMap operation only if metrics are enabled,
-            // otherwise the future is already complete (for the "join")
-            ConfigMap metricsConfigMap = kafka.generateMetricsConfigMap();
-            Service service = kafka.generateService();
-            Service headlessService = kafka.generateHeadlessService();
-            StatefulSet statefulSet = kafka.generateStatefulSet(isOpenShift);
-
-            result.add(configMapOperations.reconcile(namespace, kafka.getMetricsConfigName(), metricsConfigMap));
-            result.add(serviceOperations.reconcile(namespace, kafka.getName(), service));
-            result.add(serviceOperations.reconcile(namespace, kafka.getHeadlessName(), headlessService));
-            result.add(statefulSetOperations.reconcile(namespace, kafka.getName(), statefulSet));
-
-            CompositeFuture
-                .join(result)
-                .compose(i -> serviceOperations.endpointReadiness(namespace, service, 1_000, operationTimeoutMs))
-                .compose(i -> serviceOperations.endpointReadiness(namespace, headlessService, 1_000, operationTimeoutMs))
-                .compose(res -> {
-                    fut.complete();
-                }, fut);
-
-            return fut;
-        }
-    };
 
     private final CompositeOperation<KafkaCluster> updateKafka = new CompositeOperation<KafkaCluster>() {
         @Override
@@ -357,51 +316,6 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
     };
 
-    private final CompositeOperation<ZookeeperCluster> createZk = new CompositeOperation<ZookeeperCluster>() {
-
-        @Override
-        public String operationType() {
-            return OP_CREATE;
-        }
-
-        @Override
-        public String clusterType() {
-            return CLUSTER_TYPE_ZOOKEEPER;
-        }
-
-
-        @Override
-        public Future<?> composite(String namespace, String name) {
-            ZookeeperCluster zk = ZookeeperCluster.fromConfigMap(configMapOperations.get(namespace, name));
-            Future<Void> fut = Future.future();
-            List<Future> createResult = new ArrayList<>(4);
-
-            ConfigMap metricsConfigMap = zk.generateMetricsConfigMap();
-            Service service = zk.generateService();
-            Service headlessService = zk.generateHeadlessService();
-            StatefulSet statefulSet = zk.generateStatefulSet(isOpenShift);
-
-            createResult.add(configMapOperations.reconcile(namespace, zk.getMetricsConfigName(), metricsConfigMap));
-            createResult.add(serviceOperations.reconcile(namespace, zk.getName(), service));
-            createResult.add(serviceOperations.reconcile(namespace, zk.getHeadlessName(), headlessService));
-            createResult.add(statefulSetOperations.reconcile(namespace, zk.getName(), statefulSet));
-
-            CompositeFuture
-                .join(createResult)
-                .compose(res -> {
-                    List<Future> waitEndpointResult = new ArrayList<>(2);
-                    waitEndpointResult.add(serviceOperations.endpointReadiness(namespace, service, 1_000, operationTimeoutMs));
-                    waitEndpointResult.add(serviceOperations.endpointReadiness(namespace, headlessService, 1_000, operationTimeoutMs));
-                    return CompositeFuture.join(waitEndpointResult);
-                })
-                .compose(res -> {
-                    fut.complete();
-                }, fut);
-
-            return fut;
-        }
-    };
-
     private final CompositeOperation<ZookeeperCluster> updateZk = new CompositeOperation<ZookeeperCluster>() {
         @Override
         public String operationType() {
@@ -422,13 +336,13 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
             Service headlessService = zk.generateHeadlessService();
             Future<Void> chainFuture = Future.future();
             statefulSetOperations.scaleDown(namespace, zk.getName(), zk.getReplicas())
-                    .compose(i -> serviceOperations.reconcile(namespace, zk.getName(), service))
+                    .compose(scale -> serviceOperations.reconcile(namespace, zk.getName(), service))
                     .compose(i -> serviceOperations.reconcile(namespace, zk.getHeadlessName(), headlessService))
                     .compose(i -> configMapOperations.reconcile(namespace, zk.getMetricsConfigName(), zk.generateMetricsConfigMap()))
                     .compose(i -> statefulSetOperations.reconcile(namespace, zk.getName(), zk.generateStatefulSet(isOpenShift)))
                     .compose(i -> statefulSetOperations.rollingUpdate(namespace, zk.getName()))
                     .compose(i -> statefulSetOperations.scaleUp(namespace, zk.getName(), zk.getReplicas()))
-                    .compose(i -> serviceOperations.endpointReadiness(namespace, service, 1_000, operationTimeoutMs))
+                    .compose(scale -> serviceOperations.endpointReadiness(namespace, service, 1_000, operationTimeoutMs))
                     .compose(i -> serviceOperations.endpointReadiness(namespace, headlessService, 1_000, operationTimeoutMs))
                     .compose(chainFuture::complete, chainFuture);
             return chainFuture;
@@ -473,26 +387,6 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
         }
 
     };
-
-    private final CompositeOperation<TopicController> createTopicController = new CompositeOperation<TopicController>() {
-
-        @Override
-        public String operationType() {
-            return OP_CREATE;
-        }
-
-        @Override
-        public String clusterType() {
-            return CLUSTER_TYPE_TOPIC_CONTROLLER;
-        }
-
-        @Override
-        public Future<?> composite(String namespace, String name) {
-            TopicController topicController = TopicController.fromConfigMap(configMapOperations.get(namespace, name));
-            return deploymentOperations.reconcile(namespace, topicControllerName(name), topicController == null ? null : topicController.generateDeployment());
-        }
-    };
-
 
     private final CompositeOperation<TopicController> updateTopicController = new CompositeOperation<TopicController>() {
         @Override

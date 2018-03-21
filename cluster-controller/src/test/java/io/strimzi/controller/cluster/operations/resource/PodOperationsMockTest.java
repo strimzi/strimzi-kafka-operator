@@ -26,7 +26,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.mockito.Mockito.when;
 
-public class PodOperationsMockTest extends ResourceOperationsMockTest<KubernetesClient, Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> {
+public class PodOperationsMockTest extends ReadyResourceOperationsMockTest<KubernetesClient, Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> {
 
     @Rule
     public OpenShiftServer server = new OpenShiftServer(false, true);

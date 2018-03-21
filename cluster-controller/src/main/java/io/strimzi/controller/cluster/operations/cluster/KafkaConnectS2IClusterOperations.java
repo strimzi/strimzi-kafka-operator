@@ -69,31 +69,6 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
         }
     }
 
-    private final CompositeOperation<KafkaConnectS2ICluster> create = new CompositeOperation<KafkaConnectS2ICluster>() {
-
-        @Override
-        public String operationType() {
-            return OP_CREATE;
-        }
-
-        @Override
-        public String clusterType() {
-            return CLUSTER_TYPE_CONNECT_S2I;
-        }
-
-        @Override
-        public Future<?> composite(String namespace, String name) {
-            KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromConfigMap(configMapOperations.get(namespace, name));
-            List<Future> result = new ArrayList<>(5);
-            result.add(serviceOperations.reconcile(namespace, connect.getName(), connect.generateService()));
-            result.add(deploymentConfigOperations.reconcile(namespace, connect.getName(), connect.generateDeploymentConfig()));
-            result.add(imagesStreamOperations.reconcile(namespace, connect.getSourceImageStreamName(), connect.generateSourceImageStream()));
-            result.add(imagesStreamOperations.reconcile(namespace, connect.getName(), connect.generateTargetImageStream()));
-            result.add(buildConfigOperations.reconcile(namespace, connect.getName(), connect.generateBuildConfig()));
-            return CompositeFuture.join(result);
-        }
-    };
-
     @Override
     protected void delete(String namespace, String name, Handler<AsyncResult<Void>> handler) {
         if (isOpenShift) {

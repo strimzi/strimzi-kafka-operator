@@ -22,7 +22,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @Ignore
-public class StatefulSetOperationsMockTest extends ResourceOperationsMockTest<KubernetesClient, StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> {
+public class StatefulSetOperationsMockTest extends ScalableResourceOperationsMockTest<KubernetesClient, StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> {
 
     @Override
     protected Class<KubernetesClient> clientType() {
@@ -73,6 +73,4 @@ public class StatefulSetOperationsMockTest extends ResourceOperationsMockTest<Ku
     public void createWhenExistsIsAPatch(TestContext context) {
         createWhenExistsIsAPatch(context, false);
     }
-
-    // TODO Need to test that create waits for SS and pods
 }

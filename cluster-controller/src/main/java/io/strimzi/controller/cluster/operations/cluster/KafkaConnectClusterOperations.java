@@ -49,27 +49,6 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
         this.deploymentOperations = deploymentOperations;
     }
 
-    private final CompositeOperation<KafkaConnectCluster> create = new CompositeOperation<KafkaConnectCluster>() {
-        @Override
-        public String operationType() {
-            return OP_CREATE;
-        }
-
-        @Override
-        public String clusterType() {
-            return CLUSTER_TYPE_CONNECT;
-        }
-
-        @Override
-        public Future<?> composite(String namespace, String name) {
-            KafkaConnectCluster connect = KafkaConnectCluster.fromConfigMap(configMapOperations.get(namespace, name));
-            List<Future> result = new ArrayList<>(2);
-            result.add(serviceOperations.reconcile(namespace, connect.getName(), connect.generateService()));
-            result.add(deploymentOperations.reconcile(namespace, connect.getName(), connect.generateDeployment()));
-            return CompositeFuture.join(result);
-        }
-    };
-
     private final CompositeOperation<KafkaConnectCluster> update = new CompositeOperation<KafkaConnectCluster>() {
         @Override
         public String operationType() {
