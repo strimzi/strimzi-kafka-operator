@@ -97,9 +97,9 @@ class MockController extends Controller {
     }
 
     @Override
-    public void onTopicDeleted(TopicName topicName, Handler<AsyncResult<Void>> handler) {
+    public void onTopicDeleted(TopicName topicName, Handler<AsyncResult<Void>> resultHandler) {
         mockControllerEvents.add(new MockControllerEvent(MockControllerEvent.Type.DELETE, topicName));
-        handler.handle(topicDeletedResult);
+        resultHandler.handle(topicDeletedResult);
     }
 
     @Override
@@ -115,20 +115,20 @@ class MockController extends Controller {
     }
 
     @Override
-    public void onConfigMapAdded(ConfigMap cm, Handler<AsyncResult<Void>> handler) {
+    public void onConfigMapAdded(ConfigMap cm, Handler<AsyncResult<Void>> resultHandler) {
         mockControllerEvents.add(new MockControllerEvent(MockControllerEvent.Type.CREATE, cm));
-        handler.handle(cmAddedResult);
+        resultHandler.handle(cmAddedResult);
     }
 
     @Override
-    public void onConfigMapModified(ConfigMap cm, Handler<AsyncResult<Void>> handler) {
+    public void onConfigMapModified(ConfigMap cm, Handler<AsyncResult<Void>> resultHandler) {
         mockControllerEvents.add(new MockControllerEvent(MockControllerEvent.Type.MODIFY, cm));
-        handler.handle(cmModifiedResult);
+        resultHandler.handle(cmModifiedResult);
     }
 
     @Override
-    public void onConfigMapDeleted(ConfigMap cm, Handler<AsyncResult<Void>> handler) {
+    public void onConfigMapDeleted(ConfigMap cm, Handler<AsyncResult<Void>> resultHandler) {
         mockControllerEvents.add(new MockControllerEvent(MockControllerEvent.Type.DELETE, cm));
-        handler.handle(cmDeletedResult);
+        resultHandler.handle(cmDeletedResult);
     }
 }

@@ -25,7 +25,7 @@ public class InFlightTest {
         Async async = context.async();
         InFlight<String> inflight = new InFlight(vertx);
 
-        inflight.enqueue("test", ignored -> async.complete(), fut -> fut.complete());
+        inflight.enqueue("test", fut -> fut.complete(), ignored -> async.complete());
     }
 
     @Test
@@ -34,24 +34,24 @@ public class InFlightTest {
         Async firstCompleted = context.async();
         Async secondCompleted = context.async();
         InFlight<String> inflight = new InFlight(vertx);
-        inflight.enqueue("test", v -> {
-            LOGGER.debug("completing firstCompleted");
-            firstCompleted.complete();
-        }, fut -> {
-                LOGGER.debug("1st task waiting for both to enqueue");
-                bothEnqueued.await();
-                LOGGER.debug("1st task completing");
-                fut.complete();
+        inflight.enqueue("test", fut -> {
+            LOGGER.debug("1st task waiting for both to enqueue");
+            bothEnqueued.await();
+            LOGGER.debug("1st task completing");
+            fut.complete();
+        }, v -> {
+                LOGGER.debug("completing firstCompleted");
+                firstCompleted.complete();
             });
 
-        inflight.enqueue("test", v -> {
-            LOGGER.debug("completing secondCompleted");
-            secondCompleted.complete();
-        }, fut -> {
-                LOGGER.debug("2nd task waiting for both to enqueue");
-                bothEnqueued.await();
-                LOGGER.debug("2nd task completing");
-                fut.complete();
+        inflight.enqueue("test", fut -> {
+            LOGGER.debug("2nd task waiting for both to enqueue");
+            bothEnqueued.await();
+            LOGGER.debug("2nd task completing");
+            fut.complete();
+        }, v -> {
+                LOGGER.debug("completing secondCompleted");
+                secondCompleted.complete();
             });
         LOGGER.debug("completing bothEnqueued");
         bothEnqueued.complete();
@@ -77,26 +77,26 @@ public class InFlightTest {
         Async firstCompleted = context.async();
         Async secondCompleted = context.async();
         InFlight<String> inflight = new InFlight(vertx);
-        inflight.enqueue("test", v -> {
-            LOGGER.debug("completing firstCompleted");
-            firstCompleted.complete();
-            context.assertTrue(v.failed());
-            context.assertEquals("Oops!", v.cause().getMessage());
-        }, fut -> {
-                LOGGER.debug("1st task waiting for both to enqueue");
-                bothEnqueued.await();
-                LOGGER.debug("1st task failing");
-                fut.fail("Oops!");
+        inflight.enqueue("test", fut -> {
+            LOGGER.debug("1st task waiting for both to enqueue");
+            bothEnqueued.await();
+            LOGGER.debug("1st task failing");
+            fut.fail("Oops!");
+        }, v -> {
+                LOGGER.debug("completing firstCompleted");
+                firstCompleted.complete();
+                context.assertTrue(v.failed());
+                context.assertEquals("Oops!", v.cause().getMessage());
             });
 
-        inflight.enqueue("test", v -> {
-            LOGGER.debug("completing secondCompleted");
-            secondCompleted.complete();
-        }, fut -> {
-                LOGGER.debug("2nd task waiting for both to enqueue");
-                bothEnqueued.await();
-                LOGGER.debug("2nd task completing");
-                fut.complete();
+        inflight.enqueue("test", fut -> {
+            LOGGER.debug("2nd task waiting for both to enqueue");
+            bothEnqueued.await();
+            LOGGER.debug("2nd task completing");
+            fut.complete();
+        }, v -> {
+                LOGGER.debug("completing secondCompleted");
+                secondCompleted.complete();
             });
         LOGGER.debug("completing bothEnqueued");
         bothEnqueued.complete();

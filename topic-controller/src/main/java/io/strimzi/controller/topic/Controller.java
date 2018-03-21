@@ -336,7 +336,7 @@ public class Controller {
 
     void reconcile(ConfigMap cm, TopicName topicName, Handler<AsyncResult<Void>> resultHandler) {
 
-        Handler<Future<Void>> futureHandler = new Reconciliation("reconcile") {
+        Handler<Future<Void>> action = new Reconciliation("reconcile") {
             @Override
             public void handle(Future<Void> fut) {
 
@@ -375,7 +375,7 @@ public class Controller {
                 }
             }
         };
-        inFlight.enqueue(topicName, resultHandler, futureHandler);
+        inFlight.enqueue(topicName, action, resultHandler);
     }
 
     /**
@@ -596,19 +596,19 @@ public class Controller {
     }
 
     /** Called when a topic znode is deleted in ZK */
-    void onTopicDeleted(TopicName topicName, Handler<AsyncResult<Void>> handler) {
-        Handler<Future<Void>> futureHandler = new Reconciliation("onTopicDeleted") {
+    void onTopicDeleted(TopicName topicName, Handler<AsyncResult<Void>> resultHandler) {
+        Handler<Future<Void>> action = new Reconciliation("onTopicDeleted") {
             @Override
             public void handle(Future<Void> fut) {
                 Controller.this.reconcileOnTopicChange(topicName, null, fut.completer());
             }
         };
-        inFlight.enqueue(topicName, handler, futureHandler);
+        inFlight.enqueue(topicName, action, resultHandler);
 
     }
 
     void onTopicConfigChanged(TopicName topicName, Handler<AsyncResult<Void>> resultHandler) {
-        Handler<Future<Void>> futureHandler = new Reconciliation("onTopicConfigChanged") {
+        Handler<Future<Void>> action = new Reconciliation("onTopicConfigChanged") {
             @Override
             public void handle(Future<Void> fut) {
                 kafka.topicMetadata(topicName, metadataResult -> {
@@ -621,11 +621,11 @@ public class Controller {
                 });
             }
         };
-        inFlight.enqueue(topicName, resultHandler, futureHandler);
+        inFlight.enqueue(topicName, action, resultHandler);
     }
 
     void onTopicPartitionsChanged(TopicName topicName, Handler<AsyncResult<Void>> resultHandler) {
-        Handler<Future<Void>> futureHandler = new Reconciliation("onTopicPartitionsChanged") {
+        Handler<Future<Void>> action = new Reconciliation("onTopicPartitionsChanged") {
             @Override
             public void handle(Future<Void> fut) {
 
@@ -666,7 +666,7 @@ public class Controller {
                 });
             }
         };
-        inFlight.enqueue(topicName, resultHandler, futureHandler);
+        inFlight.enqueue(topicName, action, resultHandler);
     }
 
     private void reconcileOnTopicChange(TopicName topicName, Topic kafkaTopic, Handler<AsyncResult<Void>> resultHandler) {
@@ -724,7 +724,7 @@ public class Controller {
     void onTopicCreated(TopicName topicName, Handler<AsyncResult<Void>> resultHandler) {
         // XXX currently runs on the ZK thread, requiring a synchronized inFlight
         // is it better to put this check in the topic deleted event?
-        Handler<Future<Void>> futureHandler = new Reconciliation("onTopicCreated") {
+        Handler<Future<Void>> action = new Reconciliation("onTopicCreated") {
             @Override
             public void handle(Future<Void> fut) {
 
@@ -758,7 +758,7 @@ public class Controller {
                 kafka.topicMetadata(topicName, handler);
             }
         };
-        inFlight.enqueue(topicName, resultHandler, futureHandler);
+        inFlight.enqueue(topicName, action, resultHandler);
     }
 
     /** Called when a ConfigMap is added in k8s */
@@ -777,7 +777,7 @@ public class Controller {
                     Controller.this.reconcileOnCmChange(configMap, k8sTopic, false, fut);
                 }
             };
-            inFlight.enqueue(new TopicName(configMap), resultHandler, action);
+            inFlight.enqueue(new TopicName(configMap), action, resultHandler);
         } else {
             resultHandler.handle(Future.succeededFuture());
         }
@@ -797,13 +797,13 @@ public class Controller {
     };
 
     /** Called when a ConfigMap is modified in k8s */
-    void onConfigMapModified(ConfigMap configMap, Handler<AsyncResult<Void>> handler) {
+    void onConfigMapModified(ConfigMap configMap, Handler<AsyncResult<Void>> resultHandler) {
         if (cmPredicate.test(configMap)) {
             final Topic k8sTopic;
             try {
                 k8sTopic = TopicSerialization.fromConfigMap(configMap);
             } catch (InvalidConfigMapException e) {
-                handler.handle(Future.failedFuture(e));
+                resultHandler.handle(Future.failedFuture(e));
                 return;
             }
             Reconciliation action = new Reconciliation("onConfigMapModified") {
@@ -812,12 +812,9 @@ public class Controller {
                     Controller.this.reconcileOnCmChange(configMap, k8sTopic, true, fut);
                 }
             };
-            inFlight.enqueue(new TopicName(configMap),
-                    handler,
-                    action
-            );
+            inFlight.enqueue(new TopicName(configMap), action, resultHandler);
         } else {
-            handler.handle(Future.succeededFuture());
+            resultHandler.handle(Future.succeededFuture());
         }
     }
 
@@ -844,18 +841,17 @@ public class Controller {
     }
 
     /** Called when a ConfigMap is deleted in k8s */
-    void onConfigMapDeleted(ConfigMap configMap, Handler<AsyncResult<Void>> handler) {
+    void onConfigMapDeleted(ConfigMap configMap, Handler<AsyncResult<Void>> resultHandler) {
         if (cmPredicate.test(configMap)) {
-            Reconciliation handlerHandler = new Reconciliation("onConfigMapDeleted") {
+            Reconciliation action = new Reconciliation("onConfigMapDeleted") {
                 @Override
                 public void handle(Future<Void> fut) {
                     Controller.this.reconcileOnCmChange(configMap, null, false, fut);
                 }
             };
-            inFlight.enqueue(new TopicName(configMap), handler,
-                    handlerHandler);
+            inFlight.enqueue(new TopicName(configMap), action, resultHandler);
         } else {
-            handler.handle(Future.succeededFuture());
+            resultHandler.handle(Future.succeededFuture());
         }
     }
 
