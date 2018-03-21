@@ -80,7 +80,7 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
                             if (current == null) {
                                 internalCreate(namespace, name, desired, future);
                             } else {
-                                internalPatch(namespace, name, desired, future);
+                                internalPatch(namespace, name, current, desired, future);
                             }
                         }
                     } else {
@@ -114,7 +114,7 @@ public abstract class AbstractOperations<C, T extends HasMetadata, L extends Kub
      * Patches the resource with the given namespace and name to match the given desired resource
      * and completes the given future accordingly.
      */
-    protected void internalPatch(String namespace, String name, T desired, Future<Void> future) {
+    protected void internalPatch(String namespace, String name, T current, T desired, Future<Void> future) {
         try {
             log.info("Patching {} resource {} in namespace {} with {}", resourceKind, name, namespace, desired);
             operation().inNamespace(namespace).withName(name).cascading(true).patch(desired);
