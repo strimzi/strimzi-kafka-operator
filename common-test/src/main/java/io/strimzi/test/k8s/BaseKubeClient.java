@@ -298,7 +298,7 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
     }
 
     public List<String> listByLabel(String resourceType, String labelName) {
-        return asList(Exec.exec(namespacedCommand("get", resourceType, "-l", "name="+labelName, "-o", "jsonpath={range .items[*]}{.metadata.name} ")).out().trim().split(" +"));
+        return asList(Exec.exec(namespacedCommand("get", resourceType, "-l", "name=" + labelName, "-o", "jsonpath={range .items[*]}{.metadata.name} ")).out().trim().split(" +"));
     }
 
     @Override

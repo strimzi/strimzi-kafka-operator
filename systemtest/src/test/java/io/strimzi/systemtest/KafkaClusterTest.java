@@ -331,8 +331,8 @@ public class KafkaClusterTest {
         assertThat(configMap, valueOfCmEquals("zookeeper-healthcheck-timeout", "10"));
 
         List<String> ccPods = oc.listByLabel("pod", "strimzi-cluster-controller");
-        LOGGER.info("Count of Cluster controllers is: "+ ccPods.size());
-        for(int i=0; i<ccPods.size(); i++){
+        LOGGER.info("Count of Cluster controllers is: " + ccPods.size());
+        for (int i = 0; i < ccPods.size(); i++) {
             Assert.assertThat(oc.logs(ccPods.get(i)),
                     CoreMatchers.containsString("Diff: Zookeeper healthcheck timing changed"));
         }
