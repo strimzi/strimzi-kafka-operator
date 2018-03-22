@@ -120,7 +120,7 @@ public interface KubeClient<K extends KubeClient<K>> {
 
     String logs(String pod);
 
-    String getConfig(String resourceType, String resourceName);
+    String getResourceAsJson(String resourceType, String resourceName);
 
     K waitForResourceUpdate(String resourceType, String resourceName, String startTime);
 }

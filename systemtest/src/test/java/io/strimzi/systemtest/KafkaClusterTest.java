@@ -347,7 +347,7 @@ public class KafkaClusterTest {
         assertThat(configMap, valueOfCmEquals("KAFKA_DEFAULT_REPLICATION_FACTOR", "1"));
         LOGGER.info("Verified CM and Testing kafka pods");
         for (int i = 0; i < expectedKafkaPods; i++) {
-            String kafkaPodJson = oc.getConfig("pod", kafkaPodName(clusterName, i));
+            String kafkaPodJson = oc.getResourceAsJson("pod", kafkaPodName(clusterName, i));
             assertEquals("1", getValueFromJson(kafkaPodJson,
                     globalVariableJsonPathBuilder("KAFKA_DEFAULT_REPLICATION_FACTOR")));
             String initialDelaySecondsPath = "$.spec.containers[*].livenessProbe.initialDelaySeconds";
@@ -355,7 +355,7 @@ public class KafkaClusterTest {
         }
         LOGGER.info("Testing Zookeepers");
         for (int i = 0; i < expectedZKPods; i++) {
-            String zkPodJson = kubeClient.getConfig("pod", zookeeperPodName(clusterName, i));
+            String zkPodJson = kubeClient.getResourceAsJson("pod", zookeeperPodName(clusterName, i));
             String initialDelaySecondsPath = "$.spec.containers[*].livenessProbe.initialDelaySeconds";
             assertEquals("23", getValueFromJson(zkPodJson, initialDelaySecondsPath));
         }
@@ -372,7 +372,7 @@ public class KafkaClusterTest {
     }
 
     private String getResourceCreateTimestamp(String resourceType, String resourceName) {
-        return JsonPath.parse(kubeClient.getConfig(resourceType, resourceName)).
+        return JsonPath.parse(kubeClient.getResourceAsJson(resourceType, resourceName)).
                 read("$.metadata.creationTimestamp").toString().replaceAll("\\p{P}", "");
     }
 

@@ -293,7 +293,7 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
         TestUtils.waitFor(resourceType + " " + resourceName + " update",
                 1_000L, 240_000L, () -> {
                 try {
-                    return !startTime.equals(JsonPath.parse(getConfig(resourceType, resourceName)).
+                    return !startTime.equals(JsonPath.parse(getResourceAsJson(resourceType, resourceName)).
                             read("$.metadata.creationTimestamp").toString().replaceAll("\\p{P}", ""));
                 } catch (KubeClusterException.NotFound e) {
                     return false;
@@ -312,11 +312,7 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
         return asList(Exec.exec(namespacedCommand("get", resourceType, "-o", "jsonpath={range .items[*]}{.metadata.name} ")).out().trim().split(" +"));
     }
 
-    public List<String> listByLabel(String resourceType, String labelName) {
-        return asList(Exec.exec(namespacedCommand("get", resourceType, "-l", "name=" + labelName, "-o", "jsonpath={range .items[*]}{.metadata.name} ")).out().trim().split(" +"));
-    }
-
-    public String getConfig(String resourceType, String resourceName) {
+    public String getResourceAsJson(String resourceType, String resourceName) {
         return Exec.exec(namespacedCommand("get", resourceType, resourceName, "-o", "json")).out();
     }
 
