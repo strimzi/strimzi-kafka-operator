@@ -40,10 +40,12 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
     protected static final String OP_CREATE_UPDATE = "create/update";
     protected static final String OP_DELETE = "delete";
 
+
     protected static final int LOCK_TIMEOUT = 60000;
 
     protected final Vertx vertx;
     protected final boolean isOpenShift;
+    protected final String clusterType;
     protected final String clusterDescription;
     protected final ConfigMapOperations configMapOperations;
 
@@ -52,12 +54,13 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
      * @param isOpenShift True iff running on OpenShift
      * @param clusterDescription A description of the cluster, for logging. This is a high level description and different from
      *                           the {@code clusterType} passed to {@link #getLockName(String, String, String)}
-     *                           and {@link #execute(String, String, CompositeOperation, Handler)}
      */
-    protected AbstractClusterOperations(Vertx vertx, boolean isOpenShift, String clusterDescription,
+    protected AbstractClusterOperations(Vertx vertx, boolean isOpenShift, String clusterType,
+                                        String clusterDescription,
                                         ConfigMapOperations configMapOperations) {
         this.vertx = vertx;
         this.isOpenShift = isOpenShift;
+        this.clusterType = clusterType;
         this.clusterDescription = clusterDescription;
         this.configMapOperations = configMapOperations;
     }
@@ -73,50 +76,8 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
         return "lock::" + namespace + "::" + clusterType + "::" + name;
     }
 
-    protected abstract class CompositeOperation {
-        final String operationType;
-        final String clusterType;
-
-        protected CompositeOperation(final String operationType,
-                final String clusterType) {
-            this.clusterType = clusterType;
-            this.operationType = operationType;
-        }
-
-        /**
-         * Create the resources in Kubernetes according to the given {@code cluster},
-         * returning a composite future for when the overall operation is done
-         */
-        abstract Future<?> composite(String namespace, String name);
-
-    }
-
     /**
-     * <p>Execute the resource operations necessary to make a cluster conform to a particular desired state.</p>
-     *
-     * @param namespace The namespace containing the cluster.
-     * @param name The name of the cluster
-     * @param compositeOperation The operation to execute
-     * @param handler A completion handler
-     */
-    protected final void execute(String namespace, String name, CompositeOperation compositeOperation, Handler<AsyncResult<Void>> handler) {
-        Future<?> composite = compositeOperation.composite(namespace, name);
-        composite.setHandler(ar -> {
-            String clusterType = compositeOperation.clusterType;
-            String operationType = compositeOperation.operationType;
-            if (ar.succeeded()) {
-                log.info("{} cluster {} in namespace {}: successful {}", clusterType, name, namespace, operationType);
-                handler.handle(Future.succeededFuture());
-            } else {
-                log.error("{} cluster {} in namespace {}: failed to {}", clusterType, name, namespace, operationType, ar.result());
-                handler.handle(ar.map((Void) null));
-            }
-        });
-    }
-
-    /**
-     * Subclasses implement this method to create the cluster. The implementation usually just has to call
-     * {@link #execute(String, String, CompositeOperation, Handler)} with appropriate arguments.
+     * Subclasses implement this method to create the cluster.
      * @param namespace The namespace containing the cluster.
      * @param name The name of the cluster.
      * @param handler Completion handler
@@ -124,8 +85,7 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
     protected abstract void createOrUpdate(String namespace, String name, Handler<AsyncResult<Void>> handler);
 
     /**
-     * Subclasses implement this method to delete the cluster. The implementation usually just has to call
-     * {@link #execute(String, String, CompositeOperation, Handler)} with appropriate arguments.
+     * Subclasses implement this method to delete the cluster.
      * @param namespace The namespace containing the cluster.
      * @param name The name of the cluster.
      * @param handler Completion handler
@@ -155,11 +115,6 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
     }
 
     /**
-     * The type of cluster, used as a component of the lock.
-     */
-    protected abstract String clusterType();
-
-    /**
      * Reconcile cluster resources in the given namespace having the given cluster name.
      * Reconciliation works by getting the cluster ConfigMap in the given namespace with the given name and
      * comparing with the corresponding {@linkplain #getResources(String, Labels) resource}.
@@ -171,8 +126,6 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
      * @param name The name of the cluster
      */
     public final void reconcileCluster(String namespace, String name) {
-        String clusterType = clusterType();
-
         final String lockName = getLockName(clusterType, namespace, name);
         vertx.sharedData().getLockWithTimeout(lockName, LOCK_TIMEOUT, res -> {
             if (res.succeeded()) {
@@ -248,7 +201,6 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
      * @param selector The selector
      */
     public final void reconcileAll(String namespace, Labels selector) {
-        String clusterType = clusterType();
         Labels selectorWithCluster = selector.withType(clusterType);
 
         // get ConfigMap for the corresponding cluster type

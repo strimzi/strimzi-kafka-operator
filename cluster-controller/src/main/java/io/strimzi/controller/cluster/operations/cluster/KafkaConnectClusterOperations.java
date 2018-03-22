@@ -43,59 +43,33 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
                                          ConfigMapOperations configMapOperations,
                                          DeploymentOperations deploymentOperations,
                                          ServiceOperations serviceOperations) {
-        super(vertx, isOpenShift, "Kafka Connect", configMapOperations);
+        super(vertx, isOpenShift, CLUSTER_TYPE_CONNECT, "Kafka Connect", configMapOperations);
         this.serviceOperations = serviceOperations;
         this.deploymentOperations = deploymentOperations;
     }
 
-    private final CompositeOperation update = new CompositeOperation(OP_CREATE_UPDATE, CLUSTER_TYPE_CONNECT) {
-        public KafkaConnectCluster getCluster(String namespace, String name) {
-            ConfigMap connectConfigMap = configMapOperations.get(namespace, name);
-            KafkaConnectCluster connect = KafkaConnectCluster.fromConfigMap(connectConfigMap);
-            log.info("Updating Kafka Connect cluster {} in namespace {}", name, namespace);
-            return connect;
-        }
-
-        @Override
-        public Future<?> composite(String namespace, String name) {
-            KafkaConnectCluster connect = getCluster(namespace, name);
-            Future<Void> chainFuture = Future.future();
-            deploymentOperations.scaleDown(namespace, connect.getName(), connect.getReplicas())
-                    .compose(scale -> serviceOperations.reconcile(namespace, connect.getName(), connect.generateService()))
-                    .compose(i -> deploymentOperations.reconcile(namespace, connect.getName(), connect.generateDeployment()))
-                    .compose(i -> deploymentOperations.scaleUp(namespace, connect.getName(), connect.getReplicas()).map((Void) null))
-                    .compose(chainFuture::complete, chainFuture);
-
-            return chainFuture;
-        }
-    };
-
-    private final CompositeOperation delete = new CompositeOperation(OP_DELETE, CLUSTER_TYPE_CONNECT) {
-        @Override
-        public Future<?> composite(String namespace, String name) {
-            Deployment dep = deploymentOperations.get(namespace, KafkaConnectCluster.kafkaConnectClusterName(name));
-            KafkaConnectCluster connect = KafkaConnectCluster.fromDeployment(namespace, name, dep);
-            List<Future> result = new ArrayList<>(3);
-            result.add(serviceOperations.reconcile(namespace, connect.getName(), null));
-            result.add(deploymentOperations.reconcile(namespace, connect.getName(), null));
-            return CompositeFuture.join(result);
-        }
-
-    };
-
     @Override
     protected void createOrUpdate(String namespace, String name, Handler<AsyncResult<Void>> handler) {
-        execute(namespace, name, update, handler);
+        ConfigMap connectConfigMap = configMapOperations.get(namespace, name);
+        KafkaConnectCluster connect = KafkaConnectCluster.fromConfigMap(connectConfigMap);
+        log.info("Updating Kafka Connect cluster {} in namespace {}", name, namespace);
+        Future<Void> chainFuture = Future.future();
+        deploymentOperations.scaleDown(namespace, connect.getName(), connect.getReplicas())
+                .compose(scale -> serviceOperations.reconcile(namespace, connect.getName(), connect.generateService()))
+                .compose(i -> deploymentOperations.reconcile(namespace, connect.getName(), connect.generateDeployment()))
+                .compose(i -> deploymentOperations.scaleUp(namespace, connect.getName(), connect.getReplicas()).map((Void) null))
+                .compose(chainFuture::complete, chainFuture);
+        chainFuture.setHandler(handler);
     }
 
     @Override
     protected void delete(String namespace, String name, Handler<AsyncResult<Void>> handler) {
-        execute(namespace, name, delete, handler);
-    }
-
-    @Override
-    public String clusterType() {
-        return CLUSTER_TYPE_CONNECT;
+        Deployment dep = deploymentOperations.get(namespace, KafkaConnectCluster.kafkaConnectClusterName(name));
+        KafkaConnectCluster connect = KafkaConnectCluster.fromDeployment(namespace, name, dep);
+        List<Future> result = new ArrayList<>(3);
+        result.add(serviceOperations.reconcile(namespace, connect.getName(), null));
+        result.add(deploymentOperations.reconcile(namespace, connect.getName(), null));
+        CompositeFuture.join(result).map((Void) null).setHandler(handler);
     }
 
     @Override

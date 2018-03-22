@@ -52,7 +52,7 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
                                             ServiceOperations serviceOperations,
                                             ImageStreamOperations imagesStreamOperations,
                                             BuildConfigOperations buildConfigOperations) {
-        super(vertx, isOpenShift, "Kafka Connect S2I", configMapOperations);
+        super(vertx, isOpenShift, CLUSTER_TYPE_CONNECT_S2I, "Kafka Connect S2I", configMapOperations);
         this.serviceOperations = serviceOperations;
         this.deploymentConfigOperations = deploymentConfigOperations;
         this.imagesStreamOperations = imagesStreamOperations;
@@ -62,42 +62,6 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
     @Override
     public void createOrUpdate(String namespace, String name, Handler<AsyncResult<Void>> handler) {
         if (isOpenShift) {
-            execute(namespace, name, update, handler);
-        } else {
-            handler.handle(Future.failedFuture("S2I only available on OpenShift"));
-        }
-    }
-
-    @Override
-    protected void delete(String namespace, String name, Handler<AsyncResult<Void>> handler) {
-        if (isOpenShift) {
-            execute(namespace, name, delete, handler);
-        } else {
-            handler.handle(Future.failedFuture("S2I only available on OpenShift"));
-        }
-    }
-
-    private final CompositeOperation delete = new CompositeOperation(OP_DELETE, CLUSTER_TYPE_CONNECT_S2I) {
-        @Override
-        public Future<?> composite(String namespace, String name) {
-            DeploymentConfig dep = deploymentConfigOperations.get(namespace, KafkaConnectS2ICluster.kafkaConnectClusterName(name));
-            ImageStream sis = imagesStreamOperations.get(namespace, KafkaConnectS2ICluster.getSourceImageStreamName(KafkaConnectS2ICluster.kafkaConnectClusterName(name)));
-            KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromDeployment(namespace, name, dep, sis);
-            List<Future> result = new ArrayList<>(5);
-            result.add(serviceOperations.reconcile(namespace, connect.getName(), null));
-            result.add(deploymentConfigOperations.reconcile(namespace, connect.getName(), null));
-            result.add(imagesStreamOperations.reconcile(namespace, connect.getSourceImageStreamName(), null));
-            result.add(imagesStreamOperations.reconcile(namespace, connect.getName(), null));
-            result.add(buildConfigOperations.reconcile(namespace, connect.getName(), null));
-
-            return CompositeFuture.join(result);
-        }
-
-    };
-
-    private final CompositeOperation update = new CompositeOperation(OP_CREATE_UPDATE, CLUSTER_TYPE_CONNECT_S2I) {
-        @Override
-        public Future<?> composite(String namespace, String name) {
             ConfigMap connectConfigMap = configMapOperations.get(namespace, name);
             KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromConfigMap(connectConfigMap);
             Future<Void> chainFuture = Future.future();
@@ -110,14 +74,28 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
                     .compose(i -> buildConfigOperations.reconcile(namespace, connect.getName(), connect.generateBuildConfig()))
                     .compose(i -> deploymentConfigOperations.scaleUp(namespace, connect.getName(), connect.getReplicas()).map((Void) null))
                     .compose(chainFuture::complete, chainFuture);
-
-            return chainFuture;
+            chainFuture.map((Void) null).setHandler(handler);
+        } else {
+            handler.handle(Future.failedFuture("S2I only available on OpenShift"));
         }
-    };
+    }
 
     @Override
-    public String clusterType() {
-        return CLUSTER_TYPE_CONNECT_S2I;
+    protected void delete(String namespace, String name, Handler<AsyncResult<Void>> handler) {
+        if (isOpenShift) {
+            DeploymentConfig dep = deploymentConfigOperations.get(namespace, KafkaConnectS2ICluster.kafkaConnectClusterName(name));
+            ImageStream sis = imagesStreamOperations.get(namespace, KafkaConnectS2ICluster.getSourceImageStreamName(KafkaConnectS2ICluster.kafkaConnectClusterName(name)));
+            KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromDeployment(namespace, name, dep, sis);
+            List<Future> result = new ArrayList<>(5);
+            result.add(serviceOperations.reconcile(namespace, connect.getName(), null));
+            result.add(deploymentConfigOperations.reconcile(namespace, connect.getName(), null));
+            result.add(imagesStreamOperations.reconcile(namespace, connect.getSourceImageStreamName(), null));
+            result.add(imagesStreamOperations.reconcile(namespace, connect.getName(), null));
+            result.add(buildConfigOperations.reconcile(namespace, connect.getName(), null));
+            CompositeFuture.join(result).map((Void) null).setHandler(handler);
+        } else {
+            handler.handle(Future.failedFuture("S2I only available on OpenShift"));
+        }
     }
 
     @Override
