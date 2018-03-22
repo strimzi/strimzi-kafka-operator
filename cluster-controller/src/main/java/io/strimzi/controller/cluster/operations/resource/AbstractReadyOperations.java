@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.internal.readiness.Readiness;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,26 +42,10 @@ public abstract class AbstractReadyOperations<C, T extends HasMetadata, L extend
     public Future<Void> readiness(String namespace, String name, long pollIntervalMs, long timeoutMs) {
         Future<Void> fut = Future.future();
         log.info("Waiting for {} resource {} in namespace {} to get ready", resourceKind, name, namespace);
-        //long deadline = System.currentTimeMillis() + timeoutMs;
-
-        try {
-            while (true) {
-                if (isReady(namespace, name)) {
-                    fut.complete();
-                    break;
-                }
-                Thread.sleep(1_000);
-            }
-        } catch (Throwable t) {
-            fut.fail(t);
-        }
-        return fut;
-/*
-
+        long deadline = System.currentTimeMillis() + timeoutMs;
         Handler<Long> handler = new Handler<Long>() {
             @Override
             public void handle(Long timerId) {
-
                 vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                     future -> {
                         try {
@@ -100,7 +85,7 @@ public abstract class AbstractReadyOperations<C, T extends HasMetadata, L extend
         // Call the handler ourselves the first time
         handler.handle(null);
 
-        return fut;*/
+        return fut;
     }
 
     /**

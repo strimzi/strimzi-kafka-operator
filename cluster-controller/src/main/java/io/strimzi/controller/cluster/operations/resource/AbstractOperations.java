@@ -80,16 +80,16 @@ public abstract class AbstractOperations<C, T extends HasMetadata,
                 if (desired != null) {
                     if (current == null) {
                         log.debug("{} {}/{} does not exist, creating it", resourceKind, namespace, name);
-                        future.handle(internalCreate(namespace, name, desired));
+                        internalCreate(namespace, name, desired).setHandler(future);
                     } else {
                         log.debug("{} {}/{} already exists, patching it", resourceKind, namespace, name);
-                        future.handle(internalPatch(namespace, name, current, desired));
+                        internalPatch(namespace, name, current, desired).setHandler(future);
                     }
                 } else {
                     if (current != null) {
                         // Deletion is desired
                         log.debug("{} {}/{} exist, deleting it", resourceKind, namespace, name);
-                        future.handle(internalDelete(namespace, name));
+                        internalDelete(namespace, name).setHandler(future);
                     } else {
                         log.debug("{} {}/{} does not exist, noop", resourceKind, namespace, name);
                         future.complete(ReconcileResult.noop());
