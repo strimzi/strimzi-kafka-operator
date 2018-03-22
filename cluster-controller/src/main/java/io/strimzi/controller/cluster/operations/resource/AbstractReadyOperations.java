@@ -41,7 +41,7 @@ public abstract class AbstractReadyOperations<C, T extends HasMetadata, L extend
     public Future<Void> readiness(String namespace, String name, long pollIntervalMs, long timeoutMs) {
         Future<Void> fut = Future.future();
         log.info("Waiting for {} resource {} in namespace {} to get ready", resourceKind, name, namespace);
-        long deadline = System.currentTimeMillis() + timeoutMs;
+        //long deadline = System.currentTimeMillis() + timeoutMs;
 
         try {
             while (true) {
