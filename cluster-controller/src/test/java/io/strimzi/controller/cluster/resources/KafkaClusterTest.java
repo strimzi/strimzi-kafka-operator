@@ -12,8 +12,6 @@ import org.junit.Test;
 
 import static io.strimzi.controller.cluster.ResourceUtils.labels;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 public class KafkaClusterTest {
 
@@ -119,88 +117,6 @@ public class KafkaClusterTest {
     }
 
     // TODO test volume claim templates
-
-    @Test
-    public void testDiffNoDiffs() {
-        ClusterDiffResult diff = kc.diff(kc.generateMetricsConfigMap(), kc.generateStatefulSet(true));
-        assertFalse(diff.isDifferent());
-        assertFalse(diff.isScaleDown());
-        assertFalse(diff.isScaleUp());
-        assertFalse(diff.isRollingUpdate());
-        assertFalse(diff.isMetricsChanged());
-    }
-
-    @Test
-    public void testDiffMetrics() {
-        KafkaCluster other = KafkaCluster.fromConfigMap(ResourceUtils.createKafkaClusterConfigMap(namespace, cluster,
-                replicas, image, healthDelay, healthTimeout, "{\"something\":\"different\"}"));
-        ClusterDiffResult diff = kc.diff(other.generateMetricsConfigMap(), other.generateStatefulSet(true));
-        assertFalse(diff.isDifferent());
-        assertFalse(diff.isScaleDown());
-        assertFalse(diff.isScaleUp());
-        assertFalse(diff.isRollingUpdate());
-        assertTrue(diff.isMetricsChanged());
-    }
-
-    @Test
-    public void testDiffScaleDown() {
-        KafkaCluster other = KafkaCluster.fromConfigMap(ResourceUtils.createKafkaClusterConfigMap(namespace, cluster,
-                replicas + 1, image, healthDelay, healthTimeout, metricsCmJson));
-        ClusterDiffResult diff = kc.diff(other.generateMetricsConfigMap(), other.generateStatefulSet(true));
-        assertFalse(diff.isDifferent());
-        assertTrue(diff.isScaleDown());
-        assertFalse(diff.isScaleUp());
-        assertFalse(diff.isRollingUpdate());
-        assertFalse(diff.isMetricsChanged());
-    }
-
-    @Test
-    public void testDiffScaleUp() {
-        KafkaCluster other = KafkaCluster.fromConfigMap(ResourceUtils.createKafkaClusterConfigMap(namespace, cluster,
-                replicas - 1, image, healthDelay, healthTimeout, metricsCmJson));
-        ClusterDiffResult diff = kc.diff(other.generateMetricsConfigMap(), other.generateStatefulSet(true));
-        assertFalse(diff.isDifferent());
-        assertFalse(diff.isScaleDown());
-        assertTrue(diff.isScaleUp());
-        assertFalse(diff.isRollingUpdate());
-        assertFalse(diff.isMetricsChanged());
-    }
-
-    @Test
-    public void testDiffImage() {
-        KafkaCluster other = KafkaCluster.fromConfigMap(ResourceUtils.createKafkaClusterConfigMap(namespace, cluster,
-                replicas, "differentimage", healthDelay, healthTimeout, metricsCmJson));
-        ClusterDiffResult diff = kc.diff(other.generateMetricsConfigMap(), other.generateStatefulSet(true));
-        assertTrue(diff.isDifferent());
-        assertFalse(diff.isScaleDown());
-        assertFalse(diff.isScaleUp());
-        assertTrue(diff.isRollingUpdate());
-        assertFalse(diff.isMetricsChanged());
-    }
-
-    @Test
-    public void testDiffHealthDelay() {
-        KafkaCluster other = KafkaCluster.fromConfigMap(ResourceUtils.createKafkaClusterConfigMap(namespace, cluster,
-                replicas, image, healthDelay + 1, healthTimeout, metricsCmJson));
-        ClusterDiffResult diff = kc.diff(other.generateMetricsConfigMap(), other.generateStatefulSet(true));
-        assertTrue(diff.isDifferent());
-        assertFalse(diff.isScaleDown());
-        assertFalse(diff.isScaleUp());
-        assertTrue(diff.isRollingUpdate());
-        assertFalse(diff.isMetricsChanged());
-    }
-
-    @Test
-    public void testDiffHealthTimeout() {
-        KafkaCluster other = KafkaCluster.fromConfigMap(ResourceUtils.createKafkaClusterConfigMap(namespace, cluster,
-                replicas, image, healthDelay, healthTimeout + 1, metricsCmJson));
-        ClusterDiffResult diff = kc.diff(other.generateMetricsConfigMap(), other.generateStatefulSet(true));
-        assertTrue(diff.isDifferent());
-        assertFalse(diff.isScaleDown());
-        assertFalse(diff.isScaleUp());
-        assertTrue(diff.isRollingUpdate());
-        assertFalse(diff.isMetricsChanged());
-    }
 
     @Test
     public void testPodNames() {

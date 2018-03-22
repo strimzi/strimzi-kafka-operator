@@ -13,11 +13,8 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertNull;
 
 public class TopicControllerTest {
@@ -154,67 +151,4 @@ public class TopicControllerTest {
         assertEquals(getExpectedEnvVars(), tc.getEnvVars());
     }
 
-    @Test
-    public void testDiffNoDiffs() {
-
-        ClusterDiffResult diff = tc.diff(tc.generateDeployment());
-
-        assertFalse(diff.isDifferent());
-    }
-
-    @Test
-    public void testDiffImage() {
-
-        Deployment dep = tc.generateDeployment();
-        dep.getSpec().getTemplate().getSpec().getContainers().get(0).setImage("diff-image");
-
-        ClusterDiffResult diff = tc.diff(dep);
-
-        assertTrue(diff.isDifferent());
-    }
-
-    @Test
-    public void testDiffNamespace() {
-
-        testDiffEnvVar(TopicController.KEY_WATCHED_NAMESPACE, "diff-tc-namespace");
-    }
-
-    @Test
-    public void testDiffReconciliationInterval() {
-
-        testDiffEnvVar(TopicController.KEY_FULL_RECONCILIATION_INTERVAL_MS, "1200000");
-    }
-
-    @Test
-    public void testDiffZookeeperSessionTimeout() {
-
-        testDiffEnvVar(TopicController.KEY_ZOOKEEPER_SESSION_TIMEOUT_MS, "10000");
-    }
-
-    @Test
-    public void testDiffTopicMetadataMaxAttempts() {
-
-        testDiffEnvVar(TopicController.KEY_TOPIC_METADATA_MAX_ATTEMPTS, "5");
-    }
-
-    private void testDiffEnvVar(String name, String value) {
-
-        Deployment dep = tc.generateDeployment();
-
-        List<EnvVar> newEnvVars = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv()
-                .stream().map(envVar -> {
-
-                    if (envVar.getName().equals(name)) {
-                        return new EnvVarBuilder().withName(name).withValue(value).build();
-                    } else {
-                        return envVar;
-                    }
-
-                }).collect(Collectors.toList());
-
-        dep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(newEnvVars);
-
-        ClusterDiffResult diff = tc.diff(dep);
-        assertTrue(diff.isDifferent());
-    }
 }

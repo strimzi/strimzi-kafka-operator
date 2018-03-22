@@ -17,7 +17,6 @@ import io.strimzi.controller.cluster.operations.resource.PvcOperations;
 import io.strimzi.controller.cluster.operations.resource.ReconcileResult;
 import io.strimzi.controller.cluster.operations.resource.ServiceOperations;
 import io.strimzi.controller.cluster.resources.AbstractCluster;
-import io.strimzi.controller.cluster.resources.ClusterDiffResult;
 import io.strimzi.controller.cluster.resources.KafkaCluster;
 import io.strimzi.controller.cluster.resources.Labels;
 import io.strimzi.controller.cluster.resources.Storage;
@@ -463,16 +462,6 @@ public class KafkaClusterOperationsTest {
         ZookeeperCluster originalZookeeperCluster = ZookeeperCluster.fromConfigMap(originalCm);
         ZookeeperCluster updatedZookeeperCluster = ZookeeperCluster.fromConfigMap(clusterCm);
         TopicController originalTopicController = TopicController.fromConfigMap(originalCm);
-        TopicController updatedTopicController = TopicController.fromConfigMap(clusterCm);
-
-        ClusterDiffResult kafkaDiff = updatedKafkaCluster.diff(
-                originalKafkaCluster.isMetricsEnabled() ? originalKafkaCluster.generateMetricsConfigMap() : null,
-                originalKafkaCluster.generateStatefulSet(openShift));
-        ClusterDiffResult zkDiff = updatedZookeeperCluster.diff(
-                originalZookeeperCluster.isMetricsEnabled() ? originalZookeeperCluster.generateMetricsConfigMap() : null,
-                originalZookeeperCluster.generateStatefulSet(openShift));
-        ClusterDiffResult tcDiff = ((originalTopicController != null) && (updatedTopicController != null)) ?
-                updatedTopicController.diff(originalTopicController.generateDeployment()) : new ClusterDiffResult();
 
         // create CM, Service, headless service, statefulset and so on
         ConfigMapOperations mockCmOps = mock(ConfigMapOperations.class);
@@ -626,10 +615,14 @@ public class KafkaClusterOperationsTest {
 
             // rolling restart
             Set<String> expectedRollingRestarts = set();
-            if (kafkaDiff.isRollingUpdate()) {
+            if (KafkaSetOperations.needsRollingUpdate(
+                    originalKafkaCluster.generateStatefulSet(openShift),
+                    updatedKafkaCluster.generateStatefulSet(openShift))) {
                 expectedRollingRestarts.add(originalKafkaCluster.getName());
             }
-            if (zkDiff.isRollingUpdate()) {
+            if (ZookeeperSetOperations.needsRollingUpdate(
+                    originalZookeeperCluster.generateStatefulSet(openShift),
+                    updatedZookeeperCluster.generateStatefulSet(openShift))) {
                 expectedRollingRestarts.add(originalZookeeperCluster.getName());
             }
             //context.assertEquals(expectedRollingRestarts, rollingRestarts);

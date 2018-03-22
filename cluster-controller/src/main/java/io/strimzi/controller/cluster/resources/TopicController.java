@@ -241,64 +241,6 @@ public class TopicController extends AbstractCluster {
         return topicController;
     }
 
-
-    /**
-     * Return the differences between the current Topic Controller and the deployed one
-     *
-     * @param dep Deployment which should be diffed
-     * @return  ClusterDiffResult instance with differences
-     */
-    public ClusterDiffResult diff(Deployment dep) {
-
-        if (dep != null) {
-
-            boolean isDifferent = false;
-
-            Container container = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
-            if (!image.equals(container.getImage())) {
-                log.info("Diff: Expected image {}, actual image {}", image, container.getImage());
-                isDifferent = true;
-            }
-
-            Map<String, String> vars = containerEnvVars(container);
-
-            if (!kafkaBootstrapServers.equals(vars.getOrDefault(KEY_KAFKA_BOOTSTRAP_SERVERS, defaultBootstrapServers(cluster)))) {
-                log.info("Diff: Kafka bootstrap servers changed");
-                isDifferent = true;
-            }
-
-            if (!zookeeperConnect.equals(vars.getOrDefault(KEY_ZOOKEEPER_CONNECT, defaultZookeeperConnect(cluster)))) {
-                log.info("Diff: Zookeeper connect changed");
-                isDifferent = true;
-            }
-
-            if (!watchedNamespace.equals(vars.getOrDefault(KEY_WATCHED_NAMESPACE, namespace))) {
-                log.info("Diff: Namespace in which watching for topics changed");
-                isDifferent = true;
-            }
-
-            if (!reconciliationIntervalMs.equals(vars.getOrDefault(KEY_FULL_RECONCILIATION_INTERVAL_MS, DEFAULT_FULL_RECONCILIATION_INTERVAL_MS))) {
-                log.info("Diff: Reconciliation interval changed");
-                isDifferent = true;
-            }
-
-            if (!zookeeperSessionTimeoutMs.equals(vars.getOrDefault(KEY_ZOOKEEPER_SESSION_TIMEOUT_MS, DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_MS))) {
-                log.info("Diff: Zookeeper session timeout changed");
-                isDifferent = true;
-            }
-
-            if (topicMetadataMaxAttempts !=
-                    Integer.parseInt(vars.getOrDefault(KEY_TOPIC_METADATA_MAX_ATTEMPTS, String.valueOf(DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS)))) {
-                log.info("Diff: Topic metadata max attempts changed");
-                isDifferent = true;
-            }
-
-            return new ClusterDiffResult(isDifferent);
-        } else {
-            return null;
-        }
-    }
-
     public Deployment generateDeployment() {
         DeploymentStrategy updateStrategy = new DeploymentStrategyBuilder()
                 .withType("Recreate")
