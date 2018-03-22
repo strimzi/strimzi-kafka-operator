@@ -39,7 +39,7 @@ import static io.strimzi.controller.cluster.resources.TopicController.topicContr
 public class KafkaClusterOperations extends AbstractClusterOperations<KafkaCluster, StatefulSet> {
     private static final Logger log = LoggerFactory.getLogger(KafkaClusterOperations.class.getName());
     private static final String CLUSTER_TYPE_ZOOKEEPER = "zookeeper";
-    private static final String CLUSTER_TYPE_KAFKA = "kafka";
+    static final String CLUSTER_TYPE_KAFKA = "kafka";
     private static final String CLUSTER_TYPE_TOPIC_CONTROLLER = "topic-controller";
 
     private final long operationTimeoutMs;
