@@ -30,7 +30,7 @@ public abstract class AbstractOperations<C, T extends HasMetadata,
         L extends KubernetesResourceList/*<T>*/, D, R extends Resource<T, D>,
         P> {
 
-    private static final Logger log = LoggerFactory.getLogger(AbstractOperations.class);
+    private final Logger log = LoggerFactory.getLogger(getClass());
     protected final Vertx vertx;
     protected final C client;
     protected final String resourceKind;
@@ -79,15 +79,19 @@ public abstract class AbstractOperations<C, T extends HasMetadata,
                 T current = operation().inNamespace(namespace).withName(name).get();
                 if (desired != null) {
                     if (current == null) {
+                        log.debug("{} {}/{} does not exist, creating it", resourceKind, namespace, name);
                         future.handle(internalCreate(namespace, name, desired));
                     } else {
+                        log.debug("{} {}/{} already exists, patching it", resourceKind, namespace, name);
                         future.handle(internalPatch(namespace, name, current, desired));
                     }
                 } else {
                     if (current != null) {
                         // Deletion is desired
+                        log.debug("{} {}/{} exist, deleting it", resourceKind, namespace, name);
                         future.handle(internalDelete(namespace, name));
                     } else {
+                        log.debug("{} {}/{} does not exist, noop", resourceKind, namespace, name);
                         future.complete(ReconcileResult.noop());
                     }
                 }

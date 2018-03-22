@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory;
 public abstract class AbstractReadyOperations<C, T extends HasMetadata, L extends KubernetesResourceList/*<T>*/, D, R extends Resource<T, D>, P>
         extends AbstractOperations<C, T, L, D, R, P> {
 
-    private static final Logger log = LoggerFactory.getLogger(AbstractReadyOperations.class);
+    private final Logger log = LoggerFactory.getLogger(getClass());
 
     /**
      * Constructor.

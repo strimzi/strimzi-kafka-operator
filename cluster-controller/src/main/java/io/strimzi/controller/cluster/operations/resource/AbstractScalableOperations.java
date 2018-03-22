@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
 public abstract class AbstractScalableOperations<C, T extends HasMetadata, L extends KubernetesResourceList/*<T>*/, D, R extends ScalableResource<T, D>, P>
         extends AbstractReadyOperations<C, T, L, D, R, P> {
 
-    private static final Logger log = LoggerFactory.getLogger(AbstractScalableOperations.class.getName());
+    private final Logger log = LoggerFactory.getLogger(getClass());
 
     /**
      * Constructor
