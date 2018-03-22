@@ -28,14 +28,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
-
-
 import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.map;
 import static junit.framework.TestCase.assertTrue;
@@ -324,39 +321,30 @@ public class KafkaClusterTest {
         String clusterName = "my-cluster";
         int expectedZKPods = 2;
         int expectedKafkaPods = 2;
-
         List<String> zkPodStartTime = new ArrayList<>();
         for (int i = 0; i < expectedZKPods; i++) {
             zkPodStartTime.add(getResourceCreateTimestamp("pod", zookeeperPodName(clusterName, i)));
         }
-
         List<String> kafkaPodStartTime = new ArrayList<>();
         for (int i = 0; i < expectedKafkaPods; i++) {
             kafkaPodStartTime.add(getResourceCreateTimestamp("pod", kafkaPodName(clusterName, i)));
         }
-
         Oc oc = (Oc) this.kubeClient;
-
         replaceCm(clusterName, "zookeeper-healthcheck-delay", "23");
         replaceCm(clusterName, "kafka-healthcheck-delay", "23");
         replaceCm(clusterName, "KAFKA_DEFAULT_REPLICATION_FACTOR", "1");
-
         for (int i = 0; i < expectedZKPods; i++) {
             kubeClient.waitForResourceUpdate("pod", zookeeperPodName(clusterName, i), zkPodStartTime.get(i));
             kubeClient.waitForPod(zookeeperPodName(clusterName,  i));
         }
-
         for (int i = 0; i < expectedKafkaPods; i++) {
             kubeClient.waitForResourceUpdate("pod", kafkaPodName(clusterName, i), kafkaPodStartTime.get(i));
             kubeClient.waitForPod(kafkaPodName(clusterName,  i));
         }
-
         String configMap = kubeClient.get("cm", clusterName);
         assertThat(configMap, valueOfCmEquals("zookeeper-healthcheck-delay", "23"));
         assertThat(configMap, valueOfCmEquals("kafka-healthcheck-delay", "23"));
         assertThat(configMap, valueOfCmEquals("KAFKA_DEFAULT_REPLICATION_FACTOR", "1"));
-
-
         LOGGER.info("Verified CM and Testing kafka pods");
         for (int i = 0; i < expectedKafkaPods; i++) {
             String kafkaPodJson = oc.getConfig("pod", kafkaPodName(clusterName, i));
@@ -365,7 +353,6 @@ public class KafkaClusterTest {
             String initialDelaySecondsPath = "$.spec.containers[*].livenessProbe.initialDelaySeconds";
             assertEquals("23", getValueFromJson(kafkaPodJson, initialDelaySecondsPath));
         }
-
         LOGGER.info("Testing Zookeepers");
         for (int i = 0; i < expectedZKPods; i++) {
             String zkPodJson = kubeClient.getConfig("pod", zookeeperPodName(clusterName, i));

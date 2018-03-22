@@ -295,9 +295,6 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
                 try {
                     return !startTime.equals(JsonPath.parse(getConfig(resourceType, resourceName)).
                             read("$.metadata.creationTimestamp").toString().replaceAll("\\p{P}", ""));
-
-
-
                 } catch (KubeClusterException.NotFound e) {
                     return false;
                 }
