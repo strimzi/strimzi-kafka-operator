@@ -7,6 +7,7 @@ package io.strimzi.systemtest;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import com.jayway.jsonpath.JsonPath;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.test.ClusterController;
@@ -21,8 +22,6 @@ import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterException;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.Oc;
-import org.hamcrest.CoreMatchers;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -31,9 +30,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
+
 
 import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.map;
@@ -41,6 +42,7 @@ import static junit.framework.TestCase.assertTrue;
 import static matchers.Matchers.valueOfCmEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+
 
 @RunWith(StrimziRunner.class)
 @Namespace(KafkaClusterTest.NAMESPACE)
@@ -108,6 +110,7 @@ public class KafkaClusterTest {
             ((ObjectNode) node.get("data")).put(fieldName, fieldValue);
             String content = mapper.writeValueAsString(node);
             kubeClient.replaceContent(content);
+            LOGGER.info("Value in Config Map replaced");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -308,7 +311,7 @@ public class KafkaClusterTest {
     }
 
     @Test
-    @KafkaCluster(name = "my-cluster", kafkaNodes = 1, zkNodes = 2, config = {
+    @KafkaCluster(name = "my-cluster", kafkaNodes = 2, zkNodes = 2, config = {
             @CmData(key = "zookeeper-healthcheck-delay", value = "30"),
             @CmData(key = "zookeeper-healthcheck-timeout", value = "10"),
             @CmData(key = "kafka-healthcheck-delay", value = "30"),
@@ -317,25 +320,74 @@ public class KafkaClusterTest {
             @CmData(key = "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", value = "5"),
             @CmData(key = "KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", value = "5")
     })
-    @OpenShiftOnly
     public void testForUpdateValuesInConfigMap() {
         String clusterName = "my-cluster";
         int expectedZKPods = 2;
+        int expectedKafkaPods = 2;
+
+        List<String> zkPodStartTime = new ArrayList<>();
+        for (int i = 0; i < expectedZKPods; i++) {
+            zkPodStartTime.add(getResourceCreateTimestamp("pod", zookeeperPodName(clusterName, i)));
+        }
+
+        List<String> kafkaPodStartTime = new ArrayList<>();
+        for (int i = 0; i < expectedKafkaPods; i++) {
+            kafkaPodStartTime.add(getResourceCreateTimestamp("pod", kafkaPodName(clusterName, i)));
+        }
+
         Oc oc = (Oc) this.kubeClient;
 
         replaceCm(clusterName, "zookeeper-healthcheck-delay", "23");
-        oc.waitForStatefulSet(zookeeperStatefulSetName(clusterName), expectedZKPods);
+        replaceCm(clusterName, "kafka-healthcheck-delay", "23");
+        replaceCm(clusterName, "KAFKA_DEFAULT_REPLICATION_FACTOR", "1");
+
+        for (int i = 0; i < expectedZKPods; i++) {
+            kubeClient.waitForResourceUpdate("pod", zookeeperPodName(clusterName, i), zkPodStartTime.get(i));
+            kubeClient.waitForPod(zookeeperPodName(clusterName,  i));
+        }
+
+        for (int i = 0; i < expectedKafkaPods; i++) {
+            kubeClient.waitForResourceUpdate("pod", kafkaPodName(clusterName, i), kafkaPodStartTime.get(i));
+            kubeClient.waitForPod(kafkaPodName(clusterName,  i));
+        }
 
         String configMap = kubeClient.get("cm", clusterName);
         assertThat(configMap, valueOfCmEquals("zookeeper-healthcheck-delay", "23"));
-        assertThat(configMap, valueOfCmEquals("zookeeper-healthcheck-timeout", "10"));
+        assertThat(configMap, valueOfCmEquals("kafka-healthcheck-delay", "23"));
+        assertThat(configMap, valueOfCmEquals("KAFKA_DEFAULT_REPLICATION_FACTOR", "1"));
 
-        List<String> ccPods = oc.listByLabel("pod", "strimzi-cluster-controller");
-        LOGGER.info("Count of Cluster controllers is: " + ccPods.size());
-        for (int i = 0; i < ccPods.size(); i++) {
-            Assert.assertThat(oc.logs(ccPods.get(i)),
-                    CoreMatchers.containsString("Diff: Zookeeper healthcheck timing changed"));
+
+        LOGGER.info("Verified CM and Testing kafka pods");
+        for (int i = 0; i < expectedKafkaPods; i++) {
+            String kafkaPodJson = oc.getConfig("pod", kafkaPodName(clusterName, i));
+            assertEquals("1", getValueFromJson(kafkaPodJson,
+                    globalVariableJsonPathBuilder("KAFKA_DEFAULT_REPLICATION_FACTOR")));
+            String initialDelaySecondsPath = "$.spec.containers[*].livenessProbe.initialDelaySeconds";
+            assertEquals("23", getValueFromJson(kafkaPodJson, initialDelaySecondsPath));
+        }
+
+        LOGGER.info("Testing Zookeepers");
+        for (int i = 0; i < expectedZKPods; i++) {
+            String zkPodJson = kubeClient.getConfig("pod", zookeeperPodName(clusterName, i));
+            String initialDelaySecondsPath = "$.spec.containers[*].livenessProbe.initialDelaySeconds";
+            assertEquals("23", getValueFromJson(zkPodJson, initialDelaySecondsPath));
         }
     }
+
+    private String getValueFromJson(String json, String jsonPath) {
+        String value = JsonPath.parse(json).read(jsonPath).toString().replaceAll("\\p{P}", "");
+        return value;
+    }
+
+    private String globalVariableJsonPathBuilder(String variable) {
+        String path = "$.spec.containers[*].env[?(@.name=='" + variable + "')].value";
+        return path;
+    }
+
+    private String getResourceCreateTimestamp(String resourceType, String resourceName) {
+        return JsonPath.parse(kubeClient.getConfig(resourceType, resourceName)).
+                read("$.metadata.creationTimestamp").toString().replaceAll("\\p{P}", "");
+    }
+
 
 }

@@ -6,6 +6,7 @@ package io.strimzi.test.k8s;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jayway.jsonpath.JsonPath;
 import io.strimzi.test.TestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -287,6 +288,23 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
         return (K) this;
     }
 
+    public K waitForResourceUpdate(String resourceType, String resourceName, String startTime) {
+
+        TestUtils.waitFor(resourceType + " " + resourceName + " update",
+                1_000L, 240_000L, () -> {
+                try {
+                    return !startTime.equals(JsonPath.parse(getConfig(resourceType, resourceName)).
+                            read("$.metadata.creationTimestamp").toString().replaceAll("\\p{P}", ""));
+
+
+
+                } catch (KubeClusterException.NotFound e) {
+                    return false;
+                }
+            });
+        return (K) this;
+    }
+
     @Override
     public String toString() {
         return cmd();
@@ -299,6 +317,10 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
 
     public List<String> listByLabel(String resourceType, String labelName) {
         return asList(Exec.exec(namespacedCommand("get", resourceType, "-l", "name=" + labelName, "-o", "jsonpath={range .items[*]}{.metadata.name} ")).out().trim().split(" +"));
+    }
+
+    public String getConfig(String resourceType, String resourceName) {
+        return Exec.exec(namespacedCommand("get", resourceType, resourceName, "-o", "json")).out();
     }
 
     @Override
