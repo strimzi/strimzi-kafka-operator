@@ -131,18 +131,18 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
         @Override
         public Future<?> composite(String namespace, String name) {
             StatefulSet ss = kafkaSetOperations.get(namespace, KafkaCluster.kafkaClusterName(name));
-            if (ss == null) {
-                return Future.succeededFuture();
-            }
-            KafkaCluster kafka = KafkaCluster.fromStatefulSet(ss, namespace, name);
-            boolean deleteClaims = kafka.getStorage().type() == Storage.StorageType.PERSISTENT_CLAIM
+
+            KafkaCluster kafka = ss == null ? null : KafkaCluster.fromStatefulSet(ss, namespace, name);
+            // TODO If the SS (and the CM) has gone, how do we know whether to delete the claims?
+            // TODO Should we annotate the PVCs?
+            boolean deleteClaims = kafka != null && kafka.getStorage().type() == Storage.StorageType.PERSISTENT_CLAIM
                     && kafka.getStorage().isDeleteClaim();
             List<Future> result = new ArrayList<>(4 + (deleteClaims ? kafka.getReplicas() : 0));
 
-            result.add(configMapOperations.reconcile(namespace, kafka.getMetricsConfigName(), null));
-            result.add(serviceOperations.reconcile(namespace, kafka.getName(), null));
-            result.add(serviceOperations.reconcile(namespace, kafka.getHeadlessName(), null));
-            result.add(kafkaSetOperations.reconcile(namespace, kafka.getName(), null));
+            result.add(configMapOperations.reconcile(namespace, KafkaCluster.metricConfigsName(name), null));
+            result.add(serviceOperations.reconcile(namespace, KafkaCluster.kafkaClusterName(name), null));
+            result.add(serviceOperations.reconcile(namespace, KafkaCluster.headlessName(name), null));
+            result.add(kafkaSetOperations.reconcile(namespace, KafkaCluster.kafkaClusterName(name), null));
 
             if (deleteClaims) {
                 for (int i = 0; i < kafka.getReplicas(); i++) {
@@ -191,18 +191,17 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
         @Override
         public Future<?> composite(String namespace, String name) {
             StatefulSet ss = zkSetOperations.get(namespace, ZookeeperCluster.zookeeperClusterName(name));
-            if (ss == null) {
-                return Future.succeededFuture();
-            }
-            ZookeeperCluster zk = ZookeeperCluster.fromStatefulSet(ss, namespace, name);
-            boolean deleteClaims = zk.getStorage().type() == Storage.StorageType.PERSISTENT_CLAIM
+            ZookeeperCluster zk = ss == null ? null : ZookeeperCluster.fromStatefulSet(ss, namespace, name);
+            // TODO If the SS (and the CM) has gone, how do we know whether to delete the claims?
+            // TODO Should we annotate the PVCs?
+            boolean deleteClaims = zk != null && zk.getStorage().type() == Storage.StorageType.PERSISTENT_CLAIM
                     && zk.getStorage().isDeleteClaim();
             List<Future> result = new ArrayList<>(4 + (deleteClaims ? zk.getReplicas() : 0));
 
-            result.add(configMapOperations.reconcile(namespace, zk.getMetricsConfigName(), null));
-            result.add(serviceOperations.reconcile(namespace, zk.getName(), null));
-            result.add(serviceOperations.reconcile(namespace, zk.getHeadlessName(), null));
-            result.add(zkSetOperations.reconcile(namespace, zk.getName(), null));
+            result.add(configMapOperations.reconcile(namespace, ZookeeperCluster.zookeeperMetricsName(name), null));
+            result.add(serviceOperations.reconcile(namespace, ZookeeperCluster.zookeeperClusterName(name), null));
+            result.add(serviceOperations.reconcile(namespace, ZookeeperCluster.zookeeperHeadlessName(name), null));
+            result.add(zkSetOperations.reconcile(namespace, ZookeeperCluster.zookeeperClusterName(name), null));
 
             if (deleteClaims) {
                 for (int i = 0; i < zk.getReplicas(); i++) {
