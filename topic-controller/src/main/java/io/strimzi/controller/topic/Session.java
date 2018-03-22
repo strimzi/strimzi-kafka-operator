@@ -154,7 +154,7 @@ public class Session extends AbstractVerticle {
         LOGGER.info("Started");
     }
 
-    private void reconcileTopics(String reconciliationType) {
+    void reconcileTopics(String reconciliationType) {
         LOGGER.info("Starting {} reconciliation", reconciliationType);
         kafka.listTopics(arx -> {
             if (arx.succeeded()) {
