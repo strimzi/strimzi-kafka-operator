@@ -28,7 +28,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 @RunWith(VertxUnitRunner.class)
 public class KafkaClusterOperationsMockIT {
@@ -55,13 +56,13 @@ public class KafkaClusterOperationsMockIT {
         this.vertx = Vertx.vertx();
     }
 
-    private static <T> Map<T, T> map(T...pairs) {
+    private static <T> Map<T, T> map(T... pairs) {
         if (pairs.length % 2 != 0) {
             throw new IllegalArgumentException();
         }
-        Map<T, T> result = new HashMap<>(pairs.length/2);
-        for (int i = 0; i < pairs.length; i+=2) {
-            result.put(pairs[i], pairs[i+1]);
+        Map<T, T> result = new HashMap<>(pairs.length / 2);
+        for (int i = 0; i < pairs.length; i += 2) {
+            result.put(pairs[i], pairs[i + 1]);
         }
         return result;
     }

@@ -96,8 +96,8 @@ public class MockKube {
 
     private static <T extends HasMetadata> Map<String, T> db(Collection<T> initialResources) {
         return new HashMap(initialResources.stream().collect(Collectors.toMap(
-                c -> c.getMetadata().getName(),
-                c -> c)));
+            c -> c.getMetadata().getName(),
+            c -> c)));
     }
 
     /**
@@ -108,7 +108,7 @@ public class MockKube {
     @SuppressWarnings("unchecked")
     private static <T extends HasMetadata, D extends Doneable<T>, R extends Resource<T, D>, R2 extends Resource>
             Class<R> castClass(Class<R2> c) {
-        return (Class)c;
+        return (Class) c;
     }
 
     /**
@@ -126,7 +126,7 @@ public class MockKube {
     private <CM extends HasMetadata,
             CML extends KubernetesResource<CM> & KubernetesResourceList<CM>,
             DCM extends Doneable<CM>,
-            R extends /*CreateOrReplaceable<CM, CM, DCM>&CreateFromServerGettable<CM, CM, DCM>&*/Resource<CM, DCM>>
+            R extends Resource<CM, DCM>>
                 MixedOperation<CM, CML, DCM, R> crudMock(String resourceType, Map<String, CM> db,
                                                          Class<R> resourceClass,
                                                          BiConsumer<R, String> extraMocksOnResource) {
@@ -144,14 +144,21 @@ public class MockKube {
     }
 
     private <CM extends HasMetadata, DCM extends Doneable<CM>, R extends Resource<CM, DCM>>
-        void mockDelete(Map<String, CM> db, String resourceName, R resource) {
-        when(resource.delete()).thenAnswer(i -> db.remove(resourceName) != null);
+        void mockDelete(String resourceType, Map<String, CM> db, String resourceName, R resource) {
+        when(resource.delete()).thenAnswer(i -> {
+            LOGGER.debug("delete {} {}", resourceType, resourceName);
+            return db.remove(resourceName) != null;
+        });
     }
 
     private <CM extends HasMetadata, DCM extends Doneable<CM>, R extends Resource<CM, DCM>>
-        void mockPatch(Map<String, CM> db, String resourceName, R resource) {
+        void mockPatch(String resourceType, Map<String, CM> db, String resourceName, R resource) {
         when(resource.patch(any())).thenAnswer(i -> {
+            if (!db.containsKey(resourceName)) {
+                notExists(resourceName);
+            }
             CM argument = i.getArgument(0);
+            LOGGER.debug("patch {} {} -> {}", resourceType, resourceName, resource);
             db.put(resourceName, argument);
             return argument;
         });
@@ -166,7 +173,10 @@ public class MockKube {
     private <CM extends HasMetadata, DCM extends Doneable<CM>, R extends Resource<CM, DCM>>
         void mockCreate(String resourceType, Map<String, CM> db, String resourceName, R resource) {
         when(resource.create(any())).thenAnswer(i -> {
-            CM argument = (CM)i.getArguments()[0];
+            if (db.containsKey(resourceName)) {
+                alreadyExists(resourceName);
+            }
+            CM argument = (CM) i.getArguments()[0];
             LOGGER.debug("create {} {} -> {}", resourceType, resourceName, argument);
             db.put(resourceName, argument);
             return argument;
@@ -175,7 +185,7 @@ public class MockKube {
 
     private <CM extends HasMetadata, DCM extends Doneable<CM>, R extends Resource<CM, DCM>>
         OngoingStubbing<CM> mockGet(String resourceType, Map<String, CM> db, String resourceName, R resource) {
-        return when(resource.get()).thenAnswer( i -> {
+        return when(resource.get()).thenAnswer(i -> {
             CM r = db.get(resourceName);
             LOGGER.debug("{} {} get {}", resourceType, resourceName, r);
             return r;
@@ -195,42 +205,41 @@ public class MockKube {
     private MixedOperation<ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> mockCms() {
         String resourceType = "configmap";
         return crudMock(resourceType, this.cmDb,
-                castClass(Resource.class),
-                (resource, resourceName) -> {
-                    mockGet(resourceType, cmDb, resourceName, resource);
-                    mockCreate(resourceType, cmDb, resourceName, resource);
-                    mockCascading(resource);
-                    mockPatch(cmDb, resourceName, resource);
-                    mockDelete(cmDb, resourceName, resource);
-                });
+            castClass(Resource.class),
+            (resource, resourceName) -> {
+                mockGet(resourceType, cmDb, resourceName, resource);
+                mockCreate(resourceType, cmDb, resourceName, resource);
+                mockCascading(resource);
+                mockPatch(resourceType, cmDb, resourceName, resource);
+                mockDelete(resourceType, cmDb, resourceName, resource);
+            });
     }
 
     // Endpoints
     private MixedOperation<Endpoints, EndpointsList, DoneableEndpoints, Resource<Endpoints, DoneableEndpoints>> mockEndpoints() {
         String resourceType = "endpoint";
         return crudMock(resourceType, this.endpointDb,
-                castClass(Resource.class),
-                (resource, resourceName) -> {
-                    mockGet(resourceType, endpointDb, resourceName, resource);
-                    mockCreate(resourceType, endpointDb, resourceName, resource);
-                    mockCascading(resource);
-                    mockPatch(endpointDb, resourceName, resource);
-                    mockDelete(endpointDb, resourceName, resource);
-                    mockIsReady(resourceType, resourceName, resource);
-                });
+            castClass(Resource.class),
+            (resource, resourceName) -> {
+                mockGet(resourceType, endpointDb, resourceName, resource);
+                mockCreate(resourceType, endpointDb, resourceName, resource);
+                mockCascading(resource);
+                mockPatch(resourceType, endpointDb, resourceName, resource);
+                mockDelete(resourceType, endpointDb, resourceName, resource);
+                mockIsReady(resourceType, resourceName, resource);
+            });
     }
 
 
     // Services
-    private MixedOperation<Service, ServiceList, DoneableService, Resource<Service, DoneableService>>
-    mockSvc() {
+    private MixedOperation<Service, ServiceList, DoneableService, Resource<Service, DoneableService>> mockSvc() {
         String resourceType = "service";
         return crudMock(resourceType, this.svcDb, castClass(Resource.class), (resource, resourceName) -> {
             mockGet(resourceType, svcDb, resourceName, resource);
             //mockCreate("endpoint", endpointDb, resourceName, resource);
             mockCascading(resource);
-            mockPatch(svcDb, resourceName, resource);
-            mockDelete(svcDb, resourceName, resource);
+            mockPatch(resourceType, svcDb, resourceName, resource);
+            mockDelete(resourceType, svcDb, resourceName, resource);
             when(resource.create(any())).thenAnswer(i -> {
                 Service argument = i.getArgument(0);
                 svcDb.put(resourceName, argument);
@@ -245,15 +254,15 @@ public class MockKube {
     private MixedOperation<Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> mockPods() {
         String resourceType = "pod";
         return crudMock(resourceType, this.podDb,
-                castClass(PodResource.class),
-                (resource, resourceName) -> {
-                    mockGet(resourceType, podDb, resourceName, resource);
-                    mockCreate(resourceType, podDb, resourceName, resource);
-                    mockCascading(resource);
-                    mockPatch(podDb, resourceName, resource);
-                    mockDelete(podDb, resourceName, resource);
-                    mockIsReady(resourceType, resourceName, resource);
-                });
+            castClass(PodResource.class),
+            (resource, resourceName) -> {
+                mockGet(resourceType, podDb, resourceName, resource);
+                mockCreate(resourceType, podDb, resourceName, resource);
+                mockCascading(resource);
+                mockPatch(resourceType, podDb, resourceName, resource);
+                mockDelete(resourceType, podDb, resourceName, resource);
+                mockIsReady(resourceType, resourceName, resource);
+            });
     }
 
     // Deployments
@@ -263,64 +272,63 @@ public class MockKube {
             mockGet(resourceType, depDb, resourceName, resource);
             mockCreate(resourceType, depDb, resourceName, resource);
             mockCascading(resource);
-            mockPatch(depDb, resourceName, resource);
-            mockDelete(depDb, resourceName, resource);
+            mockPatch(resourceType, depDb, resourceName, resource);
+            mockDelete(resourceType, depDb, resourceName, resource);
         });
     }
 
     // StatefulSets
-    private MixedOperation<StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>>
-    mockSs() {
+    private MixedOperation<StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> mockSs() {
         String resourceType = "statefulset";
         return this.crudMock(resourceType, this.ssDb,
-                castClass(RollableScalableResource.class),
-                (resource, resourceName) -> {
-                    mockGet(resourceType, ssDb, resourceName, resource);
-                    //mockCreate("endpoint", endpointDb, resourceName, resource);
-                    mockCascading(resource);
-                    mockPatch(ssDb, resourceName, resource);
-                    mockDelete(ssDb, resourceName, resource);
-                    when(resource.create(any())).thenAnswer(cinvocation -> {
-                        if (ssDb.containsKey(resourceName)) {
-                            throw new KubernetesClientException(resourceType + " " + resourceName + " already exists");
-                        }
-                        StatefulSet argument = cinvocation.getArgument(0);
-                        LOGGER.debug("create {} {} -> {}", resourceType, resourceName, argument);
-                        ssDb.put(resourceName, argument);
-                        for (int i = 0; i < argument.getSpec().getReplicas(); i++) {
-                            podDb.put(argument.getMetadata().getName() + "-" + i,
-                                    new Pod());
-                        }
-                        return argument;
-                    });
-                    EditReplacePatchDeletable<StatefulSet, StatefulSet, DoneableStatefulSet, Boolean> c = mock(EditReplacePatchDeletable.class);
-                    when(resource.cascading(false)).thenReturn(c);
-                    when(c.patch(any())).thenAnswer(i -> {
-                        StatefulSet argument = i.getArgument(0);
-                        ssDb.put(resourceName, argument);
-                        return argument;
-                    });
-                    when(resource.isReady()).thenAnswer(i -> {
-                        LOGGER.debug("{} {} is ready", resourceType, resourceName);
-                        return true;
-                    });
-                    when(resource.scale(anyInt())).thenAnswer(i -> {
-                        if (!ssDb.containsKey(resourceName)) {
-                            notExists(resourceName);
-                        }
-                        int scale = i.getArgument(0);
-                        LOGGER.debug("scale {} {} to {}", resourceType, resourceName, scale);
-                        return ssDb.get(resourceName);
-                    });
-                    when(resource.scale(anyInt(), anyBoolean())).thenAnswer(i -> {
-                        if (!ssDb.containsKey(resourceName)) {
-                            notExists(resourceName);
-                        }
-                        int scale = i.getArgument(0);
-                        LOGGER.debug("scale {} {} to {}, waiting {}", resourceType, resourceName, scale, i.getArgument(1));
-                        return ssDb.get(resourceName);
-                    });
+            castClass(RollableScalableResource.class),
+            (resource, resourceName) -> {
+                mockGet(resourceType, ssDb, resourceName, resource);
+                //mockCreate("endpoint", endpointDb, resourceName, resource);
+                mockCascading(resource);
+                mockPatch(resourceType, ssDb, resourceName, resource);
+                mockDelete(resourceType, ssDb, resourceName, resource);
+                when(resource.create(any())).thenAnswer(cinvocation -> {
+                    if (ssDb.containsKey(resourceName)) {
+                        alreadyExists(resourceName);
+                    }
+                    StatefulSet argument = cinvocation.getArgument(0);
+                    LOGGER.debug("create {} {} -> {}", resourceType, resourceName, argument);
+                    ssDb.put(resourceName, argument);
+                    for (int i = 0; i < argument.getSpec().getReplicas(); i++) {
+                        podDb.put(argument.getMetadata().getName() + "-" + i,
+                                new Pod());
+                    }
+                    return argument;
                 });
+                EditReplacePatchDeletable<StatefulSet, StatefulSet, DoneableStatefulSet, Boolean> c = mock(EditReplacePatchDeletable.class);
+                when(resource.cascading(false)).thenReturn(c);
+                when(c.patch(any())).thenAnswer(i -> {
+                    StatefulSet argument = i.getArgument(0);
+                    ssDb.put(resourceName, argument);
+                    return argument;
+                });
+                when(resource.isReady()).thenAnswer(i -> {
+                    LOGGER.debug("{} {} is ready", resourceType, resourceName);
+                    return true;
+                });
+                when(resource.scale(anyInt())).thenAnswer(i -> {
+                    if (!ssDb.containsKey(resourceName)) {
+                        notExists(resourceName);
+                    }
+                    int scale = i.getArgument(0);
+                    LOGGER.debug("scale {} {} to {}", resourceType, resourceName, scale);
+                    return ssDb.get(resourceName);
+                });
+                when(resource.scale(anyInt(), anyBoolean())).thenAnswer(i -> {
+                    if (!ssDb.containsKey(resourceName)) {
+                        notExists(resourceName);
+                    }
+                    int scale = i.getArgument(0);
+                    LOGGER.debug("scale {} {} to {}, waiting {}", resourceType, resourceName, scale, i.getArgument(1));
+                    return ssDb.get(resourceName);
+                });
+            });
     }
 
     private KubernetesClientException notExists(String resource) {
