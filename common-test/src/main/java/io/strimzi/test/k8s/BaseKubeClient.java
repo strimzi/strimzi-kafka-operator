@@ -62,6 +62,7 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
         return previous;
     }
 
+    @Override
     public String namespace() {
         return namespace;
     }

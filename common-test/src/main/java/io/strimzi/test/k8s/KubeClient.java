@@ -69,6 +69,9 @@ public interface KubeClient<K extends KubeClient<K>> {
      */
     K replaceContent(String yamlContent);
 
+    /** Returns namespace for cluster */
+    String namespace();
+
     /** Returns an equivalent client, but logged in as cluster admin. */
     K clientWithAdmin();
 
