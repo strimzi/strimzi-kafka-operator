@@ -165,66 +165,6 @@ public class KafkaConnectCluster extends AbstractCluster {
         return kafkaConnect;
     }
 
-    /**
-     * Return the differences between the current Kafka Connect cluster and the deployed one
-     *
-     * @param dep Deployment which should be diffed
-     * @return  ClusterDiffResult instance with differences
-     */
-    public ClusterDiffResult diff(Deployment dep) {
-
-        boolean scaleUp = false;
-        boolean scaleDown = false;
-        boolean different = false;
-        boolean metricsChanged = false;
-        boolean rollingUpdate = false;
-
-        if (replicas > dep.getSpec().getReplicas()) {
-            log.info("Diff: Expected replicas {}, actual replicas {}", replicas, dep.getSpec().getReplicas());
-            scaleUp = true;
-        } else if (replicas < dep.getSpec().getReplicas()) {
-            log.info("Diff: Expected replicas {}, actual replicas {}", replicas, dep.getSpec().getReplicas());
-            scaleDown = true;
-        }
-
-        if (!getLabelsWithName().equals(dep.getMetadata().getLabels()))    {
-            log.info("Diff: Expected labels {}, actual labels {}", getLabelsWithName(), dep.getMetadata().getLabels());
-            different = true;
-        }
-
-        Container container = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
-        if (!getImage().equals(container.getImage())) {
-            log.info("Diff: Expected image {}, actual image {}", getImage(), container.getImage());
-            different = true;
-            rollingUpdate = true;
-        }
-
-        Map<String, String> vars = containerEnvVars(container);
-
-        if (!bootstrapServers.equals(vars.getOrDefault(KEY_BOOTSTRAP_SERVERS, DEFAULT_BOOTSTRAP_SERVERS))
-                || !groupId.equals(vars.getOrDefault(KEY_GROUP_ID, DEFAULT_GROUP_ID))
-                || !keyConverter.equals(vars.getOrDefault(KEY_KEY_CONVERTER, DEFAULT_KEY_CONVERTER))
-                || keyConverterSchemasEnable != Boolean.parseBoolean(vars.getOrDefault(KEY_KEY_CONVERTER_SCHEMAS_EXAMPLE, String.valueOf(DEFAULT_KEY_CONVERTER_SCHEMAS_EXAMPLE)))
-                || !valueConverter.equals(vars.getOrDefault(KEY_VALUE_CONVERTER, DEFAULT_VALUE_CONVERTER))
-                || valueConverterSchemasEnable != Boolean.parseBoolean(vars.getOrDefault(KEY_VALUE_CONVERTER_SCHEMAS_EXAMPLE, String.valueOf(DEFAULT_VALUE_CONVERTER_SCHEMAS_EXAMPLE)))
-                || configStorageReplicationFactor != Integer.parseInt(vars.getOrDefault(KEY_CONFIG_STORAGE_REPLICATION_FACTOR, String.valueOf(DEFAULT_CONFIG_STORAGE_REPLICATION_FACTOR)))
-                || offsetStorageReplicationFactor != Integer.parseInt(vars.getOrDefault(KEY_OFFSET_STORAGE_REPLICATION_FACTOR, String.valueOf(DEFAULT_OFFSET_STORAGE_REPLICATION_FACTOR)))
-                || statusStorageReplicationFactor != Integer.parseInt(vars.getOrDefault(KEY_STATUS_STORAGE_REPLICATION_FACTOR, String.valueOf(DEFAULT_STATUS_STORAGE_REPLICATION_FACTOR)))) {
-            log.info("Diff: Kafka Connect options changed");
-            different = true;
-            rollingUpdate = true;
-        }
-
-        if (healthCheckInitialDelay != container.getReadinessProbe().getInitialDelaySeconds()
-                || healthCheckTimeout != container.getReadinessProbe().getTimeoutSeconds()) {
-            log.info("Diff: Kafka Connect healthcheck timing changed");
-            different = true;
-            rollingUpdate = true;
-        }
-
-        return new ClusterDiffResult(different, rollingUpdate, scaleUp, scaleDown, metricsChanged);
-    }
-
     public Service generateService() {
 
         return createService("ClusterIP",
