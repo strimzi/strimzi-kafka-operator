@@ -154,9 +154,7 @@ public class MockKube {
     private <CM extends HasMetadata, DCM extends Doneable<CM>, R extends Resource<CM, DCM>>
         void mockPatch(String resourceType, Map<String, CM> db, String resourceName, R resource) {
         when(resource.patch(any())).thenAnswer(i -> {
-            if (!db.containsKey(resourceName)) {
-                notExists(resourceName);
-            }
+            checkDoesExist(db, resourceType, resourceName);
             CM argument = i.getArgument(0);
             LOGGER.debug("patch {} {} -> {}", resourceType, resourceName, resource);
             db.put(resourceName, argument);
@@ -173,9 +171,7 @@ public class MockKube {
     private <CM extends HasMetadata, DCM extends Doneable<CM>, R extends Resource<CM, DCM>>
         void mockCreate(String resourceType, Map<String, CM> db, String resourceName, R resource) {
         when(resource.create(any())).thenAnswer(i -> {
-            if (db.containsKey(resourceName)) {
-                alreadyExists(resourceName);
-            }
+            checkNotExists(db, resourceType, resourceName);
             CM argument = (CM) i.getArguments()[0];
             LOGGER.debug("create {} {} -> {}", resourceType, resourceName, argument);
             db.put(resourceName, argument);
@@ -289,9 +285,7 @@ public class MockKube {
                 mockPatch(resourceType, ssDb, resourceName, resource);
                 mockDelete(resourceType, ssDb, resourceName, resource);
                 when(resource.create(any())).thenAnswer(cinvocation -> {
-                    if (ssDb.containsKey(resourceName)) {
-                        alreadyExists(resourceName);
-                    }
+                    checkNotExists(ssDb, resourceType, resourceName);
                     StatefulSet argument = cinvocation.getArgument(0);
                     LOGGER.debug("create {} {} -> {}", resourceType, resourceName, argument);
                     ssDb.put(resourceName, argument);
@@ -313,17 +307,13 @@ public class MockKube {
                     return true;
                 });
                 when(resource.scale(anyInt())).thenAnswer(i -> {
-                    if (!ssDb.containsKey(resourceName)) {
-                        notExists(resourceName);
-                    }
+                    checkDoesExist(ssDb, resourceType, resourceName);
                     int scale = i.getArgument(0);
                     LOGGER.debug("scale {} {} to {}", resourceType, resourceName, scale);
                     return ssDb.get(resourceName);
                 });
                 when(resource.scale(anyInt(), anyBoolean())).thenAnswer(i -> {
-                    if (!ssDb.containsKey(resourceName)) {
-                        notExists(resourceName);
-                    }
+                    checkDoesExist(ssDb, resourceType, resourceName);
                     int scale = i.getArgument(0);
                     LOGGER.debug("scale {} {} to {}, waiting {}", resourceType, resourceName, scale, i.getArgument(1));
                     return ssDb.get(resourceName);
@@ -331,12 +321,17 @@ public class MockKube {
             });
     }
 
-    private KubernetesClientException notExists(String resource) {
-        throw new KubernetesClientException("Resource does not exist: " + resource);
+    private void checkNotExists(Map<String, ?> map, String resourceType, String resourceName) {
+        if (map.containsKey(resourceName)) {
+            throw new KubernetesClientException(resourceType + " " + resourceName + " already exists");
+        }
+
     }
 
-    private KubernetesClientException alreadyExists(String resource) {
-        throw new KubernetesClientException("Resource already exist: " + resource);
+    private void checkDoesExist(Map<String, ?> map, String resourceType, String resourceName) {
+        if (!map.containsKey(resourceName)) {
+            throw new KubernetesClientException(resourceType + " " + resourceName + " does not exist");
+        }
     }
 
 }
