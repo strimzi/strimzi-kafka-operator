@@ -44,6 +44,20 @@ public abstract class AbstractReadyOperations<C, T extends HasMetadata, L extend
         log.info("Waiting for {} resource {} in namespace {} to get ready", resourceKind, name, namespace);
         long deadline = System.currentTimeMillis() + timeoutMs;
 
+        try {
+            while (true) {
+                if (isReady(namespace, name)) {
+                    fut.complete();
+                    break;
+                }
+                Thread.sleep(1_000);
+            }
+        } catch (Throwable t) {
+            fut.fail(t);
+        }
+        return fut;
+/*
+
         Handler<Long> handler = new Handler<Long>() {
             @Override
             public void handle(Long timerId) {
@@ -59,12 +73,12 @@ public abstract class AbstractReadyOperations<C, T extends HasMetadata, L extend
                                 }
                                 future.fail("Not ready yet");
                             }
-                        } catch (Exception e) {
+                        } catch (Throwable e) {
                             log.warn("Caught exception while waiting for {} {} in namespace {} to get ready", resourceKind, name, namespace, e);
                             future.fail(e);
                         }
                     },
-                    false,
+                    true,
                     res -> {
                         if (res.succeeded()) {
                             log.info("{} {} in namespace {} is ready", resourceKind, name, namespace);
@@ -87,7 +101,7 @@ public abstract class AbstractReadyOperations<C, T extends HasMetadata, L extend
         // Call the handler ourselves the first time
         handler.handle(null);
 
-        return fut;
+        return fut;*/
     }
 
     /**
