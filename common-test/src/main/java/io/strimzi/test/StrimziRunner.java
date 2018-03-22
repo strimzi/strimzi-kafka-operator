@@ -185,7 +185,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         }
     }
 
-    protected KubeClient<?> kubeClient() {
+    protected KubeClient<?>     kubeClient() {
         return clusterResource().client();
     }
 
