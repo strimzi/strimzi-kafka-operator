@@ -91,6 +91,8 @@ public class ControllerIT {
     private volatile String deploymentId;
     private Set<String> preExistingEvents;
 
+    private Session session;
+
     @BeforeClass
     public static void setupKubeCluster() {
         testCluster.client().clientWithAdmin()
@@ -127,7 +129,7 @@ public class ControllerIT {
         m.put(Config.KAFKA_BOOTSTRAP_SERVERS.key, kafkaCluster.brokerList());
         m.put(Config.ZOOKEEPER_CONNECT.key, "localhost:" + zkPort(kafkaCluster));
         m.put(Config.NAMESPACE.key, NAMESPACE);
-        Session session = new Session(kubeClient, new Config(m));
+        session = new Session(kubeClient, new Config(m));
 
         Async async = context.async();
         vertx.deployVerticle(session, ar -> {
@@ -568,6 +570,52 @@ public class ControllerIT {
                 "Failure processing ConfigMap watch event ADDED on map two-cms-one-topic with labels {strimzi.io/kind=topic}: " +
                         "Topic 'two-cms-one-topic' is already managed via ConfigMap 'two-cms-one-topic-1' it cannot also be managed via the ConfiMap 'two-cms-one-topic'",
                 Controller.EventType.WARNING);
+    }
+
+    @Test
+    public void testReconcile(TestContext context) {
+        String topicName = "test-reconcile";
+
+        Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap()).build();
+        ConfigMap cm = TopicSerialization.toConfigMap(topic, cmPredicate);
+        String configMapName = cm.getMetadata().getName();
+
+        kubeClient.configMaps().inNamespace(NAMESPACE).create(cm);
+
+        // Wait for the configmap to be created
+        waitFor(context, () -> {
+            ConfigMap createdCm = kubeClient.configMaps().inNamespace(NAMESPACE).withName(configMapName).get();
+            LOGGER.info("Polled configmap {} waiting for creation", configMapName);
+
+            // modify configmap
+            if (createdCm != null) {
+                Map<String, String> data = new HashMap<>(createdCm.getData());
+                data.put("partitions", "2");
+                createdCm.setData(data);
+                kubeClient.configMaps().inNamespace(NAMESPACE).withName(configMapName).patch(createdCm);
+            }
+
+            return createdCm != null;
+        }, timeout, "Expected the configmap to have been created by now");
+
+        // trigger an immediate reconcile, while topic controller is dealing with configmap modification
+        session.reconcileTopics("periodic");
+
+        // Wait for the topic to be created
+        waitFor(context, () -> {
+            try {
+                adminClient.describeTopics(singletonList(topicName)).values().get(topicName).get();
+                return true;
+            } catch (ExecutionException e) {
+                if (e.getCause() instanceof UnknownTopicOrPartitionException) {
+                    return false;
+                } else {
+                    throw new RuntimeException(e);
+                }
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }, timeout, "Expected topic to be created by now");
     }
 
     // TODO: What happens if we create and then change labels to the CM predicate isn't matched any more
