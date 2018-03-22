@@ -26,7 +26,10 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -205,6 +208,13 @@ public class KafkaClusterOperationsMockIT {
         ).build();
 
         KafkaClusterOperations kco = createCluster(context, mockClient);
+        Set<String> ssNames = mockClient.apps().statefulSets().inNamespace(NAMESPACE).list().getItems().stream().map(r -> r.getMetadata().getName()).collect(Collectors.toSet());
+        Set<String> serviceNames = mockClient.services().inNamespace(NAMESPACE).list().getItems().stream().map(r -> r.getMetadata().getName()).collect(Collectors.toSet());
+        Set<String> deploymentNames = mockClient.extensions().deployments().inNamespace(NAMESPACE).list().getItems().stream().map(r -> r.getMetadata().getName()).collect(Collectors.toSet());
+        Set<String> cmNames = new HashSet<>(mockClient.configMaps().inNamespace(NAMESPACE).list().getItems().stream().map(r -> r.getMetadata().getName()).collect(Collectors.toSet()));
+        cmNames.remove(clusterName);
+        Set<String> pvcNames = mockClient.persistentVolumeClaims().inNamespace(NAMESPACE).list().getItems().stream().map(r -> r.getMetadata().getName()).collect(Collectors.toSet());
+
         for (String ss: statefulSets) {
             mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(ss).delete();
             assertNull("Expected ss " + ss + " to be not exist",
@@ -220,7 +230,32 @@ public class KafkaClusterOperationsMockIT {
                         "Expected ss " + ss + " to still not exist",
                         mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(ss).get());
             }
-            // TODO assert other resources do not exist either
+            // assert other resources do not exist either
+            for (String r: ssNames) {
+                assertNull(
+                        "Expected r " + r + " to still not exist",
+                        mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(r).get());
+            }
+            for (String r: serviceNames) {
+                assertNull(
+                        "Expected r " + r + " to still not exist",
+                        mockClient.services().inNamespace(NAMESPACE).withName(r).get());
+            }
+            for (String r: deploymentNames) {
+                assertNull(
+                        "Expected r " + r + " to still not exist",
+                        mockClient.extensions().deployments().inNamespace(NAMESPACE).withName(r).get());
+            }
+            for (String r: cmNames) {
+                assertNull(
+                        "Expected r " + r + " to still not exist",
+                        mockClient.configMaps().inNamespace(NAMESPACE).withName(r).get());
+            }
+            for (String r: pvcNames) {
+                assertNull(
+                        "Expected r " + r + " to still not exist",
+                        mockClient.persistentVolumeClaims().inNamespace(NAMESPACE).withName(r).get());
+            }
             updateAsync.complete();
         });
     }
