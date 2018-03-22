@@ -18,6 +18,7 @@ import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -57,6 +58,11 @@ public class KafkaClusterOperationsMockIT {
     @Before
     public void before() {
         this.vertx = Vertx.vertx();
+    }
+
+    @After
+    public void after() {
+        this.vertx.close();
     }
 
     private static <T> Map<T, T> map(T... pairs) {
