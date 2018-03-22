@@ -131,6 +131,9 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
         @Override
         public Future<?> composite(String namespace, String name) {
             StatefulSet ss = kafkaSetOperations.get(namespace, KafkaCluster.kafkaClusterName(name));
+            if (ss == null) {
+                return Future.succeededFuture();
+            }
             KafkaCluster kafka = KafkaCluster.fromStatefulSet(ss, namespace, name);
             boolean deleteClaims = kafka.getStorage().type() == Storage.StorageType.PERSISTENT_CLAIM
                     && kafka.getStorage().isDeleteClaim();
@@ -188,6 +191,9 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
         @Override
         public Future<?> composite(String namespace, String name) {
             StatefulSet ss = zkSetOperations.get(namespace, ZookeeperCluster.zookeeperClusterName(name));
+            if (ss == null) {
+                return Future.succeededFuture();
+            }
             ZookeeperCluster zk = ZookeeperCluster.fromStatefulSet(ss, namespace, name);
             boolean deleteClaims = zk.getStorage().type() == Storage.StorageType.PERSISTENT_CLAIM
                     && zk.getStorage().isDeleteClaim();

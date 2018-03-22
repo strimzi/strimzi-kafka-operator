@@ -120,7 +120,7 @@ public class KafkaClusterOperationsMockIT {
     /**
      * Test the controller re-creates services if they get deleted
      */
-    private void updateClusterWithoutZkServices(TestContext context, String... services) {
+    private void updateClusterWithoutServices(TestContext context, String... services) {
         String clusterName = cluster.getMetadata().getName();
         KubernetesClient mockClient = new MockKube().withInitialCms(Collections.singleton(cluster)
         ).build();
@@ -148,18 +148,96 @@ public class KafkaClusterOperationsMockIT {
     @Test
     public void testUpdateClusterWithoutZkServices(TestContext context) {
         String clusterName = cluster.getMetadata().getName();
-        updateClusterWithoutZkServices(context,
+        updateClusterWithoutServices(context,
                 clusterName + "-zookeeper", clusterName + "-zookeeper-headless");
     }
 
     @Test
     public void testUpdateClusterWithoutKafkaServices(TestContext context) {
         String clusterName = cluster.getMetadata().getName();
-        updateClusterWithoutZkServices(context,
+        updateClusterWithoutServices(context,
                 clusterName + "-kafka", clusterName + "-kafka-headless");
     }
 
+    private void deleteClusterWithoutServices(TestContext context, String... services) {
+        String clusterName = cluster.getMetadata().getName();
+        KubernetesClient mockClient = new MockKube().withInitialCms(Collections.singleton(cluster)
+        ).build();
 
+        KafkaClusterOperations kco = createCluster(context, mockClient);
+        for (String service: services) {
+            mockClient.services().inNamespace(NAMESPACE).withName(service).delete();
+            assertNull("Expected service " + service + " to be not exist",
+                    mockClient.services().inNamespace(NAMESPACE).withName(service).get());
+        }
+        LOGGER.info("Deleting");
+        Async updateAsync = context.async();
+        kco.delete(NAMESPACE, clusterName, ar -> {
+            if (ar.failed()) ar.cause().printStackTrace();
+            context.assertTrue(ar.succeeded());
+            for (String service: services) {
+                assertNull(
+                        "Expected service " + service + " to still not exist",
+                        mockClient.services().inNamespace(NAMESPACE).withName(service).get());
+            }
+            // TODO assert other resources do not exist either
+            updateAsync.complete();
+        });
+    }
+
+    @Test
+    public void testDeleteClusterWithoutZkServices(TestContext context) {
+        String clusterName = cluster.getMetadata().getName();
+        deleteClusterWithoutServices(context,
+                clusterName + "-zookeeper", clusterName + "-zookeeper-headless");
+    }
+
+    @Test
+    public void testDeleteClusterWithoutKafkaServices(TestContext context) {
+        String clusterName = cluster.getMetadata().getName();
+        deleteClusterWithoutServices(context,
+                clusterName + "-kafka", clusterName + "-kafka-headless");
+    }
+
+    private void deleteClusterWithoutStatefulSet(TestContext context, String... statefulSets) {
+        String clusterName = cluster.getMetadata().getName();
+        KubernetesClient mockClient = new MockKube().withInitialCms(Collections.singleton(cluster)
+        ).build();
+
+        KafkaClusterOperations kco = createCluster(context, mockClient);
+        for (String ss: statefulSets) {
+            mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(ss).delete();
+            assertNull("Expected ss " + ss + " to be not exist",
+                    mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(ss).get());
+        }
+        LOGGER.info("Deleting");
+        Async updateAsync = context.async();
+        kco.delete(NAMESPACE, clusterName, ar -> {
+            if (ar.failed()) ar.cause().printStackTrace();
+            context.assertTrue(ar.succeeded());
+            for (String ss: statefulSets) {
+                assertNull(
+                        "Expected ss " + ss + " to still not exist",
+                        mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(ss).get());
+            }
+            // TODO assert other resources do not exist either
+            updateAsync.complete();
+        });
+    }
+
+    @Test
+    public void testDeleteClusterWithoutZkStatefulSet(TestContext context) {
+        String clusterName = cluster.getMetadata().getName();
+        deleteClusterWithoutStatefulSet(context,
+                clusterName + "-zookeeper");
+    }
+
+    @Test
+    public void testDeleteClusterWithoutKafkaStatefulSet(TestContext context) {
+        String clusterName = cluster.getMetadata().getName();
+        deleteClusterWithoutStatefulSet(context,
+                clusterName + "-kafka");
+    }
 
 
 }
