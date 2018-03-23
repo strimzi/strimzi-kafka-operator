@@ -11,6 +11,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.strimzi.controller.topic.zk.Zk;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
+import io.vertx.core.http.HttpServer;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.slf4j.Logger;
@@ -42,6 +43,7 @@ public class Session extends AbstractVerticle {
     TopicWatcher topicWatcher;
     private volatile boolean stopped = false;
     private Zk zk;
+    private volatile HttpServer healthServer;
 
     public Session(KubernetesClient kubeClient, Config config) {
         this.kubeClient = kubeClient;
@@ -90,6 +92,12 @@ public class Session extends AbstractVerticle {
             }
             LOGGER.debug("Closing AdminClient {}", adminClient);
             adminClient.close(timeout - (System.currentTimeMillis() - t0), TimeUnit.MILLISECONDS);
+
+            HttpServer healthServer = this.healthServer;
+            if (healthServer != null) {
+                healthServer.close();
+            }
+
             LOGGER.info("Stopped");
             blockingResult.complete();
         }, stopFuture);
@@ -134,7 +142,7 @@ public class Session extends AbstractVerticle {
             LOGGER.debug("Watching setup");
 
             // start the HTTP server for healthchecks
-            this.startHealthServer();
+            healthServer = this.startHealthServer();
 
         }, "configmap-watcher");
         LOGGER.debug("Starting {}", configMapThread);
@@ -219,9 +227,9 @@ public class Session extends AbstractVerticle {
     /**
      * Start an HTTP health server
      */
-    private void startHealthServer() {
+    private HttpServer startHealthServer() {
 
-        this.vertx.createHttpServer()
+        return this.vertx.createHttpServer()
                 .requestHandler(request -> {
 
                     if (request.path().equals("/healthy")) {
