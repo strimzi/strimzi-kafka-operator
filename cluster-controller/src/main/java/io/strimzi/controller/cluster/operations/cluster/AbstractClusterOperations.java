@@ -37,10 +37,6 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
 
     private static final Logger log = LoggerFactory.getLogger(AbstractClusterOperations.class.getName());
 
-    protected static final String OP_CREATE_UPDATE = "create/update";
-    protected static final String OP_DELETE = "delete";
-
-
     protected static final int LOCK_TIMEOUT = 60000;
 
     protected final Vertx vertx;
@@ -77,7 +73,9 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
     }
 
     /**
-     * Subclasses implement this method to create the cluster.
+     * Subclasses implement this method to create or update the cluster. The implementation
+     * should not assume that any resources are in any particular state (e.g. that the absence on
+     * one resource means that all resources need to be created).
      * @param namespace The namespace containing the cluster.
      * @param name The name of the cluster.
      * @param handler Completion handler
@@ -119,7 +117,7 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
      * Reconciliation works by getting the cluster ConfigMap in the given namespace with the given name and
      * comparing with the corresponding {@linkplain #getResources(String, Labels) resource}.
      * <ul>
-     * <li>A cluster will be {@linkplain #createOrUpdate(String, String, Handler) created} if ConfigMap is without same-named resources</li>
+     * <li>A cluster will be {@linkplain #createOrUpdate(String, String, Handler) createed or updated} if ConfigMap is without same-named resources</li>
      * <li>A cluster will be {@linkplain #delete(String, String, Handler) deleted} if resources without same-named ConfigMap</li>
      * </ul>
      * @param namespace The namespace

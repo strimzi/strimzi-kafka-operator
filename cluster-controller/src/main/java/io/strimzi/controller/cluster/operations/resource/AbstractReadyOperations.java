@@ -14,6 +14,16 @@ import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Specializes {@link AbstractOperations} for resources which also have a notion
+ * of being "ready".
+ * @param <C> The type of client used to interact with kubernetes.
+ * @param <T> The Kubernetes resource type.
+ * @param <L> The list variant of the Kubernetes resource type.
+ * @param <D> The doneable variant of the Kubernetes resource type.
+ * @param <R> The resource operations.
+ * @param <P> The type of the {@link #reconcile(String, String, HasMetadata)}result
+ */
 public abstract class AbstractReadyOperations<C, T extends HasMetadata, L extends KubernetesResourceList/*<T>*/, D, R extends Resource<T, D>, P>
         extends AbstractOperations<C, T, L, D, R, P> {
 
@@ -52,9 +62,7 @@ public abstract class AbstractReadyOperations<C, T extends HasMetadata, L extend
                             if (isReady(namespace, name))   {
                                 future.complete();
                             } else {
-                                if (log.isTraceEnabled()) {
-                                    log.trace("{} {} in namespace {} is not ready", resourceKind, name, namespace);
-                                }
+                                log.trace("{} {} in namespace {} is not ready", resourceKind, name, namespace);
                                 future.fail("Not ready yet");
                             }
                         } catch (Throwable e) {

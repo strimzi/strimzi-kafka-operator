@@ -81,7 +81,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
         Future<Void> f = Future.<Void>future().setHandler(handler);
         updateZk(namespace, name)
             .compose(i -> updateKafka(namespace, name))
-            .compose(i -> updateTopicController(namespace, name).map((Void) null))
+            .compose(i -> updateTopicController(namespace, name))
             .compose(ar -> f.complete(), f);
     }
 
