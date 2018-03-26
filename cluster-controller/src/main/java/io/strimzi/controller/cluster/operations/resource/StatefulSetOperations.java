@@ -55,7 +55,8 @@ public class StatefulSetOperations<P> extends AbstractScalableOperations<Kuberne
      * once the pod has been recreated and is ready the process proceeds with the pod with the next higher number.
      */
     public Future<Void> rollingUpdate(String namespace, String name) {
-        return rollingUpdate(namespace, name, podName -> podOperations.isReady(namespace, podName));
+        return rollingUpdate(namespace, name,
+                podName -> podOperations.isReady(namespace, podName));
     }
 
     /**

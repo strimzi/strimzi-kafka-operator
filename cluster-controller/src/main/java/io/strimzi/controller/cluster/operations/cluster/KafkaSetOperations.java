@@ -10,19 +10,15 @@ import io.strimzi.controller.cluster.operations.resource.ReconcileResult;
 import io.strimzi.controller.cluster.operations.resource.StatefulSetOperations;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-
-import java.util.HashSet;
-
-import static io.strimzi.controller.cluster.resources.KafkaCluster.KEY_KAFKA_DEFAULT_REPLICATION_FACTOR;
-import static io.strimzi.controller.cluster.resources.KafkaCluster.KEY_KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR;
-import static io.strimzi.controller.cluster.resources.KafkaCluster.KEY_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR;
-import static io.strimzi.controller.cluster.resources.KafkaCluster.KEY_KAFKA_ZOOKEEPER_CONNECT;
-import static java.util.Arrays.asList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Specialization of {@link StatefulSetOperations} for StatefulSets of Kafka brokers
  */
 public class KafkaSetOperations extends StatefulSetOperations<Boolean> {
+
+    private static final Logger log = LoggerFactory.getLogger(KafkaSetOperations.class);
 
     /**
      * Constructor
@@ -36,26 +32,28 @@ public class KafkaSetOperations extends StatefulSetOperations<Boolean> {
 
     @Override
     protected Future<ReconcileResult<Boolean>> internalPatch(String namespace, String name, StatefulSet current, StatefulSet desired) {
-        boolean different = needsRollingUpdate(current, desired);
-        return super.internalPatch(namespace, name, current, desired).map(r -> {
-            if (r instanceof ReconcileResult.Patched) {
-                return ReconcileResult.patched(different);
-            } else {
-                return r;
-            }
-        });
+        StatefulSetDiff diff = new StatefulSetDiff(current, desired);
+        if (diff.changesVolumeClaimTemplates()) {
+            log.warn("Ignoring change to volumeClaim");
+            desired.getSpec().setVolumeClaimTemplates(current.getSpec().getVolumeClaimTemplates());
+            diff = new StatefulSetDiff(current, desired);
+        }
+        if (diff.isEmpty()) {
+            return Future.succeededFuture(ReconcileResult.noop());
+        } else {
+            boolean different = needsRollingUpdate(diff);
+            return super.internalPatch(namespace, name, current, desired).map(r -> {
+                if (r instanceof ReconcileResult.Patched) {
+                    return ReconcileResult.patched(different);
+                } else {
+                    return r;
+                }
+            });
+        }
     }
 
-    static boolean needsRollingUpdate(StatefulSet current, StatefulSet desired) {
-        return Diffs.differingLabels(current, desired)
-                    || Diffs.differingContainers(
-                            current.getSpec().getTemplate().getSpec().getContainers().get(0),
-                            desired.getSpec().getTemplate().getSpec().getContainers().get(0))
-                    || Diffs.differingEnvironments(
-                            current.getSpec().getTemplate().getSpec().getContainers().get(0),
-                            desired.getSpec().getTemplate().getSpec().getContainers().get(0),
-                        new HashSet(asList(KEY_KAFKA_ZOOKEEPER_CONNECT, KEY_KAFKA_DEFAULT_REPLICATION_FACTOR,
-                                KEY_KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR, KEY_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR))
-                    );
+    static boolean needsRollingUpdate(StatefulSetDiff diff) {
+        return diff.changesLabels()
+                    || diff.changesSpecTemplateSpec();
     }
 }

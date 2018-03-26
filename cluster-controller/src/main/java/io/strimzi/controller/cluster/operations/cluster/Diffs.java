@@ -4,9 +4,11 @@
  */
 package io.strimzi.controller.cluster.operations.cluster;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
+import io.fabric8.zjsonpatch.JsonDiff;
 
 import java.util.Iterator;
 import java.util.List;
@@ -15,6 +17,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiPredicate;
 
+import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
 import static io.strimzi.controller.cluster.resources.AbstractCluster.containerEnvVars;
 
 class Diffs {
@@ -71,5 +74,17 @@ class Diffs {
             bVars.keySet().retainAll(keys);
         }
         return !aVars.equals(bVars);
+    }
+
+    public static boolean changesVolumeClaim(StatefulSet current, StatefulSet updated) {
+        JsonNode diff = JsonDiff.asJson(patchMapper().valueToTree(current), patchMapper().valueToTree(updated));
+        System.out.println(diff);
+        for (JsonNode d: diff) {
+            if (d.get("path").asText().startsWith("/spec/volumeClaimTemplates")) {
+                return true;
+            }
+        }
+        return false;
+
     }
 }

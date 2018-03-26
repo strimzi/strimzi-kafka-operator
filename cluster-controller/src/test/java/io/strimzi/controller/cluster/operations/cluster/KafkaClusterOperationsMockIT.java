@@ -6,7 +6,11 @@ package io.strimzi.controller.cluster.operations.cluster;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.fabric8.kubernetes.client.Watcher;
 import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
 import io.strimzi.controller.cluster.operations.resource.DeploymentOperations;
 import io.strimzi.controller.cluster.operations.resource.PvcOperations;
@@ -34,6 +38,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.mockito.ArgumentMatchers.any;
 
 @RunWith(VertxUnitRunner.class)
 public class KafkaClusterOperationsMockIT {
@@ -49,7 +54,7 @@ public class KafkaClusterOperationsMockIT {
             .withNamespace(NAMESPACE)
             .withLabels(Labels.forKind("cluster").withType(KafkaClusterOperations.CLUSTER_TYPE_KAFKA).toMap())
             .endMetadata()
-            .withData(map(KafkaCluster.KEY_REPLICAS, "7",
+            .withData(map(KafkaCluster.KEY_REPLICAS, "2",
                     KafkaCluster.KEY_STORAGE, "{\"type\": \"ephemeral\"}",
                     ZookeeperCluster.KEY_REPLICAS, "3",
                     ZookeeperCluster.KEY_STORAGE, "{\"type\": \"ephemeral\"}"))
@@ -278,6 +283,47 @@ public class KafkaClusterOperationsMockIT {
         String clusterName = cluster.getMetadata().getName();
         deleteClusterWithoutStatefulSet(context,
                 clusterName + "-kafka");
+    }
+
+    @Test
+    public void testUpdateWithChangedPersistentVolume(TestContext context) {
+        String clusterName = cluster.getMetadata().getName();
+        KubernetesClient mockClient = new MockKube().withInitialCms(Collections.singleton(cluster)).build();
+
+        mockClient.pods().inNamespace(NAMESPACE).withName("my-cluster-kafka-0").watch(new Watcher<Pod>() {
+            @Override
+            public void eventReceived(Watcher.Action action, Pod resource) {
+                if (action == Action.DELETED) {
+                    vertx.setTimer(200, timerId -> mockClient.pods().inNamespace(NAMESPACE).withName(resource.getMetadata().getName()).create(resource));
+                }
+            }
+            @Override
+            public void onClose(KubernetesClientException e) {
+
+            }
+        });
+
+        KafkaClusterOperations kco = createCluster(context, mockClient);
+        LOGGER.info("Reconciling again -> update");
+        Async updateAsync = context.async();
+
+        HashMap<String, String> data = new HashMap<>(cluster.getData());
+        data.put(KafkaCluster.KEY_STORAGE, "{\"type\": \"persistent-claim\", "
+                + "\"size\": \"123\", "
+                + "\"class\": \"bar\","
+                + "\"delete-claim\": true}");
+        ConfigMap changedClusterCm = new ConfigMapBuilder(cluster).withData(data).build();
+        mockClient.configMaps().inNamespace(NAMESPACE).withName("my-cluster").patch(changedClusterCm);
+
+        LOGGER.info("Updating with changed storage");
+        kco.createOrUpdate(NAMESPACE, clusterName, ar -> {
+            if (ar.failed()) ar.cause().printStackTrace();
+            context.assertTrue(ar.succeeded());
+            StatefulSet statefulSet = mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName("my-cluster-kafka").get();
+            context.assertNotNull(statefulSet);
+            context.assertEquals("", statefulSet.getSpec().getVolumeClaimTemplates().get(0).getSpec().getStorageClassName());
+            updateAsync.complete();
+        });
     }
 
 

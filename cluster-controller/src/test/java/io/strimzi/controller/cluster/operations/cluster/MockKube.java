@@ -20,6 +20,7 @@ import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimList;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.PodList;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceList;
@@ -31,6 +32,8 @@ import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSetList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.fabric8.kubernetes.client.Watch;
+import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.AppsAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.EditReplacePatchDeletable;
 import io.fabric8.kubernetes.client.dsl.ExtensionsAPIGroupDSL;
@@ -46,6 +49,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -56,6 +60,7 @@ import static java.util.Collections.emptySet;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -63,16 +68,18 @@ public class MockKube {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MockKube.class);
 
-    private Map<String, ConfigMap> cmDb = db(emptySet());
-    private Map<String, PersistentVolumeClaim> pvcDb = db(emptySet());
-    private Map<String, Service> svcDb = db(emptySet());
-    private Map<String, Endpoints> endpointDb = db(emptySet());
-    private Map<String, Pod> podDb = db(emptySet());
-    private Map<String, StatefulSet> ssDb = db(emptySet());
-    private Map<String, Deployment> depDb = db(emptySet());
+    private final Map<String, ConfigMap> cmDb = db(emptySet(), ConfigMap.class, DoneableConfigMap.class);
+    private final Collection<Watcher<ConfigMap>> cmWatchers = new ArrayList();
+    private final Map<String, PersistentVolumeClaim> pvcDb = db(emptySet(), PersistentVolumeClaim.class, DoneablePersistentVolumeClaim.class);
+    private final Map<String, Service> svcDb = db(emptySet(), Service.class, DoneableService.class);
+    private final Map<String, Endpoints> endpointDb = db(emptySet(), Endpoints.class, DoneableEndpoints.class);
+    private final Map<String, Pod> podDb = db(emptySet(), Pod.class, DoneablePod.class);
+    private final Collection<Watcher<Pod>> podWatchers = new HashSet<>();
+    private final Map<String, StatefulSet> ssDb = db(emptySet(), StatefulSet.class, DoneableStatefulSet.class);
+    private final Map<String, Deployment> depDb = db(emptySet(), Deployment.class, DoneableDeployment.class);
 
     public MockKube withInitialCms(Set<ConfigMap> initialCms) {
-        this.cmDb = db(initialCms);
+        this.cmDb.putAll(db(initialCms, ConfigMap.class, DoneableConfigMap.class));
         return this;
     }
 
@@ -99,13 +106,24 @@ public class MockKube {
         when(mockClient.pods()).thenReturn(mockPods);
         when(mockClient.endpoints()).thenReturn(mockEndpoints);
         when(mockClient.persistentVolumeClaims()).thenReturn(mockPvcs);
+
         return mockClient;
     }
 
-    private static <T extends HasMetadata> Map<String, T> db(Collection<T> initialResources) {
+    private static <T extends HasMetadata, D extends Doneable<T>> Map<String, T> db(Collection<T> initialResources, Class<T> cls, Class<D> doneableClass) {
         return new HashMap(initialResources.stream().collect(Collectors.toMap(
             c -> c.getMetadata().getName(),
-            c -> c)));
+            c -> copyResource(c, cls, doneableClass))));
+    }
+
+    private static <T extends HasMetadata, D extends Doneable<T>> T copyResource(T resource, Class<T> resourceClass, Class<D> doneableClass) {
+        try {
+            D doneableInstance = doneableClass.getDeclaredConstructor(resourceClass).newInstance(resource);
+            T done = (T) Doneable.class.getMethod("done").invoke(doneableInstance);
+            return done;
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -162,20 +180,31 @@ public class MockKube {
     }
 
     private <CM extends HasMetadata, DCM extends Doneable<CM>, R extends Resource<CM, DCM>>
-        void mockDelete(String resourceType, Map<String, CM> db, String resourceName, R resource) {
+        void mockDelete(String resourceType, Map<String, CM> db, Collection<Watcher<CM>> watchers, String resourceName, R resource) {
         when(resource.delete()).thenAnswer(i -> {
             LOGGER.debug("delete {} {}", resourceType, resourceName);
-            return db.remove(resourceName) != null;
+            CM removed = db.remove(resourceName);
+            if (removed != null && watchers != null) {
+                for (Watcher<CM> watcher : watchers) {
+                    watcher.eventReceived(Watcher.Action.DELETED, removed);
+                }
+            }
+            return removed != null;
         });
     }
 
     private <CM extends HasMetadata, DCM extends Doneable<CM>, R extends Resource<CM, DCM>>
-        void mockPatch(String resourceType, Map<String, CM> db, String resourceName, R resource) {
+        void mockPatch(String resourceType, Map<String, CM> db, Collection<Watcher<CM>> watchers, String resourceName, R resource) {
         when(resource.patch(any())).thenAnswer(i -> {
             checkDoesExist(db, resourceType, resourceName);
             CM argument = i.getArgument(0);
             LOGGER.debug("patch {} {} -> {}", resourceType, resourceName, resource);
             db.put(resourceName, argument);
+            if (watchers != null) {
+                for (Watcher<CM> watcher : watchers) {
+                    watcher.eventReceived(Watcher.Action.MODIFIED, argument);
+                }
+            }
             return argument;
         });
     }
@@ -187,12 +216,32 @@ public class MockKube {
     }
 
     private <CM extends HasMetadata, DCM extends Doneable<CM>, R extends Resource<CM, DCM>>
-        void mockCreate(String resourceType, Map<String, CM> db, String resourceName, R resource) {
+    void mockWatch(String resourceType, Collection<Watcher<CM>> watchers, R resource) {
+        when(resource.watch(any())).thenAnswer(i -> {
+            Watcher<CM> argument = (Watcher<CM>) i.getArguments()[0];
+            LOGGER.debug("watch {} {} ", resourceType, argument);
+            watchers.add(argument);
+            Watch watch = mock(Watch.class);
+            doAnswer(z -> {
+                watchers.remove(argument);
+                return null;
+            }).when(watch).close();
+            return watch;
+        });
+    }
+
+    private <CM extends HasMetadata, DCM extends Doneable<CM>, R extends Resource<CM, DCM>>
+        void mockCreate(String resourceType, Map<String, CM> db, Collection<Watcher<CM>> watchers, String resourceName, R resource) {
         when(resource.create(any())).thenAnswer(i -> {
             checkNotExists(db, resourceType, resourceName);
             CM argument = (CM) i.getArguments()[0];
             LOGGER.debug("create {} {} -> {}", resourceType, resourceName, argument);
             db.put(resourceName, argument);
+            if (watchers != null) {
+                for (Watcher<CM> watcher : watchers) {
+                    watcher.eventReceived(Watcher.Action.ADDED, argument);
+                }
+            }
             return argument;
         });
     }
@@ -210,7 +259,7 @@ public class MockKube {
         OngoingStubbing<Boolean> mockIsReady(String resourceType, String resourceName, R resource) {
         return when(resource.isReady()).thenAnswer(i -> {
             LOGGER.debug("{} {} is ready", resourceType, resourceName);
-            return true;
+            return Boolean.TRUE;
         });
     }
 
@@ -223,10 +272,11 @@ public class MockKube {
             ConfigMapList.class,
             (resource, resourceName) -> {
                 mockGet(resourceType, cmDb, resourceName, resource);
-                mockCreate(resourceType, cmDb, resourceName, resource);
+                mockWatch(resourceType, cmWatchers, resource);
+                mockCreate(resourceType, cmDb, cmWatchers, resourceName, resource);
                 mockCascading(resource);
-                mockPatch(resourceType, cmDb, resourceName, resource);
-                mockDelete(resourceType, cmDb, resourceName, resource);
+                mockPatch(resourceType, cmDb, cmWatchers, resourceName, resource);
+                mockDelete(resourceType, cmDb, cmWatchers, resourceName, resource);
             });
     }
 
@@ -238,10 +288,10 @@ public class MockKube {
             PersistentVolumeClaimList.class,
             (resource, resourceName) -> {
                 mockGet(resourceType, pvcDb, resourceName, resource);
-                mockCreate(resourceType, pvcDb, resourceName, resource);
+                mockCreate(resourceType, pvcDb, null, resourceName, resource);
                 mockCascading(resource);
-                mockPatch(resourceType, pvcDb, resourceName, resource);
-                mockDelete(resourceType, pvcDb, resourceName, resource);
+                mockPatch(resourceType, pvcDb, null, resourceName, resource);
+                mockDelete(resourceType, pvcDb, null, resourceName, resource);
             });
     }
 
@@ -253,10 +303,10 @@ public class MockKube {
                 EndpointsList.class,
             (resource, resourceName) -> {
                 mockGet(resourceType, endpointDb, resourceName, resource);
-                mockCreate(resourceType, endpointDb, resourceName, resource);
+                mockCreate(resourceType, endpointDb, null, resourceName, resource);
                 mockCascading(resource);
-                mockPatch(resourceType, endpointDb, resourceName, resource);
-                mockDelete(resourceType, endpointDb, resourceName, resource);
+                mockPatch(resourceType, endpointDb, null, resourceName, resource);
+                mockDelete(resourceType, endpointDb, null, resourceName, resource);
                 mockIsReady(resourceType, resourceName, resource);
             });
     }
@@ -272,8 +322,8 @@ public class MockKube {
                 mockGet(resourceType, svcDb, resourceName, resource);
                 //mockCreate("endpoint", endpointDb, resourceName, resource);
                 mockCascading(resource);
-                mockPatch(resourceType, svcDb, resourceName, resource);
-                mockDelete(resourceType, svcDb, resourceName, resource);
+                mockPatch(resourceType, svcDb, null, resourceName, resource);
+                mockDelete(resourceType, svcDb, null, resourceName, resource);
                 when(resource.create(any())).thenAnswer(i -> {
                     Service argument = i.getArgument(0);
                     svcDb.put(resourceName, argument);
@@ -293,10 +343,11 @@ public class MockKube {
             PodList.class,
             (resource, resourceName) -> {
                 mockGet(resourceType, podDb, resourceName, resource);
-                mockCreate(resourceType, podDb, resourceName, resource);
+                mockWatch(resourceType, podWatchers, resource);
+                mockCreate(resourceType, podDb, podWatchers, resourceName, resource);
                 mockCascading(resource);
-                mockPatch(resourceType, podDb, resourceName, resource);
-                mockDelete(resourceType, podDb, resourceName, resource);
+                mockPatch(resourceType, podDb, podWatchers, resourceName, resource);
+                mockDelete(resourceType, podDb, podWatchers, resourceName, resource);
                 mockIsReady(resourceType, resourceName, resource);
             });
     }
@@ -309,10 +360,10 @@ public class MockKube {
             DeploymentList.class,
             (resource, resourceName) -> {
                 mockGet(resourceType, depDb, resourceName, resource);
-                mockCreate(resourceType, depDb, resourceName, resource);
+                mockCreate(resourceType, depDb, null, resourceName, resource);
                 mockCascading(resource);
-                mockPatch(resourceType, depDb, resourceName, resource);
-                mockDelete(resourceType, depDb, resourceName, resource);
+                mockPatch(resourceType, depDb, null, resourceName, resource);
+                mockDelete(resourceType, depDb, null, resourceName, resource);
             }
         );
     }
@@ -327,16 +378,21 @@ public class MockKube {
                 mockGet(resourceType, ssDb, resourceName, resource);
                 //mockCreate("endpoint", endpointDb, resourceName, resource);
                 mockCascading(resource);
-                mockPatch(resourceType, ssDb, resourceName, resource);
-                mockDelete(resourceType, ssDb, resourceName, resource);
+                mockPatch(resourceType, ssDb, null, resourceName, resource);
+                mockDelete(resourceType, ssDb, null, resourceName, resource);
+                mockIsReady(resourceType, resourceName, resource);
                 when(resource.create(any())).thenAnswer(cinvocation -> {
                     checkNotExists(ssDb, resourceType, resourceName);
                     StatefulSet argument = cinvocation.getArgument(0);
                     LOGGER.debug("create {} {} -> {}", resourceType, resourceName, argument);
                     ssDb.put(resourceName, argument);
                     for (int i = 0; i < argument.getSpec().getReplicas(); i++) {
-                        podDb.put(argument.getMetadata().getName() + "-" + i,
-                                new Pod());
+                        String podName = argument.getMetadata().getName() + "-" + i;
+                        podDb.put(podName,
+                                new PodBuilder().withNewMetadata()
+                                        .withNamespace(argument.getMetadata().getNamespace())
+                                        .withName(podName)
+                                .endMetadata().build());
                     }
                     return argument;
                 });

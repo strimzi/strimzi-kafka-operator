@@ -43,18 +43,26 @@ public class KafkaSetOperationsTest {
         String image = "bar";
         int healthDelay = 120;
         int healthTimeout = 30;
-        return ResourceUtils.createKafkaClusterConfigMap(clusterCmNamespace, clusterCmName, replicas, image, healthDelay, healthTimeout, METRICS_CONFIG);
+        return ResourceUtils.createKafkaClusterConfigMap(clusterCmNamespace, clusterCmName, replicas, image, healthDelay, healthTimeout, METRICS_CONFIG,
+                "{\"type\": \"persistent-claim\", " +
+                        "\"size\": \"123\", " +
+                        "\"class\": \"foo\"," +
+                        "\"delete-claim\": true}");
+    }
+
+    private StatefulSetDiff diff() {
+        return new StatefulSetDiff(a, b);
     }
 
     @Test
     public void testNotNeedsRollingUpdateIdentical() {
-        assertFalse(KafkaSetOperations.needsRollingUpdate(a, b));
+        assertFalse(KafkaSetOperations.needsRollingUpdate(diff()));
     }
 
     @Test
     public void testNotNeedsRollingUpdateReplicas() {
         a.getSpec().setReplicas(b.getSpec().getReplicas() + 1);
-        assertFalse(KafkaSetOperations.needsRollingUpdate(a, b));
+        assertFalse(KafkaSetOperations.needsRollingUpdate(diff()));
     }
 
     @Test
@@ -62,28 +70,28 @@ public class KafkaSetOperationsTest {
         Map<String, String> labels = new HashMap(b.getMetadata().getLabels());
         labels.put("foo", "bar");
         a.getMetadata().setLabels(labels);
-        assertTrue(KafkaSetOperations.needsRollingUpdate(a, b));
+        assertTrue(KafkaSetOperations.needsRollingUpdate(diff()));
     }
 
     @Test
     public void testNeedsRollingUpdateImage() {
         a.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(
                 a.getSpec().getTemplate().getSpec().getContainers().get(0).getImage() + "-foo");
-        assertTrue(KafkaSetOperations.needsRollingUpdate(a, b));
+        assertTrue(KafkaSetOperations.needsRollingUpdate(diff()));
     }
 
     @Test
     public void testNeedsRollingUpdateReadinessDelay() {
         a.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().setInitialDelaySeconds(
                 a.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds() + 1);
-        assertTrue(KafkaSetOperations.needsRollingUpdate(a, b));
+        assertTrue(KafkaSetOperations.needsRollingUpdate(diff()));
     }
 
     @Test
     public void testNeedsRollingUpdateReadinessTimeout() {
         a.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().setTimeoutSeconds(
                 a.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds() + 1);
-        assertTrue(KafkaSetOperations.needsRollingUpdate(a, b));
+        assertTrue(KafkaSetOperations.needsRollingUpdate(diff()));
     }
 
     @Test
@@ -91,7 +99,7 @@ public class KafkaSetOperationsTest {
         String envVar = KEY_KAFKA_ZOOKEEPER_CONNECT;
         a.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().add(new EnvVar(envVar,
                 containerEnvVars(a.getSpec().getTemplate().getSpec().getContainers().get(0)).get(envVar) + "-foo", null));
-        assertTrue(KafkaSetOperations.needsRollingUpdate(a, b));
+        assertTrue(KafkaSetOperations.needsRollingUpdate(diff()));
     }
 
     @Test
@@ -99,7 +107,7 @@ public class KafkaSetOperationsTest {
         String envVar = KEY_KAFKA_DEFAULT_REPLICATION_FACTOR;
         a.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().add(new EnvVar(envVar,
                 containerEnvVars(a.getSpec().getTemplate().getSpec().getContainers().get(0)).get(envVar) + "-foo", null));
-        assertTrue(KafkaSetOperations.needsRollingUpdate(a, b));
+        assertTrue(KafkaSetOperations.needsRollingUpdate(diff()));
     }
 
     @Test
@@ -107,7 +115,7 @@ public class KafkaSetOperationsTest {
         String envVar = KEY_KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR;
         a.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().add(new EnvVar(envVar,
                 containerEnvVars(a.getSpec().getTemplate().getSpec().getContainers().get(0)).get(envVar) + "-foo", null));
-        assertTrue(KafkaSetOperations.needsRollingUpdate(a, b));
+        assertTrue(KafkaSetOperations.needsRollingUpdate(diff()));
     }
 
     @Test
@@ -115,7 +123,7 @@ public class KafkaSetOperationsTest {
         String envVar = KEY_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR;
         a.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().add(new EnvVar(envVar,
                 containerEnvVars(a.getSpec().getTemplate().getSpec().getContainers().get(0)).get(envVar) + "-foo", null));
-        assertTrue(KafkaSetOperations.needsRollingUpdate(a, b));
+        assertTrue(KafkaSetOperations.needsRollingUpdate(diff()));
     }
 
     @Test
@@ -123,6 +131,22 @@ public class KafkaSetOperationsTest {
         String envVar = "SOME_RANDOM_ENV";
         a.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().add(new EnvVar(envVar,
                 "foo", null));
-        assertFalse(KafkaSetOperations.needsRollingUpdate(a, b));
+        assertFalse(KafkaSetOperations.needsRollingUpdate(diff()));
+    }
+
+    @Test
+    public void testFoo() {
+        Map<String, String> labels = new HashMap(b.getMetadata().getLabels());
+        labels.put("foo", "bar");
+        a.getMetadata().setLabels(labels);
+
+        String envVar = "SOME_RANDOM_ENV";
+        a.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().add(new EnvVar(envVar,
+                "foo", null));
+        //a.getSpec().getVolumeClaimTemplates().get(0).getSpec().setStorageClassName("tom");
+        a.getSpec().setReplicas(45);
+        if (Diffs.changesVolumeClaim(a, b)) {
+            System.out.println("Changes VC)");
+        }
     }
 }
