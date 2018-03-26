@@ -5,6 +5,18 @@ function install_kubectl {
     sudo cp kubectl /usr/bin
 }
 
+function install_registry {
+    sudo -E $TEST_CLUSTER addons enable registry
+    # Wait for the registry pod to be ready
+
+    until $(kubectl --namespace=kube-system get po $(kubectl get po -n kube-system | grep 'registry-[a-z0-9]' | awk '{print $1;}') --no-headers | grep -Eq '([1-9]+[0-9]*)/\1'); do
+        printf '.';
+        sleep 5;
+    done
+
+    kubectl port-forward --namespace kube-system $POD 5000:5000 &
+}
+
 if [ "$TEST_CLUSTER" = "minikube" ]; then
     install_kubectl
     curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 && chmod +x minikube
@@ -22,6 +34,9 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
     export KUBECONFIG=$HOME/.kube/config
     sudo -E minikube start --vm-driver=none --insecure-registry localhost:5000
     sudo -E minikube addons enable default-storageclass
+    sudo -E minikube addons enable registry
+    install_registry
+
 elif [ "$TEST_CLUSTER" = "minishift" ]; then
     #install_kubectl
     MS_VERSION=1.13.1
@@ -40,6 +55,8 @@ elif [ "$TEST_CLUSTER" = "minishift" ]; then
     export KUBECONFIG=$HOME/.kube/config
     sudo -E minishift start
     sudo -E minishift addons enable default-storageclass
+    sudo -E minishift addons enable registry
+    install_registry
 elif [ "$TEST_CLUSTER" = "oc" ]; then
     mkdir -p /tmp/openshift
     wget https://github.com/openshift/origin/releases/download/v3.7.0/openshift-origin-client-tools-v3.7.0-7ed6862-linux-64bit.tar.gz -O openshift.tar.gz

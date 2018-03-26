@@ -16,6 +16,7 @@ if [ "$PULL_REQUEST" != "false" ] ; then
 
 elif [ "$TAG" = "latest" ] && [ "$BRANCH" != "master" ]; then
     echo "Not in master branch and not in release tag - nothing to push"
+    DOCKER_REGISTRY=localhost:5000 make docker_push
 else
     echo "Login into Docker Hub ..."
     docker login -u $DOCKER_USER -p $DOCKER_PASS
