@@ -115,7 +115,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
         return chainFuture;
     };
 
-    private final Future<Void> deleteKafka(String namespace, String name) {
+    private final Future<CompositeFuture> deleteKafka(String namespace, String name) {
         StatefulSet ss = kafkaSetOperations.get(namespace, KafkaCluster.kafkaClusterName(name));
 
         KafkaCluster kafka = ss == null ? null : KafkaCluster.fromStatefulSet(ss, namespace, name);
@@ -138,7 +138,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
         // TODO wait for endpoints and pods to disappear
 
-        return CompositeFuture.join(result).map((Void) null);
+        return CompositeFuture.join(result);
     };
 
     private final Future<Void> updateZk(String namespace, String name) {
@@ -168,7 +168,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
         return chainFuture;
     };
 
-    private final Future<Void> deleteZk(String namespace, String name) {
+    private final Future<CompositeFuture> deleteZk(String namespace, String name) {
         StatefulSet ss = zkSetOperations.get(namespace, ZookeeperCluster.zookeeperClusterName(name));
         ZookeeperCluster zk = ss == null ? null : ZookeeperCluster.fromStatefulSet(ss, namespace, name);
         // TODO If the SS (and the CM) has gone, how do we know whether to delete the claims?
@@ -190,18 +190,18 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
         // TODO wait for endpoints and pods to disappear
 
-        return CompositeFuture.join(result).map((Void) null);
+        return CompositeFuture.join(result);
     };
 
-    private final Future<Void> updateTopicController(String namespace, String name) {
+    private final Future<ReconcileResult<Void>> updateTopicController(String namespace, String name) {
         ConfigMap tcConfigMap = configMapOperations.get(namespace, name);
         TopicController topicController = TopicController.fromConfigMap(tcConfigMap);
         Deployment deployment = topicController != null ? topicController.generateDeployment() : null;
-        return deploymentOperations.reconcile(namespace, topicControllerName(name), deployment).map((Void) null);
+        return deploymentOperations.reconcile(namespace, topicControllerName(name), deployment);
     };
 
-    private final Future<Void> deleteTopicController(String namespace, String name) {
-        return deploymentOperations.reconcile(namespace, topicControllerName(name), null).map((Void) null);
+    private final Future<ReconcileResult<Void>> deleteTopicController(String namespace, String name) {
+        return deploymentOperations.reconcile(namespace, topicControllerName(name), null);
         // TODO wait for pod to disappear
     };
 
