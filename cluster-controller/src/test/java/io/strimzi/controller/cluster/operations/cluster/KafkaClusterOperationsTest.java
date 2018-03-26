@@ -616,13 +616,13 @@ public class KafkaClusterOperationsTest {
             // rolling restart
             Set<String> expectedRollingRestarts = set();
             if (KafkaSetOperations.needsRollingUpdate(
-                    originalKafkaCluster.generateStatefulSet(openShift),
-                    updatedKafkaCluster.generateStatefulSet(openShift))) {
+                    new StatefulSetDiff(originalKafkaCluster.generateStatefulSet(openShift),
+                    updatedKafkaCluster.generateStatefulSet(openShift)))) {
                 expectedRollingRestarts.add(originalKafkaCluster.getName());
             }
             if (ZookeeperSetOperations.needsRollingUpdate(
-                    originalZookeeperCluster.generateStatefulSet(openShift),
-                    updatedZookeeperCluster.generateStatefulSet(openShift))) {
+                    new StatefulSetDiff(originalZookeeperCluster.generateStatefulSet(openShift),
+                            updatedZookeeperCluster.generateStatefulSet(openShift)))) {
                 expectedRollingRestarts.add(originalZookeeperCluster.getName());
             }
             //context.assertEquals(expectedRollingRestarts, rollingRestarts);

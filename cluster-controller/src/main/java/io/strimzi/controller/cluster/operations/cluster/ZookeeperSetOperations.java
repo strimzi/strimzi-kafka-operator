@@ -10,6 +10,8 @@ import io.strimzi.controller.cluster.operations.resource.ReconcileResult;
 import io.strimzi.controller.cluster.operations.resource.StatefulSetOperations;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 
@@ -19,6 +21,8 @@ import static io.strimzi.controller.cluster.resources.ZookeeperCluster.KEY_ZOOKE
  * Specialization of {@link StatefulSetOperations} for StatefulSets of Zookeeper nodes
  */
 public class ZookeeperSetOperations extends StatefulSetOperations<Boolean> {
+
+    private static final Logger log = LoggerFactory.getLogger(ZookeeperSetOperations.class);
 
     /**
      * Constructor
@@ -32,27 +36,30 @@ public class ZookeeperSetOperations extends StatefulSetOperations<Boolean> {
 
     @Override
     protected Future<ReconcileResult<Boolean>> internalPatch(String namespace, String name, StatefulSet current, StatefulSet desired) {
-        boolean different = needsRollingUpdate(current, desired);
-        return super.internalPatch(namespace, name, current, desired).map(r -> {
-            if (r instanceof ReconcileResult.Patched) {
-                return ReconcileResult.patched(different);
-            } else {
-                return r;
-            }
-        });
+        StatefulSetDiff diff = new StatefulSetDiff(current, desired);
+        if (diff.changesVolumeClaimTemplates()) {
+            log.warn("Ignoring change to volumeClaim");
+            desired.getSpec().setVolumeClaimTemplates(current.getSpec().getVolumeClaimTemplates());
+            diff = new StatefulSetDiff(current, desired);
+        }
+        if (diff.isEmpty()) {
+            return Future.succeededFuture(ReconcileResult.noop());
+        } else {
+            boolean different = needsRollingUpdate(diff);
+            return super.internalPatch(namespace, name, current, desired).map(r -> {
+                if (r instanceof ReconcileResult.Patched) {
+                    return ReconcileResult.patched(different);
+                } else {
+                    return r;
+                }
+            });
+        }
     }
 
-    static boolean needsRollingUpdate(StatefulSet current, StatefulSet desired) {
+    static boolean needsRollingUpdate(StatefulSetDiff diff) {
         // Because for ZK the brokers know about each other via the config, and rescaling requires a rolling update
-        return Diffs.differingScale(current, desired)
-                    || Diffs.differingLabels(current, desired)
-                    || Diffs.differingContainers(current, desired)
-                    || Diffs.differingContainers(
-                            current.getSpec().getTemplate().getSpec().getContainers().get(0),
-                            desired.getSpec().getTemplate().getSpec().getContainers().get(0))
-                    || Diffs.differingEnvironments(
-                            current.getSpec().getTemplate().getSpec().getContainers().get(0),
-                            desired.getSpec().getTemplate().getSpec().getContainers().get(0),
-                        Collections.singleton(KEY_ZOOKEEPER_METRICS_ENABLED));
+        return diff.changesSpecReplicas()
+                    || diff.changesLabels()
+                    || diff.changesSpecTemplateSpec();
     }
 }
