@@ -5,16 +5,19 @@ function install_kubectl {
     sudo cp kubectl /usr/bin
 }
 
+function get_registry_pod {
+    kubectl get po -n kube-system | grep 'registry-[a-z0-9]' | awk '{print $1;}'
+}
+
 function install_registry {
     sudo -E $TEST_CLUSTER addons enable registry
     # Wait for the registry pod to be ready
-
-    until $(kubectl --namespace=kube-system get po $(kubectl get po -n kube-system | grep 'registry-[a-z0-9]' | awk '{print $1;}') --no-headers | grep -Eq '([1-9]+[0-9]*)/\1'); do
+    until $(kubectl --namespace=kube-system get po $(get_registry_pod) --no-headers | grep -Eq '([1-9]+[0-9]*)/\1'); do
         printf '.';
         sleep 5;
     done
 
-    kubectl port-forward --namespace kube-system $POD 5000:5000 &
+    kubectl port-forward --namespace kube-system $(get_registry_pod) 5000:5000 &
 }
 
 if [ "$TEST_CLUSTER" = "minikube" ]; then
