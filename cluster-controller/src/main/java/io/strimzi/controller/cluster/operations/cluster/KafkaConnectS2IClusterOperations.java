@@ -74,7 +74,7 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
                     .compose(i -> buildConfigOperations.reconcile(namespace, connect.getName(), connect.generateBuildConfig()))
                     .compose(i -> deploymentConfigOperations.scaleUp(namespace, connect.getName(), connect.getReplicas()).map((Void) null))
                     .compose(chainFuture::complete, chainFuture);
-            chainFuture.map((Void) null).setHandler(handler);
+            chainFuture.setHandler(handler);
         } else {
             handler.handle(Future.failedFuture("S2I only available on OpenShift"));
         }
