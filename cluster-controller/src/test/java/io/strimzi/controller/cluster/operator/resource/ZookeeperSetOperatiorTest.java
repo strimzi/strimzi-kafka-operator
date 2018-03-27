@@ -9,8 +9,6 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.controller.cluster.ResourceUtils;
 import io.strimzi.controller.cluster.model.ZookeeperCluster;
-import io.strimzi.controller.cluster.operator.resource.StatefulSetDiff;
-import io.strimzi.controller.cluster.operator.resource.ZookeeperSetOperator;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -22,7 +20,7 @@ import static io.strimzi.controller.cluster.model.ZookeeperCluster.KEY_ZOOKEEPER
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public class ZookeeperSetOperationsTest {
+public class ZookeeperSetOperatiorTest {
 
     public static final String METRICS_CONFIG = "{\"foo\":\"bar\"}";
 

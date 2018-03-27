@@ -85,7 +85,7 @@ public abstract class AbstractModel {
     protected Storage storage;
 
     protected String mountPath;
-    protected static final String volumeName = "data";
+    protected static final String VOLUME_NAME = "data";
     protected String metricsConfigVolumeName;
     protected String metricsConfigMountPath;
 
@@ -204,7 +204,7 @@ public abstract class AbstractModel {
     }
 
     public String getVolumeName() {
-        return this.volumeName;
+        return this.VOLUME_NAME;
     }
 
     public String getImage() {
@@ -230,7 +230,7 @@ public abstract class AbstractModel {
     }
 
     public static String getPersistentVolumeClaimName(String kafkaClusterName, int podId) {
-        return volumeName + "-" + kafkaClusterName + "-" + podId;
+        return VOLUME_NAME + "-" + kafkaClusterName + "-" + podId;
     }
 
     public String getPodName(int podId) {

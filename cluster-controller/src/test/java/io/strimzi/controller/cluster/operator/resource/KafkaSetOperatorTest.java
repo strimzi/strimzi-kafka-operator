@@ -9,8 +9,6 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.controller.cluster.ResourceUtils;
 import io.strimzi.controller.cluster.model.KafkaCluster;
-import io.strimzi.controller.cluster.operator.resource.KafkaSetOperator;
-import io.strimzi.controller.cluster.operator.resource.StatefulSetDiff;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -25,7 +23,7 @@ import static io.strimzi.controller.cluster.model.KafkaCluster.KEY_KAFKA_ZOOKEEP
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public class KafkaSetOperationsTest {
+public class KafkaSetOperatorTest {
 
     public static final String METRICS_CONFIG = "{\"foo\":\"bar\"}";
 
