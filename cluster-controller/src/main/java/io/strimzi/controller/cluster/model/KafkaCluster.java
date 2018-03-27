@@ -23,7 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class KafkaCluster extends AbstractCluster {
+public class KafkaCluster extends AbstractModel {
 
     public static final String TYPE = "kafka";
 

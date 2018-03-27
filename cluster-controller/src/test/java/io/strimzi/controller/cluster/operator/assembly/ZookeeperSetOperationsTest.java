@@ -15,7 +15,7 @@ import org.junit.Test;
 import java.util.HashMap;
 import java.util.Map;
 
-import static io.strimzi.controller.cluster.model.AbstractCluster.containerEnvVars;
+import static io.strimzi.controller.cluster.model.AbstractModel.containerEnvVars;
 import static io.strimzi.controller.cluster.model.ZookeeperCluster.KEY_ZOOKEEPER_METRICS_ENABLED;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;

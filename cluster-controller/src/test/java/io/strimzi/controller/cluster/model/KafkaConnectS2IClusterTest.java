@@ -163,28 +163,6 @@ public class KafkaConnectS2IClusterTest {
     }
 
     @Test
-    public void testPatchService()   {
-        Service orig = new ServiceBuilder()
-                .withNewMetadata()
-                    .withName(kc.kafkaConnectClusterName(cluster))
-                    .withNamespace(namespace)
-                .endMetadata()
-                .withNewSpec()
-                    .withType("ClusterIP")
-                .endSpec()
-                .build();
-
-        Service svc = kc.patchService(orig);
-
-        Map<String, String> expectedLabels = ResourceUtils.labels(Labels.STRIMZI_CLUSTER_LABEL, this.cluster,
-                Labels.STRIMZI_TYPE_LABEL, "kafka-connect-s2i",
-                "my-user-label", "cromulent",
-                Labels.STRIMZI_NAME_LABEL, kc.kafkaConnectClusterName(cluster));
-        assertEquals(expectedLabels, svc.getMetadata().getLabels());
-        assertEquals(expectedLabels, svc.getSpec().getSelector());
-    }
-
-    @Test
     public void testGenerateDeploymentConfig()   {
         DeploymentConfig dep = kc.generateDeploymentConfig();
 

@@ -16,7 +16,7 @@ import io.strimzi.controller.cluster.operator.resource.DeploymentOperator;
 import io.strimzi.controller.cluster.operator.resource.PvcOperator;
 import io.strimzi.controller.cluster.operator.resource.ReconcileResult;
 import io.strimzi.controller.cluster.operator.resource.ServiceOperator;
-import io.strimzi.controller.cluster.model.AbstractCluster;
+import io.strimzi.controller.cluster.model.AbstractModel;
 import io.strimzi.controller.cluster.model.KafkaCluster;
 import io.strimzi.controller.cluster.model.Labels;
 import io.strimzi.controller.cluster.model.Storage;
@@ -480,14 +480,14 @@ public class KafkaAssemblyOperatorTest {
                     .withName(KafkaCluster.metricConfigsName(clusterCmName))
                     .withNamespace(clusterCmNamespace)
                 .endMetadata()
-                .withData(Collections.singletonMap(AbstractCluster.METRICS_CONFIG_FILE, METRICS_CONFIG))
+                .withData(Collections.singletonMap(AbstractModel.METRICS_CONFIG_FILE, METRICS_CONFIG))
                 .build();
         when(mockCmOps.get(clusterCmNamespace, KafkaCluster.metricConfigsName(clusterCmName))).thenReturn(metricsCm);
         ConfigMap zkMetricsCm = new ConfigMapBuilder().withNewMetadata()
                 .withName(ZookeeperCluster.zookeeperMetricsName(clusterCmName))
                 .withNamespace(clusterCmNamespace)
                 .endMetadata()
-                .withData(Collections.singletonMap(AbstractCluster.METRICS_CONFIG_FILE, METRICS_CONFIG))
+                .withData(Collections.singletonMap(AbstractModel.METRICS_CONFIG_FILE, METRICS_CONFIG))
                 .build();
         when(mockCmOps.get(clusterCmNamespace, ZookeeperCluster.zookeeperMetricsName(clusterCmName))).thenReturn(zkMetricsCm);
 

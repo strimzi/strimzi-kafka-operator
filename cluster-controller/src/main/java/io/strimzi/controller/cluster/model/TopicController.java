@@ -21,7 +21,7 @@ import java.util.Map;
 /**
  * Represents the topic controller deployment
  */
-public class TopicController extends AbstractCluster {
+public class TopicController extends AbstractModel {
 
     /**
      * The default kind of CMs that the Topic Controller will be configured to watch for
@@ -253,15 +253,6 @@ public class TopicController extends AbstractCluster {
                 updateStrategy,
                 Collections.emptyMap(),
                 Collections.emptyMap());
-    }
-
-    public Deployment patchDeployment(Deployment dep) {
-        return patchDeployment(dep,
-                createHttpProbe(healthCheckPath + "healthy", HEALTHCHECK_PORT_NAME, healthCheckInitialDelay, healthCheckTimeout),
-                createHttpProbe(healthCheckPath + "ready", HEALTHCHECK_PORT_NAME, healthCheckInitialDelay, healthCheckTimeout),
-                Collections.emptyMap(),
-                Collections.emptyMap()
-        );
     }
 
     @Override
