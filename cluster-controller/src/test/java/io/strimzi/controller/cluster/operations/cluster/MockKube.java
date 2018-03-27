@@ -163,8 +163,9 @@ public class MockKube {
         when(mixed.inNamespace(any())).thenReturn(mixed);
         when(mixed.list()).thenAnswer(i -> {
             KubernetesResourceList<CM> l = mock(listClass);
+            Collection<CM> values = db.values();
             when(l.getItems()).thenAnswer(i3 -> {
-                List<CM> r = new ArrayList<>(db.values());
+                List<CM> r = new ArrayList<>(values);
                 LOGGER.debug("{} list -> {}", resourceType, r);
                 return r;
             });
@@ -282,7 +283,7 @@ public class MockKube {
 
     // Pvcs
     private MixedOperation<PersistentVolumeClaim, PersistentVolumeClaimList, DoneablePersistentVolumeClaim, Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim>> mockPvcs() {
-        String resourceType = "persistenvolumeclaim";
+        String resourceType = "persistentvolumeclaim";
         return crudMock(resourceType, this.pvcDb,
             castClass(Resource.class),
             PersistentVolumeClaimList.class,

@@ -109,6 +109,10 @@ public class KafkaCluster extends AbstractCluster {
         return cluster + KafkaCluster.HEADLESS_NAME_SUFFIX;
     }
 
+    public static String kafkaPodName(String cluster, int pod) {
+        return kafkaClusterName(cluster) + "-" + pod;
+    }
+
     /**
      * Create a Kafka cluster from the related ConfigMap resource
      *
@@ -249,23 +253,6 @@ public class KafkaCluster extends AbstractCluster {
         } else {
             return null;
         }
-    }
-
-    /**
-     * Patches the given StatefulSet
-     * @param statefulSet The StatefulSet to patch
-     * @return The patched StatefulSet
-     */
-    public StatefulSet patchStatefulSet(StatefulSet statefulSet) {
-
-        Map<String, String> annotations = new HashMap<>();
-        annotations.put(String.format("%s/%s", ClusterController.STRIMZI_CLUSTER_CONTROLLER_DOMAIN, Storage.DELETE_CLAIM_FIELD),
-                String.valueOf(storage.isDeleteClaim()));
-
-        return patchStatefulSet(statefulSet,
-                createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout),
-                createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout),
-                annotations);
     }
 
     private List<ContainerPort> getContainerPortList() {

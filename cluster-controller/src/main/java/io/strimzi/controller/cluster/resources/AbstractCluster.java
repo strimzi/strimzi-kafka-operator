@@ -85,7 +85,7 @@ public abstract class AbstractCluster {
     protected Storage storage;
 
     protected String mountPath;
-    protected String volumeName = "data";
+    protected static final String volumeName = "data";
     protected String metricsConfigVolumeName;
     protected String metricsConfigMountPath;
 
@@ -226,7 +226,11 @@ public abstract class AbstractCluster {
     }
 
     public String getPersistentVolumeClaimName(int podId) {
-        return volumeName + "-" + name + "-" + podId;
+        return getPersistentVolumeClaimName(name,  podId);
+    }
+
+    public static String getPersistentVolumeClaimName(String kafkaClusterName, int podId) {
+        return volumeName + "-" + kafkaClusterName + "-" + podId;
     }
 
     public String getPodName(int podId) {
