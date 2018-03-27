@@ -8,18 +8,18 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.controller.cluster.ResourceUtils;
-import io.strimzi.controller.cluster.resources.KafkaCluster;
+import io.strimzi.controller.cluster.model.KafkaCluster;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static io.strimzi.controller.cluster.resources.AbstractCluster.containerEnvVars;
-import static io.strimzi.controller.cluster.resources.KafkaCluster.KEY_KAFKA_DEFAULT_REPLICATION_FACTOR;
-import static io.strimzi.controller.cluster.resources.KafkaCluster.KEY_KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR;
-import static io.strimzi.controller.cluster.resources.KafkaCluster.KEY_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR;
-import static io.strimzi.controller.cluster.resources.KafkaCluster.KEY_KAFKA_ZOOKEEPER_CONNECT;
+import static io.strimzi.controller.cluster.model.AbstractCluster.containerEnvVars;
+import static io.strimzi.controller.cluster.model.KafkaCluster.KEY_KAFKA_DEFAULT_REPLICATION_FACTOR;
+import static io.strimzi.controller.cluster.model.KafkaCluster.KEY_KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR;
+import static io.strimzi.controller.cluster.model.KafkaCluster.KEY_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR;
+import static io.strimzi.controller.cluster.model.KafkaCluster.KEY_KAFKA_ZOOKEEPER_CONNECT;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 

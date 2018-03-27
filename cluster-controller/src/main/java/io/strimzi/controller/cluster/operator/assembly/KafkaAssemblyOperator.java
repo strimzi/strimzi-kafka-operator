@@ -13,11 +13,11 @@ import io.strimzi.controller.cluster.operator.resource.DeploymentOperator;
 import io.strimzi.controller.cluster.operator.resource.PvcOperator;
 import io.strimzi.controller.cluster.operator.resource.ReconcileResult;
 import io.strimzi.controller.cluster.operator.resource.ServiceOperator;
-import io.strimzi.controller.cluster.resources.KafkaCluster;
-import io.strimzi.controller.cluster.resources.Labels;
-import io.strimzi.controller.cluster.resources.Storage;
-import io.strimzi.controller.cluster.resources.TopicController;
-import io.strimzi.controller.cluster.resources.ZookeeperCluster;
+import io.strimzi.controller.cluster.model.KafkaCluster;
+import io.strimzi.controller.cluster.model.Labels;
+import io.strimzi.controller.cluster.model.Storage;
+import io.strimzi.controller.cluster.model.TopicController;
+import io.strimzi.controller.cluster.model.ZookeeperCluster;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 
-import static io.strimzi.controller.cluster.resources.TopicController.topicControllerName;
+import static io.strimzi.controller.cluster.model.TopicController.topicControllerName;
 
 /**
  * <p>Cluster operations for a "Kafka" cluster. A KafkaClusterOperations is

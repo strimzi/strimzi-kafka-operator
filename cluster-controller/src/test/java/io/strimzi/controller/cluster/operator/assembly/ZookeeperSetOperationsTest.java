@@ -8,15 +8,15 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.controller.cluster.ResourceUtils;
-import io.strimzi.controller.cluster.resources.ZookeeperCluster;
+import io.strimzi.controller.cluster.model.ZookeeperCluster;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static io.strimzi.controller.cluster.resources.AbstractCluster.containerEnvVars;
-import static io.strimzi.controller.cluster.resources.ZookeeperCluster.KEY_ZOOKEEPER_METRICS_ENABLED;
+import static io.strimzi.controller.cluster.model.AbstractCluster.containerEnvVars;
+import static io.strimzi.controller.cluster.model.ZookeeperCluster.KEY_ZOOKEEPER_METRICS_ENABLED;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
