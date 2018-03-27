@@ -64,7 +64,8 @@ class TopicsWatcher {
                 return;
             }
             if (childResult.failed()) {
-                throw new RuntimeException(childResult.cause());
+                LOGGER.error("Error on zone {} children", TOPICS_ZNODE, childResult.cause());
+                return;
             }
             List<String> result = childResult.result();
             LOGGER.debug("znode {} now has children {}, previous children {}", TOPICS_ZNODE, result, this.children);
@@ -106,7 +107,8 @@ class TopicsWatcher {
 
         }).children(TOPICS_ZNODE, childResult -> {
             if (childResult.failed()) {
-                throw new RuntimeException(childResult.cause());
+                LOGGER.error("Error on zone {} children", TOPICS_ZNODE, childResult.cause());
+                return;
             }
             List<String> result = childResult.result();
             LOGGER.debug("Setting initial children {}", result);
