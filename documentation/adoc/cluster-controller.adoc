@@ -135,9 +135,6 @@ data:
     }
 ----
 
-WARNING: If the zookeeper cluster is deployed using "ephemeral" storage, the Kafka brokers can have problems dealing with
-Zookeeper node restarts which could happen via updates in the cluster ConfigMap.
-
 The resources created by the cluster controller into the Kubernetes/OpenShift cluster will be the following :
 
 * `[cluster-name]-zookeeper` StatefulSet which is in charge to create the Zookeeper node pods
@@ -172,6 +169,9 @@ The "ephemeral" storage is really simple to configure and the related JSON strin
 { "type": "ephemeral" }
 
 ----
+
+WARNING: If the Zookeeper cluster is deployed using "ephemeral" storage, the Kafka brokers can have problems dealing with
+Zookeeper node restarts which could happen via updates in the cluster ConfigMap.
 
 In case of "persistent-claim" type the following fields can be provided as well :
 
