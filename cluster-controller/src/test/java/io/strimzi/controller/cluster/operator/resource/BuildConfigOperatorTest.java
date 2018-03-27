@@ -16,7 +16,7 @@ import io.vertx.core.Vertx;
 
 import static org.mockito.Mockito.when;
 
-public class BuildConfigOperationsMockTest extends ResourceOperationsMockTest<OpenShiftClient, BuildConfig,
+public class BuildConfigOperatorTest extends AbstractResourceOperatorTest<OpenShiftClient, BuildConfig,
         BuildConfigList, DoneableBuildConfig, BuildConfigResource<BuildConfig, DoneableBuildConfig, Void, Build>, Void> {
 
     @Override
@@ -25,8 +25,8 @@ public class BuildConfigOperationsMockTest extends ResourceOperationsMockTest<Op
     }
 
     @Override
-    protected BuildConfigOperations createResourceOperations(Vertx vertx, OpenShiftClient mockClient) {
-        return new BuildConfigOperations(vertx, mockClient);
+    protected BuildConfigOperator createResourceOperations(Vertx vertx, OpenShiftClient mockClient) {
+        return new BuildConfigOperator(vertx, mockClient);
     }
 
     @Override

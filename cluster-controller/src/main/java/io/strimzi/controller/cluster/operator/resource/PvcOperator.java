@@ -16,13 +16,13 @@ import io.vertx.core.Vertx;
 /**
  * Operations for {@code PersistentVolumeClaim}s.
  */
-public class PvcOperations extends AbstractOperations<KubernetesClient, PersistentVolumeClaim, PersistentVolumeClaimList, DoneablePersistentVolumeClaim, Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim>, Void> {
+public class PvcOperator extends AbstractResourceOperator<KubernetesClient, PersistentVolumeClaim, PersistentVolumeClaimList, DoneablePersistentVolumeClaim, Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim>, Void> {
     /**
      * Constructor
      * @param vertx The Vertx instance
      * @param client The Kubernetes client
      */
-    public PvcOperations(Vertx vertx, KubernetesClient client) {
+    public PvcOperator(Vertx vertx, KubernetesClient client) {
         super(vertx, client, "PersistentVolumeClaim");
     }
 

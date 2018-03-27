@@ -15,13 +15,13 @@ import io.vertx.core.Vertx;
 /**
  * Operations for {@code ImageStream}s.
  */
-public class ImageStreamOperations extends AbstractOperations<OpenShiftClient, ImageStream, ImageStreamList, DoneableImageStream, Resource<ImageStream, DoneableImageStream>, Void> {
+public class ImageStreamOperator extends AbstractResourceOperator<OpenShiftClient, ImageStream, ImageStreamList, DoneableImageStream, Resource<ImageStream, DoneableImageStream>, Void> {
     /**
      * Constructor
      * @param vertx The Vertx instance
      * @param client The OpenShift client
      */
-    public ImageStreamOperations(Vertx vertx, OpenShiftClient client) {
+    public ImageStreamOperator(Vertx vertx, OpenShiftClient client) {
         super(vertx, client, "ImageStream");
     }
 

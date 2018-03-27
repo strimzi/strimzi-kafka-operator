@@ -16,17 +16,17 @@ import io.vertx.core.Vertx;
 /**
  * Operations for {@code Service}s.
  */
-public class ServiceOperations extends AbstractOperations<KubernetesClient, Service, ServiceList, DoneableService, Resource<Service, DoneableService>, Void> {
+public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, Service, ServiceList, DoneableService, Resource<Service, DoneableService>, Void> {
 
-    private final EndpointOperations endpointOperations;
+    private final EndpointOperator endpointOperations;
     /**
      * Constructor
      * @param vertx The Vertx instance
      * @param client The Kubernetes client
      */
-    public ServiceOperations(Vertx vertx, KubernetesClient client) {
+    public ServiceOperator(Vertx vertx, KubernetesClient client) {
         super(vertx, client, "Service");
-        this.endpointOperations = new EndpointOperations(vertx, client);
+        this.endpointOperations = new EndpointOperator(vertx, client);
     }
 
     @Override

@@ -15,13 +15,13 @@ import io.vertx.core.Vertx;
 /**
  * Operations for {@code Deployment}s.
  */
-public class DeploymentOperations extends AbstractScalableOperations<KubernetesClient, Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>, Void> {
+public class DeploymentOperator extends AbstractScalableResourceOperator<KubernetesClient, Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>, Void> {
     /**
      * Constructor
      * @param vertx The Vertx instance
      * @param client The Kubernetes client
      */
-    public DeploymentOperations(Vertx vertx, KubernetesClient client) {
+    public DeploymentOperator(Vertx vertx, KubernetesClient client) {
         super(vertx, client, "Deployment");
     }
 

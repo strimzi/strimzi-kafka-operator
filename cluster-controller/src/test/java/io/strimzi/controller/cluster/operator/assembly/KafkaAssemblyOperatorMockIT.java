@@ -10,10 +10,10 @@ import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.strimzi.controller.cluster.operator.resource.ConfigMapOperations;
-import io.strimzi.controller.cluster.operator.resource.DeploymentOperations;
-import io.strimzi.controller.cluster.operator.resource.PvcOperations;
-import io.strimzi.controller.cluster.operator.resource.ServiceOperations;
+import io.strimzi.controller.cluster.operator.resource.ConfigMapOperator;
+import io.strimzi.controller.cluster.operator.resource.DeploymentOperator;
+import io.strimzi.controller.cluster.operator.resource.PvcOperator;
+import io.strimzi.controller.cluster.operator.resource.ServiceOperator;
 import io.strimzi.controller.cluster.resources.KafkaCluster;
 import io.strimzi.controller.cluster.resources.Labels;
 import io.strimzi.controller.cluster.resources.Storage;
@@ -185,12 +185,12 @@ public class KafkaAssemblyOperatorMockIT {
     // - Test with storage key lacking a type
 
     private KafkaAssemblyOperator createCluster(TestContext context) {
-        ConfigMapOperations cmops = new ConfigMapOperations(vertx, mockClient);
-        ServiceOperations svcops = new ServiceOperations(vertx, mockClient);
-        KafkaSetOperations ksops = new KafkaSetOperations(vertx, mockClient);
-        ZookeeperSetOperations zksops = new ZookeeperSetOperations(vertx, mockClient);
-        DeploymentOperations depops = new DeploymentOperations(vertx, mockClient);
-        PvcOperations pvcops = new PvcOperations(vertx, mockClient);
+        ConfigMapOperator cmops = new ConfigMapOperator(vertx, mockClient);
+        ServiceOperator svcops = new ServiceOperator(vertx, mockClient);
+        KafkaSetOperator ksops = new KafkaSetOperator(vertx, mockClient);
+        ZookeeperSetOperator zksops = new ZookeeperSetOperator(vertx, mockClient);
+        DeploymentOperator depops = new DeploymentOperator(vertx, mockClient);
+        PvcOperator pvcops = new PvcOperator(vertx, mockClient);
         KafkaAssemblyOperator kco = new KafkaAssemblyOperator(vertx, true, 2_000,
                 cmops, svcops, zksops, ksops, pvcops, depops);
 

@@ -8,11 +8,11 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
-import io.strimzi.controller.cluster.operator.resource.ConfigMapOperations;
-import io.strimzi.controller.cluster.operator.resource.DeploymentOperations;
-import io.strimzi.controller.cluster.operator.resource.PvcOperations;
+import io.strimzi.controller.cluster.operator.resource.ConfigMapOperator;
+import io.strimzi.controller.cluster.operator.resource.DeploymentOperator;
+import io.strimzi.controller.cluster.operator.resource.PvcOperator;
 import io.strimzi.controller.cluster.operator.resource.ReconcileResult;
-import io.strimzi.controller.cluster.operator.resource.ServiceOperations;
+import io.strimzi.controller.cluster.operator.resource.ServiceOperator;
 import io.strimzi.controller.cluster.resources.KafkaCluster;
 import io.strimzi.controller.cluster.resources.Labels;
 import io.strimzi.controller.cluster.resources.Storage;
@@ -44,11 +44,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KafkaCluster
 
     private final long operationTimeoutMs;
 
-    private final ZookeeperSetOperations zkSetOperations;
-    private final KafkaSetOperations kafkaSetOperations;
-    private final ServiceOperations serviceOperations;
-    private final PvcOperations pvcOperations;
-    private final DeploymentOperations deploymentOperations;
+    private final ZookeeperSetOperator zkSetOperations;
+    private final KafkaSetOperator kafkaSetOperations;
+    private final ServiceOperator serviceOperations;
+    private final PvcOperator pvcOperations;
+    private final DeploymentOperator deploymentOperations;
 
     /**
      * @param vertx The Vertx instance
@@ -61,12 +61,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KafkaCluster
      */
     public KafkaAssemblyOperator(Vertx vertx, boolean isOpenShift,
                                  long operationTimeoutMs,
-                                 ConfigMapOperations configMapOperations,
-                                 ServiceOperations serviceOperations,
-                                 ZookeeperSetOperations zkSetOperations,
-                                 KafkaSetOperations kafkaSetOperations,
-                                 PvcOperations pvcOperations,
-                                 DeploymentOperations deploymentOperations) {
+                                 ConfigMapOperator configMapOperations,
+                                 ServiceOperator serviceOperations,
+                                 ZookeeperSetOperator zkSetOperations,
+                                 KafkaSetOperator kafkaSetOperations,
+                                 PvcOperator pvcOperations,
+                                 DeploymentOperator deploymentOperations) {
         super(vertx, isOpenShift, CLUSTER_TYPE_KAFKA, "Kafka", configMapOperations);
         this.operationTimeoutMs = operationTimeoutMs;
         this.zkSetOperations = zkSetOperations;

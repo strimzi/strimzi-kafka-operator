@@ -26,8 +26,8 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.mockito.Mockito.when;
 
-public class PodOperationsMockTest extends
-        ReadyResourceOperationsMockTest<KubernetesClient, Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>, Void> {
+public class PodOperatorTest extends
+        AbtractReadyResourceOperatorTest<KubernetesClient, Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>, Void> {
 
     @Rule
     public OpenShiftServer server = new OpenShiftServer(false, true);
@@ -36,7 +36,7 @@ public class PodOperationsMockTest extends
     public void testCreateReadUpdate(TestContext context) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool", 10);
         KubernetesClient client = server.getKubernetesClient();
-        PodOperations pr = new PodOperations(vertx, client);
+        PodOperator pr = new PodOperator(vertx, client);
 
         context.assertEquals(emptyList(), pr.list(NAMESPACE, Labels.EMPTY));
 
@@ -111,7 +111,7 @@ public class PodOperationsMockTest extends
     }
 
     @Override
-    protected PodOperations createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new PodOperations(vertx, mockClient);
+    protected PodOperator createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
+        return new PodOperator(vertx, mockClient);
     }
 }

@@ -11,15 +11,15 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.strimzi.controller.cluster.operator.assembly.KafkaAssemblyOperator;
 import io.strimzi.controller.cluster.operator.assembly.KafkaConnectAssemblyOperator;
 import io.strimzi.controller.cluster.operator.assembly.KafkaConnectS2IAssemblyOperator;
-import io.strimzi.controller.cluster.operator.assembly.KafkaSetOperations;
-import io.strimzi.controller.cluster.operator.assembly.ZookeeperSetOperations;
-import io.strimzi.controller.cluster.operator.resource.BuildConfigOperations;
-import io.strimzi.controller.cluster.operator.resource.ConfigMapOperations;
-import io.strimzi.controller.cluster.operator.resource.DeploymentConfigOperations;
-import io.strimzi.controller.cluster.operator.resource.DeploymentOperations;
-import io.strimzi.controller.cluster.operator.resource.ImageStreamOperations;
-import io.strimzi.controller.cluster.operator.resource.PvcOperations;
-import io.strimzi.controller.cluster.operator.resource.ServiceOperations;
+import io.strimzi.controller.cluster.operator.assembly.KafkaSetOperator;
+import io.strimzi.controller.cluster.operator.assembly.ZookeeperSetOperator;
+import io.strimzi.controller.cluster.operator.resource.BuildConfigOperator;
+import io.strimzi.controller.cluster.operator.resource.ConfigMapOperator;
+import io.strimzi.controller.cluster.operator.resource.DeploymentConfigOperator;
+import io.strimzi.controller.cluster.operator.resource.DeploymentOperator;
+import io.strimzi.controller.cluster.operator.resource.ImageStreamOperator;
+import io.strimzi.controller.cluster.operator.resource.PvcOperator;
+import io.strimzi.controller.cluster.operator.resource.ServiceOperator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -58,24 +58,24 @@ public class Main {
     static CompositeFuture run(Vertx vertx, KubernetesClient client, boolean isOpenShift, Map<String, String> env) {
         ClusterControllerConfig config = ClusterControllerConfig.fromMap(env);
 
-        ServiceOperations serviceOperations = new ServiceOperations(vertx, client);
-        ZookeeperSetOperations zookeeperSetOperations = new ZookeeperSetOperations(vertx, client);
-        KafkaSetOperations kafkaSetOperations = new KafkaSetOperations(vertx, client);
-        ConfigMapOperations configMapOperations = new ConfigMapOperations(vertx, client);
-        PvcOperations pvcOperations = new PvcOperations(vertx, client);
-        DeploymentOperations deploymentOperations = new DeploymentOperations(vertx, client);
+        ServiceOperator serviceOperations = new ServiceOperator(vertx, client);
+        ZookeeperSetOperator zookeeperSetOperations = new ZookeeperSetOperator(vertx, client);
+        KafkaSetOperator kafkaSetOperations = new KafkaSetOperator(vertx, client);
+        ConfigMapOperator configMapOperations = new ConfigMapOperator(vertx, client);
+        PvcOperator pvcOperations = new PvcOperator(vertx, client);
+        DeploymentOperator deploymentOperations = new DeploymentOperator(vertx, client);
 
         KafkaAssemblyOperator kafkaClusterOperations = new KafkaAssemblyOperator(vertx, isOpenShift, config.getOperationTimeoutMs(), configMapOperations, serviceOperations, zookeeperSetOperations, kafkaSetOperations, pvcOperations, deploymentOperations);
         KafkaConnectAssemblyOperator kafkaConnectClusterOperations = new KafkaConnectAssemblyOperator(vertx, isOpenShift, configMapOperations, deploymentOperations, serviceOperations);
 
-        DeploymentConfigOperations deploymentConfigOperations = null;
-        ImageStreamOperations imagesStreamOperations = null;
-        BuildConfigOperations buildConfigOperations = null;
+        DeploymentConfigOperator deploymentConfigOperations = null;
+        ImageStreamOperator imagesStreamOperations = null;
+        BuildConfigOperator buildConfigOperations = null;
         KafkaConnectS2IAssemblyOperator kafkaConnectS2IClusterOperations = null;
         if (isOpenShift) {
-            imagesStreamOperations = new ImageStreamOperations(vertx, client.adapt(OpenShiftClient.class));
-            buildConfigOperations = new BuildConfigOperations(vertx, client.adapt(OpenShiftClient.class));
-            deploymentConfigOperations = new DeploymentConfigOperations(vertx, client.adapt(OpenShiftClient.class));
+            imagesStreamOperations = new ImageStreamOperator(vertx, client.adapt(OpenShiftClient.class));
+            buildConfigOperations = new BuildConfigOperator(vertx, client.adapt(OpenShiftClient.class));
+            deploymentConfigOperations = new DeploymentConfigOperator(vertx, client.adapt(OpenShiftClient.class));
             kafkaConnectS2IClusterOperations = new KafkaConnectS2IAssemblyOperator(vertx, isOpenShift,
                     configMapOperations, deploymentConfigOperations,
                     serviceOperations, imagesStreamOperations, buildConfigOperations);

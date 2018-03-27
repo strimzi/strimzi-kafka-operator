@@ -15,7 +15,7 @@ import io.vertx.core.Vertx;
 
 import static org.mockito.Mockito.when;
 
-public class ServiceOperationsMockTest extends ResourceOperationsMockTest<KubernetesClient, Service, ServiceList, DoneableService, Resource<Service, DoneableService>, Void> {
+public class ServiceOperatorTest extends AbstractResourceOperatorTest<KubernetesClient, Service, ServiceList, DoneableService, Resource<Service, DoneableService>, Void> {
 
     @Override
     protected Class<KubernetesClient> clientType() {
@@ -38,7 +38,7 @@ public class ServiceOperationsMockTest extends ResourceOperationsMockTest<Kubern
     }
 
     @Override
-    protected ServiceOperations createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new ServiceOperations(vertx, mockClient);
+    protected ServiceOperator createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
+        return new ServiceOperator(vertx, mockClient);
     }
 }

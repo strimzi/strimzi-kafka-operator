@@ -15,13 +15,13 @@ import io.vertx.core.Vertx;
 /**
  * Operations for {@code DeploymentConfigs}s.
  */
-public class DeploymentConfigOperations extends AbstractScalableOperations<OpenShiftClient, DeploymentConfig, DeploymentConfigList, DoneableDeploymentConfig, DeployableScalableResource<DeploymentConfig, DoneableDeploymentConfig>, Void> {
+public class DeploymentConfigOperator extends AbstractScalableResourceOperator<OpenShiftClient, DeploymentConfig, DeploymentConfigList, DoneableDeploymentConfig, DeployableScalableResource<DeploymentConfig, DoneableDeploymentConfig>, Void> {
     /**
      * Constructor
      * @param vertx The Vertx instance
      * @param client The Kubernetes client
      */
-    public DeploymentConfigOperations(Vertx vertx, OpenShiftClient client) {
+    public DeploymentConfigOperator(Vertx vertx, OpenShiftClient client) {
         super(vertx, client, "DeploymentConfig");
     }
 
