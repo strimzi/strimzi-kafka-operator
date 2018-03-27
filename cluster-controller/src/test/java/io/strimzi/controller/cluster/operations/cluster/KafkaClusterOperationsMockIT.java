@@ -432,24 +432,6 @@ public class KafkaClusterOperationsMockIT {
     public void testUpdateKafkaWithChangedPersistentVolume(TestContext context) {
         if (Storage.StorageType.PERSISTENT_CLAIM.equals(storageType(kafkaStorage))) {
 
-            // TODO move this to mock kube, and make it cope properly with scale down
-            mockClient.pods().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaPodName(CLUSTER_NAME, 0)).watch(new Watcher<Pod>() {
-                @Override
-                public void eventReceived(Watcher.Action action, Pod resource) {
-                    if (action == Action.DELETED) {
-                        vertx.setTimer(200, timerId -> {
-                            String podName = resource.getMetadata().getName();
-                            mockClient.pods().inNamespace(NAMESPACE).withName(podName).create(resource);
-                        });
-                    }
-                }
-
-                @Override
-                public void onClose(KubernetesClientException e) {
-
-                }
-            });
-
             KafkaClusterOperations kco = createCluster(context);
             String originalStorageClass = storageClass(kafkaStorage);
             assertStorageClass(context, KafkaCluster.kafkaClusterName(CLUSTER_NAME), originalStorageClass);
@@ -532,6 +514,38 @@ public class KafkaClusterOperationsMockIT {
                 deleteAsync.complete();
             });
         }
+    }
+
+    /** Create a cluster from a Kafka Cluster CM */
+    @Test
+    public void testKafkaScaleDown(TestContext context) {
+        if (kafkaReplicas > 1) {
+            KafkaClusterOperations kco = createCluster(context);
+            Async updateAsync = context.async();
+
+            int newScale = kafkaReplicas - 1;
+            String deletedPod = KafkaCluster.kafkaPodName(CLUSTER_NAME, newScale);
+            context.assertNotNull(mockClient.pods().inNamespace(NAMESPACE).withName(deletedPod).get());
+
+            HashMap<String, String> data = new HashMap<>(cluster.getData());
+            data.put(KafkaCluster.KEY_REPLICAS,
+                    String.valueOf(newScale));
+            ConfigMap changedClusterCm = new ConfigMapBuilder(cluster).withData(data).build();
+            mockClient.configMaps().inNamespace(NAMESPACE).withName(CLUSTER_NAME).patch(changedClusterCm);
+
+            LOGGER.info("Scaling down to {} Kafka pods", newScale);
+            kco.createOrUpdate(NAMESPACE, CLUSTER_NAME, ar -> {
+                if (ar.failed()) ar.cause().printStackTrace();
+                context.assertTrue(ar.succeeded());
+                context.assertEquals(newScale,
+                        mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaClusterName(CLUSTER_NAME)).get().getSpec().getReplicas());
+                context.assertNull(mockClient.pods().inNamespace(NAMESPACE).withName(deletedPod).get(),
+                        "Expected pod " + deletedPod + " to have been deleted");
+                updateAsync.complete();
+            });
+            updateAsync.await();
+        }
+
     }
 
 }
