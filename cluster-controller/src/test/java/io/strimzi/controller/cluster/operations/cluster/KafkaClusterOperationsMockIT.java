@@ -290,11 +290,15 @@ public class KafkaClusterOperationsMockIT {
         String clusterName = cluster.getMetadata().getName();
         KubernetesClient mockClient = new MockKube().withInitialCms(Collections.singleton(cluster)).build();
 
+        // TODO move this to mock kube, and make it cope properly with scale down
         mockClient.pods().inNamespace(NAMESPACE).withName("my-cluster-kafka-0").watch(new Watcher<Pod>() {
             @Override
             public void eventReceived(Watcher.Action action, Pod resource) {
                 if (action == Action.DELETED) {
-                    vertx.setTimer(200, timerId -> mockClient.pods().inNamespace(NAMESPACE).withName(resource.getMetadata().getName()).create(resource));
+                    vertx.setTimer(200, timerId -> {
+                        String podName = resource.getMetadata().getName();
+                        mockClient.pods().inNamespace(NAMESPACE).withName(podName).create(resource);
+                    });
                 }
             }
             @Override
