@@ -519,9 +519,6 @@ public class KafkaAssemblyOperatorTest {
         when(mockZsOps.get(clusterCmNamespace, ZookeeperCluster.zookeeperClusterName(clusterCmName))).thenReturn(
                 originalZookeeperCluster.generateStatefulSet(openShift)
         );
-        //when(mockZsOps.scaleDown(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture());
-        //when(mockZsOps.scaleUp(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture());
-
         // Mock Deployment get
         if (originalTopicController != null) {
             when(mockDepOps.get(clusterCmNamespace, TopicController.topicControllerName(clusterCmName))).thenReturn(
@@ -594,28 +591,6 @@ public class KafkaAssemblyOperatorTest {
             if (createResult.failed()) createResult.cause().printStackTrace();
             context.assertTrue(createResult.succeeded());
 
-            // cm patch iff metrics changed
-            /*Set<String> expectedMetricsCms = set();
-            if (kafkaDiff.isMetricsChanged()) {
-                expectedMetricsCms.add(KafkaCluster.metricConfigsName(clusterCmName));
-            }
-            if (zkDiff.isMetricsChanged()) {
-                expectedMetricsCms.add(ZookeeperCluster.zookeeperMetricsName(clusterCmName));
-            }
-            context.assertEquals(expectedMetricsCms, metricsCms);*/
-
-            // patch services
-            /*Set<String> expectedPatchedServices = set();
-            if (kafkaDiff.isDifferent()) {
-                expectedPatchedServices.add(originalKafkaCluster.getName());
-                expectedPatchedServices.add(originalKafkaCluster.getHeadlessName());
-            }
-            if (zkDiff.isDifferent()) {
-                expectedPatchedServices.add(originalZookeeperCluster.getName());
-                expectedPatchedServices.add(originalZookeeperCluster.getHeadlessName());
-            }
-            context.assertEquals(expectedPatchedServices, captured(patchedServicesCaptor));*/
-
             // rolling restart
             Set<String> expectedRollingRestarts = set();
             if (KafkaSetOperator.needsRollingUpdate(
@@ -628,37 +603,7 @@ public class KafkaAssemblyOperatorTest {
                             updatedZookeeperCluster.generateStatefulSet(openShift)))) {
                 expectedRollingRestarts.add(originalZookeeperCluster.getName());
             }
-            //context.assertEquals(expectedRollingRestarts, rollingRestarts);
 
-            /*// scale down
-            Set<String> expectedScaleDown = set();
-            if (kafkaDiff.isScaleDown()) {
-                expectedScaleDown.add(originalKafkaCluster.getName());
-            }
-            if (zkDiff.isScaleDown()) {
-                expectedScaleDown.add(originalZookeeperCluster.getName());
-            }
-            context.assertEquals(expectedScaleDown, captured(scaledDownCaptor));
-
-            // scale up
-            Set<String> expectedScaleUp = set();
-            if (kafkaDiff.isScaleUp()) {
-                expectedScaleUp.add(originalKafkaCluster.getName());
-            }
-            if (zkDiff.isScaleUp()) {
-                expectedScaleUp.add(originalZookeeperCluster.getName());
-            }
-            context.assertEquals(expectedScaleUp, captured(scaledUpCaptor));*/
-
-/*
-            if ((originalTopicController != null) && (updatedTopicController != null)) {
-                Set<String> expectedDeps = set();
-                if (tcDiff.isDifferent()) {
-                    expectedDeps.add(originalTopicController.getName());
-                }
-                context.assertEquals(expectedDeps, captured(depCaptor));
-            }
-*/
             // No metrics config  => no CMs created
             verify(mockCmOps, never()).createOrUpdate(any());
             verifyNoMoreInteractions(mockPvcOps);

@@ -89,21 +89,21 @@ public class KafkaAssemblyOperatorMockIT {
     public static Iterable<KafkaAssemblyOperatorMockIT.Params> data() {
         int[] replicas = {1, 2, 3};
         JsonObject[] storageConfigs = {
-                new JsonObject("{\"type\": \"ephemeral\"}"),
+            new JsonObject("{\"type\": \"ephemeral\"}"),
 
-                new JsonObject("{\"type\": \"persistent-claim\", " +
-                        "\"size\": \"123\", " +
-                        "\"class\": \"foo\"," +
-                        "\"delete-claim\": true}"),
+            new JsonObject("{\"type\": \"persistent-claim\", " +
+                    "\"size\": \"123\", " +
+                    "\"class\": \"foo\"," +
+                    "\"delete-claim\": true}"),
 
-                new JsonObject("{\"type\": \"persistent-claim\", " +
-                        "\"size\": \"123\", " +
-                        "\"class\": \"foo\"," +
-                        "\"delete-claim\": false}"),
+            new JsonObject("{\"type\": \"persistent-claim\", " +
+                    "\"size\": \"123\", " +
+                    "\"class\": \"foo\"," +
+                    "\"delete-claim\": false}"),
 
-                new JsonObject("{\"type\": \"local\", " +
-                        "\"size\": \"123\", " +
-                        "\"class\": \"foo\"}")
+            new JsonObject("{\"type\": \"local\", " +
+                    "\"size\": \"123\", " +
+                    "\"class\": \"foo\"}")
         };
         List<KafkaAssemblyOperatorMockIT.Params> result = new ArrayList();
 

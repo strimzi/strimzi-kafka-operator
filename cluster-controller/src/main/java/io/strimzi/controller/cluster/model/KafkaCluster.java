@@ -269,7 +269,7 @@ public class KafkaCluster extends AbstractModel {
     private List<Volume> getVolumes() {
         List<Volume> volumeList = new ArrayList<>();
         if (storage.type() == Storage.StorageType.EPHEMERAL) {
-            volumeList.add(createEmptyDirVolume(volumeName));
+            volumeList.add(createEmptyDirVolume(VOLUME_NAME));
         }
         if (isMetricsEnabled) {
             volumeList.add(createConfigMapVolume(metricsConfigVolumeName, metricsConfigName));
@@ -281,14 +281,14 @@ public class KafkaCluster extends AbstractModel {
     private List<PersistentVolumeClaim> getVolumeClaims() {
         List<PersistentVolumeClaim> pvcList = new ArrayList<>();
         if (storage.type() == Storage.StorageType.PERSISTENT_CLAIM) {
-            pvcList.add(createPersistentVolumeClaim(volumeName));
+            pvcList.add(createPersistentVolumeClaim(VOLUME_NAME));
         }
         return pvcList;
     }
 
     private List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> volumeMountList = new ArrayList<>();
-        volumeMountList.add(createVolumeMount(volumeName, mountPath));
+        volumeMountList.add(createVolumeMount(VOLUME_NAME, mountPath));
         if (isMetricsEnabled) {
             volumeMountList.add(createVolumeMount(metricsConfigVolumeName, metricsConfigMountPath));
         }

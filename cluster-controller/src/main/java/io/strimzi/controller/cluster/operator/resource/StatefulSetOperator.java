@@ -56,7 +56,7 @@ public class StatefulSetOperator<P> extends AbstractScalableResourceOperator<Kub
      */
     public Future<Void> rollingUpdate(String namespace, String name) {
         return rollingUpdate(namespace, name,
-                podName -> podOperations.isReady(namespace, podName));
+            podName -> podOperations.isReady(namespace, podName));
     }
 
     /**

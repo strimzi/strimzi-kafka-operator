@@ -30,7 +30,7 @@ public class StatefulSetDiff {
         for (JsonNode d : diff) {
             String pathValue = d.get("path").asText();
             if (pathValue.equals(path)
-                    || pathValue.startsWith(path+"/")) {
+                    || pathValue.startsWith(path + "/")) {
                 log.info("{} differs: {}", path, d);
                 return true;
             }

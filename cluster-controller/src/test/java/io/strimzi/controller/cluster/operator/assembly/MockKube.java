@@ -83,196 +83,13 @@ public class MockKube {
 
     public KubernetesClient build() {
         KubernetesClient mockClient = mock(KubernetesClient.class);
-        //MixedOperation<ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> mockCms = mockCms();
-        MixedOperation<ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> mockCms =
-            new AbstractMockBuilder<ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>>(
-                ConfigMap.class, ConfigMapList.class, DoneableConfigMap.class, castClass(Resource.class), cmDb) {
-                @Override
-                protected void nameScopedMocks(Resource<ConfigMap, DoneableConfigMap> resource, String resourceName) {
-                    mockGet(resourceName, resource);
-                    mockWatch(resource);
-                    mockCreate(resourceName, resource);
-                    mockCascading(resource);
-                    mockPatch(resourceName, resource);
-                    mockDelete(resourceName, resource);
-                }
-            }.build();
-        MixedOperation<PersistentVolumeClaim, PersistentVolumeClaimList, DoneablePersistentVolumeClaim, Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim>> mockPvcs =
-            new AbstractMockBuilder<PersistentVolumeClaim, PersistentVolumeClaimList, DoneablePersistentVolumeClaim, Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim>>(
-                    PersistentVolumeClaim.class, PersistentVolumeClaimList.class, DoneablePersistentVolumeClaim.class, castClass(Resource.class), pvcDb) {
-                @Override
-                protected void nameScopedMocks(Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim> resource, String resourceName) {
-                    mockGet(resourceName, resource);
-                    mockCreate(resourceName, resource);
-                    mockCascading(resource);
-                    mockPatch(resourceName, resource);
-                    mockDelete(resourceName, resource);
-                }
-            }.build();
-        MixedOperation<Endpoints, EndpointsList, DoneableEndpoints, Resource<Endpoints, DoneableEndpoints>> mockEndpoints =
-            new AbstractMockBuilder<Endpoints, EndpointsList, DoneableEndpoints, Resource<Endpoints, DoneableEndpoints>>(
-                    Endpoints.class, EndpointsList.class, DoneableEndpoints.class, castClass(Resource.class), endpointDb) {
-                @Override
-                protected void nameScopedMocks(Resource<Endpoints, DoneableEndpoints> resource, String resourceName) {
-                    mockGet(resourceName, resource);
-                    mockCreate(resourceName, resource);
-                    mockCascading(resource);
-                    mockPatch(resourceName, resource);
-                    mockDelete(resourceName, resource);
-                    mockIsReady(resourceName, resource);
-                }
-            }.build();
-        MixedOperation<Service, ServiceList, DoneableService, Resource<Service, DoneableService>> mockSvc =
-            new AbstractMockBuilder<Service, ServiceList, DoneableService, Resource<Service, DoneableService>>(
-                    Service.class, ServiceList.class, DoneableService.class, castClass(Resource.class), svcDb) {
-
-                @Override
-                protected void nameScopedMocks(Resource<Service, DoneableService> resource, String resourceName) {
-                    mockGet(resourceName, resource);
-                    //mockCreate("endpoint", endpointDb, resourceName, resource);
-                    mockCascading(resource);
-                    mockPatch(resourceName, resource);
-                    mockDelete(resourceName, resource);
-                    when(resource.create(any())).thenAnswer(i -> {
-                        Service argument = i.getArgument(0);
-                        svcDb.put(resourceName, copyResource(argument));
-                        LOGGER.debug("create {} (and endpoint) {} ", resourceType, resourceName);
-                        endpointDb.put(resourceName, new Endpoints());
-                        return argument;
-                    });
-                }
-            }.build();
-        MixedOperation<Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> mockPods =
-            new AbstractMockBuilder<Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>>(
-                    Pod.class, PodList.class, DoneablePod.class, castClass(PodResource.class), podDb) {
-
-                @Override
-                protected void nameScopedMocks(PodResource<Pod, DoneablePod> resource, String resourceName) {
-                    mockGet(resourceName, resource);
-                    mockWatch(resource);
-                    mockCreate(resourceName, resource);
-                    mockCascading(resource);
-                    mockPatch(resourceName, resource);
-                    mockDelete(resourceName, resource);
-                    mockIsReady(resourceName, resource);
-                }
-            }.build();
-        MixedOperation<StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> mockSs = new AbstractMockBuilder<StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>>(
-                StatefulSet.class, StatefulSetList.class, DoneableStatefulSet.class, castClass(RollableScalableResource.class), ssDb) {
-
-            @Override
-            protected void nameScopedMocks(RollableScalableResource<StatefulSet, DoneableStatefulSet> resource, String resourceName) {
-                mockGet(resourceName, resource);
-                //mockCreate("endpoint", endpointDb, resourceName, resource);
-                mockCascading(resource);
-                mockPatch(resourceName, resource);
-                mockDelete(resourceName, resource);
-                mockIsReady(resourceName, resource);
-                when(resource.create(any())).thenAnswer(cinvocation -> {
-                    checkNotExists(resourceName);
-                    StatefulSet argument = cinvocation.getArgument(0);
-                    LOGGER.debug("create {} {} -> {}", resourceType, resourceName, argument);
-                    ssDb.put(resourceName, copyResource(argument));
-                    for (int i = 0; i < argument.getSpec().getReplicas(); i++) {
-                        String podName = argument.getMetadata().getName() + "-" + i;
-                        podDb.put(podName,
-                                new PodBuilder().withNewMetadata()
-                                        .withNamespace(argument.getMetadata().getNamespace())
-                                        .withName(podName)
-                                        .endMetadata().build());
-                    }
-                    return argument;
-                });
-                EditReplacePatchDeletable<StatefulSet, StatefulSet, DoneableStatefulSet, Boolean> c = mock(EditReplacePatchDeletable.class);
-                when(resource.cascading(false)).thenReturn(c);
-                when(c.patch(any())).thenAnswer(patchInvocation -> {
-                    StatefulSet argument = patchInvocation.getArgument(0);
-                    return doPatch(resourceName, argument);
-                });
-                when(resource.scale(anyInt(), anyBoolean())).thenAnswer(invocation -> {
-                    checkDoesExist(resourceName);
-                    StatefulSet ss = copyResource(ssDb.get(resourceName));
-                    int newScale = invocation.getArgument(0);
-                    ss.getSpec().setReplicas(newScale);
-                    return doPatch(resourceName, ss);
-                });
-                when(resource.scale(anyInt())).thenAnswer(invocation -> {
-                    checkDoesExist(resourceName);
-                    StatefulSet ss = copyResource(ssDb.get(resourceName));
-                    int newScale = invocation.getArgument(0);
-                    ss.getSpec().setReplicas(newScale);
-                    return doPatch(resourceName, ss);
-                });
-                when(resource.isReady()).thenAnswer(i -> {
-                    LOGGER.debug("{} {} is ready", resourceType, resourceName);
-                    return true;
-                });
-
-                // TODO make it cope properly with scale down
-                mockPods.inNamespace(any()).withName(any()).watch(new Watcher<Pod>() {
-                    @Override
-                    public void eventReceived(Watcher.Action action, Pod resource) {
-                        if (action == Action.DELETED) {
-                            String podName = resource.getMetadata().getName();
-                            String podNamespace = resource.getMetadata().getNamespace();
-                            StatefulSet statefulSet = ssDb.get(resourceName);
-                            if (podName.startsWith(resourceName + "-")
-                                    && Integer.parseInt(podName.substring(podName.lastIndexOf("-") + 1)) <
-                                    statefulSet.getSpec().getReplicas()) {
-                                //vertx.setTimer(200, timerId -> {
-
-                                mockPods.inNamespace(podNamespace).withName(podName).create(resource);
-                                //});
-                            }
-                        }
-                    }
-
-                    @Override
-                    public void onClose(KubernetesClientException e) {
-
-                    }
-                });
-            }
-
-            private StatefulSet doPatch(String resourceName, StatefulSet argument) {
-                int oldScale = ssDb.get(resourceName).getSpec().getReplicas();
-                int newScale = argument.getSpec().getReplicas();
-                if (newScale > oldScale) {
-                    LOGGER.debug("scaling up {} {} from {} to {}", resourceType, resourceName, oldScale, newScale);
-                    Pod examplePod = mockPods.inNamespace(argument.getMetadata().getNamespace()).withName(argument.getMetadata().getName() + "-0").get();
-                    for (int i = oldScale; i < newScale; i++) {
-                        String newPodName = argument.getMetadata().getName() + "-" + i;
-                        mockPods.inNamespace(argument.getMetadata().getNamespace()).withName(newPodName).create(
-                                new PodBuilder(examplePod).editMetadata().withName(newPodName).endMetadata().build());
-                    }
-                    ssDb.put(resourceName, copyResource(argument));
-                } else if (newScale < oldScale) {
-                    ssDb.put(resourceName, copyResource(argument));
-                    LOGGER.debug("scaling down {} {} from {} to {}", resourceType, resourceName, oldScale, newScale);
-                    for (int i = oldScale - 1; i >= newScale; i--) {
-                        String newPodName = argument.getMetadata().getName() + "-" + i;
-                        mockPods.inNamespace(argument.getMetadata().getNamespace()).withName(newPodName).delete();
-                    }
-                } else {
-                    ssDb.put(resourceName, copyResource(argument));
-                }
-
-                // TODO watch
-                return argument;
-            }
-        }.build();
-        MixedOperation<Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>> mockDep =
-            new AbstractMockBuilder<Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>>(
-                Deployment.class, DeploymentList.class, DoneableDeployment.class, castClass(ScalableResource.class), depDb) {
-            @Override
-            protected void nameScopedMocks(ScalableResource<Deployment, DoneableDeployment> resource, String resourceName) {
-                mockGet(resourceName, resource);
-                mockCreate(resourceName, resource);
-                mockCascading(resource);
-                mockPatch(resourceName, resource);
-                mockDelete(resourceName, resource);
-            }
-        }.build();
+        MixedOperation<ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> mockCms = buildConfigMaps();
+        MixedOperation<PersistentVolumeClaim, PersistentVolumeClaimList, DoneablePersistentVolumeClaim, Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim>> mockPvcs = buildPvcs();
+        MixedOperation<Endpoints, EndpointsList, DoneableEndpoints, Resource<Endpoints, DoneableEndpoints>> mockEndpoints = buildEndpoints();
+        MixedOperation<Service, ServiceList, DoneableService, Resource<Service, DoneableService>> mockSvc = buildServices();
+        MixedOperation<Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> mockPods = buildPods();
+        MixedOperation<StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> mockSs = buildStatefulSets(mockPods);
+        MixedOperation<Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>> mockDep = buildDeployments();
 
         when(mockClient.configMaps()).thenReturn(mockCms);
 
@@ -289,6 +106,210 @@ public class MockKube {
         when(mockClient.persistentVolumeClaims()).thenReturn(mockPvcs);
 
         return mockClient;
+    }
+
+    private MixedOperation<Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>> buildDeployments() {
+        return new AbstractMockBuilder<Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>>(
+            Deployment.class, DeploymentList.class, DoneableDeployment.class, castClass(ScalableResource.class), depDb) {
+            @Override
+            protected void nameScopedMocks(ScalableResource<Deployment, DoneableDeployment> resource, String resourceName) {
+                mockGet(resourceName, resource);
+                mockCreate(resourceName, resource);
+                mockCascading(resource);
+                mockPatch(resourceName, resource);
+                mockDelete(resourceName, resource);
+            }
+        }.build();
+    }
+
+    private MixedOperation<StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> buildStatefulSets(MixedOperation<Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> mockPods) {
+        return new AbstractMockBuilder<StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>>(
+                    StatefulSet.class, StatefulSetList.class, DoneableStatefulSet.class, castClass(RollableScalableResource.class), ssDb) {
+
+                @Override
+                protected void nameScopedMocks(RollableScalableResource<StatefulSet, DoneableStatefulSet> resource, String resourceName) {
+                    mockGet(resourceName, resource);
+                    //mockCreate("endpoint", endpointDb, resourceName, resource);
+                    mockCascading(resource);
+                    mockPatch(resourceName, resource);
+                    mockDelete(resourceName, resource);
+                    mockIsReady(resourceName, resource);
+                    when(resource.create(any())).thenAnswer(cinvocation -> {
+                        checkNotExists(resourceName);
+                        StatefulSet argument = cinvocation.getArgument(0);
+                        LOGGER.debug("create {} {} -> {}", resourceType, resourceName, argument);
+                        ssDb.put(resourceName, copyResource(argument));
+                        for (int i = 0; i < argument.getSpec().getReplicas(); i++) {
+                            String podName = argument.getMetadata().getName() + "-" + i;
+                            podDb.put(podName,
+                                    new PodBuilder().withNewMetadata()
+                                            .withNamespace(argument.getMetadata().getNamespace())
+                                            .withName(podName)
+                                            .endMetadata().build());
+                        }
+                        return argument;
+                    });
+                    EditReplacePatchDeletable<StatefulSet, StatefulSet, DoneableStatefulSet, Boolean> c = mock(EditReplacePatchDeletable.class);
+                    when(resource.cascading(false)).thenReturn(c);
+                    when(c.patch(any())).thenAnswer(patchInvocation -> {
+                        StatefulSet argument = patchInvocation.getArgument(0);
+                        return doPatch(resourceName, argument);
+                    });
+                    when(resource.scale(anyInt(), anyBoolean())).thenAnswer(invocation -> {
+                        checkDoesExist(resourceName);
+                        StatefulSet ss = copyResource(ssDb.get(resourceName));
+                        int newScale = invocation.getArgument(0);
+                        ss.getSpec().setReplicas(newScale);
+                        return doPatch(resourceName, ss);
+                    });
+                    when(resource.scale(anyInt())).thenAnswer(invocation -> {
+                        checkDoesExist(resourceName);
+                        StatefulSet ss = copyResource(ssDb.get(resourceName));
+                        int newScale = invocation.getArgument(0);
+                        ss.getSpec().setReplicas(newScale);
+                        return doPatch(resourceName, ss);
+                    });
+                    when(resource.isReady()).thenAnswer(i -> {
+                        LOGGER.debug("{} {} is ready", resourceType, resourceName);
+                        return true;
+                    });
+
+                    // TODO make it cope properly with scale down
+                    mockPods.inNamespace(any()).withName(any()).watch(new Watcher<Pod>() {
+                        @Override
+                        public void eventReceived(Action action, Pod resource) {
+                            if (action == Action.DELETED) {
+                                String podName = resource.getMetadata().getName();
+                                String podNamespace = resource.getMetadata().getNamespace();
+                                StatefulSet statefulSet = ssDb.get(resourceName);
+                                if (podName.startsWith(resourceName + "-")
+                                        && Integer.parseInt(podName.substring(podName.lastIndexOf("-") + 1)) <
+                                        statefulSet.getSpec().getReplicas()) {
+                                    //vertx.setTimer(200, timerId -> {
+
+                                    mockPods.inNamespace(podNamespace).withName(podName).create(resource);
+                                    //});
+                                }
+                            }
+                        }
+
+                        @Override
+                        public void onClose(KubernetesClientException e) {
+
+                        }
+                    });
+                }
+
+                private StatefulSet doPatch(String resourceName, StatefulSet argument) {
+                    int oldScale = ssDb.get(resourceName).getSpec().getReplicas();
+                    int newScale = argument.getSpec().getReplicas();
+                    if (newScale > oldScale) {
+                        LOGGER.debug("scaling up {} {} from {} to {}", resourceType, resourceName, oldScale, newScale);
+                        Pod examplePod = mockPods.inNamespace(argument.getMetadata().getNamespace()).withName(argument.getMetadata().getName() + "-0").get();
+                        for (int i = oldScale; i < newScale; i++) {
+                            String newPodName = argument.getMetadata().getName() + "-" + i;
+                            mockPods.inNamespace(argument.getMetadata().getNamespace()).withName(newPodName).create(
+                                    new PodBuilder(examplePod).editMetadata().withName(newPodName).endMetadata().build());
+                        }
+                        ssDb.put(resourceName, copyResource(argument));
+                    } else if (newScale < oldScale) {
+                        ssDb.put(resourceName, copyResource(argument));
+                        LOGGER.debug("scaling down {} {} from {} to {}", resourceType, resourceName, oldScale, newScale);
+                        for (int i = oldScale - 1; i >= newScale; i--) {
+                            String newPodName = argument.getMetadata().getName() + "-" + i;
+                            mockPods.inNamespace(argument.getMetadata().getNamespace()).withName(newPodName).delete();
+                        }
+                    } else {
+                        ssDb.put(resourceName, copyResource(argument));
+                    }
+
+                    // TODO watch
+                    return argument;
+                }
+            }.build();
+    }
+
+    private MixedOperation<Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> buildPods() {
+        return new AbstractMockBuilder<Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>>(
+                Pod.class, PodList.class, DoneablePod.class, castClass(PodResource.class), podDb) {
+
+            @Override
+            protected void nameScopedMocks(PodResource<Pod, DoneablePod> resource, String resourceName) {
+                mockGet(resourceName, resource);
+                mockWatch(resource);
+                mockCreate(resourceName, resource);
+                mockCascading(resource);
+                mockPatch(resourceName, resource);
+                mockDelete(resourceName, resource);
+                mockIsReady(resourceName, resource);
+            }
+        }.build();
+    }
+
+    private MixedOperation<Service, ServiceList, DoneableService, Resource<Service, DoneableService>> buildServices() {
+        return new AbstractMockBuilder<Service, ServiceList, DoneableService, Resource<Service, DoneableService>>(
+                Service.class, ServiceList.class, DoneableService.class, castClass(Resource.class), svcDb) {
+
+            @Override
+            protected void nameScopedMocks(Resource<Service, DoneableService> resource, String resourceName) {
+                mockGet(resourceName, resource);
+                //mockCreate("endpoint", endpointDb, resourceName, resource);
+                mockCascading(resource);
+                mockPatch(resourceName, resource);
+                mockDelete(resourceName, resource);
+                when(resource.create(any())).thenAnswer(i -> {
+                    Service argument = i.getArgument(0);
+                    svcDb.put(resourceName, copyResource(argument));
+                    LOGGER.debug("create {} (and endpoint) {} ", resourceType, resourceName);
+                    endpointDb.put(resourceName, new Endpoints());
+                    return argument;
+                });
+            }
+        }.build();
+    }
+
+    private MixedOperation<Endpoints, EndpointsList, DoneableEndpoints, Resource<Endpoints, DoneableEndpoints>> buildEndpoints() {
+        return new AbstractMockBuilder<Endpoints, EndpointsList, DoneableEndpoints, Resource<Endpoints, DoneableEndpoints>>(
+                Endpoints.class, EndpointsList.class, DoneableEndpoints.class, castClass(Resource.class), endpointDb) {
+            @Override
+            protected void nameScopedMocks(Resource<Endpoints, DoneableEndpoints> resource, String resourceName) {
+                mockGet(resourceName, resource);
+                mockCreate(resourceName, resource);
+                mockCascading(resource);
+                mockPatch(resourceName, resource);
+                mockDelete(resourceName, resource);
+                mockIsReady(resourceName, resource);
+            }
+        }.build();
+    }
+
+    private MixedOperation<PersistentVolumeClaim, PersistentVolumeClaimList, DoneablePersistentVolumeClaim, Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim>> buildPvcs() {
+        return new AbstractMockBuilder<PersistentVolumeClaim, PersistentVolumeClaimList, DoneablePersistentVolumeClaim, Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim>>(
+                PersistentVolumeClaim.class, PersistentVolumeClaimList.class, DoneablePersistentVolumeClaim.class, castClass(Resource.class), pvcDb) {
+            @Override
+            protected void nameScopedMocks(Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim> resource, String resourceName) {
+                mockGet(resourceName, resource);
+                mockCreate(resourceName, resource);
+                mockCascading(resource);
+                mockPatch(resourceName, resource);
+                mockDelete(resourceName, resource);
+            }
+        }.build();
+    }
+
+    private MixedOperation<ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> buildConfigMaps() {
+        return new AbstractMockBuilder<ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>>(
+            ConfigMap.class, ConfigMapList.class, DoneableConfigMap.class, castClass(Resource.class), cmDb) {
+            @Override
+            protected void nameScopedMocks(Resource<ConfigMap, DoneableConfigMap> resource, String resourceName) {
+                mockGet(resourceName, resource);
+                mockWatch(resource);
+                mockCreate(resourceName, resource);
+                mockCascading(resource);
+                mockPatch(resourceName, resource);
+                mockDelete(resourceName, resource);
+            }
+        }.build();
     }
 
     private static <T extends HasMetadata, D extends Doneable<T>> Map<String, T> db(Collection<T> initialResources, Class<T> cls, Class<D> doneableClass) {
@@ -356,9 +377,7 @@ public class MockKube {
          * Generate a stateful mock for CRUD-like interactions.
          * @return The mock
          */
-        public
-        MixedOperation<CM, CML, DCM, R> build() {
-
+        public MixedOperation<CM, CML, DCM, R> build() {
             MixedOperation<CM, CML, DCM, R> mixed = mock(MixedOperation.class);
 
             when(mixed.inNamespace(any())).thenReturn(mixed);
@@ -464,8 +483,7 @@ public class MockKube {
             });
         }
 
-        protected
-        OngoingStubbing<CM> mockGet(String resourceName, R resource) {
+        protected OngoingStubbing<CM> mockGet(String resourceName, R resource) {
             return when(resource.get()).thenAnswer(i -> {
                 CM r = copyResource(db.get(resourceName));
                 LOGGER.debug("{} {} get {}", resourceType, resourceName, r);
@@ -473,8 +491,7 @@ public class MockKube {
             });
         }
 
-        protected
-        OngoingStubbing<Boolean> mockIsReady(String resourceName, R resource) {
+        protected OngoingStubbing<Boolean> mockIsReady(String resourceName, R resource) {
             return when(resource.isReady()).thenAnswer(i -> {
                 LOGGER.debug("{} {} is ready", resourceType, resourceName);
                 return Boolean.TRUE;
