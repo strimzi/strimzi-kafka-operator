@@ -8,9 +8,9 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.strimzi.controller.cluster.ResourceUtils;
-import io.strimzi.controller.cluster.operator.resource.ConfigMapOperations;
-import io.strimzi.controller.cluster.operator.resource.DeploymentOperations;
-import io.strimzi.controller.cluster.operator.resource.ServiceOperations;
+import io.strimzi.controller.cluster.operator.resource.ConfigMapOperator;
+import io.strimzi.controller.cluster.operator.resource.DeploymentOperator;
+import io.strimzi.controller.cluster.operator.resource.ServiceOperator;
 import io.strimzi.controller.cluster.resources.KafkaConnectCluster;
 import io.strimzi.controller.cluster.resources.Labels;
 import io.vertx.core.Future;
@@ -58,9 +58,9 @@ public class KafkaConnectAssemblyOperatorTest {
 
     @Test
     public void testCreateCluster(TestContext context) {
-        ConfigMapOperations mockCmOps = mock(ConfigMapOperations.class);
-        ServiceOperations mockServiceOps = mock(ServiceOperations.class);
-        DeploymentOperations mockDcOps = mock(DeploymentOperations.class);
+        ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
+        ServiceOperator mockServiceOps = mock(ServiceOperator.class);
+        DeploymentOperator mockDcOps = mock(DeploymentOperator.class);
 
         String clusterCmName = "foo";
         String clusterCmNamespace = "test";
@@ -105,9 +105,9 @@ public class KafkaConnectAssemblyOperatorTest {
 
     @Test
     public void testUpdateClusterNoDiff(TestContext context) {
-        ConfigMapOperations mockCmOps = mock(ConfigMapOperations.class);
-        ServiceOperations mockServiceOps = mock(ServiceOperations.class);
-        DeploymentOperations mockDcOps = mock(DeploymentOperations.class);
+        ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
+        ServiceOperator mockServiceOps = mock(ServiceOperator.class);
+        DeploymentOperator mockDcOps = mock(DeploymentOperator.class);
 
         String clusterCmName = "foo";
         String clusterCmNamespace = "test";
@@ -159,9 +159,9 @@ public class KafkaConnectAssemblyOperatorTest {
 
     @Test
     public void testUpdateCluster(TestContext context) {
-        ConfigMapOperations mockCmOps = mock(ConfigMapOperations.class);
-        ServiceOperations mockServiceOps = mock(ServiceOperations.class);
-        DeploymentOperations mockDcOps = mock(DeploymentOperations.class);
+        ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
+        ServiceOperator mockServiceOps = mock(ServiceOperator.class);
+        DeploymentOperator mockDcOps = mock(DeploymentOperator.class);
 
         String clusterCmName = "foo";
         String clusterCmNamespace = "test";
@@ -223,9 +223,9 @@ public class KafkaConnectAssemblyOperatorTest {
 
     @Test
     public void testUpdateClusterFailure(TestContext context) {
-        ConfigMapOperations mockCmOps = mock(ConfigMapOperations.class);
-        ServiceOperations mockServiceOps = mock(ServiceOperations.class);
-        DeploymentOperations mockDcOps = mock(DeploymentOperations.class);
+        ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
+        ServiceOperator mockServiceOps = mock(ServiceOperator.class);
+        DeploymentOperator mockDcOps = mock(DeploymentOperator.class);
 
         String clusterCmName = "foo";
         String clusterCmNamespace = "test";
@@ -274,9 +274,9 @@ public class KafkaConnectAssemblyOperatorTest {
         int scaleTo = 4;
         String newReplicas = String.valueOf(scaleTo);
 
-        ConfigMapOperations mockCmOps = mock(ConfigMapOperations.class);
-        ServiceOperations mockServiceOps = mock(ServiceOperations.class);
-        DeploymentOperations mockDcOps = mock(DeploymentOperations.class);
+        ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
+        ServiceOperator mockServiceOps = mock(ServiceOperator.class);
+        DeploymentOperator mockDcOps = mock(DeploymentOperator.class);
 
         String clusterCmName = "foo";
         String clusterCmNamespace = "test";
@@ -317,9 +317,9 @@ public class KafkaConnectAssemblyOperatorTest {
         int scaleTo = 2;
         String newReplicas = String.valueOf(scaleTo);
 
-        ConfigMapOperations mockCmOps = mock(ConfigMapOperations.class);
-        ServiceOperations mockServiceOps = mock(ServiceOperations.class);
-        DeploymentOperations mockDcOps = mock(DeploymentOperations.class);
+        ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
+        ServiceOperator mockServiceOps = mock(ServiceOperator.class);
+        DeploymentOperator mockDcOps = mock(DeploymentOperator.class);
 
         String clusterCmName = "foo";
         String clusterCmNamespace = "test";
@@ -357,9 +357,9 @@ public class KafkaConnectAssemblyOperatorTest {
 
     @Test
     public void testDeleteCluster(TestContext context) {
-        ConfigMapOperations mockCmOps = mock(ConfigMapOperations.class);
-        ServiceOperations mockServiceOps = mock(ServiceOperations.class);
-        DeploymentOperations mockDcOps = mock(DeploymentOperations.class);
+        ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
+        ServiceOperator mockServiceOps = mock(ServiceOperator.class);
+        DeploymentOperator mockDcOps = mock(DeploymentOperator.class);
 
         String clusterCmName = "foo";
         String clusterCmNamespace = "test";
@@ -399,9 +399,9 @@ public class KafkaConnectAssemblyOperatorTest {
 
     @Test
     public void testReconcile(TestContext context) {
-        ConfigMapOperations mockCmOps = mock(ConfigMapOperations.class);
-        ServiceOperations mockServiceOps = mock(ServiceOperations.class);
-        DeploymentOperations mockDcOps = mock(DeploymentOperations.class);
+        ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
+        ServiceOperator mockServiceOps = mock(ServiceOperator.class);
+        DeploymentOperator mockDcOps = mock(DeploymentOperator.class);
 
 
         String clusterCmNamespace = "test";

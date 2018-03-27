@@ -28,19 +28,19 @@ import java.util.function.Predicate;
  * Operations for {@code StatefulSets}s, which supports {@link #rollingUpdate(String, String)}
  * in addition to the usual operations.
  */
-public class StatefulSetOperations<P> extends AbstractScalableOperations<KubernetesClient, StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>, P> {
+public class StatefulSetOperator<P> extends AbstractScalableResourceOperator<KubernetesClient, StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>, P> {
 
-    private static final Logger log = LoggerFactory.getLogger(StatefulSetOperations.class.getName());
-    private final PodOperations podOperations;
+    private static final Logger log = LoggerFactory.getLogger(StatefulSetOperator.class.getName());
+    private final PodOperator podOperations;
 
     /**
      * Constructor
      * @param vertx The Vertx instance
      * @param client The Kubernetes client
      */
-    public StatefulSetOperations(Vertx vertx, KubernetesClient client) {
+    public StatefulSetOperator(Vertx vertx, KubernetesClient client) {
         super(vertx, client, "StatefulSet");
-        this.podOperations = new PodOperations(vertx, client);
+        this.podOperations = new PodOperator(vertx, client);
     }
 
     @Override

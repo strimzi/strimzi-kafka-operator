@@ -7,11 +7,11 @@ package io.strimzi.controller.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.openshift.api.model.DeploymentConfig;
 import io.fabric8.openshift.api.model.ImageStream;
-import io.strimzi.controller.cluster.operator.resource.BuildConfigOperations;
-import io.strimzi.controller.cluster.operator.resource.ConfigMapOperations;
-import io.strimzi.controller.cluster.operator.resource.DeploymentConfigOperations;
-import io.strimzi.controller.cluster.operator.resource.ImageStreamOperations;
-import io.strimzi.controller.cluster.operator.resource.ServiceOperations;
+import io.strimzi.controller.cluster.operator.resource.BuildConfigOperator;
+import io.strimzi.controller.cluster.operator.resource.ConfigMapOperator;
+import io.strimzi.controller.cluster.operator.resource.DeploymentConfigOperator;
+import io.strimzi.controller.cluster.operator.resource.ImageStreamOperator;
+import io.strimzi.controller.cluster.operator.resource.ServiceOperator;
 import io.strimzi.controller.cluster.resources.KafkaConnectS2ICluster;
 import io.strimzi.controller.cluster.resources.Labels;
 import io.vertx.core.AsyncResult;
@@ -32,10 +32,10 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Ka
 
     private static final Logger log = LoggerFactory.getLogger(KafkaConnectS2IAssemblyOperator.class.getName());
     private static final String CLUSTER_TYPE_CONNECT_S2I = "kafka-connect-s2i";
-    private final ServiceOperations serviceOperations;
-    private final DeploymentConfigOperations deploymentConfigOperations;
-    private final ImageStreamOperations imagesStreamOperations;
-    private final BuildConfigOperations buildConfigOperations;
+    private final ServiceOperator serviceOperations;
+    private final DeploymentConfigOperator deploymentConfigOperations;
+    private final ImageStreamOperator imagesStreamOperations;
+    private final BuildConfigOperator buildConfigOperations;
 
     /**
      * @param vertx                      The Vertx instance
@@ -47,11 +47,11 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Ka
      * @param buildConfigOperations      For operating on BuildConfigs, may be null
      */
     public KafkaConnectS2IAssemblyOperator(Vertx vertx, boolean isOpenShift,
-                                           ConfigMapOperations configMapOperations,
-                                           DeploymentConfigOperations deploymentConfigOperations,
-                                           ServiceOperations serviceOperations,
-                                           ImageStreamOperations imagesStreamOperations,
-                                           BuildConfigOperations buildConfigOperations) {
+                                           ConfigMapOperator configMapOperations,
+                                           DeploymentConfigOperator deploymentConfigOperations,
+                                           ServiceOperator serviceOperations,
+                                           ImageStreamOperator imagesStreamOperations,
+                                           BuildConfigOperator buildConfigOperations) {
         super(vertx, isOpenShift, CLUSTER_TYPE_CONNECT_S2I, "Kafka Connect S2I", configMapOperations);
         this.serviceOperations = serviceOperations;
         this.deploymentConfigOperations = deploymentConfigOperations;

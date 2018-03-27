@@ -17,7 +17,7 @@ import org.junit.Test;
 
 import static org.mockito.Mockito.when;
 
-public class PvcOperationsMockTest extends ResourceOperationsMockTest<KubernetesClient, PersistentVolumeClaim, PersistentVolumeClaimList, DoneablePersistentVolumeClaim, Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim>, Void> {
+public class PvcOperatorTest extends AbstractResourceOperatorTest<KubernetesClient, PersistentVolumeClaim, PersistentVolumeClaimList, DoneablePersistentVolumeClaim, Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim>, Void> {
 
     @Override
     protected Class<KubernetesClient> clientType() {
@@ -40,8 +40,8 @@ public class PvcOperationsMockTest extends ResourceOperationsMockTest<Kubernetes
     }
 
     @Override
-    protected PvcOperations createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new PvcOperations(vertx, mockClient);
+    protected PvcOperator createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
+        return new PvcOperator(vertx, mockClient);
     }
 
     @Override

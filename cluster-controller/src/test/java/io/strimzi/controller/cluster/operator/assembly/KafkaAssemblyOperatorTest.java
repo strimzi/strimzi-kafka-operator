@@ -11,11 +11,11 @@ import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.controller.cluster.ClusterControllerConfig;
 import io.strimzi.controller.cluster.ResourceUtils;
-import io.strimzi.controller.cluster.operator.resource.ConfigMapOperations;
-import io.strimzi.controller.cluster.operator.resource.DeploymentOperations;
-import io.strimzi.controller.cluster.operator.resource.PvcOperations;
+import io.strimzi.controller.cluster.operator.resource.ConfigMapOperator;
+import io.strimzi.controller.cluster.operator.resource.DeploymentOperator;
+import io.strimzi.controller.cluster.operator.resource.PvcOperator;
 import io.strimzi.controller.cluster.operator.resource.ReconcileResult;
-import io.strimzi.controller.cluster.operator.resource.ServiceOperations;
+import io.strimzi.controller.cluster.operator.resource.ServiceOperator;
 import io.strimzi.controller.cluster.resources.AbstractCluster;
 import io.strimzi.controller.cluster.resources.KafkaCluster;
 import io.strimzi.controller.cluster.resources.Labels;
@@ -150,12 +150,12 @@ public class KafkaAssemblyOperatorTest {
 
     private void createCluster(TestContext context, ConfigMap clusterCm) {
         // create CM, Service, headless service, statefulset and so on
-        ConfigMapOperations mockCmOps = mock(ConfigMapOperations.class);
-        ServiceOperations mockServiceOps = mock(ServiceOperations.class);
-        ZookeeperSetOperations mockZsOps = mock(ZookeeperSetOperations.class);
-        KafkaSetOperations mockKsOps = mock(KafkaSetOperations.class);
-        PvcOperations mockPvcOps = mock(PvcOperations.class);
-        DeploymentOperations mockDepOps = mock(DeploymentOperations.class);
+        ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
+        ServiceOperator mockServiceOps = mock(ServiceOperator.class);
+        ZookeeperSetOperator mockZsOps = mock(ZookeeperSetOperator.class);
+        KafkaSetOperator mockKsOps = mock(KafkaSetOperator.class);
+        PvcOperator mockPvcOps = mock(PvcOperator.class);
+        DeploymentOperator mockDepOps = mock(DeploymentOperator.class);
 
         // Create a CM
         String clusterCmName = clusterCm.getMetadata().getName();
@@ -270,12 +270,12 @@ public class KafkaAssemblyOperatorTest {
         KafkaCluster kafkaCluster = KafkaCluster.fromConfigMap(clusterCm);
         TopicController topicController = TopicController.fromConfigMap(clusterCm);
         // create CM, Service, headless service, statefulset
-        ConfigMapOperations mockCmOps = mock(ConfigMapOperations.class);
-        ServiceOperations mockServiceOps = mock(ServiceOperations.class);
-        ZookeeperSetOperations mockZsOps = mock(ZookeeperSetOperations.class);
-        KafkaSetOperations mockKsOps = mock(KafkaSetOperations.class);
-        PvcOperations mockPvcOps = mock(PvcOperations.class);
-        DeploymentOperations mockDepOps = mock(DeploymentOperations.class);
+        ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
+        ServiceOperator mockServiceOps = mock(ServiceOperator.class);
+        ZookeeperSetOperator mockZsOps = mock(ZookeeperSetOperator.class);
+        KafkaSetOperator mockKsOps = mock(KafkaSetOperator.class);
+        PvcOperator mockPvcOps = mock(PvcOperator.class);
+        DeploymentOperator mockDepOps = mock(DeploymentOperator.class);
 
         String clusterCmName = clusterCm.getMetadata().getName();
         String clusterCmNamespace = clusterCm.getMetadata().getNamespace();
@@ -464,12 +464,12 @@ public class KafkaAssemblyOperatorTest {
         TopicController originalTopicController = TopicController.fromConfigMap(originalCm);
 
         // create CM, Service, headless service, statefulset and so on
-        ConfigMapOperations mockCmOps = mock(ConfigMapOperations.class);
-        ServiceOperations mockServiceOps = mock(ServiceOperations.class);
-        ZookeeperSetOperations mockZsOps = mock(ZookeeperSetOperations.class);
-        KafkaSetOperations mockKsOps = mock(KafkaSetOperations.class);
-        PvcOperations mockPvcOps = mock(PvcOperations.class);
-        DeploymentOperations mockDepOps = mock(DeploymentOperations.class);
+        ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
+        ServiceOperator mockServiceOps = mock(ServiceOperator.class);
+        ZookeeperSetOperator mockZsOps = mock(ZookeeperSetOperator.class);
+        KafkaSetOperator mockKsOps = mock(KafkaSetOperator.class);
+        PvcOperator mockPvcOps = mock(PvcOperator.class);
+        DeploymentOperator mockDepOps = mock(DeploymentOperator.class);
 
         String clusterCmName = clusterCm.getMetadata().getName();
         String clusterCmNamespace = clusterCm.getMetadata().getNamespace();
@@ -615,12 +615,12 @@ public class KafkaAssemblyOperatorTest {
 
             // rolling restart
             Set<String> expectedRollingRestarts = set();
-            if (KafkaSetOperations.needsRollingUpdate(
+            if (KafkaSetOperator.needsRollingUpdate(
                     new StatefulSetDiff(originalKafkaCluster.generateStatefulSet(openShift),
                     updatedKafkaCluster.generateStatefulSet(openShift)))) {
                 expectedRollingRestarts.add(originalKafkaCluster.getName());
             }
-            if (ZookeeperSetOperations.needsRollingUpdate(
+            if (ZookeeperSetOperator.needsRollingUpdate(
                     new StatefulSetDiff(originalZookeeperCluster.generateStatefulSet(openShift),
                             updatedZookeeperCluster.generateStatefulSet(openShift)))) {
                 expectedRollingRestarts.add(originalZookeeperCluster.getName());
@@ -668,12 +668,12 @@ public class KafkaAssemblyOperatorTest {
         Async async = context.async(3);
 
         // create CM, Service, headless service, statefulset
-        ConfigMapOperations mockCmOps = mock(ConfigMapOperations.class);
-        ServiceOperations mockServiceOps = mock(ServiceOperations.class);
-        ZookeeperSetOperations mockZsOps = mock(ZookeeperSetOperations.class);
-        KafkaSetOperations mockKsOps = mock(KafkaSetOperations.class);
-        PvcOperations mockPvcOps = mock(PvcOperations.class);
-        DeploymentOperations mockDepOps = mock(DeploymentOperations.class);
+        ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
+        ServiceOperator mockServiceOps = mock(ServiceOperator.class);
+        ZookeeperSetOperator mockZsOps = mock(ZookeeperSetOperator.class);
+        KafkaSetOperator mockKsOps = mock(KafkaSetOperator.class);
+        PvcOperator mockPvcOps = mock(PvcOperator.class);
+        DeploymentOperator mockDepOps = mock(DeploymentOperator.class);
 
         String clusterCmNamespace = "myNamespace";
 

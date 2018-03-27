@@ -16,14 +16,14 @@ import io.vertx.core.Vertx;
 /**
  * Operations for {@code BuildConfig}s.
  */
-public class BuildConfigOperations extends AbstractOperations<OpenShiftClient, BuildConfig, BuildConfigList, DoneableBuildConfig, BuildConfigResource<BuildConfig, DoneableBuildConfig, Void, Build>, Void> {
+public class BuildConfigOperator extends AbstractResourceOperator<OpenShiftClient, BuildConfig, BuildConfigList, DoneableBuildConfig, BuildConfigResource<BuildConfig, DoneableBuildConfig, Void, Build>, Void> {
 
     /**
      * Constructor
      * @param vertx The Vertx instance
      * @param client The OpenShift client
      */
-    public BuildConfigOperations(Vertx vertx, OpenShiftClient client) {
+    public BuildConfigOperator(Vertx vertx, OpenShiftClient client) {
         super(vertx, client, "BuildConfig");
     }
 

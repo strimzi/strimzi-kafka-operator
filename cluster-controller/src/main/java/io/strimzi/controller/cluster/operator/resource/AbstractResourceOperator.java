@@ -27,7 +27,7 @@ import java.util.List;
  * @param <R> The resource operations.
  * @param <P> The type of the {@link #reconcile(String, String, HasMetadata)}result
  */
-public abstract class AbstractOperations<C, T extends HasMetadata,
+public abstract class AbstractResourceOperator<C, T extends HasMetadata,
         L extends KubernetesResourceList/*<T>*/, D, R extends Resource<T, D>,
         P> {
 
@@ -42,7 +42,7 @@ public abstract class AbstractOperations<C, T extends HasMetadata,
      * @param client The kubernetes client.
      * @param resourceKind The mind of Kubernetes resource (used for logging).
      */
-    public AbstractOperations(Vertx vertx, C client, String resourceKind) {
+    public AbstractResourceOperator(Vertx vertx, C client, String resourceKind) {
         this.vertx = vertx;
         this.client = client;
         this.resourceKind = resourceKind;

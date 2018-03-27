@@ -7,7 +7,7 @@ package io.strimzi.controller.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.strimzi.controller.cluster.operator.resource.ConfigMapOperations;
+import io.strimzi.controller.cluster.operator.resource.ConfigMapOperator;
 import io.strimzi.controller.cluster.resources.AbstractCluster;
 import io.strimzi.controller.cluster.resources.Labels;
 import io.vertx.core.AsyncResult;
@@ -43,7 +43,7 @@ public abstract class AbstractAssemblyOperator<C extends AbstractCluster,
     protected final boolean isOpenShift;
     protected final String clusterType;
     protected final String clusterDescription;
-    protected final ConfigMapOperations configMapOperations;
+    protected final ConfigMapOperator configMapOperations;
 
     /**
      * @param vertx The Vertx instance
@@ -53,7 +53,7 @@ public abstract class AbstractAssemblyOperator<C extends AbstractCluster,
      */
     protected AbstractAssemblyOperator(Vertx vertx, boolean isOpenShift, String clusterType,
                                        String clusterDescription,
-                                       ConfigMapOperations configMapOperations) {
+                                       ConfigMapOperator configMapOperations) {
         this.vertx = vertx;
         this.isOpenShift = isOpenShift;
         this.clusterType = clusterType;

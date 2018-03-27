@@ -15,13 +15,13 @@ import io.vertx.core.Vertx;
 /**
  * Operations for {@code ConfigMap}s.
  */
-public class ConfigMapOperations extends AbstractOperations<KubernetesClient, ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>, Void> {
+public class ConfigMapOperator extends AbstractResourceOperator<KubernetesClient, ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>, Void> {
     /**
      * Constructor
      * @param vertx The Vertx instance
      * @param client The Kubernetes client
      */
-    public ConfigMapOperations(Vertx vertx, KubernetesClient client) {
+    public ConfigMapOperator(Vertx vertx, KubernetesClient client) {
         super(vertx, client, "ConfigMap");
     }
 

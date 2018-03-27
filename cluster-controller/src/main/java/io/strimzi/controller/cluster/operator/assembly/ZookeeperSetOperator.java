@@ -7,18 +7,18 @@ package io.strimzi.controller.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.controller.cluster.operator.resource.ReconcileResult;
-import io.strimzi.controller.cluster.operator.resource.StatefulSetOperations;
+import io.strimzi.controller.cluster.operator.resource.StatefulSetOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Specialization of {@link StatefulSetOperations} for StatefulSets of Zookeeper nodes
+ * Specialization of {@link StatefulSetOperator} for StatefulSets of Zookeeper nodes
  */
-public class ZookeeperSetOperations extends StatefulSetOperations<Boolean> {
+public class ZookeeperSetOperator extends StatefulSetOperator<Boolean> {
 
-    private static final Logger log = LoggerFactory.getLogger(ZookeeperSetOperations.class);
+    private static final Logger log = LoggerFactory.getLogger(ZookeeperSetOperator.class);
 
     /**
      * Constructor
@@ -26,7 +26,7 @@ public class ZookeeperSetOperations extends StatefulSetOperations<Boolean> {
      * @param vertx  The Vertx instance
      * @param client The Kubernetes client
      */
-    public ZookeeperSetOperations(Vertx vertx, KubernetesClient client) {
+    public ZookeeperSetOperator(Vertx vertx, KubernetesClient client) {
         super(vertx, client);
     }
 

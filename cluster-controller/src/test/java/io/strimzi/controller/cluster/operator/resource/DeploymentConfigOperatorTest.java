@@ -16,7 +16,7 @@ import io.vertx.core.Vertx;
 
 import static org.mockito.Mockito.when;
 
-public class DeploymentConfigOperationsMockTest extends ScalableResourceOperationsMockTest<OpenShiftClient, DeploymentConfig,
+public class DeploymentConfigOperatorTest extends ScalableResourceOperatorTest<OpenShiftClient, DeploymentConfig,
         DeploymentConfigList, DoneableDeploymentConfig,
         DeployableScalableResource<DeploymentConfig, DoneableDeploymentConfig>, Void> {
 
@@ -44,7 +44,7 @@ public class DeploymentConfigOperationsMockTest extends ScalableResourceOperatio
     }
 
     @Override
-    protected DeploymentConfigOperations createResourceOperations(Vertx vertx, OpenShiftClient mockClient) {
-        return new DeploymentConfigOperations(vertx, mockClient);
+    protected DeploymentConfigOperator createResourceOperations(Vertx vertx, OpenShiftClient mockClient) {
+        return new DeploymentConfigOperator(vertx, mockClient);
     }
 }

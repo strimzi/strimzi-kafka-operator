@@ -13,15 +13,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * An {@link AbstractOperations} that can be scaled up and down in addition to the usual operations.
+ * An {@link AbstractResourceOperator} that can be scaled up and down in addition to the usual operations.
  * @param <C> The type of client used to interact with kubernetes.
  * @param <T> The Kubernetes resource type.
  * @param <L> The list variant of the Kubernetes resource type.
  * @param <D> The doneable variant of the Kubernetes resource type.
  * @param <R> The resource operations.
  */
-public abstract class AbstractScalableOperations<C, T extends HasMetadata, L extends KubernetesResourceList/*<T>*/, D, R extends ScalableResource<T, D>, P>
-        extends AbstractReadyOperations<C, T, L, D, R, P> {
+public abstract class AbstractScalableResourceOperator<C, T extends HasMetadata, L extends KubernetesResourceList/*<T>*/, D, R extends ScalableResource<T, D>, P>
+        extends AbstractReadyResourceOperator<C, T, L, D, R, P> {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -31,7 +31,7 @@ public abstract class AbstractScalableOperations<C, T extends HasMetadata, L ext
      * @param client The Kubernetes client
      * @param resourceKind The kind of resource.
      */
-    public AbstractScalableOperations(Vertx vertx, C client, String resourceKind) {
+    public AbstractScalableResourceOperator(Vertx vertx, C client, String resourceKind) {
         super(vertx, client, resourceKind);
     }
 

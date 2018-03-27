@@ -15,7 +15,7 @@ import io.vertx.core.Vertx;
 
 import static org.mockito.Mockito.when;
 
-public class EndpointOperationsMockTest extends ReadyResourceOperationsMockTest<KubernetesClient, Endpoints, EndpointsList, DoneableEndpoints, Resource<Endpoints, DoneableEndpoints>, Void> {
+public class EndpointOperatorTest extends AbtractReadyResourceOperatorTest<KubernetesClient, Endpoints, EndpointsList, DoneableEndpoints, Resource<Endpoints, DoneableEndpoints>, Void> {
 
     @Override
     protected Class<KubernetesClient> clientType() {
@@ -38,7 +38,7 @@ public class EndpointOperationsMockTest extends ReadyResourceOperationsMockTest<
     }
 
     @Override
-    protected EndpointOperations createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new EndpointOperations(vertx, mockClient);
+    protected EndpointOperator createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
+        return new EndpointOperator(vertx, mockClient);
     }
 }

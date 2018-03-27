@@ -49,13 +49,13 @@ public class ZookeeperSetOperationsTest {
 
     @Test
     public void testNotNeedsRollingUpdateIdentical() {
-        assertFalse(ZookeeperSetOperations.needsRollingUpdate(diff()));
+        assertFalse(ZookeeperSetOperator.needsRollingUpdate(diff()));
     }
 
     @Test
     public void testNeedsRollingUpdateReplicas() {
         a.getSpec().setReplicas(b.getSpec().getReplicas() + 1);
-        assertTrue(ZookeeperSetOperations.needsRollingUpdate(diff()));
+        assertTrue(ZookeeperSetOperator.needsRollingUpdate(diff()));
     }
 
     @Test
@@ -63,28 +63,28 @@ public class ZookeeperSetOperationsTest {
         Map<String, String> labels = new HashMap<>(b.getMetadata().getLabels());
         labels.put("foo", "bar");
         a.getMetadata().setLabels(labels);
-        assertTrue(ZookeeperSetOperations.needsRollingUpdate(diff()));
+        assertTrue(ZookeeperSetOperator.needsRollingUpdate(diff()));
     }
 
     @Test
     public void testNeedsRollingUpdateImage() {
         a.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(
                 a.getSpec().getTemplate().getSpec().getContainers().get(0).getImage() + "-foo");
-        assertTrue(ZookeeperSetOperations.needsRollingUpdate(diff()));
+        assertTrue(ZookeeperSetOperator.needsRollingUpdate(diff()));
     }
 
     @Test
     public void testNeedsRollingUpdateReadinessDelay() {
         a.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().setInitialDelaySeconds(
                 a.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds() + 1);
-        assertTrue(ZookeeperSetOperations.needsRollingUpdate(diff()));
+        assertTrue(ZookeeperSetOperator.needsRollingUpdate(diff()));
     }
 
     @Test
     public void testNeedsRollingUpdateReadinessTimeout() {
         a.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().setTimeoutSeconds(
                 a.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds() + 1);
-        assertTrue(ZookeeperSetOperations.needsRollingUpdate(diff()));
+        assertTrue(ZookeeperSetOperator.needsRollingUpdate(diff()));
     }
 
     @Test
@@ -92,7 +92,7 @@ public class ZookeeperSetOperationsTest {
         String envVar = KEY_ZOOKEEPER_METRICS_ENABLED;
         a.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().add(new EnvVar(envVar,
                 containerEnvVars(a.getSpec().getTemplate().getSpec().getContainers().get(0)).get(envVar) + "-foo", null));
-        assertTrue(ZookeeperSetOperations.needsRollingUpdate(diff()));
+        assertTrue(ZookeeperSetOperator.needsRollingUpdate(diff()));
     }
 
     @Test
@@ -100,6 +100,6 @@ public class ZookeeperSetOperationsTest {
         String envVar = "SOME_RANDOM_ENV";
         a.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().add(new EnvVar(envVar,
                 "foo", null));
-        assertTrue(ZookeeperSetOperations.needsRollingUpdate(diff()));
+        assertTrue(ZookeeperSetOperator.needsRollingUpdate(diff()));
     }
 }

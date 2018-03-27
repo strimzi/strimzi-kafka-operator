@@ -31,7 +31,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(VertxUnitRunner.class)
-public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T extends HasMetadata,
+public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T extends HasMetadata,
         L extends KubernetesResourceList, D, R extends Resource<T, D>, P> {
 
     public static final String RESOURCE_NAME = "my-resource";
@@ -70,7 +70,7 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
     protected abstract void mocker(C mockClient, MixedOperation op);
 
     /** Create the subclass of ResourceOperation to be tested */
-    protected abstract AbstractOperations<C, T, L, D, R, P> createResourceOperations(Vertx vertx, C mockClient);
+    protected abstract AbstractResourceOperator<C, T, L, D, R, P> createResourceOperations(Vertx vertx, C mockClient);
 
     @Test
     public void createWhenExistsIsAPatch(TestContext context) {
@@ -91,7 +91,7 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractOperations<C, T, L, D, R, P> op = createResourceOperations(vertx, mockClient);
+        AbstractResourceOperator<C, T, L, D, R, P> op = createResourceOperations(vertx, mockClient);
 
         Async async = context.async();
         Future<ReconcileResult<P>> fut = op.createOrUpdate(resource);
@@ -124,7 +124,7 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractOperations<C, T, L, D, R, P> op = createResourceOperations(vertx, mockClient);
+        AbstractResourceOperator<C, T, L, D, R, P> op = createResourceOperations(vertx, mockClient);
 
         Async async = context.async();
         op.createOrUpdate(resource).setHandler(ar -> {
@@ -149,7 +149,7 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractOperations<C, T, L, D, R, P> op = createResourceOperations(vertx, mockClient);
+        AbstractResourceOperator<C, T, L, D, R, P> op = createResourceOperations(vertx, mockClient);
 
         Async async = context.async();
         op.createOrUpdate(resource).setHandler(ar -> {
@@ -179,7 +179,7 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractOperations<C, T, L, D, R, P> op = createResourceOperations(vertx, mockClient);
+        AbstractResourceOperator<C, T, L, D, R, P> op = createResourceOperations(vertx, mockClient);
 
         Async async = context.async();
         op.createOrUpdate(resource).setHandler(ar -> {
@@ -203,7 +203,7 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractOperations<C, T, L, D, R, P> op = createResourceOperations(vertx, mockClient);
+        AbstractResourceOperator<C, T, L, D, R, P> op = createResourceOperations(vertx, mockClient);
 
         Async async = context.async();
         op.reconcile(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null).setHandler(ar -> {
@@ -230,7 +230,7 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractOperations<C, T, L, D, R, P> op = createResourceOperations(vertx, mockClient);
+        AbstractResourceOperator<C, T, L, D, R, P> op = createResourceOperations(vertx, mockClient);
 
         Async async = context.async();
         op.reconcile(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null).setHandler(ar -> {
@@ -255,7 +255,7 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractOperations<C, T, L, D, R, P> op = createResourceOperations(vertx, mockClient);
+        AbstractResourceOperator<C, T, L, D, R, P> op = createResourceOperations(vertx, mockClient);
 
         Async async = context.async();
         op.reconcile(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null).setHandler(ar -> {
@@ -284,7 +284,7 @@ public abstract class ResourceOperationsMockTest<C extends KubernetesClient, T e
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractOperations<C, T, L, D, R, P> op = createResourceOperations(vertx, mockClient);
+        AbstractResourceOperator<C, T, L, D, R, P> op = createResourceOperations(vertx, mockClient);
 
         Async async = context.async();
         op.reconcile(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null).setHandler(ar -> {

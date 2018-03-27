@@ -15,7 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Specializes {@link AbstractOperations} for resources which also have a notion
+ * Specializes {@link AbstractResourceOperator} for resources which also have a notion
  * of being "ready".
  * @param <C> The type of client used to interact with kubernetes.
  * @param <T> The Kubernetes resource type.
@@ -24,8 +24,8 @@ import org.slf4j.LoggerFactory;
  * @param <R> The resource operations.
  * @param <P> The type of the {@link #reconcile(String, String, HasMetadata)}result
  */
-public abstract class AbstractReadyOperations<C, T extends HasMetadata, L extends KubernetesResourceList/*<T>*/, D, R extends Resource<T, D>, P>
-        extends AbstractOperations<C, T, L, D, R, P> {
+public abstract class AbstractReadyResourceOperator<C, T extends HasMetadata, L extends KubernetesResourceList/*<T>*/, D, R extends Resource<T, D>, P>
+        extends AbstractResourceOperator<C, T, L, D, R, P> {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -36,7 +36,7 @@ public abstract class AbstractReadyOperations<C, T extends HasMetadata, L extend
      * @param client       The kubernetes client.
      * @param resourceKind The mind of Kubernetes resource (used for logging).
      */
-    public AbstractReadyOperations(Vertx vertx, C client, String resourceKind) {
+    public AbstractReadyResourceOperator(Vertx vertx, C client, String resourceKind) {
         super(vertx, client, resourceKind);
     }
 

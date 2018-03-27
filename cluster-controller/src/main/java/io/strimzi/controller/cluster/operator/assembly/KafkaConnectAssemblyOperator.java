@@ -6,9 +6,9 @@ package io.strimzi.controller.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
-import io.strimzi.controller.cluster.operator.resource.ConfigMapOperations;
-import io.strimzi.controller.cluster.operator.resource.DeploymentOperations;
-import io.strimzi.controller.cluster.operator.resource.ServiceOperations;
+import io.strimzi.controller.cluster.operator.resource.ConfigMapOperator;
+import io.strimzi.controller.cluster.operator.resource.DeploymentOperator;
+import io.strimzi.controller.cluster.operator.resource.ServiceOperator;
 import io.strimzi.controller.cluster.resources.KafkaConnectCluster;
 import io.strimzi.controller.cluster.resources.Labels;
 import io.vertx.core.AsyncResult;
@@ -29,8 +29,8 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kafka
 
     private static final Logger log = LoggerFactory.getLogger(KafkaConnectAssemblyOperator.class.getName());
     private static final String CLUSTER_TYPE_CONNECT = "kafka-connect";
-    private final ServiceOperations serviceOperations;
-    private final DeploymentOperations deploymentOperations;
+    private final ServiceOperator serviceOperations;
+    private final DeploymentOperator deploymentOperations;
 
     /**
      * @param vertx The Vertx instance
@@ -40,9 +40,9 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kafka
      * @param serviceOperations For operating on Services
      */
     public KafkaConnectAssemblyOperator(Vertx vertx, boolean isOpenShift,
-                                        ConfigMapOperations configMapOperations,
-                                        DeploymentOperations deploymentOperations,
-                                        ServiceOperations serviceOperations) {
+                                        ConfigMapOperator configMapOperations,
+                                        DeploymentOperator deploymentOperations,
+                                        ServiceOperator serviceOperations) {
         super(vertx, isOpenShift, CLUSTER_TYPE_CONNECT, "Kafka Connect", configMapOperations);
         this.serviceOperations = serviceOperations;
         this.deploymentOperations = deploymentOperations;

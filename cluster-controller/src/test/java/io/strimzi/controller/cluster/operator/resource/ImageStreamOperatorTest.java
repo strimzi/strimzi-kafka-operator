@@ -15,7 +15,7 @@ import io.vertx.core.Vertx;
 
 import static org.mockito.Mockito.when;
 
-public class ImageStreamOperationsMockTest extends ResourceOperationsMockTest<OpenShiftClient, ImageStream, ImageStreamList, DoneableImageStream, Resource<ImageStream, DoneableImageStream>, Void> {
+public class ImageStreamOperatorTest extends AbstractResourceOperatorTest<OpenShiftClient, ImageStream, ImageStreamList, DoneableImageStream, Resource<ImageStream, DoneableImageStream>, Void> {
 
     @Override
     protected Class<OpenShiftClient> clientType() {
@@ -38,8 +38,8 @@ public class ImageStreamOperationsMockTest extends ResourceOperationsMockTest<Op
     }
 
     @Override
-    protected AbstractOperations<OpenShiftClient, ImageStream, ImageStreamList, DoneableImageStream, Resource<ImageStream, DoneableImageStream>, Void> createResourceOperations(Vertx vertx, OpenShiftClient mockClient) {
-        return new ImageStreamOperations(vertx, mockClient);
+    protected AbstractResourceOperator<OpenShiftClient, ImageStream, ImageStreamList, DoneableImageStream, Resource<ImageStream, DoneableImageStream>, Void> createResourceOperations(Vertx vertx, OpenShiftClient mockClient) {
+        return new ImageStreamOperator(vertx, mockClient);
     }
 
 }
