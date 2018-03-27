@@ -29,6 +29,7 @@ import java.lang.annotation.Annotation;
 import java.lang.annotation.Repeatable;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 import static io.strimzi.test.TestUtils.indent;
@@ -158,15 +159,8 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         protected void onError(Throwable t) {
             LOGGER.info("The test is failing/erroring due to {}, here's some diagnostic output{}{}",
                     t, System.lineSeparator(), "----------------------------------------------------------------------");
-            for (String resourceType : asList("pod", "deployment", "statefulset", "cm")) {
-                for (String resourceName : kubeClient().list(resourceType)) {
-                    LOGGER.info("Description of {} '{}':{}{}", resourceType, resourceName,
-                            System.lineSeparator(), indent(kubeClient().describe(resourceType, resourceName)));
-                }
-            }
-            for (String pod : kubeClient().list("pod")) {
-                LOGGER.info("Logs from pod {}:{}{}", pod, System.lineSeparator(), indent(kubeClient().logs(pod)));
-            }
+            dumpDescriptions(asList("pod", "deployment", "statefulset", "cm"));
+            dumpLogs();
             LOGGER.info("That's all the diagnostic info, the exception {} will now propoagate and the test will fail{}{}",
                     t,
                     t, System.lineSeparator(), "----------------------------------------------------------------------");
@@ -177,8 +171,24 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
             runAfter();
         }
         public void runAfter() {
+            dumpDescriptions(asList("pod"));
             if (System.getenv(NOTEARDOWN) == null) {
                 after();
+            }
+        }
+    }
+
+    private void dumpLogs() {
+        for (String pod : kubeClient().list("pod")) {
+            LOGGER.info("Logs from pod {}:{}{}", pod, System.lineSeparator(), indent(kubeClient().logs(pod)));
+        }
+    }
+
+    private void dumpDescriptions(Collection<String> resourceTypes) {
+        for (String resourceType : resourceTypes) {
+            for (String resourceName : kubeClient().list(resourceType)) {
+                LOGGER.info("Description of {} '{}':{}{}", resourceType, resourceName,
+                        System.lineSeparator(), indent(kubeClient().describe(resourceType, resourceName)));
             }
         }
     }
