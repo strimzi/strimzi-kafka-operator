@@ -32,10 +32,10 @@ import java.util.stream.Collectors;
  * @param <C> The type of cluster
  * @param <R> The type of resource from which the cluster state can be recovered
  */
-public abstract class AbstractClusterOperations<C extends AbstractCluster,
+public abstract class AbstractAssemblyOperator<C extends AbstractCluster,
         R extends HasMetadata> {
 
-    private static final Logger log = LoggerFactory.getLogger(AbstractClusterOperations.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(AbstractAssemblyOperator.class.getName());
 
     protected static final int LOCK_TIMEOUT = 60000;
 
@@ -51,9 +51,9 @@ public abstract class AbstractClusterOperations<C extends AbstractCluster,
      * @param clusterDescription A description of the cluster, for logging. This is a high level description and different from
      *                           the {@code clusterType} passed to {@link #getLockName(String, String, String)}
      */
-    protected AbstractClusterOperations(Vertx vertx, boolean isOpenShift, String clusterType,
-                                        String clusterDescription,
-                                        ConfigMapOperations configMapOperations) {
+    protected AbstractAssemblyOperator(Vertx vertx, boolean isOpenShift, String clusterType,
+                                       String clusterDescription,
+                                       ConfigMapOperations configMapOperations) {
         this.vertx = vertx;
         this.isOpenShift = isOpenShift;
         this.clusterType = clusterType;

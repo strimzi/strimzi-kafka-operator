@@ -10,10 +10,10 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.strimzi.controller.cluster.operator.assembly.AbstractClusterOperations;
-import io.strimzi.controller.cluster.operator.assembly.KafkaClusterOperations;
-import io.strimzi.controller.cluster.operator.assembly.KafkaConnectClusterOperations;
-import io.strimzi.controller.cluster.operator.assembly.KafkaConnectS2IClusterOperations;
+import io.strimzi.controller.cluster.operator.assembly.AbstractAssemblyOperator;
+import io.strimzi.controller.cluster.operator.assembly.KafkaAssemblyOperator;
+import io.strimzi.controller.cluster.operator.assembly.KafkaConnectAssemblyOperator;
+import io.strimzi.controller.cluster.operator.assembly.KafkaConnectS2IAssemblyOperator;
 import io.strimzi.controller.cluster.resources.KafkaCluster;
 import io.strimzi.controller.cluster.resources.KafkaConnectCluster;
 import io.strimzi.controller.cluster.resources.KafkaConnectS2ICluster;
@@ -44,17 +44,17 @@ public class ClusterController extends AbstractVerticle {
     private Watch configMapWatch;
 
     private long reconcileTimer;
-    private final KafkaClusterOperations kafkaClusterOperations;
-    private final KafkaConnectClusterOperations kafkaConnectClusterOperations;
-    private final KafkaConnectS2IClusterOperations kafkaConnectS2IClusterOperations;
+    private final KafkaAssemblyOperator kafkaClusterOperations;
+    private final KafkaConnectAssemblyOperator kafkaConnectClusterOperations;
+    private final KafkaConnectS2IAssemblyOperator kafkaConnectS2IClusterOperations;
     private boolean stopping;
 
     public ClusterController(String namespace,
                              long reconciliationInterval,
                              KubernetesClient client,
-                             KafkaClusterOperations kafkaClusterOperations,
-                             KafkaConnectClusterOperations kafkaConnectClusterOperations,
-                             KafkaConnectS2IClusterOperations kafkaConnectS2IClusterOperations) {
+                             KafkaAssemblyOperator kafkaClusterOperations,
+                             KafkaConnectAssemblyOperator kafkaConnectClusterOperations,
+                             KafkaConnectS2IAssemblyOperator kafkaConnectS2IClusterOperations) {
         log.info("Creating ClusterController for namespace {}", namespace);
         this.namespace = namespace;
         this.selector = Labels.forKind("cluster");
@@ -115,7 +115,7 @@ public class ClusterController extends AbstractVerticle {
                         Labels labels = Labels.fromResource(cm);
                         String type = labels.type();
 
-                        final AbstractClusterOperations<?, ?> cluster;
+                        final AbstractAssemblyOperator<?, ?> cluster;
                         if (type == null) {
                             log.warn("Missing label {} in Config Map {} in namespace {}", Labels.STRIMZI_TYPE_LABEL, cm.getMetadata().getName(), namespace);
                             return;

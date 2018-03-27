@@ -25,9 +25,9 @@ import java.util.List;
 /**
  * Cluster operations for a Kafka Connect cluster
  */
-public class KafkaConnectClusterOperations extends AbstractClusterOperations<KafkaConnectCluster, Deployment> {
+public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<KafkaConnectCluster, Deployment> {
 
-    private static final Logger log = LoggerFactory.getLogger(KafkaConnectClusterOperations.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(KafkaConnectAssemblyOperator.class.getName());
     private static final String CLUSTER_TYPE_CONNECT = "kafka-connect";
     private final ServiceOperations serviceOperations;
     private final DeploymentOperations deploymentOperations;
@@ -39,10 +39,10 @@ public class KafkaConnectClusterOperations extends AbstractClusterOperations<Kaf
      * @param deploymentOperations For operating on Deployments
      * @param serviceOperations For operating on Services
      */
-    public KafkaConnectClusterOperations(Vertx vertx, boolean isOpenShift,
-                                         ConfigMapOperations configMapOperations,
-                                         DeploymentOperations deploymentOperations,
-                                         ServiceOperations serviceOperations) {
+    public KafkaConnectAssemblyOperator(Vertx vertx, boolean isOpenShift,
+                                        ConfigMapOperations configMapOperations,
+                                        DeploymentOperations deploymentOperations,
+                                        ServiceOperations serviceOperations) {
         super(vertx, isOpenShift, CLUSTER_TYPE_CONNECT, "Kafka Connect", configMapOperations);
         this.serviceOperations = serviceOperations;
         this.deploymentOperations = deploymentOperations;

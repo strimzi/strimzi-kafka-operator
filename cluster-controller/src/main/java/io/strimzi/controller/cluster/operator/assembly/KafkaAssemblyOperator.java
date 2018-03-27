@@ -36,8 +36,8 @@ import static io.strimzi.controller.cluster.resources.TopicController.topicContr
  * an AbstractClusterOperations that really manages two clusters,
  * for of Kafka nodes and another of ZooKeeper nodes.</p>
  */
-public class KafkaClusterOperations extends AbstractClusterOperations<KafkaCluster, StatefulSet> {
-    private static final Logger log = LoggerFactory.getLogger(KafkaClusterOperations.class.getName());
+public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KafkaCluster, StatefulSet> {
+    private static final Logger log = LoggerFactory.getLogger(KafkaAssemblyOperator.class.getName());
     private static final String CLUSTER_TYPE_ZOOKEEPER = "zookeeper";
     static final String CLUSTER_TYPE_KAFKA = "kafka";
     private static final String CLUSTER_TYPE_TOPIC_CONTROLLER = "topic-controller";
@@ -59,14 +59,14 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
      * @param pvcOperations For operating on PersistentVolumeClaims
      * @param deploymentOperations For operating on Deployments
      */
-    public KafkaClusterOperations(Vertx vertx, boolean isOpenShift,
-                                  long operationTimeoutMs,
-                                  ConfigMapOperations configMapOperations,
-                                  ServiceOperations serviceOperations,
-                                  ZookeeperSetOperations zkSetOperations,
-                                  KafkaSetOperations kafkaSetOperations,
-                                  PvcOperations pvcOperations,
-                                  DeploymentOperations deploymentOperations) {
+    public KafkaAssemblyOperator(Vertx vertx, boolean isOpenShift,
+                                 long operationTimeoutMs,
+                                 ConfigMapOperations configMapOperations,
+                                 ServiceOperations serviceOperations,
+                                 ZookeeperSetOperations zkSetOperations,
+                                 KafkaSetOperations kafkaSetOperations,
+                                 PvcOperations pvcOperations,
+                                 DeploymentOperations deploymentOperations) {
         super(vertx, isOpenShift, CLUSTER_TYPE_KAFKA, "Kafka", configMapOperations);
         this.operationTimeoutMs = operationTimeoutMs;
         this.zkSetOperations = zkSetOperations;

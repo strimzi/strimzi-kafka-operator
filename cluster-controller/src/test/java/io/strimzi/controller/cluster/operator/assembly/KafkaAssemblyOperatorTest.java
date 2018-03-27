@@ -60,7 +60,7 @@ import static org.mockito.Mockito.when;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(VertxUnitRunnerWithParametersFactory.class)
-public class KafkaClusterOperationsTest {
+public class KafkaAssemblyOperatorTest {
 
     public static final String METRICS_CONFIG = "{\"foo\":\"bar\"}";
     private final boolean openShift;
@@ -123,7 +123,7 @@ public class KafkaClusterOperationsTest {
         return result;
     }
 
-    public KafkaClusterOperationsTest(Params params) {
+    public KafkaAssemblyOperatorTest(Params params) {
         this.openShift = params.openShift;
         this.metrics = params.metrics;
         this.storage = params.storage;
@@ -187,7 +187,7 @@ public class KafkaClusterOperationsTest {
         ArgumentCaptor<String> metricsNameCaptor = ArgumentCaptor.forClass(String.class);
         when(mockCmOps.reconcile(anyString(), metricsNameCaptor.capture(), metricsCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created()));
 
-        KafkaClusterOperations ops = new KafkaClusterOperations(vertx, openShift,
+        KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, openShift,
                 ClusterControllerConfig.DEFAULT_OPERATION_TIMEOUT_MS,
                 mockCmOps,
                 mockServiceOps, mockZsOps, mockKsOps,
@@ -306,7 +306,7 @@ public class KafkaClusterOperationsTest {
             when(mockDepOps.get(clusterCmNamespace, TopicController.topicControllerName(clusterCmName))).thenReturn(tcDep);
         }
 
-        KafkaClusterOperations ops = new KafkaClusterOperations(vertx, openShift,
+        KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, openShift,
                 ClusterControllerConfig.DEFAULT_OPERATION_TIMEOUT_MS,
                 mockCmOps,
                 mockServiceOps, mockZsOps, mockKsOps,
@@ -579,7 +579,7 @@ public class KafkaClusterOperationsTest {
         ArgumentCaptor<String> depCaptor = ArgumentCaptor.forClass(String.class);
         when(mockDepOps.reconcile(anyString(), depCaptor.capture(), any())).thenReturn(Future.succeededFuture());
 
-        KafkaClusterOperations ops = new KafkaClusterOperations(vertx, openShift,
+        KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, openShift,
                 ClusterControllerConfig.DEFAULT_OPERATION_TIMEOUT_MS,
                 mockCmOps,
                 mockServiceOps, mockZsOps, mockKsOps,
@@ -710,7 +710,7 @@ public class KafkaClusterOperationsTest {
         Set<String> createdOrUpdated = new HashSet<>();
         Set<String> deleted = new HashSet<>();
 
-        KafkaClusterOperations ops = new KafkaClusterOperations(vertx, openShift,
+        KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, openShift,
                 ClusterControllerConfig.DEFAULT_OPERATION_TIMEOUT_MS,
                 mockCmOps,
                 mockServiceOps, mockZsOps, mockKsOps,

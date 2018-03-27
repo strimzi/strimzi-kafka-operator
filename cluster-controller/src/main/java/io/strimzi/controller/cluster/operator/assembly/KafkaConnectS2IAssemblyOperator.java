@@ -28,9 +28,9 @@ import java.util.List;
 /**
  * Cluster operations for a Kafka Connect cluster
  */
-public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<KafkaConnectS2ICluster, DeploymentConfig> {
+public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<KafkaConnectS2ICluster, DeploymentConfig> {
 
-    private static final Logger log = LoggerFactory.getLogger(KafkaConnectS2IClusterOperations.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(KafkaConnectS2IAssemblyOperator.class.getName());
     private static final String CLUSTER_TYPE_CONNECT_S2I = "kafka-connect-s2i";
     private final ServiceOperations serviceOperations;
     private final DeploymentConfigOperations deploymentConfigOperations;
@@ -46,12 +46,12 @@ public class KafkaConnectS2IClusterOperations extends AbstractClusterOperations<
      * @param imagesStreamOperations     For operating on ImageStreams, may be null
      * @param buildConfigOperations      For operating on BuildConfigs, may be null
      */
-    public KafkaConnectS2IClusterOperations(Vertx vertx, boolean isOpenShift,
-                                            ConfigMapOperations configMapOperations,
-                                            DeploymentConfigOperations deploymentConfigOperations,
-                                            ServiceOperations serviceOperations,
-                                            ImageStreamOperations imagesStreamOperations,
-                                            BuildConfigOperations buildConfigOperations) {
+    public KafkaConnectS2IAssemblyOperator(Vertx vertx, boolean isOpenShift,
+                                           ConfigMapOperations configMapOperations,
+                                           DeploymentConfigOperations deploymentConfigOperations,
+                                           ServiceOperations serviceOperations,
+                                           ImageStreamOperations imagesStreamOperations,
+                                           BuildConfigOperations buildConfigOperations) {
         super(vertx, isOpenShift, CLUSTER_TYPE_CONNECT_S2I, "Kafka Connect S2I", configMapOperations);
         this.serviceOperations = serviceOperations;
         this.deploymentConfigOperations = deploymentConfigOperations;
