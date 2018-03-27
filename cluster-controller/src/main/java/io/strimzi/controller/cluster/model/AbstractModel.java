@@ -48,9 +48,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public abstract class AbstractCluster {
+public abstract class AbstractModel {
 
-    protected static final Logger log = LoggerFactory.getLogger(AbstractCluster.class.getName());
+    protected static final Logger log = LoggerFactory.getLogger(AbstractModel.class.getName());
 
     private static final String VOLUME_MOUNT_HACK_IMAGE = "busybox";
     private static final String VOLUME_MOUNT_HACK_NAME = "volume-mount-hack";
@@ -95,7 +95,7 @@ public abstract class AbstractCluster {
      * @param namespace Kubernetes/OpenShift namespace where cluster resources are going to be created
      * @param cluster   overall cluster name
      */
-    protected AbstractCluster(String namespace, String cluster, Labels labels) {
+    protected AbstractModel(String namespace, String cluster, Labels labels) {
         this.cluster = cluster;
         this.namespace = namespace;
         this.labels = labels.withoutKind().withCluster(cluster);
@@ -420,13 +420,13 @@ public abstract class AbstractCluster {
         if ((this.storage.type() == Storage.StorageType.PERSISTENT_CLAIM) && !isOpenShift) {
 
             String chown = String.format("chown -R %d:%d %s",
-                    AbstractCluster.VOLUME_MOUNT_HACK_GROUPID,
-                    AbstractCluster.VOLUME_MOUNT_HACK_GROUPID,
+                    AbstractModel.VOLUME_MOUNT_HACK_GROUPID,
+                    AbstractModel.VOLUME_MOUNT_HACK_GROUPID,
                     volumeMounts.get(0).getMountPath());
 
             Container initContainer = new ContainerBuilder()
-                    .withName(AbstractCluster.VOLUME_MOUNT_HACK_NAME)
-                    .withImage(AbstractCluster.VOLUME_MOUNT_HACK_IMAGE)
+                    .withName(AbstractModel.VOLUME_MOUNT_HACK_NAME)
+                    .withImage(AbstractModel.VOLUME_MOUNT_HACK_IMAGE)
                     .withVolumeMounts(volumeMounts.get(0))
                     .withCommand("sh", "-c", chown)
                     .build();
@@ -434,7 +434,7 @@ public abstract class AbstractCluster {
             initContainers.add(initContainer);
 
             securityContext = new PodSecurityContextBuilder()
-                    .withFsGroup(AbstractCluster.VOLUME_MOUNT_HACK_GROUPID)
+                    .withFsGroup(AbstractModel.VOLUME_MOUNT_HACK_GROUPID)
                     .build();
         }
 
@@ -512,57 +512,6 @@ public abstract class AbstractCluster {
                 .build();
 
         return dep;
-    }
-
-    public Service patchService(Service svc) {
-        svc.getMetadata().setLabels(getLabelsWithName());
-        svc.getSpec().setSelector(getLabelsWithName());
-        log.trace("Patched service {}", svc);
-        return svc;
-    }
-
-    protected StatefulSet patchStatefulSet(StatefulSet statefulSet,
-                                           Probe livenessProbe,
-                                           Probe readinessProbe,
-                                           Map<String, String> annotations) {
-
-        statefulSet.getMetadata().setLabels(getLabelsWithName());
-        statefulSet.getMetadata().getAnnotations().putAll(annotations);
-        statefulSet.getSpec().setSelector(new LabelSelectorBuilder().withMatchLabels(getLabelsWithName()).build());
-        statefulSet.getSpec().getTemplate().getMetadata().setLabels(getLabelsWithName());
-        Container container = statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0);
-        container.setImage(getImage());
-        container.setLivenessProbe(livenessProbe);
-        container.setReadinessProbe(readinessProbe);
-        container.setEnv(getEnvVars());
-
-        return statefulSet;
-    }
-
-    protected Deployment patchDeployment(Deployment dep,
-                                      Probe livenessProbe,
-                                      Probe readinessProbe,
-                                      Map<String, String> deploymentAnnotations,
-                                      Map<String, String> podAnnotations) {
-
-        dep.getMetadata().setLabels(getLabelsWithName());
-        dep.getMetadata().setAnnotations(deploymentAnnotations);
-        dep.getSpec().getTemplate().getMetadata().setLabels(getLabelsWithName());
-        dep.getSpec().getTemplate().getMetadata().setAnnotations(podAnnotations);
-        Container container = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
-        container.setImage(getImage());
-        container.setLivenessProbe(livenessProbe);
-        container.setReadinessProbe(readinessProbe);
-        container.setEnv(getEnvVars());
-
-        return dep;
-    }
-
-    protected ConfigMap patchConfigMap(ConfigMap cm, Map<String, String> data) {
-
-        cm.setData(data);
-
-        return cm;
     }
 
     /**

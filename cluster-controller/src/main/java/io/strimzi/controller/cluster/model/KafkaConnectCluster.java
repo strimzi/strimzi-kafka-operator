@@ -19,7 +19,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-public class KafkaConnectCluster extends AbstractCluster {
+public class KafkaConnectCluster extends AbstractModel {
 
     public static final String TYPE = "kafka-connect";
 
@@ -185,15 +185,6 @@ public class KafkaConnectCluster extends AbstractCluster {
                 createHttpProbe(healthCheckPath, REST_API_PORT_NAME, healthCheckInitialDelay, healthCheckTimeout),
                 createHttpProbe(healthCheckPath, REST_API_PORT_NAME, healthCheckInitialDelay, healthCheckTimeout),
                 updateStrategy,
-                Collections.emptyMap(),
-                Collections.emptyMap()
-                );
-    }
-
-    public Deployment patchDeployment(Deployment dep) {
-        return patchDeployment(dep,
-                createHttpProbe(healthCheckPath, REST_API_PORT_NAME, healthCheckInitialDelay, healthCheckTimeout),
-                createHttpProbe(healthCheckPath, REST_API_PORT_NAME, healthCheckInitialDelay, healthCheckTimeout),
                 Collections.emptyMap(),
                 Collections.emptyMap()
                 );

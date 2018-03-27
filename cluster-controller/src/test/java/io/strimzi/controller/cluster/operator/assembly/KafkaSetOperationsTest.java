@@ -15,7 +15,7 @@ import org.junit.Test;
 import java.util.HashMap;
 import java.util.Map;
 
-import static io.strimzi.controller.cluster.model.AbstractCluster.containerEnvVars;
+import static io.strimzi.controller.cluster.model.AbstractModel.containerEnvVars;
 import static io.strimzi.controller.cluster.model.KafkaCluster.KEY_KAFKA_DEFAULT_REPLICATION_FACTOR;
 import static io.strimzi.controller.cluster.model.KafkaCluster.KEY_KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR;
 import static io.strimzi.controller.cluster.model.KafkaCluster.KEY_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR;

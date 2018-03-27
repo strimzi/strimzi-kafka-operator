@@ -32,11 +32,14 @@ import java.util.List;
 import static io.strimzi.controller.cluster.model.TopicController.topicControllerName;
 
 /**
- * <p>Cluster operations for a "Kafka" cluster. A KafkaClusterOperations is
- * an AbstractClusterOperations that really manages two clusters,
- * for of Kafka nodes and another of ZooKeeper nodes.</p>
+ * <p>Assembly operator for a "Kafka" assembly, which manages:</p>
+ * <ul>
+ *     <li>A ZooKeeper cluster StatefulSet and related Services</li>
+ *     <li>A Kafka cluster StatefulSet and related Services</li>
+ *     <li>Optionally, a TopicController Deployment</li>
+ * </ul>
  */
-public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KafkaCluster, StatefulSet> {
+public class KafkaAssemblyOperator extends AbstractAssemblyOperator<StatefulSet> {
     private static final Logger log = LoggerFactory.getLogger(KafkaAssemblyOperator.class.getName());
     private static final String CLUSTER_TYPE_ZOOKEEPER = "zookeeper";
     static final String CLUSTER_TYPE_KAFKA = "kafka";

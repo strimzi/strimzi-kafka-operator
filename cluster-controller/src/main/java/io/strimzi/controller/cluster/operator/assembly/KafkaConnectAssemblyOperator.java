@@ -23,9 +23,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Cluster operations for a Kafka Connect cluster
+ * <p>Assembly operator for a "Kafka Connect" assembly, which manages:</p>
+ * <ul>
+ *     <li>A Kafka Connect Deployment and related Services</li>
+ * </ul>
  */
-public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<KafkaConnectCluster, Deployment> {
+public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Deployment> {
 
     private static final Logger log = LoggerFactory.getLogger(KafkaConnectAssemblyOperator.class.getName());
     private static final String CLUSTER_TYPE_CONNECT = "kafka-connect";

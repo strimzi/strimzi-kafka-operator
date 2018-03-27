@@ -155,28 +155,6 @@ public class KafkaConnectClusterTest {
     }
 
     @Test
-    public void testPatchService()   {
-        Service orig = new ServiceBuilder()
-                .withNewMetadata()
-                    .withName(kc.kafkaConnectClusterName(cluster))
-                    .withNamespace(namespace)
-                .endMetadata()
-                .withNewSpec()
-                    .withType("ClusterIP")
-                .endSpec()
-                .build();
-
-        Service svc = kc.patchService(orig);
-
-        Map<String, String> expectedLabels = ResourceUtils.labels(Labels.STRIMZI_CLUSTER_LABEL, this.cluster,
-                Labels.STRIMZI_TYPE_LABEL, "kafka-connect",
-                "my-user-label", "cromulent",
-                Labels.STRIMZI_NAME_LABEL, kc.kafkaConnectClusterName(cluster));
-        assertEquals(expectedLabels, svc.getMetadata().getLabels());
-        assertEquals(expectedLabels, svc.getSpec().getSelector());
-    }
-
-    @Test
     public void testGenerateDeployment()   {
         Deployment dep = kc.generateDeployment();
 
@@ -204,27 +182,5 @@ public class KafkaConnectClusterTest {
         assertEquals("RollingUpdate", dep.getSpec().getStrategy().getType());
         assertEquals(new Integer(1), dep.getSpec().getStrategy().getRollingUpdate().getMaxSurge().getIntVal());
         assertEquals(new Integer(0), dep.getSpec().getStrategy().getRollingUpdate().getMaxUnavailable().getIntVal());
-    }
-
-    @Test
-    public void testPatchDeployment()   {
-        Deployment orig = KafkaConnectCluster.fromConfigMap(ResourceUtils.createEmptyKafkaConnectClusterConfigMap(namespace, cluster)).generateDeployment();
-        orig.getMetadata().setLabels(Collections.EMPTY_MAP);
-        orig.getSpec().getTemplate().getMetadata().setLabels(Collections.EMPTY_MAP);
-
-        Deployment dep = kc.patchDeployment(orig);
-
-        Map<String, String> expectedLabels = ResourceUtils.labels(Labels.STRIMZI_CLUSTER_LABEL, this.cluster,
-                Labels.STRIMZI_TYPE_LABEL, "kafka-connect",
-                "my-user-label", "cromulent",
-                Labels.STRIMZI_NAME_LABEL, kc.kafkaConnectClusterName(cluster));
-        assertEquals(expectedLabels, dep.getMetadata().getLabels());
-        assertEquals(new Integer(KafkaConnectCluster.DEFAULT_REPLICAS), dep.getSpec().getReplicas());
-        assertEquals(expectedLabels, dep.getSpec().getTemplate().getMetadata().getLabels());
-        assertEquals(new Integer(healthDelay), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getInitialDelaySeconds());
-        assertEquals(new Integer(healthTimeout), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getTimeoutSeconds());
-        assertEquals(new Integer(healthDelay), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds());
-        assertEquals(new Integer(healthTimeout), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds());
-        assertEquals(getExpectedEnvVars(), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv());
     }
 }
