@@ -2,23 +2,21 @@
  * Copyright 2018, Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.controller.cluster.operator.assembly;
+package io.strimzi.controller.cluster.operator.resource;
 
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.strimzi.controller.cluster.operator.resource.ReconcileResult;
-import io.strimzi.controller.cluster.operator.resource.StatefulSetOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Specialization of {@link StatefulSetOperator} for StatefulSets of Zookeeper nodes
+ * Specialization of {@link StatefulSetOperator} for StatefulSets of Kafka brokers
  */
-public class ZookeeperSetOperator extends StatefulSetOperator<Boolean> {
+public class KafkaSetOperator extends StatefulSetOperator<Boolean> {
 
-    private static final Logger log = LoggerFactory.getLogger(ZookeeperSetOperator.class);
+    private static final Logger log = LoggerFactory.getLogger(KafkaSetOperator.class);
 
     /**
      * Constructor
@@ -26,7 +24,7 @@ public class ZookeeperSetOperator extends StatefulSetOperator<Boolean> {
      * @param vertx  The Vertx instance
      * @param client The Kubernetes client
      */
-    public ZookeeperSetOperator(Vertx vertx, KubernetesClient client) {
+    public KafkaSetOperator(Vertx vertx, KubernetesClient client) {
         super(vertx, client);
     }
 
@@ -53,9 +51,7 @@ public class ZookeeperSetOperator extends StatefulSetOperator<Boolean> {
     }
 
     static boolean needsRollingUpdate(StatefulSetDiff diff) {
-        // Because for ZK the brokers know about each other via the config, and rescaling requires a rolling update
-        return diff.changesSpecReplicas()
-                    || diff.changesLabels()
+        return diff.changesLabels()
                     || diff.changesSpecTemplateSpec();
     }
 }
