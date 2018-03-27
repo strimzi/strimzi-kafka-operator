@@ -42,6 +42,7 @@ import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.dsl.ScalableResource;
+import org.mockito.stubbing.Answer;
 import org.mockito.stubbing.OngoingStubbing;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -187,37 +188,27 @@ public class MockKube {
                 });
                 EditReplacePatchDeletable<StatefulSet, StatefulSet, DoneableStatefulSet, Boolean> c = mock(EditReplacePatchDeletable.class);
                 when(resource.cascading(false)).thenReturn(c);
-                when(c.patch(any())).thenAnswer(i -> {
-                    StatefulSet argument = i.getArgument(0);
-                    ssDb.put(resourceName, copyResource(argument));
-                    return argument;
+                when(c.patch(any())).thenAnswer(patchInvocation -> {
+                    StatefulSet argument = patchInvocation.getArgument(0);
+                    return doPatch(resourceName, argument);
+                });
+                when(resource.scale(anyInt(), anyBoolean())).thenAnswer(invocation -> {
+                    checkDoesExist(resourceName);
+                    StatefulSet ss = copyResource(ssDb.get(resourceName));
+                    int newScale = invocation.getArgument(0);
+                    ss.getSpec().setReplicas(newScale);
+                    return doPatch(resourceName, ss);
+                });
+                when(resource.scale(anyInt())).thenAnswer(invocation -> {
+                    checkDoesExist(resourceName);
+                    StatefulSet ss = copyResource(ssDb.get(resourceName));
+                    int newScale = invocation.getArgument(0);
+                    ss.getSpec().setReplicas(newScale);
+                    return doPatch(resourceName, ss);
                 });
                 when(resource.isReady()).thenAnswer(i -> {
                     LOGGER.debug("{} {} is ready", resourceType, resourceName);
                     return true;
-                });
-                when(resource.scale(anyInt(), anyBoolean())).thenAnswer(invocation -> {
-                    checkDoesExist(resourceName);
-                    StatefulSet ss = ssDb.get(resourceName);
-                    int oldScale = ss.getSpec().getReplicas();
-                    int newScale = invocation.getArgument(0);
-                    ss.getSpec().setReplicas(newScale);
-                    if (newScale > oldScale) {
-                        LOGGER.debug("scaling up {} {} from {} to {}", resourceType, resourceName, oldScale, newScale);
-                        Pod examplePod = mockPods.inNamespace(ss.getMetadata().getNamespace()).withName(ss.getMetadata().getName() + "-0").get();
-                        for (int i = oldScale; i < newScale; i++) {
-                            String newPodName = ss.getMetadata().getName() + "-" + i;
-                            mockPods.inNamespace(ss.getMetadata().getNamespace()).withName(newPodName).create(
-                                    new PodBuilder(examplePod).editMetadata().withName(newPodName).endMetadata().build());
-                        }
-                    } else if (newScale < oldScale) {
-                        LOGGER.debug("scaling down {} {} from {} to {}", resourceType, resourceName, oldScale, newScale);
-                        for (int i = oldScale-1; i >= newScale; i--) {
-                            String newPodName = ss.getMetadata().getName() + "-" + i;
-                            mockPods.inNamespace(ss.getMetadata().getNamespace()).withName(newPodName).delete();
-                        }
-                    }
-                    return copyResource(ss);
                 });
 
                 // TODO make it cope properly with scale down
@@ -244,6 +235,33 @@ public class MockKube {
 
                     }
                 });
+            }
+
+            private StatefulSet doPatch(String resourceName, StatefulSet argument) {
+                int oldScale = ssDb.get(resourceName).getSpec().getReplicas();
+                int newScale = argument.getSpec().getReplicas();
+                if (newScale > oldScale) {
+                    LOGGER.debug("scaling up {} {} from {} to {}", resourceType, resourceName, oldScale, newScale);
+                    Pod examplePod = mockPods.inNamespace(argument.getMetadata().getNamespace()).withName(argument.getMetadata().getName() + "-0").get();
+                    for (int i = oldScale; i < newScale; i++) {
+                        String newPodName = argument.getMetadata().getName() + "-" + i;
+                        mockPods.inNamespace(argument.getMetadata().getNamespace()).withName(newPodName).create(
+                                new PodBuilder(examplePod).editMetadata().withName(newPodName).endMetadata().build());
+                    }
+                    ssDb.put(resourceName, copyResource(argument));
+                } else if (newScale < oldScale) {
+                    ssDb.put(resourceName, copyResource(argument));
+                    LOGGER.debug("scaling down {} {} from {} to {}", resourceType, resourceName, oldScale, newScale);
+                    for (int i = oldScale - 1; i >= newScale; i--) {
+                        String newPodName = argument.getMetadata().getName() + "-" + i;
+                        mockPods.inNamespace(argument.getMetadata().getNamespace()).withName(newPodName).delete();
+                    }
+                } else {
+                    ssDb.put(resourceName, copyResource(argument));
+                }
+
+                // TODO watch
+                return argument;
             }
         }.build();
         MixedOperation<Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>> mockDep =

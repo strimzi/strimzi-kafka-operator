@@ -196,6 +196,8 @@ public class StatefulSetOperations<P> extends AbstractScalableOperations<Kuberne
      */
     @Override
     protected Future<ReconcileResult<P>> internalPatch(String namespace, String name, StatefulSet current, StatefulSet desired) {
+        // Don't scale via patch
+        desired.getSpec().setReplicas(current.getSpec().getReplicas());
         log.info("Patching {} resource {} in namespace {} with {}", resourceKind, name, namespace, desired);
         operation().inNamespace(namespace).withName(name).cascading(false).patch(desired);
         log.info("{} {} in namespace {} has been patched", resourceKind, name, namespace);
