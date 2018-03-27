@@ -75,6 +75,10 @@ public class ZookeeperCluster extends AbstractCluster {
         return cluster + ZookeeperCluster.HEADLESS_NAME_SUFFIX;
     }
 
+    public static String getPersistentVolumeClaimName(String clusterName, int podId) {
+        return volumeName + "-" + clusterName + "-" + podId;
+    }
+
     /**
      * Constructor
      *
@@ -201,18 +205,6 @@ public class ZookeeperCluster extends AbstractCluster {
         } else {
             return null;
         }
-    }
-
-    public StatefulSet patchStatefulSet(StatefulSet statefulSet) {
-
-        Map<String, String> annotations = new HashMap<>();
-        annotations.put(String.format("%s/%s", ClusterController.STRIMZI_CLUSTER_CONTROLLER_DOMAIN, Storage.DELETE_CLAIM_FIELD),
-                String.valueOf(storage.isDeleteClaim()));
-
-        return patchStatefulSet(statefulSet,
-                createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout),
-                createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout),
-                annotations);
     }
 
     @Override

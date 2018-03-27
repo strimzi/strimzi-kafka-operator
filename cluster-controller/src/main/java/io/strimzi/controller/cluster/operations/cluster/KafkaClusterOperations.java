@@ -118,7 +118,7 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
     private final Future<CompositeFuture> deleteKafka(String namespace, String name) {
         StatefulSet ss = kafkaSetOperations.get(namespace, KafkaCluster.kafkaClusterName(name));
 
-        KafkaCluster kafka = ss == null ? null : KafkaCluster.fromStatefulSet(ss, namespace, name);
+        final KafkaCluster kafka = ss == null ? null : KafkaCluster.fromStatefulSet(ss, namespace, name);
         // TODO If the SS (and the CM) has gone, how do we know whether to delete the claims?
         // TODO Should we annotate the PVCs?
         boolean deleteClaims = kafka != null && kafka.getStorage().type() == Storage.StorageType.PERSISTENT_CLAIM
@@ -132,7 +132,8 @@ public class KafkaClusterOperations extends AbstractClusterOperations<KafkaClust
 
         if (deleteClaims) {
             for (int i = 0; i < kafka.getReplicas(); i++) {
-                result.add(pvcOperations.reconcile(namespace, kafka.getPersistentVolumeClaimName(i), null));
+                result.add(pvcOperations.reconcile(namespace,
+                        kafka.getPersistentVolumeClaimName(i), null));
             }
         }
 

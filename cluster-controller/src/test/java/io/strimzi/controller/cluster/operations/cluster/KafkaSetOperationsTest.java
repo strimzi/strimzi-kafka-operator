@@ -133,20 +133,4 @@ public class KafkaSetOperationsTest {
                 "foo", null));
         assertFalse(KafkaSetOperations.needsRollingUpdate(diff()));
     }
-
-    @Test
-    public void testFoo() {
-        Map<String, String> labels = new HashMap(b.getMetadata().getLabels());
-        labels.put("foo", "bar");
-        a.getMetadata().setLabels(labels);
-
-        String envVar = "SOME_RANDOM_ENV";
-        a.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().add(new EnvVar(envVar,
-                "foo", null));
-        //a.getSpec().getVolumeClaimTemplates().get(0).getSpec().setStorageClassName("tom");
-        a.getSpec().setReplicas(45);
-        if (Diffs.changesVolumeClaim(a, b)) {
-            System.out.println("Changes VC)");
-        }
-    }
 }
