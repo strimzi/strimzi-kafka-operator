@@ -135,8 +135,8 @@ data:
     }
 ----
 
-WARNING: If the cluster is deployed using the "ephemeral" storage, the Kafka brokers could have problems to deal with
-Zookeeper nodes restarts which could happen on configuration updates in the cluster ConfigMap.
+WARNING: If the zookeeper cluster is deployed using "ephemeral" storage, the Kafka brokers can have problems dealing with
+Zookeeper node restarts which could happen via updates in the cluster ConfigMap.
 
 The resources created by the cluster controller into the Kubernetes/OpenShift cluster will be the following :
 
