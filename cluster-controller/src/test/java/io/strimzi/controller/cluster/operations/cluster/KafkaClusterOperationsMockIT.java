@@ -8,11 +8,8 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
-import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.fabric8.kubernetes.client.Watcher;
 import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
 import io.strimzi.controller.cluster.operations.resource.DeploymentOperations;
 import io.strimzi.controller.cluster.operations.resource.PvcOperations;
@@ -47,7 +44,6 @@ import java.util.stream.Collectors;
 import static java.util.Collections.emptySet;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.mockito.ArgumentMatchers.any;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(VertxUnitRunnerWithParametersFactory.class)
@@ -89,8 +85,7 @@ public class KafkaClusterOperationsMockIT {
 
     @Parameterized.Parameters(name = "{0}")
     public static Iterable<KafkaClusterOperationsMockIT.Params> data() {
-        int[] kafkaReplicas = {1, 2, 3};
-        int[] zkReplicas = {1, 2, 3};
+        int[] replicas = {1, 2, 3};
         JsonObject[] storageConfigs = {
                 new JsonObject("{\"type\": \"ephemeral\"}"),
 
@@ -110,9 +105,9 @@ public class KafkaClusterOperationsMockIT {
         };
         List<KafkaClusterOperationsMockIT.Params> result = new ArrayList();
 
-        for (int zkReplica : zkReplicas) {
+        for (int zkReplica : replicas) {
             for (JsonObject zkStorage : storageConfigs) {
-                for (int kafkaReplica : kafkaReplicas) {
+                for (int kafkaReplica : replicas) {
                     for (JsonObject kafkaStorage : storageConfigs) {
                         result.add(new KafkaClusterOperationsMockIT.Params(
                                 zkReplica, zkStorage,
@@ -541,11 +536,42 @@ public class KafkaClusterOperationsMockIT {
                         mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaClusterName(CLUSTER_NAME)).get().getSpec().getReplicas());
                 context.assertNull(mockClient.pods().inNamespace(NAMESPACE).withName(deletedPod).get(),
                         "Expected pod " + deletedPod + " to have been deleted");
+                // TODO assert no rolling update
                 updateAsync.complete();
             });
             updateAsync.await();
         }
+    }
 
+    /** Create a cluster from a Kafka Cluster CM */
+    @Test
+    public void testKafkaScaleUp(TestContext context) {
+
+        KafkaClusterOperations kco = createCluster(context);
+        Async updateAsync = context.async();
+
+        int newScale = kafkaReplicas + 1;
+        String newPod = KafkaCluster.kafkaPodName(CLUSTER_NAME, kafkaReplicas);
+        context.assertNull(mockClient.pods().inNamespace(NAMESPACE).withName(newPod).get());
+
+        HashMap<String, String> data = new HashMap<>(cluster.getData());
+        data.put(KafkaCluster.KEY_REPLICAS,
+                String.valueOf(newScale));
+        ConfigMap changedClusterCm = new ConfigMapBuilder(cluster).withData(data).build();
+        mockClient.configMaps().inNamespace(NAMESPACE).withName(CLUSTER_NAME).patch(changedClusterCm);
+
+        LOGGER.info("Scaling up to {} Kafka pods", newScale);
+        kco.createOrUpdate(NAMESPACE, CLUSTER_NAME, ar -> {
+            if (ar.failed()) ar.cause().printStackTrace();
+            context.assertTrue(ar.succeeded());
+            context.assertEquals(newScale,
+                    mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaClusterName(CLUSTER_NAME)).get().getSpec().getReplicas());
+            context.assertNotNull(mockClient.pods().inNamespace(NAMESPACE).withName(newPod).get(),
+                    "Expected pod " + newPod + " to have been created");
+            // TODO assert no rolling update
+            updateAsync.complete();
+        });
+        updateAsync.await();
     }
 
 }
