@@ -27,6 +27,11 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ * An "operator" for managing assemblies of various types <em>in a particular namespace</em>.
+ * The Cluster Controller's multiple namespace support is achieved by deploying multiple
+ * {@link ClusterController}'s in Vertx.
+ */
 public class ClusterController extends AbstractVerticle {
 
     private static final Logger log = LoggerFactory.getLogger(ClusterController.class.getName());
@@ -115,7 +120,7 @@ public class ClusterController extends AbstractVerticle {
                         Labels labels = Labels.fromResource(cm);
                         String type = labels.type();
 
-                        final AbstractAssemblyOperator<?, ?> cluster;
+                        final AbstractAssemblyOperator<?> cluster;
                         if (type == null) {
                             log.warn("Missing label {} in Config Map {} in namespace {}", Labels.STRIMZI_TYPE_LABEL, cm.getMetadata().getName(), namespace);
                             return;
