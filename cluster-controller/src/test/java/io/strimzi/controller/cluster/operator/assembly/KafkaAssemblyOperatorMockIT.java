@@ -47,9 +47,9 @@ import static org.junit.Assert.assertNull;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(VertxUnitRunnerWithParametersFactory.class)
-public class KafkaClusterOperationsMockIT {
+public class KafkaAssemblyOperatorMockIT {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaClusterOperationsMockIT.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaAssemblyOperatorMockIT.class);
 
     private static final String NAMESPACE = "my-namespace";
     private static final String CLUSTER_NAME = "my-cluster";
@@ -84,7 +84,7 @@ public class KafkaClusterOperationsMockIT {
     }
 
     @Parameterized.Parameters(name = "{0}")
-    public static Iterable<KafkaClusterOperationsMockIT.Params> data() {
+    public static Iterable<KafkaAssemblyOperatorMockIT.Params> data() {
         int[] replicas = {1, 2, 3};
         JsonObject[] storageConfigs = {
                 new JsonObject("{\"type\": \"ephemeral\"}"),
@@ -103,13 +103,13 @@ public class KafkaClusterOperationsMockIT {
                         "\"size\": \"123\", " +
                         "\"class\": \"foo\"}")
         };
-        List<KafkaClusterOperationsMockIT.Params> result = new ArrayList();
+        List<KafkaAssemblyOperatorMockIT.Params> result = new ArrayList();
 
         for (int zkReplica : replicas) {
             for (JsonObject zkStorage : storageConfigs) {
                 for (int kafkaReplica : replicas) {
                     for (JsonObject kafkaStorage : storageConfigs) {
-                        result.add(new KafkaClusterOperationsMockIT.Params(
+                        result.add(new KafkaAssemblyOperatorMockIT.Params(
                                 zkReplica, zkStorage,
                                 kafkaReplica, kafkaStorage));
                     }
@@ -120,7 +120,7 @@ public class KafkaClusterOperationsMockIT {
         return result;
     }
 
-    public KafkaClusterOperationsMockIT(KafkaClusterOperationsMockIT.Params params) {
+    public KafkaAssemblyOperatorMockIT(KafkaAssemblyOperatorMockIT.Params params) {
         this.zkReplicas = params.zkReplicas;
         this.zkStorage = params.zkStorage;
 
@@ -154,7 +154,7 @@ public class KafkaClusterOperationsMockIT {
                 .withNewMetadata()
                 .withName(CLUSTER_NAME)
                 .withNamespace(NAMESPACE)
-                .withLabels(Labels.forKind("cluster").withType(KafkaClusterOperations.CLUSTER_TYPE_KAFKA).toMap())
+                .withLabels(Labels.forKind("cluster").withType(KafkaAssemblyOperator.CLUSTER_TYPE_KAFKA).toMap())
                 .endMetadata()
                 .withData(map(KafkaCluster.KEY_REPLICAS, String.valueOf(kafkaReplicas),
                         KafkaCluster.KEY_STORAGE, kafkaStorage.toString(),
@@ -184,14 +184,14 @@ public class KafkaClusterOperationsMockIT {
     // - Test with absent storage key
     // - Test with storage key lacking a type
 
-    private KafkaClusterOperations createCluster(TestContext context) {
+    private KafkaAssemblyOperator createCluster(TestContext context) {
         ConfigMapOperations cmops = new ConfigMapOperations(vertx, mockClient);
         ServiceOperations svcops = new ServiceOperations(vertx, mockClient);
         KafkaSetOperations ksops = new KafkaSetOperations(vertx, mockClient);
         ZookeeperSetOperations zksops = new ZookeeperSetOperations(vertx, mockClient);
         DeploymentOperations depops = new DeploymentOperations(vertx, mockClient);
         PvcOperations pvcops = new PvcOperations(vertx, mockClient);
-        KafkaClusterOperations kco = new KafkaClusterOperations(vertx, true, 2_000,
+        KafkaAssemblyOperator kco = new KafkaAssemblyOperator(vertx, true, 2_000,
                 cmops, svcops, zksops, ksops, pvcops, depops);
 
         LOGGER.info("Reconciling initially -> create");
@@ -210,7 +210,7 @@ public class KafkaClusterOperationsMockIT {
     public void testCreateUpdateDelete(TestContext context) {
         Set<String> expectedClaims = resilientPvcs();
 
-        KafkaClusterOperations kco = createCluster(context);
+        KafkaAssemblyOperator kco = createCluster(context);
         LOGGER.info("Reconciling again -> update");
         Async updateAsync = context.async();
         kco.createOrUpdate(NAMESPACE, CLUSTER_NAME, ar -> {
@@ -285,7 +285,7 @@ public class KafkaClusterOperationsMockIT {
      */
     private void updateClusterWithoutServices(TestContext context, String... services) {
 
-        KafkaClusterOperations kco = createCluster(context);
+        KafkaAssemblyOperator kco = createCluster(context);
         for (String service: services) {
             mockClient.services().inNamespace(NAMESPACE).withName(service).delete();
             assertNull("Expected service " + service + " to be not exist",
@@ -321,7 +321,7 @@ public class KafkaClusterOperationsMockIT {
 
     private void deleteClusterWithoutServices(TestContext context, String... services) {
 
-        KafkaClusterOperations kco = createCluster(context);
+        KafkaAssemblyOperator kco = createCluster(context);
         for (String service: services) {
             mockClient.services().inNamespace(NAMESPACE).withName(service).delete();
             assertNull("Expected service " + service + " to be not exist",
@@ -358,7 +358,7 @@ public class KafkaClusterOperationsMockIT {
 
     private void deleteClusterWithoutStatefulSet(TestContext context, String... statefulSets) {
 
-        KafkaClusterOperations kco = createCluster(context);
+        KafkaAssemblyOperator kco = createCluster(context);
         Set<String> ssNames = mockClient.apps().statefulSets().inNamespace(NAMESPACE).list().getItems().stream().map(r -> r.getMetadata().getName()).collect(Collectors.toSet());
         Set<String> serviceNames = mockClient.services().inNamespace(NAMESPACE).list().getItems().stream().map(r -> r.getMetadata().getName()).collect(Collectors.toSet());
         Set<String> deploymentNames = mockClient.extensions().deployments().inNamespace(NAMESPACE).list().getItems().stream().map(r -> r.getMetadata().getName()).collect(Collectors.toSet());
@@ -427,7 +427,7 @@ public class KafkaClusterOperationsMockIT {
     public void testUpdateKafkaWithChangedPersistentVolume(TestContext context) {
         if (Storage.StorageType.PERSISTENT_CLAIM.equals(storageType(kafkaStorage))) {
 
-            KafkaClusterOperations kco = createCluster(context);
+            KafkaAssemblyOperator kco = createCluster(context);
             String originalStorageClass = storageClass(kafkaStorage);
             assertStorageClass(context, KafkaCluster.kafkaClusterName(CLUSTER_NAME), originalStorageClass);
 
@@ -476,7 +476,7 @@ public class KafkaClusterOperationsMockIT {
             allPvcs.addAll(kafkaPvcs);
             allPvcs.addAll(zkPvcs);
 
-            KafkaClusterOperations kco = createCluster(context);
+            KafkaAssemblyOperator kco = createCluster(context);
 
             boolean originalKafkaDeleteClaim = deleteClaim(kafkaStorage);
             //assertDeleteClaim(context, KafkaCluster.kafkaClusterName(CLUSTER_NAME), originalKafkaDeleteClaim);
@@ -515,7 +515,7 @@ public class KafkaClusterOperationsMockIT {
     @Test
     public void testKafkaScaleDown(TestContext context) {
         if (kafkaReplicas > 1) {
-            KafkaClusterOperations kco = createCluster(context);
+            KafkaAssemblyOperator kco = createCluster(context);
             Async updateAsync = context.async();
 
             int newScale = kafkaReplicas - 1;
@@ -547,7 +547,7 @@ public class KafkaClusterOperationsMockIT {
     @Test
     public void testKafkaScaleUp(TestContext context) {
 
-        KafkaClusterOperations kco = createCluster(context);
+        KafkaAssemblyOperator kco = createCluster(context);
         Async updateAsync = context.async();
 
         int newScale = kafkaReplicas + 1;

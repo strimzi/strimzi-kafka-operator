@@ -47,7 +47,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(VertxUnitRunner.class)
-public class KafkaConnectS2IClusterOperationsTest {
+public class KafkaConnectS2IAssemblyOperatorTest {
 
     protected static Vertx vertx;
 
@@ -89,7 +89,7 @@ public class KafkaConnectS2IClusterOperationsTest {
         ArgumentCaptor<BuildConfig> bcCaptor = ArgumentCaptor.forClass(BuildConfig.class);
         when(mockBcOps.reconcile(anyString(), anyString(), bcCaptor.capture())).thenReturn(Future.succeededFuture());
 
-        KafkaConnectS2IClusterOperations ops = new KafkaConnectS2IClusterOperations(vertx, true,
+        KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, true,
                 mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps);
 
         KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromConfigMap(clusterCm);
@@ -187,7 +187,7 @@ public class KafkaConnectS2IClusterOperationsTest {
         ArgumentCaptor<BuildConfig> bcCaptor = ArgumentCaptor.forClass(BuildConfig.class);
         when(mockBcOps.reconcile(bcNamespaceCaptor.capture(), bcNameCaptor.capture(), bcCaptor.capture())).thenReturn(Future.succeededFuture());
 
-        KafkaConnectS2IClusterOperations ops = new KafkaConnectS2IClusterOperations(vertx, true,
+        KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, true,
                 mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps);
 
         Async async = context.async();
@@ -270,7 +270,7 @@ public class KafkaConnectS2IClusterOperationsTest {
         ArgumentCaptor<BuildConfig> bcCaptor = ArgumentCaptor.forClass(BuildConfig.class);
         when(mockBcOps.reconcile(bcNamespaceCaptor.capture(), bcNameCaptor.capture(), bcCaptor.capture())).thenReturn(Future.succeededFuture());
 
-        KafkaConnectS2IClusterOperations ops = new KafkaConnectS2IClusterOperations(vertx, true,
+        KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, true,
                 mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps);
 
         Async async = context.async();
@@ -370,7 +370,7 @@ public class KafkaConnectS2IClusterOperationsTest {
         ArgumentCaptor<BuildConfig> bcCaptor = ArgumentCaptor.forClass(BuildConfig.class);
         when(mockBcOps.reconcile(bcNamespaceCaptor.capture(), bcNameCaptor.capture(), bcCaptor.capture())).thenReturn(Future.succeededFuture());
 
-        KafkaConnectS2IClusterOperations ops = new KafkaConnectS2IClusterOperations(vertx, true,
+        KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, true,
                 mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps);
 
         Async async = context.async();
@@ -420,7 +420,7 @@ public class KafkaConnectS2IClusterOperationsTest {
 
         when(mockBcOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
 
-        KafkaConnectS2IClusterOperations ops = new KafkaConnectS2IClusterOperations(vertx, true,
+        KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, true,
                 mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps);
 
         Async async = context.async();
@@ -472,7 +472,7 @@ public class KafkaConnectS2IClusterOperationsTest {
 
         when(mockBcOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
 
-        KafkaConnectS2IClusterOperations ops = new KafkaConnectS2IClusterOperations(vertx, true,
+        KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, true,
                 mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps);
 
         Async async = context.async();
@@ -518,7 +518,7 @@ public class KafkaConnectS2IClusterOperationsTest {
         ArgumentCaptor<String> bcNameCaptor = ArgumentCaptor.forClass(String.class);
         when(mockBcOps.reconcile(bcNamespaceCaptor.capture(), bcNameCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
 
-        KafkaConnectS2IClusterOperations ops = new KafkaConnectS2IClusterOperations(vertx, true,
+        KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, true,
                 mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps);
 
         Async async = context.async();
@@ -594,7 +594,7 @@ public class KafkaConnectS2IClusterOperationsTest {
         Set<String> deleted = new HashSet<>();
 
         Async async = context.async(3);
-        KafkaConnectS2IClusterOperations ops = new KafkaConnectS2IClusterOperations(vertx, true,
+        KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, true,
                 mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps) {
 
             @Override

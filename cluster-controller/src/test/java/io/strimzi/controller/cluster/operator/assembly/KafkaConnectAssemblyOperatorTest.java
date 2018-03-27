@@ -42,7 +42,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(VertxUnitRunner.class)
-public class KafkaConnectClusterOperationsTest {
+public class KafkaConnectAssemblyOperatorTest {
 
     protected static Vertx vertx;
 
@@ -76,7 +76,7 @@ public class KafkaConnectClusterOperationsTest {
         when(mockDcOps.scaleUp(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         when(mockDcOps.scaleDown(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
 
-        KafkaConnectClusterOperations ops = new KafkaConnectClusterOperations(vertx, true,
+        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, true,
                 mockCmOps, mockDcOps, mockServiceOps);
 
         KafkaConnectCluster connect = KafkaConnectCluster.fromConfigMap(clusterCm);
@@ -134,7 +134,7 @@ public class KafkaConnectClusterOperationsTest {
         ArgumentCaptor<Integer> dcScaleDownReplicasCaptor = ArgumentCaptor.forClass(Integer.class);
         when(mockDcOps.scaleDown(eq(clusterCmNamespace), dcScaleDownNameCaptor.capture(), dcScaleDownReplicasCaptor.capture())).thenReturn(Future.succeededFuture());
 
-        KafkaConnectClusterOperations ops = new KafkaConnectClusterOperations(vertx, true,
+        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, true,
                 mockCmOps, mockDcOps, mockServiceOps);
 
         Async async = context.async();
@@ -190,7 +190,7 @@ public class KafkaConnectClusterOperationsTest {
         ArgumentCaptor<Integer> dcScaleDownReplicasCaptor = ArgumentCaptor.forClass(Integer.class);
         when(mockDcOps.scaleDown(eq(clusterCmNamespace), dcScaleDownNameCaptor.capture(), dcScaleDownReplicasCaptor.capture())).thenReturn(Future.succeededFuture());
 
-        KafkaConnectClusterOperations ops = new KafkaConnectClusterOperations(vertx, true,
+        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, true,
                 mockCmOps, mockDcOps, mockServiceOps);
 
         Async async = context.async();
@@ -258,7 +258,7 @@ public class KafkaConnectClusterOperationsTest {
         ArgumentCaptor<Integer> dcScaleDownReplicasCaptor = ArgumentCaptor.forClass(Integer.class);
         when(mockDcOps.scaleDown(dcScaleDownNamespaceCaptor.capture(), dcScaleDownNameCaptor.capture(), dcScaleDownReplicasCaptor.capture())).thenReturn(Future.succeededFuture());
 
-        KafkaConnectClusterOperations ops = new KafkaConnectClusterOperations(vertx, true,
+        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, true,
                 mockCmOps, mockDcOps, mockServiceOps);
 
         Async async = context.async();
@@ -299,7 +299,7 @@ public class KafkaConnectClusterOperationsTest {
         doAnswer(i -> Future.succeededFuture(scaleTo))
                 .when(mockDcOps).scaleDown(clusterCmNamespace, connect.getName(), scaleTo);
 
-        KafkaConnectClusterOperations ops = new KafkaConnectClusterOperations(vertx, true,
+        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, true,
                 mockCmOps, mockDcOps, mockServiceOps);
 
         Async async = context.async();
@@ -342,7 +342,7 @@ public class KafkaConnectClusterOperationsTest {
         doAnswer(i -> Future.succeededFuture(scaleTo))
                 .when(mockDcOps).scaleDown(clusterCmNamespace, connect.getName(), scaleTo);
 
-        KafkaConnectClusterOperations ops = new KafkaConnectClusterOperations(vertx, true,
+        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, true,
                 mockCmOps, mockDcOps, mockServiceOps);
 
         Async async = context.async();
@@ -376,7 +376,7 @@ public class KafkaConnectClusterOperationsTest {
         ArgumentCaptor<String> dcNameCaptor = ArgumentCaptor.forClass(String.class);
         when(mockDcOps.reconcile(dcNamespaceCaptor.capture(), dcNameCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
 
-        KafkaConnectClusterOperations ops = new KafkaConnectClusterOperations(vertx, true,
+        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, true,
                 mockCmOps, mockDcOps, mockServiceOps);
 
         Async async = context.async();
@@ -435,7 +435,7 @@ public class KafkaConnectClusterOperationsTest {
         Set<String> deleted = new HashSet<>();
 
         Async async = context.async(3);
-        KafkaConnectClusterOperations ops = new KafkaConnectClusterOperations(vertx, true,
+        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, true,
                 mockCmOps, mockDcOps, mockServiceOps) {
 
             @Override

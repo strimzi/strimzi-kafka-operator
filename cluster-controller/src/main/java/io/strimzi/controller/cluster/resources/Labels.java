@@ -5,6 +5,9 @@
 package io.strimzi.controller.cluster.resources;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.strimzi.controller.cluster.operator.assembly.KafkaAssemblyOperator;
+import io.strimzi.controller.cluster.operator.assembly.KafkaConnectAssemblyOperator;
+import io.strimzi.controller.cluster.operator.assembly.KafkaConnectS2IAssemblyOperator;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -35,11 +38,11 @@ public class Labels {
     public static final String STRIMZI_KIND_LABEL = STRIMZI_DOMAIN + "kind";
     /**
      * The type of Strimzi component:
-     * E.g: {@link io.strimzi.controller.cluster.operator.assembly.KafkaClusterOperations#CLUSTER_TYPE_KAFKA kafka},
-     * {@link io.strimzi.controller.cluster.operator.assembly.KafkaClusterOperations#CLUSTER_TYPE_ZOOKEEPER zookeeper},
-     * {@link io.strimzi.controller.cluster.operator.assembly.KafkaClusterOperations#CLUSTER_TYPE_TOPIC_CONTROLLER topic-controller},
-     * {@link io.strimzi.controller.cluster.operator.assembly.KafkaConnectClusterOperations#CLUSTER_TYPE_CONNECT kafka-connect},
-     * {@link io.strimzi.controller.cluster.operator.assembly.KafkaConnectS2IClusterOperations#CLUSTER_TYPE_CONNECT_S2I kafka-connect-s2i}
+     * E.g: {@link KafkaAssemblyOperator#CLUSTER_TYPE_KAFKA kafka},
+     * {@link KafkaAssemblyOperator#CLUSTER_TYPE_ZOOKEEPER zookeeper},
+     * {@link KafkaAssemblyOperator#CLUSTER_TYPE_TOPIC_CONTROLLER topic-controller},
+     * {@link KafkaConnectAssemblyOperator#CLUSTER_TYPE_CONNECT kafka-connect},
+     * {@link KafkaConnectS2IAssemblyOperator#CLUSTER_TYPE_CONNECT_S2I kafka-connect-s2i}
      */
     public static final String STRIMZI_TYPE_LABEL = STRIMZI_DOMAIN + "type";
 
