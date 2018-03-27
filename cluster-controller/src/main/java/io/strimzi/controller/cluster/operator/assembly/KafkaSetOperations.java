@@ -2,7 +2,7 @@
  * Copyright 2018, Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.controller.cluster.operator.cluster;
+package io.strimzi.controller.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -14,11 +14,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Specialization of {@link StatefulSetOperations} for StatefulSets of Zookeeper nodes
+ * Specialization of {@link StatefulSetOperations} for StatefulSets of Kafka brokers
  */
-public class ZookeeperSetOperations extends StatefulSetOperations<Boolean> {
+public class KafkaSetOperations extends StatefulSetOperations<Boolean> {
 
-    private static final Logger log = LoggerFactory.getLogger(ZookeeperSetOperations.class);
+    private static final Logger log = LoggerFactory.getLogger(KafkaSetOperations.class);
 
     /**
      * Constructor
@@ -26,7 +26,7 @@ public class ZookeeperSetOperations extends StatefulSetOperations<Boolean> {
      * @param vertx  The Vertx instance
      * @param client The Kubernetes client
      */
-    public ZookeeperSetOperations(Vertx vertx, KubernetesClient client) {
+    public KafkaSetOperations(Vertx vertx, KubernetesClient client) {
         super(vertx, client);
     }
 
@@ -53,9 +53,7 @@ public class ZookeeperSetOperations extends StatefulSetOperations<Boolean> {
     }
 
     static boolean needsRollingUpdate(StatefulSetDiff diff) {
-        // Because for ZK the brokers know about each other via the config, and rescaling requires a rolling update
-        return diff.changesSpecReplicas()
-                    || diff.changesLabels()
+        return diff.changesLabels()
                     || diff.changesSpecTemplateSpec();
     }
 }
