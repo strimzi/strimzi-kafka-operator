@@ -127,10 +127,10 @@ public class KafkaSetOperationsTest {
     }
 
     @Test
-    public void testNotNeedsRollingUpdateEnvSomeOtherThing() {
+    public void testNeedsRollingUpdateEnvSomeOtherThing() {
         String envVar = "SOME_RANDOM_ENV";
         a.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().add(new EnvVar(envVar,
                 "foo", null));
-        assertFalse(KafkaSetOperations.needsRollingUpdate(diff()));
+        assertTrue(KafkaSetOperations.needsRollingUpdate(diff()));
     }
 }
