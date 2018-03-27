@@ -64,7 +64,7 @@ class TopicsWatcher {
                 return;
             }
             if (childResult.failed()) {
-                LOGGER.error("Error on zone {} children", TOPICS_ZNODE, childResult.cause());
+                LOGGER.error("Error on znode {} children", TOPICS_ZNODE, childResult.cause());
                 return;
             }
             List<String> result = childResult.result();
@@ -107,7 +107,7 @@ class TopicsWatcher {
 
         }).children(TOPICS_ZNODE, childResult -> {
             if (childResult.failed()) {
-                LOGGER.error("Error on zone {} children", TOPICS_ZNODE, childResult.cause());
+                LOGGER.error("Error on znode {} children", TOPICS_ZNODE, childResult.cause());
                 return;
             }
             List<String> result = childResult.result();
