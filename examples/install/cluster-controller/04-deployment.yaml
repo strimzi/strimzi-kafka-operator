@@ -24,6 +24,16 @@ spec:
               value: "120000"
             - name: STRIMZI_OPERATION_TIMEOUT_MS
               value: "300000"
+            - name: STRIMZI_DEFAULT_ZOOKEEPER_IMAGE
+              value: strimzi/zookeeper:latest
+            - name: STRIMZI_DEFAULT_KAFKA_IMAGE
+              value: strimzi/kafka:latest
+            - name: STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE
+              value: strimzi/kafka-connect:latest
+            - name: STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE
+              value: strimzi/kafka-connect-s2i:latest
+            - name: STRIMZI_DEFAULT_TOPIC_CONTROLLER_IMAGE
+              value: strimzi/topic-controller:latest
           livenessProbe:
             httpGet:
               path: /healthy

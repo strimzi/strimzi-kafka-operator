@@ -38,7 +38,8 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
     protected String tag = "latest";
 
     // Configuration defaults
-    protected static final String DEFAULT_IMAGE = "strimzi/kafka-connect-s2i:latest";
+    protected static final String DEFAULT_IMAGE =
+            System.getenv().getOrDefault("STRIMZI_DEFAULT_KAFKA_IMAGE", "strimzi/kafka-connect-s2i:latest");
 
     /**
      * Constructor
