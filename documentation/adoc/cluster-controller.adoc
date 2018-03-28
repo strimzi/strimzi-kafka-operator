@@ -404,7 +404,22 @@ env:
 
 
 `STRIMZI_OPERATION_TIMEOUT_MS`:: Optional, default: 60000 ms. The timeout for internal operations, in milliseconds. This value should be
-increased when using Strimzi on clusters where regular Kubernetes operations take longer than usual (because of slow downloading of Docker images, for example). 
+increased when using Strimzi on clusters where regular Kubernetes operations take longer than usual (because of slow downloading of Docker images, for example).
+
+`STRIMZI_DEFAULT_KAFKA_IMAGE`:: Optional, default `strimzi/kafka:latest`.
+The image name to use when deploying Kafka.
+
+`STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE`:: Optional, default `strimzi/kafka-connect:latest`.
+The image name to use when deploying Kafka Connect.
+
+`STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE`:: Optional, default `strimzi/kafka-connect-s2i:latest`.
+The image name to use when deploying Kafka Connect S2I.
+
+`STRIMZI_DEFAULT_TOPIC_CONTROLLER_IMAGE`:: Optional, default `strimzi/topic-controller:latest`.
+The image name to use when deploying the topic controller.
+
+`STRIMZI_DEFAULT_ZOOKEEPER_IMAGE`:: Optional, default `strimzi/zookeeper:latest`.
+The image name to use when deploying Zookeeper.
 
 [[multi-namespace]]
 ==== Watching multiple namespaces
