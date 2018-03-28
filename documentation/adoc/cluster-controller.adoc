@@ -61,11 +61,17 @@ In order to configure a Kafka cluster deployment, it's possible to specify the f
 the related ConfigMap :
 
 * `kafka-nodes`: number of Kafka broker nodes. Default is 3
-* `kafka-image`: the Docker image to use for the Kafka brokers. Default is `strimzi/kafka:latest`
+* `kafka-image`: the Docker image to use for the Kafka brokers.
+Default is determined by the value of the
+`<<STRIMZI_DEFAULT_KAFKA_IMAGE,STRIMZI_DEFAULT_KAFKA_IMAGE>>`
+environment variable of the Cluster Controller.
 * `kafka-healthcheck-delay`: the initial delay for the liveness and readiness probes for each Kafka broker node. Default is 15
 * `kafka-healthcheck-timeout`: the timeout on the liveness and readiness probes for each Kafka broker node. Default is 5
 * `zookeeper-nodes`: number of Zookeeper nodes
-* `zookeeper-image`: the Docker image to use for the Zookeeper nodes. Default is `strimzi/zookeeper:latest`
+* `zookeeper-image`: the Docker image to use for the Zookeeper nodes.
+Default is determined by the value of the
+`<<STRIMZI_DEFAULT_ZOOKEEPER_IMAGE,STRIMZI_DEFAULT_ZOOKEEPER_IMAGE>>`
+environment variable of the Cluster Controller.
 * `zookeeper-healthcheck-delay`: the initial delay for the liveness and readiness probes for each Zookeeper node. Default is 15
 * `zookeeper-healthcheck-timeout`: the timeout on the liveness and readiness probes for each Zookeeper node. Default is 5
 * `KAFKA_DEFAULT_REPLICATION_FACTOR`: the default replication factors for automatically created topics. It sets the 
@@ -236,7 +242,7 @@ For more information about using the metrics with Prometheus and Grafana, see <<
 ===== Topic controller
 
 Alongside the Kafka cluster and the Zookeeper ensemble, the cluster controller can also deploy the topic controller.
-In order to do that, the 'topic-controller-config` field has to be put into the data section of the cluster ConfigMap.
+In order to do that, the `topic-controller-config` field has to be put into the data section of the cluster ConfigMap.
 This field is a JSON string containing the topic controller configuration.
 Without this field, the cluster controller doesn't deploy the topic controller. It is still possible to deploy the topic
 controller by creating appropriate Kubernetes/OpenShift resources.
@@ -246,7 +252,10 @@ The JSON representation of the 'topic-controller-config` has no mandatory fields
 
 The configurable fields are the following :
 
-`image`:: Docker image to use for the topic controller. Default is `strimzi/topic-controller:latest`
+`image`:: Docker image to use for the topic controller.
+Default is determined by the value of the
+`<<STRIMZI_DEFAULT_TOPIC_CONTROLLER_IMAGE,STRIMZI_DEFAULT_TOPIC_CONTROLLER_IMAGE>>`
+environment variable of the Cluster Controller.
 `watchedNamespace`:: The Kubernetes namespace (OpenShift project) in which the topic controller watches for topic ConfigMaps.
 Default is the namespace where the topic controller is running
 `reconciliationIntervalMs`:: The interval between periodic reconciliations in milliseconds. Default is 900000 (15 minutes).
@@ -270,8 +279,11 @@ In order to configure a Kafka Connect cluster deployment, it's possible to speci
 the related ConfigMap:
 
 * `nodes`: number of Kafka Connect worker nodes. Default is 1
-* `image`: the Docker image to use for the Kafka Connect workers. Default is `strimzi/kafka-connect:latest`. If S2I is used 
-(only on OpenShift), then it should be the related S2I image.
+* `image`: the Docker image to use for the Kafka Connect workers.
+Default is determined by the value of the
+`<<STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE,STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE>>`
+environment variable of the Cluster Controller.
+If S2I is used (only on OpenShift), then it should be the related S2I image.
 * `healthcheck-delay`: the initial delay for the liveness and readiness probes for each Kafka Connect worker node. Default is 60
 * `healthcheck-timeout`: the timeout on the liveness and readiness probes for each Kafka Connect worker node. Default is 5
 * `KAFKA_CONNECT_BOOTSTRAP_SERVERS`: a list of host/port pairs to use for establishing the initial connection to the Kafka cluster.
@@ -388,7 +400,7 @@ include::../../examples/install/cluster-controller/03-role-binding.yaml[]
 
 The controller itself can be configured through the following environment variables.
 
-`STRIMZI_NAMESPACE`:: Required. A comma-separated list of namespaces that the controller should operate in. The Cluster Controller deployment might use the https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#the-downward-api[Kubernetes Downward API]
+[[STRIMZI_NAMESPACE]] `STRIMZI_NAMESPACE`:: Required. A comma-separated list of namespaces that the controller should operate in. The Cluster Controller deployment might use the https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#the-downward-api[Kubernetes Downward API]
 to set this automatically to the namespace the Cluster Controller is deployed in. See the example below:
 +
 [source,yaml,options="nowrap"]
@@ -400,26 +412,33 @@ env:
         fieldPath: metadata.namespace
 ----
 
-`STRIMZI_FULL_RECONCILIATION_INTERVAL_MS`:: Optional, default: 120000 ms. The interval between periodic reconciliations, in milliseconds.
+[[STRIMZI_FULL_RECONCILIATION_INTERVAL_MS]] `STRIMZI_FULL_RECONCILIATION_INTERVAL_MS`:: Optional, default: 120000 ms. The interval between periodic reconciliations, in milliseconds.
 
 
-`STRIMZI_OPERATION_TIMEOUT_MS`:: Optional, default: 60000 ms. The timeout for internal operations, in milliseconds. This value should be
+[[STRIMZI_OPERATION_TIMEOUT_MS]] `STRIMZI_OPERATION_TIMEOUT_MS`:: Optional, default: 60000 ms. The timeout for internal operations, in milliseconds. This value should be
 increased when using Strimzi on clusters where regular Kubernetes operations take longer than usual (because of slow downloading of Docker images, for example).
 
-`STRIMZI_DEFAULT_KAFKA_IMAGE`:: Optional, default `strimzi/kafka:latest`.
-The image name to use when deploying Kafka.
+[[STRIMZI_DEFAULT_KAFKA_IMAGE]] `STRIMZI_DEFAULT_KAFKA_IMAGE`:: Optional, default `strimzi/kafka:latest`.
+The image name to use as a default when deploying Kafka, if
+no image is specified as the `kafka-image` in the <<kafka_config_map_details,Kafka cluster ConfigMap>>.
 
-`STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE`:: Optional, default `strimzi/kafka-connect:latest`.
-The image name to use when deploying Kafka Connect.
+[[STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE]] `STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE`:: Optional, default `strimzi/kafka-connect:latest`.
+The image name to use as a default when deploying Kafka Connect, if
+no image is specified as the `image` in the
+<<kafka_connect_config_map_details,Kafka Connect cluster ConfigMap>>.
 
-`STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE`:: Optional, default `strimzi/kafka-connect-s2i:latest`.
-The image name to use when deploying Kafka Connect S2I.
+[[STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE]] `STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE`:: Optional, default `strimzi/kafka-connect-s2i:latest`.
+The image name to use as a default when deploying Kafka Connect S2I, if
+no image is specified as the `image` in the cluster ConfigMap.
 
-`STRIMZI_DEFAULT_TOPIC_CONTROLLER_IMAGE`:: Optional, default `strimzi/topic-controller:latest`.
-The image name to use when deploying the topic controller.
+[[STRIMZI_DEFAULT_TOPIC_CONTROLLER_IMAGE]] `STRIMZI_DEFAULT_TOPIC_CONTROLLER_IMAGE`:: Optional, default `strimzi/topic-controller:latest`.
+The image name to use as a default when deploying the topic controller, if
+no image is specified as the `image` in the <<topic_controller_json_config,topic controller config>>
+of the Kafka cluster ConfigMap.
 
-`STRIMZI_DEFAULT_ZOOKEEPER_IMAGE`:: Optional, default `strimzi/zookeeper:latest`.
-The image name to use when deploying Zookeeper.
+[[STRIMZI_DEFAULT_ZOOKEEPER_IMAGE]] `STRIMZI_DEFAULT_ZOOKEEPER_IMAGE`:: Optional, default `strimzi/zookeeper:latest`.
+The image name to use as a default when deploying Zookeeper, if
+no image is specified as the `zookeeper-image` in the <<kafka_config_map_details,Kafka cluster ConfigMap>>.
 
 [[multi-namespace]]
 ==== Watching multiple namespaces
