@@ -6,7 +6,7 @@ export BRANCH=${BRANCH:-master}
 export TAG=${TAG:-latest}
 export DOCKER_ORG=${DOCKER_ORG:-strimzici}
 export DOCKER_REGISTRY=${DOCKER_REGISTRY:-docker.io}
-export DOCKER_TAG=$TAG
+export DOCKER_TAG=$COMMIT
 export DOCKER_VERSION_ARG=${COMMIT:-latest}
 
 make docker_build
@@ -27,6 +27,7 @@ elif [ "$TAG" = "latest" ] && [ "$BRANCH" != "master" ]; then
     echo "Not in master branch and not in release tag - nothing to push"
 else
     export DOCKER_ORG=strimzi
+    export DOCKER_TAG=$TAG
     echo "Pushing to docker org $DOCKER_ORG"
     make docker_push
     make docu_pushtowebsite

@@ -295,6 +295,10 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         return last;
     }
 
+    private String changeOrgAndTag(String image, String newOrg, String newTag) {
+        return image.replaceFirst("^strimzi/", newOrg + "/").replaceFirst(":[^:]+$", ":" + newTag);
+    }
+
     private Statement withClusterController(Annotatable element,
                                     Statement statement) {
         Statement last = statement;
@@ -303,15 +307,19 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 // Change the docker org of the images in the 04-deployment.yaml
                 if ("04-deployment.yaml".equals(f.getName())) {
                     String dockerOrg = System.getenv().getOrDefault("DOCKER_ORG", "strimzici");
+                    String dockerTag = System.getenv().get("DOCKER_TAG");
+                    if (dockerTag == null || dockerTag.isEmpty()) {
+                        throw new RuntimeException("DOCKER_TAG environment variable not set");
+                    }
                     JsonNode containerNode = node.get("spec").get("template").get("spec").get("containers").get(0);
                     JsonNode ccImageNode = containerNode.get("image");
-                    ((ObjectNode) containerNode).put("image", ccImageNode.asText().replaceFirst("^strimzi/", dockerOrg + "/"));
+                    ((ObjectNode) containerNode).put("image", changeOrgAndTag(ccImageNode.asText(), dockerOrg, dockerTag));
                     for (JsonNode envVar : containerNode.get("env")) {
                         String varName = envVar.get("name").textValue();
-                        // Replace all the default images with ones from the $DOCKER_ORG org
+                        // Replace all the default images with ones from the $DOCKER_ORG org and with the $DOCKER_TAG tag
                         if (varName.matches("STRIMZI_DEFAULT_.*_IMAGE")) {
                             String value = envVar.get("value").textValue();
-                            ((ObjectNode) envVar).put("value", value.replaceFirst("^strimzi/", dockerOrg + "/"));
+                            ((ObjectNode) envVar).put("value", changeOrgAndTag(value, dockerOrg, dockerTag));
                         }
                     }
                 }
