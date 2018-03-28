@@ -31,6 +31,7 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static io.strimzi.test.TestUtils.indent;
 import static java.util.Arrays.asList;
@@ -55,7 +56,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
     public static final String NOTEARDOWN = "NOTEARDOWN";
     public static final String KAFKA_EPHEMERAL_CM = "../examples/configmaps/cluster-controller/kafka-ephemeral.yaml";
     public static final String KAFKA_CONNECT_CM = "../examples/configmaps/cluster-controller/kafka-connect.yaml";
-    public static final String CC_INSTALL_PATH = "../examples/install/cluster-controller";
+    public static final String CC_INSTALL_DIR = "../examples/install/cluster-controller";
     public static final String CC_DEPLOYMENT_NAME = "strimzi-cluster-controller";
 
     private KubeClusterResource clusterResource;
@@ -298,35 +299,40 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                                     Statement statement) {
         Statement last = statement;
         for (ClusterController cc : annotations(element, ClusterController.class)) {
-            String yaml = getContent(new File(CC_INSTALL_PATH), node -> {
-                String dockerOrg = System.getenv().getOrDefault("DOCKER_ORG", "strimzici");
-                JsonNode containerNode = node.get("spec").get("template").get("spec").get("containers").get(0);
-                JsonNode ccImageNode = containerNode.get("image");
-                ((ObjectNode) containerNode).put("image", ccImageNode.asText().replaceFirst("^strimzi/", dockerOrg + "/"));
-                for (JsonNode envVar : containerNode.get("env")) {
-                    String varName = envVar.get("name").textValue();
-                    // Replace all the default images with ones from the $DOCKER_ORG org
-                    if (varName.matches("STRIMZI_DEFAULT_.*_IMAGE")) {
-                        String value = envVar.get("value").textValue();
-                        ((ObjectNode) envVar).put("value", value.replaceFirst("^strimzi/", dockerOrg + "/"));
+            List<String> yamls = Arrays.stream(new File(CC_INSTALL_DIR).listFiles()).sorted().map(f -> getContent(f, node -> {
+                // Change the docker org of the images in the 04-deployment.yaml
+                if ("04-deployment.yaml".equals(f.getName())) {
+                    String dockerOrg = System.getenv().getOrDefault("DOCKER_ORG", "strimzici");
+                    JsonNode containerNode = node.get("spec").get("template").get("spec").get("containers").get(0);
+                    JsonNode ccImageNode = containerNode.get("image");
+                    ((ObjectNode) containerNode).put("image", ccImageNode.asText().replaceFirst("^strimzi/", dockerOrg + "/"));
+                    for (JsonNode envVar : containerNode.get("env")) {
+                        String varName = envVar.get("name").textValue();
+                        // Replace all the default images with ones from the $DOCKER_ORG org
+                        if (varName.matches("STRIMZI_DEFAULT_.*_IMAGE")) {
+                            String value = envVar.get("value").textValue();
+                            ((ObjectNode) envVar).put("value", value.replaceFirst("^strimzi/", dockerOrg + "/"));
+                        }
                     }
                 }
-            });
+            })).collect(Collectors.toList());
             last = new Bracket(last) {
                 @Override
                 protected void before() {
                     // Here we record the state of the cluster
                     LOGGER.info("Creating cluster controller {} before test per @ClusterController annotation on {}", cc, name(element));
-                    kubeClient().clientWithAdmin().createContent(yaml);
+                    for (String yaml: yamls) {
+                        kubeClient().clientWithAdmin().createContent(yaml);
+                    }
                     kubeClient().waitForDeployment(CC_DEPLOYMENT_NAME);
                 }
-
 
                 @Override
                 protected void after() {
                     LOGGER.info("Deleting cluster controller {} after test per @ClusterController annotation on {}", cc, name(element));
-                    // Here we verify the cluster is in the same state
-                    kubeClient().clientWithAdmin().deleteContent(yaml);
+                    for (int i = yamls.size() - 1; i >= 0; i--) {
+                        kubeClient().clientWithAdmin().deleteContent(yamls.get(i));
+                    }
                     kubeClient().waitForResourceDeletion("deployment", CC_DEPLOYMENT_NAME);
                 }
             };
