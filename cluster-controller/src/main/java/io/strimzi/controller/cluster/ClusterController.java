@@ -120,7 +120,7 @@ public class ClusterController extends AbstractVerticle {
                         Labels labels = Labels.fromResource(cm);
                         String type = labels.type();
 
-                        final AbstractAssemblyOperator<?> cluster;
+                        final AbstractAssemblyOperator cluster;
                         if (type == null) {
                             log.warn("Missing label {} in Config Map {} in namespace {}", Labels.STRIMZI_TYPE_LABEL, cm.getMetadata().getName(), namespace);
                             return;
@@ -145,7 +145,13 @@ public class ClusterController extends AbstractVerticle {
                             case DELETED:
                             case MODIFIED:
                                 log.info("ConfigMap {} in namespace {} was {}", name, namespace, action);
-                                cluster.reconcileAssembly(namespace, name);
+                                cluster.reconcileAssembly(namespace, name, result -> {
+                                    if (result.succeeded()) {
+                                        log.info("{} assembly reconciled {}", type, name);
+                                    } else {
+                                        log.error("Failed to reconcile {} assembly {}.", type, name);
+                                    }
+                                });
                                 break;
                             case ERROR:
                                 log.error("Failed ConfigMap {} in namespace{} ", name, namespace);

@@ -10,7 +10,6 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.strimzi.controller.cluster.model.Labels;
 import io.strimzi.controller.cluster.operator.resource.ConfigMapOperator;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -18,7 +17,6 @@ import io.vertx.core.shareddata.Lock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -31,10 +29,8 @@ import java.util.stream.Collectors;
  *
  * <p>This class manages a per-assembly locking strategy so only one operation per assembly
  * can proceed at once.</p>
- * @param <R> The type of resource from which the cluster state can be recovered
  */
-public abstract class AbstractAssemblyOperator<
-        R extends HasMetadata> {
+public abstract class AbstractAssemblyOperator {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractAssemblyOperator.class.getName());
 
@@ -105,14 +101,6 @@ public abstract class AbstractAssemblyOperator<
     }
 
     /**
-     * The name of the given {@code resource}, as read from its {@code strimzi.io/cluster} label.
-     * @param resource The resource
-     */
-    protected String nameFromLabels(R resource) {
-        return Labels.cluster(resource);
-    }
-
-    /**
      * Reconcile assembly resources in the given namespace having the given {@code assemblyName}.
      * Reconciliation works by getting the assembly ConfigMap in the given namespace with the given assemblyName and
      * comparing with the corresponding {@linkplain #getResources(String, Labels) resource}.
@@ -123,7 +111,7 @@ public abstract class AbstractAssemblyOperator<
      * @param namespace The namespace
      * @param assemblyName The name of the assembly
      */
-    public final void reconcileAssembly(String namespace, String assemblyName) {
+    public final void reconcileAssembly(String namespace, String assemblyName, Handler<AsyncResult<Void>> handler) {
         final String lockName = getLockName(assemblyType, namespace, assemblyName);
         vertx.sharedData().getLockWithTimeout(lockName, LOCK_TIMEOUT, res -> {
             if (res.succeeded()) {
@@ -131,54 +119,28 @@ public abstract class AbstractAssemblyOperator<
                 Lock lock = res.result();
 
                 try {
-                    log.info("Reconciling {} clusters ...", assemblyDescription);
-
                     // get ConfigMap and related resources for the specific cluster
                     ConfigMap cm = configMapOperations.get(namespace, assemblyName);
 
-                    List<R> resources = getResources(namespace, Labels.forCluster(assemblyName));
-
                     if (cm != null) {
                         log.info("Reconciliation: {} assembly {} should be created or updated", assemblyDescription, assemblyName);
-                        log.info("Creating/updating {} assembly {}", assemblyDescription, assemblyName);
                         createOrUpdate(cm, createResult -> {
-                            if (createResult.succeeded()) {
-                                log.info("{} assembly created/updated {}", assemblyDescription, assemblyName);
-                            } else {
-                                log.error("Failed to create/update {} assembly {}.", assemblyDescription, assemblyName);
-                            }
                             lock.release();
                             log.debug("Lock {} released", lockName);
+                            handler.handle(createResult);
                         });
                     } else {
-
-                        List<Future> result = new ArrayList<>(resources.size());
-                        for (R resource : resources) {
-                            log.info("Reconciliation: {} assembly {} should be deleted", assemblyDescription, resource.getMetadata().getName());
-                            String nameFromResource = nameFromLabels(resource);
-                            log.info("Deleting {} assembly {} in namespace {}", assemblyDescription, nameFromResource, namespace);
-
-                            Future<Void> deleteFuture = Future.future();
-                            result.add(deleteFuture);
-                            delete(namespace, nameFromResource, deleteResult -> {
-                                if (deleteResult.succeeded()) {
-                                    log.info("{} assembly deleted {} in namespace {}", assemblyDescription, nameFromResource, namespace);
-                                } else {
-                                    log.error("Failed to delete {} assembly {} in namespace {}", assemblyDescription, nameFromResource, namespace);
-                                }
-                                deleteFuture.complete();
-                            });
-                        }
-
-                        CompositeFuture.join(result).setHandler(res2 -> {
+                        log.info("Reconciliation: {} assembly {} should be deleted", assemblyDescription, assemblyName);
+                        delete(namespace, assemblyName, deleteResult -> {
                             lock.release();
                             log.debug("Lock {} released", lockName);
+                            handler.handle(deleteResult);
                         });
                     }
                 } catch (Throwable ex) {
-                    log.error("Error while reconciling {} assembly", assemblyDescription, ex);
                     lock.release();
                     log.debug("Lock {} released", lockName);
+                    handler.handle(Future.failedFuture(ex));
                 }
             } else {
                 log.warn("Failed to acquire lock for {} assembly {}.", assemblyType, lockName);
@@ -200,18 +162,25 @@ public abstract class AbstractAssemblyOperator<
     public final void reconcileAll(String namespace, Labels selector) {
         Labels selectorWithCluster = selector.withType(assemblyType);
 
-        // get ConfigMap for the corresponding cluster type
+        // get ConfigMaps with kind=cluster&type=kafka (or connect, or connect-s2i) for the corresponding cluster type
         List<ConfigMap> cms = configMapOperations.list(namespace, selectorWithCluster);
         Set<String> cmsNames = cms.stream().map(cm -> cm.getMetadata().getName()).collect(Collectors.toSet());
 
-        // get resources for the corresponding cluster name (they are part of)
-        List<R> resources = getResources(namespace, selectorWithCluster);
+        // get resources with kind=cluster&type=kafka (or connect, or connect-s2i)
+        List<? extends HasMetadata> resources = getResources(namespace, selectorWithCluster);
+        // now extract the cluster name from those
         Set<String> resourceNames = resources.stream().map(Labels::cluster).collect(Collectors.toSet());
 
         cmsNames.addAll(resourceNames);
 
         for (String name: cmsNames) {
-            reconcileAssembly(namespace, name);
+            reconcileAssembly(namespace, name, result -> {
+                if (result.succeeded()) {
+                    log.info("{} assembly reconciled {}", assemblyDescription, name);
+                } else {
+                    log.error("Failed to reconcile {} assembly {}.", assemblyDescription, name);
+                }
+            });
         }
     }
 
@@ -222,6 +191,6 @@ public abstract class AbstractAssemblyOperator<
      * @param selector The labels
      * @return The matching resources.
      */
-    protected abstract List<R> getResources(String namespace, Labels selector);
+    protected abstract List<HasMetadata> getResources(String namespace, Labels selector);
 
 }
