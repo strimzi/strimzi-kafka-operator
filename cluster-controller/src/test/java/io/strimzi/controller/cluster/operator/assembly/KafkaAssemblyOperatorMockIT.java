@@ -321,6 +321,39 @@ public class KafkaAssemblyOperatorMockIT {
                 KafkaCluster.headlessName(CLUSTER_NAME));
     }
 
+    @Test
+    public void testUpdateClusterWithoutZkStatefulSet(TestContext context) {
+        String statefulSet = ZookeeperCluster.zookeeperClusterName(CLUSTER_NAME);
+        updateClusterWithoutStatefulSet(context, statefulSet);
+    }
+
+    @Test
+    public void testUpdateClusterWithoutKafkaStatefulSet(TestContext context) {
+        String statefulSet = KafkaCluster.kafkaClusterName(CLUSTER_NAME);
+        updateClusterWithoutStatefulSet(context, statefulSet);
+    }
+
+    private void updateClusterWithoutStatefulSet(TestContext context, String statefulSet) {
+        KafkaAssemblyOperator kco = createCluster(context);
+
+        mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSet).delete();
+        assertNull("Expected ss " + statefulSet + " to be not exist",
+                mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSet).get());
+
+        LOGGER.info("Reconciling again -> update");
+        Async updateAsync = context.async();
+        kco.createOrUpdate(NAMESPACE, CLUSTER_NAME, ar -> {
+            if (ar.failed()) ar.cause().printStackTrace();
+            context.assertTrue(ar.succeeded());
+
+            assertNotNull(
+                    "Expected ss " + statefulSet + " to have been recreated",
+                    mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSet).get());
+
+            updateAsync.complete();
+        });
+    }
+
     private void deleteClusterWithoutServices(TestContext context, String... services) {
 
         KafkaAssemblyOperator kco = createCluster(context);
