@@ -80,19 +80,19 @@ public abstract class AbstractResourceOperator<C, T extends HasMetadata,
                 T current = operation().inNamespace(namespace).withName(name).get();
                 if (desired != null) {
                     if (current == null) {
-                        log.debug("{} {}/{} does not exist, creating it", resourceKind, namespace, name);
+                        log.info("{} {}/{} does not exist, creating it", resourceKind, namespace, name);
                         internalCreate(namespace, name, desired).setHandler(future);
                     } else {
-                        log.debug("{} {}/{} already exists, patching it", resourceKind, namespace, name);
+                        log.info("{} {}/{} already exists, patching it", resourceKind, namespace, name);
                         internalPatch(namespace, name, current, desired).setHandler(future);
                     }
                 } else {
                     if (current != null) {
                         // Deletion is desired
-                        log.debug("{} {}/{} exist, deleting it", resourceKind, namespace, name);
+                        log.info("{} {}/{} exist, deleting it", resourceKind, namespace, name);
                         internalDelete(namespace, name).setHandler(future);
                     } else {
-                        log.debug("{} {}/{} does not exist, noop", resourceKind, namespace, name);
+                        log.info("{} {}/{} does not exist, noop", resourceKind, namespace, name);
                         future.complete(ReconcileResult.noop());
                     }
                 }
@@ -110,9 +110,8 @@ public abstract class AbstractResourceOperator<C, T extends HasMetadata,
      */
     protected Future<ReconcileResult<P>> internalDelete(String namespace, String name) {
         try {
-            log.info("Deleting {} {} in namespace {}", resourceKind, name, namespace);
             operation().inNamespace(namespace).withName(name).delete();
-            log.info("{} {} in namespace {} has been deleted", resourceKind, name, namespace);
+            log.debug("{} {} in namespace {} has been deleted", resourceKind, name, namespace);
             return Future.succeededFuture(ReconcileResult.deleted());
         } catch (Exception e) {
             log.error("Caught exception while deleting {} {} in namespace {}", resourceKind, name, namespace, e);
@@ -126,9 +125,8 @@ public abstract class AbstractResourceOperator<C, T extends HasMetadata,
      */
     protected Future<ReconcileResult<P>> internalPatch(String namespace, String name, T current, T desired) {
         try {
-            log.info("Patching {} resource {} in namespace {} with {}", resourceKind, name, namespace, desired);
             operation().inNamespace(namespace).withName(name).cascading(true).patch(desired);
-            log.info("{} {} in namespace {} has been patched", resourceKind, name, namespace);
+            log.debug("{} {} in namespace {} has been patched", resourceKind, name, namespace);
             return Future.succeededFuture(ReconcileResult.patched(null));
         } catch (Exception e) {
             log.error("Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
@@ -142,9 +140,8 @@ public abstract class AbstractResourceOperator<C, T extends HasMetadata,
      */
     protected Future<ReconcileResult<P>> internalCreate(String namespace, String name, T desired) {
         try {
-            log.info("Creating {} {} in namespace {}", resourceKind, name, namespace);
             operation().inNamespace(namespace).withName(name).create(desired);
-            log.info("{} {} in namespace {} has been created", resourceKind, name, namespace);
+            log.debug("{} {} in namespace {} has been created", resourceKind, name, namespace);
             return Future.succeededFuture(ReconcileResult.created());
         } catch (Exception e) {
             log.error("Caught exception while creating {} {} in namespace {}", resourceKind, name, namespace, e);
