@@ -59,6 +59,21 @@ public class StatefulSetOperator<P> extends AbstractScalableResourceOperator<Kub
             podName -> podOperations.isReady(namespace, podName));
     }
 
+    private Future<Integer> getReplicas(String namespace, String name) {
+        Future<Integer> result = Future.future();
+        vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
+            future -> {
+                try {
+                    Integer replicas = get(namespace, name).getSpec().getReplicas();
+                    future.complete(replicas);
+                } catch (Throwable t) {
+                    future.fail(t);
+                }
+            }, true,
+            result.completer());
+        return result;
+    }
+
     /**
      * Asynchronously perform a rolling update of all the pods in the StatefulSet identified by the given
      * {@code namespace} and {@code name}, returning a Future that will complete when the rolling update
@@ -68,42 +83,73 @@ public class StatefulSetOperator<P> extends AbstractScalableResourceOperator<Kub
      */
     public Future<Void> rollingUpdate(String namespace, String name, Predicate<String> isReady) {
         Future<Void> rollingUpdateFuture = Future.future();
+        // Get the number of replicas
+        getReplicas(namespace, name).compose(replicas -> {
+            Future<Void> f = Future.succeededFuture();
+            // Then for each replicas, restart it
+            for (int i = 0; i < replicas; i++) {
+                String podName = name + "-" + i;
+                f = f.compose(ignored -> restartPod(namespace, name, isReady, podName));
+            }
+            return f;
+        }).setHandler(rollingResult -> {
+            rollingUpdateFuture.handle(rollingResult);
+        });
+        return rollingUpdateFuture;
+    }
+
+    private <T> Future<Boolean> p(Predicate<T> isReady, T argument) {
+        Future<Boolean> result = Future.future();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
             future -> {
                 try {
-                    final int replicas = get(namespace, name).getSpec().getReplicas();
-                    for (int i = 0; i < replicas; i++) {
-                        String podName = name + "-" + i;
-                        log.info("Rolling pod {}", podName);
-                        Future deleted = Future.future();
-                        Watcher<Pod> watcher = new RollingUpdateWatcher(deleted);
-
-                        try (Watch ignored = podOperations.watch(namespace, podName, watcher)) {
-                            // Delete the pod
-                            Future podReconcileFuture = podOperations.reconcile(namespace, podName, null);
-
-                            // TODO do this async
-                            while (!podReconcileFuture.isComplete() || !deleted.isComplete()) {
-                                log.info("Waiting for pod {} to be deleted", podName);
-                                Thread.sleep(1000);
-                            }
-                            // TODO Check success of podReconcileFuture and deleted futures
-                        }
-
-                        while (!isReady.test(podName)) {
-                            log.info("Waiting for pod {} to get ready", podName);
-                            Thread.sleep(1000);
-                        }
-                        log.info("Pod {} rolling update complete", podName);
-                    }
-                    future.complete();
-                } catch (Exception e) {
-                    future.fail(e);
+                    future.complete(isReady.test(argument));
+                } catch (Throwable t) {
+                    future.fail(t);
                 }
-            },
-            false,
-            rollingUpdateFuture.completer());
-        return rollingUpdateFuture;
+            }, true,
+            result.completer());
+        return result;
+    }
+
+    private Future<Void> restartPod(String namespace, String name, Predicate<String> isReady, String podName) {
+        Future<Void> result = Future.future();
+        log.info("Roll {}/{}: Rolling pod {}", namespace, name, podName);
+        Future<Void> deleted = Future.future();
+        Future<CompositeFuture> deleteFinished = Future.future();
+        Watcher<Pod> watcher = new RollingUpdateWatcher(deleted);
+        // TODO this is blocking!
+        Watch watch = podOperations.watch(namespace, podName, watcher);
+        // Delete the pod
+        log.debug("Roll {}/{}: Waiting for pod {} to be deleted", namespace, name, podName);
+        Future podReconcileFuture = podOperations.reconcile(namespace, podName, null);
+        CompositeFuture.join(podReconcileFuture, deleted).setHandler(deleteResult -> {
+            watch.close();
+            if (deleteResult.succeeded()) {
+                log.debug("Roll {}/{}: Pod {} was deleted", namespace, name, podName);
+            }
+            deleteFinished.handle(deleteResult);
+        });
+        deleteFinished.compose(ix -> {
+            log.debug("Roll {}/{}: Waiting for new pod {} to get ready", namespace, name, podName);
+            Future<Void> readyFuture = Future.future();
+            vertx.setPeriodic(1_000, timerId -> {
+                p(isReady, podName).setHandler(x -> {
+                    if (x.succeeded()) {
+                        if (x.result()) {
+                            vertx.cancelTimer(timerId);
+                            readyFuture.complete();
+                        }
+                        // else not ready
+                    } else {
+                        vertx.cancelTimer(timerId);
+                        readyFuture.fail(x.cause());
+                    }
+                });
+            });
+            return readyFuture;
+        }).setHandler(result);
+        return result;
     }
 
     @Override
