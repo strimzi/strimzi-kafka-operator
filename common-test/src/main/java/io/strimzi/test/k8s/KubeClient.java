@@ -6,6 +6,7 @@ package io.strimzi.test.k8s;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 import static java.util.Arrays.asList;
@@ -122,5 +123,7 @@ public interface KubeClient<K extends KubeClient<K>> {
 
     String getResourceAsJson(String resourceType, String resourceName);
 
-    K waitForResourceUpdate(String resourceType, String resourceName, String startTime);
+    K waitForResourceUpdate(String resourceType, String resourceName, Date startTime);
+
+    Date getResourceCreateTimestamp(String pod, String s);
 }

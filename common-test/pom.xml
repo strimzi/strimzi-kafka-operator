@@ -8,6 +8,9 @@
         <version>1.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
+    <properties>
+        <jsonpath.version>RELEASE</jsonpath.version>
+    </properties>
 
     <artifactId>common-test</artifactId>
 
@@ -53,7 +56,12 @@
         <dependency>
             <groupId>com.jayway.jsonpath</groupId>
             <artifactId>json-path</artifactId>
-            <version>RELEASE</version>
+            <version>${jsonpath.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.jayway.jsonpath</groupId>
+            <artifactId>json-path-assert</artifactId>
+            <version>${jsonpath.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

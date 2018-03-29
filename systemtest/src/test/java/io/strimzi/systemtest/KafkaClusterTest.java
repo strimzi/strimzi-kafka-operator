@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
@@ -321,13 +322,13 @@ public class KafkaClusterTest {
         String clusterName = "my-cluster";
         int expectedZKPods = 2;
         int expectedKafkaPods = 2;
-        List<String> zkPodStartTime = new ArrayList<>();
+        List<Date> zkPodStartTime = new ArrayList<>();
         for (int i = 0; i < expectedZKPods; i++) {
-            zkPodStartTime.add(getResourceCreateTimestamp("pod", zookeeperPodName(clusterName, i)));
+            zkPodStartTime.add(kubeClient.getResourceCreateTimestamp("pod", zookeeperPodName(clusterName, i)));
         }
-        List<String> kafkaPodStartTime = new ArrayList<>();
+        List<Date> kafkaPodStartTime = new ArrayList<>();
         for (int i = 0; i < expectedKafkaPods; i++) {
-            kafkaPodStartTime.add(getResourceCreateTimestamp("pod", kafkaPodName(clusterName, i)));
+            kafkaPodStartTime.add(kubeClient.getResourceCreateTimestamp("pod", kafkaPodName(clusterName, i)));
         }
         Oc oc = (Oc) this.kubeClient;
         replaceCm(clusterName, "zookeeper-healthcheck-delay", "23");
@@ -370,11 +371,5 @@ public class KafkaClusterTest {
         String path = "$.spec.containers[*].env[?(@.name=='" + variable + "')].value";
         return path;
     }
-
-    private String getResourceCreateTimestamp(String resourceType, String resourceName) {
-        return JsonPath.parse(kubeClient.getResourceAsJson(resourceType, resourceName)).
-                read("$.metadata.creationTimestamp").toString().replaceAll("\\p{P}", "");
-    }
-
 
 }

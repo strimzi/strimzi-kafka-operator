@@ -14,10 +14,14 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.NoSuchFileException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Date;
 import java.util.function.Predicate;
 
 import static java.util.Arrays.asList;
@@ -288,18 +292,29 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
         return (K) this;
     }
 
-    public K waitForResourceUpdate(String resourceType, String resourceName, String startTime) {
+    public K waitForResourceUpdate(String resourceType, String resourceName, Date startTime) {
 
         TestUtils.waitFor(resourceType + " " + resourceName + " update",
                 1_000L, 240_000L, () -> {
                 try {
-                    return !startTime.equals(JsonPath.parse(getResourceAsJson(resourceType, resourceName)).
-                            read("$.metadata.creationTimestamp").toString().replaceAll("\\p{P}", ""));
+                    return startTime.before(getResourceCreateTimestamp(resourceType, resourceName));
                 } catch (KubeClusterException.NotFound e) {
                     return false;
                 }
             });
         return (K) this;
+    }
+
+    public Date getResourceCreateTimestamp(String resourceType, String resourceName) {
+        DateFormat df = new SimpleDateFormat("yyyyMMdd'T'kkmmss'Z'");
+        Date parsedDate = null;
+        try {
+            parsedDate = df.parse(JsonPath.parse(getResourceAsJson(resourceType, resourceName)).
+                    read("$.metadata.creationTimestamp").toString().replaceAll("\\p{P}", ""));
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        return parsedDate;
     }
 
     @Override
