@@ -105,7 +105,7 @@ public class TopicControllerTest {
     @Test
     public void testFromDeployment() {
 
-        TopicController tcFromDep = TopicController.fromDeployment(namespace, cluster, tc.generateDeployment());
+        TopicController tcFromDep = TopicController.fromAssembly(namespace, cluster, tc.generateDeployment());
 
         assertEquals(tc.namespace, tcFromDep.namespace);
         assertEquals(tc.cluster, tcFromDep.cluster);

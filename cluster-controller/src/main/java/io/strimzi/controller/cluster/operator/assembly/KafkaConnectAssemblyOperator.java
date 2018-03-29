@@ -68,7 +68,7 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Deplo
     @Override
     protected void delete(String namespace, String name, Handler<AsyncResult<Void>> handler) {
         Deployment dep = deploymentOperations.get(namespace, KafkaConnectCluster.kafkaConnectClusterName(name));
-        KafkaConnectCluster connect = KafkaConnectCluster.fromDeployment(namespace, name, dep);
+        KafkaConnectCluster connect = KafkaConnectCluster.fromAssembly(namespace, name, dep);
         List<Future> result = new ArrayList<>(3);
         result.add(serviceOperations.reconcile(namespace, connect.getName(), null));
         result.add(deploymentOperations.reconcile(namespace, connect.getName(), null));

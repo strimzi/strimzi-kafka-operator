@@ -213,7 +213,7 @@ public class TopicController extends AbstractModel {
      * @param dep the deployment from which to recover the topic controller state
      * @return Topic Controller instance, null if the corresponding Deployment doesn't exist
      */
-    public static TopicController fromDeployment(String namespace, String cluster, Deployment dep) {
+    public static TopicController fromAssembly(String namespace, String cluster, Deployment dep) {
 
         TopicController topicController = null;
 

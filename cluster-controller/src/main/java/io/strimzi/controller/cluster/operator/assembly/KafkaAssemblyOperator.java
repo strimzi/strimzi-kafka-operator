@@ -125,7 +125,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<StatefulSet>
         log.info("delete kafka {}/{}", namespace, name);
         StatefulSet ss = kafkaSetOperations.get(namespace, KafkaCluster.kafkaClusterName(name));
 
-        final KafkaCluster kafka = ss == null ? null : KafkaCluster.fromStatefulSet(ss, namespace, name);
+        final KafkaCluster kafka = ss == null ? null : KafkaCluster.fromAssembly(ss, namespace, name);
         // TODO If the SS (and the CM) has gone, how do we know whether to delete the claims?
         // TODO Should we annotate the PVCs?
         boolean deleteClaims = kafka != null && kafka.getStorage().type() == Storage.StorageType.PERSISTENT_CLAIM
@@ -180,7 +180,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<StatefulSet>
     private final Future<CompositeFuture> deleteZk(String namespace, String name) {
         log.info("delete zookeeper {}/{}", namespace, name);
         StatefulSet ss = zkSetOperations.get(namespace, ZookeeperCluster.zookeeperClusterName(name));
-        ZookeeperCluster zk = ss == null ? null : ZookeeperCluster.fromStatefulSet(ss, namespace, name);
+        ZookeeperCluster zk = ss == null ? null : ZookeeperCluster.fromAssembly(ss, namespace, name);
         // TODO If the SS (and the CM) has gone, how do we know whether to delete the claims?
         // TODO Should we annotate the PVCs?
         boolean deleteClaims = zk != null && zk.getStorage().type() == Storage.StorageType.PERSISTENT_CLAIM

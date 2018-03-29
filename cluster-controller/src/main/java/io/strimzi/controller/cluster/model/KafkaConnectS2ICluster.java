@@ -92,7 +92,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
      * @param sis ImageStream
      * @return  Kafka Connect cluster instance
      */
-    public static KafkaConnectS2ICluster fromDeployment(
+    public static KafkaConnectS2ICluster fromAssembly(
             String namespace, String cluster,
             DeploymentConfig dep,
             ImageStream sis) {

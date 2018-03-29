@@ -90,7 +90,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<De
         if (isOpenShift) {
             DeploymentConfig dep = deploymentConfigOperations.get(namespace, KafkaConnectS2ICluster.kafkaConnectClusterName(name));
             ImageStream sis = imagesStreamOperations.get(namespace, KafkaConnectS2ICluster.getSourceImageStreamName(KafkaConnectS2ICluster.kafkaConnectClusterName(name)));
-            KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromDeployment(namespace, name, dep, sis);
+            KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromAssembly(namespace, name, dep, sis);
             List<Future> result = new ArrayList<>(5);
             result.add(serviceOperations.reconcile(namespace, connect.getName(), null));
             result.add(deploymentConfigOperations.reconcile(namespace, connect.getName(), null));

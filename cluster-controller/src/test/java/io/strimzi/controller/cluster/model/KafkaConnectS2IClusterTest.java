@@ -99,7 +99,7 @@ public class KafkaConnectS2IClusterTest {
 
     @Test
     public void testFromDeployment() {
-        KafkaConnectS2ICluster newKc = KafkaConnectS2ICluster.fromDeployment(namespace, cluster, kc.generateDeploymentConfig(), kc.generateSourceImageStream());
+        KafkaConnectS2ICluster newKc = KafkaConnectS2ICluster.fromAssembly(namespace, cluster, kc.generateDeploymentConfig(), kc.generateSourceImageStream());
 
         assertEquals(newKc.kafkaConnectClusterName(cluster) + ":latest", newKc.image);
         assertEquals(replicas, newKc.replicas);
@@ -120,7 +120,7 @@ public class KafkaConnectS2IClusterTest {
     @Test
     public void testFromDeploymentWithDefaultValues() {
         KafkaConnectS2ICluster defaultsKc = KafkaConnectS2ICluster.fromConfigMap(ResourceUtils.createEmptyKafkaConnectS2IClusterConfigMap(namespace, cluster));
-        KafkaConnectS2ICluster newKc = KafkaConnectS2ICluster.fromDeployment(namespace, cluster, defaultsKc.generateDeploymentConfig(), defaultsKc.generateSourceImageStream());
+        KafkaConnectS2ICluster newKc = KafkaConnectS2ICluster.fromAssembly(namespace, cluster, defaultsKc.generateDeploymentConfig(), defaultsKc.generateSourceImageStream());
 
         assertEquals(newKc.kafkaConnectClusterName(cluster) + ":latest", newKc.image);
         assertEquals(KafkaConnectS2ICluster.DEFAULT_REPLICAS, newKc.replicas);
