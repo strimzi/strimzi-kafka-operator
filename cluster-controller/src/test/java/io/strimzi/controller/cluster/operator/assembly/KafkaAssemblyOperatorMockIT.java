@@ -521,7 +521,7 @@ public class KafkaAssemblyOperatorMockIT {
     /** Create a cluster from a Kafka Cluster CM */
     @Test
     public void testKafkaScaleDown(TestContext context) {
-        if (kafkaReplicas <=1) {
+        if (kafkaReplicas <= 1) {
             LOGGER.info("Skipping scale down test because there's only 1 broker");
             return;
         }
