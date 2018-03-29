@@ -295,7 +295,7 @@ public abstract class AbstractModel {
                 .withNewEmptyDir()
                 .endEmptyDir()
                 .build();
-        log.trace("Created emptyDir volume named {}", volume);
+        log.trace("Created emptyDir Volume named '{}'", name);
         return volume;
     }
 
@@ -309,7 +309,7 @@ public abstract class AbstractModel {
                 .withName(name)
                 .withConfigMap(configMapVolumeSource)
                 .build();
-        log.info("Created configMap volume {}", volume);
+        log.trace("Created configMap Volume named '{}' with source configMap '{}'", name, configMapName);
         return volume;
     }
 
