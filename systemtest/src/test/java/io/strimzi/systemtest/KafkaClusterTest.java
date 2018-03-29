@@ -309,6 +309,7 @@ public class KafkaClusterTest {
     }
 
     @Test
+    @OpenShiftOnly
     @KafkaCluster(name = "my-cluster", kafkaNodes = 2, zkNodes = 2, config = {
             @CmData(key = "zookeeper-healthcheck-delay", value = "30"),
             @CmData(key = "zookeeper-healthcheck-timeout", value = "10"),
