@@ -82,7 +82,7 @@ public class KafkaConnectAssemblyOperatorTest {
         KafkaConnectCluster connect = KafkaConnectCluster.fromConfigMap(clusterCm);
 
         Async async = context.async();
-        ops.createOrUpdate(clusterCmNamespace, clusterCmName, createResult -> {
+        ops.createOrUpdate(clusterCm, createResult -> {
             context.assertTrue(createResult.succeeded());
 
             // Vertify service
@@ -138,7 +138,7 @@ public class KafkaConnectAssemblyOperatorTest {
                 mockCmOps, mockDcOps, mockServiceOps);
 
         Async async = context.async();
-        ops.createOrUpdate(clusterCmNamespace, clusterCmName, createResult -> {
+        ops.createOrUpdate(clusterCm, createResult -> {
             context.assertTrue(createResult.succeeded());
 
             // Vertify service
@@ -194,7 +194,7 @@ public class KafkaConnectAssemblyOperatorTest {
                 mockCmOps, mockDcOps, mockServiceOps);
 
         Async async = context.async();
-        ops.createOrUpdate(clusterCmNamespace, clusterCmName, createResult -> {
+        ops.createOrUpdate(clusterCm, createResult -> {
             context.assertTrue(createResult.succeeded());
 
             KafkaConnectCluster compareTo = KafkaConnectCluster.fromConfigMap(clusterCm);
@@ -262,7 +262,7 @@ public class KafkaConnectAssemblyOperatorTest {
                 mockCmOps, mockDcOps, mockServiceOps);
 
         Async async = context.async();
-        ops.createOrUpdate(clusterCmNamespace, clusterCmName, createResult -> {
+        ops.createOrUpdate(clusterCm, createResult -> {
             context.assertFalse(createResult.succeeded());
 
             async.complete();
@@ -303,7 +303,7 @@ public class KafkaConnectAssemblyOperatorTest {
                 mockCmOps, mockDcOps, mockServiceOps);
 
         Async async = context.async();
-        ops.createOrUpdate(clusterCmNamespace, clusterCmName, createResult -> {
+        ops.createOrUpdate(clusterCm, createResult -> {
             context.assertTrue(createResult.succeeded());
 
             verify(mockDcOps).scaleUp(clusterCmNamespace, connect.getName(), scaleTo);
@@ -346,7 +346,7 @@ public class KafkaConnectAssemblyOperatorTest {
                 mockCmOps, mockDcOps, mockServiceOps);
 
         Async async = context.async();
-        ops.createOrUpdate(clusterCmNamespace, clusterCmName, createResult -> {
+        ops.createOrUpdate(clusterCm, createResult -> {
             context.assertTrue(createResult.succeeded());
 
             verify(mockDcOps).scaleUp(clusterCmNamespace, connect.getName(), scaleTo);
@@ -439,14 +439,14 @@ public class KafkaConnectAssemblyOperatorTest {
                 mockCmOps, mockDcOps, mockServiceOps) {
 
             @Override
-            public void createOrUpdate(String namespace, String name, Handler h) {
-                createdOrUpdated.add(name);
+            public void createOrUpdate(ConfigMap assemblyCm, Handler h) {
+                createdOrUpdated.add(assemblyCm.getMetadata().getName());
                 async.countDown();
                 h.handle(Future.succeededFuture());
             }
             @Override
-            public void delete(String namespace, String name, Handler h) {
-                deleted.add(name);
+            public void delete(String namespace, String assemblyName, Handler h) {
+                deleted.add(assemblyName);
                 async.countDown();
                 h.handle(Future.succeededFuture());
             }

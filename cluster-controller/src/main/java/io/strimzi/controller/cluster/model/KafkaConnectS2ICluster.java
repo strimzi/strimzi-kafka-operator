@@ -59,9 +59,6 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
      * @return Kafka Connect cluster instance
      */
     public static KafkaConnectS2ICluster fromConfigMap(ConfigMap cm) {
-        if (cm == null) {
-            return null;
-        }
         KafkaConnectS2ICluster kafkaConnect = new KafkaConnectS2ICluster(cm.getMetadata().getNamespace(), cm.getMetadata().getName(), Labels.fromResource(cm));
 
         Map<String, String> data = cm.getData();

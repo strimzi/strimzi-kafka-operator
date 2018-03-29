@@ -6,14 +6,13 @@ package io.strimzi.controller.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.openshift.api.model.DeploymentConfig;
-import io.fabric8.openshift.api.model.ImageStream;
+import io.strimzi.controller.cluster.model.KafkaConnectS2ICluster;
+import io.strimzi.controller.cluster.model.Labels;
 import io.strimzi.controller.cluster.operator.resource.BuildConfigOperator;
 import io.strimzi.controller.cluster.operator.resource.ConfigMapOperator;
 import io.strimzi.controller.cluster.operator.resource.DeploymentConfigOperator;
 import io.strimzi.controller.cluster.operator.resource.ImageStreamOperator;
 import io.strimzi.controller.cluster.operator.resource.ServiceOperator;
-import io.strimzi.controller.cluster.model.KafkaConnectS2ICluster;
-import io.strimzi.controller.cluster.model.Labels;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -22,7 +21,6 @@ import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -65,10 +63,11 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<De
     }
 
     @Override
-    public void createOrUpdate(String namespace, String name, Handler<AsyncResult<Void>> handler) {
+    public void createOrUpdate(ConfigMap assemblyCm, Handler<AsyncResult<Void>> handler) {
+        String namespace = assemblyCm.getMetadata().getNamespace();
+        String name = assemblyCm.getMetadata().getName();
         if (isOpenShift) {
-            ConfigMap connectConfigMap = configMapOperations.get(namespace, name);
-            KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromConfigMap(connectConfigMap);
+            KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromConfigMap(assemblyCm);
             Future<Void> chainFuture = Future.future();
 
             deploymentConfigOperations.scaleDown(namespace, connect.getName(), connect.getReplicas())
@@ -86,18 +85,15 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<De
     }
 
     @Override
-    protected void delete(String namespace, String name, Handler<AsyncResult<Void>> handler) {
+    protected void delete(String namespace, String assemblyName, Handler<AsyncResult<Void>> handler) {
         if (isOpenShift) {
-            DeploymentConfig dep = deploymentConfigOperations.get(namespace, KafkaConnectS2ICluster.kafkaConnectClusterName(name));
-            ImageStream sis = imagesStreamOperations.get(namespace, KafkaConnectS2ICluster.getSourceImageStreamName(KafkaConnectS2ICluster.kafkaConnectClusterName(name)));
-            KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromAssembly(namespace, name, dep, sis);
-            List<Future> result = new ArrayList<>(5);
-            result.add(serviceOperations.reconcile(namespace, connect.getName(), null));
-            result.add(deploymentConfigOperations.reconcile(namespace, connect.getName(), null));
-            result.add(imagesStreamOperations.reconcile(namespace, connect.getSourceImageStreamName(), null));
-            result.add(imagesStreamOperations.reconcile(namespace, connect.getName(), null));
-            result.add(buildConfigOperations.reconcile(namespace, connect.getName(), null));
-            CompositeFuture.join(result).map((Void) null).setHandler(handler);
+            String clusterName = KafkaConnectS2ICluster.kafkaConnectClusterName(assemblyName);
+            CompositeFuture.join(serviceOperations.reconcile(namespace, clusterName, null),
+                deploymentConfigOperations.reconcile(namespace, clusterName, null),
+                imagesStreamOperations.reconcile(namespace, KafkaConnectS2ICluster.getSourceImageStreamName(clusterName), null),
+                imagesStreamOperations.reconcile(namespace, clusterName, null),
+                buildConfigOperations.reconcile(namespace, clusterName, null))
+            .map((Void) null).setHandler(handler);
         } else {
             handler.handle(Future.failedFuture("S2I only available on OpenShift"));
         }

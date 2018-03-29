@@ -77,19 +77,18 @@ public abstract class AbstractAssemblyOperator<
      * Subclasses implement this method to create or update the cluster. The implementation
      * should not assume that any resources are in any particular state (e.g. that the absence on
      * one resource means that all resources need to be created).
-     * @param namespace The namespace containing the cluster.
-     * @param name The name of the cluster.
+     * @param assemblyCm The name of the cluster.
      * @param handler Completion handler
      */
-    protected abstract void createOrUpdate(String namespace, String name, Handler<AsyncResult<Void>> handler);
+    protected abstract void createOrUpdate(ConfigMap assemblyCm, Handler<AsyncResult<Void>> handler);
 
     /**
      * Subclasses implement this method to delete the cluster.
      * @param namespace The namespace containing the cluster.
-     * @param name The name of the cluster.
+     * @param assemblyName The assemblyName of the cluster.
      * @param handler Completion handler
      */
-    protected abstract void delete(String namespace, String name, Handler<AsyncResult<Void>> handler);
+    protected abstract void delete(String namespace, String assemblyName, Handler<AsyncResult<Void>> handler);
 
     /**
      * The name of the given {@code resource}, as read from its metadata.
@@ -118,7 +117,7 @@ public abstract class AbstractAssemblyOperator<
      * Reconciliation works by getting the assembly ConfigMap in the given namespace with the given assemblyName and
      * comparing with the corresponding {@linkplain #getResources(String, Labels) resource}.
      * <ul>
-     * <li>An assembly will be {@linkplain #createOrUpdate(String, String, Handler) created or updated} if ConfigMap is without same-named resources</li>
+     * <li>An assembly will be {@linkplain #createOrUpdate(ConfigMap, Handler) created or updated} if ConfigMap is without same-named resources</li>
      * <li>An assembly will be {@linkplain #delete(String, String, Handler) deleted} if resources without same-named ConfigMap</li>
      * </ul>
      * @param namespace The namespace
@@ -140,14 +139,13 @@ public abstract class AbstractAssemblyOperator<
                     List<R> resources = getResources(namespace, Labels.forCluster(assemblyName));
 
                     if (cm != null) {
-                        String nameFromCm = name(cm);
-                        log.info("Reconciliation: {} assembly {} should be created or updated", assemblyDescription, cm.getMetadata().getName());
-                        log.info("Creating/updating {} assembly {}", assemblyDescription, nameFromCm);
-                        createOrUpdate(namespace, nameFromCm, createResult -> {
+                        log.info("Reconciliation: {} assembly {} should be created or updated", assemblyDescription, assemblyName);
+                        log.info("Creating/updating {} assembly {}", assemblyDescription, assemblyName);
+                        createOrUpdate(cm, createResult -> {
                             if (createResult.succeeded()) {
-                                log.info("{} assembly created/updated {}", assemblyDescription, nameFromCm);
+                                log.info("{} assembly created/updated {}", assemblyDescription, assemblyName);
                             } else {
-                                log.error("Failed to create/update {} assembly {}.", assemblyDescription, nameFromCm);
+                                log.error("Failed to create/update {} assembly {}.", assemblyDescription, assemblyName);
                             }
                             lock.release();
                             log.debug("Lock {} released", lockName);
@@ -193,7 +191,7 @@ public abstract class AbstractAssemblyOperator<
      * Reconciliation works by getting the assembly ConfigMaps in the given namespace with the given selector and
      * comparing with the corresponding {@linkplain #getResources(String, Labels) resource}.
      * <ul>
-     * <li>An assembly will be {@linkplain #createOrUpdate(String, String, Handler) created} for all ConfigMaps without same-named resources</li>
+     * <li>An assembly will be {@linkplain #createOrUpdate(ConfigMap, Handler) created} for all ConfigMaps without same-named resources</li>
      * <li>An assembly will be {@linkplain #delete(String, String, Handler) deleted} for all resources without same-named ConfigMaps</li>
      * </ul>
      * @param namespace The namespace

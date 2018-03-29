@@ -111,9 +111,6 @@ public class ZookeeperCluster extends AbstractModel {
      * @return Zookeeper cluster instance
      */
     public static ZookeeperCluster fromConfigMap(ConfigMap kafkaClusterCm) {
-        if (kafkaClusterCm == null) {
-            return null;
-        }
         ZookeeperCluster zk = new ZookeeperCluster(kafkaClusterCm.getMetadata().getNamespace(), kafkaClusterCm.getMetadata().getName(),
                 Labels.fromResource(kafkaClusterCm));
 

@@ -82,18 +82,19 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<StatefulSet>
     }
 
     @Override
-    public void createOrUpdate(String namespace, String name, Handler<AsyncResult<Void>> handler) {
+    public void createOrUpdate(ConfigMap assemblyCm, Handler<AsyncResult<Void>> handler) {
         Future<Void> f = Future.<Void>future().setHandler(handler);
-        createOrUpdateZk(namespace, name)
-            .compose(i -> createOrUpdateKafka(namespace, name))
-            .compose(i -> createOrUpdateTopicController(namespace, name))
+        createOrUpdateZk(assemblyCm)
+            .compose(i -> createOrUpdateKafka(assemblyCm))
+            .compose(i -> createOrUpdateTopicController(assemblyCm))
             .compose(ar -> f.complete(), f);
     }
 
-    private final Future<Void> createOrUpdateKafka(String namespace, String name) {
+    private final Future<Void> createOrUpdateKafka(ConfigMap assemblyCm) {
+        String namespace = assemblyCm.getMetadata().getNamespace();
+        String name = assemblyCm.getMetadata().getName();
         log.info("create/update kafka {}/{}", namespace, name);
-        ConfigMap kafkaConfigMap = configMapOperations.get(namespace, name);
-        KafkaCluster kafka = KafkaCluster.fromConfigMap(kafkaConfigMap);
+        KafkaCluster kafka = KafkaCluster.fromConfigMap(assemblyCm);
         Service service = kafka.generateService();
         Service headlessService = kafka.generateHeadlessService();
         ConfigMap metricsConfigMap = kafka.generateMetricsConfigMap();
@@ -149,10 +150,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<StatefulSet>
         return CompositeFuture.join(result);
     };
 
-    private final Future<Void> createOrUpdateZk(String namespace, String name) {
+    private final Future<Void> createOrUpdateZk(ConfigMap assemblyCm) {
+        String namespace = assemblyCm.getMetadata().getNamespace();
+        String name = assemblyCm.getMetadata().getName();
         log.info("create/update zookeeper {}/{}", namespace, name);
-        ConfigMap zkConfigMap = configMapOperations.get(namespace, name);
-        ZookeeperCluster zk = ZookeeperCluster.fromConfigMap(zkConfigMap);
+        ZookeeperCluster zk = ZookeeperCluster.fromConfigMap(assemblyCm);
         Service service = zk.generateService();
         Service headlessService = zk.generateHeadlessService();
         Future<Void> chainFuture = Future.future();
@@ -203,10 +205,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<StatefulSet>
         return CompositeFuture.join(result);
     };
 
-    private final Future<ReconcileResult<Void>> createOrUpdateTopicController(String namespace, String name) {
+    private final Future<ReconcileResult<Void>> createOrUpdateTopicController(ConfigMap assemblyCm) {
+        String namespace = assemblyCm.getMetadata().getNamespace();
+        String name = assemblyCm.getMetadata().getName();
         log.info("create/update topic controller {}/{}", namespace, name);
-        ConfigMap tcConfigMap = configMapOperations.get(namespace, name);
-        TopicController topicController = TopicController.fromConfigMap(tcConfigMap);
+        TopicController topicController = TopicController.fromConfigMap(assemblyCm);
         Deployment deployment = topicController != null ? topicController.generateDeployment() : null;
         return deploymentOperations.reconcile(namespace, topicControllerName(name), deployment);
     };
@@ -218,11 +221,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<StatefulSet>
     };
 
     @Override
-    protected void delete(String namespace, String name, Handler<AsyncResult<Void>> handler) {
+    protected void delete(String namespace, String assemblyName, Handler<AsyncResult<Void>> handler) {
         Future<Void> f = Future.<Void>future().setHandler(handler);
-        deleteTopicController(namespace, name)
-                .compose(i -> deleteKafka(namespace, name))
-                .compose(i -> deleteZk(namespace, name))
+        deleteTopicController(namespace, assemblyName)
+                .compose(i -> deleteKafka(namespace, assemblyName))
+                .compose(i -> deleteZk(namespace, assemblyName))
                 .compose(ar -> f.complete(), f);
     }
 

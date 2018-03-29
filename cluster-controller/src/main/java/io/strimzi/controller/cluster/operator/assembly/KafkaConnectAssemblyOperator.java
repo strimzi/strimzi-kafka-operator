@@ -6,11 +6,11 @@ package io.strimzi.controller.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
+import io.strimzi.controller.cluster.model.KafkaConnectCluster;
+import io.strimzi.controller.cluster.model.Labels;
 import io.strimzi.controller.cluster.operator.resource.ConfigMapOperator;
 import io.strimzi.controller.cluster.operator.resource.DeploymentOperator;
 import io.strimzi.controller.cluster.operator.resource.ServiceOperator;
-import io.strimzi.controller.cluster.model.KafkaConnectCluster;
-import io.strimzi.controller.cluster.model.Labels;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -19,7 +19,6 @@ import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -52,9 +51,10 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Deplo
     }
 
     @Override
-    protected void createOrUpdate(String namespace, String name, Handler<AsyncResult<Void>> handler) {
-        ConfigMap connectConfigMap = configMapOperations.get(namespace, name);
-        KafkaConnectCluster connect = KafkaConnectCluster.fromConfigMap(connectConfigMap);
+    protected void createOrUpdate(ConfigMap assemblyCm, Handler<AsyncResult<Void>> handler) {
+        String namespace = assemblyCm.getMetadata().getNamespace();
+        String name = assemblyCm.getMetadata().getName();
+        KafkaConnectCluster connect = KafkaConnectCluster.fromConfigMap(assemblyCm);
         log.info("Updating Kafka Connect cluster {} in namespace {}", name, namespace);
         Future<Void> chainFuture = Future.future();
         deploymentOperations.scaleDown(namespace, connect.getName(), connect.getReplicas())
@@ -66,13 +66,11 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Deplo
     }
 
     @Override
-    protected void delete(String namespace, String name, Handler<AsyncResult<Void>> handler) {
-        Deployment dep = deploymentOperations.get(namespace, KafkaConnectCluster.kafkaConnectClusterName(name));
-        KafkaConnectCluster connect = KafkaConnectCluster.fromAssembly(namespace, name, dep);
-        List<Future> result = new ArrayList<>(3);
-        result.add(serviceOperations.reconcile(namespace, connect.getName(), null));
-        result.add(deploymentOperations.reconcile(namespace, connect.getName(), null));
-        CompositeFuture.join(result).map((Void) null).setHandler(handler);
+    protected void delete(String namespace, String assemblyName, Handler<AsyncResult<Void>> handler) {
+        String name = KafkaConnectCluster.kafkaConnectClusterName(assemblyName);
+        CompositeFuture.join(serviceOperations.reconcile(namespace, name, null),
+            deploymentOperations.reconcile(namespace, name, null))
+            .map((Void) null).setHandler(handler);
     }
 
     @Override

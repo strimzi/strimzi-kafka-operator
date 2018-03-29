@@ -198,7 +198,7 @@ public class KafkaAssemblyOperatorMockIT {
 
         LOGGER.info("Reconciling initially -> create");
         Async createAsync = context.async();
-        kco.createOrUpdate(NAMESPACE, cluster.getMetadata().getName(), ar -> {
+        kco.createOrUpdate(cluster, ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.assertTrue(ar.succeeded());
             createAsync.complete();
@@ -215,7 +215,7 @@ public class KafkaAssemblyOperatorMockIT {
         KafkaAssemblyOperator kco = createCluster(context);
         LOGGER.info("Reconciling again -> update");
         Async updateAsync = context.async();
-        kco.createOrUpdate(NAMESPACE, CLUSTER_NAME, ar -> {
+        kco.createOrUpdate(cluster, ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.assertTrue(ar.succeeded());
             updateAsync.complete();
@@ -295,7 +295,7 @@ public class KafkaAssemblyOperatorMockIT {
         }
         LOGGER.info("Reconciling again -> update");
         Async updateAsync = context.async();
-        kco.createOrUpdate(NAMESPACE, CLUSTER_NAME, ar -> {
+        kco.createOrUpdate(cluster, ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.assertTrue(ar.succeeded());
             for (String service: services) {
@@ -342,7 +342,7 @@ public class KafkaAssemblyOperatorMockIT {
 
         LOGGER.info("Reconciling again -> update");
         Async updateAsync = context.async();
-        kco.createOrUpdate(NAMESPACE, CLUSTER_NAME, ar -> {
+        kco.createOrUpdate(cluster, ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.assertTrue(ar.succeeded());
 
@@ -481,7 +481,7 @@ public class KafkaAssemblyOperatorMockIT {
         mockClient.configMaps().inNamespace(NAMESPACE).withName(CLUSTER_NAME).patch(changedClusterCm);
 
         LOGGER.info("Updating with changed storage class");
-        kco.createOrUpdate(NAMESPACE, CLUSTER_NAME, ar -> {
+        kco.createOrUpdate(cluster, ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.assertTrue(ar.succeeded());
             // Check the storage class was not changed
@@ -528,11 +528,11 @@ public class KafkaAssemblyOperatorMockIT {
         data.put(KafkaCluster.KEY_STORAGE,
                 new JsonObject(kafkaStorage.toString()).put(Storage.DELETE_CLAIM_FIELD, changedKafkaDeleteClaim).toString());
         ConfigMap changedClusterCm = new ConfigMapBuilder(cluster).withData(data).build();
-        mockClient.configMaps().inNamespace(NAMESPACE).withName(CLUSTER_NAME).patch(changedClusterCm);
+        //mockClient.configMaps().inNamespace(NAMESPACE).withName(CLUSTER_NAME).patch(changedClusterCm);
 
         LOGGER.info("Updating with changed delete claim");
         Async updateAsync = context.async();
-        kco.createOrUpdate(NAMESPACE, CLUSTER_NAME, ar -> {
+        kco.createOrUpdate(changedClusterCm, ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.assertTrue(ar.succeeded());
             updateAsync.complete();
@@ -569,10 +569,10 @@ public class KafkaAssemblyOperatorMockIT {
         data.put(KafkaCluster.KEY_REPLICAS,
                 String.valueOf(newScale));
         ConfigMap changedClusterCm = new ConfigMapBuilder(cluster).withData(data).build();
-        mockClient.configMaps().inNamespace(NAMESPACE).withName(CLUSTER_NAME).patch(changedClusterCm);
+        //mockClient.configMaps().inNamespace(NAMESPACE).withName(CLUSTER_NAME).patch(changedClusterCm);
 
         LOGGER.info("Scaling down to {} Kafka pods", newScale);
-        kco.createOrUpdate(NAMESPACE, CLUSTER_NAME, ar -> {
+        kco.createOrUpdate(changedClusterCm, ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.assertTrue(ar.succeeded());
             context.assertEquals(newScale,
@@ -600,10 +600,10 @@ public class KafkaAssemblyOperatorMockIT {
         data.put(KafkaCluster.KEY_REPLICAS,
                 String.valueOf(newScale));
         ConfigMap changedClusterCm = new ConfigMapBuilder(cluster).withData(data).build();
-        mockClient.configMaps().inNamespace(NAMESPACE).withName(CLUSTER_NAME).patch(changedClusterCm);
+        //mockClient.configMaps().inNamespace(NAMESPACE).withName(CLUSTER_NAME).patch(changedClusterCm);
 
         LOGGER.info("Scaling up to {} Kafka pods", newScale);
-        kco.createOrUpdate(NAMESPACE, CLUSTER_NAME, ar -> {
+        kco.createOrUpdate(changedClusterCm, ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.assertTrue(ar.succeeded());
             context.assertEquals(newScale,

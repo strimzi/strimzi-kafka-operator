@@ -120,10 +120,6 @@ public class KafkaCluster extends AbstractModel {
      * @return Kafka cluster instance
      */
     public static KafkaCluster fromConfigMap(ConfigMap kafkaClusterCm) {
-        if (kafkaClusterCm == null) {
-            return null;
-        }
-
         KafkaCluster kafka = new KafkaCluster(kafkaClusterCm.getMetadata().getNamespace(),
                 kafkaClusterCm.getMetadata().getName(),
                 Labels.fromResource(kafkaClusterCm));
