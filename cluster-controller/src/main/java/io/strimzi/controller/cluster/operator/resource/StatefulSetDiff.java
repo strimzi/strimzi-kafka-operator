@@ -10,28 +10,34 @@ import io.fabric8.zjsonpatch.JsonDiff;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
 
 public class StatefulSetDiff {
 
     private static final Logger log = LoggerFactory.getLogger(StatefulSetDiff.class.getName());
 
-    private final JsonNode diff;
+    private final Set<String> paths = new HashSet<>();
 
     public StatefulSetDiff(StatefulSet current, StatefulSet updated) {
-        this.diff = JsonDiff.asJson(patchMapper().valueToTree(current), patchMapper().valueToTree(updated));
+        JsonNode diff = JsonDiff.asJson(patchMapper().valueToTree(current), patchMapper().valueToTree(updated));
+        for (JsonNode d : diff) {
+            String pathValue = d.get("path").asText();
+            paths.add(pathValue);
+        }
     }
 
     public boolean isEmpty() {
-        return !diff.iterator().hasNext();
+        return paths.isEmpty();
     }
 
-    private boolean containsPathOrChild(String path) {
-        for (JsonNode d : diff) {
-            String pathValue = d.get("path").asText();
+    private boolean containsPathOrChild(Set<String> paths, String path) {
+        for (String pathValue : paths) {
             if (pathValue.equals(path)
                     || pathValue.startsWith(path + "/")) {
-                log.info("{} differs: {}", path, d);
                 return true;
             }
         }
@@ -39,18 +45,23 @@ public class StatefulSetDiff {
     }
 
     public boolean changesVolumeClaimTemplates() {
-        return containsPathOrChild("/spec/volumeClaimTemplates");
+        return containsPathOrChild(paths, "/spec/volumeClaimTemplates");
     }
 
     public boolean changesSpecTemplateSpec() {
-        return containsPathOrChild("/spec/template/spec");
+        // Change changes to /spec/template/spec, except to imagePullPolicy, which gets changed
+        // the k8s
+        return containsPathOrChild(paths.stream().filter(path ->
+            !path.matches("/spec/template/spec/containers/[0-9]+/imagePullPolicy"))
+                .collect(Collectors.toSet()),
+            "/spec/template/spec");
     }
 
     public boolean changesLabels() {
-        return containsPathOrChild("/metadata/labels");
+        return containsPathOrChild(paths, "/metadata/labels");
     }
 
     public boolean changesSpecReplicas() {
-        return containsPathOrChild("/spec/replicas");
+        return containsPathOrChild(paths, "/spec/replicas");
     }
 }
