@@ -427,32 +427,34 @@ public class KafkaAssemblyOperatorMockIT {
 
     @Test
     public void testUpdateKafkaWithChangedPersistentVolume(TestContext context) {
-        if (Storage.StorageType.PERSISTENT_CLAIM.equals(storageType(kafkaStorage))) {
-
-            KafkaAssemblyOperator kco = createCluster(context);
-            String originalStorageClass = storageClass(kafkaStorage);
-            assertStorageClass(context, KafkaCluster.kafkaClusterName(CLUSTER_NAME), originalStorageClass);
-
-            Async updateAsync = context.async();
-
-            // Try to update the storage class
-            String changedClass = originalStorageClass + "2";
-
-            HashMap<String, String> data = new HashMap<>(cluster.getData());
-            data.put(KafkaCluster.KEY_STORAGE,
-                    new JsonObject(kafkaStorage.toString()).put(Storage.STORAGE_CLASS_FIELD, changedClass).toString());
-            ConfigMap changedClusterCm = new ConfigMapBuilder(cluster).withData(data).build();
-            mockClient.configMaps().inNamespace(NAMESPACE).withName(CLUSTER_NAME).patch(changedClusterCm);
-
-            LOGGER.info("Updating with changed storage class");
-            kco.createOrUpdate(NAMESPACE, CLUSTER_NAME, ar -> {
-                if (ar.failed()) ar.cause().printStackTrace();
-                context.assertTrue(ar.succeeded());
-                // Check the storage class was not changed
-                assertStorageClass(context, KafkaCluster.kafkaClusterName(CLUSTER_NAME), originalStorageClass);
-                updateAsync.complete();
-            });
+        if (!Storage.StorageType.PERSISTENT_CLAIM.equals(storageType(kafkaStorage))) {
+            LOGGER.info("Skipping claim-based test because using storage type {}", kafkaStorage);
+            return;
         }
+
+        KafkaAssemblyOperator kco = createCluster(context);
+        String originalStorageClass = storageClass(kafkaStorage);
+        assertStorageClass(context, KafkaCluster.kafkaClusterName(CLUSTER_NAME), originalStorageClass);
+
+        Async updateAsync = context.async();
+
+        // Try to update the storage class
+        String changedClass = originalStorageClass + "2";
+
+        HashMap<String, String> data = new HashMap<>(cluster.getData());
+        data.put(KafkaCluster.KEY_STORAGE,
+                new JsonObject(kafkaStorage.toString()).put(Storage.STORAGE_CLASS_FIELD, changedClass).toString());
+        ConfigMap changedClusterCm = new ConfigMapBuilder(cluster).withData(data).build();
+        mockClient.configMaps().inNamespace(NAMESPACE).withName(CLUSTER_NAME).patch(changedClusterCm);
+
+        LOGGER.info("Updating with changed storage class");
+        kco.createOrUpdate(NAMESPACE, CLUSTER_NAME, ar -> {
+            if (ar.failed()) ar.cause().printStackTrace();
+            context.assertTrue(ar.succeeded());
+            // Check the storage class was not changed
+            assertStorageClass(context, KafkaCluster.kafkaClusterName(CLUSTER_NAME), originalStorageClass);
+            updateAsync.complete();
+        });
     }
 
     private void assertStorageClass(TestContext context, String statefulSetName, String expectedClass) {
@@ -467,82 +469,87 @@ public class KafkaAssemblyOperatorMockIT {
     /** Test that we can change the deleteClaim flag, and that it's honoured */
     @Test
     public void testUpdateKafkaWithChangedDeleteClaim(TestContext context) {
-        if (Storage.StorageType.PERSISTENT_CLAIM.equals(storageType(kafkaStorage))) {
-            Set<String> allPvcs = new HashSet<>();
-            Set<String> kafkaPvcs = createPvcs(kafkaStorage,
-                    kafkaReplicas, podId -> KafkaCluster.getPersistentVolumeClaimName(KafkaCluster.kafkaClusterName(CLUSTER_NAME), podId)
-            );
-            Set<String> zkPvcs = createPvcs(zkStorage,
-                    zkReplicas, podId -> ZookeeperCluster.getPersistentVolumeClaimName(ZookeeperCluster.zookeeperClusterName(CLUSTER_NAME), podId)
-            );
-            allPvcs.addAll(kafkaPvcs);
-            allPvcs.addAll(zkPvcs);
-
-            KafkaAssemblyOperator kco = createCluster(context);
-
-            boolean originalKafkaDeleteClaim = deleteClaim(kafkaStorage);
-            //assertDeleteClaim(context, KafkaCluster.kafkaClusterName(CLUSTER_NAME), originalKafkaDeleteClaim);
-
-            // Try to update the storage class
-            boolean changedKafkaDeleteClaim = !originalKafkaDeleteClaim;
-            HashMap<String, String> data = new HashMap<>(cluster.getData());
-            data.put(KafkaCluster.KEY_STORAGE,
-                    new JsonObject(kafkaStorage.toString()).put(Storage.DELETE_CLAIM_FIELD, changedKafkaDeleteClaim).toString());
-            ConfigMap changedClusterCm = new ConfigMapBuilder(cluster).withData(data).build();
-            mockClient.configMaps().inNamespace(NAMESPACE).withName(CLUSTER_NAME).patch(changedClusterCm);
-
-            LOGGER.info("Updating with changed delete claim");
-            Async updateAsync = context.async();
-            kco.createOrUpdate(NAMESPACE, CLUSTER_NAME, ar -> {
-                if (ar.failed()) ar.cause().printStackTrace();
-                context.assertTrue(ar.succeeded());
-                updateAsync.complete();
-            });
-            updateAsync.await();
-
-            LOGGER.info("Reconciling again -> delete");
-            mockClient.configMaps().inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
-            Async deleteAsync = context.async();
-            kco.delete(NAMESPACE, CLUSTER_NAME, ar -> {
-                if (ar.failed()) ar.cause().printStackTrace();
-                context.assertTrue(ar.succeeded());
-                assertPvcs(context, changedKafkaDeleteClaim ? deleteClaim(zkStorage) ? emptySet() : zkPvcs :
-                        deleteClaim(zkStorage) ? kafkaPvcs : allPvcs);
-                deleteAsync.complete();
-            });
+        if (!Storage.StorageType.PERSISTENT_CLAIM.equals(storageType(kafkaStorage))) {
+            LOGGER.info("Skipping claim-based test because using storage type {}", kafkaStorage);
+            return;
         }
+
+        Set<String> allPvcs = new HashSet<>();
+        Set<String> kafkaPvcs = createPvcs(kafkaStorage,
+                kafkaReplicas, podId -> KafkaCluster.getPersistentVolumeClaimName(KafkaCluster.kafkaClusterName(CLUSTER_NAME), podId)
+        );
+        Set<String> zkPvcs = createPvcs(zkStorage,
+                zkReplicas, podId -> ZookeeperCluster.getPersistentVolumeClaimName(ZookeeperCluster.zookeeperClusterName(CLUSTER_NAME), podId)
+        );
+        allPvcs.addAll(kafkaPvcs);
+        allPvcs.addAll(zkPvcs);
+
+        KafkaAssemblyOperator kco = createCluster(context);
+
+        boolean originalKafkaDeleteClaim = deleteClaim(kafkaStorage);
+        //assertDeleteClaim(context, KafkaCluster.kafkaClusterName(CLUSTER_NAME), originalKafkaDeleteClaim);
+
+        // Try to update the storage class
+        boolean changedKafkaDeleteClaim = !originalKafkaDeleteClaim;
+        HashMap<String, String> data = new HashMap<>(cluster.getData());
+        data.put(KafkaCluster.KEY_STORAGE,
+                new JsonObject(kafkaStorage.toString()).put(Storage.DELETE_CLAIM_FIELD, changedKafkaDeleteClaim).toString());
+        ConfigMap changedClusterCm = new ConfigMapBuilder(cluster).withData(data).build();
+        mockClient.configMaps().inNamespace(NAMESPACE).withName(CLUSTER_NAME).patch(changedClusterCm);
+
+        LOGGER.info("Updating with changed delete claim");
+        Async updateAsync = context.async();
+        kco.createOrUpdate(NAMESPACE, CLUSTER_NAME, ar -> {
+            if (ar.failed()) ar.cause().printStackTrace();
+            context.assertTrue(ar.succeeded());
+            updateAsync.complete();
+        });
+        updateAsync.await();
+
+        LOGGER.info("Reconciling again -> delete");
+        mockClient.configMaps().inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
+        Async deleteAsync = context.async();
+        kco.delete(NAMESPACE, CLUSTER_NAME, ar -> {
+            if (ar.failed()) ar.cause().printStackTrace();
+            context.assertTrue(ar.succeeded());
+            assertPvcs(context, changedKafkaDeleteClaim ? deleteClaim(zkStorage) ? emptySet() : zkPvcs :
+                    deleteClaim(zkStorage) ? kafkaPvcs : allPvcs);
+            deleteAsync.complete();
+        });
     }
 
     /** Create a cluster from a Kafka Cluster CM */
     @Test
     public void testKafkaScaleDown(TestContext context) {
-        if (kafkaReplicas > 1) {
-            KafkaAssemblyOperator kco = createCluster(context);
-            Async updateAsync = context.async();
-
-            int newScale = kafkaReplicas - 1;
-            String deletedPod = KafkaCluster.kafkaPodName(CLUSTER_NAME, newScale);
-            context.assertNotNull(mockClient.pods().inNamespace(NAMESPACE).withName(deletedPod).get());
-
-            HashMap<String, String> data = new HashMap<>(cluster.getData());
-            data.put(KafkaCluster.KEY_REPLICAS,
-                    String.valueOf(newScale));
-            ConfigMap changedClusterCm = new ConfigMapBuilder(cluster).withData(data).build();
-            mockClient.configMaps().inNamespace(NAMESPACE).withName(CLUSTER_NAME).patch(changedClusterCm);
-
-            LOGGER.info("Scaling down to {} Kafka pods", newScale);
-            kco.createOrUpdate(NAMESPACE, CLUSTER_NAME, ar -> {
-                if (ar.failed()) ar.cause().printStackTrace();
-                context.assertTrue(ar.succeeded());
-                context.assertEquals(newScale,
-                        mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaClusterName(CLUSTER_NAME)).get().getSpec().getReplicas());
-                context.assertNull(mockClient.pods().inNamespace(NAMESPACE).withName(deletedPod).get(),
-                        "Expected pod " + deletedPod + " to have been deleted");
-                // TODO assert no rolling update
-                updateAsync.complete();
-            });
-            updateAsync.await();
+        if (kafkaReplicas <=1) {
+            LOGGER.info("Skipping scale down test because there's only 1 broker");
+            return;
         }
+        KafkaAssemblyOperator kco = createCluster(context);
+        Async updateAsync = context.async();
+
+        int newScale = kafkaReplicas - 1;
+        String deletedPod = KafkaCluster.kafkaPodName(CLUSTER_NAME, newScale);
+        context.assertNotNull(mockClient.pods().inNamespace(NAMESPACE).withName(deletedPod).get());
+
+        HashMap<String, String> data = new HashMap<>(cluster.getData());
+        data.put(KafkaCluster.KEY_REPLICAS,
+                String.valueOf(newScale));
+        ConfigMap changedClusterCm = new ConfigMapBuilder(cluster).withData(data).build();
+        mockClient.configMaps().inNamespace(NAMESPACE).withName(CLUSTER_NAME).patch(changedClusterCm);
+
+        LOGGER.info("Scaling down to {} Kafka pods", newScale);
+        kco.createOrUpdate(NAMESPACE, CLUSTER_NAME, ar -> {
+            if (ar.failed()) ar.cause().printStackTrace();
+            context.assertTrue(ar.succeeded());
+            context.assertEquals(newScale,
+                    mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaClusterName(CLUSTER_NAME)).get().getSpec().getReplicas());
+            context.assertNull(mockClient.pods().inNamespace(NAMESPACE).withName(deletedPod).get(),
+                    "Expected pod " + deletedPod + " to have been deleted");
+            // TODO assert no rolling update
+            updateAsync.complete();
+        });
+        updateAsync.await();
     }
 
     /** Create a cluster from a Kafka Cluster CM */

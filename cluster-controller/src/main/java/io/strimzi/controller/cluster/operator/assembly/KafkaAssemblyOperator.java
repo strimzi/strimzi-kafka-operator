@@ -91,6 +91,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<StatefulSet>
     }
 
     private final Future<Void> updateKafka(String namespace, String name) {
+        log.info("create/update kafka {}/{}", namespace, name);
         ConfigMap kafkaConfigMap = configMapOperations.get(namespace, name);
         KafkaCluster kafka = KafkaCluster.fromConfigMap(kafkaConfigMap);
         Service service = kafka.generateService();
@@ -121,6 +122,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<StatefulSet>
     };
 
     private final Future<CompositeFuture> deleteKafka(String namespace, String name) {
+        log.info("delete kafka {}/{}", namespace, name);
         StatefulSet ss = kafkaSetOperations.get(namespace, KafkaCluster.kafkaClusterName(name));
 
         final KafkaCluster kafka = ss == null ? null : KafkaCluster.fromStatefulSet(ss, namespace, name);
@@ -148,6 +150,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<StatefulSet>
     };
 
     private final Future<Void> updateZk(String namespace, String name) {
+        log.info("create/update zookeeper {}/{}", namespace, name);
         ConfigMap zkConfigMap = configMapOperations.get(namespace, name);
         ZookeeperCluster zk = ZookeeperCluster.fromConfigMap(zkConfigMap);
         Service service = zk.generateService();
@@ -175,6 +178,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<StatefulSet>
     };
 
     private final Future<CompositeFuture> deleteZk(String namespace, String name) {
+        log.info("delete zookeeper {}/{}", namespace, name);
         StatefulSet ss = zkSetOperations.get(namespace, ZookeeperCluster.zookeeperClusterName(name));
         ZookeeperCluster zk = ss == null ? null : ZookeeperCluster.fromStatefulSet(ss, namespace, name);
         // TODO If the SS (and the CM) has gone, how do we know whether to delete the claims?
@@ -200,6 +204,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<StatefulSet>
     };
 
     private final Future<ReconcileResult<Void>> updateTopicController(String namespace, String name) {
+        log.info("create/update topic controller {}/{}", namespace, name);
         ConfigMap tcConfigMap = configMapOperations.get(namespace, name);
         TopicController topicController = TopicController.fromConfigMap(tcConfigMap);
         Deployment deployment = topicController != null ? topicController.generateDeployment() : null;
@@ -207,6 +212,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<StatefulSet>
     };
 
     private final Future<ReconcileResult<Void>> deleteTopicController(String namespace, String name) {
+        log.info("delete topic controller {}/{}", namespace, name);
         return deploymentOperations.reconcile(namespace, topicControllerName(name), null);
         // TODO wait for pod to disappear
     };
