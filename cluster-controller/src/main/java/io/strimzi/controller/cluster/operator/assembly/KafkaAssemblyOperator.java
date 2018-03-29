@@ -84,13 +84,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<StatefulSet>
     @Override
     public void createOrUpdate(String namespace, String name, Handler<AsyncResult<Void>> handler) {
         Future<Void> f = Future.<Void>future().setHandler(handler);
-        updateZk(namespace, name)
-            .compose(i -> updateKafka(namespace, name))
-            .compose(i -> updateTopicController(namespace, name))
+        createOrUpdateZk(namespace, name)
+            .compose(i -> createOrUpdateKafka(namespace, name))
+            .compose(i -> createOrUpdateTopicController(namespace, name))
             .compose(ar -> f.complete(), f);
     }
 
-    private final Future<Void> updateKafka(String namespace, String name) {
+    private final Future<Void> createOrUpdateKafka(String namespace, String name) {
         log.info("create/update kafka {}/{}", namespace, name);
         ConfigMap kafkaConfigMap = configMapOperations.get(namespace, name);
         KafkaCluster kafka = KafkaCluster.fromConfigMap(kafkaConfigMap);
@@ -149,7 +149,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<StatefulSet>
         return CompositeFuture.join(result);
     };
 
-    private final Future<Void> updateZk(String namespace, String name) {
+    private final Future<Void> createOrUpdateZk(String namespace, String name) {
         log.info("create/update zookeeper {}/{}", namespace, name);
         ConfigMap zkConfigMap = configMapOperations.get(namespace, name);
         ZookeeperCluster zk = ZookeeperCluster.fromConfigMap(zkConfigMap);
@@ -203,7 +203,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<StatefulSet>
         return CompositeFuture.join(result);
     };
 
-    private final Future<ReconcileResult<Void>> updateTopicController(String namespace, String name) {
+    private final Future<ReconcileResult<Void>> createOrUpdateTopicController(String namespace, String name) {
         log.info("create/update topic controller {}/{}", namespace, name);
         ConfigMap tcConfigMap = configMapOperations.get(namespace, name);
         TopicController topicController = TopicController.fromConfigMap(tcConfigMap);
