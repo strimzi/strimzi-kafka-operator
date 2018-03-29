@@ -87,7 +87,7 @@ public class KafkaAssemblyOperatorMockIT {
 
     @Parameterized.Parameters(name = "{0}")
     public static Iterable<KafkaAssemblyOperatorMockIT.Params> data() {
-        int[] replicas = {1, 2, 3};
+        int[] replicas = {1, 3};
         JsonObject[] storageConfigs = {
             new JsonObject("{\"type\": \"ephemeral\"}"),
 
