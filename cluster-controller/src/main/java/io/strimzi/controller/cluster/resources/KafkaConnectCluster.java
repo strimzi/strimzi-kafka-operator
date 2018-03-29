@@ -41,7 +41,8 @@ public class KafkaConnectCluster extends AbstractCluster {
     protected int statusStorageReplicationFactor = DEFAULT_STATUS_STORAGE_REPLICATION_FACTOR;
 
     // Configuration defaults
-    protected static final String DEFAULT_IMAGE = "strimzi/kafka-connect:latest";
+    protected static final String DEFAULT_IMAGE =
+            System.getenv().getOrDefault("STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE", "strimzi/kafka-connect:latest");
     protected static final int DEFAULT_REPLICAS = 3;
     protected static final int DEFAULT_HEALTHCHECK_DELAY = 60;
     protected static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;

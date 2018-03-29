@@ -30,6 +30,8 @@ import java.lang.annotation.Repeatable;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static io.strimzi.test.TestUtils.indent;
 import static java.util.Arrays.asList;
@@ -54,7 +56,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
     public static final String NOTEARDOWN = "NOTEARDOWN";
     public static final String KAFKA_EPHEMERAL_CM = "../examples/configmaps/cluster-controller/kafka-ephemeral.yaml";
     public static final String KAFKA_CONNECT_CM = "../examples/configmaps/cluster-controller/kafka-connect.yaml";
-    public static final String CC_INSTALL_PATH = "../examples/install/cluster-controller";
+    public static final String CC_INSTALL_DIR = "../examples/install/cluster-controller";
     public static final String CC_DEPLOYMENT_NAME = "strimzi-cluster-controller";
 
     private KubeClusterResource clusterResource;
@@ -201,28 +203,33 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         }
     }
 
+    String getContent(File file, Consumer<JsonNode> edit) {
+        YAMLMapper mapper = new YAMLMapper();
+        try {
+            JsonNode node = mapper.readTree(file);
+            edit.accept(node);
+            return mapper.writeValueAsString(node);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private Statement withConnectClusters(Annotatable element,
                                         Statement statement) {
         Statement last = statement;
         for (ConnectCluster cluster : annotations(element, ConnectCluster.class)) {
             // use the example kafka-connect.yaml as a template, but modify it according to the annotation
-            YAMLMapper mapper = new YAMLMapper();
-            String yaml;
-            try {
-                JsonNode node = mapper.readTree(new File(KAFKA_CONNECT_CM));
+            String yaml = getContent(new File(KAFKA_CONNECT_CM), node -> {
                 JsonNode metadata = node.get("metadata");
                 ((ObjectNode) metadata).put("name", cluster.name());
                 JsonNode data = node.get("data");
                 ((ObjectNode) data).put("nodes", String.valueOf(cluster.nodes()));
                 ((ObjectNode) data).put("KAFKA_CONNECT_BOOTSTRAP_SERVERS", cluster.bootstrapServers());
-                yaml = mapper.writeValueAsString(node);
                 // updates values for config map
                 for (CmData cmData : cluster.config()) {
                     ((ObjectNode) data).put(cmData.key(), cmData.value());
                 }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            });
             last = new Bracket(last) {
                 private final String deploymentName = cluster.name() + "-connect";
                 @Override
@@ -252,10 +259,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         Statement last = statement;
         for (KafkaCluster cluster : annotations(element, KafkaCluster.class)) {
             // use the example kafka-ephemeral as a template, but modify it according to the annotation
-            YAMLMapper mapper = new YAMLMapper();
-            String yaml;
-            try {
-                JsonNode node = mapper.readTree(new File(KAFKA_EPHEMERAL_CM));
+            String yaml = getContent(new File(KAFKA_EPHEMERAL_CM), node -> {
                 JsonNode metadata = node.get("metadata");
                 ((ObjectNode) metadata).put("name", cluster.name());
                 JsonNode data = node.get("data");
@@ -265,10 +269,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 for (CmData cmData : cluster.config()) {
                     ((ObjectNode) data).put(cmData.key(), cmData.value());
                 }
-                yaml = mapper.writeValueAsString(node);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            });
             last = new Bracket(last) {
                 private final String kafkaStatefulSetName = cluster.name() + "-kafka";
                 private final String zkStatefulSetName = cluster.name() + "-zookeeper";
@@ -294,25 +295,52 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         return last;
     }
 
+    private String changeOrgAndTag(String image, String newOrg, String newTag) {
+        return image.replaceFirst("^strimzi/", newOrg + "/").replaceFirst(":[^:]+$", ":" + newTag);
+    }
+
     private Statement withClusterController(Annotatable element,
                                     Statement statement) {
         Statement last = statement;
         for (ClusterController cc : annotations(element, ClusterController.class)) {
+            List<String> yamls = Arrays.stream(new File(CC_INSTALL_DIR).listFiles()).sorted().map(f -> getContent(f, node -> {
+                // Change the docker org of the images in the 04-deployment.yaml
+                if ("04-deployment.yaml".equals(f.getName())) {
+                    String dockerOrg = System.getenv().getOrDefault("DOCKER_ORG", "strimzici");
+                    String dockerTag = System.getenv().get("DOCKER_TAG");
+                    if (dockerTag == null || dockerTag.isEmpty()) {
+                        throw new RuntimeException("DOCKER_TAG environment variable not set");
+                    }
+                    JsonNode containerNode = node.get("spec").get("template").get("spec").get("containers").get(0);
+                    JsonNode ccImageNode = containerNode.get("image");
+                    ((ObjectNode) containerNode).put("image", changeOrgAndTag(ccImageNode.asText(), dockerOrg, dockerTag));
+                    for (JsonNode envVar : containerNode.get("env")) {
+                        String varName = envVar.get("name").textValue();
+                        // Replace all the default images with ones from the $DOCKER_ORG org and with the $DOCKER_TAG tag
+                        if (varName.matches("STRIMZI_DEFAULT_.*_IMAGE")) {
+                            String value = envVar.get("value").textValue();
+                            ((ObjectNode) envVar).put("value", changeOrgAndTag(value, dockerOrg, dockerTag));
+                        }
+                    }
+                }
+            })).collect(Collectors.toList());
             last = new Bracket(last) {
                 @Override
                 protected void before() {
                     // Here we record the state of the cluster
                     LOGGER.info("Creating cluster controller {} before test per @ClusterController annotation on {}", cc, name(element));
-                    kubeClient().clientWithAdmin().create(CC_INSTALL_PATH);
+                    for (String yaml: yamls) {
+                        kubeClient().clientWithAdmin().createContent(yaml);
+                    }
                     kubeClient().waitForDeployment(CC_DEPLOYMENT_NAME);
                 }
-
 
                 @Override
                 protected void after() {
                     LOGGER.info("Deleting cluster controller {} after test per @ClusterController annotation on {}", cc, name(element));
-                    // Here we verify the cluster is in the same state
-                    kubeClient().clientWithAdmin().delete(CC_INSTALL_PATH);
+                    for (int i = yamls.size() - 1; i >= 0; i--) {
+                        kubeClient().clientWithAdmin().deleteContent(yamls.get(i));
+                    }
                     kubeClient().waitForResourceDeletion("deployment", CC_DEPLOYMENT_NAME);
                 }
             };

@@ -42,7 +42,8 @@ public class TopicController extends AbstractCluster {
     protected static final String HEALTHCHECK_PORT_NAME = "healthcheck";
 
     // Configuration defaults
-    protected static final String DEFAULT_IMAGE = "strimzi/topic-controller:latest";
+    protected static final String DEFAULT_IMAGE =
+            System.getenv().getOrDefault("STRIMZI_DEFAULT_TOPIC_CONTROLLER_IMAGE", "strimzi/topic-controller:latest");
     protected static final int DEFAULT_REPLICAS = 1;
     protected static final int DEFAULT_HEALTHCHECK_DELAY = 10;
     protected static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
