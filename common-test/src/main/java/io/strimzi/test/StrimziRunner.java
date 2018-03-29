@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Repeatable;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
@@ -157,18 +158,33 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         protected abstract void before();
         protected abstract void after();
 
+        List<String> ccFirst(List<String> l) {
+            List<String> head = new ArrayList<>();
+            List<String> tail = new ArrayList<>();
+            for (String n : l) {
+                if (n.startsWith("strimzi-cluster-controller-")) {
+                    head.add(n);
+                } else {
+                    tail.add(n);
+                }
+            }
+            head.addAll(tail);
+            return head;
+        }
+
         protected void onError(Throwable t) {
             LOGGER.info("The test is failing/erroring due to {}, here's some diagnostic output{}{}",
                     t, System.lineSeparator(), "----------------------------------------------------------------------");
+            for (String pod : ccFirst(kubeClient().list("pod"))) {
+                LOGGER.info("Logs from pod {}:{}{}", pod, System.lineSeparator(), indent(kubeClient().logs(pod)));
+            }
             for (String resourceType : asList("pod", "deployment", "statefulset", "cm")) {
-                for (String resourceName : kubeClient().list(resourceType)) {
+                for (String resourceName : ccFirst(kubeClient().list(resourceType))) {
                     LOGGER.info("Description of {} '{}':{}{}", resourceType, resourceName,
                             System.lineSeparator(), indent(kubeClient().describe(resourceType, resourceName)));
                 }
             }
-            for (String pod : kubeClient().list("pod")) {
-                LOGGER.info("Logs from pod {}:{}{}", pod, System.lineSeparator(), indent(kubeClient().logs(pod)));
-            }
+
             LOGGER.info("That's all the diagnostic info, the exception {} will now propoagate and the test will fail{}{}",
                     t,
                     t, System.lineSeparator(), "----------------------------------------------------------------------");

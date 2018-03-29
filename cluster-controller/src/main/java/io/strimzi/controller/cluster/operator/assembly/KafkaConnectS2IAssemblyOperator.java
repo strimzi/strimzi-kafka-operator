@@ -5,7 +5,7 @@
 package io.strimzi.controller.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.openshift.api.model.DeploymentConfig;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.strimzi.controller.cluster.model.KafkaConnectS2ICluster;
 import io.strimzi.controller.cluster.model.Labels;
 import io.strimzi.controller.cluster.operator.resource.BuildConfigOperator;
@@ -21,6 +21,7 @@ import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -31,7 +32,7 @@ import java.util.List;
  *     <li>A BuildConfig</li>
  * </ul>
  */
-public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<DeploymentConfig> {
+public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator {
 
     private static final Logger log = LoggerFactory.getLogger(KafkaConnectS2IAssemblyOperator.class.getName());
     private static final String CLUSTER_TYPE_CONNECT_S2I = "kafka-connect-s2i";
@@ -99,8 +100,13 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<De
     }
 
     @Override
-    protected List<DeploymentConfig> getResources(String namespace, Labels selector) {
-        return deploymentConfigOperations.list(namespace, selector);
+    protected List<HasMetadata> getResources(String namespace, Labels selector) {
+        List<HasMetadata> result = new ArrayList<>();
+        result.addAll(serviceOperations.list(namespace, selector));
+        result.addAll(deploymentConfigOperations.list(namespace, selector));
+        result.addAll(imagesStreamOperations.list(namespace, selector));
+        result.addAll(buildConfigOperations.list(namespace, selector));
+        return result;
     }
 
 }

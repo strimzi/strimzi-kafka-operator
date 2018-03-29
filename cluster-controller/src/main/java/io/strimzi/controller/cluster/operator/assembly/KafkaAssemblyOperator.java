@@ -5,6 +5,7 @@
 package io.strimzi.controller.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
@@ -41,7 +42,7 @@ import static io.strimzi.controller.cluster.model.TopicController.topicControlle
  *     <li>Optionally, a TopicController Deployment</li>
  * </ul>
  */
-public class KafkaAssemblyOperator extends AbstractAssemblyOperator<StatefulSet> {
+public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
     private static final Logger log = LoggerFactory.getLogger(KafkaAssemblyOperator.class.getName());
     private static final String CLUSTER_TYPE_ZOOKEEPER = "zookeeper";
     static final String CLUSTER_TYPE_KAFKA = "kafka";
@@ -230,7 +231,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<StatefulSet>
     }
 
     @Override
-    protected List<StatefulSet> getResources(String namespace, Labels selector) {
-        return kafkaSetOperations.list(namespace, selector);
+    protected List<HasMetadata> getResources(String namespace, Labels selector) {
+        List<HasMetadata> result = new ArrayList<>();
+        result.addAll(kafkaSetOperations.list(namespace, selector));
+        result.addAll(zkSetOperations.list(namespace, selector));
+        result.addAll(deploymentOperations.list(namespace, selector));
+        result.addAll(serviceOperations.list(namespace, selector));
+        // TODO remove the cluster cm! result.addAll(configMapOperations.list(namespace, selector));
+        return result;
     }
 }
