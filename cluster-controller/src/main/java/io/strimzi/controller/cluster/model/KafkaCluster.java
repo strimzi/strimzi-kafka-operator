@@ -159,7 +159,7 @@ public class KafkaCluster extends AbstractModel {
      * @param cluster   overall cluster name
      * @return  Kafka cluster instance
      */
-    public static KafkaCluster fromStatefulSet(StatefulSet ss, String namespace, String cluster) {
+    public static KafkaCluster fromAssembly(StatefulSet ss, String namespace, String cluster) {
 
         KafkaCluster kafka =  new KafkaCluster(namespace, cluster, Labels.fromResource(ss));
 

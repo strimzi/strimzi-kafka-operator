@@ -109,7 +109,7 @@ public class KafkaClusterTest {
     @Test
     public void testClusterFromStatefulSet() {
         StatefulSet ss = kc.generateStatefulSet(true);
-        KafkaCluster kc2 = KafkaCluster.fromStatefulSet(ss, namespace, cluster);
+        KafkaCluster kc2 = KafkaCluster.fromAssembly(ss, namespace, cluster);
         // Don't check the metrics CM, since this isn't restored from the StatefulSet
         checkService(kc2.generateService());
         checkHeadlessService(kc2.generateHeadlessService());

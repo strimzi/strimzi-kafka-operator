@@ -142,8 +142,8 @@ public class ZookeeperCluster extends AbstractModel {
      * @param cluster   overall cluster name
      * @return  Zookeeper cluster instance
      */
-    public static ZookeeperCluster fromStatefulSet(StatefulSet ss,
-                                                   String namespace, String cluster) {
+    public static ZookeeperCluster fromAssembly(StatefulSet ss,
+                                                String namespace, String cluster) {
         ZookeeperCluster zk =  new ZookeeperCluster(namespace, cluster,
                 Labels.fromResource(ss));
 

@@ -136,7 +136,7 @@ public class KafkaConnectCluster extends AbstractModel {
      * @param dep The deployment from which to recover the cluster state
      * @return  Kafka Connect cluster instance
      */
-    public static KafkaConnectCluster fromDeployment(
+    public static KafkaConnectCluster fromAssembly(
             String namespace, String cluster,
             Deployment dep) {
         if (dep == null) {

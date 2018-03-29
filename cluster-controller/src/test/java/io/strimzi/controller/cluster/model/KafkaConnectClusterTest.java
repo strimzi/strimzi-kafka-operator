@@ -93,7 +93,7 @@ public class KafkaConnectClusterTest {
 
     @Test
     public void testFromDeployment() {
-        KafkaConnectCluster newKc = KafkaConnectCluster.fromDeployment(namespace, cluster, kc.generateDeployment());
+        KafkaConnectCluster newKc = KafkaConnectCluster.fromAssembly(namespace, cluster, kc.generateDeployment());
 
         assertEquals(replicas, newKc.replicas);
         assertEquals(image, newKc.image);
@@ -113,7 +113,7 @@ public class KafkaConnectClusterTest {
     @Test
     public void testFromDeploymentWithDefaultValues() {
         KafkaConnectCluster defaultsKc = KafkaConnectCluster.fromConfigMap(ResourceUtils.createEmptyKafkaConnectClusterConfigMap(namespace, cluster));
-        KafkaConnectCluster newKc = KafkaConnectCluster.fromDeployment(namespace, cluster, defaultsKc.generateDeployment());
+        KafkaConnectCluster newKc = KafkaConnectCluster.fromAssembly(namespace, cluster, defaultsKc.generateDeployment());
 
         assertEquals(KafkaConnectCluster.DEFAULT_REPLICAS, newKc.replicas);
         assertEquals(KafkaConnectCluster.DEFAULT_IMAGE, newKc.image);
