@@ -80,19 +80,19 @@ public abstract class AbstractResourceOperator<C, T extends HasMetadata,
                 T current = operation().inNamespace(namespace).withName(name).get();
                 if (desired != null) {
                     if (current == null) {
-                        log.info("{} {}/{} does not exist, creating it", resourceKind, namespace, name);
+                        log.debug("{} {}/{} does not exist, creating it", resourceKind, namespace, name);
                         internalCreate(namespace, name, desired).setHandler(future);
                     } else {
-                        log.info("{} {}/{} already exists, patching it", resourceKind, namespace, name);
+                        log.debug("{} {}/{} already exists, patching it", resourceKind, namespace, name);
                         internalPatch(namespace, name, current, desired).setHandler(future);
                     }
                 } else {
                     if (current != null) {
                         // Deletion is desired
-                        log.info("{} {}/{} exist, deleting it", resourceKind, namespace, name);
+                        log.debug("{} {}/{} exist, deleting it", resourceKind, namespace, name);
                         internalDelete(namespace, name).setHandler(future);
                     } else {
-                        log.info("{} {}/{} does not exist, noop", resourceKind, namespace, name);
+                        log.debug("{} {}/{} does not exist, noop", resourceKind, namespace, name);
                         future.complete(ReconcileResult.noop());
                     }
                 }

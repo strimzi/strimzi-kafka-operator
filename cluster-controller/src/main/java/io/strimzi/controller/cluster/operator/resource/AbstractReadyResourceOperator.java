@@ -51,7 +51,7 @@ public abstract class AbstractReadyResourceOperator<C, T extends HasMetadata, L 
      */
     public Future<Void> readiness(String namespace, String name, long pollIntervalMs, long timeoutMs) {
         Future<Void> fut = Future.future();
-        log.info("Waiting for {} resource {} in namespace {} to get ready", resourceKind, name, namespace);
+        log.debug("Waiting for {} resource {} in namespace {} to get ready", resourceKind, name, namespace);
         long deadline = System.currentTimeMillis() + timeoutMs;
         Handler<Long> handler = new Handler<Long>() {
             @Override
@@ -73,7 +73,7 @@ public abstract class AbstractReadyResourceOperator<C, T extends HasMetadata, L 
                     true,
                     res -> {
                         if (res.succeeded()) {
-                            log.info("{} {} in namespace {} is ready", resourceKind, name, namespace);
+                            log.debug("{} {} in namespace {} is ready", resourceKind, name, namespace);
                             fut.complete();
                         } else {
                             long timeLeft = deadline - System.currentTimeMillis();
