@@ -180,10 +180,6 @@ public class TopicController extends AbstractModel {
      * @return Topic Controller instance, null if not configured in the ConfigMap
      */
     public static TopicController fromConfigMap(ConfigMap kafkaClusterCm) {
-        if (kafkaClusterCm == null) {
-            return null;
-        }
-
         TopicController topicController = null;
 
         String config = kafkaClusterCm.getData().get(KEY_CONFIG);

@@ -198,7 +198,7 @@ public class KafkaAssemblyOperatorTest {
 
         // Now try to create a KafkaCluster based on this CM
         Async async = context.async();
-        ops.createOrUpdate(clusterCmNamespace, clusterCmName, createResult -> {
+        ops.createOrUpdate(clusterCm, createResult -> {
             if (createResult.failed()) {
                 createResult.cause().printStackTrace();
             }
@@ -587,7 +587,7 @@ public class KafkaAssemblyOperatorTest {
 
         // Now try to update a KafkaCluster based on this CM
         Async async = context.async();
-        ops.createOrUpdate(clusterCmNamespace, clusterCmName, createResult -> {
+        ops.createOrUpdate(clusterCm, createResult -> {
             if (createResult.failed()) createResult.cause().printStackTrace();
             context.assertTrue(createResult.succeeded());
 
@@ -664,14 +664,14 @@ public class KafkaAssemblyOperatorTest {
                 mockServiceOps, mockZsOps, mockKsOps,
                 mockPvcOps, mockDepOps) {
             @Override
-            public void createOrUpdate(String namespace, String name, Handler h) {
-                createdOrUpdated.add(name);
+            public void createOrUpdate(ConfigMap assemblyCm, Handler h) {
+                createdOrUpdated.add(assemblyCm.getMetadata().getName());
                 async.countDown();
                 h.handle(Future.succeededFuture());
             }
             @Override
-            public void delete(String namespace, String name, Handler h) {
-                deleted.add(name);
+            public void delete(String namespace, String assemblyName, Handler h) {
+                deleted.add(assemblyName);
                 async.countDown();
                 h.handle(Future.succeededFuture());
             }
