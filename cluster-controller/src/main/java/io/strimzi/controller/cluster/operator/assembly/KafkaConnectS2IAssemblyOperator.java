@@ -65,7 +65,6 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<De
     @Override
     public void createOrUpdate(ConfigMap assemblyCm, Handler<AsyncResult<Void>> handler) {
         String namespace = assemblyCm.getMetadata().getNamespace();
-        String name = assemblyCm.getMetadata().getName();
         if (isOpenShift) {
             KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromConfigMap(assemblyCm);
             Future<Void> chainFuture = Future.future();
