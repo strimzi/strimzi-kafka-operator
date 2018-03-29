@@ -9,22 +9,22 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation is used in ({@link ConnectCluster}, {@link KafkaCluster})
- * to configure a cluster with custom parameters and values.
+ * Annotation is used in ({@link ClusterController})
+ * to configure a Cluster Controller with custom environment variables.
  * <p>
  * An example would be:
  * <pre>
- * &#064;Test
- * &#064;KafkaCluster(config = {
- * &#064;CmData(key = "foo", value = "bar")
+ * &#064;RunWith({@link StrimziRunner})
+ * &#064;ClusterController(envVariables = {
+ * &#064;EnvVariables(key = "foo", value = "bar")
  * })
- * public void test() {
+ * public class ClusterTest {
  * }
  * </pre>
  */
 @Target({})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface CmData {
+public @interface EnvVariables {
 
     String key();
     String value();
