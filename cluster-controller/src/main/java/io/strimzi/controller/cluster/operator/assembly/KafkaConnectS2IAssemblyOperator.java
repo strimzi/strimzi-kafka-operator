@@ -6,7 +6,6 @@ package io.strimzi.controller.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.openshift.api.model.DeploymentConfig;
 import io.strimzi.controller.cluster.model.KafkaConnectS2ICluster;
 import io.strimzi.controller.cluster.model.Labels;
 import io.strimzi.controller.cluster.operator.resource.BuildConfigOperator;
