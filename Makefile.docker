@@ -11,6 +11,7 @@ DOCKERFILE_DIR     ?= ./
 DOCKER_REGISTRY    ?= docker.io
 DOCKER_ORG         ?= $(USER)
 DOCKER_TAG         ?= latest
+DOCKER_BUILD_TAG   ?= $(DOCKER_TAG)
 DOCKER_VERSION_ARG ?= latest
 
 all: docker_build docker_push
@@ -20,8 +21,8 @@ docker_build:
 	docker build --build-arg version=$(DOCKER_VERSION_ARG) -t strimzi/$(PROJECT_NAME):$(DOCKER_TAG) $(DOCKERFILE_DIR)
 
 docker_tag:
-	echo "Tagging strimzi/$(PROJECT_NAME):$(DOCKER_TAG) to $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG) ..."
-	docker tag strimzi/$(PROJECT_NAME):$(DOCKER_TAG) $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG)
+	echo "Tagging strimzi/$(PROJECT_NAME):$(DOCKER_BUILD_TAG) to $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG) ..."
+	docker tag strimzi/$(PROJECT_NAME):$(DOCKER_BUILD_TAG) $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG)
 
 docker_push: docker_tag
 	echo "Pushing $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG) ..."
