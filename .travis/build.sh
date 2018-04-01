@@ -15,6 +15,7 @@ echo "Login into Docker Hub ..."
 docker login -u $DOCKER_USER -p $DOCKER_PASS
 
 export DOCKER_TAG=$BRANCH
+export DOCKER_BUILD_TAG=$COMMIT
 echo "Pushing to docker org $DOCKER_ORG under tag $DOCKER_TAG"
 make docker_push
 
