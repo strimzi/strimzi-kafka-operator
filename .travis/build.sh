@@ -14,7 +14,12 @@ make docker_build
 echo "Login into Docker Hub ..."
 docker login -u $DOCKER_USER -p $DOCKER_PASS
 
-echo "Pushing to docker org $DOCKER_ORG"
+export DOCKER_TAG=$BRANCH
+echo "Pushing to docker org $DOCKER_ORG under tag $DOCKER_TAG"
+make docker_push
+
+export DOCKER_TAG=$COMMIT
+echo "Pushing to docker org $DOCKER_ORG under tag $DOCKER_TAG"
 make docker_push
 
 echo "Running systemtests"

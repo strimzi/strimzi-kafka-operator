@@ -306,11 +306,8 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
             List<String> yamls = Arrays.stream(new File(CC_INSTALL_DIR).listFiles()).sorted().map(f -> getContent(f, node -> {
                 // Change the docker org of the images in the 04-deployment.yaml
                 if ("04-deployment.yaml".equals(f.getName())) {
-                    String dockerOrg = System.getenv().getOrDefault("DOCKER_ORG", "strimzici");
-                    String dockerTag = System.getenv().get("DOCKER_TAG");
-                    if (dockerTag == null || dockerTag.isEmpty()) {
-                        throw new RuntimeException("DOCKER_TAG environment variable not set");
-                    }
+                    String dockerOrg = System.getenv().getOrDefault("DOCKER_ORG", "strimzi");
+                    String dockerTag = System.getenv().getOrDefault("DOCKER_TAG", "latest");
                     JsonNode containerNode = node.get("spec").get("template").get("spec").get("containers").get(0);
                     JsonNode ccImageNode = containerNode.get("image");
                     ((ObjectNode) containerNode).put("image", changeOrgAndTag(ccImageNode.asText(), dockerOrg, dockerTag));
