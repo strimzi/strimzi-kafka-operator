@@ -50,6 +50,10 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
         echo "Minikube failed to start"
         exit 1
     else
+        # The role needs to be added because Minikube is not fully prepared for RBAC.
+        # Without adding the cluster-admin rights to the default service account in kube-system
+        # some components would be crashing (such as KubeDNS). This should have no impact on
+        # RBAC for Strimzi during the system tests.
         kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
     fi
 elif [ "$TEST_CLUSTER" = "minishift" ]; then
