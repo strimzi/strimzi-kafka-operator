@@ -1,6 +1,6 @@
 #!/bin/bash
 
-rm ~/.kube/config
+rm -rf ~/.kube
 
 function install_kubectl {
     curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl && chmod +x kubectl
@@ -22,8 +22,10 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
     docker run -d -p 5000:5000 registry
 
     export KUBECONFIG=$HOME/.kube/config
-    sudo -E minikube start --vm-driver=none --insecure-registry localhost:5000
+    sudo -E minikube start --vm-driver=none --insecure-registry localhost:5000 --extra-config=apiserver.Authorization.Mode=RBAC
     sudo -E minikube addons enable default-storageclass
+    sleep 10
+    kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
 elif [ "$TEST_CLUSTER" = "minishift" ]; then
     #install_kubectl
     MS_VERSION=1.13.1
