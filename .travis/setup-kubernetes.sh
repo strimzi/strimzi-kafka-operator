@@ -7,6 +7,24 @@ function install_kubectl {
     sudo cp kubectl /usr/bin
 }
 
+function wait_for_minikube {
+    i="0"
+
+    while [ $i -lt 60 ]
+    do
+        kubectl cluster-info &> /dev/null
+        if [ $? -ne 0 ]
+        then
+            sleep 1
+        else
+            return 0
+        fi
+        i=$[$i+1]
+    done
+
+    return 1
+}
+
 if [ "$TEST_CLUSTER" = "minikube" ]; then
     install_kubectl
     curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 && chmod +x minikube
@@ -24,8 +42,16 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
     export KUBECONFIG=$HOME/.kube/config
     sudo -E minikube start --vm-driver=none --insecure-registry localhost:5000 --extra-config=apiserver.Authorization.Mode=RBAC
     sudo -E minikube addons enable default-storageclass
-    sleep 10
-    kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
+
+    wait_for_minikube
+
+    if [ $? -ne 0 ]
+    then
+        echo "Minikube failed to start"
+        exit 1
+    else
+        kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
+    fi
 elif [ "$TEST_CLUSTER" = "minishift" ]; then
     #install_kubectl
     MS_VERSION=1.13.1
