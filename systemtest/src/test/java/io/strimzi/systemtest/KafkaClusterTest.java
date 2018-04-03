@@ -141,7 +141,7 @@ public class KafkaClusterTest {
         // (execute bash because we want the env vars expanded in the pod)
         String versions = getBrokerApiVersions(newPodName);
         for (int brokerId = 0; brokerId < scaleTo; brokerId++) {
-            assertTrue(versions.indexOf("(id: " + brokerId + " rack: ") >= 0);
+            assertTrue(versions, versions.indexOf("(id: " + brokerId + " rack: ") >= 0);
         }
         // TODO Check for k8s events, logs for errors
 
