@@ -6,6 +6,13 @@ package io.strimzi.controller.cluster;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * <p>Represents an attempt synchronize the state of some K8S resources (an "assembly") in a single namespace with a
+ * desired state, expressed as a ConfigMap.</p>
+ *
+ * <p>Each instance has a unique id and a trigger (description of the event which initiated the reconciliation),
+ * which are used to provide consistent context for logging.</p>
+ */
 public class Reconciliation {
 
     private static final AtomicInteger IDS = new AtomicInteger();
