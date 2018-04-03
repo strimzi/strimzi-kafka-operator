@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 
 /**
@@ -158,7 +159,7 @@ public abstract class AbstractAssemblyOperator {
      * @param namespace The namespace
      * @param selector The selector
      */
-    public final void reconcileAll(String trigger, String namespace, Labels selector) {
+    public final CountDownLatch reconcileAll(String trigger, String namespace, Labels selector) {
         Labels selectorWithCluster = selector.withType(assemblyType);
 
         // get ConfigMaps with kind=cluster&type=kafka (or connect, or connect-s2i) for the corresponding cluster type
@@ -174,6 +175,8 @@ public abstract class AbstractAssemblyOperator {
 
         cmsNames.addAll(resourceNames);
 
+        CountDownLatch latch = new CountDownLatch(cmsNames.size());
+
         for (String name: cmsNames) {
             Reconciliation reconciliation = new Reconciliation(trigger, assemblyType, namespace, name);
             reconcileAssembly(reconciliation, result -> {
@@ -182,8 +185,11 @@ public abstract class AbstractAssemblyOperator {
                 } else {
                     log.error("{}: Failed to reconcile", reconciliation, assemblyDescription, name);
                 }
+                latch.countDown();
             });
         }
+
+        return latch;
     }
 
     /**

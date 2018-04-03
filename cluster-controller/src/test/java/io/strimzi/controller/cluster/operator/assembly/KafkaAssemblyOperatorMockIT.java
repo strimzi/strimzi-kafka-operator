@@ -628,4 +628,19 @@ public class KafkaAssemblyOperatorMockIT {
         updateAsync.await();
     }
 
+    @Test
+    public void testReconcileAllDeleteCase(TestContext context) throws InterruptedException {
+        KafkaAssemblyOperator kco = createCluster(context);
+        mockClient.configMaps().inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
+
+        LOGGER.info("reconcileAll after CM deletion -> All resources should be deleted");
+        kco.reconcileAll("test-trigger", NAMESPACE, Labels.forKind("cluster")).await();
+
+        // Assert no CMs, Services, StatefulSets, Deployments are left
+        context.assertTrue(mockClient.configMaps().inNamespace(NAMESPACE).list().getItems().isEmpty());
+        context.assertTrue(mockClient.services().inNamespace(NAMESPACE).list().getItems().isEmpty());
+        context.assertTrue(mockClient.apps().statefulSets().inNamespace(NAMESPACE).list().getItems().isEmpty());
+        context.assertTrue(mockClient.extensions().deployments().inNamespace(NAMESPACE).list().getItems().isEmpty());
+    }
+
 }
