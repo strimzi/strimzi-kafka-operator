@@ -40,6 +40,7 @@ public class StatefulSetDiff {
         JsonNode diff = JsonDiff.asJson(patchMapper().valueToTree(current), patchMapper().valueToTree(updated));
         Set<String> paths = new HashSet<>();
         for (JsonNode d : diff) {
+            log.debug("StatefulSet {}/{} diff {}", current.getMetadata().getNamespace(), current.getMetadata().getName(), d);
             String pathValue = d.get("path").asText();
             log.debug("StatefulSet {}/{} differs at path {}", current.getMetadata().getNamespace(), current.getMetadata().getName(), pathValue);
             paths.add(pathValue);
