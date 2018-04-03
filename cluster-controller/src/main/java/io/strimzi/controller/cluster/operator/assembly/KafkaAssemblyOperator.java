@@ -230,8 +230,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
 
     @Override
     protected void delete(Reconciliation reconciliation, Handler<AsyncResult<Void>> handler) {
-        String namespace = reconciliation.namespace();
-        String assemblyName = reconciliation.assemblyName();
         Future<Void> f = Future.<Void>future().setHandler(handler);
         deleteTopicController(reconciliation)
                 .compose(i -> deleteKafka(reconciliation))
