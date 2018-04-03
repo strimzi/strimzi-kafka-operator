@@ -185,7 +185,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 }
             }
 
-            LOGGER.info("That's all the diagnostic info, the exception {} will now propoagate and the test will fail{}{}",
+            LOGGER.info("That's all the diagnostic info, the exception {} will now propagate and the test will fail{}{}",
                     t,
                     t, System.lineSeparator(), "----------------------------------------------------------------------");
         }
@@ -304,7 +304,12 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     // delete cm
                     kubeClient().deleteContent(yaml);
                     // wait for ss to go
-                    kubeClient().waitForResourceDeletion("statefulset", zkStatefulSetName);
+                    try {
+                        kubeClient().waitForResourceDeletion("statefulset", zkStatefulSetName);
+                    } catch (Exception e) {
+                        LOGGER.info("Exception {} while cleaning up. ", e.toString());
+                        onError(e);
+                    }
                 }
             };
         }
