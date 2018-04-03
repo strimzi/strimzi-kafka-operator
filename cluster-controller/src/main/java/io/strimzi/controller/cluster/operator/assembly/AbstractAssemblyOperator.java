@@ -7,6 +7,7 @@ package io.strimzi.controller.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.strimzi.controller.cluster.Reconciliation;
 import io.strimzi.controller.cluster.model.Labels;
 import io.strimzi.controller.cluster.operator.resource.ConfigMapOperator;
 import io.vertx.core.AsyncResult;
@@ -76,15 +77,13 @@ public abstract class AbstractAssemblyOperator {
      * @param assemblyCm The name of the cluster.
      * @param handler Completion handler
      */
-    protected abstract void createOrUpdate(ConfigMap assemblyCm, Handler<AsyncResult<Void>> handler);
+    protected abstract void createOrUpdate(Reconciliation reconciliation, ConfigMap assemblyCm, Handler<AsyncResult<Void>> handler);
 
     /**
      * Subclasses implement this method to delete the cluster.
-     * @param namespace The namespace containing the cluster.
-     * @param assemblyName The assemblyName of the cluster.
      * @param handler Completion handler
      */
-    protected abstract void delete(String namespace, String assemblyName, Handler<AsyncResult<Void>> handler);
+    protected abstract void delete(Reconciliation reconciliation, Handler<AsyncResult<Void>> handler);
 
     /**
      * The name of the given {@code resource}, as read from its metadata.
@@ -106,16 +105,16 @@ public abstract class AbstractAssemblyOperator {
      * comparing with the corresponding {@linkplain #getResources(String, Labels) resource}.
      * <ul>
      * <li>An assembly will be {@linkplain #createOrUpdate(ConfigMap, Handler) created or updated} if ConfigMap is without same-named resources</li>
-     * <li>An assembly will be {@linkplain #delete(String, String, Handler) deleted} if resources without same-named ConfigMap</li>
+     * <li>An assembly will be {@linkplain #delete(Reconciliation, Handler) deleted} if resources without same-named ConfigMap</li>
      * </ul>
-     * @param namespace The namespace
-     * @param assemblyName The name of the assembly
      */
-    public final void reconcileAssembly(String namespace, String assemblyName, Handler<AsyncResult<Void>> handler) {
+    public final void reconcileAssembly(Reconciliation reconciliation, Handler<AsyncResult<Void>> handler) {
+        String namespace = reconciliation.namespace();
+        String assemblyName = reconciliation.assemblyName();
         final String lockName = getLockName(assemblyType, namespace, assemblyName);
         vertx.sharedData().getLockWithTimeout(lockName, LOCK_TIMEOUT, res -> {
             if (res.succeeded()) {
-                log.debug("Lock {} acquired", lockName);
+                log.debug("{}: Lock {} acquired", reconciliation, lockName);
                 Lock lock = res.result();
 
                 try {
@@ -123,27 +122,27 @@ public abstract class AbstractAssemblyOperator {
                     ConfigMap cm = configMapOperations.get(namespace, assemblyName);
 
                     if (cm != null) {
-                        log.info("Reconciliation: {} assembly {} should be created or updated", assemblyDescription, assemblyName);
-                        createOrUpdate(cm, createResult -> {
+                        log.info("{}: assembly {} should be created or updated", reconciliation, assemblyName);
+                        createOrUpdate(reconciliation, cm, createResult -> {
                             lock.release();
-                            log.debug("Lock {} released", lockName);
+                            log.debug("{}: Lock {} released", reconciliation, lockName);
                             handler.handle(createResult);
                         });
                     } else {
-                        log.info("Reconciliation: {} assembly {} should be deleted", assemblyDescription, assemblyName);
-                        delete(namespace, assemblyName, deleteResult -> {
+                        log.info("{}: assembly {} should be deleted", reconciliation, assemblyName);
+                        delete(reconciliation, deleteResult -> {
                             lock.release();
-                            log.debug("Lock {} released", lockName);
+                            log.debug("{}: Lock {} released", reconciliation, lockName);
                             handler.handle(deleteResult);
                         });
                     }
                 } catch (Throwable ex) {
                     lock.release();
-                    log.debug("Lock {} released", lockName);
+                    log.debug("{}: Lock {} released", reconciliation, lockName);
                     handler.handle(Future.failedFuture(ex));
                 }
             } else {
-                log.warn("Failed to acquire lock for {} assembly {}.", assemblyType, lockName);
+                log.warn("{}: Failed to acquire lock {}.", reconciliation, lockName);
             }
         });
     }
@@ -154,12 +153,12 @@ public abstract class AbstractAssemblyOperator {
      * comparing with the corresponding {@linkplain #getResources(String, Labels) resource}.
      * <ul>
      * <li>An assembly will be {@linkplain #createOrUpdate(ConfigMap, Handler) created} for all ConfigMaps without same-named resources</li>
-     * <li>An assembly will be {@linkplain #delete(String, String, Handler) deleted} for all resources without same-named ConfigMaps</li>
+     * <li>An assembly will be {@linkplain #delete(Reconciliation, Handler) deleted} for all resources without same-named ConfigMaps</li>
      * </ul>
      * @param namespace The namespace
      * @param selector The selector
      */
-    public final void reconcileAll(String namespace, Labels selector) {
+    public final void reconcileAll(String trigger, String namespace, Labels selector) {
         Labels selectorWithCluster = selector.withType(assemblyType);
 
         // get ConfigMaps with kind=cluster&type=kafka (or connect, or connect-s2i) for the corresponding cluster type
@@ -174,11 +173,12 @@ public abstract class AbstractAssemblyOperator {
         cmsNames.addAll(resourceNames);
 
         for (String name: cmsNames) {
-            reconcileAssembly(namespace, name, result -> {
+            Reconciliation reconciliation = new Reconciliation(trigger, assemblyType, namespace, name);
+            reconcileAssembly(reconciliation, result -> {
                 if (result.succeeded()) {
-                    log.info("{} assembly reconciled {}", assemblyDescription, name);
+                    log.info("{}: {} assembly reconciled", reconciliation, assemblyDescription, name);
                 } else {
-                    log.error("Failed to reconcile {} assembly {}.", assemblyDescription, name);
+                    log.error("{}: Failed to reconcile", reconciliation, assemblyDescription, name);
                 }
             });
         }

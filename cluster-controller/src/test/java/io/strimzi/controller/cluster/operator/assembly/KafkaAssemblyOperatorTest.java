@@ -10,19 +10,20 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.controller.cluster.ClusterControllerConfig;
+import io.strimzi.controller.cluster.Reconciliation;
 import io.strimzi.controller.cluster.ResourceUtils;
-import io.strimzi.controller.cluster.operator.resource.ConfigMapOperator;
-import io.strimzi.controller.cluster.operator.resource.DeploymentOperator;
-import io.strimzi.controller.cluster.operator.resource.KafkaSetOperator;
-import io.strimzi.controller.cluster.operator.resource.PvcOperator;
-import io.strimzi.controller.cluster.operator.resource.ReconcileResult;
-import io.strimzi.controller.cluster.operator.resource.ServiceOperator;
 import io.strimzi.controller.cluster.model.AbstractModel;
 import io.strimzi.controller.cluster.model.KafkaCluster;
 import io.strimzi.controller.cluster.model.Labels;
 import io.strimzi.controller.cluster.model.Storage;
 import io.strimzi.controller.cluster.model.TopicController;
 import io.strimzi.controller.cluster.model.ZookeeperCluster;
+import io.strimzi.controller.cluster.operator.resource.ConfigMapOperator;
+import io.strimzi.controller.cluster.operator.resource.DeploymentOperator;
+import io.strimzi.controller.cluster.operator.resource.KafkaSetOperator;
+import io.strimzi.controller.cluster.operator.resource.PvcOperator;
+import io.strimzi.controller.cluster.operator.resource.ReconcileResult;
+import io.strimzi.controller.cluster.operator.resource.ServiceOperator;
 import io.strimzi.controller.cluster.operator.resource.StatefulSetDiff;
 import io.strimzi.controller.cluster.operator.resource.ZookeeperSetOperator;
 import io.vertx.core.Future;
@@ -198,7 +199,7 @@ public class KafkaAssemblyOperatorTest {
 
         // Now try to create a KafkaCluster based on this CM
         Async async = context.async();
-        ops.createOrUpdate(clusterCm, createResult -> {
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaCluster.TYPE, clusterCmNamespace, clusterCmName), clusterCm, createResult -> {
             if (createResult.failed()) {
                 createResult.cause().printStackTrace();
             }
@@ -318,7 +319,7 @@ public class KafkaAssemblyOperatorTest {
 
         // Now try to delete a KafkaCluster based on this CM
         Async async = context.async();
-        ops.delete(clusterCmNamespace, clusterCmName, createResult -> {
+        ops.delete(new Reconciliation("test-trigger", KafkaCluster.TYPE, clusterCmNamespace, clusterCmName), createResult -> {
             context.assertTrue(createResult.succeeded());
 
             /*Set<String> metricsNames = new HashSet<>();
@@ -587,7 +588,7 @@ public class KafkaAssemblyOperatorTest {
 
         // Now try to update a KafkaCluster based on this CM
         Async async = context.async();
-        ops.createOrUpdate(clusterCm, createResult -> {
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaCluster.TYPE, clusterCmNamespace, clusterCmName), clusterCm, createResult -> {
             if (createResult.failed()) createResult.cause().printStackTrace();
             context.assertTrue(createResult.succeeded());
 
@@ -664,21 +665,21 @@ public class KafkaAssemblyOperatorTest {
                 mockServiceOps, mockZsOps, mockKsOps,
                 mockPvcOps, mockDepOps) {
             @Override
-            public void createOrUpdate(ConfigMap assemblyCm, Handler h) {
+            public void createOrUpdate(Reconciliation reconciliation, ConfigMap assemblyCm, Handler h) {
                 createdOrUpdated.add(assemblyCm.getMetadata().getName());
                 async.countDown();
                 h.handle(Future.succeededFuture());
             }
             @Override
-            public void delete(String namespace, String assemblyName, Handler h) {
-                deleted.add(assemblyName);
+            public void delete(Reconciliation reconciliation, Handler h) {
+                deleted.add(reconciliation.assemblyName());
                 async.countDown();
                 h.handle(Future.succeededFuture());
             }
         };
 
         // Now try to reconcile all the Kafka clusters
-        ops.reconcileAll(clusterCmNamespace, Labels.EMPTY);
+        ops.reconcileAll("test", clusterCmNamespace, Labels.EMPTY);
 
         async.await();
 

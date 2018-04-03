@@ -6,6 +6,7 @@ package io.strimzi.controller.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.strimzi.controller.cluster.Reconciliation;
 import io.strimzi.controller.cluster.model.KafkaConnectS2ICluster;
 import io.strimzi.controller.cluster.model.Labels;
 import io.strimzi.controller.cluster.operator.resource.BuildConfigOperator;
@@ -64,8 +65,8 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator {
     }
 
     @Override
-    public void createOrUpdate(ConfigMap assemblyCm, Handler<AsyncResult<Void>> handler) {
-        String namespace = assemblyCm.getMetadata().getNamespace();
+    public void createOrUpdate(Reconciliation reconciliation, ConfigMap assemblyCm, Handler<AsyncResult<Void>> handler) {
+        String namespace = reconciliation.namespace();
         if (isOpenShift) {
             KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromConfigMap(assemblyCm);
             Future<Void> chainFuture = Future.future();
@@ -85,8 +86,10 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator {
     }
 
     @Override
-    protected void delete(String namespace, String assemblyName, Handler<AsyncResult<Void>> handler) {
+    protected void delete(Reconciliation reconciliation, Handler<AsyncResult<Void>> handler) {
         if (isOpenShift) {
+            String namespace = reconciliation.namespace();
+            String assemblyName = reconciliation.assemblyName();
             String clusterName = KafkaConnectS2ICluster.kafkaConnectClusterName(assemblyName);
             CompositeFuture.join(serviceOperations.reconcile(namespace, clusterName, null),
                 deploymentConfigOperations.reconcile(namespace, clusterName, null),

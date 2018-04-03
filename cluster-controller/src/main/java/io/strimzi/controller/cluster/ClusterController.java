@@ -84,7 +84,7 @@ public class ClusterController extends AbstractVerticle {
                 log.info("Setting up periodical reconciliation for namespace {}", namespace);
                 this.reconcileTimer = vertx.setPeriodic(this.reconciliationInterval, res2 -> {
                     log.info("Triggering periodic reconciliation for namespace {}...", namespace);
-                    reconcileAll();
+                    reconcileAll("timer");
                 });
 
                 log.info("ClusterController running for namespace {}", namespace);
@@ -144,22 +144,23 @@ public class ClusterController extends AbstractVerticle {
                             case ADDED:
                             case DELETED:
                             case MODIFIED:
-                                log.info("ConfigMap {} in namespace {} was {}", name, namespace, action);
-                                cluster.reconcileAssembly(namespace, name, result -> {
+                                Reconciliation reconciliation = new Reconciliation("watch", type, namespace, name);
+                                log.info("{}: ConfigMap {} in namespace {} was {}", reconciliation, name, namespace, action);
+                                cluster.reconcileAssembly(reconciliation, result -> {
                                     if (result.succeeded()) {
-                                        log.info("{} assembly reconciled {}", type, name);
+                                        log.info("{}: assembly reconciled", reconciliation);
                                     } else {
-                                        log.error("Failed to reconcile {} assembly {}.", type, name);
+                                        log.error("{}: Failed to reconcile", reconciliation);
                                     }
                                 });
                                 break;
                             case ERROR:
                                 log.error("Failed ConfigMap {} in namespace{} ", name, namespace);
-                                reconcileAll();
+                                reconcileAll("watch error");
                                 break;
                             default:
                                 log.error("Unknown action: {} in namespace {}", name, namespace);
-                                reconcileAll();
+                                reconcileAll("watch unknown");
                         }
                     }
 
@@ -206,12 +207,12 @@ public class ClusterController extends AbstractVerticle {
     /**
       Periodical reconciliation (in case we lost some event)
      */
-    private void reconcileAll() {
-        kafkaAssemblyOperator.reconcileAll(namespace, selector);
-        kafkaConnectAssemblyOperator.reconcileAll(namespace, selector);
+    private void reconcileAll(String trigger) {
+        kafkaAssemblyOperator.reconcileAll(trigger, namespace, selector);
+        kafkaConnectAssemblyOperator.reconcileAll(trigger, namespace, selector);
 
         if (kafkaConnectS2IAssemblyOperator != null) {
-            kafkaConnectS2IAssemblyOperator.reconcileAll(namespace, selector);
+            kafkaConnectS2IAssemblyOperator.reconcileAll(trigger, namespace, selector);
         }
     }
 
