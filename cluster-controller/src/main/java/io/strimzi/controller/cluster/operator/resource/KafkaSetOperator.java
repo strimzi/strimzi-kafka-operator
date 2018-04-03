@@ -51,7 +51,14 @@ public class KafkaSetOperator extends StatefulSetOperator<Boolean> {
     }
 
     public static boolean needsRollingUpdate(StatefulSetDiff diff) {
-        return diff.changesLabels()
-                    || diff.changesSpecTemplateSpec();
+        if (diff.changesLabels()) {
+            log.debug("Changed labels => needs rolling update");
+            return true;
+        }
+        if (diff.changesSpecTemplateSpec()) {
+            log.debug("Changed template spec => needs rolling update");
+            return true;
+        }
+        return false;
     }
 }

@@ -52,8 +52,18 @@ public class ZookeeperSetOperator extends StatefulSetOperator<Boolean> {
 
     public static boolean needsRollingUpdate(StatefulSetDiff diff) {
         // Because for ZK the brokers know about each other via the config, and rescaling requires a rolling update
-        return diff.changesSpecReplicas()
-                    || diff.changesLabels()
-                    || diff.changesSpecTemplateSpec();
+        if (diff.changesSpecReplicas()) {
+            log.debug("Changed #replicas => needs rolling update");
+            return true;
+        }
+        if (diff.changesLabels()) {
+            log.debug("Changed labels => needs rolling update");
+            return true;
+        }
+        if (diff.changesSpecTemplateSpec()) {
+            log.debug("Changed template spec => needs rolling update");
+            return true;
+        }
+        return false;
     }
 }

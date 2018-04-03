@@ -133,7 +133,7 @@ public class KafkaClusterTest {
         final int newBrokerId = newPodId;
         final String newPodName = kafkaPodName(clusterName,  newPodId);
         final String firstPodName = kafkaPodName(clusterName,  0);
-        LOGGER.info("Scaling up to {}", scaleTo);
+        LOGGER.info("Scaling Kafka up to {}", scaleTo);
         replaceCm(clusterName, "kafka-nodes", String.valueOf(initialReplicas + 1));
         kubeClient.waitForStatefulSet(kafkaStatefulSetName(clusterName), initialReplicas + 1);
 
@@ -195,7 +195,7 @@ public class KafkaClusterTest {
                 zookeeperPodName(clusterName,  newPodIds[1])
         };
         final String firstPodName = zookeeperPodName(clusterName,  0);
-        LOGGER.info("Scaling up to {}", scaleTo);
+        LOGGER.info("Scaling zookeeper up to {}", scaleTo);
         replaceCm(clusterName, "zookeeper-nodes", String.valueOf(scaleTo));
         kubeClient.waitForPod(newPodName[0]);
         kubeClient.waitForPod(newPodName[1]);

@@ -172,20 +172,21 @@ public class StatefulSetOperator<P> extends AbstractScalableResourceOperator<Kub
 
         @Override
         public void eventReceived(Action action, Pod pod) {
+            String podName = pod.getMetadata().getName();
             switch (action) {
                 case DELETED:
-                    log.info("Pod has been deleted");
+                    log.info("Pod {} has been deleted", podName);
                     deleted.complete();
                     break;
                 case ADDED:
                 case MODIFIED:
-                    log.info("Ignored action {} while waiting for Pod deletion", action);
+                    log.info("Ignored action {} on pod {} while waiting for Pod deletion", action, podName);
                     break;
                 case ERROR:
                     log.error("Error while waiting for Pod deletion");
                     break;
                 default:
-                    log.error("Unknown action {} while waiting for pod deletion", action);
+                    log.error("Unknown action {} on pod {} while waiting for pod deletion", action, podName);
             }
         }
 
