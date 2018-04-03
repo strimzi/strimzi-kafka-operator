@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.strimzi.controller.cluster.Reconciliation;
 import io.strimzi.controller.cluster.model.KafkaCluster;
 import io.strimzi.controller.cluster.model.Labels;
 import io.strimzi.controller.cluster.model.Storage;
@@ -202,7 +203,7 @@ public class KafkaAssemblyOperatorMockIT {
 
         LOGGER.info("Reconciling initially -> create");
         Async createAsync = context.async();
-        kco.reconcileAssembly(NAMESPACE, CLUSTER_NAME, ar -> {
+        kco.reconcileAssembly(new Reconciliation("test-trigger", KafkaCluster.TYPE, NAMESPACE, CLUSTER_NAME), ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.assertTrue(ar.succeeded());
             context.assertNotNull(mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaClusterName(CLUSTER_NAME)).get());
@@ -224,7 +225,7 @@ public class KafkaAssemblyOperatorMockIT {
         KafkaAssemblyOperator kco = createCluster(context);
         LOGGER.info("Reconciling again -> update");
         Async updateAsync = context.async();
-        kco.reconcileAssembly(NAMESPACE, CLUSTER_NAME, ar -> {
+        kco.reconcileAssembly(new Reconciliation("test-trigger", KafkaCluster.TYPE, NAMESPACE, CLUSTER_NAME), ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.assertTrue(ar.succeeded());
             updateAsync.complete();
@@ -233,7 +234,7 @@ public class KafkaAssemblyOperatorMockIT {
         LOGGER.info("Reconciling again -> delete");
         mockClient.configMaps().inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
         Async deleteAsync = context.async();
-        kco.reconcileAssembly(NAMESPACE, CLUSTER_NAME, ar -> {
+        kco.reconcileAssembly(new Reconciliation("test-trigger", KafkaCluster.TYPE, NAMESPACE, CLUSTER_NAME), ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.assertTrue(ar.succeeded());
             assertPvcs(context, expectedClaims);
@@ -304,7 +305,7 @@ public class KafkaAssemblyOperatorMockIT {
         }
         LOGGER.info("Reconciling again -> update");
         Async updateAsync = context.async();
-        kco.reconcileAssembly(NAMESPACE, CLUSTER_NAME, ar -> {
+        kco.reconcileAssembly(new Reconciliation("test-trigger", KafkaCluster.TYPE, NAMESPACE, CLUSTER_NAME), ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.assertTrue(ar.succeeded());
             for (String service: services) {
@@ -351,7 +352,7 @@ public class KafkaAssemblyOperatorMockIT {
 
         LOGGER.info("Reconciling again -> update");
         Async updateAsync = context.async();
-        kco.reconcileAssembly(NAMESPACE, CLUSTER_NAME, ar -> {
+        kco.reconcileAssembly(new Reconciliation("test-trigger", KafkaCluster.TYPE, NAMESPACE, CLUSTER_NAME), ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.assertTrue(ar.succeeded());
 
@@ -374,7 +375,7 @@ public class KafkaAssemblyOperatorMockIT {
         LOGGER.info("Deleting");
         mockClient.configMaps().inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
         Async updateAsync = context.async();
-        kco.reconcileAssembly(NAMESPACE, CLUSTER_NAME, ar -> {
+        kco.reconcileAssembly(new Reconciliation("test-trigger", KafkaCluster.TYPE, NAMESPACE, CLUSTER_NAME), ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.assertTrue(ar.succeeded());
             for (String service: services) {
@@ -419,7 +420,7 @@ public class KafkaAssemblyOperatorMockIT {
         LOGGER.info("Deleting");
         mockClient.configMaps().inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
         Async updateAsync = context.async();
-        kco.reconcileAssembly(NAMESPACE, CLUSTER_NAME, ar -> {
+        kco.reconcileAssembly(new Reconciliation("test-trigger", KafkaCluster.TYPE, NAMESPACE, CLUSTER_NAME), ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.assertTrue(ar.succeeded());
             for (String ss: statefulSets) {
@@ -492,7 +493,7 @@ public class KafkaAssemblyOperatorMockIT {
         mockClient.configMaps().inNamespace(NAMESPACE).withName(CLUSTER_NAME).patch(changedClusterCm);
 
         LOGGER.info("Updating with changed storage class");
-        kco.reconcileAssembly(NAMESPACE, CLUSTER_NAME, ar -> {
+        kco.reconcileAssembly(new Reconciliation("test-trigger", KafkaCluster.TYPE, NAMESPACE, CLUSTER_NAME), ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.assertTrue(ar.succeeded());
             // Check the storage class was not changed
@@ -543,7 +544,7 @@ public class KafkaAssemblyOperatorMockIT {
 
         LOGGER.info("Updating with changed delete claim");
         Async updateAsync = context.async();
-        kco.reconcileAssembly(NAMESPACE, CLUSTER_NAME, ar -> {
+        kco.reconcileAssembly(new Reconciliation("test-trigger", KafkaCluster.TYPE, NAMESPACE, CLUSTER_NAME), ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.assertTrue(ar.succeeded());
             updateAsync.complete();
@@ -553,7 +554,7 @@ public class KafkaAssemblyOperatorMockIT {
         LOGGER.info("Reconciling again -> delete");
         mockClient.configMaps().inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
         Async deleteAsync = context.async();
-        kco.reconcileAssembly(NAMESPACE, CLUSTER_NAME, ar -> {
+        kco.reconcileAssembly(new Reconciliation("test-trigger", KafkaCluster.TYPE, NAMESPACE, CLUSTER_NAME), ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.assertTrue(ar.succeeded());
             assertPvcs(context, changedKafkaDeleteClaim ? deleteClaim(zkStorage) ? emptySet() : zkPvcs :
@@ -583,7 +584,7 @@ public class KafkaAssemblyOperatorMockIT {
         mockClient.configMaps().inNamespace(NAMESPACE).withName(CLUSTER_NAME).patch(changedClusterCm);
 
         LOGGER.info("Scaling down to {} Kafka pods", newScale);
-        kco.reconcileAssembly(NAMESPACE, CLUSTER_NAME, ar -> {
+        kco.reconcileAssembly(new Reconciliation("test-trigger", KafkaCluster.TYPE, NAMESPACE, CLUSTER_NAME), ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.assertTrue(ar.succeeded());
             context.assertEquals(newScale,
@@ -614,7 +615,7 @@ public class KafkaAssemblyOperatorMockIT {
         mockClient.configMaps().inNamespace(NAMESPACE).withName(CLUSTER_NAME).patch(changedClusterCm);
 
         LOGGER.info("Scaling up to {} Kafka pods", newScale);
-        kco.reconcileAssembly(NAMESPACE, CLUSTER_NAME, ar -> {
+        kco.reconcileAssembly(new Reconciliation("test-trigger", KafkaCluster.TYPE, NAMESPACE, CLUSTER_NAME), ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.assertTrue(ar.succeeded());
             context.assertEquals(newScale,

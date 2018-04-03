@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.openshift.api.model.BuildConfig;
 import io.fabric8.openshift.api.model.DeploymentConfig;
 import io.fabric8.openshift.api.model.ImageStream;
+import io.strimzi.controller.cluster.Reconciliation;
 import io.strimzi.controller.cluster.ResourceUtils;
 import io.strimzi.controller.cluster.operator.resource.BuildConfigOperator;
 import io.strimzi.controller.cluster.operator.resource.ConfigMapOperator;
@@ -95,7 +96,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromConfigMap(clusterCm);
 
         Async async = context.async();
-        ops.createOrUpdate(clusterCm, createResult -> {
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnectS2ICluster.TYPE, clusterCmNamespace, clusterCmName), clusterCm, createResult -> {
             context.assertTrue(createResult.succeeded());
 
             // Vertify service
@@ -191,7 +192,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
                 mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps);
 
         Async async = context.async();
-        ops.createOrUpdate(clusterCm, createResult -> {
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnectS2ICluster.TYPE, clusterCmNamespace, clusterCmName), clusterCm, createResult -> {
             context.assertTrue(createResult.succeeded());
 
             // Vertify service
@@ -274,7 +275,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
                 mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps);
 
         Async async = context.async();
-        ops.createOrUpdate(clusterCm, createResult -> {
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnectS2ICluster.TYPE, clusterCmNamespace, clusterCmName), clusterCm, createResult -> {
             context.assertTrue(createResult.succeeded());
 
             KafkaConnectS2ICluster compareTo = KafkaConnectS2ICluster.fromConfigMap(clusterCm);
@@ -374,7 +375,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
                 mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps);
 
         Async async = context.async();
-        ops.createOrUpdate(clusterCm, createResult -> {
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnectS2ICluster.TYPE, clusterCmNamespace, clusterCmName), clusterCm, createResult -> {
             context.assertFalse(createResult.succeeded());
 
             async.complete();
@@ -424,7 +425,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
                 mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps);
 
         Async async = context.async();
-        ops.createOrUpdate(clusterCm, createResult -> {
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnectS2ICluster.TYPE, clusterCmNamespace, clusterCmName), clusterCm, createResult -> {
             context.assertTrue(createResult.succeeded());
 
             verify(mockDcOps).scaleUp(clusterCmNamespace, connect.getName(), scaleTo);
@@ -476,7 +477,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
                 mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps);
 
         Async async = context.async();
-        ops.createOrUpdate(clusterCm, createResult -> {
+        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnectS2ICluster.TYPE, clusterCmNamespace, clusterCmName), clusterCm, createResult -> {
             context.assertTrue(createResult.succeeded());
 
             // Verify ScaleDown
@@ -522,7 +523,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
                 mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps);
 
         Async async = context.async();
-        ops.delete(clusterCmNamespace, clusterCmName, createResult -> {
+        ops.delete(new Reconciliation("test-trigger", KafkaConnectS2ICluster.TYPE, clusterCmNamespace, clusterCmName), createResult -> {
             context.assertTrue(createResult.succeeded());
 
             // Verify service
@@ -598,21 +599,21 @@ public class KafkaConnectS2IAssemblyOperatorTest {
                 mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps) {
 
             @Override
-            public void createOrUpdate(ConfigMap assemblyCm, Handler h) {
+            public void createOrUpdate(Reconciliation reconciliation, ConfigMap assemblyCm, Handler h) {
                 createdOrUpdated.add(assemblyCm.getMetadata().getName());
                 async.countDown();
                 h.handle(Future.succeededFuture());
             }
             @Override
-            public void delete(String namespace, String assemblyName, Handler h) {
-                deleted.add(assemblyName);
+            public void delete(Reconciliation reconciliation, Handler h) {
+                deleted.add(reconciliation.assemblyName());
                 async.countDown();
                 h.handle(Future.succeededFuture());
             }
         };
 
         // Now try to reconcile all the Kafka Connect S2I clusters
-        ops.reconcileAll(clusterCmNamespace, Labels.EMPTY);
+        ops.reconcileAll("test", clusterCmNamespace, Labels.EMPTY);
 
         async.await();
 

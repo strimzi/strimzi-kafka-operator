@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
+import io.strimzi.controller.cluster.Reconciliation;
 import io.strimzi.controller.cluster.operator.resource.ConfigMapOperator;
 import io.strimzi.controller.cluster.operator.resource.DeploymentOperator;
 import io.strimzi.controller.cluster.operator.resource.KafkaSetOperator;
@@ -83,18 +84,18 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
     }
 
     @Override
-    public void createOrUpdate(ConfigMap assemblyCm, Handler<AsyncResult<Void>> handler) {
+    public void createOrUpdate(Reconciliation reconciliation, ConfigMap assemblyCm, Handler<AsyncResult<Void>> handler) {
         Future<Void> f = Future.<Void>future().setHandler(handler);
-        createOrUpdateZk(assemblyCm)
-            .compose(i -> createOrUpdateKafka(assemblyCm))
-            .compose(i -> createOrUpdateTopicController(assemblyCm))
+        createOrUpdateZk(reconciliation, assemblyCm)
+            .compose(i -> createOrUpdateKafka(reconciliation, assemblyCm))
+            .compose(i -> createOrUpdateTopicController(reconciliation, assemblyCm))
             .compose(ar -> f.complete(), f);
     }
 
-    private final Future<Void> createOrUpdateKafka(ConfigMap assemblyCm) {
+    private final Future<Void> createOrUpdateKafka(Reconciliation reconciliation, ConfigMap assemblyCm) {
         String namespace = assemblyCm.getMetadata().getNamespace();
         String name = assemblyCm.getMetadata().getName();
-        log.info("create/update kafka {}/{}", namespace, name);
+        log.info("{}: create/update kafka {}", reconciliation, name);
         KafkaCluster kafka = KafkaCluster.fromConfigMap(assemblyCm);
         Service service = kafka.generateService();
         Service headlessService = kafka.generateHeadlessService();
@@ -123,8 +124,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
         return chainFuture;
     };
 
-    private final Future<CompositeFuture> deleteKafka(String namespace, String name) {
-        log.info("delete kafka {}/{}", namespace, name);
+    private final Future<CompositeFuture> deleteKafka(Reconciliation reconciliation) {
+        String namespace = reconciliation.namespace();
+        String name = reconciliation.assemblyName();
+        log.info("{}: delete kafka {}", reconciliation, name);
         StatefulSet ss = kafkaSetOperations.get(namespace, KafkaCluster.kafkaClusterName(name));
 
         final KafkaCluster kafka = ss == null ? null : KafkaCluster.fromAssembly(ss, namespace, name);
@@ -151,10 +154,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
         return CompositeFuture.join(result);
     };
 
-    private final Future<Void> createOrUpdateZk(ConfigMap assemblyCm) {
+    private final Future<Void> createOrUpdateZk(Reconciliation reconciliation, ConfigMap assemblyCm) {
         String namespace = assemblyCm.getMetadata().getNamespace();
         String name = assemblyCm.getMetadata().getName();
-        log.info("create/update zookeeper {}/{}", namespace, name);
+        log.info("{}: create/update zookeeper {}", reconciliation, name);
         ZookeeperCluster zk = ZookeeperCluster.fromConfigMap(assemblyCm);
         Service service = zk.generateService();
         Service headlessService = zk.generateHeadlessService();
@@ -180,8 +183,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
         return chainFuture;
     };
 
-    private final Future<CompositeFuture> deleteZk(String namespace, String name) {
-        log.info("delete zookeeper {}/{}", namespace, name);
+    private final Future<CompositeFuture> deleteZk(Reconciliation reconciliation) {
+        String namespace = reconciliation.namespace();
+        String name = reconciliation.assemblyName();
+        log.info("{}: delete zookeeper {}", reconciliation, name);
         StatefulSet ss = zkSetOperations.get(namespace, ZookeeperCluster.zookeeperClusterName(name));
         ZookeeperCluster zk = ss == null ? null : ZookeeperCluster.fromAssembly(ss, namespace, name);
         // TODO If the SS (and the CM) has gone, how do we know whether to delete the claims?
@@ -206,27 +211,31 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
         return CompositeFuture.join(result);
     };
 
-    private final Future<ReconcileResult<Void>> createOrUpdateTopicController(ConfigMap assemblyCm) {
+    private final Future<ReconcileResult<Void>> createOrUpdateTopicController(Reconciliation reconciliation, ConfigMap assemblyCm) {
         String namespace = assemblyCm.getMetadata().getNamespace();
         String name = assemblyCm.getMetadata().getName();
-        log.info("create/update topic controller {}/{}", namespace, name);
+        log.info("{}: create/update topic controller {}", reconciliation, name);
         TopicController topicController = TopicController.fromConfigMap(assemblyCm);
         Deployment deployment = topicController != null ? topicController.generateDeployment() : null;
         return deploymentOperations.reconcile(namespace, topicControllerName(name), deployment);
     };
 
-    private final Future<ReconcileResult<Void>> deleteTopicController(String namespace, String name) {
-        log.info("delete topic controller {}/{}", namespace, name);
+    private final Future<ReconcileResult<Void>> deleteTopicController(Reconciliation reconciliation) {
+        String namespace = reconciliation.namespace();
+        String name = reconciliation.assemblyName();
+        log.info("{}: delete topic controller {}", reconciliation, name);
         return deploymentOperations.reconcile(namespace, topicControllerName(name), null);
         // TODO wait for pod to disappear
     };
 
     @Override
-    protected void delete(String namespace, String assemblyName, Handler<AsyncResult<Void>> handler) {
+    protected void delete(Reconciliation reconciliation, Handler<AsyncResult<Void>> handler) {
+        String namespace = reconciliation.namespace();
+        String assemblyName = reconciliation.assemblyName();
         Future<Void> f = Future.<Void>future().setHandler(handler);
-        deleteTopicController(namespace, assemblyName)
-                .compose(i -> deleteKafka(namespace, assemblyName))
-                .compose(i -> deleteZk(namespace, assemblyName))
+        deleteTopicController(reconciliation)
+                .compose(i -> deleteKafka(reconciliation))
+                .compose(i -> deleteZk(reconciliation))
                 .compose(ar -> f.complete(), f);
     }
 

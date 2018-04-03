@@ -6,6 +6,7 @@ package io.strimzi.controller.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.strimzi.controller.cluster.Reconciliation;
 import io.strimzi.controller.cluster.model.KafkaConnectCluster;
 import io.strimzi.controller.cluster.model.Labels;
 import io.strimzi.controller.cluster.operator.resource.ConfigMapOperator;
@@ -52,11 +53,12 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator {
     }
 
     @Override
-    protected void createOrUpdate(ConfigMap assemblyCm, Handler<AsyncResult<Void>> handler) {
-        String namespace = assemblyCm.getMetadata().getNamespace();
-        String name = assemblyCm.getMetadata().getName();
+    protected void createOrUpdate(Reconciliation reconciliation, ConfigMap assemblyCm, Handler<AsyncResult<Void>> handler) {
+
+        String namespace = reconciliation.namespace();
+        String name = reconciliation.assemblyName();
         KafkaConnectCluster connect = KafkaConnectCluster.fromConfigMap(assemblyCm);
-        log.info("Updating Kafka Connect cluster {} in namespace {}", name, namespace);
+        log.info("{}: Updating Kafka Connect cluster", reconciliation, name, namespace);
         Future<Void> chainFuture = Future.future();
         deploymentOperations.scaleDown(namespace, connect.getName(), connect.getReplicas())
                 .compose(scale -> serviceOperations.reconcile(namespace, connect.getName(), connect.generateService()))
@@ -67,7 +69,9 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator {
     }
 
     @Override
-    protected void delete(String namespace, String assemblyName, Handler<AsyncResult<Void>> handler) {
+    protected void delete(Reconciliation reconciliation, Handler<AsyncResult<Void>> handler) {
+        String namespace = reconciliation.namespace();
+        String assemblyName = reconciliation.assemblyName();
         String name = KafkaConnectCluster.kafkaConnectClusterName(assemblyName);
         CompositeFuture.join(serviceOperations.reconcile(namespace, name, null),
             deploymentOperations.reconcile(namespace, name, null))
