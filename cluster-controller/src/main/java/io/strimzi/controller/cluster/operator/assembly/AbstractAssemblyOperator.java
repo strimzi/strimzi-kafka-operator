@@ -104,7 +104,7 @@ public abstract class AbstractAssemblyOperator {
      * Reconciliation works by getting the assembly ConfigMap in the given namespace with the given assemblyName and
      * comparing with the corresponding {@linkplain #getResources(String, Labels) resource}.
      * <ul>
-     * <li>An assembly will be {@linkplain #createOrUpdate(ConfigMap, Handler) created or updated} if ConfigMap is without same-named resources</li>
+     * <li>An assembly will be {@linkplain #createOrUpdate(Reconciliation, ConfigMap, Handler) created or updated} if ConfigMap is without same-named resources</li>
      * <li>An assembly will be {@linkplain #delete(Reconciliation, Handler) deleted} if resources without same-named ConfigMap</li>
      * </ul>
      */
@@ -152,7 +152,7 @@ public abstract class AbstractAssemblyOperator {
      * Reconciliation works by getting the assembly ConfigMaps in the given namespace with the given selector and
      * comparing with the corresponding {@linkplain #getResources(String, Labels) resource}.
      * <ul>
-     * <li>An assembly will be {@linkplain #createOrUpdate(ConfigMap, Handler) created} for all ConfigMaps without same-named resources</li>
+     * <li>An assembly will be {@linkplain #createOrUpdate(Reconciliation, ConfigMap, Handler) created} for all ConfigMaps without same-named resources</li>
      * <li>An assembly will be {@linkplain #delete(Reconciliation, Handler) deleted} for all resources without same-named ConfigMaps</li>
      * </ul>
      * @param namespace The namespace
@@ -164,11 +164,13 @@ public abstract class AbstractAssemblyOperator {
         // get ConfigMaps with kind=cluster&type=kafka (or connect, or connect-s2i) for the corresponding cluster type
         List<ConfigMap> cms = configMapOperations.list(namespace, selectorWithCluster);
         Set<String> cmsNames = cms.stream().map(cm -> cm.getMetadata().getName()).collect(Collectors.toSet());
+        log.debug("reconcileAll({}, {}): ConfigMaps with labels {}: {}", assemblyType, trigger, selectorWithCluster, cmsNames);
 
         // get resources with kind=cluster&type=kafka (or connect, or connect-s2i)
         List<? extends HasMetadata> resources = getResources(namespace, selectorWithCluster);
         // now extract the cluster name from those
         Set<String> resourceNames = resources.stream().map(Labels::cluster).collect(Collectors.toSet());
+        log.debug("reconcileAll({}, {}): Other resources with labels {}: {}", assemblyType, trigger, selectorWithCluster, resourceNames);
 
         cmsNames.addAll(resourceNames);
 

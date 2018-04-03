@@ -20,21 +20,7 @@ public class StatefulSetDiff {
 
     private static final Logger log = LoggerFactory.getLogger(StatefulSetDiff.class.getName());
 
-    private final Set<String> paths = new HashSet<>();
-
-    public StatefulSetDiff(StatefulSet current, StatefulSet updated) {
-        JsonNode diff = JsonDiff.asJson(patchMapper().valueToTree(current), patchMapper().valueToTree(updated));
-        for (JsonNode d : diff) {
-            String pathValue = d.get("path").asText();
-            paths.add(pathValue);
-        }
-    }
-
-    public boolean isEmpty() {
-        return paths.isEmpty();
-    }
-
-    private boolean containsPathOrChild(Set<String> paths, String path) {
+    private static boolean containsPathOrChild(Iterable<String> paths, String path) {
         for (String pathValue : paths) {
             if (pathValue.equals(path)
                     || pathValue.startsWith(path + "/")) {
@@ -44,24 +30,49 @@ public class StatefulSetDiff {
         return false;
     }
 
+    private final boolean changesVolumeClaimTemplate;
+    private final boolean isEmpty;
+    private final boolean changesSpecTemplateSpec;
+    private final boolean changesLabels;
+    private final boolean changesSpecReplicas;
+
+    public StatefulSetDiff(StatefulSet current, StatefulSet updated) {
+        JsonNode diff = JsonDiff.asJson(patchMapper().valueToTree(current), patchMapper().valueToTree(updated));
+        Set<String> paths = new HashSet<>();
+        for (JsonNode d : diff) {
+            String pathValue = d.get("path").asText();
+            log.debug("StatefulSet {}/{} differs at path {}", current.getMetadata().getNamespace(), current.getMetadata().getName(), pathValue);
+            paths.add(pathValue);
+        }
+        isEmpty = paths.isEmpty();
+        changesVolumeClaimTemplate = containsPathOrChild(paths, "/spec/volumeClaimTemplates");
+        // Change changes to /spec/template/spec, except to imagePullPolicy, which gets changed
+        // by k8s
+        changesSpecTemplateSpec = containsPathOrChild(paths.stream().filter(path ->
+                        !path.matches("/spec/template/spec/containers/[0-9]+/imagePullPolicy"))
+                        .collect(Collectors.toSet()),
+                "/spec/template/spec");
+        changesLabels = containsPathOrChild(paths, "/metadata/labels");
+        changesSpecReplicas = containsPathOrChild(paths, "/spec/replicas");
+    }
+
+    public boolean isEmpty() {
+        return isEmpty;
+    }
+
     public boolean changesVolumeClaimTemplates() {
-        return containsPathOrChild(paths, "/spec/volumeClaimTemplates");
+        return changesVolumeClaimTemplate;
     }
 
     public boolean changesSpecTemplateSpec() {
-        // Change changes to /spec/template/spec, except to imagePullPolicy, which gets changed
-        // the k8s
-        return containsPathOrChild(paths.stream().filter(path ->
-            !path.matches("/spec/template/spec/containers/[0-9]+/imagePullPolicy"))
-                .collect(Collectors.toSet()),
-            "/spec/template/spec");
+        return changesSpecTemplateSpec;
     }
 
     public boolean changesLabels() {
-        return containsPathOrChild(paths, "/metadata/labels");
+        return changesLabels;
     }
 
     public boolean changesSpecReplicas() {
-        return containsPathOrChild(paths, "/spec/replicas");
+        return changesSpecReplicas;
     }
 }
