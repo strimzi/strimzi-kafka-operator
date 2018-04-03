@@ -318,6 +318,12 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                             String value = envVar.get("value").textValue();
                             ((ObjectNode) envVar).put("value", changeOrgAndTag(value, dockerOrg, dockerTag));
                         }
+                        // Updates default values of env variables
+                        for (EnvVariables envVariable : cc.envVariables()) {
+                            if (varName.equals(envVariable.key())) {
+                                ((ObjectNode) envVar).put("value", envVariable.value());
+                            }
+                        }
                     }
                 }
             })).collect(Collectors.toList());
