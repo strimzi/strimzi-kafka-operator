@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
@@ -61,7 +60,6 @@ public class StatefulSetDiff {
     public StatefulSetDiff(StatefulSet current, StatefulSet updated) {
         JsonNode diff = JsonDiff.asJson(patchMapper().valueToTree(current), patchMapper().valueToTree(updated));
         Set<String> paths = new HashSet<>();
-        new TreeSet().ceiling()
         for (JsonNode d : diff) {
             String pathValue = d.get("path").asText();
             if (ignorablePaths.contains(pathValue)) {
