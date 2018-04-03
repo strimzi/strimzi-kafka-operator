@@ -52,6 +52,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptySet;
@@ -381,14 +382,16 @@ public class MockKube {
             MixedOperation<CM, CML, DCM, R> mixed = mock(MixedOperation.class);
 
             when(mixed.inNamespace(any())).thenReturn(mixed);
-            when(mixed.list()).thenAnswer(i -> {
-                KubernetesResourceList<CM> l = mock(listClass);
-                Collection<CM> values = db.values().stream().map(resource -> copyResource(resource)).collect(Collectors.toList());
-                when(l.getItems()).thenAnswer(i3 -> {
-                    LOGGER.debug("{} list -> {}", resourceTypeClass.getSimpleName(), values);
-                    return values;
-                });
-                return l;
+            when(mixed.list()).thenAnswer(i -> mockList(p -> true));
+            when(mixed.withLabels(any())).thenAnswer(i -> {
+                MixedOperation<CM, CML, DCM, R> mixedWithLabels = mock(MixedOperation.class);
+                Map<String, String> labels = i.getArgument(0);
+                when(mixedWithLabels.list()).thenAnswer(i2 -> mockList(p -> {
+                    Map<String, String> m = new HashMap(p.getMetadata().getLabels());
+                    m.keySet().retainAll(labels.keySet());
+                    return labels.equals(m);
+                }));
+                return mixedWithLabels;
             });
             when(mixed.withName(any())).thenAnswer(invocation -> {
                 String resourceName = invocation.getArgument(0);
@@ -397,6 +400,16 @@ public class MockKube {
                 return resource;
             });
             return mixed;
+        }
+
+        private KubernetesResourceList<CM> mockList(Predicate<? super CM> predicate) {
+            KubernetesResourceList<CM> l = mock(listClass);
+            Collection<CM> values = db.values().stream().filter(predicate).map(resource -> copyResource(resource)).collect(Collectors.toList());
+            when(l.getItems()).thenAnswer(i3 -> {
+                LOGGER.debug("{} list -> {}", resourceTypeClass.getSimpleName(), values);
+                return values;
+            });
+            return l;
         }
 
         /**

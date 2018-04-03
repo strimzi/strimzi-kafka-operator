@@ -240,10 +240,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
     @Override
     protected List<HasMetadata> getResources(String namespace, Labels selector) {
         List<HasMetadata> result = new ArrayList<>();
-        result.addAll(kafkaSetOperations.list(namespace, selector));
-        result.addAll(zkSetOperations.list(namespace, selector));
-        result.addAll(deploymentOperations.list(namespace, selector));
-        result.addAll(serviceOperations.list(namespace, selector));
+        result.addAll(kafkaSetOperations.list(namespace, Labels.forType(KafkaCluster.TYPE)));
+        result.addAll(zkSetOperations.list(namespace, Labels.forType(KafkaCluster.TYPE)));
+        result.addAll(deploymentOperations.list(namespace, Labels.forType(KafkaCluster.TYPE)));
+        result.addAll(serviceOperations.list(namespace, Labels.forType(KafkaCluster.TYPE)));
         // TODO remove the cluster cm! result.addAll(configMapOperations.list(namespace, selector));
         return result;
     }

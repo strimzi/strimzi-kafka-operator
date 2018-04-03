@@ -105,10 +105,10 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator {
     @Override
     protected List<HasMetadata> getResources(String namespace, Labels selector) {
         List<HasMetadata> result = new ArrayList<>();
-        result.addAll(serviceOperations.list(namespace, selector));
-        result.addAll(deploymentConfigOperations.list(namespace, selector));
-        result.addAll(imagesStreamOperations.list(namespace, selector));
-        result.addAll(buildConfigOperations.list(namespace, selector));
+        result.addAll(serviceOperations.list(namespace, Labels.forType(KafkaConnectS2ICluster.TYPE)));
+        result.addAll(deploymentConfigOperations.list(namespace, Labels.forType(KafkaConnectS2ICluster.TYPE)));
+        result.addAll(imagesStreamOperations.list(namespace, Labels.forType(KafkaConnectS2ICluster.TYPE)));
+        result.addAll(buildConfigOperations.list(namespace, Labels.forType(KafkaConnectS2ICluster.TYPE)));
         return result;
     }
 
