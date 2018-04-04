@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
 import static java.util.Arrays.asList;
@@ -73,10 +72,7 @@ public class StatefulSetDiff {
         changesVolumeClaimTemplate = containsPathOrChild(paths, "/spec/volumeClaimTemplates");
         // Change changes to /spec/template/spec, except to imagePullPolicy, which gets changed
         // by k8s
-        changesSpecTemplateSpec = containsPathOrChild(paths.stream().filter(path ->
-                        !path.matches("/spec/template/spec/containers/[0-9]+/imagePullPolicy"))
-                        .collect(Collectors.toSet()),
-                "/spec/template/spec");
+        changesSpecTemplateSpec = containsPathOrChild(paths, "/spec/template/spec");
         changesLabels = containsPathOrChild(paths, "/metadata/labels");
         changesSpecReplicas = containsPathOrChild(paths, "/spec/replicas");
     }
