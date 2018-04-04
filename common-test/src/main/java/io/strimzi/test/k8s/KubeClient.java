@@ -37,6 +37,9 @@ public interface KubeClient<K extends KubeClient<K>> {
 
     String namespace(String namespace);
 
+    /** Returns namespace for cluster */
+    String namespace();
+
     boolean clientAvailable();
 
     /** Creates the resources in the given files. */
