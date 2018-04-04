@@ -13,13 +13,7 @@
               files="io[/\\]strimzi[/\\]controller[/\\]cluster[/\\]ResourceUtils.java"/>
 
     <suppress checks="MethodLength|NPathComplexity|CyclomaticComplexity"
-              files="io[/\\]strimzi[/\\]controller[/\\]cluster[/\\]operations[/\\]cluster[/\\]KafkaClusterOperationsTest.java"/>
-
-    <suppress checks="CyclomaticComplexity|NPathComplexity"
-              files="io[/\\]strimzi[/\\]controller[/\\]cluster[/\\]resources[/\\].*Cluster.java"/>
-
-    <suppress checks="BooleanExpressionComplexity"
-              files="io[/\\]strimzi[/\\]controller[/\\]cluster[/\\]resources[/\\]KafkaConnect(S2I)?Cluster.java"/>
+              files="io[/\\]strimzi[/\\]controller[/\\]cluster[/\\]operator[/\\]assembly[/\\]KafkaAssemblyOperatorTest.java"/>
 
     <!-- topic controller -->
     <suppress checks="NPathComplexity|CyclomaticComplexity"

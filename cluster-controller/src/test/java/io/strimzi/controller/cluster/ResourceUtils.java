@@ -6,12 +6,13 @@ package io.strimzi.controller.cluster;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
-import io.strimzi.controller.cluster.resources.KafkaCluster;
-import io.strimzi.controller.cluster.resources.KafkaConnectCluster;
-import io.strimzi.controller.cluster.resources.KafkaConnectS2ICluster;
-import io.strimzi.controller.cluster.resources.Labels;
-import io.strimzi.controller.cluster.resources.TopicController;
-import io.strimzi.controller.cluster.resources.ZookeeperCluster;
+import io.strimzi.controller.cluster.model.AssemblyType;
+import io.strimzi.controller.cluster.model.KafkaCluster;
+import io.strimzi.controller.cluster.model.KafkaConnectCluster;
+import io.strimzi.controller.cluster.model.KafkaConnectS2ICluster;
+import io.strimzi.controller.cluster.model.Labels;
+import io.strimzi.controller.cluster.model.TopicController;
+import io.strimzi.controller.cluster.model.ZookeeperCluster;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -84,7 +85,7 @@ public class ResourceUtils {
                 .withNewMetadata()
                     .withName(clusterCmName)
                     .withNamespace(clusterCmNamespace)
-                    .withLabels(Labels.userLabels(singletonMap("my-user-label", "cromulent")).withKind("cluster").withType("kafka").toMap())
+                    .withLabels(Labels.userLabels(singletonMap("my-user-label", "cromulent")).withKind("cluster").withType(AssemblyType.KAFKA).toMap())
                 .endMetadata()
                 .withData(cmData)
                 .build();

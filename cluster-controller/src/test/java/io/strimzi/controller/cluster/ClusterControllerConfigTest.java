@@ -4,7 +4,7 @@
  */
 package io.strimzi.controller.cluster;
 
-import io.strimzi.controller.cluster.resources.Labels;
+import io.strimzi.controller.cluster.model.Labels;
 import org.junit.Test;
 
 import java.util.Collections;

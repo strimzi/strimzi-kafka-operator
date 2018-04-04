@@ -10,14 +10,12 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.strimzi.controller.cluster.operations.cluster.AbstractClusterOperations;
-import io.strimzi.controller.cluster.operations.cluster.KafkaClusterOperations;
-import io.strimzi.controller.cluster.operations.cluster.KafkaConnectClusterOperations;
-import io.strimzi.controller.cluster.operations.cluster.KafkaConnectS2IClusterOperations;
-import io.strimzi.controller.cluster.resources.KafkaCluster;
-import io.strimzi.controller.cluster.resources.KafkaConnectCluster;
-import io.strimzi.controller.cluster.resources.KafkaConnectS2ICluster;
-import io.strimzi.controller.cluster.resources.Labels;
+import io.strimzi.controller.cluster.model.AssemblyType;
+import io.strimzi.controller.cluster.model.Labels;
+import io.strimzi.controller.cluster.operator.assembly.AbstractAssemblyOperator;
+import io.strimzi.controller.cluster.operator.assembly.KafkaAssemblyOperator;
+import io.strimzi.controller.cluster.operator.assembly.KafkaConnectAssemblyOperator;
+import io.strimzi.controller.cluster.operator.assembly.KafkaConnectS2IAssemblyOperator;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -27,6 +25,11 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ * An "operator" for managing assemblies of various types <em>in a particular namespace</em>.
+ * The Cluster Controller's multiple namespace support is achieved by deploying multiple
+ * {@link ClusterController}'s in Vertx.
+ */
 public class ClusterController extends AbstractVerticle {
 
     private static final Logger log = LoggerFactory.getLogger(ClusterController.class.getName());
@@ -44,25 +47,25 @@ public class ClusterController extends AbstractVerticle {
     private Watch configMapWatch;
 
     private long reconcileTimer;
-    private final KafkaClusterOperations kafkaClusterOperations;
-    private final KafkaConnectClusterOperations kafkaConnectClusterOperations;
-    private final KafkaConnectS2IClusterOperations kafkaConnectS2IClusterOperations;
+    private final KafkaAssemblyOperator kafkaAssemblyOperator;
+    private final KafkaConnectAssemblyOperator kafkaConnectAssemblyOperator;
+    private final KafkaConnectS2IAssemblyOperator kafkaConnectS2IAssemblyOperator;
     private boolean stopping;
 
     public ClusterController(String namespace,
                              long reconciliationInterval,
                              KubernetesClient client,
-                             KafkaClusterOperations kafkaClusterOperations,
-                             KafkaConnectClusterOperations kafkaConnectClusterOperations,
-                             KafkaConnectS2IClusterOperations kafkaConnectS2IClusterOperations) {
+                             KafkaAssemblyOperator kafkaAssemblyOperator,
+                             KafkaConnectAssemblyOperator kafkaConnectAssemblyOperator,
+                             KafkaConnectS2IAssemblyOperator kafkaConnectS2IAssemblyOperator) {
         log.info("Creating ClusterController for namespace {}", namespace);
         this.namespace = namespace;
         this.selector = Labels.forKind("cluster");
         this.reconciliationInterval = reconciliationInterval;
         this.client = client;
-        this.kafkaClusterOperations = kafkaClusterOperations;
-        this.kafkaConnectClusterOperations = kafkaConnectClusterOperations;
-        this.kafkaConnectS2IClusterOperations = kafkaConnectS2IClusterOperations;
+        this.kafkaAssemblyOperator = kafkaAssemblyOperator;
+        this.kafkaConnectAssemblyOperator = kafkaConnectAssemblyOperator;
+        this.kafkaConnectS2IAssemblyOperator = kafkaConnectS2IAssemblyOperator;
     }
 
     @Override
@@ -79,7 +82,7 @@ public class ClusterController extends AbstractVerticle {
                 log.info("Setting up periodical reconciliation for namespace {}", namespace);
                 this.reconcileTimer = vertx.setPeriodic(this.reconciliationInterval, res2 -> {
                     log.info("Triggering periodic reconciliation for namespace {}...", namespace);
-                    reconcileAllClusters();
+                    reconcileAll("timer");
                 });
 
                 log.info("ClusterController running for namespace {}", namespace);
@@ -113,42 +116,58 @@ public class ClusterController extends AbstractVerticle {
                     @Override
                     public void eventReceived(Action action, ConfigMap cm) {
                         Labels labels = Labels.fromResource(cm);
-                        String type = labels.type();
+                        AssemblyType type;
+                        try {
+                            type = labels.type();
+                        } catch (IllegalArgumentException e) {
+                            log.warn("Unknown {} label {} received in Config Map {} in namespace {}",
+                                    Labels.STRIMZI_TYPE_LABEL,
+                                    cm.getMetadata().getLabels().get(Labels.STRIMZI_TYPE_LABEL),
+                                    cm.getMetadata().getName(), namespace);
+                            return;
+                        }
 
-                        final AbstractClusterOperations<?, ?> cluster;
+                        final AbstractAssemblyOperator cluster;
                         if (type == null) {
                             log.warn("Missing label {} in Config Map {} in namespace {}", Labels.STRIMZI_TYPE_LABEL, cm.getMetadata().getName(), namespace);
                             return;
-                        } else if (type.equals(KafkaCluster.TYPE)) {
-                            cluster = kafkaClusterOperations;
-                        } else if (type.equals(KafkaConnectCluster.TYPE)) {
-                            cluster = kafkaConnectClusterOperations;
-                        } else if (type.equals(KafkaConnectS2ICluster.TYPE)) {
-                            if (kafkaConnectS2IClusterOperations != null)   {
-                                cluster = kafkaConnectS2IClusterOperations;
-                            } else {
-                                log.warn("Cluster type {} cannot be used outside of OpenShift as requested by Config Map {} in namespace {}", type, cm.getMetadata().getName(), namespace);
-                                return;
-                            }
                         } else {
-                            log.warn("Unknown type {} received in Config Map {} in namespace {}", type, cm.getMetadata().getName(), namespace);
-                            return;
+                            switch (type) {
+                                case KAFKA:
+                                    cluster = kafkaAssemblyOperator;
+                                    break;
+                                case CONNECT:
+                                    cluster = kafkaConnectAssemblyOperator;
+                                    break;
+                                case CONNECT_S2I:
+                                    cluster = kafkaConnectS2IAssemblyOperator;
+                                    break;
+                                default:
+                                    return;
+                            }
                         }
                         String name = cm.getMetadata().getName();
                         switch (action) {
                             case ADDED:
                             case DELETED:
                             case MODIFIED:
-                                log.info("ConfigMap {} in namespace {} was {}", name, namespace, action);
-                                cluster.reconcileCluster(namespace, name);
+                                Reconciliation reconciliation = new Reconciliation("watch", type, namespace, name);
+                                log.info("{}: ConfigMap {} in namespace {} was {}", reconciliation, name, namespace, action);
+                                cluster.reconcileAssembly(reconciliation, result -> {
+                                    if (result.succeeded()) {
+                                        log.info("{}: assembly reconciled", reconciliation);
+                                    } else {
+                                        log.error("{}: Failed to reconcile", reconciliation);
+                                    }
+                                });
                                 break;
                             case ERROR:
                                 log.error("Failed ConfigMap {} in namespace{} ", name, namespace);
-                                reconcileAllClusters();
+                                reconcileAll("watch error");
                                 break;
                             default:
                                 log.error("Unknown action: {} in namespace {}", name, namespace);
-                                reconcileAllClusters();
+                                reconcileAll("watch unknown");
                         }
                     }
 
@@ -195,12 +214,12 @@ public class ClusterController extends AbstractVerticle {
     /**
       Periodical reconciliation (in case we lost some event)
      */
-    private void reconcileAllClusters() {
-        kafkaClusterOperations.reconcileAll(namespace, selector);
-        kafkaConnectClusterOperations.reconcileAll(namespace, selector);
+    private void reconcileAll(String trigger) {
+        kafkaAssemblyOperator.reconcileAll(trigger, namespace, selector);
+        kafkaConnectAssemblyOperator.reconcileAll(trigger, namespace, selector);
 
-        if (kafkaConnectS2IClusterOperations != null) {
-            kafkaConnectS2IClusterOperations.reconcileAll(namespace, selector);
+        if (kafkaConnectS2IAssemblyOperator != null) {
+            kafkaConnectS2IAssemblyOperator.reconcileAll(trigger, namespace, selector);
         }
     }
 

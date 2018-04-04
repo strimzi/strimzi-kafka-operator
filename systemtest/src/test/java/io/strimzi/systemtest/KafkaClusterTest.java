@@ -11,11 +11,11 @@ import com.jayway.jsonpath.JsonPath;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.test.ClusterController;
+import io.strimzi.test.CmData;
 import io.strimzi.test.KafkaCluster;
 import io.strimzi.test.Namespace;
 import io.strimzi.test.OpenShiftOnly;
 import io.strimzi.test.Resources;
-import io.strimzi.test.CmData;
 import io.strimzi.test.StrimziRunner;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClient;
@@ -133,7 +133,7 @@ public class KafkaClusterTest {
         final int newBrokerId = newPodId;
         final String newPodName = kafkaPodName(clusterName,  newPodId);
         final String firstPodName = kafkaPodName(clusterName,  0);
-        LOGGER.info("Scaling up to {}", scaleTo);
+        LOGGER.info("Scaling Kafka up to {}", scaleTo);
         replaceCm(clusterName, "kafka-nodes", String.valueOf(initialReplicas + 1));
         kubeClient.waitForStatefulSet(kafkaStatefulSetName(clusterName), initialReplicas + 1);
 
@@ -141,7 +141,7 @@ public class KafkaClusterTest {
         // (execute bash because we want the env vars expanded in the pod)
         String versions = getBrokerApiVersions(newPodName);
         for (int brokerId = 0; brokerId < scaleTo; brokerId++) {
-            assertTrue(versions.indexOf("(id: " + brokerId + " rack: ") >= 0);
+            assertTrue(versions, versions.indexOf("(id: " + brokerId + " rack: ") >= 0);
         }
         // TODO Check for k8s events, logs for errors
 
@@ -195,7 +195,7 @@ public class KafkaClusterTest {
                 zookeeperPodName(clusterName,  newPodIds[1])
         };
         final String firstPodName = zookeeperPodName(clusterName,  0);
-        LOGGER.info("Scaling up to {}", scaleTo);
+        LOGGER.info("Scaling zookeeper up to {}", scaleTo);
         replaceCm(clusterName, "zookeeper-nodes", String.valueOf(scaleTo));
         kubeClient.waitForPod(newPodName[0]);
         kubeClient.waitForPod(newPodName[1]);

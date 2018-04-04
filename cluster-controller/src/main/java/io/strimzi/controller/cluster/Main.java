@@ -8,19 +8,18 @@ import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.strimzi.controller.cluster.operations.cluster.KafkaClusterOperations;
-import io.strimzi.controller.cluster.operations.cluster.KafkaConnectClusterOperations;
-import io.strimzi.controller.cluster.operations.cluster.KafkaConnectS2IClusterOperations;
-import io.strimzi.controller.cluster.operations.resource.BuildConfigOperations;
-import io.strimzi.controller.cluster.operations.resource.ConfigMapOperations;
-import io.strimzi.controller.cluster.operations.resource.DeploymentConfigOperations;
-import io.strimzi.controller.cluster.operations.resource.DeploymentOperations;
-import io.strimzi.controller.cluster.operations.resource.EndpointOperations;
-import io.strimzi.controller.cluster.operations.resource.ImageStreamOperations;
-import io.strimzi.controller.cluster.operations.resource.PodOperations;
-import io.strimzi.controller.cluster.operations.resource.PvcOperations;
-import io.strimzi.controller.cluster.operations.resource.ServiceOperations;
-import io.strimzi.controller.cluster.operations.resource.StatefulSetOperations;
+import io.strimzi.controller.cluster.operator.assembly.KafkaAssemblyOperator;
+import io.strimzi.controller.cluster.operator.assembly.KafkaConnectAssemblyOperator;
+import io.strimzi.controller.cluster.operator.assembly.KafkaConnectS2IAssemblyOperator;
+import io.strimzi.controller.cluster.operator.resource.KafkaSetOperator;
+import io.strimzi.controller.cluster.operator.resource.ZookeeperSetOperator;
+import io.strimzi.controller.cluster.operator.resource.BuildConfigOperator;
+import io.strimzi.controller.cluster.operator.resource.ConfigMapOperator;
+import io.strimzi.controller.cluster.operator.resource.DeploymentConfigOperator;
+import io.strimzi.controller.cluster.operator.resource.DeploymentOperator;
+import io.strimzi.controller.cluster.operator.resource.ImageStreamOperator;
+import io.strimzi.controller.cluster.operator.resource.PvcOperator;
+import io.strimzi.controller.cluster.operator.resource.ServiceOperator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -59,26 +58,25 @@ public class Main {
     static CompositeFuture run(Vertx vertx, KubernetesClient client, boolean isOpenShift, Map<String, String> env) {
         ClusterControllerConfig config = ClusterControllerConfig.fromMap(env);
 
-        ServiceOperations serviceOperations = new ServiceOperations(vertx, client);
-        StatefulSetOperations statefulSetOperations = new StatefulSetOperations(vertx, client);
-        ConfigMapOperations configMapOperations = new ConfigMapOperations(vertx, client);
-        PvcOperations pvcOperations = new PvcOperations(vertx, client);
-        DeploymentOperations deploymentOperations = new DeploymentOperations(vertx, client);
-        PodOperations podOperations = new PodOperations(vertx, client);
-        EndpointOperations endpointOperations = new EndpointOperations(vertx, client);
+        ServiceOperator serviceOperations = new ServiceOperator(vertx, client);
+        ZookeeperSetOperator zookeeperSetOperations = new ZookeeperSetOperator(vertx, client);
+        KafkaSetOperator kafkaSetOperations = new KafkaSetOperator(vertx, client);
+        ConfigMapOperator configMapOperations = new ConfigMapOperator(vertx, client);
+        PvcOperator pvcOperations = new PvcOperator(vertx, client);
+        DeploymentOperator deploymentOperations = new DeploymentOperator(vertx, client);
 
-        KafkaClusterOperations kafkaClusterOperations = new KafkaClusterOperations(vertx, isOpenShift, config.getOperationTimeoutMs(), configMapOperations, serviceOperations, statefulSetOperations, pvcOperations, podOperations, endpointOperations, deploymentOperations);
-        KafkaConnectClusterOperations kafkaConnectClusterOperations = new KafkaConnectClusterOperations(vertx, isOpenShift, configMapOperations, deploymentOperations, serviceOperations);
+        KafkaAssemblyOperator kafkaClusterOperations = new KafkaAssemblyOperator(vertx, isOpenShift, config.getOperationTimeoutMs(), configMapOperations, serviceOperations, zookeeperSetOperations, kafkaSetOperations, pvcOperations, deploymentOperations);
+        KafkaConnectAssemblyOperator kafkaConnectClusterOperations = new KafkaConnectAssemblyOperator(vertx, isOpenShift, configMapOperations, deploymentOperations, serviceOperations);
 
-        DeploymentConfigOperations deploymentConfigOperations = null;
-        ImageStreamOperations imagesStreamOperations = null;
-        BuildConfigOperations buildConfigOperations = null;
-        KafkaConnectS2IClusterOperations kafkaConnectS2IClusterOperations = null;
+        DeploymentConfigOperator deploymentConfigOperations = null;
+        ImageStreamOperator imagesStreamOperations = null;
+        BuildConfigOperator buildConfigOperations = null;
+        KafkaConnectS2IAssemblyOperator kafkaConnectS2IClusterOperations = null;
         if (isOpenShift) {
-            imagesStreamOperations = new ImageStreamOperations(vertx, client.adapt(OpenShiftClient.class));
-            buildConfigOperations = new BuildConfigOperations(vertx, client.adapt(OpenShiftClient.class));
-            deploymentConfigOperations = new DeploymentConfigOperations(vertx, client.adapt(OpenShiftClient.class));
-            kafkaConnectS2IClusterOperations = new KafkaConnectS2IClusterOperations(vertx, isOpenShift,
+            imagesStreamOperations = new ImageStreamOperator(vertx, client.adapt(OpenShiftClient.class));
+            buildConfigOperations = new BuildConfigOperator(vertx, client.adapt(OpenShiftClient.class));
+            deploymentConfigOperations = new DeploymentConfigOperator(vertx, client.adapt(OpenShiftClient.class));
+            kafkaConnectS2IClusterOperations = new KafkaConnectS2IAssemblyOperator(vertx, isOpenShift,
                     configMapOperations, deploymentConfigOperations,
                     serviceOperations, imagesStreamOperations, buildConfigOperations);
         }
