@@ -131,10 +131,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
         StatefulSet ss = kafkaSetOperations.get(namespace, KafkaCluster.kafkaClusterName(name));
 
         final KafkaCluster kafka = ss == null ? null : KafkaCluster.fromAssembly(ss, namespace, name);
-        // TODO If the SS (and the CM) has gone, how do we know whether to delete the claims?
-        // TODO Should we annotate the PVCs?
         boolean deleteClaims = kafka != null && kafka.getStorage().type() == Storage.StorageType.PERSISTENT_CLAIM
-                && kafka.getStorage().isDeleteClaim();
+            && kafka.getStorage().isDeleteClaim();
         List<Future> result = new ArrayList<>(4 + (deleteClaims ? kafka.getReplicas() : 0));
 
         result.add(configMapOperations.reconcile(namespace, KafkaCluster.metricConfigsName(name), null));
@@ -148,8 +146,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
                         kafka.getPersistentVolumeClaimName(i), null));
             }
         }
-
-        // TODO wait for endpoints and pods to disappear
 
         return CompositeFuture.join(result);
     };
@@ -189,8 +185,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
         log.info("{}: delete zookeeper {}", reconciliation, name);
         StatefulSet ss = zkSetOperations.get(namespace, ZookeeperCluster.zookeeperClusterName(name));
         ZookeeperCluster zk = ss == null ? null : ZookeeperCluster.fromAssembly(ss, namespace, name);
-        // TODO If the SS (and the CM) has gone, how do we know whether to delete the claims?
-        // TODO Should we annotate the PVCs?
         boolean deleteClaims = zk != null && zk.getStorage().type() == Storage.StorageType.PERSISTENT_CLAIM
                 && zk.getStorage().isDeleteClaim();
         List<Future> result = new ArrayList<>(4 + (deleteClaims ? zk.getReplicas() : 0));
@@ -205,8 +199,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
                 result.add(pvcOperations.reconcile(namespace, zk.getPersistentVolumeClaimName(i), null));
             }
         }
-
-        // TODO wait for endpoints and pods to disappear
 
         return CompositeFuture.join(result);
     };
@@ -225,7 +217,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
         String name = reconciliation.assemblyName();
         log.info("{}: delete topic controller {}", reconciliation, name);
         return deploymentOperations.reconcile(namespace, topicControllerName(name), null);
-        // TODO wait for pod to disappear
     };
 
     @Override

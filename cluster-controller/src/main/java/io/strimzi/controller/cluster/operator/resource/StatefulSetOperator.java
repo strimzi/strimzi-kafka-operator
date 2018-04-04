@@ -118,7 +118,6 @@ public class StatefulSetOperator<P> extends AbstractScalableResourceOperator<Kub
         Future<Void> deleted = Future.future();
         Future<CompositeFuture> deleteFinished = Future.future();
         Watcher<Pod> watcher = new RollingUpdateWatcher(deleted);
-        // TODO this is blocking!
         Watch watch = podOperations.watch(namespace, podName, watcher);
         // Delete the pod
         log.debug("Roll {}/{}: Waiting for pod {} to be deleted", namespace, name, podName);
@@ -211,7 +210,6 @@ public class StatefulSetOperator<P> extends AbstractScalableResourceOperator<Kub
         Future<ReconcileResult<P>> result = Future.future();
         Future<ReconcileResult<P>> crt = super.internalCreate(namespace, name, desired);
 
-
         long operationTimeoutMs = 60_000L;
 
         // ... then wait for the SS to be ready...
@@ -219,7 +217,6 @@ public class StatefulSetOperator<P> extends AbstractScalableResourceOperator<Kub
         // ... then wait for all the pods to be ready
             .compose(res -> podReadiness(namespace, desired, 1_000, operationTimeoutMs).map(res))
             .compose(res -> result.complete(res), result);
-        // TODO I need to block until things are ready
         return result;
     }
 

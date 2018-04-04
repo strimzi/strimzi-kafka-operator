@@ -175,7 +175,6 @@ public class MockKube {
                         return true;
                     });
 
-                    // TODO make it cope properly with scale down
                     mockPods.inNamespace(any()).withName(any()).watch(new Watcher<Pod>() {
                         @Override
                         public void eventReceived(Action action, Pod resource) {
@@ -186,10 +185,7 @@ public class MockKube {
                                 if (podName.startsWith(resourceName + "-")
                                         && Integer.parseInt(podName.substring(podName.lastIndexOf("-") + 1)) <
                                         statefulSet.getSpec().getReplicas()) {
-                                    //vertx.setTimer(200, timerId -> {
-
                                     mockPods.inNamespace(podNamespace).withName(podName).create(resource);
-                                    //});
                                 }
                             }
                         }
@@ -223,8 +219,6 @@ public class MockKube {
                     } else {
                         ssDb.put(resourceName, copyResource(argument));
                     }
-
-                    // TODO watch
                     return argument;
                 }
             }.build();

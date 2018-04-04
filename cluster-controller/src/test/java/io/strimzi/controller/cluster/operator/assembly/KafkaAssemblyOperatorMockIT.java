@@ -187,10 +187,6 @@ public class KafkaAssemblyOperatorMockIT {
         return result;
     }
 
-    // TODO Test with invalid cluster CMs:
-    // - Test with absent storage key
-    // - Test with storage key lacking a type
-
     private KafkaAssemblyOperator createCluster(TestContext context) {
         ConfigMapOperator cmops = new ConfigMapOperator(vertx, mockClient);
         ServiceOperator svcops = new ServiceOperator(vertx, mockClient);
@@ -367,6 +363,11 @@ public class KafkaAssemblyOperatorMockIT {
     private void deleteClusterWithoutServices(TestContext context, String... services) {
 
         KafkaAssemblyOperator kco = createCluster(context);
+        Set<String> ssNames = mockClient.apps().statefulSets().inNamespace(NAMESPACE).list().getItems().stream().map(r -> r.getMetadata().getName()).collect(Collectors.toSet());
+        Set<String> deploymentNames = mockClient.extensions().deployments().inNamespace(NAMESPACE).list().getItems().stream().map(r -> r.getMetadata().getName()).collect(Collectors.toSet());
+        Set<String> cmNames = new HashSet<>(mockClient.configMaps().inNamespace(NAMESPACE).list().getItems().stream().map(r -> r.getMetadata().getName()).collect(Collectors.toSet()));
+        cmNames.remove(CLUSTER_NAME);
+        Set<String> pvcNames = mockClient.persistentVolumeClaims().inNamespace(NAMESPACE).list().getItems().stream().map(r -> r.getMetadata().getName()).collect(Collectors.toSet());
         for (String service: services) {
             mockClient.services().inNamespace(NAMESPACE).withName(service).delete();
             assertNull("Expected service " + service + " to be not exist",
@@ -383,7 +384,32 @@ public class KafkaAssemblyOperatorMockIT {
                         "Expected service " + service + " to still not exist",
                         mockClient.services().inNamespace(NAMESPACE).withName(service).get());
             }
-            // TODO assert other resources do not exist either
+            for (String ss: ssNames) {
+                assertNull(
+                        "Expected ss " + ss + " to still not exist",
+                        mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(ss).get());
+            }
+            // assert other resources do not exist either
+            for (String r: ssNames) {
+                assertNull(
+                        "Expected r " + r + " to still not exist",
+                        mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(r).get());
+            }
+            for (String r: deploymentNames) {
+                assertNull(
+                        "Expected r " + r + " to still not exist",
+                        mockClient.extensions().deployments().inNamespace(NAMESPACE).withName(r).get());
+            }
+            for (String r: cmNames) {
+                assertNull(
+                        "Expected r " + r + " to still not exist",
+                        mockClient.configMaps().inNamespace(NAMESPACE).withName(r).get());
+            }
+            for (String r: pvcNames) {
+                assertNull(
+                        "Expected r " + r + " to still not exist",
+                        mockClient.persistentVolumeClaims().inNamespace(NAMESPACE).withName(r).get());
+            }
             updateAsync.complete();
         });
     }
