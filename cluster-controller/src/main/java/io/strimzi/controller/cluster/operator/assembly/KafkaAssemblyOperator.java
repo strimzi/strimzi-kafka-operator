@@ -45,10 +45,8 @@ import static io.strimzi.controller.cluster.model.TopicController.topicControlle
  */
 public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
     private static final Logger log = LoggerFactory.getLogger(KafkaAssemblyOperator.class.getName());
-    private static final String CLUSTER_TYPE_ZOOKEEPER = "zookeeper";
     static final String CLUSTER_TYPE_KAFKA = "kafka";
-    private static final String CLUSTER_TYPE_TOPIC_CONTROLLER = "topic-controller";
-
+    
     private final long operationTimeoutMs;
 
     private final ZookeeperSetOperator zkSetOperations;
