@@ -103,7 +103,7 @@ public abstract class AbstractAssemblyOperator {
     /**
      * Reconcile assembly resources in the given namespace having the given {@code assemblyName}.
      * Reconciliation works by getting the assembly ConfigMap in the given namespace with the given assemblyName and
-     * comparing with the corresponding {@linkplain #getResources(String, Labels) resource}.
+     * comparing with the corresponding {@linkplain #getResources(String) resource}.
      * <ul>
      * <li>An assembly will be {@linkplain #createOrUpdate(Reconciliation, ConfigMap, Handler) created or updated} if ConfigMap is without same-named resources</li>
      * <li>An assembly will be {@linkplain #delete(Reconciliation, Handler) deleted} if resources without same-named ConfigMap</li>
@@ -170,7 +170,7 @@ public abstract class AbstractAssemblyOperator {
         log.debug("reconcileAll({}, {}): ConfigMaps with labels {}: {}", assemblyType, trigger, selectorWithCluster, cmsNames);
 
         // get resources with kind=cluster&type=kafka (or connect, or connect-s2i)
-        List<? extends HasMetadata> resources = getResources(namespace, selectorWithCluster);
+        List<? extends HasMetadata> resources = getResources(namespace);
         // now extract the cluster name from those
         Set<String> resourceNames = resources.stream().map(Labels::cluster).collect(Collectors.toSet());
         log.debug("reconcileAll({}, {}): Other resources with labels {}: {}", assemblyType, trigger, selectorWithCluster, resourceNames);
@@ -197,12 +197,10 @@ public abstract class AbstractAssemblyOperator {
     }
 
     /**
-     * Gets the resources in the given namespace and with the given labels
-     * from which an AbstractModel representing the current state of the assembly can be obtained.
+     * Gets all the assembly resources (for all assemblies) in the given namespace.
      * @param namespace The namespace
-     * @param selector The labels
      * @return The matching resources.
      */
-    protected abstract List<HasMetadata> getResources(String namespace, Labels selector);
+    protected abstract List<HasMetadata> getResources(String namespace);
 
 }

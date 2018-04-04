@@ -103,7 +103,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator {
     }
 
     @Override
-    protected List<HasMetadata> getResources(String namespace, Labels selector) {
+    protected List<HasMetadata> getResources(String namespace) {
         List<HasMetadata> result = new ArrayList<>();
         result.addAll(serviceOperations.list(namespace, Labels.forType(KafkaConnectS2ICluster.TYPE)));
         result.addAll(deploymentConfigOperations.list(namespace, Labels.forType(KafkaConnectS2ICluster.TYPE)));
