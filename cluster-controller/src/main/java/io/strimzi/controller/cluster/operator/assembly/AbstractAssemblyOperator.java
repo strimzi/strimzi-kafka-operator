@@ -151,11 +151,13 @@ public abstract class AbstractAssemblyOperator {
     /**
      * Reconcile assembly resources in the given namespace having the given selector.
      * Reconciliation works by getting the assembly ConfigMaps in the given namespace with the given selector and
-     * comparing with the corresponding {@linkplain #getResources(String, Labels) resource}.
+     * comparing with the corresponding {@linkplain #getResources(String) resource}.
      * <ul>
      * <li>An assembly will be {@linkplain #createOrUpdate(Reconciliation, ConfigMap, Handler) created} for all ConfigMaps without same-named resources</li>
      * <li>An assembly will be {@linkplain #delete(Reconciliation, Handler) deleted} for all resources without same-named ConfigMaps</li>
      * </ul>
+     *
+     * @param trigger A description of the triggering event (timer or watch), used for logging
      * @param namespace The namespace
      * @param selector The selector
      */
