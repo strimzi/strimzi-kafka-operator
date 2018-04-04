@@ -12,7 +12,11 @@ function wait_for_minikube {
 
     while [ $i -lt 60 ]
     do
-        kubectl cluster-info &> /dev/null
+        # The role needs to be added because Minikube is not fully prepared for RBAC.
+        # Without adding the cluster-admin rights to the default service account in kube-system
+        # some components would be crashing (such as KubeDNS). This should have no impact on
+        # RBAC for Strimzi during the system tests.
+        kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
         if [ $? -ne 0 ]
         then
             sleep 1
@@ -47,14 +51,8 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
 
     if [ $? -ne 0 ]
     then
-        echo "Minikube failed to start"
+        echo "Minikube failed to start or RBAC could not be properly set up"
         exit 1
-    else
-        # The role needs to be added because Minikube is not fully prepared for RBAC.
-        # Without adding the cluster-admin rights to the default service account in kube-system
-        # some components would be crashing (such as KubeDNS). This should have no impact on
-        # RBAC for Strimzi during the system tests.
-        kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
     fi
 elif [ "$TEST_CLUSTER" = "minishift" ]; then
     #install_kubectl
