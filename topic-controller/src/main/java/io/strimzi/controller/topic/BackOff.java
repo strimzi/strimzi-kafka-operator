@@ -27,9 +27,15 @@ public class BackOff {
     }
 
     public BackOff(long scaleMs, int base, int maxAttempts) {
-        assert scaleMs > 0;
-        assert base > 0;
-        assert maxAttempts > 0;
+        if (scaleMs <= 0) {
+            throw new IllegalArgumentException();
+        }
+        if (base <= 0) {
+            throw new IllegalArgumentException();
+        }
+        if (maxAttempts <= 0) {
+            throw new IllegalArgumentException();
+        }
         this.scaleMs = scaleMs;
         this.base = base;
         this.maxAttempts = maxAttempts;
