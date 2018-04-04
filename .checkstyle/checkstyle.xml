@@ -115,6 +115,10 @@
             <!-- default is 200 -->
             <property name="max" value="500"/>
         </module>
+
+        <module name="IllegalToken">
+            <property name="tokens" value="LITERAL_ASSERT"/>
+        </module>
     </module>
 
     <module name="SuppressionFilter">

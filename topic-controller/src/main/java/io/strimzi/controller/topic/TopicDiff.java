@@ -118,7 +118,9 @@ public class TopicDiff {
         private final String configValue;
 
         public AddedConfigEntry(String configKey, String configValue) {
-            assert configKey != null && configValue != null;
+            if (configKey == null || configValue == null) {
+                throw new IllegalArgumentException();
+            }
             this.configKey = configKey;
             this.configValue = configValue;
         }

@@ -19,7 +19,9 @@ class TopicName {
     private final String name;
 
     public TopicName(String name) {
-        assert name != null && !name.isEmpty();
+        if (name == null || name.isEmpty()) {
+            throw new IllegalArgumentException();
+        }
         // TODO Shame we can't validate a topic name without relying on an internal class
         Topic.validate(name);
         this.name = name;
