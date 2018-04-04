@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.jayway.jsonpath.JsonPath;
+import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.test.ClusterController;
@@ -34,10 +35,25 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import static io.strimzi.systemtest.k8s.Events.Created;
+import static io.strimzi.systemtest.k8s.Events.Failed;
+import static io.strimzi.systemtest.k8s.Events.FailedSync;
+import static io.strimzi.systemtest.k8s.Events.FailedValidation;
+import static io.strimzi.systemtest.k8s.Events.Killing;
+import static io.strimzi.systemtest.k8s.Events.Pulled;
+import static io.strimzi.systemtest.k8s.Events.Pulling;
+import static io.strimzi.systemtest.k8s.Events.Scheduled;
+import static io.strimzi.systemtest.k8s.Events.Started;
+import static io.strimzi.systemtest.k8s.Events.SuccessfulDelete;
+import static io.strimzi.systemtest.k8s.Events.Unhealthy;
+import static io.strimzi.systemtest.matchers.Matchers.hasReasons;
+import static io.strimzi.systemtest.matchers.Matchers.valueOfCmEquals;
 import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.map;
 import static junit.framework.TestCase.assertTrue;
-import static matchers.Matchers.valueOfCmEquals;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
@@ -55,6 +71,7 @@ public class KafkaClusterTest {
     public static KubeClusterResource cluster = new KubeClusterResource();
 
     private KubeClient<?> kubeClient = cluster.client();
+    private KubernetesClient client = new DefaultKubernetesClient();
 
     private static String kafkaStatefulSetName(String clusterName) {
         return clusterName + "-kafka";
@@ -122,7 +139,6 @@ public class KafkaClusterTest {
         LOGGER.info("Running kafkaScaleUpScaleDown {}", clusterName);
 
         //kubeClient.waitForStatefulSet(kafkaStatefulSetName(clusterName), 3);
-        KubernetesClient client = new DefaultKubernetesClient();
 
         final int initialReplicas = client.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaStatefulSetName(clusterName)).get().getStatus().getReplicas();
         assertEquals(3, initialReplicas);
@@ -143,7 +159,13 @@ public class KafkaClusterTest {
         for (int brokerId = 0; brokerId < scaleTo; brokerId++) {
             assertTrue(versions, versions.indexOf("(id: " + brokerId + " rack: ") >= 0);
         }
-        // TODO Check for k8s events, logs for errors
+
+        //Test that the new pod does not have errors or failures in events
+        List<Event> events = getEvents("Pod", newPodName);
+        assertThat(events, hasReasons(Scheduled, Pulling, Pulled, Created, Started));
+        assertThat(events, not(hasReasons(Failed, Unhealthy, FailedSync, FailedValidation)));
+
+        // TODO Check logs for errors
 
         // scale down
         LOGGER.info("Scaling down");
@@ -157,7 +179,13 @@ public class KafkaClusterTest {
 
         assertTrue("Expect the added broker, " + newBrokerId + ",  to no longer be present in output of kafka-broker-api-versions.sh",
                 versions.indexOf("(id: " + newBrokerId + " rack: ") == -1);
-        // TODO Check for k8s events, logs for errors
+
+        //Test that the new broker has event 'Killing'
+        assertThat(getEvents("Pod", newPodName), hasReasons(Killing));
+        //Test that stateful set has event 'SuccessfulDelete'
+        assertThat(getEvents("StatefulSet", kafkaStatefulSetName(clusterName)), hasReasons(SuccessfulDelete));
+
+        // TODO Check logs for errors
     }
 
     private String getBrokerApiVersions(String podName) {
@@ -183,7 +211,6 @@ public class KafkaClusterTest {
         String clusterName = "my-cluster";
         LOGGER.info("Running zookeeperScaleUpScaleDown with cluster {}", clusterName);
         //kubeClient.waitForStatefulSet(zookeeperStatefulSetName(clusterName), 1);
-        KubernetesClient client = new DefaultKubernetesClient();
         final int initialReplicas = client.apps().statefulSets().inNamespace(NAMESPACE).withName(zookeeperStatefulSetName(clusterName)).get().getStatus().getReplicas();
         assertEquals(1, initialReplicas);
 
@@ -205,16 +232,29 @@ public class KafkaClusterTest {
         waitForZkMntr(newPodName[0], Pattern.compile("zk_server_state\\s+(leader|follower)"));
         waitForZkMntr(newPodName[1], Pattern.compile("zk_server_state\\s+(leader|follower)"));
 
-        // TODO Check for k8s events, logs for errors
+        // TODO Check logs for errors
+        //Test that first pod does not have errors or failures in events
+        List<Event> eventsForFirstPod = getEvents("Pod", newPodName[0]);
+        assertThat(eventsForFirstPod, hasReasons(Scheduled, Pulling, Pulled, Created, Started));
+        assertThat(eventsForFirstPod, not(hasReasons(Failed, Unhealthy, FailedSync, FailedValidation)));
+
+        //Test that second pod does not have errors or failures in events
+        List<Event> eventsForSecondPod = getEvents("Pod", newPodName[1]);
+        assertThat(eventsForSecondPod, hasReasons(Scheduled, Pulling, Pulled, Created, Started));
+        assertThat(eventsForSecondPod, not(hasReasons(Failed, Unhealthy, FailedSync, FailedValidation)));
 
         // scale down
         LOGGER.info("Scaling down");
         replaceCm(clusterName, "zookeeper-nodes", String.valueOf(1));
-        kubeClient.waitForResourceDeletion("po", zookeeperPodName(clusterName,  1));
+        kubeClient.waitForResourceDeletion("pod", zookeeperPodName(clusterName,  1));
         // Wait for the one remaining node to enter standalone mode
         waitForZkMntr(firstPodName, Pattern.compile("zk_server_state\\s+standalone"));
 
-        // TODO Check for k8s events, logs for errors
+        //Test that the second pod has event 'Killing'
+        assertThat(getEvents("Pod", newPodName[1]), hasReasons(Killing));
+        //Test that stateful set has event 'SuccessfulDelete'
+        assertThat(getEvents("StatefulSet", zookeeperStatefulSetName(clusterName)), hasReasons(SuccessfulDelete));
+        // TODO Check logs for errors
     }
 
     private void waitForZkMntr(String pod, Pattern pattern) {
@@ -373,4 +413,10 @@ public class KafkaClusterTest {
         return path;
     }
 
+    private List<Event> getEvents(String resourceType, String resourceName) {
+        return client.events().inNamespace(NAMESPACE).list().getItems().stream()
+                .filter(event -> event.getInvolvedObject().getKind().equals(resourceType))
+                .filter(event -> event.getInvolvedObject().getName().equals(resourceName))
+                .collect(Collectors.toList());
+    }
 }
