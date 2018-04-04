@@ -9,13 +9,14 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
-import io.netty.handler.codec.http.HttpResponseStatus;
+
 import io.strimzi.controller.cluster.model.AssemblyType;
 import io.strimzi.controller.cluster.model.Labels;
 import io.strimzi.controller.cluster.operator.assembly.AbstractAssemblyOperator;
 import io.strimzi.controller.cluster.operator.assembly.KafkaAssemblyOperator;
 import io.strimzi.controller.cluster.operator.assembly.KafkaConnectAssemblyOperator;
 import io.strimzi.controller.cluster.operator.assembly.KafkaConnectS2IAssemblyOperator;
+
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -232,9 +233,9 @@ public class ClusterController extends AbstractVerticle {
                 .requestHandler(request -> {
 
                     if (request.path().equals("/healthy")) {
-                        request.response().setStatusCode(HttpResponseStatus.OK.code()).end();
+                        request.response().setStatusCode(200).end();
                     } else if (request.path().equals("/ready")) {
-                        request.response().setStatusCode(HttpResponseStatus.OK.code()).end();
+                        request.response().setStatusCode(200).end();
                     }
                 })
                 .listen(HEALTH_SERVER_PORT);
