@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.controller.cluster.Reconciliation;
+import io.strimzi.controller.cluster.model.AssemblyType;
 import io.strimzi.controller.cluster.operator.resource.ConfigMapOperator;
 import io.strimzi.controller.cluster.operator.resource.DeploymentOperator;
 import io.strimzi.controller.cluster.operator.resource.KafkaSetOperator;
@@ -45,8 +46,7 @@ import static io.strimzi.controller.cluster.model.TopicController.topicControlle
  */
 public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
     private static final Logger log = LoggerFactory.getLogger(KafkaAssemblyOperator.class.getName());
-    static final String CLUSTER_TYPE_KAFKA = "kafka";
-    
+
     private final long operationTimeoutMs;
 
     private final ZookeeperSetOperator zkSetOperations;
@@ -72,7 +72,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
                                  KafkaSetOperator kafkaSetOperations,
                                  PvcOperator pvcOperations,
                                  DeploymentOperator deploymentOperations) {
-        super(vertx, isOpenShift, CLUSTER_TYPE_KAFKA, "Kafka", configMapOperations);
+        super(vertx, isOpenShift, AssemblyType.KAFKA, configMapOperations);
         this.operationTimeoutMs = operationTimeoutMs;
         this.zkSetOperations = zkSetOperations;
         this.serviceOperations = serviceOperations;
@@ -229,10 +229,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
     @Override
     protected List<HasMetadata> getResources(String namespace) {
         List<HasMetadata> result = new ArrayList<>();
-        result.addAll(kafkaSetOperations.list(namespace, Labels.forType(KafkaCluster.TYPE)));
-        result.addAll(zkSetOperations.list(namespace, Labels.forType(KafkaCluster.TYPE)));
-        result.addAll(deploymentOperations.list(namespace, Labels.forType(KafkaCluster.TYPE)));
-        result.addAll(serviceOperations.list(namespace, Labels.forType(KafkaCluster.TYPE)));
+        result.addAll(kafkaSetOperations.list(namespace, Labels.forType(AssemblyType.KAFKA)));
+        result.addAll(zkSetOperations.list(namespace, Labels.forType(AssemblyType.KAFKA)));
+        result.addAll(deploymentOperations.list(namespace, Labels.forType(AssemblyType.KAFKA)));
+        result.addAll(serviceOperations.list(namespace, Labels.forType(AssemblyType.KAFKA)));
+        result.addAll(configMapOperations.list(namespace, Labels.forType(AssemblyType.KAFKA)));
         return result;
     }
 }

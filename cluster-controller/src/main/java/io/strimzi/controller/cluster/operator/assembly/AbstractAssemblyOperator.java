@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.strimzi.controller.cluster.Reconciliation;
+import io.strimzi.controller.cluster.model.AssemblyType;
 import io.strimzi.controller.cluster.model.Labels;
 import io.strimzi.controller.cluster.operator.resource.ConfigMapOperator;
 import io.vertx.core.AsyncResult;
@@ -40,23 +41,18 @@ public abstract class AbstractAssemblyOperator {
 
     protected final Vertx vertx;
     protected final boolean isOpenShift;
-    protected final String assemblyType;
-    protected final String assemblyDescription;
+    protected final AssemblyType assemblyType;
     protected final ConfigMapOperator configMapOperations;
 
     /**
      * @param vertx The Vertx instance
      * @param isOpenShift True iff running on OpenShift
-     * @param assemblyDescription A description of the assembly, for logging. This is a high level description and different from
-     *                           the {@code assemblyType} passed to {@link #getLockName(String, String, String)}
      */
-    protected AbstractAssemblyOperator(Vertx vertx, boolean isOpenShift, String assemblyType,
-                                       String assemblyDescription,
+    protected AbstractAssemblyOperator(Vertx vertx, boolean isOpenShift, AssemblyType assemblyType,
                                        ConfigMapOperator configMapOperations) {
         this.vertx = vertx;
         this.isOpenShift = isOpenShift;
         this.assemblyType = assemblyType;
-        this.assemblyDescription = assemblyDescription;
         this.configMapOperations = configMapOperations;
     }
 
@@ -67,7 +63,7 @@ public abstract class AbstractAssemblyOperator {
      * @param namespace The namespace containing the cluster
      * @param name The name of the cluster
      */
-    protected final String getLockName(String assemblyType, String namespace, String name) {
+    protected final String getLockName(AssemblyType assemblyType, String namespace, String name) {
         return "lock::" + namespace + "::" + assemblyType + "::" + name;
     }
 
@@ -172,7 +168,10 @@ public abstract class AbstractAssemblyOperator {
         // get resources with kind=cluster&type=kafka (or connect, or connect-s2i)
         List<? extends HasMetadata> resources = getResources(namespace);
         // now extract the cluster name from those
-        Set<String> resourceNames = resources.stream().map(Labels::cluster).collect(Collectors.toSet());
+        Set<String> resourceNames = resources.stream()
+                .filter(r -> Labels.kind(r) == null) // exclude Cluster CM, which won't have a cluster label
+                .map(Labels::cluster)
+                .collect(Collectors.toSet());
         log.debug("reconcileAll({}, {}): Other resources with labels {}: {}", assemblyType, trigger, selectorWithCluster, resourceNames);
 
         cmsNames.addAll(resourceNames);
@@ -185,9 +184,9 @@ public abstract class AbstractAssemblyOperator {
             Reconciliation reconciliation = new Reconciliation(trigger, assemblyType, namespace, name);
             reconcileAssembly(reconciliation, result -> {
                 if (result.succeeded()) {
-                    log.info("{}: {} assembly reconciled", reconciliation, assemblyDescription, name);
+                    log.info("{}: Assembly reconciled", reconciliation);
                 } else {
-                    log.error("{}: Failed to reconcile", reconciliation, assemblyDescription, name);
+                    log.error("{}: Failed to reconcile", reconciliation);
                 }
                 latch.countDown();
             });
@@ -198,6 +197,7 @@ public abstract class AbstractAssemblyOperator {
 
     /**
      * Gets all the assembly resources (for all assemblies) in the given namespace.
+     * Assembly CMs may be included in the result.
      * @param namespace The namespace
      * @return The matching resources.
      */

@@ -27,7 +27,6 @@ public class TopicController extends AbstractModel {
      * The default kind of CMs that the Topic Controller will be configured to watch for
      */
     public static final String TOPIC_CM_KIND = "topic";
-    private static final String TYPE = "topic";
 
     private static final String NAME_SUFFIX = "-topic-controller";
 
@@ -81,7 +80,7 @@ public class TopicController extends AbstractModel {
      */
     protected TopicController(String namespace, String cluster, Labels labels) {
 
-        super(namespace, cluster, labels.withType(TopicController.TYPE));
+        super(namespace, cluster, labels.withType(AssemblyType.KAFKA));
         this.name = topicControllerName(cluster);
         this.image = DEFAULT_IMAGE;
         this.replicas = DEFAULT_REPLICAS;

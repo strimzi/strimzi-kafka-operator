@@ -7,6 +7,7 @@ package io.strimzi.controller.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.strimzi.controller.cluster.Reconciliation;
+import io.strimzi.controller.cluster.model.AssemblyType;
 import io.strimzi.controller.cluster.model.KafkaConnectCluster;
 import io.strimzi.controller.cluster.model.Labels;
 import io.strimzi.controller.cluster.operator.resource.ConfigMapOperator;
@@ -32,7 +33,6 @@ import java.util.List;
 public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator {
 
     private static final Logger log = LoggerFactory.getLogger(KafkaConnectAssemblyOperator.class.getName());
-    private static final String CLUSTER_TYPE_CONNECT = "kafka-connect";
     private final ServiceOperator serviceOperations;
     private final DeploymentOperator deploymentOperations;
 
@@ -47,7 +47,7 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator {
                                         ConfigMapOperator configMapOperations,
                                         DeploymentOperator deploymentOperations,
                                         ServiceOperator serviceOperations) {
-        super(vertx, isOpenShift, CLUSTER_TYPE_CONNECT, "Kafka Connect", configMapOperations);
+        super(vertx, isOpenShift, AssemblyType.CONNECT, configMapOperations);
         this.serviceOperations = serviceOperations;
         this.deploymentOperations = deploymentOperations;
     }
@@ -81,8 +81,8 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator {
     @Override
     protected List<HasMetadata> getResources(String namespace) {
         List<HasMetadata> result = new ArrayList<>();
-        result.addAll(serviceOperations.list(namespace, Labels.forType(KafkaConnectCluster.TYPE)));
-        result.addAll(deploymentOperations.list(namespace, Labels.forType(KafkaConnectCluster.TYPE)));
+        result.addAll(serviceOperations.list(namespace, Labels.forType(AssemblyType.CONNECT)));
+        result.addAll(deploymentOperations.list(namespace, Labels.forType(AssemblyType.CONNECT)));
         return result;
     }
 }

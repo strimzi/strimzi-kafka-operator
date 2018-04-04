@@ -6,6 +6,7 @@ package io.strimzi.controller.cluster;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.strimzi.controller.cluster.model.AssemblyType;
 import io.strimzi.controller.cluster.model.KafkaCluster;
 import io.strimzi.controller.cluster.model.KafkaConnectCluster;
 import io.strimzi.controller.cluster.model.KafkaConnectS2ICluster;
@@ -84,7 +85,7 @@ public class ResourceUtils {
                 .withNewMetadata()
                     .withName(clusterCmName)
                     .withNamespace(clusterCmNamespace)
-                    .withLabels(Labels.userLabels(singletonMap("my-user-label", "cromulent")).withKind("cluster").withType("kafka").toMap())
+                    .withLabels(Labels.userLabels(singletonMap("my-user-label", "cromulent")).withKind("cluster").withType(AssemblyType.KAFKA).toMap())
                 .endMetadata()
                 .withData(cmData)
                 .build();

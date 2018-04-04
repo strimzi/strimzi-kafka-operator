@@ -13,6 +13,7 @@ import io.strimzi.controller.cluster.ClusterControllerConfig;
 import io.strimzi.controller.cluster.Reconciliation;
 import io.strimzi.controller.cluster.ResourceUtils;
 import io.strimzi.controller.cluster.model.AbstractModel;
+import io.strimzi.controller.cluster.model.AssemblyType;
 import io.strimzi.controller.cluster.model.KafkaCluster;
 import io.strimzi.controller.cluster.model.Labels;
 import io.strimzi.controller.cluster.model.Storage;
@@ -199,7 +200,7 @@ public class KafkaAssemblyOperatorTest {
 
         // Now try to create a KafkaCluster based on this CM
         Async async = context.async();
-        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaCluster.TYPE, clusterCmNamespace, clusterCmName), clusterCm, createResult -> {
+        ops.createOrUpdate(new Reconciliation("test-trigger", AssemblyType.KAFKA, clusterCmNamespace, clusterCmName), clusterCm, createResult -> {
             if (createResult.failed()) {
                 createResult.cause().printStackTrace();
             }
@@ -319,7 +320,7 @@ public class KafkaAssemblyOperatorTest {
 
         // Now try to delete a KafkaCluster based on this CM
         Async async = context.async();
-        ops.delete(new Reconciliation("test-trigger", KafkaCluster.TYPE, clusterCmNamespace, clusterCmName), createResult -> {
+        ops.delete(new Reconciliation("test-trigger", AssemblyType.KAFKA, clusterCmNamespace, clusterCmName), createResult -> {
             context.assertTrue(createResult.succeeded());
 
             /*Set<String> metricsNames = new HashSet<>();
@@ -588,7 +589,7 @@ public class KafkaAssemblyOperatorTest {
 
         // Now try to update a KafkaCluster based on this CM
         Async async = context.async();
-        ops.createOrUpdate(new Reconciliation("test-trigger", KafkaCluster.TYPE, clusterCmNamespace, clusterCmName), clusterCm, createResult -> {
+        ops.createOrUpdate(new Reconciliation("test-trigger", AssemblyType.KAFKA, clusterCmNamespace, clusterCmName), clusterCm, createResult -> {
             if (createResult.failed()) createResult.cause().printStackTrace();
             context.assertTrue(createResult.succeeded());
 
@@ -638,7 +639,7 @@ public class KafkaAssemblyOperatorTest {
 
 
         // providing the list of ALL StatefulSets for all the Kafka clusters
-        Labels newLabels = Labels.forType("kafka");
+        Labels newLabels = Labels.forType(AssemblyType.KAFKA);
         when(mockKsOps.list(eq(clusterCmNamespace), eq(newLabels))).thenReturn(
                 asList(KafkaCluster.fromConfigMap(bar).generateStatefulSet(openShift),
                         KafkaCluster.fromConfigMap(baz).generateStatefulSet(openShift))
@@ -654,7 +655,6 @@ public class KafkaAssemblyOperatorTest {
         when(mockKsOps.list(eq(clusterCmNamespace), eq(bazLabels))).thenReturn(
                 asList(KafkaCluster.fromConfigMap(baz).generateStatefulSet(openShift))
         );
-
 
         Set<String> createdOrUpdated = new HashSet<>();
         Set<String> deleted = new HashSet<>();

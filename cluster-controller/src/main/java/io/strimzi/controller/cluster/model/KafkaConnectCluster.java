@@ -21,8 +21,6 @@ import java.util.Map;
 
 public class KafkaConnectCluster extends AbstractModel {
 
-    public static final String TYPE = "kafka-connect";
-
     // Port configuration
     protected static final int REST_API_PORT = 8083;
     protected static final String REST_API_PORT_NAME = "rest-api";

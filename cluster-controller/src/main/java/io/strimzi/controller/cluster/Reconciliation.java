@@ -4,6 +4,8 @@
  */
 package io.strimzi.controller.cluster;
 
+import io.strimzi.controller.cluster.model.AssemblyType;
+
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -18,12 +20,12 @@ public class Reconciliation {
     private static final AtomicInteger IDS = new AtomicInteger();
 
     private final String trigger;
-    private final String type;
+    private final AssemblyType type;
     private final String namespace;
     private final String assemblyName;
     private final int id;
 
-    public Reconciliation(String trigger, String type, String namespace, String assemblyName) {
+    public Reconciliation(String trigger, AssemblyType type, String namespace, String assemblyName) {
         this.trigger = trigger;
         this.type = type;
         this.namespace = namespace;
@@ -31,7 +33,7 @@ public class Reconciliation {
         this.id = IDS.getAndIncrement();
     }
 
-    public String type() {
+    public AssemblyType type() {
         return type;
     }
 

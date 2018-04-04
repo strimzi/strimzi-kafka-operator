@@ -24,8 +24,6 @@ import java.util.Map;
 
 public class ZookeeperCluster extends AbstractModel {
 
-    public static final String TYPE = "zookeeper";
-
     private static final int CLIENT_PORT = 2181;
     private static final String CLIENT_PORT_NAME = "clients";
     private static final int CLUSTERING_PORT = 2888;
@@ -87,7 +85,7 @@ public class ZookeeperCluster extends AbstractModel {
      */
     private ZookeeperCluster(String namespace, String cluster, Labels labels) {
 
-        super(namespace, cluster, labels.withType(ZookeeperCluster.TYPE));
+        super(namespace, cluster, labels.withType(AssemblyType.KAFKA));
         this.name = zookeeperClusterName(cluster);
         this.headlessName = zookeeperHeadlessName(cluster);
         this.metricsConfigName = zookeeperMetricsName(cluster);

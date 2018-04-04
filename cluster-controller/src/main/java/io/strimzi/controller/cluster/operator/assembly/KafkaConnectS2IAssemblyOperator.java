@@ -7,6 +7,7 @@ package io.strimzi.controller.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.strimzi.controller.cluster.Reconciliation;
+import io.strimzi.controller.cluster.model.AssemblyType;
 import io.strimzi.controller.cluster.model.KafkaConnectS2ICluster;
 import io.strimzi.controller.cluster.model.Labels;
 import io.strimzi.controller.cluster.operator.resource.BuildConfigOperator;
@@ -36,7 +37,6 @@ import java.util.List;
 public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator {
 
     private static final Logger log = LoggerFactory.getLogger(KafkaConnectS2IAssemblyOperator.class.getName());
-    private static final String CLUSTER_TYPE_CONNECT_S2I = "kafka-connect-s2i";
     private final ServiceOperator serviceOperations;
     private final DeploymentConfigOperator deploymentConfigOperations;
     private final ImageStreamOperator imagesStreamOperations;
@@ -57,7 +57,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator {
                                            ServiceOperator serviceOperations,
                                            ImageStreamOperator imagesStreamOperations,
                                            BuildConfigOperator buildConfigOperations) {
-        super(vertx, isOpenShift, CLUSTER_TYPE_CONNECT_S2I, "Kafka Connect S2I", configMapOperations);
+        super(vertx, isOpenShift, AssemblyType.CONNECT_S2I, configMapOperations);
         this.serviceOperations = serviceOperations;
         this.deploymentConfigOperations = deploymentConfigOperations;
         this.imagesStreamOperations = imagesStreamOperations;
@@ -105,10 +105,10 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator {
     @Override
     protected List<HasMetadata> getResources(String namespace) {
         List<HasMetadata> result = new ArrayList<>();
-        result.addAll(serviceOperations.list(namespace, Labels.forType(KafkaConnectS2ICluster.TYPE)));
-        result.addAll(deploymentConfigOperations.list(namespace, Labels.forType(KafkaConnectS2ICluster.TYPE)));
-        result.addAll(imagesStreamOperations.list(namespace, Labels.forType(KafkaConnectS2ICluster.TYPE)));
-        result.addAll(buildConfigOperations.list(namespace, Labels.forType(KafkaConnectS2ICluster.TYPE)));
+        result.addAll(serviceOperations.list(namespace, Labels.forType(AssemblyType.CONNECT_S2I)));
+        result.addAll(deploymentConfigOperations.list(namespace, Labels.forType(AssemblyType.CONNECT_S2I)));
+        result.addAll(imagesStreamOperations.list(namespace, Labels.forType(AssemblyType.CONNECT_S2I)));
+        result.addAll(buildConfigOperations.list(namespace, Labels.forType(AssemblyType.CONNECT_S2I)));
         return result;
     }
 

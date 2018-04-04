@@ -5,9 +5,6 @@
 package io.strimzi.controller.cluster.model;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.strimzi.controller.cluster.operator.assembly.KafkaAssemblyOperator;
-import io.strimzi.controller.cluster.operator.assembly.KafkaConnectAssemblyOperator;
-import io.strimzi.controller.cluster.operator.assembly.KafkaConnectS2IAssemblyOperator;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -37,12 +34,8 @@ public class Labels {
      */
     public static final String STRIMZI_KIND_LABEL = STRIMZI_DOMAIN + "kind";
     /**
-     * The type of Strimzi component:
-     * E.g: {@link KafkaAssemblyOperator#CLUSTER_TYPE_KAFKA kafka},
-     * {@link KafkaAssemblyOperator#CLUSTER_TYPE_ZOOKEEPER zookeeper},
-     * {@link KafkaAssemblyOperator#CLUSTER_TYPE_TOPIC_CONTROLLER topic-controller},
-     * {@link KafkaConnectAssemblyOperator#CLUSTER_TYPE_CONNECT kafka-connect},
-     * {@link KafkaConnectS2IAssemblyOperator#CLUSTER_TYPE_CONNECT_S2I kafka-connect-s2i}
+     * The type of Strimzi assembly.
+     * @see AssemblyType
      */
     public static final String STRIMZI_TYPE_LABEL = STRIMZI_DOMAIN + "type";
 
@@ -77,8 +70,9 @@ public class Labels {
     /**
      * Returns the value of the {@code strimzi.io/type} label of the given {@code resource}.
      */
-    public static String type(HasMetadata resource) {
-        return resource.getMetadata().getLabels().get(Labels.STRIMZI_TYPE_LABEL);
+    public static AssemblyType type(HasMetadata resource) {
+        String type = resource.getMetadata().getLabels().get(Labels.STRIMZI_TYPE_LABEL);
+        return type != null ? AssemblyType.fromName(type) : null;
     }
 
     /**
@@ -133,8 +127,8 @@ public class Labels {
     /**
      * The same labels as this instance, but with the given {@code type} for the {@code strimzi.io/type} key.
      */
-    public Labels withType(String type) {
-        return with(STRIMZI_TYPE_LABEL, type);
+    public Labels withType(AssemblyType type) {
+        return with(STRIMZI_TYPE_LABEL, type.toString());
     }
 
     /**
@@ -189,8 +183,8 @@ public class Labels {
     /**
      * A singleton instance with the given {@code type} for the {@code strimzi.io/type} key.
      */
-    public static Labels forType(String type) {
-        return new Labels(singletonMap(STRIMZI_TYPE_LABEL, type));
+    public static Labels forType(AssemblyType type) {
+        return new Labels(singletonMap(STRIMZI_TYPE_LABEL, type.toString()));
     }
 
     /**
@@ -203,8 +197,9 @@ public class Labels {
     /**
      * Return the value of the {@code strimzi.io/type}.
      */
-    public String type() {
-        return labels.get(STRIMZI_TYPE_LABEL);
+    public AssemblyType type() {
+        String type = labels.get(STRIMZI_TYPE_LABEL);
+        return type != null ? AssemblyType.fromName(type) : null;
     }
 
     @Override

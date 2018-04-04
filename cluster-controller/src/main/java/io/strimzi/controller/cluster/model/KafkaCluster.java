@@ -25,8 +25,6 @@ import java.util.Map;
 
 public class KafkaCluster extends AbstractModel {
 
-    public static final String TYPE = "kafka";
-
     protected static final int CLIENT_PORT = 9092;
     protected static final String CLIENT_PORT_NAME = "clients";
 

@@ -10,14 +10,12 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.strimzi.controller.cluster.model.AssemblyType;
+import io.strimzi.controller.cluster.model.Labels;
 import io.strimzi.controller.cluster.operator.assembly.AbstractAssemblyOperator;
 import io.strimzi.controller.cluster.operator.assembly.KafkaAssemblyOperator;
 import io.strimzi.controller.cluster.operator.assembly.KafkaConnectAssemblyOperator;
 import io.strimzi.controller.cluster.operator.assembly.KafkaConnectS2IAssemblyOperator;
-import io.strimzi.controller.cluster.model.KafkaCluster;
-import io.strimzi.controller.cluster.model.KafkaConnectCluster;
-import io.strimzi.controller.cluster.model.KafkaConnectS2ICluster;
-import io.strimzi.controller.cluster.model.Labels;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -118,26 +116,35 @@ public class ClusterController extends AbstractVerticle {
                     @Override
                     public void eventReceived(Action action, ConfigMap cm) {
                         Labels labels = Labels.fromResource(cm);
-                        String type = labels.type();
+                        AssemblyType type;
+                        try {
+                            type = labels.type();
+                        } catch (IllegalArgumentException e) {
+                            log.warn("Unknown {} label {} received in Config Map {} in namespace {}",
+                                    Labels.STRIMZI_TYPE_LABEL,
+                                    cm.getMetadata().getLabels().get(Labels.STRIMZI_TYPE_LABEL),
+                                    cm.getMetadata().getName(), namespace);
+                            return;
+                        }
 
                         final AbstractAssemblyOperator cluster;
                         if (type == null) {
                             log.warn("Missing label {} in Config Map {} in namespace {}", Labels.STRIMZI_TYPE_LABEL, cm.getMetadata().getName(), namespace);
                             return;
-                        } else if (type.equals(KafkaCluster.TYPE)) {
-                            cluster = kafkaAssemblyOperator;
-                        } else if (type.equals(KafkaConnectCluster.TYPE)) {
-                            cluster = kafkaConnectAssemblyOperator;
-                        } else if (type.equals(KafkaConnectS2ICluster.TYPE)) {
-                            if (kafkaConnectS2IAssemblyOperator != null)   {
-                                cluster = kafkaConnectS2IAssemblyOperator;
-                            } else {
-                                log.warn("Cluster type {} cannot be used outside of OpenShift as requested by Config Map {} in namespace {}", type, cm.getMetadata().getName(), namespace);
-                                return;
-                            }
                         } else {
-                            log.warn("Unknown type {} received in Config Map {} in namespace {}", type, cm.getMetadata().getName(), namespace);
-                            return;
+                            switch (type) {
+                                case KAFKA:
+                                    cluster = kafkaAssemblyOperator;
+                                    break;
+                                case CONNECT:
+                                    cluster = kafkaConnectAssemblyOperator;
+                                    break;
+                                case CONNECT_S2I:
+                                    cluster = kafkaConnectS2IAssemblyOperator;
+                                    break;
+                                default:
+                                    return;
+                            }
                         }
                         String name = cm.getMetadata().getName();
                         switch (action) {

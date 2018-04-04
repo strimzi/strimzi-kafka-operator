@@ -30,8 +30,6 @@ import java.util.Map;
 
 public class KafkaConnectS2ICluster extends KafkaConnectCluster {
 
-    public static final String TYPE = "kafka-connect-s2i";
-
     // Kafka Connect S2I configuration
     protected String sourceImageBaseName = DEFAULT_IMAGE.substring(0, DEFAULT_IMAGE.lastIndexOf(":"));
     protected String sourceImageTag = DEFAULT_IMAGE.substring(DEFAULT_IMAGE.lastIndexOf(":") + 1);
