@@ -175,6 +175,8 @@ public abstract class AbstractAssemblyOperator {
 
         cmsNames.addAll(resourceNames);
 
+        // We use a latch so that callers (specifically, test callers) know when the reconciliation is complete
+        // Using futures would be more complex for no benefit
         CountDownLatch latch = new CountDownLatch(cmsNames.size());
 
         for (String name: cmsNames) {
