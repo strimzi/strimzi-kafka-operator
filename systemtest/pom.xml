@@ -17,6 +17,11 @@
             <version>${hamcrest.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-library</artifactId>
+            <version>${hamcrest.version}</version>
+        </dependency>
+        <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>${fasterxml.jackson.version}</version>
@@ -59,7 +64,6 @@
             <groupId>io.fabric8</groupId>
             <artifactId>kubernetes-model</artifactId>
             <version>${fabric8.kubernetes-model.version}</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.jayway.jsonpath</groupId>
