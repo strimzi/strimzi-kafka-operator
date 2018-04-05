@@ -10,6 +10,8 @@ import org.hamcrest.Matcher;
 
 import java.util.List;
 
+import static org.hamcrest.Matchers.not;
+
 public class Matchers {
 
     private Matchers() {
@@ -38,5 +40,14 @@ public class Matchers {
      */
     public static Matcher<List<Event>> hasAnyOfReasons(Events... eventReasons) {
         return new HasAnyOfReasons(eventReasons);
+    }
+
+    /**
+     * A matcher checks that events don't have all listed reasons
+     * @param eventReasons - unexpected events for resource
+     * @return a matcher {@link #hasAnyOfReasons(Events... eventReasons)} with opposite result
+     */
+    public static Matcher<List<Event>> hasNoneOfReasons(Events... eventReasons) {
+        return not(hasAnyOfReasons(eventReasons));
     }
 }

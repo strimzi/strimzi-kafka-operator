@@ -49,12 +49,11 @@ import static io.strimzi.systemtest.k8s.Events.Started;
 import static io.strimzi.systemtest.k8s.Events.SuccessfulDelete;
 import static io.strimzi.systemtest.k8s.Events.Unhealthy;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
-import static io.strimzi.systemtest.matchers.Matchers.hasAnyOfReasons;
+import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.valueOfCmEquals;
 import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.map;
 import static junit.framework.TestCase.assertTrue;
-import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
@@ -164,7 +163,7 @@ public class KafkaClusterTest {
         //Test that the new pod does not have errors or failures in events
         List<Event> events = getEvents("Pod", newPodName);
         assertThat(events, hasAllOfReasons(Scheduled, Pulling, Pulled, Created, Started));
-        assertThat(events, not(hasAnyOfReasons(Failed, Unhealthy, FailedSync, FailedValidation)));
+        assertThat(events, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
 
         // TODO Check logs for errors
 
@@ -237,12 +236,12 @@ public class KafkaClusterTest {
         //Test that first pod does not have errors or failures in events
         List<Event> eventsForFirstPod = getEvents("Pod", newPodName[0]);
         assertThat(eventsForFirstPod, hasAllOfReasons(Scheduled, Pulling, Pulled, Created, Started));
-        assertThat(eventsForFirstPod, not(hasAnyOfReasons(Failed, Unhealthy, FailedSync, FailedValidation)));
+        assertThat(eventsForFirstPod, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
 
         //Test that second pod does not have errors or failures in events
         List<Event> eventsForSecondPod = getEvents("Pod", newPodName[1]);
         assertThat(eventsForSecondPod, hasAllOfReasons(Scheduled, Pulling, Pulled, Created, Started));
-        assertThat(eventsForSecondPod, not(hasAnyOfReasons(Failed, Unhealthy, FailedSync, FailedValidation)));
+        assertThat(eventsForSecondPod, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
 
         // scale down
         LOGGER.info("Scaling down");

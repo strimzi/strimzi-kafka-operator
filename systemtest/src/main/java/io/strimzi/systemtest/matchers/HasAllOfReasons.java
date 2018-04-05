@@ -40,6 +40,6 @@ public class HasAllOfReasons extends BaseMatcher<List<Event>> {
 
     @Override
     public void describeTo(Description description) {
-        description.appendValueList("The resource should contain the following event {", ", ", "}. ", eventReasons);
+        description.appendValueList("The resource should contain all of the following events {", ", ", "}. ", eventReasons);
     }
 }
