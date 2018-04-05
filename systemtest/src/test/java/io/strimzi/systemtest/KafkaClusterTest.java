@@ -124,10 +124,6 @@ public class KafkaClusterTest {
         return clusterName + "-topic-controller";
     }
 
-    private static String topicControllerDeploymentName(String clusterName) {
-        return clusterName + "-topic-controller";
-    }
-
     @BeforeClass
     public static void waitForCc() {
         // TODO Build this into the annos, or get rid of the annos
