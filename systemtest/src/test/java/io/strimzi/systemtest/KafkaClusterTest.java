@@ -209,7 +209,7 @@ public class KafkaClusterTest {
         //Test that the new broker has event 'Killing'
         assertThat(getEvents("Pod", newPodName), hasAllOfReasons(Killing));
         //Test that stateful set has event 'SuccessfulDelete'
-        assertThat(getEvents("StatefulSet", kafkaStatefulSetName(clusterName)), hasAllOfReasons(SuccessfulDelete));
+        assertThat(getEvents("StatefulSet", kafkaClusterName(CLUSTER_NAME)), hasAllOfReasons(SuccessfulDelete));
 
         // TODO Check logs for errors
     }
@@ -279,7 +279,7 @@ public class KafkaClusterTest {
         //Test that the second pod has event 'Killing'
         assertThat(getEvents("Pod", newPodName[1]), hasAllOfReasons(Killing));
         //Test that stateful set has event 'SuccessfulDelete'
-        assertThat(getEvents("StatefulSet", zookeeperStatefulSetName(clusterName)), hasAllOfReasons(SuccessfulDelete));
+        assertThat(getEvents("StatefulSet", zookeeperClusterName(CLUSTER_NAME)), hasAllOfReasons(SuccessfulDelete));
         // TODO Check logs for errors
     }
 
