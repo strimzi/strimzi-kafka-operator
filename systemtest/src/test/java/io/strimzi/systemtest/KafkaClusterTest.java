@@ -48,7 +48,8 @@ import static io.strimzi.systemtest.k8s.Events.Scheduled;
 import static io.strimzi.systemtest.k8s.Events.Started;
 import static io.strimzi.systemtest.k8s.Events.SuccessfulDelete;
 import static io.strimzi.systemtest.k8s.Events.Unhealthy;
-import static io.strimzi.systemtest.matchers.Matchers.hasReasons;
+import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
+import static io.strimzi.systemtest.matchers.Matchers.hasAnyOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.valueOfCmEquals;
 import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.map;
@@ -162,8 +163,8 @@ public class KafkaClusterTest {
 
         //Test that the new pod does not have errors or failures in events
         List<Event> events = getEvents("Pod", newPodName);
-        assertThat(events, hasReasons(Scheduled, Pulling, Pulled, Created, Started));
-        assertThat(events, not(hasReasons(Failed, Unhealthy, FailedSync, FailedValidation)));
+        assertThat(events, hasAllOfReasons(Scheduled, Pulling, Pulled, Created, Started));
+        assertThat(events, not(hasAnyOfReasons(Failed, Unhealthy, FailedSync, FailedValidation)));
 
         // TODO Check logs for errors
 
@@ -181,9 +182,9 @@ public class KafkaClusterTest {
                 versions.indexOf("(id: " + newBrokerId + " rack: ") == -1);
 
         //Test that the new broker has event 'Killing'
-        assertThat(getEvents("Pod", newPodName), hasReasons(Killing));
+        assertThat(getEvents("Pod", newPodName), hasAllOfReasons(Killing));
         //Test that stateful set has event 'SuccessfulDelete'
-        assertThat(getEvents("StatefulSet", kafkaStatefulSetName(clusterName)), hasReasons(SuccessfulDelete));
+        assertThat(getEvents("StatefulSet", kafkaStatefulSetName(clusterName)), hasAllOfReasons(SuccessfulDelete));
 
         // TODO Check logs for errors
     }
@@ -235,13 +236,13 @@ public class KafkaClusterTest {
         // TODO Check logs for errors
         //Test that first pod does not have errors or failures in events
         List<Event> eventsForFirstPod = getEvents("Pod", newPodName[0]);
-        assertThat(eventsForFirstPod, hasReasons(Scheduled, Pulling, Pulled, Created, Started));
-        assertThat(eventsForFirstPod, not(hasReasons(Failed, Unhealthy, FailedSync, FailedValidation)));
+        assertThat(eventsForFirstPod, hasAllOfReasons(Scheduled, Pulling, Pulled, Created, Started));
+        assertThat(eventsForFirstPod, not(hasAnyOfReasons(Failed, Unhealthy, FailedSync, FailedValidation)));
 
         //Test that second pod does not have errors or failures in events
         List<Event> eventsForSecondPod = getEvents("Pod", newPodName[1]);
-        assertThat(eventsForSecondPod, hasReasons(Scheduled, Pulling, Pulled, Created, Started));
-        assertThat(eventsForSecondPod, not(hasReasons(Failed, Unhealthy, FailedSync, FailedValidation)));
+        assertThat(eventsForSecondPod, hasAllOfReasons(Scheduled, Pulling, Pulled, Created, Started));
+        assertThat(eventsForSecondPod, not(hasAnyOfReasons(Failed, Unhealthy, FailedSync, FailedValidation)));
 
         // scale down
         LOGGER.info("Scaling down");
@@ -251,9 +252,9 @@ public class KafkaClusterTest {
         waitForZkMntr(firstPodName, Pattern.compile("zk_server_state\\s+standalone"));
 
         //Test that the second pod has event 'Killing'
-        assertThat(getEvents("Pod", newPodName[1]), hasReasons(Killing));
+        assertThat(getEvents("Pod", newPodName[1]), hasAllOfReasons(Killing));
         //Test that stateful set has event 'SuccessfulDelete'
-        assertThat(getEvents("StatefulSet", zookeeperStatefulSetName(clusterName)), hasReasons(SuccessfulDelete));
+        assertThat(getEvents("StatefulSet", zookeeperStatefulSetName(clusterName)), hasAllOfReasons(SuccessfulDelete));
         // TODO Check logs for errors
     }
 

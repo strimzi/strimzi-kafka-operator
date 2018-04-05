@@ -25,10 +25,18 @@ public class Matchers {
     }
 
     /**
-     * Matcher to check events for resource
+     * A matcher checks that examined object has a full match of reasons for actual events.
      * @param eventReasons - expected events for resource
      */
-    public static Matcher<List<Event>> hasReasons(Events... eventReasons) {
-        return new EventMatcher(eventReasons);
+    public static Matcher<List<Event>> hasAllOfReasons(Events... eventReasons) {
+        return new HasAllOfReasons(eventReasons);
+    }
+
+    /**
+     * A matcher checks that examined object has at least one match of reasons for actual events.
+     * @param eventReasons - expected events for resource
+     */
+    public static Matcher<List<Event>> hasAnyOfReasons(Events... eventReasons) {
+        return new HasAnyOfReasons(eventReasons);
     }
 }

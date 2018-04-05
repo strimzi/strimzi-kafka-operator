@@ -14,13 +14,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * <p>A EventMatcher is custom matcher to check events for resources.</p>
+ * <p>A HasAllOfReasons is custom matcher to check the full matching of reasons for actual events.</p>
  */
-public class EventMatcher extends BaseMatcher<List<Event>> {
+public class HasAllOfReasons extends BaseMatcher<List<Event>> {
 
     private Events[] eventReasons;
 
-    public EventMatcher(Events... eventReasons) {
+    public HasAllOfReasons(Events... eventReasons) {
         this.eventReasons = eventReasons;
     }
 
