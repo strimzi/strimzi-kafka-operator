@@ -7,7 +7,6 @@ package io.strimzi.controller.topic;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
-import io.netty.handler.codec.http.HttpResponseStatus;
 import io.strimzi.controller.topic.zk.Zk;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
@@ -233,9 +232,9 @@ public class Session extends AbstractVerticle {
                 .requestHandler(request -> {
 
                     if (request.path().equals("/healthy")) {
-                        request.response().setStatusCode(HttpResponseStatus.OK.code()).end();
+                        request.response().setStatusCode(200).end();
                     } else if (request.path().equals("/ready")) {
-                        request.response().setStatusCode(HttpResponseStatus.OK.code()).end();
+                        request.response().setStatusCode(200).end();
                     }
                 })
                 .listen(HEALTH_SERVER_PORT);
