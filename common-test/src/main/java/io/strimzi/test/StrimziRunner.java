@@ -7,10 +7,6 @@ package io.strimzi.test;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-import io.fabric8.kubernetes.client.Config;
-import io.fabric8.kubernetes.client.ConfigBuilder;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.Minishift;
@@ -264,12 +260,8 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 @Override
                 protected void after() {
                     LOGGER.info("Deleting connect cluster '{}' after test per @ConnectCluster annotation on {}", cluster.name(), name(element));
-                    // create config for kubernetes client
-                    Config kubeConfig = new ConfigBuilder().withNamespace(kubeClient().namespace()).build();
-                    KubernetesClient client = new DefaultKubernetesClient(kubeConfig);
                     // delete cm
-                    client.configMaps().withName(cluster.name()).delete();
-                    client.close();
+                    kubeClient().deleteContent(yaml);
                     // wait for ss to go
                     kubeClient().waitForResourceDeletion("deployment", deploymentName);
                 }
@@ -309,12 +301,8 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 @Override
                 protected void after() {
                     LOGGER.info("Deleting kafka cluster '{}' after test per @KafkaCluster annotation on {}", cluster.name(), name(element));
-                    // create config for kubernetes client
-                    Config kubeConfig = new ConfigBuilder().withNamespace(kubeClient().namespace()).build();
-                    KubernetesClient client = new DefaultKubernetesClient(kubeConfig);
                     // delete cm
-                    client.configMaps().withName(cluster.name()).delete();
-                    client.close();
+                    kubeClient().deleteContent(yaml);
                     // wait for ss to go
                     try {
                         kubeClient().waitForResourceDeletion("statefulset", zkStatefulSetName);

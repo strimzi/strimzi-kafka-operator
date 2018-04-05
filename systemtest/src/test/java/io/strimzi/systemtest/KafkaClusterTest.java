@@ -4,10 +4,6 @@
  */
 package io.strimzi.systemtest;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-import com.jayway.jsonpath.JsonPath;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -18,24 +14,17 @@ import io.strimzi.test.Namespace;
 import io.strimzi.test.OpenShiftOnly;
 import io.strimzi.test.Resources;
 import io.strimzi.test.StrimziRunner;
-import io.strimzi.test.TestUtils;
-import io.strimzi.test.k8s.KubeClient;
-import io.strimzi.test.k8s.KubeClusterException;
-import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.Oc;
 import org.junit.BeforeClass;
-import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.io.IOException;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.k8s.Events.Created;
 import static io.strimzi.systemtest.k8s.Events.Failed;
@@ -51,12 +40,7 @@ import static io.strimzi.systemtest.k8s.Events.Unhealthy;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.valueOfCmEquals;
-import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.map;
-import static io.strimzi.test.k8s.BaseKubeClient.CM;
-import static io.strimzi.test.k8s.BaseKubeClient.DEPLOYMENT;
-import static io.strimzi.test.k8s.BaseKubeClient.SERVICE;
-import static io.strimzi.test.k8s.BaseKubeClient.STATEFUL_SET;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
@@ -65,64 +49,12 @@ import static org.junit.Assert.assertThat;
 @RunWith(StrimziRunner.class)
 @Namespace(KafkaClusterTest.NAMESPACE)
 @ClusterController
-public class KafkaClusterTest {
+public class KafkaClusterTest extends AbstractClusterTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaClusterTest.class);
 
     public static final String NAMESPACE = "kafka-cluster-test";
     private static final String CLUSTER_NAME = "my-cluster";
-
-    @ClassRule
-    public static KubeClusterResource cluster = new KubeClusterResource();
-
-    private KubeClient<?> kubeClient = cluster.client();
-    private KubernetesClient client = new DefaultKubernetesClient();
-
-    // can be used as kafka stateful set or service names
-    private static String kafkaClusterName(String clusterName) {
-        return clusterName + "-kafka";
-    }
-
-    private static String kafkaPodName(String clusterName, int podId) {
-        return kafkaClusterName(clusterName) + "-" + podId;
-    }
-
-    private static String kafkaHeadlessServiceName(String clusterName) {
-        return kafkaClusterName(clusterName) + "-headless";
-    }
-
-    private static String kafkaMetricsConfigName(String clusterName) {
-        return kafkaClusterName(clusterName) + "-metrics-config";
-    }
-
-    private static String kafkaPVCName(String clusterName, int podId) {
-        return "data-" + kafkaClusterName(clusterName) + "-" + podId;
-    }
-
-    // can be used as zookeeper stateful set or service names
-    private static String zookeeperClusterName(String clusterName) {
-        return clusterName + "-zookeeper";
-    }
-
-    private static String zookeeperPodName(String clusterName, int podId) {
-        return zookeeperClusterName(clusterName) + "-" + podId;
-    }
-
-    private static String zookeeperHeadlessServiceName(String clusterName) {
-        return zookeeperClusterName(clusterName) + "-headless";
-    }
-
-    private static String zookeeperMetricsConfigName(String clusterName) {
-        return zookeeperClusterName(clusterName) + "-metrics-config";
-    }
-
-    private static String zookeeperPVCName(String clusterName, int podId) {
-        return "data-" + zookeeperClusterName(clusterName) + "-" + podId;
-    }
-
-    private static String topicControllerDeploymentName(String clusterName) {
-        return clusterName + "-topic-controller";
-    }
 
     @BeforeClass
     public static void waitForCc() {
@@ -142,20 +74,6 @@ public class KafkaClusterTest {
         oc.deleteByName("cm", clusterName);
         oc.waitForResourceDeletion("statefulset", kafkaClusterName(clusterName));
         oc.waitForResourceDeletion("statefulset", zookeeperClusterName(clusterName));
-    }
-
-    private void replaceCm(String cmName, String fieldName, String fieldValue) {
-        try {
-            String jsonString = kubeClient.get("cm", cmName);
-            YAMLMapper mapper = new YAMLMapper();
-            JsonNode node = mapper.readTree(jsonString);
-            ((ObjectNode) node.get("data")).put(fieldName, fieldValue);
-            String content = mapper.writeValueAsString(node);
-            kubeClient.replaceContent(content);
-            LOGGER.info("Value in Config Map replaced");
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     @Test
@@ -214,22 +132,6 @@ public class KafkaClusterTest {
         // TODO Check logs for errors
     }
 
-    private String getBrokerApiVersions(String podName) {
-        AtomicReference<String> versions = new AtomicReference<>();
-        TestUtils.waitFor("kafka-broker-api-versions.sh success", 1_000L, 30_000L, () -> {
-            try {
-                String output = kubeClient.exec(podName,
-                        "/opt/kafka/bin/kafka-broker-api-versions.sh", "--bootstrap-server", "localhost:9092").out();
-                versions.set(output);
-                return true;
-            } catch (KubeClusterException e) {
-                LOGGER.trace("/opt/kafka/bin/kafka-broker-api-versions.sh: {}", e.getMessage());
-                return false;
-            }
-        });
-        return versions.get();
-    }
-
     @Test
     @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 1, zkNodes = 1)
     public void testZookeeperScaleUpScaleDown() {
@@ -281,29 +183,6 @@ public class KafkaClusterTest {
         //Test that stateful set has event 'SuccessfulDelete'
         assertThat(getEvents("StatefulSet", zookeeperClusterName(CLUSTER_NAME)), hasAllOfReasons(SuccessfulDelete));
         // TODO Check logs for errors
-    }
-
-    private void waitForZkMntr(String pod, Pattern pattern) {
-        long timeoutMs = 120_000L;
-        long pollMs = 1_000L;
-        TestUtils.waitFor("mntr", pollMs, timeoutMs, () -> {
-            try {
-                String output = kubeClient.exec(pod,
-                        "/bin/bash", "-c", "echo mntr | nc localhost 2181").out();
-
-                if (pattern.matcher(output).find()) {
-                    return true;
-                }
-            } catch (KubeClusterException e) {
-                LOGGER.trace("Exception while waiting for ZK to become leader/follower, ignoring", e);
-            }
-            return false;
-        },
-            () -> LOGGER.info("zookeeper `mntr` output at the point of timeout does not match {}:{}{}",
-                pattern.pattern(),
-                System.lineSeparator(),
-                indent(kubeClient.exec(pod, "/bin/bash", "-c", "echo mntr | nc localhost 2181").out()))
-        );
     }
 
     @Test
@@ -426,156 +305,5 @@ public class KafkaClusterTest {
             String initialDelaySecondsPath = "$.spec.containers[*].livenessProbe.initialDelaySeconds";
             assertEquals("23", getValueFromJson(zkPodJson, initialDelaySecondsPath));
         }
-    }
-
-    @Test
-    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 1)
-    public void testDeleteTopicControllerDeployment() {
-        // kafka cluster already deployed via annotation
-        String topicControllerDeploymentName = topicControllerDeploymentName(CLUSTER_NAME);
-        LOGGER.info("Running deleteTopicControllerDeployment with cluster {}", CLUSTER_NAME);
-
-        kubeClient.deleteByName(DEPLOYMENT, topicControllerDeploymentName);
-        kubeClient.waitForResourceDeletion(DEPLOYMENT, topicControllerDeploymentName);
-
-        LOGGER.info("Waiting for recovery {}", topicControllerDeploymentName);
-        kubeClient.waitForDeployment(topicControllerDeploymentName);
-    }
-
-    @Test
-    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 1)
-    public void testDeleteKafkaStatefulSet() {
-        // kafka cluster already deployed via annotation
-        String kafkaStatefulSetName = kafkaClusterName(CLUSTER_NAME);
-
-        LOGGER.info("Running deleteKafkaStatefulSet with cluster {}", CLUSTER_NAME);
-
-        kubeClient.deleteByName(STATEFUL_SET, kafkaStatefulSetName);
-        kubeClient.waitForResourceDeletion(STATEFUL_SET, kafkaStatefulSetName);
-
-        LOGGER.info("Waiting for recovery {}", kafkaStatefulSetName);
-        kubeClient.waitForStatefulSet(kafkaStatefulSetName, 1);
-    }
-
-    @Test
-    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 1, zkNodes = 1)
-    public void testDeleteZookeeperStatefulSet() {
-        // kafka cluster already deployed via annotation
-        String zookeeperStatefulSetName = zookeeperClusterName(CLUSTER_NAME);
-
-        LOGGER.info("Running deleteZookeeperStatefulSet with cluster {}", CLUSTER_NAME);
-
-        kubeClient.deleteByName(STATEFUL_SET, zookeeperStatefulSetName);
-        kubeClient.waitForResourceDeletion(STATEFUL_SET, zookeeperStatefulSetName);
-
-        LOGGER.info("Waiting for recovery {}", zookeeperStatefulSetName);
-        kubeClient.waitForStatefulSet(zookeeperStatefulSetName, 1);
-    }
-
-    private String getValueFromJson(String json, String jsonPath) {
-        String value = JsonPath.parse(json).read(jsonPath).toString().replaceAll("\\p{P}", "");
-        return value;
-    }
-
-    private String globalVariableJsonPathBuilder(String variable) {
-        String path = "$.spec.containers[*].env[?(@.name=='" + variable + "')].value";
-        return path;
-    }
-
-    @Test
-    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 1)
-    public void testDeleteKafkaService() {
-        // kafka cluster already deployed via annotation
-        String kafkaServiceName = kafkaClusterName(CLUSTER_NAME);
-
-        LOGGER.info("Running deleteKafkaService with cluster {}", CLUSTER_NAME);
-
-        kubeClient.deleteByName(SERVICE, kafkaServiceName);
-        kubeClient.waitForResourceDeletion(SERVICE, kafkaServiceName);
-
-        LOGGER.info("Waiting for creation {}", kafkaServiceName);
-        kubeClient.waitForResourceCreation(SERVICE, kafkaServiceName);
-    }
-
-    @Test
-    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 1)
-    public void testDeleteZookeeperService() {
-        // kafka cluster already deployed via annotation
-        String zookeeperServiceName = zookeeperClusterName(CLUSTER_NAME);
-
-        LOGGER.info("Running deleteKafkaService with cluster {}", CLUSTER_NAME);
-
-        kubeClient.deleteByName(SERVICE, zookeeperServiceName);
-        kubeClient.waitForResourceDeletion(SERVICE, zookeeperServiceName);
-
-        LOGGER.info("Waiting for creation {}", zookeeperServiceName);
-        kubeClient.waitForResourceCreation(SERVICE, zookeeperServiceName);
-    }
-
-    @Test
-    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 1)
-    public void testDeleteKafkaHeadlessService() {
-        // kafka cluster already deployed via annotation
-        String kafkaHeadlessServiceName = kafkaHeadlessServiceName(CLUSTER_NAME);
-
-        LOGGER.info("Running deleteKafkaHeadlessService with cluster {}", CLUSTER_NAME);
-
-        kubeClient.deleteByName(SERVICE, kafkaHeadlessServiceName);
-        kubeClient.waitForResourceDeletion(SERVICE, kafkaHeadlessServiceName);
-
-        LOGGER.info("Waiting for creation {}", kafkaHeadlessServiceName);
-        kubeClient.waitForResourceCreation(SERVICE, kafkaHeadlessServiceName);
-    }
-
-    @Test
-    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 1)
-    public void testDeleteZookeeperHeadlessService() {
-        // kafka cluster already deployed via annotation
-        String zookeeperHeadlessServiceName = zookeeperHeadlessServiceName(CLUSTER_NAME);
-
-        LOGGER.info("Running deleteKafkaHeadlessService with cluster {}", CLUSTER_NAME);
-
-        kubeClient.deleteByName(SERVICE, zookeeperHeadlessServiceName);
-        kubeClient.waitForResourceDeletion(SERVICE, zookeeperHeadlessServiceName);
-
-        LOGGER.info("Waiting for creation {}", zookeeperHeadlessServiceName);
-        kubeClient.waitForResourceCreation(SERVICE, zookeeperHeadlessServiceName);
-    }
-
-    @Test
-    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 1)
-    public void testDeleteKafkaMetricsConfig() {
-        // kafka cluster already deployed via annotation
-        String kafkaMetricsConfigName = kafkaMetricsConfigName(CLUSTER_NAME);
-
-        LOGGER.info("Running deleteKafkaMetricsConfig with cluster {}", CLUSTER_NAME);
-
-        kubeClient.deleteByName(CM, kafkaMetricsConfigName);
-        kubeClient.waitForResourceDeletion(CM, kafkaMetricsConfigName);
-
-        LOGGER.info("Waiting for creation {}", kafkaMetricsConfigName);
-        kubeClient.waitForResourceCreation(CM, kafkaMetricsConfigName);
-    }
-
-    @Test
-    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 1)
-    public void testDeleteZookeeperMetricsConfig() {
-        // kafka cluster already deployed via annotation
-        String zookeeperMetricsConfigName = zookeeperMetricsConfigName(CLUSTER_NAME);
-
-        LOGGER.info("Running deleteZookeeperMetricsConfig with cluster {}", CLUSTER_NAME);
-
-        kubeClient.deleteByName(CM, zookeeperMetricsConfigName);
-        kubeClient.waitForResourceDeletion(CM, zookeeperMetricsConfigName);
-
-        LOGGER.info("Waiting for creation {}", zookeeperMetricsConfigName);
-        kubeClient.waitForResourceCreation(CM, zookeeperMetricsConfigName);
-    }
-
-    private List<Event> getEvents(String resourceType, String resourceName) {
-        return client.events().inNamespace(NAMESPACE).list().getItems().stream()
-                .filter(event -> event.getInvolvedObject().getKind().equals(resourceType))
-                .filter(event -> event.getInvolvedObject().getName().equals(resourceName))
-                .collect(Collectors.toList());
     }
 }

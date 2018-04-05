@@ -11,10 +11,7 @@ import io.strimzi.test.Namespace;
 import io.strimzi.test.OpenShiftOnly;
 import io.strimzi.test.Resources;
 import io.strimzi.test.StrimziRunner;
-import io.strimzi.test.k8s.KubeClient;
-import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.Oc;
-import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
@@ -26,18 +23,13 @@ import static io.strimzi.test.TestUtils.map;
 @Namespace(ConnectClusterTest.NAMESPACE)
 @ClusterController
 @KafkaCluster(name = ConnectClusterTest.KAFKA_CLUSTER_NAME)
-public class ConnectClusterTest {
+public class ConnectClusterTest extends AbstractClusterTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectClusterTest.class);
 
     public static final String NAMESPACE = "connect-cluster-test";
     public static final String KAFKA_CLUSTER_NAME = "connect-tests";
     public static final String BOOTSTRAP_SERVERS = KAFKA_CLUSTER_NAME + "-kafka:9092";
-
-    @ClassRule
-    public static KubeClusterResource cluster = new KubeClusterResource();
-
-    private KubeClient<?> kubeClient = cluster.client();
 
     @Test
     @Resources(value = "../examples/templates/cluster-controller", asAdmin = true)
