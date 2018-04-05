@@ -4,12 +4,17 @@
  */
 package io.strimzi.test;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 
 public final class TestUtils {
 
@@ -73,5 +78,16 @@ public final class TestUtils {
             sb.append("    ").append(line).append(System.lineSeparator());
         }
         return sb.toString();
+    }
+
+    public static String getContent(File file, Consumer<JsonNode> edit) {
+        YAMLMapper mapper = new YAMLMapper();
+        try {
+            JsonNode node = mapper.readTree(file);
+            edit.accept(node);
+            return mapper.writeValueAsString(node);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

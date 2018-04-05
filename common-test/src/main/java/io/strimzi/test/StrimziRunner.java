@@ -6,7 +6,6 @@ package io.strimzi.test;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.Minishift;
@@ -24,16 +23,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Repeatable;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import static io.strimzi.test.TestUtils.getContent;
 import static io.strimzi.test.TestUtils.indent;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -216,17 +214,6 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
             return "field " + field.getDeclaringClass().getSimpleName() + "." + field.getName();
         } else {
             return a.toString();
-        }
-    }
-
-    String getContent(File file, Consumer<JsonNode> edit) {
-        YAMLMapper mapper = new YAMLMapper();
-        try {
-            JsonNode node = mapper.readTree(file);
-            edit.accept(node);
-            return mapper.writeValueAsString(node);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
     }
 
