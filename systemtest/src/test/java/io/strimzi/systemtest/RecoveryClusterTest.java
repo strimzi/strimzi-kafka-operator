@@ -21,7 +21,9 @@ import static io.strimzi.test.k8s.BaseKubeClient.STATEFUL_SET;
 
 @RunWith(StrimziRunner.class)
 @Namespace(RecoveryClusterTest.NAMESPACE)
-@ClusterController(envVariables = {@EnvVariables(key = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS", value = "30000")})
+@ClusterController(envVariables = {
+    @EnvVariables(key = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS", value = "10000"),
+    @EnvVariables(key = "STRIMZI_OPERATION_TIMEOUT_MS", value = "10000")})
 public class RecoveryClusterTest extends AbstractClusterTest {
 
     static final String NAMESPACE = "recovery-cluster-test";
@@ -59,7 +61,7 @@ public class RecoveryClusterTest extends AbstractClusterTest {
     }
 
     @Test
-    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 1, zkNodes = 1)
+    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 1)
     public void testDeleteZookeeperStatefulSet() {
         // kafka cluster already deployed via annotation
         String zookeeperStatefulSetName = zookeeperClusterName(CLUSTER_NAME);
