@@ -22,17 +22,17 @@ import static io.strimzi.test.k8s.BaseKubeClient.STATEFUL_SET;
 @RunWith(StrimziRunner.class)
 @Namespace(RecoveryClusterTest.NAMESPACE)
 @ClusterController(envVariables = {
-    @EnvVariables(key = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS", value = "10000"),
-    @EnvVariables(key = "STRIMZI_OPERATION_TIMEOUT_MS", value = "10000")})
+    @EnvVariables(key = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS", value = "15000"),
+    @EnvVariables(key = "STRIMZI_OPERATION_TIMEOUT_MS", value = "15000")})
+@KafkaCluster(name = RecoveryClusterTest.CLUSTER_NAME, kafkaNodes = 1)
 public class RecoveryClusterTest extends AbstractClusterTest {
 
     static final String NAMESPACE = "recovery-cluster-test";
-    private static final String CLUSTER_NAME = "recovery-cluster";
+    static final String CLUSTER_NAME = "recovery-cluster";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RecoveryClusterTest.class);
 
     @Test
-    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 1)
     public void testDeleteTopicControllerDeployment() {
         // kafka cluster already deployed via annotation
         String topicControllerDeploymentName = topicControllerDeploymentName(CLUSTER_NAME);
@@ -46,7 +46,6 @@ public class RecoveryClusterTest extends AbstractClusterTest {
     }
 
     @Test
-    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 1)
     public void testDeleteKafkaStatefulSet() {
         // kafka cluster already deployed via annotation
         String kafkaStatefulSetName = kafkaClusterName(CLUSTER_NAME);
@@ -61,7 +60,6 @@ public class RecoveryClusterTest extends AbstractClusterTest {
     }
 
     @Test
-    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 1)
     public void testDeleteZookeeperStatefulSet() {
         // kafka cluster already deployed via annotation
         String zookeeperStatefulSetName = zookeeperClusterName(CLUSTER_NAME);
@@ -76,7 +74,6 @@ public class RecoveryClusterTest extends AbstractClusterTest {
     }
 
     @Test
-    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 1)
     public void testDeleteKafkaService() {
         // kafka cluster already deployed via annotation
         String kafkaServiceName = kafkaClusterName(CLUSTER_NAME);
@@ -91,7 +88,6 @@ public class RecoveryClusterTest extends AbstractClusterTest {
     }
 
     @Test
-    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 1)
     public void testDeleteZookeeperService() {
         // kafka cluster already deployed via annotation
         String zookeeperServiceName = zookeeperClusterName(CLUSTER_NAME);
@@ -106,7 +102,6 @@ public class RecoveryClusterTest extends AbstractClusterTest {
     }
 
     @Test
-    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 1)
     public void testDeleteKafkaHeadlessService() {
         // kafka cluster already deployed via annotation
         String kafkaHeadlessServiceName = kafkaHeadlessServiceName(CLUSTER_NAME);
@@ -121,7 +116,6 @@ public class RecoveryClusterTest extends AbstractClusterTest {
     }
 
     @Test
-    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 1)
     public void testDeleteZookeeperHeadlessService() {
         // kafka cluster already deployed via annotation
         String zookeeperHeadlessServiceName = zookeeperHeadlessServiceName(CLUSTER_NAME);
@@ -136,7 +130,6 @@ public class RecoveryClusterTest extends AbstractClusterTest {
     }
 
     @Test
-    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 1)
     public void testDeleteKafkaMetricsConfig() {
         // kafka cluster already deployed via annotation
         String kafkaMetricsConfigName = kafkaMetricsConfigName(CLUSTER_NAME);
@@ -151,7 +144,6 @@ public class RecoveryClusterTest extends AbstractClusterTest {
     }
 
     @Test
-    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 1)
     public void testDeleteZookeeperMetricsConfig() {
         // kafka cluster already deployed via annotation
         String zookeeperMetricsConfigName = zookeeperMetricsConfigName(CLUSTER_NAME);
