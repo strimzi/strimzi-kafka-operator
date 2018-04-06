@@ -45,7 +45,7 @@ public class ClusterController extends AbstractVerticle {
     private final String namespace;
     private final long reconciliationInterval;
 
-    private Watch configMapWatch;
+    private volatile Watch configMapWatch;
 
     private long reconcileTimer;
     private final KafkaAssemblyOperator kafkaAssemblyOperator;
@@ -101,7 +101,6 @@ public class ClusterController extends AbstractVerticle {
 
     @Override
     public void stop(Future<Void> stop) {
-        stopping = true;
         log.info("Stopping ClusterController for namespace {}", namespace);
         vertx.cancelTimer(reconcileTimer);
         configMapWatch.close();
@@ -176,11 +175,10 @@ public class ClusterController extends AbstractVerticle {
                     public void onClose(KubernetesClientException e) {
                         if (e != null) {
                             log.error("Watcher closed with exception in namespace {}", namespace, e);
+                            recreateConfigMapWatch();
                         } else {
                             log.info("Watcher closed in namespace {}", namespace);
                         }
-
-                        recreateConfigMapWatch();
                     }
                 });
                 future.complete(watch);
@@ -197,11 +195,6 @@ public class ClusterController extends AbstractVerticle {
     }
 
     private void recreateConfigMapWatch() {
-        if (stopping) {
-            return;
-        }
-        configMapWatch.close();
-
         createConfigMapWatch(res -> {
             if (res.succeeded())    {
                 log.info("ConfigMap watch recreated in namespace {}", namespace);
