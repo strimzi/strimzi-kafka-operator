@@ -39,7 +39,7 @@ cat > /tmp/strimzi.properties <<EOF
 broker.id=${KAFKA_BROKER_ID}
 # Listeners
 listeners=CLIENT://:9092,REPLICATION://:9091
-advertised.listeners=CLIENT://$(hostname -I | tr -d " " ):9092,REPLICATION://$(hostname -f):9091
+advertised.listeners=CLIENT://$(hostname -f):9092,REPLICATION://$(hostname -f):9091
 listener.security.protocol.map=CLIENT:PLAINTEXT,REPLICATION:PLAINTEXT
 inter.broker.listener.name=REPLICATION
 # Zookeeper
