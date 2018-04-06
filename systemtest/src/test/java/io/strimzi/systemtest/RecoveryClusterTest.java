@@ -9,6 +9,7 @@ import io.strimzi.test.EnvVariables;
 import io.strimzi.test.KafkaCluster;
 import io.strimzi.test.Namespace;
 import io.strimzi.test.StrimziRunner;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
@@ -22,8 +23,8 @@ import static io.strimzi.test.k8s.BaseKubeClient.STATEFUL_SET;
 @RunWith(StrimziRunner.class)
 @Namespace(RecoveryClusterTest.NAMESPACE)
 @ClusterController(envVariables = {
-    @EnvVariables(key = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS", value = "15000"),
-    @EnvVariables(key = "STRIMZI_OPERATION_TIMEOUT_MS", value = "15000")})
+    @EnvVariables(key = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS", value = "10000"),
+    @EnvVariables(key = "STRIMZI_OPERATION_TIMEOUT_MS", value = "10000")})
 @KafkaCluster(name = RecoveryClusterTest.CLUSTER_NAME, kafkaNodes = 1)
 public class RecoveryClusterTest extends AbstractClusterTest {
 
@@ -32,8 +33,14 @@ public class RecoveryClusterTest extends AbstractClusterTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RecoveryClusterTest.class);
 
+    @BeforeClass
+    public void waitForTC(){
+        // wait fot TC to be sure that test can delete it safely
+        kubeClient.waitForDeployment(topicControllerDeploymentName(CLUSTER_NAME));
+    }
+
     @Test
-    public void testDeleteTopicControllerDeployment() {
+    public void testRecoveryFromTopicControllerDeletion() {
         // kafka cluster already deployed via annotation
         String topicControllerDeploymentName = topicControllerDeploymentName(CLUSTER_NAME);
         LOGGER.info("Running deleteTopicControllerDeployment with cluster {}", CLUSTER_NAME);
@@ -46,10 +53,9 @@ public class RecoveryClusterTest extends AbstractClusterTest {
     }
 
     @Test
-    public void testDeleteKafkaStatefulSet() {
+    public void testRecoveryFromKafkaStatefulSetDeletion() {
         // kafka cluster already deployed via annotation
         String kafkaStatefulSetName = kafkaClusterName(CLUSTER_NAME);
-
         LOGGER.info("Running deleteKafkaStatefulSet with cluster {}", CLUSTER_NAME);
 
         kubeClient.deleteByName(STATEFUL_SET, kafkaStatefulSetName);
@@ -60,10 +66,9 @@ public class RecoveryClusterTest extends AbstractClusterTest {
     }
 
     @Test
-    public void testDeleteZookeeperStatefulSet() {
+    public void testRecoveryFromZookeeperStatefulSetDeletion() {
         // kafka cluster already deployed via annotation
         String zookeeperStatefulSetName = zookeeperClusterName(CLUSTER_NAME);
-
         LOGGER.info("Running deleteZookeeperStatefulSet with cluster {}", CLUSTER_NAME);
 
         kubeClient.deleteByName(STATEFUL_SET, zookeeperStatefulSetName);
@@ -74,10 +79,9 @@ public class RecoveryClusterTest extends AbstractClusterTest {
     }
 
     @Test
-    public void testDeleteKafkaService() {
+    public void testRecoveryFromKafkaServiceDeletion() {
         // kafka cluster already deployed via annotation
         String kafkaServiceName = kafkaClusterName(CLUSTER_NAME);
-
         LOGGER.info("Running deleteKafkaService with cluster {}", CLUSTER_NAME);
 
         kubeClient.deleteByName(SERVICE, kafkaServiceName);
@@ -88,7 +92,7 @@ public class RecoveryClusterTest extends AbstractClusterTest {
     }
 
     @Test
-    public void testDeleteZookeeperService() {
+    public void testRecoveryFromZookeeperServiceDeletion() {
         // kafka cluster already deployed via annotation
         String zookeeperServiceName = zookeeperClusterName(CLUSTER_NAME);
 
@@ -102,24 +106,21 @@ public class RecoveryClusterTest extends AbstractClusterTest {
     }
 
     @Test
-    public void testDeleteKafkaHeadlessService() {
+    public void testRecoveryFromKafkaHeadlessServiceDeletion() {
         // kafka cluster already deployed via annotation
         String kafkaHeadlessServiceName = kafkaHeadlessServiceName(CLUSTER_NAME);
-
         LOGGER.info("Running deleteKafkaHeadlessService with cluster {}", CLUSTER_NAME);
 
         kubeClient.deleteByName(SERVICE, kafkaHeadlessServiceName);
-        kubeClient.waitForResourceDeletion(SERVICE, kafkaHeadlessServiceName);
 
         LOGGER.info("Waiting for creation {}", kafkaHeadlessServiceName);
         kubeClient.waitForResourceCreation(SERVICE, kafkaHeadlessServiceName);
     }
 
     @Test
-    public void testDeleteZookeeperHeadlessService() {
+    public void testRecoveryFromZookeeperHeadlessServiceDeletion() {
         // kafka cluster already deployed via annotation
         String zookeeperHeadlessServiceName = zookeeperHeadlessServiceName(CLUSTER_NAME);
-
         LOGGER.info("Running deleteKafkaHeadlessService with cluster {}", CLUSTER_NAME);
 
         kubeClient.deleteByName(SERVICE, zookeeperHeadlessServiceName);
@@ -130,10 +131,9 @@ public class RecoveryClusterTest extends AbstractClusterTest {
     }
 
     @Test
-    public void testDeleteKafkaMetricsConfig() {
+    public void testRecoveryFromKafkaMetricsConfigDeletion() {
         // kafka cluster already deployed via annotation
         String kafkaMetricsConfigName = kafkaMetricsConfigName(CLUSTER_NAME);
-
         LOGGER.info("Running deleteKafkaMetricsConfig with cluster {}", CLUSTER_NAME);
 
         kubeClient.deleteByName(CM, kafkaMetricsConfigName);
@@ -144,10 +144,9 @@ public class RecoveryClusterTest extends AbstractClusterTest {
     }
 
     @Test
-    public void testDeleteZookeeperMetricsConfig() {
+    public void testRecoveryFromZookeeperMetricsConfigDeletion() {
         // kafka cluster already deployed via annotation
         String zookeeperMetricsConfigName = zookeeperMetricsConfigName(CLUSTER_NAME);
-
         LOGGER.info("Running deleteZookeeperMetricsConfig with cluster {}", CLUSTER_NAME);
 
         kubeClient.deleteByName(CM, zookeeperMetricsConfigName);
