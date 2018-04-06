@@ -51,7 +51,6 @@ public class ClusterController extends AbstractVerticle {
     private final KafkaAssemblyOperator kafkaAssemblyOperator;
     private final KafkaConnectAssemblyOperator kafkaConnectAssemblyOperator;
     private final KafkaConnectS2IAssemblyOperator kafkaConnectS2IAssemblyOperator;
-    private boolean stopping;
 
     public ClusterController(String namespace,
                              long reconciliationInterval,
