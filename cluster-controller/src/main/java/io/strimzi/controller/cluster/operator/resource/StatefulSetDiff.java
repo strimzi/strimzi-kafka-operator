@@ -11,7 +11,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
 import static java.util.Arrays.asList;
@@ -20,34 +23,41 @@ public class StatefulSetDiff {
 
     private static final Logger log = LoggerFactory.getLogger(StatefulSetDiff.class.getName());
 
-    private Set<String> ignorablePaths = new HashSet<>(asList(
-        "/spec/revisionHistoryLimit",
-        "/spec/template/spec/containers/0/imagePullPolicy",
-        "/spec/template/spec/containers/0/livenessProbe/failureThreshold",
-        "/spec/template/spec/containers/0/livenessProbe/periodSeconds",
-        "/spec/template/spec/containers/0/livenessProbe/successThreshold",
-        "/spec/template/spec/containers/0/readinessProbe/failureThreshold",
-        "/spec/template/spec/containers/0/readinessProbe/periodSeconds",
-        "/spec/template/spec/containers/0/readinessProbe/successThreshold",
-        "/spec/template/spec/containers/0/resources",
-        "/spec/template/spec/containers/0/terminationMessagePath",
-        "/spec/template/spec/containers/0/terminationMessagePolicy",
-        "/spec/template/spec/dnsPolicy",
-        "/spec/template/spec/restartPolicy",
-        "/spec/template/spec/schedulerName",
-        "/spec/template/spec/securityContext",
-        "/spec/template/spec/terminationGracePeriodSeconds",
-        "/spec/template/spec/volumes/1/configMap/defaultMode",
-        "/status"));
+    private static final List<Pattern> IGNORABLE_PATHS;
+    static {
+        IGNORABLE_PATHS = asList(
+            "/spec/revisionHistoryLimit",
+            "/spec/template/spec/containers/0/imagePullPolicy",
+            "/spec/template/spec/containers/0/livenessProbe/failureThreshold",
+            "/spec/template/spec/containers/0/livenessProbe/periodSeconds",
+            "/spec/template/spec/containers/0/livenessProbe/successThreshold",
+            "/spec/template/spec/containers/0/readinessProbe/failureThreshold",
+            "/spec/template/spec/containers/0/readinessProbe/periodSeconds",
+            "/spec/template/spec/containers/0/readinessProbe/successThreshold",
+            "/spec/template/spec/containers/0/resources",
+            "/spec/template/spec/containers/0/terminationMessagePath",
+            "/spec/template/spec/containers/0/terminationMessagePolicy",
+            "/spec/template/spec/dnsPolicy",
+            "/spec/template/spec/restartPolicy",
+            "/spec/template/spec/schedulerName",
+            "/spec/template/spec/securityContext",
+            "/spec/template/spec/terminationGracePeriodSeconds",
+            "/spec/template/spec/volumes/[0-9]+/configMap/defaultMode",
+            "/status").stream().map(Pattern::compile).collect(Collectors.toList());
+    }
 
     private static boolean containsPathOrChild(Iterable<String> paths, String path) {
         for (String pathValue : paths) {
-            if (pathValue.equals(path)
-                    || pathValue.startsWith(path + "/")) {
+            if (equalsOrPrefix(path, pathValue)) {
                 return true;
             }
         }
         return false;
+    }
+
+    private static boolean equalsOrPrefix(String path, String pathValue) {
+        return pathValue.equals(path)
+                || pathValue.startsWith(path + "/");
     }
 
     private final boolean changesVolumeClaimTemplate;
@@ -59,11 +69,13 @@ public class StatefulSetDiff {
     public StatefulSetDiff(StatefulSet current, StatefulSet updated) {
         JsonNode diff = JsonDiff.asJson(patchMapper().valueToTree(current), patchMapper().valueToTree(updated));
         Set<String> paths = new HashSet<>();
-        for (JsonNode d : diff) {
+        outer: for (JsonNode d : diff) {
             String pathValue = d.get("path").asText();
-            if (ignorablePaths.contains(pathValue)) {
-                log.debug("StatefulSet {}/{} ignoring diff {}", current.getMetadata().getNamespace(), current.getMetadata().getName(), d);
-                continue;
+            for (Pattern pattern : IGNORABLE_PATHS) {
+                if (pattern.matcher(pathValue).matches()) {
+                    log.debug("StatefulSet {}/{} ignoring diff {}", current.getMetadata().getNamespace(), current.getMetadata().getName(), d);
+                    continue outer;
+                }
             }
             log.debug("StatefulSet {}/{} differs at path {}", current.getMetadata().getNamespace(), current.getMetadata().getName(), pathValue);
             paths.add(pathValue);
