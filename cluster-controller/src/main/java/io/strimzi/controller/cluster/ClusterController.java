@@ -208,6 +208,7 @@ public class ClusterController extends AbstractVerticle {
                 configMapWatch = res.result();
             } else {
                 log.error("Failed to recreate ConfigMap watch in namespace {}", namespace);
+                // We failed to recreate the Watch. We cannot continue without it. Lets close Vert.x and exit.
                 vertx.close();
             }
         });
