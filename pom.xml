@@ -105,6 +105,11 @@
                 </exclusions>
             </dependency>
             <dependency>
+                <groupId>org.scala-lang</groupId>
+                <artifactId>scala-library</artifactId>
+                <version>${scala-library.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-core</artifactId>
                 <version>${fasterxml.jackson.version}</version>
@@ -318,6 +323,7 @@
                             <ignoredUnusedDeclaredDependencies>
                                 <ignoredUnusedDeclaredDependency>org.slf4j:slf4j-log4j12</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>io.debezium:debezium-core</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>org.scala-lang:scala-library</ignoredUnusedDeclaredDependency>
                             </ignoredUnusedDeclaredDependencies>
                         </configuration>
                     </execution>

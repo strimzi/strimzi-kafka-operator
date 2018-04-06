@@ -10,13 +10,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
-import kafka.log.LogConfig;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.errors.InvalidTopicException;
-import scala.collection.Iterator;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -28,7 +26,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 
 import static java.lang.String.format;
 
@@ -71,7 +68,7 @@ public class TopicSerialization {
                         CM_KEY_CONFIG + "': " + (e.getMessage() != null ? e.getMessage() : e.toString()));
             }
         }
-        Set<String> supportedConfigs = getSupportedTopicConfigs();
+
         for (Map.Entry<?, ?> entry : result.entrySet()) {
             Object key = entry.getKey();
             String msg = null;
@@ -84,24 +81,12 @@ public class TopicSerialization {
             } else if (!(v instanceof String)) {
                 msg = "The value corresponding to the key must have a String value, not a value of type " + v.getClass();
             }
-            if (!supportedConfigs.contains(key)) {
-                msg = "The allowed configs keys are " + supportedConfigs;
-            }
             if (msg != null) {
                 throw new InvalidConfigMapException(cm, "ConfigMap's 'data' section has invalid key '" +
                         CM_KEY_CONFIG + "': The key '" + key + "' of the topic config is invalid: " + msg);
             }
         }
         return (Map<String, String>) result;
-    }
-
-    private static Set<String> getSupportedTopicConfigs() {
-        Set<String> supportedKeys = new TreeSet<>();
-        Iterator<String> it = LogConfig.configNames().iterator();
-        while (it.hasNext()) {
-            supportedKeys.add(it.next());
-        }
-        return supportedKeys;
     }
 
     private static String topicConfigToConfigMapString(Map<String, String> config) throws IOException {

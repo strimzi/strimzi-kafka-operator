@@ -24,7 +24,6 @@ import java.util.Map;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class TopicSerializationTest {
@@ -234,26 +233,6 @@ public class TopicSerializationTest {
                     "Unrecognized token 'foobar': was expecting 'null', 'true', 'false' or NaN\n" +
                     " at [Source: UNKNOWN; line: 1, column: 13]",
                     e.getMessage());
-        }
-    }
-
-    @Test
-    public void testErrorInConfigInvalidKey() {
-        Map<String, String> data = new HashMap<>();
-        data.put(TopicSerialization.CM_KEY_REPLICAS, "1");
-        data.put(TopicSerialization.CM_KEY_PARTITIONS, "1");
-        data.put(TopicSerialization.CM_KEY_CONFIG, "{\"foo\":\"bar\"}");
-
-        ConfigMap cm = new ConfigMapBuilder().editOrNewMetadata().withName("my-topic")
-                .endMetadata().withData(data).build();
-
-        try {
-            TopicSerialization.fromConfigMap(cm);
-            fail("Should throw");
-        } catch (InvalidConfigMapException e) {
-            assertTrue(e.getMessage().startsWith("ConfigMap's 'data' section has invalid key 'config': " +
-                            "The key 'foo' of the topic config is invalid: " +
-                            "The allowed configs keys are ["));
         }
     }
 
