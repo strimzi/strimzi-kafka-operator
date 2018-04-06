@@ -23,7 +23,7 @@
         <fabric8.kubernetes-model.version>2.0.4</fabric8.kubernetes-model.version>
         <fabric8.zjsonpatch.version>0.3.0</fabric8.zjsonpatch.version>
         <vertx.version>3.5.1</vertx.version>
-        <slf4j.version>1.7.21</slf4j.version>
+        <slf4j.version>1.7.22</slf4j.version>
         <junit.version>4.12</junit.version>
         <hamcrest.version>1.3</hamcrest.version>
         <fasterxml.jackson.version>2.9.3</fasterxml.jackson.version>
