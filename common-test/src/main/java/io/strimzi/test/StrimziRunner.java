@@ -289,6 +289,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
             last = new Bracket(last) {
                 private final String kafkaStatefulSetName = cluster.name() + "-kafka";
                 private final String zkStatefulSetName = cluster.name() + "-zookeeper";
+                private final String tcDeploymentName = cluster.name() + "-topic-controller";
                 @Override
                 protected void before() {
                     LOGGER.info("Creating kafka cluster '{}' before test per @KafkaCluster annotation on {}", cluster.name(), name(element));
@@ -296,6 +297,8 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     kubeClient().createContent(yaml);
                     // wait for ss
                     kubeClient().waitForStatefulSet(kafkaStatefulSetName, cluster.kafkaNodes());
+                    // wait fot TC
+                    kubeClient().waitForDeployment(tcDeploymentName);
                 }
 
                 @Override

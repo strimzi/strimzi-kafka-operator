@@ -33,12 +33,6 @@ public class RecoveryClusterTest extends AbstractClusterTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RecoveryClusterTest.class);
 
-    @BeforeClass
-    public void waitForTC(){
-        // wait fot TC to be sure that test can delete it safely
-        kubeClient.waitForDeployment(topicControllerDeploymentName(CLUSTER_NAME));
-    }
-
     @Test
     public void testRecoveryFromTopicControllerDeletion() {
         // kafka cluster already deployed via annotation
