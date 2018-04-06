@@ -78,7 +78,6 @@ public class RecoveryClusterTest extends AbstractClusterTest {
         LOGGER.info("Running deleteKafkaService with cluster {}", CLUSTER_NAME);
 
         kubeClient.deleteByName(SERVICE, kafkaServiceName);
-        kubeClient.waitForResourceDeletion(SERVICE, kafkaServiceName);
 
         LOGGER.info("Waiting for creation {}", kafkaServiceName);
         kubeClient.waitForResourceCreation(SERVICE, kafkaServiceName);
@@ -92,7 +91,6 @@ public class RecoveryClusterTest extends AbstractClusterTest {
         LOGGER.info("Running deleteKafkaService with cluster {}", CLUSTER_NAME);
 
         kubeClient.deleteByName(SERVICE, zookeeperServiceName);
-        kubeClient.waitForResourceDeletion(SERVICE, zookeeperServiceName);
 
         LOGGER.info("Waiting for creation {}", zookeeperServiceName);
         kubeClient.waitForResourceCreation(SERVICE, zookeeperServiceName);
@@ -117,7 +115,6 @@ public class RecoveryClusterTest extends AbstractClusterTest {
         LOGGER.info("Running deleteKafkaHeadlessService with cluster {}", CLUSTER_NAME);
 
         kubeClient.deleteByName(SERVICE, zookeeperHeadlessServiceName);
-        kubeClient.waitForResourceDeletion(SERVICE, zookeeperHeadlessServiceName);
 
         LOGGER.info("Waiting for creation {}", zookeeperHeadlessServiceName);
         kubeClient.waitForResourceCreation(SERVICE, zookeeperHeadlessServiceName);
