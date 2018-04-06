@@ -31,18 +31,18 @@ import org.slf4j.LoggerFactory;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class Main {
     private static final Logger log = LoggerFactory.getLogger(Main.class.getName());
 
     public static void main(String[] args) {
+        ClusterControllerConfig config = ClusterControllerConfig.fromMap(System.getenv());
         Vertx vertx = Vertx.vertx();
         KubernetesClient client = new DefaultKubernetesClient();
 
         isOnOpenShift(vertx, client).setHandler(os -> {
             if (os.succeeded()) {
-                run(vertx, client, os.result().booleanValue(), System.getenv()).setHandler(ar -> {
+                run(vertx, client, os.result().booleanValue(), config).setHandler(ar -> {
                     if (ar.failed()) {
                         log.error("Unable to start controller for 1 or more namespace", ar.cause());
                         System.exit(1);
@@ -55,9 +55,7 @@ public class Main {
         });
     }
 
-    static CompositeFuture run(Vertx vertx, KubernetesClient client, boolean isOpenShift, Map<String, String> env) {
-        ClusterControllerConfig config = ClusterControllerConfig.fromMap(env);
-
+    static CompositeFuture run(Vertx vertx, KubernetesClient client, boolean isOpenShift, ClusterControllerConfig config) {
         ServiceOperator serviceOperations = new ServiceOperator(vertx, client);
         ZookeeperSetOperator zookeeperSetOperations = new ZookeeperSetOperator(vertx, client);
         KafkaSetOperator kafkaSetOperations = new KafkaSetOperator(vertx, client);
