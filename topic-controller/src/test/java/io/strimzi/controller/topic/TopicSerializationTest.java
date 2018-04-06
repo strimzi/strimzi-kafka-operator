@@ -232,8 +232,7 @@ public class TopicSerializationTest {
         } catch (InvalidConfigMapException e) {
             assertEquals("ConfigMap's 'data' section has invalid key 'config': " +
                     "Unrecognized token 'foobar': was expecting 'null', 'true', 'false' or NaN\n" +
-                    " at [Source: 'config' key of 'data' section of " +
-                    "ConfigMap 'my-topic' in namespace 'null'; line: 1, column: 13]",
+                    " at [Source: UNKNOWN; line: 1, column: 13]",
                     e.getMessage());
         }
     }
@@ -273,7 +272,7 @@ public class TopicSerializationTest {
         } catch (InvalidConfigMapException e) {
             assertEquals("ConfigMap's 'data' section has invalid key 'config': " +
                             "Unexpected character ('n' (code 110)): was expecting double-quote to start field name\n" +
-                            " at [Source: 'config' key of 'data' section of ConfigMap 'my-topic' in namespace 'null'; line: 1, column: 3]",
+                            " at [Source: UNKNOWN; line: 1, column: 3]",
                     e.getMessage());
         }
     }

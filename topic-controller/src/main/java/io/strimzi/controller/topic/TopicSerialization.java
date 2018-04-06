@@ -5,6 +5,7 @@
 package io.strimzi.controller.topic;
 
 import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.fabric8.kubernetes.api.model.ConfigMap;
@@ -326,6 +327,7 @@ public class TopicSerialization {
 
     private static ObjectMapper objectMapper() {
         JsonFactory jf = new JsonFactory();
+        jf.configure(JsonParser.Feature.INCLUDE_SOURCE_IN_LOCATION, false);
         return new ObjectMapper(jf);
     }
 
