@@ -32,10 +32,15 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
 
     public static final String CREATE = "create";
     public static final String DELETE = "delete";
+    public static final String DEPLOYMENT = "deployment";
+    public static final String STATEFUL_SET = "statefulset";
+    public static final String SERVICE = "service";
+    public static final String CM = "cm";
     private String namespace = defaultNamespace();
 
     protected abstract String cmd();
 
+    @Override
     public K deleteByName(String resourceType, String resourceName) {
         Exec.exec(namespacedCommand(DELETE, resourceType, resourceName));
         return (K) this;
@@ -57,6 +62,7 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
         return previous;
     }
 
+    @Override
     public String namespace() {
         return namespace;
     }
@@ -276,6 +282,14 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
                 }
                 return false;
             });
+    }
+
+    @Override
+    public K waitForResourceCreation(String resourceType, String resourceName) {
+        // wait when resource to be created
+        return waitFor(resourceType, resourceName,
+            actualObj -> true
+        );
     }
 
     @Override

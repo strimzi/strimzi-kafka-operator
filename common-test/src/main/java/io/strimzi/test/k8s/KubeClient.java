@@ -35,6 +35,9 @@ public interface KubeClient<K extends KubeClient<K>> {
 
     String defaultNamespace();
 
+    /** Deletes the resources by resource name. */
+    K deleteByName(String resourceType, String resourceName);
+
     String namespace(String namespace);
 
     /** Returns namespace for cluster */
@@ -107,6 +110,14 @@ public interface KubeClient<K extends KubeClient<K>> {
      * * @return This kube client.
      */
     K waitForStatefulSet(String name, int expectPods);
+
+    /**
+     * Wait for the resource with the given {@code name} to be created.
+     * @param resourceType The resource type.
+     * @param resourceName The resource name.
+     * @return This kube client.
+     */
+    K waitForResourceCreation(String resourceType, String resourceName);
 
     /**
      * Get the content of the given {@code resource} with the given {@code name} as YAML.
