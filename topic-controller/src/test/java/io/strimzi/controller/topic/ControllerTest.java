@@ -107,7 +107,7 @@ public class ControllerTest {
             assertFailed(context, ar);
             context.assertTrue(ar.cause() instanceof InvalidConfigMapException);
             context.assertEquals("ConfigMap's 'data' section has invalid key 'config': Unexpected character ('n' (code 110)): was expecting double-quote to start field name\n" +
-                    " at [Source: 'config' key of 'data' section of ConfigMap 'invalid' in namespace 'null'; line: 1, column: 3]", ar.cause().getMessage());
+                    " at [Source: UNKNOWN; line: 1, column: 3]", ar.cause().getMessage());
             mockKafka.assertEmpty(context);
             mockTopicStore.assertEmpty(context);
             async.complete();

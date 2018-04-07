@@ -138,9 +138,9 @@ public abstract class AbtractReadyResourceOperatorTest<C extends KubernetesClien
         Async async = context.async();
         op.readiness(NAMESPACE, RESOURCE_NAME, 20, 5_000).setHandler(ar -> {
             assertTrue(ar.succeeded());
-            verify(mockResource, times(Readiness.isReadinessApplicable(resource) ? unreadyCount + 1 : 1)).get();
+            verify(mockResource, times(Readiness.isReadinessApplicable(resource.getClass()) ? unreadyCount + 1 : 1)).get();
 
-            if (Readiness.isReadinessApplicable(resource)) {
+            if (Readiness.isReadinessApplicable(resource.getClass())) {
                 verify(mockResource, times(unreadyCount + 1)).isReady();
             }
             async.complete();
@@ -151,7 +151,7 @@ public abstract class AbtractReadyResourceOperatorTest<C extends KubernetesClien
     public void waitUntilReadyUnsuccessful(TestContext context) {
         T resource = resource();
 
-        if (!Readiness.isReadinessApplicable(resource))  {
+        if (!Readiness.isReadinessApplicable(resource.getClass()))  {
             return;
         }
 
@@ -184,7 +184,7 @@ public abstract class AbtractReadyResourceOperatorTest<C extends KubernetesClien
     public void waitUntilReadyThrows(TestContext context) {
         T resource = resource();
 
-        if (!Readiness.isReadinessApplicable(resource))  {
+        if (!Readiness.isReadinessApplicable(resource.getClass()))  {
             return;
         }
 

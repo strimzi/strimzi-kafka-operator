@@ -24,7 +24,6 @@ import java.util.Map;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class TopicSerializationTest {
@@ -232,29 +231,8 @@ public class TopicSerializationTest {
         } catch (InvalidConfigMapException e) {
             assertEquals("ConfigMap's 'data' section has invalid key 'config': " +
                     "Unrecognized token 'foobar': was expecting 'null', 'true', 'false' or NaN\n" +
-                    " at [Source: 'config' key of 'data' section of " +
-                    "ConfigMap 'my-topic' in namespace 'null'; line: 1, column: 13]",
+                    " at [Source: UNKNOWN; line: 1, column: 13]",
                     e.getMessage());
-        }
-    }
-
-    @Test
-    public void testErrorInConfigInvalidKey() {
-        Map<String, String> data = new HashMap<>();
-        data.put(TopicSerialization.CM_KEY_REPLICAS, "1");
-        data.put(TopicSerialization.CM_KEY_PARTITIONS, "1");
-        data.put(TopicSerialization.CM_KEY_CONFIG, "{\"foo\":\"bar\"}");
-
-        ConfigMap cm = new ConfigMapBuilder().editOrNewMetadata().withName("my-topic")
-                .endMetadata().withData(data).build();
-
-        try {
-            TopicSerialization.fromConfigMap(cm);
-            fail("Should throw");
-        } catch (InvalidConfigMapException e) {
-            assertTrue(e.getMessage().startsWith("ConfigMap's 'data' section has invalid key 'config': " +
-                            "The key 'foo' of the topic config is invalid: " +
-                            "The allowed configs keys are ["));
         }
     }
 
@@ -273,7 +251,7 @@ public class TopicSerializationTest {
         } catch (InvalidConfigMapException e) {
             assertEquals("ConfigMap's 'data' section has invalid key 'config': " +
                             "Unexpected character ('n' (code 110)): was expecting double-quote to start field name\n" +
-                            " at [Source: 'config' key of 'data' section of ConfigMap 'my-topic' in namespace 'null'; line: 1, column: 3]",
+                            " at [Source: UNKNOWN; line: 1, column: 3]",
                     e.getMessage());
         }
     }

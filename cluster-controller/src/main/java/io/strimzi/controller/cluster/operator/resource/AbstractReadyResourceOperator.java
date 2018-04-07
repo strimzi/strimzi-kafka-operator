@@ -106,7 +106,7 @@ public abstract class AbstractReadyResourceOperator<C, T extends HasMetadata, L 
         R resourceOp = operation().inNamespace(namespace).withName(name);
         T resource = resourceOp.get();
         if (resource != null)   {
-            if (Readiness.isReadinessApplicable(resource)) {
+            if (Readiness.isReadinessApplicable(resource.getClass())) {
                 return Boolean.TRUE.equals(resourceOp.isReady());
             } else {
                 return true;
