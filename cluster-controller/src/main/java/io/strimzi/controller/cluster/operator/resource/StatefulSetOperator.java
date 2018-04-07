@@ -5,6 +5,7 @@
 package io.strimzi.controller.cluster.operator.resource;
 
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.extensions.DoneableStatefulSet;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSetList;
@@ -250,5 +251,39 @@ public class StatefulSetOperator<P> extends AbstractScalableResourceOperator<Kub
         operation().inNamespace(namespace).withName(name).cascading(false).patch(desired);
         log.debug("Patched {} {}/{}", resourceKind, namespace, name);
         return Future.succeededFuture(ReconcileResult.patched(null));
+    }
+
+    /**
+     * Reverts the changes done storage configuration of running cluster. Such changes are not allowed.
+     *
+     * @param current Current StatefulSet
+     * @param desired New StatefulSet
+     */
+    protected void revertStorageChanges(StatefulSet current, StatefulSet desired) {
+        if (current.getSpec().getVolumeClaimTemplates().isEmpty()) {
+            // We are on ephemeral storage and changing to persistent
+            desired.getSpec().setVolumeClaimTemplates(current.getSpec().getVolumeClaimTemplates());
+
+            List<Volume> volumes = current.getSpec().getTemplate().getSpec().getVolumes();
+            for (int i = 0; i < volumes.size(); i++) {
+                Volume vol = volumes.get(i);
+                if ("data".equals(vol.getName()) && vol.getEmptyDir() != null) {
+                    desired.getSpec().getTemplate().getSpec().getVolumes().add(0, volumes.get(i));
+                    break;
+                }
+            }
+        } else {
+            // We are on persistent storage and changing to ephemeral
+            desired.getSpec().setVolumeClaimTemplates(current.getSpec().getVolumeClaimTemplates());
+
+            List<Volume> volumes = desired.getSpec().getTemplate().getSpec().getVolumes();
+            for (int i = 0; i < volumes.size(); i++) {
+                Volume vol = volumes.get(i);
+                if ("data".equals(vol.getName()) && vol.getEmptyDir() != null) {
+                    volumes.remove(i);
+                    break;
+                }
+            }
+        }
     }
 }

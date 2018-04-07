@@ -32,8 +32,8 @@ public class KafkaSetOperator extends StatefulSetOperator<Boolean> {
     protected Future<ReconcileResult<Boolean>> internalPatch(String namespace, String name, StatefulSet current, StatefulSet desired) {
         StatefulSetDiff diff = new StatefulSetDiff(current, desired);
         if (diff.changesVolumeClaimTemplates()) {
-            log.warn("Ignoring change to volumeClaim");
-            desired.getSpec().setVolumeClaimTemplates(current.getSpec().getVolumeClaimTemplates());
+            log.warn("Changing storage type or size is not possible.");
+            revertStorageChanges(current, desired);
             diff = new StatefulSetDiff(current, desired);
         }
         if (diff.isEmpty()) {
