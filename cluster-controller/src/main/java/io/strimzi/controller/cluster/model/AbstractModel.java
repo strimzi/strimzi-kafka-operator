@@ -85,7 +85,7 @@ public abstract class AbstractModel {
     protected Storage storage;
 
     protected String mountPath;
-    protected static final String VOLUME_NAME = "data";
+    public static final String VOLUME_NAME = "data";
     protected String metricsConfigVolumeName;
     protected String metricsConfigMountPath;
 

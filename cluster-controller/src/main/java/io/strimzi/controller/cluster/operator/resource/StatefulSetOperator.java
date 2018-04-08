@@ -15,6 +15,7 @@ import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
+import io.strimzi.controller.cluster.model.AbstractModel;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -267,7 +268,7 @@ public class StatefulSetOperator<P> extends AbstractScalableResourceOperator<Kub
             List<Volume> volumes = current.getSpec().getTemplate().getSpec().getVolumes();
             for (int i = 0; i < volumes.size(); i++) {
                 Volume vol = volumes.get(i);
-                if ("data".equals(vol.getName()) && vol.getEmptyDir() != null) {
+                if (AbstractModel.VOLUME_NAME.equals(vol.getName()) && vol.getEmptyDir() != null) {
                     desired.getSpec().getTemplate().getSpec().getVolumes().add(0, volumes.get(i));
                     break;
                 }
@@ -279,7 +280,7 @@ public class StatefulSetOperator<P> extends AbstractScalableResourceOperator<Kub
             List<Volume> volumes = desired.getSpec().getTemplate().getSpec().getVolumes();
             for (int i = 0; i < volumes.size(); i++) {
                 Volume vol = volumes.get(i);
-                if ("data".equals(vol.getName()) && vol.getEmptyDir() != null) {
+                if (AbstractModel.VOLUME_NAME.equals(vol.getName()) && vol.getEmptyDir() != null) {
                     volumes.remove(i);
                     break;
                 }
