@@ -5,6 +5,7 @@
 package io.strimzi.controller.cluster.operator.resource;
 
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.extensions.DoneableStatefulSet;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSetList;
@@ -14,6 +15,7 @@ import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
+import io.strimzi.controller.cluster.model.AbstractModel;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -250,5 +252,41 @@ public class StatefulSetOperator<P> extends AbstractScalableResourceOperator<Kub
         operation().inNamespace(namespace).withName(name).cascading(false).patch(desired);
         log.debug("Patched {} {}/{}", resourceKind, namespace, name);
         return Future.succeededFuture(ReconcileResult.patched(null));
+    }
+
+    /**
+     * Reverts the changes done storage configuration of running cluster. Such changes are not allowed.
+     *
+     * @param current Current StatefulSet
+     * @param desired New StatefulSet
+     *
+     * @return Updated StatefulSetDiff after the storage patching
+     */
+    protected StatefulSetDiff revertStorageChanges(StatefulSet current, StatefulSet desired) {
+        desired.getSpec().setVolumeClaimTemplates(current.getSpec().getVolumeClaimTemplates());
+
+        if (current.getSpec().getVolumeClaimTemplates().isEmpty()) {
+            // We are on ephemeral storage and changing to persistent
+            List<Volume> volumes = current.getSpec().getTemplate().getSpec().getVolumes();
+            for (int i = 0; i < volumes.size(); i++) {
+                Volume vol = volumes.get(i);
+                if (AbstractModel.VOLUME_NAME.equals(vol.getName()) && vol.getEmptyDir() != null) {
+                    desired.getSpec().getTemplate().getSpec().getVolumes().add(0, volumes.get(i));
+                    break;
+                }
+            }
+        } else {
+            // We are on persistent storage and changing to ephemeral
+            List<Volume> volumes = desired.getSpec().getTemplate().getSpec().getVolumes();
+            for (int i = 0; i < volumes.size(); i++) {
+                Volume vol = volumes.get(i);
+                if (AbstractModel.VOLUME_NAME.equals(vol.getName()) && vol.getEmptyDir() != null) {
+                    volumes.remove(i);
+                    break;
+                }
+            }
+        }
+
+        return new StatefulSetDiff(current, desired);
     }
 }

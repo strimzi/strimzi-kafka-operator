@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
+import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.controller.cluster.Reconciliation;
@@ -536,6 +537,61 @@ public class KafkaAssemblyOperatorMockIT {
         List<PersistentVolumeClaim> volumeClaimTemplates = statefulSet.getSpec().getVolumeClaimTemplates();
         context.assertFalse(volumeClaimTemplates.isEmpty());
         context.assertEquals(expectedClass, volumeClaimTemplates.get(0).getSpec().getStorageClassName());
+    }
+
+    @Test
+    public void testUpdateKafkaWithChangedStorageType(TestContext context) {
+        if (!Storage.StorageType.LOCAL.equals(storageType(kafkaStorage))) {
+            LOGGER.info("Skipping change storage type test because using storage type {}", kafkaStorage);
+            return;
+        }
+
+        KafkaAssemblyOperator kco = createCluster(context);
+        List<PersistentVolumeClaim> originalPVCs = mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaClusterName(CLUSTER_NAME)).get().getSpec().getVolumeClaimTemplates();
+        List<Volume> originalVolumes = mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaClusterName(CLUSTER_NAME)).get().getSpec().getTemplate().getSpec().getVolumes();
+
+        Async updateAsync = context.async();
+
+        // Try to update the storage type
+        HashMap<String, String> data = new HashMap<>(cluster.getData());
+
+        if ("ephemeral".equals(kafkaStorage.getString("type"))) {
+            data.put(KafkaCluster.KEY_STORAGE,
+                    new JsonObject("{\"type\": \"persistent-claim\", " +
+                            "\"size\": \"123\"}").toString());
+        } else if ("persistent-claim".equals(kafkaStorage.getString("type"))) {
+            data.put(KafkaCluster.KEY_STORAGE,
+                    new JsonObject("{\"type\": \"ephemeral\"}").toString());
+        }
+
+        ConfigMap changedClusterCm = new ConfigMapBuilder(cluster).withData(data).build();
+        mockClient.configMaps().inNamespace(NAMESPACE).withName(CLUSTER_NAME).patch(changedClusterCm);
+
+        LOGGER.info("Updating with changed storage type");
+        kco.reconcileAssembly(new Reconciliation("test-trigger", AssemblyType.KAFKA, NAMESPACE, CLUSTER_NAME), ar -> {
+            if (ar.failed()) ar.cause().printStackTrace();
+            context.assertTrue(ar.succeeded());
+            // Check the Volumes and PVCs were not changed
+            assertPVCs(context, KafkaCluster.kafkaClusterName(CLUSTER_NAME), originalPVCs);
+            assertVolumes(context, KafkaCluster.kafkaClusterName(CLUSTER_NAME), originalVolumes);
+            updateAsync.complete();
+        });
+    }
+
+    private void assertPVCs(TestContext context, String statefulSetName, List<PersistentVolumeClaim> originalPVCs) {
+        StatefulSet statefulSet = mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSetName).get();
+        context.assertNotNull(statefulSet);
+        List<PersistentVolumeClaim> pvcs = statefulSet.getSpec().getVolumeClaimTemplates();
+        context.assertEquals(pvcs.size(), originalPVCs.size());
+        context.assertEquals(pvcs, originalPVCs);
+    }
+
+    private void assertVolumes(TestContext context, String statefulSetName, List<Volume> originalVolumes) {
+        StatefulSet statefulSet = mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSetName).get();
+        context.assertNotNull(statefulSet);
+        List<Volume> volumes = statefulSet.getSpec().getTemplate().getSpec().getVolumes();
+        context.assertEquals(volumes.size(), originalVolumes.size());
+        context.assertEquals(volumes, originalVolumes);
     }
 
     /** Test that we can change the deleteClaim flag, and that it's honoured */
