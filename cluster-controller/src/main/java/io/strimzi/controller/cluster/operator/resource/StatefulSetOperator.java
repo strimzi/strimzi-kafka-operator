@@ -259,8 +259,10 @@ public class StatefulSetOperator<P> extends AbstractScalableResourceOperator<Kub
      *
      * @param current Current StatefulSet
      * @param desired New StatefulSet
+     *
+     * @return Updated StatefulSetDiff after the storage patching
      */
-    protected void revertStorageChanges(StatefulSet current, StatefulSet desired) {
+    protected StatefulSetDiff revertStorageChanges(StatefulSet current, StatefulSet desired) {
         desired.getSpec().setVolumeClaimTemplates(current.getSpec().getVolumeClaimTemplates());
 
         if (current.getSpec().getVolumeClaimTemplates().isEmpty()) {
@@ -284,5 +286,7 @@ public class StatefulSetOperator<P> extends AbstractScalableResourceOperator<Kub
                 }
             }
         }
+
+        return new StatefulSetDiff(current, desired);
     }
 }
