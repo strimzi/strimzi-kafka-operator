@@ -163,34 +163,39 @@ public class Session extends AbstractVerticle {
 
     void reconcileTopics(String reconciliationType) {
         LOGGER.info("Starting {} reconciliation", reconciliationType);
-        kafka.listTopics(arx -> {
-            if (arx.succeeded()) {
-                Set<String> kafkaTopics = arx.result();
+        kafka.listTopics(topicsListResult -> {
+            if (topicsListResult.succeeded()) {
+                Set<String> kafkaTopics = topicsListResult.result();
                 LOGGER.debug("Reconciling kafka topics {}", kafkaTopics);
                 // First reconcile the topics in kafka
                 for (String name : kafkaTopics) {
                     LOGGER.debug("{} reconciliation of topic {}", reconciliationType, name);
                     TopicName topicName = new TopicName(name);
-                    k8s.getFromName(topicName.asMapName(), ar -> {
-                        ConfigMap cm = ar.result();
-
-                        controller.reconcile(cm, topicName, reconcileResult -> {
-                            if (reconcileResult.succeeded()) {
-                                LOGGER.info("Success {} reconciling ConfigMap {} topic {}",
-                                        reconciliationType, Controller.logConfigMap(cm), topicName);
-                            } else {
-                                LOGGER.error("Error {} reconciling ConfigMap {} topic {}",
-                                        reconciliationType, Controller.logConfigMap(cm), topicName, reconcileResult.cause());
-                            }
-                        });
+                    k8s.getFromName(topicName.asMapName(), cmResult -> {
+                        if (cmResult.succeeded()) {
+                            ConfigMap cm = cmResult.result();
+                            controller.reconcile(cm, topicName, reconcileResult -> {
+                                if (reconcileResult.succeeded()) {
+                                    LOGGER.info("Success {} reconciling ConfigMap {} topic {}",
+                                            reconciliationType, Controller.logConfigMap(cm), topicName);
+                                } else {
+                                    LOGGER.error("Error {} reconciling ConfigMap {} topic {}",
+                                            reconciliationType, Controller.logConfigMap(cm), topicName, reconcileResult.cause());
+                                }
+                            });
+                        } else {
+                            LOGGER.error("Error {} getting ConfigMap {} for topic {}",
+                                    reconciliationType,
+                                    topicName.asMapName(), topicName, cmResult.cause());
+                        }
                     });
                 }
 
                 LOGGER.debug("Reconciling configmaps");
                 // Then those in k8s which aren't in kafka
-                k8s.listMaps(ar -> {
-                    if (ar.succeeded()) {
-                        List<ConfigMap> configMaps = ar.result();
+                k8s.listMaps(configMapsListResult -> {
+                    if (configMapsListResult.succeeded()) {
+                        List<ConfigMap> configMaps = configMapsListResult.result();
                         Map<String, ConfigMap> configMapsMap = configMaps.stream().collect(Collectors.toMap(
                             cm -> cm.getMetadata().getName(),
                             cm -> cm));
@@ -211,14 +216,14 @@ public class Session extends AbstractVerticle {
                             });
                         }
                     } else {
-                        LOGGER.error("Unable to list ConfigMaps", ar.cause());
+                        LOGGER.error("Unable to list ConfigMaps", configMapsListResult.cause());
                     }
 
                     // Finally those in private store which we've not dealt with so far...
                     // TODO ^^
                 });
             } else {
-                LOGGER.error("Error performing {} reconciliation", reconciliationType, arx.cause());
+                LOGGER.error("Error performing {} reconciliation", reconciliationType, topicsListResult.cause());
             }
         });
     }
