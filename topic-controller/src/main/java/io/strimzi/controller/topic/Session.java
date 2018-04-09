@@ -36,6 +36,8 @@ public class Session extends AbstractVerticle {
     TopicsWatcher topicsWatcher;
     TopicConfigsWatcher topicConfigsWatcher;
     TopicWatcher topicWatcher;
+    /** The id of the periodic reconciliation timer. This is null during a periodic reconciliation. */
+    private volatile Long timerId;
     private volatile boolean stopped = false;
     private Zk zk;
     private volatile HttpServer healthServer;
@@ -56,6 +58,10 @@ public class Session extends AbstractVerticle {
     @Override
     public void stop(Future<Void> stopFuture) throws Exception {
         this.stopped = true;
+        Long timerId = this.timerId;
+        if (timerId != null) {
+            vertx.cancelTimer(timerId);
+        }
         vertx.executeBlocking(blockingResult -> {
             long t0 = System.currentTimeMillis();
             long timeout = 120_000L;
@@ -146,10 +152,15 @@ public class Session extends AbstractVerticle {
         final Long interval = config.get(Config.FULL_RECONCILIATION_INTERVAL_MS);
         Handler<Long> periodic = new Handler<Long>() {
             @Override
-            public void handle(Long timerId) {
-                controller.reconcileAllTopics("periodic").setHandler(result -> {
-                    vertx.setTimer(interval, this);
-                });
+            public void handle(Long oldTimerId) {
+                if (!stopped) {
+                    timerId = null;
+                    controller.reconcileAllTopics("periodic").setHandler(result -> {
+                        if (!stopped) {
+                            timerId = vertx.setTimer(interval, this);
+                        }
+                    });
+                }
             }
         };
         periodic.handle(null);
