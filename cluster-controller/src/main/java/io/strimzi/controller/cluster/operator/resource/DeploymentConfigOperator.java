@@ -10,6 +10,7 @@ import io.fabric8.openshift.api.model.DeploymentConfigList;
 import io.fabric8.openshift.api.model.DoneableDeploymentConfig;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.openshift.client.dsl.DeployableScalableResource;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
 /**
@@ -38,5 +39,10 @@ public class DeploymentConfigOperator extends AbstractScalableResourceOperator<O
         } else {
             return null;
         }
+    }
+
+    protected Future<ReconcileResult<Void>> internalPatch(String namespace, String name, DeploymentConfig current, DeploymentConfig desired) {
+        desired.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(current.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
+        return super.internalPatch(namespace, name, current, desired);
     }
 }
