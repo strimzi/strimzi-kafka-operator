@@ -559,8 +559,7 @@ public class KafkaAssemblyOperatorMockIT {
             data.put(KafkaCluster.KEY_STORAGE,
                     new JsonObject("{\"type\": \"persistent-claim\", " +
                             "\"size\": \"123\"}").toString());
-        }
-        else if ("persistent-claim".equals(kafkaStorage.getString("type"))) {
+        } else if ("persistent-claim".equals(kafkaStorage.getString("type"))) {
             data.put(KafkaCluster.KEY_STORAGE,
                     new JsonObject("{\"type\": \"ephemeral\"}").toString());
         }
