@@ -153,14 +153,17 @@ public class Session extends AbstractVerticle {
         // Reconcile initially
         reconcileTopics("initial");
         // And periodically after that
-        vertx.setPeriodic(this.config.get(Config.FULL_RECONCILIATION_INTERVAL_MS),
-            timerId -> {
-                if (stopped) {
-                    vertx.cancelTimer(timerId);
-                    return;
-                }
-                reconcileTopics("periodic");
-            });
+
+        final Long interval = config.get(Config.FULL_RECONCILIATION_INTERVAL_MS);
+        Handler<Long> periodic = new Handler<Long>() {
+            @Override
+            public void handle(Long timerId) {
+                reconcileTopics("periodic").setHandler(result -> {
+                    vertx.setTimer(interval, this);
+                });
+            }
+        };
+        vertx.setTimer(interval, periodic);
         LOGGER.info("Started");
     }
 
