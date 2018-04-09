@@ -4,12 +4,10 @@
  */
 package io.strimzi.controller.topic;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
 import io.strimzi.controller.topic.zk.Zk;
 import io.vertx.core.AbstractVerticle;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServer;
@@ -18,13 +16,8 @@ import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 public class Session extends AbstractVerticle {
 
@@ -150,79 +143,17 @@ public class Session extends AbstractVerticle {
         LOGGER.debug("Starting {}", configMapThread);
         configMapThread.start();
 
-        // Reconcile initially
-        reconcileTopics("initial");
-        // And periodically after that
-
         final Long interval = config.get(Config.FULL_RECONCILIATION_INTERVAL_MS);
         Handler<Long> periodic = new Handler<Long>() {
             @Override
             public void handle(Long timerId) {
-                reconcileTopics("periodic").setHandler(result -> {
+                controller.reconcileAllTopics("periodic").setHandler(result -> {
                     vertx.setTimer(interval, this);
                 });
             }
         };
-        vertx.setTimer(interval, periodic);
+        periodic.handle(null);
         LOGGER.info("Started");
-    }
-
-    Future reconcileTopics(String reconciliationType) {
-        Future topicsJoin = Future.future();
-        Future mapsJoin = Future.future();
-        LOGGER.info("Starting {} reconciliation", reconciliationType);
-        kafka.listTopics(topicsListResult -> {
-            if (topicsListResult.succeeded()) {
-                Set<String> kafkaTopics = topicsListResult.result();
-                LOGGER.debug("Reconciling kafka topics {}", kafkaTopics);
-                // First reconcile the topics in kafka
-                List<Future> topicFutures = new ArrayList<>();
-                for (String name : kafkaTopics) {
-                    LOGGER.debug("{} reconciliation of topic {}", reconciliationType, name);
-                    TopicName topicName = new TopicName(name);
-                    Future topicFuture = Future.future();
-                    topicFutures.add(topicFuture);
-                    k8s.getFromName(topicName.asMapName(), cmResult -> {
-                        if (cmResult.succeeded()) {
-                            ConfigMap cm = cmResult.result();
-                            controller.reconcile(cm, topicName).setHandler(topicFuture);
-                        } else {
-                            LOGGER.error("Error {} getting ConfigMap {} for topic {}",
-                                    reconciliationType,
-                                    topicName.asMapName(), topicName, cmResult.cause());
-                        }
-                    });
-                }
-                CompositeFuture.join(topicFutures).setHandler(topicsJoin);
-                LOGGER.debug("Reconciling configmaps");
-                // Then those in k8s which aren't in kafka
-                k8s.listMaps(configMapsListResult -> {
-                    List<Future> cmFutures = new ArrayList<>();
-                    if (configMapsListResult.succeeded()) {
-                        List<ConfigMap> configMaps = configMapsListResult.result();
-                        Map<String, ConfigMap> configMapsMap = configMaps.stream().collect(Collectors.toMap(
-                            cm -> cm.getMetadata().getName(),
-                            cm -> cm));
-                        configMapsMap.keySet().removeAll(kafkaTopics);
-                        LOGGER.debug("Reconciling configmaps: {}", configMapsMap.keySet());
-                        for (ConfigMap cm : configMapsMap.values()) {
-                            LOGGER.debug("{} reconciliation of configmap {}", reconciliationType, cm.getMetadata().getName());
-
-                            TopicName topicName = new TopicName(cm);
-                            cmFutures.add(controller.reconcile(cm, topicName));
-                        }
-                    } else {
-                        LOGGER.error("Unable to list ConfigMaps", configMapsListResult.cause());
-                    }
-                    CompositeFuture.join(cmFutures).setHandler(mapsJoin);
-                    // Finally those in private store which we've not dealt with so far...
-                    // TODO ^^
-                });
-            } else {
-                LOGGER.error("Error performing {} reconciliation", reconciliationType, topicsListResult.cause());
-            }
-        });
-        return CompositeFuture.join(topicsJoin, mapsJoin);
     }
 
     /**

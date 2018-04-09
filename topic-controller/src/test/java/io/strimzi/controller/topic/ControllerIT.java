@@ -599,7 +599,7 @@ public class ControllerIT {
         }, timeout, "Expected the configmap to have been created by now");
 
         // trigger an immediate reconcile, while topic controller is dealing with configmap modification
-        session.reconcileTopics("periodic");
+        session.controller.reconcileAllTopics("periodic");
 
         // Wait for the topic to be created
         waitFor(context, () -> {
