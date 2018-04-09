@@ -261,10 +261,10 @@ public class StatefulSetOperator<P> extends AbstractScalableResourceOperator<Kub
      * @param desired New StatefulSet
      */
     protected void revertStorageChanges(StatefulSet current, StatefulSet desired) {
+        desired.getSpec().setVolumeClaimTemplates(current.getSpec().getVolumeClaimTemplates());
+
         if (current.getSpec().getVolumeClaimTemplates().isEmpty()) {
             // We are on ephemeral storage and changing to persistent
-            desired.getSpec().setVolumeClaimTemplates(current.getSpec().getVolumeClaimTemplates());
-
             List<Volume> volumes = current.getSpec().getTemplate().getSpec().getVolumes();
             for (int i = 0; i < volumes.size(); i++) {
                 Volume vol = volumes.get(i);
@@ -275,8 +275,6 @@ public class StatefulSetOperator<P> extends AbstractScalableResourceOperator<Kub
             }
         } else {
             // We are on persistent storage and changing to ephemeral
-            desired.getSpec().setVolumeClaimTemplates(current.getSpec().getVolumeClaimTemplates());
-
             List<Volume> volumes = desired.getSpec().getTemplate().getSpec().getVolumes();
             for (int i = 0; i < volumes.size(); i++) {
                 Volume vol = volumes.get(i);
