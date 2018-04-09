@@ -334,8 +334,8 @@ public class Controller {
         this.config = config;
     }
 
-    void reconcile(ConfigMap cm, TopicName topicName, Handler<AsyncResult<Void>> resultHandler) {
-
+    Future<Void> reconcile(ConfigMap cm, TopicName topicName) {
+        Future<Void> result = Future.future();
         Handler<Future<Void>> action = new Reconciliation("reconcile") {
             @Override
             public void handle(Future<Void> fut) {
@@ -375,7 +375,8 @@ public class Controller {
                 }
             }
         };
-        inFlight.enqueue(topicName, action, resultHandler);
+        inFlight.enqueue(topicName, action, result);
+        return result;
     }
 
     /**
