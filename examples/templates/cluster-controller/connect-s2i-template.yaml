@@ -73,7 +73,7 @@ parameters:
 - description: Tag of the S2I Docker image
   displayName: S2I image tag
   name: S2I_IMAGE_TAG
-  value: latest
+  value: 0.3.0-rc1
 - description: Number of seconds after the container has started before healthcheck probes are initiated.
   displayName: Kafka Connect healthcheck initial delay
   name: HEALTHCHECK_DELAY
