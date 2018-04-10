@@ -17,6 +17,7 @@ release_version:
 	echo "Changing Docker image tags to :$(RELEASE_VERSION)"
 	find ./examples -name '*.yaml' -type f -exec sed -i '/image: "\?strimzi\/[a-zA-Z0-9_-.]\+:[a-zA-Z0-9_-.]\+"\?/s/:[a-zA-Z0-9_-.]\+/:$(RELEASE_VERSION)/g' {} \;
 	find ./examples -name '*.yaml' -type f -exec sed -i '/name: [a-zA-Z0-9_-]*IMAGE_TAG/{n;s/value: [a-zA-Z0-9_-.]\+/value: $(RELEASE_VERSION)/}' {} \;
+	find ./examples -name '*.yaml' -type f -exec sed -i '/name: STRIMZI_DEFAULT_[a-zA-Z0-9_-]*IMAGE/{n;s/:[a-zA-Z0-9_-.]\+/:$(RELEASE_VERSION)/}' {} \;
 	echo "Changing documentation version to $(RELEASE_VERSION)"
 	find ./documentation/adoc/ -name '*.adoc' -type f -exec sed -i '/:revnumber: [a-zA-Z0-9_-.]\+/s/:revnumber: [a-zA-Z0-9_-.]\+/:revnumber: $(RELEASE_VERSION)/' {} \;
 
