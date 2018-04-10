@@ -9,6 +9,7 @@ import io.fabric8.openshift.api.model.Build;
 import io.fabric8.openshift.api.model.BuildConfig;
 import io.fabric8.openshift.api.model.BuildConfigBuilder;
 import io.fabric8.openshift.api.model.BuildConfigList;
+import io.fabric8.openshift.api.model.BuildTriggerPolicy;
 import io.fabric8.openshift.api.model.DoneableBuildConfig;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.openshift.client.dsl.BuildConfigResource;
@@ -41,6 +42,12 @@ public class BuildConfigOperatorTest extends AbstractResourceOperatorTest<OpenSh
 
     @Override
     protected BuildConfig resource() {
-        return new BuildConfigBuilder().withNewMetadata().withNamespace(NAMESPACE).withName(RESOURCE_NAME).endMetadata().build();
+        return new BuildConfigBuilder().withNewMetadata()
+                .withNamespace(NAMESPACE)
+                .withName(RESOURCE_NAME)
+            .endMetadata()
+            .withNewSpec()
+                .withTriggers(new BuildTriggerPolicy())
+            .endSpec().build();
     }
 }
