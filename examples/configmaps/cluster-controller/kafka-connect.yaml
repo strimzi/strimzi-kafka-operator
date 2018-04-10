@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-connect-cluster
+  labels:
+    strimzi.io/kind: cluster
+    strimzi.io/type: kafka-connect
+data:
+  nodes: "1"
+  image: "strimzi/kafka-connect:0.3.0-rc1"
+  healthcheck-delay: "60"
+  healthcheck-timeout: "5"
+  KAFKA_CONNECT_BOOTSTRAP_SERVERS: "my-cluster-kafka:9092"
+  KAFKA_CONNECT_GROUP_ID: "my-connect-cluster"
+  KAFKA_CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+  KAFKA_CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE: "true"
+  KAFKA_CONNECT_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+  KAFKA_CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "true"
+  KAFKA_CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "3"
+  KAFKA_CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "3"
+  KAFKA_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "3"

@@ -15,6 +15,11 @@ data:
       "transaction.state.log.replication.factor": 3,
       "transaction.state.log.min.isr": 2
     }
+  kafka-healthcheck-delay: "15"
+  kafka-healthcheck-timeout: "5"
+  zookeeper-nodes: "1"
+  zookeeper-healthcheck-delay: "15"
+  zookeeper-healthcheck-timeout: "5"
   kafka-storage: |-
     { "type": "ephemeral" }
   kafka-metrics-config: |-
