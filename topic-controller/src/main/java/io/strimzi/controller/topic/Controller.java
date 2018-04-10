@@ -967,7 +967,7 @@ public class Controller {
         return cm != null ? cm.getMetadata().getNamespace() + "/" + cm.getMetadata().getName() : null;
     }
 
-    Future reconcileAllTopics(String reconciliationType) {
+    Future<?> reconcileAllTopics(String reconciliationType) {
         Future topicsJoin = Future.future();
         Future mapsJoin = Future.future();
         LOGGER.info("Starting {} reconciliation", reconciliationType);
@@ -990,6 +990,7 @@ public class Controller {
                             LOGGER.error("Error {} getting ConfigMap {} for topic {}",
                                     reconciliationType,
                                     topicName.asMapName(), topicName, cmResult.cause());
+                            topicFuture.fail(new ControllerException("Error getting ConfigMap " + topicName.asMapName() + " during " + reconciliationType + " reconciliation", cmResult.cause()));
                         }
                     });
                 }
@@ -1011,15 +1012,19 @@ public class Controller {
                             TopicName topicName = new TopicName(cm);
                             cmFutures.add(reconcile(cm, topicName));
                         }
+                        CompositeFuture.join(cmFutures).setHandler(mapsJoin);
                     } else {
                         LOGGER.error("Unable to list ConfigMaps", configMapsListResult.cause());
+                        mapsJoin.fail(new ControllerException("Error listing existing ConfigMaps during " + reconciliationType + " reconciliation", configMapsListResult.cause()));
                     }
-                    CompositeFuture.join(cmFutures).setHandler(mapsJoin);
                     // Finally those in private store which we've not dealt with so far...
                     // TODO ^^
                 });
             } else {
                 LOGGER.error("Error performing {} reconciliation", reconciliationType, topicsListResult.cause());
+                ControllerException listException = new ControllerException("Error listing existing topics during " + reconciliationType + " reconciliation", topicsListResult.cause());
+                topicsJoin.fail(listException);
+                mapsJoin.fail(listException);
             }
         });
         return CompositeFuture.join(topicsJoin, mapsJoin);

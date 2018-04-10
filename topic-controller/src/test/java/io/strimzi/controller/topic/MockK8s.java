@@ -17,14 +17,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 public class MockK8s implements K8s {
 
-    private Map<MapName, ConfigMap> byName = new HashMap<>();
+    private Map<MapName, AsyncResult<ConfigMap>> byName = new HashMap<>();
     private List<Event> events = new ArrayList<>();
     private Function<MapName, AsyncResult<Void>> createResponse = n -> Future.failedFuture("Unexpected. ");
     private Function<MapName, AsyncResult<Void>> modifyResponse = n -> Future.failedFuture("Unexpected. ");
     private Function<MapName, AsyncResult<Void>> deleteResponse = n -> Future.failedFuture("Unexpected. ");
+    private Supplier<AsyncResult<List<ConfigMap>>> listResponse = () -> Future.succeededFuture(new ArrayList(byName.values().stream().filter(ar -> ar.succeeded()).map(ar -> ar.result()).collect(Collectors.toList())));
 
     public MockK8s setCreateResponse(MapName mapName, Exception exception) {
         Function<MapName, AsyncResult<Void>> old = createResponse;
@@ -75,7 +78,7 @@ public class MockK8s implements K8s {
     public void createConfigMap(ConfigMap cm, Handler<AsyncResult<Void>> handler) {
         AsyncResult<Void> response = createResponse.apply(new MapName(cm));
         if (response.succeeded()) {
-            ConfigMap old = byName.put(new MapName(cm), cm);
+            AsyncResult<ConfigMap> old = byName.put(new MapName(cm), Future.succeededFuture(cm));
             if (old != null) {
                 handler.handle(Future.failedFuture("configmap already existed: " + cm.getMetadata().getName()));
                 return;
@@ -88,7 +91,7 @@ public class MockK8s implements K8s {
     public void updateConfigMap(ConfigMap cm, Handler<AsyncResult<Void>> handler) {
         AsyncResult<Void> response = modifyResponse.apply(new MapName(cm));
         if (response.succeeded()) {
-            ConfigMap old = byName.put(new MapName(cm), cm);
+            AsyncResult<ConfigMap> old = byName.put(new MapName(cm), Future.succeededFuture(cm));
             if (old == null) {
                 handler.handle(Future.failedFuture("configmap does not exist, cannot be updated: " + cm.getMetadata().getName()));
                 return;
@@ -111,13 +114,17 @@ public class MockK8s implements K8s {
 
     @Override
     public void listMaps(Handler<AsyncResult<List<ConfigMap>>> handler) {
-        handler.handle(Future.succeededFuture(new ArrayList(byName.values())));
+        handler.handle(listResponse.get());
+    }
+
+    public void setListMapsResult(Supplier<AsyncResult<List<ConfigMap>>> response) {
+        this.listResponse = response;
     }
 
     @Override
     public void getFromName(MapName mapName, Handler<AsyncResult<ConfigMap>> handler) {
-        ConfigMap cm = byName.get(mapName);
-        handler.handle(Future.succeededFuture(cm));
+        AsyncResult<ConfigMap> cmFuture = byName.get(mapName);
+        handler.handle(cmFuture != null ? cmFuture : Future.succeededFuture());
     }
 
     @Override
@@ -127,12 +134,14 @@ public class MockK8s implements K8s {
     }
 
     public void assertExists(TestContext context, MapName mapName) {
-        context.assertTrue(byName.containsKey(mapName));
+        AsyncResult<ConfigMap> got = byName.get(mapName);
+        context.assertTrue(got != null && got.succeeded());
     }
 
     public void assertContains(TestContext context, ConfigMap cm) {
-        ConfigMap configMap = byName.get(new MapName(cm));
-        context.assertEquals(cm, configMap);
+        AsyncResult<ConfigMap> configMapResult = byName.get(new MapName(cm));
+        context.assertTrue(configMapResult.succeeded());
+        context.assertEquals(cm, configMapResult.result());
     }
 
     public void assertNotExists(TestContext context, MapName mapName) {
@@ -150,5 +159,9 @@ public class MockK8s implements K8s {
 
     public void assertNoEvents(TestContext context) {
         context.assertTrue(events.isEmpty());
+    }
+
+    public void setGetFromNameResponse(MapName mapName, AsyncResult<ConfigMap> futureCm) {
+        this.byName.put(mapName, futureCm);
     }
 }

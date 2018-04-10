@@ -27,6 +27,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static java.util.Collections.emptySet;
+import static java.util.Collections.singleton;
+
 @RunWith(VertxUnitRunner.class)
 public class ControllerTest {
 
@@ -796,6 +799,47 @@ public class ControllerTest {
         Exception k8sException = new KubernetesClientException("");
         Exception storeException = null;
         topicDeleted(context, storeException, k8sException);
+    }
+
+    @Test
+    public void testReconcileAllTopics_listTopicsFails(TestContext context) {
+        RuntimeException error = new RuntimeException("some failure");
+        mockKafka.setTopicsListResponse(Future.failedFuture(error));
+
+        Future<?> reconcileFuture = controller.reconcileAllTopics("periodic");
+
+        reconcileFuture.setHandler(context.asyncAssertFailure(e -> {
+            context.assertEquals("Error listing existing topics during periodic reconciliation", e.getMessage());
+            context.assertEquals(error, e.getCause());
+        }));
+    }
+
+    @Test
+    public void testReconcileAllTopics_getCmFails(TestContext context) {
+        RuntimeException error = new RuntimeException("some failure");
+        mockKafka.setTopicsListResponse(Future.succeededFuture(singleton(topicName.toString())));
+        mockK8s.setGetFromNameResponse(mapName, Future.failedFuture(error));
+
+        Future<?> reconcileFuture = controller.reconcileAllTopics("periodic");
+
+        reconcileFuture.setHandler(context.asyncAssertFailure(e -> {
+            context.assertEquals("Error getting ConfigMap my-topic during periodic reconciliation", e.getMessage());
+            context.assertEquals(error, e.getCause());
+        }));
+    }
+
+    @Test
+    public void testReconcileAllTopics_listMapsFails(TestContext context) {
+        RuntimeException error = new RuntimeException("some failure");
+        mockKafka.setTopicsListResponse(Future.succeededFuture(emptySet()));
+        mockK8s.setListMapsResult(() -> Future.failedFuture(error));
+
+        Future<?> reconcileFuture = controller.reconcileAllTopics("periodic");
+
+        reconcileFuture.setHandler(context.asyncAssertFailure(e -> {
+            context.assertEquals("Error listing existing ConfigMaps during periodic reconciliation", e.getMessage());
+            context.assertEquals(error, e.getCause());
+        }));
     }
 
     // TODO tests for nasty races (e.g. create on both ends, update on one end and delete on the other)
