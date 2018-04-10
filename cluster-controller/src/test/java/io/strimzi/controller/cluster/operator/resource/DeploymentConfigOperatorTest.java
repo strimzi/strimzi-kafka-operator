@@ -4,6 +4,7 @@
  */
 package io.strimzi.controller.cluster.operator.resource;
 
+import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.ScalableResource;
 import io.fabric8.openshift.api.model.DeploymentConfig;
@@ -32,7 +33,17 @@ public class DeploymentConfigOperatorTest extends ScalableResourceOperatorTest<O
 
     @Override
     protected DeploymentConfig resource() {
-        return new DeploymentConfigBuilder().withNewMetadata().withNamespace(NAMESPACE).withName(RESOURCE_NAME).endMetadata().build();
+        return new DeploymentConfigBuilder().withNewMetadata()
+                .withNamespace(NAMESPACE)
+                .withName(RESOURCE_NAME)
+            .endMetadata()
+            .withNewSpec()
+                .withNewTemplate()
+                    .withNewSpec()
+                        .addToContainers(new ContainerBuilder().withImage("img").build())
+                    .endSpec()
+                .endTemplate()
+            .endSpec().build();
     }
 
     @Override
