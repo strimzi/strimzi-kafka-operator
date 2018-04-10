@@ -8,19 +8,20 @@ import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.test.ClusterController;
-import io.strimzi.test.CmData;
-import io.strimzi.test.KafkaCluster;
 import io.strimzi.test.Namespace;
-import io.strimzi.test.OpenShiftOnly;
-import io.strimzi.test.Resources;
 import io.strimzi.test.StrimziRunner;
+import io.strimzi.test.Topic;
 import io.strimzi.test.k8s.Oc;
+import io.strimzi.test.Resources;
+import io.strimzi.test.OpenShiftOnly;
+import io.strimzi.test.KafkaCluster;
+import io.strimzi.test.CmData;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -44,7 +45,7 @@ import static io.strimzi.test.TestUtils.map;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
-
+import org.apache.commons.collections4.CollectionUtils;
 
 @RunWith(StrimziRunner.class)
 @Namespace(KafkaClusterTest.NAMESPACE)
@@ -55,6 +56,10 @@ public class KafkaClusterTest extends AbstractClusterTest {
 
     public static final String NAMESPACE = "kafka-cluster-test";
     private static final String CLUSTER_NAME = "my-cluster";
+
+    private static String topicControllerName(String clusterName) {
+        return clusterName + "-topic-controller";
+    }
 
     @BeforeClass
     public static void waitForCc() {
@@ -306,4 +311,24 @@ public class KafkaClusterTest extends AbstractClusterTest {
             assertEquals("23", getValueFromJson(zkPodJson, initialDelaySecondsPath));
         }
     }
+
+    @Test
+    @KafkaCluster(name = "my-cluster", kafkaNodes = 3, config = {
+        @CmData(key = "KAFKA_DEFAULT_REPLICATION_FACTOR", value = "1")})
+    @Topic(name = "test-topic", clusterName = "my-cluster")
+    public void testSendMessages() {
+        String topicName = "test-topic";
+        String clusterName = "my-cluster";
+        int messagesCount = 5;
+        List<String> messagesToSend = new ArrayList<>();
+        for (int i = 0; i < messagesCount; i++) {
+            messagesToSend.add("Test message " + i);
+        }
+        sendMessages(messagesToSend, clusterName, topicName);
+        List<String> consumedMessages = consumeMessages(clusterName, topicName);
+        LOGGER.info("Comparing lists of sent and received messages");
+        assertTrue(CollectionUtils.isEqualCollection(messagesToSend, consumedMessages));
+    }
+
+
 }

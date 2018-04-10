@@ -6,7 +6,6 @@ package io.strimzi.test;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.Minishift;
@@ -24,16 +23,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Repeatable;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import static io.strimzi.test.TestUtils.getContent;
 import static io.strimzi.test.TestUtils.indent;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -59,6 +57,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
     public static final String KAFKA_CONNECT_CM = "../examples/configmaps/cluster-controller/kafka-connect.yaml";
     public static final String CC_INSTALL_DIR = "../examples/install/cluster-controller";
     public static final String CC_DEPLOYMENT_NAME = "strimzi-cluster-controller";
+    public static final String TOPIC_CM = "../examples/configmaps/topic-controller/kafka-topic-configmap.yaml";
 
     private KubeClusterResource clusterResource;
 
@@ -93,6 +92,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         statement = withClusterController(method, statement);
         statement = withResources(method, statement);
         statement = withNamespaces(method, statement);
+        statement = withTopic(method, statement);
         return statement;
     }
 
@@ -219,17 +219,6 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         }
     }
 
-    String getContent(File file, Consumer<JsonNode> edit) {
-        YAMLMapper mapper = new YAMLMapper();
-        try {
-            JsonNode node = mapper.readTree(file);
-            edit.accept(node);
-            return mapper.writeValueAsString(node);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     private Statement withConnectClusters(Annotatable element,
                                         Statement statement) {
         Statement last = statement;
@@ -313,6 +302,37 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                         LOGGER.info("Exception {} while cleaning up. ", e.toString());
                         onError(e);
                     }
+                }
+            };
+        }
+        return last;
+    }
+
+    private Statement withTopic(Annotatable element, Statement statement) {
+        Statement last = statement;
+        for (Topic cluster : annotations(element, Topic.class)) {
+            String yaml = getContent(new File(TOPIC_CM), node -> {
+                JsonNode metadata = node.get("metadata");
+                ((ObjectNode) metadata).put("name", String.valueOf(cluster.name()));
+                JsonNode labels = metadata.get("labels");
+                ((ObjectNode) labels).put("strimzi.io/cluster", String.valueOf(cluster.clusterName()));
+                JsonNode data = node.get("data");
+                ((ObjectNode) data).put("name", String.valueOf(cluster.name()));
+                ((ObjectNode) data).put("partitions", String.valueOf(cluster.partitions()));
+                ((ObjectNode) data).put("replicas", String.valueOf(cluster.replicas()));
+            });
+            last = new Bracket(last) {
+                @Override
+                protected void before() {
+                    LOGGER.info("Creating Topic", cluster.name(), name(element));
+                    // create cm
+                    kubeClient().createContent(yaml);
+                }
+                @Override
+                protected void after() {
+                    LOGGER.info("Deleting ConfigMap '{}' after test per @Topic annotation on {}", cluster.clusterName(), name(element));
+                    // delete cm
+                    kubeClient().deleteContent(yaml);
                 }
             };
         }
@@ -450,6 +470,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
             statement = withClusterController(testClass, statement);
             statement = withResources(testClass, statement);
             statement = withNamespaces(testClass, statement);
+            statement = withTopic(testClass, statement);
         }
         return statement;
     }
