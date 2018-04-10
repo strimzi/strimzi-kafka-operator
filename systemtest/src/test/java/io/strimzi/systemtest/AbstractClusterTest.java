@@ -20,6 +20,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
@@ -151,5 +153,37 @@ public class AbstractClusterTest {
                 .filter(event -> event.getInvolvedObject().getKind().equals(resourceType))
                 .filter(event -> event.getInvolvedObject().getName().equals(resourceName))
                 .collect(Collectors.toList());
+    }
+
+    public void sendMessages(List<String> messages, String clusterName, String topic) {
+        LOGGER.info("Sending messages");
+        String messagesToSend = "";
+        for (int i = 0; i < messages.size(); i++) {
+            messagesToSend = messagesToSend + messages.get(i) + "\\n";
+        }
+        messagesToSend = messagesToSend.substring(0, messagesToSend.length() - 2);
+
+        String command = "echo -e \"" + messagesToSend + "\" | sh bin/kafka-console-producer.sh --broker-list " +
+                clusterName + "-kafka:9092 --topic " + topic + " & sleep 20; kill %1";
+        try {
+            System.out.println(kubeClient.exec(kafkaPodName(clusterName, 1),
+                    "/bin/bash", "-c", command).out());
+        } catch (Exception e) {
+        }
+    }
+
+    public List<String> consumeMessages(String clusterName, String topic) {
+
+        LOGGER.info("Consuming messages");
+        String output = null;
+        try {
+            output = kubeClient.exec(kafkaPodName(clusterName, 1), "/bin/bash", "-c",
+                    "/opt/kafka/bin/kafka-console-consumer.sh --bootstrap-server " + clusterName +
+                            "-kafka:9092 --topic " + topic + " --from-beginning & sleep 20; kill %1").out();
+        } catch (Exception e) {
+        }
+        LOGGER.info("Consumed ");
+        List<String> consumedMessages = new ArrayList<String>(Arrays.asList(output.split("\n")));
+        return consumedMessages;
     }
 }

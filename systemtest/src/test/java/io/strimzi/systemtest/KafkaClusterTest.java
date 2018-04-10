@@ -4,27 +4,24 @@
  */
 package io.strimzi.systemtest;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-import com.jayway.jsonpath.JsonPath;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.test.ClusterController;
-import io.strimzi.test.CmData;
-import io.strimzi.test.KafkaCluster;
 import io.strimzi.test.Namespace;
-import io.strimzi.test.OpenShiftOnly;
-import io.strimzi.test.Resources;
 import io.strimzi.test.StrimziRunner;
+import io.strimzi.test.Topic;
 import io.strimzi.test.k8s.Oc;
+import io.strimzi.test.Resources;
+import io.strimzi.test.OpenShiftOnly;
+import io.strimzi.test.KafkaCluster;
+import io.strimzi.test.CmData;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -48,14 +45,7 @@ import static io.strimzi.test.TestUtils.map;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
-import io.strimzi.systemtest.clients.KafkaConsumer;
-import io.strimzi.systemtest.clients.KafkaProducer;
-import org.slf4j.LoggerFactory;
 import org.apache.commons.collections4.CollectionUtils;
-import java.io.File;
-import static io.strimzi.test.TestUtils.getContent;
-
-
 
 @RunWith(StrimziRunner.class)
 @Namespace(KafkaClusterTest.NAMESPACE)
@@ -323,47 +313,22 @@ public class KafkaClusterTest extends AbstractClusterTest {
     }
 
     @Test
-    @Resources(value = "../examples/templates/cluster-controller", asAdmin = true)
-    @OpenShiftOnly
+    @KafkaCluster(name = "my-cluster", kafkaNodes = 3, config = {
+        @CmData(key = "KAFKA_DEFAULT_REPLICATION_FACTOR", value = "1")})
+    @Topic(name = "test-topic", clusterName = "my-cluster")
     public void testSendMessages() {
         String topicName = "test-topic";
-        Oc oc = (Oc) this.kubeClient;
+        String clusterName = "my-cluster";
         int messagesCount = 5;
-        oc.namespace();
-        String clusterName = "openshift-my-cluster";
-        oc.newApp("strimzi-ephemeral", map("CLUSTER_NAME", clusterName));
-        oc.waitForStatefulSet(zookeeperStatefulSetName(clusterName), 1);
-        oc.waitForStatefulSet(kafkaStatefulSetName(clusterName), 3);
-        String bootstrapServers = "";
-        for (int i = 0; i < 3; i++) {
-            String kafkaPodJson = oc.getResourceAsJson("pod", kafkaPodName(clusterName, i));
-            bootstrapServers = bootstrapServers + JsonPath.parse(kafkaPodJson).read("$.status.podIP").toString() + ":9092,";
+        List<String> messagesToSend = new ArrayList<>();
+        for (int i = 0; i < messagesCount; i++) {
+            messagesToSend.add("Test message " + i);
         }
-        bootstrapServers = bootstrapServers.substring(0, bootstrapServers.length() - 1);
-
-        String yaml = getContent(new File("../examples/configmaps/topic-controller/kafka-topic-configmap.yaml"), node -> {
-            JsonNode metadata = node.get("metadata");
-            ((ObjectNode) metadata).put("name", topicName);
-            JsonNode labels = metadata.get("labels");
-            ((ObjectNode) labels).put("strimzi.io/cluster", clusterName);
-            JsonNode data = node.get("data");
-            ((ObjectNode) data).put("name", topicName);
-        });
-        oc.createContent(yaml);
-        oc.waitForDeployment(topicControllerName(clusterName));
-
-        KafkaProducer producer = new KafkaProducer("my-topic", bootstrapServers);
-        List<String> sentMessages = producer.runProducer(5);
-
-        KafkaConsumer consumer = new KafkaConsumer("my-topic", bootstrapServers);
-        List<String> consumedMessages = consumer.runConsumer();
-
+        sendMessages(messagesToSend, clusterName, topicName);
+        List<String> consumedMessages = consumeMessages(clusterName, topicName);
         LOGGER.info("Comparing lists of sent and received messages");
-        assertTrue(CollectionUtils.isEqualCollection(sentMessages, consumedMessages));
-
-        oc.deleteByName("cm", clusterName);
-        oc.waitForResourceDeletion("statefulset", kafkaStatefulSetName(clusterName));
-        oc.waitForResourceDeletion("statefulset", zookeeperStatefulSetName(clusterName));
+        assertTrue(CollectionUtils.isEqualCollection(messagesToSend, consumedMessages));
     }
+
 
 }
