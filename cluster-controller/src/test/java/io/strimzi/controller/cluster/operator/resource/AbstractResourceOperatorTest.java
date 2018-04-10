@@ -96,6 +96,9 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         Async async = context.async();
         Future<ReconcileResult<P>> fut = op.createOrUpdate(resource);
         fut.setHandler(ar -> {
+            if (!ar.succeeded()) {
+                ar.cause().printStackTrace();
+            }
             assertTrue(ar.succeeded());
             verify(mockResource).get();
             verify(mockResource).patch(any());
