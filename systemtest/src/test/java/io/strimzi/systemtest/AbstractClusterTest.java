@@ -166,9 +166,9 @@ public class AbstractClusterTest {
         String command = "echo -e \"" + messagesToSend + "\" | sh bin/kafka-console-producer.sh --broker-list " +
                 clusterName + "-kafka:9092 --topic " + topic + " & sleep 20; kill %1";
         try {
-            System.out.println(kubeClient.exec(kafkaPodName(clusterName, 1),
-                    "/bin/bash", "-c", command).out());
-        } catch (Exception e) {
+        LOGGER.info(kubeClient.exec(kafkaPodName(clusterName, 1),
+                "/bin/bash", "-c", command).out());
+        } catch (Exception e){
         }
     }
 
@@ -182,7 +182,7 @@ public class AbstractClusterTest {
                             "-kafka:9092 --topic " + topic + " --from-beginning & sleep 20; kill %1").out();
         } catch (Exception e) {
         }
-        LOGGER.info("Consumed ");
+        LOGGER.info("Consumed messages");
         List<String> consumedMessages = new ArrayList<String>(Arrays.asList(output.split("\n")));
         return consumedMessages;
     }

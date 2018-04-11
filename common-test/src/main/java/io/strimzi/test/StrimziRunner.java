@@ -477,29 +477,31 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
 
     private Statement withTopic(Annotatable element, Statement statement) {
         Statement last = statement;
-        for (Topic cluster : annotations(element, Topic.class)) {
+        for (Topic topic : annotations(element, Topic.class)) {
             String yaml = getContent(new File(TOPIC_CM), node -> {
                 JsonNode metadata = node.get("metadata");
-                ((ObjectNode) metadata).put("name", String.valueOf(cluster.name()));
+                ((ObjectNode) metadata).put("name", topic.name());
                 JsonNode labels = metadata.get("labels");
-                ((ObjectNode) labels).put("strimzi.io/cluster", String.valueOf(cluster.clusterName()));
+                ((ObjectNode) labels).put("strimzi.io/topic", topic.clusterName());
                 JsonNode data = node.get("data");
-                ((ObjectNode) data).put("name", String.valueOf(cluster.name()));
-                ((ObjectNode) data).put("partitions", String.valueOf(cluster.partitions()));
-                ((ObjectNode) data).put("replicas", String.valueOf(cluster.replicas()));
+                ((ObjectNode) data).put("name", topic.name());
+                ((ObjectNode) data).put("partitions", String.valueOf(topic.partitions()));
+                ((ObjectNode) data).put("replicas", String.valueOf(topic.replicas()));
             });
             last = new Bracket(last) {
                 @Override
                 protected void before() {
-                    LOGGER.info("Creating Topic", cluster.name(), name(element));
+                    LOGGER.info("Creating Topic {} {}", topic.name(), name(element));
                     // create cm
                     kubeClient().createContent(yaml);
+                    kubeClient().waitForResourceCreation("cm", topic.name());
                 }
                 @Override
                 protected void after() {
-                    LOGGER.info("Deleting ConfigMap '{}' after test per @Topic annotation on {}", cluster.clusterName(), name(element));
+                    LOGGER.info("Deleting ConfigMap '{}' after test per @Topic annotation on {}", topic.clusterName(), name(element));
                     // delete cm
                     kubeClient().deleteContent(yaml);
+                    kubeClient().waitForResourceDeletion("cm", topic.name());
                 }
             };
         }

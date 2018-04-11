@@ -80,6 +80,10 @@ public final class TestUtils {
         return sb.toString();
     }
 
+    /**
+     * Method is used for reading of YAML file with config map and editing of necessary fields
+     * @return edited Config map in String format
+     * */
     public static String getContent(File file, Consumer<JsonNode> edit) {
         YAMLMapper mapper = new YAMLMapper();
         try {

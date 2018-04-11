@@ -13,12 +13,11 @@ import java.lang.annotation.Repeatable;
 
 /**
  * Annotation for test classes or methods run via {@code @RunWith(StrimziRunner.class)}
- * which causes that runner to create kafka clusters before, and delete kafka clusters after,
- * the tests.
+ * which causes that runner create kafka config map with Topic before,
+ * and delete kafka config map with Topic after the tests.
  */
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-@Repeatable(Topic.Container.class)
 public @interface Topic {
 
     String name();
