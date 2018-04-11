@@ -32,7 +32,7 @@ function wait_for_minikube {
 
 if [ "$TEST_CLUSTER" = "minikube" ]; then
     install_kubectl
-    curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 && chmod +x minikube
+    curl -Lo minikube https://github.com/kubernetes/minikube/releases/download/v0.25.2/minikube-linux-amd64 && chmod +x minikube
     sudo cp minikube /usr/bin
 
     export MINIKUBE_WANTUPDATENOTIFICATION=false
