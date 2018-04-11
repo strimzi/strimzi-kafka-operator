@@ -7,7 +7,6 @@ metadata:
     strimzi.io/type: kafka-connect
 data:
   nodes: "1"
-  image: "strimzi/kafka-connect:0.3.0-rc1"
   healthcheck-delay: "60"
   healthcheck-timeout: "5"
   KAFKA_CONNECT_BOOTSTRAP_SERVERS: "my-cluster-kafka:9092"
