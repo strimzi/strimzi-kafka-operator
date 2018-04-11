@@ -276,8 +276,13 @@ public class KafkaClusterTest extends AbstractClusterTest {
         }
         Oc oc = (Oc) this.kubeClient;
         replaceCm(clusterName, "zookeeper-healthcheck-delay", "23");
+        replaceCm(clusterName, "zookeeper-healthcheck-timeout", "24");
         replaceCm(clusterName, "kafka-healthcheck-delay", "23");
+        replaceCm(clusterName, "kafka-healthcheck-timeout", "20");
         replaceCm(clusterName, "KAFKA_DEFAULT_REPLICATION_FACTOR", "1");
+        replaceCm(clusterName, "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "4");
+        replaceCm(clusterName, "KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", "2");
+
         for (int i = 0; i < expectedZKPods; i++) {
             kubeClient.waitForResourceUpdate("pod", zookeeperPodName(clusterName, i), zkPodStartTime.get(i));
             kubeClient.waitForPod(zookeeperPodName(clusterName,  i));
@@ -295,14 +300,22 @@ public class KafkaClusterTest extends AbstractClusterTest {
             String kafkaPodJson = oc.getResourceAsJson("pod", kafkaPodName(clusterName, i));
             assertEquals("1", getValueFromJson(kafkaPodJson,
                     globalVariableJsonPathBuilder("KAFKA_DEFAULT_REPLICATION_FACTOR")));
+            assertEquals("4", getValueFromJson(kafkaPodJson,
+                    globalVariableJsonPathBuilder("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR")));
+            assertEquals("2", getValueFromJson(kafkaPodJson,
+                    globalVariableJsonPathBuilder("KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR")));
             String initialDelaySecondsPath = "$.spec.containers[*].livenessProbe.initialDelaySeconds";
             assertEquals("23", getValueFromJson(kafkaPodJson, initialDelaySecondsPath));
+            String kafkaHealthcheckTimeout = "$.spec.containers[*].livenessProbe.timeoutSeconds";
+            assertEquals("20", getValueFromJson(kafkaPodJson, kafkaHealthcheckTimeout));
         }
         LOGGER.info("Testing Zookeepers");
         for (int i = 0; i < expectedZKPods; i++) {
             String zkPodJson = kubeClient.getResourceAsJson("pod", zookeeperPodName(clusterName, i));
             String initialDelaySecondsPath = "$.spec.containers[*].livenessProbe.initialDelaySeconds";
             assertEquals("23", getValueFromJson(zkPodJson, initialDelaySecondsPath));
+            String zookeeperHealthcheckTimeout = "$.spec.containers[*].livenessProbe.timeoutSeconds";
+            assertEquals("24", getValueFromJson(zkPodJson, zookeeperHealthcheckTimeout));
         }
     }
 }
