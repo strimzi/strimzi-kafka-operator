@@ -11,7 +11,6 @@ import com.jayway.jsonpath.JsonPath;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterException;
@@ -21,7 +20,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -156,22 +154,11 @@ public class AbstractClusterTest {
                 .collect(Collectors.toList());
     }
 
-    public void sendMessages(List<String> messages, String clusterName, String topic) {
-        LOGGER.info("Sending messages");
-        final String messagesToSend = messages.stream().collect(Collectors.joining("\n"));
-        sendMessages(messagesToSend, clusterName, topic);
-    }
-
     public void sendMessages(String messages, String clusterName, String topic) {
         LOGGER.info("Sending messages");
         String command = "echo -e \"" + messages + "\" | sh bin/kafka-console-producer.sh --broker-list " +
-                clusterName + "-kafka:9092 --topic " + topic + " & sleep 20; kill %1";
-        try {
-            LOGGER.info(kubeClient.exec(kafkaPodName(clusterName, 1),
-                    "/bin/bash", "-c", command).out());
-        } catch (KubeClusterException e) {
-            LOGGER.warn("Error appeared while tried to kill message producer" + e);
-        }
+                clusterName + "-kafka:9092 --topic " + topic + " & sleep 20";
+        kubeClient.exec(kafkaPodName(clusterName, 1), "/bin/bash", "-c", command);
     }
 
     public List<String> consumeMessages(String clusterName, String topic) {

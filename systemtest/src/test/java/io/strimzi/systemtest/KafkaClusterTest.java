@@ -16,7 +16,6 @@ import io.strimzi.test.CmData;
 import io.strimzi.test.Topic;
 import io.strimzi.test.StrimziRunner;
 import io.strimzi.test.k8s.Oc;
-import org.apache.commons.collections.CollectionUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -27,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.k8s.Events.Created;
 import static io.strimzi.systemtest.k8s.Events.Failed;
@@ -310,7 +310,7 @@ public class KafkaClusterTest extends AbstractClusterTest {
     }
 
     @Test
-    @KafkaCluster(name = "my-cluster", kafkaNodes = 3, config = {
+    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 3, config = {
             @CmData(key = "KAFKA_DEFAULT_REPLICATION_FACTOR", value = "1")})
     @Topic(name = "test-topic", clusterName = "my-cluster")
     public void testSendMessages() {
@@ -320,7 +320,7 @@ public class KafkaClusterTest extends AbstractClusterTest {
         for (int i = 0; i < messagesCount; i++) {
             messagesToSend.add("Test message " + i);
         }
-        sendMessages(messagesToSend, CLUSTER_NAME, topicName);
+        sendMessages(messagesToSend.stream().collect(Collectors.joining("\n")), CLUSTER_NAME, topicName);
         List<String> consumedMessages = consumeMessages(CLUSTER_NAME, topicName);
         LOGGER.info("Comparing lists of sent and received messages");
         assertThat(messagesToSend, is(consumedMessages));

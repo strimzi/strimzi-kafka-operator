@@ -4,12 +4,10 @@
  */
 package io.strimzi.test;
 
-
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.lang.annotation.Repeatable;
 
 /**
  * Annotation for test classes or methods run via {@code @RunWith(StrimziRunner.class)}
@@ -24,10 +22,4 @@ public @interface Topic {
     String clusterName();
     int partitions() default 1;
     int replicas() default 1;
-
-    @Target({ElementType.METHOD, ElementType.TYPE})
-    @Retention(RetentionPolicy.RUNTIME)
-    @interface Container {
-        Topic[] value();
-    }
 }

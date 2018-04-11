@@ -34,8 +34,8 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import static io.strimzi.test.TestUtils.getContent;
 import static io.strimzi.test.TestUtils.indent;
+import static io.strimzi.test.k8s.BaseKubeClient.CM;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -494,14 +494,14 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     LOGGER.info("Creating Topic {} {}", topic.name(), name(element));
                     // create cm
                     kubeClient().createContent(yaml);
-                    kubeClient().waitForResourceCreation("cm", topic.name());
+                    kubeClient().waitForResourceCreation(CM, topic.name());
                 }
                 @Override
                 protected void after() {
                     LOGGER.info("Deleting ConfigMap '{}' after test per @Topic annotation on {}", topic.clusterName(), name(element));
                     // delete cm
                     kubeClient().deleteContent(yaml);
-                    kubeClient().waitForResourceDeletion("cm", topic.name());
+                    kubeClient().waitForResourceDeletion(CM, topic.name());
                 }
             };
         }
