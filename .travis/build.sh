@@ -7,7 +7,6 @@ export TAG=${TAG:-latest}
 export DOCKER_ORG=${DOCKER_ORG:-strimzici}
 export DOCKER_REGISTRY=${DOCKER_REGISTRY:-docker.io}
 export DOCKER_TAG=$COMMIT
-export DOCKER_VERSION_ARG=${COMMIT:-latest}
 
 make docker_build
 

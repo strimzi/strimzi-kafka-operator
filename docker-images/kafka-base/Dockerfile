@@ -17,10 +17,6 @@ ENV JMX_EXPORTER_VERSION=0.1.0
 ENV KAFKA_CHECKSUM="935c0df1cf742405c40d9248cfdd1578038b595b59ec5a350543a7fe67b6be26ff6c4426f7c0c072ff4aa006b701502a55fcf7e2ced1fdc64330e3383035078c  kafka_2.12-1.0.1.tgz"
 ENV JMX_EXPORTER_CHECKSUM="6ab370edccc2eeb3985f4c95769c26c090d0e052 jmx_prometheus_javaagent-0.1.0.jar"
 
-# Set from build args
-ARG version=latest
-ENV VERSION ${version}
-
 # Downloading/extracting Apache Kafka
 RUN curl -O https://www.apache.org/dist/kafka/${KAFKA_VERSION}/kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz \
     && echo $KAFKA_CHECKSUM > kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz.sha512 \
