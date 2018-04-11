@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import static io.strimzi.test.TestUtils.getContent;
 import static io.strimzi.test.TestUtils.indent;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -59,6 +60,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
     public static final String KAFKA_CONNECT_CM = "../examples/configmaps/cluster-controller/kafka-connect.yaml";
     public static final String CC_INSTALL_DIR = "../examples/install/cluster-controller";
     public static final String CC_DEPLOYMENT_NAME = "strimzi-cluster-controller";
+    public static final String TOPIC_CM = "../examples/configmaps/topic-controller/kafka-topic-configmap.yaml";
 
     private KubeClusterResource clusterResource;
 
@@ -93,6 +95,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         statement = withClusterController(method, statement);
         statement = withResources(method, statement);
         statement = withNamespaces(method, statement);
+        statement = withTopic(method, statement);
         return statement;
     }
 
@@ -450,6 +453,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
             statement = withClusterController(testClass, statement);
             statement = withResources(testClass, statement);
             statement = withNamespaces(testClass, statement);
+            statement = withTopic(testClass, statement);
         }
         return statement;
     }
@@ -469,5 +473,36 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
             }
         }
         return clusterResource;
+    }
+
+    private Statement withTopic(Annotatable element, Statement statement) {
+        Statement last = statement;
+        for (Topic cluster : annotations(element, Topic.class)) {
+            String yaml = getContent(new File(TOPIC_CM), node -> {
+                JsonNode metadata = node.get("metadata");
+                ((ObjectNode) metadata).put("name", String.valueOf(cluster.name()));
+                JsonNode labels = metadata.get("labels");
+                ((ObjectNode) labels).put("strimzi.io/cluster", String.valueOf(cluster.clusterName()));
+                JsonNode data = node.get("data");
+                ((ObjectNode) data).put("name", String.valueOf(cluster.name()));
+                ((ObjectNode) data).put("partitions", String.valueOf(cluster.partitions()));
+                ((ObjectNode) data).put("replicas", String.valueOf(cluster.replicas()));
+            });
+            last = new Bracket(last) {
+                @Override
+                protected void before() {
+                    LOGGER.info("Creating Topic", cluster.name(), name(element));
+                    // create cm
+                    kubeClient().createContent(yaml);
+                }
+                @Override
+                protected void after() {
+                    LOGGER.info("Deleting ConfigMap '{}' after test per @Topic annotation on {}", cluster.clusterName(), name(element));
+                    // delete cm
+                    kubeClient().deleteContent(yaml);
+                }
+            };
+        }
+        return last;
     }
 }

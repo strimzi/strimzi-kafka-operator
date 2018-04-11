@@ -8,13 +8,15 @@ import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.test.ClusterController;
-import io.strimzi.test.CmData;
-import io.strimzi.test.KafkaCluster;
 import io.strimzi.test.Namespace;
-import io.strimzi.test.OpenShiftOnly;
 import io.strimzi.test.Resources;
+import io.strimzi.test.OpenShiftOnly;
+import io.strimzi.test.KafkaCluster;
+import io.strimzi.test.CmData;
+import io.strimzi.test.Topic;
 import io.strimzi.test.StrimziRunner;
 import io.strimzi.test.k8s.Oc;
+import org.apache.commons.collections.CollectionUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -304,5 +306,23 @@ public class KafkaClusterTest extends AbstractClusterTest {
             String initialDelaySecondsPath = "$.spec.containers[*].livenessProbe.initialDelaySeconds";
             assertEquals("23", getValueFromJson(zkPodJson, initialDelaySecondsPath));
         }
+    }
+
+    @Test
+    @KafkaCluster(name = "my-cluster", kafkaNodes = 3, config = {
+            @CmData(key = "KAFKA_DEFAULT_REPLICATION_FACTOR", value = "1")})
+    @Topic(name = "test-topic", clusterName = "my-cluster")
+    public void testSendMessages() {
+        String topicName = "test-topic";
+        String clusterName = "my-cluster";
+        int messagesCount = 5;
+        List<String> messagesToSend = new ArrayList<>();
+        for (int i = 0; i < messagesCount; i++) {
+            messagesToSend.add("Test message " + i);
+        }
+        sendMessages(messagesToSend, clusterName, topicName);
+        List<String> consumedMessages = consumeMessages(clusterName, topicName);
+        LOGGER.info("Comparing lists of sent and received messages");
+        assertTrue(CollectionUtils.isEqualCollection(messagesToSend, consumedMessages));
     }
 }
