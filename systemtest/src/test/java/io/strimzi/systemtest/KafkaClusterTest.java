@@ -43,6 +43,7 @@ import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.valueOfCmEquals;
 import static io.strimzi.test.TestUtils.map;
 import static junit.framework.TestCase.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
@@ -314,15 +315,14 @@ public class KafkaClusterTest extends AbstractClusterTest {
     @Topic(name = "test-topic", clusterName = "my-cluster")
     public void testSendMessages() {
         String topicName = "test-topic";
-        String clusterName = "my-cluster";
         int messagesCount = 5;
         List<String> messagesToSend = new ArrayList<>();
         for (int i = 0; i < messagesCount; i++) {
             messagesToSend.add("Test message " + i);
         }
-        sendMessages(messagesToSend, clusterName, topicName);
-        List<String> consumedMessages = consumeMessages(clusterName, topicName);
+        sendMessages(messagesToSend, CLUSTER_NAME, topicName);
+        List<String> consumedMessages = consumeMessages(CLUSTER_NAME, topicName);
         LOGGER.info("Comparing lists of sent and received messages");
-        assertTrue(CollectionUtils.isEqualCollection(messagesToSend, consumedMessages));
+        assertThat(messagesToSend, is(consumedMessages));
     }
 }
