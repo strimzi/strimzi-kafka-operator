@@ -38,7 +38,7 @@ export LOG_DIR="$KAFKA_HOME"
 cat > /tmp/strimzi.properties <<EOF
 broker.id=${KAFKA_BROKER_ID}
 # Listeners
-listeners=CLIENT://:9092,REPLICATION://:9091
+listeners=CLIENT://0.0.0.0:9092,REPLICATION://0.0.0.0:9091
 advertised.listeners=CLIENT://$(hostname -f):9092,REPLICATION://$(hostname -f):9091
 listener.security.protocol.map=CLIENT:PLAINTEXT,REPLICATION:PLAINTEXT
 inter.broker.listener.name=REPLICATION
