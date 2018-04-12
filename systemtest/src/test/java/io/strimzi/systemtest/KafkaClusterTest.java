@@ -320,8 +320,8 @@ public class KafkaClusterTest extends AbstractClusterTest {
         for (int i = 0; i < messagesCount; i++) {
             messagesToSend.add("Test message " + i);
         }
-        sendMessages(messagesToSend.stream().collect(Collectors.joining("\n")), CLUSTER_NAME, topicName);
-        List<String> consumedMessages = consumeMessages(CLUSTER_NAME, topicName);
+        sendMessages(messagesToSend.stream().collect(Collectors.joining("\n")), CLUSTER_NAME, topicName, 20);
+        List<String> consumedMessages = consumeMessages(CLUSTER_NAME, topicName, 20);
         LOGGER.info("Comparing lists of sent and received messages");
         assertThat(messagesToSend, is(consumedMessages));
     }

@@ -22,4 +22,10 @@ public @interface Topic {
     String clusterName();
     int partitions() default 1;
     int replicas() default 1;
+
+    @Target({ElementType.METHOD, ElementType.TYPE})
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface Container {
+        Topic[] value();
+    }
 }

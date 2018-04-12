@@ -154,19 +154,19 @@ public class AbstractClusterTest {
                 .collect(Collectors.toList());
     }
 
-    public void sendMessages(String messages, String clusterName, String topic) {
+    public void sendMessages(String messages, String clusterName, String topic, int timeoutSeconds) {
         LOGGER.info("Sending messages");
         String command = "echo -e \"" + messages + "\" | sh bin/kafka-console-producer.sh --broker-list " +
-                clusterName + "-kafka:9092 --topic " + topic + " & sleep 20";
+                clusterName + "-kafka:9092 --topic " + topic + " & sleep " + timeoutSeconds + "";
         kubeClient.exec(kafkaPodName(clusterName, 1), "/bin/bash", "-c", command);
     }
 
-    public List<String> consumeMessages(String clusterName, String topic) {
+    public List<String> consumeMessages(String clusterName, String topic, int timeoutSeconds) {
 
         LOGGER.info("Consuming messages");
         String output = kubeClient.exec(kafkaPodName(clusterName, 1), "/bin/bash", "-c",
-                    "/opt/kafka/bin/kafka-console-consumer.sh --bootstrap-server " + clusterName +
-                            "-kafka:9092 --topic " + topic + " --from-beginning & sleep 20; kill %1").out();
+                    "bin/kafka-console-consumer.sh --bootstrap-server " + clusterName +
+                            "-kafka:9092 --topic " + topic + " --from-beginning & sleep " + timeoutSeconds + "; kill %1").out();
         LOGGER.info("Consumed messages");
         return Arrays.asList(output.split("\n"));
     }
