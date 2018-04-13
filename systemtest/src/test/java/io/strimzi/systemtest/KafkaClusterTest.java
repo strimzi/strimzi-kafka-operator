@@ -32,7 +32,6 @@ import static io.strimzi.systemtest.k8s.Events.FailedSync;
 import static io.strimzi.systemtest.k8s.Events.FailedValidation;
 import static io.strimzi.systemtest.k8s.Events.Killing;
 import static io.strimzi.systemtest.k8s.Events.Pulled;
-import static io.strimzi.systemtest.k8s.Events.Pulling;
 import static io.strimzi.systemtest.k8s.Events.Scheduled;
 import static io.strimzi.systemtest.k8s.Events.Started;
 import static io.strimzi.systemtest.k8s.Events.SuccessfulDelete;
