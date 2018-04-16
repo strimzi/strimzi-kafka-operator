@@ -32,7 +32,6 @@ import static io.strimzi.systemtest.k8s.Events.FailedSync;
 import static io.strimzi.systemtest.k8s.Events.FailedValidation;
 import static io.strimzi.systemtest.k8s.Events.Killing;
 import static io.strimzi.systemtest.k8s.Events.Pulled;
-import static io.strimzi.systemtest.k8s.Events.Pulling;
 import static io.strimzi.systemtest.k8s.Events.Scheduled;
 import static io.strimzi.systemtest.k8s.Events.Started;
 import static io.strimzi.systemtest.k8s.Events.SuccessfulDelete;
@@ -106,7 +105,7 @@ public class KafkaClusterTest extends AbstractClusterTest {
 
         //Test that the new pod does not have errors or failures in events
         List<Event> events = getEvents("Pod", newPodName);
-        assertThat(events, hasAllOfReasons(Scheduled, Pulling, Pulled, Created, Started));
+        assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
         assertThat(events, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
 
         // TODO Check logs for errors
@@ -163,12 +162,12 @@ public class KafkaClusterTest extends AbstractClusterTest {
         // TODO Check logs for errors
         //Test that first pod does not have errors or failures in events
         List<Event> eventsForFirstPod = getEvents("Pod", newPodName[0]);
-        assertThat(eventsForFirstPod, hasAllOfReasons(Scheduled, Pulling, Pulled, Created, Started));
+        assertThat(eventsForFirstPod, hasAllOfReasons(Scheduled, Pulled, Created, Started));
         assertThat(eventsForFirstPod, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
 
         //Test that second pod does not have errors or failures in events
         List<Event> eventsForSecondPod = getEvents("Pod", newPodName[1]);
-        assertThat(eventsForSecondPod, hasAllOfReasons(Scheduled, Pulling, Pulled, Created, Started));
+        assertThat(eventsForSecondPod, hasAllOfReasons(Scheduled, Pulled, Created, Started));
         assertThat(eventsForSecondPod, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
 
         // scale down
