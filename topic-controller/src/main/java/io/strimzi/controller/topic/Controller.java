@@ -16,8 +16,12 @@ import org.apache.kafka.common.errors.TopicExistsException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.util.Collections.disjoint;
 
@@ -334,8 +338,8 @@ public class Controller {
         this.config = config;
     }
 
-    void reconcile(ConfigMap cm, TopicName topicName, Handler<AsyncResult<Void>> resultHandler) {
-
+    Future<Void> reconcile(ConfigMap cm, TopicName topicName) {
+        Future<Void> result = Future.future();
         Handler<Future<Void>> action = new Reconciliation("reconcile") {
             @Override
             public void handle(Future<Void> fut) {
@@ -375,7 +379,8 @@ public class Controller {
                 }
             }
         };
-        inFlight.enqueue(topicName, action, resultHandler);
+        inFlight.enqueue(topicName, action, result);
+        return result;
     }
 
     /**
@@ -960,6 +965,69 @@ public class Controller {
      */
     static String logConfigMap(ConfigMap cm) {
         return cm != null ? cm.getMetadata().getNamespace() + "/" + cm.getMetadata().getName() : null;
+    }
+
+    Future<?> reconcileAllTopics(String reconciliationType) {
+        Future topicsJoin = Future.future();
+        Future mapsJoin = Future.future();
+        LOGGER.info("Starting {} reconciliation", reconciliationType);
+        kafka.listTopics(topicsListResult -> {
+            if (topicsListResult.succeeded()) {
+                Set<String> kafkaTopics = topicsListResult.result();
+                LOGGER.debug("Reconciling kafka topics {}", kafkaTopics);
+                // First reconcile the topics in kafka
+                List<Future> topicFutures = new ArrayList<>();
+                for (String name : kafkaTopics) {
+                    LOGGER.debug("{} reconciliation of topic {}", reconciliationType, name);
+                    TopicName topicName = new TopicName(name);
+                    Future topicFuture = Future.future();
+                    topicFutures.add(topicFuture);
+                    k8s.getFromName(topicName.asMapName(), cmResult -> {
+                        if (cmResult.succeeded()) {
+                            ConfigMap cm = cmResult.result();
+                            reconcile(cm, topicName).setHandler(topicFuture);
+                        } else {
+                            LOGGER.error("Error {} getting ConfigMap {} for topic {}",
+                                    reconciliationType,
+                                    topicName.asMapName(), topicName, cmResult.cause());
+                            topicFuture.fail(new ControllerException("Error getting ConfigMap " + topicName.asMapName() + " during " + reconciliationType + " reconciliation", cmResult.cause()));
+                        }
+                    });
+                }
+                CompositeFuture.join(topicFutures).setHandler(topicsJoin);
+                LOGGER.debug("Reconciling configmaps");
+                // Then those in k8s which aren't in kafka
+                k8s.listMaps(configMapsListResult -> {
+                    List<Future> cmFutures = new ArrayList<>();
+                    if (configMapsListResult.succeeded()) {
+                        List<ConfigMap> configMaps = configMapsListResult.result();
+                        Map<String, ConfigMap> configMapsMap = configMaps.stream().collect(Collectors.toMap(
+                            cm -> cm.getMetadata().getName(),
+                            cm -> cm));
+                        configMapsMap.keySet().removeAll(kafkaTopics);
+                        LOGGER.debug("Reconciling configmaps: {}", configMapsMap.keySet());
+                        for (ConfigMap cm : configMapsMap.values()) {
+                            LOGGER.debug("{} reconciliation of configmap {}", reconciliationType, cm.getMetadata().getName());
+
+                            TopicName topicName = new TopicName(cm);
+                            cmFutures.add(reconcile(cm, topicName));
+                        }
+                        CompositeFuture.join(cmFutures).setHandler(mapsJoin);
+                    } else {
+                        LOGGER.error("Unable to list ConfigMaps", configMapsListResult.cause());
+                        mapsJoin.fail(new ControllerException("Error listing existing ConfigMaps during " + reconciliationType + " reconciliation", configMapsListResult.cause()));
+                    }
+                    // Finally those in private store which we've not dealt with so far...
+                    // TODO ^^
+                });
+            } else {
+                LOGGER.error("Error performing {} reconciliation", reconciliationType, topicsListResult.cause());
+                ControllerException listException = new ControllerException("Error listing existing topics during " + reconciliationType + " reconciliation", topicsListResult.cause());
+                topicsJoin.fail(listException);
+                mapsJoin.fail(listException);
+            }
+        });
+        return CompositeFuture.join(topicsJoin, mapsJoin);
     }
 }
 

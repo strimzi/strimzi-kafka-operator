@@ -34,6 +34,10 @@ public class ControllerException extends RuntimeException {
         this(null, message, null);
     }
 
+    public ControllerException(String message, Throwable cause) {
+        this(null, message, cause);
+    }
+
     public HasMetadata getInvolvedObject() {
         return involvedObject;
     }

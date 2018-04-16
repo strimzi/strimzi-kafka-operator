@@ -4,24 +4,20 @@
  */
 package io.strimzi.controller.topic;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
 import io.strimzi.controller.topic.zk.Zk;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServer;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 public class Session extends AbstractVerticle {
 
@@ -40,6 +36,8 @@ public class Session extends AbstractVerticle {
     TopicsWatcher topicsWatcher;
     TopicConfigsWatcher topicConfigsWatcher;
     TopicWatcher topicWatcher;
+    /** The id of the periodic reconciliation timer. This is null during a periodic reconciliation. */
+    private volatile Long timerId;
     private volatile boolean stopped = false;
     private Zk zk;
     private volatile HttpServer healthServer;
@@ -60,6 +58,10 @@ public class Session extends AbstractVerticle {
     @Override
     public void stop(Future<Void> stopFuture) throws Exception {
         this.stopped = true;
+        Long timerId = this.timerId;
+        if (timerId != null) {
+            vertx.cancelTimer(timerId);
+        }
         vertx.executeBlocking(blockingResult -> {
             long t0 = System.currentTimeMillis();
             long timeout = 120_000L;
@@ -147,80 +149,22 @@ public class Session extends AbstractVerticle {
         LOGGER.debug("Starting {}", configMapThread);
         configMapThread.start();
 
-        // Reconcile initially
-        reconcileTopics("initial");
-        // And periodically after that
-        vertx.setPeriodic(this.config.get(Config.FULL_RECONCILIATION_INTERVAL_MS),
-            timerId -> {
-                if (stopped) {
-                    vertx.cancelTimer(timerId);
-                    return;
-                }
-                reconcileTopics("periodic");
-            });
-        LOGGER.info("Started");
-    }
-
-    void reconcileTopics(String reconciliationType) {
-        LOGGER.info("Starting {} reconciliation", reconciliationType);
-        kafka.listTopics(arx -> {
-            if (arx.succeeded()) {
-                Set<String> kafkaTopics = arx.result();
-                LOGGER.debug("Reconciling kafka topics {}", kafkaTopics);
-                // First reconcile the topics in kafka
-                for (String name : kafkaTopics) {
-                    LOGGER.debug("{} reconciliation of topic {}", reconciliationType, name);
-                    TopicName topicName = new TopicName(name);
-                    k8s.getFromName(topicName.asMapName(), ar -> {
-                        ConfigMap cm = ar.result();
-
-                        controller.reconcile(cm, topicName, reconcileResult -> {
-                            if (reconcileResult.succeeded()) {
-                                LOGGER.info("Success {} reconciling ConfigMap {} topic {}",
-                                        reconciliationType, Controller.logConfigMap(cm), topicName);
-                            } else {
-                                LOGGER.error("Error {} reconciling ConfigMap {} topic {}",
-                                        reconciliationType, Controller.logConfigMap(cm), topicName, reconcileResult.cause());
-                            }
-                        });
+        final Long interval = config.get(Config.FULL_RECONCILIATION_INTERVAL_MS);
+        Handler<Long> periodic = new Handler<Long>() {
+            @Override
+            public void handle(Long oldTimerId) {
+                if (!stopped) {
+                    timerId = null;
+                    controller.reconcileAllTopics("periodic").setHandler(result -> {
+                        if (!stopped) {
+                            timerId = vertx.setTimer(interval, this);
+                        }
                     });
                 }
-
-                LOGGER.debug("Reconciling configmaps");
-                // Then those in k8s which aren't in kafka
-                k8s.listMaps(ar -> {
-                    if (ar.succeeded()) {
-                        List<ConfigMap> configMaps = ar.result();
-                        Map<String, ConfigMap> configMapsMap = configMaps.stream().collect(Collectors.toMap(
-                            cm -> cm.getMetadata().getName(),
-                            cm -> cm));
-                        configMapsMap.keySet().removeAll(kafkaTopics);
-                        LOGGER.debug("Reconciling configmaps: {}", configMapsMap.keySet());
-                        for (ConfigMap cm : configMapsMap.values()) {
-                            LOGGER.debug("{} reconciliation of configmap {}", reconciliationType, cm.getMetadata().getName());
-
-                            TopicName topicName = new TopicName(cm);
-                            controller.reconcile(cm, topicName, reconcileResult -> {
-                                if (reconcileResult.succeeded()) {
-                                    LOGGER.info("Success {} reconciling ConfigMap {}",
-                                            reconciliationType, Controller.logConfigMap(cm));
-                                } else {
-                                    LOGGER.error("Error {} reconciling ConfigMap {}",
-                                            reconciliationType, Controller.logConfigMap(cm), reconcileResult.cause());
-                                }
-                            });
-                        }
-                    } else {
-                        LOGGER.error("Unable to list ConfigMaps", ar.cause());
-                    }
-
-                    // Finally those in private store which we've not dealt with so far...
-                    // TODO ^^
-                });
-            } else {
-                LOGGER.error("Error performing {} reconciliation", reconciliationType, arx.cause());
             }
-        });
+        };
+        periodic.handle(null);
+        LOGGER.info("Started");
     }
 
     /**
