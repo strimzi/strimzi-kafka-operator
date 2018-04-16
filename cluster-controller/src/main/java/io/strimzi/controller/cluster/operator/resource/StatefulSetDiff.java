@@ -27,6 +27,10 @@ public class StatefulSetDiff {
     static {
         IGNORABLE_PATHS = asList(
             "/spec/revisionHistoryLimit",
+            "/spec/template/spec/initContainers/0/imagePullPolicy",
+            "/spec/template/spec/initContainers/0/resources",
+            "/spec/template/spec/initContainers/0/terminationMessagePath",
+            "/spec/template/spec/initContainers/0/terminationMessagePolicy",
             "/spec/template/spec/containers/0/imagePullPolicy",
             "/spec/template/spec/containers/0/livenessProbe/failureThreshold",
             "/spec/template/spec/containers/0/livenessProbe/periodSeconds",
