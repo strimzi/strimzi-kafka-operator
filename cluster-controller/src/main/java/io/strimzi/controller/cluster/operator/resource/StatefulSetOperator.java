@@ -34,15 +34,17 @@ public class StatefulSetOperator<P> extends AbstractScalableResourceOperator<Kub
 
     private static final Logger log = LoggerFactory.getLogger(StatefulSetOperator.class.getName());
     private final PodOperator podOperations;
+    private final long operationTimeoutMs;
 
     /**
      * Constructor
      * @param vertx The Vertx instance
      * @param client The Kubernetes client
      */
-    public StatefulSetOperator(Vertx vertx, KubernetesClient client) {
+    public StatefulSetOperator(Vertx vertx, KubernetesClient client, long operationTimeoutMs) {
         super(vertx, client, "StatefulSet");
         this.podOperations = new PodOperator(vertx, client);
+        this.operationTimeoutMs = operationTimeoutMs;
     }
 
     @Override
@@ -211,8 +213,6 @@ public class StatefulSetOperator<P> extends AbstractScalableResourceOperator<Kub
         // Create the SS...
         Future<ReconcileResult<P>> result = Future.future();
         Future<ReconcileResult<P>> crt = super.internalCreate(namespace, name, desired);
-
-        long operationTimeoutMs = 60_000L;
 
         // ... then wait for the SS to be ready...
         crt.compose(res -> readiness(namespace, desired.getMetadata().getName(), 1_000, operationTimeoutMs).map(res))

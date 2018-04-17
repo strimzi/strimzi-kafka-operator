@@ -58,7 +58,7 @@ public class StatefulSetOperatorTest<P>
 
     @Override
     protected StatefulSetOperator createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new StatefulSetOperator(vertx, mockClient) {
+        return new StatefulSetOperator(vertx, mockClient, 60_000L) {
             @Override
             public Future<Void> readiness(String namespace, String name, long pollIntervalMs, long timeoutMs) {
                 return Future.succeededFuture();
