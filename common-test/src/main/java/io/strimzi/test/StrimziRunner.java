@@ -55,7 +55,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
      * in the state it was in when the test failed.
      */
     public static final String NOTEARDOWN = "NOTEARDOWN";
-    public static final String KAFKA_EPHEMERAL_CM = "../examples/configmaps/cluster-controller/kafka-ephemeral.yaml";
+    public static final String KAFKA_PERSISTENT_CM = "../examples/configmaps/cluster-controller/kafka-persistent.yaml";
     public static final String KAFKA_CONNECT_CM = "../examples/configmaps/cluster-controller/kafka-connect.yaml";
     public static final String CC_INSTALL_DIR = "../examples/install/cluster-controller";
     public static final String CC_DEPLOYMENT_NAME = "strimzi-cluster-controller";
@@ -275,7 +275,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         Statement last = statement;
         for (KafkaCluster cluster : annotations(element, KafkaCluster.class)) {
             // use the example kafka-ephemeral as a template, but modify it according to the annotation
-            String yaml = getContent(new File(KAFKA_EPHEMERAL_CM), node -> {
+            String yaml = getContent(new File(KAFKA_PERSISTENT_CM), node -> {
                 JsonNode metadata = node.get("metadata");
                 ((ObjectNode) metadata).put("name", cluster.name());
                 JsonNode data = node.get("data");
