@@ -18,8 +18,6 @@ release_version:
 	find ./examples -name '*.yaml' -type f -exec sed -i '/image: "\?strimzi\/[a-zA-Z0-9_-.]\+:[a-zA-Z0-9_-.]\+"\?/s/:[a-zA-Z0-9_-.]\+/:$(RELEASE_VERSION)/g' {} \;
 	find ./examples -name '*.yaml' -type f -exec sed -i '/name: [a-zA-Z0-9_-]*IMAGE_TAG/{n;s/value: [a-zA-Z0-9_-.]\+/value: $(RELEASE_VERSION)/}' {} \;
 	find ./examples -name '*.yaml' -type f -exec sed -i '/name: STRIMZI_DEFAULT_[a-zA-Z0-9_-]*IMAGE/{n;s/:[a-zA-Z0-9_-.]\+/:$(RELEASE_VERSION)/}' {} \;
-	echo "Changing documentation version to $(RELEASE_VERSION)"
-	find ./documentation/adoc/ -name '*.adoc' -type f -exec sed -i '/:revnumber: [a-zA-Z0-9_-.]\+/s/:revnumber: [a-zA-Z0-9_-.]\+/:revnumber: $(RELEASE_VERSION)/' {} \;
 
 release_maven:
 	echo "Update pom versions to $(RELEASE_VERSION)"
@@ -33,12 +31,12 @@ release_pkg:
 
 docu_html: docu_htmlclean
 	mkdir -p documentation/html
-	asciidoctor documentation/adoc/docu.adoc -o documentation/html/master.html
+	asciidoctor -a revnumber=$(RELEASE_VERSION) documentation/adoc/docu.adoc -o documentation/html/master.html
 	cp -vr documentation/adoc/images documentation/html/images
 
 docu_htmlnoheader: docu_htmlnoheaderclean
 	mkdir -p documentation/htmlnoheader
-	asciidoctor -s documentation/adoc/docu.adoc -o documentation/htmlnoheader/master.html
+	asciidoctor -a revnumber=$(RELEASE_VERSION) -s documentation/adoc/docu.adoc -o documentation/htmlnoheader/master.html
 
 docu_pushtowebsite: docu_htmlnoheader
 	./.travis/docu-push-to-website.sh
