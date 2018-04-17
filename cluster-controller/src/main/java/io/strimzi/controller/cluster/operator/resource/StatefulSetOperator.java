@@ -264,6 +264,7 @@ public class StatefulSetOperator<P> extends AbstractScalableResourceOperator<Kub
      */
     protected StatefulSetDiff revertStorageChanges(StatefulSet current, StatefulSet desired) {
         desired.getSpec().setVolumeClaimTemplates(current.getSpec().getVolumeClaimTemplates());
+        desired.getSpec().getTemplate().getSpec().setInitContainers(current.getSpec().getTemplate().getSpec().getInitContainers());
 
         if (current.getSpec().getVolumeClaimTemplates().isEmpty()) {
             // We are on ephemeral storage and changing to persistent

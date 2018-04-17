@@ -6,6 +6,7 @@ package io.strimzi.controller.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
 import io.fabric8.kubernetes.api.model.Volume;
@@ -549,6 +550,7 @@ public class KafkaAssemblyOperatorMockIT {
         KafkaAssemblyOperator kco = createCluster(context);
         List<PersistentVolumeClaim> originalPVCs = mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaClusterName(CLUSTER_NAME)).get().getSpec().getVolumeClaimTemplates();
         List<Volume> originalVolumes = mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaClusterName(CLUSTER_NAME)).get().getSpec().getTemplate().getSpec().getVolumes();
+        List<Container> originalInitContainers = mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaClusterName(CLUSTER_NAME)).get().getSpec().getTemplate().getSpec().getInitContainers();
 
         Async updateAsync = context.async();
 
@@ -574,6 +576,7 @@ public class KafkaAssemblyOperatorMockIT {
             // Check the Volumes and PVCs were not changed
             assertPVCs(context, KafkaCluster.kafkaClusterName(CLUSTER_NAME), originalPVCs);
             assertVolumes(context, KafkaCluster.kafkaClusterName(CLUSTER_NAME), originalVolumes);
+            assertInitContainers(context, KafkaCluster.kafkaClusterName(CLUSTER_NAME), originalInitContainers);
             updateAsync.complete();
         });
     }
@@ -592,6 +595,14 @@ public class KafkaAssemblyOperatorMockIT {
         List<Volume> volumes = statefulSet.getSpec().getTemplate().getSpec().getVolumes();
         context.assertEquals(volumes.size(), originalVolumes.size());
         context.assertEquals(volumes, originalVolumes);
+    }
+
+    private void assertInitContainers(TestContext context, String statefulSetName, List<Container> originalInitContainers) {
+        StatefulSet statefulSet = mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSetName).get();
+        context.assertNotNull(statefulSet);
+        List<Container> initContainers = statefulSet.getSpec().getTemplate().getSpec().getInitContainers();
+        context.assertEquals(initContainers.size(), originalInitContainers.size());
+        context.assertEquals(initContainers, originalInitContainers);
     }
 
     /** Test that we can change the deleteClaim flag, and that it's honoured */
