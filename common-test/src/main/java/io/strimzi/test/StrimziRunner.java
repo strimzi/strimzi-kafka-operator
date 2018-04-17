@@ -5,6 +5,7 @@
 package io.strimzi.test;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.strimzi.test.k8s.KubeClient;
@@ -94,8 +95,8 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         statement = withKafkaClusters(method, statement);
         statement = withClusterController(method, statement);
         statement = withResources(method, statement);
-        statement = withNamespaces(method, statement);
         statement = withTopic(method, statement);
+        statement = withNamespaces(method, statement);
         return statement;
     }
 
@@ -478,29 +479,37 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
     private Statement withTopic(Annotatable element, Statement statement) {
         Statement last = statement;
         for (Topic topic : annotations(element, Topic.class)) {
-            String yaml = getContent(new File(TOPIC_CM), node -> {
-                JsonNode metadata = node.get("metadata");
-                ((ObjectNode) metadata).put("name", topic.name());
-                JsonNode labels = metadata.get("labels");
-                ((ObjectNode) labels).put("strimzi.io/topic", topic.clusterName());
-                JsonNode data = node.get("data");
-                ((ObjectNode) data).put("name", topic.name());
-                ((ObjectNode) data).put("partitions", String.valueOf(topic.partitions()));
-                ((ObjectNode) data).put("replicas", String.valueOf(topic.replicas()));
-            });
+            final JsonNodeFactory factory = JsonNodeFactory.instance;
+            final ObjectNode node = factory.objectNode();
+            node.put("apiVersion", "v1");
+            node.put("kind", "ConfigMap");
+            node.putObject("metadata");
+            JsonNode metadata = node.get("metadata");
+            ((ObjectNode) metadata).put("name", topic.name());
+            ((ObjectNode) metadata).putObject("labels");
+            JsonNode labels = metadata.get("labels");
+            ((ObjectNode) labels).put("strimzi.io/kind", "topic");
+            ((ObjectNode) labels).put("strimzi.io/cluster", topic.clusterName());
+            node.putObject("data");
+            JsonNode data = node.get("data");
+            ((ObjectNode) data).put("name", topic.name());
+            ((ObjectNode) data).put("partitions", String.valueOf(topic.partitions()));
+            ((ObjectNode) data).put("replicas", String.valueOf(topic.replicas()));
+            String configMap = node.toString();
+            System.out.println(configMap);
             last = new Bracket(last) {
                 @Override
                 protected void before() {
                     LOGGER.info("Creating Topic {} {}", topic.name(), name(element));
                     // create cm
-                    kubeClient().createContent(yaml);
+                    kubeClient().createContent(configMap);
                     kubeClient().waitForResourceCreation(CM, topic.name());
                 }
                 @Override
                 protected void after() {
                     LOGGER.info("Deleting ConfigMap '{}' after test per @Topic annotation on {}", topic.clusterName(), name(element));
                     // delete cm
-                    kubeClient().deleteContent(yaml);
+                    kubeClient().deleteContent(configMap);
                     kubeClient().waitForResourceDeletion(CM, topic.name());
                 }
             };

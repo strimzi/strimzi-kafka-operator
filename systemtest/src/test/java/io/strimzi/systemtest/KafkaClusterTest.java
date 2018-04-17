@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest;
 
+import com.jayway.jsonpath.JsonPath;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -23,10 +24,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.k8s.Events.Created;
 import static io.strimzi.systemtest.k8s.Events.Failed;
@@ -43,7 +44,6 @@ import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.valueOfCmEquals;
 import static io.strimzi.test.TestUtils.map;
 import static junit.framework.TestCase.assertTrue;
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
@@ -57,6 +57,7 @@ public class KafkaClusterTest extends AbstractClusterTest {
 
     public static final String NAMESPACE = "kafka-cluster-test";
     private static final String CLUSTER_NAME = "my-cluster";
+    private static final String TOPIC_NAME = "test-topic";
 
     @BeforeClass
     public static void waitForCc() {
@@ -312,17 +313,16 @@ public class KafkaClusterTest extends AbstractClusterTest {
     @Test
     @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 3, config = {
             @CmData(key = "KAFKA_DEFAULT_REPLICATION_FACTOR", value = "1")})
-    @Topic(name = "test-topic", clusterName = "my-cluster")
+    @Topic(name = TOPIC_NAME, clusterName = "my-cluster")
     public void testSendMessages() {
-        String topicName = "test-topic";
-        int messagesCount = 5;
-        List<String> messagesToSend = new ArrayList<>();
-        for (int i = 0; i < messagesCount; i++) {
-            messagesToSend.add("Test message " + i);
-        }
-        sendMessages(messagesToSend.stream().collect(Collectors.joining("\n")), CLUSTER_NAME, topicName, 20);
-        List<String> consumedMessages = consumeMessages(CLUSTER_NAME, topicName, 20);
-        LOGGER.info("Comparing lists of sent and received messages");
-        assertThat(messagesToSend, is(consumedMessages));
+        int messagesCount = 20;
+        sendMessages(CLUSTER_NAME, TOPIC_NAME, messagesCount);
+        String consumedMessages = consumeMessages(CLUSTER_NAME, TOPIC_NAME, 1, 20);
+        List<String> messages = new ArrayList<>(Arrays.asList(consumedMessages.split("\n")));
+        String count = JsonPath.parse(messages.get(3)).read("$.count").toString();
+        assertTrue(messagesCount == Integer.parseInt(count));
+        String topic = JsonPath.parse(messages.get(3)).read(".partitions.[0].topic").toString().
+                replaceAll("[\\[\\]\"]", "");
+        assertTrue(TOPIC_NAME.equals(topic));
     }
 }
