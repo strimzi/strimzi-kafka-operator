@@ -4,7 +4,10 @@ set -x
 rm -rf ~/.kube
 
 function install_kubectl {
-    curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl && chmod +x kubectl
+    if [ "${TEST_KUBECTL_VERSION:-latest}" = "latest" ]; then
+        TEST_KUBECTL_VERSION=$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)
+    fi
+    curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/${TEST_KUBECTL_VERSION}/bin/linux/amd64/kubectl && chmod +x kubectl
     sudo cp kubectl /usr/bin
 }
 
@@ -32,7 +35,12 @@ function wait_for_minikube {
 
 if [ "$TEST_CLUSTER" = "minikube" ]; then
     install_kubectl
-    curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 && chmod +x minikube
+    if [ "${TEST_MINIKUBE_VERSION:-latest}" = "latest" ]; then
+        TEST_MINIKUBE_URL=https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+    else
+        TEST_MINIKUBE_URL=https://github.com/kubernetes/minikube/releases/download/${TEST_MINIKUBE_VERSION}/minikube-linux-amd64
+    fi
+    curl -Lo minikube ${TEST_MINIKUBE_URL} && chmod +x minikube
     sudo cp minikube /usr/bin
 
     export MINIKUBE_WANTUPDATENOTIFICATION=false
