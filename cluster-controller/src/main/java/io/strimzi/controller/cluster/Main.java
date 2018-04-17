@@ -57,8 +57,8 @@ public class Main {
 
     static CompositeFuture run(Vertx vertx, KubernetesClient client, boolean isOpenShift, ClusterControllerConfig config) {
         ServiceOperator serviceOperations = new ServiceOperator(vertx, client);
-        ZookeeperSetOperator zookeeperSetOperations = new ZookeeperSetOperator(vertx, client);
-        KafkaSetOperator kafkaSetOperations = new KafkaSetOperator(vertx, client);
+        ZookeeperSetOperator zookeeperSetOperations = new ZookeeperSetOperator(vertx, client, config.getOperationTimeoutMs());
+        KafkaSetOperator kafkaSetOperations = new KafkaSetOperator(vertx, client, config.getOperationTimeoutMs());
         ConfigMapOperator configMapOperations = new ConfigMapOperator(vertx, client);
         PvcOperator pvcOperations = new PvcOperator(vertx, client);
         DeploymentOperator deploymentOperations = new DeploymentOperator(vertx, client);

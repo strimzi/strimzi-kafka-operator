@@ -192,8 +192,8 @@ public class KafkaAssemblyOperatorMockIT {
     private KafkaAssemblyOperator createCluster(TestContext context) {
         ConfigMapOperator cmops = new ConfigMapOperator(vertx, mockClient);
         ServiceOperator svcops = new ServiceOperator(vertx, mockClient);
-        KafkaSetOperator ksops = new KafkaSetOperator(vertx, mockClient);
-        ZookeeperSetOperator zksops = new ZookeeperSetOperator(vertx, mockClient);
+        KafkaSetOperator ksops = new KafkaSetOperator(vertx, mockClient, 60_000L);
+        ZookeeperSetOperator zksops = new ZookeeperSetOperator(vertx, mockClient, 60_000L);
         DeploymentOperator depops = new DeploymentOperator(vertx, mockClient);
         PvcOperator pvcops = new PvcOperator(vertx, mockClient);
         KafkaAssemblyOperator kco = new KafkaAssemblyOperator(vertx, true, 2_000,

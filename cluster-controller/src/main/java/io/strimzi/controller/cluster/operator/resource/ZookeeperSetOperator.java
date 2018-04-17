@@ -24,8 +24,8 @@ public class ZookeeperSetOperator extends StatefulSetOperator<Boolean> {
      * @param vertx  The Vertx instance
      * @param client The Kubernetes client
      */
-    public ZookeeperSetOperator(Vertx vertx, KubernetesClient client) {
-        super(vertx, client);
+    public ZookeeperSetOperator(Vertx vertx, KubernetesClient client, long operationTimeoutMs) {
+        super(vertx, client, operationTimeoutMs);
     }
 
     @Override

@@ -24,8 +24,8 @@ public class KafkaSetOperator extends StatefulSetOperator<Boolean> {
      * @param vertx  The Vertx instance
      * @param client The Kubernetes client
      */
-    public KafkaSetOperator(Vertx vertx, KubernetesClient client) {
-        super(vertx, client);
+    public KafkaSetOperator(Vertx vertx, KubernetesClient client, long operationTimeoutMs) {
+        super(vertx, client, operationTimeoutMs);
     }
 
     @Override
