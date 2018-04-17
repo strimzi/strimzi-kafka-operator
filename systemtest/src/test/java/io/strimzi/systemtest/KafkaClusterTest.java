@@ -258,9 +258,9 @@ public class KafkaClusterTest extends AbstractClusterTest {
             @CmData(key = "zookeeper-healthcheck-timeout", value = "10"),
             @CmData(key = "kafka-healthcheck-delay", value = "30"),
             @CmData(key = "kafka-healthcheck-timeout", value = "10"),
-            @CmData(key = "KAFKA_DEFAULT_REPLICATION_FACTOR", value = "2"),
-            @CmData(key = "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", value = "5"),
-            @CmData(key = "KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", value = "5")
+            @CmData(key = "KAFKA_DEFAULT_REPLICATION_FACTOR", value = "1"),
+            @CmData(key = "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", value = "1"),
+            @CmData(key = "KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", value = "1")
     })
     public void testForUpdateValuesInConfigMap() {
         String clusterName = "my-cluster";
@@ -279,8 +279,8 @@ public class KafkaClusterTest extends AbstractClusterTest {
         replaceCm(clusterName, "zookeeper-healthcheck-timeout", "24");
         replaceCm(clusterName, "kafka-healthcheck-delay", "23");
         replaceCm(clusterName, "kafka-healthcheck-timeout", "20");
-        replaceCm(clusterName, "KAFKA_DEFAULT_REPLICATION_FACTOR", "1");
-        replaceCm(clusterName, "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "4");
+        replaceCm(clusterName, "KAFKA_DEFAULT_REPLICATION_FACTOR", "2");
+        replaceCm(clusterName, "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "2");
         replaceCm(clusterName, "KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", "2");
 
         for (int i = 0; i < expectedZKPods; i++) {
@@ -293,14 +293,19 @@ public class KafkaClusterTest extends AbstractClusterTest {
         }
         String configMap = kubeClient.get("cm", clusterName);
         assertThat(configMap, valueOfCmEquals("zookeeper-healthcheck-delay", "23"));
+        assertThat(configMap, valueOfCmEquals("zookeeper-healthcheck-timeout", "24"));
         assertThat(configMap, valueOfCmEquals("kafka-healthcheck-delay", "23"));
-        assertThat(configMap, valueOfCmEquals("KAFKA_DEFAULT_REPLICATION_FACTOR", "1"));
+        assertThat(configMap, valueOfCmEquals("kafka-healthcheck-timeout", "20"));
+        assertThat(configMap, valueOfCmEquals("KAFKA_DEFAULT_REPLICATION_FACTOR", "2"));
+        assertThat(configMap, valueOfCmEquals("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "2"));
+        assertThat(configMap, valueOfCmEquals("KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", "2"));
+
         LOGGER.info("Verified CM and Testing kafka pods");
         for (int i = 0; i < expectedKafkaPods; i++) {
             String kafkaPodJson = oc.getResourceAsJson("pod", kafkaPodName(clusterName, i));
-            assertEquals("1", getValueFromJson(kafkaPodJson,
+            assertEquals("2", getValueFromJson(kafkaPodJson,
                     globalVariableJsonPathBuilder("KAFKA_DEFAULT_REPLICATION_FACTOR")));
-            assertEquals("4", getValueFromJson(kafkaPodJson,
+            assertEquals("2", getValueFromJson(kafkaPodJson,
                     globalVariableJsonPathBuilder("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR")));
             assertEquals("2", getValueFromJson(kafkaPodJson,
                     globalVariableJsonPathBuilder("KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR")));
