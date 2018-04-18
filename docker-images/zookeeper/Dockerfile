@@ -5,7 +5,7 @@ EXPOSE 2181 2888 3888 9404
 # copy configuration files
 COPY ./config/ $KAFKA_HOME/config/
 
-# copy scripts for starting Kafka and Zookeeper
+# copy scripts for starting Zookeeper
 COPY ./scripts/ $KAFKA_HOME
 
 USER kafka:kafka
