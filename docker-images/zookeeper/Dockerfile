@@ -1,6 +1,6 @@
 FROM strimzi/kafka-base:latest
 
-EXPOSE 2181 2888 3888 9404
+EXPOSE 2181 2888 3888
 
 # copy configuration files
 COPY ./config/ $KAFKA_HOME/config/
