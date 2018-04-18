@@ -34,7 +34,4 @@ RUN curl -O https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_java
     && mv jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar /opt/prometheus/jmx_prometheus_javaagent.jar \
     && rm -rf jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.*
 
-# exposed port for the JMX exporter
-EXPOSE 9404
-
 WORKDIR $KAFKA_HOME

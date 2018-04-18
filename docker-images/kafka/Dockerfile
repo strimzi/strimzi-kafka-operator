@@ -1,6 +1,7 @@
 FROM strimzi/kafka-base:latest
 
-EXPOSE 9091 9092
+# exposing Kafka ports and the one for JMX exporter
+EXPOSE 9091 9092 9404
 
 # copy configuration files
 COPY ./config/ $KAFKA_HOME/config/
