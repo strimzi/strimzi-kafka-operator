@@ -5,11 +5,7 @@
 
 java_build:
 	echo "Building JAR file ..."
-ifndef CI
-	mvn package
-else
-	mvn verify
-endif
+	mvn ${MVN_ARGS} verify
 
 java_clean:
 	echo "Cleaning Maven build ..."
