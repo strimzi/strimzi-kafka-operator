@@ -22,6 +22,8 @@ import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Probe;
 import io.fabric8.kubernetes.api.model.ProbeBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.ServicePort;
@@ -90,6 +92,9 @@ public abstract class AbstractModel {
     public static final String VOLUME_NAME = "data";
     protected String metricsConfigVolumeName;
     protected String metricsConfigMountPath;
+
+    private JvmOptions jvmOptions;
+    private Resources resources;
 
     /**
      * Constructor
@@ -417,6 +422,7 @@ public abstract class AbstractModel {
             List<VolumeMount> volumeMounts,
             Probe livenessProbe,
             Probe readinessProbe,
+            ResourceRequirements resources,
             boolean isOpenShift) {
 
         Map<String, String> annotations = new HashMap<>();
@@ -431,6 +437,7 @@ public abstract class AbstractModel {
                 .withPorts(ports)
                 .withLivenessProbe(livenessProbe)
                 .withReadinessProbe(readinessProbe)
+                .withResources(resources)
                 .build();
 
         List<Container> initContainers = new ArrayList<>();
@@ -497,7 +504,8 @@ public abstract class AbstractModel {
             Probe readinessProbe,
             DeploymentStrategy updateStrategy,
             Map<String, String> deploymentAnnotations,
-            Map<String, String> podAnnotations) {
+            Map<String, String> podAnnotations,
+            ResourceRequirements resources) {
 
         Container container = new ContainerBuilder()
                 .withName(name)
@@ -506,6 +514,7 @@ public abstract class AbstractModel {
                 .withPorts(ports)
                 .withLivenessProbe(livenessProbe)
                 .withReadinessProbe(readinessProbe)
+                .withResources(resources)
                 .build();
 
         Deployment dep = new DeploymentBuilder()
@@ -553,5 +562,72 @@ public abstract class AbstractModel {
             Collectors.toMap(EnvVar::getName, EnvVar::getValue,
                 // On duplicates, last in wins
                 (u, v) -> v));
+    }
+
+    protected ResourceRequirements resources() {
+        if (resources != null) {
+            ResourceRequirementsBuilder builder = new ResourceRequirementsBuilder();
+            Resources.CpuMemory limits = resources.getLimits();
+            if (limits != null
+                    && limits.getMilliCpu() > 0) {
+                builder.addToLimits("cpu", new Quantity(limits.getCpuFormatted()));
+            }
+            if (limits != null
+                    && limits.getMemory() > 0) {
+                builder.addToLimits("memory", new Quantity(limits.getMemoryFormatted()));
+            }
+            Resources.CpuMemory requests = resources.getRequests();
+            if (requests != null
+                    && requests.getMilliCpu() > 0) {
+                builder.addToRequests("cpu", new Quantity(requests.getCpuFormatted()));
+            }
+            if (requests != null
+                    && requests.getMemory() > 0) {
+                builder.addToRequests("memory", new Quantity(requests.getMemoryFormatted()));
+            }
+            return builder.build();
+        }
+        return null;
+    }
+
+    public void setResources(Resources resources) {
+        this.resources = resources;
+    }
+
+    public void setJvmOptions(JvmOptions jvmOptions) {
+        this.jvmOptions = jvmOptions;
+    }
+
+    protected String javaHeapOptions(long maxNeeded, double fraction) {
+        StringBuilder result = new StringBuilder();
+        String xms = jvmOptions != null ? jvmOptions.getXms() : null;
+
+        if (xms != null) {
+            result.append("-Xms").append(xms).append(' ');
+        }
+
+        String xmx = jvmOptions != null ? jvmOptions.getXmx() : null;
+        if (xmx != null) {
+            // Honour explicit max heap
+            result.append("-Xmx").append(xmx).append(' ');
+        } else if (resources != null
+                && resources.getRequests() != null
+                && resources.getRequests().getMemory() > 0) {
+            long avail = resources.getRequests().getMemory();
+            // Configure JVM heap according to the requested resources
+            if (maxNeeded > 0) {
+                result.append("-XX:MaxRAM=").append((long) (Math.min(fraction * avail, maxNeeded))).append(' ');
+            } else {
+                result.append("-XX:MaxRAM=").append((long) fraction * avail).append(' ');
+            }
+        } else {
+            // Tell the JVM it's running in a container
+            // (see https://developers.redhat.com/blog/2017/04/04/openjdk-and-containers/)
+            // And base the mam ram use on the fraction
+            result.append("-XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -XX:MaxRAMFraction=").append((int) Math.ceil(1.0 / fraction)).append(' ');
+        }
+        // remove tailing space
+        result.setLength(result.length() - 1);
+        return result.toString();
     }
 }

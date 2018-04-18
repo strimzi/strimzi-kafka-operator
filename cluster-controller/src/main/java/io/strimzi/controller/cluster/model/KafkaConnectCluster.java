@@ -61,6 +61,8 @@ public class KafkaConnectCluster extends AbstractModel {
     public static final String KEY_REPLICAS = "nodes";
     public static final String KEY_HEALTHCHECK_DELAY = "healthcheck-delay";
     public static final String KEY_HEALTHCHECK_TIMEOUT = "healthcheck-timeout";
+    public static final String KEY_JVM_OPTIONS = "jvmOptions";
+    public static final String KEY_RESOURCES = "resources";
 
     // Kafka Connect configuration keys
     public static final String KEY_BOOTSTRAP_SERVERS = "KAFKA_CONNECT_BOOTSTRAP_SERVERS";
@@ -72,6 +74,7 @@ public class KafkaConnectCluster extends AbstractModel {
     public static final String KEY_CONFIG_STORAGE_REPLICATION_FACTOR = "KAFKA_CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR";
     public static final String KEY_OFFSET_STORAGE_REPLICATION_FACTOR = "KAFKA_CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR";
     public static final String KEY_STATUS_STORAGE_REPLICATION_FACTOR = "KAFKA_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR";
+    public static final String KEY_KAFKA_HEAP_OPTS = "KAFKA_HEAP_OPTS";
 
     public static String kafkaConnectClusterName(String cluster) {
         return cluster + KafkaConnectCluster.NAME_SUFFIX;
@@ -107,6 +110,8 @@ public class KafkaConnectCluster extends AbstractModel {
         Map<String, String> data = cm.getData();
         kafkaConnect.setReplicas(Integer.parseInt(data.getOrDefault(KEY_REPLICAS, String.valueOf(DEFAULT_REPLICAS))));
         kafkaConnect.setImage(data.getOrDefault(KEY_IMAGE, DEFAULT_IMAGE));
+        kafkaConnect.setResources(Resources.fromJson(data.get(KEY_RESOURCES)));
+        kafkaConnect.setJvmOptions(JvmOptions.fromJson(data.get(KEY_JVM_OPTIONS)));
         kafkaConnect.setHealthCheckInitialDelay(Integer.parseInt(data.getOrDefault(KEY_HEALTHCHECK_DELAY, String.valueOf(DEFAULT_HEALTHCHECK_DELAY))));
         kafkaConnect.setHealthCheckTimeout(Integer.parseInt(data.getOrDefault(KEY_HEALTHCHECK_TIMEOUT, String.valueOf(DEFAULT_HEALTHCHECK_TIMEOUT))));
 
@@ -182,7 +187,8 @@ public class KafkaConnectCluster extends AbstractModel {
                 createHttpProbe(healthCheckPath, REST_API_PORT_NAME, healthCheckInitialDelay, healthCheckTimeout),
                 updateStrategy,
                 Collections.emptyMap(),
-                Collections.emptyMap()
+                Collections.emptyMap(),
+                resources()
                 );
     }
 
@@ -198,7 +204,7 @@ public class KafkaConnectCluster extends AbstractModel {
         varList.add(buildEnvVar(KEY_CONFIG_STORAGE_REPLICATION_FACTOR, String.valueOf(configStorageReplicationFactor)));
         varList.add(buildEnvVar(KEY_OFFSET_STORAGE_REPLICATION_FACTOR, String.valueOf(offsetStorageReplicationFactor)));
         varList.add(buildEnvVar(KEY_STATUS_STORAGE_REPLICATION_FACTOR, String.valueOf(statusStorageReplicationFactor)));
-
+        varList.add(buildEnvVar(KEY_KAFKA_HEAP_OPTS, javaHeapOptions(0, 1.0)));
         return varList;
     }
 

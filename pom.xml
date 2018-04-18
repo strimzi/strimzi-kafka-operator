@@ -27,6 +27,7 @@
         <junit.version>4.12</junit.version>
         <hamcrest.version>1.3</hamcrest.version>
         <fasterxml.jackson.version>2.9.3</fasterxml.jackson.version>
+        <fasterxml.jackson-annotations.version>2.9.0</fasterxml.jackson-annotations.version>
         <kafka.version>1.0.1</kafka.version>
         <scala-library.version>2.12.3</scala-library.version>
         <zookeeper.version>3.4.10</zookeeper.version>
@@ -115,13 +116,18 @@
                 <version>${fasterxml.jackson.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.fasterxml.jackson.dataformat</groupId>
-                <artifactId>jackson-dataformat-yaml</artifactId>
-                <version>${fasterxml.jackson.version}</version>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>${fasterxml.jackson-annotations.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
+                <version>${fasterxml.jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-yaml</artifactId>
                 <version>${fasterxml.jackson.version}</version>
             </dependency>
             <dependency>

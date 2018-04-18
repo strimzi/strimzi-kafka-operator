@@ -11,7 +11,6 @@ import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategy;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategyBuilder;
 import io.strimzi.controller.cluster.ClusterController;
-import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -29,12 +28,6 @@ public class TopicController extends AbstractModel {
     public static final String TOPIC_CM_KIND = "topic";
 
     private static final String NAME_SUFFIX = "-topic-controller";
-
-    private static final String WATCHED_NAMESPACE_FIELD = "watchedNamespace";
-    private static final String IMAGE_FIELD = "image";
-    private static final String RECONCILIATION_INTERVAL_FIELD_MS = "reconciliationIntervalMs";
-    private static final String ZOOKEEPER_SESSION_TIMEOUT_FIELD_MS = "zookeeperSessionTimeoutMs";
-    private static final String TOPIC_METADATA_MAX_ATTEMPTS_FIELD = "topicMetadataMaxAttempts";
 
     // Port configuration
     protected static final int HEALTHCHECK_PORT = 8080;
@@ -188,13 +181,14 @@ public class TopicController extends AbstractModel {
                     kafkaClusterCm.getMetadata().getName(),
                     Labels.fromResource(kafkaClusterCm));
 
-            JsonObject json = new JsonObject(config);
+            TcConfig tcConfig = TcConfig.fromJson(config);
 
-            topicController.setImage(json.getString(TopicController.IMAGE_FIELD, DEFAULT_IMAGE));
-            topicController.setWatchedNamespace(json.getString(TopicController.WATCHED_NAMESPACE_FIELD, namespace));
-            topicController.setReconciliationIntervalMs(json.getString(TopicController.RECONCILIATION_INTERVAL_FIELD_MS, DEFAULT_FULL_RECONCILIATION_INTERVAL_MS));
-            topicController.setZookeeperSessionTimeoutMs(json.getString(TopicController.ZOOKEEPER_SESSION_TIMEOUT_FIELD_MS, DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_MS));
-            topicController.setTopicMetadataMaxAttempts(json.getInteger(TopicController.TOPIC_METADATA_MAX_ATTEMPTS_FIELD, DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS));
+            topicController.setImage(tcConfig.getImage());
+            topicController.setWatchedNamespace(tcConfig.getWatchedNamespace() != null ? tcConfig.getWatchedNamespace() : namespace);
+            topicController.setReconciliationIntervalMs(tcConfig.getReconciliationInterval());
+            topicController.setZookeeperSessionTimeoutMs(tcConfig.getZookeeperSessionTimeout());
+            topicController.setTopicMetadataMaxAttempts(tcConfig.getTopicMetadataMaxAttempts());
+            topicController.setResources(tcConfig.getResources());
         }
 
         return topicController;
@@ -227,8 +221,8 @@ public class TopicController extends AbstractModel {
             topicController.setKafkaBootstrapServers(vars.getOrDefault(KEY_KAFKA_BOOTSTRAP_SERVERS, defaultBootstrapServers(cluster)));
             topicController.setZookeeperConnect(vars.getOrDefault(KEY_ZOOKEEPER_CONNECT, defaultZookeeperConnect(cluster)));
             topicController.setWatchedNamespace(vars.getOrDefault(KEY_WATCHED_NAMESPACE, namespace));
-            topicController.setReconciliationIntervalMs(vars.getOrDefault(KEY_FULL_RECONCILIATION_INTERVAL_MS, DEFAULT_FULL_RECONCILIATION_INTERVAL_MS));
-            topicController.setZookeeperSessionTimeoutMs(vars.getOrDefault(KEY_ZOOKEEPER_SESSION_TIMEOUT_MS, DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_MS));
+            topicController.setReconciliationIntervalMs(vars.get(KEY_FULL_RECONCILIATION_INTERVAL_MS));
+            topicController.setZookeeperSessionTimeoutMs(vars.get(KEY_ZOOKEEPER_SESSION_TIMEOUT_MS));
             topicController.setTopicConfigMapLabels(vars.getOrDefault(KEY_CONFIGMAP_LABELS, defaultTopicConfigMapLabels(cluster)));
             topicController.setTopicMetadataMaxAttempts(Integer.parseInt(vars.getOrDefault(KEY_TOPIC_METADATA_MAX_ATTEMPTS, String.valueOf(DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS))));
         }
@@ -247,7 +241,8 @@ public class TopicController extends AbstractModel {
                 createHttpProbe(healthCheckPath + "ready", HEALTHCHECK_PORT_NAME, DEFAULT_HEALTHCHECK_DELAY, DEFAULT_HEALTHCHECK_TIMEOUT),
                 updateStrategy,
                 Collections.emptyMap(),
-                Collections.emptyMap());
+                Collections.emptyMap(),
+                resources());
     }
 
     @Override

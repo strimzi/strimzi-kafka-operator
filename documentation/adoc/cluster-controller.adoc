@@ -1,3 +1,6 @@
+:k8s-docs-version: v1-7
+:resources-link: https://{k8s-docs-version}.docs.kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
+
 == Cluster Controller
 
 The cluster controller is in charge of deploying a Kafka cluster alongside a Zookeeper ensemble. As part of the Kafka cluster,
@@ -72,6 +75,12 @@ environment variable of the Cluster Controller.
 <<storage_configuration_json_config>> for more details.
 * `kafka-metrics-config`: a JSON string representing the JMX exporter configuration for exposing metrics from Kafka broker nodes.
  Removing this field means having no metrics exposed.
+* `kafka-resources`:
+  a JSON string configuring the resource limits and requests for Kafka broker containers.
+  The accepted JSON format is described in the <<resources_json_config>> section.
+* `kafka-jvmOptions`:
+  a JSON string allowing the JVM running Kafka to be configured.
+   The accepted JSON format is described in the <<jvm_json_config>> section.
 * `zookeeper-nodes`: number of Zookeeper nodes
 * `zookeeper-image`: the Docker image to use for the Zookeeper nodes.
 Default is determined by the value of the
@@ -83,6 +92,12 @@ environment variable of the Cluster Controller.
 <<storage_configuration_json_config>> for more details.
 * `zookeeper-metrics-config`: a JSON string representing the JMX exporter configuration for exposing metrics from Zookeeper nodes.
  Removing this field means having no metrics exposed.
+* `zookeeper-resources`:
+  a JSON string configuring the resource limits and requests for Zookeeper broker containers.
+  The accepted JSON format is described in the <<resources_json_config>> section.
+* `zookeeper-jvmOptions`:
+  a JSON string allowing the JVM running Zookeeper to be configured.
+   The accepted JSON format is described in the <<jvm_json_config>> section.
 * `topic-controller-config`: a JSON string representing the topic controller configuration. See the <<topic_controller_json_config>>
 documentation for further details. More info about the topic controller in the related <<Topic Controller>> documentation page.
  
@@ -317,6 +332,7 @@ are generated :
 * `data-[cluster-name]-zookeeper-[idx]` Persistent Volume Claim for the volume used for storing data for the
 Zookeeper node pod `[idx]`
 
+[[metrics_json_config]]
 ===== Metrics
 
 Because Strimzi uses the [JMX exporter](https://github.com/prometheus/jmx_exporter) in order to expose metrics
@@ -324,6 +340,97 @@ on each node, the JSON string used for metrics configuration in the cluster Conf
 configuration file. For this reason, you can find more information on how to use it in the corresponding GitHub repo.
 
 For more information about using the metrics with Prometheus and Grafana, see <<_metrics>>
+
+[[resources_json_config]]
+===== Resource limits and requests
+
+It is possible to configure {resources-link}[Kubernetes resource limits and requests] on several containers using a JSON object.
+The object may have a `requests` and a `limits` property, each having the same schema, consisting of  `cpu` and `memory` properties.
+The same syntax as Kubernetes' is used for the values of `cpu` and `memory`.
+
+.Example Resource limits and requests JSON configuration
+[source,json]
+----
+{
+  "requests": {
+    "cpu": "1",
+    "memory": "2Gi"
+  },
+  "limits": {
+    "cpu": "1",
+    "memory": "2Gi"
+  }
+}
+----
+
+`requests/memory`::
+the memory request for the container, corresponding directly to Kubernetes' {resources-link}[`spec.containers[\].resources.requests.memory`] setting.
+Optional with no default.
+`requests/cpu`::
+the cpu request for the container, corresponding directly to Kubernetes' {resources-link}[`spec.containers[\].resources.requests.cpu`] setting.
+Optional with no default.
+`limits/memory`::
+the memory request for the container, corresponding directly to Kubernetes' {resources-link}[`spec.containers[\].resources.limits.memory`] setting.
+Optional with no default.
+`limits/cpu`::
+the cpu request for the container, corresponding directly to Kubernetes' {resources-link}[`spec.containers[\].resources.limits.cpu`] setting.
+Optional with no default.
+
+[[jvm_json_config]]
+===== JVM Options
+
+It is possible to configure a subset of available JVM options on Kafka, Zookeeper and Topic Controller containers using a JSON object.
+The object has a property for each JVM (`java`) option which can be configured:
+
+`-Xmx`::
+The maximum heap size. See the <<setting_xmx>> section for further details.
+
+`-Xms`::
+The initial heap size.
+Setting the same value for initial and maximum (`-Xmx`) heap sizes avoids the JVM having to allocate memory after startup, at the cost of possibly allocating more heap than is really needed.
+For Kafka and Zookeeper pods such allocation could cause unwanted latency.
+For Kafka Connect avoiding over allocation may be the more important concern, especially in distributed mode where the effects of over-allocation will be multiplied by the number of consumers.
+
+NOTE: The units accepted by JVM settings such as `-Xmx` and `-Xms` are those accepted by the OpenJDK `java` binary in the corresponding image.
+Accordingly, `1g` or `1G` means 1,073,741,824 bytes.
+This is in contrast to the units used for <<resources_json_config,memory limits and requests>>, which follow the Kubernetes convention where `1G` means 1,000,000,000 bytes, and `1Gi` means 1,073,741,824 bytes
+
+.Example Resource limits and requests JSON configuration
+[source,json]
+----
+{
+  "-Xmx": "2g",
+  "-Xms": "2g"
+}
+----
+
+In the above example, the JVM will use 2 GiB (=2,147,483,648 bytes) for its heap.
+Its total memory usage will be approximately 8GiB.
+
+[[setting_xmx]]
+====== Setting `-Xmx`
+
+The default value used for `-Xmx` depends on whether there is a <<resources_json_config,memory request>> for the container:
+
+* If there is a memory request, the JVM's maximum memory will be limited according to the kind of pod (Kafka, Zookeeper, TopicController) to an appropriate value less than the request.
+* Otherwise, when there is no memory request, the JVM's maximum memory will be limited according to the kind of pod and the RAM available to the container.
+
+[IMPORTANT]
+====
+Setting `-Xmx` explicitly is requires some care:
+
+* The JVM's overall memory usage will be approximately 4 × the maximum heap as configured by `-Xmx`.
+
+* If `-Xmx` is set without also setting an appropriate Kubernetes
+memory request, it is possible that the container will be killed should the Kubernetes node
+experience memory pressure (from other Pods running on it).
+====
+
+When `-Xmx` is set explicitly, it is recommended use a memory request that is at least 4.5 × the request heap memory when setting `-Xmx`.
+
+Furthermore, containers doing lots of disk I/O (such as Kafka broker containers) will need to leave some memory available for use as OS page cache.
+On such containers, the request memory should be substantially more than the memory used by the JVM.
+
 
 [[topic_controller_json_config]]
 ===== Topic controller
@@ -350,6 +457,9 @@ Default is the namespace where the topic controller is running
 `topicMetadataMaxAttempts`:: The number of attempts for getting topics metadata from Kafka. The time between each attempt
  is defined as an exponential back-off. You might want to increase this value when topic creation could take more time due
  to its larger size (i.e. many partitions/replicas). Default `6`.
+`resources`::
+  an object configuring the resource limits and requests for the topic controller container.
+  The accepted JSON format is described in the <<resources_json_config>> section.
 
 .Example Topic Controller JSON configuration
 [source,json]
@@ -373,6 +483,12 @@ environment variable of the Cluster Controller.
 If S2I is used (only on OpenShift), then it should be the related S2I image.
 * `healthcheck-delay`: the initial delay for the liveness and readiness probes for each Kafka Connect worker node. Default is 60
 * `healthcheck-timeout`: the timeout on the liveness and readiness probes for each Kafka Connect worker node. Default is 5
+* `resources`:
+a JSON string configuring the resource limits and requests for Kafka Connect containers.
+The accepted JSON format is described in the <<resources_json_config>> section.
+* `jvmOptions`:
+a JSON string allowing the JVM running Kafka Connect to be configured.
+The accepted JSON format is described in the <<jvm_json_config>> section.
 * `KAFKA_CONNECT_BOOTSTRAP_SERVERS`: a list of host/port pairs to use for establishing the initial connection to the Kafka cluster.
 It sets the `bootstrap.servers` property in the properties configuration file used by Kafka Connect worker nodes on startup.
 Default is `my-cluster-kafka:9092`

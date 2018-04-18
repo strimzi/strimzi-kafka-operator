@@ -8,18 +8,23 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.jayway.jsonpath.JsonPath;
+import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.Event;
+import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterException;
 import io.strimzi.test.k8s.KubeClusterResource;
+import io.strimzi.test.k8s.ProcessResult;
 import org.junit.ClassRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +33,10 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static io.strimzi.test.TestUtils.indent;
+import static java.util.Arrays.asList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 public class AbstractClusterIT {
 
@@ -177,5 +186,51 @@ public class AbstractClusterIT {
                     "bin/kafka-verifiable-consumer.sh --broker-list " + clusterName +
                             "-kafka:9092 --topic " + topic + " --group-id " + groupID + " & sleep "
                             + timeout + "; kill %1").out();
+    }
+
+    protected void assertResources(String podName, String memoryLimit, String cpuLimit, String memoryRequest, String cpuRequest) {
+        Pod po = client.pods().withName(podName).get();
+        assertNotNull("Expected a pod called " + podName, po);
+        Container container = po.getSpec().getContainers().get(0);
+        Map<String, Quantity> limits = container.getResources().getLimits();
+        assertEquals(memoryLimit, limits.get("memory").getAmount());
+        assertEquals(cpuLimit, limits.get("cpu").getAmount());
+        Map<String, Quantity> requests = container.getResources().getRequests();
+        assertEquals(memoryRequest, requests.get("memory").getAmount());
+        assertEquals(cpuRequest, requests.get("cpu").getAmount());
+    }
+
+    protected void assertExpectedJavaOpts(String podName, String expectedXmx, String expectedXms) {
+        List<List<String>> cmdLines = commandLines(podName, "java");
+        assertEquals("Expected exactly 1 java process to be running",
+                1, cmdLines.size());
+        List<String> cmd = cmdLines.get(0);
+        int toIndex = cmd.indexOf("-jar");
+        if (toIndex != -1) {
+            // Just consider arguments to the JVM, not the application running in it
+            cmd = cmd.subList(0, toIndex);
+            // We should do something similar if the class not -jar was given, but that's
+            // hard to do properly.
+        }
+        assertCmdOption(cmd, expectedXmx);
+        assertCmdOption(cmd, expectedXms);
+    }
+
+    private void assertCmdOption(List<String> cmd, String expectedXmx) {
+        if (!cmd.contains(expectedXmx)) {
+            fail("Failed to find argument matching " + expectedXmx + " in java command line " +
+                    cmd.stream().collect(Collectors.joining("\n")));
+        }
+    }
+
+    private List<List<String>> commandLines(String podName, String cmd) {
+        List<List<String>> result = new ArrayList<>();
+        ProcessResult pr = kubeClient.exec(podName, "/bin/bash", "-c",
+                "for pid in $(ps -C java -o pid h); do cat /proc/$pid/cmdline; done"
+        );
+        for (String cmdLine : pr.out().split("\n")) {
+            result.add(asList(cmdLine.split("\0")));
+        }
+        return result;
     }
 }

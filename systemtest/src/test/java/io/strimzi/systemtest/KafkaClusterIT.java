@@ -47,7 +47,6 @@ import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
-
 @RunWith(StrimziRunner.class)
 @Namespace(KafkaClusterIT.NAMESPACE)
 @ClusterController
@@ -298,4 +297,40 @@ public class KafkaClusterIT extends AbstractClusterIT {
                 replaceAll("[\\[\\]\"]", "");
         assertEquals(TOPIC_NAME, topic);
     }*/
+
+    @KafkaCluster(name = "jvm-resource-cluster",
+        kafkaNodes = 1,
+        zkNodes = 1,
+        config = {
+            @CmData(key = "kafka-resources",
+                    value = "{ \"limits\": {\"memory\": \"2Gi\", \"cpu\": 2}, " +
+                            "\"requests\": {\"memory\": \"2Gi\", \"cpu\": 2}}"),
+            @CmData(key = "kafka-jvmOptions",
+                    value = "{\"-Xmx\": \"512m\", \"-Xms\": \"256m\"}"),
+            @CmData(key = "zookeeper-resources",
+                    value = "{ \"limits\": {\"memory\": \"1G\", \"cpu\": 1}, " +
+                            "\"requests\": {\"memory\": \"1G\", \"cpu\": 1} }"),
+            @CmData(key = "zookeeper-jvmOptions",
+                    value = "{\"-Xmx\": \"600m\", \"-Xms\": \"300m\"}"),
+            @CmData(key = "topic-controller-config",
+                    value = "{\"resources\": { \"limits\": {\"memory\": \"500M\", \"cpu\": 1}, " +
+                            "\"requests\": {\"memory\": \"500M\", \"cpu\": 1} } }")
+    })
+    @Test
+    public void testJvmAndResources() {
+        assertResources("jvm-resource-cluster-kafka-0",
+                "2Gi", "2", "2Gi", "2");
+        assertExpectedJavaOpts("jvm-resource-cluster-kafka-0",
+                "-Xmx512m", "-Xms256m");
+
+        assertResources("jvm-resource-cluster-zookeeper-0",
+                "1G", "1", "1G", "1");
+        assertExpectedJavaOpts("jvm-resource-cluster-zookeeper-0",
+                "-Xmx600m", "-Xms300m");
+
+        String podName = client.pods().list().getItems().stream().filter(p -> p.getMetadata().getName().startsWith("jvm-resource-cluster-topic-controller-")).findFirst().get().getMetadata().getName();
+
+        assertResources(podName,
+                "500M", "1", "500M", "1");
+    }
 }

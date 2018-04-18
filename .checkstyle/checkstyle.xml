@@ -102,6 +102,13 @@
         <module name="ClassFanOutComplexity">
             <!-- default is 20 -->
             <property name="max" value="40"/>
+            <property name="excludedClasses" value="IllegalStateException, Set, StringBuilder, HashMap, ArrayList,
+            String, float, SortedSet, long, RuntimeException, NullPointerException, TreeSet, List, Boolean, Void,
+            Queue, Short, IllegalArgumentException, UnsupportedOperationException, HashSet, void, Character,
+            IndexOutOfBoundsException, byte, double, SecurityException, TreeMap, Double, Deque, int, Exception,
+            LinkedList, Integer, Float, StringBuffer, boolean, Byte, SortedMap, char, Long, short, Throwable,
+            Object, Class, ArrayIndexOutOfBoundsException, Map,
+            Logger, LoggerFactory"/>
         </module>
         <module name="CyclomaticComplexity">
             <!-- default is 10-->

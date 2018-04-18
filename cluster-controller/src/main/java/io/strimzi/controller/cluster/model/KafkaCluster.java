@@ -62,7 +62,12 @@ public class KafkaCluster extends AbstractModel {
     // Kafka configuration keys (EnvVariables)
     public static final String KEY_KAFKA_ZOOKEEPER_CONNECT = "KAFKA_ZOOKEEPER_CONNECT";
     private static final String KEY_KAFKA_METRICS_ENABLED = "KAFKA_METRICS_ENABLED";
+    public static final String KEY_JVM_OPTIONS = "kafka-jvmOptions";
+    public static final String KEY_RESOURCES = "kafka-resources";
+
+    // Kafka configuration keys
     protected static final String KEY_KAFKA_USER_CONFIGURATION = "KAFKA_USER_CONFIGURATION";
+    public static final String KEY_KAFKA_HEAP_OPTS = "KAFKA_HEAP_OPTS";
 
     /**
      * Constructor
@@ -136,6 +141,8 @@ public class KafkaCluster extends AbstractModel {
         if (kafkaConfig != null) {
             kafka.setConfiguration(new KafkaConfiguration(new JsonObject(kafkaConfig)));
         }
+        kafka.setResources(Resources.fromJson(data.get(KEY_RESOURCES)));
+        kafka.setJvmOptions(JvmOptions.fromJson(data.get(KEY_JVM_OPTIONS)));
 
         return kafka;
     }
@@ -226,6 +233,7 @@ public class KafkaCluster extends AbstractModel {
                 getVolumeMounts(),
                 createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout),
                 createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout),
+                resources(),
                 isOpenShift);
     }
 
@@ -290,6 +298,7 @@ public class KafkaCluster extends AbstractModel {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(buildEnvVar(KEY_KAFKA_ZOOKEEPER_CONNECT, zookeeperConnect));
         varList.add(buildEnvVar(KEY_KAFKA_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
+        varList.add(buildEnvVar(KEY_KAFKA_HEAP_OPTS, javaHeapOptions(5 * 1024 * 1024 * 1024, 0.5)));
 
         if (configuration != null) {
             varList.add(buildEnvVar(KEY_KAFKA_USER_CONFIGURATION, configuration.getConfiguration()));

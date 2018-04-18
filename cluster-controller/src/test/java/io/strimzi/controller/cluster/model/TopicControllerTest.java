@@ -52,8 +52,8 @@ public class TopicControllerTest {
         expected.add(new EnvVarBuilder().withName(TopicController.KEY_KAFKA_BOOTSTRAP_SERVERS).withValue(TopicController.defaultBootstrapServers(cluster)).build());
         expected.add(new EnvVarBuilder().withName(TopicController.KEY_ZOOKEEPER_CONNECT).withValue(TopicController.defaultZookeeperConnect(cluster)).build());
         expected.add(new EnvVarBuilder().withName(TopicController.KEY_WATCHED_NAMESPACE).withValue(tcWatchedNamespace).build());
-        expected.add(new EnvVarBuilder().withName(TopicController.KEY_FULL_RECONCILIATION_INTERVAL_MS).withValue(tcReconciliationInterval).build());
-        expected.add(new EnvVarBuilder().withName(TopicController.KEY_ZOOKEEPER_SESSION_TIMEOUT_MS).withValue(tcZookeeperSessionTimeout).build());
+        expected.add(new EnvVarBuilder().withName(TopicController.KEY_FULL_RECONCILIATION_INTERVAL_MS).withValue(String.valueOf(tcReconciliationInterval)).build());
+        expected.add(new EnvVarBuilder().withName(TopicController.KEY_ZOOKEEPER_SESSION_TIMEOUT_MS).withValue(String.valueOf(tcZookeeperSessionTimeout)).build());
         expected.add(new EnvVarBuilder().withName(TopicController.KEY_TOPIC_METADATA_MAX_ATTEMPTS).withValue(String.valueOf(tcTopicMetadataMaxAttempts)).build());
 
         return expected;

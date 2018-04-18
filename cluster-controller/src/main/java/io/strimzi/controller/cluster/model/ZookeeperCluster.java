@@ -56,10 +56,13 @@ public class ZookeeperCluster extends AbstractModel {
     public static final String KEY_HEALTHCHECK_TIMEOUT = "zookeeper-healthcheck-timeout";
     public static final String KEY_METRICS_CONFIG = "zookeeper-metrics-config";
     public static final String KEY_STORAGE = "zookeeper-storage";
+    public static final String KEY_JVM_OPTIONS = "zookeeper-jvmOptions";
+    public static final String KEY_RESOURCES = "zookeeper-resources";
 
     // Zookeeper configuration keys
     private static final String KEY_ZOOKEEPER_NODE_COUNT = "ZOOKEEPER_NODE_COUNT";
     public static final String KEY_ZOOKEEPER_METRICS_ENABLED = "ZOOKEEPER_METRICS_ENABLED";
+    public static final String KEY_KAFKA_HEAP_OPTS = "KAFKA_HEAP_OPTS";
 
     public static String zookeeperClusterName(String cluster) {
         return cluster + ZookeeperCluster.NAME_SUFFIX;
@@ -127,6 +130,9 @@ public class ZookeeperCluster extends AbstractModel {
         String storageConfig = data.get(KEY_STORAGE);
         zk.setStorage(Storage.fromJson(new JsonObject(storageConfig)));
 
+        zk.setResources(Resources.fromJson(data.get(KEY_RESOURCES)));
+        zk.setJvmOptions(JvmOptions.fromJson(data.get(KEY_JVM_OPTIONS)));
+
         return zk;
     }
 
@@ -190,6 +196,7 @@ public class ZookeeperCluster extends AbstractModel {
                 getVolumeMounts(),
                 createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout),
                 createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout),
+                resources(),
                 isOpenShift);
     }
 
@@ -208,7 +215,7 @@ public class ZookeeperCluster extends AbstractModel {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(buildEnvVar(KEY_ZOOKEEPER_NODE_COUNT, Integer.toString(replicas)));
         varList.add(buildEnvVar(KEY_ZOOKEEPER_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
-
+        varList.add(buildEnvVar(KEY_KAFKA_HEAP_OPTS, javaHeapOptions(2 * 1024 * 1024 * 1024, 0.75)));
         return varList;
     }
 
