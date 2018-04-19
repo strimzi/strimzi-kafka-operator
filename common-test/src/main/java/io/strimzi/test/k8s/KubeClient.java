@@ -140,4 +140,6 @@ public interface KubeClient<K extends KubeClient<K>> {
     K waitForResourceUpdate(String resourceType, String resourceName, Date startTime);
 
     Date getResourceCreateTimestamp(String pod, String s);
+
+    List<String> listResourcesByLabel(String resourceType, String label);
 }
