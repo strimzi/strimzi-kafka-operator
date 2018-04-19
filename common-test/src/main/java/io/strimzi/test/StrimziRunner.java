@@ -453,8 +453,8 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
             statement = withKafkaClusters(testClass, statement);
             statement = withClusterController(testClass, statement);
             statement = withResources(testClass, statement);
-            statement = withNamespaces(testClass, statement);
             statement = withTopic(testClass, statement);
+            statement = withNamespaces(testClass, statement);
         }
         return statement;
     }
@@ -493,10 +493,9 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
             node.putObject("data");
             JsonNode data = node.get("data");
             ((ObjectNode) data).put("name", topic.name());
-            ((ObjectNode) data).put("partitions", String.valueOf(topic.partitions()));
-            ((ObjectNode) data).put("replicas", String.valueOf(topic.replicas()));
+            ((ObjectNode) data).put("partitions", topic.partitions());
+            ((ObjectNode) data).put("replicas", topic.replicas());
             String configMap = node.toString();
-            System.out.println(configMap);
             last = new Bracket(last) {
                 @Override
                 protected void before() {

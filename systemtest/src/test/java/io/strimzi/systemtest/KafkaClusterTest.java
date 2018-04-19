@@ -316,13 +316,13 @@ public class KafkaClusterTest extends AbstractClusterTest {
     @Topic(name = TOPIC_NAME, clusterName = "my-cluster")
     public void testSendMessages() {
         int messagesCount = 20;
-        sendMessages(CLUSTER_NAME, TOPIC_NAME, messagesCount);
-        String consumedMessages = consumeMessages(CLUSTER_NAME, TOPIC_NAME, 1, 20);
+        sendMessages(CLUSTER_NAME, TOPIC_NAME, messagesCount, 1);
+        String consumedMessages = consumeMessages(CLUSTER_NAME, TOPIC_NAME, 1, 20, 2);
         List<String> messages = new ArrayList<>(Arrays.asList(consumedMessages.split("\n")));
         String count = JsonPath.parse(messages.get(3)).read("$.count").toString();
-        assertTrue(messagesCount == Integer.parseInt(count));
+        assertEquals(messagesCount, Integer.parseInt(count));
         String topic = JsonPath.parse(messages.get(3)).read(".partitions.[0].topic").toString().
                 replaceAll("[\\[\\]\"]", "");
-        assertTrue(TOPIC_NAME.equals(topic));
+        assertEquals(TOPIC_NAME, topic);
     }
 }

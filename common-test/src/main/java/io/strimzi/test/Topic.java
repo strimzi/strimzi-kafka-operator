@@ -20,8 +20,8 @@ public @interface Topic {
 
     String name();
     String clusterName();
-    int partitions() default 1;
-    int replicas() default 1;
+    String partitions() default "1";
+    String replicas() default "1";
 
     @Target({ElementType.METHOD, ElementType.TYPE})
     @Retention(RetentionPolicy.RUNTIME)
