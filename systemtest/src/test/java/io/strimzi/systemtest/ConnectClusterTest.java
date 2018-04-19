@@ -20,12 +20,17 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-import static io.strimzi.systemtest.k8s.Events.*;
+import static io.strimzi.systemtest.k8s.Events.Created;
+import static io.strimzi.systemtest.k8s.Events.Scheduled;
+import static io.strimzi.systemtest.k8s.Events.Started;
+import static io.strimzi.systemtest.k8s.Events.Pulled;
+import static io.strimzi.systemtest.k8s.Events.Failed;
+import static io.strimzi.systemtest.k8s.Events.Unhealthy;
+import static io.strimzi.systemtest.k8s.Events.FailedSync;
+import static io.strimzi.systemtest.k8s.Events.FailedValidation;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
 import static io.strimzi.test.TestUtils.map;
-import static java.util.Arrays.asList;
-import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
@@ -70,7 +75,7 @@ public class ConnectClusterTest extends AbstractClusterTest {
         LOGGER.info("Running kafkaConnectScaleUP {}", KAFKA_CONNECT_NAME);
 
         List<String> connectPods = kubeClient.listResourcesByLabel("pod", "strimzi.io/type=kafka-connect");
-        int initialReplicas= connectPods.size();
+        int initialReplicas = connectPods.size();
         assertEquals(1, initialReplicas);
         final int scaleTo = initialReplicas + 1;
 
@@ -80,14 +85,14 @@ public class ConnectClusterTest extends AbstractClusterTest {
         connectPods = kubeClient.listResourcesByLabel("pod", "strimzi.io/type=kafka-connect");
         assertEquals(scaleTo, connectPods.size());
         for (String pod : connectPods) {
-        List<Event> events = getEvents("Pod", pod);
-        assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
-        assertThat(events, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
+            List<Event> events = getEvents("Pod", pod);
+            assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
+            assertThat(events, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
         }
 
         LOGGER.info("Scaling down to {}", initialReplicas);
         replaceCm("my-cluster", "nodes", String.valueOf(initialReplicas));
-        while (kubeClient.listResourcesByLabel("pod", "strimzi.io/type=kafka-connect").size() == scaleTo){
+        while (kubeClient.listResourcesByLabel("pod", "strimzi.io/type=kafka-connect").size() == scaleTo) {
             LOGGER.info("Waiting for connect pod deletion");
         }
         connectPods = kubeClient.listResourcesByLabel("pod", "strimzi.io/type=kafka-connect");
