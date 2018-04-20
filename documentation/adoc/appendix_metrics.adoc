@@ -69,7 +69,7 @@ kubectl apply -f https://raw.githubusercontent.com/strimzi/strimzi/master/metric
 As an example, and in order to visualize the exported metrics in Grafana, the simple dashboard https://github.com/strimzi/strimzi/blob/master/metrics/examples/grafana/kafka-dashboard.json[`kafka-dashboard.json`] file is provided.
 The Prometheus data source, and the above dashboard, can be set up in Grafana by following these steps.
 
-NOTE: If your cluster is running using `minikube` or `minishift`, you can use the `port-forward` command for forwarding traffic from the Grafana pod to the host. For example, you can access the Grafana UI by running `oc port-forward grafana-1-fbl7s 3000:3000` (or using `kubectl` instead of `oc`) and then pointing a browser to `http://localhost:3000`.
+NOTE: For accessing the dashboard, you can use the `port-forward` command for forwarding traffic from the Grafana pod to the host. For example, you can access the Grafana UI by running `oc port-forward grafana-1-fbl7s 3000:3000` (or using `kubectl` instead of `oc`) and then pointing a browser to `http://localhost:3000`.
 
 . Access to the Grafana UI using `admin/admin` credentials.
 +
