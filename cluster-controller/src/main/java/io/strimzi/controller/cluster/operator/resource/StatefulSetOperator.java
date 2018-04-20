@@ -86,6 +86,7 @@ public class StatefulSetOperator<P> extends AbstractScalableResourceOperator<Kub
      * before the process proceeds with the pod with the next higher number.
      */
     public Future<Void> rollingUpdate(String namespace, String name, Predicate<String> isReady) {
+        log.info("Starting rolling update of {}/{}", namespace, name);
         Future<Void> rollingUpdateFuture = Future.future();
         // Get the number of replicas
         getReplicas(namespace, name).compose(replicas -> {
@@ -118,23 +119,23 @@ public class StatefulSetOperator<P> extends AbstractScalableResourceOperator<Kub
 
     private Future<Void> restartPod(String namespace, String name, Predicate<String> isReady, String podName) {
         Future<Void> result = Future.future();
-        log.info("Roll {}/{}: Rolling pod {}", namespace, name, podName);
+        log.info("Rolling update of {}/{}: Rolling pod {}", namespace, name, podName);
         Future<Void> deleted = Future.future();
         Future<CompositeFuture> deleteFinished = Future.future();
         Watcher<Pod> watcher = new RollingUpdateWatcher(deleted);
         Watch watch = podOperations.watch(namespace, podName, watcher);
         // Delete the pod
-        log.debug("Roll {}/{}: Waiting for pod {} to be deleted", namespace, name, podName);
+        log.debug("Rolling update of {}/{}: Waiting for pod {} to be deleted", namespace, name, podName);
         Future podReconcileFuture = podOperations.reconcile(namespace, podName, null);
         CompositeFuture.join(podReconcileFuture, deleted).setHandler(deleteResult -> {
             watch.close();
             if (deleteResult.succeeded()) {
-                log.debug("Roll {}/{}: Pod {} was deleted", namespace, name, podName);
+                log.debug("Rolling update of {}/{}: Pod {} was deleted", namespace, name, podName);
             }
             deleteFinished.handle(deleteResult);
         });
         deleteFinished.compose(ix -> {
-            log.debug("Roll {}/{}: Waiting for new pod {} to get ready", namespace, name, podName);
+            log.debug("Rolling update of {}/{}: Waiting for new pod {} to get ready", namespace, name, podName);
             Future<Void> readyFuture = Future.future();
             vertx.setPeriodic(1_000, timerId -> {
                 p(isReady, podName).setHandler(x -> {
@@ -178,12 +179,12 @@ public class StatefulSetOperator<P> extends AbstractScalableResourceOperator<Kub
             String podName = pod.getMetadata().getName();
             switch (action) {
                 case DELETED:
-                    log.info("Pod {} has been deleted", podName);
+                    log.debug("Pod {} has been deleted", podName);
                     deleted.complete();
                     break;
                 case ADDED:
                 case MODIFIED:
-                    log.info("Ignored action {} on pod {} while waiting for Pod deletion", action, podName);
+                    log.debug("Ignored action {} on pod {} while waiting for Pod deletion", action, podName);
                     break;
                 case ERROR:
                     log.error("Error while waiting for Pod deletion");
@@ -196,10 +197,10 @@ public class StatefulSetOperator<P> extends AbstractScalableResourceOperator<Kub
         @Override
         public void onClose(KubernetesClientException e) {
             if (e != null && !deleted.isComplete()) {
-                log.error("Kubernetes watcher has been closed with exception!", e);
+                log.error("Rolling update watcher has been closed with exception!", e);
                 deleted.fail(e);
             } else {
-                log.info("Kubernetes watcher has been closed!");
+                log.debug("Rolling update watcher has been closed!");
             }
         }
     }
