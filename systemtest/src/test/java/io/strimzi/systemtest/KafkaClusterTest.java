@@ -4,15 +4,17 @@
  */
 package io.strimzi.systemtest;
 
+import com.jayway.jsonpath.JsonPath;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.test.ClusterController;
-import io.strimzi.test.CmData;
-import io.strimzi.test.KafkaCluster;
 import io.strimzi.test.Namespace;
-import io.strimzi.test.OpenShiftOnly;
 import io.strimzi.test.Resources;
+import io.strimzi.test.OpenShiftOnly;
+import io.strimzi.test.KafkaCluster;
+import io.strimzi.test.CmData;
+import io.strimzi.test.Topic;
 import io.strimzi.test.StrimziRunner;
 import io.strimzi.test.k8s.Oc;
 import org.junit.BeforeClass;
@@ -22,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -54,6 +57,7 @@ public class KafkaClusterTest extends AbstractClusterTest {
 
     public static final String NAMESPACE = "kafka-cluster-test";
     private static final String CLUSTER_NAME = "my-cluster";
+    private static final String TOPIC_NAME = "test-topic";
 
     @BeforeClass
     public static void waitForCc() {
@@ -322,5 +326,21 @@ public class KafkaClusterTest extends AbstractClusterTest {
             String zookeeperHealthcheckTimeout = "$.spec.containers[*].livenessProbe.timeoutSeconds";
             assertEquals("24", getValueFromJson(zkPodJson, zookeeperHealthcheckTimeout));
         }
+    }
+
+    @Test
+    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 3, config = {
+            @CmData(key = "KAFKA_DEFAULT_REPLICATION_FACTOR", value = "1")})
+    @Topic(name = TOPIC_NAME, clusterName = "my-cluster")
+    public void testSendMessages() {
+        int messagesCount = 20;
+        sendMessages(CLUSTER_NAME, TOPIC_NAME, messagesCount, 1);
+        String consumedMessages = consumeMessages(CLUSTER_NAME, TOPIC_NAME, 1, 20, 2);
+        List<String> messages = new ArrayList<>(Arrays.asList(consumedMessages.split("\n")));
+        String count = JsonPath.parse(messages.get(3)).read("$.count").toString();
+        assertEquals(messagesCount, Integer.parseInt(count));
+        String topic = JsonPath.parse(messages.get(3)).read(".partitions.[0].topic").toString().
+                replaceAll("[\\[\\]\"]", "");
+        assertEquals(TOPIC_NAME, topic);
     }
 }

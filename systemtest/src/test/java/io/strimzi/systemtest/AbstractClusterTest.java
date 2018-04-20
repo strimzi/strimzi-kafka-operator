@@ -152,4 +152,20 @@ public class AbstractClusterTest {
                 .filter(event -> event.getInvolvedObject().getName().equals(resourceName))
                 .collect(Collectors.toList());
     }
+
+    public void sendMessages(String clusterName, String topic, int messagesCount, int kafkaPodID) {
+        LOGGER.info("Sending messages");
+        String command = "sh bin/kafka-verifiable-producer.sh --broker-list " +
+                clusterName + "-kafka:9092 --topic " + topic + " --max-messages " + messagesCount + "";
+        kubeClient.exec(kafkaPodName(clusterName, kafkaPodID), "/bin/bash", "-c", command);
+    }
+
+    public String consumeMessages(String clusterName, String topic, int groupID, int timeout, int kafkaPodID) {
+
+        LOGGER.info("Consuming messages");
+        return  kubeClient.exec(kafkaPodName(clusterName, kafkaPodID), "/bin/bash", "-c",
+                    "bin/kafka-verifiable-consumer.sh --broker-list " + clusterName +
+                            "-kafka:9092 --topic " + topic + " --group-id " + groupID + " & sleep "
+                            + timeout + "; kill %1").out();
+    }
 }

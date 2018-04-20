@@ -5,6 +5,7 @@
 package io.strimzi.test;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.strimzi.test.k8s.KubeClient;
@@ -35,6 +36,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static io.strimzi.test.TestUtils.indent;
+import static io.strimzi.test.k8s.BaseKubeClient.CM;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -59,6 +61,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
     public static final String KAFKA_CONNECT_CM = "../examples/configmaps/cluster-controller/kafka-connect.yaml";
     public static final String CC_INSTALL_DIR = "../examples/install/cluster-controller";
     public static final String CC_DEPLOYMENT_NAME = "strimzi-cluster-controller";
+    public static final String TOPIC_CM = "../examples/configmaps/topic-controller/kafka-topic-configmap.yaml";
 
     private KubeClusterResource clusterResource;
 
@@ -92,6 +95,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         statement = withKafkaClusters(method, statement);
         statement = withClusterController(method, statement);
         statement = withResources(method, statement);
+        statement = withTopic(method, statement);
         statement = withNamespaces(method, statement);
         return statement;
     }
@@ -449,6 +453,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
             statement = withKafkaClusters(testClass, statement);
             statement = withClusterController(testClass, statement);
             statement = withResources(testClass, statement);
+            statement = withTopic(testClass, statement);
             statement = withNamespaces(testClass, statement);
         }
         return statement;
@@ -469,5 +474,45 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
             }
         }
         return clusterResource;
+    }
+
+    private Statement withTopic(Annotatable element, Statement statement) {
+        Statement last = statement;
+        for (Topic topic : annotations(element, Topic.class)) {
+            final JsonNodeFactory factory = JsonNodeFactory.instance;
+            final ObjectNode node = factory.objectNode();
+            node.put("apiVersion", "v1");
+            node.put("kind", "ConfigMap");
+            node.putObject("metadata");
+            JsonNode metadata = node.get("metadata");
+            ((ObjectNode) metadata).put("name", topic.name());
+            ((ObjectNode) metadata).putObject("labels");
+            JsonNode labels = metadata.get("labels");
+            ((ObjectNode) labels).put("strimzi.io/kind", "topic");
+            ((ObjectNode) labels).put("strimzi.io/cluster", topic.clusterName());
+            node.putObject("data");
+            JsonNode data = node.get("data");
+            ((ObjectNode) data).put("name", topic.name());
+            ((ObjectNode) data).put("partitions", topic.partitions());
+            ((ObjectNode) data).put("replicas", topic.replicas());
+            String configMap = node.toString();
+            last = new Bracket(last) {
+                @Override
+                protected void before() {
+                    LOGGER.info("Creating Topic {} {}", topic.name(), name(element));
+                    // create cm
+                    kubeClient().createContent(configMap);
+                    kubeClient().waitForResourceCreation(CM, topic.name());
+                }
+                @Override
+                protected void after() {
+                    LOGGER.info("Deleting ConfigMap '{}' after test per @Topic annotation on {}", topic.clusterName(), name(element));
+                    // delete cm
+                    kubeClient().deleteContent(configMap);
+                    kubeClient().waitForResourceDeletion(CM, topic.name());
+                }
+            };
+        }
+        return last;
     }
 }
