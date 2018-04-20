@@ -22,7 +22,7 @@ spec:
               value: my-cluster-zookeeper:2181
             - name: STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS
               value: "20000"
-            - name: STRIMZI_PERIODIC_INTERVAL_MS
+            - name: STRIMZI_FULL_RECONCILIATION_INTERVAL_MS
               value: "900000"
             - name: STRIMZI_NAMESPACE
               valueFrom:
