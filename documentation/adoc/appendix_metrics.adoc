@@ -71,6 +71,13 @@ The Prometheus data source, and the above dashboard, can be set up in Grafana by
 
 NOTE: If your cluster is running using `minikube` or `minishift`, you can use the `port-forward` command for forwarding traffic from the Grafana pod to the host. For example, you can access the Grafana UI by running `oc port-forward grafana-1-fbl7s 3000:3000` (or using `kubectl` instead of `oc`) and then pointing a browser to `http://localhost:3000`.
 
+If the deployment is running on OpenShift, you can expose the Grafana dashboard through a Route with the following command:
+
+[source]
+oc apply -f https://raw.githubusercontent.com/strimzi/strimzi/master/metrics/examples/grafana/openshift-route.yaml
+
+WARNING: There is no specific security provided with the Grafana dashboard. It's accessible just using the default `admin/admin` credentials.
+
 . Access to the Grafana UI using `admin/admin` credentials.
 +
 image::grafana_login.png[Grafana login]

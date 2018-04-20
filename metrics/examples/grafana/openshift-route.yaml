@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Route
+metadata:
+  name: grafana
+  labels:
+    name: grafana
+spec:
+  to:
+    kind: Service
+    name: grafana
+  port:
+    targetPort: grafana
