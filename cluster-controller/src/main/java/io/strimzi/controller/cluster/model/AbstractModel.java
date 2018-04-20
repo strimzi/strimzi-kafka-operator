@@ -84,6 +84,8 @@ public abstract class AbstractModel {
 
     protected Storage storage;
 
+    protected AbstractConfiguration configuration;
+
     protected String mountPath;
     public static final String VOLUME_NAME = "data";
     protected String metricsConfigVolumeName;
@@ -201,6 +203,14 @@ public abstract class AbstractModel {
 
     protected void setStorage(Storage storage) {
         this.storage = storage;
+    }
+
+    public AbstractConfiguration getConfiguration() {
+        return configuration;
+    }
+
+    protected void setConfiguration(AbstractConfiguration configuration) {
+        this.configuration = configuration;
     }
 
     public String getVolumeName() {
