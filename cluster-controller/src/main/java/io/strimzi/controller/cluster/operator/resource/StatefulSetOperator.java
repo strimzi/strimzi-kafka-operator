@@ -197,10 +197,10 @@ public class StatefulSetOperator<P> extends AbstractScalableResourceOperator<Kub
         @Override
         public void onClose(KubernetesClientException e) {
             if (e != null && !deleted.isComplete()) {
-                log.error("Rolling update watcher has been closed with exception!", e);
+                log.error("Rolling update watcher has been closed with exception", e);
                 deleted.fail(e);
             } else {
-                log.debug("Rolling update watcher has been closed!");
+                log.debug("Rolling update watcher has been closed");
             }
         }
     }
