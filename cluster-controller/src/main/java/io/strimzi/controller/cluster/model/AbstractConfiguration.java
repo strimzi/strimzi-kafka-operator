@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -47,6 +48,30 @@ public abstract class AbstractConfiguration {
     }
 
     /**
+     * Converts the values from the configuration Json object to string or logs error if they have unsupported type
+     *
+     * @param json  JSON object with the configuration
+     * @return  Map with configuration values as String
+     */
+    private Map<String, String> convertToStrings(JsonObject json)  {
+        Map<String, String> map = new HashMap<>();
+
+        for (String key : json.fieldNames())    {
+            Object value = json.getValue(key);
+
+            if (value instanceof String)    {
+                map.put(key, (String)value);
+            } else if (value instanceof Integer || value instanceof Long || value instanceof Boolean || value instanceof Double || value instanceof Float)    {
+                map.put(key, String.valueOf(value));
+            } else  {
+                log.error("Unsupported type {} in configuration for key {}", value.getClass(), key);
+            }
+        }
+
+        return map;
+    }
+
+    /**
      * Constructor used to instantiate this class from JsonObject. Should be used to create configuration from
      * ConfigMap / CRD.
      *
@@ -56,8 +81,7 @@ public abstract class AbstractConfiguration {
      */
     public AbstractConfiguration(JsonObject jsonOptions, List<String> forbiddenOptions) {
         Properties options = new Properties();
-        Map<String, Object> mapOptions = jsonOptions.getMap();
-        options.putAll(mapOptions);
+        options.putAll(convertToStrings(jsonOptions));
         this.options = filterForbidden(options, forbiddenOptions);
     }
 
@@ -81,7 +105,7 @@ public abstract class AbstractConfiguration {
             }
 
             log.trace("Configuration option \"{}\" is allowed and will be passed to the assembly", propertyName);
-            filtered.put(propertyName, options.get(propertyName));
+            filtered.put(propertyName, options.getProperty(propertyName));
         }
 
         return filtered;
