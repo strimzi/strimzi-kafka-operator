@@ -5,10 +5,13 @@
 package io.strimzi.controller.cluster.model;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.controller.cluster.ResourceUtils;
 import org.junit.Test;
+
+import java.util.List;
 
 import static io.strimzi.controller.cluster.ResourceUtils.labels;
 import static org.junit.Assert.assertEquals;
@@ -22,7 +25,8 @@ public class KafkaClusterTest {
     private final int healthDelay = 120;
     private final int healthTimeout = 30;
     private final String metricsCmJson = "{\"animal\":\"wombat\"}";
-    private final ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson);
+    private final String configurationJson = "{\"foo\":\"bar\"}";
+    private final ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson);
     private final KafkaCluster kc = KafkaCluster.fromConfigMap(cm);
 
     @Test
@@ -101,6 +105,19 @@ public class KafkaClusterTest {
         assertEquals(new Integer(healthDelay), ss.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getInitialDelaySeconds());
         assertEquals(new Integer(healthTimeout), ss.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds());
         assertEquals(new Integer(healthDelay), ss.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds());
+        assertEquals("foo=bar\n", findEnvVar(ss, KafkaCluster.KEY_KAFKA_USER_CONFIGURATION));
+    }
+
+    private String findEnvVar(StatefulSet ss, String envVarName) {
+        List<EnvVar> env = ss.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
+
+        for (EnvVar envVar : env)   {
+            if (envVar.getName().equals(envVarName))    {
+                return envVar.getValue();
+            }
+        }
+
+        return null;
     }
 
     /**

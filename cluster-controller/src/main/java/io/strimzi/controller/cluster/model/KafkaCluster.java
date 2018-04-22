@@ -62,7 +62,7 @@ public class KafkaCluster extends AbstractModel {
     // Kafka configuration keys (EnvVariables)
     public static final String KEY_KAFKA_ZOOKEEPER_CONNECT = "KAFKA_ZOOKEEPER_CONNECT";
     private static final String KEY_KAFKA_METRICS_ENABLED = "KAFKA_METRICS_ENABLED";
-    private static final String KEY_KAFKA_USER_CONFIGURATION = "KAFKA_USER_CONFIGURATION";
+    protected static final String KEY_KAFKA_USER_CONFIGURATION = "KAFKA_USER_CONFIGURATION";
 
     /**
      * Constructor
@@ -290,7 +290,10 @@ public class KafkaCluster extends AbstractModel {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(buildEnvVar(KEY_KAFKA_ZOOKEEPER_CONNECT, zookeeperConnect));
         varList.add(buildEnvVar(KEY_KAFKA_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
-        varList.add(buildEnvVar(KEY_KAFKA_USER_CONFIGURATION, configuration.getConfigurationFile()));
+
+        if (configuration != null) {
+            varList.add(buildEnvVar(KEY_KAFKA_USER_CONFIGURATION, configuration.getConfiguration()));
+        }
 
         return varList;
     }

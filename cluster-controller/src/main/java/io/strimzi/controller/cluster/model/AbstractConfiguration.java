@@ -1,84 +1,127 @@
+/*
+ * Copyright 2017-2018, Strimzi authors.
+ * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
+ */
+
 package io.strimzi.controller.cluster.model;
 
-import io.strimzi.controller.cluster.operator.resource.StatefulSetDiff;
 import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
-import java.util.Spliterators;
+import java.util.Properties;
 
+/**
+ * Abstract class for processing and generating configuration passed by the user.
+ */
 public abstract class AbstractConfiguration {
     private static final Logger log = LoggerFactory.getLogger(AbstractConfiguration.class.getName());
 
-    private Map<String, Object> options;
+    private final Properties options;
 
-    public AbstractConfiguration(String configurationFile, List<String> FORBIDDEN_OPTIONS) {
-        Map<String, Object> options = new HashMap<String, Object>();
-        String[] lines = configurationFile.split("\n");
+    /**
+     * Constructor used to instantiate this class from String configuration. Should be used to create configuration
+     * from the Assembly.
+     *
+     * @param configuration     Configuration in String format. Should contain zero or more lines with with key=value
+     *                          pairs.
+     * @param forbiddenOptions   List with configuration keys which are not allowed. All keys which start with one of
+     *                           these keys will be ignored.
+     */
+    public AbstractConfiguration(String configuration, List<String> forbiddenOptions) {
+        Properties options = new Properties();
 
-        for (String line : lines)   {
-            String key = line.substring(0, line.indexOf("=")).trim();
-            String value = line.substring(line.indexOf("=") + 1).trim();
-            options.put(key, value);
+        try (StringReader reader = new StringReader(configuration)) {
+            options.load(reader);
+        } catch (IOException e)   {
+            log.error("Failed to read the configuration from String", e);
         }
 
-        this.options = filterForbidden(options, FORBIDDEN_OPTIONS);
+        this.options = filterForbidden(options, forbiddenOptions);
     }
 
-    public AbstractConfiguration(JsonObject jsonOptions, List<String> FORBIDDEN_OPTIONS) {
-        this.options = filterForbidden(jsonOptions.getMap(), FORBIDDEN_OPTIONS);
+    /**
+     * Constructor used to instantiate this class from JsonObject. Should be used to create configuration from
+     * ConfigMap / CRD.
+     *
+     * @param jsonOptions     Json object with configuration options as key ad value pairs.
+     * @param forbiddenOptions   List with configuration keys which are not allowed. All keys which start with one of
+     *                           these keys will be ignored.
+     */
+    public AbstractConfiguration(JsonObject jsonOptions, List<String> forbiddenOptions) {
+        Properties options = new Properties();
+        Map<String, Object> mapOptions = jsonOptions.getMap();
+        options.putAll(mapOptions);
+        this.options = filterForbidden(options, forbiddenOptions);
     }
 
-    private Map<String, Object> filterForbidden(Map<String, Object> options, List<String> FORBIDDEN_OPTIONS)   {
-        Map<String, Object> filtered = new HashMap<>();
+    /**
+     * Filters forbidden values from the configuration.
+     *
+     * @param options   Properties object with configuration options
+     * @param forbiddenOptions  List with configuration keys which are not allowed. All keys which start with one of
+     *                          these keys will be ignored.
+     * @return  New Properties object which contains only allowed options.
+     */
+    private Properties filterForbidden(Properties options, List<String> forbiddenOptions)   {
+        Properties filtered = new Properties();
 
-        outer: for (Map.Entry<String, Object> entry : options.entrySet()) {
-            String key = entry.getKey();
-
-            for (String forbiddenKey : FORBIDDEN_OPTIONS) {
-                if (key.toLowerCase().startsWith(forbiddenKey)) {
-                    log.warn("Configuration option \"{}\" is forbidden and will be ignored", key);
+        outer: for (String propertyName : options.stringPropertyNames()) {
+            for (String forbiddenKey : forbiddenOptions) {
+                if (propertyName.toLowerCase(Locale.ENGLISH).startsWith(forbiddenKey)) {
+                    log.warn("Configuration option \"{}\" is forbidden and will be ignored", propertyName);
                     continue outer;
                 }
             }
 
-            log.trace("Configuration option \"{}\" is allowed and will be passed to Kafka", key);
-            filtered.put(entry.getKey(), entry.getValue());
+            log.trace("Configuration option \"{}\" is allowed and will be passed to the assembly", propertyName);
+            filtered.put(propertyName, options.get(propertyName));
         }
 
         return filtered;
     }
 
-    public String getConfigurationFile() {
+    /**
+     * Generate configuration file in String format.
+     *
+     * @return  String with one or more lines containing key=value pairs with the configuration options.
+     */
+    public String getConfiguration() {
         String configuration = "";
-        final Charset charset = StandardCharsets.UTF_8;
 
-        try {
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            PrintStream printStream = new PrintStream(outputStream, true, charset.name());
-
-            for (Map.Entry<String, Object> entry : options.entrySet()) {
-                printStream.format("%s=%s%n", entry.getKey(), entry.getValue().toString());
-            }
-
-            configuration = new String(outputStream.toByteArray(), charset);
-            printStream.close();
-            outputStream.close();
-        } catch (UnsupportedEncodingException e)    {
-            log.error("Encoding {} is not supported", charset.name(), e);
-        } catch (IOException e)    {
-            log.error("Failed to close stream", e);
+        try (StringWriter writer = new StringWriter()) {
+            options.store(writer, null);
+            configuration = stripComments(writer.toString());
+        } catch (IOException e) {
+            log.error("Failed to store configuration into String", e);
         }
 
         return configuration;
+    }
+
+    /**
+     * Strip comments from configuration string. Comments are lines starting with #. The default comment with timestamp
+     * which is always added by Proeprties class is otherwise triggering rolling update when used in EnvVar.
+     *
+     * @param configuration String with configuration which should be strip of comments (lines starting with #)
+     * @return  String with configuration without comments
+     */
+    private String stripComments(String configuration)  {
+        StringBuilder builder = new StringBuilder();
+        String[] lines = configuration.split("\n");
+
+        for (String line : lines)   {
+            if (!line.startsWith("#"))  {
+                builder.append(line + "\n");
+            }
+        }
+
+        return builder.toString();
     }
 }

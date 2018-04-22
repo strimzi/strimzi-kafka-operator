@@ -205,10 +205,20 @@ public abstract class AbstractModel {
         this.storage = storage;
     }
 
+    /**
+     * Returns the Configuration object which is passed to the cluster as EnvVar
+     *
+     * @return  Configuration object with cluster configuration
+     */
     public AbstractConfiguration getConfiguration() {
         return configuration;
     }
 
+    /**
+     * Set the configuration object which might be passed to the cluster as EnvVar
+     *
+     * @param configuration Configuration object with cluster configuration
+     */
     protected void setConfiguration(AbstractConfiguration configuration) {
         this.configuration = configuration;
     }
