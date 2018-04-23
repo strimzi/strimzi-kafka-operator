@@ -67,6 +67,11 @@ Default is determined by the value of the
 environment variable of the Cluster Controller.
 * `kafka-healthcheck-delay`: the initial delay for the liveness and readiness probes for each Kafka broker node. Default is 15
 * `kafka-healthcheck-timeout`: the timeout on the liveness and readiness probes for each Kafka broker node. Default is 5
+* `kafka-config`: a JSON string with Kafka configuration. See section <<kafka_configuration_json_config>> for more details.
+* `kafka-storage`: a JSON string representing the storage configuration for the Kafka broker nodes. See section
+<<storage_configuration_json_config>> for more details.
+* `kafka-metrics-config`: a JSON string representing the JMX exporter configuration for exposing metrics from Kafka broker nodes.
+ Removing this field means having no metrics exposed.
 * `zookeeper-nodes`: number of Zookeeper nodes
 * `zookeeper-image`: the Docker image to use for the Zookeeper nodes.
 Default is determined by the value of the
@@ -74,13 +79,8 @@ Default is determined by the value of the
 environment variable of the Cluster Controller.
 * `zookeeper-healthcheck-delay`: the initial delay for the liveness and readiness probes for each Zookeeper node. Default is 15
 * `zookeeper-healthcheck-timeout`: the timeout on the liveness and readiness probes for each Zookeeper node. Default is 5
-* `kafka-config`: a JSON string with Kafka configuration. See section <<kafka_configuration_json_config>> for more details.
-* `kafka-storage`: a JSON string representing the storage configuration for the Kafka broker nodes. See section
-<<storage_configuration_json_config>> for more details.
 * `zookeeper-storage`: a JSON string representing the storage configuration for the Zookeeper nodes. See section
 <<storage_configuration_json_config>> for more details.
-* `kafka-metrics-config`: a JSON string representing the JMX exporter configuration for exposing metrics from Kafka broker nodes.
- Removing this field means having no metrics exposed.
 * `zookeeper-metrics-config`: a JSON string representing the JMX exporter configuration for exposing metrics from Zookeeper nodes.
  Removing this field means having no metrics exposed.
 * `topic-controller-config`: a JSON string representing the topic controller configuration. See the <<topic_controller_json_config>>
@@ -234,7 +234,7 @@ below.
 }
 ----
 
-NOTE:: Strimzi doesn't validate the configuration provided by the user. When invalid configuration is provided, the
+NOTE:: The cluster controller doesn't validate the configuration provided by the user. When invalid configuration is provided, the
 Kafka cluster might not start or might become unstable. In such cases, the configuration in the `kafka-config` field
 should be fixed and the cluster controller will roll out the new configuration to all Kafka brokers.
 
