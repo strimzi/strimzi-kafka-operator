@@ -20,7 +20,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -84,11 +86,21 @@ public class AbstractClusterIT {
     }
 
     void replaceCm(String cmName, String fieldName, String fieldValue) {
+        Map<String, String> changes = new HashMap<>();
+        changes.put(fieldName, fieldValue);
+        replaceCm(cmName, changes);
+    }
+
+    void replaceCm(String cmName, Map<String, String> changes) {
         try {
             String jsonString = kubeClient.get("cm", cmName);
             YAMLMapper mapper = new YAMLMapper();
             JsonNode node = mapper.readTree(jsonString);
-            ((ObjectNode) node.get("data")).put(fieldName, fieldValue);
+
+            for (Map.Entry<String, String> change : changes.entrySet()) {
+                ((ObjectNode) node.get("data")).put(change.getKey(), change.getValue());
+            }
+
             String content = mapper.writeValueAsString(node);
             kubeClient.replaceContent(content);
             LOGGER.info("Value in Config Map replaced");
