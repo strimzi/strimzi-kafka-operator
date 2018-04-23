@@ -68,12 +68,11 @@ you can push the images to OpenShift's Docker repo like this:
         
 2. Log in to the Docker repo running in the local cluster:
 
-        docker login -u `oc project -q` -p `oc whoami -t` 172.30.1.1:5000
+        docker login -u developer -p `oc whoami -t` 172.30.1.1:5000
         
    `172.30.1.1:5000` happens to be the IP and port of the Docker registry
-   running in the cluster (see `oc get svc -n default`). Note that the 
-   Docker user is the OpenShift *project*, not the OpenShift user, and we're 
-   using the token for the current (`developer`) login as the password. 
+   running in the cluster (see `oc get svc -n default`). Note that we are using the `developer` OpenShift user and the 
+   token for the current (`developer`) login as the password. 
         
 3. Now run `make` to push the development images to that Docker repo:
 
