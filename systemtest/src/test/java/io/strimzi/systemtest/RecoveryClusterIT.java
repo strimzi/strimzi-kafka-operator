@@ -20,17 +20,17 @@ import static io.strimzi.test.k8s.BaseKubeClient.SERVICE;
 import static io.strimzi.test.k8s.BaseKubeClient.STATEFUL_SET;
 
 @RunWith(StrimziRunner.class)
-@Namespace(RecoveryClusterTest.NAMESPACE)
+@Namespace(RecoveryClusterIT.NAMESPACE)
 @ClusterController(envVariables = {
     @EnvVariables(key = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS", value = "10000"),
     @EnvVariables(key = "STRIMZI_OPERATION_TIMEOUT_MS", value = "10000")})
-@KafkaCluster(name = RecoveryClusterTest.CLUSTER_NAME, kafkaNodes = 1)
-public class RecoveryClusterTest extends AbstractClusterTest {
+@KafkaCluster(name = RecoveryClusterIT.CLUSTER_NAME, kafkaNodes = 1)
+public class RecoveryClusterIT extends AbstractClusterIT {
 
     static final String NAMESPACE = "recovery-cluster-test";
     static final String CLUSTER_NAME = "recovery-cluster";
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(RecoveryClusterTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(RecoveryClusterIT.class);
 
     @Test
     public void testRecoveryFromTopicControllerDeletion() {

@@ -49,11 +49,11 @@ import static org.junit.Assert.assertThat;
 
 
 @RunWith(StrimziRunner.class)
-@Namespace(KafkaClusterTest.NAMESPACE)
+@Namespace(KafkaClusterIT.NAMESPACE)
 @ClusterController
-public class KafkaClusterTest extends AbstractClusterTest {
+public class KafkaClusterIT extends AbstractClusterIT {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaClusterTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaClusterIT.class);
 
     public static final String NAMESPACE = "kafka-cluster-test";
     private static final String CLUSTER_NAME = "my-cluster";
