@@ -20,12 +20,12 @@ import org.slf4j.LoggerFactory;
 import static io.strimzi.test.TestUtils.map;
 
 @RunWith(StrimziRunner.class)
-@Namespace(ConnectClusterTest.NAMESPACE)
+@Namespace(ConnectClusterIT.NAMESPACE)
 @ClusterController
-@KafkaCluster(name = ConnectClusterTest.KAFKA_CLUSTER_NAME)
-public class ConnectClusterTest extends AbstractClusterTest {
+@KafkaCluster(name = ConnectClusterIT.KAFKA_CLUSTER_NAME)
+public class ConnectClusterIT extends AbstractClusterIT {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConnectClusterTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConnectClusterIT.class);
 
     public static final String NAMESPACE = "connect-cluster-test";
     public static final String KAFKA_CLUSTER_NAME = "connect-tests";

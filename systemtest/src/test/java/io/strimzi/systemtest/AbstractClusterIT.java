@@ -27,9 +27,9 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.test.TestUtils.indent;
 
-public class AbstractClusterTest {
+public class AbstractClusterIT {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractClusterTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractClusterIT.class);
 
     @ClassRule
     public static KubeClusterResource cluster = new KubeClusterResource();
