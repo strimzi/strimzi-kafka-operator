@@ -288,12 +288,12 @@ public class KafkaClusterIT extends AbstractClusterIT {
         assertThat(configMap, valueOfCmEquals("zookeeper-healthcheck-timeout", "24"));
         assertThat(configMap, valueOfCmEquals("kafka-healthcheck-delay", "23"));
         assertThat(configMap, valueOfCmEquals("kafka-healthcheck-timeout", "20"));
-        assertThat(configMap, valueOfCmEquals("kafka-config", "{\"default.replication.factor\": 1,\"offsets.topic.replication.factor\": 1,\"transaction.state.log.replication.factor\": 1}"));
+        assertThat(configMap, valueOfCmEquals("kafka-config", "{\"default.replication.factor\": 2,\"offsets.topic.replication.factor\": 2,\"transaction.state.log.replication.factor\": 2}"));
 
         LOGGER.info("Verified CM and Testing kafka pods");
         for (int i = 0; i < expectedKafkaPods; i++) {
             String kafkaPodJson = oc.getResourceAsJson("pod", kafkaPodName(clusterName, i));
-            assertEquals("{\"offsets.topic.replication.factor\": 1,\"default.replication.factor\": 1,\"transaction.state.log.replication.factor\": 1}", getValueFromJson(kafkaPodJson,
+            assertEquals("{\"offsets.topic.replication.factor\": 2,\"default.replication.factor\": 2,\"transaction.state.log.replication.factor\": 2}", getValueFromJson(kafkaPodJson,
                     globalVariableJsonPathBuilder("KAFKA_USER_CONFIGURATION")));
             String initialDelaySecondsPath = "$.spec.containers[*].livenessProbe.initialDelaySeconds";
             assertEquals("23", getValueFromJson(kafkaPodJson, initialDelaySecondsPath));
