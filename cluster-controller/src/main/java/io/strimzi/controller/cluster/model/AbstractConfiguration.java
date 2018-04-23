@@ -60,7 +60,7 @@ public abstract class AbstractConfiguration {
             Object value = json.getValue(key);
 
             if (value instanceof String)    {
-                map.put(key, (String)value);
+                map.put(key, (String) value);
             } else if (value instanceof Integer || value instanceof Long || value instanceof Boolean || value instanceof Double || value instanceof Float)    {
                 map.put(key, String.valueOf(value));
             } else  {

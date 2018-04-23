@@ -74,14 +74,11 @@ Default is determined by the value of the
 environment variable of the Cluster Controller.
 * `zookeeper-healthcheck-delay`: the initial delay for the liveness and readiness probes for each Zookeeper node. Default is 15
 * `zookeeper-healthcheck-timeout`: the timeout on the liveness and readiness probes for each Zookeeper node. Default is 5
-* `KAFKA_DEFAULT_REPLICATION_FACTOR`: the default replication factors for automatically created topics. It sets the 
-`default.replication.factor` property in the properties configuration file used by Kafka broker nodes on startup. Default is 3
-* `KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR`: the replication factor for the offsets topic. It sets the  
-`offsets.topic.replication.factor` property in the properties configuration file used by Kafka broker nodes on startup. Default is 3
-* `KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR`: the replication factor for the transaction topic. It sets the 
-`transaction.state.log.replication.factor` property in the properties configuration file used by Kafka broker nodes on startup. Default is 3
-* `kafka-storage`: a JSON string representing the storage configuration for the Kafka broker nodes. See related section
-* `zookeeper-storage`: a JSON string representing the storage configuration for the Zookeeper nodes. See related section
+* `kafka-config`: a JSON string with Kafka configuration. See section <<kafka_configuration_json_config>> for more details.
+* `kafka-storage`: a JSON string representing the storage configuration for the Kafka broker nodes. See section
+<<storage_configuration_json_config>> for more details.
+* `zookeeper-storage`: a JSON string representing the storage configuration for the Zookeeper nodes. See section
+<<storage_configuration_json_config>> for more details.
 * `kafka-metrics-config`: a JSON string representing the JMX exporter configuration for exposing metrics from Kafka broker nodes.
  Removing this field means having no metrics exposed.
 * `zookeeper-metrics-config`: a JSON string representing the JMX exporter configuration for exposing metrics from Zookeeper nodes.
@@ -110,9 +107,24 @@ data:
   zookeeper-image: "strimzi/zookeeper:latest"
   zookeeper-healthcheck-delay: "15"
   zookeeper-healthcheck-timeout: "5"
-  KAFKA_DEFAULT_REPLICATION_FACTOR: "3"
-  KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "3"
-  KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "3"
+  kafka-config: |-
+    {
+      "num.partitions": 1,
+      "num.recovery.threads.per.data.dir": 1,
+      "default.replication.factor": 3,
+      "offsets.topic.replication.factor": 3,
+      "transaction.state.log.replication.factor": 3,
+      "transaction.state.log.min.isr": 1,
+      "log.retention.hours": 168,
+      "log.segment.bytes": 1073741824,
+      "log.retention.check.interval.ms": 300000,
+      "num.network.threads": 3,
+      "num.io.threads": 8,
+      "socket.send.buffer.bytes": 102400,
+      "socket.receive.buffer.bytes": 102400,
+      "socket.request.max.bytes": 104857600,
+      "group.initial.rebalance.delay.ms": 0
+    }
   kafka-storage: |-
     { "type": "ephemeral" }
   zookeeper-storage: |-
@@ -154,6 +166,79 @@ a volume by the Zookeeper node pods
 * `[cluster-name]-kafka-metrics-config` ConfigMap which contains the Kafka metrics configuration and mounted as
 a volume by the Kafka broker pods
 
+[[kafka_configuration_json_config]]
+===== Kafka Configuration
+
+`kafka-config` field allows detailed configuration of Apache Kafka. This field should contain a JSON object with Kafka
+configuration options as keys. The values could be in one of the following types:
+
+* String
+* Integer
+* Long
+* Double
+* Float
+* Boolean
+
+The `kafka-config` field supports all Kafka configuration options with the exception of options related to:
+
+* Security (Encryption, Authentication and Authorization)
+* Listener configuration
+* Broker ID configuration
+* Configuration of log data directories
+* Inter-broker communication
+* Zookeeper connectivity
+
+Specifically, all configuration options with keys starting with one of the following strings will be ignored:
+
+* `listeners`
+* `advertised.`
+* `broker.`
+* `listener.`
+* `host.name`
+* `port`
+* `inter.broker.listener.name`
+* `sasl.`
+* `ssl.`
+* `security.`
+* `password.`
+* `principal.builder.class`
+* `log.dir`
+* `zookeeper.connect`
+* `zookeeper.set.acl`
+* `authorizer.`
+* `super.user`
+
+All other options will be passed to Kafka. List of all available options can be found on the
+http://kafka.apache.org/documentation/#brokerconfigs[Kafka website]. An example of `kafka-config` field is provided
+below.
+
+.Example Kafka configuration
+[source,json]
+----
+{
+  "num.partitions": 1,
+  "num.recovery.threads.per.data.dir": 1,
+  "default.replication.factor": 3,
+  "offsets.topic.replication.factor": 3,
+  "transaction.state.log.replication.factor": 3,
+  "transaction.state.log.min.isr": 1,
+  "log.retention.hours": 168,
+  "log.segment.bytes": 1073741824,
+  "log.retention.check.interval.ms": 300000,
+  "num.network.threads": 3,
+  "num.io.threads": 8,
+  "socket.send.buffer.bytes": 102400,
+  "socket.receive.buffer.bytes": 102400,
+  "socket.request.max.bytes": 104857600,
+  "group.initial.rebalance.delay.ms": 0
+}
+----
+
+NOTE:: Strimzi doesn't validate the configuration provided by the user. When invalid configuration is provided, the
+Kafka cluster might not start or might become unstable. In such cases, the configuration in the `kafka-config` field
+should be fixed and the cluster controller will roll out the new configuration to all Kafka brokers.
+
+[[storage_configuration_json_config]]
 ===== Storage
 
 Both Kafka and Zookeeper save data to files.
@@ -173,7 +258,6 @@ The "ephemeral" storage is really simple to configure and the related JSON strin
 [source,json]
 ----
 { "type": "ephemeral" }
-
 ----
 
 WARNING: If the Zookeeper cluster is deployed using "ephemeral" storage, the Kafka brokers can have problems dealing with

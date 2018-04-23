@@ -20,14 +20,20 @@ public class KafkaConfiguration extends AbstractConfiguration {
     static {
         FORBIDDEN_OPTIONS = asList(
                 "listeners",
-                "advertised.listeners",
-                "broker.id",
+                "advertised.",
+                "broker.",
                 "listener.",
+                "host.name",
+                "port",
                 "inter.broker.listener.name",
                 "sasl.",
                 "ssl.",
-                "log.dirs",
+                "security.",
+                "password.",
+                "principal.builder.class",
+                "log.dir",
                 "zookeeper.connect",
+                "zookeeper.set.acl",
                 "authorizer.",
                 "super.user");
     }
