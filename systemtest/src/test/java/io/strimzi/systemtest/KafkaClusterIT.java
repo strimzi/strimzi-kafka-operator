@@ -293,7 +293,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
         LOGGER.info("Verified CM and Testing kafka pods");
         for (int i = 0; i < expectedKafkaPods; i++) {
             String kafkaPodJson = oc.getResourceAsJson("pod", kafkaPodName(clusterName, i));
-            assertEquals("{\"offsets.topic.replication.factor\": 2,\"default.replication.factor\": 2,\"transaction.state.log.replication.factor\": 2}", getValueFromJson(kafkaPodJson,
+            assertEquals("offsets.topic.replication.factor=2\ndefault.replication.factor=2\ntransaction.state.log.replication.factor=2", getValueFromJson(kafkaPodJson,
                     globalVariableJsonPathBuilder("KAFKA_USER_CONFIGURATION")));
             String initialDelaySecondsPath = "$.spec.containers[*].livenessProbe.initialDelaySeconds";
             assertEquals("23", getValueFromJson(kafkaPodJson, initialDelaySecondsPath));
