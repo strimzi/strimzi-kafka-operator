@@ -4,17 +4,15 @@
  */
 package io.strimzi.systemtest;
 
-import com.jayway.jsonpath.JsonPath;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.test.ClusterController;
-import io.strimzi.test.Namespace;
-import io.strimzi.test.Resources;
-import io.strimzi.test.OpenShiftOnly;
-import io.strimzi.test.KafkaCluster;
 import io.strimzi.test.CmData;
-import io.strimzi.test.Topic;
+import io.strimzi.test.KafkaCluster;
+import io.strimzi.test.Namespace;
+import io.strimzi.test.OpenShiftOnly;
+import io.strimzi.test.Resources;
 import io.strimzi.test.StrimziRunner;
 import io.strimzi.test.k8s.Oc;
 import org.junit.BeforeClass;
@@ -24,7 +22,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
