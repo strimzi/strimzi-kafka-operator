@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -86,9 +87,7 @@ public class AbstractClusterIT {
     }
 
     void replaceCm(String cmName, String fieldName, String fieldValue) {
-        Map<String, String> changes = new HashMap<>();
-        changes.put(fieldName, fieldValue);
-        replaceCm(cmName, changes);
+        replaceCm(cmName, Collections.singletonMap(fieldName, fieldValue));
     }
 
     void replaceCm(String cmName, Map<String, String> changes) {
