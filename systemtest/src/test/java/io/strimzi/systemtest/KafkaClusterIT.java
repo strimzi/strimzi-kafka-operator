@@ -318,19 +318,19 @@ public class KafkaClusterIT extends AbstractClusterIT {
     })
     @Test
     public void testJvmAndResources() {
-        assertResources("jvm-resource-cluster-kafka-0",
+        assertResources(NAMESPACE, "jvm-resource-cluster-kafka-0",
                 "2Gi", "400m", "2Gi", "400m");
         assertExpectedJavaOpts("jvm-resource-cluster-kafka-0",
                 "-Xmx1g", "-Xms1G");
 
-        assertResources("jvm-resource-cluster-zookeeper-0",
+        assertResources(NAMESPACE, "jvm-resource-cluster-zookeeper-0",
                 "1G", "300m", "1G", "300m");
         assertExpectedJavaOpts("jvm-resource-cluster-zookeeper-0",
                 "-Xmx600m", "-Xms300m");
 
         String podName = client.pods().list().getItems().stream().filter(p -> p.getMetadata().getName().startsWith("jvm-resource-cluster-topic-controller-")).findFirst().get().getMetadata().getName();
 
-        assertResources(podName,
+        assertResources(NAMESPACE, podName,
                 "500M", "300m", "500M", "300m");
     }
 }

@@ -64,7 +64,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
         })
     public void testJvmAndResources() {
         String podName = kubeClient.list("Pod").stream().filter(n -> n.startsWith("jvm-resource-connect-")).findFirst().get();
-        assertResources(podName,
+        assertResources(NAMESPACE, podName,
                 "400M", "2", "300M", "1");
         assertExpectedJavaOpts(podName,
                 "-Xmx200m", "-Xms200m");

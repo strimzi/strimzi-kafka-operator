@@ -188,9 +188,11 @@ public class AbstractClusterIT {
                             + timeout + "; kill %1").out();
     }
 
-    protected void assertResources(String podName, String memoryLimit, String cpuLimit, String memoryRequest, String cpuRequest) {
-        Pod po = client.pods().withName(podName).get();
-        assertNotNull("Expected a pod called " + podName, po);
+    protected void assertResources(String namespace, String podName, String memoryLimit, String cpuLimit, String memoryRequest, String cpuRequest) {
+        Pod po = client.pods().inNamespace(namespace).withName(podName).get();
+        assertNotNull("Expected a pod called " + podName + " but found " +
+            client.pods().list().getItems().stream().map(p -> p.getMetadata().getName()).collect(Collectors.toList()),
+            po);
         Container container = po.getSpec().getContainers().get(0);
         Map<String, Quantity> limits = container.getResources().getLimits();
         assertEquals(memoryLimit, limits.get("memory").getAmount());
