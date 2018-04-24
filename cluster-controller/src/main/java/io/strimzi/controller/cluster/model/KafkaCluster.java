@@ -37,9 +37,6 @@ public class KafkaCluster extends AbstractModel {
 
     // Kafka configuration
     private String zookeeperConnect = DEFAULT_KAFKA_ZOOKEEPER_CONNECT;
-    private int defaultReplicationFactor = DEFAULT_KAFKA_DEFAULT_REPLICATION_FACTOR;
-    private int offsetsTopicReplicationFactor = DEFAULT_KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR;
-    private int transactionStateLogReplicationFactor = DEFAULT_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR;
 
     // Configuration defaults
     private static final String DEFAULT_IMAGE =
@@ -52,24 +49,20 @@ public class KafkaCluster extends AbstractModel {
 
     // Kafka configuration defaults
     private static final String DEFAULT_KAFKA_ZOOKEEPER_CONNECT = "zookeeper:2181";
-    private static final int DEFAULT_KAFKA_DEFAULT_REPLICATION_FACTOR = 3;
-    private static final int DEFAULT_KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR = 3;
-    private static final int DEFAULT_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR = 3;
 
-    // Configuration keys
+    // Configuration keys (in ConfigMap)
     public static final String KEY_IMAGE = "kafka-image";
     public static final String KEY_REPLICAS = "kafka-nodes";
     public static final String KEY_HEALTHCHECK_DELAY = "kafka-healthcheck-delay";
     public static final String KEY_HEALTHCHECK_TIMEOUT = "kafka-healthcheck-timeout";
     public static final String KEY_METRICS_CONFIG = "kafka-metrics-config";
     public static final String KEY_STORAGE = "kafka-storage";
+    public static final String KEY_KAFKA_CONFIG = "kafka-config";
 
-    // Kafka configuration keys
+    // Kafka configuration keys (EnvVariables)
     public static final String KEY_KAFKA_ZOOKEEPER_CONNECT = "KAFKA_ZOOKEEPER_CONNECT";
-    public static final String KEY_KAFKA_DEFAULT_REPLICATION_FACTOR = "KAFKA_DEFAULT_REPLICATION_FACTOR";
-    public static final String KEY_KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR = "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR";
-    public static final String KEY_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR = "KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR";
     private static final String KEY_KAFKA_METRICS_ENABLED = "KAFKA_METRICS_ENABLED";
+    protected static final String KEY_KAFKA_USER_CONFIGURATION = "KAFKA_USER_CONFIGURATION";
 
     /**
      * Constructor
@@ -129,9 +122,6 @@ public class KafkaCluster extends AbstractModel {
         kafka.setHealthCheckTimeout(Integer.parseInt(data.getOrDefault(KEY_HEALTHCHECK_TIMEOUT, String.valueOf(DEFAULT_HEALTHCHECK_TIMEOUT))));
 
         kafka.setZookeeperConnect(data.getOrDefault(KEY_KAFKA_ZOOKEEPER_CONNECT, kafkaClusterCm.getMetadata().getName() + "-zookeeper:2181"));
-        kafka.setDefaultReplicationFactor(Integer.parseInt(data.getOrDefault(KEY_KAFKA_DEFAULT_REPLICATION_FACTOR, String.valueOf(DEFAULT_KAFKA_DEFAULT_REPLICATION_FACTOR))));
-        kafka.setOffsetsTopicReplicationFactor(Integer.parseInt(data.getOrDefault(KEY_KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR, String.valueOf(DEFAULT_KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR))));
-        kafka.setTransactionStateLogReplicationFactor(Integer.parseInt(data.getOrDefault(KEY_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR, String.valueOf(DEFAULT_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR))));
 
         String metricsConfig = data.get(KEY_METRICS_CONFIG);
         kafka.setMetricsEnabled(metricsConfig != null);
@@ -141,6 +131,11 @@ public class KafkaCluster extends AbstractModel {
 
         String storageConfig = data.get(KEY_STORAGE);
         kafka.setStorage(Storage.fromJson(new JsonObject(storageConfig)));
+
+        String kafkaConfig = data.get(KEY_KAFKA_CONFIG);
+        if (kafkaConfig != null) {
+            kafka.setConfiguration(new KafkaConfiguration(new JsonObject(kafkaConfig)));
+        }
 
         return kafka;
     }
@@ -166,9 +161,6 @@ public class KafkaCluster extends AbstractModel {
         Map<String, String> vars = containerEnvVars(container);
 
         kafka.setZookeeperConnect(vars.getOrDefault(KEY_KAFKA_ZOOKEEPER_CONNECT, ss.getMetadata().getName() + "-zookeeper:2181"));
-        kafka.setDefaultReplicationFactor(Integer.parseInt(vars.getOrDefault(KEY_KAFKA_DEFAULT_REPLICATION_FACTOR, String.valueOf(DEFAULT_KAFKA_DEFAULT_REPLICATION_FACTOR))));
-        kafka.setOffsetsTopicReplicationFactor(Integer.parseInt(vars.getOrDefault(KEY_KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR, String.valueOf(DEFAULT_KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR))));
-        kafka.setTransactionStateLogReplicationFactor(Integer.parseInt(vars.getOrDefault(KEY_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR, String.valueOf(DEFAULT_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR))));
 
         kafka.setMetricsEnabled(Boolean.parseBoolean(vars.getOrDefault(KEY_KAFKA_METRICS_ENABLED, String.valueOf(DEFAULT_KAFKA_METRICS_ENABLED))));
         if (kafka.isMetricsEnabled()) {
@@ -187,6 +179,8 @@ public class KafkaCluster extends AbstractModel {
             Storage storage = new Storage(Storage.StorageType.EPHEMERAL);
             kafka.setStorage(storage);
         }
+
+        kafka.setConfiguration(new KafkaConfiguration(vars.getOrDefault(KEY_KAFKA_USER_CONFIGURATION, "")));
 
         return kafka;
     }
@@ -295,27 +289,16 @@ public class KafkaCluster extends AbstractModel {
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(buildEnvVar(KEY_KAFKA_ZOOKEEPER_CONNECT, zookeeperConnect));
-        varList.add(buildEnvVar(KEY_KAFKA_DEFAULT_REPLICATION_FACTOR, String.valueOf(defaultReplicationFactor)));
-        varList.add(buildEnvVar(KEY_KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR, String.valueOf(offsetsTopicReplicationFactor)));
-        varList.add(buildEnvVar(KEY_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR, String.valueOf(transactionStateLogReplicationFactor)));
         varList.add(buildEnvVar(KEY_KAFKA_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
+
+        if (configuration != null) {
+            varList.add(buildEnvVar(KEY_KAFKA_USER_CONFIGURATION, configuration.getConfiguration()));
+        }
 
         return varList;
     }
 
     protected void setZookeeperConnect(String zookeeperConnect) {
         this.zookeeperConnect = zookeeperConnect;
-    }
-
-    protected void setDefaultReplicationFactor(int defaultReplicationFactor) {
-        this.defaultReplicationFactor = defaultReplicationFactor;
-    }
-
-    protected void setOffsetsTopicReplicationFactor(int offsetsTopicReplicationFactor) {
-        this.offsetsTopicReplicationFactor = offsetsTopicReplicationFactor;
-    }
-
-    protected void setTransactionStateLogReplicationFactor(int transactionStateLogReplicationFactor) {
-        this.transactionStateLogReplicationFactor = transactionStateLogReplicationFactor;
     }
 }

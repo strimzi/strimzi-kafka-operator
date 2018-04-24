@@ -16,9 +16,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static io.strimzi.controller.cluster.model.AbstractModel.containerEnvVars;
-import static io.strimzi.controller.cluster.model.KafkaCluster.KEY_KAFKA_DEFAULT_REPLICATION_FACTOR;
-import static io.strimzi.controller.cluster.model.KafkaCluster.KEY_KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR;
-import static io.strimzi.controller.cluster.model.KafkaCluster.KEY_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR;
 import static io.strimzi.controller.cluster.model.KafkaCluster.KEY_KAFKA_ZOOKEEPER_CONNECT;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -97,30 +94,6 @@ public class KafkaSetOperatorTest {
     @Test
     public void testNeedsRollingUpdateEnvZkConnect() {
         String envVar = KEY_KAFKA_ZOOKEEPER_CONNECT;
-        a.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().add(new EnvVar(envVar,
-                containerEnvVars(a.getSpec().getTemplate().getSpec().getContainers().get(0)).get(envVar) + "-foo", null));
-        assertTrue(KafkaSetOperator.needsRollingUpdate(diff()));
-    }
-
-    @Test
-    public void testNeedsRollingUpdateEnvDefaultRepFactor() {
-        String envVar = KEY_KAFKA_DEFAULT_REPLICATION_FACTOR;
-        a.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().add(new EnvVar(envVar,
-                containerEnvVars(a.getSpec().getTemplate().getSpec().getContainers().get(0)).get(envVar) + "-foo", null));
-        assertTrue(KafkaSetOperator.needsRollingUpdate(diff()));
-    }
-
-    @Test
-    public void testNeedsRollingUpdateEnvOffsetsRepFactor() {
-        String envVar = KEY_KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR;
-        a.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().add(new EnvVar(envVar,
-                containerEnvVars(a.getSpec().getTemplate().getSpec().getContainers().get(0)).get(envVar) + "-foo", null));
-        assertTrue(KafkaSetOperator.needsRollingUpdate(diff()));
-    }
-
-    @Test
-    public void testNeedsRollingUpdateEnvTxnRepFactor() {
-        String envVar = KEY_KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR;
         a.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().add(new EnvVar(envVar,
                 containerEnvVars(a.getSpec().getTemplate().getSpec().getContainers().get(0)).get(envVar) + "-foo", null));
         assertTrue(KafkaSetOperator.needsRollingUpdate(diff()));

@@ -26,6 +26,7 @@ public class TopicControllerTest {
     private final int healthDelay = 120;
     private final int healthTimeout = 30;
     private final String metricsCmJson = "{\"animal\":\"wombat\"}";
+    private final String kafkaJson = "{\"foo\":\"bar\"}";
     private final String storageJson = "{\"type\": \"ephemeral\"}";
 
     private final String tcWatchedNamespace = "my-topic-namespace";
@@ -42,7 +43,7 @@ public class TopicControllerTest {
             "\"topicMetadataMaxAttempts\":" + tcTopicMetadataMaxAttempts +
             " }";
 
-    private final ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, storageJson, topicControllerJson);
+    private final ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, kafkaJson, storageJson, topicControllerJson);
     private final TopicController tc = TopicController.fromConfigMap(cm);
 
     private List<EnvVar> getExpectedEnvVars() {
@@ -70,7 +71,7 @@ public class TopicControllerTest {
     @Test
     public void testFromConfigMapDefaultConfig() {
 
-        ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, storageJson, "{ }");
+        ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, kafkaJson, storageJson, "{ }");
         TopicController tc = TopicController.fromConfigMap(cm);
 
         assertEquals(TopicController.DEFAULT_IMAGE, tc.getImage());
