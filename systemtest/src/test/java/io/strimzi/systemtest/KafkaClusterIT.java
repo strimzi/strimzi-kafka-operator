@@ -82,10 +82,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
     }
 
     @Test
-    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 3, config = {
-            @CmData(key = "kafka-storage", value = "{ \"type\": \"ephemeral\" }"),
-            @CmData(key = "zookeeper-storage", value = "{ \"type\": \"ephemeral\" }")
-    })
+    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 3)
     public void testKafkaScaleUpScaleDown() {
         // kafka cluster already deployed via annotation
         LOGGER.info("Running kafkaScaleUpScaleDown {}", CLUSTER_NAME);
@@ -141,10 +138,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
     }
 
     @Test
-    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 1, zkNodes = 1, config = {
-            @CmData(key = "kafka-storage", value = "{ \"type\": \"ephemeral\" }"),
-            @CmData(key = "zookeeper-storage", value = "{ \"type\": \"ephemeral\" }")
-    })
+    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 1, zkNodes = 1)
     public void testZookeeperScaleUpScaleDown() {
         // kafka cluster already deployed via annotation
         LOGGER.info("Running zookeeperScaleUpScaleDown with cluster {}", CLUSTER_NAME);
@@ -197,45 +191,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
     }
 
     @Test
-    @KafkaCluster(name = "my-cluster-persistent", kafkaNodes = 2, zkNodes = 2, config = {
-        @CmData(key = "kafka-storage", value = "{ \"type\": \"persistent-claim\", \"size\": \"1Gi\", \"delete-claim\": false }"),
-        @CmData(key = "zookeeper-storage", value = "{ \"type\": \"persistent-claim\", \"size\": \"1Gi\", \"delete-claim\": false }"),
-        @CmData(key = "zookeeper-healthcheck-delay", value = "30"),
-        @CmData(key = "zookeeper-healthcheck-timeout", value = "15"),
-        @CmData(key = "kafka-healthcheck-delay", value = "30"),
-        @CmData(key = "kafka-healthcheck-timeout", value = "15"),
-        @CmData(key = "kafka-config", value = "{\"default.replication.factor\": 1,\"offsets.topic.replication.factor\": 1,\"transaction.state.log.replication.factor\": 1}")
-    })
-    public void testDeployKafkaOnPersistentStorage() {
-        String clusterName = "my-cluster-persistent";
-        int expectedZKPods = 2;
-        int expectedKafkaPods = 2;
-
-        List<String> persistentVolumeClaimNames = kubeClient.list("pvc");
-        assertEquals(expectedZKPods + expectedKafkaPods, persistentVolumeClaimNames.size());
-
-        //Checking Persistent volume claims for Zookeeper nodes
-        for (int i = 0; i < expectedZKPods; i++) {
-            assertTrue(persistentVolumeClaimNames.contains(zookeeperPVCName(clusterName, i)));
-        }
-
-        //Checking Persistent volume claims for Kafka nodes
-        for (int i = 0; i < expectedZKPods; i++) {
-            assertTrue(persistentVolumeClaimNames.contains(kafkaPVCName(clusterName, i)));
-        }
-
-        String configMap = kubeClient.get("cm", clusterName);
-        assertThat(configMap, valueOfCmEquals("zookeeper-healthcheck-delay", "30"));
-        assertThat(configMap, valueOfCmEquals("zookeeper-healthcheck-timeout", "15"));
-        assertThat(configMap, valueOfCmEquals("kafka-healthcheck-delay", "30"));
-        assertThat(configMap, valueOfCmEquals("kafka-healthcheck-timeout", "15"));
-        assertThat(configMap, valueOfCmEquals("kafka-config", "{\"default.replication.factor\": 1,\"offsets.topic.replication.factor\": 1,\"transaction.state.log.replication.factor\": 1}"));
-    }
-
-    @Test
     @KafkaCluster(name = "my-cluster", kafkaNodes = 2, zkNodes = 2, config = {
-            @CmData(key = "kafka-storage", value = "{ \"type\": \"ephemeral\" }"),
-            @CmData(key = "zookeeper-storage", value = "{ \"type\": \"ephemeral\" }"),
             @CmData(key = "zookeeper-healthcheck-delay", value = "30"),
             @CmData(key = "zookeeper-healthcheck-timeout", value = "10"),
             @CmData(key = "kafka-healthcheck-delay", value = "30"),
