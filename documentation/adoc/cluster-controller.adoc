@@ -379,7 +379,7 @@ Optional with no default.
 [[jvm_json_config]]
 ===== JVM Options
 
-It is possible to configure a subset of available JVM options on Kafka, Zookeeper and Topic Controller containers using a JSON object.
+It is possible to configure a subset of available JVM options on Kafka, Zookeeper and Kafka Connect containers using a JSON object.
 The object has a property for each JVM (`java`) option which can be configured:
 
 `-Xmx`::
@@ -428,7 +428,7 @@ experience memory pressure (from other Pods running on it).
 
 When `-Xmx` is set explicitly, it is recommended use a memory request that is at least 4.5 × the request heap memory when setting `-Xmx`.
 
-Furthermore, containers doing lots of disk I/O (such as Kafka broker containers) will need to leave some memory available for use as OS page cache.
+Furthermore, containers doing lots of disk I/O (such as Kafka broker containers) will need to leave some memory available for use as operating system page cache.
 On such containers, the request memory should be substantially more than the memory used by the JVM.
 
 

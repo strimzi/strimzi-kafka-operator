@@ -181,7 +181,7 @@ public class TopicController extends AbstractModel {
                     kafkaClusterCm.getMetadata().getName(),
                     Labels.fromResource(kafkaClusterCm));
 
-            TcConfig tcConfig = TcConfig.fromJson(config);
+            TopicControllerConfig tcConfig = TopicControllerConfig.fromJson(config);
 
             topicController.setImage(tcConfig.getImage());
             topicController.setWatchedNamespace(tcConfig.getWatchedNamespace() != null ? tcConfig.getWatchedNamespace() : namespace);

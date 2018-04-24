@@ -7,7 +7,7 @@ package io.strimzi.controller.cluster.model;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class TcConfig {
+public class TopicControllerConfig {
     private String watchedNamespace;
     private String image = TopicController.DEFAULT_IMAGE;
     private String reconciliationInterval = TopicController.DEFAULT_FULL_RECONCILIATION_INTERVAL_MS;
@@ -63,7 +63,7 @@ public class TcConfig {
         this.resources = resources;
     }
 
-    public static TcConfig fromJson(String json) {
-        return JsonUtils.fromJson(json, TcConfig.class);
+    public static TopicControllerConfig fromJson(String json) {
+        return JsonUtils.fromJson(json, TopicControllerConfig.class);
     }
 }
