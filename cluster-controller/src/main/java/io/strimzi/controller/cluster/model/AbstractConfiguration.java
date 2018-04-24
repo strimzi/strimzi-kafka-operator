@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 /**
  * Abstract class for processing and generating configuration passed by the user.
@@ -40,7 +41,7 @@ public abstract class AbstractConfiguration {
 
         try (StringReader reader = new StringReader(configuration)) {
             options.load(reader);
-        } catch (IOException e)   {
+        } catch (IOException | IllegalArgumentException e)   {
             log.error("Failed to read the configuration from String", e);
         }
 
@@ -96,17 +97,21 @@ public abstract class AbstractConfiguration {
     private Properties filterForbidden(Properties options, List<String> forbiddenOptions)   {
         Properties filtered = new Properties();
 
-        outer: for (String propertyName : options.stringPropertyNames()) {
-            for (String forbiddenKey : forbiddenOptions) {
-                if (propertyName.toLowerCase(Locale.ENGLISH).startsWith(forbiddenKey)) {
-                    log.warn("Configuration option \"{}\" is forbidden and will be ignored", propertyName);
-                    continue outer;
+        Map<String, String> m = options.entrySet().stream()
+            .filter(e -> !forbiddenOptions.stream().anyMatch(s -> {
+                boolean forbidden = ((String) e.getKey()).toLowerCase(Locale.ENGLISH).startsWith(s);
+                if (forbidden) {
+                    log.warn("Configuration option \"{}\" is forbidden and will be ignored", e.getKey());
+                } else {
+                    log.trace("Configuration option \"{}\" is allowed and will be passed to the assembly", e.getKey());
                 }
-            }
+                return forbidden;
+            }))
+            .collect(Collectors.toMap(
+                v -> (String) v.getKey(), v -> (String) v.getValue()
+            ));
 
-            log.trace("Configuration option \"{}\" is allowed and will be passed to the assembly", propertyName);
-            filtered.put(propertyName, options.getProperty(propertyName));
-        }
+        filtered.putAll(m);
 
         return filtered;
     }

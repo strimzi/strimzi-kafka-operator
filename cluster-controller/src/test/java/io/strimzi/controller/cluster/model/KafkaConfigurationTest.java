@@ -90,6 +90,20 @@ public class KafkaConfigurationTest {
     }
 
     @Test
+    public void testConfigurationStringWithForbiddenKeysInUpperCase() {
+        String configuration = "var1=aaa\n" +
+                "var2=bbb\n" +
+                "var3=ccc\n" +
+                "HOST.NAME=ddd\n";
+        String expectedConfiguration = "var3=ccc\n" +
+                "var2=bbb\n" +
+                "var1=aaa\n";
+
+        AbstractConfiguration config = new KafkaConfiguration(configuration);
+        assertEquals(expectedConfiguration, config.getConfiguration());
+    }
+
+    @Test
     public void testJsonWithForbiddenKeys() {
         JsonObject configuration = new JsonObject().put("var1", "aaa").put("var2", "bbb").put("var3", "ccc").put("advertised.listeners", "ddd");
         String expectedConfiguration = "var3=ccc\n" +
