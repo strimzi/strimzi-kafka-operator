@@ -212,7 +212,6 @@ public class KafkaClusterIT extends AbstractClusterIT {
         int expectedKafkaPods = 2;
 
         List<String> persistentVolumeClaimNames = kubeClient.list("pvc");
-        LOGGER.info("PVCs: {} / {}", persistentVolumeClaimNames.size(), persistentVolumeClaimNames);
         assertEquals(expectedZKPods + expectedKafkaPods, persistentVolumeClaimNames.size());
 
         //Checking Persistent volume claims for Zookeeper nodes
