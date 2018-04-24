@@ -221,7 +221,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
 
         for (int i = 0; i < expectedKafkaPods; i++) {
             String kafkaPodJson = kubeClient.getResourceAsJson("pod", kafkaPodName(clusterName, i));
-            assertEquals("offsets.topic.replication.factor=1\ndefault.replication.factor=1\ntransaction.state.log.replication.factor=1", getValueFromJson(kafkaPodJson,
+            assertEquals("transaction.state.log.replication.factor=1\\ndefault.replication.factor=1\\noffsets.topic.replication.factor=1\\n".replaceAll("\\p{P}", ""), getValueFromJson(kafkaPodJson,
                     globalVariableJsonPathBuilder("KAFKA_USER_CONFIGURATION")));
             String initialDelaySecondsPath = "$.spec.containers[*].livenessProbe.initialDelaySeconds";
             assertEquals("30", getValueFromJson(kafkaPodJson, initialDelaySecondsPath));
@@ -264,7 +264,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
 
         for (int i = 0; i < expectedKafkaPods; i++) {
             String kafkaPodJson = kubeClient.getResourceAsJson("pod", kafkaPodName(clusterName, i));
-            assertEquals("offsets.topic.replication.factor=2\ndefault.replication.factor=2\ntransaction.state.log.replication.factor=2", getValueFromJson(kafkaPodJson,
+            assertEquals("transaction.state.log.replication.factor=2\\ndefault.replication.factor=2\\noffsets.topic.replication.factor=2\\n".replaceAll("\\p{P}", ""), getValueFromJson(kafkaPodJson,
                     globalVariableJsonPathBuilder("KAFKA_USER_CONFIGURATION")));
             String initialDelaySecondsPath = "$.spec.containers[*].livenessProbe.initialDelaySeconds";
             assertEquals("31", getValueFromJson(kafkaPodJson, initialDelaySecondsPath));
