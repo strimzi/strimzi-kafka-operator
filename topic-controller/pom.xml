@@ -87,6 +87,7 @@
         </dependency>
     </dependencies>
     <build>
+        <finalName>topic-controller</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -99,7 +100,7 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <finalName>topic-controller</finalName>
+                            <finalName>topic-controller-${project.version}</finalName>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
