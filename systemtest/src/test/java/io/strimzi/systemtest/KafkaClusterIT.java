@@ -306,7 +306,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
                     value = "{ \"limits\": {\"memory\": \"2Gi\", \"cpu\": 2}, " +
                             "\"requests\": {\"memory\": \"2Gi\", \"cpu\": 2}}"),
             @CmData(key = "kafka-jvmOptions",
-                    value = "{\"-Xmx\": \"512m\", \"-Xms\": \"256m\"}"),
+                    value = "{\"-Xmx\": \"1g\", \"-Xms\": \"1G\"}"),
             @CmData(key = "zookeeper-resources",
                     value = "{ \"limits\": {\"memory\": \"1G\", \"cpu\": 1}, " +
                             "\"requests\": {\"memory\": \"1G\", \"cpu\": 1} }"),
@@ -321,7 +321,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
         assertResources("jvm-resource-cluster-kafka-0",
                 "2Gi", "2", "2Gi", "2");
         assertExpectedJavaOpts("jvm-resource-cluster-kafka-0",
-                "-Xmx512m", "-Xms256m");
+                "-Xmx1g", "-Xms1G");
 
         assertResources("jvm-resource-cluster-zookeeper-0",
                 "1G", "1", "1G", "1");
