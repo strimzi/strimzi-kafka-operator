@@ -291,10 +291,13 @@ public class KafkaClusterIT extends AbstractClusterIT {
         sendMessages(CLUSTER_NAME, TOPIC_NAME, messagesCount, 1);
         String consumedMessages = consumeMessages(CLUSTER_NAME, TOPIC_NAME, 1, 20, 2);
         List<String> messages = new ArrayList<>(Arrays.asList(consumedMessages.split("\n")));
+        LOGGER.debug("Consumed messages: {}", consumedMessages);
         String count = JsonPath.parse(messages.get(3)).read("$.count").toString();
+        LOGGER.debug("Count: {}", count);
         assertEquals(messagesCount, Integer.parseInt(count));
         String topic = JsonPath.parse(messages.get(3)).read(".partitions.[0].topic").toString().
                 replaceAll("[\\[\\]\"]", "");
+        LOGGER.debug("Topic: {}", topic);
         assertEquals(TOPIC_NAME, topic);
     }
 }
