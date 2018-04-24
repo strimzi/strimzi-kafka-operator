@@ -135,6 +135,15 @@ public interface KubeClient<K extends KubeClient<K>> {
 
     String logs(String pod);
 
+    /**
+     * @param resourceType The type of resource
+     * @param resourceName The name of resource
+     * @param grepPattern Grep pattern for search
+     * @param since Return logs newer than a relative duration like 5s, 2m, or 3h.
+     * @return Grep result as string
+     */
+    String searchInLog(String resourceType, String resourceName, String grepPattern, String since);
+
     String getResourceAsJson(String resourceType, String resourceName);
 
     K waitForResourceUpdate(String resourceType, String resourceName, Date startTime);
