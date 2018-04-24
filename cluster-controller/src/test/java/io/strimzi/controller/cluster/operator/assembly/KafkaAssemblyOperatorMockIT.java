@@ -68,7 +68,7 @@ public class KafkaAssemblyOperatorMockIT {
 
     private final int kafkaReplicas;
     private final JsonObject kafkaStorage;
-    private final Resources resources;
+    private final String resources;
     private KubernetesClient mockClient;
 
     public static class Params {
@@ -78,10 +78,10 @@ public class KafkaAssemblyOperatorMockIT {
         private final int kafkaReplicas;
         private final JsonObject kafkaStorage;
 
-        private Resources resources;
+        private String resources;
 
         public Params(int zkReplicas, JsonObject zkStorage, int kafkaReplicas, JsonObject kafkaStorage,
-                      Resources resources) {
+                      String resources) {
             this.kafkaReplicas = kafkaReplicas;
             this.kafkaStorage = kafkaStorage;
             this.zkReplicas = zkReplicas;
@@ -118,10 +118,8 @@ public class KafkaAssemblyOperatorMockIT {
                     "\"size\": \"123\", " +
                     "\"class\": \"foo\"}")
         };
-        Resources[] resources = {
-            new Resources(
-                    new Resources.CpuMemory(5000, 5000),
-                    new Resources.CpuMemory(5000, 5000))
+        String[] resources = {
+            "{ \"limits\" : { \"cpu\": 5, \"memory\": 5000 }, \"requests\": { \"cpu\": 5, \"memory\": 5000 } }"
         };
         List<KafkaAssemblyOperatorMockIT.Params> result = new ArrayList();
 
@@ -129,7 +127,7 @@ public class KafkaAssemblyOperatorMockIT {
             for (JsonObject zkStorage : storageConfigs) {
                 for (int kafkaReplica : replicas) {
                     for (JsonObject kafkaStorage : storageConfigs) {
-                        for (Resources resource : resources) {
+                        for (String resource : resources) {
                             result.add(new KafkaAssemblyOperatorMockIT.Params(
                                     zkReplica, zkStorage,
                                     kafkaReplica, kafkaStorage, resource));
@@ -184,7 +182,7 @@ public class KafkaAssemblyOperatorMockIT {
                 .withData(map(KafkaCluster.KEY_REPLICAS, String.valueOf(kafkaReplicas),
                         KafkaCluster.KEY_STORAGE, kafkaStorage.toString(),
                         KafkaCluster.KEY_METRICS_CONFIG, "{}",
-                        KafkaCluster.KEY_RESOURCES, resources != null ? resources.toString() : null,
+                        KafkaCluster.KEY_RESOURCES, resources != null ? resources : null,
                         ZookeeperCluster.KEY_REPLICAS, String.valueOf(zkReplicas),
                         ZookeeperCluster.KEY_STORAGE, zkStorage.toString(),
                         ZookeeperCluster.KEY_METRICS_CONFIG, "{}",
@@ -629,18 +627,19 @@ public class KafkaAssemblyOperatorMockIT {
     private void assertResourceReqirements(TestContext context, String statefulSetName) {
         StatefulSet statefulSet = mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSetName).get();
         context.assertNotNull(statefulSet);
-        ResourceRequirements resources = statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).getResources();
-        if (resources != null && this.resources.getRequests() != null) {
-            context.assertEquals(this.resources.getRequests().getCpuFormatted(), resources.getRequests().get("cpu").getAmount());
+        ResourceRequirements requirements = statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).getResources();
+        Resources resources = Resources.fromJson(this.resources);
+        if (resources != null && resources.getRequests() != null) {
+            context.assertEquals(resources.getRequests().getCpuFormatted(), requirements.getRequests().get("cpu").getAmount());
         }
-        if (resources != null && this.resources.getRequests() != null) {
-            context.assertEquals(this.resources.getRequests().getMemoryFormatted(), resources.getRequests().get("memory").getAmount());
+        if (resources != null && resources.getRequests() != null) {
+            context.assertEquals(resources.getRequests().getMemoryFormatted(), requirements.getRequests().get("memory").getAmount());
         }
-        if (resources != null && this.resources.getLimits() != null) {
-            context.assertEquals(this.resources.getLimits().getCpuFormatted(), resources.getLimits().get("cpu").getAmount());
+        if (resources != null && resources.getLimits() != null) {
+            context.assertEquals(resources.getLimits().getCpuFormatted(), requirements.getLimits().get("cpu").getAmount());
         }
-        if (resources != null && this.resources.getLimits() != null) {
-            context.assertEquals(this.resources.getLimits().getMemoryFormatted(), resources.getLimits().get("memory").getAmount());
+        if (resources != null && resources.getLimits() != null) {
+            context.assertEquals(resources.getLimits().getMemoryFormatted(), requirements.getLimits().get("memory").getAmount());
         }
     }
 

@@ -303,18 +303,18 @@ public class KafkaClusterIT extends AbstractClusterIT {
         zkNodes = 1,
         config = {
             @CmData(key = "kafka-resources",
-                    value = "{ \"limits\": {\"memory\": \"2Gi\", \"cpu\": 2}, " +
-                            "\"requests\": {\"memory\": \"2Gi\", \"cpu\": 2}}"),
+                    value = "{ \"limits\": {\"memory\": \"2Gi\", \"cpu\": \"2\"}, " +
+                            "\"requests\": {\"memory\": \"2Gi\", \"cpu\": \"2\"}}"),
             @CmData(key = "kafka-jvmOptions",
                     value = "{\"-Xmx\": \"1g\", \"-Xms\": \"1G\"}"),
             @CmData(key = "zookeeper-resources",
-                    value = "{ \"limits\": {\"memory\": \"1G\", \"cpu\": 1}, " +
-                            "\"requests\": {\"memory\": \"1G\", \"cpu\": 1} }"),
+                    value = "{ \"limits\": {\"memory\": \"1G\", \"cpu\": \"1\"}, " +
+                            "\"requests\": {\"memory\": \"1G\", \"cpu\": \"1\"} }"),
             @CmData(key = "zookeeper-jvmOptions",
                     value = "{\"-Xmx\": \"600m\", \"-Xms\": \"300m\"}"),
             @CmData(key = "topic-controller-config",
-                    value = "{\"resources\": { \"limits\": {\"memory\": \"500M\", \"cpu\": 1}, " +
-                            "\"requests\": {\"memory\": \"500M\", \"cpu\": 1} } }")
+                    value = "{\"resources\": { \"limits\": {\"memory\": \"500M\", \"cpu\": \"1\"}, " +
+                            "\"requests\": {\"memory\": \"500M\", \"cpu\": \"1\"} } }")
     })
     @Test
     public void testJvmAndResources() {

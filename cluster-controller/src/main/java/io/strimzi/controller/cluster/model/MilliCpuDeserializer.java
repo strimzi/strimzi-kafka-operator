@@ -44,7 +44,8 @@ public class MilliCpuDeserializer extends StdScalarDeserializer<Integer> {
             case JsonTokenId.ID_NUMBER_INT:
                 switch (p.getNumberType()) {
                     case INT:
-                        return p.getIntValue();
+                        // interpret a json int as that many cpus, not millicpus
+                        return p.getIntValue() * 1000;
                 }
                 break;
             case JsonTokenId.ID_STRING:

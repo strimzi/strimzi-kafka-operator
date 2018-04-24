@@ -87,7 +87,4 @@ public class Resources {
         return JsonUtils.fromJson(json, Resources.class);
     }
 
-    public String toString() {
-        return JsonUtils.toJson(this);
-    }
 }

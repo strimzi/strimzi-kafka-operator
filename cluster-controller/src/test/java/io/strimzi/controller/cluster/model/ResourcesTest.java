@@ -12,9 +12,17 @@ public class ResourcesTest {
 
     @Test
     public void testDeserializeSuffixes() {
-        Resources opts = Resources.fromJson("{\"limits\": {\"memory\": \"10Gi\"}, \"requests\": {\"memory\": \"5G\"}}");
+        Resources opts = Resources.fromJson("{\"limits\": {\"memory\": \"10Gi\", \"cpu\": \"1\"}, \"requests\": {\"memory\": \"5G\", \"cpu\": 1}}");
         assertEquals(10737418240L, opts.getLimits().getMemory());
+        assertEquals(1000, opts.getLimits().getMilliCpu());
+        assertEquals("1", opts.getLimits().getCpuFormatted());
         assertEquals(5000000000L, opts.getRequests().getMemory());
+        assertEquals(1000, opts.getLimits().getMilliCpu());
+        assertEquals("1", opts.getLimits().getCpuFormatted());
+        AbstractModel abstractModel = new AbstractModel("", "", Labels.forCluster("")) {
+        };
+        abstractModel.setResources(opts);
+        assertEquals("1", abstractModel.resources().getLimits().get("cpu").getAmount());
     }
 
     @Test
