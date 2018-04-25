@@ -161,7 +161,11 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 statement.evaluate();
             } catch (Throwable e) {
                 if (!(e instanceof VirtualMachineError)) {
-                    onError(e);
+                    try {
+                        onError(e);
+                    } catch (Throwable t) {
+                        e.addSuppressed(t);
+                    }
                 }
                 throw e;
 

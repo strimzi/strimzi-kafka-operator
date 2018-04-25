@@ -203,7 +203,7 @@ public class KafkaConnectCluster extends AbstractModel {
         varList.add(buildEnvVar(KEY_CONFIG_STORAGE_REPLICATION_FACTOR, String.valueOf(configStorageReplicationFactor)));
         varList.add(buildEnvVar(KEY_OFFSET_STORAGE_REPLICATION_FACTOR, String.valueOf(offsetStorageReplicationFactor)));
         varList.add(buildEnvVar(KEY_STATUS_STORAGE_REPLICATION_FACTOR, String.valueOf(statusStorageReplicationFactor)));
-        kafkaHeapOptions(varList, 1.0, 0);
+        kafkaHeapOptions(varList, 1.0, 0L);
         return varList;
     }
 

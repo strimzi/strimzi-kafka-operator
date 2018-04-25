@@ -298,7 +298,7 @@ public class KafkaCluster extends AbstractModel {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(buildEnvVar(KEY_KAFKA_ZOOKEEPER_CONNECT, zookeeperConnect));
         varList.add(buildEnvVar(KEY_KAFKA_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
-        kafkaHeapOptions(varList, 0.5, 5 * 1024 * 1024 * 1024);
+        kafkaHeapOptions(varList, 0.5, 5L * 1024L * 1024L * 1024L);
 
         if (configuration != null) {
             varList.add(buildEnvVar(KEY_KAFKA_USER_CONFIGURATION, configuration.getConfiguration()));
