@@ -139,10 +139,10 @@ public interface KubeClient<K extends KubeClient<K>> {
      * @param resourceType The type of resource
      * @param resourceName The name of resource
      * @param grepPattern Grep pattern for search
-     * @param since Return logs newer than a relative duration like 5s, 2m, or 3h.
+     * @param sinceSeconds Return logs newer than a relative duration like 5s, 2m, or 3h.
      * @return Grep result as string
      */
-    String searchInLog(String resourceType, String resourceName, String grepPattern, String since);
+    String searchInLog(String resourceType, String resourceName, String grepPattern, String sinceSeconds);
 
     String getResourceAsJson(String resourceType, String resourceName);
 

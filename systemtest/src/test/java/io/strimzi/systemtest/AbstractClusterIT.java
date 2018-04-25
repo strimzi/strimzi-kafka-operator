@@ -37,6 +37,9 @@ import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
+import static org.junit.Assert.assertThat;
+import static org.hamcrest.Matchers.isEmptyString;
+
 
 public class AbstractClusterIT {
 
@@ -234,5 +237,11 @@ public class AbstractClusterIT {
             result.add(asList(cmdLine.split("\0")));
         }
         return result;
+    }
+
+    void checkErrorsInLogCC() {
+        //TODO add blacklist for unexpected errors
+        String searchPattern = "\'Exception\\|Error\\|Throwable\'";
+        assertThat(kubeClient.searchInLog("deploy", "strimzi-cluster-controller", searchPattern, "60"), isEmptyString());
     }
 }

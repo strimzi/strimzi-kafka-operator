@@ -19,8 +19,6 @@ import static io.strimzi.test.k8s.BaseKubeClient.CM;
 import static io.strimzi.test.k8s.BaseKubeClient.DEPLOYMENT;
 import static io.strimzi.test.k8s.BaseKubeClient.SERVICE;
 import static io.strimzi.test.k8s.BaseKubeClient.STATEFUL_SET;
-import static org.hamcrest.Matchers.isEmptyString;
-import static org.junit.Assert.assertThat;
 
 @RunWith(StrimziRunner.class)
 @IgnoreIfDef("TRAVIS")
@@ -49,7 +47,7 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         kubeClient.waitForDeployment(topicControllerDeploymentName);
 
         //Test that CC doesn't have any exceptions in log
-        assertThat(kubeClient.searchInLog("deploy", "strimzi-cluster-controller", "exception", "60"), isEmptyString());
+        checkErrorsInLogCC();
     }
 
     @Test
@@ -65,7 +63,7 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         kubeClient.waitForStatefulSet(kafkaStatefulSetName, 1);
 
         //Test that CC doesn't have any exceptions in log
-        assertThat(kubeClient.searchInLog("deploy", "strimzi-cluster-controller", "exception", "60"), isEmptyString());
+        checkErrorsInLogCC();
     }
 
     @Test
@@ -81,7 +79,7 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         kubeClient.waitForStatefulSet(zookeeperStatefulSetName, 1);
 
         //Test that CC doesn't have any exceptions in log
-        assertThat(kubeClient.searchInLog("deploy", "strimzi-cluster-controller", "exception", "60"), isEmptyString());
+        checkErrorsInLogCC();
     }
 
     @Test
@@ -96,7 +94,7 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         kubeClient.waitForResourceCreation(SERVICE, kafkaServiceName);
 
         //Test that CC doesn't have any exceptions in log
-        assertThat(kubeClient.searchInLog("deploy", "strimzi-cluster-controller", "exception", "60"), isEmptyString());
+        checkErrorsInLogCC();
     }
 
     @Test
@@ -112,7 +110,7 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         kubeClient.waitForResourceCreation(SERVICE, zookeeperServiceName);
 
         //Test that CC doesn't have any exceptions in log
-        assertThat(kubeClient.searchInLog("deploy", "strimzi-cluster-controller", "exception", "60"), isEmptyString());
+        checkErrorsInLogCC();
     }
 
     @Test
@@ -127,7 +125,7 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         kubeClient.waitForResourceCreation(SERVICE, kafkaHeadlessServiceName);
 
         //Test that CC doesn't have any exceptions in log
-        assertThat(kubeClient.searchInLog("deploy", "strimzi-cluster-controller", "exception", "60"), isEmptyString());
+        checkErrorsInLogCC();
     }
 
     @Test
@@ -142,7 +140,7 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         kubeClient.waitForResourceCreation(SERVICE, zookeeperHeadlessServiceName);
 
         //Test that CC doesn't have any exceptions in log
-        assertThat(kubeClient.searchInLog("deploy", "strimzi-cluster-controller", "exception", "60"), isEmptyString());
+        checkErrorsInLogCC();
     }
 
     @Test
@@ -158,7 +156,7 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         kubeClient.waitForResourceCreation(CM, kafkaMetricsConfigName);
 
         //Test that CC doesn't have any exceptions in log
-        assertThat(kubeClient.searchInLog("deploy", "strimzi-cluster-controller", "exception", "60"), isEmptyString());
+        checkErrorsInLogCC();
     }
 
     @Test
@@ -174,6 +172,6 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         kubeClient.waitForResourceCreation(CM, zookeeperMetricsConfigName);
 
         //Test that CC doesn't have any exceptions in log
-        assertThat(kubeClient.searchInLog("deploy", "strimzi-cluster-controller", "exception", "60"), isEmptyString());
+        checkErrorsInLogCC();
     }
 }

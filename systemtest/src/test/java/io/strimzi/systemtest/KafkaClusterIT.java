@@ -44,7 +44,6 @@ import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.valueOfCmEquals;
 import static io.strimzi.test.TestUtils.map;
 import static junit.framework.TestCase.assertTrue;
-import static org.hamcrest.Matchers.isEmptyString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
@@ -113,7 +112,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
         assertThat(events, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
         //Test that CC doesn't have any exceptions in log
-        assertThat(kubeClient.searchInLog("deploy", "strimzi-cluster-controller", "exception", "60"), isEmptyString());
+        checkErrorsInLogCC();
 
         // scale down
         LOGGER.info("Scaling down");
@@ -133,7 +132,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
         //Test that stateful set has event 'SuccessfulDelete'
         assertThat(getEvents("StatefulSet", kafkaClusterName(CLUSTER_NAME)), hasAllOfReasons(SuccessfulDelete));
         //Test that CC doesn't have any exceptions in log
-        assertThat(kubeClient.searchInLog("deploy", "strimzi-cluster-controller", "exception", "60"), isEmptyString());
+        checkErrorsInLogCC();
     }
 
     @Test
@@ -176,7 +175,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
         assertThat(eventsForSecondPod, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
 
         //Test that CC doesn't have any exceptions in log
-        assertThat(kubeClient.searchInLog("deploy", "strimzi-cluster-controller", "exception", "60"), isEmptyString());
+        checkErrorsInLogCC();
 
         // scale down
         LOGGER.info("Scaling down");
@@ -190,7 +189,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
         //Test that stateful set has event 'SuccessfulDelete'
         assertThat(getEvents("StatefulSet", zookeeperClusterName(CLUSTER_NAME)), hasAllOfReasons(SuccessfulDelete));
         //Test that CC doesn't have any exceptions in log
-        assertThat(kubeClient.searchInLog("deploy", "strimzi-cluster-controller", "exception", "60"), isEmptyString());
+        checkErrorsInLogCC();
     }
 
     @Test
