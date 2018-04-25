@@ -217,7 +217,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         }
     }
 
-    protected KubeClient<?>     kubeClient() {
+    protected KubeClient<?> kubeClient() {
         return clusterResource().client();
     }
 
@@ -537,13 +537,24 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
             @Override
             protected void before() {
                 t0 = System.currentTimeMillis();
-                LOGGER.info("Starting " + element);
+                LOGGER.info("Starting {}", name(element));
             }
 
             @Override
             protected void after() {
-                LOGGER.info("Finished " + element + ": took " + ((System.currentTimeMillis() - t0) / 1000) + "s");
+                LOGGER.info("Finished {}: took {}",
+                        name(element),
+                        duration(System.currentTimeMillis() - t0));
             }
         };
     }
+
+    private static String duration(long millis) {
+        long ms = millis % 1_000;
+        long time = millis / 1_000;
+        long minutes = time / 60;
+        long seconds = time % 60;
+        return minutes + "m" + seconds + "." + ms + "s";
+    }
+
 }
