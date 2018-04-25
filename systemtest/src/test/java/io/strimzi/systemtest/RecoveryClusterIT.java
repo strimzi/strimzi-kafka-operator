@@ -47,7 +47,7 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         kubeClient.waitForDeployment(topicControllerDeploymentName);
 
         //Test that CC doesn't have any exceptions in log
-        checkErrorsInLogCC();
+        assertNoCcErrorsLogged();
     }
 
     @Test
@@ -63,7 +63,7 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         kubeClient.waitForStatefulSet(kafkaStatefulSetName, 1);
 
         //Test that CC doesn't have any exceptions in log
-        checkErrorsInLogCC();
+        assertNoCcErrorsLogged();
     }
 
     @Test
@@ -79,7 +79,7 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         kubeClient.waitForStatefulSet(zookeeperStatefulSetName, 1);
 
         //Test that CC doesn't have any exceptions in log
-        checkErrorsInLogCC();
+        assertNoCcErrorsLogged();
     }
 
     @Test
@@ -94,7 +94,7 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         kubeClient.waitForResourceCreation(SERVICE, kafkaServiceName);
 
         //Test that CC doesn't have any exceptions in log
-        checkErrorsInLogCC();
+        assertNoCcErrorsLogged();
     }
 
     @Test
@@ -110,7 +110,7 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         kubeClient.waitForResourceCreation(SERVICE, zookeeperServiceName);
 
         //Test that CC doesn't have any exceptions in log
-        checkErrorsInLogCC();
+        assertNoCcErrorsLogged();
     }
 
     @Test
@@ -125,7 +125,7 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         kubeClient.waitForResourceCreation(SERVICE, kafkaHeadlessServiceName);
 
         //Test that CC doesn't have any exceptions in log
-        checkErrorsInLogCC();
+        assertNoCcErrorsLogged();
     }
 
     @Test
@@ -140,7 +140,7 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         kubeClient.waitForResourceCreation(SERVICE, zookeeperHeadlessServiceName);
 
         //Test that CC doesn't have any exceptions in log
-        checkErrorsInLogCC();
+        assertNoCcErrorsLogged();
     }
 
     @Test
@@ -156,7 +156,7 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         kubeClient.waitForResourceCreation(CM, kafkaMetricsConfigName);
 
         //Test that CC doesn't have any exceptions in log
-        checkErrorsInLogCC();
+        assertNoCcErrorsLogged();
     }
 
     @Test
@@ -172,6 +172,6 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         kubeClient.waitForResourceCreation(CM, zookeeperMetricsConfigName);
 
         //Test that CC doesn't have any exceptions in log
-        checkErrorsInLogCC();
+        assertNoCcErrorsLogged();
     }
 }

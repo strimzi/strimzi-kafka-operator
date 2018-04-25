@@ -357,10 +357,10 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
     }
 
     @Override
-    public String searchInLog(String resourceType, String resourceName, String grepPattern, String sinceSeconds) {
+    public String searchInLog(String resourceType, String resourceName, String sinceSeconds, String... grepPattern) {
         try {
             return Exec.exec("bash", "-c", join(" ", namespacedCommand("logs", resourceType + "/" + resourceName, "--since=" + sinceSeconds + "s",
-                    "|", "grep", grepPattern))).out();
+                    "|", "grep", "\'" + join("\\|", grepPattern) + "\'"))).out();
         } catch (KubeClusterException e) {
             if (e.result != null && e.result.exitStatus() == 1) {
                 LOGGER.info("{} not found", grepPattern);

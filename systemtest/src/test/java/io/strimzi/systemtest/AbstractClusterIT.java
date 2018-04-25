@@ -139,22 +139,22 @@ public class AbstractClusterIT {
         long timeoutMs = 120_000L;
         long pollMs = 1_000L;
         TestUtils.waitFor("mntr", pollMs, timeoutMs, () -> {
-            try {
-                String output = kubeClient.exec(pod,
-                    "/bin/bash", "-c", "echo mntr | nc localhost 2181").out();
+                    try {
+                        String output = kubeClient.exec(pod,
+                                "/bin/bash", "-c", "echo mntr | nc localhost 2181").out();
 
-                if (pattern.matcher(output).find()) {
-                    return true;
-                }
-            } catch (KubeClusterException e) {
-                LOGGER.trace("Exception while waiting for ZK to become leader/follower, ignoring", e);
-            }
-                return false;
-            },
-            () -> LOGGER.info("zookeeper `mntr` output at the point of timeout does not match {}:{}{}",
-                pattern.pattern(),
-                System.lineSeparator(),
-                indent(kubeClient.exec(pod, "/bin/bash", "-c", "echo mntr | nc localhost 2181").out()))
+                        if (pattern.matcher(output).find()) {
+                            return true;
+                        }
+                    } catch (KubeClusterException e) {
+                        LOGGER.trace("Exception while waiting for ZK to become leader/follower, ignoring", e);
+                    }
+                    return false;
+                },
+                () -> LOGGER.info("zookeeper `mntr` output at the point of timeout does not match {}:{}{}",
+                        pattern.pattern(),
+                        System.lineSeparator(),
+                        indent(kubeClient.exec(pod, "/bin/bash", "-c", "echo mntr | nc localhost 2181").out()))
         );
     }
 
@@ -185,17 +185,17 @@ public class AbstractClusterIT {
     public String consumeMessages(String clusterName, String topic, int groupID, int timeout, int kafkaPodID) {
 
         LOGGER.info("Consuming messages");
-        return  kubeClient.exec(kafkaPodName(clusterName, kafkaPodID), "/bin/bash", "-c",
-                    "bin/kafka-verifiable-consumer.sh --broker-list " + clusterName +
-                            "-kafka:9092 --topic " + topic + " --group-id " + groupID + " & sleep "
-                            + timeout + "; kill %1").out();
+        return kubeClient.exec(kafkaPodName(clusterName, kafkaPodID), "/bin/bash", "-c",
+                "bin/kafka-verifiable-consumer.sh --broker-list " + clusterName +
+                        "-kafka:9092 --topic " + topic + " --group-id " + groupID + " & sleep "
+                        + timeout + "; kill %1").out();
     }
 
     protected void assertResources(String namespace, String podName, String memoryLimit, String cpuLimit, String memoryRequest, String cpuRequest) {
         Pod po = client.pods().inNamespace(namespace).withName(podName).get();
         assertNotNull("Expected a pod called " + podName + " but found " +
-            client.pods().list().getItems().stream().map(p -> p.getMetadata().getName()).collect(Collectors.toList()),
-            po);
+                        client.pods().list().getItems().stream().map(p -> p.getMetadata().getName()).collect(Collectors.toList()),
+                po);
         Container container = po.getSpec().getContainers().get(0);
         Map<String, Quantity> limits = container.getResources().getLimits();
         assertEquals(memoryLimit, limits.get("memory").getAmount());
@@ -239,9 +239,8 @@ public class AbstractClusterIT {
         return result;
     }
 
-    void checkErrorsInLogCC() {
+    void assertNoCcErrorsLogged() {
         //TODO add blacklist for unexpected errors
-        String searchPattern = "\'Exception\\|Error\\|Throwable\'";
-        assertThat(kubeClient.searchInLog("deploy", "strimzi-cluster-controller", searchPattern, "60"), isEmptyString());
+        assertThat(kubeClient.searchInLog("deploy", "strimzi-cluster-controller", "60", "Exception", "Error", "Throwable"), isEmptyString());
     }
 }
