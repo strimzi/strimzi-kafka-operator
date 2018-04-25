@@ -74,7 +74,6 @@ public class KafkaConnectCluster extends AbstractModel {
     public static final String KEY_CONFIG_STORAGE_REPLICATION_FACTOR = "KAFKA_CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR";
     public static final String KEY_OFFSET_STORAGE_REPLICATION_FACTOR = "KAFKA_CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR";
     public static final String KEY_STATUS_STORAGE_REPLICATION_FACTOR = "KAFKA_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR";
-    public static final String KEY_KAFKA_HEAP_OPTS = "KAFKA_HEAP_OPTS";
 
     public static String kafkaConnectClusterName(String cluster) {
         return cluster + KafkaConnectCluster.NAME_SUFFIX;
@@ -204,7 +203,7 @@ public class KafkaConnectCluster extends AbstractModel {
         varList.add(buildEnvVar(KEY_CONFIG_STORAGE_REPLICATION_FACTOR, String.valueOf(configStorageReplicationFactor)));
         varList.add(buildEnvVar(KEY_OFFSET_STORAGE_REPLICATION_FACTOR, String.valueOf(offsetStorageReplicationFactor)));
         varList.add(buildEnvVar(KEY_STATUS_STORAGE_REPLICATION_FACTOR, String.valueOf(statusStorageReplicationFactor)));
-        varList.add(buildEnvVar(KEY_KAFKA_HEAP_OPTS, javaHeapOptions(0, 1.0)));
+        kafkaHeapOptions(varList, 1.0, 0);
         return varList;
     }
 

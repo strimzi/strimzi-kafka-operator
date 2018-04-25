@@ -59,6 +59,9 @@ public abstract class AbstractModel {
     private static final Long VOLUME_MOUNT_HACK_GROUPID = 1001L;
 
     public static final String METRICS_CONFIG_FILE = "config.yml";
+    public static final String ENV_VAR_DYNAMIC_HEAP_FRACTION = "DYNAMIC_HEAP_FRACTION";
+    public static final String ENV_VAR_KAFKA_HEAP_OPTS = "KAFKA_HEAP_OPTS";
+    public static final String ENV_VAR_DYNAMIC_HEAP_MAX = "DYNAMIC_HEAP_MAX";
 
     protected final String cluster;
     protected final String namespace;
@@ -598,36 +601,29 @@ public abstract class AbstractModel {
         this.jvmOptions = jvmOptions;
     }
 
-    protected String javaHeapOptions(long maxNeeded, double fraction) {
-        StringBuilder result = new StringBuilder();
+    protected void kafkaHeapOptions(List<EnvVar> envVars, double dynamicHeapFraction, long dynamicHeapMaxBytes) {
+        StringBuilder kafkaHeapOpts = new StringBuilder();
         String xms = jvmOptions != null ? jvmOptions.getXms() : null;
 
         if (xms != null) {
-            result.append("-Xms").append(xms).append(' ');
+            kafkaHeapOpts.append("-Xms").append(xms);
         }
 
         String xmx = jvmOptions != null ? jvmOptions.getXmx() : null;
         if (xmx != null) {
             // Honour explicit max heap
-            result.append("-Xmx").append(xmx).append(' ');
-        } else if (resources != null
-                && resources.getRequests() != null
-                && resources.getRequests().getMemory() > 0) {
-            long avail = resources.getRequests().getMemory();
-            // Configure JVM heap according to the requested resources
-            if (maxNeeded > 0) {
-                result.append("-XX:MaxRAM=").append((long) (Math.min(fraction * avail, maxNeeded))).append(' ');
-            } else {
-                result.append("-XX:MaxRAM=").append((long) fraction * avail).append(' ');
-            }
+            kafkaHeapOpts.append(' ').append("-Xmx").append(xmx);
         } else {
-            // Tell the JVM it's running in a container
-            // (see https://developers.redhat.com/blog/2017/04/04/openjdk-and-containers/)
-            // And base the mam ram use on the fraction
-            result.append("-XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -XX:MaxRAMFraction=").append((int) Math.ceil(1.0 / fraction)).append(' ');
+            // Otherwise delegate to the container to figure out
+            // Using whatever cgroup memory limit has been set by the k8s infra
+            envVars.add(buildEnvVar(ENV_VAR_DYNAMIC_HEAP_FRACTION, Double.toString(dynamicHeapFraction)));
+            if (dynamicHeapMaxBytes > 0) {
+                envVars.add(buildEnvVar(ENV_VAR_DYNAMIC_HEAP_MAX, Long.toString(dynamicHeapMaxBytes)));
+            }
         }
-        // remove tailing space
-        result.setLength(result.length() - 1);
-        return result.toString();
+        String trim = kafkaHeapOpts.toString().trim();
+        if (!trim.isEmpty()) {
+            envVars.add(buildEnvVar(ENV_VAR_KAFKA_HEAP_OPTS, trim));
+        }
     }
 }
