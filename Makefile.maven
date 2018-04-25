@@ -1,11 +1,12 @@
 # Makefile.maven contains the shared tasks for building Java applications. This file is
 # included into the Makefile files which contain some Java sources which should be build
 # (E.g. cluster-controller etc.).
-#
+
+MVN_ARGS        ?= -q
 
 java_build:
 	echo "Building JAR file ..."
-	mvn ${MVN_ARGS} verify
+	mvn $(MVN_ARGS) verify
 
 java_clean:
 	echo "Cleaning Maven build ..."
