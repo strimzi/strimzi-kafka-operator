@@ -8,6 +8,14 @@ clean: java_clean
 
 #include ../Makefile.docker
 
-include ../Makefile.maven
+java_build:
+	echo "Building JAR file ..."
+	mvn -DtrimStackTrace=false install
+
+java_clean:
+	echo "Cleaning Maven build ..."
+	mvn clean
+
+#include ../Makefile.maven
 
 .PHONY: build clean release
