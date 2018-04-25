@@ -22,6 +22,9 @@ before_script:
 - "./.travis/setup-kubernetes.sh"
 script:
 - "./.travis/build.sh"
+cache:
+  directories:
+  - $HOME/.m2
 env:
   global:
   - PULL_REQUEST=${TRAVIS_PULL_REQUEST}
