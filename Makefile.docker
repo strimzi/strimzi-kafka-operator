@@ -15,7 +15,7 @@ all: docker_build docker_push
 
 docker_build:
 	# Build Docker image ...
-	docker build -t strimzi/$(PROJECT_NAME):latest $(DOCKERFILE_DIR)
+	docker build -q -t strimzi/$(PROJECT_NAME):latest $(DOCKERFILE_DIR)
 
 docker_tag:
 	# Tag the "latest" image we built with the given tag
