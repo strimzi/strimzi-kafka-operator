@@ -101,7 +101,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
 
     @Override
     protected Statement methodBlock(FrameworkMethod method) {
-        Statement statement = super.methodBlock(method);
+        Statement statement = withDump(super.methodBlock(method));
         statement = withConnectClusters(method, statement);
         statement = withKafkaClusters(method, statement);
         statement = withClusterController(method, statement);
@@ -175,7 +175,11 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
             }
 
         }
+
+        /** Runs before the test */
         protected abstract void before();
+
+        /** Runs after the test, even it if failed or the JVM can killed */
         protected abstract void after();
 
         List<String> ccFirst(List<String> l) {
@@ -192,23 +196,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
             return head;
         }
 
-        protected void onError(Throwable t) {
-            LOGGER.info("The test is failing/erroring due to {}, here's some diagnostic output{}{}",
-                    t, System.lineSeparator(), "----------------------------------------------------------------------");
-            for (String pod : ccFirst(kubeClient().list("pod"))) {
-                LOGGER.info("Logs from pod {}:{}{}", pod, System.lineSeparator(), indent(kubeClient().logs(pod)));
-            }
-            for (String resourceType : asList("pod", "deployment", "statefulset", "cm")) {
-                for (String resourceName : ccFirst(kubeClient().list(resourceType))) {
-                    LOGGER.info("Description of {} '{}':{}{}", resourceType, resourceName,
-                            System.lineSeparator(), indent(kubeClient().describe(resourceType, resourceName)));
-                }
-            }
-
-            LOGGER.info("That's all the diagnostic info, the exception {} will now propagate and the test will fail{}{}",
-                    t,
-                    t, System.lineSeparator(), "----------------------------------------------------------------------");
-        }
+        protected void onError(Throwable t) {}
 
         @Override
         public void run() {
@@ -248,6 +236,37 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private Statement withDump(Statement statement) {
+        return new Bracket(statement) {
+            @Override
+            protected void before() {
+            }
+
+            @Override
+            protected void after() {
+            }
+
+            @Override
+            protected void onError(Throwable t) {
+                LOGGER.info("The test is failing/erroring due to {}, here's some diagnostic output{}{}",
+                        t, System.lineSeparator(), "----------------------------------------------------------------------");
+                for (String pod : ccFirst(kubeClient().list("pod"))) {
+                    LOGGER.info("Logs from pod {}:{}{}", pod, System.lineSeparator(), indent(kubeClient().logs(pod)));
+                }
+                for (String resourceType : asList("pod", "deployment", "statefulset", "cm")) {
+                    for (String resourceName : ccFirst(kubeClient().list(resourceType))) {
+                        LOGGER.info("Description of {} '{}':{}{}", resourceType, resourceName,
+                                System.lineSeparator(), indent(kubeClient().describe(resourceType, resourceName)));
+                    }
+                }
+
+                LOGGER.info("That's all the diagnostic info, the exception {} will now propagate and the test will fail{}{}",
+                        t,
+                        t, System.lineSeparator(), "----------------------------------------------------------------------");
+            }
+        };
     }
 
     private Statement withConnectClusters(Annotatable element,
