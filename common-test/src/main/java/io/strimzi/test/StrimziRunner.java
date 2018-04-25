@@ -108,6 +108,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         statement = withResources(method, statement);
         statement = withTopic(method, statement);
         statement = withNamespaces(method, statement);
+        statement = withLogging(method, statement);
         return statement;
     }
 
@@ -467,6 +468,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
             statement = withResources(testClass, statement);
             statement = withTopic(testClass, statement);
             statement = withNamespaces(testClass, statement);
+            statement = withLogging(testClass, statement);
         }
         return statement;
     }
@@ -526,5 +528,22 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
             };
         }
         return last;
+    }
+
+
+    private Statement withLogging(Annotatable element, Statement statement) {
+        return new Bracket(statement) {
+            private long t0;
+            @Override
+            protected void before() {
+                t0 = System.currentTimeMillis();
+                LOGGER.info("Starting " + element);
+            }
+
+            @Override
+            protected void after() {
+                LOGGER.info("Finished " + element + ": took " + ((System.currentTimeMillis() - t0) / 1000) + "s");
+            }
+        };
     }
 }
