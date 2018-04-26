@@ -17,7 +17,6 @@ import io.strimzi.test.Resources;
 import io.strimzi.test.StrimziRunner;
 import io.strimzi.test.k8s.Oc;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;

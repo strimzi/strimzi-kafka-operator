@@ -10,7 +10,6 @@ import io.strimzi.test.IgnoreIfDef;
 import io.strimzi.test.KafkaCluster;
 import io.strimzi.test.Namespace;
 import io.strimzi.test.StrimziRunner;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
