@@ -65,7 +65,6 @@ public class KafkaClusterIT extends AbstractClusterIT {
         //cluster.client().waitForDeployment("strimzi-cluster-controller");
     }
 
-    @Ignore("TODO This test should be disabled for CI, but not for ST")
     @Test
     @IgnoreIfDef("TRAVIS")
     @OpenShiftOnly
@@ -191,7 +190,6 @@ public class KafkaClusterIT extends AbstractClusterIT {
         // TODO Check logs for errors
     }
 
-    @Ignore("TODO This test should be disabled for CI, but not for ST")
     @Test
     @IgnoreIfDef("TRAVIS")
     @KafkaCluster(name = "my-cluster", kafkaNodes = 2, zkNodes = 2, config = {

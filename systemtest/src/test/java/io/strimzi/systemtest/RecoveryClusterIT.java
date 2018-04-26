@@ -21,7 +21,6 @@ import static io.strimzi.test.k8s.BaseKubeClient.DEPLOYMENT;
 import static io.strimzi.test.k8s.BaseKubeClient.SERVICE;
 import static io.strimzi.test.k8s.BaseKubeClient.STATEFUL_SET;
 
-@Ignore("TODO This test should be disabled for CI, but not for ST")
 @RunWith(StrimziRunner.class)
 @IgnoreIfDef("TRAVIS")
 @Namespace(RecoveryClusterIT.NAMESPACE)
