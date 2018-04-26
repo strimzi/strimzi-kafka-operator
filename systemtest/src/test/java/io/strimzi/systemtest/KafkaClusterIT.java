@@ -17,6 +17,7 @@ import io.strimzi.test.Resources;
 import io.strimzi.test.StrimziRunner;
 import io.strimzi.test.k8s.Oc;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
@@ -64,6 +65,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
         //cluster.client().waitForDeployment("strimzi-cluster-controller");
     }
 
+    @Ignore("TODO This test should be disabled for CI, but not for ST")
     @Test
     @IgnoreIfDef("TRAVIS")
     @OpenShiftOnly
@@ -189,6 +191,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
         // TODO Check logs for errors
     }
 
+    @Ignore("TODO This test should be disabled for CI, but not for ST")
     @Test
     @IgnoreIfDef("TRAVIS")
     @KafkaCluster(name = "my-cluster", kafkaNodes = 2, zkNodes = 2, config = {
