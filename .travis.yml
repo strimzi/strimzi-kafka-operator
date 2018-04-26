@@ -16,7 +16,6 @@ services:
 #  apt:
 #    packages:
 #      - asciidoctor
-install: true
 before_install:
 - gem install asciidoctor
 before_script:
