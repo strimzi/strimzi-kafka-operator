@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest;
 
+import com.jayway.jsonpath.JsonPath;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -14,14 +15,17 @@ import io.strimzi.test.Namespace;
 import io.strimzi.test.OpenShiftOnly;
 import io.strimzi.test.Resources;
 import io.strimzi.test.StrimziRunner;
+import io.strimzi.test.Topic;
 import io.strimzi.test.k8s.Oc;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -134,6 +138,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
         // TODO Check logs for errors
     }
 
+    @Ignore
     @Test
     @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 1, zkNodes = 1)
     public void testZookeeperScaleUpScaleDown() {
@@ -187,6 +192,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
         // TODO Check logs for errors
     }
 
+    @Ignore
     @Test
     @KafkaCluster(name = "my-cluster", kafkaNodes = 2, zkNodes = 2, config = {
             @CmData(key = "zookeeper-healthcheck-delay", value = "30"),
@@ -278,7 +284,8 @@ public class KafkaClusterIT extends AbstractClusterIT {
         }
     }
 
-    /*@Test
+    @Ignore
+    @Test
     @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 3, config = {
             @CmData(key = "kafka-config", value = "{\"default.replication.factor\": 1,\"offsets.topic.replication.factor\": 1,\"transaction.state.log.replication.factor\": 1}")
             })
@@ -293,5 +300,5 @@ public class KafkaClusterIT extends AbstractClusterIT {
         String topic = JsonPath.parse(messages.get(3)).read(".partitions.[0].topic").toString().
                 replaceAll("[\\[\\]\"]", "");
         assertEquals(TOPIC_NAME, topic);
-    }*/
+    }
 }
