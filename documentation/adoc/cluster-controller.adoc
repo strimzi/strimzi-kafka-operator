@@ -410,23 +410,32 @@ Its total memory usage will be approximately 8GiB.
 [[setting_xmx]]
 ====== Setting `-Xmx`
 
-The default value used for `-Xmx` depends on whether there is a <<resources_json_config,memory request>> for the container:
+The default value used for `-Xmx` depends on whether there is a <<resources_json_config,memory limit>> for the container:
 
-* If there is a memory request, the JVM's maximum memory will be limited according to the kind of pod (Kafka, Zookeeper, TopicController) to an appropriate value less than the request.
-* Otherwise, when there is no memory request, the JVM's maximum memory will be limited according to the kind of pod and the RAM available to the container.
+* If there is a memory limit, the JVM's maximum memory will be limited according to the kind of pod (Kafka, Zookeeper, TopicController) to an appropriate value less than the limit.
+* Otherwise, when there is no memory limit, the JVM's maximum memory will be set according to the kind of pod and the RAM available to the container.
 
 [IMPORTANT]
 ====
 Setting `-Xmx` explicitly is requires some care:
 
-* The JVM's overall memory usage will be approximately 4 × the maximum heap as configured by `-Xmx`.
+* The JVM's overall memory usage will be approximately 4 × the maximum heap, as configured by `-Xmx`.
 
 * If `-Xmx` is set without also setting an appropriate Kubernetes
-memory request, it is possible that the container will be killed should the Kubernetes node
+memory limit, it is possible that the container will be killed should the Kubernetes node
 experience memory pressure (from other Pods running on it).
+
+* If `-Xmx` is set without also setting an appropriate Kubernetes
+memory request, it is possible that the container will scheduled to a node with insufficient memory.
+In this case the container will start but crash (immediately if `-Xms` is set to `-Xmx`, or some later time if not).
+
 ====
 
-When `-Xmx` is set explicitly, it is recommended use a memory request that is at least 4.5 × the request heap memory when setting `-Xmx`.
+When setting `-Xmx` explicitly, it is recommended to:
+
+* set the memory request and the memory limit to the same value,
+* use a memory request that is at least 4.5 × the `-Xmx`,
+* consider setting `-Xms` to the same value as `-Xms`.
 
 Furthermore, containers doing lots of disk I/O (such as Kafka broker containers) will need to leave some memory available for use as operating system page cache.
 On such containers, the request memory should be substantially more than the memory used by the JVM.
