@@ -10,6 +10,7 @@ import io.strimzi.test.IgnoreIfDef;
 import io.strimzi.test.KafkaCluster;
 import io.strimzi.test.Namespace;
 import io.strimzi.test.StrimziRunner;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
@@ -34,6 +35,7 @@ public class RecoveryClusterIT extends AbstractClusterIT {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RecoveryClusterIT.class);
 
+    @Ignore
     @Test
     public void testRecoveryFromTopicControllerDeletion() {
         // kafka cluster already deployed via annotation
@@ -47,6 +49,7 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         kubeClient.waitForDeployment(topicControllerDeploymentName);
     }
 
+    @Ignore
     @Test
     public void testRecoveryFromKafkaStatefulSetDeletion() {
         // kafka cluster already deployed via annotation
@@ -60,6 +63,7 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         kubeClient.waitForStatefulSet(kafkaStatefulSetName, 1);
     }
 
+    @Ignore
     @Test
     public void testRecoveryFromZookeeperStatefulSetDeletion() {
         // kafka cluster already deployed via annotation
@@ -73,6 +77,7 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         kubeClient.waitForStatefulSet(zookeeperStatefulSetName, 1);
     }
 
+    @Ignore
     @Test
     public void testRecoveryFromKafkaServiceDeletion() {
         // kafka cluster already deployed via annotation
@@ -85,6 +90,7 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         kubeClient.waitForResourceCreation(SERVICE, kafkaServiceName);
     }
 
+    @Ignore
     @Test
     public void testRecoveryFromZookeeperServiceDeletion() {
         // kafka cluster already deployed via annotation
@@ -98,6 +104,7 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         kubeClient.waitForResourceCreation(SERVICE, zookeeperServiceName);
     }
 
+    @Ignore
     @Test
     public void testRecoveryFromKafkaHeadlessServiceDeletion() {
         // kafka cluster already deployed via annotation
@@ -110,6 +117,7 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         kubeClient.waitForResourceCreation(SERVICE, kafkaHeadlessServiceName);
     }
 
+    @Ignore
     @Test
     public void testRecoveryFromZookeeperHeadlessServiceDeletion() {
         // kafka cluster already deployed via annotation
@@ -122,6 +130,7 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         kubeClient.waitForResourceCreation(SERVICE, zookeeperHeadlessServiceName);
     }
 
+    @Ignore
     @Test
     public void testRecoveryFromKafkaMetricsConfigDeletion() {
         // kafka cluster already deployed via annotation
@@ -135,6 +144,7 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         kubeClient.waitForResourceCreation(CM, kafkaMetricsConfigName);
     }
 
+    @Ignore
     @Test
     public void testRecoveryFromZookeeperMetricsConfigDeletion() {
         // kafka cluster already deployed via annotation
