@@ -74,7 +74,8 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         if (super.isIgnored(child)) {
             return true;
         } else {
-            return isWrongClusterType(getTestClass(), child) || isWrongClusterType(child, child);
+            return isWrongClusterType(getTestClass(), child) || isWrongClusterType(child, child)
+                    || isIgnoredByEnvVar(getTestClass(), child) || isIgnoredByEnvVar(child, child);
         }
     }
 
@@ -84,6 +85,16 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     || clusterResource().cluster() instanceof Minishift);
         if (result) {
             LOGGER.info("{} is @OpenShiftOnly, but the running cluster is not OpenShift: Ignoring {}", name(annotated), name(test));
+        }
+        return result;
+    }
+
+    private boolean isIgnoredByEnvVar(Annotatable annotated, FrameworkMethod test) {
+        IgnoreIfDef anno = annotated.getAnnotation(IgnoreIfDef.class);
+        boolean result = anno != null
+                && System.getenv(anno.value()) != null;
+        if (result) {
+            LOGGER.info("{} is @IgnoreIfDef, and {} has value {}: Ignoring {}", name(annotated), anno.value(), System.getenv(anno.value()), name(test));
         }
         return result;
     }
