@@ -10,7 +10,7 @@ $(DOCKER_TARGETS): $(SUBDIRS)
 release: release_prepare release_version release_maven $(SUBDIRS) release_docu release_pkg
 
 release_prepare:
-	echo ${RELEASE_VERSION} > release.version
+	echo $(RELEASE_VERSION) > release.version
 	rm -rf ./strimzi-$(RELEASE_VERSION)
 	rm -f ./strimzi-$(RELEASE_VERSION).tar.gz
 	mkdir ./strimzi-$(RELEASE_VERSION)
