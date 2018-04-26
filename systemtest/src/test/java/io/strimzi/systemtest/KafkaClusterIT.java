@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.test.ClusterController;
 import io.strimzi.test.CmData;
+import io.strimzi.test.IgnoreIfDef;
 import io.strimzi.test.KafkaCluster;
 import io.strimzi.test.Namespace;
 import io.strimzi.test.OpenShiftOnly;
@@ -65,8 +66,9 @@ public class KafkaClusterIT extends AbstractClusterIT {
     }
 
     @Test
-    @Resources(value = "../examples/templates/cluster-controller", asAdmin = true)
+    @IgnoreIfDef("TRAVIS")
     @OpenShiftOnly
+    @Resources(value = "../examples/templates/cluster-controller", asAdmin = true)
     public void testDeployKafkaClusterViaTemplate() {
         Oc oc = (Oc) this.kubeClient;
         String clusterName = "openshift-my-cluster";
@@ -135,6 +137,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
     }
 
     @Test
+    @IgnoreIfDef("TRAVIS")
     @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 1, zkNodes = 1)
     public void testZookeeperScaleUpScaleDown() {
         // kafka cluster already deployed via annotation
@@ -188,6 +191,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
     }
 
     @Test
+    @IgnoreIfDef("TRAVIS")
     @KafkaCluster(name = "my-cluster", kafkaNodes = 2, zkNodes = 2, config = {
             @CmData(key = "zookeeper-healthcheck-delay", value = "30"),
             @CmData(key = "zookeeper-healthcheck-timeout", value = "10"),
