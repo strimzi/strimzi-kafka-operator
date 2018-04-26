@@ -5,6 +5,7 @@
 package io.strimzi.systemtest;
 
 import io.strimzi.test.ClusterController;
+import io.strimzi.test.CmData;
 import io.strimzi.test.ConnectCluster;
 import io.strimzi.test.IgnoreIfDef;
 import io.strimzi.test.KafkaCluster;
@@ -51,6 +52,22 @@ public class ConnectClusterIT extends AbstractClusterIT {
     @ConnectCluster(name = "my-cluster", bootstrapServers = BOOTSTRAP_SERVERS)
     public void testDeployUndeploy() {
         LOGGER.info("Looks like the connect cluster my-cluster deployed OK");
+    }
+
+    @Test
+    @ConnectCluster(name = "jvm-resource", bootstrapServers = BOOTSTRAP_SERVERS,
+        nodes = 1,
+        config = {
+                @CmData(key = "resources", value = "{ \"limits\": {\"memory\": \"400M\", \"cpu\": 2}, " +
+                        "\"requests\": {\"memory\": \"300M\", \"cpu\": 1} }"),
+                @CmData(key = "jvmOptions", value = "{\"-Xmx\": \"200m\", \"-Xms\": \"200m\"}")
+        })
+    public void testJvmAndResources() {
+        String podName = kubeClient.list("Pod").stream().filter(n -> n.startsWith("jvm-resource-connect-")).findFirst().get();
+        assertResources(NAMESPACE, podName,
+                "400M", "2", "300M", "1");
+        assertExpectedJavaOpts(podName,
+                "-Xmx200m", "-Xms200m");
     }
 
 }

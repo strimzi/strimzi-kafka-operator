@@ -22,6 +22,8 @@ import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Probe;
 import io.fabric8.kubernetes.api.model.ProbeBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.ServicePort;
@@ -57,6 +59,9 @@ public abstract class AbstractModel {
     private static final Long VOLUME_MOUNT_HACK_GROUPID = 1001L;
 
     public static final String METRICS_CONFIG_FILE = "config.yml";
+    public static final String ENV_VAR_DYNAMIC_HEAP_FRACTION = "DYNAMIC_HEAP_FRACTION";
+    public static final String ENV_VAR_KAFKA_HEAP_OPTS = "KAFKA_HEAP_OPTS";
+    public static final String ENV_VAR_DYNAMIC_HEAP_MAX = "DYNAMIC_HEAP_MAX";
 
     protected final String cluster;
     protected final String namespace;
@@ -90,6 +95,9 @@ public abstract class AbstractModel {
     public static final String VOLUME_NAME = "data";
     protected String metricsConfigVolumeName;
     protected String metricsConfigMountPath;
+
+    private JvmOptions jvmOptions;
+    private Resources resources;
 
     /**
      * Constructor
@@ -417,6 +425,7 @@ public abstract class AbstractModel {
             List<VolumeMount> volumeMounts,
             Probe livenessProbe,
             Probe readinessProbe,
+            ResourceRequirements resources,
             boolean isOpenShift) {
 
         Map<String, String> annotations = new HashMap<>();
@@ -431,6 +440,7 @@ public abstract class AbstractModel {
                 .withPorts(ports)
                 .withLivenessProbe(livenessProbe)
                 .withReadinessProbe(readinessProbe)
+                .withResources(resources)
                 .build();
 
         List<Container> initContainers = new ArrayList<>();
@@ -497,7 +507,8 @@ public abstract class AbstractModel {
             Probe readinessProbe,
             DeploymentStrategy updateStrategy,
             Map<String, String> deploymentAnnotations,
-            Map<String, String> podAnnotations) {
+            Map<String, String> podAnnotations,
+            ResourceRequirements resources) {
 
         Container container = new ContainerBuilder()
                 .withName(name)
@@ -506,6 +517,7 @@ public abstract class AbstractModel {
                 .withPorts(ports)
                 .withLivenessProbe(livenessProbe)
                 .withReadinessProbe(readinessProbe)
+                .withResources(resources)
                 .build();
 
         Deployment dep = new DeploymentBuilder()
@@ -553,5 +565,65 @@ public abstract class AbstractModel {
             Collectors.toMap(EnvVar::getName, EnvVar::getValue,
                 // On duplicates, last in wins
                 (u, v) -> v));
+    }
+
+    protected ResourceRequirements resources() {
+        if (resources != null) {
+            ResourceRequirementsBuilder builder = new ResourceRequirementsBuilder();
+            Resources.CpuMemory limits = resources.getLimits();
+            if (limits != null
+                    && limits.getMilliCpu() > 0) {
+                builder.addToLimits("cpu", new Quantity(limits.getCpuFormatted()));
+            }
+            if (limits != null
+                    && limits.getMemory() > 0) {
+                builder.addToLimits("memory", new Quantity(limits.getMemoryFormatted()));
+            }
+            Resources.CpuMemory requests = resources.getRequests();
+            if (requests != null
+                    && requests.getMilliCpu() > 0) {
+                builder.addToRequests("cpu", new Quantity(requests.getCpuFormatted()));
+            }
+            if (requests != null
+                    && requests.getMemory() > 0) {
+                builder.addToRequests("memory", new Quantity(requests.getMemoryFormatted()));
+            }
+            return builder.build();
+        }
+        return null;
+    }
+
+    public void setResources(Resources resources) {
+        this.resources = resources;
+    }
+
+    public void setJvmOptions(JvmOptions jvmOptions) {
+        this.jvmOptions = jvmOptions;
+    }
+
+    protected void kafkaHeapOptions(List<EnvVar> envVars, double dynamicHeapFraction, long dynamicHeapMaxBytes) {
+        StringBuilder kafkaHeapOpts = new StringBuilder();
+        String xms = jvmOptions != null ? jvmOptions.getXms() : null;
+
+        if (xms != null) {
+            kafkaHeapOpts.append("-Xms").append(xms);
+        }
+
+        String xmx = jvmOptions != null ? jvmOptions.getXmx() : null;
+        if (xmx != null) {
+            // Honour explicit max heap
+            kafkaHeapOpts.append(' ').append("-Xmx").append(xmx);
+        } else {
+            // Otherwise delegate to the container to figure out
+            // Using whatever cgroup memory limit has been set by the k8s infra
+            envVars.add(buildEnvVar(ENV_VAR_DYNAMIC_HEAP_FRACTION, Double.toString(dynamicHeapFraction)));
+            if (dynamicHeapMaxBytes > 0) {
+                envVars.add(buildEnvVar(ENV_VAR_DYNAMIC_HEAP_MAX, Long.toString(dynamicHeapMaxBytes)));
+            }
+        }
+        String trim = kafkaHeapOpts.toString().trim();
+        if (!trim.isEmpty()) {
+            envVars.add(buildEnvVar(ENV_VAR_KAFKA_HEAP_OPTS, trim));
+        }
     }
 }

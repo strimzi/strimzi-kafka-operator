@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -16,6 +17,7 @@ import io.strimzi.controller.cluster.Reconciliation;
 import io.strimzi.controller.cluster.model.AssemblyType;
 import io.strimzi.controller.cluster.model.KafkaCluster;
 import io.strimzi.controller.cluster.model.Labels;
+import io.strimzi.controller.cluster.model.Resources;
 import io.strimzi.controller.cluster.model.Storage;
 import io.strimzi.controller.cluster.model.TopicController;
 import io.strimzi.controller.cluster.model.ZookeeperCluster;
@@ -66,6 +68,7 @@ public class KafkaAssemblyOperatorMockIT {
 
     private final int kafkaReplicas;
     private final JsonObject kafkaStorage;
+    private final String resources;
     private KubernetesClient mockClient;
 
     public static class Params {
@@ -75,18 +78,23 @@ public class KafkaAssemblyOperatorMockIT {
         private final int kafkaReplicas;
         private final JsonObject kafkaStorage;
 
-        public Params(int zkReplicas, JsonObject zkStorage, int kafkaReplicas, JsonObject kafkaStorage) {
+        private String resources;
+
+        public Params(int zkReplicas, JsonObject zkStorage, int kafkaReplicas, JsonObject kafkaStorage,
+                      String resources) {
             this.kafkaReplicas = kafkaReplicas;
             this.kafkaStorage = kafkaStorage;
             this.zkReplicas = zkReplicas;
             this.zkStorage = zkStorage;
+            this.resources = resources;
         }
 
         public String toString() {
             return "zkReplicas=" + zkReplicas +
                     ",zkStorage=" + kafkaStorage +
                     ",kafkaReplicas=" + kafkaReplicas +
-                    ",kafkaStorage=" + kafkaStorage;
+                    ",kafkaStorage=" + kafkaStorage +
+                    ",resources=" + resources;
         }
     }
 
@@ -110,15 +118,20 @@ public class KafkaAssemblyOperatorMockIT {
                     "\"size\": \"123\", " +
                     "\"class\": \"foo\"}")
         };
+        String[] resources = {
+            "{ \"limits\" : { \"cpu\": 5, \"memory\": 5000 }, \"requests\": { \"cpu\": 5, \"memory\": 5000 } }"
+        };
         List<KafkaAssemblyOperatorMockIT.Params> result = new ArrayList();
 
         for (int zkReplica : replicas) {
             for (JsonObject zkStorage : storageConfigs) {
                 for (int kafkaReplica : replicas) {
                     for (JsonObject kafkaStorage : storageConfigs) {
-                        result.add(new KafkaAssemblyOperatorMockIT.Params(
-                                zkReplica, zkStorage,
-                                kafkaReplica, kafkaStorage));
+                        for (String resource : resources) {
+                            result.add(new KafkaAssemblyOperatorMockIT.Params(
+                                    zkReplica, zkStorage,
+                                    kafkaReplica, kafkaStorage, resource));
+                        }
                     }
                 }
             }
@@ -133,6 +146,8 @@ public class KafkaAssemblyOperatorMockIT {
 
         this.kafkaReplicas = params.kafkaReplicas;
         this.kafkaStorage = params.kafkaStorage;
+
+        this.resources = params.resources;
     }
 
     /** Return the storage type the test cluster initially uses */
@@ -157,6 +172,7 @@ public class KafkaAssemblyOperatorMockIT {
     @Before
     public void before() {
         this.vertx = Vertx.vertx();
+
         this.cluster = new ConfigMapBuilder()
                 .withNewMetadata()
                 .withName(CLUSTER_NAME)
@@ -166,6 +182,7 @@ public class KafkaAssemblyOperatorMockIT {
                 .withData(map(KafkaCluster.KEY_REPLICAS, String.valueOf(kafkaReplicas),
                         KafkaCluster.KEY_STORAGE, kafkaStorage.toString(),
                         KafkaCluster.KEY_METRICS_CONFIG, "{}",
+                        KafkaCluster.KEY_RESOURCES, resources != null ? resources : null,
                         ZookeeperCluster.KEY_REPLICAS, String.valueOf(zkReplicas),
                         ZookeeperCluster.KEY_STORAGE, zkStorage.toString(),
                         ZookeeperCluster.KEY_METRICS_CONFIG, "{}",
@@ -210,6 +227,7 @@ public class KafkaAssemblyOperatorMockIT {
             context.assertNotNull(mockClient.extensions().deployments().inNamespace(NAMESPACE).withName(TopicController.topicControllerName(CLUSTER_NAME)).get());
             context.assertNotNull(mockClient.configMaps().inNamespace(NAMESPACE).withName(KafkaCluster.metricConfigsName(CLUSTER_NAME)).get());
             context.assertNotNull(mockClient.configMaps().inNamespace(NAMESPACE).withName(ZookeeperCluster.zookeeperMetricsName(CLUSTER_NAME)).get());
+            assertResourceReqirements(context, KafkaCluster.kafkaClusterName(CLUSTER_NAME));
             createAsync.complete();
         });
         createAsync.await();
@@ -565,6 +583,7 @@ public class KafkaAssemblyOperatorMockIT {
             data.put(KafkaCluster.KEY_STORAGE,
                     new JsonObject("{\"type\": \"ephemeral\"}").toString());
         }
+        data.put(KafkaCluster.KEY_RESOURCES, resources != null ? resources.toString() : null);
 
         ConfigMap changedClusterCm = new ConfigMapBuilder(cluster).withData(data).build();
         mockClient.configMaps().inNamespace(NAMESPACE).withName(CLUSTER_NAME).patch(changedClusterCm);
@@ -603,6 +622,25 @@ public class KafkaAssemblyOperatorMockIT {
         List<Container> initContainers = statefulSet.getSpec().getTemplate().getSpec().getInitContainers();
         context.assertEquals(initContainers.size(), originalInitContainers.size());
         context.assertEquals(initContainers, originalInitContainers);
+    }
+
+    private void assertResourceReqirements(TestContext context, String statefulSetName) {
+        StatefulSet statefulSet = mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSetName).get();
+        context.assertNotNull(statefulSet);
+        ResourceRequirements requirements = statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).getResources();
+        Resources resources = Resources.fromJson(this.resources);
+        if (resources != null && resources.getRequests() != null) {
+            context.assertEquals(resources.getRequests().getCpuFormatted(), requirements.getRequests().get("cpu").getAmount());
+        }
+        if (resources != null && resources.getRequests() != null) {
+            context.assertEquals(resources.getRequests().getMemoryFormatted(), requirements.getRequests().get("memory").getAmount());
+        }
+        if (resources != null && resources.getLimits() != null) {
+            context.assertEquals(resources.getLimits().getCpuFormatted(), requirements.getLimits().get("cpu").getAmount());
+        }
+        if (resources != null && resources.getLimits() != null) {
+            context.assertEquals(resources.getLimits().getMemoryFormatted(), requirements.getLimits().get("memory").getAmount());
+        }
     }
 
     /** Test that we can change the deleteClaim flag, and that it's honoured */

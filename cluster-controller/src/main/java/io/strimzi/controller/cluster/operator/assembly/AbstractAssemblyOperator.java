@@ -186,7 +186,7 @@ public abstract class AbstractAssemblyOperator {
                 if (result.succeeded()) {
                     log.info("{}: Assembly reconciled", reconciliation);
                 } else {
-                    log.error("{}: Failed to reconcile", reconciliation);
+                    log.error("{}: Failed to reconcile", reconciliation, result.cause());
                 }
                 latch.countDown();
             });

@@ -47,7 +47,6 @@ import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
-
 @RunWith(StrimziRunner.class)
 @Namespace(KafkaClusterIT.NAMESPACE)
 @ClusterController
@@ -81,8 +80,8 @@ public class KafkaClusterIT extends AbstractClusterIT {
     }
 
     @Test
-    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 3)
-    public void testKafkaScaleUpScaleDown() {
+    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 3, zkNodes = 1)
+    public void testKafkaAndZookeeperScaleUpScaleDown() {
         // kafka cluster already deployed via annotation
         LOGGER.info("Running kafkaScaleUpScaleDown {}", CLUSTER_NAME);
 
@@ -144,35 +143,35 @@ public class KafkaClusterIT extends AbstractClusterIT {
         LOGGER.info("Running zookeeperScaleUpScaleDown with cluster {}", CLUSTER_NAME);
         //kubeClient.waitForStatefulSet(zookeeperStatefulSetName(CLUSTER_NAME), 1);
         KubernetesClient client = new DefaultKubernetesClient();
-        final int initialReplicas = client.apps().statefulSets().inNamespace(NAMESPACE).withName(zookeeperClusterName(CLUSTER_NAME)).get().getStatus().getReplicas();
-        assertEquals(1, initialReplicas);
+        final int initialZkReplicas = client.apps().statefulSets().inNamespace(NAMESPACE).withName(zookeeperClusterName(CLUSTER_NAME)).get().getStatus().getReplicas();
+        assertEquals(1, initialZkReplicas);
 
         // scale up
-        final int scaleTo = initialReplicas + 2;
-        final int[] newPodIds = {initialReplicas, initialReplicas + 1};
-        final String[] newPodName = {
+        final int scaleZkTo = initialZkReplicas + 2;
+        final int[] newPodIds = {initialZkReplicas, initialZkReplicas + 1};
+        final String[] newZkPodName = {
                 zookeeperPodName(CLUSTER_NAME,  newPodIds[0]),
                 zookeeperPodName(CLUSTER_NAME,  newPodIds[1])
         };
-        final String firstPodName = zookeeperPodName(CLUSTER_NAME,  0);
-        LOGGER.info("Scaling up to {}", scaleTo);
-        replaceCm(CLUSTER_NAME, "zookeeper-nodes", String.valueOf(scaleTo));
-        kubeClient.waitForPod(newPodName[0]);
-        kubeClient.waitForPod(newPodName[1]);
+        final String firstZkPodName = zookeeperPodName(CLUSTER_NAME,  0);
+        LOGGER.info("Scaling up to {}", scaleZkTo);
+        replaceCm(CLUSTER_NAME, "zookeeper-nodes", String.valueOf(scaleZkTo));
+        kubeClient.waitForPod(newZkPodName[0]);
+        kubeClient.waitForPod(newZkPodName[1]);
 
         // check the new node is either in leader or follower state
-        waitForZkMntr(firstPodName, Pattern.compile("zk_server_state\\s+(leader|follower)"));
-        waitForZkMntr(newPodName[0], Pattern.compile("zk_server_state\\s+(leader|follower)"));
-        waitForZkMntr(newPodName[1], Pattern.compile("zk_server_state\\s+(leader|follower)"));
+        waitForZkMntr(firstZkPodName, Pattern.compile("zk_server_state\\s+(leader|follower)"));
+        waitForZkMntr(newZkPodName[0], Pattern.compile("zk_server_state\\s+(leader|follower)"));
+        waitForZkMntr(newZkPodName[1], Pattern.compile("zk_server_state\\s+(leader|follower)"));
 
         // TODO Check logs for errors
         //Test that first pod does not have errors or failures in events
-        List<Event> eventsForFirstPod = getEvents("Pod", newPodName[0]);
+        List<Event> eventsForFirstPod = getEvents("Pod", newZkPodName[0]);
         assertThat(eventsForFirstPod, hasAllOfReasons(Scheduled, Pulled, Created, Started));
         assertThat(eventsForFirstPod, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
 
         //Test that second pod does not have errors or failures in events
-        List<Event> eventsForSecondPod = getEvents("Pod", newPodName[1]);
+        List<Event> eventsForSecondPod = getEvents("Pod", newZkPodName[1]);
         assertThat(eventsForSecondPod, hasAllOfReasons(Scheduled, Pulled, Created, Started));
         assertThat(eventsForSecondPod, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
 
@@ -181,10 +180,10 @@ public class KafkaClusterIT extends AbstractClusterIT {
         replaceCm(CLUSTER_NAME, "zookeeper-nodes", String.valueOf(1));
         kubeClient.waitForResourceDeletion("po", zookeeperPodName(CLUSTER_NAME,  1));
         // Wait for the one remaining node to enter standalone mode
-        waitForZkMntr(firstPodName, Pattern.compile("zk_server_state\\s+standalone"));
+        waitForZkMntr(firstZkPodName, Pattern.compile("zk_server_state\\s+standalone"));
 
         //Test that the second pod has event 'Killing'
-        assertThat(getEvents("Pod", newPodName[1]), hasAllOfReasons(Killing));
+        assertThat(getEvents("Pod", newZkPodName[1]), hasAllOfReasons(Killing));
         //Test that stateful set has event 'SuccessfulDelete'
         assertThat(getEvents("StatefulSet", zookeeperClusterName(CLUSTER_NAME)), hasAllOfReasons(SuccessfulDelete));
         // TODO Check logs for errors
@@ -298,4 +297,40 @@ public class KafkaClusterIT extends AbstractClusterIT {
                 replaceAll("[\\[\\]\"]", "");
         assertEquals(TOPIC_NAME, topic);
     }*/
+
+    @KafkaCluster(name = "jvm-resource-cluster",
+        kafkaNodes = 1,
+        zkNodes = 1,
+        config = {
+            @CmData(key = "kafka-resources",
+                    value = "{ \"limits\": {\"memory\": \"2Gi\", \"cpu\": \"400m\"}, " +
+                            "\"requests\": {\"memory\": \"2Gi\", \"cpu\": \"400m\"}}"),
+            @CmData(key = "kafka-jvmOptions",
+                    value = "{\"-Xmx\": \"1g\", \"-Xms\": \"1G\"}"),
+            @CmData(key = "zookeeper-resources",
+                    value = "{ \"limits\": {\"memory\": \"1G\", \"cpu\": \"300m\"}, " +
+                            "\"requests\": {\"memory\": \"1G\", \"cpu\": \"300m\"} }"),
+            @CmData(key = "zookeeper-jvmOptions",
+                    value = "{\"-Xmx\": \"600m\", \"-Xms\": \"300m\"}"),
+            @CmData(key = "topic-controller-config",
+                    value = "{\"resources\": { \"limits\": {\"memory\": \"500M\", \"cpu\": \"300m\"}, " +
+                            "\"requests\": {\"memory\": \"500M\", \"cpu\": \"300m\"} } }")
+    })
+    @Test
+    public void testJvmAndResources() {
+        assertResources(NAMESPACE, "jvm-resource-cluster-kafka-0",
+                "2Gi", "400m", "2Gi", "400m");
+        assertExpectedJavaOpts("jvm-resource-cluster-kafka-0",
+                "-Xmx1g", "-Xms1G");
+
+        assertResources(NAMESPACE, "jvm-resource-cluster-zookeeper-0",
+                "1G", "300m", "1G", "300m");
+        assertExpectedJavaOpts("jvm-resource-cluster-zookeeper-0",
+                "-Xmx600m", "-Xms300m");
+
+        String podName = client.pods().list().getItems().stream().filter(p -> p.getMetadata().getName().startsWith("jvm-resource-cluster-topic-controller-")).findFirst().get().getMetadata().getName();
+
+        assertResources(NAMESPACE, podName,
+                "500M", "300m", "500M", "300m");
+    }
 }

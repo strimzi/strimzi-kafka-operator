@@ -1,4 +1,5 @@
 #!/bin/bash
+set +x
 
 # volume for saving Kafka server logs
 export KAFKA_VOLUME="/var/lib/kafka/"
@@ -40,6 +41,17 @@ export LOG_DIR="$KAFKA_HOME"
 echo "Starting Kafka with configuration:"
 cat /tmp/strimzi.properties
 echo ""
+
+if [ -z "$KAFKA_HEAP_OPTS" -a -n "${DYNAMIC_HEAP_FRACTION}" ]; then
+    . ./dynamic_resources.sh
+    # Calculate a max heap size based some DYNAMIC_HEAP_FRACTION of the heap
+    # available to a jvm using 100% of the GCroup-aware memory
+    # up to some optional DYNAMIC_HEAP_MAX
+    CALC_MAX_HEAP=$(get_heap_size ${DYNAMIC_HEAP_FRACTION} ${DYNAMIC_HEAP_MAX})
+    if [ -n "$CALC_MAX_HEAP" ]; then
+      export KAFKA_HEAP_OPTS="-Xms${CALC_MAX_HEAP} -Xmx${CALC_MAX_HEAP}"
+    fi
+fi
 
 # starting Kafka server with final configuration
 exec $KAFKA_HOME/bin/kafka-server-start.sh /tmp/strimzi.properties

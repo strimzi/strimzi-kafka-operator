@@ -101,13 +101,14 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
 
     @Override
     protected Statement methodBlock(FrameworkMethod method) {
-        Statement statement = super.methodBlock(method);
+        Statement statement = withDump(super.methodBlock(method));
         statement = withConnectClusters(method, statement);
         statement = withKafkaClusters(method, statement);
         statement = withClusterController(method, statement);
         statement = withResources(method, statement);
         statement = withTopic(method, statement);
         statement = withNamespaces(method, statement);
+        statement = withLogging(method, statement);
         return statement;
     }
 
@@ -160,7 +161,11 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 statement.evaluate();
             } catch (Throwable e) {
                 if (!(e instanceof VirtualMachineError)) {
-                    onError(e);
+                    try {
+                        onError(e);
+                    } catch (Throwable t) {
+                        e.addSuppressed(t);
+                    }
                 }
                 throw e;
 
@@ -170,7 +175,11 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
             }
 
         }
+
+        /** Runs before the test */
         protected abstract void before();
+
+        /** Runs after the test, even it if failed or the JVM can killed */
         protected abstract void after();
 
         List<String> ccFirst(List<String> l) {
@@ -187,23 +196,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
             return head;
         }
 
-        protected void onError(Throwable t) {
-            LOGGER.info("The test is failing/erroring due to {}, here's some diagnostic output{}{}",
-                    t, System.lineSeparator(), "----------------------------------------------------------------------");
-            for (String pod : ccFirst(kubeClient().list("pod"))) {
-                LOGGER.info("Logs from pod {}:{}{}", pod, System.lineSeparator(), indent(kubeClient().logs(pod)));
-            }
-            for (String resourceType : asList("pod", "deployment", "statefulset", "cm")) {
-                for (String resourceName : ccFirst(kubeClient().list(resourceType))) {
-                    LOGGER.info("Description of {} '{}':{}{}", resourceType, resourceName,
-                            System.lineSeparator(), indent(kubeClient().describe(resourceType, resourceName)));
-                }
-            }
-
-            LOGGER.info("That's all the diagnostic info, the exception {} will now propagate and the test will fail{}{}",
-                    t,
-                    t, System.lineSeparator(), "----------------------------------------------------------------------");
-        }
+        protected void onError(Throwable t) {}
 
         @Override
         public void run() {
@@ -216,7 +209,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         }
     }
 
-    protected KubeClient<?>     kubeClient() {
+    protected KubeClient<?> kubeClient() {
         return clusterResource().client();
     }
 
@@ -243,6 +236,37 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private Statement withDump(Statement statement) {
+        return new Bracket(statement) {
+            @Override
+            protected void before() {
+            }
+
+            @Override
+            protected void after() {
+            }
+
+            @Override
+            protected void onError(Throwable t) {
+                LOGGER.info("The test is failing/erroring due to {}, here's some diagnostic output{}{}",
+                        t, System.lineSeparator(), "----------------------------------------------------------------------");
+                for (String pod : ccFirst(kubeClient().list("pod"))) {
+                    LOGGER.info("Logs from pod {}:{}{}", pod, System.lineSeparator(), indent(kubeClient().logs(pod)));
+                }
+                for (String resourceType : asList("pod", "deployment", "statefulset", "cm")) {
+                    for (String resourceName : ccFirst(kubeClient().list(resourceType))) {
+                        LOGGER.info("Description of {} '{}':{}{}", resourceType, resourceName,
+                                System.lineSeparator(), indent(kubeClient().describe(resourceType, resourceName)));
+                    }
+                }
+
+                LOGGER.info("That's all the diagnostic info, the exception {} will now propagate and the test will fail{}{}",
+                        t,
+                        t, System.lineSeparator(), "----------------------------------------------------------------------");
+            }
+        };
     }
 
     private Statement withConnectClusters(Annotatable element,
@@ -347,7 +371,8 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 if ("04-deployment.yaml".equals(f.getName())) {
                     String dockerOrg = System.getenv().getOrDefault("DOCKER_ORG", "strimzi");
                     String dockerTag = System.getenv().getOrDefault("DOCKER_TAG", "latest");
-                    JsonNode containerNode = node.get("spec").get("template").get("spec").get("containers").get(0);
+                    ObjectNode containerNode = (ObjectNode) node.get("spec").get("template").get("spec").get("containers").get(0);
+                    containerNode.put("imagePullPolicy", "Always");
                     JsonNode ccImageNode = containerNode.get("image");
                     ((ObjectNode) containerNode).put("image", changeOrgAndTag(ccImageNode.asText(), dockerOrg, dockerTag));
                     for (JsonNode envVar : containerNode.get("env")) {
@@ -466,6 +491,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
             statement = withResources(testClass, statement);
             statement = withTopic(testClass, statement);
             statement = withNamespaces(testClass, statement);
+            statement = withLogging(testClass, statement);
         }
         return statement;
     }
@@ -526,4 +552,32 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         }
         return last;
     }
+
+
+    private Statement withLogging(Annotatable element, Statement statement) {
+        return new Bracket(statement) {
+            private long t0;
+            @Override
+            protected void before() {
+                t0 = System.currentTimeMillis();
+                LOGGER.info("Starting {}", name(element));
+            }
+
+            @Override
+            protected void after() {
+                LOGGER.info("Finished {}: took {}",
+                        name(element),
+                        duration(System.currentTimeMillis() - t0));
+            }
+        };
+    }
+
+    private static String duration(long millis) {
+        long ms = millis % 1_000;
+        long time = millis / 1_000;
+        long minutes = time / 60;
+        long seconds = time % 60;
+        return minutes + "m" + seconds + "." + ms + "s";
+    }
+
 }

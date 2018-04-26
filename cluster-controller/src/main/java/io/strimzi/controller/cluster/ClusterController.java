@@ -156,7 +156,7 @@ public class ClusterController extends AbstractVerticle {
                                     if (result.succeeded()) {
                                         log.info("{}: assembly reconciled", reconciliation);
                                     } else {
-                                        log.error("{}: Failed to reconcile", reconciliation);
+                                        log.error("{}: Failed to reconcile", reconciliation, result.cause());
                                     }
                                 });
                                 break;
