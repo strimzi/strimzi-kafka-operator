@@ -4,7 +4,7 @@
 
 java_build:
 	echo "Building JAR file ..."
-	mvn -q ${MVN_ARGS} install
+	mvn -q $(MVN_ARGS) verify
 
 java_clean:
 	echo "Cleaning Maven build ..."
