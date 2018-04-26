@@ -10,7 +10,7 @@ clean: java_clean
 
 java_build:
 	echo "Building JAR file ..."
-	mvn -DtrimStackTrace=false install
+	mvn -q -DtrimStackTrace=false install
 
 java_clean:
 	echo "Cleaning Maven build ..."
