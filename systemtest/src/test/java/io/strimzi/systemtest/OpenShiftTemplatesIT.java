@@ -8,6 +8,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.strimzi.test.JUnitGroup;
+import io.strimzi.test.JUnitGroupRule;
 import io.strimzi.test.Namespace;
 import io.strimzi.test.OpenShiftOnly;
 import io.strimzi.test.Resources;
@@ -15,6 +17,7 @@ import io.strimzi.test.StrimziRunner;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.Oc;
 import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -42,11 +45,15 @@ public class OpenShiftTemplatesIT {
     @ClassRule
     public static KubeClusterResource cluster = new KubeClusterResource();
 
+    @Rule
+    public JUnitGroupRule rule = new JUnitGroupRule();
+
     private ObjectMapper mapper = new ObjectMapper();
     private Oc oc = (Oc) cluster.client();
     private KubernetesClient client = new DefaultKubernetesClient();
 
     @Test
+    @JUnitGroup(value = {"acceptance"})
     public void testStrimziEphemeral() throws IOException {
         String clusterName = "foo";
         oc.newApp("strimzi-ephemeral", map("CLUSTER_NAME", clusterName,
@@ -63,6 +70,7 @@ public class OpenShiftTemplatesIT {
     }
 
     @Test
+    @JUnitGroup(value = {"acceptance"})
     public void testStrimziPersistent() throws IOException {
         String clusterName = "bar";
         oc.newApp("strimzi-persistent", map("CLUSTER_NAME", clusterName,
@@ -79,6 +87,7 @@ public class OpenShiftTemplatesIT {
     }
 
     @Test
+    @JUnitGroup(value = {"acceptance"})
     public void testStrimziEphemeralWithCustomParameters() {
         String clusterName = "test-ephemeral-with-custom-parameters";
         oc.newApp("strimzi-ephemeral", map("CLUSTER_NAME", clusterName,
@@ -104,6 +113,7 @@ public class OpenShiftTemplatesIT {
     }
 
     @Test
+    @JUnitGroup(value = {"acceptance"})
     public void testStrimziPersistentWithCustomParameters() throws IOException {
         String clusterName = "test-persistent-with-custom-parameters";
         oc.newApp("strimzi-persistent", map("CLUSTER_NAME", clusterName,
@@ -133,6 +143,7 @@ public class OpenShiftTemplatesIT {
     }
 
     @Test
+    @JUnitGroup(value = {"acceptance"})
     public void testConnect() {
         String clusterName = "test-connect";
         oc.newApp("strimzi-connect", map("CLUSTER_NAME", clusterName,
@@ -145,6 +156,7 @@ public class OpenShiftTemplatesIT {
     }
 
     @Test
+    @JUnitGroup(value = {"acceptance"})
     public void testS2i() {
         String clusterName = "test-s2i";
         oc.newApp("strimzi-connect-s2i", map("CLUSTER_NAME", clusterName,
@@ -157,6 +169,7 @@ public class OpenShiftTemplatesIT {
     }
 
     @Test
+    @JUnitGroup(value = {"acceptance"})
     public void testTopicController() {
         String topicName = "test-topic-cm";
         String mapName = "test-topic-cm-foo";
