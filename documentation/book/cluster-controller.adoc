@@ -1,0 +1,479 @@
+== Cluster Controller
+
+The cluster controller is in charge of deploying a Kafka cluster alongside a Zookeeper ensemble. As part of the Kafka cluster,
+it can also deploy the topic controller which provides operator-style topic management via ConfigMaps.
+The cluster controller is also able to deploy a Kafka Connect cluster which connects to an existing Kafka cluster.
+On {OpenShiftName} such a cluster can be deployed using the Source2Image feature, providing an easy way of including more connectors.
+
+image::cluster_controller.png[Cluster Controller]
+
+When the cluster controller is up, it starts to "watch" for ConfigMaps containing the Kafka or Kafka Connect
+cluster configuration. Such ConfigMaps need to have a specific label which is, by default, `strimzi.io/kind=cluster`
+(as described <<Format of the cluster ConfigMap,later>>) that can be changed through a corresponding environment variable.
+
+When a new ConfigMap is created in {ProductPlatformName} cluster, the controller gets the cluster configuration from
+its `data` section and starts creating a new Kafka or Kafka Connect cluster by creating the necessary {ProductPlatformName}
+resources, such as StatefulSets, ConfigMaps, Services etc.
+
+Every time the ConfigMap is updated by the user with some changes in the `data` section, the controller performs corresponding
+updates on the {ProductPlatformName} resources which make up the Kafka or Kafka Connect cluster. Resources are either patched
+or deleted and then re-created in order to make the Kafka or Kafka Connect cluster reflect the state of the cluster ConfigMap.
+This might cause a rolling update which might lead to service disruption.
+
+Finally, when the ConfigMap is deleted, the controller starts to un-deploy the cluster deleting all the related {ProductPlatformName}
+resources.
+
+=== Reconciliation
+
+Although the controller reacts to all notifications about the cluster ConfigMaps received from the {ProductPlatformName} cluster,
+if the controller is not running, or if a notification is not received for any reason, the ConfigMaps will get out of sync
+with the state of the running {ProductPlatformName} cluster.
+
+In order to handle failovers properly, a periodic reconciliation process is executed by the cluster controller so
+that it can compare the state of the ConfigMaps with the current cluster deployment in order to have
+a consistent state across all of them.
+
+[[config_map_details]]
+=== Format of the cluster ConfigMap
+
+The controller watches for ConfigMaps having the label `strimzi.io/kind=cluster` in order to find and get
+configuration for a Kafka or Kafka Connect cluster to deploy.
+
+In order to distinguish which "type" of cluster to deploy, Kafka or Kafka Connect, the controller checks the
+`strimzi.io/type` label which can have one of the the following values :
+
+* `kafka`: the ConfigMap provides configuration for a Kafka cluster (with Zookeeper ensemble) deployment
+* `kafka-connect`: the ConfigMap provides configuration for a Kafka Connect cluster deployment
+* `kafka-connect-s2i`: the ConfigMap provides configuration for a Kafka Connect cluster deployment using Build and Source2Image
+features (works only with {OpenShiftName})
+
+Whatever other labels are applied to the ConfigMap will also be applied to the {ProductPlatformName} resources making
+up the Kafka or Kafka Connect cluster. This provides a convenient mechanism for those resource to be labelled
+in whatever way the user requires.
+
+The `data` section of such ConfigMaps contains different keys depending on the "type" of deployment as described in the 
+following sections.
+
+[[kafka_config_map_details]]
+==== Kafka
+
+In order to configure a Kafka cluster deployment, it's possible to specify the following fields in the `data` section of 
+the related ConfigMap :
+
+* `kafka-nodes`: number of Kafka broker nodes. Default is 3
+* `kafka-image`: the Docker image to use for the Kafka brokers.
+Default is determined by the value of the
+`<<STRIMZI_DEFAULT_KAFKA_IMAGE,STRIMZI_DEFAULT_KAFKA_IMAGE>>`
+environment variable of the Cluster Controller.
+* `kafka-healthcheck-delay`: the initial delay for the liveness and readiness probes for each Kafka broker node. Default is 15
+* `kafka-healthcheck-timeout`: the timeout on the liveness and readiness probes for each Kafka broker node. Default is 5
+* `zookeeper-nodes`: number of Zookeeper nodes
+* `zookeeper-image`: the Docker image to use for the Zookeeper nodes.
+Default is determined by the value of the
+`<<STRIMZI_DEFAULT_ZOOKEEPER_IMAGE,STRIMZI_DEFAULT_ZOOKEEPER_IMAGE>>`
+environment variable of the Cluster Controller.
+* `zookeeper-healthcheck-delay`: the initial delay for the liveness and readiness probes for each Zookeeper node. Default is 15
+* `zookeeper-healthcheck-timeout`: the timeout on the liveness and readiness probes for each Zookeeper node. Default is 5
+* `KAFKA_DEFAULT_REPLICATION_FACTOR`: the default replication factors for automatically created topics. It sets the 
+`default.replication.factor` property in the properties configuration file used by Kafka broker nodes on startup. Default is 3
+* `KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR`: the replication factor for the offsets topic. It sets the  
+`offsets.topic.replication.factor` property in the properties configuration file used by Kafka broker nodes on startup. Default is 3
+* `KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR`: the replication factor for the transaction topic. It sets the 
+`transaction.state.log.replication.factor` property in the properties configuration file used by Kafka broker nodes on startup. Default is 3
+* `kafka-storage`: a JSON string representing the storage configuration for the Kafka broker nodes. See related section
+* `zookeeper-storage`: a JSON string representing the storage configuration for the Zookeeper nodes. See related section
+* `kafka-metrics-config`: a JSON string representing the JMX exporter configuration for exposing metrics from Kafka broker nodes.
+ Removing this field means having no metrics exposed.
+* `zookeeper-metrics-config`: a JSON string representing the JMX exporter configuration for exposing metrics from Zookeeper nodes.
+ Removing this field means having no metrics exposed.
+* `topic-controller-config`: a JSON string representing the topic controller configuration. See the <<topic_controller_json_config>>
+documentation for further details. More info about the topic controller in the related <<Topic Controller>> documentation page.
+ 
+The following is an example of a ConfigMap for a Kafka cluster.
+
+.Example Kafka cluster ConfigMap
+[source,yaml,options="nowrap",subs="attributes"]
+----
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-cluster
+  labels:
+    strimzi.io/kind: cluster
+    strimzi.io/type: kafka
+data:
+  kafka-nodes: "3"
+  kafka-image: "{DockerKafka}"
+  kafka-healthcheck-delay: "15"
+  kafka-healthcheck-timeout: "5"
+  zookeeper-nodes: "1"
+  zookeeper-image: "{DockerZookeeper}"
+  zookeeper-healthcheck-delay: "15"
+  zookeeper-healthcheck-timeout: "5"
+  KAFKA_DEFAULT_REPLICATION_FACTOR: "3"
+  KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "3"
+  KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "3"
+  kafka-storage: |-
+    { "type": "ephemeral" }
+  zookeeper-storage: |-
+    { "type": "ephemeral" }
+  kafka-metrics-config: |-
+    {
+      "lowercaseOutputName": true,
+      "rules": [
+          {
+            "pattern": "kafka.server<type=(.+), name=(.+)PerSec\\w*><>Count",
+            "name": "kafka_server_$1_$2_total"
+          },
+          {
+            "pattern": "kafka.server<type=(.+), name=(.+)PerSec\\w*, topic=(.+)><>Count",
+            "name": "kafka_server_$1_$2_total",
+            "labels":
+            {
+              "topic": "$3"
+            }
+          }
+      ]
+    }
+  zookeeper-metrics-config: |-
+    {
+      "lowercaseOutputName": true
+    }
+----
+
+The resources created by the cluster controller into the {ProductPlatformName} cluster will be the following :
+
+* `[cluster-name]-zookeeper` StatefulSet which is in charge to create the Zookeeper node pods
+* `[cluster-name]-kafka` StatefulSet which is in charge to create the Kafka broker pods
+* `[cluster-name]-zookeeper-headless` Service needed to have DNS resolve the Zookeeper pods IP addresses directly
+* `[cluster-name]-kafka-headless` Service needed to have DNS resolve the Kafka broker pods IP addresses directly
+* `[cluster-name]-zookeeper` Service used by Kafka brokers to connect to Zookeeper nodes as clients
+* `[cluster-name]-kafka` Service can be used as bootstrap servers for Kafka clients
+* `[cluster-name]-zookeeper-metrics-config` ConfigMap which contains the Zookeeper metrics configuration and mounted as
+a volume by the Zookeeper node pods
+* `[cluster-name]-kafka-metrics-config` ConfigMap which contains the Kafka metrics configuration and mounted as
+a volume by the Kafka broker pods
+
+===== Storage
+
+Both Kafka and Zookeeper save data to files.
+
+{ProductName} allows to save such data in an "ephemeral" way (using `emptyDir`) or in a "persistent-claim" way using persistent
+volumes.
+It's possible to provide the storage configuration in the related ConfigMap using a JSON string as value for the 
+`kafka-storage` and `zookeeper-storage` fields.
+
+IMPORTANT: The `kafka-storage` and `zookeeper-storage` fields can't be changed when the cluster is up.
+
+The JSON representation has a mandatory `type` field for specifying the type of storage to use ("ephemeral" or "persistent-claim").
+
+The "ephemeral" storage is really simple to configure and the related JSON string has the following structure.
+
+.Ephemeral storage JSON
+[source,json]
+----
+{ "type": "ephemeral" }
+
+----
+
+WARNING: If the Zookeeper cluster is deployed using "ephemeral" storage, the Kafka brokers can have problems dealing with
+Zookeeper node restarts which could happen via updates in the cluster ConfigMap.
+
+In case of "persistent-claim" type the following fields can be provided as well :
+
+* `size`: defines the size of the persistent volume claim (i.e 1Gi) - mandatory
+* `class` : the {ProductPlatformName} https://kubernetes.io/docs/concepts/storage/storage-classes/[storage class] to use
+for dynamic volume allocation - optional
+* `selector`: allows to select a specific persistent volume to use. It contains a `matchLabels` field which defines an
+inner JSON object with key:value representing labels for selecting such a volume - optional
+* `delete-claim`: boolean value which specifies if the persistent volume claim has to be deleted when the cluster is un-deployed.
+Default is `false` - optional
+
+.Persistent storage JSON with 1Gi as size
+[source,json]
+----
+{ "type": "persistent-claim", "size": "1Gi" }
+----
+
+This example demonstrates use of a storage class.
+
+.Persistent storage JSON using "storage class"
+[source,json]
+----
+{
+  "type": "persistent-claim",
+  "size": "1Gi",
+  "class": "my-storage-class"
+}
+----
+
+Finally, a selector can be used in order to select a specific labeled persistent volume which provides some needed features (i.e. an SSD)
+
+.Persistent storage JSON with "match labels" selector
+[source,json]
+----
+{
+  "type": "persistent-claim",
+  "size": "1Gi",
+  "selector":
+  {
+    "matchLabels":
+    {
+      "hdd-type": "ssd"
+    }
+  },
+  "delete-claim": true
+}
+----
+
+When the "persistent-claim" is used, other than the resources already described in the <<Kafka>> section, the following resources
+are generated :
+
+* `data-[cluster-name]-kafka-[idx]` Persistent Volume Claim for the volume used for storing data for the Kafka broker pod `[idx]`
+* `data-[cluster-name]-zookeeper-[idx]` Persistent Volume Claim for the volume used for storing data for the
+Zookeeper node pod `[idx]`
+
+===== Metrics
+
+Because {ProductName} uses the [JMX exporter](https://github.com/prometheus/jmx_exporter) in order to expose metrics
+on each node, the JSON string used for metrics configuration in the cluster ConfigMap reflects the related JMX exporter 
+configuration file. For this reason, you can find more information on how to use it in the corresponding GitHub repo.
+
+For more information about using the metrics with Prometheus and Grafana, see <<_metrics>>
+
+[[topic_controller_json_config]]
+===== Topic controller
+
+Alongside the Kafka cluster and the Zookeeper ensemble, the cluster controller can also deploy the topic controller.
+In order to do that, the `topic-controller-config` field has to be put into the data section of the cluster ConfigMap.
+This field is a JSON string containing the topic controller configuration.
+Without this field, the cluster controller doesn't deploy the topic controller. It is still possible to deploy the topic
+controller by creating appropriate {ProductPlatformName} resources.
+
+The JSON representation of the 'topic-controller-config` has no mandatory fields and if the value is an empty object
+(just "{ }"), the cluster controller will deploy the topic controller with a default configuration.
+
+The configurable fields are the following :
+
+`image`:: Docker image to use for the topic controller.
+Default is determined by the value of the
+`<<STRIMZI_DEFAULT_TOPIC_CONTROLLER_IMAGE,STRIMZI_DEFAULT_TOPIC_CONTROLLER_IMAGE>>`
+environment variable of the Cluster Controller.
+`watchedNamespace`:: The {ProductPlatformName} namespace in which the topic controller watches for topic ConfigMaps.
+Default is the namespace where the topic controller is running
+`reconciliationIntervalMs`:: The interval between periodic reconciliations in milliseconds. Default is 900000 (15 minutes).
+`zookeeperSessionTimeoutMs`:: The Zookeeper session timeout in milliseconds. Default is 20000 milliseconds (20 seconds).
+`topicMetadataMaxAttempts`:: The number of attempts for getting topics metadata from Kafka. The time between each attempt
+ is defined as an exponential back-off. You might want to increase this value when topic creation could take more time due
+ to its larger size (i.e. many partitions/replicas). Default `6`.
+
+.Example Topic Controller JSON configuration
+[source,json]
+----
+{ "reconciliationIntervalMs": "900000", "zookeeperSessionTimeoutMs": "20000" }
+----
+
+More information about these configuration parameters in the related <<Topic Controller>> documentation page.
+
+[[kafka_connect_config_map_details]]
+==== Kafka Connect
+
+In order to configure a Kafka Connect cluster deployment, it's possible to specify the following fields in the `data` section of 
+the related ConfigMap:
+
+* `nodes`: number of Kafka Connect worker nodes. Default is 1
+* `image`: the Docker image to use for the Kafka Connect workers.
+Default is determined by the value of the
+`<<STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE,STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE>>`
+environment variable of the Cluster Controller.
+If S2I is used (only on {OpenShiftName}), then it should be the related S2I image.
+* `healthcheck-delay`: the initial delay for the liveness and readiness probes for each Kafka Connect worker node. Default is 60
+* `healthcheck-timeout`: the timeout on the liveness and readiness probes for each Kafka Connect worker node. Default is 5
+* `KAFKA_CONNECT_BOOTSTRAP_SERVERS`: a list of host/port pairs to use for establishing the initial connection to the Kafka cluster.
+It sets the `bootstrap.servers` property in the properties configuration file used by Kafka Connect worker nodes on startup.
+Default is `my-cluster-kafka:9092`
+* `KAFKA_CONNECT_GROUP_ID`: a unique string that identifies the Connect cluster group this worker belongs to.
+It sets the `group.id` property in the properties configuration file used by Kafka Connect worker nodes on startup.
+Default is `my-connect-cluster`
+* `KAFKA_CONNECT_KEY_CONVERTER`: converter class used to convert keys between Kafka Connect format and the serialized form 
+that is written to Kafka. It sets the `key.converter` property in the properties configuration file used by Kafka Connect 
+worker nodes on startup. Default is `org.apache.kafka.connect.json.JsonConverter`
+* `KAFKA_CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE`: if Kafka Connect transformation on keys are with or without schemas.
+It sets the `key.converter.schemas.enable` property in the properties configuration file used by Kafka Connect worker nodes on startup.
+Default is true
+* `KAFKA_CONNECT_VALUE_CONVERTER`: converter class used to convert values between Kafka Connect format and the serialized form 
+that is written to Kafka. It sets the `value.converter` property in the properties configuration file used by Kafka Connect 
+worker nodes on startup. Default is `org.apache.kafka.connect.json.JsonConverter`
+* `KAFKA_CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE`: if Kafka Connect transformation on values are with or without schemas.
+It sets the `value.converter.schemas.enable` property in the properties configuration file used by Kafka Connect worker nodes on startup.
+Default is true
+* `KAFKA_CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR`: replication factor used when creating the configuration storage topic.
+It sets the `config.storage.replication.factor` property in the properties configuration file used by Kafka Connect worker nodes on startup.
+Default is 3
+* `KAFKA_CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR`: replication factor used when creating the offset storage topic.
+It sets the `offset.storage.replication.factor` property in the properties configuration file used by Kafka Connect worker nodes on startup.
+Default is 3
+* `KAFKA_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR`: replication factor used when creating the status storage topic.
+It sets the `status.storage.replication.factor` property in the properties configuration file used by Kafka Connect worker nodes on startup.
+Default is 3
+
+The following is an example of cluster configuration ConfigMap is the following.
+
+.Example Kafka Connect cluster ConfigMap
+[source,yaml,options="nowrap",subs="attributes"]
+----
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-connect-cluster
+  labels:
+    strimzi.io/kind: cluster
+    strimzi.io/type: kafka-connect
+data:
+  nodes: "1"
+  image: "{DockerKafkaConnect}"
+  healthcheck-delay: "60"
+  healthcheck-timeout: "5"
+  KAFKA_CONNECT_BOOTSTRAP_SERVERS: "my-cluster-kafka:9092"
+  KAFKA_CONNECT_GROUP_ID: "my-connect-cluster"
+  KAFKA_CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+  KAFKA_CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE: "true"
+  KAFKA_CONNECT_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+  KAFKA_CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "true"
+  KAFKA_CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "3"
+  KAFKA_CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "3"
+  KAFKA_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "3"
+----
+
+The resources created by the cluster controller into the {ProductPlatformName} cluster will be the following :
+
+* [connect-cluster-name]-connect Deployment which is in charge to create the Kafka Connect worker node pods
+* [connect-cluster-name]-connect Service which exposes the REST interface for managing the Kafka Connect cluster
+
+=== Provisioning Role-Based Access Control (RBAC) for the controller
+
+For the controller to function it needs permission within the {ProductPlatformName} cluster to interact with
+the resources it manages (ConfigMaps, Pods, Deployments, StatefulSets, Services etc).
+Such permission is described in terms of {ProductPlatformName} role-based access controls.
+
+==== Using a ServiceAccount
+
+The controller is best run using a ServiceAccount:
+
+[source,yaml,options="nowrap"]
+.Example ServiceAccount for the Cluster Controller
+----
+include::../../examples/install/cluster-controller/01-service-account.yaml[]
+----
+
+The Deployment of the controller then needs to specify this in the `serviceAccountName` of its `template`´s
+ `spec`:
+
+[source,yaml,numbered,options="nowrap",highlight='12']
+.Partial example Deployment for the Cluster Controller
+----
+include::../../examples/install/cluster-controller/04-deployment.yaml[lines=1..13]
+# etc ...
+----
+
+Note line 12, where the the `strimzi-cluster-controller` ServiceAccount is specified as the `serviceAccountName`.
+
+==== Defining a Role
+
+The controller needs to operate using a Role that gives it access to the necessary resources
+
+[source,yaml,options="nowrap"]
+.Example Role for the Cluster Controller
+----
+include::../../examples/install/cluster-controller/02-role.yaml[]
+----
+
+
+==== Defining a RoleBinding
+
+Finally, the controller needs a RoleBinding which associates its Role with its ServiceAccount
+
+[source,yaml,options="nowrap"]
+.Example RoleBinding for the Cluster Controller
+----
+include::../../examples/install/cluster-controller/03-role-binding.yaml[]
+----
+
+=== Controller configuration
+
+The controller itself can be configured through the following environment variables.
+
+[[STRIMZI_NAMESPACE]] `STRIMZI_NAMESPACE`:: Required. A comma-separated list of namespaces that the controller should operate in. The Cluster Controller deployment might use the https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#the-downward-api[Kubernetes Downward API]
+to set this automatically to the namespace the Cluster Controller is deployed in. See the example below:
++
+[source,yaml,options="nowrap"]
+----
+env:
+  - name: STRIMZI_NAMESPACE
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.namespace
+----
+
+[[STRIMZI_FULL_RECONCILIATION_INTERVAL_MS]] `STRIMZI_FULL_RECONCILIATION_INTERVAL_MS`:: Optional, default: 120000 ms. The interval between periodic reconciliations, in milliseconds.
+
+
+[[STRIMZI_OPERATION_TIMEOUT_MS]] `STRIMZI_OPERATION_TIMEOUT_MS`:: Optional, default: 60000 ms. The timeout for internal operations, in milliseconds. This value should be
+increased when using Strimzi on clusters where regular {ProductPlatformName} operations take longer than usual (because of slow downloading of Docker images, for example).
+
+[[STRIMZI_DEFAULT_KAFKA_IMAGE]] `STRIMZI_DEFAULT_KAFKA_IMAGE`:: Optional, default `strimzi/kafka:latest`.
+The image name to use as a default when deploying Kafka, if
+no image is specified as the `kafka-image` in the <<kafka_config_map_details,Kafka cluster ConfigMap>>.
+
+[[STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE]] `STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE`:: Optional, default `strimzi/kafka-connect:latest`.
+The image name to use as a default when deploying Kafka Connect, if
+no image is specified as the `image` in the
+<<kafka_connect_config_map_details,Kafka Connect cluster ConfigMap>>.
+
+[[STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE]] `STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE`:: Optional, default `strimzi/kafka-connect-s2i:latest`.
+The image name to use as a default when deploying Kafka Connect S2I, if
+no image is specified as the `image` in the cluster ConfigMap.
+
+[[STRIMZI_DEFAULT_TOPIC_CONTROLLER_IMAGE]] `STRIMZI_DEFAULT_TOPIC_CONTROLLER_IMAGE`:: Optional, default `strimzi/topic-controller:latest`.
+The image name to use as a default when deploying the topic controller, if
+no image is specified as the `image` in the <<topic_controller_json_config,topic controller config>>
+of the Kafka cluster ConfigMap.
+
+[[STRIMZI_DEFAULT_ZOOKEEPER_IMAGE]] `STRIMZI_DEFAULT_ZOOKEEPER_IMAGE`:: Optional, default `strimzi/zookeeper:latest`.
+The image name to use as a default when deploying Zookeeper, if
+no image is specified as the `zookeeper-image` in the <<kafka_config_map_details,Kafka cluster ConfigMap>>.
+
+[[multi-namespace]]
+==== Watching multiple namespaces
+
+The `STRIMZI_NAMESPACE` environment variable can be used to configure a single controller instance
+to operate in multiple namespaces. For each namespace given, the controller will watch for cluster ConfigMaps
+and perform periodic reconciliation. To be able to do this, the controller's ServiceAccount needs
+access to the necessary resources in those other namespaces. This can be done by creating an additional
+RoleBinding in each of those namespaces, associating the controller's ServiceAccount
+(`strimzi-cluster-controller` in the examples) with the controller's
+Role (`strimzi-controller-role` in the examples).
+
+Suppose, for example, that a controller deployed in namespace `foo` needs to operate in namespace `bar`.
+The following RoleBinding would grant the necessary permissions:
+
+.Example RoleBinding for a controller to operate in namespace `bar`
+[source,yaml,options="nowrap"]
+----
+apiVersion: v1
+kind: RoleBinding
+metadata:
+  name: strimzi-cluster-controller-binding-bar
+  namespace: bar
+  labels:
+    app: strimzi
+subjects:
+  - kind: ServiceAccount
+    name: strimzi-cluster-controller
+    namespace: foo
+roleRef:
+  kind: Role
+  name: strimzi-cluster-controller-role
+  apiGroup: v1
+----
+
