@@ -30,7 +30,9 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Main {
     private static final Logger log = LoggerFactory.getLogger(Main.class.getName());
@@ -56,6 +58,7 @@ public class Main {
     }
 
     static CompositeFuture run(Vertx vertx, KubernetesClient client, boolean isOpenShift, ClusterControllerConfig config) {
+        printEnvInfo();
         ServiceOperator serviceOperations = new ServiceOperator(vertx, client);
         ZookeeperSetOperator zookeeperSetOperations = new ZookeeperSetOperator(vertx, client, config.getOperationTimeoutMs());
         KafkaSetOperator kafkaSetOperations = new KafkaSetOperator(vertx, client, config.getOperationTimeoutMs());
@@ -136,5 +139,14 @@ public class Main {
         });
 
         return fut;
+    }
+
+    static void printEnvInfo() {
+        Map<String, String> m = new HashMap<>(System.getenv());
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String, String> entry: m.entrySet()) {
+            sb.append("\t").append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
+        }
+        log.info("Using config:\n" + sb.toString());
     }
 }
