@@ -37,6 +37,8 @@ import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
+import static org.junit.Assert.assertThat;
+import static org.hamcrest.Matchers.isEmptyString;
 
 public class AbstractClusterIT {
 
@@ -182,7 +184,7 @@ public class AbstractClusterIT {
     public String consumeMessages(String clusterName, String topic, int groupID, int timeout, int kafkaPodID) {
 
         LOGGER.info("Consuming messages");
-        return  kubeClient.exec(kafkaPodName(clusterName, kafkaPodID), "/bin/bash", "-c",
+        return kubeClient.exec(kafkaPodName(clusterName, kafkaPodID), "/bin/bash", "-c",
                     "bin/kafka-verifiable-consumer.sh --broker-list " + clusterName +
                             "-kafka:9092 --topic " + topic + " --group-id " + groupID + " & sleep "
                             + timeout + "; kill %1").out();
@@ -234,5 +236,10 @@ public class AbstractClusterIT {
             result.add(asList(cmdLine.split("\0")));
         }
         return result;
+    }
+
+    void assertNoCcErrorsLogged() {
+        //TODO add blacklist for unexpected errors
+        assertThat(kubeClient.searchInLog("deploy", "strimzi-cluster-controller", "60", "Exception", "Error", "Throwable"), isEmptyString());
     }
 }

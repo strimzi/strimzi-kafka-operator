@@ -111,8 +111,8 @@ public class KafkaClusterIT extends AbstractClusterIT {
         List<Event> events = getEvents("Pod", newPodName);
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
         assertThat(events, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
-
-        // TODO Check logs for errors
+        //Test that CC doesn't have any exceptions in log
+        assertNoCcErrorsLogged();
 
         // scale down
         LOGGER.info("Scaling down");
@@ -131,8 +131,8 @@ public class KafkaClusterIT extends AbstractClusterIT {
         assertThat(getEvents("Pod", newPodName), hasAllOfReasons(Killing));
         //Test that stateful set has event 'SuccessfulDelete'
         assertThat(getEvents("StatefulSet", kafkaClusterName(CLUSTER_NAME)), hasAllOfReasons(SuccessfulDelete));
-
-        // TODO Check logs for errors
+        //Test that CC doesn't have any exceptions in log
+        assertNoCcErrorsLogged();
     }
 
     @Test
@@ -164,7 +164,6 @@ public class KafkaClusterIT extends AbstractClusterIT {
         waitForZkMntr(newZkPodName[0], Pattern.compile("zk_server_state\\s+(leader|follower)"));
         waitForZkMntr(newZkPodName[1], Pattern.compile("zk_server_state\\s+(leader|follower)"));
 
-        // TODO Check logs for errors
         //Test that first pod does not have errors or failures in events
         List<Event> eventsForFirstPod = getEvents("Pod", newZkPodName[0]);
         assertThat(eventsForFirstPod, hasAllOfReasons(Scheduled, Pulled, Created, Started));
@@ -174,6 +173,9 @@ public class KafkaClusterIT extends AbstractClusterIT {
         List<Event> eventsForSecondPod = getEvents("Pod", newZkPodName[1]);
         assertThat(eventsForSecondPod, hasAllOfReasons(Scheduled, Pulled, Created, Started));
         assertThat(eventsForSecondPod, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
+
+        //Test that CC doesn't have any exceptions in log
+        assertNoCcErrorsLogged();
 
         // scale down
         LOGGER.info("Scaling down");
@@ -186,7 +188,8 @@ public class KafkaClusterIT extends AbstractClusterIT {
         assertThat(getEvents("Pod", newZkPodName[1]), hasAllOfReasons(Killing));
         //Test that stateful set has event 'SuccessfulDelete'
         assertThat(getEvents("StatefulSet", zookeeperClusterName(CLUSTER_NAME)), hasAllOfReasons(SuccessfulDelete));
-        // TODO Check logs for errors
+        //Test that CC doesn't have any exceptions in log
+        assertNoCcErrorsLogged();
     }
 
     @Test

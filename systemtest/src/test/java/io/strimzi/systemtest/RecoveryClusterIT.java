@@ -45,6 +45,9 @@ public class RecoveryClusterIT extends AbstractClusterIT {
 
         LOGGER.info("Waiting for recovery {}", topicControllerDeploymentName);
         kubeClient.waitForDeployment(topicControllerDeploymentName);
+
+        //Test that CC doesn't have any exceptions in log
+        assertNoCcErrorsLogged();
     }
 
     @Test
@@ -58,6 +61,9 @@ public class RecoveryClusterIT extends AbstractClusterIT {
 
         LOGGER.info("Waiting for recovery {}", kafkaStatefulSetName);
         kubeClient.waitForStatefulSet(kafkaStatefulSetName, 1);
+
+        //Test that CC doesn't have any exceptions in log
+        assertNoCcErrorsLogged();
     }
 
     @Test
@@ -71,6 +77,9 @@ public class RecoveryClusterIT extends AbstractClusterIT {
 
         LOGGER.info("Waiting for recovery {}", zookeeperStatefulSetName);
         kubeClient.waitForStatefulSet(zookeeperStatefulSetName, 1);
+
+        //Test that CC doesn't have any exceptions in log
+        assertNoCcErrorsLogged();
     }
 
     @Test
@@ -83,6 +92,9 @@ public class RecoveryClusterIT extends AbstractClusterIT {
 
         LOGGER.info("Waiting for creation {}", kafkaServiceName);
         kubeClient.waitForResourceCreation(SERVICE, kafkaServiceName);
+
+        //Test that CC doesn't have any exceptions in log
+        assertNoCcErrorsLogged();
     }
 
     @Test
@@ -96,6 +108,9 @@ public class RecoveryClusterIT extends AbstractClusterIT {
 
         LOGGER.info("Waiting for creation {}", zookeeperServiceName);
         kubeClient.waitForResourceCreation(SERVICE, zookeeperServiceName);
+
+        //Test that CC doesn't have any exceptions in log
+        assertNoCcErrorsLogged();
     }
 
     @Test
@@ -108,6 +123,9 @@ public class RecoveryClusterIT extends AbstractClusterIT {
 
         LOGGER.info("Waiting for creation {}", kafkaHeadlessServiceName);
         kubeClient.waitForResourceCreation(SERVICE, kafkaHeadlessServiceName);
+
+        //Test that CC doesn't have any exceptions in log
+        assertNoCcErrorsLogged();
     }
 
     @Test
@@ -120,6 +138,9 @@ public class RecoveryClusterIT extends AbstractClusterIT {
 
         LOGGER.info("Waiting for creation {}", zookeeperHeadlessServiceName);
         kubeClient.waitForResourceCreation(SERVICE, zookeeperHeadlessServiceName);
+
+        //Test that CC doesn't have any exceptions in log
+        assertNoCcErrorsLogged();
     }
 
     @Test
@@ -133,6 +154,9 @@ public class RecoveryClusterIT extends AbstractClusterIT {
 
         LOGGER.info("Waiting for creation {}", kafkaMetricsConfigName);
         kubeClient.waitForResourceCreation(CM, kafkaMetricsConfigName);
+
+        //Test that CC doesn't have any exceptions in log
+        assertNoCcErrorsLogged();
     }
 
     @Test
@@ -146,5 +170,8 @@ public class RecoveryClusterIT extends AbstractClusterIT {
 
         LOGGER.info("Waiting for creation {}", zookeeperMetricsConfigName);
         kubeClient.waitForResourceCreation(CM, zookeeperMetricsConfigName);
+
+        //Test that CC doesn't have any exceptions in log
+        assertNoCcErrorsLogged();
     }
 }
