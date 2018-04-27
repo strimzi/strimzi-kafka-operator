@@ -40,7 +40,6 @@ import static org.junit.Assert.fail;
 import static org.junit.Assert.assertThat;
 import static org.hamcrest.Matchers.isEmptyString;
 
-
 public class AbstractClusterIT {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractClusterIT.class);
@@ -141,7 +140,7 @@ public class AbstractClusterIT {
         TestUtils.waitFor("mntr", pollMs, timeoutMs, () -> {
             try {
                 String output = kubeClient.exec(pod,
-                        "/bin/bash", "-c", "echo mntr | nc localhost 2181").out();
+                    "/bin/bash", "-c", "echo mntr | nc localhost 2181").out();
 
                 if (pattern.matcher(output).find()) {
                     return true;
