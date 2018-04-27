@@ -56,9 +56,9 @@ import static org.junit.Assert.assertNull;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(VertxUnitRunnerWithParametersFactory.class)
-public class KafkaAssemblyOperatorMockIT {
+public class KafkaAssemblyOperatorMockTest {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaAssemblyOperatorMockIT.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaAssemblyOperatorMockTest.class);
 
     private static final String NAMESPACE = "my-namespace";
     private static final String CLUSTER_NAME = "my-cluster";
@@ -99,7 +99,7 @@ public class KafkaAssemblyOperatorMockIT {
     }
 
     @Parameterized.Parameters(name = "{0}")
-    public static Iterable<KafkaAssemblyOperatorMockIT.Params> data() {
+    public static Iterable<KafkaAssemblyOperatorMockTest.Params> data() {
         int[] replicas = {1, 3};
         JsonObject[] storageConfigs = {
             new JsonObject("{\"type\": \"ephemeral\"}"),
@@ -121,14 +121,14 @@ public class KafkaAssemblyOperatorMockIT {
         String[] resources = {
             "{ \"limits\" : { \"cpu\": 5, \"memory\": 5000 }, \"requests\": { \"cpu\": 5, \"memory\": 5000 } }"
         };
-        List<KafkaAssemblyOperatorMockIT.Params> result = new ArrayList();
+        List<KafkaAssemblyOperatorMockTest.Params> result = new ArrayList();
 
         for (int zkReplica : replicas) {
             for (JsonObject zkStorage : storageConfigs) {
                 for (int kafkaReplica : replicas) {
                     for (JsonObject kafkaStorage : storageConfigs) {
                         for (String resource : resources) {
-                            result.add(new KafkaAssemblyOperatorMockIT.Params(
+                            result.add(new KafkaAssemblyOperatorMockTest.Params(
                                     zkReplica, zkStorage,
                                     kafkaReplica, kafkaStorage, resource));
                         }
@@ -140,7 +140,7 @@ public class KafkaAssemblyOperatorMockIT {
         return result;
     }
 
-    public KafkaAssemblyOperatorMockIT(KafkaAssemblyOperatorMockIT.Params params) {
+    public KafkaAssemblyOperatorMockTest(KafkaAssemblyOperatorMockTest.Params params) {
         this.zkReplicas = params.zkReplicas;
         this.zkStorage = params.zkStorage;
 
