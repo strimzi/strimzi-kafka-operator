@@ -108,5 +108,7 @@ The release process should normally look like this:
 5. Push the changes to the release branch on GitHub
 6. Create the tag and push it to GitHub. Tag name determines the tag of the resulting Docker images. Therefore the Git 
 tag name has to be the same as the `RELEASE_VERSION`,
-7. Once the CI build for the tag is finished and the Docker imaghes are pushed to Docker Hub, Create a GitHub release 
-and tag based on the release branch. Attach the TAR.GZ and ZIP archives to the release
+7. Once the CI build for the tag is finished and the Docker images are pushed to Docker Hub, Create a GitHub release and tag based on the release branch. 
+Attach the TAR.GZ and ZIP archives to the release
+8. On the `master` git branch, update the versions to the next SNAPSHOT version using the `next_version` `make` target. 
+For example to update the next version to `0.6.0-SNAPSHOT` run: `make NEXT_VERSION=0.6.0-SNAPSHOT next_version`.
