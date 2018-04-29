@@ -6,7 +6,6 @@ package io.strimzi.systemtest;
 
 import io.strimzi.test.ClusterController;
 import io.strimzi.test.EnvVariables;
-import io.strimzi.test.IgnoreIfDef;
 import io.strimzi.test.JUnitGroup;
 import io.strimzi.test.KafkaCluster;
 import io.strimzi.test.Namespace;
@@ -22,7 +21,7 @@ import static io.strimzi.test.k8s.BaseKubeClient.SERVICE;
 import static io.strimzi.test.k8s.BaseKubeClient.STATEFUL_SET;
 
 @RunWith(StrimziRunner.class)
-@IgnoreIfDef("TRAVIS")
+@JUnitGroup(name = "regression")
 @Namespace(RecoveryClusterIT.NAMESPACE)
 @ClusterController(envVariables = {
     @EnvVariables(key = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS", value = "10000"),
@@ -36,7 +35,6 @@ public class RecoveryClusterIT extends AbstractClusterIT {
     private static final Logger LOGGER = LoggerFactory.getLogger(RecoveryClusterIT.class);
 
     @Test
-    @JUnitGroup(value = {"regression"})
     public void testRecoveryFromTopicControllerDeletion() {
         // kafka cluster already deployed via annotation
         String topicControllerDeploymentName = topicControllerDeploymentName(CLUSTER_NAME);
@@ -53,7 +51,6 @@ public class RecoveryClusterIT extends AbstractClusterIT {
     }
 
     @Test
-    @JUnitGroup(value = {"regression"})
     public void testRecoveryFromKafkaStatefulSetDeletion() {
         // kafka cluster already deployed via annotation
         String kafkaStatefulSetName = kafkaClusterName(CLUSTER_NAME);
@@ -70,7 +67,6 @@ public class RecoveryClusterIT extends AbstractClusterIT {
     }
 
     @Test
-    @JUnitGroup(value = {"regression"})
     public void testRecoveryFromZookeeperStatefulSetDeletion() {
         // kafka cluster already deployed via annotation
         String zookeeperStatefulSetName = zookeeperClusterName(CLUSTER_NAME);
@@ -87,7 +83,6 @@ public class RecoveryClusterIT extends AbstractClusterIT {
     }
 
     @Test
-    @JUnitGroup(value = {"regression"})
     public void testRecoveryFromKafkaServiceDeletion() {
         // kafka cluster already deployed via annotation
         String kafkaServiceName = kafkaClusterName(CLUSTER_NAME);
@@ -103,7 +98,6 @@ public class RecoveryClusterIT extends AbstractClusterIT {
     }
 
     @Test
-    @JUnitGroup(value = {"regression"})
     public void testRecoveryFromZookeeperServiceDeletion() {
         // kafka cluster already deployed via annotation
         String zookeeperServiceName = zookeeperClusterName(CLUSTER_NAME);
@@ -120,7 +114,6 @@ public class RecoveryClusterIT extends AbstractClusterIT {
     }
 
     @Test
-    @JUnitGroup(value = {"regression"})
     public void testRecoveryFromKafkaHeadlessServiceDeletion() {
         // kafka cluster already deployed via annotation
         String kafkaHeadlessServiceName = kafkaHeadlessServiceName(CLUSTER_NAME);
@@ -136,7 +129,6 @@ public class RecoveryClusterIT extends AbstractClusterIT {
     }
 
     @Test
-    @JUnitGroup(value = {"regression"})
     public void testRecoveryFromZookeeperHeadlessServiceDeletion() {
         // kafka cluster already deployed via annotation
         String zookeeperHeadlessServiceName = zookeeperHeadlessServiceName(CLUSTER_NAME);
@@ -152,7 +144,6 @@ public class RecoveryClusterIT extends AbstractClusterIT {
     }
 
     @Test
-    @JUnitGroup(value = {"regression"})
     public void testRecoveryFromKafkaMetricsConfigDeletion() {
         // kafka cluster already deployed via annotation
         String kafkaMetricsConfigName = kafkaMetricsConfigName(CLUSTER_NAME);
@@ -169,7 +160,6 @@ public class RecoveryClusterIT extends AbstractClusterIT {
     }
 
     @Test
-    @JUnitGroup(value = {"regression"})
     public void testRecoveryFromZookeeperMetricsConfigDeletion() {
         // kafka cluster already deployed via annotation
         String zookeeperMetricsConfigName = zookeeperMetricsConfigName(CLUSTER_NAME);

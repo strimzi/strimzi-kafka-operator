@@ -10,7 +10,6 @@ import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.test.ClusterController;
 import io.strimzi.test.CmData;
-import io.strimzi.test.IgnoreIfDef;
 import io.strimzi.test.JUnitGroup;
 import io.strimzi.test.KafkaCluster;
 import io.strimzi.test.Namespace;
@@ -69,8 +68,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
     }
 
     @Test
-    @JUnitGroup(value = {"acceptance"})
-    @IgnoreIfDef("TRAVIS")
+    @JUnitGroup(name = "regression")
     @OpenShiftOnly
     @Resources(value = "../examples/templates/cluster-controller", asAdmin = true)
     public void testDeployKafkaClusterViaTemplate() {
@@ -85,7 +83,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
     }
 
     @Test
-    @JUnitGroup(value = {"acceptance"})
+    @JUnitGroup(name = "acceptance")
     @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 3, zkNodes = 1)
     public void testKafkaAndZookeeperScaleUpScaleDown() {
         // kafka cluster already deployed via annotation
@@ -142,8 +140,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
     }
 
     @Test
-    @JUnitGroup(value = {"acceptance"})
-    @IgnoreIfDef("TRAVIS")
+    @JUnitGroup(name = "regression")
     @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 1, zkNodes = 1)
     public void testZookeeperScaleUpScaleDown() {
         // kafka cluster already deployed via annotation
@@ -200,8 +197,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
     }
 
     @Test
-    @JUnitGroup(value = {"regression"})
-    @IgnoreIfDef("TRAVIS")
+    @JUnitGroup(name = "regression")
     @KafkaCluster(name = "my-cluster", kafkaNodes = 2, zkNodes = 2, config = {
             @CmData(key = "zookeeper-healthcheck-delay", value = "30"),
             @CmData(key = "zookeeper-healthcheck-timeout", value = "10"),
@@ -293,7 +289,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
     }
 
     @Test
-    @JUnitGroup(value = {"regression"})
+    @JUnitGroup(name = "acceptance")
     @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 3, config = {
             @CmData(key = "kafka-config", value = "{\"default.replication.factor\": 1,\"offsets.topic.replication.factor\": 1,\"transaction.state.log.replication.factor\": 1}")
             })
@@ -328,7 +324,9 @@ public class KafkaClusterIT extends AbstractClusterIT {
                     value = "{\"resources\": { \"limits\": {\"memory\": \"500M\", \"cpu\": \"300m\"}, " +
                             "\"requests\": {\"memory\": \"500M\", \"cpu\": \"300m\"} } }")
     })
+
     @Test
+    @JUnitGroup(name = "acceptance")
     public void testJvmAndResources() {
         assertResources(NAMESPACE, "jvm-resource-cluster-kafka-0",
                 "2Gi", "400m", "2Gi", "400m");

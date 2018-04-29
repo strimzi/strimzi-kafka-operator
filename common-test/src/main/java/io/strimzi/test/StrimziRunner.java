@@ -31,6 +31,9 @@ import java.lang.annotation.Repeatable;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -75,7 +78,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
             return true;
         } else {
             return isWrongClusterType(getTestClass(), child) || isWrongClusterType(child, child)
-                    || isIgnoredByEnvVar(getTestClass(), child) || isIgnoredByEnvVar(child, child);
+                    || isIgnoredByTestGroup(getTestClass(), child) || isIgnoredByTestGroup(child, child);
         }
     }
 
@@ -89,14 +92,55 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         return result;
     }
 
-    private boolean isIgnoredByEnvVar(Annotatable annotated, FrameworkMethod test) {
-        IgnoreIfDef anno = annotated.getAnnotation(IgnoreIfDef.class);
-        boolean result = anno != null
-                && System.getenv(anno.value()) != null;
-        if (result) {
-            LOGGER.info("{} is @IgnoreIfDef, and {} has value {}: Ignoring {}", name(annotated), anno.value(), System.getenv(anno.value()), name(test));
+    private boolean isIgnoredByTestGroup(Annotatable annotated, FrameworkMethod test) {
+        JUnitGroup testGroup = annotated.getAnnotation(JUnitGroup.class);
+        if (testGroup == null) {
+            return false;
         }
-        return result;
+        Collection<String> enabledGroups = getEnabledGroups(testGroup.key());
+        Collection<String> declaredGroups = getDeclaredGroups(testGroup);
+        if (isGroupEnabled(enabledGroups, declaredGroups)) {
+            LOGGER.info("None of the test groups {} are enabled for method {}. Enabled test groups: {}",
+                    declaredGroups, test.getName(), enabledGroups);
+            return false;
+        }
+        return true;
+    }
+
+    private static Collection<String> getEnabledGroups(String key) {
+        Collection<String> enabledGroups = splitProperties(System.getProperty(key));
+        return enabledGroups;
+    }
+
+    private static Collection<String> getDeclaredGroups(JUnitGroup testGroup) {
+        String[] declaredGroups = testGroup.name();
+        return new HashSet<>(Arrays.asList(declaredGroups));
+    }
+
+    private static Collection<String> splitProperties(String commaSeparated) {
+        if (commaSeparated == null || commaSeparated.trim().isEmpty()) {
+            return Collections.emptySet();
+        }
+        return new HashSet<>(Arrays.asList(commaSeparated.split(",+")));
+    }
+
+    /**
+     * A test group is enabled if {@link JUnitGroup#ALL_GROUPS} is defined or
+     * the declared test groups contain at least one defined test group
+     * @param enabledGroups Test groups that are enabled for execution.
+     * @param declaredGroups Test groups that are declared in the {@link JUnitGroup} annotation.
+     * @return boolean name with actual status
+     */
+    private static boolean isGroupEnabled(Collection<String> enabledGroups, Collection<String> declaredGroups) {
+        if (enabledGroups.contains(JUnitGroup.ALL_GROUPS) || (enabledGroups.isEmpty() && declaredGroups.isEmpty())) {
+            return true;
+        }
+        for (String enabledGroup : enabledGroups) {
+            if (declaredGroups.contains(enabledGroup)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

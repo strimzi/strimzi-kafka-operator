@@ -7,7 +7,6 @@ package io.strimzi.systemtest;
 import io.strimzi.test.ClusterController;
 import io.strimzi.test.CmData;
 import io.strimzi.test.ConnectCluster;
-import io.strimzi.test.IgnoreIfDef;
 import io.strimzi.test.JUnitGroup;
 import io.strimzi.test.KafkaCluster;
 import io.strimzi.test.Namespace;
@@ -35,8 +34,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
     public static final String BOOTSTRAP_SERVERS = KAFKA_CLUSTER_NAME + "-kafka:9092";
 
     @Test
-    @JUnitGroup(value = {"acceptance"})
-    @IgnoreIfDef("TRAVIS")
+    @JUnitGroup(name = "regression")
     @Resources(value = "../examples/templates/cluster-controller", asAdmin = true)
     @OpenShiftOnly
     public void testDeployConnectClusterViaTemplate() {
@@ -51,13 +49,14 @@ public class ConnectClusterIT extends AbstractClusterIT {
     }
 
     @Test
-    @JUnitGroup(value = {"acceptance"})
+    @JUnitGroup(name = "acceptance")
     @ConnectCluster(name = "my-cluster", bootstrapServers = BOOTSTRAP_SERVERS)
     public void testDeployUndeploy() {
         LOGGER.info("Looks like the connect cluster my-cluster deployed OK");
     }
 
     @Test
+    @JUnitGroup(name = "acceptance")
     @ConnectCluster(name = "jvm-resource", bootstrapServers = BOOTSTRAP_SERVERS,
         nodes = 1,
         config = {
