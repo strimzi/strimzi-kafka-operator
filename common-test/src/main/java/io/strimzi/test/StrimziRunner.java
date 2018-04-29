@@ -100,10 +100,12 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         Collection<String> enabledGroups = getEnabledGroups(testGroup.key());
         Collection<String> declaredGroups = getDeclaredGroups(testGroup);
         if (isGroupEnabled(enabledGroups, declaredGroups)) {
-            LOGGER.info("None of the test groups {} are enabled for method {}. Enabled test groups: {}",
-                    declaredGroups, test.getName(), enabledGroups);
+            LOGGER.info("Test group {} is enabled for method {}. Enabled test groups: {}",
+                declaredGroups, test.getName(), enabledGroups);
             return false;
         }
+        LOGGER.info("None of the test groups {} are enabled for method {}. Enabled test groups: {}",
+                declaredGroups, test.getName(), enabledGroups);
         return true;
     }
 
