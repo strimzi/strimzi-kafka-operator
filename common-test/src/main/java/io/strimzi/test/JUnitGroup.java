@@ -11,12 +11,10 @@ import java.lang.annotation.Target;
 
 /**
  * Annotation is intended for test methods for the ability to group test cases and execute certain types of groups on CI.
- * For using this annotation, need to define an instance of ({@link JUnitGroupRule}) as a ({@link org.junit.Rule})
- * for each test classes.
  *
- * Availible types - acceptance, regression
+ * Availible types: acceptance, regression
  *
- * How to execute the expected group of system tests. Add system property "junitgroup" with following value:
+ * To execute an expected group of system tests need to add system property "junitgroup" with following value:
  * -Djunitgroup=integration - to execute one test group
  * -Djunitgroup=acceptance,regression - to execute many test groups
  * -Djunitgroup=all - to execute all test groups
