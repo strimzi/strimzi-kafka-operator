@@ -58,7 +58,7 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator {
         String namespace = reconciliation.namespace();
         String name = reconciliation.assemblyName();
         KafkaConnectCluster connect = KafkaConnectCluster.fromConfigMap(assemblyCm);
-        log.info("{}: Updating Kafka Connect cluster", reconciliation, name, namespace);
+        log.debug("{}: Updating Kafka Connect cluster", reconciliation, name, namespace);
         Future<Void> chainFuture = Future.future();
         deploymentOperations.scaleDown(namespace, connect.getName(), connect.getReplicas())
                 .compose(scale -> serviceOperations.reconcile(namespace, connect.getName(), connect.generateService()))

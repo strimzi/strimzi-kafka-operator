@@ -93,7 +93,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
     private final Future<Void> createOrUpdateKafka(Reconciliation reconciliation, ConfigMap assemblyCm) {
         String namespace = assemblyCm.getMetadata().getNamespace();
         String name = assemblyCm.getMetadata().getName();
-        log.info("{}: create/update kafka {}", reconciliation, name);
+        log.debug("{}: create/update kafka {}", reconciliation, name);
         KafkaCluster kafka = KafkaCluster.fromConfigMap(assemblyCm);
         Service service = kafka.generateService();
         Service headlessService = kafka.generateHeadlessService();
@@ -125,7 +125,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
     private final Future<CompositeFuture> deleteKafka(Reconciliation reconciliation) {
         String namespace = reconciliation.namespace();
         String name = reconciliation.assemblyName();
-        log.info("{}: delete kafka {}", reconciliation, name);
+        log.debug("{}: delete kafka {}", reconciliation, name);
         StatefulSet ss = kafkaSetOperations.get(namespace, KafkaCluster.kafkaClusterName(name));
 
         final KafkaCluster kafka = ss == null ? null : KafkaCluster.fromAssembly(ss, namespace, name);
@@ -151,7 +151,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
     private final Future<Void> createOrUpdateZk(Reconciliation reconciliation, ConfigMap assemblyCm) {
         String namespace = assemblyCm.getMetadata().getNamespace();
         String name = assemblyCm.getMetadata().getName();
-        log.info("{}: create/update zookeeper {}", reconciliation, name);
+        log.debug("{}: create/update zookeeper {}", reconciliation, name);
         ZookeeperCluster zk = ZookeeperCluster.fromConfigMap(assemblyCm);
         Service service = zk.generateService();
         Service headlessService = zk.generateHeadlessService();
@@ -180,7 +180,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
     private final Future<CompositeFuture> deleteZk(Reconciliation reconciliation) {
         String namespace = reconciliation.namespace();
         String name = reconciliation.assemblyName();
-        log.info("{}: delete zookeeper {}", reconciliation, name);
+        log.debug("{}: delete zookeeper {}", reconciliation, name);
         StatefulSet ss = zkSetOperations.get(namespace, ZookeeperCluster.zookeeperClusterName(name));
         ZookeeperCluster zk = ss == null ? null : ZookeeperCluster.fromAssembly(ss, namespace, name);
         boolean deleteClaims = zk != null && zk.getStorage().type() == Storage.StorageType.PERSISTENT_CLAIM
@@ -204,7 +204,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
     private final Future<ReconcileResult<Void>> createOrUpdateTopicController(Reconciliation reconciliation, ConfigMap assemblyCm) {
         String namespace = assemblyCm.getMetadata().getNamespace();
         String name = assemblyCm.getMetadata().getName();
-        log.info("{}: create/update topic controller {}", reconciliation, name);
+        log.debug("{}: create/update topic controller {}", reconciliation, name);
         TopicController topicController = TopicController.fromConfigMap(assemblyCm);
         Deployment deployment = topicController != null ? topicController.generateDeployment() : null;
         return deploymentOperations.reconcile(namespace, topicControllerName(name), deployment);
@@ -213,7 +213,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
     private final Future<ReconcileResult<Void>> deleteTopicController(Reconciliation reconciliation) {
         String namespace = reconciliation.namespace();
         String name = reconciliation.assemblyName();
-        log.info("{}: delete topic controller {}", reconciliation, name);
+        log.debug("{}: delete topic controller {}", reconciliation, name);
         return deploymentOperations.reconcile(namespace, topicControllerName(name), null);
     };
 
