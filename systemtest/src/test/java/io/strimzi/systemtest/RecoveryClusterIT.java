@@ -6,7 +6,7 @@ package io.strimzi.systemtest;
 
 import io.strimzi.test.ClusterController;
 import io.strimzi.test.EnvVariables;
-import io.strimzi.test.IgnoreIfDef;
+import io.strimzi.test.JUnitGroup;
 import io.strimzi.test.KafkaCluster;
 import io.strimzi.test.Namespace;
 import io.strimzi.test.StrimziRunner;
@@ -21,7 +21,7 @@ import static io.strimzi.test.k8s.BaseKubeClient.SERVICE;
 import static io.strimzi.test.k8s.BaseKubeClient.STATEFUL_SET;
 
 @RunWith(StrimziRunner.class)
-@IgnoreIfDef("TRAVIS")
+@JUnitGroup(name = "regression")
 @Namespace(RecoveryClusterIT.NAMESPACE)
 @ClusterController(envVariables = {
     @EnvVariables(key = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS", value = "10000"),
