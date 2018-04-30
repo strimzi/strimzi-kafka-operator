@@ -310,6 +310,6 @@ for "topic ConfigMaps" which are those with the following labels:
 strimzi.io/cluster: <cluster-name>
 strimzi.io/kind: topic
 
-When the Topic Controller is deployed manually the `strimzi.io/cluster` label is not necessary.
+NOTE: When the Topic Controller is deployed manually the `strimzi.io/cluster` label is not necessary.
 
 The topic ConfigMap contains the topic configuration in a specific format. The ConfigMap format is described in <<topic_config_map_details>>.

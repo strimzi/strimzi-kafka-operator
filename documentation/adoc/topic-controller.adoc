@@ -109,11 +109,14 @@ metadata:
   name: orders
   labels:
     strimzi.io/kind: topic
+    strimzi.io/cluster: my-cluster
 data:
   name: orders
   partitions: "10"
   replicas: "2"
 ----
+
+NOTE: When the Topic Controller is deployed manually the `strimzi.io/cluster` label is not necessary.
 
 Because the `config` key is omitted from the `data` the topic's config will be empty, and thus default to the 
 Kafka broker default.
@@ -146,6 +149,7 @@ metadata:
   name: orders
   labels:
     strimzi.io/kind: topic
+    strimzi.io/cluster: my-cluster
 data:
   name: orders
   partitions: "10"
