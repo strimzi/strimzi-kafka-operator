@@ -743,16 +743,16 @@ custom plugins into this directory:</p>
 <h5 id="create_a_new_image_based_on_our_base_image">Create a new image based on our base image</h5>
 <div class="paragraph">
 <p>AMQ Streams on OpenShift provides its own Docker image for running Kafka Connect which can be found on <a href="https://access.redhat.com/containers/">Red Hat Container Catalog</a> as
-<code>jboss-amqstreams-1/amqstreams10-kafkaconnect-openshift:1.0</code>. This image could be used as a base image for
+<code>jboss-amqstreams-1-tech-preview/amqstreams10-kafkaconnect-openshift:1.0</code>. This image could be used as a base image for
 building a new custom image with additional plugins. The following steps describe the process for creating such a custom image:</p>
 </div>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>Create a new <code>Dockerfile</code> which uses <code>jboss-amqstreams-1/amqstreams10-kafkaconnect-openshift:1.0</code> as the base image</p>
+<p>Create a new <code>Dockerfile</code> which uses <code>jboss-amqstreams-1-tech-preview/amqstreams10-kafkaconnect-openshift:1.0</code> as the base image</p>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-Dockerfile hljs" data-lang="Dockerfile">FROM jboss-amqstreams-1/amqstreams10-kafkaconnect-openshift:1.0
+<pre class="highlightjs highlight"><code class="language-Dockerfile hljs" data-lang="Dockerfile">FROM jboss-amqstreams-1-tech-preview/amqstreams10-kafkaconnect-openshift:1.0
 USER root:root
 COPY ./my-plugin/ /opt/kafka/plugins/
 USER kafka:kafka</code></pre>
@@ -784,7 +784,7 @@ new image when the Kafka Connect cluster is being deployed</p>
 new Docker images. OpenShift Build takes a builder image with S2I support together with source code and/or binaries
 provided by the user and uses them to build a new Docker image. The newly created Docker Image will be stored in
 OpenShift&#8217;s local Docker repository and can then be used in deployments. AMQ Streams on OpenShift provides a Kafka Connect builder
-image which can be found on <a href="https://access.redhat.com/containers/">Red Hat Container Catalog</a> as <code>jboss-amqstreams-1/amqstreams10-kafkaconnects2i-openshift:1.0</code> with such S2I support. It takes user-provided
+image which can be found on <a href="https://access.redhat.com/containers/">Red Hat Container Catalog</a> as <code>jboss-amqstreams-1-tech-preview/amqstreams10-kafkaconnects2i-openshift:1.0</code> with such S2I support. It takes user-provided
 binaries (with plugins and connectors) and creates a new Kafka Connect image. This enhanced Kafka Connect image can be
 used with our Kafka Connect deployment.</p>
 </div>
@@ -1104,11 +1104,11 @@ metadata:
     strimzi.io/type: kafka
 data:
   kafka-nodes: "3"
-  kafka-image: "jboss-amqstreams-1/amqstreams10-kafka-openshift:1.0"
+  kafka-image: "jboss-amqstreams-1-tech-preview/amqstreams10-kafka-openshift:1.0"
   kafka-healthcheck-delay: "15"
   kafka-healthcheck-timeout: "5"
   zookeeper-nodes: "1"
-  zookeeper-image: "jboss-amqstreams-1/amqstreams10-zookeeper-openshift:1.0"
+  zookeeper-image: "jboss-amqstreams-1-tech-preview/amqstreams10-zookeeper-openshift:1.0"
   zookeeper-healthcheck-delay: "15"
   zookeeper-healthcheck-timeout: "5"
   KAFKA_DEFAULT_REPLICATION_FACTOR: "3"
@@ -1454,7 +1454,7 @@ metadata:
     strimzi.io/type: kafka-connect
 data:
   nodes: "1"
-  image: "jboss-amqstreams-1/amqstreams10-kafkaconnect-openshift:1.0"
+  image: "jboss-amqstreams-1-tech-preview/amqstreams10-kafkaconnect-openshift:1.0"
   healthcheck-delay: "60"
   healthcheck-timeout: "5"
   KAFKA_CONNECT_BOOTSTRAP_SERVERS: "my-cluster-kafka:9092"

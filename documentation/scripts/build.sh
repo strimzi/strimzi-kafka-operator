@@ -5,11 +5,11 @@ asciidoctor -t -dbook \
     -a ProductPlatformName=OpenShift \
     -a ProductPlatformLongName="OpenShift Container Platform" \
     -a DockerRepository="https://access.redhat.com/containers/[Red Hat Container Catalog]" \
-    -a DockerZookeeper="jboss-amqstreams-1/amqstreams10-zookeeper-openshift:1.0" \
-    -a DockerKafka="jboss-amqstreams-1/amqstreams10-kafka-openshift:1.0" \
-    -a DockerKafkaConnect="jboss-amqstreams-1/amqstreams10-kafkaconnect-openshift:1.0" \
-    -a DockerKafkaConnectS2I="jboss-amqstreams-1/amqstreams10-kafkaconnects2i-openshift:1.0" \
-    -a DockerTopicController="jboss-amqstreams-1/amqstreams10-topiccontroller-openshift:1.0" \
+    -a DockerZookeeper="jboss-amqstreams-1-tech-preview/amqstreams10-zookeeper-openshift:1.0" \
+    -a DockerKafka="jboss-amqstreams-1-tech-preview/amqstreams10-kafka-openshift:1.0" \
+    -a DockerKafkaConnect="jboss-amqstreams-1-tech-preview/amqstreams10-kafkaconnect-openshift:1.0" \
+    -a DockerKafkaConnectS2I="jboss-amqstreams-1-tech-preview/amqstreams10-kafkaconnects2i-openshift:1.0" \
+    -a DockerTopicController="jboss-amqstreams-1-tech-preview/amqstreams10-topiccontroller-openshift:1.0" \
     -a Kubernetes! \
     -a InstallationAppendix! \
     -a MetricsAppendix! \
