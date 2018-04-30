@@ -59,7 +59,7 @@ oc describe all
 
 === Kafka broker
 
-Strimzi uses StatefulSets feature of Kubernetes/OpenShift to deploy Kafka brokers.
+Strimzi uses the StatefulSets feature of Kubernetes/OpenShift to deploy Kafka brokers.
 With StatefulSets, the pods receive a unique name and network identity and that makes it easier to identify the
 individual Kafka broker pods and set their identity (broker ID). The deployment uses **regular** and **headless**
 services:
