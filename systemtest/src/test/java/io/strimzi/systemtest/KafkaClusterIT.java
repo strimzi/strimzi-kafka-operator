@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest;
 
-import com.jayway.jsonpath.JsonPath;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -25,7 +24,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
