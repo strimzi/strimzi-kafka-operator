@@ -97,7 +97,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         if (testGroup == null) {
             return false;
         }
-        Collection<String> enabledGroups = getEnabledGroups(testGroup.key());
+        Collection<String> enabledGroups = getEnabledGroups(testGroup.systemProperty());
         Collection<String> declaredGroups = getDeclaredGroups(testGroup);
         if (isGroupEnabled(enabledGroups, declaredGroups)) {
             LOGGER.info("Test group {} is enabled for method {}. Enabled test groups: {}",

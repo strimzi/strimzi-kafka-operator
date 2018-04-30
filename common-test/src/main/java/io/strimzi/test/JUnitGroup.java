@@ -23,11 +23,11 @@ import java.lang.annotation.Target;
 @Target({ElementType.METHOD, ElementType.TYPE})
 public @interface JUnitGroup {
 
-    String DEFAULT_KEY = "junitgroup";
+    String DEFAULT_PROPERTY = "junitgroup";
     String ALL_GROUPS = "all";
 
-    /** The name of the system property that allows to test groups. The default is {@value #DEFAULT_KEY}. */
-    String key() default DEFAULT_KEY;
+    /** The name of the system property that allows to test groups. The default is {@value #DEFAULT_PROPERTY}. */
+    String systemProperty() default DEFAULT_PROPERTY;
 
     /**
      * Name of the test group(s) to which a test belongs. If the name is not defined, the test will belong to the default
