@@ -11,6 +11,7 @@ several different targets mainly for building and pushing Docker images.
 - [Building everything](#building-everything)
 - [Pushing images to the cluster's Docker repo](#pushing-images-to-the-clusters-docker-repo)
 - [Release](#release)
+- [Running system tests](#running-system-tests)
 
 <!-- /TOC -->
 
@@ -112,3 +113,12 @@ tag name has to be the same as the `RELEASE_VERSION`,
 Attach the TAR.GZ and ZIP archives to the release
 8. On the `master` git branch, update the versions to the next SNAPSHOT version using the `next_version` `make` target. 
 For example to update the next version to `0.6.0-SNAPSHOT` run: `make NEXT_VERSION=0.6.0-SNAPSHOT next_version`.
+
+## Running system tests
+To execute an expected group of system tests need to add system property `junitgroup` with following value:
+
+`-Djunitgroup=integration` - to execute one test group
+`-Djunitgroup=acceptance,regression` - to execute many test groups
+`-Djunitgroup=all` - to execute all test groups
+
+If `junitgroup` system property isn't defined, all tests without an explicitly declared test group will be executed.
