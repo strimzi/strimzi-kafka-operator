@@ -182,20 +182,6 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         /** Runs after the test, even it if failed or the JVM can killed */
         protected abstract void after();
 
-        List<String> ccFirst(List<String> l) {
-            List<String> head = new ArrayList<>();
-            List<String> tail = new ArrayList<>();
-            for (String n : l) {
-                if (n.startsWith("strimzi-cluster-controller-")) {
-                    head.add(n);
-                } else {
-                    tail.add(n);
-                }
-            }
-            head.addAll(tail);
-            return head;
-        }
-
         protected void onError(Throwable t) {}
 
         @Override
@@ -250,23 +236,43 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
 
             @Override
             protected void onError(Throwable t) {
-                LOGGER.info("The test is failing/erroring due to {}, here's some diagnostic output{}{}",
-                        t, System.lineSeparator(), "----------------------------------------------------------------------");
-                for (String pod : ccFirst(kubeClient().list("pod"))) {
-                    LOGGER.info("Logs from pod {}:{}{}", pod, System.lineSeparator(), indent(kubeClient().logs(pod)));
-                }
-                for (String resourceType : asList("pod", "deployment", "statefulset", "cm")) {
-                    for (String resourceName : ccFirst(kubeClient().list(resourceType))) {
-                        LOGGER.info("Description of {} '{}':{}{}", resourceType, resourceName,
-                                System.lineSeparator(), indent(kubeClient().describe(resourceType, resourceName)));
-                    }
-                }
-
-                LOGGER.info("That's all the diagnostic info, the exception {} will now propagate and the test will fail{}{}",
-                        t,
-                        t, System.lineSeparator(), "----------------------------------------------------------------------");
+                logState(t);
             }
+
+
         };
+    }
+
+    private List<String> ccFirst(List<String> l) {
+        List<String> head = new ArrayList<>();
+        List<String> tail = new ArrayList<>();
+        for (String n : l) {
+            if (n.startsWith("strimzi-cluster-controller-")) {
+                head.add(n);
+            } else {
+                tail.add(n);
+            }
+        }
+        head.addAll(tail);
+        return head;
+    }
+
+    private void logState(Throwable t) {
+        LOGGER.info("The test is failing/erroring due to {}, here's some diagnostic output{}{}",
+                t, System.lineSeparator(), "----------------------------------------------------------------------");
+        for (String pod : ccFirst(kubeClient().list("pod"))) {
+            LOGGER.info("Logs from pod {}:{}{}", pod, System.lineSeparator(), indent(kubeClient().logs(pod)));
+        }
+        for (String resourceType : asList("pod", "deployment", "statefulset", "cm")) {
+            for (String resourceName : ccFirst(kubeClient().list(resourceType))) {
+                LOGGER.info("Description of {} '{}':{}{}", resourceType, resourceName,
+                        System.lineSeparator(), indent(kubeClient().describe(resourceType, resourceName)));
+            }
+        }
+
+        LOGGER.info("That's all the diagnostic info, the exception {} will now propagate and the test will fail{}{}",
+                t,
+                t, System.lineSeparator(), "----------------------------------------------------------------------");
     }
 
     private Statement withConnectClusters(Annotatable element,
@@ -334,10 +340,14 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     LOGGER.info("Creating kafka cluster '{}' before test per @KafkaCluster annotation on {}", cluster.name(), name(element));
                     // create cm
                     kubeClient().createContent(yaml);
-                    // wait for ss
-                    kubeClient().waitForStatefulSet(kafkaStatefulSetName, cluster.kafkaNodes());
-                    // wait fot TC
-                    kubeClient().waitForDeployment(tcDeploymentName);
+                    try {
+                        // wait for ss
+                        kubeClient().waitForStatefulSet(kafkaStatefulSetName, cluster.kafkaNodes());
+                        // wait fot TC
+                        kubeClient().waitForDeployment(tcDeploymentName);
+                    } catch (TimeoutException e) {
+                        logState(e);
+                    }
                 }
 
                 @Override
