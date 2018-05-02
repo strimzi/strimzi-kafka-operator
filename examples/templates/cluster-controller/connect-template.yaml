@@ -94,12 +94,22 @@ objects:
     image: "${IMAGE_REPO_NAME}/${IMAGE_NAME}:${IMAGE_TAG}"
     healthcheck-delay: "${HEALTHCHECK_DELAY}"
     healthcheck-timeout: "${HEALTHCHECK_TIMEOUT}"
-    KAFKA_CONNECT_BOOTSTRAP_SERVERS: "${KAFKA_CONNECT_BOOTSTRAP_SERVERS}"
-    KAFKA_CONNECT_GROUP_ID: "${KAFKA_CONNECT_GROUP_ID}"
-    KAFKA_CONNECT_KEY_CONVERTER: "${KAFKA_CONNECT_KEY_CONVERTER}"
-    KAFKA_CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE: "${KAFKA_CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE}"
-    KAFKA_CONNECT_VALUE_CONVERTER: "${KAFKA_CONNECT_VALUE_CONVERTER}"
-    KAFKA_CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "${KAFKA_CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE}"
-    KAFKA_CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "${KAFKA_CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR}"
-    KAFKA_CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "${KAFKA_CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR}"
-    KAFKA_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "${KAFKA_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR}"
+    connect-config: |-
+      {
+        "bootstrap-servers": "${KAFKA_CONNECT_BOOTSTRAP_SERVERS}",
+        "group.id": "${KAFKA_CONNECT_GROUP_ID}",
+        "offset.storage.topic": "${KAFKA_CONNECT_GROUP_ID}-offsets",
+        "config.storage.topic": "${KAFKA_CONNECT_GROUP_ID}-configs",
+        "status.storage.topic": "${KAFKA_CONNECT_GROUP_ID}-status",
+        "key.converter": "${KAFKA_CONNECT_KEY_CONVERTER}",
+        "value.converter": "${KAFKA_CONNECT_VALUE_CONVERTER}",
+        "key.converter.schemas.enable": "${KAFKA_CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE}",
+        "value.converter.schemas.enable": "${KAFKA_CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE}",
+        "internal.key.converter": "org.apache.kafka.connect.json.JsonConverter",
+        "internal.value.converter": "org.apache.kafka.connect.json.JsonConverter",
+        "internal.key.converter.schemas.enable": false,
+        "internal.value.converter.schemas.enable": false,
+        "config.storage.replication.factor": "${KAFKA_CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR}",
+        "offset.storage.replication.factor": "${KAFKA_CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR}",
+        "status.storage.replication.factor": "${KAFKA_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR}"
+      }
