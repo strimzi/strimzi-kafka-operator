@@ -14,12 +14,14 @@ import io.strimzi.test.OpenShiftOnly;
 import io.strimzi.test.Resources;
 import io.strimzi.test.StrimziRunner;
 import io.strimzi.test.k8s.Oc;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static io.strimzi.test.TestUtils.map;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(StrimziRunner.class)
 @Namespace(ConnectClusterIT.NAMESPACE)
@@ -31,7 +33,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
 
     public static final String NAMESPACE = "connect-cluster-test";
     public static final String KAFKA_CLUSTER_NAME = "connect-tests";
-    public static final String BOOTSTRAP_SERVERS = KAFKA_CLUSTER_NAME + "-kafka:9092";
+    public static final String CONNECT_CONFIG = "{\"bootstrap.servers\": \"" + KAFKA_CLUSTER_NAME + "-kafka:9092" + "\"}";
 
     @Test
     @JUnitGroup(name = "regression")
@@ -41,7 +43,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
         Oc oc = (Oc) this.kubeClient;
         String clusterName = "openshift-my-connect-cluster";
         oc.newApp("strimzi-connect", map("CLUSTER_NAME", clusterName,
-                "KAFKA_CONNECT_BOOTSTRAP_SERVERS", BOOTSTRAP_SERVERS));
+                "KEY_KAFKA_CONNECT_USER_CONFIGURATION", CONNECT_CONFIG));
         String deploymentName = clusterName + "-connect";
         oc.waitForDeployment(deploymentName);
         oc.deleteByName("cm", clusterName);
@@ -50,14 +52,20 @@ public class ConnectClusterIT extends AbstractClusterIT {
 
     @Test
     @JUnitGroup(name = "acceptance")
-    @ConnectCluster(name = "my-cluster", bootstrapServers = BOOTSTRAP_SERVERS)
+    @ConnectCluster(name = "my-cluster", connectConfig = CONNECT_CONFIG)
     public void testDeployUndeploy() {
         LOGGER.info("Looks like the connect cluster my-cluster deployed OK");
+
+        String podName = kubeClient.list("Pod").stream().filter(n -> n.startsWith("jvm-resource-connect-")).findFirst().get();
+        String kafkaPodJson = kubeClient.getResourceAsJson("pod", podName);
+
+        assertEquals(("bootstrap.servers=" + KAFKA_CLUSTER_NAME + "-kafka:9092\\n").replaceAll("\\p{P}", ""), getValueFromJson(kafkaPodJson,
+                globalVariableJsonPathBuilder("KAFKA_CONNECT_USER_CONFIGURATION")));
     }
 
     @Test
     @JUnitGroup(name = "acceptance")
-    @ConnectCluster(name = "jvm-resource", bootstrapServers = BOOTSTRAP_SERVERS,
+    @ConnectCluster(name = "jvm-resource", connectConfig = CONNECT_CONFIG,
         nodes = 1,
         config = {
                 @CmData(key = "resources", value = "{ \"limits\": {\"memory\": \"400M\", \"cpu\": 2}, " +

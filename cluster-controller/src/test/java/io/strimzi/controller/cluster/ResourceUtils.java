@@ -109,24 +109,13 @@ public class ResourceUtils {
      * Generate ConfigMap for Kafka Connect S2I cluster
      */
     public static ConfigMap createKafkaConnectS2IClusterConfigMap(String clusterCmNamespace, String clusterCmName, int replicas,
-                                                                  String image, int healthDelay, int healthTimeout, String bootstrapServers,
-                                                                  String groupID, int configReplicationFactor, int offsetReplicationFactor,
-                                                                  int statusReplicationFactor, String keyConverter, String valueConverter,
-                                                                  boolean keyConverterSchemas, boolean valuesConverterSchema) {
+                                                                  String image, int healthDelay, int healthTimeout, String connectConfig) {
         Map<String, String> cmData = new HashMap<>();
         cmData.put(KafkaConnectS2ICluster.KEY_IMAGE, image);
         cmData.put(KafkaConnectS2ICluster.KEY_REPLICAS, Integer.toString(replicas));
         cmData.put(KafkaConnectS2ICluster.KEY_HEALTHCHECK_DELAY, Integer.toString(healthDelay));
         cmData.put(KafkaConnectS2ICluster.KEY_HEALTHCHECK_TIMEOUT, Integer.toString(healthTimeout));
-        cmData.put(KafkaConnectS2ICluster.KEY_BOOTSTRAP_SERVERS, bootstrapServers);
-        cmData.put(KafkaConnectS2ICluster.KEY_GROUP_ID, groupID);
-        cmData.put(KafkaConnectS2ICluster.KEY_CONFIG_STORAGE_REPLICATION_FACTOR, Integer.toString(configReplicationFactor));
-        cmData.put(KafkaConnectS2ICluster.KEY_OFFSET_STORAGE_REPLICATION_FACTOR, Integer.toString(offsetReplicationFactor));
-        cmData.put(KafkaConnectS2ICluster.KEY_STATUS_STORAGE_REPLICATION_FACTOR, Integer.toString(statusReplicationFactor));
-        cmData.put(KafkaConnectS2ICluster.KEY_KEY_CONVERTER, keyConverter);
-        cmData.put(KafkaConnectS2ICluster.KEY_KEY_CONVERTER_SCHEMAS_EXAMPLE, Boolean.toString(keyConverterSchemas));
-        cmData.put(KafkaConnectS2ICluster.KEY_VALUE_CONVERTER, valueConverter);
-        cmData.put(KafkaConnectS2ICluster.KEY_VALUE_CONVERTER_SCHEMAS_EXAMPLE, Boolean.toString(valuesConverterSchema));
+        cmData.put(KafkaConnectS2ICluster.KEY_CONNECT_CONFIG, connectConfig);
 
         ConfigMap cm = createEmptyKafkaConnectS2IClusterConfigMap(clusterCmNamespace, clusterCmName);
         cm.setData(cmData);
@@ -156,24 +145,13 @@ public class ResourceUtils {
      * Generate ConfigMap for Kafka Connect cluster
      */
     public static ConfigMap createKafkaConnectClusterConfigMap(String clusterCmNamespace, String clusterCmName, int replicas,
-                                                                  String image, int healthDelay, int healthTimeout, String bootstrapServers,
-                                                                  String groupID, int configReplicationFactor, int offsetReplicationFactor,
-                                                                  int statusReplicationFactor, String keyConverter, String valueConverter,
-                                                                  boolean keyConverterSchemas, boolean valuesConverterSchema) {
+                                                                  String image, int healthDelay, int healthTimeout, String connectConfig) {
         Map<String, String> cmData = new HashMap<>();
         cmData.put(KafkaConnectCluster.KEY_IMAGE, image);
         cmData.put(KafkaConnectCluster.KEY_REPLICAS, Integer.toString(replicas));
         cmData.put(KafkaConnectCluster.KEY_HEALTHCHECK_DELAY, Integer.toString(healthDelay));
         cmData.put(KafkaConnectCluster.KEY_HEALTHCHECK_TIMEOUT, Integer.toString(healthTimeout));
-        cmData.put(KafkaConnectCluster.KEY_BOOTSTRAP_SERVERS, bootstrapServers);
-        cmData.put(KafkaConnectCluster.KEY_GROUP_ID, groupID);
-        cmData.put(KafkaConnectCluster.KEY_CONFIG_STORAGE_REPLICATION_FACTOR, Integer.toString(configReplicationFactor));
-        cmData.put(KafkaConnectCluster.KEY_OFFSET_STORAGE_REPLICATION_FACTOR, Integer.toString(offsetReplicationFactor));
-        cmData.put(KafkaConnectCluster.KEY_STATUS_STORAGE_REPLICATION_FACTOR, Integer.toString(statusReplicationFactor));
-        cmData.put(KafkaConnectCluster.KEY_KEY_CONVERTER, keyConverter);
-        cmData.put(KafkaConnectCluster.KEY_KEY_CONVERTER_SCHEMAS_EXAMPLE, Boolean.toString(keyConverterSchemas));
-        cmData.put(KafkaConnectCluster.KEY_VALUE_CONVERTER, valueConverter);
-        cmData.put(KafkaConnectCluster.KEY_VALUE_CONVERTER_SCHEMAS_EXAMPLE, Boolean.toString(valuesConverterSchema));
+        cmData.put(KafkaConnectCluster.KEY_CONNECT_CONFIG, connectConfig);
 
         ConfigMap cm = createEmptyKafkaConnectClusterConfigMap(clusterCmNamespace, clusterCmName);
         cm.setData(cmData);

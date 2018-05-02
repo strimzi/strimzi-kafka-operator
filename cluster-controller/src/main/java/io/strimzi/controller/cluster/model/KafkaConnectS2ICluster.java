@@ -96,8 +96,10 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
         kafkaConnect.setHealthCheckInitialDelay(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds());
         kafkaConnect.setHealthCheckTimeout(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds());
 
-        Map<String, String> vars = containerEnvVars(dep.getSpec().getTemplate().getSpec().getContainers().get(0));
-        kafkaConnect.setConfiguration(new KafkaConfiguration(vars.getOrDefault(KEY_KAFKA_CONNECT_USER_CONFIGURATION, "")));
+        String connectConfiguration = containerEnvVars(dep.getSpec().getTemplate().getSpec().getContainers().get(0)).get(KEY_KAFKA_CONNECT_USER_CONFIGURATION);
+        if (connectConfiguration != null) {
+            kafkaConnect.setConfiguration(new KafkaConfiguration(connectConfiguration));
+        }
 
         String sourceImage = sis.getSpec().getTags().get(0).getFrom().getName();
         kafkaConnect.setImage(sourceImage);

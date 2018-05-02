@@ -117,8 +117,10 @@ public class KafkaConnectCluster extends AbstractModel {
         kafkaConnect.setHealthCheckInitialDelay(container.getReadinessProbe().getInitialDelaySeconds());
         kafkaConnect.setHealthCheckTimeout(container.getReadinessProbe().getTimeoutSeconds());
 
-        Map<String, String> vars = containerEnvVars(container);
-        kafkaConnect.setConfiguration(new KafkaConfiguration(vars.getOrDefault(KEY_KAFKA_CONNECT_USER_CONFIGURATION, "")));
+        String connectConfiguration = containerEnvVars(container).get(KEY_KAFKA_CONNECT_USER_CONFIGURATION);
+        if (connectConfiguration != null) {
+            kafkaConnect.setConfiguration(new KafkaConfiguration(connectConfiguration));
+        }
 
         return kafkaConnect;
     }
