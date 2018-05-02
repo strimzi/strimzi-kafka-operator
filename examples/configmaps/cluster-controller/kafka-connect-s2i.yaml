@@ -7,7 +7,6 @@ metadata:
     strimzi.io/type: kafka-connect-s2i
 data:
   nodes: "1"
-  image: "strimzi/kafka-connect-s2i:latest"
   healthcheck-delay: "60"
   healthcheck-timeout: "5"
   connect-config: |-

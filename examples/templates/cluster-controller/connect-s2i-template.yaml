@@ -97,7 +97,7 @@ objects:
     healthcheck-timeout: "${HEALTHCHECK_TIMEOUT}"
     connect-config: |-
       {
-        "bootstrap-servers": "${KAFKA_CONNECT_BOOTSTRAP_SERVERS}",
+        "bootstrap.servers": "${KAFKA_CONNECT_BOOTSTRAP_SERVERS}",
         "group.id": "${KAFKA_CONNECT_GROUP_ID}",
         "offset.storage.topic": "${KAFKA_CONNECT_GROUP_ID}-offsets",
         "config.storage.topic": "${KAFKA_CONNECT_GROUP_ID}-configs",

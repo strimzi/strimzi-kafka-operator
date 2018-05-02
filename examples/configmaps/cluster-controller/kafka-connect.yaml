@@ -7,12 +7,11 @@ metadata:
     strimzi.io/type: kafka-connect
 data:
   nodes: "1"
-  image: "strimzi/kafka-connect:latest"
   healthcheck-delay: "60"
   healthcheck-timeout: "5"
   connect-config: |-
     {
-      "bootstrap-servers": "my-cluster-kafka:9092",
+      "bootstrap.servers": "my-cluster-kafka:9092",
       "group.id": "my-connect-cluster",
       "offset.storage.topic": "my-connect-cluster-offsets",
       "config.storage.topic": "my-connect-cluster-configs",

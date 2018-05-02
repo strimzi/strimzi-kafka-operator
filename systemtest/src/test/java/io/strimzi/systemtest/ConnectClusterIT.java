@@ -33,7 +33,8 @@ public class ConnectClusterIT extends AbstractClusterIT {
 
     public static final String NAMESPACE = "connect-cluster-test";
     public static final String KAFKA_CLUSTER_NAME = "connect-tests";
-    public static final String CONNECT_CONFIG = "{\"bootstrap.servers\": \"" + KAFKA_CLUSTER_NAME + "-kafka:9092" + "\"}";
+    public static final String KAFKA_CONNECT_BOOTSTRAP_SERVERS = KAFKA_CLUSTER_NAME + "-kafka:9092";
+    public static final String CONNECT_CONFIG = "{\"bootstrap.servers\": \"" + KAFKA_CONNECT_BOOTSTRAP_SERVERS + "\"}";
 
     @Test
     @JUnitGroup(name = "regression")
@@ -43,7 +44,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
         Oc oc = (Oc) this.kubeClient;
         String clusterName = "openshift-my-connect-cluster";
         oc.newApp("strimzi-connect", map("CLUSTER_NAME", clusterName,
-                "KEY_KAFKA_CONNECT_USER_CONFIGURATION", CONNECT_CONFIG));
+                "KAFKA_CONNECT_BOOTSTRAP_SERVERS", KAFKA_CONNECT_BOOTSTRAP_SERVERS));
         String deploymentName = clusterName + "-connect";
         oc.waitForDeployment(deploymentName);
         oc.deleteByName("cm", clusterName);
@@ -56,7 +57,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
     public void testDeployUndeploy() {
         LOGGER.info("Looks like the connect cluster my-cluster deployed OK");
 
-        String podName = kubeClient.list("Pod").stream().filter(n -> n.startsWith("jvm-resource-connect-")).findFirst().get();
+        String podName = kubeClient.list("Pod").stream().filter(n -> n.startsWith("my-cluster-connect-")).findFirst().get();
         String kafkaPodJson = kubeClient.getResourceAsJson("pod", podName);
 
         assertEquals(("bootstrap.servers=" + KAFKA_CLUSTER_NAME + "-kafka:9092\\n").replaceAll("\\p{P}", ""), getValueFromJson(kafkaPodJson,

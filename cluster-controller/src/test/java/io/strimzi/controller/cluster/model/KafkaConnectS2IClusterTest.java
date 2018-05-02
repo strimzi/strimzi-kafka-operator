@@ -39,7 +39,7 @@ public class KafkaConnectS2IClusterTest {
 
     protected List<EnvVar> getExpectedEnvVars() {
         List<EnvVar> expected = new ArrayList<EnvVar>();
-        expected.add(new EnvVarBuilder().withName(KafkaConnectCluster.KEY_KAFKA_CONNECT_USER_CONFIGURATION).withValue("foo=bar\n").build());
+        expected.add(new EnvVarBuilder().withName(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_USER_CONFIGURATION).withValue("foo=bar\n").build());
         expected.add(new EnvVarBuilder().withName(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION).withValue("1.0").build());
         return expected;
     }

@@ -326,10 +326,12 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 ((ObjectNode) metadata).put("name", cluster.name());
                 JsonNode data = node.get("data");
                 ((ObjectNode) data).put("nodes", String.valueOf(cluster.nodes()));
-                ((ObjectNode) data).put("KAFKA_CONNECT_USER_CONFIGURATION", cluster.connectConfig());
+                ((ObjectNode) data).put("connect-config", cluster.connectConfig());
                 // updates values for config map
                 for (CmData cmData : cluster.config()) {
-                    ((ObjectNode) data).put(cmData.key(), cmData.value());
+                    if (data.has(cmData.key())) {
+                        ((ObjectNode) data).put(cmData.key(), cmData.value());
+                    }
                 }
             });
             last = new Bracket(last) {
