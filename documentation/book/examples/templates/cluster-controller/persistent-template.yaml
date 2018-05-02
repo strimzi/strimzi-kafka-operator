@@ -1,0 +1,134 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: strimzi-persistent
+  annotations:
+    openshift.io/display-name: "Apache Kafka (Persistent storage)"
+    description: >-
+      This template installs Apache Zookeeper and Apache Kafka clusters. For more information
+      about using this template see http://strimzi.io
+    tags: "messaging,datastore"
+    iconClass: "fa fa-share-alt fa-flip-horizontal"
+    template.openshift.io/documentation-url: "http://strimzi.io"
+message: "Kafka cluster ${CLUSTER_NAME} is being deployed. Use '${CLUSTER_NAME}:9092' as bootstrap server in your application."
+parameters:
+- description: All Kubernetes resources will be named after the cluster name
+  displayName: Name of the cluster
+  name: CLUSTER_NAME
+  value: my-cluster
+- description: Number of Zookeeper cluster nodes which will be deployed (odd number of nodes is recomended)
+  displayName: Number of Zookeeper cluster nodes (odd number of nodes is recomended)
+  name: ZOOKEEPER_NODE_COUNT
+  required: true
+  value: "3"
+- description: Number of Kafka cluster nodes which will be deployed
+  displayName: Number of Kafka cluster nodes
+  name: KAFKA_NODE_COUNT
+  required: true
+  value: "3"
+- description: Volume space available for Zookeeper data, e.g. 512Mi, 2Gi.
+  displayName: Zookeeper Volume Capacity
+  name: ZOOKEEPER_VOLUME_CAPACITY
+  required: true
+  value: 1Gi
+- description: Volume space available for Kafka data, e.g. 512Mi, 2Gi.
+  displayName: Kafka Volume Capacity
+  name: KAFKA_VOLUME_CAPACITY
+  required: true
+  value: 1Gi
+- description: Image repository name
+  displayName: Repository Name
+  name: IMAGE_REPO_NAME
+  value: strimzi
+- description: Kafka image name
+  displayName: Kafka image Name
+  name: KAFKA_IMAGE_NAME
+  value: kafka
+- description: Kafka image tag
+  displayName: Kafka image tag
+  name: KAFKA_IMAGE_TAG
+  value: 0.3.0
+- description: Zookeeper image name
+  displayName: Zookeeper image Name
+  name: ZOOKEEPER_IMAGE_NAME
+  value: zookeeper
+- description: Zookeeper image tag
+  displayName: Zookeeper image tag
+  name: ZOOKEEPER_IMAGE_TAG
+  value: 0.3.0
+- description: Number of seconds after the container has started before healthcheck probes are initiated.
+  displayName: Zookeeper healthcheck initial delay
+  name: ZOOKEEPER_HEALTHCHECK_DELAY
+  value: "15"
+- description: Number of seconds after which the probe times out.
+  displayName: Zookeeper healthcheck timeout
+  name: ZOOKEEPER_HEALTHCHECK_TIMEOUT
+  value: "5"
+- description: Number of seconds after the container has started before healthcheck probes are initiated.
+  displayName: Kafka healthcheck initial delay
+  name: KAFKA_HEALTHCHECK_DELAY
+  value: "15"
+- description: Number of seconds after which the probe times out.
+  displayName: Kafka healthcheck timeout
+  name: KAFKA_HEALTHCHECK_TIMEOUT
+  value: "5"
+- description: Default replication factor for newly created topics
+  displayName: Default replication factor
+  name: KAFKA_DEFAULT_REPLICATION_FACTOR
+  value: "1"
+- description: Replication factor for offsets topic
+  displayName: Offsets replication factor
+  name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+  value: "3"
+- description: Replication factor for transactions state log topic
+  displayName: Transaction state replication factor
+  name: KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR
+  value: "3"
+objects:
+- apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: ${CLUSTER_NAME}
+    labels:
+      strimzi.io/type: kafka
+      strimzi.io/kind: cluster
+  data:
+    kafka-nodes: "${KAFKA_NODE_COUNT}"
+    kafka-image: "${IMAGE_REPO_NAME}/${KAFKA_IMAGE_NAME}:${KAFKA_IMAGE_TAG}"
+    kafka-healthcheck-delay: "${KAFKA_HEALTHCHECK_DELAY}"
+    kafka-healthcheck-timeout: "${KAFKA_HEALTHCHECK_TIMEOUT}"
+    zookeeper-nodes: "${ZOOKEEPER_NODE_COUNT}"
+    zookeeper-image: "${IMAGE_REPO_NAME}/${ZOOKEEPER_IMAGE_NAME}:${ZOOKEEPER_IMAGE_TAG}"
+    zookeeper-healthcheck-delay: "${ZOOKEEPER_HEALTHCHECK_DELAY}"
+    zookeeper-healthcheck-timeout: "${ZOOKEEPER_HEALTHCHECK_TIMEOUT}"
+    KAFKA_DEFAULT_REPLICATION_FACTOR: "${KAFKA_DEFAULT_REPLICATION_FACTOR}"
+    KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "${KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR}"
+    KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "${KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR}"
+    kafka-storage: |-
+      { "type": "persistent-claim", "size": "${KAFKA_VOLUME_CAPACITY}", "delete-claim": false }
+    zookeeper-storage: |-
+      { "type": "persistent-claim", "size": "${ZOOKEEPER_VOLUME_CAPACITY}", "delete-claim": false }
+    kafka-metrics-config: |-
+      {
+        "lowercaseOutputName": true,
+        "rules": [
+            {
+              "pattern": "kafka.server<type=(.+), name=(.+)PerSec\\w*><>Count",
+              "name": "kafka_server_$1_$2_total"
+            },
+            {
+              "pattern": "kafka.server<type=(.+), name=(.+)PerSec\\w*, topic=(.+)><>Count",
+              "name": "kafka_server_$1_$2_total",
+              "labels":
+              {
+                "topic": "$3"
+              }
+            }
+        ]
+      }
+    zookeeper-metrics-config: |-
+      {
+        "lowercaseOutputName": true
+      }
+    topic-controller-config: |-
+      { }

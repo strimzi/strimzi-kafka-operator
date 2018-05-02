@@ -1,0 +1,44 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: strimzi-topic-controller
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: strimzi-topic-controller
+    spec:
+      serviceAccountName: strimzi-topic-controller
+      containers:
+        - name: strimzi-topic-controller
+          image: strimzi/topic-controller:0.3.0
+          env:
+            - name: STRIMZI_CONFIGMAP_LABELS
+              value: "strimzi.io/kind=topic"
+            - name: STRIMZI_KAFKA_BOOTSTRAP_SERVERS
+              value: my-cluster-kafka:9092
+            - name: STRIMZI_ZOOKEEPER_CONNECT
+              value: my-cluster-zookeeper:2181
+            - name: STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS
+              value: "20000"
+            - name: STRIMZI_PERIODIC_INTERVAL_MS
+              value: "900000"
+            - name: STRIMZI_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          livenessProbe:
+            httpGet:
+              path: /healthy
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 30
+  strategy:
+    type: Recreate

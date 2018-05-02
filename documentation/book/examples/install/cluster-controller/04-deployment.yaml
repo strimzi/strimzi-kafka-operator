@@ -1,0 +1,50 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: strimzi-cluster-controller
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: strimzi-cluster-controller
+    spec:
+      serviceAccountName: strimzi-cluster-controller
+      containers:
+        - name: strimzi-cluster-controller
+          image: strimzi/cluster-controller:0.3.0
+          env:
+            - name: STRIMZI_CONFIGMAP_LABELS
+              value: "strimzi.io/kind=cluster"
+            - name: STRIMZI_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: STRIMZI_FULL_RECONCILIATION_INTERVAL_MS
+              value: "120000"
+            - name: STRIMZI_OPERATION_TIMEOUT_MS
+              value: "300000"
+            - name: STRIMZI_DEFAULT_ZOOKEEPER_IMAGE
+              value: strimzi/zookeeper:0.3.0
+            - name: STRIMZI_DEFAULT_KAFKA_IMAGE
+              value: strimzi/kafka:0.3.0
+            - name: STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE
+              value: strimzi/kafka-connect:0.3.0
+            - name: STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE
+              value: strimzi/kafka-connect-s2i:0.3.0
+            - name: STRIMZI_DEFAULT_TOPIC_CONTROLLER_IMAGE
+              value: strimzi/topic-controller:0.3.0
+          livenessProbe:
+            httpGet:
+              path: /healthy
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 30
+  strategy:
+    type: Recreate

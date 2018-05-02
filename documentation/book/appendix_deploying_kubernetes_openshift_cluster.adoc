@@ -1,4 +1,5 @@
 [appendix]
+[[installing_kubernetes_and_openshift_cluster]]
 == Installing {ProductPlatformName} cluster
 
 The easiest way to get started with {ProductPlatformName} is using the `Minikube`, `Minishift` or `oc cluster up`
