@@ -139,7 +139,7 @@ public class Session extends AbstractVerticle {
 
         Thread configMapThread = new Thread(() -> {
             LOGGER.debug("Watching configmaps matching {}", cmPredicate);
-            Session.this.topicCmWatch = kubeClient.configMaps().inNamespace(kubeClient.getNamespace()).watch(new ConfigMapWatcher(controller, cmPredicate));
+            Session.this.topicCmWatch = kubeClient.configMaps().inNamespace(namespace).watch(new ConfigMapWatcher(controller, cmPredicate));
             LOGGER.debug("Watching setup");
 
             // start the HTTP server for healthchecks
