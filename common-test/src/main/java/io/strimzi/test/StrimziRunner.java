@@ -429,6 +429,15 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     String dockerTag = System.getenv().getOrDefault("DOCKER_TAG", "latest");
                     ObjectNode containerNode = (ObjectNode) node.get("spec").get("template").get("spec").get("containers").get(0);
                     containerNode.put("imagePullPolicy", "Always");
+                    JsonNodeFactory factory = new JsonNodeFactory(false);
+                    ObjectNode resources = new ObjectNode(factory);
+                    ObjectNode requests = new ObjectNode(factory);
+                    requests.put("cpu", "200m").put("memory", "128Mi");
+                    ObjectNode limits = new ObjectNode(factory);
+                    limits.put("cpu", "1000m").put("memory", "128Mi");
+                    resources.set("requests", requests);
+                    resources.set("limits", limits);
+                    containerNode.replace("resources", resources);
                     JsonNode ccImageNode = containerNode.get("image");
                     ((ObjectNode) containerNode).put("image", changeOrgAndTag(ccImageNode.asText(), dockerOrg, dockerTag));
                     for (JsonNode envVar : containerNode.get("env")) {

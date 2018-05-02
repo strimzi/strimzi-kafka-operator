@@ -46,5 +46,12 @@ spec:
               port: 8080
             initialDelaySeconds: 10
             periodSeconds: 30
+          resources:
+            limits:
+              memory: 128Mi
+              cpu: 1000m
+            requests:
+              memory: 128Mi
+              cpu: 200m
   strategy:
     type: Recreate
