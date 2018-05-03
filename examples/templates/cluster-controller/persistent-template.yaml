@@ -36,26 +36,6 @@ parameters:
   name: KAFKA_VOLUME_CAPACITY
   required: true
   value: 1Gi
-- description: Image repository name
-  displayName: Repository Name
-  name: IMAGE_REPO_NAME
-  value: strimzi
-- description: Kafka image name
-  displayName: Kafka image Name
-  name: KAFKA_IMAGE_NAME
-  value: kafka
-- description: Kafka image tag
-  displayName: Kafka image tag
-  name: KAFKA_IMAGE_TAG
-  value: latest
-- description: Zookeeper image name
-  displayName: Zookeeper image Name
-  name: ZOOKEEPER_IMAGE_NAME
-  value: zookeeper
-- description: Zookeeper image tag
-  displayName: Zookeeper image tag
-  name: ZOOKEEPER_IMAGE_TAG
-  value: latest
 - description: Number of seconds after the container has started before healthcheck probes are initiated.
   displayName: Zookeeper healthcheck initial delay
   name: ZOOKEEPER_HEALTHCHECK_DELAY
@@ -94,11 +74,9 @@ objects:
       strimzi.io/kind: cluster
   data:
     kafka-nodes: "${KAFKA_NODE_COUNT}"
-    kafka-image: "${IMAGE_REPO_NAME}/${KAFKA_IMAGE_NAME}:${KAFKA_IMAGE_TAG}"
     kafka-healthcheck-delay: "${KAFKA_HEALTHCHECK_DELAY}"
     kafka-healthcheck-timeout: "${KAFKA_HEALTHCHECK_TIMEOUT}"
     zookeeper-nodes: "${ZOOKEEPER_NODE_COUNT}"
-    zookeeper-image: "${IMAGE_REPO_NAME}/${ZOOKEEPER_IMAGE_NAME}:${ZOOKEEPER_IMAGE_TAG}"
     zookeeper-healthcheck-delay: "${ZOOKEEPER_HEALTHCHECK_DELAY}"
     zookeeper-healthcheck-timeout: "${ZOOKEEPER_HEALTHCHECK_TIMEOUT}"
     kafka-config: |-

@@ -62,18 +62,6 @@ parameters:
   displayName: Status replication factor
   name: KAFKA_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR
   value: "3"
-- description: Image repository name of the S2I Docker image
-  displayName: S2I image repository
-  name: S2I_IMAGE_REPO_NAME
-  value: strimzi
-- description: Name of the S2I Docker image
-  displayName: S2I image name
-  name: S2I_IMAGE_NAME
-  value: kafka-connect-s2i
-- description: Tag of the S2I Docker image
-  displayName: S2I image tag
-  name: S2I_IMAGE_TAG
-  value: latest
 - description: Number of seconds after the container has started before healthcheck probes are initiated.
   displayName: Kafka Connect healthcheck initial delay
   name: HEALTHCHECK_DELAY
@@ -92,7 +80,6 @@ objects:
       strimzi.io/type: kafka-connect-s2i
   data:
     nodes: "${INSTANCES}"
-    image: "${S2I_IMAGE_REPO_NAME}/${S2I_IMAGE_NAME}:${S2I_IMAGE_TAG}"
     healthcheck-delay: "${HEALTHCHECK_DELAY}"
     healthcheck-timeout: "${HEALTHCHECK_TIMEOUT}"
     KAFKA_CONNECT_BOOTSTRAP_SERVERS: "${KAFKA_CONNECT_BOOTSTRAP_SERVERS}"

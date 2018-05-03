@@ -7,11 +7,9 @@ metadata:
     strimzi.io/type: kafka
 data:
   kafka-nodes: "3"
-  kafka-image: "strimzi/kafka:latest"
   kafka-healthcheck-delay: "15"
   kafka-healthcheck-timeout: "5"
   zookeeper-nodes: "3"
-  zookeeper-image: "strimzi/zookeeper:latest"
   zookeeper-healthcheck-delay: "15"
   zookeeper-healthcheck-timeout: "5"
   kafka-config: |-
