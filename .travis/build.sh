@@ -34,5 +34,7 @@ else
     export DOCKER_TAG=$TAG
     echo "Pushing to docker org $DOCKER_ORG"
     make docker_push
-    make docu_pushtowebsite
+    if [ "$BRANCH" = "master" ]; then
+        make docu_pushtowebsite
+    fi
 fi
