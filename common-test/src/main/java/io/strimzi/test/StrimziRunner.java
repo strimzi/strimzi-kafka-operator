@@ -329,9 +329,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 ((ObjectNode) data).put("connect-config", cluster.connectConfig());
                 // updates values for config map
                 for (CmData cmData : cluster.config()) {
-                    if (data.has(cmData.key())) {
-                        ((ObjectNode) data).put(cmData.key(), cmData.value());
-                    }
+                    ((ObjectNode) data).put(cmData.key(), cmData.value());
                 }
             });
             last = new Bracket(last) {
