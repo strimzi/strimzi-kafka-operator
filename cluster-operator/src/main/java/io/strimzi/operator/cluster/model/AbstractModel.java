@@ -39,6 +39,7 @@ import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSetUpdateStrategyBuilder;
 import io.strimzi.operator.cluster.ClusterOperator;
+import io.strimzi.operator.cluster.InvalidConfigMapException;
 import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -624,6 +625,32 @@ public abstract class AbstractModel {
         String trim = kafkaHeapOpts.toString().trim();
         if (!trim.isEmpty()) {
             envVars.add(buildEnvVar(ENV_VAR_KAFKA_HEAP_OPTS, trim));
+        }
+    }
+
+    public static void checkSingleNumber(Map<String, Object> data, String field) {
+        try {
+            Integer.parseInt(data.get(field).toString());
+        } catch (NumberFormatException e)  {
+            String msg = " is corrupted.";
+            if (data.get(field).toString().length() == 0) {
+                msg = " is empty.";
+            }
+            throw new InvalidConfigMapException(field + msg);
+        }
+    }
+
+    public static void checkType(Map<String, Object> data, String field) {
+        try {
+            Storage.fromJson(new JsonObject(data.get(field).toString()));
+        } catch (Exception e) {
+            throw new InvalidConfigMapException(field + " is corrupted.");
+        }
+    }
+
+    public static void checkString(Map<String, Object> data, String field) {
+        if (data.get(field).toString().length() == 0) {
+            throw new InvalidConfigMapException(field + " is empty.");
         }
     }
 }

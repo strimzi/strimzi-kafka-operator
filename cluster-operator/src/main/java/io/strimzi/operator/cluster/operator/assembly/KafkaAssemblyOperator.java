@@ -94,7 +94,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
         String namespace = assemblyCm.getMetadata().getNamespace();
         String name = assemblyCm.getMetadata().getName();
         log.debug("{}: create/update kafka {}", reconciliation, name);
-        KafkaCluster kafka = KafkaCluster.fromConfigMap(assemblyCm);
+        KafkaCluster kafka;
+        try {
+            kafka = KafkaCluster.fromConfigMap(assemblyCm);
+        } catch (Exception e) {
+            return Future.failedFuture(e);
+        }
         Service service = kafka.generateService();
         Service headlessService = kafka.generateHeadlessService();
         ConfigMap metricsConfigMap = kafka.generateMetricsConfigMap();
@@ -152,7 +157,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
         String namespace = assemblyCm.getMetadata().getNamespace();
         String name = assemblyCm.getMetadata().getName();
         log.debug("{}: create/update zookeeper {}", reconciliation, name);
-        ZookeeperCluster zk = ZookeeperCluster.fromConfigMap(assemblyCm);
+        ZookeeperCluster zk;
+        try {
+            zk = ZookeeperCluster.fromConfigMap(assemblyCm);
+        } catch (Exception e) {
+            return Future.failedFuture(e);
+        }
         Service service = zk.generateService();
         Service headlessService = zk.generateHeadlessService();
         Future<Void> chainFuture = Future.future();
@@ -204,8 +214,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
     private final Future<ReconcileResult<Void>> createOrUpdateTopicOperator(Reconciliation reconciliation, ConfigMap assemblyCm) {
         String namespace = assemblyCm.getMetadata().getNamespace();
         String name = assemblyCm.getMetadata().getName();
-        log.debug("{}: create/update topic operator {}", reconciliation, name);
-        TopicOperator topicOperator = TopicOperator.fromConfigMap(assemblyCm);
+        log.debug("{}: create/update topic controller {}", reconciliation, name);
+        TopicOperator topicOperator;
+        try {
+            topicOperator = TopicOperator.fromConfigMap(assemblyCm);
+        } catch (Exception e) {
+            return Future.failedFuture(e);
+        }
         Deployment deployment = topicOperator != null ? topicOperator.generateDeployment() : null;
         return deploymentOperations.reconcile(namespace, topicOperatorName(name), deployment);
     };

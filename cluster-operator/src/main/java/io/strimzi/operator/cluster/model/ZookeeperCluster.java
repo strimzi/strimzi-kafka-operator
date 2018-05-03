@@ -119,6 +119,7 @@ public class ZookeeperCluster extends AbstractModel {
                 Labels.fromResource(kafkaClusterCm));
 
         Map<String, String> data = kafkaClusterCm.getData();
+        checkAll(data);
         zk.setReplicas(Integer.parseInt(data.getOrDefault(KEY_REPLICAS, String.valueOf(DEFAULT_REPLICAS))));
         zk.setImage(data.getOrDefault(KEY_IMAGE, DEFAULT_IMAGE));
         zk.setHealthCheckInitialDelay(Integer.parseInt(data.getOrDefault(KEY_HEALTHCHECK_DELAY, String.valueOf(DEFAULT_HEALTHCHECK_DELAY))));
@@ -142,6 +143,24 @@ public class ZookeeperCluster extends AbstractModel {
         zk.setJvmOptions(JvmOptions.fromJson(data.get(KEY_JVM_OPTIONS)));
 
         return zk;
+    }
+
+    protected static void checkAll(Map<String, String> stringMap) {
+        Map<String, Object> data = new HashMap<String, Object>();
+        for (Map.Entry<String, String> entry : stringMap.entrySet()) {
+            data.put(entry.getKey(), (Object) entry.getValue());
+        }
+
+        checkSingleNumber(data, KEY_REPLICAS);
+        checkSingleNumber(data, KEY_HEALTHCHECK_DELAY);
+        checkSingleNumber(data, KEY_HEALTHCHECK_TIMEOUT);
+
+        checkType(data, KEY_STORAGE);
+
+        checkString(data, KEY_IMAGE);
+        checkString(data, KEY_METRICS_CONFIG);
+
+
     }
 
     /**

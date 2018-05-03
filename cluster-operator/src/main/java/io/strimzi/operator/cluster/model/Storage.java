@@ -177,7 +177,7 @@ public class Storage {
             } else if (type.equals(LOCAL.type)) {
                 return LOCAL;
             } else {
-                throw new IllegalArgumentException("Unknown type: " + type);
+                throw new IllegalArgumentException("Unknown type: " + type + ". Allowed types are: " + EPHEMERAL.toString() + ", " + PERSISTENT_CLAIM.toString() + " and " + LOCAL.toString() + ".");
             }
         }
     }

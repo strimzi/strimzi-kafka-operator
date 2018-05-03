@@ -405,7 +405,6 @@ public class KafkaConnectAssemblyOperatorTest {
         ServiceOperator mockServiceOps = mock(ServiceOperator.class);
         DeploymentOperator mockDcOps = mock(DeploymentOperator.class);
 
-
         String clusterCmNamespace = "test";
 
         ConfigMap foo = ResourceUtils.createEmptyKafkaConnectClusterConfigMap(clusterCmNamespace, "foo");

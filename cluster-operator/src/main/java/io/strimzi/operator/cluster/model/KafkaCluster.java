@@ -15,6 +15,8 @@ import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.operator.cluster.ClusterOperator;
+import io.strimzi.operator.cluster.InvalidConfigMapException;
+import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
@@ -62,6 +64,10 @@ public class KafkaCluster extends AbstractModel {
     public static final String KEY_RESOURCES = "kafka-resources";
 
     // Kafka configuration keys (EnvVariables)
+    public static final String KEY_KAFKA_ZOOKEEPER_CONNECT = "KAFKA_ZOOKEEPER_CONNECT";
+    private static final String KEY_KAFKA_METRICS_ENABLED = "KAFKA_METRICS_ENABLED";
+
+    // Kafka configuration keys (EnvVariables)
     public static final String ENV_VAR_KAFKA_ZOOKEEPER_CONNECT = "KAFKA_ZOOKEEPER_CONNECT";
     private static final String ENV_VAR_KAFKA_METRICS_ENABLED = "KAFKA_METRICS_ENABLED";
     protected static final String ENV_VAR_KAFKA_USER_CONFIGURATION = "KAFKA_USER_CONFIGURATION";
@@ -106,6 +112,39 @@ public class KafkaCluster extends AbstractModel {
         return kafkaClusterName(cluster) + "-" + pod;
     }
 
+    protected static void checkAll(Map<String, String> stringMap) {
+        Map<String, Object> data = new HashMap<String, Object>();
+        for (Map.Entry<String, String> entry : stringMap.entrySet()) {
+            data.put(entry.getKey(), (Object) entry.getValue());
+        }
+        checkSingleNumber(data, KEY_REPLICAS);
+        checkString(data, KEY_IMAGE);
+        checkSingleNumber(data, KEY_HEALTHCHECK_DELAY);
+        checkSingleNumber(data, KEY_HEALTHCHECK_TIMEOUT);
+
+        String metricsConfig = data.get(KEY_METRICS_CONFIG).toString();
+
+        JsonObject jo = new JsonObject(metricsConfig);
+        Map<String, Object> map = jo.getMap();
+        for (Map.Entry<String, Object> entry : map.entrySet()) {
+            checkString(map, entry.getKey());
+        }
+
+
+        checkType(data, KEY_STORAGE);
+
+        String kafkaConfig = data.get(KEY_KAFKA_CONFIG).toString();
+        try {
+            JsonObject jo2 = new JsonObject(kafkaConfig);
+            Map<String, Object> map2 = jo2.getMap();
+            for (Map.Entry<String, Object> entry : map2.entrySet()) {
+                checkSingleNumber(map2, entry.getKey());
+            }
+        } catch (DecodeException de) {
+            throw new InvalidConfigMapException("Config Map JSON is corrupted.");
+        }
+    }
+
     /**
      * Create a Kafka cluster from the related ConfigMap resource
      *
@@ -118,12 +157,13 @@ public class KafkaCluster extends AbstractModel {
                 Labels.fromResource(kafkaClusterCm));
 
         Map<String, String> data = kafkaClusterCm.getData();
+        checkAll(data);
         kafka.setReplicas(Integer.parseInt(data.getOrDefault(KEY_REPLICAS, String.valueOf(DEFAULT_REPLICAS))));
         kafka.setImage(data.getOrDefault(KEY_IMAGE, DEFAULT_IMAGE));
         kafka.setHealthCheckInitialDelay(Integer.parseInt(data.getOrDefault(KEY_HEALTHCHECK_DELAY, String.valueOf(DEFAULT_HEALTHCHECK_DELAY))));
         kafka.setHealthCheckTimeout(Integer.parseInt(data.getOrDefault(KEY_HEALTHCHECK_TIMEOUT, String.valueOf(DEFAULT_HEALTHCHECK_TIMEOUT))));
 
-        kafka.setZookeeperConnect(data.getOrDefault(ENV_VAR_KAFKA_ZOOKEEPER_CONNECT, kafkaClusterCm.getMetadata().getName() + "-zookeeper:2181"));
+        kafka.setZookeeperConnect(kafkaClusterCm.getMetadata().getName() + "-zookeeper:2181");
 
         String metricsConfig = data.get(KEY_METRICS_CONFIG);
         kafka.setMetricsEnabled(metricsConfig != null);

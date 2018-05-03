@@ -68,7 +68,13 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator {
     public void createOrUpdate(Reconciliation reconciliation, ConfigMap assemblyCm, Handler<AsyncResult<Void>> handler) {
         String namespace = reconciliation.namespace();
         if (isOpenShift) {
-            KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromConfigMap(assemblyCm);
+            KafkaConnectS2ICluster connect;
+            try {
+                connect = KafkaConnectS2ICluster.fromConfigMap(assemblyCm);
+            } catch (Exception e) {
+                handler.handle(Future.failedFuture(e));
+                return;
+            }
             Future<Void> chainFuture = Future.future();
 
             deploymentConfigOperations.scaleDown(namespace, connect.getName(), connect.getReplicas())

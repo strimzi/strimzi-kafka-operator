@@ -27,6 +27,7 @@ import io.fabric8.openshift.api.model.TagReference;
 import io.vertx.core.json.JsonObject;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 public class KafkaConnectS2ICluster extends KafkaConnectCluster {
@@ -61,6 +62,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
         KafkaConnectS2ICluster kafkaConnect = new KafkaConnectS2ICluster(cm.getMetadata().getNamespace(), cm.getMetadata().getName(), Labels.fromResource(cm));
 
         Map<String, String> data = cm.getData();
+        checkAll(data);
         kafkaConnect.setReplicas(Integer.parseInt(data.getOrDefault(KEY_REPLICAS, String.valueOf(DEFAULT_REPLICAS))));
         kafkaConnect.setImage(data.getOrDefault(KEY_IMAGE, DEFAULT_IMAGE));
         kafkaConnect.setResources(Resources.fromJson(data.get(KEY_RESOURCES)));
@@ -74,6 +76,26 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
         }
 
         return kafkaConnect;
+    }
+
+    protected static void checkAll(Map<String, String> stringMap) {
+        Map<String, Object> data = new HashMap<String, Object>();
+        for (Map.Entry<String, String> entry : stringMap.entrySet()) {
+            data.put(entry.getKey(), (Object) entry.getValue());
+        }
+
+        checkSingleNumber(data, KEY_CONFIG_STORAGE_REPLICATION_FACTOR);
+        checkSingleNumber(data, KEY_OFFSET_STORAGE_REPLICATION_FACTOR);
+        checkSingleNumber(data, KEY_STATUS_STORAGE_REPLICATION_FACTOR);
+        checkSingleNumber(data, KEY_HEALTHCHECK_DELAY);
+        checkSingleNumber(data, KEY_HEALTHCHECK_TIMEOUT);
+        checkSingleNumber(data, KEY_REPLICAS);
+
+        checkString(data, KEY_BOOTSTRAP_SERVERS);
+        checkString(data, KEY_GROUP_ID);
+        checkString(data, KEY_KEY_CONVERTER);
+        checkString(data, KEY_VALUE_CONVERTER);
+        checkString(data, KEY_IMAGE);
     }
 
     /**
