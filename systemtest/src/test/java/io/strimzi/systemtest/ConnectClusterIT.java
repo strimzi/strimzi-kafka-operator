@@ -34,7 +34,42 @@ public class ConnectClusterIT extends AbstractClusterIT {
     public static final String NAMESPACE = "connect-cluster-test";
     public static final String KAFKA_CLUSTER_NAME = "connect-tests";
     public static final String KAFKA_CONNECT_BOOTSTRAP_SERVERS = KAFKA_CLUSTER_NAME + "-kafka:9092";
-    public static final String CONNECT_CONFIG = "{\"bootstrap.servers\": \"" + KAFKA_CONNECT_BOOTSTRAP_SERVERS + "\"}";
+    public static final String KAFKA_CONNECT_BOOTSTRAP_SERVERS_ESCAPED = KAFKA_CLUSTER_NAME + "-kafka\\:9092";
+    public static final String CONNECT_CONFIG = "{\n" +
+            "      \"bootstrap.servers\": \"" + KAFKA_CONNECT_BOOTSTRAP_SERVERS + "\",\n" +
+            "      \"group.id\": \"my-connect-cluster\",\n" +
+            "      \"offset.storage.topic\": \"my-connect-cluster-offsets\",\n" +
+            "      \"config.storage.topic\": \"my-connect-cluster-configs\",\n" +
+            "      \"status.storage.topic\": \"my-connect-cluster-status\",\n" +
+            "      \"key.converter\": \"org.apache.kafka.connect.json.JsonConverter\",\n" +
+            "      \"value.converter\": \"org.apache.kafka.connect.json.JsonConverter\",\n" +
+            "      \"key.converter.schemas.enable\": true,\n" +
+            "      \"value.converter.schemas.enable\": true,\n" +
+            "      \"internal.key.converter\": \"org.apache.kafka.connect.json.JsonConverter\",\n" +
+            "      \"internal.value.converter\": \"org.apache.kafka.connect.json.JsonConverter\",\n" +
+            "      \"internal.key.converter.schemas.enable\": false,\n" +
+            "      \"internal.value.converter.schemas.enable\": false,\n" +
+            "      \"config.storage.replication.factor\": 3,\n" +
+            "      \"offset.storage.replication.factor\": 3,\n" +
+            "      \"status.storage.replication.factor\": 3\n" +
+            "    }";
+
+    private static final String EXPECTED_CONFIG = "group.id=my-connect-cluster\\n" +
+            "key.converter=org.apache.kafka.connect.json.JsonConverter\\n" +
+            "offset.storage.replication.factor=3\\n" +
+            "internal.key.converter.schemas.enable=false\\n" +
+            "config.storage.replication.factor=3\\n" +
+            "value.converter=org.apache.kafka.connect.json.JsonConverter\\n" +
+            "bootstrap.servers=" + KAFKA_CONNECT_BOOTSTRAP_SERVERS_ESCAPED + "\\n" +
+            "key.converter.schemas.enable=true\\n" +
+            "config.storage.topic=my-connect-cluster-configs\\n" +
+            "status.storage.topic=my-connect-cluster-status\\n" +
+            "offset.storage.topic=my-connect-cluster-offsets\\n" +
+            "internal.key.converter=org.apache.kafka.connect.json.JsonConverter\\n" +
+            "status.storage.replication.factor=3\\n" +
+            "internal.value.converter.schemas.enable=false\\n" +
+            "value.converter.schemas.enable=true\\n" +
+            "internal.value.converter=org.apache.kafka.connect.json.JsonConverter\\n";
 
     @Test
     @JUnitGroup(name = "regression")
@@ -60,7 +95,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
         String podName = kubeClient.list("Pod").stream().filter(n -> n.startsWith("my-cluster-connect-")).findFirst().get();
         String kafkaPodJson = kubeClient.getResourceAsJson("pod", podName);
 
-        assertEquals(("bootstrap.servers=" + KAFKA_CLUSTER_NAME + "-kafka:9092\\n").replaceAll("\\p{P}", ""), getValueFromJson(kafkaPodJson,
+        assertEquals(EXPECTED_CONFIG.replaceAll("\\p{P}", ""), getValueFromJson(kafkaPodJson,
                 globalVariableJsonPathBuilder("KAFKA_CONNECT_USER_CONFIGURATION")));
     }
 
