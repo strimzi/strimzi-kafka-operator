@@ -7,7 +7,13 @@ package io.strimzi.operator.cluster;
 
 public class InvalidConfigMapException extends RuntimeException {
 
-    public InvalidConfigMapException(String message) {
-        super(message);
+    private String key;
+    public InvalidConfigMapException(String message, String key) {
+        super(key + message);
+        this.key = key;
+    }
+
+    public String getKey() {
+        return key;
     }
 }

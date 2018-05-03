@@ -9,14 +9,15 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
+import io.strimzi.operator.cluster.InvalidConfigMapException;
 import io.strimzi.operator.cluster.ResourceUtils;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.Test;
-
+import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
@@ -133,5 +134,63 @@ public class KafkaConnectClusterTest {
         assertEquals("RollingUpdate", dep.getSpec().getStrategy().getType());
         assertEquals(new Integer(1), dep.getSpec().getStrategy().getRollingUpdate().getMaxSurge().getIntVal());
         assertEquals(new Integer(0), dep.getSpec().getStrategy().getRollingUpdate().getMaxUnavailable().getIntVal());
+    }
+
+    @Test
+    public void testCorruptedValues() {
+        ConfigMap cm = ResourceUtils.createEmptyKafkaConnectClusterConfigMap(namespace, cluster);
+
+        // type mismatch
+        cm.getData().put("kafka-healthcheck-delay", "1z");
+        try {
+            KafkaCluster kc = KafkaCluster.fromConfigMap(cm);
+            fail("Expected it to throw an exception");
+        } catch (InvalidConfigMapException e) {
+            assertEquals(e.getKey(), "kafka-healthcheck-delay");
+        }
+
+        // unknown type
+        cm.getData().clear();
+        cm.getData().put("kafka-storage", "{ \"type\": \"zidan\" }");
+        try {
+            KafkaCluster kc = KafkaCluster.fromConfigMap(cm);
+            fail("Expected it to throw an exception");
+        } catch (InvalidConfigMapException e) {
+            assertEquals(e.getKey(), "kafka-storage");
+        }
+
+        // type mismatch
+        cm.getData().clear();
+        cm.getData().put("kafka-config", "{  \"num.io.threads\": \"lol\" }");
+        try {
+            KafkaCluster kc = KafkaCluster.fromConfigMap(cm);
+            fail("Expected it to throw an exception");
+        } catch (InvalidConfigMapException e) {
+            assertEquals("num.io.threads", e.getKey());
+        }
+
+        // corrupted JSON (missing quotes)
+        cm.getData().clear();
+        cm.getData().put("kafka-config", "{" +
+                "\"num.recovery.threads.per.data.dir\": \"1\",\n" +
+                "\"default.replication.factor\": e,\n" +
+                "\"num.io.threads\": \"1\"" +
+                "}");
+        try {
+            KafkaCluster kc = KafkaCluster.fromConfigMap(cm);
+            fail("Expected it to throw an exception");
+        } catch (InvalidConfigMapException e) {
+            assertEquals("default.replication.factor", e.getKey());
+        }
+
+        // empty value
+        cm.getData().clear();
+        cm.getData().put("kafka-config", "{  \"num.io.threads\": \"\" }");
+        try {
+            KafkaCluster kc = KafkaCluster.fromConfigMap(cm);
+            fail("Expected it to throw an exception");
+        } catch (InvalidConfigMapException e) {
+            assertEquals(e.getKey(), "num.io.threads");
+        }
     }
 }

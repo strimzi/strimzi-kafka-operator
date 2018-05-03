@@ -43,6 +43,7 @@ public abstract class AbstractAssemblyOperator {
     protected final boolean isOpenShift;
     protected final AssemblyType assemblyType;
     protected final ConfigMapOperator configMapOperations;
+
     /**
      * @param vertx The Vertx instance
      * @param isOpenShift True iff running on OpenShift
