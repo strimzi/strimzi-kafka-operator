@@ -399,7 +399,7 @@ For Kafka and Zookeeper pods such allocation could cause unwanted latency.
 For Kafka Connect avoiding over allocation may be the more important concern, especially in distributed mode where the effects of over-allocation will be multiplied by the number of consumers.
 
 NOTE: The units accepted by JVM settings such as `-Xmx` and `-Xms` are those accepted by the OpenJDK `java` binary in the corresponding image.
-Accordingly, `1g` or `1G` means 1,073,741,824 bytes.
+Accordingly, `1g` or `1G` means 1,073,741,824 bytes, and `Gi` is not a valid unit suffix. 
 This is in contrast to the units used for <<resources_json_config,memory limits and requests>>, which follow the Kubernetes convention where `1G` means 1,000,000,000 bytes, and `1Gi` means 1,073,741,824 bytes
 
 .Example Resource limits and requests JSON configuration
