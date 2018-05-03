@@ -4,11 +4,9 @@ if [ -z "$KAFKA_CONNECT_PLUGIN_PATH" ]; then
 export KAFKA_CONNECT_PLUGIN_PATH="${KAFKA_HOME}/plugins"
 fi
 
-# Generate the config file
-./kafka_connect_config_generator.sh /tmp/strimzi-connect.properties
-
-echo "Starting Kafka connect with configuration:"
-cat /tmp/strimzi-connect.properties
+# Generate and print the config file
+echo "Starting Kafka Connect with configuration:"
+./kafka_connect_config_generator.sh | tee /tmp/strimzi-connect.properties
 echo ""
 
 # Disable Kafka's GC logging (which logs to a file)...

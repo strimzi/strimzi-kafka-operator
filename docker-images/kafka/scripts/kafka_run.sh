@@ -35,11 +35,9 @@ fi
 # directory avoids trying to create it (and logging a permission denied error)
 export LOG_DIR="$KAFKA_HOME"
 
-# Generate the config file
-./kafka_config_generator.sh /tmp/strimzi.properties
-
+# Generate and print the config file
 echo "Starting Kafka with configuration:"
-cat /tmp/strimzi.properties
+./kafka_config_generator.sh | tee /tmp/strimzi.properties
 echo ""
 
 if [ -z "$KAFKA_HEAP_OPTS" -a -n "${DYNAMIC_HEAP_FRACTION}" ]; then

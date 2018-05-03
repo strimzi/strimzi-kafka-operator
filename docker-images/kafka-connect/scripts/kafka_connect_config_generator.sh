@@ -1,9 +1,7 @@
 #!/bin/bash
 
-CONFIG_FILE=$1
-
 # Write the config file
-cat > ${CONFIG_FILE:-/tmp/strimzi-connect.properties} <<EOF
+cat <<EOF
 # REST Listeners
 rest.port=8083
 rest.advertised.host.name=$(hostname -I)
