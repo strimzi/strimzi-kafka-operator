@@ -429,7 +429,7 @@ public abstract class AbstractModel {
             boolean isOpenShift) {
 
         Map<String, String> annotations = new HashMap<>();
-        annotations.put(String.format("%s/%s", ClusterOperator.STRIMZI_CLUSTER_CONTROLLER_DOMAIN, Storage.DELETE_CLAIM_FIELD),
+        annotations.put(String.format("%s/%s", ClusterOperator.STRIMZI_CLUSTER_OPERATOR_DOMAIN, Storage.DELETE_CLAIM_FIELD),
                 String.valueOf(storage.isDeleteClaim()));
 
         Container container = new ContainerBuilder()

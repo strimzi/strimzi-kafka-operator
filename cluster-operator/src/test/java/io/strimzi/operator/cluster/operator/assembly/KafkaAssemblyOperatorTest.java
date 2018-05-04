@@ -268,11 +268,11 @@ public class KafkaAssemblyOperatorTest {
             //verify(mockPodOps, times(zookeeperCluster.getReplicas() + kafkaCluster.getReplicas()))
             //        .readiness(any(), any(), anyLong(), anyLong());
 
-            // if topic controller configuration was defined in the CM
+            // if topic operator configuration was defined in the CM
             if (topicOperator != null) {
                 List<Deployment> capturedDeps = depCaptor.getAllValues();
                 context.assertEquals(1, capturedDeps.size());
-                context.assertEquals(TopicOperator.topicControllerName(clusterCmName), capturedDeps.get(0).getMetadata().getName());
+                context.assertEquals(TopicOperator.topicOperatorName(clusterCmName), capturedDeps.get(0).getMetadata().getName());
             }
 
             // PvcOperations only used for deletion
@@ -320,7 +320,7 @@ public class KafkaAssemblyOperatorTest {
         when(mockDepOps.reconcile(eq(clusterCmNamespace), depCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
         if (topicOperator != null) {
             Deployment tcDep = topicOperator.generateDeployment();
-            when(mockDepOps.get(clusterCmNamespace, TopicOperator.topicControllerName(clusterCmName))).thenReturn(tcDep);
+            when(mockDepOps.get(clusterCmNamespace, TopicOperator.topicOperatorName(clusterCmName))).thenReturn(tcDep);
         }
 
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, openShift,
@@ -365,10 +365,10 @@ public class KafkaAssemblyOperatorTest {
             }
             context.assertEquals(expectedPvcDeletions, captured(pvcCaptor));
 
-            // if topic controller configuration was defined in the CM
+            // if topic operator configuration was defined in the CM
             if (topicOperator != null) {
                 Set<String> expectedDepNames = new HashSet<>();
-                expectedDepNames.add(TopicOperator.topicControllerName(clusterCmName));
+                expectedDepNames.add(TopicOperator.topicOperatorName(clusterCmName));
                 context.assertEquals(expectedDepNames, captured(depCaptor));
             }
 
@@ -463,7 +463,7 @@ public class KafkaAssemblyOperatorTest {
     }
 
     @Test
-    public void testUpdateTopicControllerConfig(TestContext context) {
+    public void testUpdateTopicOperatorConfig(TestContext context) {
         ConfigMap clusterCm = getConfigMap("bar");
         if (tcConfig != null) {
             clusterCm.getData().put(TopicOperator.KEY_CONFIG, "{\"something\":\"changed\"}");
@@ -535,7 +535,7 @@ public class KafkaAssemblyOperatorTest {
         );
         // Mock Deployment get
         if (originalTopicOperator != null) {
-            when(mockDepOps.get(clusterCmNamespace, TopicOperator.topicControllerName(clusterCmName))).thenReturn(
+            when(mockDepOps.get(clusterCmNamespace, TopicOperator.topicOperatorName(clusterCmName))).thenReturn(
                     originalTopicOperator.generateDeployment()
             );
         }

@@ -30,12 +30,12 @@ public class TopicOperatorTest {
     private final String storageJson = "{\"type\": \"ephemeral\"}";
 
     private final String tcWatchedNamespace = "my-topic-namespace";
-    private final String tcImage = "my-topic-controller-image";
+    private final String tcImage = "my-topic-operator-image";
     private final String tcReconciliationInterval = "900000";
     private final String tcZookeeperSessionTimeout = "20000";
     private final int tcTopicMetadataMaxAttempts = 3;
 
-    private final String topicControllerJson = "{ " +
+    private final String topicOperatorJson = "{ " +
             "\"watchedNamespace\":\"" + tcWatchedNamespace + "\", " +
             "\"image\":\"" + tcImage + "\", " +
             "\"reconciliationInterval\":\"" + tcReconciliationInterval + "\", " +
@@ -43,7 +43,7 @@ public class TopicOperatorTest {
             "\"topicMetadataMaxAttempts\":" + tcTopicMetadataMaxAttempts +
             " }";
 
-    private final ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, kafkaJson, storageJson, topicControllerJson);
+    private final ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, kafkaJson, storageJson, topicOperatorJson);
     private final TopicOperator tc = TopicOperator.fromConfigMap(cm);
 
     private List<EnvVar> getExpectedEnvVars() {
@@ -129,11 +129,11 @@ public class TopicOperatorTest {
 
         Deployment dep = tc.generateDeployment();
 
-        assertEquals(tc.topicControllerName(cluster), dep.getMetadata().getName());
+        assertEquals(tc.topicOperatorName(cluster), dep.getMetadata().getName());
         assertEquals(namespace, dep.getMetadata().getNamespace());
         assertEquals(new Integer(TopicOperator.DEFAULT_REPLICAS), dep.getSpec().getReplicas());
         assertEquals(1, dep.getSpec().getTemplate().getSpec().getContainers().size());
-        assertEquals(tc.topicControllerName(cluster), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getName());
+        assertEquals(tc.topicOperatorName(cluster), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getName());
         assertEquals(tc.image, dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
         assertEquals(getExpectedEnvVars(), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv());
         assertEquals(new Integer(TopicOperator.DEFAULT_HEALTHCHECK_DELAY), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getInitialDelaySeconds());

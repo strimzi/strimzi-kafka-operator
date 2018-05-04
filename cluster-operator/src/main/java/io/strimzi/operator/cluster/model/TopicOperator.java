@@ -18,16 +18,16 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Represents the topic controller deployment
+ * Represents the topic operator deployment
  */
 public class TopicOperator extends AbstractModel {
 
     /**
-     * The default kind of CMs that the Topic Controller will be configured to watch for
+     * The default kind of CMs that the Topic Operator will be configured to watch for
      */
     public static final String TOPIC_CM_KIND = "topic";
 
-    private static final String NAME_SUFFIX = "-topic-controller";
+    private static final String NAME_SUFFIX = "-topic-operator";
 
     // Port configuration
     protected static final int HEALTHCHECK_PORT = 8080;
@@ -35,7 +35,7 @@ public class TopicOperator extends AbstractModel {
 
     // Configuration defaults
     protected static final String DEFAULT_IMAGE =
-            System.getenv().getOrDefault("STRIMZI_DEFAULT_TOPIC_CONTROLLER_IMAGE", "strimzi/topic-controller:latest");
+            System.getenv().getOrDefault("STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE", "strimzi/topic-operator:latest");
     protected static final int DEFAULT_REPLICAS = 1;
     protected static final int DEFAULT_HEALTHCHECK_DELAY = 10;
     protected static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
@@ -46,9 +46,9 @@ public class TopicOperator extends AbstractModel {
     protected static final int DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS = 6;
 
     // Configuration keys
-    public static final String KEY_CONFIG = "topic-controller-config";
+    public static final String KEY_CONFIG = "topic-operator-config";
 
-    // Topic Controller configuration keys
+    // Topic Operator configuration keys
     public static final String KEY_CONFIGMAP_LABELS = "STRIMZI_CONFIGMAP_LABELS";
     public static final String KEY_KAFKA_BOOTSTRAP_SERVERS = "STRIMZI_KAFKA_BOOTSTRAP_SERVERS";
     public static final String KEY_ZOOKEEPER_CONNECT = "STRIMZI_ZOOKEEPER_CONNECT";
@@ -74,7 +74,7 @@ public class TopicOperator extends AbstractModel {
     protected TopicOperator(String namespace, String cluster, Labels labels) {
 
         super(namespace, cluster, labels.withType(AssemblyType.KAFKA));
-        this.name = topicControllerName(cluster);
+        this.name = topicOperatorName(cluster);
         this.image = DEFAULT_IMAGE;
         this.replicas = DEFAULT_REPLICAS;
         this.healthCheckPath = "/";
@@ -147,7 +147,7 @@ public class TopicOperator extends AbstractModel {
         return topicMetadataMaxAttempts;
     }
 
-    public static String topicControllerName(String cluster) {
+    public static String topicOperatorName(String cluster) {
         return cluster + TopicOperator.NAME_SUFFIX;
     }
 
@@ -166,10 +166,10 @@ public class TopicOperator extends AbstractModel {
     }
 
     /**
-     * Create a Topic Controller from the related ConfigMap resource
+     * Create a Topic Operator from the related ConfigMap resource
      *
-     * @param kafkaClusterCm ConfigMap with cluster configuration containing the topic controller one
-     * @return Topic Controller instance, null if not configured in the ConfigMap
+     * @param kafkaClusterCm ConfigMap with cluster configuration containing the topic operator one
+     * @return Topic Operator instance, null if not configured in the ConfigMap
      */
     public static TopicOperator fromConfigMap(ConfigMap kafkaClusterCm) {
         TopicOperator topicOperator = null;
@@ -195,12 +195,12 @@ public class TopicOperator extends AbstractModel {
     }
 
     /**
-     * Create a Topic Controller from the deployed Deployment resource
+     * Create a Topic Operator from the deployed Deployment resource
      *
      * @param namespace Kubernetes/OpenShift namespace where cluster resources are going to be created
      * @param cluster overall cluster name
-     * @param dep the deployment from which to recover the topic controller state
-     * @return Topic Controller instance, null if the corresponding Deployment doesn't exist
+     * @param dep the deployment from which to recover the topic operator state
+     * @return Topic Operator instance, null if the corresponding Deployment doesn't exist
      */
     public static TopicOperator fromAssembly(String namespace, String cluster, Deployment dep) {
 
@@ -261,6 +261,6 @@ public class TopicOperator extends AbstractModel {
 
     @Override
     protected String getServiceAccountName() {
-        return ClusterOperator.STRIMZI_CLUSTER_CONTROLLER_SERVICE_ACCOUNT;
+        return ClusterOperator.STRIMZI_CLUSTER_OPERATOR_SERVICE_ACCOUNT;
     }
 }

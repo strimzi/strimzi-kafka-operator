@@ -28,15 +28,15 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * An "operator" for managing assemblies of various types <em>in a particular namespace</em>.
- * The Cluster Controller's multiple namespace support is achieved by deploying multiple
+ * The Cluster Operator's multiple namespace support is achieved by deploying multiple
  * {@link ClusterOperator}'s in Vertx.
  */
 public class ClusterOperator extends AbstractVerticle {
 
     private static final Logger log = LoggerFactory.getLogger(ClusterOperator.class.getName());
 
-    public static final String STRIMZI_CLUSTER_CONTROLLER_DOMAIN = "cluster.controller.strimzi.io";
-    public static final String STRIMZI_CLUSTER_CONTROLLER_SERVICE_ACCOUNT = "strimzi-cluster-controller";
+    public static final String STRIMZI_CLUSTER_OPERATOR_DOMAIN = "cluster.operator.strimzi.io";
+    public static final String STRIMZI_CLUSTER_OPERATOR_SERVICE_ACCOUNT = "strimzi-cluster-operator";
 
     private static final int HEALTH_SERVER_PORT = 8080;
 
@@ -58,7 +58,7 @@ public class ClusterOperator extends AbstractVerticle {
                            KafkaAssemblyOperator kafkaAssemblyOperator,
                            KafkaConnectAssemblyOperator kafkaConnectAssemblyOperator,
                            KafkaConnectS2IAssemblyOperator kafkaConnectS2IAssemblyOperator) {
-        log.info("Creating ClusterController for namespace {}", namespace);
+        log.info("Creating ClusterOperator for namespace {}", namespace);
         this.namespace = namespace;
         this.selector = Labels.forKind("cluster");
         this.reconciliationInterval = reconciliationInterval;
@@ -70,7 +70,7 @@ public class ClusterOperator extends AbstractVerticle {
 
     @Override
     public void start(Future<Void> start) {
-        log.info("Starting ClusterController for namespace {}", namespace);
+        log.info("Starting ClusterOperator for namespace {}", namespace);
 
         // Configure the executor here, but it is used only in other places
         getVertx().createSharedWorkerExecutor("kubernetes-ops-pool", 10, TimeUnit.SECONDS.toNanos(120));
@@ -85,22 +85,22 @@ public class ClusterOperator extends AbstractVerticle {
                     reconcileAll("timer");
                 });
 
-                log.info("ClusterController running for namespace {}", namespace);
+                log.info("ClusterOperator running for namespace {}", namespace);
 
                 // start the HTTP server for healthchecks
                 this.startHealthServer();
 
                 start.complete();
             } else {
-                log.error("ClusterController startup failed for namespace {}", namespace, res.cause());
-                start.fail("ClusterController startup failed for namespace " + namespace);
+                log.error("ClusterOperator startup failed for namespace {}", namespace, res.cause());
+                start.fail("ClusterOperator startup failed for namespace " + namespace);
             }
         });
     }
 
     @Override
     public void stop(Future<Void> stop) {
-        log.info("Stopping ClusterController for namespace {}", namespace);
+        log.info("Stopping ClusterOperator for namespace {}", namespace);
         vertx.cancelTimer(reconcileTimer);
         configMapWatch.close();
         client.close();

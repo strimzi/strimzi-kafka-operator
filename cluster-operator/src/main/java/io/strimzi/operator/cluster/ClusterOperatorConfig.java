@@ -12,7 +12,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.unmodifiableSet;
 
 /**
- * Cluster Controller configuration
+ * Cluster Operator configuration
  */
 public class ClusterOperatorConfig {
 
@@ -31,7 +31,7 @@ public class ClusterOperatorConfig {
     /**
      * Constructor
      *
-     * @param namespaces namespace in which the controller will run and create resources
+     * @param namespaces namespace in which the operator will run and create resources
      * @param reconciliationIntervalMs    specify every how many milliseconds the reconciliation runs
      * @param operationTimeoutMs    timeout for internal operations specified in milliseconds
      */
@@ -45,7 +45,7 @@ public class ClusterOperatorConfig {
      * Loads configuration parameters from a related map
      *
      * @param map   map from which loading configuration parameters
-     * @return  Cluster Controller configuration instance
+     * @return  Cluster Operator configuration instance
      */
     public static ClusterOperatorConfig fromMap(Map<String, String> map) {
 
@@ -74,7 +74,7 @@ public class ClusterOperatorConfig {
 
 
     /**
-     * @return  namespaces in which the controller runs and creates resources
+     * @return  namespaces in which the operator runs and creates resources
      */
     public Set<String> getNamespaces() {
         return namespaces;
@@ -96,7 +96,7 @@ public class ClusterOperatorConfig {
 
     @Override
     public String toString() {
-        return "ClusterControllerConfig(" +
+        return "ClusterOperatorConfig(" +
                 "namespaces=" + namespaces +
                 ",reconciliationIntervalMs=" + reconciliationIntervalMs +
                 ")";

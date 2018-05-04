@@ -178,7 +178,7 @@ public class KafkaCluster extends AbstractModel {
 
             Storage storage = Storage.fromPersistentVolumeClaim(ss.getSpec().getVolumeClaimTemplates().get(0));
             if (ss.getMetadata().getAnnotations() != null) {
-                String deleteClaimAnnotation = String.format("%s/%s", ClusterOperator.STRIMZI_CLUSTER_CONTROLLER_DOMAIN, Storage.DELETE_CLAIM_FIELD);
+                String deleteClaimAnnotation = String.format("%s/%s", ClusterOperator.STRIMZI_CLUSTER_OPERATOR_DOMAIN, Storage.DELETE_CLAIM_FIELD);
                 storage.withDeleteClaim(Boolean.valueOf(ss.getMetadata().getAnnotations().computeIfAbsent(deleteClaimAnnotation, s -> "false")));
             }
             kafka.setStorage(storage);
@@ -224,7 +224,7 @@ public class KafkaCluster extends AbstractModel {
 
     /**
      * Generates a StatefulSet according to configured defaults
-     * @param isOpenShift True iff this controller is operating within OpenShift.
+     * @param isOpenShift True iff this operator is operating within OpenShift.
      * @return The generate StatefulSet
      */
     public StatefulSet generateStatefulSet(boolean isOpenShift) {

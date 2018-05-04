@@ -34,14 +34,14 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 
-import static io.strimzi.operator.cluster.model.TopicOperator.topicControllerName;
+import static io.strimzi.operator.cluster.model.TopicOperator.topicOperatorName;
 
 /**
  * <p>Assembly operator for a "Kafka" assembly, which manages:</p>
  * <ul>
  *     <li>A ZooKeeper cluster StatefulSet and related Services</li>
  *     <li>A Kafka cluster StatefulSet and related Services</li>
- *     <li>Optionally, a TopicController Deployment</li>
+ *     <li>Optionally, a TopicOperator Deployment</li>
  * </ul>
  */
 public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
@@ -86,7 +86,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
         Future<Void> f = Future.<Void>future().setHandler(handler);
         createOrUpdateZk(reconciliation, assemblyCm)
             .compose(i -> createOrUpdateKafka(reconciliation, assemblyCm))
-            .compose(i -> createOrUpdateTopicController(reconciliation, assemblyCm))
+            .compose(i -> createOrUpdateTopicOperator(reconciliation, assemblyCm))
             .compose(ar -> f.complete(), f);
     }
 
@@ -201,26 +201,26 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
         return CompositeFuture.join(result);
     };
 
-    private final Future<ReconcileResult<Void>> createOrUpdateTopicController(Reconciliation reconciliation, ConfigMap assemblyCm) {
+    private final Future<ReconcileResult<Void>> createOrUpdateTopicOperator(Reconciliation reconciliation, ConfigMap assemblyCm) {
         String namespace = assemblyCm.getMetadata().getNamespace();
         String name = assemblyCm.getMetadata().getName();
-        log.debug("{}: create/update topic controller {}", reconciliation, name);
+        log.debug("{}: create/update topic operator {}", reconciliation, name);
         TopicOperator topicOperator = TopicOperator.fromConfigMap(assemblyCm);
         Deployment deployment = topicOperator != null ? topicOperator.generateDeployment() : null;
-        return deploymentOperations.reconcile(namespace, topicControllerName(name), deployment);
+        return deploymentOperations.reconcile(namespace, topicOperatorName(name), deployment);
     };
 
-    private final Future<ReconcileResult<Void>> deleteTopicController(Reconciliation reconciliation) {
+    private final Future<ReconcileResult<Void>> deleteTopicOperator(Reconciliation reconciliation) {
         String namespace = reconciliation.namespace();
         String name = reconciliation.assemblyName();
-        log.debug("{}: delete topic controller {}", reconciliation, name);
-        return deploymentOperations.reconcile(namespace, topicControllerName(name), null);
+        log.debug("{}: delete topic operator {}", reconciliation, name);
+        return deploymentOperations.reconcile(namespace, topicOperatorName(name), null);
     };
 
     @Override
     protected void delete(Reconciliation reconciliation, Handler<AsyncResult<Void>> handler) {
         Future<Void> f = Future.<Void>future().setHandler(handler);
-        deleteTopicController(reconciliation)
+        deleteTopicOperator(reconciliation)
                 .compose(i -> deleteKafka(reconciliation))
                 .compose(i -> deleteZk(reconciliation))
                 .compose(ar -> f.complete(), f);

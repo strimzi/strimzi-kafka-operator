@@ -26,10 +26,10 @@ public class Labels {
      * <ul>
      *     <li>{@code strimzi.io/kind=cluster}
      *         identifies a ConfigMap that is intended to be consumed by
-     *         the cluster controller.</li>
+     *         the cluster operator.</li>
      *     <li>{@code strimzi.io/kind=topic}
      *         identifies a ConfigMap that is intended to be consumed
-     *         by the topic controller.</li>
+     *         by the topic operator.</li>
      * </ul>
      */
     public static final String STRIMZI_KIND_LABEL = STRIMZI_DOMAIN + "kind";

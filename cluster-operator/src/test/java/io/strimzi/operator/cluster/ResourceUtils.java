@@ -76,7 +76,7 @@ public class ResourceUtils {
 
     public static ConfigMap createKafkaClusterConfigMap(String clusterCmNamespace, String clusterCmName, int replicas,
                                                         String image, int healthDelay, int healthTimeout, String metricsCmJson,
-                                                        String kafkaConfigurationJson, String storage, String topicController) {
+                                                        String kafkaConfigurationJson, String storage, String topicOperator) {
         Map<String, String> cmData = new HashMap<>();
         cmData.put(KafkaCluster.KEY_REPLICAS, Integer.toString(replicas));
         cmData.put(KafkaCluster.KEY_IMAGE, image);
@@ -91,8 +91,8 @@ public class ResourceUtils {
         cmData.put(ZookeeperCluster.KEY_HEALTHCHECK_TIMEOUT, Integer.toString(healthTimeout));
         cmData.put(ZookeeperCluster.KEY_STORAGE, storage);
         cmData.put(ZookeeperCluster.KEY_METRICS_CONFIG, metricsCmJson);
-        if (topicController != null) {
-            cmData.put(TopicOperator.KEY_CONFIG, topicController);
+        if (topicOperator != null) {
+            cmData.put(TopicOperator.KEY_CONFIG, topicOperator);
         }
         return new ConfigMapBuilder()
                 .withNewMetadata()

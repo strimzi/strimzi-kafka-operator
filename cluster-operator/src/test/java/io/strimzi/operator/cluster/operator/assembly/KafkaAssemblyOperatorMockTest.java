@@ -224,7 +224,7 @@ public class KafkaAssemblyOperatorMockTest {
             context.assertTrue(ar.succeeded());
             context.assertNotNull(mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaClusterName(CLUSTER_NAME)).get());
             context.assertNotNull(mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(ZookeeperCluster.zookeeperClusterName(CLUSTER_NAME)).get());
-            context.assertNotNull(mockClient.extensions().deployments().inNamespace(NAMESPACE).withName(TopicOperator.topicControllerName(CLUSTER_NAME)).get());
+            context.assertNotNull(mockClient.extensions().deployments().inNamespace(NAMESPACE).withName(TopicOperator.topicOperatorName(CLUSTER_NAME)).get());
             context.assertNotNull(mockClient.configMaps().inNamespace(NAMESPACE).withName(KafkaCluster.metricConfigsName(CLUSTER_NAME)).get());
             context.assertNotNull(mockClient.configMaps().inNamespace(NAMESPACE).withName(ZookeeperCluster.zookeeperMetricsName(CLUSTER_NAME)).get());
             assertResourceReqirements(context, KafkaCluster.kafkaClusterName(CLUSTER_NAME));
@@ -310,7 +310,7 @@ public class KafkaAssemblyOperatorMockTest {
     }
 
     /**
-     * Test the controller re-creates services if they get deleted
+     * Test the operator re-creates services if they get deleted
      */
     private void updateClusterWithoutServices(TestContext context, String... services) {
 

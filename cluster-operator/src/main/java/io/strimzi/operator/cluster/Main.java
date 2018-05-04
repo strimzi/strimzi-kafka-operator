@@ -46,7 +46,7 @@ public class Main {
             if (os.succeeded()) {
                 run(vertx, client, os.result().booleanValue(), config).setHandler(ar -> {
                     if (ar.failed()) {
-                        log.error("Unable to start controller for 1 or more namespace", ar.cause());
+                        log.error("Unable to start operator for 1 or more namespace", ar.cause());
                         System.exit(1);
                     }
                 });
@@ -86,18 +86,18 @@ public class Main {
         for (String namespace : config.getNamespaces()) {
             Future<String> fut = Future.future();
             futures.add(fut);
-            ClusterOperator controller = new ClusterOperator(namespace,
+            ClusterOperator operator = new ClusterOperator(namespace,
                     config.getReconciliationIntervalMs(),
                     client,
                     kafkaClusterOperations,
                     kafkaConnectClusterOperations,
                     kafkaConnectS2IClusterOperations);
-            vertx.deployVerticle(controller,
+            vertx.deployVerticle(operator,
                 res -> {
                     if (res.succeeded()) {
-                        log.info("Cluster Controller verticle started in namespace {}", namespace);
+                        log.info("Cluster Operator verticle started in namespace {}", namespace);
                     } else {
-                        log.error("Cluster Controller verticle in namespace {} failed to start", namespace, res.cause());
+                        log.error("Cluster Operator verticle in namespace {} failed to start", namespace, res.cause());
                         System.exit(1);
                     }
                     fut.completer().handle(res);
