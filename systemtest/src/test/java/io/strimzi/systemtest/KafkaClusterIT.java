@@ -284,7 +284,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
     @Test
     @JUnitGroup(name = "acceptance")
     @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 3, config = {
-            @CmData(key = "kafka-config", value = "{\"default.replication.factor\": 1,\"offsets.topic.replication.factor\": 1,\"transaction.state.log.replication.factor\": 1}")
+            @CmData(key = "kafka-config", value = "{\"default.replication.factor\": 3,\"offsets.topic.replication.factor\": 3,\"transaction.state.log.replication.factor\": 3}")
             })
     @Topic(name = TOPIC_NAME, clusterName = "my-cluster")
     public void testSendMessages() {
