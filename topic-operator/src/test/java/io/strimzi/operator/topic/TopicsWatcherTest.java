@@ -18,11 +18,11 @@ import static org.junit.Assert.assertTrue;
 @RunWith(VertxUnitRunner.class)
 public class TopicsWatcherTest {
 
-    private MockController controller;
+    private MockTopicOperator controller;
     private MockZk mockZk;
     @Before
     public void setup() {
-        controller = new MockController();
+        controller = new MockTopicOperator();
         mockZk = new MockZk();
     }
 
@@ -32,7 +32,7 @@ public class TopicsWatcherTest {
     }
 
     private void addTopic() {
-        controller = new MockController();
+        controller = new MockTopicOperator();
         controller.topicCreatedResult = Future.succeededFuture();
         mockZk = new MockZk();
         mockZk.childrenResult = Future.succeededFuture(asList("foo", "bar"));
@@ -42,8 +42,8 @@ public class TopicsWatcherTest {
         TopicsWatcher topicsWatcher = new TopicsWatcher(controller, topicConfigsWatcher, topicWatcher);
         topicsWatcher.start(mockZk);
         mockZk.triggerChildren(Future.succeededFuture(asList("foo", "bar", "baz")));
-        assertEquals(asList(new MockController.MockControllerEvent(
-                MockController.MockControllerEvent.Type.CREATE, new TopicName("baz"))), controller.getMockControllerEvents());
+        assertEquals(asList(new MockTopicOperator.MockControllerEvent(
+                MockTopicOperator.MockControllerEvent.Type.CREATE, new TopicName("baz"))), controller.getMockControllerEvents());
         assertTrue(topicConfigsWatcher.watching("baz"));
         assertTrue(topicWatcher.watching("baz"));
     }
@@ -56,14 +56,14 @@ public class TopicsWatcherTest {
         controller.clearEvents();
         mockZk.triggerData(Future.succeededFuture(new byte[0]));
         assertEquals(asList(
-                new MockController.MockControllerEvent(MockController.MockControllerEvent.Type.MODIFY_PARTITIONS, new TopicName("baz")),
-                new MockController.MockControllerEvent(MockController.MockControllerEvent.Type.MODIFY_CONFIG, new TopicName("baz"))),
+                new MockTopicOperator.MockControllerEvent(MockTopicOperator.MockControllerEvent.Type.MODIFY_PARTITIONS, new TopicName("baz")),
+                new MockTopicOperator.MockControllerEvent(MockTopicOperator.MockControllerEvent.Type.MODIFY_CONFIG, new TopicName("baz"))),
                 controller.getMockControllerEvents());
     }
 
     @Test
     public void testTopicDelete() {
-        controller = new MockController();
+        controller = new MockTopicOperator();
         controller.topicDeletedResult = Future.succeededFuture();
         mockZk = new MockZk();
         mockZk.childrenResult = Future.succeededFuture(asList("foo", "bar"));
@@ -72,8 +72,8 @@ public class TopicsWatcherTest {
         TopicsWatcher topicsWatcher = new TopicsWatcher(controller, topicConfigsWatcher, topicWatcher);
         topicsWatcher.start(mockZk);
         mockZk.triggerChildren(Future.succeededFuture(asList("foo")));
-        assertEquals(asList(new MockController.MockControllerEvent(
-                MockController.MockControllerEvent.Type.DELETE, new TopicName("bar"))), controller.getMockControllerEvents());
+        assertEquals(asList(new MockTopicOperator.MockControllerEvent(
+                MockTopicOperator.MockControllerEvent.Type.DELETE, new TopicName("bar"))), controller.getMockControllerEvents());
         assertFalse(topicConfigsWatcher.watching("baz"));
     }
 }

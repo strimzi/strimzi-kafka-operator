@@ -19,11 +19,11 @@ class ConfigMapWatcher implements Watcher<ConfigMap> {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(ConfigMapWatcher.class);
 
-    private Controller controller;
+    private TopicOperator topicOperator;
     private final LabelPredicate cmPredicate;
 
-    public ConfigMapWatcher(Controller controller, LabelPredicate cmPredicate) {
-        this.controller = controller;
+    public ConfigMapWatcher(TopicOperator topicOperator, LabelPredicate cmPredicate) {
+        this.topicOperator = topicOperator;
         this.cmPredicate = cmPredicate;
     }
 
@@ -46,18 +46,18 @@ class ConfigMapWatcher implements Watcher<ConfigMap> {
                         message = "Failure processing ConfigMap watch event " + action + " on map " + name + " with labels " + labels + ": " + ar.cause().getMessage();
                         LOGGER.error("{}", message, ar.cause());
                     }
-                    controller.enqueue(controller.new Event(configMap, message, Controller.EventType.WARNING, errorResult -> { }));
+                    topicOperator.enqueue(topicOperator.new Event(configMap, message, TopicOperator.EventType.WARNING, errorResult -> { }));
                 }
             };
             switch (action) {
                 case ADDED:
-                    controller.onConfigMapAdded(configMap, resultHandler);
+                    topicOperator.onConfigMapAdded(configMap, resultHandler);
                     break;
                 case MODIFIED:
-                    controller.onConfigMapModified(configMap, resultHandler);
+                    topicOperator.onConfigMapModified(configMap, resultHandler);
                     break;
                 case DELETED:
-                    controller.onConfigMapDeleted(configMap, resultHandler);
+                    topicOperator.onConfigMapDeleted(configMap, resultHandler);
                     break;
                 case ERROR:
                     LOGGER.error("Watch received action=ERROR for ConfigMap " + name);

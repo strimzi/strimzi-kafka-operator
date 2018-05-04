@@ -56,11 +56,11 @@ import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-@Namespace(ControllerIT.NAMESPACE)
+@Namespace(TopicOperatorIT.NAMESPACE)
 @RunWith(VertxUnitRunner.class)
-public class ControllerIT {
+public class TopicOperatorIT {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ControllerIT.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(TopicOperatorIT.class);
 
     @ClassRule
     public static KubeClusterResource testCluster = new KubeClusterResource();
@@ -381,7 +381,7 @@ public class ControllerIT {
         }
     }
 
-    private void waitForEvent(TestContext context, ConfigMap cm, String expectedMessage, Controller.EventType expectedType) {
+    private void waitForEvent(TestContext context, ConfigMap cm, String expectedMessage, TopicOperator.EventType expectedType) {
         waitFor(context, () -> {
             List<Event> items = kubeClient.events().inNamespace(NAMESPACE).withLabels(cmPredicate.labels()).list().getItems();
             List<Event> filtered = items.stream().
@@ -469,7 +469,7 @@ public class ControllerIT {
                 "ConfigMap test-configmap-created-with-bad-data has an invalid 'data' section: " +
                         "ConfigMap's 'data' section has invalid key 'partitions': " +
                         "should be a strictly positive integer but was 'foo'",
-                Controller.EventType.WARNING);
+                TopicOperator.EventType.WARNING);
 
     }
 
@@ -534,7 +534,7 @@ public class ControllerIT {
                 "ConfigMap test-configmap-modified-with-bad-data has an invalid 'data' section: " +
                         "ConfigMap's 'data' section has invalid key 'partitions': " +
                         "should be a strictly positive integer but was 'foo'",
-                Controller.EventType.WARNING);
+                TopicOperator.EventType.WARNING);
     }
 
     @Test
@@ -551,7 +551,7 @@ public class ControllerIT {
         // We expect this to cause a warning event
         waitForEvent(context, cm,
                 "Kafka topics cannot be renamed, but ConfigMap's data.name has changed.",
-                Controller.EventType.WARNING);
+                TopicOperator.EventType.WARNING);
 
     }
 
@@ -569,7 +569,7 @@ public class ControllerIT {
         waitForEvent(context, cm,
                 "Failure processing ConfigMap watch event ADDED on map two-cms-one-topic with labels {strimzi.io/kind=topic}: " +
                         "Topic 'two-cms-one-topic' is already managed via ConfigMap 'two-cms-one-topic-1' it cannot also be managed via the ConfiMap 'two-cms-one-topic'",
-                Controller.EventType.WARNING);
+                TopicOperator.EventType.WARNING);
     }
 
     @Test
@@ -599,7 +599,7 @@ public class ControllerIT {
         }, timeout, "Expected the configmap to have been created by now");
 
         // trigger an immediate reconcile, while topic controller is dealing with configmap modification
-        session.controller.reconcileAllTopics("periodic");
+        session.topicOperator.reconcileAllTopics("periodic");
 
         // Wait for the topic to be created
         waitFor(context, () -> {

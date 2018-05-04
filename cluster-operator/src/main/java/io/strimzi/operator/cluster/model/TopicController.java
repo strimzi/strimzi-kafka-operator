@@ -10,7 +10,7 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategy;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategyBuilder;
-import io.strimzi.operator.cluster.ClusterController;
+import io.strimzi.operator.cluster.ClusterOperator;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -261,6 +261,6 @@ public class TopicController extends AbstractModel {
 
     @Override
     protected String getServiceAccountName() {
-        return ClusterController.STRIMZI_CLUSTER_CONTROLLER_SERVICE_ACCOUNT;
+        return ClusterOperator.STRIMZI_CLUSTER_CONTROLLER_SERVICE_ACCOUNT;
     }
 }

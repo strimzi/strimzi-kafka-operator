@@ -25,9 +25,9 @@ import java.util.stream.Collectors;
 
 import static java.util.Collections.disjoint;
 
-public class Controller {
+public class TopicOperator {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(Controller.class);
+    private final static Logger LOGGER = LoggerFactory.getLogger(TopicOperator.class);
     private final static Logger EVENT_LOGGER = LoggerFactory.getLogger("Event");
     private final Kafka kafka;
     private final K8s k8s;
@@ -53,7 +53,7 @@ public class Controller {
         private final HasMetadata involvedObject;
         private final Handler<AsyncResult<Void>> handler;
 
-        public Event(ControllerException exception, Handler<AsyncResult<Void>> handler) {
+        public Event(OperatorException exception, Handler<AsyncResult<Void>> handler) {
             this.involvedObject = exception.getInvolvedObject();
             this.message = exception.getMessage();
             this.handler = handler;
@@ -83,7 +83,7 @@ public class Controller {
                     .withMessage(message)
                     .withNewMetadata().withLabels(cmPredicate.labels()).withGenerateName("topic-controller").withNamespace(namespace).endMetadata()
                     .withNewSource()
-                    .withComponent(Controller.class.getName())
+                    .withComponent(TopicOperator.class.getName())
                     .endSource();
             io.fabric8.kubernetes.api.model.Event event = evtb.build();
             switch (eventType) {
@@ -113,7 +113,7 @@ public class Controller {
         }
 
         @Override
-        public void handle(Void v) throws ControllerException {
+        public void handle(Void v) throws OperatorException {
             ConfigMap cm = TopicSerialization.toConfigMap(topic, cmPredicate);
             k8s.createConfigMap(cm, handler);
         }
@@ -184,7 +184,7 @@ public class Controller {
         }
 
         @Override
-        public void handle(Void v) throws ControllerException {
+        public void handle(Void v) throws OperatorException {
             kafka.createTopic(topic, ar -> {
                 if (ar.succeeded()) {
                     LOGGER.info("Created topic '{}' for ConfigMap '{}'", topic.getTopicName(), topic.getMapName());
@@ -194,7 +194,7 @@ public class Controller {
                     if (ar.cause() instanceof TopicExistsException) {
                         // TODO reconcile
                     } else {
-                        throw new ControllerException(involvedObject, ar.cause());
+                        throw new OperatorException(involvedObject, ar.cause());
                     }
                 }
             });
@@ -221,7 +221,7 @@ public class Controller {
         }
 
         @Override
-        public void handle(Void v) throws ControllerException {
+        public void handle(Void v) throws OperatorException {
             kafka.updateTopicConfig(topic, ar -> {
                 if (ar.failed()) {
                     enqueue(new Event(involvedObject, ar.cause().toString(), EventType.WARNING, eventResult -> { }));
@@ -252,7 +252,7 @@ public class Controller {
         }
 
         @Override
-        public void handle(Void v) throws ControllerException {
+        public void handle(Void v) throws OperatorException {
             kafka.increasePartitions(topic, ar -> {
                 if (ar.failed()) {
                     enqueue(new Event(involvedObject, ar.cause().toString(), EventType.WARNING, eventResult -> { }));
@@ -283,7 +283,7 @@ public class Controller {
         }
 
         @Override
-        public void handle(Void v) throws ControllerException {
+        public void handle(Void v) throws OperatorException {
             kafka.changeReplicationFactor(topic, ar -> {
                 if (ar.failed()) {
                     enqueue(new Event(involvedObject, ar.cause().toString(), EventType.WARNING, eventResult -> { }));
@@ -311,7 +311,7 @@ public class Controller {
         }
 
         @Override
-        public void handle(Void v) throws ControllerException {
+        public void handle(Void v) throws OperatorException {
             LOGGER.info("Deleting topic '{}'", topicName);
             kafka.deleteTopic(topicName, handler);
         }
@@ -322,12 +322,12 @@ public class Controller {
         }
     }
 
-    public Controller(Vertx vertx, Kafka kafka,
-                      K8s k8s,
-                      TopicStore topicStore,
-                      LabelPredicate cmPredicate,
-                      String namespace,
-                      Config config) {
+    public TopicOperator(Vertx vertx, Kafka kafka,
+                         K8s k8s,
+                         TopicStore topicStore,
+                         LabelPredicate cmPredicate,
+                         String namespace,
+                         Config config) {
         this.kafka = kafka;
         this.k8s = k8s;
         this.vertx = vertx;
@@ -373,7 +373,7 @@ public class Controller {
                 } catch (InvalidConfigMapException e) {
                     LOGGER.error("Error reconciling ConfigMap {}: Invalid 'data' section: ", logConfigMap(cm), e.getMessage());
                     fut.fail(e);
-                } catch (ControllerException e) {
+                } catch (OperatorException e) {
                     LOGGER.error("Error reconciling ConfigMap {}", logConfigMap(cm), e);
                     fut.fail(e);
                 }
@@ -534,7 +534,7 @@ public class Controller {
     private void update3Way(HasMetadata involvedObject, Topic k8sTopic, Topic kafkaTopic, Topic privateTopic,
                             Handler<AsyncResult<Void>> reconciliationResultHandler) {
         if (!privateTopic.getMapName().equals(k8sTopic.getMapName())) {
-            reconciliationResultHandler.handle(Future.failedFuture(new ControllerException(involvedObject,
+            reconciliationResultHandler.handle(Future.failedFuture(new OperatorException(involvedObject,
                     "Topic '" + kafkaTopic.getTopicName() + "' is already managed via ConfigMap '" + privateTopic.getMapName() + "' it cannot also be managed via the ConfiMap '" + k8sTopic.getMapName() + "'")));
             return;
         }
@@ -605,7 +605,7 @@ public class Controller {
         Handler<Future<Void>> action = new Reconciliation("onTopicDeleted") {
             @Override
             public void handle(Future<Void> fut) {
-                Controller.this.reconcileOnTopicChange(topicName, null, fut.completer());
+                TopicOperator.this.reconcileOnTopicChange(topicName, null, fut.completer());
             }
         };
         inFlight.enqueue(topicName, action, resultHandler);
@@ -619,7 +619,7 @@ public class Controller {
                 kafka.topicMetadata(topicName, metadataResult -> {
                     if (metadataResult.succeeded()) {
                         Topic topic = TopicSerialization.fromTopicMetadata(metadataResult.result());
-                        Controller.this.reconcileOnTopicChange(topicName, topic, fut.completer());
+                        TopicOperator.this.reconcileOnTopicChange(topicName, topic, fut.completer());
                     } else {
                         fut.fail(metadataResult.cause());
                     }
@@ -651,7 +651,7 @@ public class Controller {
                                     retry();
                                 } else {
                                     LOGGER.info("Topic {} partitions changed to {}", topicName, kafkaTopic.getNumPartitions());
-                                    Controller.this.reconcileOnTopicChange(topicName, kafkaTopic, fut.completer());
+                                    TopicOperator.this.reconcileOnTopicChange(topicName, kafkaTopic, fut.completer());
                                 }
 
                             } else {
@@ -779,7 +779,7 @@ public class Controller {
             Handler<Future<Void>> action = new Reconciliation("onConfigMapAdded") {
                 @Override
                 public void handle(Future<Void> fut) {
-                    Controller.this.reconcileOnCmChange(configMap, k8sTopic, false, fut);
+                    TopicOperator.this.reconcileOnCmChange(configMap, k8sTopic, false, fut);
                 }
             };
             inFlight.enqueue(new TopicName(configMap), action, resultHandler);
@@ -814,7 +814,7 @@ public class Controller {
             Reconciliation action = new Reconciliation("onConfigMapModified") {
                 @Override
                 public void handle(Future<Void> fut) {
-                    Controller.this.reconcileOnCmChange(configMap, k8sTopic, true, fut);
+                    TopicOperator.this.reconcileOnCmChange(configMap, k8sTopic, true, fut);
                 }
             };
             inFlight.enqueue(new TopicName(configMap), action, resultHandler);
@@ -851,7 +851,7 @@ public class Controller {
             Reconciliation action = new Reconciliation("onConfigMapDeleted") {
                 @Override
                 public void handle(Future<Void> fut) {
-                    Controller.this.reconcileOnCmChange(configMap, null, false, fut);
+                    TopicOperator.this.reconcileOnCmChange(configMap, null, false, fut);
                 }
             };
             inFlight.enqueue(new TopicName(configMap), action, resultHandler);
@@ -872,7 +872,7 @@ public class Controller {
         }
 
         @Override
-        public void handle(Void v) throws ControllerException {
+        public void handle(Void v) throws OperatorException {
             topicStore.update(topic, ar -> {
                 if (ar.failed()) {
                     enqueue(new Event(involvedObject, ar.cause().toString(), EventType.WARNING, eventResult -> { }));
@@ -900,7 +900,7 @@ public class Controller {
         }
 
         @Override
-        public void handle(Void v) throws ControllerException {
+        public void handle(Void v) throws OperatorException {
             LOGGER.debug("Executing {}", this);
             topicStore.create(topic, ar -> {
                 LOGGER.debug("Completing {}", this);
@@ -933,7 +933,7 @@ public class Controller {
         }
 
         @Override
-        public void handle(Void v) throws ControllerException {
+        public void handle(Void v) throws OperatorException {
             topicStore.delete(topicName, ar -> {
                 if (ar.failed()) {
                     enqueue(new Event(involvedObject, ar.cause().toString(), EventType.WARNING, eventResult -> { }));
@@ -990,7 +990,7 @@ public class Controller {
                             LOGGER.error("Error {} getting ConfigMap {} for topic {}",
                                     reconciliationType,
                                     topicName.asMapName(), topicName, cmResult.cause());
-                            topicFuture.fail(new ControllerException("Error getting ConfigMap " + topicName.asMapName() + " during " + reconciliationType + " reconciliation", cmResult.cause()));
+                            topicFuture.fail(new OperatorException("Error getting ConfigMap " + topicName.asMapName() + " during " + reconciliationType + " reconciliation", cmResult.cause()));
                         }
                     });
                 }
@@ -1015,14 +1015,14 @@ public class Controller {
                         CompositeFuture.join(cmFutures).setHandler(mapsJoin);
                     } else {
                         LOGGER.error("Unable to list ConfigMaps", configMapsListResult.cause());
-                        mapsJoin.fail(new ControllerException("Error listing existing ConfigMaps during " + reconciliationType + " reconciliation", configMapsListResult.cause()));
+                        mapsJoin.fail(new OperatorException("Error listing existing ConfigMaps during " + reconciliationType + " reconciliation", configMapsListResult.cause()));
                     }
                     // Finally those in private store which we've not dealt with so far...
                     // TODO ^^
                 });
             } else {
                 LOGGER.error("Error performing {} reconciliation", reconciliationType, topicsListResult.cause());
-                ControllerException listException = new ControllerException("Error listing existing topics during " + reconciliationType + " reconciliation", topicsListResult.cause());
+                OperatorException listException = new OperatorException("Error listing existing topics during " + reconciliationType + " reconciliation", topicsListResult.cause());
                 topicsJoin.fail(listException);
                 mapsJoin.fail(listException);
             }

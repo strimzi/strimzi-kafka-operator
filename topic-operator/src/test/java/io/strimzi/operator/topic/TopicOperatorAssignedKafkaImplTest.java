@@ -21,7 +21,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 
 @RunWith(VertxUnitRunner.class)
-public class ControllerAssignedKafkaImplTest {
+public class TopicOperatorAssignedKafkaImplTest {
 
     private static Config config;
 

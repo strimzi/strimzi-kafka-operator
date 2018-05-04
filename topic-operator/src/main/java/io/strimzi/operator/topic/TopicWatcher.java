@@ -8,21 +8,21 @@ import io.vertx.core.Handler;
 
 /**
  * ZooKeeper watcher for child znodes of {@code /brokers/topics},
- * calling {@link Controller#onTopicPartitionsChanged(TopicName, Handler)}
+ * calling {@link TopicOperator#onTopicPartitionsChanged(TopicName, Handler)}
  * for changed children.
  */
 public class TopicWatcher extends ZkWatcher {
 
     private static final String TOPICS_ZNODE = "/brokers/topics";
 
-    TopicWatcher(Controller controller) {
-        super(controller, TOPICS_ZNODE);
+    TopicWatcher(TopicOperator topicOperator) {
+        super(topicOperator, TOPICS_ZNODE);
     }
 
     @Override
     protected void notifyController(String child) {
         log.debug("Partitions change for topic {}", child);
-        controller.onTopicPartitionsChanged(new TopicName(child), ar -> {
+        topicOperator.onTopicPartitionsChanged(new TopicName(child), ar -> {
             log.info("Reconciliation result due to topic partitions change: {}", ar);
         });
     }

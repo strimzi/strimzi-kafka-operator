@@ -38,7 +38,7 @@ public class Main {
     private static final Logger log = LoggerFactory.getLogger(Main.class.getName());
 
     public static void main(String[] args) {
-        ClusterControllerConfig config = ClusterControllerConfig.fromMap(System.getenv());
+        ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(System.getenv());
         Vertx vertx = Vertx.vertx();
         KubernetesClient client = new DefaultKubernetesClient();
 
@@ -57,7 +57,7 @@ public class Main {
         });
     }
 
-    static CompositeFuture run(Vertx vertx, KubernetesClient client, boolean isOpenShift, ClusterControllerConfig config) {
+    static CompositeFuture run(Vertx vertx, KubernetesClient client, boolean isOpenShift, ClusterOperatorConfig config) {
         printEnvInfo();
         ServiceOperator serviceOperations = new ServiceOperator(vertx, client);
         ZookeeperSetOperator zookeeperSetOperations = new ZookeeperSetOperator(vertx, client, config.getOperationTimeoutMs());
@@ -86,7 +86,7 @@ public class Main {
         for (String namespace : config.getNamespaces()) {
             Future<String> fut = Future.future();
             futures.add(fut);
-            ClusterController controller = new ClusterController(namespace,
+            ClusterOperator controller = new ClusterOperator(namespace,
                     config.getReconciliationIntervalMs(),
                     client,
                     kafkaClusterOperations,

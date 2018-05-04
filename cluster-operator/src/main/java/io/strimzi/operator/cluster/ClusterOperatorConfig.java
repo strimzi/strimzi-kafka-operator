@@ -14,7 +14,7 @@ import static java.util.Collections.unmodifiableSet;
 /**
  * Cluster Controller configuration
  */
-public class ClusterControllerConfig {
+public class ClusterOperatorConfig {
 
     public static final String STRIMZI_NAMESPACE = "STRIMZI_NAMESPACE";
     public static final String STRIMZI_CONFIGMAP_LABELS = "STRIMZI_CONFIGMAP_LABELS";
@@ -35,7 +35,7 @@ public class ClusterControllerConfig {
      * @param reconciliationIntervalMs    specify every how many milliseconds the reconciliation runs
      * @param operationTimeoutMs    timeout for internal operations specified in milliseconds
      */
-    public ClusterControllerConfig(Set<String> namespaces, long reconciliationIntervalMs, long operationTimeoutMs) {
+    public ClusterOperatorConfig(Set<String> namespaces, long reconciliationIntervalMs, long operationTimeoutMs) {
         this.namespaces = unmodifiableSet(new HashSet<>(namespaces));
         this.reconciliationIntervalMs = reconciliationIntervalMs;
         this.operationTimeoutMs = operationTimeoutMs;
@@ -47,29 +47,29 @@ public class ClusterControllerConfig {
      * @param map   map from which loading configuration parameters
      * @return  Cluster Controller configuration instance
      */
-    public static ClusterControllerConfig fromMap(Map<String, String> map) {
+    public static ClusterOperatorConfig fromMap(Map<String, String> map) {
 
-        String namespacesList = map.get(ClusterControllerConfig.STRIMZI_NAMESPACE);
+        String namespacesList = map.get(ClusterOperatorConfig.STRIMZI_NAMESPACE);
         Set<String> namespaces;
         if (namespacesList == null || namespacesList.isEmpty()) {
-            throw new IllegalArgumentException(ClusterControllerConfig.STRIMZI_NAMESPACE + " cannot be null");
+            throw new IllegalArgumentException(ClusterOperatorConfig.STRIMZI_NAMESPACE + " cannot be null");
         } else {
             namespaces = new HashSet(asList(namespacesList.trim().split("\\s*,+\\s*")));
         }
 
         long reconciliationInterval = DEFAULT_FULL_RECONCILIATION_INTERVAL_MS;
-        String reconciliationIntervalEnvVar = map.get(ClusterControllerConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS);
+        String reconciliationIntervalEnvVar = map.get(ClusterOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS);
         if (reconciliationIntervalEnvVar != null) {
             reconciliationInterval = Long.parseLong(reconciliationIntervalEnvVar);
         }
 
         long operationTimeout = DEFAULT_OPERATION_TIMEOUT_MS;
-        String operationTimeoutEnvVar = map.get(ClusterControllerConfig.STRIMZI_OPERATION_TIMEOUT_MS);
+        String operationTimeoutEnvVar = map.get(ClusterOperatorConfig.STRIMZI_OPERATION_TIMEOUT_MS);
         if (operationTimeoutEnvVar != null) {
             operationTimeout = Long.parseLong(operationTimeoutEnvVar);
         }
 
-        return new ClusterControllerConfig(namespaces, reconciliationInterval, operationTimeout);
+        return new ClusterOperatorConfig(namespaces, reconciliationInterval, operationTimeout);
     }
 
 

@@ -6,7 +6,7 @@ package io.strimzi.operator.topic;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 
-public class InvalidConfigMapException extends ControllerException {
+public class InvalidConfigMapException extends OperatorException {
     public InvalidConfigMapException(HasMetadata involvedObject, String message) {
         super(involvedObject, message);
     }

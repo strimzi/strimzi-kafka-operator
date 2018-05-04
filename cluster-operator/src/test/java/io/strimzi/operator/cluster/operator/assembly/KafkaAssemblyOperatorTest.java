@@ -9,7 +9,7 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
-import io.strimzi.operator.cluster.ClusterControllerConfig;
+import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.Reconciliation;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
@@ -205,7 +205,7 @@ public class KafkaAssemblyOperatorTest {
         when(mockCmOps.reconcile(anyString(), metricsNameCaptor.capture(), metricsCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created()));
 
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, openShift,
-                ClusterControllerConfig.DEFAULT_OPERATION_TIMEOUT_MS,
+                ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS,
                 mockCmOps,
                 mockServiceOps, mockZsOps, mockKsOps,
                 mockPvcOps, mockDepOps);
@@ -324,7 +324,7 @@ public class KafkaAssemblyOperatorTest {
         }
 
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, openShift,
-                ClusterControllerConfig.DEFAULT_OPERATION_TIMEOUT_MS,
+                ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS,
                 mockCmOps,
                 mockServiceOps, mockZsOps, mockKsOps,
                 mockPvcOps,
@@ -594,7 +594,7 @@ public class KafkaAssemblyOperatorTest {
         when(mockDepOps.reconcile(anyString(), depCaptor.capture(), any())).thenReturn(Future.succeededFuture());
 
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, openShift,
-                ClusterControllerConfig.DEFAULT_OPERATION_TIMEOUT_MS,
+                ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS,
                 mockCmOps,
                 mockServiceOps, mockZsOps, mockKsOps,
                 mockPvcOps, mockDepOps);
@@ -672,7 +672,7 @@ public class KafkaAssemblyOperatorTest {
         Set<String> deleted = new HashSet<>();
 
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, openShift,
-                ClusterControllerConfig.DEFAULT_OPERATION_TIMEOUT_MS,
+                ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS,
                 mockCmOps,
                 mockServiceOps, mockZsOps, mockKsOps,
                 mockPvcOps, mockDepOps) {

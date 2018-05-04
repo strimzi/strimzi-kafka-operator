@@ -10,25 +10,25 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
  * A transient exception is one where we cannot <em>currently</em> complete the work required for reconciliation
  * but the problem should have gone away if we retry later.
  */
-public class TransientControllerException extends ControllerException {
+public class TransientOperatorException extends OperatorException {
 
-    public TransientControllerException(HasMetadata involvedObject, String message) {
+    public TransientOperatorException(HasMetadata involvedObject, String message) {
         super(involvedObject, message);
     }
 
-    public TransientControllerException(HasMetadata involvedObject, Throwable cause) {
+    public TransientOperatorException(HasMetadata involvedObject, Throwable cause) {
         super(involvedObject, cause);
     }
 
-    public TransientControllerException(HasMetadata involvedObject, String message, Throwable cause) {
+    public TransientOperatorException(HasMetadata involvedObject, String message, Throwable cause) {
         super(involvedObject, message, cause);
     }
 
-    public TransientControllerException(Throwable cause) {
+    public TransientOperatorException(Throwable cause) {
         super(cause);
     }
 
-    public TransientControllerException(String message) {
+    public TransientOperatorException(String message) {
         super(message);
     }
 }

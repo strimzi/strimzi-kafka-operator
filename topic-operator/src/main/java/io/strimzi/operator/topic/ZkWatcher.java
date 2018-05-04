@@ -19,7 +19,7 @@ public abstract class ZkWatcher {
 
     protected Logger log = LoggerFactory.getLogger(getClass());
 
-    protected final Controller controller;
+    protected final TopicOperator topicOperator;
     private volatile ZkWatcherState state = ZkWatcherState.NOT_STARTED;
     private volatile Zk zk;
 
@@ -29,11 +29,11 @@ public abstract class ZkWatcher {
     /**
      * Constructor
      *
-     * @param controller    Controller instance to notify
+     * @param topicOperator    Controller instance to notify
      * @param rootZNode     root znode to watch children
      */
-    ZkWatcher(Controller controller, String rootZNode) {
-        this.controller = controller;
+    ZkWatcher(TopicOperator topicOperator, String rootZNode) {
+        this.topicOperator = topicOperator;
         this.rootZNode = rootZNode;
     }
 

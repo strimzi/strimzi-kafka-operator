@@ -12,9 +12,9 @@ import io.vertx.core.Handler;
 import java.util.ArrayList;
 import java.util.List;
 
-class MockController extends Controller {
+class MockTopicOperator extends TopicOperator {
 
-    public MockController() {
+    public MockTopicOperator() {
         super(null, null, null, null, null, null, null);
     }
 

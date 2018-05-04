@@ -14,7 +14,7 @@ import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
-import io.strimzi.operator.cluster.ClusterController;
+import io.strimzi.operator.cluster.ClusterOperator;
 import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
@@ -178,7 +178,7 @@ public class KafkaCluster extends AbstractModel {
 
             Storage storage = Storage.fromPersistentVolumeClaim(ss.getSpec().getVolumeClaimTemplates().get(0));
             if (ss.getMetadata().getAnnotations() != null) {
-                String deleteClaimAnnotation = String.format("%s/%s", ClusterController.STRIMZI_CLUSTER_CONTROLLER_DOMAIN, Storage.DELETE_CLAIM_FIELD);
+                String deleteClaimAnnotation = String.format("%s/%s", ClusterOperator.STRIMZI_CLUSTER_CONTROLLER_DOMAIN, Storage.DELETE_CLAIM_FIELD);
                 storage.withDeleteClaim(Boolean.valueOf(ss.getMetadata().getAnnotations().computeIfAbsent(deleteClaimAnnotation, s -> "false")));
             }
             kafka.setStorage(storage);

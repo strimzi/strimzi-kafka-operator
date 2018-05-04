@@ -29,11 +29,11 @@ import java.util.concurrent.TimeUnit;
 /**
  * An "operator" for managing assemblies of various types <em>in a particular namespace</em>.
  * The Cluster Controller's multiple namespace support is achieved by deploying multiple
- * {@link ClusterController}'s in Vertx.
+ * {@link ClusterOperator}'s in Vertx.
  */
-public class ClusterController extends AbstractVerticle {
+public class ClusterOperator extends AbstractVerticle {
 
-    private static final Logger log = LoggerFactory.getLogger(ClusterController.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(ClusterOperator.class.getName());
 
     public static final String STRIMZI_CLUSTER_CONTROLLER_DOMAIN = "cluster.controller.strimzi.io";
     public static final String STRIMZI_CLUSTER_CONTROLLER_SERVICE_ACCOUNT = "strimzi-cluster-controller";
@@ -52,12 +52,12 @@ public class ClusterController extends AbstractVerticle {
     private final KafkaConnectAssemblyOperator kafkaConnectAssemblyOperator;
     private final KafkaConnectS2IAssemblyOperator kafkaConnectS2IAssemblyOperator;
 
-    public ClusterController(String namespace,
-                             long reconciliationInterval,
-                             KubernetesClient client,
-                             KafkaAssemblyOperator kafkaAssemblyOperator,
-                             KafkaConnectAssemblyOperator kafkaConnectAssemblyOperator,
-                             KafkaConnectS2IAssemblyOperator kafkaConnectS2IAssemblyOperator) {
+    public ClusterOperator(String namespace,
+                           long reconciliationInterval,
+                           KubernetesClient client,
+                           KafkaAssemblyOperator kafkaAssemblyOperator,
+                           KafkaConnectAssemblyOperator kafkaConnectAssemblyOperator,
+                           KafkaConnectS2IAssemblyOperator kafkaConnectS2IAssemblyOperator) {
         log.info("Creating ClusterController for namespace {}", namespace);
         this.namespace = namespace;
         this.selector = Labels.forKind("cluster");

@@ -9,32 +9,32 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 /**
  * An exception possibly with an attached K8S resource (e.g. a ConfigMap).
  */
-public class ControllerException extends RuntimeException {
+public class OperatorException extends RuntimeException {
 
     private final HasMetadata involvedObject;
 
-    public ControllerException(HasMetadata involvedObject, String message) {
+    public OperatorException(HasMetadata involvedObject, String message) {
         this(involvedObject, message, null);
     }
 
-    public ControllerException(HasMetadata involvedObject, Throwable cause) {
+    public OperatorException(HasMetadata involvedObject, Throwable cause) {
         this(involvedObject, null, cause);
     }
 
-    public ControllerException(HasMetadata involvedObject, String message, Throwable cause) {
+    public OperatorException(HasMetadata involvedObject, String message, Throwable cause) {
         super(message, cause);
         this.involvedObject = involvedObject;
     }
 
-    public ControllerException(Throwable cause) {
+    public OperatorException(Throwable cause) {
         this(null, null, cause);
     }
 
-    public ControllerException(String message) {
+    public OperatorException(String message) {
         this(null, message, null);
     }
 
-    public ControllerException(String message, Throwable cause) {
+    public OperatorException(String message, Throwable cause) {
         this(null, message, cause);
     }
 

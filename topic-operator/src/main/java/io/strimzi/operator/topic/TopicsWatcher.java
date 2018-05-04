@@ -14,8 +14,8 @@ import java.util.Set;
 
 /**
  * ZooKeeper watcher for child znodes of {@code /brokers/topics},
- * calling {@link Controller#onTopicCreated(TopicName, io.vertx.core.Handler)} for new children and
- * {@link Controller#onTopicDeleted(TopicName, io.vertx.core.Handler)} for deleted children.
+ * calling {@link TopicOperator#onTopicCreated(TopicName, io.vertx.core.Handler)} for new children and
+ * {@link TopicOperator#onTopicDeleted(TopicName, io.vertx.core.Handler)} for deleted children.
  */
 class TopicsWatcher {
 
@@ -23,7 +23,7 @@ class TopicsWatcher {
 
     private static final String TOPICS_ZNODE = "/brokers/topics";
 
-    private final Controller controller;
+    private final TopicOperator topicOperator;
     private final TopicConfigsWatcher tcw;
     private final TopicWatcher tw;
 
@@ -34,12 +34,12 @@ class TopicsWatcher {
     /**
      * Constructor
      *
-     * @param controller    Controller instance
+     * @param topicOperator    Controller instance
      * @param tcw   watcher for the topics config changes
      * @param tw    watcher for the topics partitions changes
      */
-    TopicsWatcher(Controller controller, TopicConfigsWatcher tcw, TopicWatcher tw) {
-        this.controller = controller;
+    TopicsWatcher(TopicOperator topicOperator, TopicConfigsWatcher tcw, TopicWatcher tw) {
+        this.topicOperator = topicOperator;
         this.tcw = tcw;
         this.tw = tw;
     }
@@ -80,7 +80,7 @@ class TopicsWatcher {
                 for (String topicName : deleted) {
                     tcw.removeChild(topicName);
                     tw.removeChild(topicName);
-                    controller.onTopicDeleted(new TopicName(topicName), ar -> {
+                    topicOperator.onTopicDeleted(new TopicName(topicName), ar -> {
                         if (ar.succeeded()) {
                             LOGGER.debug("Success responding to deletion of topic {}", topicName);
                         } else {
@@ -95,7 +95,7 @@ class TopicsWatcher {
                 for (String topicName : created) {
                     tcw.addChild(topicName);
                     tw.addChild(topicName);
-                    controller.onTopicCreated(new TopicName(topicName), ar -> {
+                    topicOperator.onTopicCreated(new TopicName(topicName), ar -> {
                         if (ar.succeeded()) {
                             LOGGER.debug("Success responding to creation of topic {}", topicName);
                         } else {

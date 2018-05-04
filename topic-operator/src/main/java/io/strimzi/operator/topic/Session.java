@@ -31,7 +31,7 @@ public class Session extends AbstractVerticle {
     ControllerAssignedKafkaImpl kafka;
     AdminClient adminClient;
     K8sImpl k8s;
-    Controller controller;
+    TopicOperator topicOperator;
     Watch topicCmWatch;
     TopicsWatcher topicsWatcher;
     TopicConfigsWatcher topicConfigsWatcher;
@@ -71,7 +71,7 @@ public class Session extends AbstractVerticle {
             LOGGER.debug("Stopping zk watches");
             topicsWatcher.stop();
 
-            while (controller.isWorkInflight()) {
+            while (topicOperator.isWorkInflight()) {
                 if (System.currentTimeMillis() - t0 > timeout) {
                     LOGGER.error("Timeout waiting for inflight work to finish");
                     break;
@@ -126,20 +126,20 @@ public class Session extends AbstractVerticle {
         ZkTopicStore topicStore = new ZkTopicStore(zk);
         LOGGER.debug("Using TopicStore {}", topicStore);
 
-        this.controller = new Controller(vertx, kafka, k8s, topicStore, cmPredicate, namespace, config);
-        LOGGER.debug("Using Controller {}", controller);
+        this.topicOperator = new TopicOperator(vertx, kafka, k8s, topicStore, cmPredicate, namespace, config);
+        LOGGER.debug("Using Controller {}", topicOperator);
 
-        this.topicConfigsWatcher = new TopicConfigsWatcher(controller);
+        this.topicConfigsWatcher = new TopicConfigsWatcher(topicOperator);
         LOGGER.debug("Using TopicConfigsWatcher {}", topicConfigsWatcher);
-        this.topicWatcher = new TopicWatcher(controller);
+        this.topicWatcher = new TopicWatcher(topicOperator);
         LOGGER.debug("Using TopicWatcher {}", topicWatcher);
-        this.topicsWatcher = new TopicsWatcher(controller, topicConfigsWatcher, topicWatcher);
+        this.topicsWatcher = new TopicsWatcher(topicOperator, topicConfigsWatcher, topicWatcher);
         LOGGER.debug("Using TopicsWatcher {}", topicsWatcher);
         topicsWatcher.start(zk);
 
         Thread configMapThread = new Thread(() -> {
             LOGGER.debug("Watching configmaps matching {}", cmPredicate);
-            Session.this.topicCmWatch = kubeClient.configMaps().inNamespace(namespace).watch(new ConfigMapWatcher(controller, cmPredicate));
+            Session.this.topicCmWatch = kubeClient.configMaps().inNamespace(namespace).watch(new ConfigMapWatcher(topicOperator, cmPredicate));
             LOGGER.debug("Watching setup");
 
             // start the HTTP server for healthchecks
@@ -155,7 +155,7 @@ public class Session extends AbstractVerticle {
             public void handle(Long oldTimerId) {
                 if (!stopped) {
                     timerId = null;
-                    controller.reconcileAllTopics("periodic").setHandler(result -> {
+                    topicOperator.reconcileAllTopics("periodic").setHandler(result -> {
                         if (!stopped) {
                             timerId = vertx.setTimer(interval, this);
                         }

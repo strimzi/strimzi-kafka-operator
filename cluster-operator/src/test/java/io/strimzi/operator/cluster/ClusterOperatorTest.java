@@ -30,7 +30,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @RunWith(VertxUnitRunner.class)
-public class ClusterControllerTest {
+public class ClusterOperatorTest {
 
     public static final String STRIMZI_IO_KIND_CLUSTER = "strimzi.io/kind=cluster";
     private Vertx vertx;
@@ -85,10 +85,10 @@ public class ClusterControllerTest {
         Async async = context.async();
 
         Map<String, String> env = new HashMap<>();
-        env.put(ClusterControllerConfig.STRIMZI_NAMESPACE, namespaces);
-        env.put(ClusterControllerConfig.STRIMZI_CONFIGMAP_LABELS, STRIMZI_IO_KIND_CLUSTER);
-        env.put(ClusterControllerConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, "120000");
-        Main.run(vertx, client, true, ClusterControllerConfig.fromMap(env)).setHandler(ar -> {
+        env.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, namespaces);
+        env.put(ClusterOperatorConfig.STRIMZI_CONFIGMAP_LABELS, STRIMZI_IO_KIND_CLUSTER);
+        env.put(ClusterOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, "120000");
+        Main.run(vertx, client, true, ClusterOperatorConfig.fromMap(env)).setHandler(ar -> {
             context.assertNull(ar.cause(), "Expected all verticles to start OK");
             async.complete();
         });
