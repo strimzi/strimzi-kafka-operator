@@ -40,7 +40,7 @@ public class TopicOperatorAssignedKafkaImplTest {
      * rather than the real ReassignPartitionsCommand. This allows us to test
      * various scenarios without needing ZK+Kafka clusters deployed.
      */
-    static class Subclass extends ControllerAssignedKafkaImpl {
+    static class Subclass extends OperatorAssignedKafkaImpl {
 
         static List<String> fail(String message) {
             return asList("--fail", message);

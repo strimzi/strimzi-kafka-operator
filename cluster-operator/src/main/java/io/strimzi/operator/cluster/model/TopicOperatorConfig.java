@@ -7,12 +7,12 @@ package io.strimzi.operator.cluster.model;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class TopicControllerConfig {
+public class TopicOperatorConfig {
     private String watchedNamespace;
-    private String image = TopicController.DEFAULT_IMAGE;
-    private String reconciliationInterval = TopicController.DEFAULT_FULL_RECONCILIATION_INTERVAL_MS;
-    private String zookeeperSessionTimeout = TopicController.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_MS;
-    private int topicMetadataMaxAttempts = TopicController.DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS;
+    private String image = TopicOperator.DEFAULT_IMAGE;
+    private String reconciliationInterval = TopicOperator.DEFAULT_FULL_RECONCILIATION_INTERVAL_MS;
+    private String zookeeperSessionTimeout = TopicOperator.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_MS;
+    private int topicMetadataMaxAttempts = TopicOperator.DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS;
     private Resources resources;
 
     public String getWatchedNamespace() {
@@ -63,7 +63,7 @@ public class TopicControllerConfig {
         this.resources = resources;
     }
 
-    public static TopicControllerConfig fromJson(String json) {
-        return JsonUtils.fromJson(json, TopicControllerConfig.class);
+    public static TopicOperatorConfig fromJson(String json) {
+        return JsonUtils.fromJson(json, TopicOperatorConfig.class);
     }
 }

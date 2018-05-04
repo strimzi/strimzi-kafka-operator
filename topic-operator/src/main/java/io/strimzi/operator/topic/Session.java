@@ -28,7 +28,7 @@ public class Session extends AbstractVerticle {
     private final Config config;
     private final KubernetesClient kubeClient;
 
-    ControllerAssignedKafkaImpl kafka;
+    OperatorAssignedKafkaImpl kafka;
     AdminClient adminClient;
     K8sImpl k8s;
     TopicOperator topicOperator;
@@ -111,7 +111,7 @@ public class Session extends AbstractVerticle {
         adminClientProps.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, config.get(Config.KAFKA_BOOTSTRAP_SERVERS));
         this.adminClient = AdminClient.create(adminClientProps);
         LOGGER.debug("Using AdminClient {}", adminClient);
-        this.kafka = new ControllerAssignedKafkaImpl(adminClient, vertx, config);
+        this.kafka = new OperatorAssignedKafkaImpl(adminClient, vertx, config);
         LOGGER.debug("Using Kafka {}", kafka);
         LabelPredicate cmPredicate = config.get(Config.LABELS);
 

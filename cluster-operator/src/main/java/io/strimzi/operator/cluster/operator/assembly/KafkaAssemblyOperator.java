@@ -20,7 +20,7 @@ import io.strimzi.operator.cluster.operator.resource.ServiceOperator;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.Labels;
 import io.strimzi.operator.cluster.model.Storage;
-import io.strimzi.operator.cluster.model.TopicController;
+import io.strimzi.operator.cluster.model.TopicOperator;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperSetOperator;
 import io.vertx.core.AsyncResult;
@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 
-import static io.strimzi.operator.cluster.model.TopicController.topicControllerName;
+import static io.strimzi.operator.cluster.model.TopicOperator.topicControllerName;
 
 /**
  * <p>Assembly operator for a "Kafka" assembly, which manages:</p>
@@ -205,8 +205,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
         String namespace = assemblyCm.getMetadata().getNamespace();
         String name = assemblyCm.getMetadata().getName();
         log.debug("{}: create/update topic controller {}", reconciliation, name);
-        TopicController topicController = TopicController.fromConfigMap(assemblyCm);
-        Deployment deployment = topicController != null ? topicController.generateDeployment() : null;
+        TopicOperator topicOperator = TopicOperator.fromConfigMap(assemblyCm);
+        Deployment deployment = topicOperator != null ? topicOperator.generateDeployment() : null;
         return deploymentOperations.reconcile(namespace, topicControllerName(name), deployment);
     };
 

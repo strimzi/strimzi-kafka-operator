@@ -11,7 +11,7 @@ import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaConnectS2ICluster;
 import io.strimzi.operator.cluster.model.Labels;
-import io.strimzi.operator.cluster.model.TopicController;
+import io.strimzi.operator.cluster.model.TopicOperator;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 
 import java.util.HashMap;
@@ -92,7 +92,7 @@ public class ResourceUtils {
         cmData.put(ZookeeperCluster.KEY_STORAGE, storage);
         cmData.put(ZookeeperCluster.KEY_METRICS_CONFIG, metricsCmJson);
         if (topicController != null) {
-            cmData.put(TopicController.KEY_CONFIG, topicController);
+            cmData.put(TopicOperator.KEY_CONFIG, topicController);
         }
         return new ConfigMapBuilder()
                 .withNewMetadata()

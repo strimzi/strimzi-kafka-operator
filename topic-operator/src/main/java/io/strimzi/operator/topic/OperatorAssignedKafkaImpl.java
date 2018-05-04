@@ -44,12 +44,12 @@ import java.util.regex.Pattern;
  * The controller is able to make rack-aware assignments (if so configured), but does not take into account
  * other aspects (e.g. disk utilisation, CPU load, network IO).
  */
-public class ControllerAssignedKafkaImpl extends BaseKafkaImpl {
+public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(ControllerAssignedKafkaImpl.class);
+    private final static Logger LOGGER = LoggerFactory.getLogger(OperatorAssignedKafkaImpl.class);
     private final Config config;
 
-    public ControllerAssignedKafkaImpl(AdminClient adminClient, Vertx vertx, Config config) {
+    public OperatorAssignedKafkaImpl(AdminClient adminClient, Vertx vertx, Config config) {
         super(adminClient, vertx);
         this.config = config;
     }
@@ -189,7 +189,7 @@ public class ControllerAssignedKafkaImpl extends BaseKafkaImpl {
     }
 
     private static File createTmpFile(String suffix) throws IOException {
-        File tmpFile = File.createTempFile(ControllerAssignedKafkaImpl.class.getName(), suffix);
+        File tmpFile = File.createTempFile(OperatorAssignedKafkaImpl.class.getName(), suffix);
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("Created temporary file {}", tmpFile);
         }

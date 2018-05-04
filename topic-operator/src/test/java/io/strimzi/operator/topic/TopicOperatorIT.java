@@ -100,13 +100,13 @@ public class TopicOperatorIT {
         oldNamespace = testCluster.client().namespace(NAMESPACE);
         testCluster.client().clientWithAdmin()
                 .create("../examples/install/topic-controller/02-role.yaml")
-                .create("src/test/resources/ControllerIT-rbac.yaml");
+                .create("src/test/resources/TopicOperatorIT-rbac.yaml");
     }
 
     @AfterClass
     public static void teardownKubeCluster() {
         testCluster.client().clientWithAdmin()
-                .delete("src/test/resources/ControllerIT-rbac.yaml")
+                .delete("src/test/resources/TopicOperatorIT-rbac.yaml")
                 .delete("../examples/install/topic-controller/02-role.yaml")
                 .deleteNamespace(NAMESPACE);
         testCluster.client().clientWithAdmin().namespace(oldNamespace);

@@ -17,7 +17,7 @@ import io.strimzi.operator.cluster.model.AssemblyType;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.Labels;
 import io.strimzi.operator.cluster.model.Storage;
-import io.strimzi.operator.cluster.model.TopicController;
+import io.strimzi.operator.cluster.model.TopicOperator;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.cluster.operator.resource.DeploymentOperator;
@@ -199,7 +199,7 @@ public class KafkaAssemblyOperatorTest {
 
         KafkaCluster kafkaCluster = KafkaCluster.fromConfigMap(clusterCm);
         ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromConfigMap(clusterCm);
-        TopicController topicController = TopicController.fromConfigMap(clusterCm);
+        TopicOperator topicOperator = TopicOperator.fromConfigMap(clusterCm);
         ArgumentCaptor<ConfigMap> metricsCaptor = ArgumentCaptor.forClass(ConfigMap.class);
         ArgumentCaptor<String> metricsNameCaptor = ArgumentCaptor.forClass(String.class);
         when(mockCmOps.reconcile(anyString(), metricsNameCaptor.capture(), metricsCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created()));
@@ -269,10 +269,10 @@ public class KafkaAssemblyOperatorTest {
             //        .readiness(any(), any(), anyLong(), anyLong());
 
             // if topic controller configuration was defined in the CM
-            if (topicController != null) {
+            if (topicOperator != null) {
                 List<Deployment> capturedDeps = depCaptor.getAllValues();
                 context.assertEquals(1, capturedDeps.size());
-                context.assertEquals(TopicController.topicControllerName(clusterCmName), capturedDeps.get(0).getMetadata().getName());
+                context.assertEquals(TopicOperator.topicControllerName(clusterCmName), capturedDeps.get(0).getMetadata().getName());
             }
 
             // PvcOperations only used for deletion
@@ -285,7 +285,7 @@ public class KafkaAssemblyOperatorTest {
 
         ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromConfigMap(clusterCm);
         KafkaCluster kafkaCluster = KafkaCluster.fromConfigMap(clusterCm);
-        TopicController topicController = TopicController.fromConfigMap(clusterCm);
+        TopicOperator topicOperator = TopicOperator.fromConfigMap(clusterCm);
         // create CM, Service, headless service, statefulset
         ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
         ServiceOperator mockServiceOps = mock(ServiceOperator.class);
@@ -318,9 +318,9 @@ public class KafkaAssemblyOperatorTest {
 
         ArgumentCaptor<String> depCaptor = ArgumentCaptor.forClass(String.class);
         when(mockDepOps.reconcile(eq(clusterCmNamespace), depCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
-        if (topicController != null) {
-            Deployment tcDep = topicController.generateDeployment();
-            when(mockDepOps.get(clusterCmNamespace, TopicController.topicControllerName(clusterCmName))).thenReturn(tcDep);
+        if (topicOperator != null) {
+            Deployment tcDep = topicOperator.generateDeployment();
+            when(mockDepOps.get(clusterCmNamespace, TopicOperator.topicControllerName(clusterCmName))).thenReturn(tcDep);
         }
 
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, openShift,
@@ -366,9 +366,9 @@ public class KafkaAssemblyOperatorTest {
             context.assertEquals(expectedPvcDeletions, captured(pvcCaptor));
 
             // if topic controller configuration was defined in the CM
-            if (topicController != null) {
+            if (topicOperator != null) {
                 Set<String> expectedDepNames = new HashSet<>();
-                expectedDepNames.add(TopicController.topicControllerName(clusterCmName));
+                expectedDepNames.add(TopicOperator.topicControllerName(clusterCmName));
                 context.assertEquals(expectedDepNames, captured(depCaptor));
             }
 
@@ -466,7 +466,7 @@ public class KafkaAssemblyOperatorTest {
     public void testUpdateTopicControllerConfig(TestContext context) {
         ConfigMap clusterCm = getConfigMap("bar");
         if (tcConfig != null) {
-            clusterCm.getData().put(TopicController.KEY_CONFIG, "{\"something\":\"changed\"}");
+            clusterCm.getData().put(TopicOperator.KEY_CONFIG, "{\"something\":\"changed\"}");
             updateCluster(context, getConfigMap("bar"), clusterCm, false, false);
         }
     }
@@ -478,7 +478,7 @@ public class KafkaAssemblyOperatorTest {
         KafkaCluster updatedKafkaCluster = KafkaCluster.fromConfigMap(clusterCm);
         ZookeeperCluster originalZookeeperCluster = ZookeeperCluster.fromConfigMap(originalCm);
         ZookeeperCluster updatedZookeeperCluster = ZookeeperCluster.fromConfigMap(clusterCm);
-        TopicController originalTopicController = TopicController.fromConfigMap(originalCm);
+        TopicOperator originalTopicOperator = TopicOperator.fromConfigMap(originalCm);
 
         // create CM, Service, headless service, statefulset and so on
         ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
@@ -534,9 +534,9 @@ public class KafkaAssemblyOperatorTest {
                 originalZookeeperCluster.generateStatefulSet(openShift)
         );
         // Mock Deployment get
-        if (originalTopicController != null) {
-            when(mockDepOps.get(clusterCmNamespace, TopicController.topicControllerName(clusterCmName))).thenReturn(
-                    originalTopicController.generateDeployment()
+        if (originalTopicOperator != null) {
+            when(mockDepOps.get(clusterCmNamespace, TopicOperator.topicControllerName(clusterCmName))).thenReturn(
+                    originalTopicOperator.generateDeployment()
             );
         }
 

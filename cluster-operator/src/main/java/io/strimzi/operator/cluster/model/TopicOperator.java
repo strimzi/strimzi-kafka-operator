@@ -20,7 +20,7 @@ import java.util.Map;
 /**
  * Represents the topic controller deployment
  */
-public class TopicController extends AbstractModel {
+public class TopicOperator extends AbstractModel {
 
     /**
      * The default kind of CMs that the Topic Controller will be configured to watch for
@@ -71,7 +71,7 @@ public class TopicController extends AbstractModel {
      * @param namespace Kubernetes/OpenShift namespace where cluster resources are going to be created
      * @param cluster   overall cluster name
      */
-    protected TopicController(String namespace, String cluster, Labels labels) {
+    protected TopicOperator(String namespace, String cluster, Labels labels) {
 
         super(namespace, cluster, labels.withType(AssemblyType.KAFKA));
         this.name = topicControllerName(cluster);
@@ -148,7 +148,7 @@ public class TopicController extends AbstractModel {
     }
 
     public static String topicControllerName(String cluster) {
-        return cluster + TopicController.NAME_SUFFIX;
+        return cluster + TopicOperator.NAME_SUFFIX;
     }
 
     protected static String defaultZookeeperConnect(String cluster) {
@@ -162,7 +162,7 @@ public class TopicController extends AbstractModel {
     protected static String defaultTopicConfigMapLabels(String cluster) {
         return String.format("%s=%s,%s=%s",
                 Labels.STRIMZI_CLUSTER_LABEL, cluster,
-                Labels.STRIMZI_KIND_LABEL, TopicController.TOPIC_CM_KIND);
+                Labels.STRIMZI_KIND_LABEL, TopicOperator.TOPIC_CM_KIND);
     }
 
     /**
@@ -171,27 +171,27 @@ public class TopicController extends AbstractModel {
      * @param kafkaClusterCm ConfigMap with cluster configuration containing the topic controller one
      * @return Topic Controller instance, null if not configured in the ConfigMap
      */
-    public static TopicController fromConfigMap(ConfigMap kafkaClusterCm) {
-        TopicController topicController = null;
+    public static TopicOperator fromConfigMap(ConfigMap kafkaClusterCm) {
+        TopicOperator topicOperator = null;
 
         String config = kafkaClusterCm.getData().get(KEY_CONFIG);
         if (config != null) {
             String namespace = kafkaClusterCm.getMetadata().getNamespace();
-            topicController = new TopicController(namespace,
+            topicOperator = new TopicOperator(namespace,
                     kafkaClusterCm.getMetadata().getName(),
                     Labels.fromResource(kafkaClusterCm));
 
-            TopicControllerConfig tcConfig = TopicControllerConfig.fromJson(config);
+            TopicOperatorConfig tcConfig = TopicOperatorConfig.fromJson(config);
 
-            topicController.setImage(tcConfig.getImage());
-            topicController.setWatchedNamespace(tcConfig.getWatchedNamespace() != null ? tcConfig.getWatchedNamespace() : namespace);
-            topicController.setReconciliationIntervalMs(tcConfig.getReconciliationInterval());
-            topicController.setZookeeperSessionTimeoutMs(tcConfig.getZookeeperSessionTimeout());
-            topicController.setTopicMetadataMaxAttempts(tcConfig.getTopicMetadataMaxAttempts());
-            topicController.setResources(tcConfig.getResources());
+            topicOperator.setImage(tcConfig.getImage());
+            topicOperator.setWatchedNamespace(tcConfig.getWatchedNamespace() != null ? tcConfig.getWatchedNamespace() : namespace);
+            topicOperator.setReconciliationIntervalMs(tcConfig.getReconciliationInterval());
+            topicOperator.setZookeeperSessionTimeoutMs(tcConfig.getZookeeperSessionTimeout());
+            topicOperator.setTopicMetadataMaxAttempts(tcConfig.getTopicMetadataMaxAttempts());
+            topicOperator.setResources(tcConfig.getResources());
         }
 
-        return topicController;
+        return topicOperator;
     }
 
     /**
@@ -202,32 +202,32 @@ public class TopicController extends AbstractModel {
      * @param dep the deployment from which to recover the topic controller state
      * @return Topic Controller instance, null if the corresponding Deployment doesn't exist
      */
-    public static TopicController fromAssembly(String namespace, String cluster, Deployment dep) {
+    public static TopicOperator fromAssembly(String namespace, String cluster, Deployment dep) {
 
-        TopicController topicController = null;
+        TopicOperator topicOperator = null;
 
         if (dep != null) {
 
-            topicController = new TopicController(namespace, cluster,
+            topicOperator = new TopicOperator(namespace, cluster,
                     Labels.fromResource(dep));
-            topicController.setReplicas(dep.getSpec().getReplicas());
+            topicOperator.setReplicas(dep.getSpec().getReplicas());
             Container container = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
-            topicController.setImage(container.getImage());
-            topicController.setHealthCheckInitialDelay(container.getReadinessProbe().getInitialDelaySeconds());
-            topicController.setHealthCheckTimeout(container.getReadinessProbe().getTimeoutSeconds());
+            topicOperator.setImage(container.getImage());
+            topicOperator.setHealthCheckInitialDelay(container.getReadinessProbe().getInitialDelaySeconds());
+            topicOperator.setHealthCheckTimeout(container.getReadinessProbe().getTimeoutSeconds());
 
             Map<String, String> vars = containerEnvVars(container);
 
-            topicController.setKafkaBootstrapServers(vars.getOrDefault(KEY_KAFKA_BOOTSTRAP_SERVERS, defaultBootstrapServers(cluster)));
-            topicController.setZookeeperConnect(vars.getOrDefault(KEY_ZOOKEEPER_CONNECT, defaultZookeeperConnect(cluster)));
-            topicController.setWatchedNamespace(vars.getOrDefault(KEY_WATCHED_NAMESPACE, namespace));
-            topicController.setReconciliationIntervalMs(vars.get(KEY_FULL_RECONCILIATION_INTERVAL_MS));
-            topicController.setZookeeperSessionTimeoutMs(vars.get(KEY_ZOOKEEPER_SESSION_TIMEOUT_MS));
-            topicController.setTopicConfigMapLabels(vars.getOrDefault(KEY_CONFIGMAP_LABELS, defaultTopicConfigMapLabels(cluster)));
-            topicController.setTopicMetadataMaxAttempts(Integer.parseInt(vars.getOrDefault(KEY_TOPIC_METADATA_MAX_ATTEMPTS, String.valueOf(DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS))));
+            topicOperator.setKafkaBootstrapServers(vars.getOrDefault(KEY_KAFKA_BOOTSTRAP_SERVERS, defaultBootstrapServers(cluster)));
+            topicOperator.setZookeeperConnect(vars.getOrDefault(KEY_ZOOKEEPER_CONNECT, defaultZookeeperConnect(cluster)));
+            topicOperator.setWatchedNamespace(vars.getOrDefault(KEY_WATCHED_NAMESPACE, namespace));
+            topicOperator.setReconciliationIntervalMs(vars.get(KEY_FULL_RECONCILIATION_INTERVAL_MS));
+            topicOperator.setZookeeperSessionTimeoutMs(vars.get(KEY_ZOOKEEPER_SESSION_TIMEOUT_MS));
+            topicOperator.setTopicConfigMapLabels(vars.getOrDefault(KEY_CONFIGMAP_LABELS, defaultTopicConfigMapLabels(cluster)));
+            topicOperator.setTopicMetadataMaxAttempts(Integer.parseInt(vars.getOrDefault(KEY_TOPIC_METADATA_MAX_ATTEMPTS, String.valueOf(DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS))));
         }
 
-        return topicController;
+        return topicOperator;
     }
 
     public Deployment generateDeployment() {

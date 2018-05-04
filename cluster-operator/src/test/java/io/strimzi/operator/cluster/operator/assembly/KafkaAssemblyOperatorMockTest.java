@@ -19,7 +19,7 @@ import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.Labels;
 import io.strimzi.operator.cluster.model.Resources;
 import io.strimzi.operator.cluster.model.Storage;
-import io.strimzi.operator.cluster.model.TopicController;
+import io.strimzi.operator.cluster.model.TopicOperator;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.cluster.operator.resource.DeploymentOperator;
@@ -186,7 +186,7 @@ public class KafkaAssemblyOperatorMockTest {
                         ZookeeperCluster.KEY_REPLICAS, String.valueOf(zkReplicas),
                         ZookeeperCluster.KEY_STORAGE, zkStorage.toString(),
                         ZookeeperCluster.KEY_METRICS_CONFIG, "{}",
-                        TopicController.KEY_CONFIG, "{}"))
+                        TopicOperator.KEY_CONFIG, "{}"))
                 .build();
         mockClient = new MockKube().withInitialCms(Collections.singleton(cluster)).build();
     }
@@ -224,7 +224,7 @@ public class KafkaAssemblyOperatorMockTest {
             context.assertTrue(ar.succeeded());
             context.assertNotNull(mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaClusterName(CLUSTER_NAME)).get());
             context.assertNotNull(mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(ZookeeperCluster.zookeeperClusterName(CLUSTER_NAME)).get());
-            context.assertNotNull(mockClient.extensions().deployments().inNamespace(NAMESPACE).withName(TopicController.topicControllerName(CLUSTER_NAME)).get());
+            context.assertNotNull(mockClient.extensions().deployments().inNamespace(NAMESPACE).withName(TopicOperator.topicControllerName(CLUSTER_NAME)).get());
             context.assertNotNull(mockClient.configMaps().inNamespace(NAMESPACE).withName(KafkaCluster.metricConfigsName(CLUSTER_NAME)).get());
             context.assertNotNull(mockClient.configMaps().inNamespace(NAMESPACE).withName(ZookeeperCluster.zookeeperMetricsName(CLUSTER_NAME)).get());
             assertResourceReqirements(context, KafkaCluster.kafkaClusterName(CLUSTER_NAME));

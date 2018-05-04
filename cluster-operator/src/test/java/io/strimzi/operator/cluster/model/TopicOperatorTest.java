@@ -17,7 +17,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
-public class TopicControllerTest {
+public class TopicOperatorTest {
 
     private final String namespace = "test";
     private final String cluster = "foo";
@@ -44,17 +44,17 @@ public class TopicControllerTest {
             " }";
 
     private final ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, kafkaJson, storageJson, topicControllerJson);
-    private final TopicController tc = TopicController.fromConfigMap(cm);
+    private final TopicOperator tc = TopicOperator.fromConfigMap(cm);
 
     private List<EnvVar> getExpectedEnvVars() {
         List<EnvVar> expected = new ArrayList<>();
-        expected.add(new EnvVarBuilder().withName(TopicController.KEY_CONFIGMAP_LABELS).withValue(TopicController.defaultTopicConfigMapLabels(cluster)).build());
-        expected.add(new EnvVarBuilder().withName(TopicController.KEY_KAFKA_BOOTSTRAP_SERVERS).withValue(TopicController.defaultBootstrapServers(cluster)).build());
-        expected.add(new EnvVarBuilder().withName(TopicController.KEY_ZOOKEEPER_CONNECT).withValue(TopicController.defaultZookeeperConnect(cluster)).build());
-        expected.add(new EnvVarBuilder().withName(TopicController.KEY_WATCHED_NAMESPACE).withValue(tcWatchedNamespace).build());
-        expected.add(new EnvVarBuilder().withName(TopicController.KEY_FULL_RECONCILIATION_INTERVAL_MS).withValue(String.valueOf(tcReconciliationInterval)).build());
-        expected.add(new EnvVarBuilder().withName(TopicController.KEY_ZOOKEEPER_SESSION_TIMEOUT_MS).withValue(String.valueOf(tcZookeeperSessionTimeout)).build());
-        expected.add(new EnvVarBuilder().withName(TopicController.KEY_TOPIC_METADATA_MAX_ATTEMPTS).withValue(String.valueOf(tcTopicMetadataMaxAttempts)).build());
+        expected.add(new EnvVarBuilder().withName(TopicOperator.KEY_CONFIGMAP_LABELS).withValue(TopicOperator.defaultTopicConfigMapLabels(cluster)).build());
+        expected.add(new EnvVarBuilder().withName(TopicOperator.KEY_KAFKA_BOOTSTRAP_SERVERS).withValue(TopicOperator.defaultBootstrapServers(cluster)).build());
+        expected.add(new EnvVarBuilder().withName(TopicOperator.KEY_ZOOKEEPER_CONNECT).withValue(TopicOperator.defaultZookeeperConnect(cluster)).build());
+        expected.add(new EnvVarBuilder().withName(TopicOperator.KEY_WATCHED_NAMESPACE).withValue(tcWatchedNamespace).build());
+        expected.add(new EnvVarBuilder().withName(TopicOperator.KEY_FULL_RECONCILIATION_INTERVAL_MS).withValue(String.valueOf(tcReconciliationInterval)).build());
+        expected.add(new EnvVarBuilder().withName(TopicOperator.KEY_ZOOKEEPER_SESSION_TIMEOUT_MS).withValue(String.valueOf(tcZookeeperSessionTimeout)).build());
+        expected.add(new EnvVarBuilder().withName(TopicOperator.KEY_TOPIC_METADATA_MAX_ATTEMPTS).withValue(String.valueOf(tcTopicMetadataMaxAttempts)).build());
 
         return expected;
     }
@@ -63,7 +63,7 @@ public class TopicControllerTest {
     public void testFromConfigMapNoConfig() {
 
         ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson);
-        TopicController tc = TopicController.fromConfigMap(cm);
+        TopicOperator tc = TopicOperator.fromConfigMap(cm);
 
         assertNull(tc);
     }
@@ -72,16 +72,16 @@ public class TopicControllerTest {
     public void testFromConfigMapDefaultConfig() {
 
         ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, kafkaJson, storageJson, "{ }");
-        TopicController tc = TopicController.fromConfigMap(cm);
+        TopicOperator tc = TopicOperator.fromConfigMap(cm);
 
-        assertEquals(TopicController.DEFAULT_IMAGE, tc.getImage());
+        assertEquals(TopicOperator.DEFAULT_IMAGE, tc.getImage());
         assertEquals(namespace, tc.getWatchedNamespace());
-        assertEquals(TopicController.DEFAULT_FULL_RECONCILIATION_INTERVAL_MS, tc.getReconciliationIntervalMs());
-        assertEquals(TopicController.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_MS, tc.getZookeeperSessionTimeoutMs());
-        assertEquals(TopicController.defaultBootstrapServers(cluster), tc.getKafkaBootstrapServers());
-        assertEquals(TopicController.defaultZookeeperConnect(cluster), tc.getZookeeperConnect());
-        assertEquals(TopicController.defaultTopicConfigMapLabels(cluster), tc.getTopicConfigMapLabels());
-        assertEquals(TopicController.DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS, tc.getTopicMetadataMaxAttempts());
+        assertEquals(TopicOperator.DEFAULT_FULL_RECONCILIATION_INTERVAL_MS, tc.getReconciliationIntervalMs());
+        assertEquals(TopicOperator.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_MS, tc.getZookeeperSessionTimeoutMs());
+        assertEquals(TopicOperator.defaultBootstrapServers(cluster), tc.getKafkaBootstrapServers());
+        assertEquals(TopicOperator.defaultZookeeperConnect(cluster), tc.getZookeeperConnect());
+        assertEquals(TopicOperator.defaultTopicConfigMapLabels(cluster), tc.getTopicConfigMapLabels());
+        assertEquals(TopicOperator.DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS, tc.getTopicMetadataMaxAttempts());
     }
 
     @Test
@@ -90,23 +90,23 @@ public class TopicControllerTest {
         assertEquals(namespace, tc.namespace);
         assertEquals(cluster, tc.cluster);
         assertEquals(tcImage, tc.image);
-        assertEquals(TopicController.DEFAULT_REPLICAS, tc.replicas);
-        assertEquals(TopicController.DEFAULT_HEALTHCHECK_DELAY, tc.healthCheckInitialDelay);
-        assertEquals(TopicController.DEFAULT_HEALTHCHECK_TIMEOUT, tc.healthCheckTimeout);
+        assertEquals(TopicOperator.DEFAULT_REPLICAS, tc.replicas);
+        assertEquals(TopicOperator.DEFAULT_HEALTHCHECK_DELAY, tc.healthCheckInitialDelay);
+        assertEquals(TopicOperator.DEFAULT_HEALTHCHECK_TIMEOUT, tc.healthCheckTimeout);
         assertEquals(tcImage, tc.getImage());
         assertEquals(tcWatchedNamespace, tc.getWatchedNamespace());
         assertEquals(tcReconciliationInterval, tc.getReconciliationIntervalMs());
         assertEquals(tcZookeeperSessionTimeout, tc.getZookeeperSessionTimeoutMs());
-        assertEquals(TopicController.defaultBootstrapServers(cluster), tc.getKafkaBootstrapServers());
-        assertEquals(TopicController.defaultZookeeperConnect(cluster), tc.getZookeeperConnect());
-        assertEquals(TopicController.defaultTopicConfigMapLabels(cluster), tc.getTopicConfigMapLabels());
+        assertEquals(TopicOperator.defaultBootstrapServers(cluster), tc.getKafkaBootstrapServers());
+        assertEquals(TopicOperator.defaultZookeeperConnect(cluster), tc.getZookeeperConnect());
+        assertEquals(TopicOperator.defaultTopicConfigMapLabels(cluster), tc.getTopicConfigMapLabels());
         assertEquals(tcTopicMetadataMaxAttempts, tc.getTopicMetadataMaxAttempts());
     }
 
     @Test
     public void testFromDeployment() {
 
-        TopicController tcFromDep = TopicController.fromAssembly(namespace, cluster, tc.generateDeployment());
+        TopicOperator tcFromDep = TopicOperator.fromAssembly(namespace, cluster, tc.generateDeployment());
 
         assertEquals(tc.namespace, tcFromDep.namespace);
         assertEquals(tc.cluster, tcFromDep.cluster);
@@ -131,18 +131,18 @@ public class TopicControllerTest {
 
         assertEquals(tc.topicControllerName(cluster), dep.getMetadata().getName());
         assertEquals(namespace, dep.getMetadata().getNamespace());
-        assertEquals(new Integer(TopicController.DEFAULT_REPLICAS), dep.getSpec().getReplicas());
+        assertEquals(new Integer(TopicOperator.DEFAULT_REPLICAS), dep.getSpec().getReplicas());
         assertEquals(1, dep.getSpec().getTemplate().getSpec().getContainers().size());
         assertEquals(tc.topicControllerName(cluster), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getName());
         assertEquals(tc.image, dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
         assertEquals(getExpectedEnvVars(), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv());
-        assertEquals(new Integer(TopicController.DEFAULT_HEALTHCHECK_DELAY), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getInitialDelaySeconds());
-        assertEquals(new Integer(TopicController.DEFAULT_HEALTHCHECK_TIMEOUT), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getTimeoutSeconds());
-        assertEquals(new Integer(TopicController.DEFAULT_HEALTHCHECK_DELAY), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds());
-        assertEquals(new Integer(TopicController.DEFAULT_HEALTHCHECK_TIMEOUT), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds());
+        assertEquals(new Integer(TopicOperator.DEFAULT_HEALTHCHECK_DELAY), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getInitialDelaySeconds());
+        assertEquals(new Integer(TopicOperator.DEFAULT_HEALTHCHECK_TIMEOUT), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getTimeoutSeconds());
+        assertEquals(new Integer(TopicOperator.DEFAULT_HEALTHCHECK_DELAY), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds());
+        assertEquals(new Integer(TopicOperator.DEFAULT_HEALTHCHECK_TIMEOUT), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds());
         assertEquals(1, dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().size());
-        assertEquals(new Integer(TopicController.HEALTHCHECK_PORT), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().get(0).getContainerPort());
-        assertEquals(TopicController.HEALTHCHECK_PORT_NAME, dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().get(0).getName());
+        assertEquals(new Integer(TopicOperator.HEALTHCHECK_PORT), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().get(0).getContainerPort());
+        assertEquals(TopicOperator.HEALTHCHECK_PORT_NAME, dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().get(0).getName());
         assertEquals("TCP", dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().get(0).getProtocol());
         assertEquals("Recreate", dep.getSpec().getStrategy().getType());
     }
