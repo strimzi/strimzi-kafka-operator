@@ -37,8 +37,8 @@
 
     <modules>
         <module>common-test</module>
-        <module>topic-controller</module>
-        <module>cluster-controller</module>
+        <module>topic-operator</module>
+        <module>cluster-operator</module>
         <module>systemtest</module>
     </modules>
 

@@ -93,7 +93,7 @@ you can push the images to OpenShift's Docker repo like this:
 version. The `release` target will:
 * Update all tags of Docker images to `RELEASE_VERSION`
 * Update documentation version to `RELEASE_VERSION`
-* Set version of the main Maven projects (`topic-controller` and `clutser-controller`) to `RELEASE_VERSION` 
+* Set version of the main Maven projects (`topic-operator` and `clutser-operator`) to `RELEASE_VERSION` 
 * Create TAR.GZ and ZIP archives with the Kubernetes and OpenShift YAML files which can be used for deployment
 and documentation in HTML format.
  

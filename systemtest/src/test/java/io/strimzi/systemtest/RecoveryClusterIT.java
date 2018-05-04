@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest;
 
-import io.strimzi.test.ClusterController;
+import io.strimzi.test.ClusterOperator;
 import io.strimzi.test.EnvVariables;
 import io.strimzi.test.JUnitGroup;
 import io.strimzi.test.KafkaCluster;
@@ -23,7 +23,7 @@ import static io.strimzi.test.k8s.BaseKubeClient.STATEFUL_SET;
 @RunWith(StrimziRunner.class)
 @JUnitGroup(name = "regression")
 @Namespace(RecoveryClusterIT.NAMESPACE)
-@ClusterController(envVariables = {
+@ClusterOperator(envVariables = {
     @EnvVariables(key = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS", value = "10000"),
     @EnvVariables(key = "STRIMZI_OPERATION_TIMEOUT_MS", value = "10000")})
 @KafkaCluster(name = RecoveryClusterIT.CLUSTER_NAME, kafkaNodes = 1)
@@ -35,16 +35,16 @@ public class RecoveryClusterIT extends AbstractClusterIT {
     private static final Logger LOGGER = LoggerFactory.getLogger(RecoveryClusterIT.class);
 
     @Test
-    public void testRecoveryFromTopicControllerDeletion() {
+    public void testRecoveryFromTopicOperatorDeletion() {
         // kafka cluster already deployed via annotation
-        String topicControllerDeploymentName = topicControllerDeploymentName(CLUSTER_NAME);
-        LOGGER.info("Running deleteTopicControllerDeployment with cluster {}", CLUSTER_NAME);
+        String topicOperatorDeploymentName = topicOperatorDeploymentName(CLUSTER_NAME);
+        LOGGER.info("Running deleteTopicOperatorDeployment with cluster {}", CLUSTER_NAME);
 
-        kubeClient.deleteByName(DEPLOYMENT, topicControllerDeploymentName);
-        kubeClient.waitForResourceDeletion(DEPLOYMENT, topicControllerDeploymentName);
+        kubeClient.deleteByName(DEPLOYMENT, topicOperatorDeploymentName);
+        kubeClient.waitForResourceDeletion(DEPLOYMENT, topicOperatorDeploymentName);
 
-        LOGGER.info("Waiting for recovery {}", topicControllerDeploymentName);
-        kubeClient.waitForDeployment(topicControllerDeploymentName);
+        LOGGER.info("Waiting for recovery {}", topicOperatorDeploymentName);
+        kubeClient.waitForDeployment(topicOperatorDeploymentName);
 
         //Test that CC doesn't have any exceptions in log
         assertNoCcErrorsLogged();
