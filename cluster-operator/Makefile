@@ -1,4 +1,4 @@
-PROJECT_NAME=cluster-controller
+PROJECT_NAME=cluster-operator
 
 docker_build: java_build
 all: docker_build docker_push

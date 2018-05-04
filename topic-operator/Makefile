@@ -1,4 +1,4 @@
-PROJECT_NAME=topic-controller
+PROJECT_NAME=topic-operator
 
 docker_build: java_build
 all: docker_build docker_push
