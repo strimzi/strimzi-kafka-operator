@@ -1,11 +1,11 @@
 [appendix]
 == Frequently Asked Questions
 
-=== Cluster Controller
+=== Cluster Operator
 
 ==== Log contains warnings about failing to acquire lock
 
-For each cluster, the Cluster Controller always executes only one operation at a time. The Cluster Controller uses locks
+For each cluster, the Cluster Operator always executes only one operation at a time. The Cluster Operator uses locks
 to make sure that there are never two parallel operations running for the same cluster. In case an operation requires
 more time to complete, other operations will wait until it is completed and the lock is released.
 
@@ -25,7 +25,7 @@ the next periodic reconciliation. It will try to acquire the lock again and exec
 
 Should this message appear periodically even in situations when there should be no other operations running for a given
 cluster, it might indicate that due to some error the lock was not properly released. In such cases it is recommended to
-restart the cluster controller.
+restart the cluster operator.
 
 
 

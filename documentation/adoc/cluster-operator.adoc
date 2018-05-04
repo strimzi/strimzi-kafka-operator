@@ -1,48 +1,48 @@
 :k8s-docs-version: v1-7
 :resources-link: https://{k8s-docs-version}.docs.kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
 
-== Cluster Controller
+== Cluster Operator
 
-The cluster controller is in charge of deploying a Kafka cluster alongside a Zookeeper ensemble. As part of the Kafka cluster,
-it can also deploy the topic controller which provides operator-style topic management via ConfigMaps.
-The cluster controller is also able to deploy a Kafka Connect cluster which connects to an existing Kafka cluster.
+The cluster operator is in charge of deploying a Kafka cluster alongside a Zookeeper ensemble. As part of the Kafka cluster,
+it can also deploy the topic operator which provides operator-style topic management via ConfigMaps.
+The cluster operator is also able to deploy a Kafka Connect cluster which connects to an existing Kafka cluster.
 On OpenShift such a cluster can be deployed using the Source2Image feature, providing an easy way of including more connectors.
 
-image::cluster_controller.png[Cluster Controller]
+image::cluster_operator.png[Cluster Operator]
 
-When the cluster controller is up, it starts to "watch" for ConfigMaps containing the Kafka or Kafka Connect
+When the cluster operator is up, it starts to "watch" for ConfigMaps containing the Kafka or Kafka Connect
 cluster configuration. Such ConfigMaps need to have a specific label which is, by default, `strimzi.io/kind=cluster`
 (as described <<Format of the cluster ConfigMap,later>>) that can be changed through a corresponding environment variable.
 
-When a new ConfigMap is created in the Kubernetes/OpenShift cluster, the controller gets the cluster configuration from
+When a new ConfigMap is created in the Kubernetes/OpenShift cluster, the operator gets the cluster configuration from
 its `data` section and starts creating a new Kafka or Kafka Connect cluster by creating the necessary Kubernetes/OpenShift
 resources, such as StatefulSets, ConfigMaps, Services etc.
 
-Every time the ConfigMap is updated by the user with some changes in the `data` section, the controller performs corresponding
+Every time the ConfigMap is updated by the user with some changes in the `data` section, the operator performs corresponding
 updates on the Kubernetes/OpenShift resources which make up the Kafka or Kafka Connect cluster. Resources are either patched
 or deleted and then re-created in order to make the Kafka or Kafka Connect cluster reflect the state of the cluster ConfigMap.
 This might cause a rolling update which might lead to service disruption.
 
-Finally, when the ConfigMap is deleted, the controller starts to un-deploy the cluster deleting all the related Kubernetes/OpenShift
+Finally, when the ConfigMap is deleted, the operator starts to un-deploy the cluster deleting all the related Kubernetes/OpenShift
 resources.
 
 === Reconciliation
 
-Although the controller reacts to all notifications about the cluster ConfigMaps received from the Kubernetes/OpenShift cluster,
-if the controller is not running, or if a notification is not received for any reason, the ConfigMaps will get out of sync
+Although the operator reacts to all notifications about the cluster ConfigMaps received from the Kubernetes/OpenShift cluster,
+if the operator is not running, or if a notification is not received for any reason, the ConfigMaps will get out of sync
 with the state of the running Kubernetes/OpenShift cluster.
 
-In order to handle failovers properly, a periodic reconciliation process is executed by the cluster controller so
+In order to handle failovers properly, a periodic reconciliation process is executed by the cluster operator so
 that it can compare the state of the ConfigMaps with the current cluster deployment in order to have
 a consistent state across all of them.
 
 [[config_map_details]]
 === Format of the cluster ConfigMap
 
-The controller watches for ConfigMaps having the label `strimzi.io/kind=cluster` in order to find and get
+The operator watches for ConfigMaps having the label `strimzi.io/kind=cluster` in order to find and get
 configuration for a Kafka or Kafka Connect cluster to deploy.
 
-In order to distinguish which "type" of cluster to deploy, Kafka or Kafka Connect, the controller checks the
+In order to distinguish which "type" of cluster to deploy, Kafka or Kafka Connect, the operator checks the
 `strimzi.io/type` label which can have one of the the following values :
 
 * `kafka`: the ConfigMap provides configuration for a Kafka cluster (with Zookeeper ensemble) deployment
@@ -67,7 +67,7 @@ the related ConfigMap :
 * `kafka-image`: the Docker image to use for the Kafka brokers.
 Default is determined by the value of the
 `<<STRIMZI_DEFAULT_KAFKA_IMAGE,STRIMZI_DEFAULT_KAFKA_IMAGE>>`
-environment variable of the Cluster Controller.
+environment variable of the Cluster Operator.
 * `kafka-healthcheck-delay`: the initial delay for the liveness and readiness probes for each Kafka broker node. Default is 15
 * `kafka-healthcheck-timeout`: the timeout on the liveness and readiness probes for each Kafka broker node. Default is 5
 * `kafka-config`: a JSON string with Kafka configuration. See section <<kafka_configuration_json_config>> for more details.
@@ -85,7 +85,7 @@ environment variable of the Cluster Controller.
 * `zookeeper-image`: the Docker image to use for the Zookeeper nodes.
 Default is determined by the value of the
 `<<STRIMZI_DEFAULT_ZOOKEEPER_IMAGE,STRIMZI_DEFAULT_ZOOKEEPER_IMAGE>>`
-environment variable of the Cluster Controller.
+environment variable of the Cluster Operator.
 * `zookeeper-healthcheck-delay`: the initial delay for the liveness and readiness probes for each Zookeeper node. Default is 15
 * `zookeeper-healthcheck-timeout`: the timeout on the liveness and readiness probes for each Zookeeper node. Default is 5
 * `zookeeper-storage`: a JSON string representing the storage configuration for the Zookeeper nodes. See section
@@ -98,8 +98,8 @@ environment variable of the Cluster Controller.
 * `zookeeper-jvmOptions`:
   a JSON string allowing the JVM running Zookeeper to be configured.
    The accepted JSON format is described in the <<jvm_json_config>> section.
-* `topic-controller-config`: a JSON string representing the topic controller configuration. See the <<topic_controller_json_config>>
-documentation for further details. More info about the topic controller in the related <<Topic Controller>> documentation page.
+* `topic-operator-config`: a JSON string representing the topic operator configuration. See the <<topic_operator_json_config>>
+documentation for further details. More info about the topic operator in the related <<Topic Operator>> documentation page.
  
 The following is an example of a ConfigMap for a Kafka cluster.
 
@@ -168,7 +168,7 @@ data:
     }
 ----
 
-The resources created by the cluster controller into the Kubernetes/OpenShift cluster will be the following :
+The resources created by the cluster operator into the Kubernetes/OpenShift cluster will be the following :
 
 * `[cluster-name]-zookeeper` StatefulSet which is in charge to create the Zookeeper node pods
 * `[cluster-name]-kafka` StatefulSet which is in charge to create the Kafka broker pods
@@ -246,9 +246,9 @@ below.
 }
 ----
 
-NOTE:: The cluster controller doesn't validate the provided configuration. When invalid configuration is provided, the
+NOTE:: The cluster operator doesn't validate the provided configuration. When invalid configuration is provided, the
 Kafka cluster might not start or might become unstable. In such cases, the configuration in the `kafka-config` field
-should be fixed and the cluster controller will roll out the new configuration to all Kafka brokers.
+should be fixed and the cluster operator will roll out the new configuration to all Kafka brokers.
 
 [[storage_configuration_json_config]]
 ===== Storage
@@ -375,7 +375,7 @@ Optional with no default.
 
 ====== Minimum Resource Requirements
 
-Testing has shown that the cluster controller functions adequately with 128Mi of memory and 200m CPU when watching two clusters.
+Testing has shown that the cluster operator functions adequately with 128Mi of memory and 200m CPU when watching two clusters.
 It is therefore recommended to use these as a minimum when configuring resource requests and not to run it with lower limits than these.
 Configuring more generous limits is recommended, especially when it's controlling multiple clusters.
 
@@ -416,7 +416,7 @@ Its total memory usage will be approximately 8GiB.
 
 The default value used for `-Xmx` depends on whether there is a <<resources_json_config,memory limit>> for the container:
 
-* If there is a memory limit, the JVM's maximum memory will be limited according to the kind of pod (Kafka, Zookeeper, TopicController) to an appropriate value less than the limit.
+* If there is a memory limit, the JVM's maximum memory will be limited according to the kind of pod (Kafka, Zookeeper, TopicOperator) to an appropriate value less than the limit.
 * Otherwise, when there is no memory limit, the JVM's maximum memory will be set according to the kind of pod and the RAM available to the container.
 
 [IMPORTANT]
@@ -445,42 +445,42 @@ Furthermore, containers doing lots of disk I/O (such as Kafka broker containers)
 On such containers, the request memory should be substantially more than the memory used by the JVM.
 
 
-[[topic_controller_json_config]]
-===== Topic controller
+[[topic_operator_json_config]]
+===== Topic Operator
 
-Alongside the Kafka cluster and the Zookeeper ensemble, the cluster controller can also deploy the topic controller.
-In order to do that, the `topic-controller-config` field has to be put into the data section of the cluster ConfigMap.
-This field is a JSON string containing the topic controller configuration.
-Without this field, the cluster controller doesn't deploy the topic controller. It is still possible to deploy the topic
-controller by creating appropriate Kubernetes/OpenShift resources.
+Alongside the Kafka cluster and the Zookeeper ensemble, the cluster operator can also deploy the topic operator.
+In order to do that, the `topic-operator-config` field has to be put into the data section of the cluster ConfigMap.
+This field is a JSON string containing the topic operator configuration.
+Without this field, the cluster operator doesn't deploy the topic operator. It is still possible to deploy the topic
+operator by creating appropriate Kubernetes/OpenShift resources.
 
-The JSON representation of the 'topic-controller-config` has no mandatory fields and if the value is an empty object
-(just "{ }"), the cluster controller will deploy the topic controller with a default configuration.
+The JSON representation of the 'topic-operator-config` has no mandatory fields and if the value is an empty object
+(just "{ }"), the cluster operator will deploy the topic operator with a default configuration.
 
 The configurable fields are the following :
 
-`image`:: Docker image to use for the topic controller.
+`image`:: Docker image to use for the topic operator.
 Default is determined by the value of the
-`<<STRIMZI_DEFAULT_TOPIC_CONTROLLER_IMAGE,STRIMZI_DEFAULT_TOPIC_CONTROLLER_IMAGE>>`
-environment variable of the Cluster Controller.
-`watchedNamespace`:: The Kubernetes namespace (OpenShift project) in which the topic controller watches for topic ConfigMaps.
-Default is the namespace where the topic controller is running
+`<<STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE,STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE>>`
+environment variable of the Cluster Operator.
+`watchedNamespace`:: The Kubernetes namespace (OpenShift project) in which the topic operator watches for topic ConfigMaps.
+Default is the namespace where the topic operator is running
 `reconciliationIntervalMs`:: The interval between periodic reconciliations in milliseconds. Default is 900000 (15 minutes).
 `zookeeperSessionTimeoutMs`:: The Zookeeper session timeout in milliseconds. Default is 20000 milliseconds (20 seconds).
 `topicMetadataMaxAttempts`:: The number of attempts for getting topics metadata from Kafka. The time between each attempt
  is defined as an exponential back-off. You might want to increase this value when topic creation could take more time due
  to its larger size (i.e. many partitions/replicas). Default `6`.
 `resources`::
-  an object configuring the resource limits and requests for the topic controller container.
+  an object configuring the resource limits and requests for the topic operator container.
   The accepted JSON format is described in the <<resources_json_config>> section.
 
-.Example Topic Controller JSON configuration
+.Example Topic Operator JSON configuration
 [source,json]
 ----
 { "reconciliationIntervalMs": "900000", "zookeeperSessionTimeoutMs": "20000" }
 ----
 
-More information about these configuration parameters in the related <<Topic Controller>> documentation page.
+More information about these configuration parameters in the related <<Topic Operator>> documentation page.
 
 [[kafka_connect_config_map_details]]
 ==== Kafka Connect
@@ -492,7 +492,7 @@ the related ConfigMap:
 `image`:: The Docker image to use for the Kafka Connect workers.
 Default is determined by the value of the
 `<<STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE,STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE>>`
-environment variable of the Cluster Controller.
+environment variable of the Cluster Operator.
 If S2I is used (only on OpenShift), then it should be the related S2I image.
 `healthcheck-delay`:: The initial delay for the liveness and readiness probes for each Kafka Connect worker node. Default is 60
 `healthcheck-timeout`:: The timeout on the liveness and readiness probes for each Kafka Connect worker node. Default is 5
@@ -541,7 +541,7 @@ data:
     }
 ----
 
-The resources created by the cluster controller into the Kubernetes/OpenShift cluster will be the following :
+The resources created by the cluster operator into the Kubernetes/OpenShift cluster will be the following :
 
 * [connect-cluster-name]-connect Deployment which is in charge to create the Kafka Connect worker node pods
 * [connect-cluster-name]-connect Service which exposes the REST interface for managing the Kafka Connect cluster
@@ -598,69 +598,69 @@ below.
 }
 ----
 
-INFO:: The cluster controller doesn't validate the provided configuration. When invalid configuration is provided, the
+INFO:: The cluster operator doesn't validate the provided configuration. When invalid configuration is provided, the
 Kafka Connect cluster might not start or might become unstable. In such cases, the configuration in the `connect-config` field
-should be fixed and the cluster controller will roll out the new configuration to all Kafka Connect instances.
+should be fixed and the cluster operator will roll out the new configuration to all Kafka Connect instances.
 
 INFO:: Some configuration options are mandatory and in case they are not provided, Kafka Connect will not start. The cluster
-controller will not use any default values when the mandatory options are not specified - all mandatory configuration
+operator will not use any default values when the mandatory options are not specified - all mandatory configuration
 options have to be specified in the `connect-config` field.
 
-=== Provisioning Role-Based Access Control (RBAC) for the controller
+=== Provisioning Role-Based Access Control (RBAC) for the operator
 
-For the controller to function it needs permission within the Kubernetes/OpenShift cluster to interact with
+For the operator to function it needs permission within the Kubernetes/OpenShift cluster to interact with
 the resources it manages (ConfigMaps, Pods, Deployments, StatefulSets, Services etc).
 Such permission is described in terms of Kubernetes/OpenShift role-based access controls.
 
 ==== Using a ServiceAccount
 
-The controller is best run using a ServiceAccount:
+The operator is best run using a ServiceAccount:
 
 [source,yaml,options="nowrap"]
-.Example ServiceAccount for the Cluster Controller
+.Example ServiceAccount for the Cluster Operator
 ----
-include::../../examples/install/cluster-controller/01-service-account.yaml[]
+include::../../examples/install/cluster-operator/01-service-account.yaml[]
 ----
 
-The Deployment of the controller then needs to specify this in the `serviceAccountName` of its `template`´s
+The Deployment of the operator then needs to specify this in the `serviceAccountName` of its `template`´s
  `spec`:
 
 [source,yaml,numbered,options="nowrap",highlight='12']
-.Partial example Deployment for the Cluster Controller
+.Partial example Deployment for the Cluster Operator
 ----
-include::../../examples/install/cluster-controller/04-deployment.yaml[lines=1..13]
+include::../../examples/install/cluster-operator/04-deployment.yaml[lines=1..13]
 # etc ...
 ----
 
-Note line 12, where the the `strimzi-cluster-controller` ServiceAccount is specified as the `serviceAccountName`.
+Note line 12, where the the `strimzi-cluster-operator` ServiceAccount is specified as the `serviceAccountName`.
 
 ==== Defining a Role
 
-The controller needs to operate using a Role that gives it access to the necessary resources
+The operator needs to operate using a Role that gives it access to the necessary resources
 
 [source,yaml,options="nowrap"]
-.Example Role for the Cluster Controller
+.Example Role for the Cluster Operator
 ----
-include::../../examples/install/cluster-controller/02-role.yaml[]
+include::../../examples/install/cluster-operator/02-role.yaml[]
 ----
 
 
 ==== Defining a RoleBinding
 
-Finally, the controller needs a RoleBinding which associates its Role with its ServiceAccount
+Finally, the operator needs a RoleBinding which associates its Role with its ServiceAccount
 
 [source,yaml,options="nowrap"]
-.Example RoleBinding for the Cluster Controller
+.Example RoleBinding for the Cluster Operator
 ----
-include::../../examples/install/cluster-controller/03-role-binding.yaml[]
+include::../../examples/install/cluster-operator/03-role-binding.yaml[]
 ----
 
-=== Controller configuration
+=== Operator configuration
 
-The controller itself can be configured through the following environment variables.
+The operator itself can be configured through the following environment variables.
 
-[[STRIMZI_NAMESPACE]] `STRIMZI_NAMESPACE`:: Required. A comma-separated list of namespaces that the controller should operate in. The Cluster Controller deployment might use the https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#the-downward-api[Kubernetes Downward API]
-to set this automatically to the namespace the Cluster Controller is deployed in. See the example below:
+[[STRIMZI_NAMESPACE]] `STRIMZI_NAMESPACE`:: Required. A comma-separated list of namespaces that the operator should operate in. The Cluster Operator deployment might use the https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#the-downward-api[Kubernetes Downward API]
+to set this automatically to the namespace the Cluster Operator is deployed in. See the example below:
 +
 [source,yaml,options="nowrap"]
 ----
@@ -690,9 +690,9 @@ no image is specified as the `image` in the
 The image name to use as a default when deploying Kafka Connect S2I, if
 no image is specified as the `image` in the cluster ConfigMap.
 
-[[STRIMZI_DEFAULT_TOPIC_CONTROLLER_IMAGE]] `STRIMZI_DEFAULT_TOPIC_CONTROLLER_IMAGE`:: Optional, default `strimzi/topic-controller:latest`.
-The image name to use as a default when deploying the topic controller, if
-no image is specified as the `image` in the <<topic_controller_json_config,topic controller config>>
+[[STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE]] `STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE`:: Optional, default `strimzi/topic-operator:latest`.
+The image name to use as a default when deploying the topic operator, if
+no image is specified as the `image` in the <<topic_operator_json_config,topic operator config>>
 of the Kafka cluster ConfigMap.
 
 [[STRIMZI_DEFAULT_ZOOKEEPER_IMAGE]] `STRIMZI_DEFAULT_ZOOKEEPER_IMAGE`:: Optional, default `strimzi/zookeeper:latest`.
@@ -702,34 +702,34 @@ no image is specified as the `zookeeper-image` in the <<kafka_config_map_details
 [[multi-namespace]]
 ==== Watching multiple namespaces
 
-The `STRIMZI_NAMESPACE` environment variable can be used to configure a single controller instance
-to operate in multiple namespaces. For each namespace given, the controller will watch for cluster ConfigMaps
-and perform periodic reconciliation. To be able to do this, the controller's ServiceAccount needs
+The `STRIMZI_NAMESPACE` environment variable can be used to configure a single operator instance
+to operate in multiple namespaces. For each namespace given, the operator will watch for cluster ConfigMaps
+and perform periodic reconciliation. To be able to do this, the operator's ServiceAccount needs
 access to the necessary resources in those other namespaces. This can be done by creating an additional
-RoleBinding in each of those namespaces, associating the controller's ServiceAccount
-(`strimzi-cluster-controller` in the examples) with the controller's
-Role (`strimzi-controller-role` in the examples).
+RoleBinding in each of those namespaces, associating the operator's ServiceAccount
+(`strimzi-cluster-operator` in the examples) with the operator's
+Role (`strimzi-operator-role` in the examples).
 
-Suppose, for example, that a controller deployed in namespace `foo` needs to operate in namespace `bar`.
+Suppose, for example, that a operator deployed in namespace `foo` needs to operate in namespace `bar`.
 The following RoleBinding would grant the necessary permissions:
 
-.Example RoleBinding for a controller to operate in namespace `bar`
+.Example RoleBinding for a operator to operate in namespace `bar`
 [source,yaml,options="nowrap"]
 ----
 apiVersion: v1
 kind: RoleBinding
 metadata:
-  name: strimzi-cluster-controller-binding-bar
+  name: strimzi-cluster-operator-binding-bar
   namespace: bar
   labels:
     app: strimzi
 subjects:
   - kind: ServiceAccount
-    name: strimzi-cluster-controller
+    name: strimzi-cluster-operator
     namespace: foo
 roleRef:
   kind: Role
-  name: strimzi-cluster-controller-role
+  name: strimzi-cluster-operator-role
   apiGroup: v1
 ----
 

@@ -14,12 +14,12 @@ In order to execute the commands in this guide, your Kubernetes/OpenShift user n
 manage RBAC resources (Roles and Role Bindings).
 
 
-=== Cluster Controller
+=== Cluster Operator
 
-Strimzi uses a component called the Cluster Controller to deploy and manage Kafka (including Zookeeper) and Kafka Connect
-clusters. The Cluster Controller is deployed as a process running inside your Kubernetes or OpenShift cluster. To deploy a
+Strimzi uses a component called the Cluster Operator to deploy and manage Kafka (including Zookeeper) and Kafka Connect
+clusters. The Cluster Operator is deployed as a process running inside your Kubernetes or OpenShift cluster. To deploy a
 Kafka cluster, a ConfigMap with the cluster configuration has to be created. Based on the information in that ConfigMap,
-the Cluster Controller will deploy a corresponding Kafka cluster. By default, the ConfigMap needs to be labeled with
+the Cluster Operator will deploy a corresponding Kafka cluster. By default, the ConfigMap needs to be labeled with
 following labels:
 
 [source,yaml]
@@ -28,16 +28,16 @@ strimzi.io/kind: cluster
 
 and contain the cluster configuration in a specific format. The ConfigMap format is described in <<config_map_details>>.
 
-Strimzi contains example YAML files which make deploying a Cluster Controller easier.
+Strimzi contains example YAML files which make deploying a Cluster Operator easier.
 
 ==== Deploying to Kubernetes
 
-To deploy the Cluster Controller on Kubernetes, the following command should be executed:
+To deploy the Cluster Operator on Kubernetes, the following command should be executed:
 
 [source]
-kubectl create -f examples/install/cluster-controller
+kubectl create -f examples/install/cluster-operator
 
-To verify whether the Cluster Controller has been deployed successfully, the Kubernetes Dashboard or the following
+To verify whether the Cluster Operator has been deployed successfully, the Kubernetes Dashboard or the following
 command can be used:
 
 [source]
@@ -45,13 +45,13 @@ kubectl describe all
 
 ==== Deploying to OpenShift
 
-To deploy the Cluster Controller on OpenShift, the following commands should be executed:
+To deploy the Cluster Operator on OpenShift, the following commands should be executed:
 
 [source]
-oc create -f examples/install/cluster-controller
-oc create -f examples/templates/cluster-controller
+oc create -f examples/install/cluster-operator
+oc create -f examples/templates/cluster-operator
 
-To verify whether the Cluster Controller has been deployed successfully, the OpenShift console or the following command
+To verify whether the Cluster Operator has been deployed successfully, the OpenShift console or the following command
 can be used:
 
 [source]
@@ -98,12 +98,12 @@ To deploy a Kafka broker on Kubernetes, the corresponding ConfigMap has to be cr
 cluster using the provided example ConfigMap, the following command should be executed:
 
 [source]
-kubectl apply -f examples/configmaps/cluster-controller/kafka-ephemeral.yaml
+kubectl apply -f examples/configmaps/cluster-operator/kafka-ephemeral.yaml
 
 Another example ConfigMap is provided for persistent Kafka cluster. To deploy it, the following command should be run:
 
 [source]
-kubectl apply -f examples/configmaps/cluster-controller/kafka-persistent.yaml
+kubectl apply -f examples/configmaps/cluster-operator/kafka-persistent.yaml
 
 ==== Deploying to OpenShift
 
@@ -121,7 +121,7 @@ oc new-app strimzi-persistent
 
 === Kafka Connect
 
-The Cluster Controller can also deploy a https://kafka.apache.org/documentation/#connect[Kafka Connect] cluster which
+The Cluster Operator can also deploy a https://kafka.apache.org/documentation/#connect[Kafka Connect] cluster which
 can be used with either of the Kafka broker deployments described above. It is implemented as a Deployment with a
 configurable number of workers. The default image currently contains only the Connectors distributed with Apache Kafka
 Connect: `FileStreamSinkConnector` and `FileStreamSourceConnector`. The REST interface for managing the Kafka Connect
@@ -136,7 +136,7 @@ To deploy Kafka Connect on Kubernetes, the corresponding ConfigMap has to be cre
 created using the following command:
 
 [source]
-kubectl apply -f examples/configmaps/cluster-controller/kafka-connect.yaml
+kubectl apply -f examples/configmaps/cluster-operator/kafka-connect.yaml
 
 ==== Deploying to OpenShift
 
@@ -249,40 +249,40 @@ _The name of the build should be changed according to the cluster name of the de
 
 3. Once the build is finished, the new image will be used automatically by the Kafka Connect deployment.
 
-=== Topic Controller
+=== Topic Operator
 
-Strimzi uses a component called the Topic Controller to manage topics in the Kafka cluster. The Topic Controller
+Strimzi uses a component called the Topic Operator to manage topics in the Kafka cluster. The Topic Operator
 is deployed as a process running inside a Kubernetes/OpenShift cluster. To create a new Kafka topic, a ConfigMap
 with the related configuration (name, partitions, replication factor, ...) has to be created. Based on the information
-in that ConfigMap, the Topic Controller will create a corresponding Kafka topic in the cluster.
+in that ConfigMap, the Topic Operator will create a corresponding Kafka topic in the cluster.
 
 Deleting a topic ConfigMap raises the deletion of the corresponding Kafka topic as well.
 
-The Cluster Controller is able to deploy a Topic Controller, which can be configured in the cluster ConfigMap.
-Alternatively, it is possible to deploy a Topic Controller manually, rather than having it deployed
-by the Cluster Controller.
+The Cluster Operator is able to deploy a Topic Operator, which can be configured in the cluster ConfigMap.
+Alternatively, it is possible to deploy a Topic Operator manually, rather than having it deployed
+by the Cluster Operator.
 
-==== Deploying through the Cluster Controller
+==== Deploying through the Cluster Operator
 
-To deploy the Topic Controller through the Cluster Controller, its configuration needs to be provided in the cluster
-ConfigMap in the `topic-controller-config` field as a JSON string.
+To deploy the Topic Operator through the Cluster Operator, its configuration needs to be provided in the cluster
+ConfigMap in the `topic-operator-config` field as a JSON string.
 
-For more information on the JSON configuration format see <<topic_controller_json_config>>.
+For more information on the JSON configuration format see <<topic_operator_json_config>>.
 
-==== Deploying standalone Topic Controller
+==== Deploying standalone Topic Operator
 
-If you are not going to deploy the Kafka cluster using the Cluster Controller but you already have a Kafka cluster deployed
-on Kubernetes or OpenShift, it could be useful to deploy the Topic Controller using the provided YAML files.
-In that case you can still leverage on the Topic Controller features of managing Kafka topics through related ConfigMaps.
+If you are not going to deploy the Kafka cluster using the Cluster Operator but you already have a Kafka cluster deployed
+on Kubernetes or OpenShift, it could be useful to deploy the Topic Operator using the provided YAML files.
+In that case you can still leverage on the Topic Operator features of managing Kafka topics through related ConfigMaps.
 
 ===== Deploying to Kubernetes
 
-To deploy the Topic Controller on Kubernetes (not through the Cluster Controller), the following command should be executed:
+To deploy the Topic Operator on Kubernetes (not through the Cluster Operator), the following command should be executed:
 
 [source]
-kubectl create -f examples/install/topic-controller.yaml
+kubectl create -f examples/install/topic-operator.yaml
 
-To verify whether the Topic Controller has been deployed successfully, the Kubernetes Dashboard or the following
+To verify whether the Topic Operator has been deployed successfully, the Kubernetes Dashboard or the following
 command can be used:
 
 [source]
@@ -290,12 +290,12 @@ kubectl describe all
 
 ===== Deploying to OpenShift
 
-To deploy the Topic Controller on OpenShift (not through the Cluster Controller), the following command should be executed:
+To deploy the Topic Operator on OpenShift (not through the Cluster Operator), the following command should be executed:
 
 [source]
-oc create -f examples/install/topic-controller
+oc create -f examples/install/topic-operator
 
-To verify whether the Topic Controller has been deployed successfully, the OpenShift console or the following command
+To verify whether the Topic Operator has been deployed successfully, the OpenShift console or the following command
 can be used:
 
 [source]
@@ -303,13 +303,13 @@ oc describe all
 
 ==== Topic ConfigMap
 
-When the Topic Controller is deployed by the Cluster Controller it will be configured to watch
+When the Topic Operator is deployed by the Cluster Operator it will be configured to watch
 for "topic ConfigMaps" which are those with the following labels:
 
 [source,yaml]
 strimzi.io/cluster: <cluster-name>
 strimzi.io/kind: topic
 
-NOTE: When the Topic Controller is deployed manually the `strimzi.io/cluster` label is not necessary.
+NOTE: When the Topic Operator is deployed manually the `strimzi.io/cluster` label is not necessary.
 
 The topic ConfigMap contains the topic configuration in a specific format. The ConfigMap format is described in <<topic_config_map_details>>.
