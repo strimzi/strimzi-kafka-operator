@@ -1,18 +1,18 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: strimzi-topic-controller
+  name: strimzi-topic-operator
 spec:
   replicas: 1
   template:
     metadata:
       labels:
-        name: strimzi-topic-controller
+        name: strimzi-topic-operator
     spec:
-      serviceAccountName: strimzi-topic-controller
+      serviceAccountName: strimzi-topic-operator
       containers:
-        - name: strimzi-topic-controller
-          image: strimzi/topic-controller:latest
+        - name: strimzi-topic-operator
+          image: strimzi/topic-operator:latest
           env:
             - name: STRIMZI_CONFIGMAP_LABELS
               value: "strimzi.io/kind=topic"

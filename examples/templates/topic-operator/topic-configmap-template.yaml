@@ -6,7 +6,7 @@ metadata:
     openshift.io/display-name: "Apache Kafka Topic"
     description: >-
       This template creates a "Topic ConfigMap". Used in conjunction with
-      the Strimzi topic controller this will create a corresponding
+      the Strimzi topic operator this will create a corresponding
       topic in a Strimzi Kafka cluster.
       For more information about using this template see http://strimzi.io
     tags: "messaging"

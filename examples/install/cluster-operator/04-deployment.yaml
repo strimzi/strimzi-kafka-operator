@@ -1,18 +1,18 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: strimzi-cluster-controller
+  name: strimzi-cluster-operator
 spec:
   replicas: 1
   template:
     metadata:
       labels:
-        name: strimzi-cluster-controller
+        name: strimzi-cluster-operator
     spec:
-      serviceAccountName: strimzi-cluster-controller
+      serviceAccountName: strimzi-cluster-operator
       containers:
-        - name: strimzi-cluster-controller
-          image: strimzi/cluster-controller:latest
+        - name: strimzi-cluster-operator
+          image: strimzi/cluster-operator:latest
           env:
             - name: STRIMZI_CONFIGMAP_LABELS
               value: "strimzi.io/kind=cluster"
@@ -32,8 +32,8 @@ spec:
               value: strimzi/kafka-connect:latest
             - name: STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE
               value: strimzi/kafka-connect-s2i:latest
-            - name: STRIMZI_DEFAULT_TOPIC_CONTROLLER_IMAGE
-              value: strimzi/topic-controller:latest
+            - name: STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE
+              value: strimzi/topic-operator:latest
           livenessProbe:
             httpGet:
               path: /healthy

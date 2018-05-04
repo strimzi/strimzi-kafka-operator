@@ -123,5 +123,5 @@ objects:
       {
         "lowercaseOutputName": true
       }
-    topic-controller-config: |-
+    topic-operator-config: |-
       { }
