@@ -362,15 +362,19 @@ The same syntax as Kubernetes' is used for the values of `cpu` and `memory`.
 
 `requests/memory`::
 the memory request for the container, corresponding directly to Kubernetes' {resources-link}[`spec.containers[\].resources.requests.memory`] setting.
+Kubernetes/OpenShift will ensure the containers have at least this much memory by running the pod on a node with at least as much free memory as all the containers require.
 Optional with no default.
 `requests/cpu`::
 the cpu request for the container, corresponding directly to Kubernetes' {resources-link}[`spec.containers[\].resources.requests.cpu`] setting.
+Kubernetes/OpenShift will ensure the containers have at least this much CPU by running the pod on a node with at least as much uncommitted CPU as all the containers require.
 Optional with no default.
 `limits/memory`::
-the memory request for the container, corresponding directly to Kubernetes' {resources-link}[`spec.containers[\].resources.limits.memory`] setting.
+the memory limit for the container, corresponding directly to Kubernetes' {resources-link}[`spec.containers[\].resources.limits.memory`] setting.
+Kubernetes/OpenShift will limit the containers to this much memory, potentially terminating their pod if they use more.
 Optional with no default.
 `limits/cpu`::
-the cpu request for the container, corresponding directly to Kubernetes' {resources-link}[`spec.containers[\].resources.limits.cpu`] setting.
+the cpu limit for the container, corresponding directly to Kubernetes' {resources-link}[`spec.containers[\].resources.limits.cpu`] setting.
+Kubernetes/OpenShift will cap the containers CPU usage to this limit.
 Optional with no default.
 
 ====== Minimum Resource Requirements
