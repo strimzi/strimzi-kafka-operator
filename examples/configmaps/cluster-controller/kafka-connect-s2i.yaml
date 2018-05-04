@@ -4,7 +4,7 @@ metadata:
   name: my-connect-cluster
   labels:
     strimzi.io/kind: cluster
-    strimzi.io/type: kafka-connect
+    strimzi.io/type: kafka-connect-s2i
 data:
   nodes: "1"
   healthcheck-delay: "60"

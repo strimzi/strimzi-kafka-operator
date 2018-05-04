@@ -12,17 +12,6 @@ import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.Minishift;
 import io.strimzi.test.k8s.OpenShift;
-import org.junit.ClassRule;
-import org.junit.runner.notification.RunNotifier;
-import org.junit.runners.BlockJUnit4ClassRunner;
-import org.junit.runners.model.Annotatable;
-import org.junit.runners.model.FrameworkField;
-import org.junit.runners.model.FrameworkMethod;
-import org.junit.runners.model.InitializationError;
-import org.junit.runners.model.Statement;
-import org.junit.runners.model.TestClass;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -37,6 +26,18 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+
+import org.junit.ClassRule;
+import org.junit.runner.notification.RunNotifier;
+import org.junit.runners.BlockJUnit4ClassRunner;
+import org.junit.runners.model.Annotatable;
+import org.junit.runners.model.FrameworkField;
+import org.junit.runners.model.FrameworkMethod;
+import org.junit.runners.model.InitializationError;
+import org.junit.runners.model.Statement;
+import org.junit.runners.model.TestClass;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.k8s.BaseKubeClient.CM;
@@ -331,7 +332,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 ((ObjectNode) metadata).put("name", cluster.name());
                 JsonNode data = node.get("data");
                 ((ObjectNode) data).put("nodes", String.valueOf(cluster.nodes()));
-                ((ObjectNode) data).put("KAFKA_CONNECT_BOOTSTRAP_SERVERS", cluster.bootstrapServers());
+                ((ObjectNode) data).put("connect-config", cluster.connectConfig());
                 // updates values for config map
                 for (CmData cmData : cluster.config()) {
                     ((ObjectNode) data).put(cmData.key(), cmData.value());

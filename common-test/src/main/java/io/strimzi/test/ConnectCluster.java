@@ -20,7 +20,7 @@ import java.lang.annotation.Target;
 @Repeatable(ConnectCluster.Container.class)
 public @interface ConnectCluster {
     String name();
-    String bootstrapServers();
+    String connectConfig();
     int nodes() default 1;
     CmData[] config() default {};
 

@@ -184,14 +184,11 @@ a volume by the Kafka broker pods
 [[kafka_configuration_json_config]]
 ===== Kafka Configuration
 
-`kafka-config` field allows detailed configuration of Apache Kafka. This field should contain a JSON object with Kafka
-configuration options as keys. The values could be in one of the following types:
+The `kafka-config` field allows detailed configuration of Apache Kafka. This field should contain a JSON object with Kafka
+configuration options as keys. The values could be in one of the following JSON types:
 
 * String
-* Integer
-* Long
-* Double
-* Float
+* Number
 * Boolean
 
 The `kafka-config` field supports all Kafka configuration options with the exception of options related to:
@@ -223,8 +220,8 @@ Specifically, all configuration options with keys starting with one of the follo
 * `authorizer.`
 * `super.user`
 
-All other options will be passed to Kafka. List of all available options can be found on the
-http://kafka.apache.org/documentation/#brokerconfigs[Kafka website]. An example of `kafka-config` field is provided
+All other options will be passed to Kafka. A list of all the available options can be found on the
+http://kafka.apache.org/11/documentation.html#brokerconfigs[Kafka website]. An example `kafka-config` field is provided
 below.
 
 .Example Kafka configuration
@@ -249,7 +246,7 @@ below.
 }
 ----
 
-NOTE:: The cluster controller doesn't validate the configuration provided by the user. When invalid configuration is provided, the
+NOTE:: The cluster controller doesn't validate the provided configuration. When invalid configuration is provided, the
 Kafka cluster might not start or might become unstable. In such cases, the configuration in the `kafka-config` field
 should be fixed and the cluster controller will roll out the new configuration to all Kafka brokers.
 
@@ -491,47 +488,20 @@ More information about these configuration parameters in the related <<Topic Con
 In order to configure a Kafka Connect cluster deployment, it's possible to specify the following fields in the `data` section of 
 the related ConfigMap:
 
-* `nodes`: number of Kafka Connect worker nodes. Default is 1
-* `image`: the Docker image to use for the Kafka Connect workers.
+`nodes`:: Number of Kafka Connect worker nodes. Default is 1
+`image`:: The Docker image to use for the Kafka Connect workers.
 Default is determined by the value of the
 `<<STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE,STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE>>`
 environment variable of the Cluster Controller.
 If S2I is used (only on OpenShift), then it should be the related S2I image.
-* `healthcheck-delay`: the initial delay for the liveness and readiness probes for each Kafka Connect worker node. Default is 60
-* `healthcheck-timeout`: the timeout on the liveness and readiness probes for each Kafka Connect worker node. Default is 5
-* `resources`:
-a JSON string configuring the resource limits and requests for Kafka Connect containers.
+`healthcheck-delay`:: The initial delay for the liveness and readiness probes for each Kafka Connect worker node. Default is 60
+`healthcheck-timeout`:: The timeout on the liveness and readiness probes for each Kafka Connect worker node. Default is 5
+`resources`:: A JSON string configuring the resource limits and requests for Kafka Connect containers.
 The accepted JSON format is described in the <<resources_json_config>> section.
-* `jvmOptions`:
-a JSON string allowing the JVM running Kafka Connect to be configured.
+`jvmOptions`:: A JSON string allowing the JVM running Kafka Connect to be configured.
 The accepted JSON format is described in the <<jvm_json_config>> section.
-* `KAFKA_CONNECT_BOOTSTRAP_SERVERS`: a list of host/port pairs to use for establishing the initial connection to the Kafka cluster.
-It sets the `bootstrap.servers` property in the properties configuration file used by Kafka Connect worker nodes on startup.
-Default is `my-cluster-kafka:9092`
-* `KAFKA_CONNECT_GROUP_ID`: a unique string that identifies the Connect cluster group this worker belongs to.
-It sets the `group.id` property in the properties configuration file used by Kafka Connect worker nodes on startup.
-Default is `my-connect-cluster`
-* `KAFKA_CONNECT_KEY_CONVERTER`: converter class used to convert keys between Kafka Connect format and the serialized form 
-that is written to Kafka. It sets the `key.converter` property in the properties configuration file used by Kafka Connect 
-worker nodes on startup. Default is `org.apache.kafka.connect.json.JsonConverter`
-* `KAFKA_CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE`: if Kafka Connect transformation on keys are with or without schemas.
-It sets the `key.converter.schemas.enable` property in the properties configuration file used by Kafka Connect worker nodes on startup.
-Default is true
-* `KAFKA_CONNECT_VALUE_CONVERTER`: converter class used to convert values between Kafka Connect format and the serialized form 
-that is written to Kafka. It sets the `value.converter` property in the properties configuration file used by Kafka Connect 
-worker nodes on startup. Default is `org.apache.kafka.connect.json.JsonConverter`
-* `KAFKA_CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE`: if Kafka Connect transformation on values are with or without schemas.
-It sets the `value.converter.schemas.enable` property in the properties configuration file used by Kafka Connect worker nodes on startup.
-Default is true
-* `KAFKA_CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR`: replication factor used when creating the configuration storage topic.
-It sets the `config.storage.replication.factor` property in the properties configuration file used by Kafka Connect worker nodes on startup.
-Default is 3
-* `KAFKA_CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR`: replication factor used when creating the offset storage topic.
-It sets the `offset.storage.replication.factor` property in the properties configuration file used by Kafka Connect worker nodes on startup.
-Default is 3
-* `KAFKA_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR`: replication factor used when creating the status storage topic.
-It sets the `status.storage.replication.factor` property in the properties configuration file used by Kafka Connect worker nodes on startup.
-Default is 3
+`connect-config`:: A JSON string with Kafka Connect configuration. See section <<kafka_connect_configuration_json_config>>
+for more details.
 
 The following is an example of cluster configuration ConfigMap is the following.
 
@@ -550,21 +520,91 @@ data:
   image: "strimzi/kafka-connect:latest"
   healthcheck-delay: "60"
   healthcheck-timeout: "5"
-  KAFKA_CONNECT_BOOTSTRAP_SERVERS: "my-cluster-kafka:9092"
-  KAFKA_CONNECT_GROUP_ID: "my-connect-cluster"
-  KAFKA_CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
-  KAFKA_CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE: "true"
-  KAFKA_CONNECT_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
-  KAFKA_CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "true"
-  KAFKA_CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "3"
-  KAFKA_CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "3"
-  KAFKA_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "3"
+  connect-config: |-
+    {
+      "bootstrap.servers": "my-cluster-kafka:9092",
+      "group.id": "my-connect-cluster",
+      "offset.storage.topic": "my-connect-cluster-offsets",
+      "config.storage.topic": "my-connect-cluster-configs",
+      "status.storage.topic": "my-connect-cluster-status",
+      "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+      "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+      "key.converter.schemas.enable": true,
+      "value.converter.schemas.enable": true,
+      "internal.key.converter": "org.apache.kafka.connect.json.JsonConverter",
+      "internal.value.converter": "org.apache.kafka.connect.json.JsonConverter",
+      "internal.key.converter.schemas.enable": false,
+      "internal.value.converter.schemas.enable": false,
+      "config.storage.replication.factor": 3,
+      "offset.storage.replication.factor": 3,
+      "status.storage.replication.factor": 3
+    }
 ----
 
 The resources created by the cluster controller into the Kubernetes/OpenShift cluster will be the following :
 
 * [connect-cluster-name]-connect Deployment which is in charge to create the Kafka Connect worker node pods
 * [connect-cluster-name]-connect Service which exposes the REST interface for managing the Kafka Connect cluster
+
+[[kafka_connect_configuration_json_config]]
+===== Kafka Connect configuration
+
+The `connect-config` field allows detailed configuration of Apache Kafka Connect and Connect S2I. This field should contain
+a JSON object with Kafka Connect configuration options as keys. The values could be in one of the following JSON types:
+
+* String
+* Number
+* Boolean
+
+The `connect-config` field supports all Kafka Connect configuration options with the exception of options related to:
+
+* Security (Encryption, Authentication and Authorization)
+* Listener / REST interface configuration
+* Plugin path configuration
+
+Specifically, all configuration options with keys starting with one of the following strings will be ignored:
+
+* `ssl.`
+* `sasl.`
+* `security.`
+* `listeners`
+* `plugin.path`
+* `rest.`
+
+All other options will be passed to Kafka Connect. A list of all the available options can be found on the
+http://kafka.apache.org/11/documentation.html#connectconfigs[Kafka website]. An example `connect-config` field is provided
+below.
+
+.Example Kafka Connect configuration
+[source,json]
+----
+{
+  "bootstrap.servers": "my-cluster-kafka:9092",
+  "group.id": "my-connect-cluster",
+  "offset.storage.topic": "my-connect-cluster-offsets",
+  "config.storage.topic": "my-connect-cluster-configs",
+  "status.storage.topic": "my-connect-cluster-status",
+  "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+  "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+  "key.converter.schemas.enable": true,
+  "value.converter.schemas.enable": true,
+  "internal.key.converter": "org.apache.kafka.connect.json.JsonConverter",
+  "internal.value.converter": "org.apache.kafka.connect.json.JsonConverter",
+  "internal.key.converter.schemas.enable": false,
+  "internal.value.converter.schemas.enable": false,
+  "config.storage.replication.factor": 3,
+  "offset.storage.replication.factor": 3,
+  "status.storage.replication.factor": 3
+}
+----
+
+INFO:: The cluster controller doesn't validate the provided configuration. When invalid configuration is provided, the
+Kafka Connect cluster might not start or might become unstable. In such cases, the configuration in the `connect-config` field
+should be fixed and the cluster controller will roll out the new configuration to all Kafka Connect instances.
+
+INFO:: Some configuration options are mandatory and in case they are not provided, Kafka Connect will not start. The cluster
+controller will not use any default values when the mandatory options are not specified - all mandatory configuration
+options have to be specified in the `connect-config` field.
 
 === Provisioning Role-Based Access Control (RBAC) for the controller
 

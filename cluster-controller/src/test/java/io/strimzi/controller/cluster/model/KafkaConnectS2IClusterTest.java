@@ -14,13 +14,15 @@ import io.fabric8.openshift.api.model.DeploymentConfig;
 import io.fabric8.openshift.api.model.ImageChangeTrigger;
 import io.fabric8.openshift.api.model.ImageStream;
 import io.strimzi.controller.cluster.ResourceUtils;
-import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.junit.Test;
+
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 public class KafkaConnectS2IClusterTest {
     private final String namespace = "test";
@@ -29,32 +31,15 @@ public class KafkaConnectS2IClusterTest {
     private final String image = "my-image:latest";
     private final int healthDelay = 100;
     private final int healthTimeout = 10;
-    private final String bootstrapServers = "my-cluster-kafka:9092";
-    private final String groupID = "my-cluster-group";
-    private final int configReplicationFactor = 1;
-    private final int offsetReplicationFactor = 1;
-    private final int statusReplicationFactor = 1;
-    private final String keyConverter = "org.apache.kafka.connect.json.AvroConverter";
-    private final String valueConverter = "org.apache.kafka.connect.json.AvroConverter";
-    private final boolean keyConverterSchemas = false;
-    private final boolean valuesConverterSchema = false;
+    private final String configurationJson = "{\"foo\":\"bar\"}";
 
     private final ConfigMap cm = ResourceUtils.createKafkaConnectS2IClusterConfigMap(namespace, cluster, replicas, image,
-            healthDelay, healthTimeout, bootstrapServers, groupID, configReplicationFactor, offsetReplicationFactor,
-            statusReplicationFactor, keyConverter, valueConverter, keyConverterSchemas, valuesConverterSchema);
+            healthDelay, healthTimeout, configurationJson);
     private final KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromConfigMap(cm);
 
     protected List<EnvVar> getExpectedEnvVars() {
         List<EnvVar> expected = new ArrayList<EnvVar>();
-        expected.add(new EnvVarBuilder().withName(kc.KEY_BOOTSTRAP_SERVERS).withValue(bootstrapServers).build());
-        expected.add(new EnvVarBuilder().withName(kc.KEY_GROUP_ID).withValue(groupID).build());
-        expected.add(new EnvVarBuilder().withName(kc.KEY_KEY_CONVERTER).withValue(keyConverter).build());
-        expected.add(new EnvVarBuilder().withName(kc.KEY_KEY_CONVERTER_SCHEMAS_EXAMPLE).withValue(Boolean.toString(keyConverterSchemas)).build());
-        expected.add(new EnvVarBuilder().withName(kc.KEY_VALUE_CONVERTER).withValue(valueConverter).build());
-        expected.add(new EnvVarBuilder().withName(kc.KEY_VALUE_CONVERTER_SCHEMAS_EXAMPLE).withValue(Boolean.toString(valuesConverterSchema)).build());
-        expected.add(new EnvVarBuilder().withName(kc.KEY_CONFIG_STORAGE_REPLICATION_FACTOR).withValue(Integer.toString(configReplicationFactor)).build());
-        expected.add(new EnvVarBuilder().withName(kc.KEY_OFFSET_STORAGE_REPLICATION_FACTOR).withValue(Integer.toString(offsetReplicationFactor)).build());
-        expected.add(new EnvVarBuilder().withName(kc.KEY_STATUS_STORAGE_REPLICATION_FACTOR).withValue(Integer.toString(statusReplicationFactor)).build());
+        expected.add(new EnvVarBuilder().withName(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_USER_CONFIGURATION).withValue("foo=bar\n").build());
         expected.add(new EnvVarBuilder().withName(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION).withValue("1.0").build());
         return expected;
     }
@@ -68,15 +53,7 @@ public class KafkaConnectS2IClusterTest {
         assertEquals(KafkaConnectS2ICluster.DEFAULT_IMAGE, kc.sourceImageBaseName + ":" + kc.sourceImageTag);
         assertEquals(KafkaConnectS2ICluster.DEFAULT_HEALTHCHECK_DELAY, kc.healthCheckInitialDelay);
         assertEquals(KafkaConnectS2ICluster.DEFAULT_HEALTHCHECK_TIMEOUT, kc.healthCheckTimeout);
-        assertEquals(KafkaConnectS2ICluster.DEFAULT_BOOTSTRAP_SERVERS, kc.bootstrapServers);
-        assertEquals(KafkaConnectS2ICluster.DEFAULT_CONFIG_STORAGE_REPLICATION_FACTOR, kc.configStorageReplicationFactor);
-        assertEquals(KafkaConnectS2ICluster.DEFAULT_OFFSET_STORAGE_REPLICATION_FACTOR, kc.offsetStorageReplicationFactor);
-        assertEquals(KafkaConnectS2ICluster.DEFAULT_STATUS_STORAGE_REPLICATION_FACTOR, kc.statusStorageReplicationFactor);
-        assertEquals(KafkaConnectS2ICluster.DEFAULT_GROUP_ID, kc.groupId);
-        assertEquals(KafkaConnectS2ICluster.DEFAULT_KEY_CONVERTER, kc.keyConverter);
-        assertEquals(KafkaConnectS2ICluster.DEFAULT_KEY_CONVERTER_SCHEMAS_EXAMPLE, kc.keyConverterSchemasEnable);
-        assertEquals(KafkaConnectS2ICluster.DEFAULT_VALUE_CONVERTER, kc.valueConverter);
-        assertEquals(KafkaConnectS2ICluster.DEFAULT_VALUE_CONVERTER_SCHEMAS_EXAMPLE, kc.valueConverterSchemasEnable);
+        assertNull(kc.getConfiguration());
     }
 
     @Test
@@ -86,15 +63,7 @@ public class KafkaConnectS2IClusterTest {
         assertEquals(image, kc.sourceImageBaseName + ":" + kc.sourceImageTag);
         assertEquals(healthDelay, kc.healthCheckInitialDelay);
         assertEquals(healthTimeout, kc.healthCheckTimeout);
-        assertEquals(bootstrapServers, kc.bootstrapServers);
-        assertEquals(configReplicationFactor, kc.configStorageReplicationFactor);
-        assertEquals(offsetReplicationFactor, kc.offsetStorageReplicationFactor);
-        assertEquals(statusReplicationFactor, kc.statusStorageReplicationFactor);
-        assertEquals(groupID, kc.groupId);
-        assertEquals(keyConverter, kc.keyConverter);
-        assertEquals(keyConverterSchemas, kc.keyConverterSchemasEnable);
-        assertEquals(valueConverter, kc.valueConverter);
-        assertEquals(valuesConverterSchema, kc.valueConverterSchemasEnable);
+        assertEquals("foo=bar\n", kc.getConfiguration().getConfiguration());
     }
 
     @Test
@@ -106,15 +75,7 @@ public class KafkaConnectS2IClusterTest {
         assertEquals(image, newKc.sourceImageBaseName + ":" + newKc.sourceImageTag);
         assertEquals(healthDelay, newKc.healthCheckInitialDelay);
         assertEquals(healthTimeout, newKc.healthCheckTimeout);
-        assertEquals(bootstrapServers, newKc.bootstrapServers);
-        assertEquals(configReplicationFactor, newKc.configStorageReplicationFactor);
-        assertEquals(offsetReplicationFactor, newKc.offsetStorageReplicationFactor);
-        assertEquals(statusReplicationFactor, newKc.statusStorageReplicationFactor);
-        assertEquals(groupID, newKc.groupId);
-        assertEquals(keyConverter, newKc.keyConverter);
-        assertEquals(keyConverterSchemas, newKc.keyConverterSchemasEnable);
-        assertEquals(valueConverter, newKc.valueConverter);
-        assertEquals(valuesConverterSchema, newKc.valueConverterSchemasEnable);
+        assertEquals("foo=bar\n", kc.getConfiguration().getConfiguration());
     }
 
     @Test
@@ -127,15 +88,7 @@ public class KafkaConnectS2IClusterTest {
         assertEquals(KafkaConnectS2ICluster.DEFAULT_IMAGE, newKc.sourceImageBaseName + ":" + newKc.sourceImageTag);
         assertEquals(KafkaConnectS2ICluster.DEFAULT_HEALTHCHECK_DELAY, newKc.healthCheckInitialDelay);
         assertEquals(KafkaConnectS2ICluster.DEFAULT_HEALTHCHECK_TIMEOUT, newKc.healthCheckTimeout);
-        assertEquals(KafkaConnectS2ICluster.DEFAULT_BOOTSTRAP_SERVERS, newKc.bootstrapServers);
-        assertEquals(KafkaConnectS2ICluster.DEFAULT_CONFIG_STORAGE_REPLICATION_FACTOR, newKc.configStorageReplicationFactor);
-        assertEquals(KafkaConnectS2ICluster.DEFAULT_OFFSET_STORAGE_REPLICATION_FACTOR, newKc.offsetStorageReplicationFactor);
-        assertEquals(KafkaConnectS2ICluster.DEFAULT_STATUS_STORAGE_REPLICATION_FACTOR, newKc.statusStorageReplicationFactor);
-        assertEquals(KafkaConnectS2ICluster.DEFAULT_GROUP_ID, newKc.groupId);
-        assertEquals(KafkaConnectS2ICluster.DEFAULT_KEY_CONVERTER, newKc.keyConverter);
-        assertEquals(KafkaConnectS2ICluster.DEFAULT_KEY_CONVERTER_SCHEMAS_EXAMPLE, newKc.keyConverterSchemasEnable);
-        assertEquals(KafkaConnectS2ICluster.DEFAULT_VALUE_CONVERTER, newKc.valueConverter);
-        assertEquals(KafkaConnectS2ICluster.DEFAULT_VALUE_CONVERTER_SCHEMAS_EXAMPLE, newKc.valueConverterSchemasEnable);
+        assertNull(newKc.getConfiguration());
     }
 
     @Test

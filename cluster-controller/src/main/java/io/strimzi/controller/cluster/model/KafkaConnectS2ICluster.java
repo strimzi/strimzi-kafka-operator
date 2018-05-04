@@ -24,6 +24,7 @@ import io.fabric8.openshift.api.model.ImageLookupPolicyBuilder;
 import io.fabric8.openshift.api.model.ImageStream;
 import io.fabric8.openshift.api.model.ImageStreamBuilder;
 import io.fabric8.openshift.api.model.TagReference;
+import io.vertx.core.json.JsonObject;
 
 import java.util.Collections;
 import java.util.Map;
@@ -67,15 +68,10 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
         kafkaConnect.setHealthCheckInitialDelay(Integer.parseInt(data.getOrDefault(KEY_HEALTHCHECK_DELAY, String.valueOf(DEFAULT_HEALTHCHECK_DELAY))));
         kafkaConnect.setHealthCheckTimeout(Integer.parseInt(data.getOrDefault(KEY_HEALTHCHECK_TIMEOUT, String.valueOf(DEFAULT_HEALTHCHECK_TIMEOUT))));
 
-        kafkaConnect.setBootstrapServers(data.getOrDefault(KEY_BOOTSTRAP_SERVERS, DEFAULT_BOOTSTRAP_SERVERS));
-        kafkaConnect.setGroupId(data.getOrDefault(KEY_GROUP_ID, DEFAULT_GROUP_ID));
-        kafkaConnect.setKeyConverter(data.getOrDefault(KEY_KEY_CONVERTER, DEFAULT_KEY_CONVERTER));
-        kafkaConnect.setKeyConverterSchemasEnable(Boolean.parseBoolean(data.getOrDefault(KEY_KEY_CONVERTER_SCHEMAS_EXAMPLE, String.valueOf(DEFAULT_KEY_CONVERTER_SCHEMAS_EXAMPLE))));
-        kafkaConnect.setValueConverter(data.getOrDefault(KEY_VALUE_CONVERTER, DEFAULT_VALUE_CONVERTER));
-        kafkaConnect.setValueConverterSchemasEnable(Boolean.parseBoolean(data.getOrDefault(KEY_VALUE_CONVERTER_SCHEMAS_EXAMPLE, String.valueOf(DEFAULT_VALUE_CONVERTER_SCHEMAS_EXAMPLE))));
-        kafkaConnect.setConfigStorageReplicationFactor(Integer.parseInt(data.getOrDefault(KEY_CONFIG_STORAGE_REPLICATION_FACTOR, String.valueOf(DEFAULT_CONFIG_STORAGE_REPLICATION_FACTOR))));
-        kafkaConnect.setOffsetStorageReplicationFactor(Integer.parseInt(data.getOrDefault(KEY_OFFSET_STORAGE_REPLICATION_FACTOR, String.valueOf(DEFAULT_OFFSET_STORAGE_REPLICATION_FACTOR))));
-        kafkaConnect.setStatusStorageReplicationFactor(Integer.parseInt(data.getOrDefault(KEY_STATUS_STORAGE_REPLICATION_FACTOR, String.valueOf(DEFAULT_STATUS_STORAGE_REPLICATION_FACTOR))));
+        String connectConfig = data.get(KEY_CONNECT_CONFIG);
+        if (connectConfig != null) {
+            kafkaConnect.setConfiguration(new KafkaConnectConfiguration(new JsonObject(connectConfig)));
+        }
 
         return kafkaConnect;
     }
@@ -100,17 +96,10 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
         kafkaConnect.setHealthCheckInitialDelay(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds());
         kafkaConnect.setHealthCheckTimeout(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds());
 
-        Map<String, String> vars = containerEnvVars(dep.getSpec().getTemplate().getSpec().getContainers().get(0));
-
-        kafkaConnect.setBootstrapServers(vars.getOrDefault(KEY_BOOTSTRAP_SERVERS, DEFAULT_BOOTSTRAP_SERVERS));
-        kafkaConnect.setGroupId(vars.getOrDefault(KEY_GROUP_ID, DEFAULT_GROUP_ID));
-        kafkaConnect.setKeyConverter(vars.getOrDefault(KEY_KEY_CONVERTER, DEFAULT_KEY_CONVERTER));
-        kafkaConnect.setKeyConverterSchemasEnable(Boolean.parseBoolean(vars.getOrDefault(KEY_KEY_CONVERTER_SCHEMAS_EXAMPLE, String.valueOf(DEFAULT_KEY_CONVERTER_SCHEMAS_EXAMPLE))));
-        kafkaConnect.setValueConverter(vars.getOrDefault(KEY_VALUE_CONVERTER, DEFAULT_VALUE_CONVERTER));
-        kafkaConnect.setValueConverterSchemasEnable(Boolean.parseBoolean(vars.getOrDefault(KEY_VALUE_CONVERTER_SCHEMAS_EXAMPLE, String.valueOf(DEFAULT_VALUE_CONVERTER_SCHEMAS_EXAMPLE))));
-        kafkaConnect.setConfigStorageReplicationFactor(Integer.parseInt(vars.getOrDefault(KEY_CONFIG_STORAGE_REPLICATION_FACTOR, String.valueOf(DEFAULT_CONFIG_STORAGE_REPLICATION_FACTOR))));
-        kafkaConnect.setOffsetStorageReplicationFactor(Integer.parseInt(vars.getOrDefault(KEY_OFFSET_STORAGE_REPLICATION_FACTOR, String.valueOf(DEFAULT_OFFSET_STORAGE_REPLICATION_FACTOR))));
-        kafkaConnect.setStatusStorageReplicationFactor(Integer.parseInt(vars.getOrDefault(KEY_STATUS_STORAGE_REPLICATION_FACTOR, String.valueOf(DEFAULT_STATUS_STORAGE_REPLICATION_FACTOR))));
+        String connectConfiguration = containerEnvVars(dep.getSpec().getTemplate().getSpec().getContainers().get(0)).get(ENV_VAR_KAFKA_CONNECT_USER_CONFIGURATION);
+        if (connectConfiguration != null) {
+            kafkaConnect.setConfiguration(new KafkaConnectConfiguration(connectConfiguration));
+        }
 
         String sourceImage = sis.getSpec().getTags().get(0).getFrom().getName();
         kafkaConnect.setImage(sourceImage);

@@ -157,7 +157,7 @@ public class KafkaCluster extends AbstractModel {
      */
     public static KafkaCluster fromAssembly(StatefulSet ss, String namespace, String cluster) {
 
-        KafkaCluster kafka =  new KafkaCluster(namespace, cluster, Labels.fromResource(ss));
+        KafkaCluster kafka = new KafkaCluster(namespace, cluster, Labels.fromResource(ss));
 
         kafka.setReplicas(ss.getSpec().getReplicas());
         Container container = ss.getSpec().getTemplate().getSpec().getContainers().get(0);
@@ -187,7 +187,10 @@ public class KafkaCluster extends AbstractModel {
             kafka.setStorage(storage);
         }
 
-        kafka.setConfiguration(new KafkaConfiguration(vars.getOrDefault(KEY_KAFKA_USER_CONFIGURATION, "")));
+        String kafkaConfiguration = containerEnvVars(container).get(KEY_KAFKA_USER_CONFIGURATION);
+        if (kafkaConfiguration != null) {
+            kafka.setConfiguration(new KafkaConfiguration(kafkaConfiguration));
+        }
 
         return kafka;
     }
