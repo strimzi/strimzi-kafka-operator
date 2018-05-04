@@ -19,7 +19,6 @@ public class KafkaConnectConfiguration extends AbstractConfiguration {
 
     static {
         FORBIDDEN_OPTIONS = asList(
-                //"bootstrap.servers",
                 "ssl.",
                 "sasl.",
                 "security.",

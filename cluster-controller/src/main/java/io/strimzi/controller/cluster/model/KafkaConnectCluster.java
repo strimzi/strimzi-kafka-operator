@@ -119,7 +119,7 @@ public class KafkaConnectCluster extends AbstractModel {
 
         String connectConfiguration = containerEnvVars(container).get(ENV_VAR_KAFKA_CONNECT_USER_CONFIGURATION);
         if (connectConfiguration != null) {
-            kafkaConnect.setConfiguration(new KafkaConfiguration(connectConfiguration));
+            kafkaConnect.setConfiguration(new KafkaConnectConfiguration(connectConfiguration));
         }
 
         return kafkaConnect;

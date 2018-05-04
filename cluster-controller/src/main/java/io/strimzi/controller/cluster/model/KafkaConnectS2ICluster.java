@@ -98,7 +98,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
 
         String connectConfiguration = containerEnvVars(dep.getSpec().getTemplate().getSpec().getContainers().get(0)).get(ENV_VAR_KAFKA_CONNECT_USER_CONFIGURATION);
         if (connectConfiguration != null) {
-            kafkaConnect.setConfiguration(new KafkaConfiguration(connectConfiguration));
+            kafkaConnect.setConfiguration(new KafkaConnectConfiguration(connectConfiguration));
         }
 
         String sourceImage = sis.getSpec().getTags().get(0).getFrom().getName();
