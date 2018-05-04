@@ -168,9 +168,9 @@ public class TopicOperatorTest {
     }
 
     /**
-     * 1. controller is notified that a ConfigMap is created
-     * 2. controller successfully creates topic in kafka
-     * 3. controller successfully creates in topic store
+     * 1. operator is notified that a ConfigMap is created
+     * 2. operator successfully creates topic in kafka
+     * 3. operator successfully creates in topic store
      */
     @Test
     public void testOnConfigMapAdded(TestContext context) {
@@ -178,7 +178,7 @@ public class TopicOperatorTest {
     }
 
     /**
-     * 1. controller is notified that a ConfigMap is created
+     * 1. operator is notified that a ConfigMap is created
      * 2. error when creating topic in kafka
      */
     @Test
@@ -190,7 +190,7 @@ public class TopicOperatorTest {
     }
 
     /**
-     * 1. controller is notified that a ConfigMap is created
+     * 1. operator is notified that a ConfigMap is created
      * 2. error when creating topic in kafka
      */
     @Test
@@ -202,8 +202,8 @@ public class TopicOperatorTest {
     }
 
     /**
-     * 1. controller is notified that a ConfigMap is created
-     * 2. controller successfully creates topic in kafka
+     * 1. operator is notified that a ConfigMap is created
+     * 2. operator successfully creates topic in kafka
      * 3. error when creating in topic store
      */
     @Test
@@ -217,10 +217,10 @@ public class TopicOperatorTest {
     // TODO ^^ but a disconnected/loss of session error
 
     /**
-     * 1. controller is notified that a topic is created
-     * 2. controller successfully queries kafka to get topic metadata
-     * 3. controller successfully creates config map
-     * 4. controller successfully creates in topic store
+     * 1. operator is notified that a topic is created
+     * 2. operator successfully queries kafka to get topic metadata
+     * 3. operator successfully creates config map
+     * 4. operator successfully creates in topic store
      */
     @Test
     public void testOnTopicCreated(TestContext context) {
@@ -241,11 +241,11 @@ public class TopicOperatorTest {
     }
 
     /**
-     * 1. controller is notified that a topic is created
-     * 2. controller initially failed querying kafka to get topic metadata
-     * 3. controller is subsequently successful in querying kafka to get topic metadata
-     * 4. controller successfully creates config map
-     * 5. controller successfully creates in topic store
+     * 1. operator is notified that a topic is created
+     * 2. operator initially failed querying kafka to get topic metadata
+     * 3. operator is subsequently successful in querying kafka to get topic metadata
+     * 4. operator successfully creates config map
+     * 5. operator successfully creates in topic store
      */
     @Test
     public void testOnTopicCreated_retry(TestContext context) {
@@ -286,8 +286,8 @@ public class TopicOperatorTest {
 
 
     /**
-     * 1. controller is notified that a topic is created
-     * 2. controller times out getting metadata
+     * 1. operator is notified that a topic is created
+     * 2. operator times out getting metadata
      */
     @Test
     public void testOnTopicCreated_retryTimeout(TestContext context) {
@@ -306,8 +306,8 @@ public class TopicOperatorTest {
 
     /**
      * 0. ZK notifies of a change in topic config
-     * 1. controller gets updated topic metadata
-     * 2. controller updates k8s and topic store.
+     * 1. operator gets updated topic metadata
+     * 2. operator updates k8s and topic store.
      */
     @Test
     public void testOnTopicChanged(TestContext context) {
@@ -351,7 +351,7 @@ public class TopicOperatorTest {
     // TODO error creating config map (exists), and then reconciliation
 
     /**
-     * Test reconciliation when a configmap has been created while the controller wasn't running
+     * Test reconciliation when a configmap has been created while the operator wasn't running
      */
     @Test
     public void testReconcile_withCm_noKafka_noPrivate(TestContext context) {
@@ -382,7 +382,7 @@ public class TopicOperatorTest {
     }
 
     /**
-     * Test reconciliation when a topic has been deleted while the controller
+     * Test reconciliation when a topic has been deleted while the operator
      * wasn't running
      */
     @Test
@@ -413,7 +413,7 @@ public class TopicOperatorTest {
     }
 
     /**
-     * Test reconciliation when a topic has been created while the controller wasn't running
+     * Test reconciliation when a topic has been created while the operator wasn't running
      */
     @Test
     public void testReconcile_noCm_withKafka_noPrivate(TestContext context) {
@@ -451,7 +451,7 @@ public class TopicOperatorTest {
     }
 
     /**
-     * Test reconciliation when a cm has been deleted while the controller
+     * Test reconciliation when a cm has been deleted while the operator
      * wasn't running
      */
     @Test
@@ -480,7 +480,7 @@ public class TopicOperatorTest {
     }
 
     /**
-     * Test reconciliation when a cm has been added both in kafka and in k8s while the controller was down, and both
+     * Test reconciliation when a cm has been added both in kafka and in k8s while the operator was down, and both
      * topics are identical.
      */
     @Test
@@ -515,7 +515,7 @@ public class TopicOperatorTest {
     }
 
     /**
-     * Test reconciliation when a cm has been added both in kafka and in k8s while the controller was down, and
+     * Test reconciliation when a cm has been added both in kafka and in k8s while the operator was down, and
      * the topics are irreconcilably different: Kafka wins
      */
     @Test
@@ -558,7 +558,7 @@ public class TopicOperatorTest {
     }
 
     /**
-     * Test reconciliation when a cm has been added both in kafka and in k8s while the controller was down, and
+     * Test reconciliation when a cm has been added both in kafka and in k8s while the operator was down, and
      * the topics are irreconcilably different: Kafka wins
      */
     @Test
@@ -602,7 +602,7 @@ public class TopicOperatorTest {
     }
 
     /**
-     * Test reconciliation when a cm has been changed both in kafka and in k8s while the controller was down, and
+     * Test reconciliation when a cm has been changed both in kafka and in k8s while the operator was down, and
      * a 3 way merge is needed.
      */
     @Test

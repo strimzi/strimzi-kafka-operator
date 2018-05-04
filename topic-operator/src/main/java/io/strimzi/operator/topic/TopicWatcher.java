@@ -20,7 +20,7 @@ public class TopicWatcher extends ZkWatcher {
     }
 
     @Override
-    protected void notifyController(String child) {
+    protected void notifyOperator(String child) {
         log.debug("Partitions change for topic {}", child);
         topicOperator.onTopicPartitionsChanged(new TopicName(child), ar -> {
             log.info("Reconciliation result due to topic partitions change: {}", ar);

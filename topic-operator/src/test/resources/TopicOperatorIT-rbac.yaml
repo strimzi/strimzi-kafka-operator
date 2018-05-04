@@ -3,7 +3,7 @@
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: Role
 metadata:
-  name: strimzi-topic-controller-role-it
+  name: strimzi-topic-operator-role-it
   labels:
     app: strimzi
 rules:
@@ -18,7 +18,7 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: RoleBinding
 metadata:
-  name: strimzi-topic-controller-binding-it
+  name: strimzi-topic-operator-binding-it
   labels:
     app: strimzi
 subjects:
@@ -26,13 +26,13 @@ subjects:
     name: developer
 roleRef:
   kind: Role
-  name: strimzi-topic-controller-role-it
+  name: strimzi-topic-operator-role-it
   apiGroup: rbac.authorization.k8s.io
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: RoleBinding
 metadata:
-  name: strimzi-topic-controller-binding
+  name: strimzi-topic-operator-binding
   labels:
     app: strimzi
 subjects:
@@ -40,6 +40,6 @@ subjects:
     name: developer
 roleRef:
   kind: Role
-  name: strimzi-topic-controller-role
+  name: strimzi-topic-operator-role
   apiGroup: rbac.authorization.k8s.io
 ---

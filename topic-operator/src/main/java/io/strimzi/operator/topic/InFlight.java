@@ -20,15 +20,15 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * For example, consider this linearization:
  * 1. User creates a topic in Kafka
- * 2. Controller notified of topic creation via ZooKeeper.
- * 3. Controller creates ConfigMap due to event 1.
- * 4. Controller notified of ConfigMap creation via Kubernetes
+ * 2. Operator notified of topic creation via ZooKeeper.
+ * 3. Operator creates ConfigMap due to event 1.
+ * 4. Operator notified of ConfigMap creation via Kubernetes
  *
  * Without Inflight the processing for event 1 is not complete (we've not created the
  * topic in the private topic store), so the linearization can proceed like this:
  *
- * 5. Controller creates private topic in topic store due to event 1.
- * 6. Controller creates private topic in topic sture doe to event 4.
+ * 5. Operator creates private topic in topic store due to event 1.
+ * 6. Operator creates private topic in topic sture doe to event 4.
  *    Exception because that private topic already exists.
  *
  * With Inflight the processing for the ConfigMap creation is deferred until all the processing

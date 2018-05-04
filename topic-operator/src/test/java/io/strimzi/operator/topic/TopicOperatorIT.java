@@ -69,7 +69,7 @@ public class TopicOperatorIT {
     private final LabelPredicate cmPredicate = LabelPredicate.fromString(
             "strimzi.io/kind=topic");
 
-    public static final String NAMESPACE = "topic-controller-it";
+    public static final String NAMESPACE = "topic-operator-it";
 
     private final Vertx vertx = Vertx.vertx();
     private KafkaCluster kafkaCluster;
@@ -99,7 +99,7 @@ public class TopicOperatorIT {
                 .createNamespace(NAMESPACE);
         oldNamespace = testCluster.client().namespace(NAMESPACE);
         testCluster.client().clientWithAdmin()
-                .create("../examples/install/topic-controller/02-role.yaml")
+                .create("../examples/install/topic-operator/02-role.yaml")
                 .create("src/test/resources/TopicOperatorIT-rbac.yaml");
     }
 
@@ -107,7 +107,7 @@ public class TopicOperatorIT {
     public static void teardownKubeCluster() {
         testCluster.client().clientWithAdmin()
                 .delete("src/test/resources/TopicOperatorIT-rbac.yaml")
-                .delete("../examples/install/topic-controller/02-role.yaml")
+                .delete("../examples/install/topic-operator/02-role.yaml")
                 .deleteNamespace(NAMESPACE);
         testCluster.client().clientWithAdmin().namespace(oldNamespace);
     }
@@ -120,7 +120,7 @@ public class TopicOperatorIT {
         kafkaCluster.addBrokers(1);
         kafkaCluster.deleteDataPriorToStartup(true);
         kafkaCluster.deleteDataUponShutdown(true);
-        kafkaCluster.usingDirectory(Files.createTempDirectory("controller-integration-test").toFile());
+        kafkaCluster.usingDirectory(Files.createTempDirectory("operator-integration-test").toFile());
         kafkaCluster.startup();
 
         kubeClient = new DefaultKubernetesClient().inNamespace(NAMESPACE);
@@ -598,7 +598,7 @@ public class TopicOperatorIT {
             return createdCm != null;
         }, timeout, "Expected the configmap to have been created by now");
 
-        // trigger an immediate reconcile, while topic controller is dealing with configmap modification
+        // trigger an immediate reconcile, while topic operator is dealing with configmap modification
         session.topicOperator.reconcileAllTopics("periodic");
 
         // Wait for the topic to be created

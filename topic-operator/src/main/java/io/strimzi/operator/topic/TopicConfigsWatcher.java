@@ -20,7 +20,7 @@ class TopicConfigsWatcher extends ZkWatcher {
     }
 
     @Override
-    protected void notifyController(String child) {
+    protected void notifyOperator(String child) {
         log.debug("Config change for topic {}", child);
         topicOperator.onTopicConfigChanged(new TopicName(child), ar2 -> {
             log.info("Reconciliation result due to topic config change: {}", ar2);

@@ -18,8 +18,8 @@ class MockTopicOperator extends TopicOperator {
         super(null, null, null, null, null, null, null);
     }
 
-    static class MockControllerEvent {
-        private final MockControllerEvent.Type type;
+    static class MockOperatorEvent {
+        private final MockOperatorEvent.Type type;
 
         static enum Type {
             CREATE,
@@ -31,13 +31,13 @@ class MockTopicOperator extends TopicOperator {
         private final TopicName topicName;
         private final ConfigMap configMap;
 
-        public MockControllerEvent(MockControllerEvent.Type type, TopicName topicName) {
+        public MockOperatorEvent(MockOperatorEvent.Type type, TopicName topicName) {
             this.type = type;
             this.topicName = topicName;
             this.configMap = null;
         }
 
-        public MockControllerEvent(MockControllerEvent.Type type, ConfigMap configMap) {
+        public MockOperatorEvent(MockOperatorEvent.Type type, ConfigMap configMap) {
             this.type = type;
             this.topicName = null;
             this.configMap = configMap;
@@ -48,12 +48,12 @@ class MockTopicOperator extends TopicOperator {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
 
-            MockControllerEvent mockControllerEvent = (MockControllerEvent) o;
+            MockOperatorEvent mockOperatorEvent = (MockOperatorEvent) o;
 
-            if (type != mockControllerEvent.type) return false;
-            if (topicName != null ? !topicName.equals(mockControllerEvent.topicName) : mockControllerEvent.topicName != null)
+            if (type != mockOperatorEvent.type) return false;
+            if (topicName != null ? !topicName.equals(mockOperatorEvent.topicName) : mockOperatorEvent.topicName != null)
                 return false;
-            return configMap != null ? configMap.equals(mockControllerEvent.configMap) : mockControllerEvent.configMap == null;
+            return configMap != null ? configMap.equals(mockOperatorEvent.configMap) : mockOperatorEvent.configMap == null;
         }
 
         @Override
@@ -80,55 +80,55 @@ class MockTopicOperator extends TopicOperator {
     public AsyncResult<Void> cmAddedResult = Future.failedFuture("Unexpected mock interaction. Configure " + getClass().getSimpleName() + ".cmAddedResult");
     public AsyncResult<Void> cmDeletedResult = Future.failedFuture("Unexpected mock interaction. Configure " + getClass().getSimpleName() + ".cmDeletedResult");
     public AsyncResult<Void> cmModifiedResult = Future.failedFuture("Unexpected mock interaction. Configure " + getClass().getSimpleName() + ".cmModifiedResult");
-    private List<MockControllerEvent> mockControllerEvents = new ArrayList<>();
+    private List<MockOperatorEvent> mockOperatorEvents = new ArrayList<>();
 
-    public List<MockControllerEvent> getMockControllerEvents() {
-        return mockControllerEvents;
+    public List<MockOperatorEvent> getMockOperatorEvents() {
+        return mockOperatorEvents;
     }
 
     public void clearEvents() {
-        mockControllerEvents.clear();
+        mockOperatorEvents.clear();
     }
 
     @Override
     public void onTopicCreated(TopicName topicName, Handler<AsyncResult<Void>> handler) {
-        mockControllerEvents.add(new MockControllerEvent(MockControllerEvent.Type.CREATE, topicName));
+        mockOperatorEvents.add(new MockOperatorEvent(MockOperatorEvent.Type.CREATE, topicName));
         handler.handle(topicCreatedResult);
     }
 
     @Override
     public void onTopicDeleted(TopicName topicName, Handler<AsyncResult<Void>> resultHandler) {
-        mockControllerEvents.add(new MockControllerEvent(MockControllerEvent.Type.DELETE, topicName));
+        mockOperatorEvents.add(new MockOperatorEvent(MockOperatorEvent.Type.DELETE, topicName));
         resultHandler.handle(topicDeletedResult);
     }
 
     @Override
     public void onTopicConfigChanged(TopicName topicName, Handler<AsyncResult<Void>> handler) {
-        mockControllerEvents.add(new MockControllerEvent(MockControllerEvent.Type.MODIFY_CONFIG, topicName));
+        mockOperatorEvents.add(new MockOperatorEvent(MockOperatorEvent.Type.MODIFY_CONFIG, topicName));
         handler.handle(topicModifiedResult);
     }
 
     @Override
     public void onTopicPartitionsChanged(TopicName topicName, Handler<AsyncResult<Void>> handler) {
-        mockControllerEvents.add(new MockControllerEvent(MockControllerEvent.Type.MODIFY_PARTITIONS, topicName));
+        mockOperatorEvents.add(new MockOperatorEvent(MockOperatorEvent.Type.MODIFY_PARTITIONS, topicName));
         handler.handle(topicModifiedResult);
     }
 
     @Override
     public void onConfigMapAdded(ConfigMap cm, Handler<AsyncResult<Void>> resultHandler) {
-        mockControllerEvents.add(new MockControllerEvent(MockControllerEvent.Type.CREATE, cm));
+        mockOperatorEvents.add(new MockOperatorEvent(MockOperatorEvent.Type.CREATE, cm));
         resultHandler.handle(cmAddedResult);
     }
 
     @Override
     public void onConfigMapModified(ConfigMap cm, Handler<AsyncResult<Void>> resultHandler) {
-        mockControllerEvents.add(new MockControllerEvent(MockControllerEvent.Type.MODIFY, cm));
+        mockOperatorEvents.add(new MockOperatorEvent(MockOperatorEvent.Type.MODIFY, cm));
         resultHandler.handle(cmModifiedResult);
     }
 
     @Override
     public void onConfigMapDeleted(ConfigMap cm, Handler<AsyncResult<Void>> resultHandler) {
-        mockControllerEvents.add(new MockControllerEvent(MockControllerEvent.Type.DELETE, cm));
+        mockOperatorEvents.add(new MockOperatorEvent(MockOperatorEvent.Type.DELETE, cm));
         resultHandler.handle(cmDeletedResult);
     }
 }

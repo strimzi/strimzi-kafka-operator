@@ -81,7 +81,7 @@ public class TopicOperator {
             }
             evtb.withType(eventType.name)
                     .withMessage(message)
-                    .withNewMetadata().withLabels(cmPredicate.labels()).withGenerateName("topic-controller").withNamespace(namespace).endMetadata()
+                    .withNewMetadata().withLabels(cmPredicate.labels()).withGenerateName("topic-operator").withNamespace(namespace).endMetadata()
                     .withNewSource()
                     .withComponent(TopicOperator.class.getName())
                     .endSource();

@@ -40,8 +40,8 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 
 /**
- * An implementation of {@link Kafka} which leave partition assignment decisions to the Kafka controller.
- * The controller is able to make rack-aware assignments (if so configured), but does not take into account
+ * An implementation of {@link Kafka} which leave partition assignment decisions to the Kafka operator.
+ * The operator is able to make rack-aware assignments (if so configured), but does not take into account
  * other aspects (e.g. disk utilisation, CPU load, network IO).
  */
 public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {

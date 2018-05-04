@@ -29,7 +29,7 @@ public abstract class ZkWatcher {
     /**
      * Constructor
      *
-     * @param topicOperator    Controller instance to notify
+     * @param topicOperator    Operator instance to notify
      * @param rootZNode     root znode to watch children
      */
     ZkWatcher(TopicOperator topicOperator, String rootZNode) {
@@ -74,7 +74,7 @@ public abstract class ZkWatcher {
             if (dataResult.succeeded()) {
                 this.children.compute(child, (k, v) -> {
                     if (v) {
-                        this.notifyController(child);
+                        this.notifyOperator(child);
                     }
                     return true;
                 });
@@ -117,11 +117,11 @@ public abstract class ZkWatcher {
     }
 
     /**
-     * Notify the controller about changes in the provided child
+     * Notify the operator about changes in the provided child
      *
      * @param child child changed
      */
-    protected abstract void notifyController(String child);
+    protected abstract void notifyOperator(String child);
 
     /**
      * Possible state of a ZkWatcher

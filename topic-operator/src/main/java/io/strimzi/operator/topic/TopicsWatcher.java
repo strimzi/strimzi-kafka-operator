@@ -34,7 +34,7 @@ class TopicsWatcher {
     /**
      * Constructor
      *
-     * @param topicOperator    Controller instance
+     * @param topicOperator    Operator instance
      * @param tcw   watcher for the topics config changes
      * @param tw    watcher for the topics partitions changes
      */

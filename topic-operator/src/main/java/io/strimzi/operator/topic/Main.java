@@ -13,7 +13,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * The entry-point to the topic controller.
+ * The entry-point to the topic operator.
  * Main responsibility is to deploy a {@link Session} with an appropriate Config and KubeClient,
  * redeploying if the config changes.
  */

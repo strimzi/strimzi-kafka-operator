@@ -53,7 +53,7 @@ public class Session extends AbstractVerticle {
     }
 
     /**
-     * Stop the controller.
+     * Stop the operator.
      */
     @Override
     public void stop(Future<Void> stopFuture) throws Exception {
@@ -127,7 +127,7 @@ public class Session extends AbstractVerticle {
         LOGGER.debug("Using TopicStore {}", topicStore);
 
         this.topicOperator = new TopicOperator(vertx, kafka, k8s, topicStore, cmPredicate, namespace, config);
-        LOGGER.debug("Using Controller {}", topicOperator);
+        LOGGER.debug("Using Operator {}", topicOperator);
 
         this.topicConfigsWatcher = new TopicConfigsWatcher(topicOperator);
         LOGGER.debug("Using TopicConfigsWatcher {}", topicConfigsWatcher);
