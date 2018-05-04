@@ -8,17 +8,17 @@
 
     <!-- Note that [/\\] must be used as the path separator for cross-platform support -->
 
-    <!-- cluster-controller -->
+    <!-- cluster-operator -->
     <suppress checks="ParameterNumber"
-              files="io[/\\]strimzi[/\\]controller[/\\]cluster[/\\]ResourceUtils.java"/>
+              files="io[/\\]strimzi[/\\]operator[/\\]cluster[/\\]ResourceUtils.java"/>
 
     <suppress checks="MethodLength|NPathComplexity|CyclomaticComplexity"
-              files="io[/\\]strimzi[/\\]controller[/\\]cluster[/\\]operator[/\\]assembly[/\\]KafkaAssemblyOperatorTest.java"/>
+              files="io[/\\]strimzi[/\\]operator[/\\]cluster[/\\]operator[/\\]assembly[/\\]KafkaAssemblyOperatorTest.java"/>
 
-    <!-- topic controller -->
+    <!-- topic operator -->
     <suppress checks="NPathComplexity|CyclomaticComplexity"
-              files="io[/\\]strimzi[/\\]controller[/\\]topic[/\\]Controller.java"/>
+              files="io[/\\]strimzi[/\\]operator[/\\]topic[/\\]Controller.java"/>
 
     <suppress checks="NPathComplexity|CyclomaticComplexity"
-              files="io[/\\]strimzi[/\\]controller[/\\]topic[/\\]TopicName.java"/>
+              files="io[/\\]strimzi[/\\]operator[/\\]topic[/\\]TopicName.java"/>
 </suppressions>

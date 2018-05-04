@@ -47,7 +47,7 @@ import static java.util.Collections.singletonList;
 
 /**
  * A test runner which sets up Strimzi resources in a Kubernetes cluster
- * according to annotations ({@link Namespace}, {@link Resources}, {@link ClusterController}, {@link KafkaCluster})
+ * according to annotations ({@link Namespace}, {@link Resources}, {@link ClusterOperator}, {@link KafkaCluster})
  * on the test class and/or test methods. {@link OpenShiftOnly} can be used to ignore tests when not running on
  * OpenShift (if the thing under test is OpenShift-specific).
  */
@@ -61,11 +61,11 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
      * in the state it was in when the test failed.
      */
     public static final String NOTEARDOWN = "NOTEARDOWN";
-    public static final String KAFKA_PERSISTENT_CM = "../examples/configmaps/cluster-controller/kafka-persistent.yaml";
-    public static final String KAFKA_CONNECT_CM = "../examples/configmaps/cluster-controller/kafka-connect.yaml";
-    public static final String CC_INSTALL_DIR = "../examples/install/cluster-controller";
-    public static final String CC_DEPLOYMENT_NAME = "strimzi-cluster-controller";
-    public static final String TOPIC_CM = "../examples/configmaps/topic-controller/kafka-topic-configmap.yaml";
+    public static final String KAFKA_PERSISTENT_CM = "../examples/configmaps/cluster-operator/kafka-persistent.yaml";
+    public static final String KAFKA_CONNECT_CM = "../examples/configmaps/cluster-operator/kafka-connect.yaml";
+    public static final String CC_INSTALL_DIR = "../examples/install/cluster-operator";
+    public static final String CC_DEPLOYMENT_NAME = "strimzi-cluster-operator";
+    public static final String TOPIC_CM = "../examples/configmaps/topic-operator/kafka-topic-configmap.yaml";
 
     private KubeClusterResource clusterResource;
 
@@ -151,7 +151,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         Statement statement = withDump(super.methodBlock(method));
         statement = withConnectClusters(method, statement);
         statement = withKafkaClusters(method, statement);
-        statement = withClusterController(method, statement);
+        statement = withClusterOperator(method, statement);
         statement = withResources(method, statement);
         statement = withTopic(method, statement);
         statement = withNamespaces(method, statement);
@@ -294,7 +294,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         List<String> head = new ArrayList<>();
         List<String> tail = new ArrayList<>();
         for (String n : l) {
-            if (n.startsWith("strimzi-cluster-controller-")) {
+            if (n.startsWith("strimzi-cluster-operator-")) {
                 head.add(n);
             } else {
                 tail.add(n);
@@ -381,7 +381,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
             last = new Bracket(last) {
                 private final String kafkaStatefulSetName = cluster.name() + "-kafka";
                 private final String zkStatefulSetName = cluster.name() + "-zookeeper";
-                private final String tcDeploymentName = cluster.name() + "-topic-controller";
+                private final String tcDeploymentName = cluster.name() + "-topic-operator";
                 @Override
                 protected void before() {
                     LOGGER.info("Creating kafka cluster '{}' before test per @KafkaCluster annotation on {}", cluster.name(), name(element));
@@ -419,10 +419,10 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         return image.replaceFirst("^strimzi/", newOrg + "/").replaceFirst(":[^:]+$", ":" + newTag);
     }
 
-    private Statement withClusterController(Annotatable element,
+    private Statement withClusterOperator(Annotatable element,
                                     Statement statement) {
         Statement last = statement;
-        for (ClusterController cc : annotations(element, ClusterController.class)) {
+        for (ClusterOperator cc : annotations(element, ClusterOperator.class)) {
             List<String> yamls = Arrays.stream(new File(CC_INSTALL_DIR).listFiles()).sorted().map(f -> getContent(f, node -> {
                 // Change the docker org of the images in the 04-deployment.yaml
                 if ("04-deployment.yaml".equals(f.getName())) {
@@ -461,7 +461,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 @Override
                 protected void before() {
                     // Here we record the state of the cluster
-                    LOGGER.info("Creating cluster controller {} before test per @ClusterController annotation on {}", cc, name(element));
+                    LOGGER.info("Creating cluster operator {} before test per @ClusterOperator annotation on {}", cc, name(element));
                     for (String yaml: yamls) {
                         kubeClient().clientWithAdmin().createContent(yaml);
                     }
@@ -470,7 +470,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
 
                 @Override
                 protected void after() {
-                    LOGGER.info("Deleting cluster controller {} after test per @ClusterController annotation on {}", cc, name(element));
+                    LOGGER.info("Deleting cluster operator {} after test per @ClusterOperator annotation on {}", cc, name(element));
                     for (int i = yamls.size() - 1; i >= 0; i--) {
                         kubeClient().clientWithAdmin().deleteContent(yamls.get(i));
                     }
@@ -553,7 +553,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         if (!areAllChildrenIgnored()) {
             statement = withConnectClusters(testClass, statement);
             statement = withKafkaClusters(testClass, statement);
-            statement = withClusterController(testClass, statement);
+            statement = withClusterOperator(testClass, statement);
             statement = withResources(testClass, statement);
             statement = withTopic(testClass, statement);
             statement = withNamespaces(testClass, statement);

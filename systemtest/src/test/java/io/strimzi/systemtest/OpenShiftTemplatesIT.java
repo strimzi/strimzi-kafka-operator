@@ -29,13 +29,13 @@ import static org.junit.Assert.assertNotNull;
 /**
  * Basic tests for the OpenShift templates.
  * This only tests that the template create the appropriate resource,
- * not that the created resource is processed by controller(s) in the appropriate way.
+ * not that the created resource is processed by operator(s) in the appropriate way.
  */
 @RunWith(StrimziRunner.class)
 @OpenShiftOnly
 @Namespace(OpenShiftTemplatesIT.NAMESPACE)
-@Resources(value = "../examples/templates/cluster-controller", asAdmin = true)
-@Resources(value = "../examples/templates/topic-controller", asAdmin = true)
+@Resources(value = "../examples/templates/cluster-operator", asAdmin = true)
+@Resources(value = "../examples/templates/topic-operator", asAdmin = true)
 public class OpenShiftTemplatesIT {
 
     public static final String NAMESPACE = "template-test";
@@ -165,7 +165,7 @@ public class OpenShiftTemplatesIT {
 
     @Test
     @JUnitGroup(name = "acceptance")
-    public void testTopicController() {
+    public void testTopicOperator() {
         String topicName = "test-topic-cm";
         String mapName = "test-topic-cm-foo";
         oc.newApp("strimzi-topic", map(

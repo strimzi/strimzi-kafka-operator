@@ -9,13 +9,13 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation is used in ({@link ClusterController})
- * to configure a Cluster Controller with custom environment variables.
+ * Annotation is used in ({@link ClusterOperator})
+ * to configure a Cluster Operator with custom environment variables.
  * <p>
  * An example would be:
  * <pre>
  * &#064;RunWith({@link StrimziRunner})
- * &#064;ClusterController(envVariables = {
+ * &#064;ClusterOperator(envVariables = {
  * &#064;EnvVariables(key = "foo", value = "bar")
  * })
  * public class ClusterTest {

@@ -1,6 +1,6 @@
 # Makefile.maven contains the shared tasks for building Java applications. This file is
 # included into the Makefile files which contain some Java sources which should be build
-# (E.g. cluster-controller etc.).
+# (E.g. cluster-operator etc.).
 
 java_build:
 	echo "Building JAR file ..."

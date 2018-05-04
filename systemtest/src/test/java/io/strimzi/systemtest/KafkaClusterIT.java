@@ -8,7 +8,7 @@ import com.jayway.jsonpath.JsonPath;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.strimzi.test.ClusterController;
+import io.strimzi.test.ClusterOperator;
 import io.strimzi.test.CmData;
 import io.strimzi.test.JUnitGroup;
 import io.strimzi.test.KafkaCluster;
@@ -52,7 +52,7 @@ import static org.junit.Assert.assertThat;
 
 @RunWith(StrimziRunner.class)
 @Namespace(KafkaClusterIT.NAMESPACE)
-@ClusterController
+@ClusterOperator
 public class KafkaClusterIT extends AbstractClusterIT {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaClusterIT.class);
@@ -64,13 +64,13 @@ public class KafkaClusterIT extends AbstractClusterIT {
     @BeforeClass
     public static void waitForCc() {
         // TODO Build this into the annos, or get rid of the annos
-        //cluster.client().waitForDeployment("strimzi-cluster-controller");
+        //cluster.client().waitForDeployment("strimzi-cluster-operator");
     }
 
     @Test
     @JUnitGroup(name = "regression")
     @OpenShiftOnly
-    @Resources(value = "../examples/templates/cluster-controller", asAdmin = true)
+    @Resources(value = "../examples/templates/cluster-operator", asAdmin = true)
     public void testDeployKafkaClusterViaTemplate() {
         Oc oc = (Oc) this.kubeClient;
         String clusterName = "openshift-my-cluster";
@@ -320,7 +320,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
                             "\"requests\": {\"memory\": \"1G\", \"cpu\": \"300m\"} }"),
             @CmData(key = "zookeeper-jvmOptions",
                     value = "{\"-Xmx\": \"600m\", \"-Xms\": \"300m\"}"),
-            @CmData(key = "topic-controller-config",
+            @CmData(key = "topic-operator-config",
                     value = "{\"resources\": { \"limits\": {\"memory\": \"500M\", \"cpu\": \"300m\"}, " +
                             "\"requests\": {\"memory\": \"500M\", \"cpu\": \"300m\"} } }")
     })
@@ -338,7 +338,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
         assertExpectedJavaOpts("jvm-resource-cluster-zookeeper-0",
                 "-Xmx600m", "-Xms300m");
 
-        String podName = client.pods().list().getItems().stream().filter(p -> p.getMetadata().getName().startsWith("jvm-resource-cluster-topic-controller-")).findFirst().get().getMetadata().getName();
+        String podName = client.pods().list().getItems().stream().filter(p -> p.getMetadata().getName().startsWith("jvm-resource-cluster-topic-operator-")).findFirst().get().getMetadata().getName();
 
         assertResources(NAMESPACE, podName,
                 "500M", "300m", "500M", "300m");

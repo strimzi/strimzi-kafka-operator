@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest;
 
-import io.strimzi.test.ClusterController;
+import io.strimzi.test.ClusterOperator;
 import io.strimzi.test.CmData;
 import io.strimzi.test.ConnectCluster;
 import io.strimzi.test.JUnitGroup;
@@ -25,7 +25,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(StrimziRunner.class)
 @Namespace(ConnectClusterIT.NAMESPACE)
-@ClusterController
+@ClusterOperator
 @KafkaCluster(name = ConnectClusterIT.KAFKA_CLUSTER_NAME)
 public class ConnectClusterIT extends AbstractClusterIT {
 
@@ -73,7 +73,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
 
     @Test
     @JUnitGroup(name = "regression")
-    @Resources(value = "../examples/templates/cluster-controller", asAdmin = true)
+    @Resources(value = "../examples/templates/cluster-operator", asAdmin = true)
     @OpenShiftOnly
     public void testDeployConnectClusterViaTemplate() {
         Oc oc = (Oc) this.kubeClient;

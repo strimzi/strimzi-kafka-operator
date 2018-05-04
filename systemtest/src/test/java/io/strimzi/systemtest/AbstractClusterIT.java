@@ -93,8 +93,8 @@ public class AbstractClusterIT {
         return "data-" + zookeeperClusterName(clusterName) + "-" + podId;
     }
 
-    static String topicControllerDeploymentName(String clusterName) {
-        return clusterName + "-topic-controller";
+    static String topicOperatorDeploymentName(String clusterName) {
+        return clusterName + "-topic-operator";
     }
 
     void replaceCm(String cmName, String fieldName, String fieldValue) {
@@ -241,6 +241,6 @@ public class AbstractClusterIT {
 
     void assertNoCcErrorsLogged() {
         //TODO add blacklist for unexpected errors
-        assertThat(kubeClient.searchInLog("deploy", "strimzi-cluster-controller", "60", "Exception", "Error", "Throwable"), isEmptyString());
+        assertThat(kubeClient.searchInLog("deploy", "strimzi-cluster-operator", "60", "Exception", "Error", "Throwable"), isEmptyString());
     }
 }

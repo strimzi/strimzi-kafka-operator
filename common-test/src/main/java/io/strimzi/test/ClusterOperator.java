@@ -11,12 +11,12 @@ import java.lang.annotation.Target;
 
 /**
  * Annotation for test classes or methods run via {@code @RunWith(StrimziRunner.class)}
- * which causes that runner to create a cluster controller before, and delete a cluster controller after,
+ * which causes that runner to create a cluster operator before, and delete a cluster operator after,
  * the tests.
  */
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface ClusterController {
+public @interface ClusterOperator {
 
     EnvVariables[] envVariables() default {};
 }
