@@ -75,7 +75,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
         kafkaConnect.setHealthCheckInitialDelay(Integer.parseInt(data.getOrDefault(KEY_HEALTHCHECK_DELAY, String.valueOf(DEFAULT_HEALTHCHECK_DELAY))));
         kafkaConnect.setHealthCheckTimeout(Integer.parseInt(data.getOrDefault(KEY_HEALTHCHECK_TIMEOUT, String.valueOf(DEFAULT_HEALTHCHECK_TIMEOUT))));
 
-        kafkaConnect.setInsecureSourceRepository(Boolean.parseBoolean((data.getOrDefault(KEY_INSECURE_SOURCE_REPO, "false"))));
+        kafkaConnect.setInsecureSourceRepository(Boolean.parseBoolean(data.getOrDefault(KEY_INSECURE_SOURCE_REPO, "false")));
 
         String connectConfig = data.get(KEY_CONNECT_CONFIG);
         if (connectConfig != null) {
