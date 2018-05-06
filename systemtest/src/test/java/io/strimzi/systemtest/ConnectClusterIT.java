@@ -23,7 +23,14 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-import static io.strimzi.systemtest.k8s.Events.*;
+import static io.strimzi.systemtest.k8s.Events.Scheduled;
+import static io.strimzi.systemtest.k8s.Events.Pulled;
+import static io.strimzi.systemtest.k8s.Events.Created;
+import static io.strimzi.systemtest.k8s.Events.Started;
+import static io.strimzi.systemtest.k8s.Events.Failed;
+import static io.strimzi.systemtest.k8s.Events.Unhealthy;
+import static io.strimzi.systemtest.k8s.Events.FailedSync;
+import static io.strimzi.systemtest.k8s.Events.FailedValidation;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
 import static io.strimzi.test.TestUtils.map;
