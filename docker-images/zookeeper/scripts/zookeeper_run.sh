@@ -24,33 +24,9 @@ mkdir -p $ZOOKEEPER_DATA_DIR
 # Create myid file
 echo $ZOOKEEPER_ID > $ZOOKEEPER_DATA_DIR/myid
 
-# Write the config file
-cat > /tmp/zookeeper.properties <<EOF
-timeTick=2000
-initLimit=5
-syncLimit=2
-
-# the directory where the snapshot is stored.
-dataDir=${ZOOKEEPER_DATA_DIR}
-clientPort=2181
-quorumListenOnAllIPs=true
-maxClientCnxns=0
-
-# Snapshot autopurging
-autopurge.snapRetainCount=3
-autopurge.purgeInterval=1
-
-# Ensemble configuration
-EOF
-
-NODE=1
-while [ $NODE -le $ZOOKEEPER_NODE_COUNT ]; do
-    echo "server.${NODE}=${BASE_HOSTNAME}-$((NODE-1)).${BASE_FQDN}:2888:3888" >> /tmp/zookeeper.properties
-    let NODE=NODE+1
-done
-
+# Generate and print the config file
 echo "Starting Zookeeper with configuration:"
-cat /tmp/zookeeper.properties
+./zookeeper_config_generator.sh | tee /tmp/zookeeper.properties
 echo ""
 
 if [ -z "$ZOOKEEPER_LOG_LEVEL" ]; then

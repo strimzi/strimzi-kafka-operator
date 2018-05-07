@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
@@ -24,12 +25,12 @@ import java.util.Map;
 
 public class ZookeeperCluster extends AbstractModel {
 
-    private static final int CLIENT_PORT = 2181;
-    private static final String CLIENT_PORT_NAME = "clients";
-    private static final int CLUSTERING_PORT = 2888;
-    private static final String CLUSTERING_PORT_NAME = "clustering";
-    private static final int LEADER_ELECTION_PORT = 3888;
-    private static final String LEADER_ELECTION_PORT_NAME = "leader-election";
+    protected static final int CLIENT_PORT = 2181;
+    protected static final String CLIENT_PORT_NAME = "clients";
+    protected static final int CLUSTERING_PORT = 2888;
+    protected static final String CLUSTERING_PORT_NAME = "clustering";
+    protected static final int LEADER_ELECTION_PORT = 3888;
+    protected static final String LEADER_ELECTION_PORT_NAME = "leader-election";
 
     private static final String NAME_SUFFIX = "-zookeeper";
     private static final String HEADLESS_NAME_SUFFIX = NAME_SUFFIX + "-headless";
@@ -46,10 +47,7 @@ public class ZookeeperCluster extends AbstractModel {
     private static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
     private static final boolean DEFAULT_ZOOKEEPER_METRICS_ENABLED = false;
 
-    // Zookeeper configuration defaults
-    // N/A
-
-    // Configuration keys
+    // Configuration keys (Config Map)
     public static final String KEY_IMAGE = "zookeeper-image";
     public static final String KEY_REPLICAS = "zookeeper-nodes";
     public static final String KEY_HEALTHCHECK_DELAY = "zookeeper-healthcheck-delay";
@@ -58,11 +56,12 @@ public class ZookeeperCluster extends AbstractModel {
     public static final String KEY_STORAGE = "zookeeper-storage";
     public static final String KEY_JVM_OPTIONS = "zookeeper-jvmOptions";
     public static final String KEY_RESOURCES = "zookeeper-resources";
+    public static final String KEY_ZOOKEEPER_CONFIG = "zookeeper-config";
 
-    // Zookeeper configuration keys
-    private static final String KEY_ZOOKEEPER_NODE_COUNT = "ZOOKEEPER_NODE_COUNT";
-    public static final String KEY_ZOOKEEPER_METRICS_ENABLED = "ZOOKEEPER_METRICS_ENABLED";
-    public static final String KEY_KAFKA_HEAP_OPTS = "KAFKA_HEAP_OPTS";
+    // Zookeeper configuration keys (EnvVariables)
+    private static final String ENV_VAR_ZOOKEEPER_NODE_COUNT = "ZOOKEEPER_NODE_COUNT";
+    public static final String ENV_VAR_ZOOKEEPER_METRICS_ENABLED = "ZOOKEEPER_METRICS_ENABLED";
+    protected static final String ENV_VAR_ZOOKEEPER_CONFIGURATION = "ZOOKEEPER_CONFIGURATION";
 
     public static String zookeeperClusterName(String cluster) {
         return cluster + ZookeeperCluster.NAME_SUFFIX;
@@ -130,6 +129,11 @@ public class ZookeeperCluster extends AbstractModel {
         String storageConfig = data.get(KEY_STORAGE);
         zk.setStorage(Storage.fromJson(new JsonObject(storageConfig)));
 
+        String zookeeperConfig = data.get(KEY_ZOOKEEPER_CONFIG);
+        if (zookeeperConfig != null) {
+            zk.setConfiguration(new ZookeeperConfiguration(new JsonObject(zookeeperConfig)));
+        }
+
         zk.setResources(Resources.fromJson(data.get(KEY_RESOURCES)));
         zk.setJvmOptions(JvmOptions.fromJson(data.get(KEY_JVM_OPTIONS)));
 
@@ -149,13 +153,14 @@ public class ZookeeperCluster extends AbstractModel {
                 Labels.fromResource(ss));
 
         zk.setReplicas(ss.getSpec().getReplicas());
-        zk.setImage(ss.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
-        zk.setHealthCheckInitialDelay(ss.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds());
-        zk.setHealthCheckInitialDelay(ss.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds());
+        Container container = ss.getSpec().getTemplate().getSpec().getContainers().get(0);
+        zk.setImage(container.getImage());
+        zk.setHealthCheckInitialDelay(container.getReadinessProbe().getInitialDelaySeconds());
+        zk.setHealthCheckTimeout(container.getReadinessProbe().getTimeoutSeconds());
 
-        Map<String, String> vars = containerEnvVars(ss.getSpec().getTemplate().getSpec().getContainers().get(0));
+        Map<String, String> vars = containerEnvVars(container);
 
-        zk.setMetricsEnabled(Boolean.parseBoolean(vars.getOrDefault(KEY_ZOOKEEPER_METRICS_ENABLED, String.valueOf(DEFAULT_ZOOKEEPER_METRICS_ENABLED))));
+        zk.setMetricsEnabled(Boolean.parseBoolean(vars.getOrDefault(ENV_VAR_ZOOKEEPER_METRICS_ENABLED, String.valueOf(DEFAULT_ZOOKEEPER_METRICS_ENABLED))));
         if (zk.isMetricsEnabled()) {
             zk.setMetricsConfigName(zookeeperMetricsName(cluster));
         }
@@ -171,6 +176,11 @@ public class ZookeeperCluster extends AbstractModel {
         } else {
             Storage storage = new Storage(Storage.StorageType.EPHEMERAL);
             zk.setStorage(storage);
+        }
+
+        String zookeeperConfiguration = containerEnvVars(container).get(ENV_VAR_ZOOKEEPER_CONFIGURATION);
+        if (zookeeperConfiguration != null) {
+            zk.setConfiguration(new ZookeeperConfiguration(zookeeperConfiguration));
         }
 
         return zk;
@@ -213,9 +223,14 @@ public class ZookeeperCluster extends AbstractModel {
     @Override
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
-        varList.add(buildEnvVar(KEY_ZOOKEEPER_NODE_COUNT, Integer.toString(replicas)));
-        varList.add(buildEnvVar(KEY_ZOOKEEPER_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
+        varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_NODE_COUNT, Integer.toString(replicas)));
+        varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
         kafkaHeapOptions(varList, 0.75, 2L * 1024L * 1024L * 1024L);
+
+        if (configuration != null) {
+            varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_CONFIGURATION, configuration.getConfiguration()));
+        }
+
         return varList;
     }
 

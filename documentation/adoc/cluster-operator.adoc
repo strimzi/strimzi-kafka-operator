@@ -88,6 +88,7 @@ Default is determined by the value of the
 environment variable of the Cluster Operator.
 * `zookeeper-healthcheck-delay`: the initial delay for the liveness and readiness probes for each Zookeeper node. Default is 15
 * `zookeeper-healthcheck-timeout`: the timeout on the liveness and readiness probes for each Zookeeper node. Default is 5
+* `zookeeper-config`: a JSON string with Zookeeper configuration. See section <<zookeeper_configuration_json_config>> for more details.
 * `zookeeper-storage`: a JSON string representing the storage configuration for the Zookeeper nodes. See section
 <<storage_configuration_json_config>> for more details.
 * `zookeeper-metrics-config`: a JSON string representing the JMX exporter configuration for exposing metrics from Zookeeper nodes.
@@ -118,10 +119,6 @@ data:
   kafka-image: "strimzi/kafka:latest"
   kafka-healthcheck-delay: "15"
   kafka-healthcheck-timeout: "5"
-  zookeeper-nodes: "1"
-  zookeeper-image: "strimzi/zookeeper:latest"
-  zookeeper-healthcheck-delay: "15"
-  zookeeper-healthcheck-timeout: "5"
   kafka-config: |-
     {
       "num.partitions": 1,
@@ -142,8 +139,6 @@ data:
     }
   kafka-storage: |-
     { "type": "ephemeral" }
-  zookeeper-storage: |-
-    { "type": "ephemeral" }
   kafka-metrics-config: |-
     {
       "lowercaseOutputName": true,
@@ -162,6 +157,22 @@ data:
           }
       ]
     }
+  zookeeper-nodes: "1"
+  zookeeper-image: "strimzi/zookeeper:latest"
+  zookeeper-healthcheck-delay: "15"
+  zookeeper-healthcheck-timeout: "5"
+  zookeeper-config: |-
+    {
+      "timeTick": 2000,
+      "initLimit": 5,
+      "syncLimit": 2,
+      "quorumListenOnAllIPs": true,
+      "maxClientCnxns": 0,
+      "autopurge.snapRetainCount": 3,
+      "autopurge.purgeInterval": 1
+    }
+  zookeeper-storage: |-
+    { "type": "ephemeral" }
   zookeeper-metrics-config: |-
     {
       "lowercaseOutputName": true
@@ -249,6 +260,55 @@ below.
 NOTE:: The cluster operator doesn't validate the provided configuration. When invalid configuration is provided, the
 Kafka cluster might not start or might become unstable. In such cases, the configuration in the `kafka-config` field
 should be fixed and the cluster operator will roll out the new configuration to all Kafka brokers.
+
+[[zookeeper_configuration_json_config]]
+===== Zookeeper Configuration
+
+The `zookeeper-config` field allows detailed configuration of Apache Zookeeepr. This field should contain a JSON object
+with Zookeeper configuration options as keys. The values could be in one of the following JSON types:
+
+* String
+* Number
+* Boolean
+
+The `zookeeper-config` field supports all Zookeeper configuration options with the exception of options related to:
+
+* Security (Encryption, Authentication and Authorization)
+* Listener configuration
+* Configuration of data directories
+* Zookeeper cluster composition
+
+Specifically, all configuration options with keys starting with one of the following strings will be ignored:
+
+* `server.`
+* `dataDir`
+* `dataLogDir`
+* `clientPort`
+* `authProvider`
+* `quorum.auth`
+* `requireClientAuthScheme`
+
+All other options will be passed to Zookeeper. A list of all the available options can be found on the
+http://zookeeper.apache.org/doc/r3.4.12/zookeeperAdmin.html[Zookeeper website]. An example `zookeeper-config` field is provided
+below.
+
+.Example Zookeeper configuration
+[source,json]
+----
+{
+  "timeTick": 2000,
+  "initLimit": 5,
+  "syncLimit": 2,
+  "quorumListenOnAllIPs": true,
+  "maxClientCnxns": 0,
+  "autopurge.snapRetainCount": 3,
+  "autopurge.purgeInterval": 1
+}
+----
+
+NOTE:: The cluster operator doesn't validate the provided configuration. When invalid configuration is provided, the
+Zookeeper cluster might not start or might become unstable. In such cases, the configuration in the `zookeeper-config` field
+should be fixed and the cluster operator will roll out the new configuration to all Zookeeper nodes.
 
 [[storage_configuration_json_config]]
 ===== Storage

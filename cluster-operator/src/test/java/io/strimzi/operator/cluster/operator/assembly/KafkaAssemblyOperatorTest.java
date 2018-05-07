@@ -71,6 +71,7 @@ public class KafkaAssemblyOperatorTest {
     private final boolean openShift;
     private final boolean metrics;
     private final String kafkaConfig;
+    private final String zooConfig;
     private final String storage;
     private final String tcConfig;
     private final boolean deleteClaim;
@@ -79,13 +80,15 @@ public class KafkaAssemblyOperatorTest {
         private final boolean openShift;
         private final boolean metrics;
         private final String kafkaConfig;
+        private final String zooConfig;
         private final String storage;
         private final String tcConfig;
 
-        public Params(boolean openShift, boolean metrics, String kafkaConfig, String storage, String tcConfig) {
+        public Params(boolean openShift, boolean metrics, String kafkaConfig, String zooConfig, String storage, String tcConfig) {
             this.openShift = openShift;
             this.metrics = metrics;
             this.kafkaConfig = kafkaConfig;
+            this.zooConfig = zooConfig;
             this.storage = storage;
             this.tcConfig = tcConfig;
         }
@@ -94,6 +97,7 @@ public class KafkaAssemblyOperatorTest {
             return "openShift=" + openShift +
                     ",metrics=" + metrics +
                     ",kafkaConfig=" + kafkaConfig +
+                    ",zooConfig=" + zooConfig +
                     ",storage=" + storage +
                     ",tcConfig=" + tcConfig;
         }
@@ -118,6 +122,11 @@ public class KafkaAssemblyOperatorTest {
             "{ }",
             "{\"foo\": \"bar\"}"
         };
+        String[] zooConfigs = {
+            null,
+            "{ }",
+            "{\"foo\": \"bar\"}"
+        };
         String[] tcConfigs = {
             null,
             "{ }",
@@ -128,9 +137,11 @@ public class KafkaAssemblyOperatorTest {
         for (boolean shift: shiftiness) {
             for (boolean metric: metrics) {
                 for (String kafkaConfig: kafkaConfigs) {
-                    for (String storage : storageConfigs) {
-                        for (String tcConfig : tcConfigs) {
-                            result.add(new Params(shift, metric, kafkaConfig, storage, tcConfig));
+                    for (String zooConfig: zooConfigs) {
+                        for (String storage : storageConfigs) {
+                            for (String tcConfig : tcConfigs) {
+                                result.add(new Params(shift, metric, kafkaConfig, zooConfig, storage, tcConfig));
+                            }
                         }
                     }
                 }
@@ -143,6 +154,7 @@ public class KafkaAssemblyOperatorTest {
         this.openShift = params.openShift;
         this.metrics = params.metrics;
         this.kafkaConfig = params.kafkaConfig;
+        this.zooConfig = params.zooConfig;
         this.storage = params.storage;
         this.tcConfig = params.tcConfig;
         this.deleteClaim = Storage.fromJson(new JsonObject(params.storage)).isDeleteClaim();
@@ -383,7 +395,7 @@ public class KafkaAssemblyOperatorTest {
         int healthDelay = 120;
         int healthTimeout = 30;
         String metricsCmJson = metrics ? METRICS_CONFIG : null;
-        return ResourceUtils.createKafkaClusterConfigMap(clusterCmNamespace, clusterCmName, replicas, image, healthDelay, healthTimeout, metricsCmJson, kafkaConfig, storage, tcConfig);
+        return ResourceUtils.createKafkaClusterConfigMap(clusterCmNamespace, clusterCmName, replicas, image, healthDelay, healthTimeout, metricsCmJson, kafkaConfig, zooConfig, storage, tcConfig);
     }
 
     private static <T> Set<T> set(T... elements) {

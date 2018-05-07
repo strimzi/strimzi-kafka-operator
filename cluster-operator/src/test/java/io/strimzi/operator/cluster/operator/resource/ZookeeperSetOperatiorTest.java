@@ -16,7 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static io.strimzi.operator.cluster.model.AbstractModel.containerEnvVars;
-import static io.strimzi.operator.cluster.model.ZookeeperCluster.KEY_ZOOKEEPER_METRICS_ENABLED;
+import static io.strimzi.operator.cluster.model.ZookeeperCluster.ENV_VAR_ZOOKEEPER_METRICS_ENABLED;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -89,7 +89,7 @@ public class ZookeeperSetOperatiorTest {
 
     @Test
     public void testNeedsRollingUpdateEnvZkMetricsEnabled() {
-        String envVar = KEY_ZOOKEEPER_METRICS_ENABLED;
+        String envVar = ENV_VAR_ZOOKEEPER_METRICS_ENABLED;
         a.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().add(new EnvVar(envVar,
                 containerEnvVars(a.getSpec().getTemplate().getSpec().getContainers().get(0)).get(envVar) + "-foo", null));
         assertTrue(ZookeeperSetOperator.needsRollingUpdate(diff()));
