@@ -12,7 +12,7 @@ import io.vertx.core.json.JsonObject;
 import static java.util.Arrays.asList;
 
 /**
- * Class for handling Kafka configuration passed by the user
+ * Class for handling Zookeeper configuration passed by the user
  */
 public class ZookeeperConfiguration extends AbstractConfiguration {
     private static final List<String> FORBIDDEN_OPTIONS;
