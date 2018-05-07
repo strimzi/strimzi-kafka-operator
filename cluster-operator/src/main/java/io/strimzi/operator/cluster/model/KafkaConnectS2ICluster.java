@@ -317,9 +317,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
     }
 
     /**
-     * Returns true if the source repo for the S2I image should be treated as insecure in source ImageStream
-     *
-     * @return
+     * @return true if the source repo for the S2I image should be treated as insecure in source ImageStream
      */
     public boolean isInsecureSourceRepository() {
         return insecureSourceRepository;
