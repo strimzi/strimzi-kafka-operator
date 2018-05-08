@@ -78,21 +78,9 @@ objects:
     kafka-healthcheck-timeout: "${KAFKA_HEALTHCHECK_TIMEOUT}"
     kafka-config: |-
       {
-        "num.partitions": 1,
-        "num.recovery.threads.per.data.dir": 1,
         "default.replication.factor": ${KAFKA_DEFAULT_REPLICATION_FACTOR},
         "offsets.topic.replication.factor": ${KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR},
-        "transaction.state.log.replication.factor": ${KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR},
-        "transaction.state.log.min.isr": 1,
-        "log.retention.hours": 168,
-        "log.segment.bytes": 1073741824,
-        "log.retention.check.interval.ms": 300000,
-        "num.network.threads": 3,
-        "num.io.threads": 8,
-        "socket.send.buffer.bytes": 102400,
-        "socket.receive.buffer.bytes": 102400,
-        "socket.request.max.bytes": 104857600,
-        "group.initial.rebalance.delay.ms": 0
+        "transaction.state.log.replication.factor": ${KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR}
       }
     kafka-storage: |-
       { "type": "persistent-claim", "size": "${KAFKA_VOLUME_CAPACITY}", "delete-claim": false }
@@ -117,16 +105,6 @@ objects:
     zookeeper-nodes: "${ZOOKEEPER_NODE_COUNT}"
     zookeeper-healthcheck-delay: "${ZOOKEEPER_HEALTHCHECK_DELAY}"
     zookeeper-healthcheck-timeout: "${ZOOKEEPER_HEALTHCHECK_TIMEOUT}"
-    zookeeper-config: |-
-      {
-        "timeTick": 2000,
-        "initLimit": 5,
-        "syncLimit": 2,
-        "quorumListenOnAllIPs": true,
-        "maxClientCnxns": 0,
-        "autopurge.snapRetainCount": 3,
-        "autopurge.purgeInterval": 1
-      }
     zookeeper-storage: |-
       { "type": "persistent-claim", "size": "${ZOOKEEPER_VOLUME_CAPACITY}", "delete-claim": false }
     zookeeper-metrics-config: |-

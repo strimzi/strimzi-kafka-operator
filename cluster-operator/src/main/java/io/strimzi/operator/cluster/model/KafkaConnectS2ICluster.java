@@ -68,10 +68,8 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
         kafkaConnect.setHealthCheckInitialDelay(Integer.parseInt(data.getOrDefault(KEY_HEALTHCHECK_DELAY, String.valueOf(DEFAULT_HEALTHCHECK_DELAY))));
         kafkaConnect.setHealthCheckTimeout(Integer.parseInt(data.getOrDefault(KEY_HEALTHCHECK_TIMEOUT, String.valueOf(DEFAULT_HEALTHCHECK_TIMEOUT))));
 
-        String connectConfig = data.get(KEY_CONNECT_CONFIG);
-        if (connectConfig != null) {
-            kafkaConnect.setConfiguration(new KafkaConnectConfiguration(new JsonObject(connectConfig)));
-        }
+        String connectConfig = data.getOrDefault(KEY_CONNECT_CONFIG, "{}");
+        kafkaConnect.setConfiguration(new KafkaConnectConfiguration(new JsonObject(connectConfig)));
 
         return kafkaConnect;
     }
@@ -96,10 +94,8 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
         kafkaConnect.setHealthCheckInitialDelay(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds());
         kafkaConnect.setHealthCheckTimeout(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds());
 
-        String connectConfiguration = containerEnvVars(dep.getSpec().getTemplate().getSpec().getContainers().get(0)).get(ENV_VAR_KAFKA_CONNECT_USER_CONFIGURATION);
-        if (connectConfiguration != null) {
-            kafkaConnect.setConfiguration(new KafkaConnectConfiguration(connectConfiguration));
-        }
+        String connectConfiguration = containerEnvVars(dep.getSpec().getTemplate().getSpec().getContainers().get(0)).getOrDefault(ENV_VAR_KAFKA_CONNECT_CONFIGURATION, "");
+        kafkaConnect.setConfiguration(new KafkaConnectConfiguration(connectConfiguration));
 
         String sourceImage = sis.getSpec().getTags().get(0).getFrom().getName();
         kafkaConnect.setImage(sourceImage);

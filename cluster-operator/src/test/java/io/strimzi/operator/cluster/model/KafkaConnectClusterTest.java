@@ -18,7 +18,6 @@ import java.util.Map;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 
 public class KafkaConnectClusterTest {
     private final String namespace = "test";
@@ -28,6 +27,23 @@ public class KafkaConnectClusterTest {
     private final int healthDelay = 100;
     private final int healthTimeout = 10;
     private final String configurationJson = "{\"foo\":\"bar\"}";
+    private final String expectedConfiguration = "group.id=connect-cluster\n" +
+            "key.converter=org.apache.kafka.connect.json.JsonConverter\n" +
+            "value.converter=org.apache.kafka.connect.json.JsonConverter\n" +
+            "config.storage.topic=connect-cluster-configs\n" +
+            "status.storage.topic=connect-cluster-status\n" +
+            "offset.storage.topic=connect-cluster-offsets\n" +
+            "foo=bar\n" +
+            "internal.key.converter=org.apache.kafka.connect.json.JsonConverter\n" +
+            "internal.value.converter=org.apache.kafka.connect.json.JsonConverter\n";
+    private final String defaultConfiguration = "internal.value.converter=org.apache.kafka.connect.json.JsonConverter\n" +
+            "offset.storage.topic=connect-cluster-offsets\n" +
+            "group.id=connect-cluster\n" +
+            "status.storage.topic=connect-cluster-status\n" +
+            "internal.key.converter=org.apache.kafka.connect.json.JsonConverter\n" +
+            "value.converter=org.apache.kafka.connect.json.JsonConverter\n" +
+            "key.converter=org.apache.kafka.connect.json.JsonConverter\n" +
+            "config.storage.topic=connect-cluster-configs\n";
 
     private final ConfigMap cm = ResourceUtils.createKafkaConnectClusterConfigMap(namespace, cluster, replicas, image,
             healthDelay, healthTimeout, configurationJson);
@@ -35,7 +51,7 @@ public class KafkaConnectClusterTest {
 
     protected List<EnvVar> getExpectedEnvVars() {
         List<EnvVar> expected = new ArrayList<EnvVar>();
-        expected.add(new EnvVarBuilder().withName(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_USER_CONFIGURATION).withValue("foo=bar\n").build());
+        expected.add(new EnvVarBuilder().withName(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_CONFIGURATION).withValue(expectedConfiguration).build());
         expected.add(new EnvVarBuilder().withName(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION).withValue("1.0").build());
         return expected;
     }
@@ -48,7 +64,7 @@ public class KafkaConnectClusterTest {
         assertEquals(KafkaConnectCluster.DEFAULT_REPLICAS, kc.replicas);
         assertEquals(KafkaConnectCluster.DEFAULT_HEALTHCHECK_DELAY, kc.healthCheckInitialDelay);
         assertEquals(KafkaConnectCluster.DEFAULT_HEALTHCHECK_TIMEOUT, kc.healthCheckTimeout);
-        assertNull(kc.getConfiguration());
+        assertEquals(defaultConfiguration, kc.getConfiguration().getConfiguration());
     }
 
     @Test
@@ -57,7 +73,7 @@ public class KafkaConnectClusterTest {
         assertEquals(image, kc.image);
         assertEquals(healthDelay, kc.healthCheckInitialDelay);
         assertEquals(healthTimeout, kc.healthCheckTimeout);
-        assertEquals("foo=bar\n", kc.getConfiguration().getConfiguration());
+        assertEquals(expectedConfiguration, kc.getConfiguration().getConfiguration());
     }
 
     @Test
@@ -68,7 +84,7 @@ public class KafkaConnectClusterTest {
         assertEquals(image, newKc.image);
         assertEquals(healthDelay, newKc.healthCheckInitialDelay);
         assertEquals(healthTimeout, newKc.healthCheckTimeout);
-        assertEquals("foo=bar\n", kc.getConfiguration().getConfiguration());
+        assertEquals(expectedConfiguration, kc.getConfiguration().getConfiguration());
     }
 
     @Test
@@ -80,7 +96,7 @@ public class KafkaConnectClusterTest {
         assertEquals(KafkaConnectCluster.DEFAULT_IMAGE, newKc.image);
         assertEquals(KafkaConnectCluster.DEFAULT_HEALTHCHECK_DELAY, newKc.healthCheckInitialDelay);
         assertEquals(KafkaConnectCluster.DEFAULT_HEALTHCHECK_TIMEOUT, newKc.healthCheckTimeout);
-        assertNull(newKc.getConfiguration());
+        assertEquals(defaultsKc.getConfiguration().getConfiguration(), newKc.getConfiguration().getConfiguration());
     }
 
     @Test

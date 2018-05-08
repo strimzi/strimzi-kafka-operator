@@ -6,7 +6,7 @@ cat <<EOF
 dataDir=${ZOOKEEPER_DATA_DIR}
 clientPort=2181
 
-# User configuration
+# Provided configuration
 ${ZOOKEEPER_CONFIGURATION}
 # Zookeeper nodes configuration
 EOF
