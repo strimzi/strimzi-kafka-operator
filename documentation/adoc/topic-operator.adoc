@@ -90,7 +90,7 @@ The `data` of such ConfigMaps supports the following keys:
 
 * `name` The name of the topic. Optional; if this is absent the name of the ConfigMap itself is used.
 * `partitions` The number of partitions of the Kafka topic. This can be increased, but not decreased. Required. 
-* `replicas` The number of replicas of the Kafka topic. Required. 
+* `replicas` The number of replicas of the Kafka topic. This cannot be larger than the number of nodes in the Kafka cluster. Required.
 * `config` A string in JSON format representing the https://kafka.apache.org/documentation/#topicconfigs[topic configuration]. Optional, defaulting to the empty set.
  
 

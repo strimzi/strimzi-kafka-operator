@@ -179,16 +179,22 @@ public class AbstractClusterIT {
         LOGGER.info("Sending messages");
         String command = "sh bin/kafka-verifiable-producer.sh --broker-list " +
                 clusterName + "-kafka:9092 --topic " + topic + " --max-messages " + messagesCount + "";
+
+        LOGGER.info("Command for kafka-verifiable-producer.sh {}", command);
+
         kubeClient.exec(kafkaPodName(clusterName, kafkaPodID), "/bin/bash", "-c", command);
     }
 
     public String consumeMessages(String clusterName, String topic, int groupID, int timeout, int kafkaPodID) {
-
         LOGGER.info("Consuming messages");
-        return kubeClient.exec(kafkaPodName(clusterName, kafkaPodID), "/bin/bash", "-c",
-                    "bin/kafka-verifiable-consumer.sh --broker-list " + clusterName +
-                            "-kafka:9092 --topic " + topic + " --group-id " + groupID + " & sleep "
-                            + timeout + "; kill %1").out();
+        String output = kubeClient.exec(kafkaPodName(clusterName, kafkaPodID), "/bin/bash", "-c",
+                "bin/kafka-verifiable-consumer.sh --broker-list " + clusterName +
+                        "-kafka:9092 --topic " + topic + " --group-id " + groupID + " & sleep "
+                        + timeout + "; kill %1").out();
+        output = "[" + output.replaceAll("\n", ",") + "]";
+        LOGGER.info("Output for kafka-verifiable-consumer.sh {}", output);
+        return output;
+
     }
 
     protected void assertResources(String namespace, String podName, String memoryLimit, String cpuLimit, String memoryRequest, String cpuRequest) {

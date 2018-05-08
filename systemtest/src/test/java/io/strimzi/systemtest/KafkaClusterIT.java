@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest;
 
-import com.jayway.jsonpath.JsonPath;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -25,7 +24,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -47,8 +45,10 @@ import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.valueOfCmEquals;
 import static io.strimzi.test.TestUtils.map;
 import static junit.framework.TestCase.assertTrue;
+import static org.hamcrest.Matchers.hasItem;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
 @RunWith(StrimziRunner.class)
 @Namespace(KafkaClusterIT.NAMESPACE)
@@ -232,20 +232,16 @@ public class KafkaClusterIT extends AbstractClusterIT {
             String kafkaPodJson = kubeClient.getResourceAsJson("pod", kafkaPodName(clusterName, i));
             assertEquals("transaction.state.log.replication.factor=1\\ndefault.replication.factor=1\\noffsets.topic.replication.factor=1\\n".replaceAll("\\p{P}", ""), getValueFromJson(kafkaPodJson,
                     globalVariableJsonPathBuilder("KAFKA_USER_CONFIGURATION")));
-            String initialDelaySecondsPath = "$.spec.containers[*].livenessProbe.initialDelaySeconds";
-            assertEquals("30", getValueFromJson(kafkaPodJson, initialDelaySecondsPath));
-            String kafkaHealthcheckTimeout = "$.spec.containers[*].livenessProbe.timeoutSeconds";
-            assertEquals("10", getValueFromJson(kafkaPodJson, kafkaHealthcheckTimeout));
+            assertThat(kafkaPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(30)));
+            assertThat(kafkaPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.timeoutSeconds", hasItem(10)));
         }
         LOGGER.info("Testing Zookeepers");
         for (int i = 0; i < expectedZKPods; i++) {
             String zkPodJson = kubeClient.getResourceAsJson("pod", zookeeperPodName(clusterName, i));
             assertEquals("timeTick=2000\\nsyncLimit=2\\ninitLimit=5\\n".replaceAll("\\p{P}", ""), getValueFromJson(zkPodJson,
                     globalVariableJsonPathBuilder("ZOOKEEPER_CONFIGURATION")));
-            String initialDelaySecondsPath = "$.spec.containers[*].livenessProbe.initialDelaySeconds";
-            assertEquals("30", getValueFromJson(zkPodJson, initialDelaySecondsPath));
-            String zookeeperHealthcheckTimeout = "$.spec.containers[*].livenessProbe.timeoutSeconds";
-            assertEquals("10", getValueFromJson(zkPodJson, zookeeperHealthcheckTimeout));
+            assertThat(zkPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(30)));
+            assertThat(zkPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.timeoutSeconds", hasItem(10)));
         }
 
         Map<String, String> changes = new HashMap<>();
@@ -279,39 +275,34 @@ public class KafkaClusterIT extends AbstractClusterIT {
             String kafkaPodJson = kubeClient.getResourceAsJson("pod", kafkaPodName(clusterName, i));
             assertEquals("transaction.state.log.replication.factor=2\\ndefault.replication.factor=2\\noffsets.topic.replication.factor=2\\n".replaceAll("\\p{P}", ""), getValueFromJson(kafkaPodJson,
                     globalVariableJsonPathBuilder("KAFKA_USER_CONFIGURATION")));
-            String initialDelaySecondsPath = "$.spec.containers[*].livenessProbe.initialDelaySeconds";
-            assertEquals("31", getValueFromJson(kafkaPodJson, initialDelaySecondsPath));
-            String kafkaHealthcheckTimeout = "$.spec.containers[*].livenessProbe.timeoutSeconds";
-            assertEquals("11", getValueFromJson(kafkaPodJson, kafkaHealthcheckTimeout));
+
+            assertThat(kafkaPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(31)));
+            assertThat(kafkaPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.timeoutSeconds", hasItem(11)));
         }
         LOGGER.info("Testing Zookeepers");
         for (int i = 0; i < expectedZKPods; i++) {
             String zkPodJson = kubeClient.getResourceAsJson("pod", zookeeperPodName(clusterName, i));
             assertEquals("timeTick=2100\\nsyncLimit=3\\ninitLimit=6\\n".replaceAll("\\p{P}", ""), getValueFromJson(zkPodJson,
                     globalVariableJsonPathBuilder("ZOOKEEPER_CONFIGURATION")));
-            String initialDelaySecondsPath = "$.spec.containers[*].livenessProbe.initialDelaySeconds";
-            assertEquals("31", getValueFromJson(zkPodJson, initialDelaySecondsPath));
-            String zookeeperHealthcheckTimeout = "$.spec.containers[*].livenessProbe.timeoutSeconds";
-            assertEquals("11", getValueFromJson(zkPodJson, zookeeperHealthcheckTimeout));
+            assertThat(zkPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(31)));
+            assertThat(zkPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.timeoutSeconds", hasItem(11)));
         }
     }
 
     @Test
     @JUnitGroup(name = "regression")
     @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 3, config = {
-            @CmData(key = "kafka-config", value = "{\"default.replication.factor\": 1,\"offsets.topic.replication.factor\": 1,\"transaction.state.log.replication.factor\": 1}")
+            @CmData(key = "kafka-config", value = "{\"default.replication.factor\": 3,\"offsets.topic.replication.factor\": 3,\"transaction.state.log.replication.factor\": 3}")
             })
     @Topic(name = TOPIC_NAME, clusterName = "my-cluster")
     public void testSendMessages() {
         int messagesCount = 20;
         sendMessages(CLUSTER_NAME, TOPIC_NAME, messagesCount, 1);
-        String consumedMessages = consumeMessages(CLUSTER_NAME, TOPIC_NAME, 1, 20, 2);
-        List<String> messages = new ArrayList<>(Arrays.asList(consumedMessages.split("\n")));
-        String count = JsonPath.parse(messages.get(3)).read("$.count").toString();
-        assertEquals(messagesCount, Integer.parseInt(count));
-        String topic = JsonPath.parse(messages.get(3)).read(".partitions.[0].topic").toString().
-                replaceAll("[\\[\\]\"]", "");
-        assertEquals(TOPIC_NAME, topic);
+        String consumedMessages = consumeMessages(CLUSTER_NAME, TOPIC_NAME, 1, 30, 2);
+
+        assertThat(consumedMessages, hasJsonPath("$[*].count", hasItem(messagesCount)));
+        assertThat(consumedMessages, hasJsonPath("$[*].partitions[*].topic", hasItem(TOPIC_NAME)));
+
     }
 
     @KafkaCluster(name = "jvm-resource-cluster",
