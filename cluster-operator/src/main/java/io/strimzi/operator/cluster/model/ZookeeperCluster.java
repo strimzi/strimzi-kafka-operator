@@ -59,9 +59,9 @@ public class ZookeeperCluster extends AbstractModel {
     public static final String KEY_ZOOKEEPER_CONFIG = "zookeeper-config";
 
     // Zookeeper configuration keys (EnvVariables)
-    private static final String ENV_VAR_ZOOKEEPER_NODE_COUNT = "ZOOKEEPER_NODE_COUNT";
+    public static final String ENV_VAR_ZOOKEEPER_NODE_COUNT = "ZOOKEEPER_NODE_COUNT";
     public static final String ENV_VAR_ZOOKEEPER_METRICS_ENABLED = "ZOOKEEPER_METRICS_ENABLED";
-    protected static final String ENV_VAR_ZOOKEEPER_CONFIGURATION = "ZOOKEEPER_CONFIGURATION";
+    public static final String ENV_VAR_ZOOKEEPER_CONFIGURATION = "ZOOKEEPER_CONFIGURATION";
 
     public static String zookeeperClusterName(String cluster) {
         return cluster + ZookeeperCluster.NAME_SUFFIX;
@@ -73,6 +73,10 @@ public class ZookeeperCluster extends AbstractModel {
 
     public static String zookeeperHeadlessName(String cluster) {
         return cluster + ZookeeperCluster.HEADLESS_NAME_SUFFIX;
+    }
+
+    public static String zookeeperPodName(String cluster, int pod) {
+        return zookeeperClusterName(cluster) + "-" + pod;
     }
 
     public static String getPersistentVolumeClaimName(String clusterName, int podId) {

@@ -126,7 +126,7 @@ public class ZookeeperClusterTest {
     public void testPodNames() {
 
         for (int i = 0; i < replicas; i++) {
-            assertEquals(ZookeeperCluster.zookeeperClusterName(cluster) + "-" + i, zc.getPodName(i));
+            assertEquals(ZookeeperCluster.zookeeperPodName(cluster, i), zc.getPodName(i));
         }
     }
 
