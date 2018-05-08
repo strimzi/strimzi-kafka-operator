@@ -58,16 +58,13 @@ public class KafkaCluster extends AbstractModel {
     public static final String KEY_METRICS_CONFIG = "kafka-metrics-config";
     public static final String KEY_STORAGE = "kafka-storage";
     public static final String KEY_KAFKA_CONFIG = "kafka-config";
-
-    // Kafka configuration keys (EnvVariables)
-    public static final String KEY_KAFKA_ZOOKEEPER_CONNECT = "KAFKA_ZOOKEEPER_CONNECT";
-    private static final String KEY_KAFKA_METRICS_ENABLED = "KAFKA_METRICS_ENABLED";
     public static final String KEY_JVM_OPTIONS = "kafka-jvmOptions";
     public static final String KEY_RESOURCES = "kafka-resources";
 
-    // Kafka configuration keys
-    protected static final String KEY_KAFKA_USER_CONFIGURATION = "KAFKA_USER_CONFIGURATION";
-    public static final String KEY_KAFKA_HEAP_OPTS = "KAFKA_HEAP_OPTS";
+    // Kafka configuration keys (EnvVariables)
+    public static final String ENV_VAR_KAFKA_ZOOKEEPER_CONNECT = "KAFKA_ZOOKEEPER_CONNECT";
+    private static final String ENV_VAR_KAFKA_METRICS_ENABLED = "KAFKA_METRICS_ENABLED";
+    protected static final String ENV_VAR_KAFKA_USER_CONFIGURATION = "KAFKA_USER_CONFIGURATION";
 
     /**
      * Constructor
@@ -126,7 +123,7 @@ public class KafkaCluster extends AbstractModel {
         kafka.setHealthCheckInitialDelay(Integer.parseInt(data.getOrDefault(KEY_HEALTHCHECK_DELAY, String.valueOf(DEFAULT_HEALTHCHECK_DELAY))));
         kafka.setHealthCheckTimeout(Integer.parseInt(data.getOrDefault(KEY_HEALTHCHECK_TIMEOUT, String.valueOf(DEFAULT_HEALTHCHECK_TIMEOUT))));
 
-        kafka.setZookeeperConnect(data.getOrDefault(KEY_KAFKA_ZOOKEEPER_CONNECT, kafkaClusterCm.getMetadata().getName() + "-zookeeper:2181"));
+        kafka.setZookeeperConnect(data.getOrDefault(ENV_VAR_KAFKA_ZOOKEEPER_CONNECT, kafkaClusterCm.getMetadata().getName() + "-zookeeper:2181"));
 
         String metricsConfig = data.get(KEY_METRICS_CONFIG);
         kafka.setMetricsEnabled(metricsConfig != null);
@@ -141,6 +138,7 @@ public class KafkaCluster extends AbstractModel {
         if (kafkaConfig != null) {
             kafka.setConfiguration(new KafkaConfiguration(new JsonObject(kafkaConfig)));
         }
+
         kafka.setResources(Resources.fromJson(data.get(KEY_RESOURCES)));
         kafka.setJvmOptions(JvmOptions.fromJson(data.get(KEY_JVM_OPTIONS)));
 
@@ -167,9 +165,9 @@ public class KafkaCluster extends AbstractModel {
 
         Map<String, String> vars = containerEnvVars(container);
 
-        kafka.setZookeeperConnect(vars.getOrDefault(KEY_KAFKA_ZOOKEEPER_CONNECT, ss.getMetadata().getName() + "-zookeeper:2181"));
+        kafka.setZookeeperConnect(vars.getOrDefault(ENV_VAR_KAFKA_ZOOKEEPER_CONNECT, ss.getMetadata().getName() + "-zookeeper:2181"));
 
-        kafka.setMetricsEnabled(Boolean.parseBoolean(vars.getOrDefault(KEY_KAFKA_METRICS_ENABLED, String.valueOf(DEFAULT_KAFKA_METRICS_ENABLED))));
+        kafka.setMetricsEnabled(Boolean.parseBoolean(vars.getOrDefault(ENV_VAR_KAFKA_METRICS_ENABLED, String.valueOf(DEFAULT_KAFKA_METRICS_ENABLED))));
         if (kafka.isMetricsEnabled()) {
             kafka.setMetricsConfigName(metricConfigsName(cluster));
         }
@@ -187,7 +185,7 @@ public class KafkaCluster extends AbstractModel {
             kafka.setStorage(storage);
         }
 
-        String kafkaConfiguration = containerEnvVars(container).get(KEY_KAFKA_USER_CONFIGURATION);
+        String kafkaConfiguration = containerEnvVars(container).get(ENV_VAR_KAFKA_USER_CONFIGURATION);
         if (kafkaConfiguration != null) {
             kafka.setConfiguration(new KafkaConfiguration(kafkaConfiguration));
         }
@@ -299,12 +297,12 @@ public class KafkaCluster extends AbstractModel {
     @Override
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
-        varList.add(buildEnvVar(KEY_KAFKA_ZOOKEEPER_CONNECT, zookeeperConnect));
-        varList.add(buildEnvVar(KEY_KAFKA_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_ZOOKEEPER_CONNECT, zookeeperConnect));
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
         kafkaHeapOptions(varList, 0.5, 5L * 1024L * 1024L * 1024L);
 
         if (configuration != null) {
-            varList.add(buildEnvVar(KEY_KAFKA_USER_CONFIGURATION, configuration.getConfiguration()));
+            varList.add(buildEnvVar(ENV_VAR_KAFKA_USER_CONFIGURATION, configuration.getConfiguration()));
         }
 
         return varList;

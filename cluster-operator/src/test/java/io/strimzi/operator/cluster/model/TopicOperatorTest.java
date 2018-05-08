@@ -26,7 +26,8 @@ public class TopicOperatorTest {
     private final int healthDelay = 120;
     private final int healthTimeout = 30;
     private final String metricsCmJson = "{\"animal\":\"wombat\"}";
-    private final String kafkaJson = "{\"foo\":\"bar\"}";
+    private final String kafkaConfigJson = "{\"foo\":\"bar\"}";
+    private final String zooConfigJson = "{\"foo\":\"bar\"}";
     private final String storageJson = "{\"type\": \"ephemeral\"}";
 
     private final String tcWatchedNamespace = "my-topic-namespace";
@@ -43,7 +44,7 @@ public class TopicOperatorTest {
             "\"topicMetadataMaxAttempts\":" + tcTopicMetadataMaxAttempts +
             " }";
 
-    private final ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, kafkaJson, storageJson, topicOperatorJson);
+    private final ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, kafkaConfigJson, zooConfigJson, storageJson, topicOperatorJson);
     private final TopicOperator tc = TopicOperator.fromConfigMap(cm);
 
     private List<EnvVar> getExpectedEnvVars() {
@@ -71,7 +72,7 @@ public class TopicOperatorTest {
     @Test
     public void testFromConfigMapDefaultConfig() {
 
-        ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, kafkaJson, storageJson, "{ }");
+        ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, kafkaConfigJson, zooConfigJson, storageJson, "{ }");
         TopicOperator tc = TopicOperator.fromConfigMap(cm);
 
         assertEquals(TopicOperator.DEFAULT_IMAGE, tc.getImage());

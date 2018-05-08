@@ -9,9 +9,6 @@ data:
   kafka-nodes: "3"
   kafka-healthcheck-delay: "15"
   kafka-healthcheck-timeout: "5"
-  zookeeper-nodes: "3"
-  zookeeper-healthcheck-delay: "15"
-  zookeeper-healthcheck-timeout: "5"
   kafka-config: |-
     {
       "num.partitions": 1,
@@ -32,8 +29,6 @@ data:
     }
   kafka-storage: |-
     { "type": "persistent-claim", "size": "1Gi", "delete-claim": false }
-  zookeeper-storage: |-
-    { "type": "persistent-claim", "size": "1Gi", "delete-claim": false }
   kafka-metrics-config: |-
     {
       "lowercaseOutputName": true,
@@ -52,6 +47,21 @@ data:
           }
       ]
     }
+  zookeeper-nodes: "3"
+  zookeeper-healthcheck-delay: "15"
+  zookeeper-healthcheck-timeout: "5"
+  zookeeper-config: |-
+    {
+      "timeTick": 2000,
+      "initLimit": 5,
+      "syncLimit": 2,
+      "quorumListenOnAllIPs": true,
+      "maxClientCnxns": 0,
+      "autopurge.snapRetainCount": 3,
+      "autopurge.purgeInterval": 1
+    }
+  zookeeper-storage: |-
+    { "type": "persistent-claim", "size": "1Gi", "delete-claim": false }
   zookeeper-metrics-config: |-
     {
       "lowercaseOutputName": true

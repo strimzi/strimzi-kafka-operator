@@ -203,7 +203,8 @@ public class KafkaClusterIT extends AbstractClusterIT {
             @CmData(key = "zookeeper-healthcheck-timeout", value = "10"),
             @CmData(key = "kafka-healthcheck-delay", value = "30"),
             @CmData(key = "kafka-healthcheck-timeout", value = "10"),
-            @CmData(key = "kafka-config", value = "{\"default.replication.factor\": 1,\"offsets.topic.replication.factor\": 1,\"transaction.state.log.replication.factor\": 1}")
+            @CmData(key = "kafka-config", value = "{\"default.replication.factor\": 1,\"offsets.topic.replication.factor\": 1,\"transaction.state.log.replication.factor\": 1}"),
+            @CmData(key = "zookeeper-config", value = "{\"timeTick\": 2000, \"initLimit\": 5, \"syncLimit\": 2}")
     })
     public void testCustomAndUpdatedValues() {
         String clusterName = "my-cluster";
@@ -225,6 +226,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
         assertThat(configMapBefore, valueOfCmEquals("kafka-healthcheck-delay", "30"));
         assertThat(configMapBefore, valueOfCmEquals("kafka-healthcheck-timeout", "10"));
         assertThat(configMapBefore, valueOfCmEquals("kafka-config", "{\"default.replication.factor\": 1,\"offsets.topic.replication.factor\": 1,\"transaction.state.log.replication.factor\": 1}"));
+        assertThat(configMapBefore, valueOfCmEquals("zookeeper-config", "{\"timeTick\": 2000, \"initLimit\": 5, \"syncLimit\": 2}"));
 
         for (int i = 0; i < expectedKafkaPods; i++) {
             String kafkaPodJson = kubeClient.getResourceAsJson("pod", kafkaPodName(clusterName, i));
@@ -236,6 +238,8 @@ public class KafkaClusterIT extends AbstractClusterIT {
         LOGGER.info("Testing Zookeepers");
         for (int i = 0; i < expectedZKPods; i++) {
             String zkPodJson = kubeClient.getResourceAsJson("pod", zookeeperPodName(clusterName, i));
+            assertEquals("timeTick=2000\\nsyncLimit=2\\ninitLimit=5\\n".replaceAll("\\p{P}", ""), getValueFromJson(zkPodJson,
+                    globalVariableJsonPathBuilder("ZOOKEEPER_CONFIGURATION")));
             assertThat(zkPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(30)));
             assertThat(zkPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.timeoutSeconds", hasItem(10)));
         }
@@ -246,6 +250,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
         changes.put("kafka-healthcheck-delay", "31");
         changes.put("kafka-healthcheck-timeout", "11");
         changes.put("kafka-config", "{\"default.replication.factor\": 2,\"offsets.topic.replication.factor\": 2,\"transaction.state.log.replication.factor\": 2}");
+        changes.put("zookeeper-config", "{\"timeTick\": 2100, \"initLimit\": 6, \"syncLimit\": 3}");
         replaceCm(clusterName, changes);
 
         for (int i = 0; i < expectedZKPods; i++) {
@@ -264,6 +269,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
         assertThat(configMapAfter, valueOfCmEquals("kafka-healthcheck-delay", "31"));
         assertThat(configMapAfter, valueOfCmEquals("kafka-healthcheck-timeout", "11"));
         assertThat(configMapAfter, valueOfCmEquals("kafka-config", "{\"default.replication.factor\": 2,\"offsets.topic.replication.factor\": 2,\"transaction.state.log.replication.factor\": 2}"));
+        assertThat(configMapAfter, valueOfCmEquals("zookeeper-config", "{\"timeTick\": 2100, \"initLimit\": 6, \"syncLimit\": 3}"));
 
         for (int i = 0; i < expectedKafkaPods; i++) {
             String kafkaPodJson = kubeClient.getResourceAsJson("pod", kafkaPodName(clusterName, i));
@@ -276,6 +282,8 @@ public class KafkaClusterIT extends AbstractClusterIT {
         LOGGER.info("Testing Zookeepers");
         for (int i = 0; i < expectedZKPods; i++) {
             String zkPodJson = kubeClient.getResourceAsJson("pod", zookeeperPodName(clusterName, i));
+            assertEquals("timeTick=2100\\nsyncLimit=3\\ninitLimit=6\\n".replaceAll("\\p{P}", ""), getValueFromJson(zkPodJson,
+                    globalVariableJsonPathBuilder("ZOOKEEPER_CONFIGURATION")));
             assertThat(zkPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(31)));
             assertThat(zkPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.timeoutSeconds", hasItem(11)));
         }

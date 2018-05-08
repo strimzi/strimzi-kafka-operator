@@ -16,7 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static io.strimzi.operator.cluster.model.AbstractModel.containerEnvVars;
-import static io.strimzi.operator.cluster.model.KafkaCluster.KEY_KAFKA_ZOOKEEPER_CONNECT;
+import static io.strimzi.operator.cluster.model.KafkaCluster.ENV_VAR_KAFKA_ZOOKEEPER_CONNECT;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -93,7 +93,7 @@ public class KafkaSetOperatorTest {
 
     @Test
     public void testNeedsRollingUpdateEnvZkConnect() {
-        String envVar = KEY_KAFKA_ZOOKEEPER_CONNECT;
+        String envVar = ENV_VAR_KAFKA_ZOOKEEPER_CONNECT;
         a.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().add(new EnvVar(envVar,
                 containerEnvVars(a.getSpec().getTemplate().getSpec().getContainers().get(0)).get(envVar) + "-foo", null));
         assertTrue(KafkaSetOperator.needsRollingUpdate(diff()));
