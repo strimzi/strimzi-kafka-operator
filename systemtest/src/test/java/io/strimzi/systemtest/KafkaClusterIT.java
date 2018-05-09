@@ -231,14 +231,14 @@ public class KafkaClusterIT extends AbstractClusterIT {
         for (int i = 0; i < expectedKafkaPods; i++) {
             String kafkaPodJson = kubeClient.getResourceAsJson("pod", kafkaPodName(clusterName, i));
             assertEquals("transaction.state.log.replication.factor=1\\ndefault.replication.factor=1\\noffsets.topic.replication.factor=1\\n".replaceAll("\\p{P}", ""), getValueFromJson(kafkaPodJson,
-                    globalVariableJsonPathBuilder("KAFKA_USER_CONFIGURATION")));
+                    globalVariableJsonPathBuilder("KAFKA_CONFIGURATION")));
             assertThat(kafkaPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(30)));
             assertThat(kafkaPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.timeoutSeconds", hasItem(10)));
         }
         LOGGER.info("Testing Zookeepers");
         for (int i = 0; i < expectedZKPods; i++) {
             String zkPodJson = kubeClient.getResourceAsJson("pod", zookeeperPodName(clusterName, i));
-            assertEquals("timeTick=2000\\nsyncLimit=2\\ninitLimit=5\\n".replaceAll("\\p{P}", ""), getValueFromJson(zkPodJson,
+            assertEquals("timeTick=2000\\nautopurge.purgeInterval=1\\nsyncLimit=2\\ninitLimit=5\\n".replaceAll("\\p{P}", ""), getValueFromJson(zkPodJson,
                     globalVariableJsonPathBuilder("ZOOKEEPER_CONFIGURATION")));
             assertThat(zkPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(30)));
             assertThat(zkPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.timeoutSeconds", hasItem(10)));
@@ -274,7 +274,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
         for (int i = 0; i < expectedKafkaPods; i++) {
             String kafkaPodJson = kubeClient.getResourceAsJson("pod", kafkaPodName(clusterName, i));
             assertEquals("transaction.state.log.replication.factor=2\\ndefault.replication.factor=2\\noffsets.topic.replication.factor=2\\n".replaceAll("\\p{P}", ""), getValueFromJson(kafkaPodJson,
-                    globalVariableJsonPathBuilder("KAFKA_USER_CONFIGURATION")));
+                    globalVariableJsonPathBuilder("KAFKA_CONFIGURATION")));
 
             assertThat(kafkaPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(31)));
             assertThat(kafkaPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.timeoutSeconds", hasItem(11)));
@@ -282,7 +282,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
         LOGGER.info("Testing Zookeepers");
         for (int i = 0; i < expectedZKPods; i++) {
             String zkPodJson = kubeClient.getResourceAsJson("pod", zookeeperPodName(clusterName, i));
-            assertEquals("timeTick=2100\\nsyncLimit=3\\ninitLimit=6\\n".replaceAll("\\p{P}", ""), getValueFromJson(zkPodJson,
+            assertEquals("timeTick=2100\\nautopurge.purgeInterval=1\\nsyncLimit=3\\ninitLimit=6\\n".replaceAll("\\p{P}", ""), getValueFromJson(zkPodJson,
                     globalVariableJsonPathBuilder("ZOOKEEPER_CONFIGURATION")));
             assertThat(zkPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(31)));
             assertThat(zkPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.timeoutSeconds", hasItem(11)));

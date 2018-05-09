@@ -45,7 +45,7 @@ public class KafkaConnectCluster extends AbstractModel {
     public static final String KEY_CONNECT_CONFIG = "connect-config";
 
     // Kafka Connect configuration keys (EnvVariables)
-    protected static final String ENV_VAR_KAFKA_CONNECT_USER_CONFIGURATION = "KAFKA_CONNECT_USER_CONFIGURATION";
+    protected static final String ENV_VAR_KAFKA_CONNECT_CONFIGURATION = "KAFKA_CONNECT_CONFIGURATION";
 
     public static String kafkaConnectClusterName(String cluster) {
         return cluster + KafkaConnectCluster.NAME_SUFFIX;
@@ -86,10 +86,8 @@ public class KafkaConnectCluster extends AbstractModel {
         kafkaConnect.setHealthCheckInitialDelay(Integer.parseInt(data.getOrDefault(KEY_HEALTHCHECK_DELAY, String.valueOf(DEFAULT_HEALTHCHECK_DELAY))));
         kafkaConnect.setHealthCheckTimeout(Integer.parseInt(data.getOrDefault(KEY_HEALTHCHECK_TIMEOUT, String.valueOf(DEFAULT_HEALTHCHECK_TIMEOUT))));
 
-        String connectConfig = data.get(KEY_CONNECT_CONFIG);
-        if (connectConfig != null) {
-            kafkaConnect.setConfiguration(new KafkaConnectConfiguration(new JsonObject(connectConfig)));
-        }
+        String connectConfig = data.getOrDefault(KEY_CONNECT_CONFIG, "{}");
+        kafkaConnect.setConfiguration(new KafkaConnectConfiguration(new JsonObject(connectConfig)));
 
         return kafkaConnect;
     }
@@ -117,10 +115,8 @@ public class KafkaConnectCluster extends AbstractModel {
         kafkaConnect.setHealthCheckInitialDelay(container.getReadinessProbe().getInitialDelaySeconds());
         kafkaConnect.setHealthCheckTimeout(container.getReadinessProbe().getTimeoutSeconds());
 
-        String connectConfiguration = containerEnvVars(container).get(ENV_VAR_KAFKA_CONNECT_USER_CONFIGURATION);
-        if (connectConfiguration != null) {
-            kafkaConnect.setConfiguration(new KafkaConnectConfiguration(connectConfiguration));
-        }
+        String connectConfiguration = containerEnvVars(container).getOrDefault(ENV_VAR_KAFKA_CONNECT_CONFIGURATION, "");
+        kafkaConnect.setConfiguration(new KafkaConnectConfiguration(connectConfiguration));
 
         return kafkaConnect;
     }
@@ -154,12 +150,9 @@ public class KafkaConnectCluster extends AbstractModel {
     @Override
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
-
-        if (configuration != null) {
-            varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_USER_CONFIGURATION, configuration.getConfiguration()));
-        }
-
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_CONFIGURATION, configuration.getConfiguration()));
         kafkaHeapOptions(varList, 1.0, 0L);
+
         return varList;
     }
 }
