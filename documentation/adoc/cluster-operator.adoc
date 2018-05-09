@@ -264,7 +264,7 @@ should be fixed and the cluster operator will roll out the new configuration to 
 [[zookeeper_configuration_json_config]]
 ===== Zookeeper Configuration
 
-The `zookeeper-config` field allows detailed configuration of Apache Zookeeepr. This field should contain a JSON object
+The `zookeeper-config` field allows detailed configuration of Apache Zookeeper. This field should contain a JSON object
 with Zookeeper configuration options as keys. The values could be in one of the following JSON types:
 
 * String
