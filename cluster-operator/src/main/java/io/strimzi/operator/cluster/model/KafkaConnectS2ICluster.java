@@ -69,9 +69,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
         kafkaConnect.setHealthCheckTimeout(getInteger(data, KEY_HEALTHCHECK_TIMEOUT, DEFAULT_HEALTHCHECK_TIMEOUT));
 
         String connectConfig = getConfig(data, KEY_CONNECT_CONFIG);
-        if (connectConfig != null) {
-            kafkaConnect.setConfiguration(new KafkaConnectConfiguration(new JsonObject(connectConfig)));
-        }
+        kafkaConnect.setConfiguration(new KafkaConnectConfiguration(new JsonObject(connectConfig)));
         return kafkaConnect;
     }
 

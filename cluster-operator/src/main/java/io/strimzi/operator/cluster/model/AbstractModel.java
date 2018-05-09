@@ -637,7 +637,7 @@ public abstract class AbstractModel {
             return Integer.parseInt(data.get(key));
         } catch (NumberFormatException e)  {
             String msg = " is corrupted.";
-            if (data.get(key).toString().length() == 0) {
+            if (data.get(key).length() == 0) {
                 msg = " is empty.";
             }
             throw new InvalidConfigMapException(msg, key);
@@ -691,7 +691,7 @@ public abstract class AbstractModel {
     public static String getConfig(Map<String, String> data, String key) {
         String config = "";
         try {
-            config = data.get(key).toString();
+            config = data.get(key);
             Map<String, Object> map = new JsonObject(config).getMap();
             Map<String, String> newMap = new HashMap<String, String>();
             for (Map.Entry<String, Object> entry : map.entrySet()) {

@@ -138,9 +138,7 @@ public class KafkaCluster extends AbstractModel {
         kafka.setStorage(getStorage(data, KEY_STORAGE));
 
         String kafkaConfig = getConfig(data, KEY_KAFKA_CONFIG);
-        if (kafkaConfig != null) {
-            kafka.setConfiguration(new KafkaConfiguration(new JsonObject(kafkaConfig)));
-        }
+        kafka.setConfiguration(new KafkaConfiguration(new JsonObject(kafkaConfig)));
 
         kafka.setResources(Resources.fromJson(data.get(KEY_RESOURCES)));
         kafka.setJvmOptions(JvmOptions.fromJson(data.get(KEY_JVM_OPTIONS)));
