@@ -636,11 +636,11 @@ public abstract class AbstractModel {
             }
             return Integer.parseInt(data.get(key));
         } catch (NumberFormatException e)  {
-            String msg = " is corrupted.";
-            if (data.get(key).length() == 0) {
-                msg = " is empty.";
+            String msg = " is corrupted";
+            if (data.get(key).isEmpty()) {
+                msg = " is empty";
             }
-            throw new InvalidConfigMapException(msg, key);
+            throw new InvalidConfigMapException(key, msg);
         }
     }
 
@@ -651,21 +651,21 @@ public abstract class AbstractModel {
             }
             return Storage.fromJson(new JsonObject(data.get(key)));
         } catch (Exception e) {
-            throw new InvalidConfigMapException(" is corrupted.", key);
+            throw new InvalidConfigMapException(key, " is corrupted");
         }
     }
 
-    public static String getString(Map<String, String> data, String key, String defaultValue) {
+    public static String getNonemptyString(Map<String, String> data, String key, String defaultValue) {
         if (data.get(key) == null) { // value is not set in config map -> will be used default value
             return defaultValue;
         }
         if (data.get(key).length() == 0) {
-            throw new InvalidConfigMapException(" is empty.", key);
+            throw new InvalidConfigMapException(key, " is empty");
         }
         return data.get(key);
     }
 
-    public static String getJSONcorruptionBlame(DecodeException de, String config) {
+    public static String getJsonCorruptionBlame(DecodeException de, String config) {
         String token = "";
         token = de.getMessage();
         if (token.contains("Illegal unquoted character")) {
@@ -688,24 +688,32 @@ public abstract class AbstractModel {
         return blame;
     }
 
-    public static String getConfig(Map<String, String> data, String key) {
-        String config = "";
+    public static JsonObject getConfig(Map<String, String> data, String key) {
+        String config;
+        config = data.get(key);
+        if (config == null) {
+            return null;
+        }
         try {
-            config = data.get(key);
             Map<String, Object> map = new JsonObject(config).getMap();
             Map<String, String> newMap = new HashMap<String, String>();
             for (Map.Entry<String, Object> entry : map.entrySet()) {
                 if (entry.getValue() instanceof String) {
                     newMap.put(entry.getKey(), (String) entry.getValue());
+                } else if (entry.getValue() instanceof Integer || entry.getValue() instanceof Long || entry.getValue() instanceof Boolean || entry.getValue() instanceof Double || entry.getValue() instanceof Float)    {
+                    map.put(key, String.valueOf(entry.getValue()));
+                } else {
+                    throw new InvalidConfigMapException(entry.getKey(), " has JSON with key " + entry.getKey() + " with a non-String value");
                 }
             }
+
             for (Map.Entry<String, String> entry : newMap.entrySet()) {
                 getInteger(newMap, entry.getKey(), 0);
             }
-        } catch (DecodeException de) {
-            throw new InvalidConfigMapException("corruptes JSON", getJSONcorruptionBlame(de, config));
-        }
 
-        return config;
+        } catch (DecodeException de) {
+            throw new InvalidConfigMapException(getJsonCorruptionBlame(de, config), " corruptes JSON");
+        }
+        return new JsonObject(config);
     }
 }

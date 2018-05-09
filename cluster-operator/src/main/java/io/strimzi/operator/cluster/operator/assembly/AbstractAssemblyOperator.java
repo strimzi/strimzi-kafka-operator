@@ -202,4 +202,5 @@ public abstract class AbstractAssemblyOperator {
      * @return The matching resources.
      */
     protected abstract List<HasMetadata> getResources(String namespace);
+
 }

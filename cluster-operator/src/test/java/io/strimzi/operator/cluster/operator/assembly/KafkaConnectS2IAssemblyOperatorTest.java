@@ -564,8 +564,8 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         BuildConfigOperator mockBcOps = mock(BuildConfigOperator.class);
         ImageStreamOperator mockIsOps = mock(ImageStreamOperator.class);
 
-        String clusterCmNamespace = "test";
 
+        String clusterCmNamespace = "test";
 
         ConfigMap foo = ResourceUtils.createEmptyKafkaConnectClusterConfigMap(clusterCmNamespace, "foo");
         ConfigMap bar = ResourceUtils.createEmptyKafkaConnectClusterConfigMap(clusterCmNamespace, "bar");
