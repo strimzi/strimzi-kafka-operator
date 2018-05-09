@@ -123,7 +123,8 @@ public class ResourceUtils {
      * Generate ConfigMap for Kafka Connect S2I cluster
      */
     public static ConfigMap createKafkaConnectS2IClusterConfigMap(String clusterCmNamespace, String clusterCmName, int replicas,
-                                                                  String image, int healthDelay, int healthTimeout, String connectConfig) {
+                                                                  String image, int healthDelay, int healthTimeout, String connectConfig,
+                                                                  boolean insecureSourceRepo) {
         Map<String, String> cmData = new HashMap<>();
         cmData.put(KafkaConnectS2ICluster.KEY_IMAGE, image);
         cmData.put(KafkaConnectS2ICluster.KEY_REPLICAS, Integer.toString(replicas));
@@ -132,6 +133,7 @@ public class ResourceUtils {
         if (connectConfig != null) {
             cmData.put(KafkaConnectS2ICluster.KEY_CONNECT_CONFIG, connectConfig);
         }
+        cmData.put(KafkaConnectS2ICluster.KEY_INSECURE_SOURCE_REPO, String.valueOf(insecureSourceRepo));
 
         ConfigMap cm = createEmptyKafkaConnectS2IClusterConfigMap(clusterCmNamespace, clusterCmName);
         cm.setData(cmData);
