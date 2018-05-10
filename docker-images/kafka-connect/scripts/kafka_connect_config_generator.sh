@@ -8,6 +8,6 @@ rest.advertised.host.name=$(hostname -I)
 rest.advertised.port=8083
 # Plugins
 plugin.path=${KAFKA_CONNECT_PLUGIN_PATH}
-# User configuration
-${KAFKA_CONNECT_USER_CONFIGURATION}
+# Provided configuration
+${KAFKA_CONNECT_CONFIGURATION}
 EOF

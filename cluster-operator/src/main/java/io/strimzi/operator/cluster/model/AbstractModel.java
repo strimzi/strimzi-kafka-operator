@@ -39,8 +39,6 @@ import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSetUpdateStrategyBuilder;
 import io.strimzi.operator.cluster.ClusterOperator;
-import io.strimzi.operator.cluster.InvalidConfigMapException;
-import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -627,93 +625,5 @@ public abstract class AbstractModel {
         if (!trim.isEmpty()) {
             envVars.add(buildEnvVar(ENV_VAR_KAFKA_HEAP_OPTS, trim));
         }
-    }
-
-    public static int getInteger(Map<String, String> data, String key, int defaultValue) {
-        try {
-            if (data.get(key) == null) { // value is not set in config map -> will be used default value
-                return defaultValue;
-            }
-            return Integer.parseInt(data.get(key));
-        } catch (NumberFormatException e)  {
-            String msg = " is corrupted";
-            if (data.get(key).isEmpty()) {
-                msg = " is empty";
-            }
-            throw new InvalidConfigMapException(key, msg);
-        }
-    }
-
-    public static Storage getStorage(Map<String, String> data, String key) {
-        try {
-            if (data.get(key) == null) { // value is not set in config map
-                return new Storage(Storage.StorageType.PERSISTENT_CLAIM);
-            }
-            return Storage.fromJson(new JsonObject(data.get(key)));
-        } catch (Exception e) {
-            throw new InvalidConfigMapException(key, " is corrupted");
-        }
-    }
-
-    public static String getNonemptyString(Map<String, String> data, String key, String defaultValue) {
-        if (data.get(key) == null) { // value is not set in config map -> will be used default value
-            return defaultValue;
-        }
-        if (data.get(key).length() == 0) {
-            throw new InvalidConfigMapException(key, " is empty");
-        }
-        return data.get(key);
-    }
-
-    public static String getJsonCorruptionBlame(DecodeException de, String config) {
-        String token = "";
-        token = de.getMessage();
-        if (token.contains("Illegal unquoted character")) {
-            return "JSON quotation";
-        }
-        token = token.replace("Failed to decode: Unrecognized token '", "");
-        token = token.substring(0, token.indexOf("'"));
-
-        String[] entries = config.replace("{", "").replace("}", "")
-                .replace("\"", "").replace(" ", "")
-                .replace("\n", "").split(",");
-        int i;
-        String blame = "";
-        for (i = 0; i < entries.length; ++i) {
-            if (entries[i].split(":")[1].equals(token)) {
-                blame = entries[i].split(":")[0];
-                break;
-            }
-        }
-        return blame;
-    }
-
-    public static JsonObject getConfig(Map<String, String> data, String key) {
-        String config;
-        config = data.get(key);
-        if (config == null) {
-            return null;
-        }
-        try {
-            Map<String, Object> map = new JsonObject(config).getMap();
-            Map<String, String> newMap = new HashMap<String, String>();
-            for (Map.Entry<String, Object> entry : map.entrySet()) {
-                if (entry.getValue() instanceof String) {
-                    newMap.put(entry.getKey(), (String) entry.getValue());
-                } else if (entry.getValue() instanceof Integer || entry.getValue() instanceof Long || entry.getValue() instanceof Boolean || entry.getValue() instanceof Double || entry.getValue() instanceof Float)    {
-                    map.put(key, String.valueOf(entry.getValue()));
-                } else {
-                    throw new InvalidConfigMapException(entry.getKey(), " has JSON with key " + entry.getKey() + " with a non-String value");
-                }
-            }
-
-            for (Map.Entry<String, String> entry : newMap.entrySet()) {
-                getInteger(newMap, entry.getKey(), 0);
-            }
-
-        } catch (DecodeException de) {
-            throw new InvalidConfigMapException(getJsonCorruptionBlame(de, config), " corruptes JSON");
-        }
-        return new JsonObject(config);
     }
 }

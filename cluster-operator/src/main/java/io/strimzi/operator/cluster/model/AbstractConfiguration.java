@@ -5,6 +5,7 @@
 
 package io.strimzi.operator.cluster.model;
 
+import io.strimzi.operator.cluster.InvalidConfigMapException;
 import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,8 +38,22 @@ public abstract class AbstractConfiguration {
      *                           these keys will be ignored.
      */
     public AbstractConfiguration(String configuration, List<String> forbiddenOptions) {
-        Properties options = new Properties();
+        this(configuration, forbiddenOptions, new Properties());
+    }
 
+    /**
+     * Constructor used to instantiate this class from String configuration. Should be used to create configuration
+     * from the Assembly.
+     *
+     * @param configuration     Configuration in String format. Should contain zero or more lines with with key=value
+     *                          pairs.
+     * @param forbiddenOptions  List with configuration keys which are not allowed. All keys which start with one of
+     *                          these keys will be ignored.
+     * @param defaults          Properties object with default options
+     */
+    public AbstractConfiguration(String configuration, List<String> forbiddenOptions, Properties defaults) {
+        Properties options = new Properties();
+        options.putAll(defaults);
         try (StringReader reader = new StringReader(configuration)) {
             options.load(reader);
         } catch (IOException | IllegalArgumentException e)   {
@@ -66,6 +81,7 @@ public abstract class AbstractConfiguration {
                 map.put(key, String.valueOf(value));
             } else  {
                 log.error("Unsupported type {} in configuration for key {}", value.getClass(), key);
+                throw new InvalidConfigMapException(key, " - Unsupported type " + value.getClass() + " in configuration for this key");
             }
         }
 
@@ -81,7 +97,21 @@ public abstract class AbstractConfiguration {
      *                           these keys will be ignored.
      */
     public AbstractConfiguration(JsonObject jsonOptions, List<String> forbiddenOptions) {
+        this(jsonOptions, forbiddenOptions, new Properties());
+    }
+
+    /**
+     * Constructor used to instantiate this class from JsonObject. Should be used to create configuration from
+     * ConfigMap / CRD.
+     *
+     * @param jsonOptions     Json object with configuration options as key ad value pairs.
+     * @param forbiddenOptions   List with configuration keys which are not allowed. All keys which start with one of
+     *                           these keys will be ignored.
+     * @param defaults          Properties object with default options
+     */
+    public AbstractConfiguration(JsonObject jsonOptions, List<String> forbiddenOptions, Properties defaults) {
         Properties options = new Properties();
+        options.putAll(defaults);
         options.putAll(convertToStrings(jsonOptions));
         this.options = filterForbidden(options, forbiddenOptions);
     }

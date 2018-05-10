@@ -121,21 +121,9 @@ data:
   kafka-healthcheck-timeout: "5"
   kafka-config: |-
     {
-      "num.partitions": 1,
-      "num.recovery.threads.per.data.dir": 1,
-      "default.replication.factor": 3,
       "offsets.topic.replication.factor": 3,
       "transaction.state.log.replication.factor": 3,
-      "transaction.state.log.min.isr": 1,
-      "log.retention.hours": 168,
-      "log.segment.bytes": 1073741824,
-      "log.retention.check.interval.ms": 300000,
-      "num.network.threads": 3,
-      "num.io.threads": 8,
-      "socket.send.buffer.bytes": 102400,
-      "socket.receive.buffer.bytes": 102400,
-      "socket.request.max.bytes": 104857600,
-      "group.initial.rebalance.delay.ms": 0
+      "transaction.state.log.min.isr": 2
     }
   kafka-storage: |-
     { "type": "ephemeral" }
@@ -166,9 +154,6 @@ data:
       "timeTick": 2000,
       "initLimit": 5,
       "syncLimit": 2,
-      "quorumListenOnAllIPs": true,
-      "maxClientCnxns": 0,
-      "autopurge.snapRetainCount": 3,
       "autopurge.purgeInterval": 1
     }
   zookeeper-storage: |-
@@ -264,7 +249,7 @@ should be fixed and the cluster operator will roll out the new configuration to 
 [[zookeeper_configuration_json_config]]
 ===== Zookeeper Configuration
 
-The `zookeeper-config` field allows detailed configuration of Apache Zookeeepr. This field should contain a JSON object
+The `zookeeper-config` field allows detailed configuration of Apache Zookeeper. This field should contain a JSON object
 with Zookeeper configuration options as keys. The values could be in one of the following JSON types:
 
 * String
@@ -305,6 +290,15 @@ below.
   "autopurge.purgeInterval": 1
 }
 ----
+
+Selected options have default values:
+
+* `timeTick` with default value `2000`
+* `initLimit` with default value `5`
+* `syncLimit` with default value `2`
+* `autopurge.purgeInterval` with default value `1`
+
+These options will be automatically configured in case they are not present in the `zookeeper-config` field.
 
 NOTE:: The cluster operator doesn't validate the provided configuration. When invalid configuration is provided, the
 Zookeeper cluster might not start or might become unstable. In such cases, the configuration in the `zookeeper-config` field
@@ -586,22 +580,7 @@ data:
   healthcheck-timeout: "5"
   connect-config: |-
     {
-      "bootstrap.servers": "my-cluster-kafka:9092",
-      "group.id": "my-connect-cluster",
-      "offset.storage.topic": "my-connect-cluster-offsets",
-      "config.storage.topic": "my-connect-cluster-configs",
-      "status.storage.topic": "my-connect-cluster-status",
-      "key.converter": "org.apache.kafka.connect.json.JsonConverter",
-      "value.converter": "org.apache.kafka.connect.json.JsonConverter",
-      "key.converter.schemas.enable": true,
-      "value.converter.schemas.enable": true,
-      "internal.key.converter": "org.apache.kafka.connect.json.JsonConverter",
-      "internal.value.converter": "org.apache.kafka.connect.json.JsonConverter",
-      "internal.key.converter.schemas.enable": false,
-      "internal.value.converter.schemas.enable": false,
-      "config.storage.replication.factor": 3,
-      "offset.storage.replication.factor": 3,
-      "status.storage.replication.factor": 3
+      "bootstrap.servers": "my-cluster-kafka:9092"
     }
 ----
 
@@ -662,13 +641,22 @@ below.
 }
 ----
 
+Selected options have default values:
+
+* `group.id` with default value `connect-cluster`
+* `offset.storage.topic` with default value `connect-cluster-offsets`
+* `config.storage.topic` with default value `connect-cluster-configs`
+* `status.storage.topic` with default value `connect-cluster-status`
+* `key.converter` with default value `org.apache.kafka.connect.json.JsonConverter`
+* `value.converter` with default value `org.apache.kafka.connect.json.JsonConverter`
+* `internal.key.converter` with default value `org.apache.kafka.connect.json.JsonConverter`
+* `internal.value.converter` with default value `org.apache.kafka.connect.json.JsonConverter`
+
+These options will be automatically configured in case they are not present in the `connect-config` field.
+
 INFO:: The cluster operator doesn't validate the provided configuration. When invalid configuration is provided, the
 Kafka Connect cluster might not start or might become unstable. In such cases, the configuration in the `connect-config` field
 should be fixed and the cluster operator will roll out the new configuration to all Kafka Connect instances.
-
-INFO:: Some configuration options are mandatory and in case they are not provided, Kafka Connect will not start. The cluster
-operator will not use any default values when the mandatory options are not specified - all mandatory configuration
-options have to be specified in the `connect-config` field.
 
 === Provisioning Role-Based Access Control (RBAC) for the operator
 

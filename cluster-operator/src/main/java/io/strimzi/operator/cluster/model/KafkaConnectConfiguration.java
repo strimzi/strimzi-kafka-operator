@@ -8,6 +8,7 @@ package io.strimzi.operator.cluster.model;
 import io.vertx.core.json.JsonObject;
 
 import java.util.List;
+import java.util.Properties;
 
 import static java.util.Arrays.asList;
 
@@ -16,6 +17,7 @@ import static java.util.Arrays.asList;
  */
 public class KafkaConnectConfiguration extends AbstractConfiguration {
     private static final List<String> FORBIDDEN_OPTIONS;
+    private static final Properties DEFAULTS;
 
     static {
         FORBIDDEN_OPTIONS = asList(
@@ -25,6 +27,16 @@ public class KafkaConnectConfiguration extends AbstractConfiguration {
                 "listeners",
                 "plugin.path",
                 "rest.");
+
+        DEFAULTS = new Properties();
+        DEFAULTS.setProperty("group.id", "connect-cluster");
+        DEFAULTS.setProperty("offset.storage.topic", "connect-cluster-offsets");
+        DEFAULTS.setProperty("config.storage.topic", "connect-cluster-configs");
+        DEFAULTS.setProperty("status.storage.topic", "connect-cluster-status");
+        DEFAULTS.setProperty("key.converter", "org.apache.kafka.connect.json.JsonConverter");
+        DEFAULTS.setProperty("value.converter", "org.apache.kafka.connect.json.JsonConverter");
+        DEFAULTS.setProperty("internal.key.converter", "org.apache.kafka.connect.json.JsonConverter");
+        DEFAULTS.setProperty("internal.value.converter", "org.apache.kafka.connect.json.JsonConverter");
     }
 
     /**
@@ -35,7 +47,7 @@ public class KafkaConnectConfiguration extends AbstractConfiguration {
      *                      pairs.
      */
     public KafkaConnectConfiguration(String configuration) {
-        super(configuration, FORBIDDEN_OPTIONS);
+        super(configuration, FORBIDDEN_OPTIONS, DEFAULTS);
     }
 
     /**
@@ -45,6 +57,6 @@ public class KafkaConnectConfiguration extends AbstractConfiguration {
      * @param jsonOptions     Json object with configuration options as key ad value pairs.
      */
     public KafkaConnectConfiguration(JsonObject jsonOptions) {
-        super(jsonOptions, FORBIDDEN_OPTIONS);
+        super(jsonOptions, FORBIDDEN_OPTIONS, DEFAULTS);
     }
 }

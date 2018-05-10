@@ -22,7 +22,9 @@ import java.util.Map;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class KafkaConnectS2IClusterTest {
     private final String namespace = "test";
@@ -32,14 +34,32 @@ public class KafkaConnectS2IClusterTest {
     private final int healthDelay = 100;
     private final int healthTimeout = 10;
     private final String configurationJson = "{\"foo\":\"bar\"}";
+    private final String expectedConfiguration = "group.id=connect-cluster\n" +
+            "key.converter=org.apache.kafka.connect.json.JsonConverter\n" +
+            "value.converter=org.apache.kafka.connect.json.JsonConverter\n" +
+            "config.storage.topic=connect-cluster-configs\n" +
+            "status.storage.topic=connect-cluster-status\n" +
+            "offset.storage.topic=connect-cluster-offsets\n" +
+            "foo=bar\n" +
+            "internal.key.converter=org.apache.kafka.connect.json.JsonConverter\n" +
+            "internal.value.converter=org.apache.kafka.connect.json.JsonConverter\n";
+    private final String defaultConfiguration = "internal.value.converter=org.apache.kafka.connect.json.JsonConverter\n" +
+            "offset.storage.topic=connect-cluster-offsets\n" +
+            "group.id=connect-cluster\n" +
+            "status.storage.topic=connect-cluster-status\n" +
+            "internal.key.converter=org.apache.kafka.connect.json.JsonConverter\n" +
+            "value.converter=org.apache.kafka.connect.json.JsonConverter\n" +
+            "key.converter=org.apache.kafka.connect.json.JsonConverter\n" +
+            "config.storage.topic=connect-cluster-configs\n";
+    private final boolean insecureSourceRepo = false;
 
     private final ConfigMap cm = ResourceUtils.createKafkaConnectS2IClusterConfigMap(namespace, cluster, replicas, image,
-            healthDelay, healthTimeout, configurationJson);
+            healthDelay, healthTimeout, configurationJson, insecureSourceRepo);
     private final KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromConfigMap(cm);
 
     protected List<EnvVar> getExpectedEnvVars() {
         List<EnvVar> expected = new ArrayList<EnvVar>();
-        expected.add(new EnvVarBuilder().withName(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_USER_CONFIGURATION).withValue("foo=bar\n").build());
+        expected.add(new EnvVarBuilder().withName(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_CONFIGURATION).withValue(expectedConfiguration).build());
         expected.add(new EnvVarBuilder().withName(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION).withValue("1.0").build());
         return expected;
     }
@@ -53,7 +73,8 @@ public class KafkaConnectS2IClusterTest {
         assertEquals(KafkaConnectS2ICluster.DEFAULT_IMAGE, kc.sourceImageBaseName + ":" + kc.sourceImageTag);
         assertEquals(KafkaConnectS2ICluster.DEFAULT_HEALTHCHECK_DELAY, kc.healthCheckInitialDelay);
         assertEquals(KafkaConnectS2ICluster.DEFAULT_HEALTHCHECK_TIMEOUT, kc.healthCheckTimeout);
-        assertNull(kc.getConfiguration());
+        assertEquals(defaultConfiguration, kc.getConfiguration().getConfiguration());
+        assertFalse(kc.isInsecureSourceRepository());
     }
 
     @Test
@@ -63,7 +84,8 @@ public class KafkaConnectS2IClusterTest {
         assertEquals(image, kc.sourceImageBaseName + ":" + kc.sourceImageTag);
         assertEquals(healthDelay, kc.healthCheckInitialDelay);
         assertEquals(healthTimeout, kc.healthCheckTimeout);
-        assertEquals("foo=bar\n", kc.getConfiguration().getConfiguration());
+        assertEquals(expectedConfiguration, kc.getConfiguration().getConfiguration());
+        assertFalse(kc.isInsecureSourceRepository());
     }
 
     @Test
@@ -75,7 +97,7 @@ public class KafkaConnectS2IClusterTest {
         assertEquals(image, newKc.sourceImageBaseName + ":" + newKc.sourceImageTag);
         assertEquals(healthDelay, newKc.healthCheckInitialDelay);
         assertEquals(healthTimeout, newKc.healthCheckTimeout);
-        assertEquals("foo=bar\n", kc.getConfiguration().getConfiguration());
+        assertEquals(expectedConfiguration, kc.getConfiguration().getConfiguration());
     }
 
     @Test
@@ -88,7 +110,7 @@ public class KafkaConnectS2IClusterTest {
         assertEquals(KafkaConnectS2ICluster.DEFAULT_IMAGE, newKc.sourceImageBaseName + ":" + newKc.sourceImageTag);
         assertEquals(KafkaConnectS2ICluster.DEFAULT_HEALTHCHECK_DELAY, newKc.healthCheckInitialDelay);
         assertEquals(KafkaConnectS2ICluster.DEFAULT_HEALTHCHECK_TIMEOUT, newKc.healthCheckTimeout);
-        assertNull(newKc.getConfiguration());
+        assertEquals(defaultsKc.getConfiguration().getConfiguration(), newKc.getConfiguration().getConfiguration());
     }
 
     @Test
@@ -191,6 +213,32 @@ public class KafkaConnectS2IClusterTest {
         assertEquals(image.substring(image.lastIndexOf(":") + 1), is.getSpec().getTags().get(0).getName());
         assertEquals("DockerImage", is.getSpec().getTags().get(0).getFrom().getKind());
         assertEquals(image, is.getSpec().getTags().get(0).getFrom().getName());
+        assertNull(is.getSpec().getTags().get(0).getImportPolicy());
+        assertNull(is.getSpec().getTags().get(0).getReferencePolicy());
+    }
+
+    @Test
+    public void testInsecureSourceRepo() {
+        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromConfigMap(ResourceUtils.createKafkaConnectS2IClusterConfigMap(namespace, cluster, replicas, image,
+                healthDelay, healthTimeout, configurationJson, true));
+
+        assertTrue(kc.isInsecureSourceRepository());
+
+        ImageStream is = kc.generateSourceImageStream();
+
+        assertEquals(kc.getSourceImageStreamName(), is.getMetadata().getName());
+        assertEquals(namespace, is.getMetadata().getNamespace());
+        assertEquals(ResourceUtils.labels(Labels.STRIMZI_CLUSTER_LABEL, cluster,
+                Labels.STRIMZI_TYPE_LABEL, "kafka-connect-s2i",
+                "my-user-label", "cromulent",
+                Labels.STRIMZI_NAME_LABEL, kc.getSourceImageStreamName()), is.getMetadata().getLabels());
+        assertEquals(false, is.getSpec().getLookupPolicy().getLocal());
+        assertEquals(1, is.getSpec().getTags().size());
+        assertEquals(image.substring(image.lastIndexOf(":") + 1), is.getSpec().getTags().get(0).getName());
+        assertEquals("DockerImage", is.getSpec().getTags().get(0).getFrom().getKind());
+        assertEquals(image, is.getSpec().getTags().get(0).getFrom().getName());
+        assertTrue(is.getSpec().getTags().get(0).getImportPolicy().getInsecure());
+        assertEquals("Local", is.getSpec().getTags().get(0).getReferencePolicy().getType());
     }
 
     @Test

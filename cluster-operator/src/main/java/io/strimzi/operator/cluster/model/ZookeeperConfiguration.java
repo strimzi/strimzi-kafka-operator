@@ -6,6 +6,7 @@
 package io.strimzi.operator.cluster.model;
 
 import java.util.List;
+import java.util.Properties;
 
 import io.vertx.core.json.JsonObject;
 
@@ -16,6 +17,7 @@ import static java.util.Arrays.asList;
  */
 public class ZookeeperConfiguration extends AbstractConfiguration {
     private static final List<String> FORBIDDEN_OPTIONS;
+    private static final Properties DEFAULTS;
 
     static {
         FORBIDDEN_OPTIONS = asList(
@@ -26,6 +28,12 @@ public class ZookeeperConfiguration extends AbstractConfiguration {
                 "authProvider",
                 "quorum.auth",
                 "requireClientAuthScheme");
+
+        DEFAULTS = new Properties();
+        DEFAULTS.setProperty("timeTick", "2000");
+        DEFAULTS.setProperty("initLimit", "5");
+        DEFAULTS.setProperty("syncLimit", "2");
+        DEFAULTS.setProperty("autopurge.purgeInterval", "1");
     }
 
     /**
@@ -36,7 +44,7 @@ public class ZookeeperConfiguration extends AbstractConfiguration {
      *                      pairs.
      */
     public ZookeeperConfiguration(String configuration) {
-        super(configuration, FORBIDDEN_OPTIONS);
+        super(configuration, FORBIDDEN_OPTIONS, DEFAULTS);
     }
 
     /**
@@ -46,6 +54,6 @@ public class ZookeeperConfiguration extends AbstractConfiguration {
      * @param jsonOptions     Json object with configuration options as key ad value pairs.
      */
     public ZookeeperConfiguration(JsonObject jsonOptions) {
-        super(jsonOptions, FORBIDDEN_OPTIONS);
+        super(jsonOptions, FORBIDDEN_OPTIONS, DEFAULTS);
     }
 }

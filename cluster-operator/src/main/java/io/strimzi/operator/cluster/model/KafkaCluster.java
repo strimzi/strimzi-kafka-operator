@@ -64,7 +64,7 @@ public class KafkaCluster extends AbstractModel {
     // Kafka configuration keys (EnvVariables)
     public static final String ENV_VAR_KAFKA_ZOOKEEPER_CONNECT = "KAFKA_ZOOKEEPER_CONNECT";
     private static final String ENV_VAR_KAFKA_METRICS_ENABLED = "KAFKA_METRICS_ENABLED";
-    protected static final String ENV_VAR_KAFKA_USER_CONFIGURATION = "KAFKA_USER_CONFIGURATION";
+    protected static final String ENV_VAR_KAFKA_CONFIGURATION = "KAFKA_CONFIGURATION";
 
     /**
      * Constructor
@@ -118,25 +118,22 @@ public class KafkaCluster extends AbstractModel {
                 Labels.fromResource(kafkaClusterCm));
 
         Map<String, String> data = kafkaClusterCm.getData();
-        kafka.setReplicas(getInteger(data, KEY_REPLICAS, DEFAULT_REPLICAS));
-        kafka.setImage(getNonemptyString(data, KEY_IMAGE, DEFAULT_IMAGE));
-        kafka.setHealthCheckInitialDelay(getInteger(data, KEY_HEALTHCHECK_DELAY, DEFAULT_HEALTHCHECK_DELAY));
-        kafka.setHealthCheckTimeout(getInteger(data, KEY_HEALTHCHECK_TIMEOUT, DEFAULT_HEALTHCHECK_TIMEOUT));
+        kafka.setReplicas(Utils.getInteger(data, KEY_REPLICAS, DEFAULT_REPLICAS));
+        kafka.setImage(Utils.getNonemptyString(data, KEY_IMAGE, DEFAULT_IMAGE));
+        kafka.setHealthCheckInitialDelay(Utils.getInteger(data, KEY_HEALTHCHECK_DELAY, DEFAULT_HEALTHCHECK_DELAY));
+        kafka.setHealthCheckTimeout(Utils.getInteger(data, KEY_HEALTHCHECK_TIMEOUT, DEFAULT_HEALTHCHECK_TIMEOUT));
 
         kafka.setZookeeperConnect(kafkaClusterCm.getMetadata().getName() + "-zookeeper:2181");
 
-        String metricsConfig = data.get(KEY_METRICS_CONFIG);
+        JsonObject metricsConfig = Utils.getJson(data, KEY_METRICS_CONFIG);
         kafka.setMetricsEnabled(metricsConfig != null);
         if (kafka.isMetricsEnabled()) {
-            kafka.setMetricsConfig(new JsonObject(metricsConfig));
+            kafka.setMetricsConfig(metricsConfig);
         }
 
-        kafka.setStorage(getStorage(data, KEY_STORAGE));
+        kafka.setStorage(Utils.getStorage(data, KEY_STORAGE));
 
-        JsonObject kafkaConfig = getConfig(data, KEY_KAFKA_CONFIG);
-        if (kafkaConfig != null) {
-            kafka.setConfiguration(new KafkaConfiguration(kafkaConfig));
-        }
+        kafka.setConfiguration(Utils.getConfig(data, KEY_KAFKA_CONFIG));
 
         kafka.setResources(Resources.fromJson(data.get(KEY_RESOURCES)));
         kafka.setJvmOptions(JvmOptions.fromJson(data.get(KEY_JVM_OPTIONS)));
@@ -166,7 +163,7 @@ public class KafkaCluster extends AbstractModel {
 
         kafka.setZookeeperConnect(vars.getOrDefault(ENV_VAR_KAFKA_ZOOKEEPER_CONNECT, ss.getMetadata().getName() + "-zookeeper:2181"));
 
-        kafka.setMetricsEnabled(Boolean.parseBoolean(vars.getOrDefault(ENV_VAR_KAFKA_METRICS_ENABLED, String.valueOf(DEFAULT_KAFKA_METRICS_ENABLED))));
+        kafka.setMetricsEnabled(Utils.getBoolean(vars, ENV_VAR_KAFKA_METRICS_ENABLED, DEFAULT_KAFKA_METRICS_ENABLED));
         if (kafka.isMetricsEnabled()) {
             kafka.setMetricsConfigName(metricConfigsName(cluster));
         }
@@ -184,7 +181,7 @@ public class KafkaCluster extends AbstractModel {
             kafka.setStorage(storage);
         }
 
-        String kafkaConfiguration = containerEnvVars(container).get(ENV_VAR_KAFKA_USER_CONFIGURATION);
+        String kafkaConfiguration = containerEnvVars(container).get(ENV_VAR_KAFKA_CONFIGURATION);
         if (kafkaConfiguration != null) {
             kafka.setConfiguration(new KafkaConfiguration(kafkaConfiguration));
         }
@@ -300,7 +297,9 @@ public class KafkaCluster extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_KAFKA_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
         kafkaHeapOptions(varList, 0.5, 5L * 1024L * 1024L * 1024L);
 
-        varList.add(buildEnvVar(ENV_VAR_KAFKA_USER_CONFIGURATION, configuration.getConfiguration()));
+        if (configuration != null) {
+            varList.add(buildEnvVar(ENV_VAR_KAFKA_CONFIGURATION, configuration.getConfiguration()));
+        }
 
         return varList;
     }

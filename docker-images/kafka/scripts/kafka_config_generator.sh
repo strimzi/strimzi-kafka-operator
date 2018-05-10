@@ -13,6 +13,6 @@ zookeeper.connect=${KAFKA_ZOOKEEPER_CONNECT:-zookeeper:2181}
 zookeeper.connection.timeout.ms=6000
 # Logs
 log.dirs=${KAFKA_LOG_DIRS}
-# User provided settings
-${KAFKA_USER_CONFIGURATION}
+# Provided configuration
+${KAFKA_CONFIGURATION}
 EOF

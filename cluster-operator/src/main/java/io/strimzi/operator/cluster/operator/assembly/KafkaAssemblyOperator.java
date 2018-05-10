@@ -214,7 +214,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
     private final Future<ReconcileResult<Void>> createOrUpdateTopicOperator(Reconciliation reconciliation, ConfigMap assemblyCm) {
         String namespace = assemblyCm.getMetadata().getNamespace();
         String name = assemblyCm.getMetadata().getName();
-        log.debug("{}: create/update topic controller {}", reconciliation, name);
+        log.debug("{}: create/update topic operator {}", reconciliation, name);
         TopicOperator topicOperator;
         try {
             topicOperator = TopicOperator.fromConfigMap(assemblyCm);

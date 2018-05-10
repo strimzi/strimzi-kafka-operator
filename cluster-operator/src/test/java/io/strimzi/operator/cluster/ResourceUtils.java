@@ -93,12 +93,16 @@ public class ResourceUtils {
         cmData.put(KafkaCluster.KEY_HEALTHCHECK_TIMEOUT, Integer.toString(healthTimeout));
         cmData.put(KafkaCluster.KEY_STORAGE, storage);
         cmData.put(KafkaCluster.KEY_METRICS_CONFIG, metricsCmJson);
-        cmData.put(KafkaCluster.KEY_KAFKA_CONFIG, kafkaConfigurationJson);
+        if (kafkaConfigurationJson != null) {
+            cmData.put(KafkaCluster.KEY_KAFKA_CONFIG, kafkaConfigurationJson);
+        }
         cmData.put(ZookeeperCluster.KEY_REPLICAS, Integer.toString(replicas));
         cmData.put(ZookeeperCluster.KEY_IMAGE, image + "-zk");
         cmData.put(ZookeeperCluster.KEY_HEALTHCHECK_DELAY, Integer.toString(healthDelay));
         cmData.put(ZookeeperCluster.KEY_HEALTHCHECK_TIMEOUT, Integer.toString(healthTimeout));
-        cmData.put(ZookeeperCluster.KEY_ZOOKEEPER_CONFIG, zooConfigurationJson);
+        if (zooConfigurationJson != null) {
+            cmData.put(ZookeeperCluster.KEY_ZOOKEEPER_CONFIG, zooConfigurationJson);
+        }
         cmData.put(ZookeeperCluster.KEY_STORAGE, storage);
         cmData.put(ZookeeperCluster.KEY_METRICS_CONFIG, metricsCmJson);
         if (topicOperator != null) {
@@ -119,13 +123,17 @@ public class ResourceUtils {
      * Generate ConfigMap for Kafka Connect S2I cluster
      */
     public static ConfigMap createKafkaConnectS2IClusterConfigMap(String clusterCmNamespace, String clusterCmName, int replicas,
-                                                                  String image, int healthDelay, int healthTimeout, String connectConfig) {
+                                                                  String image, int healthDelay, int healthTimeout, String connectConfig,
+                                                                  boolean insecureSourceRepo) {
         Map<String, String> cmData = new HashMap<>();
         cmData.put(KafkaConnectS2ICluster.KEY_IMAGE, image);
         cmData.put(KafkaConnectS2ICluster.KEY_REPLICAS, Integer.toString(replicas));
         cmData.put(KafkaConnectS2ICluster.KEY_HEALTHCHECK_DELAY, Integer.toString(healthDelay));
         cmData.put(KafkaConnectS2ICluster.KEY_HEALTHCHECK_TIMEOUT, Integer.toString(healthTimeout));
-        cmData.put(KafkaConnectS2ICluster.KEY_CONNECT_CONFIG, connectConfig);
+        if (connectConfig != null) {
+            cmData.put(KafkaConnectS2ICluster.KEY_CONNECT_CONFIG, connectConfig);
+        }
+        cmData.put(KafkaConnectS2ICluster.KEY_INSECURE_SOURCE_REPO, String.valueOf(insecureSourceRepo));
 
         ConfigMap cm = createEmptyKafkaConnectS2IClusterConfigMap(clusterCmNamespace, clusterCmName);
         cm.setData(cmData);
@@ -161,7 +169,9 @@ public class ResourceUtils {
         cmData.put(KafkaConnectCluster.KEY_REPLICAS, Integer.toString(replicas));
         cmData.put(KafkaConnectCluster.KEY_HEALTHCHECK_DELAY, Integer.toString(healthDelay));
         cmData.put(KafkaConnectCluster.KEY_HEALTHCHECK_TIMEOUT, Integer.toString(healthTimeout));
-        cmData.put(KafkaConnectCluster.KEY_CONNECT_CONFIG, connectConfig);
+        if (connectConfig != null) {
+            cmData.put(KafkaConnectS2ICluster.KEY_CONNECT_CONFIG, connectConfig);
+        }
 
         ConfigMap cm = createEmptyKafkaConnectClusterConfigMap(clusterCmNamespace, clusterCmName);
         cm.setData(cmData);

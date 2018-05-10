@@ -23,8 +23,10 @@ import io.fabric8.openshift.api.model.ImageChangeTrigger;
 import io.fabric8.openshift.api.model.ImageLookupPolicyBuilder;
 import io.fabric8.openshift.api.model.ImageStream;
 import io.fabric8.openshift.api.model.ImageStreamBuilder;
+import io.fabric8.openshift.api.model.TagImportPolicy;
+import io.fabric8.openshift.api.model.TagImportPolicyBuilder;
 import io.fabric8.openshift.api.model.TagReference;
-import io.vertx.core.json.JsonObject;
+import io.fabric8.openshift.api.model.TagReferencePolicyBuilder;
 
 import java.util.Collections;
 import java.util.Map;
@@ -35,10 +37,14 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
     protected String sourceImageBaseName = DEFAULT_IMAGE.substring(0, DEFAULT_IMAGE.lastIndexOf(":"));
     protected String sourceImageTag = DEFAULT_IMAGE.substring(DEFAULT_IMAGE.lastIndexOf(":") + 1);
     protected String tag = "latest";
+    protected boolean insecureSourceRepository = false;
 
     // Configuration defaults
     protected static final String DEFAULT_IMAGE =
             System.getenv().getOrDefault("STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE", "strimzi/kafka-connect-s2i:latest");
+
+    // Configuration keys (in ConfigMap)
+    public static final String KEY_INSECURE_SOURCE_REPO = "insecure-source-repo";
 
     /**
      * Constructor
@@ -61,18 +67,16 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
         KafkaConnectS2ICluster kafkaConnect = new KafkaConnectS2ICluster(cm.getMetadata().getNamespace(), cm.getMetadata().getName(), Labels.fromResource(cm));
 
         Map<String, String> data = cm.getData();
-        kafkaConnect.setReplicas(getInteger(data, KEY_REPLICAS, DEFAULT_REPLICAS));
-        kafkaConnect.setImage(getNonemptyString(data, KEY_IMAGE, DEFAULT_IMAGE));
+        kafkaConnect.setReplicas(Utils.getInteger(data, KEY_REPLICAS, DEFAULT_REPLICAS));
+        kafkaConnect.setImage(Utils.getNonemptyString(data, KEY_IMAGE, DEFAULT_IMAGE));
         kafkaConnect.setResources(Resources.fromJson(data.get(KEY_RESOURCES)));
         kafkaConnect.setJvmOptions(JvmOptions.fromJson(data.get(KEY_JVM_OPTIONS)));
-        kafkaConnect.setHealthCheckInitialDelay(getInteger(data, KEY_HEALTHCHECK_DELAY, DEFAULT_HEALTHCHECK_DELAY));
-        kafkaConnect.setHealthCheckTimeout(getInteger(data, KEY_HEALTHCHECK_TIMEOUT, DEFAULT_HEALTHCHECK_TIMEOUT));
+        kafkaConnect.setHealthCheckInitialDelay(Utils.getInteger(data, KEY_HEALTHCHECK_DELAY, DEFAULT_HEALTHCHECK_DELAY));
+        kafkaConnect.setHealthCheckTimeout(Utils.getInteger(data, KEY_HEALTHCHECK_TIMEOUT, DEFAULT_HEALTHCHECK_TIMEOUT));
 
-        JsonObject connectConfig = getConfig(data, KEY_CONNECT_CONFIG);
-        if (connectConfig == null) {
-            connectConfig = new JsonObject();
-        }
-        kafkaConnect.setConfiguration(new KafkaConnectConfiguration(connectConfig));
+        kafkaConnect.setConfiguration(Utils.getConfig(data, KEY_CONNECT_CONFIG));
+        kafkaConnect.setInsecureSourceRepository(Utils.getBoolean(data, KEY_INSECURE_SOURCE_REPO, false));
+
         return kafkaConnect;
     }
 
@@ -96,13 +100,19 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
         kafkaConnect.setHealthCheckInitialDelay(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds());
         kafkaConnect.setHealthCheckTimeout(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds());
 
-        String connectConfiguration = containerEnvVars(dep.getSpec().getTemplate().getSpec().getContainers().get(0)).get(ENV_VAR_KAFKA_CONNECT_USER_CONFIGURATION);
-        if (connectConfiguration != null) {
-            kafkaConnect.setConfiguration(new KafkaConnectConfiguration(connectConfiguration));
-        }
+        String connectConfiguration = containerEnvVars(dep.getSpec().getTemplate().getSpec().getContainers().get(0)).getOrDefault(ENV_VAR_KAFKA_CONNECT_CONFIGURATION, "");
+        kafkaConnect.setConfiguration(new KafkaConnectConfiguration(connectConfiguration));
 
         String sourceImage = sis.getSpec().getTags().get(0).getFrom().getName();
         kafkaConnect.setImage(sourceImage);
+
+        TagImportPolicy policy = sis.getSpec().getTags().get(0).getImportPolicy();
+        if (policy != null) {
+            Boolean insecure = policy.getInsecure();
+            if (insecure != null) {
+                kafkaConnect.setInsecureSourceRepository(insecure);
+            }
+        }
 
         return kafkaConnect;
     }
@@ -183,6 +193,11 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
         TagReference sourceTag = new TagReference();
         sourceTag.setName(sourceImageTag);
         sourceTag.setFrom(image);
+
+        if (insecureSourceRepository)   {
+            sourceTag.setImportPolicy(new TagImportPolicyBuilder().withInsecure(true).build());
+            sourceTag.setReferencePolicy(new TagReferencePolicyBuilder().withType("Local").build());
+        }
 
         ImageStream imageStream = new ImageStreamBuilder()
                 .withNewMetadata()
@@ -292,5 +307,21 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
         this.sourceImageTag = image.substring(image.lastIndexOf(":") + 1);
         this.image = name + ":" + tag;
 
+    }
+
+    /**
+     * @return true if the source repo for the S2I image should be treated as insecure in source ImageStream
+     */
+    public boolean isInsecureSourceRepository() {
+        return insecureSourceRepository;
+    }
+
+    /**
+     * Set whether the source repository for the S2I image should be treated as insecure
+     *
+     * @param insecureSourceRepository  Set to true for using insecure repository
+     */
+    public void setInsecureSourceRepository(boolean insecureSourceRepository) {
+        this.insecureSourceRepository = insecureSourceRepository;
     }
 }

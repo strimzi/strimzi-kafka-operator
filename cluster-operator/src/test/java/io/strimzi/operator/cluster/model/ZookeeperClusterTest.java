@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.strimzi.operator.cluster.InvalidConfigMapException;
 import io.strimzi.operator.cluster.ResourceUtils;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
@@ -12,6 +13,7 @@ import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import org.junit.Test;
 
 import static io.strimzi.operator.cluster.ResourceUtils.labels;
+import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
 
 public class ZookeeperClusterTest {
@@ -104,7 +106,7 @@ public class ZookeeperClusterTest {
         assertEquals(new Integer(healthDelay), ss.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getInitialDelaySeconds());
         assertEquals(new Integer(healthTimeout), ss.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds());
         assertEquals(new Integer(healthDelay), ss.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds());
-        assertEquals("foo=bar\n", AbstractModel.containerEnvVars(ss.getSpec().getTemplate().getSpec().getContainers().get(0)).get(ZookeeperCluster.ENV_VAR_ZOOKEEPER_CONFIGURATION));
+        assertEquals("timeTick=2000\nautopurge.purgeInterval=1\nsyncLimit=2\ninitLimit=5\nfoo=bar\n", AbstractModel.containerEnvVars(ss.getSpec().getTemplate().getSpec().getContainers().get(0)).get(ZookeeperCluster.ENV_VAR_ZOOKEEPER_CONFIGURATION));
     }
 
     /**
@@ -135,6 +137,17 @@ public class ZookeeperClusterTest {
 
         for (int i = 0; i < replicas; i++) {
             assertEquals(zc.VOLUME_NAME + "-" + ZookeeperCluster.zookeeperClusterName(cluster) + "-" + i, zc.getPersistentVolumeClaimName(i));
+        }
+    }
+
+    @Test
+    public void testCorruptedConfigMap() {
+        try {
+            ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, "{\"key.name\":oops}");
+            ZookeeperCluster.fromConfigMap(cm);
+            fail("Expected it to throw an exception");
+        } catch (InvalidConfigMapException e) {
+            assertEquals("key.name", e.getKey());
         }
     }
 

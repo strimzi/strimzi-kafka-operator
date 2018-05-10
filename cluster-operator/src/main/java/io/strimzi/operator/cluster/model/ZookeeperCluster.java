@@ -119,23 +119,20 @@ public class ZookeeperCluster extends AbstractModel {
                 Labels.fromResource(kafkaClusterCm));
 
         Map<String, String> data = kafkaClusterCm.getData();
-        zk.setReplicas(getInteger(data, KEY_REPLICAS, DEFAULT_REPLICAS));
-        zk.setImage(getNonemptyString(data, KEY_IMAGE, DEFAULT_IMAGE));
-        zk.setHealthCheckInitialDelay(getInteger(data, KEY_HEALTHCHECK_DELAY, DEFAULT_HEALTHCHECK_DELAY));
-        zk.setHealthCheckTimeout(getInteger(data, KEY_HEALTHCHECK_TIMEOUT, DEFAULT_HEALTHCHECK_TIMEOUT));
+        zk.setReplicas(Utils.getInteger(data, KEY_REPLICAS, DEFAULT_REPLICAS));
+        zk.setImage(Utils.getNonemptyString(data, KEY_IMAGE, DEFAULT_IMAGE));
+        zk.setHealthCheckInitialDelay(Utils.getInteger(data, KEY_HEALTHCHECK_DELAY, DEFAULT_HEALTHCHECK_DELAY));
+        zk.setHealthCheckTimeout(Utils.getInteger(data, KEY_HEALTHCHECK_TIMEOUT, DEFAULT_HEALTHCHECK_TIMEOUT));
 
-        JsonObject metricsConfig = getConfig(data, KEY_METRICS_CONFIG);
+        JsonObject metricsConfig = Utils.getJson(data, KEY_METRICS_CONFIG);
         zk.setMetricsEnabled(metricsConfig != null);
         if (zk.isMetricsEnabled()) {
             zk.setMetricsConfig(metricsConfig);
         }
 
-        zk.setStorage(getStorage(data, KEY_STORAGE));
+        zk.setStorage(Utils.getStorage(data, KEY_STORAGE));
 
-        String zookeeperConfig = data.get(KEY_ZOOKEEPER_CONFIG);
-        if (zookeeperConfig != null) {
-            zk.setConfiguration(new ZookeeperConfiguration(new JsonObject(zookeeperConfig)));
-        }
+        zk.setConfiguration(Utils.getConfig(data, KEY_ZOOKEEPER_CONFIG));
 
         zk.setResources(Resources.fromJson(data.get(KEY_RESOURCES)));
         zk.setJvmOptions(JvmOptions.fromJson(data.get(KEY_JVM_OPTIONS)));
@@ -163,7 +160,7 @@ public class ZookeeperCluster extends AbstractModel {
 
         Map<String, String> vars = containerEnvVars(container);
 
-        zk.setMetricsEnabled(Boolean.parseBoolean(vars.getOrDefault(ENV_VAR_ZOOKEEPER_METRICS_ENABLED, String.valueOf(DEFAULT_ZOOKEEPER_METRICS_ENABLED))));
+        zk.setMetricsEnabled(Utils.getBoolean(vars, ENV_VAR_ZOOKEEPER_METRICS_ENABLED, DEFAULT_ZOOKEEPER_METRICS_ENABLED));
         if (zk.isMetricsEnabled()) {
             zk.setMetricsConfigName(zookeeperMetricsName(cluster));
         }
@@ -181,10 +178,8 @@ public class ZookeeperCluster extends AbstractModel {
             zk.setStorage(storage);
         }
 
-        String zookeeperConfiguration = containerEnvVars(container).get(ENV_VAR_ZOOKEEPER_CONFIGURATION);
-        if (zookeeperConfiguration != null) {
-            zk.setConfiguration(new ZookeeperConfiguration(zookeeperConfiguration));
-        }
+        String zookeeperConfiguration = containerEnvVars(container).getOrDefault(ENV_VAR_ZOOKEEPER_CONFIGURATION, "");
+        zk.setConfiguration(new ZookeeperConfiguration(zookeeperConfiguration));
 
         return zk;
     }
@@ -229,10 +224,7 @@ public class ZookeeperCluster extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_NODE_COUNT, Integer.toString(replicas)));
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
         kafkaHeapOptions(varList, 0.75, 2L * 1024L * 1024L * 1024L);
-
-        if (configuration != null) {
-            varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_CONFIGURATION, configuration.getConfiguration()));
-        }
+        varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_CONFIGURATION, configuration.getConfiguration()));
 
         return varList;
     }
