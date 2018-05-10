@@ -132,7 +132,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
     }
 
     @Test
-    //@JUnitGroup(name = "regression")
+    @JUnitGroup(name = "regression")
     @ConnectCluster(name = CONNECT_CLUSTER_NAME, connectConfig = CONNECT_CONFIG)
     public void testKafkaConnectScaleUpScaleDown() {
         // kafka cluster Connect already deployed via annotation
