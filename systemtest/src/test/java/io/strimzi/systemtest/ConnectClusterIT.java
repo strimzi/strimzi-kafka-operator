@@ -167,6 +167,4 @@ public class ConnectClusterIT extends AbstractClusterIT {
             assertThat(events, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
         }
     }
-
-
 }
