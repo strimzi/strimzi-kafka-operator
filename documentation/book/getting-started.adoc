@@ -184,7 +184,7 @@ building a new custom image with additional plugins. The following steps describ
 FROM {DockerKafkaConnect}
 USER root:root
 COPY ./my-plugin/ /opt/kafka/plugins/
-USER kafka:kafka
+USER {DockerImageUser}
 ----
 2. Build the Docker image and upload it to the appropriate Docker repository
 3. Use the new Docker image in the Kafka Connect deployment:
