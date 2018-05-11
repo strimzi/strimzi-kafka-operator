@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest;
 
+import io.fabric8.kubernetes.api.model.Event;
 import io.strimzi.test.ClusterOperator;
 import io.strimzi.test.CmData;
 import io.strimzi.test.ConnectCluster;
@@ -20,8 +21,21 @@ import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+
+import static io.strimzi.systemtest.k8s.Events.Scheduled;
+import static io.strimzi.systemtest.k8s.Events.Pulled;
+import static io.strimzi.systemtest.k8s.Events.Created;
+import static io.strimzi.systemtest.k8s.Events.Started;
+import static io.strimzi.systemtest.k8s.Events.Failed;
+import static io.strimzi.systemtest.k8s.Events.Unhealthy;
+import static io.strimzi.systemtest.k8s.Events.FailedSync;
+import static io.strimzi.systemtest.k8s.Events.FailedValidation;
+import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
+import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
 import static io.strimzi.test.TestUtils.map;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 
 @RunWith(StrimziRunner.class)
 @Namespace(ConnectClusterIT.NAMESPACE)
@@ -33,6 +47,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
 
     public static final String NAMESPACE = "connect-cluster-test";
     public static final String KAFKA_CLUSTER_NAME = "connect-tests";
+    public static final String CONNECT_CLUSTER_NAME = "my-cluster";
     public static final String KAFKA_CONNECT_BOOTSTRAP_SERVERS = KAFKA_CLUSTER_NAME + "-kafka:9092";
     public static final String KAFKA_CONNECT_BOOTSTRAP_SERVERS_ESCAPED = KAFKA_CLUSTER_NAME + "-kafka\\:9092";
     public static final String CONNECT_CONFIG = "{\n" +
@@ -94,4 +109,40 @@ public class ConnectClusterIT extends AbstractClusterIT {
                 "-Xmx200m", "-Xms200m");
     }
 
+    @Test
+    @JUnitGroup(name = "regression")
+    @ConnectCluster(name = CONNECT_CLUSTER_NAME, connectConfig = CONNECT_CONFIG)
+    public void testKafkaConnectScaleUpScaleDown() {
+        // kafka cluster Connect already deployed via annotation
+        LOGGER.info("Running kafkaConnectScaleUP {}", CONNECT_CLUSTER_NAME);
+
+        List<String> connectPods = kubeClient.listResourcesByLabel("pod", "strimzi.io/type=kafka-connect");
+        int initialReplicas = connectPods.size();
+        assertEquals(1, initialReplicas);
+        final int scaleTo = initialReplicas + 1;
+
+        LOGGER.info("Scaling up to {}", scaleTo);
+        replaceCm(CONNECT_CLUSTER_NAME, "nodes", String.valueOf(initialReplicas + 1));
+        kubeClient.waitForDeployment(kafkaConnectName(CONNECT_CLUSTER_NAME));
+        connectPods = kubeClient.listResourcesByLabel("pod", "strimzi.io/type=kafka-connect");
+        assertEquals(scaleTo, connectPods.size());
+        for (String pod : connectPods) {
+            List<Event> events = getEvents("Pod", pod);
+            assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
+            assertThat(events, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
+        }
+
+        LOGGER.info("Scaling down to {}", initialReplicas);
+        replaceCm(CONNECT_CLUSTER_NAME, "nodes", String.valueOf(initialReplicas));
+        while (kubeClient.listResourcesByLabel("pod", "strimzi.io/type=kafka-connect").size() == scaleTo) {
+            LOGGER.info("Waiting for connect pod deletion");
+        }
+        connectPods = kubeClient.listResourcesByLabel("pod", "strimzi.io/type=kafka-connect");
+        assertEquals(initialReplicas, connectPods.size());
+        for (String pod : connectPods) {
+            List<Event> events = getEvents("Pod", pod);
+            assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
+            assertThat(events, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
+        }
+    }
 }

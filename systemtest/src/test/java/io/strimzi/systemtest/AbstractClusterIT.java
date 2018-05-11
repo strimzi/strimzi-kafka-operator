@@ -56,6 +56,10 @@ public class AbstractClusterIT {
         return clusterName + "-kafka";
     }
 
+    static String kafkaConnectName(String clusterName) {
+        return clusterName + "-connect";
+    }
+
     static String kafkaPodName(String clusterName, int podId) {
         return kafkaClusterName(clusterName) + "-" + podId;
     }
