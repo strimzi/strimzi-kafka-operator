@@ -33,9 +33,12 @@ import static io.strimzi.systemtest.k8s.Events.FailedSync;
 import static io.strimzi.systemtest.k8s.Events.FailedValidation;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
+import static io.strimzi.systemtest.matchers.Matchers.valueOfCmEquals;
 import static io.strimzi.test.TestUtils.map;
+import static org.hamcrest.Matchers.hasItem;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
 @RunWith(StrimziRunner.class)
 @Namespace(ConnectClusterIT.NAMESPACE)
@@ -143,6 +146,30 @@ public class ConnectClusterIT extends AbstractClusterIT {
             List<Event> events = getEvents("Pod", pod);
             assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
             assertThat(events, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
+        }
+    }
+
+    @Test
+    @JUnitGroup(name = "regression")
+    @ConnectCluster(name = CONNECT_CLUSTER_NAME, connectConfig = CONNECT_CONFIG)
+    public void testForUpdateValuesInConnectCM() {
+        List<String> connectPods = kubeClient.listResourcesByLabel("pod", "strimzi.io/type=kafka-connect");
+        replaceCm(CONNECT_CLUSTER_NAME, "healthcheck-delay", "120");
+        replaceCm(CONNECT_CLUSTER_NAME, "healthcheck-timeout", "10");
+
+        kubeClient.waitForDeployment(kafkaConnectName(CONNECT_CLUSTER_NAME));
+        for (int i = 0; i < connectPods.size(); i++) {
+            kubeClient.waitForResourceDeletion("pod", connectPods.get(i));
+        }
+        LOGGER.info("Verify values after update");
+        String configMapAfter = kubeClient.get("cm", CONNECT_CLUSTER_NAME);
+        assertThat(configMapAfter, valueOfCmEquals("healthcheck-delay", "120"));
+        assertThat(configMapAfter, valueOfCmEquals("healthcheck-timeout", "10"));
+        connectPods = kubeClient.listResourcesByLabel("pod", "strimzi.io/type=kafka-connect");
+        for (int i = 0; i < connectPods.size(); i++) {
+            String connectPodJson = kubeClient.getResourceAsJson("pod", connectPods.get(i));
+            assertThat(connectPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(120)));
+            assertThat(connectPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.timeoutSeconds", hasItem(10)));
         }
     }
 }
