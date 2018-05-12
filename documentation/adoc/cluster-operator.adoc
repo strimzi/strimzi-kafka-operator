@@ -651,6 +651,8 @@ Selected options have default values:
 * `value.converter` with default value `org.apache.kafka.connect.json.JsonConverter`
 * `internal.key.converter` with default value `org.apache.kafka.connect.json.JsonConverter`
 * `internal.value.converter` with default value `org.apache.kafka.connect.json.JsonConverter`
+* `internal.key.converter.schemas.enable` with default value `false`
+* `internal.value.converter.schemas.enable` with default value `false`
 
 These options will be automatically configured in case they are not present in the `connect-config` field.
 

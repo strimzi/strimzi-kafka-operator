@@ -37,6 +37,8 @@ public class KafkaConnectConfiguration extends AbstractConfiguration {
         DEFAULTS.setProperty("value.converter", "org.apache.kafka.connect.json.JsonConverter");
         DEFAULTS.setProperty("internal.key.converter", "org.apache.kafka.connect.json.JsonConverter");
         DEFAULTS.setProperty("internal.value.converter", "org.apache.kafka.connect.json.JsonConverter");
+        DEFAULTS.setProperty("internal.key.converter.schemas.enable", "false");
+        DEFAULTS.setProperty("internal.value.converter.schemas.enable", "false");
     }
 
     /**
