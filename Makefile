@@ -51,6 +51,7 @@ docu_pushtowebsite: docu_htmlnoheader
 release_docu: docu_html
 	mkdir -p strimzi-$(RELEASE_VERSION)/docs
 	cp -rv documentation/html/ strimzi-$(RELEASE_VERSION)/docs/
+	mv strimzi-$(RELEASE_VERSION)/docs/html/master.html strimzi-$(RELEASE_VERSION)/docs/html/index.html
 
 docu_clean: docu_htmlclean docu_htmlnoheaderclean
 
