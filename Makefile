@@ -10,12 +10,12 @@ $(DOCKER_TARGETS): $(SUBDIRS)
 release: release_prepare release_version release_maven $(SUBDIRS) release_docu release_pkg
 
 next_version:
-	echo $(NEXT_VERSION) > release.version
+	echo $(shell echo $(NEXT_VERSION) | tr a-z A-Z) > release.version
 	mvn versions:set -DnewVersion=$(shell echo $(NEXT_VERSION) | tr a-z A-Z)
 	mvn versions:commit
 
 release_prepare:
-	echo $(RELEASE_VERSION) > release.version
+	echo $(shell echo $(RELEASE_VERSION) | tr a-z A-Z) > release.version
 	rm -rf ./strimzi-$(RELEASE_VERSION)
 	rm -f ./strimzi-$(RELEASE_VERSION).tar.gz
 	mkdir ./strimzi-$(RELEASE_VERSION)
