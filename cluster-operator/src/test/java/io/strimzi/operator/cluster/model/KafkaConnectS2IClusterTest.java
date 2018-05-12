@@ -36,21 +36,25 @@ public class KafkaConnectS2IClusterTest {
     private final String configurationJson = "{\"foo\":\"bar\"}";
     private final String expectedConfiguration = "group.id=connect-cluster\n" +
             "key.converter=org.apache.kafka.connect.json.JsonConverter\n" +
+            "internal.key.converter.schemas.enable=false\n" +
             "value.converter=org.apache.kafka.connect.json.JsonConverter\n" +
             "config.storage.topic=connect-cluster-configs\n" +
             "status.storage.topic=connect-cluster-status\n" +
             "offset.storage.topic=connect-cluster-offsets\n" +
             "foo=bar\n" +
             "internal.key.converter=org.apache.kafka.connect.json.JsonConverter\n" +
+            "internal.value.converter.schemas.enable=false\n" +
             "internal.value.converter=org.apache.kafka.connect.json.JsonConverter\n";
-    private final String defaultConfiguration = "internal.value.converter=org.apache.kafka.connect.json.JsonConverter\n" +
-            "offset.storage.topic=connect-cluster-offsets\n" +
-            "group.id=connect-cluster\n" +
-            "status.storage.topic=connect-cluster-status\n" +
-            "internal.key.converter=org.apache.kafka.connect.json.JsonConverter\n" +
-            "value.converter=org.apache.kafka.connect.json.JsonConverter\n" +
+    private final String defaultConfiguration = "group.id=connect-cluster\n" +
             "key.converter=org.apache.kafka.connect.json.JsonConverter\n" +
-            "config.storage.topic=connect-cluster-configs\n";
+            "internal.key.converter.schemas.enable=false\n" +
+            "value.converter=org.apache.kafka.connect.json.JsonConverter\n" +
+            "config.storage.topic=connect-cluster-configs\n" +
+            "status.storage.topic=connect-cluster-status\n" +
+            "offset.storage.topic=connect-cluster-offsets\n" +
+            "internal.key.converter=org.apache.kafka.connect.json.JsonConverter\n" +
+            "internal.value.converter.schemas.enable=false\n" +
+            "internal.value.converter=org.apache.kafka.connect.json.JsonConverter\n";
     private final boolean insecureSourceRepo = false;
 
     private final ConfigMap cm = ResourceUtils.createKafkaConnectS2IClusterConfigMap(namespace, cluster, replicas, image,
