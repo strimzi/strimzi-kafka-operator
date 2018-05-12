@@ -56,12 +56,14 @@ public class ConnectClusterIT extends AbstractClusterIT {
 
     private static final String EXPECTED_CONFIG = "group.id=connect-cluster\\n" +
             "key.converter=org.apache.kafka.connect.json.JsonConverter\\n" +
+            "internal.key.converter.schemas.enable=false\\n" +
             "value.converter=org.apache.kafka.connect.json.JsonConverter\\n" +
             "bootstrap.servers=" + KAFKA_CONNECT_BOOTSTRAP_SERVERS_ESCAPED + "\\n" +
             "config.storage.topic=connect-cluster-configs\\n" +
             "status.storage.topic=connect-cluster-status\\n" +
             "offset.storage.topic=connect-cluster-offsets\\n" +
             "internal.key.converter=org.apache.kafka.connect.json.JsonConverter\\n" +
+            "internal.value.converter.schemas.enable=false\\n" +
             "internal.value.converter=org.apache.kafka.connect.json.JsonConverter\\n";
 
     @Test
