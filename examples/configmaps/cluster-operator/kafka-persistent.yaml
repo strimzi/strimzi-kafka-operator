@@ -17,9 +17,6 @@ data:
     }
   kafka-healthcheck-delay: "15"
   kafka-healthcheck-timeout: "5"
-  zookeeper-nodes: "3"
-  zookeeper-healthcheck-delay: "15"
-  zookeeper-healthcheck-timeout: "5"
   kafka-storage: |-
     { "type": "persistent-claim", "size": "1Gi", "delete-claim": false }
   kafka-metrics-config: |-
