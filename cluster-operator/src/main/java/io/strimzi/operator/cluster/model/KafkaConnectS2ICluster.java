@@ -68,13 +68,13 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
 
         Map<String, String> data = cm.getData();
         kafkaConnect.setReplicas(Utils.getInteger(data, KEY_REPLICAS, DEFAULT_REPLICAS));
-        kafkaConnect.setImage(Utils.getNonemptyString(data, KEY_IMAGE, DEFAULT_IMAGE));
+        kafkaConnect.setImage(Utils.getNonEmptyString(data, KEY_IMAGE, DEFAULT_IMAGE));
         kafkaConnect.setResources(Resources.fromJson(data.get(KEY_RESOURCES)));
         kafkaConnect.setJvmOptions(JvmOptions.fromJson(data.get(KEY_JVM_OPTIONS)));
         kafkaConnect.setHealthCheckInitialDelay(Utils.getInteger(data, KEY_HEALTHCHECK_DELAY, DEFAULT_HEALTHCHECK_DELAY));
         kafkaConnect.setHealthCheckTimeout(Utils.getInteger(data, KEY_HEALTHCHECK_TIMEOUT, DEFAULT_HEALTHCHECK_TIMEOUT));
 
-        kafkaConnect.setConfiguration(Utils.getConfig(data, KEY_CONNECT_CONFIG));
+        kafkaConnect.setConfiguration(Utils.getKafkaConnectConfiguration(data, KEY_CONNECT_CONFIG));
         kafkaConnect.setInsecureSourceRepository(Utils.getBoolean(data, KEY_INSECURE_SOURCE_REPO, false));
 
         return kafkaConnect;

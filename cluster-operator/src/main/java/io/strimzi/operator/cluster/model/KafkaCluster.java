@@ -119,7 +119,7 @@ public class KafkaCluster extends AbstractModel {
 
         Map<String, String> data = kafkaClusterCm.getData();
         kafka.setReplicas(Utils.getInteger(data, KEY_REPLICAS, DEFAULT_REPLICAS));
-        kafka.setImage(Utils.getNonemptyString(data, KEY_IMAGE, DEFAULT_IMAGE));
+        kafka.setImage(Utils.getNonEmptyString(data, KEY_IMAGE, DEFAULT_IMAGE));
         kafka.setHealthCheckInitialDelay(Utils.getInteger(data, KEY_HEALTHCHECK_DELAY, DEFAULT_HEALTHCHECK_DELAY));
         kafka.setHealthCheckTimeout(Utils.getInteger(data, KEY_HEALTHCHECK_TIMEOUT, DEFAULT_HEALTHCHECK_TIMEOUT));
 
@@ -133,7 +133,7 @@ public class KafkaCluster extends AbstractModel {
 
         kafka.setStorage(Utils.getStorage(data, KEY_STORAGE));
 
-        kafka.setConfiguration(Utils.getConfig(data, KEY_KAFKA_CONFIG));
+        kafka.setConfiguration(Utils.getKafkaConfiguration(data, KEY_KAFKA_CONFIG));
 
         kafka.setResources(Resources.fromJson(data.get(KEY_RESOURCES)));
         kafka.setJvmOptions(JvmOptions.fromJson(data.get(KEY_JVM_OPTIONS)));

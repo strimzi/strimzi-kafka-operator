@@ -120,7 +120,7 @@ public class ZookeeperCluster extends AbstractModel {
 
         Map<String, String> data = kafkaClusterCm.getData();
         zk.setReplicas(Utils.getInteger(data, KEY_REPLICAS, DEFAULT_REPLICAS));
-        zk.setImage(Utils.getNonemptyString(data, KEY_IMAGE, DEFAULT_IMAGE));
+        zk.setImage(Utils.getNonEmptyString(data, KEY_IMAGE, DEFAULT_IMAGE));
         zk.setHealthCheckInitialDelay(Utils.getInteger(data, KEY_HEALTHCHECK_DELAY, DEFAULT_HEALTHCHECK_DELAY));
         zk.setHealthCheckTimeout(Utils.getInteger(data, KEY_HEALTHCHECK_TIMEOUT, DEFAULT_HEALTHCHECK_TIMEOUT));
 
@@ -132,7 +132,7 @@ public class ZookeeperCluster extends AbstractModel {
 
         zk.setStorage(Utils.getStorage(data, KEY_STORAGE));
 
-        zk.setConfiguration(Utils.getConfig(data, KEY_ZOOKEEPER_CONFIG));
+        zk.setConfiguration(Utils.getZookeeperConfiguration(data, KEY_ZOOKEEPER_CONFIG));
 
         zk.setResources(Resources.fromJson(data.get(KEY_RESOURCES)));
         zk.setJvmOptions(JvmOptions.fromJson(data.get(KEY_JVM_OPTIONS)));

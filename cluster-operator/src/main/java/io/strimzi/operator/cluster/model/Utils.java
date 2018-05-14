@@ -10,10 +10,6 @@ import io.vertx.core.json.JsonObject;
 
 import java.util.Map;
 
-import static io.strimzi.operator.cluster.model.KafkaCluster.KEY_KAFKA_CONFIG;
-import static io.strimzi.operator.cluster.model.KafkaConnectCluster.KEY_CONNECT_CONFIG;
-import static io.strimzi.operator.cluster.model.ZookeeperCluster.KEY_ZOOKEEPER_CONFIG;
-
 public class Utils {
     public static int getInteger(Map<String, String> data, String key, int defaultValue) {
         try {
@@ -54,7 +50,7 @@ public class Utils {
         }
     }
 
-    public static String getNonemptyString(Map<String, String> data, String key, String defaultValue) {
+    public static String getNonEmptyString(Map<String, String> data, String key, String defaultValue) {
         if (data.get(key) == null) { // value is not set in config map -> will be used default value
             return defaultValue;
         }
@@ -90,16 +86,19 @@ public class Utils {
         return blame;
     }
 
-    public static <T extends AbstractConfiguration> T getConfig(Map<String, String> data, String key) {
+    public static KafkaConnectConfiguration getKafkaConnectConfiguration(Map<String, String> data, String key) {
         JsonObject jo = getJson(data, key);
-        if (key.equals(KEY_CONNECT_CONFIG)) {
-            return jo == null ? (T) new KafkaConnectConfiguration(new JsonObject()) : (T) new KafkaConnectConfiguration(jo);
-        } else if (key.equals(KEY_ZOOKEEPER_CONFIG)) {
-            return jo == null ? (T) new ZookeeperConfiguration(new JsonObject()) : (T) new ZookeeperConfiguration(jo);
-        } else if (key.equals(KEY_KAFKA_CONFIG)) {
-            return jo == null ?  (T) new KafkaConfiguration(new JsonObject()) : (T) new KafkaConfiguration(jo);
-        }
-        return null;
+        return jo == null ? new KafkaConnectConfiguration(new JsonObject()) : new KafkaConnectConfiguration(jo);
+    }
+
+    public static ZookeeperConfiguration getZookeeperConfiguration(Map<String, String> data, String key) {
+        JsonObject jo = getJson(data, key);
+        return jo == null ? new ZookeeperConfiguration(new JsonObject()) : new ZookeeperConfiguration(jo);
+    }
+
+    public static KafkaConfiguration getKafkaConfiguration(Map<String, String> data, String key) {
+        JsonObject jo = getJson(data, key);
+        return jo == null ? new KafkaConfiguration(new JsonObject()) : new KafkaConfiguration(jo);
     }
 
     public static JsonObject getJson(Map<String, String> data, String key) {
@@ -110,7 +109,7 @@ public class Utils {
         try {
             new JsonObject(config);
         } catch (DecodeException de) {
-            throw new InvalidConfigMapException(getJsonCorruptionBlame(de, config), " corruptes JSON");
+            throw new InvalidConfigMapException(getJsonCorruptionBlame(de, config), " corrupts JSON");
         }
         return new JsonObject(config);
     }
