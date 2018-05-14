@@ -401,7 +401,7 @@ For more information about using the metrics with Prometheus and Grafana, see <<
 
 It is possible to configure {ProductPlatformName} resource limits and requests on several containers using a JSON object.
 The object may have a `requests` and a `limits` property, each having the same schema, consisting of `cpu` and `memory` properties.
-The same syntax as {ProductPlatformName} is used for the values of `cpu` and `memory`.
+The {ProductPlatformName} syntax is used for the values of `cpu` and `memory`.
 
 .Example Resource limits and requests JSON configuration
 [source,json]
@@ -418,24 +418,25 @@ The same syntax as {ProductPlatformName} is used for the values of `cpu` and `me
 }
 ----
 
+:k8s-docs-version: v1-7
+:k8s-resource-request-limit-docs-link: https://{k8s-docs-version}.docs.kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
+
 `requests/memory`::
-the memory request for the container, corresponding directly to Kubernetes' {resources-link}[`spec.containers[\].resources.requests.memory`] setting.
+the memory request for the container, corresponding directly to {k8s-resource-request-limit-docs-link}[`spec.containers[\].resources.requests.memory`] setting.
 {ProductPlatformName} will ensure the containers have at least this much memory by running the pod on a node with at
 least as much free memory as all the containers require. Optional with no default.
 `requests/cpu`::
-the cpu request for the container, corresponding directly to Kubernetes' {resources-link}[`spec.containers[\].resources.requests.cpu`] setting.
+the cpu request for the container, corresponding directly to {k8s-resource-request-limit-docs-link}[`spec.containers[\].resources.requests.cpu`] setting.
 {ProductPlatformName} will ensure the containers have at least this much CPU by running the pod on a node with at least
 as much uncommitted CPU as all the containers require. Optional with no default.
 `limits/memory`::
-the memory limit for the container, corresponding directly to Kubernetes' {resources-link}[`spec.containers[\].resources.limits.memory`] setting.
+the memory limit for the container, corresponding directly to {k8s-resource-request-limit-docs-link}[`spec.containers[\].resources.limits.memory`] setting.
 {ProductPlatformName} will limit the containers to this much memory, potentially terminating their pod if they use more.
 Optional with no default.
 `limits/cpu`::
-the cpu limit for the container, corresponding directly to Kubernetes' {resources-link}[`spec.containers[\].resources.limits.cpu`] setting.
+the cpu limit for the container, corresponding directly to {k8s-resource-request-limit-docs-link}[`spec.containers[\].resources.limits.cpu`] setting.
 {ProductPlatformName} will cap the containers CPU usage to this limit. Optional with no default.
 
-:k8s-docs-version: v1-7
-:k8s-resource-request-limit-docs-link: https://{k8s-docs-version}.docs.kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
 More details about resource limits and requests can be found on {k8s-resource-request-limit-docs-link}[{KubernetesName} website].
 
 ====== Minimum Resource Requirements
@@ -494,11 +495,11 @@ Setting `-Xmx` explicitly is requires some care:
 
 * The JVM's overall memory usage will be approximately 4 × the maximum heap, as configured by `-Xmx`.
 
-* If `-Xmx` is set without also setting an appropriate Kubernetes
-memory limit, it is possible that the container will be killed should the Kubernetes node
+* If `-Xmx` is set without also setting an appropriate {ProductPlatformName}
+memory limit, it is possible that the container will be killed should the {ProductPlatformName} node
 experience memory pressure (from other Pods running on it).
 
-* If `-Xmx` is set without also setting an appropriate Kubernetes
+* If `-Xmx` is set without also setting an appropriate {ProductPlatformName}
 memory request, it is possible that the container will scheduled to a node with insufficient memory.
 In this case the container will start but crash (immediately if `-Xms` is set to `-Xmx`, or some later time if not).
 
@@ -672,7 +673,6 @@ INFO:: The Cluster Operator doesn't validate the provided configuration. When in
 Kafka Connect cluster might not start or might become unstable. In such cases, the configuration in the `connect-config` field
 should be fixed and the Cluster Operator will roll out the new configuration to all Kafka Connect instances.
 
-
 === Provisioning Role-Based Access Control (RBAC) for the operator
 
 For the operator to function it needs permission within the {ProductPlatformName} cluster to interact with
@@ -711,7 +711,6 @@ The operator needs to operate using a Role that gives it access to the necessary
 include::examples/install/cluster-operator/02-role.yaml[]
 ----
 
-
 ==== Defining a RoleBinding
 
 Finally, the operator needs a RoleBinding which associates its Role with its ServiceAccount
@@ -726,7 +725,8 @@ include::examples/install/cluster-operator/03-role-binding.yaml[]
 
 The operator itself can be configured through the following environment variables.
 
-[[STRIMZI_NAMESPACE]] `STRIMZI_NAMESPACE`:: Required. A comma-separated list of namespaces that the operator should operate in. The Cluster Operator deployment might use the https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#the-downward-api[Kubernetes Downward API]
+[[STRIMZI_NAMESPACE]] `STRIMZI_NAMESPACE`:: Required. A comma-separated list of namespaces that the operator should
+operate in. The Cluster Operator deployment might use the https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#the-downward-api[{KubernetesName} Downward API]
 to set this automatically to the namespace the Cluster Operator is deployed in. See the example below:
 +
 [source,yaml,options="nowrap"]
@@ -742,7 +742,7 @@ env:
 
 
 [[STRIMZI_OPERATION_TIMEOUT_MS]] `STRIMZI_OPERATION_TIMEOUT_MS`:: Optional, default: 60000 ms. The timeout for internal operations, in milliseconds. This value should be
-increased when using Strimzi on clusters where regular {ProductPlatformName} operations take longer than usual (because of slow downloading of Docker images, for example).
+increased when using {ProductName} on clusters where regular {ProductPlatformName} operations take longer than usual (because of slow downloading of Docker images, for example).
 
 [[STRIMZI_DEFAULT_KAFKA_IMAGE]] `STRIMZI_DEFAULT_KAFKA_IMAGE`:: Optional, default `strimzi/kafka:latest`.
 The image name to use as a default when deploying Kafka, if

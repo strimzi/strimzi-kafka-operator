@@ -72,10 +72,10 @@ than it would even if it was stateless.
     * Remember that the name cannot be easily changed later.
     * Choose a name for the ConfigMap that reflects the name of the topic it describes.
     * Ideally the ConfigMap's `metadata.name` should be the same as its `data.name`.
-      To do this, the topic name will have to be a https://github.com/kubernetes/community/blob/master/contributors/design-proposals/architecture/identifiers.md[valid Kubernetes resource name].
+      To do this, the topic name will have to be a https://github.com/kubernetes/community/blob/master/contributors/design-proposals/architecture/identifiers.md[valid {KubernetesName} resource name].
 . When creating a topic:
     * Remember that the name cannot be easily changed later.
-    * It's best to use a name that is a https://github.com/kubernetes/community/blob/master/contributors/design-proposals/architecture/identifiers.md[valid Kubernetes resource name],
+    * It's best to use a name that is a https://github.com/kubernetes/community/blob/master/contributors/design-proposals/architecture/identifiers.md[valid {KubernetesName} resource name],
       otherwise the operator will have to sanitize the name when creating
       the corresponding ConfigMap.
 

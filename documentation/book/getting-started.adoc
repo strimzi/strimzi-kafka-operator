@@ -190,7 +190,7 @@ USER {DockerImageUser}
 3. Use the new Docker image in the Kafka Connect deployment:
   - On {OpenShiftName}, the template parameters `IMAGE_REPO_NAME`, `IMAGE_NAME` and `IMAGE_TAG` can be changed to point to the
   new image when the Kafka Connect cluster is being deployed
-ifdef::Kubernetes[  - On Kubernetes, the Kafka Connect ConfigMap has to be modified to use the new image]
+ifdef::Kubernetes[  - On {KubernetesName}, the Kafka Connect ConfigMap has to be modified to use the new image]
 
 ===== Using {OpenShiftName} Build and S2I image
 

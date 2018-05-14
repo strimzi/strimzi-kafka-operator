@@ -13,7 +13,7 @@ In order to interact with a {KubernetesName} cluster the https://kubernetes.io/d
 utility needs to be installed.
 
 The easiest way to get a running {KubernetesName} cluster is using `Minikube`. `Minikube` can be downloaded and installed
-from the https://kubernetes.io/docs/getting-started-guides/minikube/[Kubernetes website]. Depending on the number of brokers
+from the https://kubernetes.io/docs/getting-started-guides/minikube/[{KubernetesName} website]. Depending on the number of brokers
 you want to deploy inside the cluster and if you need Kafka Connect running as well, it could be worth running `Minikube`
 at least with 4 GB of RAM instead of the default 2 GB.
 Once installed, it can be started using:
