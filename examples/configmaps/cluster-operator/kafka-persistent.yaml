@@ -15,8 +15,6 @@ data:
       "transaction.state.log.replication.factor": 3,
       "transaction.state.log.min.isr": 2
     }
-  kafka-healthcheck-delay: "15"
-  kafka-healthcheck-timeout: "5"
   kafka-storage: |-
     { "type": "persistent-claim", "size": "1Gi", "delete-claim": false }
   kafka-metrics-config: |-
