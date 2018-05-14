@@ -35,7 +35,7 @@ data:
           }
       ]
     }
-  zookeeper-nodes: "1"
+  zookeeper-nodes: "3"
   zookeeper-healthcheck-delay: "15"
   zookeeper-healthcheck-timeout: "5"
   zookeeper-storage: |-

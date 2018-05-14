@@ -24,7 +24,7 @@ parameters:
   displayName: Number of Zookeeper cluster nodes (odd number of nodes is recomended)
   name: ZOOKEEPER_NODE_COUNT
   required: true
-  value: "1"
+  value: "3"
 - description: Number of Kafka cluster nodes which will be deployed
   displayName: Number of Kafka cluster nodes
   name: KAFKA_NODE_COUNT
