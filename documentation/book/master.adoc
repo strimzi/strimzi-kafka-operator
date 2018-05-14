@@ -13,14 +13,14 @@ Apache Kafka on {ProductPlatformName}.
 
 {ProductName} consists of two main components:
 
-Cluster Controller:: Responsible for deploying and managing Apache Kafka clusters within {ProductPlatformName} cluster.
-Topic Controller:: Responsible for managing Kafka topics within a Kafka cluster running within {ProductPlatformName} cluster.
+Cluster Operator:: Responsible for deploying and managing Apache Kafka clusters within {ProductPlatformName} cluster.
+Topic Operator:: Responsible for managing Kafka topics within a Kafka cluster running within {ProductPlatformName} cluster.
 
 include::getting-started.adoc[]
 
-include::cluster-controller.adoc[]
+include::cluster-operator.adoc[]
 
-include::topic-controller.adoc[]
+include::topic-operator.adoc[]
 
 include::faq.adoc[]
 
