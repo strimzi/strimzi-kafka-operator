@@ -14,7 +14,7 @@ endif::InstallationAppendix[]
 The Prometheus server configuration uses a service discovery feature in order to discover the pods in the cluster from which it gets metrics.
 In order to have this feature working, it's necessary for the service account used for running the Prometheus service pod to have access to the API server to get the pod list. By default the service account `prometheus-server` is used.
 
-[source]
+[source,shell]
 export NAMESPACE=[namespace]
 oc login -u system:admin
 oc create sa prometheus-server
@@ -25,7 +25,7 @@ where `[namespace]` is the namespace/project where the Apache Kafka cluster was 
 
 Finally, create the Prometheus service by running
 
-[source]
+[source,shell]
 oc create -f https://raw.githubusercontent.com/strimzi/strimzi/master/metrics/examples/prometheus/kubernetes.yaml
 
 ==== Grafana
@@ -34,7 +34,7 @@ A Grafana server is necessary only to get a visualisation of the Prometheus metr
 
 To deploy Grafana on {OpenShiftName}, the following commands should be executed:
 
-[source]
+[source,shell]
 oc create -f https://raw.githubusercontent.com/strimzi/strimzi/master/metrics/examples/grafana/kubernetes.yaml
 
 ifdef::Kubernetes[]
@@ -45,7 +45,7 @@ ifdef::Kubernetes[]
 The Prometheus server configuration uses a service discovery feature in order to discover the pods in the cluster from which it gets metrics.
 If the RBAC is enabled in your {KubernetesName} deployment then in order to have this feature working, it's necessary for the service account used for running the Prometheus service pod to have access to the API server to get the pod list. By default the service account `prometheus-server` is used.
 
-[source]
+[source,shell]
 export NAMESPACE=[namespace]
 kubectl create sa prometheus-server
 kubectl create -f https://raw.githubusercontent.com/strimzi/strimzi/master/metrics/examples/prometheus/cluster-reader.yaml
@@ -55,7 +55,7 @@ where `[namespace]` is the namespace/project where the Apache Kafka cluster was 
 
 Finally, create the Prometheus service by running
 
-[source]
+[source,shell]
 kubectl apply -f https://raw.githubusercontent.com/strimzi/strimzi/master/metrics/examples/prometheus/kubernetes.yaml
 
 ==== Grafana
@@ -64,7 +64,7 @@ A Grafana server is necessary only to get a visualisation of Prometheus metrics.
 
 To deploy Grafana on {KubernetesName}, the following commands should be executed:
 
-[source]
+[source,shell]
 kubectl apply -f https://raw.githubusercontent.com/strimzi/strimzi/master/metrics/examples/grafana/kubernetes.yaml
 
 === Grafana dashboard

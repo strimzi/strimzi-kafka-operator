@@ -122,7 +122,7 @@ Kafka broker default.
 
 2. The ConfigMap should be created in {KubernetesName}:
 +
-[source]
+[source,shell]
 ----
 kubectl create -f orders-topic.yaml
 ----
@@ -178,7 +178,7 @@ Kafka broker default.
 
 2. The ConfigMap should be created in {OpenShiftName}:
 +
-[source]
+[source,shell]
 ----
 oc create -f orders-topic.yaml
 ----

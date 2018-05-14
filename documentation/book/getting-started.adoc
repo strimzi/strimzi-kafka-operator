@@ -39,13 +39,13 @@ ifdef::Kubernetes[]
 
 To deploy the Cluster Operator on {KubernetesName}, the following command should be executed:
 
-[source]
+[source,shell]
 kubectl create -f examples/install/cluster-operator
 
 To verify whether the Cluster Operator has been deployed successfully, the {KubernetesName} Dashboard or the following
 command can be used:
 
-[source]
+[source,shell]
 kubectl describe all
 endif::Kubernetes[]
 
@@ -53,14 +53,14 @@ endif::Kubernetes[]
 
 To deploy the Cluster Operator on {OpenShiftName}, the following commands should be executed:
 
-[source]
+[source,shell]
 oc create -f examples/install/cluster-operator
 oc create -f examples/templates/cluster-operator
 
 To verify whether the Cluster Operator has been deployed successfully, the {OpenShiftName} console or the following command
 can be used:
 
-[source]
+[source,shell]
 oc describe all
 
 === Kafka broker
@@ -106,12 +106,12 @@ ifdef::Kubernetes[]
 To deploy a Kafka broker on {KubernetesName}, the corresponding ConfigMap has to be created. To create the ephemeral
 cluster using the provided example ConfigMap, the following command should be executed:
 
-[source]
+[source,shell]
 kubectl apply -f examples/configmaps/cluster-operator/kafka-ephemeral.yaml
 
 Another example ConfigMap is provided for persistent Kafka cluster. To deploy it, the following command should be run:
 
-[source]
+[source,shell]
 kubectl apply -f examples/configmaps/cluster-operator/kafka-persistent.yaml
 endif::Kubernetes[]
 
@@ -121,12 +121,12 @@ For {OpenShiftName}, the Kafka broker is provided in the form of a template. The
 using the command line or using the {OpenShiftName} console. To create the ephemeral cluster, the following command should be
 executed:
 
-[source]
+[source,shell]
 oc new-app strimzi-ephemeral
 
 Similarly, to deploy a persistent Kafka cluster the following command should be run:
 
-[source]
+[source,shell]
 oc new-app strimzi-persistent
 
 === Kafka Connect
@@ -146,7 +146,7 @@ ifdef::Kubernetes[]
 To deploy Kafka Connect on {KubernetesName}, the corresponding ConfigMap has to be created. An example ConfigMap can be
 created using the following command:
 
-[source]
+[source,shell]
 kubectl apply -f examples/configmaps/cluster-operator/kafka-connect.yaml
 endif::Kubernetes[]
 
@@ -156,7 +156,7 @@ On {OpenShiftName}, Kafka Connect is provided in the form of a template. It can 
 using the command line or using the {OpenShiftName} console. To create a Kafka Connect cluster from the command line, the following
 command should be run:
 
-[source]
+[source,shell]
 oc new-app strimzi-connect
 
 ==== Using Kafka Connect with additional plugins
@@ -207,7 +207,7 @@ The S2I deployment is again provided as an {OpenShiftName} template. It can be d
 line or using the {OpenShiftName} console. To create Kafka Connect S2I cluster from the command line, the following command should
 be run:
 
-[source]
+[source,shell]
 oc new-app strimzi-connect-s2i
 
 Once the cluster is deployed, a new Build can be triggered from the command line:
@@ -254,7 +254,7 @@ $ tree ./my-plugins/
 
 2. To start a new image build using the prepared directory, the following command has to be run:
 +
-[source]
+[source,shell]
 oc start-build my-connect-cluster-connect --from-dir ./my-plugins/
 +
 _The name of the build should be changed according to the cluster name of the deployed Kafka Connect cluster._
@@ -292,13 +292,13 @@ ifdef::Kubernetes[]
 
 To deploy the Topic Operator on {KubernetesName} (not through the Cluster Operator), the following command should be executed:
 
-[source]
+[source,shell]
 kubectl create -f examples/install/topic-operator.yaml
 
 To verify whether the Topic Operator has been deployed successfully, the {KubernetesName} Dashboard or the following
 command can be used:
 
-[source]
+[source,shell]
 kubectl describe all
 endif::Kubernetes[]
 
@@ -306,13 +306,13 @@ endif::Kubernetes[]
 
 To deploy the Topic Operator on {OpenShiftName} (not through the Cluster Operator), the following command should be executed:
 
-[source]
+[source,shell]
 oc create -f examples/install/topic-operator
 
 To verify whether the Topic Operator has been deployed successfully, the {OpenShiftName} console or the following command
 can be used:
 
-[source]
+[source,shell]
 oc describe all
 
 ==== Topic ConfigMap

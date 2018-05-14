@@ -14,10 +14,10 @@ INFO:: Examples of cluster operations are _cluster creation_, _rolling update_, 
 If the wait for the lock takes too long, the operation times out and the following warning message will be printed to
 the log:
 
-[source]
----
+[source,shell]
+----
 2018-03-04 17:09:24 WARNING AbstractClusterOperations:290 - Failed to acquire lock for kafka cluster lock::kafka::myproject::my-cluster
----
+----
 
 Depending on the exact configuration of `STRIMZI_FULL_RECONCILIATION_INTERVAL_MS` and `STRIMZI_OPERATION_TIMEOUT_MS`, this
 warning message may appear regularly without indicating any problems. The operations which time out will be picked up by
