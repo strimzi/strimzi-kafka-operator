@@ -12,18 +12,10 @@
 :linkattrs:
 :toclevels: 4
 
-//:revnumber: {ProductVersion}
-//:sectnums:
-//:toc: preamble
-//:toclevels: 3
-//:toc-title: Content
-//:imagesdir: ./images
-//:xrefstyle: full
-
 // Name placeholders
 :ProductLongName: Strimzi
 :ProductName: Strimzi
-:ProductVersion: 0.3.0
+:ProductVersion: master
 :OpenShiftName: OpenShift
 :OpenShiftLongName: OpenShift
 :KubernetesName: Kubernetes
@@ -39,12 +31,6 @@
 :DockerKafkaConnectS2I: strimzi/kafka-connect-s2i:{ProductVersion}
 :DockerTopicController: strimzi/topic-controller:{ProductVersion}
 :DockerImageUser: kafka:kafka
-//:dockerZookeeper: jboss-amqstreams-1/amqstreams10-zookeeper-openshift:1.0
-//:dockerKafka: jboss-amqstreams-1/amqstreams10-kafka-openshift:1.0
-//:dockerKafkaConnect: jboss-amqstreams-1/amqstreams10-kafkaconnect-openshift:1.0
-//:dockerKafkaConnectS2I: jboss-amqstreams-1/amqstreams10-kafkaconnects2i-openshift:1.0
-//:dockerTopicController: jboss-amqstreams-1/amqstreams10-topiccontroller-openshift:1.0
-//:DockerImageUser: jboss:root
 
 // Section enablers
 :Kubernetes:
