@@ -337,7 +337,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
         assertExpectedJavaOpts("jvm-resource-cluster-zookeeper-0",
                 "-Xmx600m", "-Xms300m");
 
-        String podName = client.pods().list().getItems().stream().filter(p -> p.getMetadata().getName().startsWith("jvm-resource-cluster-topic-operator-")).findFirst().get().getMetadata().getName();
+        String podName = client.pods().inNamespace(NAMESPACE).list().getItems().stream().filter(p -> p.getMetadata().getName().startsWith("jvm-resource-cluster-topic-operator-")).findFirst().get().getMetadata().getName();
 
         assertResources(NAMESPACE, podName,
                 "500M", "300m", "500M", "300m");
