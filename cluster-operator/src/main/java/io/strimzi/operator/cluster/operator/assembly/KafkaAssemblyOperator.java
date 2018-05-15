@@ -28,8 +28,9 @@ import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,7 +46,7 @@ import static io.strimzi.operator.cluster.model.TopicOperator.topicOperatorName;
  * </ul>
  */
 public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
-    private static final Logger log = LoggerFactory.getLogger(KafkaAssemblyOperator.class.getName());
+    private static final Logger log = LogManager.getLogger(KafkaAssemblyOperator.class.getName());
 
     private final long operationTimeoutMs;
 

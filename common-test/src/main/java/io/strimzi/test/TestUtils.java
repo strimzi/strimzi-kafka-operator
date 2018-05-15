@@ -4,8 +4,8 @@
  */
 package io.strimzi.test;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -13,7 +13,7 @@ import java.util.function.BooleanSupplier;
 
 public final class TestUtils {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(TestUtils.class);
+    private static final Logger LOGGER = LogManager.getLogger(TestUtils.class);
 
     private TestUtils() {
         // All static methods

@@ -11,14 +11,14 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.List;
 
 public class K8sImpl implements K8s {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(TopicOperator.class);
+    private final static Logger LOGGER = LogManager.getLogger(TopicOperator.class);
 
     private final LabelPredicate cmPredicate;
     private final String namespace;

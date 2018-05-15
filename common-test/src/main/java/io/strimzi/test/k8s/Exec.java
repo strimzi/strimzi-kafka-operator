@@ -4,8 +4,8 @@
  */
 package io.strimzi.test.k8s;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
@@ -22,7 +22,7 @@ import static java.lang.String.join;
 import static java.util.Arrays.asList;
 
 class Exec {
-    private static final Logger LOGGER = LoggerFactory.getLogger(Exec.class);
+    private static final Logger LOGGER = LogManager.getLogger(Exec.class);
 
     /**
      * Executes the given command in a subprocess.

@@ -16,8 +16,9 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.shareddata.Lock;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 
 import java.util.List;
 import java.util.Set;
@@ -35,7 +36,7 @@ import java.util.stream.Collectors;
  */
 public abstract class AbstractAssemblyOperator {
 
-    private static final Logger log = LoggerFactory.getLogger(AbstractAssemblyOperator.class.getName());
+    private static final Logger log = LogManager.getLogger(AbstractAssemblyOperator.class.getName());
 
     protected static final int LOCK_TIMEOUT = 60000;
 

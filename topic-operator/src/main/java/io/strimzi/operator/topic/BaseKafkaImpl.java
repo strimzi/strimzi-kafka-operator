@@ -15,8 +15,8 @@ import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.Collections;
 import java.util.Map;
@@ -31,7 +31,7 @@ import java.util.concurrent.ExecutionException;
  */
 public abstract class BaseKafkaImpl implements Kafka {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(BaseKafkaImpl.class);
+    private final static Logger LOGGER = LogManager.getLogger(BaseKafkaImpl.class);
 
     protected final AdminClient adminClient;
 

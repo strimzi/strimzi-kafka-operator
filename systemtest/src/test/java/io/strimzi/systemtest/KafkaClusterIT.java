@@ -17,11 +17,13 @@ import io.strimzi.test.Resources;
 import io.strimzi.test.StrimziRunner;
 import io.strimzi.test.Topic;
 import io.strimzi.test.k8s.Oc;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -58,7 +60,7 @@ import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 @ClusterOperator
 public class KafkaClusterIT extends AbstractClusterIT {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaClusterIT.class);
+    private static final Logger LOGGER = LogManager.getLogger(KafkaClusterIT.class);
 
     public static final String NAMESPACE = "kafka-cluster-test";
     private static final String CLUSTER_NAME = "my-cluster";

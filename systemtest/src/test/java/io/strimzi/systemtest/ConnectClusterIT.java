@@ -15,10 +15,12 @@ import io.strimzi.test.OpenShiftOnly;
 import io.strimzi.test.Resources;
 import io.strimzi.test.StrimziRunner;
 import io.strimzi.test.k8s.Oc;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.List;
@@ -48,7 +50,7 @@ import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 @KafkaCluster(name = ConnectClusterIT.KAFKA_CLUSTER_NAME)
 public class ConnectClusterIT extends AbstractClusterIT {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConnectClusterIT.class);
+    private static final Logger LOGGER = LogManager.getLogger(ConnectClusterIT.class);
 
     public static final String NAMESPACE = "connect-cluster-test";
     public static final String KAFKA_CLUSTER_NAME = "connect-tests";

@@ -4,8 +4,8 @@
  */
 package io.strimzi.test.k8s;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.Arrays;
 import java.util.Locale;
@@ -39,7 +39,7 @@ public interface KubeCluster {
      * @throws RuntimeException If no running cluster was found.
      */
     static KubeCluster bootstrap() {
-        Logger logger = LoggerFactory.getLogger(KubeCluster.class);
+        Logger logger = LogManager.getLogger(KubeCluster.class);
 
         KubeCluster[] clusters = null;
         String clusterName = System.getenv(ENV_VAR_TEST_CLUSTER);

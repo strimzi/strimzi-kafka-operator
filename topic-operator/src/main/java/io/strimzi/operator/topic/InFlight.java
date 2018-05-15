@@ -8,8 +8,8 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -38,7 +38,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 class InFlight<T> {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(InFlight.class);
+    private final static Logger LOGGER = LogManager.getLogger(InFlight.class);
 
     private final Vertx vertx;
 

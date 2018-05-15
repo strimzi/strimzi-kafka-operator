@@ -7,8 +7,9 @@ package io.strimzi.operator.cluster.operator.resource;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.zjsonpatch.JsonDiff;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 
 import java.util.HashSet;
 import java.util.List;
@@ -21,7 +22,7 @@ import static java.util.Arrays.asList;
 
 public class StatefulSetDiff {
 
-    private static final Logger log = LoggerFactory.getLogger(StatefulSetDiff.class.getName());
+    private static final Logger log = LogManager.getLogger(StatefulSetDiff.class.getName());
 
     private static final List<Pattern> IGNORABLE_PATHS;
     static {

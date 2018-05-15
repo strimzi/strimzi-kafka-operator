@@ -6,8 +6,8 @@ package io.strimzi.init.kafka;
 
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -15,7 +15,7 @@ import java.util.Map;
 
 public class Main {
 
-    private static final Logger log = LoggerFactory.getLogger(Main.class);
+    private static final Logger log = LogManager.getLogger(Main.class);
 
     private static final String RACK_FILE_PATH = "./rack/rack.id";
 

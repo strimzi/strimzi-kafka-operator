@@ -43,8 +43,9 @@ import io.fabric8.kubernetes.api.model.extensions.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSetUpdateStrategyBuilder;
 import io.strimzi.operator.cluster.ClusterOperator;
 import io.vertx.core.json.JsonObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -55,7 +56,7 @@ import java.util.stream.Collectors;
 
 public abstract class AbstractModel {
 
-    protected static final Logger log = LoggerFactory.getLogger(AbstractModel.class.getName());
+    protected static final Logger log = LogManager.getLogger(AbstractModel.class.getName());
 
     private static final String VOLUME_MOUNT_HACK_IMAGE = "busybox";
     private static final String VOLUME_MOUNT_HACK_NAME = "volume-mount-hack";

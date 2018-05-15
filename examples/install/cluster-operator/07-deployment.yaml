@@ -34,6 +34,8 @@ spec:
               value: strimzi/kafka-connect-s2i:latest
             - name: STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE
               value: strimzi/topic-operator:latest
+            - name: STRIMZI_LOG_LEVEL
+              value: INFO
           livenessProbe:
             httpGet:
               path: /healthy

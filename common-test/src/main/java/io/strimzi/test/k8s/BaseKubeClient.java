@@ -8,8 +8,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
 import io.strimzi.test.TestUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,7 +29,7 @@ import static java.util.Arrays.asList;
 
 public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements KubeClient<K> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(BaseKubeClient.class);
+    private static final Logger LOGGER = LogManager.getLogger(BaseKubeClient.class);
 
     public static final String CREATE = "create";
     public static final String DELETE = "delete";

@@ -42,9 +42,11 @@ import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.dsl.ScalableResource;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.mockito.stubbing.OngoingStubbing;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -65,7 +67,7 @@ import static org.mockito.Mockito.when;
 
 public class MockKube {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(MockKube.class);
+    private static final Logger LOGGER = LogManager.getLogger(MockKube.class);
 
     private final Map<String, ConfigMap> cmDb = db(emptySet(), ConfigMap.class, DoneableConfigMap.class);
     private final Collection<Watcher<ConfigMap>> cmWatchers = new ArrayList();

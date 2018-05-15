@@ -27,6 +27,8 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.ClassRule;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.BlockJUnit4ClassRunner;
@@ -36,8 +38,6 @@ import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.Statement;
 import org.junit.runners.model.TestClass;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.k8s.BaseKubeClient.CM;
@@ -53,7 +53,7 @@ import static java.util.Collections.singletonList;
  */
 public class StrimziRunner extends BlockJUnit4ClassRunner {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(StrimziRunner.class);
+    private static final Logger LOGGER = LogManager.getLogger(StrimziRunner.class);
 
     /**
      * If env var NOTEARDOWN is set to any value then teardown for resources supported by annotations

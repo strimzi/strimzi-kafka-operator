@@ -21,8 +21,8 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.concurrent.TimeUnit;
 
@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class ClusterOperator extends AbstractVerticle {
 
-    private static final Logger log = LoggerFactory.getLogger(ClusterOperator.class.getName());
+    private static final Logger log = LogManager.getLogger(ClusterOperator.class.getName());
 
     public static final String STRIMZI_CLUSTER_OPERATOR_DOMAIN = "cluster.operator.strimzi.io";
     public static final String STRIMZI_CLUSTER_OPERATOR_SERVICE_ACCOUNT = "strimzi-cluster-operator";

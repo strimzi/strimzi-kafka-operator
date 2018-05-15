@@ -29,9 +29,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.ClassRule;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+
 
 import static io.strimzi.test.TestUtils.indent;
 import static java.util.Arrays.asList;
@@ -43,7 +45,7 @@ import static org.junit.Assert.fail;
 
 public class AbstractClusterIT {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractClusterIT.class);
+    private static final Logger LOGGER = LogManager.getLogger(AbstractClusterIT.class);
 
     @ClassRule
     public static KubeClusterResource cluster = new KubeClusterResource();

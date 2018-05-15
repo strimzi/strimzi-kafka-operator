@@ -11,8 +11,8 @@ import io.fabric8.kubernetes.client.internal.readiness.Readiness;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Specializes {@link AbstractResourceOperator} for resources which also have a notion
@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
 public abstract class AbstractReadyResourceOperator<C, T extends HasMetadata, L extends KubernetesResourceList/*<T>*/, D, R extends Resource<T, D>, P>
         extends AbstractResourceOperator<C, T, L, D, R, P> {
 
-    private final Logger log = LoggerFactory.getLogger(getClass());
+    private final Logger log = LogManager.getLogger(getClass());
 
     /**
      * Constructor.

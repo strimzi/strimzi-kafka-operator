@@ -26,6 +26,8 @@ spec:
               value: "900000"
             - name: STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS
               value: "6"
+            - name: STRIMZI_LOG_LEVEL
+              value: INFO
             - name: STRIMZI_NAMESPACE
               valueFrom:
                 fieldRef:
