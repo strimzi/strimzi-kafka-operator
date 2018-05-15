@@ -38,12 +38,13 @@ release_pkg:
 
 docu_html: docu_htmlclean
 	mkdir -p documentation/html
-	asciidoctor -a revnumber=$(RELEASE_VERSION) documentation/adoc/docu.adoc -o documentation/html/master.html
-	cp -vr documentation/adoc/images documentation/html/images
+	asciidoctor -t -dbook -a ProductVersion=$(RELEASE_VERSION) documentation/book/master.adoc -o documentation/html/index.html
+	cp -vrL documentation/book/images documentation/html/images
 
 docu_htmlnoheader: docu_htmlnoheaderclean
 	mkdir -p documentation/htmlnoheader
-	asciidoctor -a revnumber=$(RELEASE_VERSION) -s documentation/adoc/docu.adoc -o documentation/htmlnoheader/master.html
+	asciidoctor -t -dbook -a ProductVersion=$(RELEASE_VERSION) -s documentation/book/master.adoc -o documentation/htmlnoheader/master.html
+	cp -vrL documentation/book/images documentation/htmlnoheader/images
 
 docu_pushtowebsite: docu_htmlnoheader
 	./.travis/docu-push-to-website.sh
@@ -51,7 +52,6 @@ docu_pushtowebsite: docu_htmlnoheader
 release_docu: docu_html
 	mkdir -p strimzi-$(RELEASE_VERSION)/docs
 	cp -rv documentation/html/ strimzi-$(RELEASE_VERSION)/docs/
-	mv strimzi-$(RELEASE_VERSION)/docs/html/master.html strimzi-$(RELEASE_VERSION)/docs/html/index.html
 
 docu_clean: docu_htmlclean docu_htmlnoheaderclean
 
