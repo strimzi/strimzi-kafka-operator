@@ -49,7 +49,7 @@ docu_htmlnoheader: docu_htmlnoheaderclean
 docu_pushtowebsite: docu_htmlnoheader
 	./.travis/docu-push-to-website.sh
 
-release_docu: docu_html
+release_docu: docu_html docu_htmlnoheader
 	mkdir -p strimzi-$(RELEASE_VERSION)/docs
 	cp -rv documentation/html/ strimzi-$(RELEASE_VERSION)/docs/
 
