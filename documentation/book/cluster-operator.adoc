@@ -721,7 +721,7 @@ Finally, the operator needs a RoleBinding which associates its Role with its Ser
 include::examples/install/cluster-operator/03-role-binding.yaml[]
 ----
 
-=== operator configuration
+=== Operator configuration
 
 The operator itself can be configured through the following environment variables.
 
