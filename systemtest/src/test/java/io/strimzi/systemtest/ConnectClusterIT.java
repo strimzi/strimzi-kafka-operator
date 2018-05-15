@@ -21,7 +21,9 @@ import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static io.strimzi.systemtest.k8s.Events.Scheduled;
 import static io.strimzi.systemtest.k8s.Events.Pulled;
@@ -36,6 +38,7 @@ import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.valueOfCmEquals;
 import static io.strimzi.test.TestUtils.map;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
@@ -154,8 +157,18 @@ public class ConnectClusterIT extends AbstractClusterIT {
     @ConnectCluster(name = CONNECT_CLUSTER_NAME, connectConfig = CONNECT_CONFIG)
     public void testForUpdateValuesInConnectCM() {
         List<String> connectPods = kubeClient.listResourcesByLabel("pod", "strimzi.io/type=kafka-connect");
-        replaceCm(CONNECT_CLUSTER_NAME, "healthcheck-delay", "61");
-        replaceCm(CONNECT_CLUSTER_NAME, "healthcheck-timeout", "6");
+
+        String conncectConfig = "{\n" +
+                "      \"bootstrap.servers\": \"" + KAFKA_CONNECT_BOOTSTRAP_SERVERS + "\",\n" +
+                "      \"config.storage.replication.factor\": \"1\",\n" +
+                "      \"offset.storage.replication.factor\": \"1\",\n" +
+                "      \"status.storage.replication.factor\": \"1\"\n" +
+                "    }";
+        Map<String, String> changes = new HashMap<>();
+        changes.put("connect-config", conncectConfig);
+        changes.put("healthcheck-delay", "61");
+        changes.put("healthcheck-timeout", "6");
+        replaceCm(CONNECT_CLUSTER_NAME, changes);
 
         kubeClient.waitForDeployment(kafkaConnectName(CONNECT_CLUSTER_NAME));
         for (int i = 0; i < connectPods.size(); i++) {
@@ -170,6 +183,9 @@ public class ConnectClusterIT extends AbstractClusterIT {
             String connectPodJson = kubeClient.getResourceAsJson("pod", connectPods.get(i));
             assertThat(connectPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(61)));
             assertThat(connectPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.timeoutSeconds", hasItem(6)));
+            assertThat(connectPodJson, containsString("config.storage.replication.factor=1"));
+            assertThat(connectPodJson, containsString("offset.storage.replication.factor=1"));
+            assertThat(connectPodJson, containsString("status.storage.replication.factor=1"));
         }
     }
 }
