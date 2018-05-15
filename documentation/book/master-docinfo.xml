@@ -1,0 +1,14 @@
+<!-- No need to manually update the following attribute for each title change, although it should be technically possible to do so -->
+<!-- As far as I know, the topmost Level 0 title in the `master.adoc` file resolves to this attribute -->
+<title>Using {ProductLongName}</title>
+
+<productname>{ProductLongName}</productname>
+<productnumber>{ProductVersion}</productnumber>
+
+        <!-- The subtitle can be changed manually, as it is only required by CCUTIL and only visible on the portal  -->
+<subtitle>For Use with {ProductName}</subtitle>
+<release>{ProductVersion}</release>
+<abstract>
+<para>This guide provides a getting started experience for {ProductName}.</para>
+</abstract>
+<xi:include href="Common_Content/Legal_Notice.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />

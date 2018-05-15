@@ -1,38 +1,35 @@
-:k8s-docs-version: v1-7
-:resources-link: https://{k8s-docs-version}.docs.kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
-
 == Cluster Operator
 
-The cluster operator is in charge of deploying a Kafka cluster alongside a Zookeeper ensemble. As part of the Kafka cluster,
+The Cluster Operator is in charge of deploying a Kafka cluster alongside a Zookeeper ensemble. As part of the Kafka cluster,
 it can also deploy the topic operator which provides operator-style topic management via ConfigMaps.
-The cluster operator is also able to deploy a Kafka Connect cluster which connects to an existing Kafka cluster.
-On OpenShift such a cluster can be deployed using the Source2Image feature, providing an easy way of including more connectors.
+The Cluster Operator is also able to deploy a Kafka Connect cluster which connects to an existing Kafka cluster.
+On {OpenShiftName} such a cluster can be deployed using the Source2Image feature, providing an easy way of including more connectors.
 
 image::cluster_operator.png[Cluster Operator]
 
-When the cluster operator is up, it starts to "watch" for ConfigMaps containing the Kafka or Kafka Connect
+When the Cluster Operator is up, it starts to "watch" for ConfigMaps containing the Kafka or Kafka Connect
 cluster configuration. Such ConfigMaps need to have a specific label which is, by default, `strimzi.io/kind=cluster`
 (as described <<Format of the cluster ConfigMap,later>>) that can be changed through a corresponding environment variable.
 
-When a new ConfigMap is created in the Kubernetes/OpenShift cluster, the operator gets the cluster configuration from
-its `data` section and starts creating a new Kafka or Kafka Connect cluster by creating the necessary Kubernetes/OpenShift
+When a new ConfigMap is created in {ProductPlatformName} cluster, the operator gets the cluster configuration from
+its `data` section and starts creating a new Kafka or Kafka Connect cluster by creating the necessary {ProductPlatformName}
 resources, such as StatefulSets, ConfigMaps, Services etc.
 
 Every time the ConfigMap is updated by the user with some changes in the `data` section, the operator performs corresponding
-updates on the Kubernetes/OpenShift resources which make up the Kafka or Kafka Connect cluster. Resources are either patched
+updates on the {ProductPlatformName} resources which make up the Kafka or Kafka Connect cluster. Resources are either patched
 or deleted and then re-created in order to make the Kafka or Kafka Connect cluster reflect the state of the cluster ConfigMap.
 This might cause a rolling update which might lead to service disruption.
 
-Finally, when the ConfigMap is deleted, the operator starts to un-deploy the cluster deleting all the related Kubernetes/OpenShift
+Finally, when the ConfigMap is deleted, the operator starts to un-deploy the cluster deleting all the related {ProductPlatformName}
 resources.
 
 === Reconciliation
 
-Although the operator reacts to all notifications about the cluster ConfigMaps received from the Kubernetes/OpenShift cluster,
+Although the operator reacts to all notifications about the cluster ConfigMaps received from the {ProductPlatformName} cluster,
 if the operator is not running, or if a notification is not received for any reason, the ConfigMaps will get out of sync
-with the state of the running Kubernetes/OpenShift cluster.
+with the state of the running {ProductPlatformName} cluster.
 
-In order to handle failovers properly, a periodic reconciliation process is executed by the cluster operator so
+In order to handle failovers properly, a periodic reconciliation process is executed by the Cluster Operator so
 that it can compare the state of the ConfigMaps with the current cluster deployment in order to have
 a consistent state across all of them.
 
@@ -48,9 +45,9 @@ In order to distinguish which "type" of cluster to deploy, Kafka or Kafka Connec
 * `kafka`: the ConfigMap provides configuration for a Kafka cluster (with Zookeeper ensemble) deployment
 * `kafka-connect`: the ConfigMap provides configuration for a Kafka Connect cluster deployment
 * `kafka-connect-s2i`: the ConfigMap provides configuration for a Kafka Connect cluster deployment using Build and Source2Image
-features (works only with OpenShift)
+features (works only with {OpenShiftName})
 
-Whatever other labels are applied to the ConfigMap will also be applied to the Kubernetes/OpenShift resources making
+Whatever other labels are applied to the ConfigMap will also be applied to the {ProductPlatformName} resources making
 up the Kafka or Kafka Connect cluster. This provides a convenient mechanism for those resource to be labelled
 in whatever way the user requires.
 
@@ -63,49 +60,56 @@ following sections.
 In order to configure a Kafka cluster deployment, it's possible to specify the following fields in the `data` section of 
 the related ConfigMap :
 
-* `kafka-nodes`: number of Kafka broker nodes. Default is 3
-* `kafka-image`: the Docker image to use for the Kafka brokers.
-Default is determined by the value of the
-`<<STRIMZI_DEFAULT_KAFKA_IMAGE,STRIMZI_DEFAULT_KAFKA_IMAGE>>`
-environment variable of the Cluster Operator.
-* `kafka-healthcheck-delay`: the initial delay for the liveness and readiness probes for each Kafka broker node. Default is 15
-* `kafka-healthcheck-timeout`: the timeout on the liveness and readiness probes for each Kafka broker node. Default is 5
-* `kafka-config`: a JSON string with Kafka configuration. See section <<kafka_configuration_json_config>> for more details.
-* `kafka-storage`: a JSON string representing the storage configuration for the Kafka broker nodes. See section
-<<storage_configuration_json_config>> for more details.
-* `kafka-metrics-config`: a JSON string representing the JMX exporter configuration for exposing metrics from Kafka broker nodes.
+`kafka-nodes`::
+Number of Kafka broker nodes. Default is 3.
+`kafka-image`::
+The Docker image to use for the Kafka brokers. Default is determined by the value of the `<<STRIMZI_DEFAULT_KAFKA_IMAGE,STRIMZI_DEFAULT_KAFKA_IMAGE>>` environment variable of the Cluster Operator.
+`kafka-healthcheck-delay`::
+The initial delay for the liveness and readiness probes for each Kafka broker node. Default is 15.
+`kafka-healthcheck-timeout`::
+The timeout on the liveness and readiness probes for each Kafka broker node. Default is 5.
+`kafka-config`::
+A JSON string with Kafka configuration. See section <<kafka_configuration_json_config>> for more details.
+`kafka-storage`::
+A JSON string representing the storage configuration for the Kafka broker nodes. See section <<storage_configuration_json_config>> for more details.
+`kafka-metrics-config`::
+A JSON string representing the JMX exporter configuration for exposing metrics from Kafka broker nodes.
  Removing this field means having no metrics exposed.
-* `kafka-resources`:
-  a JSON string configuring the resource limits and requests for Kafka broker containers.
-  The accepted JSON format is described in the <<resources_json_config>> section.
-* `kafka-jvmOptions`:
-  a JSON string allowing the JVM running Kafka to be configured.
+`kafka-resources`::
+A JSON string configuring the resource limits and requests for Kafka broker containers. The accepted JSON format is
+described in the <<resources_json_config>> section.
+`kafka-jvmOptions`::
+A JSON string allowing the JVM running Kafka to be configured.
    The accepted JSON format is described in the <<jvm_json_config>> section.
-* `zookeeper-nodes`: number of Zookeeper nodes
-* `zookeeper-image`: the Docker image to use for the Zookeeper nodes.
-Default is determined by the value of the
-`<<STRIMZI_DEFAULT_ZOOKEEPER_IMAGE,STRIMZI_DEFAULT_ZOOKEEPER_IMAGE>>`
-environment variable of the Cluster Operator.
-* `zookeeper-healthcheck-delay`: the initial delay for the liveness and readiness probes for each Zookeeper node. Default is 15
-* `zookeeper-healthcheck-timeout`: the timeout on the liveness and readiness probes for each Zookeeper node. Default is 5
-* `zookeeper-config`: a JSON string with Zookeeper configuration. See section <<zookeeper_configuration_json_config>> for more details.
-* `zookeeper-storage`: a JSON string representing the storage configuration for the Zookeeper nodes. See section
-<<storage_configuration_json_config>> for more details.
-* `zookeeper-metrics-config`: a JSON string representing the JMX exporter configuration for exposing metrics from Zookeeper nodes.
- Removing this field means having no metrics exposed.
-* `zookeeper-resources`:
-  a JSON string configuring the resource limits and requests for Zookeeper broker containers.
-  The accepted JSON format is described in the <<resources_json_config>> section.
-* `zookeeper-jvmOptions`:
-  a JSON string allowing the JVM running Zookeeper to be configured.
-   The accepted JSON format is described in the <<jvm_json_config>> section.
-* `topic-operator-config`: a JSON string representing the topic operator configuration. See the <<topic_operator_json_config>>
-documentation for further details. More info about the topic operator in the related <<Topic Operator>> documentation page.
+`zookeeper-nodes`::
+Number of Zookeeper nodes.
+`zookeeper-image`::
+The Docker image to use for the Zookeeper nodes. Default is determined by the value of the
+`<<STRIMZI_DEFAULT_ZOOKEEPER_IMAGE,STRIMZI_DEFAULT_ZOOKEEPER_IMAGE>>` environment variable of the Cluster Operator.
+`zookeeper-healthcheck-delay`::
+The initial delay for the liveness and readiness probes for each Zookeeper node. Default is 15.
+`zookeeper-healthcheck-timeout`::
+The timeout on the liveness and readiness probes for each Zookeeper node. Default is 5.
+`zookeeper-config`::
+A JSON string with Zookeeper configuration. See section <<zookeeper_configuration_json_config>> for more details.
+`zookeeper-storage`::
+A JSON string representing the storage configuration for the Zookeeper nodes. See section <<storage_configuration_json_config>> for more details.
+`zookeeper-metrics-config`::
+A JSON string representing the JMX exporter configuration for exposing metrics from Zookeeper nodes. Removing this field
+ eans having no metrics exposed.
+`zookeeper-resources`::
+A JSON string configuring the resource limits and requests for Zookeeper broker containers. The accepted JSON format is
+described in the <<resources_json_config>> section.
+`zookeeper-jvmOptions`::
+A JSON string allowing the JVM running Zookeeper to be configured. The accepted JSON format is described in the <<jvm_json_config>> section.
+`topic-operator-config`::
+A JSON string representing the topic operator configuration. See the <<topic_operator_json_config>> documentation for
+further details. More info about the topic operator in the related <<Topic operator>> documentation page.
  
 The following is an example of a ConfigMap for a Kafka cluster.
 
 .Example Kafka cluster ConfigMap
-[source,yaml,options="nowrap"]
+[source,yaml,options="nowrap",subs="attributes"]
 ----
 apiVersion: v1
 kind: ConfigMap
@@ -116,7 +120,7 @@ metadata:
     strimzi.io/type: kafka
 data:
   kafka-nodes: "3"
-  kafka-image: "strimzi/kafka:latest"
+  kafka-image: "{DockerKafka}"
   kafka-healthcheck-delay: "15"
   kafka-healthcheck-timeout: "5"
   kafka-config: |-
@@ -132,11 +136,11 @@ data:
       "lowercaseOutputName": true,
       "rules": [
           {
-            "pattern": "kafka.server<type=(.+), name=(.+)PerSec\\w*><>Count",
+            "pattern": "kafka.server&lt;type=(.+), name=(.+)PerSec\\w*&gt;&lt;&gt;Count",
             "name": "kafka_server_$1_$2_total"
           },
           {
-            "pattern": "kafka.server<type=(.+), name=(.+)PerSec\\w*, topic=(.+)><>Count",
+            "pattern": "kafka.server&lt;type=(.+), name=(.+)PerSec\\w*, topic=(.+)&gt;&lt;&gt;Count",
             "name": "kafka_server_$1_$2_total",
             "labels":
             {
@@ -146,7 +150,7 @@ data:
       ]
     }
   zookeeper-nodes: "1"
-  zookeeper-image: "strimzi/zookeeper:latest"
+  zookeeper-image: "{DockerZookeeper}"
   zookeeper-healthcheck-delay: "15"
   zookeeper-healthcheck-timeout: "5"
   zookeeper-config: |-
@@ -164,7 +168,7 @@ data:
     }
 ----
 
-The resources created by the cluster operator into the Kubernetes/OpenShift cluster will be the following :
+The resources created by the Cluster Operator into the {ProductPlatformName} cluster will be the following :
 
 * `[cluster-name]-zookeeper` StatefulSet which is in charge to create the Zookeeper node pods
 * `[cluster-name]-kafka` StatefulSet which is in charge to create the Kafka broker pods
@@ -242,7 +246,7 @@ below.
 }
 ----
 
-NOTE:: The cluster operator doesn't validate the provided configuration. When invalid configuration is provided, the
+NOTE:: The Cluster Operator doesn't validate the provided configuration. When invalid configuration is provided, the
 Kafka cluster might not start or might become unstable. In such cases, the configuration in the `kafka-config` field
 should be fixed and the cluster operator will roll out the new configuration to all Kafka brokers.
 
@@ -300,7 +304,7 @@ Selected options have default values:
 
 These options will be automatically configured in case they are not present in the `zookeeper-config` field.
 
-NOTE:: The cluster operator doesn't validate the provided configuration. When invalid configuration is provided, the
+NOTE:: The Cluster Operator doesn't validate the provided configuration. When invalid configuration is provided, the
 Zookeeper cluster might not start or might become unstable. In such cases, the configuration in the `zookeeper-config` field
 should be fixed and the cluster operator will roll out the new configuration to all Zookeeper nodes.
 
@@ -309,7 +313,7 @@ should be fixed and the cluster operator will roll out the new configuration to 
 
 Both Kafka and Zookeeper save data to files.
 
-Strimzi allows to save such data in an "ephemeral" way (using `emptyDir`) or in a "persistent-claim" way using persistent
+{ProductName} allows to save such data in an "ephemeral" way (using `emptyDir`) or in a "persistent-claim" way using persistent
 volumes.
 It's possible to provide the storage configuration in the related ConfigMap using a JSON string as value for the 
 `kafka-storage` and `zookeeper-storage` fields.
@@ -324,6 +328,7 @@ The "ephemeral" storage is really simple to configure and the related JSON strin
 [source,json]
 ----
 { "type": "ephemeral" }
+
 ----
 
 WARNING: If the Zookeeper cluster is deployed using "ephemeral" storage, the Kafka brokers can have problems dealing with
@@ -332,7 +337,7 @@ Zookeeper node restarts which could happen via updates in the cluster ConfigMap.
 In case of "persistent-claim" type the following fields can be provided as well :
 
 * `size`: defines the size of the persistent volume claim (i.e 1Gi) - mandatory
-* `class` : the Kubernetes/OpenShift https://kubernetes.io/docs/concepts/storage/storage-classes/[storage class] to use
+* `class` : the {ProductPlatformName} https://kubernetes.io/docs/concepts/storage/storage-classes/[storage class] to use
 for dynamic volume allocation - optional
 * `selector`: allows to select a specific persistent volume to use. It contains a `matchLabels` field which defines an
 inner JSON object with key:value representing labels for selecting such a volume - optional
@@ -383,10 +388,9 @@ are generated :
 * `data-[cluster-name]-zookeeper-[idx]` Persistent Volume Claim for the volume used for storing data for the
 Zookeeper node pod `[idx]`
 
-[[metrics_json_config]]
 ===== Metrics
 
-Because Strimzi uses the [JMX exporter](https://github.com/prometheus/jmx_exporter) in order to expose metrics
+Because {ProductName} uses the [JMX exporter](https://github.com/prometheus/jmx_exporter) in order to expose metrics
 on each node, the JSON string used for metrics configuration in the cluster ConfigMap reflects the related JMX exporter 
 configuration file. For this reason, you can find more information on how to use it in the corresponding GitHub repo.
 
@@ -395,9 +399,9 @@ For more information about using the metrics with Prometheus and Grafana, see <<
 [[resources_json_config]]
 ===== Resource limits and requests
 
-It is possible to configure {resources-link}[Kubernetes resource limits and requests] on several containers using a JSON object.
-The object may have a `requests` and a `limits` property, each having the same schema, consisting of  `cpu` and `memory` properties.
-The same syntax as Kubernetes' is used for the values of `cpu` and `memory`.
+It is possible to configure {ProductPlatformName} resource limits and requests on several containers using a JSON object.
+The object may have a `requests` and a `limits` property, each having the same schema, consisting of `cpu` and `memory` properties.
+The {ProductPlatformName} syntax is used for the values of `cpu` and `memory`.
 
 .Example Resource limits and requests JSON configuration
 [source,json]
@@ -414,26 +418,30 @@ The same syntax as Kubernetes' is used for the values of `cpu` and `memory`.
 }
 ----
 
+:k8s-docs-version: v1-7
+:k8s-resource-request-limit-docs-link: https://{k8s-docs-version}.docs.kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
+
 `requests/memory`::
-the memory request for the container, corresponding directly to Kubernetes' {resources-link}[`spec.containers[\].resources.requests.memory`] setting.
-Kubernetes/OpenShift will ensure the containers have at least this much memory by running the pod on a node with at least as much free memory as all the containers require.
-Optional with no default.
+the memory request for the container, corresponding directly to {k8s-resource-request-limit-docs-link}[`spec.containers[\].resources.requests.memory`] setting.
+{ProductPlatformName} will ensure the containers have at least this much memory by running the pod on a node with at
+least as much free memory as all the containers require. Optional with no default.
 `requests/cpu`::
-the cpu request for the container, corresponding directly to Kubernetes' {resources-link}[`spec.containers[\].resources.requests.cpu`] setting.
-Kubernetes/OpenShift will ensure the containers have at least this much CPU by running the pod on a node with at least as much uncommitted CPU as all the containers require.
-Optional with no default.
+the cpu request for the container, corresponding directly to {k8s-resource-request-limit-docs-link}[`spec.containers[\].resources.requests.cpu`] setting.
+{ProductPlatformName} will ensure the containers have at least this much CPU by running the pod on a node with at least
+as much uncommitted CPU as all the containers require. Optional with no default.
 `limits/memory`::
-the memory limit for the container, corresponding directly to Kubernetes' {resources-link}[`spec.containers[\].resources.limits.memory`] setting.
-Kubernetes/OpenShift will limit the containers to this much memory, potentially terminating their pod if they use more.
+the memory limit for the container, corresponding directly to {k8s-resource-request-limit-docs-link}[`spec.containers[\].resources.limits.memory`] setting.
+{ProductPlatformName} will limit the containers to this much memory, potentially terminating their pod if they use more.
 Optional with no default.
 `limits/cpu`::
-the cpu limit for the container, corresponding directly to Kubernetes' {resources-link}[`spec.containers[\].resources.limits.cpu`] setting.
-Kubernetes/OpenShift will cap the containers CPU usage to this limit.
-Optional with no default.
+the cpu limit for the container, corresponding directly to {k8s-resource-request-limit-docs-link}[`spec.containers[\].resources.limits.cpu`] setting.
+{ProductPlatformName} will cap the containers CPU usage to this limit. Optional with no default.
+
+More details about resource limits and requests can be found on {k8s-resource-request-limit-docs-link}[{KubernetesName} website].
 
 ====== Minimum Resource Requirements
 
-Testing has shown that the cluster operator functions adequately with 256Mi of memory and 200m CPU when watching two clusters.
+Testing has shown that the Cluster Operator functions adequately with 256Mi of memory and 200m CPU when watching two clusters.
 It is therefore recommended to use these as a minimum when configuring resource requests and not to run it with lower limits than these.
 Configuring more generous limits is recommended, especially when it's controlling multiple clusters.
 
@@ -449,13 +457,15 @@ The maximum heap size. See the <<setting_xmx>> section for further details.
 
 `-Xms`::
 The initial heap size.
-Setting the same value for initial and maximum (`-Xmx`) heap sizes avoids the JVM having to allocate memory after startup, at the cost of possibly allocating more heap than is really needed.
-For Kafka and Zookeeper pods such allocation could cause unwanted latency.
-For Kafka Connect avoiding over allocation may be the more important concern, especially in distributed mode where the effects of over-allocation will be multiplied by the number of consumers.
+Setting the same value for initial and maximum (`-Xmx`) heap sizes avoids the JVM having to allocate memory after startup,
+at the cost of possibly allocating more heap than is really needed. For Kafka and Zookeeper pods such allocation could
+cause unwanted latency. For Kafka Connect avoiding over allocation may be the more important concern, especially in
+distributed mode where the effects of over-allocation will be multiplied by the number of consumers.
 
-NOTE: The units accepted by JVM settings such as `-Xmx` and `-Xms` are those accepted by the OpenJDK `java` binary in the corresponding image.
-Accordingly, `1g` or `1G` means 1,073,741,824 bytes, and `Gi` is not a valid unit suffix. 
-This is in contrast to the units used for <<resources_json_config,memory limits and requests>>, which follow the Kubernetes convention where `1G` means 1,000,000,000 bytes, and `1Gi` means 1,073,741,824 bytes
+NOTE: The units accepted by JVM settings such as `-Xmx` and `-Xms` are those accepted by the JDK `java`
+binary in the corresponding image. Accordingly, `1g` or `1G` means 1,073,741,824 bytes, and `Gi` is not a valid unit
+suffix. This is in contrast to the units used for <<resources_json_config,memory limits and requests>>, which follow the
+{ProductPlatformName} convention where `1G` means 1,000,000,000 bytes, and `1Gi` means 1,073,741,824 bytes
 
 .Example Resource limits and requests JSON configuration
 [source,json]
@@ -474,8 +484,10 @@ Its total memory usage will be approximately 8GiB.
 
 The default value used for `-Xmx` depends on whether there is a <<resources_json_config,memory limit>> for the container:
 
-* If there is a memory limit, the JVM's maximum memory will be limited according to the kind of pod (Kafka, Zookeeper, TopicOperator) to an appropriate value less than the limit.
-* Otherwise, when there is no memory limit, the JVM's maximum memory will be set according to the kind of pod and the RAM available to the container.
+* If there is a memory limit, the JVM's maximum memory will be limited according to the kind of pod (Kafka, Zookeeper,
+Topic Operator) to an appropriate value less than the limit.
+* Otherwise, when there is no memory limit, the JVM's maximum memory will be set according to the kind of pod and the
+RAM available to the container.
 
 [IMPORTANT]
 ====
@@ -483,11 +495,11 @@ Setting `-Xmx` explicitly is requires some care:
 
 * The JVM's overall memory usage will be approximately 4 × the maximum heap, as configured by `-Xmx`.
 
-* If `-Xmx` is set without also setting an appropriate Kubernetes
-memory limit, it is possible that the container will be killed should the Kubernetes node
+* If `-Xmx` is set without also setting an appropriate {ProductPlatformName}
+memory limit, it is possible that the container will be killed should the {ProductPlatformName} node
 experience memory pressure (from other Pods running on it).
 
-* If `-Xmx` is set without also setting an appropriate Kubernetes
+* If `-Xmx` is set without also setting an appropriate {ProductPlatformName}
 memory request, it is possible that the container will scheduled to a node with insufficient memory.
 In this case the container will start but crash (immediately if `-Xms` is set to `-Xmx`, or some later time if not).
 
@@ -499,38 +511,41 @@ When setting `-Xmx` explicitly, it is recommended to:
 * use a memory request that is at least 4.5 × the `-Xmx`,
 * consider setting `-Xms` to the same value as `-Xms`.
 
-Furthermore, containers doing lots of disk I/O (such as Kafka broker containers) will need to leave some memory available for use as operating system page cache.
-On such containers, the request memory should be substantially more than the memory used by the JVM.
-
+Furthermore, containers doing lots of disk I/O (such as Kafka broker containers) will need to leave some memory available
+for use as operating system page cache. On such containers, the request memory should be substantially more than the
+memory used by the JVM.
 
 [[topic_operator_json_config]]
 ===== Topic Operator
 
-Alongside the Kafka cluster and the Zookeeper ensemble, the cluster operator can also deploy the topic operator.
+Alongside the Kafka cluster and the Zookeeper ensemble, the Cluster Operator can also deploy the topic operator.
 In order to do that, the `topic-operator-config` field has to be put into the data section of the cluster ConfigMap.
 This field is a JSON string containing the topic operator configuration.
-Without this field, the cluster operator doesn't deploy the topic operator. It is still possible to deploy the topic
-operator by creating appropriate Kubernetes/OpenShift resources.
+Without this field, the Cluster Operator doesn't deploy the topic operator. It is still possible to deploy the topic
+operator by creating appropriate {ProductPlatformName} resources.
 
 The JSON representation of the 'topic-operator-config` has no mandatory fields and if the value is an empty object
-(just "{ }"), the cluster operator will deploy the topic operator with a default configuration.
+(just "{ }"), the Cluster Operator will deploy the topic operator with a default configuration.
 
 The configurable fields are the following :
 
-`image`:: Docker image to use for the topic operator.
-Default is determined by the value of the
-`<<STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE,STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE>>`
-environment variable of the Cluster Operator.
-`watchedNamespace`:: The Kubernetes namespace (OpenShift project) in which the topic operator watches for topic ConfigMaps.
-Default is the namespace where the topic operator is running
-`reconciliationIntervalMs`:: The interval between periodic reconciliations in milliseconds. Default is 900000 (15 minutes).
-`zookeeperSessionTimeoutMs`:: The Zookeeper session timeout in milliseconds. Default is 20000 milliseconds (20 seconds).
-`topicMetadataMaxAttempts`:: The number of attempts for getting topics metadata from Kafka. The time between each attempt
- is defined as an exponential back-off. You might want to increase this value when topic creation could take more time due
- to its larger size (i.e. many partitions/replicas). Default `6`.
+`image`::
+Docker image to use for the topic operator. Default is determined by the value of the
+`<<STRIMZI_DEFAULT_TOPIC_operator_IMAGE,STRIMZI_DEFAULT_TOPIC_operator_IMAGE>>` environment variable of the Cluster Operator.
+`watchedNamespace`::
+The {ProductPlatformName} namespace in which the topic operator watches for topic ConfigMaps. Default is the namespace
+where the topic operator is running.
+`reconciliationIntervalMs`::
+The interval between periodic reconciliations in milliseconds. Default is 900000 (15 minutes).
+`zookeeperSessionTimeoutMs`::
+The Zookeeper session timeout in milliseconds. Default is 20000 milliseconds (20 seconds).
+`topicMetadataMaxAttempts`::
+The number of attempts for getting topics metadata from Kafka. The time between each attempt is defined as an exponential
+back-off. You might want to increase this value when topic creation could take more time due to its larger size (i.e.
+many partitions / replicas). Default is `6`.
 `resources`::
-  an object configuring the resource limits and requests for the topic operator container.
-  The accepted JSON format is described in the <<resources_json_config>> section.
+An object configuring the resource limits and requests for the topic operator container. The accepted JSON format is
+described in the <<resources_json_config>> section.
 
 .Example Topic Operator JSON configuration
 [source,json]
@@ -546,25 +561,23 @@ More information about these configuration parameters in the related <<Topic Ope
 In order to configure a Kafka Connect cluster deployment, it's possible to specify the following fields in the `data` section of 
 the related ConfigMap:
 
-`nodes`:: Number of Kafka Connect worker nodes. Default is 1
-`image`:: The Docker image to use for the Kafka Connect workers.
-Default is determined by the value of the
-`<<STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE,STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE>>`
-environment variable of the Cluster Operator.
-If S2I is used (only on OpenShift), then it should be the related S2I image.
-`healthcheck-delay`:: The initial delay for the liveness and readiness probes for each Kafka Connect worker node. Default is 60
-`healthcheck-timeout`:: The timeout on the liveness and readiness probes for each Kafka Connect worker node. Default is 5
+`nodes`:: Number of Kafka Connect worker nodes. Default is 1.
+`image`:: The Docker image to use for the Kafka Connect workers. Default is determined by the value of the
+`<<STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE,STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE>>` environment variable of the Cluster Operator.
+If S2I is used (only on {OpenShiftName}), then it should be the related S2I image.
+`healthcheck-delay`:: The initial delay for the liveness and readiness probes for each Kafka Connect worker node. Default is 60.
+`healthcheck-timeout`:: The timeout on the liveness and readiness probes for each Kafka Connect worker node. Default is 5.
+`connect-config`:: A JSON string with Kafka Connect configuration. See section <<kafka_connect_configuration_json_config>>
+for more details.
 `resources`:: A JSON string configuring the resource limits and requests for Kafka Connect containers.
 The accepted JSON format is described in the <<resources_json_config>> section.
 `jvmOptions`:: A JSON string allowing the JVM running Kafka Connect to be configured.
 The accepted JSON format is described in the <<jvm_json_config>> section.
-`connect-config`:: A JSON string with Kafka Connect configuration. See section <<kafka_connect_configuration_json_config>>
-for more details.
 
 The following is an example of cluster configuration ConfigMap is the following.
 
 .Example Kafka Connect cluster ConfigMap
-[source,yaml,options="nowrap"]
+[source,yaml,options="nowrap",subs="attributes"]
 ----
 apiVersion: v1
 kind: ConfigMap
@@ -575,7 +588,7 @@ metadata:
     strimzi.io/type: kafka-connect
 data:
   nodes: "1"
-  image: "strimzi/kafka-connect:latest"
+  image: "{DockerKafkaConnect}"
   healthcheck-delay: "60"
   healthcheck-timeout: "5"
   connect-config: |-
@@ -584,7 +597,7 @@ data:
     }
 ----
 
-The resources created by the cluster operator into the Kubernetes/OpenShift cluster will be the following :
+The resources created by the Cluster Operator into the {ProductPlatformName} cluster will be the following :
 
 * [connect-cluster-name]-connect Deployment which is in charge to create the Kafka Connect worker node pods
 * [connect-cluster-name]-connect Service which exposes the REST interface for managing the Kafka Connect cluster
@@ -656,15 +669,15 @@ Selected options have default values:
 
 These options will be automatically configured in case they are not present in the `connect-config` field.
 
-INFO:: The cluster operator doesn't validate the provided configuration. When invalid configuration is provided, the
+INFO:: The Cluster Operator doesn't validate the provided configuration. When invalid configuration is provided, the
 Kafka Connect cluster might not start or might become unstable. In such cases, the configuration in the `connect-config` field
-should be fixed and the cluster operator will roll out the new configuration to all Kafka Connect instances.
+should be fixed and the Cluster Operator will roll out the new configuration to all Kafka Connect instances.
 
 === Provisioning Role-Based Access Control (RBAC) for the operator
 
-For the operator to function it needs permission within the Kubernetes/OpenShift cluster to interact with
+For the operator to function it needs permission within the {ProductPlatformName} cluster to interact with
 the resources it manages (ConfigMaps, Pods, Deployments, StatefulSets, Services etc).
-Such permission is described in terms of Kubernetes/OpenShift role-based access controls.
+Such permission is described in terms of {ProductPlatformName} role-based access controls.
 
 ==== Using a ServiceAccount
 
@@ -673,7 +686,7 @@ The operator is best run using a ServiceAccount:
 [source,yaml,options="nowrap"]
 .Example ServiceAccount for the Cluster Operator
 ----
-include::../../examples/install/cluster-operator/01-service-account.yaml[]
+include::examples/install/cluster-operator/01-service-account.yaml[]
 ----
 
 The Deployment of the operator then needs to specify this in the `serviceAccountName` of its `template`´s
@@ -682,7 +695,7 @@ The Deployment of the operator then needs to specify this in the `serviceAccount
 [source,yaml,numbered,options="nowrap",highlight='12']
 .Partial example Deployment for the Cluster Operator
 ----
-include::../../examples/install/cluster-operator/04-deployment.yaml[lines=1..13]
+include::examples/install/cluster-operator/04-deployment.yaml[lines=1..13]
 # etc ...
 ----
 
@@ -695,9 +708,8 @@ The operator needs to operate using a Role that gives it access to the necessary
 [source,yaml,options="nowrap"]
 .Example Role for the Cluster Operator
 ----
-include::../../examples/install/cluster-operator/02-role.yaml[]
+include::examples/install/cluster-operator/02-role.yaml[]
 ----
-
 
 ==== Defining a RoleBinding
 
@@ -706,14 +718,15 @@ Finally, the operator needs a RoleBinding which associates its Role with its Ser
 [source,yaml,options="nowrap"]
 .Example RoleBinding for the Cluster Operator
 ----
-include::../../examples/install/cluster-operator/03-role-binding.yaml[]
+include::examples/install/cluster-operator/03-role-binding.yaml[]
 ----
 
-=== Operator configuration
+=== operator configuration
 
 The operator itself can be configured through the following environment variables.
 
-[[STRIMZI_NAMESPACE]] `STRIMZI_NAMESPACE`:: Required. A comma-separated list of namespaces that the operator should operate in. The Cluster Operator deployment might use the https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#the-downward-api[Kubernetes Downward API]
+[[STRIMZI_NAMESPACE]] `STRIMZI_NAMESPACE`:: Required. A comma-separated list of namespaces that the operator should
+operate in. The Cluster Operator deployment might use the https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#the-downward-api[{KubernetesName} Downward API]
 to set this automatically to the namespace the Cluster Operator is deployed in. See the example below:
 +
 [source,yaml,options="nowrap"]
@@ -729,7 +742,7 @@ env:
 
 
 [[STRIMZI_OPERATION_TIMEOUT_MS]] `STRIMZI_OPERATION_TIMEOUT_MS`:: Optional, default: 60000 ms. The timeout for internal operations, in milliseconds. This value should be
-increased when using Strimzi on clusters where regular Kubernetes operations take longer than usual (because of slow downloading of Docker images, for example).
+increased when using {ProductName} on clusters where regular {ProductPlatformName} operations take longer than usual (because of slow downloading of Docker images, for example).
 
 [[STRIMZI_DEFAULT_KAFKA_IMAGE]] `STRIMZI_DEFAULT_KAFKA_IMAGE`:: Optional, default `strimzi/kafka:latest`.
 The image name to use as a default when deploying Kafka, if
@@ -744,7 +757,7 @@ no image is specified as the `image` in the
 The image name to use as a default when deploying Kafka Connect S2I, if
 no image is specified as the `image` in the cluster ConfigMap.
 
-[[STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE]] `STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE`:: Optional, default `strimzi/topic-operator:latest`.
+[[STRIMZI_DEFAULT_TOPIC_operator_IMAGE]] `STRIMZI_DEFAULT_TOPIC_operator_IMAGE`:: Optional, default `strimzi/topic-operator:latest`.
 The image name to use as a default when deploying the topic operator, if
 no image is specified as the `image` in the <<topic_operator_json_config,topic operator config>>
 of the Kafka cluster ConfigMap.

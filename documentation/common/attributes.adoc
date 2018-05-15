@@ -1,0 +1,39 @@
+// AsciiDoc settings
+:data-uri!:
+:doctype: book
+:experimental:
+:idprefix:
+:imagesdir: images
+:numbered:
+:sectanchors!:
+:sectnums:
+:source-highlighter: highlightjs
+:toc: left
+:linkattrs:
+:toclevels: 4
+
+// Name placeholders
+:ProductLongName: Strimzi
+:ProductName: Strimzi
+:ProductVersion: master
+:OpenShiftName: OpenShift
+:OpenShiftLongName: OpenShift
+:KubernetesName: Kubernetes
+:KubernetesLongName: Kubernetes
+:ProductPlatformName: {OpenShiftName} or {KubernetesName}
+:ProductPlatformLongName: {OpenShiftLongName} or {KubernetesLongName}
+
+// Docker image names
+:DockerTag: {ProductVersion}
+:DockerRepository: https://hub.docker.com[Docker Hub]
+:DockerZookeeper: strimzi/zookeeper:{DockerTag}
+:DockerKafka: strimzi/kafka:{DockerTag}
+:DockerKafkaConnect: strimzi/kafka-connect:{DockerTag}
+:DockerKafkaConnectS2I: strimzi/kafka-connect-s2i:{DockerTag}
+:DockerTopicController: strimzi/topic-controller:{DockerTag}
+:DockerImageUser: kafka:kafka
+
+// Section enablers
+:Kubernetes:
+:InstallationAppendix:
+:MetricsAppendix:

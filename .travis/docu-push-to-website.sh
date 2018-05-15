@@ -10,7 +10,7 @@ ssh-add github_deploy_key
 git clone git@github.com:strimzi/strimzi.github.io.git /tmp/website
 cp -v documentation/htmlnoheader/master.html /tmp/website/docs/master/master.html
 rm -rf /tmp/website/docs/master/images
-cp -vr documentation/adoc/images /tmp/website/docs/master/images
+cp -vrL documentation/htmlnoheader/images /tmp/website/docs/master/images
 
 pushd /tmp/website
 
