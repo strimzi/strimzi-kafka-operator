@@ -561,12 +561,12 @@ More information about these configuration parameters in the related <<Topic Ope
 In order to configure a Kafka Connect cluster deployment, it's possible to specify the following fields in the `data` section of 
 the related ConfigMap:
 
-* `nodes`: Number of Kafka Connect worker nodes. Default is 1.
-* `image`: The Docker image to use for the Kafka Connect workers. Default is determined by the value of the
+`nodes`:: Number of Kafka Connect worker nodes. Default is 1.
+`image`:: The Docker image to use for the Kafka Connect workers. Default is determined by the value of the
 `<<STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE,STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE>>` environment variable of the Cluster Operator.
 If S2I is used (only on {OpenShiftName}), then it should be the related S2I image.
-* `healthcheck-delay`: The initial delay for the liveness and readiness probes for each Kafka Connect worker node. Default is 60.
-* `healthcheck-timeout`: The timeout on the liveness and readiness probes for each Kafka Connect worker node. Default is 5.
+`healthcheck-delay`:: The initial delay for the liveness and readiness probes for each Kafka Connect worker node. Default is 60.
+`healthcheck-timeout`:: The timeout on the liveness and readiness probes for each Kafka Connect worker node. Default is 5.
 `connect-config`:: A JSON string with Kafka Connect configuration. See section <<kafka_connect_configuration_json_config>>
 for more details.
 `resources`:: A JSON string configuring the resource limits and requests for Kafka Connect containers.
