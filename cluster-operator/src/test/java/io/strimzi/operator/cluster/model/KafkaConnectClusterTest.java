@@ -9,15 +9,20 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
+import io.strimzi.operator.cluster.InvalidConfigMapException;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.vertx.core.json.JsonObject;
+import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.Test;
-
+import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class KafkaConnectClusterTest {
     private final String namespace = "test";
@@ -153,5 +158,109 @@ public class KafkaConnectClusterTest {
         assertEquals("RollingUpdate", dep.getSpec().getStrategy().getType());
         assertEquals(new Integer(1), dep.getSpec().getStrategy().getRollingUpdate().getMaxSurge().getIntVal());
         assertEquals(new Integer(0), dep.getSpec().getStrategy().getRollingUpdate().getMaxUnavailable().getIntVal());
+    }
+
+    @Test
+    public void testCorruptedValues() {
+        ConfigMap cm = ResourceUtils.createEmptyKafkaConnectClusterConfigMap(namespace, cluster);
+
+        // type mismatch
+        cm.getData().put("kafka-healthcheck-delay", "1z");
+        try {
+            KafkaCluster.fromConfigMap(cm);
+            fail("Expected it to throw an exception");
+        } catch (InvalidConfigMapException e) {
+            assertEquals(e.getKey(), "kafka-healthcheck-delay");
+        }
+
+        // unknown type
+        cm.getData().clear();
+        cm.getData().put("kafka-storage", "{ \"type\": \"zidan\" }");
+        try {
+            KafkaCluster.fromConfigMap(cm);
+            fail("Expected it to throw an exception");
+        } catch (InvalidConfigMapException e) {
+            assertEquals(e.getKey(), "kafka-storage");
+        }
+
+        // corrupted JSON (missing quotes)
+        cm.getData().clear();
+        cm.getData().put("kafka-config", "{" +
+                "\"num.recovery.threads.per.data.dir\": \"1\",\n" +
+                "\"default.replication.factor\": e,\n" +
+                "\"num.io.threads\": \"1\"" +
+                "}");
+        try {
+            KafkaCluster.fromConfigMap(cm);
+            fail("Expected it to throw an exception");
+        } catch (InvalidConfigMapException e) {
+            assertEquals("default.replication.factor", e.getKey());
+        }
+
+        // corrupted JSON (missing quotes)
+        cm.getData().clear();
+        cm.getData().put("kafka-config", "{" +
+                "\"num.recovery.threads.per.data.dir\": \"1\",\n" +
+                "\"num.io.threads\": \"1\"");
+        try {
+            KafkaCluster.fromConfigMap(cm);
+            fail("Expected it to throw an exception");
+        } catch (InvalidConfigMapException e) {
+            assertEquals("JSON braces", e.getKey());
+        }
+    }
+
+    @Test
+    public void testCorruptedBooleans() {
+        ConfigMap cm = ResourceUtils.createEmptyKafkaConnectClusterConfigMap(namespace, cluster);
+
+        // typo in boolean value
+        cm.getData().put("kafka-config", "{" +
+                "\"num.recovery.threads.per.data.dir\": \"1\",\n" +
+                "\"default.replication.factor\": 3,\n" +
+                "\"num.io.threads\": \"1\",\n" +
+                "\"bool.value\": tru" +
+                "}");
+        try {
+            KafkaCluster.fromConfigMap(cm);
+            fail("Expected it to throw an exception");
+        } catch (InvalidConfigMapException e) {
+            assertEquals("bool.value", e.getKey());
+        }
+
+        // test parsing boolean values
+        cm.getData().clear();
+        cm.getData().put("kafka-config", "{" +
+                "\"num.recovery.threads.per.data.dir\": \"1\",\n" +
+                "\"default.replication.factor\": 3,\n" +
+                "\"num.io.threads\": \"1\",\n" +
+                "\"bool.value\": true,\n" +
+                "\"bool.value2\": \"true\",\n" +
+                "\"bool.value3\": false,\n" +
+                "\"bool.value4\": \"truuue\"" +
+                "}");
+
+        // we have to prepare map before parsing booleans
+        Map<String, String> data = cm.getData();
+        String config = data.get("kafka-config");
+        Map<String, Object> map = new JsonObject(config).getMap();
+        Map<String, String> newMap = new HashMap<String, String>();
+        for (Map.Entry<String, Object> entry : map.entrySet()) {
+            if (entry.getValue() instanceof String) {
+                newMap.put(entry.getKey(), (String) entry.getValue());
+            } else if (entry.getValue() instanceof Integer || entry.getValue() instanceof Long || entry.getValue() instanceof Boolean || entry.getValue() instanceof Double || entry.getValue() instanceof Float) {
+                newMap.put(entry.getKey(), String.valueOf(entry.getValue()));
+            }
+        }
+        assertTrue(Utils.getBoolean(newMap, "bool.value", false));
+        assertTrue(Utils.getBoolean(newMap, "bool.value2", true));
+        assertFalse(Utils.getBoolean(newMap, "bool.value3", true));
+
+        try {
+            assertTrue(Utils.getBoolean(newMap, "bool.value4", false));
+            fail("Expected it to throw an exception");
+        } catch (InvalidConfigMapException e) {
+            assertEquals("bool.value4", e.getKey());
+        }
     }
 }

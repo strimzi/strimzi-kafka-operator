@@ -119,22 +119,20 @@ public class ZookeeperCluster extends AbstractModel {
                 Labels.fromResource(kafkaClusterCm));
 
         Map<String, String> data = kafkaClusterCm.getData();
-        zk.setReplicas(Integer.parseInt(data.getOrDefault(KEY_REPLICAS, String.valueOf(DEFAULT_REPLICAS))));
-        zk.setImage(data.getOrDefault(KEY_IMAGE, DEFAULT_IMAGE));
-        zk.setHealthCheckInitialDelay(Integer.parseInt(data.getOrDefault(KEY_HEALTHCHECK_DELAY, String.valueOf(DEFAULT_HEALTHCHECK_DELAY))));
-        zk.setHealthCheckTimeout(Integer.parseInt(data.getOrDefault(KEY_HEALTHCHECK_TIMEOUT, String.valueOf(DEFAULT_HEALTHCHECK_TIMEOUT))));
+        zk.setReplicas(Utils.getInteger(data, KEY_REPLICAS, DEFAULT_REPLICAS));
+        zk.setImage(Utils.getNonEmptyString(data, KEY_IMAGE, DEFAULT_IMAGE));
+        zk.setHealthCheckInitialDelay(Utils.getInteger(data, KEY_HEALTHCHECK_DELAY, DEFAULT_HEALTHCHECK_DELAY));
+        zk.setHealthCheckTimeout(Utils.getInteger(data, KEY_HEALTHCHECK_TIMEOUT, DEFAULT_HEALTHCHECK_TIMEOUT));
 
-        String metricsConfig = data.get(KEY_METRICS_CONFIG);
+        JsonObject metricsConfig = Utils.getJson(data, KEY_METRICS_CONFIG);
         zk.setMetricsEnabled(metricsConfig != null);
         if (zk.isMetricsEnabled()) {
-            zk.setMetricsConfig(new JsonObject(metricsConfig));
+            zk.setMetricsConfig(metricsConfig);
         }
 
-        String storageConfig = data.get(KEY_STORAGE);
-        zk.setStorage(Storage.fromJson(new JsonObject(storageConfig)));
+        zk.setStorage(Utils.getStorage(data, KEY_STORAGE));
 
-        String zookeeperConfig = data.getOrDefault(KEY_ZOOKEEPER_CONFIG, "{}");
-        zk.setConfiguration(new ZookeeperConfiguration(new JsonObject(zookeeperConfig)));
+        zk.setConfiguration(Utils.getZookeeperConfiguration(data, KEY_ZOOKEEPER_CONFIG));
 
         zk.setResources(Resources.fromJson(data.get(KEY_RESOURCES)));
         zk.setJvmOptions(JvmOptions.fromJson(data.get(KEY_JVM_OPTIONS)));
@@ -162,7 +160,7 @@ public class ZookeeperCluster extends AbstractModel {
 
         Map<String, String> vars = containerEnvVars(container);
 
-        zk.setMetricsEnabled(Boolean.parseBoolean(vars.getOrDefault(ENV_VAR_ZOOKEEPER_METRICS_ENABLED, String.valueOf(DEFAULT_ZOOKEEPER_METRICS_ENABLED))));
+        zk.setMetricsEnabled(Utils.getBoolean(vars, ENV_VAR_ZOOKEEPER_METRICS_ENABLED, DEFAULT_ZOOKEEPER_METRICS_ENABLED));
         if (zk.isMetricsEnabled()) {
             zk.setMetricsConfigName(zookeeperMetricsName(cluster));
         }

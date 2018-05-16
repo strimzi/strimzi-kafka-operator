@@ -118,26 +118,22 @@ public class KafkaCluster extends AbstractModel {
                 Labels.fromResource(kafkaClusterCm));
 
         Map<String, String> data = kafkaClusterCm.getData();
-        kafka.setReplicas(Integer.parseInt(data.getOrDefault(KEY_REPLICAS, String.valueOf(DEFAULT_REPLICAS))));
-        kafka.setImage(data.getOrDefault(KEY_IMAGE, DEFAULT_IMAGE));
-        kafka.setHealthCheckInitialDelay(Integer.parseInt(data.getOrDefault(KEY_HEALTHCHECK_DELAY, String.valueOf(DEFAULT_HEALTHCHECK_DELAY))));
-        kafka.setHealthCheckTimeout(Integer.parseInt(data.getOrDefault(KEY_HEALTHCHECK_TIMEOUT, String.valueOf(DEFAULT_HEALTHCHECK_TIMEOUT))));
+        kafka.setReplicas(Utils.getInteger(data, KEY_REPLICAS, DEFAULT_REPLICAS));
+        kafka.setImage(Utils.getNonEmptyString(data, KEY_IMAGE, DEFAULT_IMAGE));
+        kafka.setHealthCheckInitialDelay(Utils.getInteger(data, KEY_HEALTHCHECK_DELAY, DEFAULT_HEALTHCHECK_DELAY));
+        kafka.setHealthCheckTimeout(Utils.getInteger(data, KEY_HEALTHCHECK_TIMEOUT, DEFAULT_HEALTHCHECK_TIMEOUT));
 
-        kafka.setZookeeperConnect(data.getOrDefault(ENV_VAR_KAFKA_ZOOKEEPER_CONNECT, kafkaClusterCm.getMetadata().getName() + "-zookeeper:2181"));
+        kafka.setZookeeperConnect(kafkaClusterCm.getMetadata().getName() + "-zookeeper:2181");
 
-        String metricsConfig = data.get(KEY_METRICS_CONFIG);
+        JsonObject metricsConfig = Utils.getJson(data, KEY_METRICS_CONFIG);
         kafka.setMetricsEnabled(metricsConfig != null);
         if (kafka.isMetricsEnabled()) {
-            kafka.setMetricsConfig(new JsonObject(metricsConfig));
+            kafka.setMetricsConfig(metricsConfig);
         }
 
-        String storageConfig = data.get(KEY_STORAGE);
-        kafka.setStorage(Storage.fromJson(new JsonObject(storageConfig)));
+        kafka.setStorage(Utils.getStorage(data, KEY_STORAGE));
 
-        String kafkaConfig = data.get(KEY_KAFKA_CONFIG);
-        if (kafkaConfig != null) {
-            kafka.setConfiguration(new KafkaConfiguration(new JsonObject(kafkaConfig)));
-        }
+        kafka.setConfiguration(Utils.getKafkaConfiguration(data, KEY_KAFKA_CONFIG));
 
         kafka.setResources(Resources.fromJson(data.get(KEY_RESOURCES)));
         kafka.setJvmOptions(JvmOptions.fromJson(data.get(KEY_JVM_OPTIONS)));
@@ -167,7 +163,7 @@ public class KafkaCluster extends AbstractModel {
 
         kafka.setZookeeperConnect(vars.getOrDefault(ENV_VAR_KAFKA_ZOOKEEPER_CONNECT, ss.getMetadata().getName() + "-zookeeper:2181"));
 
-        kafka.setMetricsEnabled(Boolean.parseBoolean(vars.getOrDefault(ENV_VAR_KAFKA_METRICS_ENABLED, String.valueOf(DEFAULT_KAFKA_METRICS_ENABLED))));
+        kafka.setMetricsEnabled(Utils.getBoolean(vars, ENV_VAR_KAFKA_METRICS_ENABLED, DEFAULT_KAFKA_METRICS_ENABLED));
         if (kafka.isMetricsEnabled()) {
             kafka.setMetricsConfigName(metricConfigsName(cluster));
         }

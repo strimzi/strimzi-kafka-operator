@@ -5,6 +5,7 @@
 
 package io.strimzi.operator.cluster.model;
 
+import io.strimzi.operator.cluster.InvalidConfigMapException;
 import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,6 +81,7 @@ public abstract class AbstractConfiguration {
                 map.put(key, String.valueOf(value));
             } else  {
                 log.error("Unsupported type {} in configuration for key {}", value.getClass(), key);
+                throw new InvalidConfigMapException(key, " - Unsupported type " + value.getClass() + " in configuration for this key");
             }
         }
 

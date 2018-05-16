@@ -27,7 +27,6 @@ import io.fabric8.openshift.api.model.TagImportPolicy;
 import io.fabric8.openshift.api.model.TagImportPolicyBuilder;
 import io.fabric8.openshift.api.model.TagReference;
 import io.fabric8.openshift.api.model.TagReferencePolicyBuilder;
-import io.vertx.core.json.JsonObject;
 
 import java.util.Collections;
 import java.util.Map;
@@ -68,17 +67,15 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
         KafkaConnectS2ICluster kafkaConnect = new KafkaConnectS2ICluster(cm.getMetadata().getNamespace(), cm.getMetadata().getName(), Labels.fromResource(cm));
 
         Map<String, String> data = cm.getData();
-        kafkaConnect.setReplicas(Integer.parseInt(data.getOrDefault(KEY_REPLICAS, String.valueOf(DEFAULT_REPLICAS))));
-        kafkaConnect.setImage(data.getOrDefault(KEY_IMAGE, DEFAULT_IMAGE));
+        kafkaConnect.setReplicas(Utils.getInteger(data, KEY_REPLICAS, DEFAULT_REPLICAS));
+        kafkaConnect.setImage(Utils.getNonEmptyString(data, KEY_IMAGE, DEFAULT_IMAGE));
         kafkaConnect.setResources(Resources.fromJson(data.get(KEY_RESOURCES)));
         kafkaConnect.setJvmOptions(JvmOptions.fromJson(data.get(KEY_JVM_OPTIONS)));
-        kafkaConnect.setHealthCheckInitialDelay(Integer.parseInt(data.getOrDefault(KEY_HEALTHCHECK_DELAY, String.valueOf(DEFAULT_HEALTHCHECK_DELAY))));
-        kafkaConnect.setHealthCheckTimeout(Integer.parseInt(data.getOrDefault(KEY_HEALTHCHECK_TIMEOUT, String.valueOf(DEFAULT_HEALTHCHECK_TIMEOUT))));
+        kafkaConnect.setHealthCheckInitialDelay(Utils.getInteger(data, KEY_HEALTHCHECK_DELAY, DEFAULT_HEALTHCHECK_DELAY));
+        kafkaConnect.setHealthCheckTimeout(Utils.getInteger(data, KEY_HEALTHCHECK_TIMEOUT, DEFAULT_HEALTHCHECK_TIMEOUT));
 
-        String connectConfig = data.getOrDefault(KEY_CONNECT_CONFIG, "{}");
-        kafkaConnect.setConfiguration(new KafkaConnectConfiguration(new JsonObject(connectConfig)));
-
-        kafkaConnect.setInsecureSourceRepository(Boolean.parseBoolean(data.getOrDefault(KEY_INSECURE_SOURCE_REPO, "false")));
+        kafkaConnect.setConfiguration(Utils.getKafkaConnectConfiguration(data, KEY_CONNECT_CONFIG));
+        kafkaConnect.setInsecureSourceRepository(Utils.getBoolean(data, KEY_INSECURE_SOURCE_REPO, false));
 
         return kafkaConnect;
     }

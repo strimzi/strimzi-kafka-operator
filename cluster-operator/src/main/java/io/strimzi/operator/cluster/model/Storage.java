@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.vertx.core.json.JsonObject;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -177,7 +178,7 @@ public class Storage {
             } else if (type.equals(LOCAL.type)) {
                 return LOCAL;
             } else {
-                throw new IllegalArgumentException("Unknown type: " + type);
+                throw new IllegalArgumentException("Unknown type: " + type + ". Allowed types are: " + Arrays.toString(values()));
             }
         }
     }

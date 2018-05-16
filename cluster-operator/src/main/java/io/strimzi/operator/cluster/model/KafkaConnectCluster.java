@@ -13,7 +13,6 @@ import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategy;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategyBuilder;
 import io.fabric8.kubernetes.api.model.extensions.RollingUpdateDeploymentBuilder;
-import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -86,8 +85,7 @@ public class KafkaConnectCluster extends AbstractModel {
         kafkaConnect.setHealthCheckInitialDelay(Integer.parseInt(data.getOrDefault(KEY_HEALTHCHECK_DELAY, String.valueOf(DEFAULT_HEALTHCHECK_DELAY))));
         kafkaConnect.setHealthCheckTimeout(Integer.parseInt(data.getOrDefault(KEY_HEALTHCHECK_TIMEOUT, String.valueOf(DEFAULT_HEALTHCHECK_TIMEOUT))));
 
-        String connectConfig = data.getOrDefault(KEY_CONNECT_CONFIG, "{}");
-        kafkaConnect.setConfiguration(new KafkaConnectConfiguration(new JsonObject(connectConfig)));
+        kafkaConnect.setConfiguration(Utils.getKafkaConnectConfiguration(data, KEY_CONNECT_CONFIG));
 
         return kafkaConnect;
     }

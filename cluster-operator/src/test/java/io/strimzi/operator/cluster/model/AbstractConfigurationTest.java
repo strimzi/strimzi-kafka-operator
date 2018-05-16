@@ -7,10 +7,12 @@ package io.strimzi.operator.cluster.model;
 import java.util.List;
 import java.util.Properties;
 
+import io.strimzi.operator.cluster.InvalidConfigMapException;
 import io.vertx.core.json.JsonObject;
 import org.junit.Test;
 
 import static java.util.Arrays.asList;
+import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -188,9 +190,12 @@ public class AbstractConfigurationTest {
         String expectedConfiguration = defaultConfiguration +
                 "var2=bbb\n" +
                 "var1=1\n";
-
-        AbstractConfiguration config = new TestConfiguration(configuration);
-        assertEquals(expectedConfiguration, config.getConfiguration());
+        try {
+            AbstractConfiguration config = new TestConfiguration(configuration);
+            fail("Expected it to throw an exception");
+        } catch (InvalidConfigMapException e) {
+            assertEquals("var3", e.getKey());
+        }
     }
 
     @Test
