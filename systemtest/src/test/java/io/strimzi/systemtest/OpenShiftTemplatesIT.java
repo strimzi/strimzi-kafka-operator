@@ -83,7 +83,7 @@ public class OpenShiftTemplatesIT {
 
     @Test
     @JUnitGroup(name = "acceptance")
-    public void testStrimziEphemeralWithCustomParameters() {
+    public void testStrimziEphemeralWithCustomParameters() throws IOException {
         String clusterName = "test-ephemeral-with-custom-parameters";
         oc.newApp("strimzi-ephemeral", map("CLUSTER_NAME", clusterName,
                 "ZOOKEEPER_HEALTHCHECK_DELAY", "30",
@@ -102,9 +102,9 @@ public class OpenShiftTemplatesIT {
         assertEquals("10", cmData.get("zookeeper-healthcheck-timeout"));
         assertEquals("30", cmData.get("kafka-healthcheck-delay"));
         assertEquals("10", cmData.get("kafka-healthcheck-timeout"));
-        assertEquals("2", cmData.get("KAFKA_DEFAULT_REPLICATION_FACTOR"));
-        assertEquals("5", cmData.get("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR"));
-        assertEquals("5", cmData.get("KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR"));
+        assertEquals("2", mapper.readTree(cmData.get("kafka-config")).get("default.replication.factor").asText());
+        assertEquals("5", mapper.readTree(cmData.get("kafka-config")).get("offsets.topic.replication.factor").asText());
+        assertEquals("5", mapper.readTree(cmData.get("kafka-config")).get("transaction.state.log.replication.factor").asText());
     }
 
     @Test
@@ -130,9 +130,9 @@ public class OpenShiftTemplatesIT {
         assertEquals("10", cmData.get("zookeeper-healthcheck-timeout"));
         assertEquals("30", cmData.get("kafka-healthcheck-delay"));
         assertEquals("10", cmData.get("kafka-healthcheck-timeout"));
-        assertEquals("2", cmData.get("KAFKA_DEFAULT_REPLICATION_FACTOR"));
-        assertEquals("5", cmData.get("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR"));
-        assertEquals("5", cmData.get("KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR"));
+        assertEquals("2", mapper.readTree(cmData.get("kafka-config")).get("default.replication.factor").asText());
+        assertEquals("5", mapper.readTree(cmData.get("kafka-config")).get("offsets.topic.replication.factor").asText());
+        assertEquals("5", mapper.readTree(cmData.get("kafka-config")).get("transaction.state.log.replication.factor").asText());
         assertEquals("2Gi", mapper.readTree(cmData.get("kafka-storage")).get("size").asText());
         assertEquals("2Gi", mapper.readTree(cmData.get("zookeeper-storage")).get("size").asText());
     }
