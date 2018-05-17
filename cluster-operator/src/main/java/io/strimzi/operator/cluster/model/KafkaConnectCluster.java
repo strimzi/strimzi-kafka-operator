@@ -141,8 +141,8 @@ public class KafkaConnectCluster extends AbstractModel {
                 updateStrategy,
                 Collections.emptyMap(),
                 Collections.emptyMap(),
-                resources()
-                );
+                resources(),
+                getAffinity());
     }
 
     @Override

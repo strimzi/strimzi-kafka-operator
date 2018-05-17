@@ -4,15 +4,22 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.fabric8.kubernetes.api.model.Affinity;
+import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
+import io.fabric8.kubernetes.api.model.PodAffinityTerm;
+import io.fabric8.kubernetes.api.model.PodAntiAffinity;
+import io.fabric8.kubernetes.api.model.PodAntiAffinityBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.kubernetes.api.model.WeightedPodAffinityTerm;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.operator.cluster.ClusterOperator;
 import io.vertx.core.json.JsonObject;
@@ -37,6 +44,7 @@ public class KafkaCluster extends AbstractModel {
 
     // Kafka configuration
     private String zookeeperConnect = DEFAULT_KAFKA_ZOOKEEPER_CONNECT;
+    private RackConfig rackConfig;
 
     // Configuration defaults
     private static final String DEFAULT_IMAGE =
@@ -60,6 +68,7 @@ public class KafkaCluster extends AbstractModel {
     public static final String KEY_KAFKA_CONFIG = "kafka-config";
     public static final String KEY_JVM_OPTIONS = "kafka-jvmOptions";
     public static final String KEY_RESOURCES = "kafka-resources";
+    public static final String KEY_RACK = "kafka-rack";
 
     // Kafka configuration keys (EnvVariables)
     public static final String ENV_VAR_KAFKA_ZOOKEEPER_CONNECT = "KAFKA_ZOOKEEPER_CONNECT";
@@ -138,6 +147,11 @@ public class KafkaCluster extends AbstractModel {
         kafka.setResources(Resources.fromJson(data.get(KEY_RESOURCES)));
         kafka.setJvmOptions(JvmOptions.fromJson(data.get(KEY_JVM_OPTIONS)));
 
+        RackConfig rackConfig = RackConfig.fromJson(data.get(KEY_RACK));
+        if (rackConfig != null) {
+            kafka.setRackConfig(rackConfig);
+        }
+
         return kafka;
     }
 
@@ -186,6 +200,12 @@ public class KafkaCluster extends AbstractModel {
             kafka.setConfiguration(new KafkaConfiguration(kafkaConfiguration));
         }
 
+        Affinity affinity = ss.getSpec().getTemplate().getSpec().getAffinity();
+        if (affinity != null) {
+            String rackTopologyKey = affinity.getPodAntiAffinity().getPreferredDuringSchedulingIgnoredDuringExecution().get(0).getPodAffinityTerm().getTopologyKey();
+            kafka.setRackConfig(new RackConfig(rackTopologyKey));
+        }
+
         return kafka;
     }
 
@@ -231,6 +251,7 @@ public class KafkaCluster extends AbstractModel {
                 createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout),
                 createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout),
                 resources(),
+                getAffinity(),
                 isOpenShift);
     }
 
@@ -291,6 +312,41 @@ public class KafkaCluster extends AbstractModel {
     }
 
     @Override
+    protected Affinity getAffinity() {
+
+        List<WeightedPodAffinityTerm> weightedPodAffinityTerms = new ArrayList<>();
+        PodAntiAffinity podAntiAffinity = null;
+        Affinity affinity = null;
+
+        // adding the affinity term for rack feature only if it's enabled
+        if (rackConfig != null) {
+            Map<String, String> matchLabels = new HashMap<>();
+            matchLabels.put(Labels.STRIMZI_CLUSTER_LABEL, cluster);
+            matchLabels.put(Labels.STRIMZI_NAME_LABEL, name);
+            matchLabels.put(Labels.STRIMZI_TYPE_LABEL, AssemblyType.KAFKA.toString());
+            LabelSelector labelSelector = new LabelSelector(null, matchLabels);
+
+            PodAffinityTerm podAffinityTerm = new PodAffinityTerm(labelSelector, null, rackConfig.getTopologyKey());
+            WeightedPodAffinityTerm weightedPodAffinityTerm = new WeightedPodAffinityTerm(podAffinityTerm, 100);
+            weightedPodAffinityTerms.add(weightedPodAffinityTerm);
+        }
+
+        if (weightedPodAffinityTerms.size() > 0) {
+            podAntiAffinity = new PodAntiAffinityBuilder()
+                    .withPreferredDuringSchedulingIgnoredDuringExecution(weightedPodAffinityTerms)
+                    .build();
+        }
+
+        if (podAntiAffinity != null) {
+            affinity = new AffinityBuilder()
+                    .withPodAntiAffinity(podAntiAffinity)
+                    .build();
+        }
+
+        return affinity;
+    }
+
+    @Override
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(buildEnvVar(ENV_VAR_KAFKA_ZOOKEEPER_CONNECT, zookeeperConnect));
@@ -306,5 +362,9 @@ public class KafkaCluster extends AbstractModel {
 
     protected void setZookeeperConnect(String zookeeperConnect) {
         this.zookeeperConnect = zookeeperConnect;
+    }
+
+    protected void setRackConfig(RackConfig rackConfig) {
+        this.rackConfig = rackConfig;
     }
 }
