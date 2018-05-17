@@ -205,6 +205,7 @@ public class ZookeeperCluster extends AbstractModel {
                 createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout),
                 createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout),
                 resources(),
+                getAffinity(),
                 isOpenShift);
     }
 

@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSource;
@@ -265,6 +266,13 @@ public abstract class AbstractModel {
         return name + "-" + podId;
     }
 
+    /**
+     * @return the affinity rules used for deploying Pods from the related StatefulSet/Deployment
+     */
+    protected Affinity getAffinity() {
+        return null;
+    }
+
     protected VolumeMount createVolumeMount(String name, String path) {
         VolumeMount volumeMount = new VolumeMountBuilder()
                 .withName(name)
@@ -426,6 +434,7 @@ public abstract class AbstractModel {
             Probe livenessProbe,
             Probe readinessProbe,
             ResourceRequirements resources,
+            Affinity affinity,
             boolean isOpenShift) {
 
         Map<String, String> annotations = new HashMap<>();
@@ -488,6 +497,7 @@ public abstract class AbstractModel {
                             .withAnnotations(getPrometheusAnnotations())
                         .endMetadata()
                         .withNewSpec()
+                            .withAffinity(affinity)
                             .withSecurityContext(securityContext)
                             .withInitContainers(initContainers)
                             .withContainers(container)
@@ -508,7 +518,8 @@ public abstract class AbstractModel {
             DeploymentStrategy updateStrategy,
             Map<String, String> deploymentAnnotations,
             Map<String, String> podAnnotations,
-            ResourceRequirements resources) {
+            ResourceRequirements resources,
+            Affinity affinity) {
 
         Container container = new ContainerBuilder()
                 .withName(name)
@@ -522,24 +533,25 @@ public abstract class AbstractModel {
 
         Deployment dep = new DeploymentBuilder()
                 .withNewMetadata()
-                .withName(name)
-                .withLabels(getLabelsWithName())
-                .withNamespace(namespace)
-                .withAnnotations(deploymentAnnotations)
+                    .withName(name)
+                    .withLabels(getLabelsWithName())
+                    .withNamespace(namespace)
+                    .withAnnotations(deploymentAnnotations)
                 .endMetadata()
                 .withNewSpec()
-                .withStrategy(updateStrategy)
-                .withReplicas(replicas)
-                .withNewTemplate()
-                .withNewMetadata()
-                .withLabels(getLabelsWithName())
-                .withAnnotations(podAnnotations)
-                .endMetadata()
-                .withNewSpec()
-                .withServiceAccountName(getServiceAccountName())
-                .withContainers(container)
-                .endSpec()
-                .endTemplate()
+                    .withStrategy(updateStrategy)
+                    .withReplicas(replicas)
+                    .withNewTemplate()
+                        .withNewMetadata()
+                            .withLabels(getLabelsWithName())
+                            .withAnnotations(podAnnotations)
+                        .endMetadata()
+                        .withNewSpec()
+                            .withAffinity(affinity)
+                            .withServiceAccountName(getServiceAccountName())
+                            .withContainers(container)
+                        .endSpec()
+                    .endTemplate()
                 .endSpec()
                 .build();
 
