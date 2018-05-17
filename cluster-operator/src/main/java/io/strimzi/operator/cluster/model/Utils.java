@@ -10,7 +10,12 @@ import io.vertx.core.json.JsonObject;
 
 import java.util.Map;
 
-public class Utils {
+public final class Utils {
+
+
+    private Utils() {
+        // no-op
+    }
     public static int getInteger(Map<String, String> data, String key, int defaultValue) {
         try {
             if (data.get(key) == null) { // value is not set in ConfigMap -> will be used default value
