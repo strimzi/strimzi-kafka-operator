@@ -11,8 +11,8 @@ import java.lang.annotation.Target;
 
 /**
  * Annotation for test classes or methods run via {@code @RunWith(StrimziRunner.class)}
- * which causes that runner create kafka config map with Topic before,
- * and delete kafka config map with Topic after the tests.
+ * which causes that runner create kafka ConfigMap with Topic before,
+ * and delete kafka ConfigMap with Topic after the tests.
  */
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)

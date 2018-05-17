@@ -142,7 +142,7 @@ public class ResourceUtils {
     }
 
     /**
-     * Generate empty Kafka Connect S2I config map
+     * Generate empty Kafka Connect S2I ConfigMap
      */
     public static ConfigMap createEmptyKafkaConnectS2IClusterConfigMap(String clusterCmNamespace, String clusterCmName) {
         Map<String, String> cmData = new HashMap<>();
@@ -180,7 +180,7 @@ public class ResourceUtils {
     }
 
     /**
-     * Generate empty Kafka Connect config map
+     * Generate empty Kafka Connect ConfigMap
      */
     public static ConfigMap createEmptyKafkaConnectClusterConfigMap(String clusterCmNamespace, String clusterCmName) {
         Map<String, String> cmData = new HashMap<>();

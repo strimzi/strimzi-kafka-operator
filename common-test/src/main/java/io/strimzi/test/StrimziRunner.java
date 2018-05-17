@@ -333,7 +333,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 JsonNode data = node.get("data");
                 ((ObjectNode) data).put("nodes", String.valueOf(cluster.nodes()));
                 ((ObjectNode) data).put("connect-config", cluster.connectConfig());
-                // updates values for config map
+                // updates values for ConfigMap
                 for (CmData cmData : cluster.config()) {
                     ((ObjectNode) data).put(cmData.key(), cmData.value());
                 }
@@ -373,7 +373,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 JsonNode data = node.get("data");
                 ((ObjectNode) data).put("kafka-nodes", String.valueOf(cluster.kafkaNodes()));
                 ((ObjectNode) data).put("zookeeper-nodes", String.valueOf(cluster.zkNodes()));
-                // updates values for config map
+                // updates values for ConfigMap
                 for (CmData cmData : cluster.config()) {
                     ((ObjectNode) data).put(cmData.key(), cmData.value());
                 }

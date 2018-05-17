@@ -47,7 +47,7 @@ public class ZookeeperCluster extends AbstractModel {
     private static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
     private static final boolean DEFAULT_ZOOKEEPER_METRICS_ENABLED = false;
 
-    // Configuration keys (Config Map)
+    // Configuration keys (ConfigMap)
     public static final String KEY_IMAGE = "zookeeper-image";
     public static final String KEY_REPLICAS = "zookeeper-nodes";
     public static final String KEY_HEALTHCHECK_DELAY = "zookeeper-healthcheck-delay";
