@@ -18,8 +18,8 @@ public class Matchers {
     }
 
     /**
-     * Matcher to check value by key in config map
-     * @param key - key of config map
+     * Matcher to check value by key in ConfigMap
+     * @param key - key of ConfigMap
      * @param value - expected value for the key
      */
     public static Matcher<String> valueOfCmEquals(String key, String value) {

@@ -119,7 +119,7 @@ public class ClusterOperator extends AbstractVerticle {
                         try {
                             type = labels.type();
                         } catch (IllegalArgumentException e) {
-                            log.warn("Unknown {} label {} received in Config Map {} in namespace {}",
+                            log.warn("Unknown {} label {} received in ConfigMap {} in namespace {}",
                                     Labels.STRIMZI_TYPE_LABEL,
                                     cm.getMetadata().getLabels().get(Labels.STRIMZI_TYPE_LABEL),
                                     cm.getMetadata().getName(), namespace);
@@ -128,7 +128,7 @@ public class ClusterOperator extends AbstractVerticle {
 
                         final AbstractAssemblyOperator cluster;
                         if (type == null) {
-                            log.warn("Missing label {} in Config Map {} in namespace {}", Labels.STRIMZI_TYPE_LABEL, cm.getMetadata().getName(), namespace);
+                            log.warn("Missing label {} in ConfigMap {} in namespace {}", Labels.STRIMZI_TYPE_LABEL, cm.getMetadata().getName(), namespace);
                             return;
                         } else {
                             switch (type) {

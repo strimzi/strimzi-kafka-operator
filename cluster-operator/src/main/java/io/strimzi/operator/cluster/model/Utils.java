@@ -13,7 +13,7 @@ import java.util.Map;
 public class Utils {
     public static int getInteger(Map<String, String> data, String key, int defaultValue) {
         try {
-            if (data.get(key) == null) { // value is not set in config map -> will be used default value
+            if (data.get(key) == null) { // value is not set in ConfigMap -> will be used default value
                 return defaultValue;
             }
             return Integer.parseInt(data.get(key));
@@ -27,7 +27,7 @@ public class Utils {
     }
 
     public static boolean getBoolean(Map<String, String> data, String key, boolean defaultValue) {
-        if (data.get(key) == null) { // value is not set in config map
+        if (data.get(key) == null) { // value is not set in ConfigMap
             return defaultValue;
         } // java parses "truue" as false. We need to be more strict
         if (data.get(key).equals("true")) {
@@ -41,7 +41,7 @@ public class Utils {
 
     public static Storage getStorage(Map<String, String> data, String key) {
         try {
-            if (data.get(key) == null) { // value is not set in config map
+            if (data.get(key) == null) { // value is not set in ConfigMap
                 return new Storage(Storage.StorageType.PERSISTENT_CLAIM);
             }
             return Storage.fromJson(new JsonObject(data.get(key)));
@@ -51,7 +51,7 @@ public class Utils {
     }
 
     public static String getNonEmptyString(Map<String, String> data, String key, String defaultValue) {
-        if (data.get(key) == null) { // value is not set in config map -> will be used default value
+        if (data.get(key) == null) { // value is not set in ConfigMap -> will be used default value
             return defaultValue;
         }
         if (data.get(key).length() == 0) {

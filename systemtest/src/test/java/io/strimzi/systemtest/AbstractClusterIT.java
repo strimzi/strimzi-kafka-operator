@@ -117,7 +117,7 @@ public class AbstractClusterIT {
 
             String content = mapper.writeValueAsString(node);
             kubeClient.replaceContent(content);
-            LOGGER.info("Value in Config Map replaced");
+            LOGGER.info("Value in ConfigMap replaced");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

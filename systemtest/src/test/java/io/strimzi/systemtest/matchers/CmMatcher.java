@@ -12,7 +12,7 @@ import java.io.IOException;
 
 /**
  * <p>A CmMatcher is custom matcher to check values for parameters
- * in the config map of tested cluster.</p>
+ * in the ConfigMap of tested cluster.</p>
  */
 public class CmMatcher extends BaseMatcher<String> {
 

@@ -81,7 +81,7 @@ public class TopicOperatorTest {
         return result;
     }
 
-    /** Test what happens when a non-topic config map gets created in kubernetes */
+    /** Test what happens when a non-topic ConfigMap gets created in kubernetes */
     @Test
     public void testOnConfigMapAdded_ignorable(TestContext context) {
         ConfigMap cm = new ConfigMapBuilder().withNewMetadata().withName("non-topic").endMetadata().build();
@@ -96,7 +96,7 @@ public class TopicOperatorTest {
         });
     }
 
-    /** Test what happens when a non-topic config map gets created in kubernetes */
+    /** Test what happens when a non-topic ConfigMap gets created in kubernetes */
     @Test
     public void testOnConfigMapAdded_invalidCm(TestContext context) {
         Map<String, String> data = map(TopicSerialization.CM_KEY_REPLICAS, "1",
@@ -219,7 +219,7 @@ public class TopicOperatorTest {
     /**
      * 1. operator is notified that a topic is created
      * 2. operator successfully queries kafka to get topic metadata
-     * 3. operator successfully creates config map
+     * 3. operator successfully creates ConfigMap
      * 4. operator successfully creates in topic store
      */
     @Test
@@ -244,7 +244,7 @@ public class TopicOperatorTest {
      * 1. operator is notified that a topic is created
      * 2. operator initially failed querying kafka to get topic metadata
      * 3. operator is subsequently successful in querying kafka to get topic metadata
-     * 4. operator successfully creates config map
+     * 4. operator successfully creates ConfigMap
      * 5. operator successfully creates in topic store
      */
     @Test
@@ -348,7 +348,7 @@ public class TopicOperatorTest {
     }
 
     // TODO error getting full topic metadata, and then reconciliation
-    // TODO error creating config map (exists), and then reconciliation
+    // TODO error creating ConfigMap (exists), and then reconciliation
 
     /**
      * Test reconciliation when a configmap has been created while the operator wasn't running

@@ -11,15 +11,15 @@ corresponding Kafka topics.
 
 Specifically:
  
-* if a config map is created, the operator will create the topic it describes
-* if a config map is deleted, the operator will delete the topic it describes
-* if a config map is changed, the operator will update the topic it describes
+* if a ConfigMap is created, the operator will create the topic it describes
+* if a ConfigMap is deleted, the operator will delete the topic it describes
+* if a ConfigMap is changed, the operator will update the topic it describes
 
 And also, in the other direction:
 
-* if a topic is created, the operator will create a config map describing it
-* if a topic is deleted, the operator will create the config map describing it
-* if a topic is changed, the operator will update the config map describing it
+* if a topic is created, the operator will create a ConfigMap describing it
+* if a topic is deleted, the operator will create the ConfigMap describing it
+* if a topic is changed, the operator will update the ConfigMap describing it
 
 This is beneficial to a {ProductPlatformName} centric style of deploying
 applications, because it allows you to declare a ConfigMap as part of your
@@ -99,7 +99,7 @@ This example shows how to create a topic called "orders" with 10 partitions and 
 ifdef::Kubernetes[]
 ==== On {KubernetesName}
 
-1. The config map has to be prepared:
+1. The ConfigMap has to be prepared:
 +
 .Topic declaration ConfigMap
 [source,yaml]
@@ -155,7 +155,7 @@ endif::Kubernetes[]
 
 ==== On {OpenShiftName}
 
-1. The config map has to be prepared:
+1. The ConfigMap has to be prepared:
 +
 .Topic declaration ConfigMap
 [source,yaml]
