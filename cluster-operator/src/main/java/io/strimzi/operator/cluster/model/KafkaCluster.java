@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.LabelSelector;
@@ -31,6 +32,15 @@ import java.util.List;
 import java.util.Map;
 
 public class KafkaCluster extends AbstractModel {
+
+    public static final String KAFKA_SERVICE_ACCOUNT = "strimzi-kafka";
+
+    private static final String KAFKA_INIT_IMAGE = "strimzi/kafka-init:latest";
+    private static final String KAFKA_INIT_NAME = "kafka-init";
+    private static final String KAFKA_INIT_VOLUME_NAME = "rack-volume";
+    private static final String KAFKA_INIT_VOLUME_MOUNT = "/rack";
+    private static final String ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY = "RACK_TOPOLOGY_KEY";
+    private static final String ENV_VAR_KAFKA_INIT_NODE_NAME = "NODE_NAME";
 
     protected static final int CLIENT_PORT = 9092;
     protected static final String CLIENT_PORT_NAME = "clients";
@@ -252,6 +262,7 @@ public class KafkaCluster extends AbstractModel {
                 createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout),
                 resources(),
                 getAffinity(),
+                getInitContainers(),
                 isOpenShift);
     }
 
@@ -289,6 +300,9 @@ public class KafkaCluster extends AbstractModel {
         if (isMetricsEnabled) {
             volumeList.add(createConfigMapVolume(metricsConfigVolumeName, metricsConfigName));
         }
+        if (rackConfig != null) {
+            volumeList.add(createEmptyDirVolume(KAFKA_INIT_VOLUME_NAME));
+        }
 
         return volumeList;
     }
@@ -306,6 +320,9 @@ public class KafkaCluster extends AbstractModel {
         volumeMountList.add(createVolumeMount(VOLUME_NAME, mountPath));
         if (isMetricsEnabled) {
             volumeMountList.add(createVolumeMount(metricsConfigVolumeName, metricsConfigMountPath));
+        }
+        if (rackConfig != null) {
+            volumeMountList.add(createVolumeMount(KAFKA_INIT_VOLUME_NAME, KAFKA_INIT_VOLUME_MOUNT));
         }
 
         return volumeMountList;
@@ -344,6 +361,36 @@ public class KafkaCluster extends AbstractModel {
         }
 
         return affinity;
+    }
+
+    @Override
+    protected List<Container> getInitContainers() {
+
+        List<Container> initContainers = new ArrayList<>();
+
+        if (rackConfig != null) {
+
+            List<EnvVar> varList = new ArrayList<>();
+            varList.add(buildEnvVarFromFieldRef(ENV_VAR_KAFKA_INIT_NODE_NAME, "spec.nodeName"));
+            varList.add(buildEnvVar(ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY, rackConfig.getTopologyKey()));
+
+            Container initContainer = new ContainerBuilder()
+                    .withName(KAFKA_INIT_NAME)
+                    .withImage(KAFKA_INIT_IMAGE)
+                    .withImagePullPolicy("IfNotPresent") // TODO: just for testing locally ... to remove!!!
+                    .withEnv(varList)
+                    .withVolumeMounts(createVolumeMount(KAFKA_INIT_VOLUME_NAME, KAFKA_INIT_VOLUME_MOUNT))
+                    .build();
+
+            initContainers.add(initContainer);
+        }
+
+        return initContainers;
+    }
+
+    @Override
+    protected String getServiceAccountName() {
+        return KAFKA_SERVICE_ACCOUNT;
     }
 
     @Override

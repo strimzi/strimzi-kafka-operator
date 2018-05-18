@@ -243,7 +243,8 @@ public class TopicOperator extends AbstractModel {
                 Collections.emptyMap(),
                 Collections.emptyMap(),
                 resources(),
-                getAffinity());
+                getAffinity(),
+                getInitContainers());
     }
 
     @Override
