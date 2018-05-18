@@ -140,7 +140,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
     }
 
     @Test
-//    @JUnitGroup(name = "regression")
+    @JUnitGroup(name = "regression")
     @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 1, zkNodes = 1)
     public void testZookeeperScaleUpScaleDown() {
         // kafka cluster already deployed via annotation
