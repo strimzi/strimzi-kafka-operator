@@ -15,6 +15,8 @@ import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.ContainerPortBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
+import io.fabric8.kubernetes.api.model.EnvVarSource;
+import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
@@ -273,6 +275,13 @@ public abstract class AbstractModel {
         return null;
     }
 
+    /**
+     * @return a list of init containers to add to the StatefulSet/Deployment
+     */
+    protected List<Container> getInitContainers() {
+        return null;
+    }
+
     protected VolumeMount createVolumeMount(String name, String path) {
         VolumeMount volumeMount = new VolumeMountBuilder()
                 .withName(name)
@@ -435,6 +444,7 @@ public abstract class AbstractModel {
             Probe readinessProbe,
             ResourceRequirements resources,
             Affinity affinity,
+            List<Container> initContainers,
             boolean isOpenShift) {
 
         Map<String, String> annotations = new HashMap<>();
@@ -452,7 +462,7 @@ public abstract class AbstractModel {
                 .withResources(resources)
                 .build();
 
-        List<Container> initContainers = new ArrayList<>();
+        List<Container> initContainersInternal = new ArrayList<>();
         PodSecurityContext securityContext = null;
         // if a persistent volume claim is requested and the running cluster is a Kubernetes one
         // there is an hack on volume mounting which needs an "init-container"
@@ -470,11 +480,15 @@ public abstract class AbstractModel {
                     .withCommand("sh", "-c", chown)
                     .build();
 
-            initContainers.add(initContainer);
+            initContainersInternal.add(initContainer);
 
             securityContext = new PodSecurityContextBuilder()
                     .withFsGroup(AbstractModel.VOLUME_MOUNT_HACK_GROUPID)
                     .build();
+        }
+        // add all the other init containers provided by the specific model implementation
+        if (initContainers != null) {
+            initContainersInternal.addAll(initContainers);
         }
 
         StatefulSet statefulSet = new StatefulSetBuilder()
@@ -497,9 +511,10 @@ public abstract class AbstractModel {
                             .withAnnotations(getPrometheusAnnotations())
                         .endMetadata()
                         .withNewSpec()
+                            .withServiceAccountName(getServiceAccountName())
                             .withAffinity(affinity)
                             .withSecurityContext(securityContext)
-                            .withInitContainers(initContainers)
+                            .withInitContainers(initContainersInternal)
                             .withContainers(container)
                             .withVolumes(volumes)
                         .endSpec()
@@ -519,7 +534,8 @@ public abstract class AbstractModel {
             Map<String, String> deploymentAnnotations,
             Map<String, String> podAnnotations,
             ResourceRequirements resources,
-            Affinity affinity) {
+            Affinity affinity,
+            List<Container> initContainers) {
 
         Container container = new ContainerBuilder()
                 .withName(name)
@@ -549,6 +565,7 @@ public abstract class AbstractModel {
                         .withNewSpec()
                             .withAffinity(affinity)
                             .withServiceAccountName(getServiceAccountName())
+                            .withInitContainers(initContainers)
                             .withContainers(container)
                         .endSpec()
                     .endTemplate()
@@ -567,6 +584,25 @@ public abstract class AbstractModel {
      */
     protected static EnvVar buildEnvVar(String name, String value) {
         return new EnvVarBuilder().withName(name).withValue(value).build();
+    }
+
+    /**
+     * Build an environment variable instance with the provided name from a field reference
+     * using Downward API
+     *
+     * @param name The name of the environment variable
+     * @param field The field path from which getting the value
+     * @return The environment variable instance
+     */
+    protected static EnvVar buildEnvVarFromFieldRef(String name, String field) {
+
+        EnvVarSource envVarSource = new EnvVarSourceBuilder()
+                .withNewFieldRef()
+                    .withFieldPath(field)
+                .endFieldRef()
+                .build();
+
+        return new EnvVarBuilder().withName(name).withValueFrom(envVarSource).build();
     }
 
     /**
