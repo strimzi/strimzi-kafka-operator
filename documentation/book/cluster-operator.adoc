@@ -703,7 +703,12 @@ Note line 12, where the the `strimzi-cluster-operator` ServiceAccount is specifi
 
 ==== Defining a Role
 
-The operator needs to operate using a Role that gives it access to the necessary resources
+The Cluster Operator needs to operate using a Role that gives it access to the necessary resources.
+Depending on the {ProductPlatformName} cluster setup, a cluster administrator might be needed to create the Role.
+Cluster administrator rights are only needed for the creation of the Role.
+The Role itself doesn't contain any cluster administrator privileges, and the Cluster Operator will not run under the cluster admin account.
+The Role follows the "principle of least privilege" and contains only those privileges needed by the Cluster Operator to operate Kafka, Kafka Connect and Zookeeper clusters.
+The assigned privileges allow the Cluster Operator to manage {ProductPlatformName} resources such as StatefulSets, Deployments, Pods and ConfigMaps.
 
 [source,yaml,options="nowrap"]
 .Example Role for the Cluster Operator
@@ -711,14 +716,36 @@ The operator needs to operate using a Role that gives it access to the necessary
 include::examples/install/cluster-operator/02-role.yaml[]
 ----
 
+When the Role cannot be created, the predefined ClusterRole named `edit` can be used instead.
+
 ==== Defining a RoleBinding
 
-Finally, the operator needs a RoleBinding which associates its Role with its ServiceAccount
+Finally, the operator needs a RoleBinding which associates its Role with its ServiceAccount:
 
 [source,yaml,options="nowrap"]
 .Example RoleBinding for the Cluster Operator
 ----
 include::examples/install/cluster-operator/03-role-binding.yaml[]
+----
+
+In case the `edit` ClusterRole is being used, the RoleBinding has to be modified to refer to it instead of the `strimzi-cluster-operator-role` Role:
+
+[source,yaml,options="nowrap"]
+.Example RoleBinding for the Cluster Operator using the `edit` ClusterRole
+----
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: RoleBinding
+metadata:
+  name: strimzi-cluster-operator-binding
+  labels:
+    app: strimzi
+subjects:
+  - kind: ServiceAccount
+    name: strimzi-cluster-operator
+roleRef:
+  kind: ClusterRole
+  name: edit
+  apiGroup: rbac.authorization.k8s.io
 ----
 
 === Operator configuration
