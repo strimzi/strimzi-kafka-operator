@@ -75,7 +75,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
         Oc oc = (Oc) this.kubeClient;
         String clusterName = "openshift-my-cluster";
         oc.newApp("strimzi-ephemeral", map("CLUSTER_NAME", clusterName));
-        oc.waitForStatefulSet(zookeeperClusterName(clusterName), 1);
+        oc.waitForStatefulSet(zookeeperClusterName(clusterName), 3);
         oc.waitForStatefulSet(kafkaClusterName(clusterName), 3);
         oc.deleteByName("cm", clusterName);
         oc.waitForResourceDeletion("statefulset", kafkaClusterName(clusterName));
@@ -140,7 +140,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
     }
 
     @Test
-    @JUnitGroup(name = "regression")
+//    @JUnitGroup(name = "regression")
     @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 1, zkNodes = 1)
     public void testZookeeperScaleUpScaleDown() {
         // kafka cluster already deployed via annotation
