@@ -23,9 +23,12 @@
 :ProductPlatformName: {OpenShiftName} or {KubernetesName}
 :ProductPlatformLongName: {OpenShiftLongName} or {KubernetesLongName}
 
+// Source and download links
+:ReleaseDownload: https://github.com/strimzi/strimzi/releases[GitHub]
+
 // Docker image names
 :DockerTag: {ProductVersion}
-:DockerRepository: https://hub.docker.com[Docker Hub]
+:DockerRepository: https://hub.docker.com/u/strimzi[Docker Hub]
 :DockerZookeeper: strimzi/zookeeper:{DockerTag}
 :DockerKafka: strimzi/kafka:{DockerTag}
 :DockerKafkaConnect: strimzi/kafka-connect:{DockerTag}

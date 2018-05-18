@@ -1,5 +1,12 @@
 == Getting started
 
+=== Downloading {ProductName}
+
+Strimzi releases are available for download from {ReleaseDownload}.
+The release artifacts contain documentation and example YAML files for deployment on {ProductPlatformName}.
+The example files are used throughout this documentation and can be used to install {ProductName}.
+The Docker images are available on {DockerRepository}.
+
 === Prerequisites
 
 An {ProductPlatformName} cluster is required to deploy {ProductLongName}. {ProductName} supports all kinds of clusters - from public and
@@ -16,7 +23,6 @@ endif::InstallationAppendix[]
 
 In order to execute the commands in this guide, your {ProductPlatformName} user needs to have the rights to create and
 manage RBAC resources (Roles and Role Bindings).
-
 
 === Cluster Operator
 
