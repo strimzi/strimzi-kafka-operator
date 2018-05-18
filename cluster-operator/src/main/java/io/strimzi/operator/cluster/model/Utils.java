@@ -66,29 +66,41 @@ public final class Utils {
     }
 
     public static String getJsonCorruptionBlame(DecodeException de, String config) {
-        String token = "";
-        token = de.getMessage();
-        if (token.contains("Illegal unquoted character")) {
-            return "JSON quotation";
-        }
-        if (token.contains("Failed to decode: Unexpected end-of-input")) {
-            return "JSON braces";
-        }
-        token = token.replace("Failed to decode: Unrecognized token '", "");
-        token = token.substring(0, token.indexOf("'"));
-
-        String[] entries = config.replace("{", "").replace("}", "")
-               .replace("\"", "").replace(" ", "")
-                .replace(",", "").split("\n");
-        int i;
-        String blame = "";
-        for (i = 0; i < entries.length; ++i) {
-            if (entries[i].split(":")[1].equals(token)) {
-                blame = entries[i].split(":")[0];
-                break;
+        try {
+            String token = "";
+            token = de.getMessage();
+            if (token.contains("Failed to decode: No content to map due to end-of-input")) {
+                return "JSON - empty value";
             }
+            if (token.contains("Illegal unquoted character")) {
+                return "JSON quotation";
+            }
+            if (token.contains("Failed to decode: Unexpected character")) {
+                token = token.replace("Failed to decode: Unexpected character ('", "");
+                token = token.substring(0, token.indexOf("'"));
+                return "Unexpected character - " + token;
+            }
+            if (token.contains("Failed to decode: Unexpected end-of-input")) {
+                return "JSON braces";
+            }
+            token = token.replace("Failed to decode: Unrecognized token '", "");
+            token = token.substring(0, token.indexOf("'"));
+
+            String[] entries = config.replace("{", "").replace("}", "")
+                    .replace("\"", "").replace(" ", "")
+                    .replace(",", "").split("\n");
+            int i;
+            String blame = "";
+            for (i = 0; i < entries.length; ++i) {
+                if (entries[i].split(":")[1].equals(token)) {
+                    blame = entries[i].split(":")[0];
+                    break;
+                }
+            }
+            return blame;
+        } catch (ArrayIndexOutOfBoundsException e) {
+            return "unknown flaw";
         }
-        return blame;
     }
 
     public static KafkaConnectConfiguration getKafkaConnectConfiguration(Map<String, String> data, String key) {

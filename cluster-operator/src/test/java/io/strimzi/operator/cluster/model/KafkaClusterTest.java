@@ -148,4 +148,57 @@ public class KafkaClusterTest {
             assertEquals("key.name", e.getKey());
         }
     }
+
+    @Test
+    public void testCorruptedConfigMapMetrics() {
+        try {
+            ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout,
+                    "", configurationJson);
+            KafkaCluster.fromConfigMap(cm);
+            fail("Expected it to throw an exception");
+        } catch (InvalidConfigMapException e) {
+            assertEquals("JSON - empty value", e.getKey());
+        }
+
+        try {
+            ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout,
+                    "{\"lowercaseOutputName\" : true \n," +
+                            "\"rules\": }", configurationJson);
+            KafkaCluster.fromConfigMap(cm);
+            fail("Expected it to throw an exception");
+        } catch (InvalidConfigMapException e) {
+            assertEquals("Unexpected character - }", e.getKey());
+        }
+
+        try {
+            ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout,
+                    "    {\n" +
+                            "    \"lowercaseOutputName\": true,\n" +
+                            "    \"rules\": [{\n" +
+                            "    \"pattern\": \"kafka.server<type=(.+), name=(.+)PerSec\\\\w*><>Count\",\n" +
+                            "    \"name\": \"kafka_server_$1_$2_total\"\n" +
+                            "    },\n" +
+                            "    {\n" +
+                            "    \"pattern\": \"kafka.server<type=(.+), name=(.+)PerSec\\\\w*, topic=(.+)><>Count\",\n" +
+                            "    \"name\": \"x\",\n" +
+                            "    \"labels\": \n" +
+                            "    }\n" +
+                            "    ]\n" +
+                            "    }", configurationJson);
+            KafkaCluster.fromConfigMap(cm);
+            fail("Expected it to throw an exception");
+        } catch (InvalidConfigMapException e) {
+            assertEquals("Unexpected character - }", e.getKey());
+        }
+
+        try {
+            ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout,
+                    "{\"lowercaseOutputName\" : tru \n," +
+                            "\"rules\": \"I am valid\" }", configurationJson);
+            KafkaCluster.fromConfigMap(cm);
+            fail("Expected it to throw an exception");
+        } catch (InvalidConfigMapException e) {
+            assertEquals("lowercaseOutputName", e.getKey());
+        }
+    }
 }

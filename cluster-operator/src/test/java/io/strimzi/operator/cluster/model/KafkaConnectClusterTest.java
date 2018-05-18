@@ -263,4 +263,34 @@ public class KafkaConnectClusterTest {
             assertEquals("bool.value4", e.getKey());
         }
     }
+
+    @Test
+    public void testEmptyValue() {
+        ConfigMap cm = ResourceUtils.createEmptyKafkaConnectClusterConfigMap(namespace, cluster);
+
+        // in the middle
+        cm.getData().put("kafka-config", "{" +
+                "\"offsets .topic.replication.factor\": \"3\",\n" +
+                "\"transaction.state.log.min.isr\": ,\n" +
+                "\"default.replication.factor\": 2 }");
+        try {
+            KafkaCluster.fromConfigMap(cm);
+            fail("Expected it to throw an exception");
+        } catch (InvalidConfigMapException e) {
+            assertEquals("Unexpected character - ,", e.getKey());
+        }
+
+        // end
+        cm.getData().clear();
+        cm.getData().put("kafka-config", "{" +
+                "\"offsets .topic.replication.factor\": \"3\",\n" +
+                "\"transaction.state.log.min.isr\": 7,\n" +
+                "\"default.replication.factor\": }");
+        try {
+            KafkaCluster.fromConfigMap(cm);
+            fail("Expected it to throw an exception");
+        } catch (InvalidConfigMapException e) {
+            assertEquals("Unexpected character - }", e.getKey());
+        }
+    }
 }
