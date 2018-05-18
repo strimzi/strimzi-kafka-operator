@@ -704,11 +704,11 @@ Note line 12, where the the `strimzi-cluster-operator` ServiceAccount is specifi
 ==== Defining a Role
 
 The Cluster Operator needs to operate using a Role that gives it access to the necessary resources.
-Depending on {ProductPlatformName} cluster setup, a cluster administrator might be needed to create the Role.
+Depending on the {ProductPlatformName} cluster setup, a cluster administrator might be needed to create the Role.
 Cluster administrator rights are only needed for the creation of the Role.
-The Role it self doesn't contain any cluster administrator privileges and the Cluster Operator will not run under cluster admin account.
-The Role follows the principle of least privilege and contains only the privileges needed by the Cluster Operator to operate Kafka, Kafka Connect and Zookeeper clusters.
-The assigned privileges allow Cluster Operator to manage {ProductPlatformName} resources such as StatefulSets, Deployments, Pods and ConfigMaps.
+The Role itself doesn't contain any cluster administrator privileges, and the Cluster Operator will not run under the cluster admin account.
+The Role follows the "principle of least privilege" and contains only those privileges needed by the Cluster Operator to operate Kafka, Kafka Connect and Zookeeper clusters.
+The assigned privileges allow the Cluster Operator to manage {ProductPlatformName} resources such as StatefulSets, Deployments, Pods and ConfigMaps.
 
 [source,yaml,options="nowrap"]
 .Example Role for the Cluster Operator
