@@ -9,12 +9,10 @@ The Docker images are available on {DockerRepository}.
 
 === Prerequisites
 
-An {ProductPlatformName} cluster is required to deploy {ProductLongName}. {ProductName} supports all kinds of clusters - from public and
-private clouds down to local deployments intended for development purposes. This guide expects that an {ProductPlatformName}
-cluster is available and the
-ifdef::Kubernetes[`kubectl` or]
-`oc` command line tools are installed and configured to connect
-to the running cluster.
+{ProductLongName} runs on {ProductPlatformName} cluster.
+{ProductName} supports ifdef::Kubernetes[{KubernetesLongName} 1.9 and higher] or {OpenShiftLongName} 3.9 and higher.
+{ProductName} works on all kinds of clusters - from public and private clouds down to local deployments intended for development purposes.
+This guide expects that an {ProductPlatformName} cluster is available and the ifdef::Kubernetes[`kubectl` or] `oc` command line tools are installed and configured to connect to the running cluster.
 
 ifdef::InstallationAppendix[]
 When no existing {ProductPlatformName} cluster is available, `Minikube` or `Minishift` can be used to create a local
