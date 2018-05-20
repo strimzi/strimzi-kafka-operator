@@ -39,7 +39,7 @@ If you want to get in touch with us first before contributing, you can use:
 - [Strimzi Slack workspace](https://join.slack.com/t/strimzi/shared_invite/enQtMzU2Mjk3NTgxMzE5LTYyMTUwMGNlMDQwMzBhOGI4YmY4MjhiMDgyNjA5OTk2MTFiYjc4M2Q3NGU1YTFjOWRiMzM2NGMwNDUwMjBlNDY)
 
 ## License
-Strimzi is licensed under the Apache License, Version 2.0
+Strimzi is licensed under the [Apache License](./LICENSE), Version 2.0
 
 [strimzi]: http://strimzi.io "Strimzi"
 [kafka]: https://kafka.apache.org "Apache Kafka"
