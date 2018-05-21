@@ -22,7 +22,7 @@ public class ClusterOperatorConfig {
     public static final String STRIMZI_OPERATION_TIMEOUT_MS = "STRIMZI_OPERATION_TIMEOUT_MS";
 
     public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = 120_000;
-    public static final long DEFAULT_OPERATION_TIMEOUT_MS = 60_000;
+    public static final long DEFAULT_OPERATION_TIMEOUT_MS = 300_000;
 
     private final Set<String> namespaces;
     private final long reconciliationIntervalMs;
