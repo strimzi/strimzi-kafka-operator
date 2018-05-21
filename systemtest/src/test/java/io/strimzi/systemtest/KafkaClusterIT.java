@@ -46,6 +46,8 @@ import static io.strimzi.systemtest.matchers.Matchers.valueOfCmEquals;
 import static io.strimzi.test.TestUtils.map;
 import static junit.framework.TestCase.assertTrue;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
@@ -341,5 +343,45 @@ public class KafkaClusterIT extends AbstractClusterIT {
 
         assertResources(NAMESPACE, podName,
                 "500M", "300m", "500M", "300m");
+    }
+
+    @Test
+    @JUnitGroup(name = "regression")
+    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 3, config = {
+            @CmData(key = "kafka-config", value = "{\"default.replication.factor\": 3,\"offsets.topic.replication.factor\": 3,\"transaction.state.log.replication.factor\": 3}")
+    })
+    @Topic(name = TOPIC_NAME, clusterName = "my-cluster")
+    public void testForTopicOperator() {
+        assertThat(listTopicsUsingPodCLI(CLUSTER_NAME, kafkaPodName(CLUSTER_NAME, 1)), hasItem("test-topic"));
+
+        //Createing topics for testing
+        createTopicUsingPodCLI(CLUSTER_NAME, kafkaPodName(CLUSTER_NAME, 1), "topic-from-cli", 1, 1);
+        createTopicUsingPodCLI(CLUSTER_NAME, kafkaPodName(CLUSTER_NAME, 1), "test-topic1", 1, 1);
+        assertThat(listTopicsUsingPodCLI(CLUSTER_NAME, kafkaPodName(CLUSTER_NAME, 1)), hasItems("test-topic", "topic-from-cli", "test-topic1"));
+        assertThat(kubeClient.list("cm"), hasItems("test-topic", "topic-from-cli", "test-topic1"));
+
+        //Updating first topic using pod CLI
+        updateTopicPartitionsCountUsingPodCLI(CLUSTER_NAME, kafkaPodName(CLUSTER_NAME, 1), "test-topic1", 2);
+        assertThat(describeTopicUsingPodCLI(CLUSTER_NAME, kafkaPodName(CLUSTER_NAME, 1), "test-topic1"),
+                hasItems("PartitionCount:2"));
+        String testTopicCM = kubeClient.get("cm", "test-topic1");
+        assertThat(testTopicCM, valueOfCmEquals("partitions", "2"));
+
+        //Updating second topic via CM update
+        replaceCm("topic-from-cli", "partitions", "2");
+        assertThat(describeTopicUsingPodCLI(CLUSTER_NAME, kafkaPodName(CLUSTER_NAME, 1), "topic-from-cli"),
+                hasItems("PartitionCount:2"));
+        testTopicCM = kubeClient.get("cm", "topic-from-cli");
+        assertThat(testTopicCM, valueOfCmEquals("partitions", "2"));
+
+        //Deleting first topic by deletion of CM
+        kubeClient.deleteByName("cm", "topic-from-cli");
+        assertThat(listTopicsUsingPodCLI(CLUSTER_NAME, kafkaPodName(CLUSTER_NAME, 1)), not(hasItems("topic-from-cli")));
+
+        //Deleting another topic using pod CLI
+        deleteTopicUsingPodCLI(CLUSTER_NAME, kafkaPodName(CLUSTER_NAME, 1), "test-topic1");
+        List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, kafkaPodName(CLUSTER_NAME, 1));
+        assertThat(topics, not(hasItems("topic-from-cli", "test-topic1")));
+        assertThat(topics, hasItems("test-topic"));
     }
 }

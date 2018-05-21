@@ -253,4 +253,32 @@ public class AbstractClusterIT {
         //TODO add blacklist for unexpected errors
         assertThat(kubeClient.searchInLog("deploy", "strimzi-cluster-operator", "60", "Exception", "Error", "Throwable"), isEmptyString());
     }
+
+    public List<String> listTopicsUsingPodCLI(String clusterName, String podName) {
+        return asList(kubeClient.exec(podName, "/bin/bash", "-c",
+                "bin/kafka-topics.sh --list --zookeeper " + clusterName + "-zookeeper:2181").out().split("\\s+"));
+    }
+
+    public String createTopicUsingPodCLI(String clusterName, String podName, String topic, int replicationFactor, int partitions) {
+        return kubeClient.exec(podName, "/bin/bash", "-c",
+                "bin/kafka-topics.sh --create --zookeeper " + clusterName + "-zookeeper:2181 " +
+                        "--replication-factor " + replicationFactor + " --partitions " + partitions + " " +
+                        " --topic " + topic + "").out();
+    }
+
+    public String deleteTopicUsingPodCLI(String clusterName, String podName, String topic) {
+        return kubeClient.exec(podName, "/bin/bash", "-c",
+                "bin/kafka-topics.sh --delete --zookeeper " + clusterName + "-zookeeper:2181 --topic " + topic + "").out();
+    }
+
+    public List<String>  describeTopicUsingPodCLI(String clusterName, String podName, String topic) {
+        return asList(kubeClient.exec(podName, "/bin/bash", "-c",
+                "bin/kafka-topics.sh --describe --zookeeper " + clusterName + "-zookeeper:2181 --topic " + topic + "").out().split("\\s+"));
+    }
+
+    public String updateTopicPartitionsCountUsingPodCLI(String clusterName, String podName, String topic, int partitions) {
+        return kubeClient.exec(podName, "/bin/bash", "-c",
+                "bin/kafka-topics.sh --zookeeper " + clusterName + "-zookeeper:2181 --alter --topic " + topic + "" +
+                        " --partitions " + partitions).out();
+    }
 }
