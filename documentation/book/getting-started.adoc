@@ -202,8 +202,8 @@ ifdef::Kubernetes[  - On {KubernetesName}, the Kafka Connect ConfigMap has to be
 
 ===== Using {OpenShiftName} Build and S2I image
 
-{OpenShiftName} supports https://docs.openshift.org/3.6/dev_guide/builds/index.html[Builds] which can be used together with
-https://docs.openshift.org/3.6/creating_images/s2i.html#creating-images-s2i[Source-to-Image (S2I)] framework to create
+{OpenShiftName} supports https://docs.openshift.org/3.9/dev_guide/builds/index.html[Builds] which can be used together with
+the https://docs.openshift.org/3.9/creating_images/s2i.html#creating-images-s2i[Source-to-Image (S2I)] framework to create
 new Docker images. {OpenShiftName} Build takes a builder image with S2I support together with source code and/or binaries
 provided by the user and uses them to build a new Docker image. The newly created Docker Image will be stored in
 {OpenShiftName}'s local Docker repository and can then be used in deployments. {ProductName} provides a Kafka Connect builder
