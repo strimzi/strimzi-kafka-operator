@@ -675,7 +675,7 @@ should be fixed and the Cluster Operator will roll out the new configuration to 
 
 ===== Kafka Connect S2I deployment
 
-When using {ProductName} together with an {OpenShiftName} cluster, Kafka Connect can be deployed with support for https://docs.openshift.org/3.9/dev_guide/builds/index.html[{OpenShiftName} Builds] and https://docs.openshift.org/3.9/creating_images/s2i.html#creating-images-s2i[Source-to-Image (S2I)].
+When using {ProductName} together with an {OpenShiftName} cluster, a user can deploy Kafka Connect with support for https://docs.openshift.org/3.9/dev_guide/builds/index.html[{OpenShiftName} Builds] and https://docs.openshift.org/3.9/creating_images/s2i.html#creating-images-s2i[Source-to-Image (S2I)].
 To activate the S2I deployment, the `strimzi.io/type` label in the ConfigMap should be set to `kafka-connect-s2i`.
 The following is a full example of a ConfigMap for a Kafka Connect S2I cluster.
 
