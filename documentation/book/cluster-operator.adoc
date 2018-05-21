@@ -701,24 +701,23 @@ data:
 ----
 
 The S2I deployment is very similar to the regular Kafka Connect deployment.
-Compared to regular deployment, it will create additional resources.
-The resources created by the Cluster Operator for the S2I deployment will be the following:
+Compared to the regular deployment, the Cluster Operator will create the following additional resources:
 
-* [connect-cluster-name]-connect DeploymentConfig which is in charge to create the Kafka Connect worker node pods
-* [connect-cluster-name]-connect Service which exposes the REST interface for managing the Kafka Connect cluster
+* [connect-cluster-name]-connect-source ImageStream which is used as the base image for the newly-built Docker images
 * [connect-cluster-name]-connect BuildConfig which is responsible for building the new Kafka Connect Docker images
-* [connect-cluster-name]-connect-source ImageStream which is used as base image for the newly build Docker images
-* [connect-cluster-name]-connect ImageStream where the newly build Docker images will be pushed
+* [connect-cluster-name]-connect ImageStream where the newly built Docker images will be pushed
+* [connect-cluster-name]-connect DeploymentConfig which is in charge of creating the Kafka Connect worker node pods
+* [connect-cluster-name]-connect Service which exposes the REST interface for managing the Kafka Connect cluster
 
 The Kafka Connect S2I deployment supports the same options as the regular Kafka Connect deployment.
-List of supported options can be found in the <<kafka_connect_config_map_details>> section.
+A list of supported options can be found in the <<kafka_connect_config_map_details>> section.
 The `image` option specifies the Docker image which will be used as the _source image_ - the base image for the newly build Docker image.
 The default value of the `image` option is determined by the value of the `<<STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE,STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE>>` environment variable of the Cluster Operator.
 All other options have the same meaning as for the regular deployment.
 
 Once the Kafka Connect S2I cluster is deployed, new plugins can be added by starting a new {OpenShiftName} build.
-New build can be started using the `oc` command line tool.
-Before starting the build, a directory with all KafkaConnect plugins which should be added has the be created.
+The new build can be started using the `oc` command line tool.
+Before starting the build, a directory with all the KafkaConnect plugins which should be added has the be created.
 The plugins and all their dependencies can be in a single directory or can be split into multiple subdirectories.
 For example:
 
@@ -749,13 +748,13 @@ $ tree ./s2i-plugins/
     └── README.md
 ----
 
-New build can be started using the following command:
+A new build can be started using the following command:
 
 [source,shell]
 oc start-build my-connect-cluster-connect --from-dir ./s2i-plugins/
 
 This command will upload the whole directory into the {OpenShiftName} cluster and start a new build.
-The build will take the base Docker image from the source ImageStream (named _[connect-cluster-name]-connect-source_) and add the directory and all files it contains into this image and push the resulting image into the target ImageStream (named _[connect-cluster-name]-connect_).
+The build will take the base Docker image from the source ImageStream (named _[connect-cluster-name]-connect-source_) and add the directory and all the files it contains into this image and push the resulting image into the target ImageStream (named _[connect-cluster-name]-connect_).
 When the new image is pushed to the target ImageStream, a rolling update of the Kafka Connect S2I deployment will be started and will roll out the new version of the image with the added plugins.
 By default, the `oc start-build` command will trigger the build and complete.
 The progress of the build can be observed in the {OpenShiftName} console.
@@ -780,7 +779,7 @@ Push successful
 ----
 
 NOTE: The S2I build will always add the additional Kafka Connect plugins to the original source image.
-They will not be added to the Docker image from previous build.
+They will not be added to the Docker image from a previous build.
 To add multiple plugins to the deployment, they all have to be added within the same build.
 
 
