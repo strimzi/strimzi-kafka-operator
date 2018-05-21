@@ -17,9 +17,11 @@
 :ProductName: Strimzi
 :ProductVersion: master
 :OpenShiftName: OpenShift
-:OpenShiftLongName: OpenShift
+:OpenShiftLongName: OpenShift Origin
+:OpenShiftVersion: 3.9 and higher
 :KubernetesName: Kubernetes
 :KubernetesLongName: Kubernetes
+:KubernetesVersion: 1.9 and higher
 :ProductPlatformName: {OpenShiftName} or {KubernetesName}
 :ProductPlatformLongName: {OpenShiftLongName} or {KubernetesLongName}
 
