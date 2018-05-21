@@ -5,7 +5,6 @@
 package io.strimzi.systemtest;
 
 import io.strimzi.test.ClusterOperator;
-import io.strimzi.test.EnvVariables;
 import io.strimzi.test.JUnitGroup;
 import io.strimzi.test.KafkaCluster;
 import io.strimzi.test.Namespace;
@@ -23,9 +22,7 @@ import static io.strimzi.test.k8s.BaseKubeClient.STATEFUL_SET;
 @RunWith(StrimziRunner.class)
 @JUnitGroup(name = "regression")
 @Namespace(RecoveryClusterIT.NAMESPACE)
-@ClusterOperator(envVariables = {
-    @EnvVariables(key = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS", value = "10000"),
-    @EnvVariables(key = "STRIMZI_OPERATION_TIMEOUT_MS", value = "10000")})
+@ClusterOperator
 @KafkaCluster(name = RecoveryClusterIT.CLUSTER_NAME, kafkaNodes = 1)
 public class RecoveryClusterIT extends AbstractClusterIT {
 
@@ -46,8 +43,8 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         LOGGER.info("Waiting for recovery {}", topicOperatorDeploymentName);
         kubeClient.waitForDeployment(topicOperatorDeploymentName);
 
-        //Test that CC doesn't have any exceptions in log
-        assertNoCcErrorsLogged();
+        //Test that CO doesn't have any exceptions in log
+        assertNoCoErrorsLogged();
     }
 
     @Test
@@ -62,8 +59,8 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         LOGGER.info("Waiting for recovery {}", kafkaStatefulSetName);
         kubeClient.waitForStatefulSet(kafkaStatefulSetName, 1);
 
-        //Test that CC doesn't have any exceptions in log
-        assertNoCcErrorsLogged();
+        //Test that CO doesn't have any exceptions in log
+        assertNoCoErrorsLogged();
     }
 
     @Test
@@ -78,8 +75,8 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         LOGGER.info("Waiting for recovery {}", zookeeperStatefulSetName);
         kubeClient.waitForStatefulSet(zookeeperStatefulSetName, 1);
 
-        //Test that CC doesn't have any exceptions in log
-        assertNoCcErrorsLogged();
+        //Test that CO doesn't have any exceptions in log
+        assertNoCoErrorsLogged();
     }
 
     @Test
@@ -93,8 +90,8 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         LOGGER.info("Waiting for creation {}", kafkaServiceName);
         kubeClient.waitForResourceCreation(SERVICE, kafkaServiceName);
 
-        //Test that CC doesn't have any exceptions in log
-        assertNoCcErrorsLogged();
+        //Test that CO doesn't have any exceptions in log
+        assertNoCoErrorsLogged();
     }
 
     @Test
@@ -109,8 +106,8 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         LOGGER.info("Waiting for creation {}", zookeeperServiceName);
         kubeClient.waitForResourceCreation(SERVICE, zookeeperServiceName);
 
-        //Test that CC doesn't have any exceptions in log
-        assertNoCcErrorsLogged();
+        //Test that CO doesn't have any exceptions in log
+        assertNoCoErrorsLogged();
     }
 
     @Test
@@ -124,8 +121,8 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         LOGGER.info("Waiting for creation {}", kafkaHeadlessServiceName);
         kubeClient.waitForResourceCreation(SERVICE, kafkaHeadlessServiceName);
 
-        //Test that CC doesn't have any exceptions in log
-        assertNoCcErrorsLogged();
+        //Test that CO doesn't have any exceptions in log
+        assertNoCoErrorsLogged();
     }
 
     @Test
@@ -139,8 +136,8 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         LOGGER.info("Waiting for creation {}", zookeeperHeadlessServiceName);
         kubeClient.waitForResourceCreation(SERVICE, zookeeperHeadlessServiceName);
 
-        //Test that CC doesn't have any exceptions in log
-        assertNoCcErrorsLogged();
+        //Test that CO doesn't have any exceptions in log
+        assertNoCoErrorsLogged();
     }
 
     @Test
@@ -155,8 +152,8 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         LOGGER.info("Waiting for creation {}", kafkaMetricsConfigName);
         kubeClient.waitForResourceCreation(CM, kafkaMetricsConfigName);
 
-        //Test that CC doesn't have any exceptions in log
-        assertNoCcErrorsLogged();
+        //Test that CO doesn't have any exceptions in log
+        assertNoCoErrorsLogged();
     }
 
     @Test
@@ -171,7 +168,7 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         LOGGER.info("Waiting for creation {}", zookeeperMetricsConfigName);
         kubeClient.waitForResourceCreation(CM, zookeeperMetricsConfigName);
 
-        //Test that CC doesn't have any exceptions in log
-        assertNoCcErrorsLogged();
+        //Test that CO doesn't have any exceptions in log
+        assertNoCoErrorsLogged();
     }
 }

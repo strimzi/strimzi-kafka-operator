@@ -115,8 +115,8 @@ public class KafkaClusterIT extends AbstractClusterIT {
         List<Event> events = getEvents("Pod", newPodName);
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
         assertThat(events, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
-        //Test that CC doesn't have any exceptions in log
-        assertNoCcErrorsLogged();
+        //Test that CO doesn't have any exceptions in log
+        assertNoCoErrorsLogged();
 
         // scale down
         LOGGER.info("Scaling down");
@@ -135,8 +135,8 @@ public class KafkaClusterIT extends AbstractClusterIT {
         assertThat(getEvents("Pod", newPodName), hasAllOfReasons(Killing));
         //Test that stateful set has event 'SuccessfulDelete'
         assertThat(getEvents("StatefulSet", kafkaClusterName(CLUSTER_NAME)), hasAllOfReasons(SuccessfulDelete));
-        //Test that CC doesn't have any exceptions in log
-        assertNoCcErrorsLogged();
+        //Test that CO doesn't have any exceptions in log
+        assertNoCoErrorsLogged();
     }
 
     @Test
@@ -178,8 +178,8 @@ public class KafkaClusterIT extends AbstractClusterIT {
         assertThat(eventsForSecondPod, hasAllOfReasons(Scheduled, Pulled, Created, Started));
         assertThat(eventsForSecondPod, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
 
-        //Test that CC doesn't have any exceptions in log
-        assertNoCcErrorsLogged();
+        //Test that CO doesn't have any exceptions in log
+        assertNoCoErrorsLogged();
 
         // scale down
         LOGGER.info("Scaling down");
@@ -192,8 +192,8 @@ public class KafkaClusterIT extends AbstractClusterIT {
         assertThat(getEvents("Pod", newZkPodName[1]), hasAllOfReasons(Killing));
         //Test that stateful set has event 'SuccessfulDelete'
         assertThat(getEvents("StatefulSet", zookeeperClusterName(CLUSTER_NAME)), hasAllOfReasons(SuccessfulDelete));
-        //Test that CC doesn't have any exceptions in log
-        assertNoCcErrorsLogged();
+        //Test that CO doesn't have any exceptions in log
+        assertNoCoErrorsLogged();
     }
 
     @Test

@@ -249,7 +249,7 @@ public class AbstractClusterIT {
         return result;
     }
 
-    void assertNoCcErrorsLogged() {
+    void assertNoCoErrorsLogged() {
         //TODO add blacklist for unexpected errors
         assertThat(kubeClient.searchInLog("deploy", "strimzi-cluster-operator", "60", "Exception", "Error", "Throwable"), isEmptyString());
     }
