@@ -10,7 +10,7 @@ The Docker images are available on {DockerRepository}.
 === Prerequisites
 
 {ProductLongName} runs on {ProductPlatformName}.
-{ProductName} supports ifdef::Kubernetes[{KubernetesLongName} {KubernetesVersion}] or {OpenShiftLongName} {OpenShiftVersion}.
+{ProductName} supports ifdef::Kubernetes[{KubernetesLongName} {KubernetesVersion} or] {OpenShiftLongName} {OpenShiftVersion}.
 {ProductName} works on all kinds of clusters - from public and private clouds down to local deployments intended for development.
 This guide expects that an {ProductPlatformName} cluster is available and the ifdef::Kubernetes[`kubectl` or] `oc` command line tools are installed and configured to connect to the running cluster.
 
