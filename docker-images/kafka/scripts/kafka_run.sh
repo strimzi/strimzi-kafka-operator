@@ -35,6 +35,11 @@ fi
 # directory avoids trying to create it (and logging a permission denied error)
 export LOG_DIR="$KAFKA_HOME"
 
+# get broker rack if it's enabled
+if [ -e /rack/rack.id ]; then
+  export KAFKA_RACK=$(cat /rack/rack.id)
+fi
+
 # Generate and print the config file
 echo "Starting Kafka with configuration:"
 ./kafka_config_generator.sh | tee /tmp/strimzi.properties
