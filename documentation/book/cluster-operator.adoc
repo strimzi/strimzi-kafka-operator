@@ -574,7 +574,7 @@ The accepted JSON format is described in the <<resources_json_config>> section.
 `jvmOptions`:: A JSON string allowing the JVM running Kafka Connect to be configured.
 The accepted JSON format is described in the <<jvm_json_config>> section.
 
-The following is an example of cluster configuration ConfigMap.
+The following is an example of a Kafka Connect configuration ConfigMap.
 
 .Example Kafka Connect cluster ConfigMap
 [source,yaml,options="nowrap",subs="attributes"]
@@ -711,7 +711,7 @@ Compared to the regular deployment, the Cluster Operator will create the followi
 
 The Kafka Connect S2I deployment supports the same options as the regular Kafka Connect deployment.
 A list of supported options can be found in the <<kafka_connect_config_map_details>> section.
-The `image` option specifies the Docker image which will be used as the _source image_ - the base image for the newly build Docker image.
+The `image` option specifies the Docker image which will be used as the _source image_ - the base image for the newly built Docker image.
 The default value of the `image` option is determined by the value of the `<<STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE,STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE>>` environment variable of the Cluster Operator.
 All other options have the same meaning as for the regular deployment.
 
