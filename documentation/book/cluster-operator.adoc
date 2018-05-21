@@ -716,8 +716,7 @@ The default value of the `image` option is determined by the value of the `<<STR
 All other options have the same meaning as for the regular deployment.
 
 Once the Kafka Connect S2I cluster is deployed, new plugins can be added by starting a new {OpenShiftName} build.
-The new build can be started using the `oc` command line tool.
-Before starting the build, a directory with all the KafkaConnect plugins which should be added has the be created.
+Before starting the build, a directory with all the KafkaConnect plugins which should be added has to be created.
 The plugins and all their dependencies can be in a single directory or can be split into multiple subdirectories.
 For example:
 
