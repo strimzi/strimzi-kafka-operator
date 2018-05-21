@@ -27,10 +27,11 @@ public class StatefulSetDiff {
     static {
         IGNORABLE_PATHS = asList(
             "/spec/revisionHistoryLimit",
-            "/spec/template/spec/initContainers/0/imagePullPolicy",
-            "/spec/template/spec/initContainers/0/resources",
-            "/spec/template/spec/initContainers/0/terminationMessagePath",
-            "/spec/template/spec/initContainers/0/terminationMessagePolicy",
+            "/spec/template/spec/initContainers/[0-9]+/imagePullPolicy",
+            "/spec/template/spec/initContainers/[0-9]+/resources",
+            "/spec/template/spec/initContainers/[0-9]+/terminationMessagePath",
+            "/spec/template/spec/initContainers/[0-9]+/terminationMessagePolicy",
+            "/spec/template/spec/initContainers/[0-9]+/env/[0-9]+/valueFrom/fieldRef/apiVersion",
             "/spec/template/spec/containers/0/imagePullPolicy",
             "/spec/template/spec/containers/0/livenessProbe/failureThreshold",
             "/spec/template/spec/containers/0/livenessProbe/periodSeconds",
@@ -48,6 +49,7 @@ public class StatefulSetDiff {
             "/spec/template/spec/terminationGracePeriodSeconds",
             "/spec/template/spec/volumes/[0-9]+/configMap/defaultMode",
             "/spec/volumeClaimTemplates/[0-9]+/status",
+            "/spec/template/spec/serviceAccount",
             "/status").stream().map(Pattern::compile).collect(Collectors.toList());
     }
 
