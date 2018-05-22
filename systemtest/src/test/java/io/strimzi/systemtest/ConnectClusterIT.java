@@ -15,7 +15,6 @@ import io.strimzi.test.OpenShiftOnly;
 import io.strimzi.test.Resources;
 import io.strimzi.test.StrimziRunner;
 import io.strimzi.test.k8s.Oc;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
@@ -25,20 +24,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.systemtest.k8s.Events.Scheduled;
-import static io.strimzi.systemtest.k8s.Events.Pulled;
 import static io.strimzi.systemtest.k8s.Events.Created;
-import static io.strimzi.systemtest.k8s.Events.Started;
 import static io.strimzi.systemtest.k8s.Events.Failed;
-import static io.strimzi.systemtest.k8s.Events.Unhealthy;
 import static io.strimzi.systemtest.k8s.Events.FailedSync;
 import static io.strimzi.systemtest.k8s.Events.FailedValidation;
+import static io.strimzi.systemtest.k8s.Events.Pulled;
+import static io.strimzi.systemtest.k8s.Events.Scheduled;
+import static io.strimzi.systemtest.k8s.Events.Started;
+import static io.strimzi.systemtest.k8s.Events.Unhealthy;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.valueOfCmEquals;
 import static io.strimzi.test.TestUtils.map;
-import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasItem;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
@@ -135,6 +134,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
         connectPods = kubeClient.listResourcesByLabel("pod", "strimzi.io/type=kafka-connect");
         assertEquals(scaleTo, connectPods.size());
         for (String pod : connectPods) {
+            kubeClient.waitForPod(pod);
             List<Event> events = getEvents("Pod", pod);
             assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
             assertThat(events, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
