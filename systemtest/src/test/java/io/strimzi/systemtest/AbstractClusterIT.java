@@ -261,7 +261,7 @@ public class AbstractClusterIT {
 
     public String createTopicUsingPodCLI(String clusterName, String podName, String topic, int replicationFactor, int partitions) {
         return kubeClient.exec(podName, "/bin/bash", "-c",
-                "bin/kafka-topics.sh --zookeeper " + clusterName + "-zookeeper:2181  --create " + " --topic " + topic+
+                "bin/kafka-topics.sh --zookeeper " + clusterName + "-zookeeper:2181  --create " + " --topic " + topic +
                         " --replication-factor " + replicationFactor + " --partitions " + partitions).out();
     }
 
@@ -277,7 +277,6 @@ public class AbstractClusterIT {
 
     public String updateTopicPartitionsCountUsingPodCLI(String clusterName, String podName, String topic, int partitions) {
         return kubeClient.exec(podName, "/bin/bash", "-c",
-                "bin/kafka-topics.sh --zookeeper " + clusterName + "-zookeeper:2181 --alter --topic " + topic + "" +
-                        " --partitions " + partitions).out();
+                "bin/kafka-topics.sh --zookeeper " + clusterName + "-zookeeper:2181 --alter --topic " + topic + " --partitions " + partitions).out();
     }
 }
