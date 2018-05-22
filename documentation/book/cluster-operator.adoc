@@ -80,7 +80,10 @@ A JSON string configuring the resource limits and requests for Kafka broker cont
 described in the <<resources_json_config>> section.
 `kafka-jvmOptions`::
 A JSON string allowing the JVM running Kafka to be configured.
-   The accepted JSON format is described in the <<jvm_json_config>> section.
+The accepted JSON format is described in the <<jvm_json_config>> section.
+`kafka-rack`::
+A JSON string allowing the Kafka rack feature to be configured and used in rack aware replication assignment for fault tolerance.
+The accepted JSON format is described in the <<kafka_rack>> section.
 `zookeeper-nodes`::
 Number of Zookeeper nodes.
 `zookeeper-image`::
@@ -514,6 +517,27 @@ When setting `-Xmx` explicitly, it is recommended to:
 Furthermore, containers doing lots of disk I/O (such as Kafka broker containers) will need to leave some memory available
 for use as operating system page cache. On such containers, the request memory should be substantially more than the
 memory used by the JVM.
+
+[[kafka_rack]]
+===== Kafka rack
+
+It's possible to enable the Kafka rack support specifying a JSON string for the `kafka-rack` field in the cluster ConfigMap.
+Such a JSON object has one mandatory field named `topologyKey`.
+This key needs to match with one of the labels assigned to the {ProductPlatformName} cluster nodes in order to use them for
+scheduling Kafka brokers across the nodes themselves in different "racks".
+If the {ProductPlatformName} cluster is running on a cloud provider platform, that label should represent the availability zone
+where the node is running.
+
+.Example Kafka rack JSON configuration
+[source,json]
+----
+{
+  "topologyKey": "failure-domain.beta.kubernetes.io/zone"
+}
+----
+
+In the above example, the "failure-domain.beta.kubernetes.io/zone" node label will be used for scheduling Kafka broker Pods
+on nodes which have different values for such a label in order to have the brokers running on different racks/availability zones.
 
 [[topic_operator_json_config]]
 ===== Topic Operator
