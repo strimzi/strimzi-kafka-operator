@@ -37,7 +37,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -54,6 +53,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static io.strimzi.operator.cluster.ResourceUtils.map;
 import static java.util.Collections.emptySet;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -198,17 +198,6 @@ public class KafkaAssemblyOperatorMockTest {
     @After
     public void after() {
         this.vertx.close();
-    }
-
-    private static <T> Map<T, T> map(T... pairs) {
-        if (pairs.length % 2 != 0) {
-            throw new IllegalArgumentException();
-        }
-        Map<T, T> result = new HashMap<>(pairs.length / 2);
-        for (int i = 0; i < pairs.length; i += 2) {
-            result.put(pairs[i], pairs[i + 1]);
-        }
-        return result;
     }
 
     private KafkaAssemblyOperator createCluster(TestContext context) {

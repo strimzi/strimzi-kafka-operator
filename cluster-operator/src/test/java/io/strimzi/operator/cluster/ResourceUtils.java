@@ -199,4 +199,15 @@ public class ResourceUtils {
                 .withData(cmData)
                 .build();
     }
+
+    public static <T> Map<T, T> map(T... pairs) {
+        if (pairs.length % 2 != 0) {
+            throw new IllegalArgumentException();
+        }
+        Map<T, T> result = new HashMap<>(pairs.length / 2);
+        for (int i = 0; i < pairs.length; i += 2) {
+            result.put(pairs[i], pairs[i + 1]);
+        }
+        return result;
+    }
 }
