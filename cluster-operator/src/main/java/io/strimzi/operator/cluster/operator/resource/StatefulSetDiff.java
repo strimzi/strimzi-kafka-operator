@@ -32,6 +32,7 @@ public class StatefulSetDiff {
             "/spec/template/spec/initContainers/[0-9]+/terminationMessagePath",
             "/spec/template/spec/initContainers/[0-9]+/terminationMessagePolicy",
             "/spec/template/spec/initContainers/[0-9]+/env/[0-9]+/valueFrom/fieldRef/apiVersion",
+            "/spec/template/spec/initContainers/[0-9]+/env/[0-9]+/value",
             "/spec/template/spec/containers/0/imagePullPolicy",
             "/spec/template/spec/containers/0/livenessProbe/failureThreshold",
             "/spec/template/spec/containers/0/livenessProbe/periodSeconds",
@@ -70,7 +71,6 @@ public class StatefulSetDiff {
     private final boolean changesVolumeClaimTemplate;
     private final boolean isEmpty;
     private final boolean changesSpecTemplateSpec;
-    private final boolean changesSpecTemplateSpecInitContainers;
     private final boolean changesLabels;
     private final boolean changesSpecReplicas;
 
@@ -93,7 +93,6 @@ public class StatefulSetDiff {
         // Change changes to /spec/template/spec, except to imagePullPolicy, which gets changed
         // by k8s
         changesSpecTemplateSpec = containsPathOrChild(paths, "/spec/template/spec");
-        changesSpecTemplateSpecInitContainers = containsPathOrChild(paths, "/spec/template/spec/initContainers");
         changesLabels = containsPathOrChild(paths, "/metadata/labels");
         changesSpecReplicas = containsPathOrChild(paths, "/spec/replicas");
     }
@@ -108,10 +107,6 @@ public class StatefulSetDiff {
 
     public boolean changesSpecTemplateSpec() {
         return changesSpecTemplateSpec;
-    }
-
-    public boolean changesSpecTemplateSpecInitContainers() {
-        return changesSpecTemplateSpecInitContainers;
     }
 
     public boolean changesLabels() {

@@ -31,7 +31,7 @@ public class ZookeeperSetOperator extends StatefulSetOperator<Boolean> {
     @Override
     protected Future<ReconcileResult<Boolean>> internalPatch(String namespace, String name, StatefulSet current, StatefulSet desired) {
         StatefulSetDiff diff = new StatefulSetDiff(current, desired);
-        if (diff.changesVolumeClaimTemplates() || diff.changesSpecTemplateSpecInitContainers()) {
+        if (diff.changesVolumeClaimTemplates()) {
             log.warn("Changing Zookeeper storage type or size is not possible. The changes will be ignored.");
             diff = revertStorageChanges(current, desired);
         }
