@@ -82,7 +82,7 @@ described in the <<resources_json_config>> section.
 A JSON string allowing the JVM running Kafka to be configured.
 The accepted JSON format is described in the <<jvm_json_config>> section.
 `kafka-rack`::
-A JSON string allowing the Kafka rack feature to be configured and used in rack aware replication assignment for fault tolerance.
+A JSON string allowing the Kafka rack feature to be configured and used in rack-aware partition assignment for fault tolerance.
 The accepted JSON format is described in the <<kafka_rack>> section.
 `zookeeper-nodes`::
 Number of Zookeeper nodes.
@@ -521,12 +521,13 @@ memory used by the JVM.
 [[kafka_rack]]
 ===== Kafka rack
 
-It's possible to enable the Kafka rack support specifying a JSON string for the `kafka-rack` field in the cluster ConfigMap.
+It is possible to enable Kafka rack-awareness by specifying a JSON string for the `kafka-rack` field in the cluster ConfigMap.
 Such a JSON object has one mandatory field named `topologyKey`.
-This key needs to match with one of the labels assigned to the {ProductPlatformName} cluster nodes in order to use them for
-scheduling Kafka brokers across the nodes themselves in different "racks".
-If the {ProductPlatformName} cluster is running on a cloud provider platform, that label should represent the availability zone
-where the node is running.
+This key needs to match one of the labels assigned to the {ProductPlatformName} cluster nodes.
+The label is used by {ProductPlatformName} when scheduling Kafka broker pods to nodes. 
+{ProductPlatformName} will try to minimize the number of pods scheduled on nodes with the same label value.
+If the {ProductPlatformName} cluster is running on a cloud provider platform, that label should represent the availability zone where the node is running.
+This will have the effect of spreading the broker pods across the availability zones, and also setting the brokers `rack.id` configuration parameter.
 
 .Example Kafka rack JSON configuration
 [source,json]
@@ -536,8 +537,7 @@ where the node is running.
 }
 ----
 
-In the above example, the "failure-domain.beta.kubernetes.io/zone" node label will be used for scheduling Kafka broker Pods
-on nodes which have different values for such a label in order to have the brokers running on different racks/availability zones.
+In the above example, the `failure-domain.beta.kubernetes.io/zone` node label will be used for scheduling Kafka broker Pods.
 
 [[topic_operator_json_config]]
 ===== Topic Operator
