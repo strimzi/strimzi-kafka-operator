@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.function.Predicate;
 
 /**
- * Operations for {@code StatefulSets}s, which supports {@link #rollingUpdate(StatefulSet)}
+ * Operations for {@code StatefulSets}s, which supports {@link #maybeRollingUpdate(StatefulSet)}
  * in addition to the usual operations.
  */
 public abstract class StatefulSetOperator extends AbstractScalableResourceOperator<KubernetesClient, StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> {
@@ -62,8 +62,8 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
      * is complete. Starting with pod 0, each pod will be deleted and re-created automatically by the ReplicaSet,
      * once the pod has been recreated and is ready the process proceeds with the pod with the next higher number.
      */
-    public Future<Void> rollingUpdate(StatefulSet ss) {
-        return rollingUpdate(ss,
+    public Future<Void> maybeRollingUpdate(StatefulSet ss) {
+        return maybeRollingUpdate(ss,
             podName -> podOperations.isReady(ss.getMetadata().getNamespace(), podName));
     }
 
@@ -74,7 +74,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
      * once the pod has been recreated then given {@code isReady} function will be polled until it returns true,
      * before the process proceeds with the pod with the next higher number.
      */
-    public Future<Void> rollingUpdate(StatefulSet ss, Predicate<String> isReady) {
+    public Future<Void> maybeRollingUpdate(StatefulSet ss, Predicate<String> isReady) {
         String namespace = ss.getMetadata().getNamespace();
         String name = ss.getMetadata().getName();
         final int replicas = ss.getSpec().getReplicas();
