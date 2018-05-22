@@ -15,8 +15,11 @@ import io.strimzi.operator.cluster.model.TopicOperator;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.singletonMap;
 
 public class ResourceUtils {
@@ -198,6 +201,10 @@ public class ResourceUtils {
                 .endMetadata()
                 .withData(cmData)
                 .build();
+    }
+
+    public static <T> Set<T> set(T... elements) {
+        return new HashSet(asList(elements));
     }
 
     public static <T> Map<T, T> map(T... pairs) {

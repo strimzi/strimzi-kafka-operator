@@ -48,7 +48,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -770,6 +769,13 @@ public class KafkaAssemblyOperatorMockTest {
         context.assertTrue(mockClient.services().inNamespace(NAMESPACE).list().getItems().isEmpty());
         context.assertTrue(mockClient.apps().statefulSets().inNamespace(NAMESPACE).list().getItems().isEmpty());
         context.assertTrue(mockClient.extensions().deployments().inNamespace(NAMESPACE).list().getItems().isEmpty());
+    }
+
+    @Test
+    public void testResumePartialRoll(TestContext context) {
+
+
+        KafkaAssemblyOperator kco = createCluster(context);
     }
 
 }
