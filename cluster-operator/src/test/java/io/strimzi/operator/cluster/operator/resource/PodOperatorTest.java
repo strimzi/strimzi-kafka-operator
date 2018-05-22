@@ -27,7 +27,7 @@ import static java.util.Collections.singletonList;
 import static org.mockito.Mockito.when;
 
 public class PodOperatorTest extends
-        AbtractReadyResourceOperatorTest<KubernetesClient, Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>, Void> {
+        AbtractReadyResourceOperatorTest<KubernetesClient, Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> {
 
     @Rule
     public OpenShiftServer server = new OpenShiftServer(false, true);

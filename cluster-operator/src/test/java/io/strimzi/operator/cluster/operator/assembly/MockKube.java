@@ -17,6 +17,7 @@ import io.fabric8.kubernetes.api.model.EndpointsList;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResource;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
+import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimList;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -45,8 +46,6 @@ import io.fabric8.kubernetes.client.dsl.ScalableResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mockito.stubbing.OngoingStubbing;
-
-
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -145,10 +144,12 @@ public class MockKube {
                         for (int i = 0; i < argument.getSpec().getReplicas(); i++) {
                             String podName = argument.getMetadata().getName() + "-" + i;
                             podDb.put(podName,
-                                    new PodBuilder().withNewMetadata()
+                                    new PodBuilder().withNewMetadataLike(argument.getSpec().getTemplate().getMetadata())
                                             .withNamespace(argument.getMetadata().getNamespace())
                                             .withName(podName)
-                                            .endMetadata().build());
+                                            .endMetadata()
+                                            .withNewSpecLike(argument.getSpec().getTemplate().getSpec()).endSpec()
+                                            .build());
                         }
                         return argument;
                     });
@@ -187,7 +188,15 @@ public class MockKube {
                                 if (podName.startsWith(resourceName + "-")
                                         && Integer.parseInt(podName.substring(podName.lastIndexOf("-") + 1)) <
                                         statefulSet.getSpec().getReplicas()) {
-                                    mockPods.inNamespace(podNamespace).withName(podName).create(resource);
+                                    ObjectMeta templateMeta = statefulSet.getSpec().getTemplate().getMetadata();
+                                    Pod copy = new DoneablePod(resource)
+                                        .withNewMetadataLike(templateMeta)
+                                            .withNamespace(podNamespace)
+                                            .withNamespace(podName)
+                                        .endMetadata()
+                                        .withNewSpecLike(statefulSet.getSpec().getTemplate().getSpec()).endSpec()
+                                        .done();
+                                    mockPods.inNamespace(podNamespace).withName(podName).create(copy);
                                 }
                             }
                         }
@@ -459,8 +468,7 @@ public class MockKube {
         }
 
         protected void mockCascading(R resource) {
-            EditReplacePatchDeletable<CM, CM, DCM, Boolean> c = mock(EditReplacePatchDeletable.class);
-            when(resource.cascading(true)).thenReturn(c);
+            when(resource.cascading(anyBoolean())).thenReturn(resource);
         }
 
         protected void mockWatch(R resource) {

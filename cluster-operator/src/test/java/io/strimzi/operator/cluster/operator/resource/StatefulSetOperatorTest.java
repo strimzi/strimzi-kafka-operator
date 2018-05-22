@@ -22,9 +22,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @Ignore
-public class StatefulSetOperatorTest<P>
+public class StatefulSetOperatorTest
         extends ScalableResourceOperatorTest<KubernetesClient, StatefulSet, StatefulSetList,
-                        DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>, P> {
+                        DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> {
 
     @Override
     protected Class<KubernetesClient> clientType() {
@@ -63,6 +63,12 @@ public class StatefulSetOperatorTest<P>
             public Future<Void> readiness(String namespace, String name, long pollIntervalMs, long timeoutMs) {
                 return Future.succeededFuture();
             }
+
+            @Override
+            protected boolean shouldIncrementGeneration(StatefulSet current, StatefulSet desired) {
+                return true;
+            }
+
             @Override
             protected Future<?> podReadiness(String namespace, StatefulSet desired, long pollInterval, long operationTimeoutMs) {
                 return Future.succeededFuture();
