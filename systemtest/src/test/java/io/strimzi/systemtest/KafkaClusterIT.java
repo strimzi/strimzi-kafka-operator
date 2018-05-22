@@ -43,9 +43,12 @@ import static io.strimzi.systemtest.k8s.Events.Unhealthy;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.valueOfCmEquals;
+import static io.strimzi.test.StrimziRunner.TOPIC_CM;
 import static io.strimzi.test.TestUtils.map;
 import static junit.framework.TestCase.assertTrue;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
@@ -341,5 +344,41 @@ public class KafkaClusterIT extends AbstractClusterIT {
 
         assertResources(NAMESPACE, podName,
                 "500M", "300m", "500M", "300m");
+    }
+
+    @Test
+    @JUnitGroup(name = "regression")
+    @KafkaCluster(name = CLUSTER_NAME)
+    public void testForTopicOperator() {
+        //Createing topics for testing
+        kubeClient.create(TOPIC_CM);
+        assertThat(listTopicsUsingPodCLI(CLUSTER_NAME, kafkaPodName(CLUSTER_NAME, 1)), hasItem("my-topic"));
+
+        createTopicUsingPodCLI(CLUSTER_NAME, kafkaPodName(CLUSTER_NAME, 1), "topic-from-cli", 1, 1);
+        assertThat(listTopicsUsingPodCLI(CLUSTER_NAME, kafkaPodName(CLUSTER_NAME, 1)), hasItems("my-topic", "topic-from-cli"));
+        assertThat(kubeClient.list("cm"), hasItems("my-topic", "topic-from-cli", "my-topic"));
+
+        //Updating first topic using pod CLI
+        updateTopicPartitionsCountUsingPodCLI(CLUSTER_NAME, kafkaPodName(CLUSTER_NAME, 1), "my-topic", 2);
+        assertThat(describeTopicUsingPodCLI(CLUSTER_NAME, kafkaPodName(CLUSTER_NAME, 1), "my-topic"),
+                hasItems("PartitionCount:2"));
+        String testTopicCM = kubeClient.get("cm", "my-topic");
+        assertThat(testTopicCM, valueOfCmEquals("partitions", "2"));
+
+        //Updating second topic via CM update
+        replaceCm("topic-from-cli", "partitions", "2");
+        assertThat(describeTopicUsingPodCLI(CLUSTER_NAME, kafkaPodName(CLUSTER_NAME, 1), "topic-from-cli"),
+                hasItems("PartitionCount:2"));
+        testTopicCM = kubeClient.get("cm", "topic-from-cli");
+        assertThat(testTopicCM, valueOfCmEquals("partitions", "2"));
+
+        //Deleting first topic by deletion of CM
+        kubeClient.deleteByName("cm", "topic-from-cli");
+        assertThat(listTopicsUsingPodCLI(CLUSTER_NAME, kafkaPodName(CLUSTER_NAME, 1)), not(hasItems("topic-from-cli")));
+
+        //Deleting another topic using pod CLI
+        deleteTopicUsingPodCLI(CLUSTER_NAME, kafkaPodName(CLUSTER_NAME, 1), "my-topic");
+        List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, kafkaPodName(CLUSTER_NAME, 1));
+        assertThat(topics, not(hasItems("topic-from-cli", "my-topic")));
     }
 }
