@@ -41,7 +41,7 @@
         <module>topic-operator</module>
         <module>cluster-operator</module>
         <module>systemtest</module>
-        <module>kafka-init</module>
+        <module>init-kafka</module>
     </modules>
 
     <dependencyManagement>
