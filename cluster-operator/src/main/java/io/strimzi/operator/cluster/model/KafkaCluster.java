@@ -26,6 +26,7 @@ import io.strimzi.operator.cluster.ClusterOperator;
 import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -332,7 +333,6 @@ public class KafkaCluster extends AbstractModel {
     protected Affinity getAffinity() {
 
         List<WeightedPodAffinityTerm> weightedPodAffinityTerms = new ArrayList<>();
-        PodAntiAffinity podAntiAffinity = null;
         Affinity affinity = null;
 
         // adding the affinity term for rack feature only if it's enabled
@@ -348,13 +348,12 @@ public class KafkaCluster extends AbstractModel {
             weightedPodAffinityTerms.add(weightedPodAffinityTerm);
         }
 
+        // creating the affinity only if related terms were added
         if (weightedPodAffinityTerms.size() > 0) {
-            podAntiAffinity = new PodAntiAffinityBuilder()
+            PodAntiAffinity podAntiAffinity = new PodAntiAffinityBuilder()
                     .withPreferredDuringSchedulingIgnoredDuringExecution(weightedPodAffinityTerms)
                     .build();
-        }
 
-        if (podAntiAffinity != null) {
             affinity = new AffinityBuilder()
                     .withPodAntiAffinity(podAntiAffinity)
                     .build();
@@ -370,9 +369,9 @@ public class KafkaCluster extends AbstractModel {
 
         if (rackConfig != null) {
 
-            List<EnvVar> varList = new ArrayList<>();
-            varList.add(buildEnvVarFromFieldRef(ENV_VAR_KAFKA_INIT_NODE_NAME, "spec.nodeName"));
-            varList.add(buildEnvVar(ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY, rackConfig.getTopologyKey()));
+            List<EnvVar> varList =
+                    Arrays.asList(buildEnvVarFromFieldRef(ENV_VAR_KAFKA_INIT_NODE_NAME, "spec.nodeName"),
+                            buildEnvVar(ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY, rackConfig.getTopologyKey()));
 
             Container initContainer = new ContainerBuilder()
                     .withName(KAFKA_INIT_NAME)
