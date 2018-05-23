@@ -4,8 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 public class RackConfig {
 
     private String topologyKey;
@@ -18,7 +16,6 @@ public class RackConfig {
         this.topologyKey = topologyKey;
     }
 
-    @JsonProperty("topologyKey")
     public String getTopologyKey() {
         return topologyKey;
     }
