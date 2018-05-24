@@ -56,14 +56,14 @@ public class ResourceUtils {
                                                         String metricsCmJson) {
         return createKafkaClusterConfigMap(clusterCmNamespace, clusterCmName, replicas, image, healthDelay,
                 healthTimeout, metricsCmJson, "{}", "{}",
-                "{\"type\": \"ephemeral\"}", null);
+                "{\"type\": \"ephemeral\"}", null, null);
     }
     public static ConfigMap createKafkaClusterConfigMap(String clusterCmNamespace, String clusterCmName, int replicas,
                                                         String image, int healthDelay, int healthTimeout,
                                                         String metricsCmJson, String kafkaConfigurationJson) {
         return createKafkaClusterConfigMap(clusterCmNamespace, clusterCmName, replicas, image, healthDelay,
                 healthTimeout, metricsCmJson, kafkaConfigurationJson, "{}",
-                "{\"type\": \"ephemeral\"}", null);
+                "{\"type\": \"ephemeral\"}", null, null);
     }
     public static ConfigMap createKafkaClusterConfigMap(String clusterCmNamespace, String clusterCmName, int replicas,
                                                         String image, int healthDelay, int healthTimeout,
@@ -71,7 +71,7 @@ public class ResourceUtils {
                                                         String zooConfigurationJson) {
         return createKafkaClusterConfigMap(clusterCmNamespace, clusterCmName, replicas, image, healthDelay,
                 healthTimeout, metricsCmJson, kafkaConfigurationJson, zooConfigurationJson,
-                "{\"type\": \"ephemeral\"}", null);
+                "{\"type\": \"ephemeral\"}", null, null);
     }
     public static ConfigMap createKafkaClusterConfigMap(String clusterCmNamespace, String clusterCmName, int replicas,
                                                         String image, int healthDelay, int healthTimeout,
@@ -79,13 +79,13 @@ public class ResourceUtils {
                                                         String zooConfigurationJson, String storage) {
         return createKafkaClusterConfigMap(clusterCmNamespace, clusterCmName, replicas, image, healthDelay,
                 healthTimeout, metricsCmJson, kafkaConfigurationJson, zooConfigurationJson,
-                storage, null);
+                storage, null, null);
     }
 
     public static ConfigMap createKafkaClusterConfigMap(String clusterCmNamespace, String clusterCmName, int replicas,
                                                         String image, int healthDelay, int healthTimeout, String metricsCmJson,
                                                         String kafkaConfigurationJson, String zooConfigurationJson,
-                                                        String storage, String topicOperator) {
+                                                        String storage, String topicOperator, String rackJson) {
         Map<String, String> cmData = new HashMap<>();
         cmData.put(KafkaCluster.KEY_REPLICAS, Integer.toString(replicas));
         cmData.put(KafkaCluster.KEY_IMAGE, image);
@@ -107,6 +107,9 @@ public class ResourceUtils {
         cmData.put(ZookeeperCluster.KEY_METRICS_CONFIG, metricsCmJson);
         if (topicOperator != null) {
             cmData.put(TopicOperator.KEY_CONFIG, topicOperator);
+        }
+        if (rackJson != null) {
+            cmData.put(KafkaCluster.KEY_RACK, rackJson);
         }
         return new ConfigMapBuilder()
                 .withNewMetadata()
