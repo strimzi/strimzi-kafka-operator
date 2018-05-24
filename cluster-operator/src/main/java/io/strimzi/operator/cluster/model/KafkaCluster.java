@@ -36,10 +36,10 @@ public class KafkaCluster extends AbstractModel {
 
     public static final String KAFKA_SERVICE_ACCOUNT = "strimzi-kafka";
 
-    private static final String INIT_KAFKA_IMAGE = "strimzi/init-kafka:latest";
-    private static final String INIT_KAFKA_NAME = "init-kafka";
-    private static final String INIT_KAFKA_VOLUME_NAME = "rack-volume";
-    private static final String INIT_KAFKA_VOLUME_MOUNT = "/rack";
+    protected static final String INIT_KAFKA_IMAGE = "strimzi/init-kafka:latest";
+    protected static final String INIT_KAFKA_NAME = "init-kafka";
+    protected static final String INIT_KAFKA_VOLUME_NAME = "rack-volume";
+    protected static final String INIT_KAFKA_VOLUME_MOUNT = "/rack";
     private static final String ENV_VAR_INIT_KAFKA_RACK_TOPOLOGY_KEY = "RACK_TOPOLOGY_KEY";
     private static final String ENV_VAR_INIT_KAFKA_NODE_NAME = "NODE_NAME";
 

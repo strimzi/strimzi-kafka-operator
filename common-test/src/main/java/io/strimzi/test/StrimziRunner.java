@@ -425,7 +425,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         for (ClusterOperator cc : annotations(element, ClusterOperator.class)) {
             List<String> yamls = Arrays.stream(new File(CC_INSTALL_DIR).listFiles()).sorted().map(f -> getContent(f, node -> {
                 // Change the docker org of the images in the 04-deployment.yaml
-                if ("04-deployment.yaml".equals(f.getName())) {
+                if ("07-deployment.yaml".equals(f.getName())) {
                     String dockerOrg = System.getenv().getOrDefault("DOCKER_ORG", "strimzi");
                     String dockerTag = System.getenv().getOrDefault("DOCKER_TAG", "latest");
                     ObjectNode containerNode = (ObjectNode) node.get("spec").get("template").get("spec").get("containers").get(0);

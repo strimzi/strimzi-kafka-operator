@@ -63,6 +63,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(VertxUnitRunnerWithParametersFactory.class)
 public class KafkaAssemblyOperatorTest {
@@ -395,7 +396,7 @@ public class KafkaAssemblyOperatorTest {
         int healthDelay = 120;
         int healthTimeout = 30;
         String metricsCmJson = metrics ? METRICS_CONFIG : null;
-        return ResourceUtils.createKafkaClusterConfigMap(clusterCmNamespace, clusterCmName, replicas, image, healthDelay, healthTimeout, metricsCmJson, kafkaConfig, zooConfig, storage, tcConfig);
+        return ResourceUtils.createKafkaClusterConfigMap(clusterCmNamespace, clusterCmName, replicas, image, healthDelay, healthTimeout, metricsCmJson, kafkaConfig, zooConfig, storage, tcConfig, null);
     }
 
     private static <T> Set<T> set(T... elements) {

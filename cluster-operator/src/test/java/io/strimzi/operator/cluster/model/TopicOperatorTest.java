@@ -44,7 +44,7 @@ public class TopicOperatorTest {
             "\"topicMetadataMaxAttempts\":" + tcTopicMetadataMaxAttempts +
             " }";
 
-    private final ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, kafkaConfigJson, zooConfigJson, storageJson, topicOperatorJson);
+    private final ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, kafkaConfigJson, zooConfigJson, storageJson, topicOperatorJson, null);
     private final TopicOperator tc = TopicOperator.fromConfigMap(cm);
 
     private List<EnvVar> getExpectedEnvVars() {
@@ -72,7 +72,7 @@ public class TopicOperatorTest {
     @Test
     public void testFromConfigMapDefaultConfig() {
 
-        ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, kafkaConfigJson, zooConfigJson, storageJson, "{ }");
+        ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, kafkaConfigJson, zooConfigJson, storageJson, "{ }", null);
         TopicOperator tc = TopicOperator.fromConfigMap(cm);
 
         assertEquals(TopicOperator.DEFAULT_IMAGE, tc.getImage());

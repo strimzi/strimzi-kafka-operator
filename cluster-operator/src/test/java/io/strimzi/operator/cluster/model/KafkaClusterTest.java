@@ -5,15 +5,22 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.WeightedPodAffinityTerm;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.operator.cluster.InvalidConfigMapException;
 import io.strimzi.operator.cluster.ResourceUtils;
 import org.junit.Test;
 
+import java.util.List;
+
 import static io.strimzi.operator.cluster.ResourceUtils.labels;
 import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class KafkaClusterTest {
 
@@ -84,10 +91,21 @@ public class KafkaClusterTest {
     public void testGenerateStatefulSet() {
         // We expect a single statefulSet ...
         StatefulSet ss = kc.generateStatefulSet(true);
-        checkStatefulSet(ss);
+        checkStatefulSet(ss, cm);
     }
 
-    private void checkStatefulSet(StatefulSet ss) {
+    @Test
+    public void testGenerateStatefulSetWithRack() {
+        ConfigMap cm =
+                ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout,
+                        metricsCmJson, configurationJson, "{}", "{\"type\": \"ephemeral\"}",
+                        null, "{\"topologyKey\": \"rack-key\"}");
+        KafkaCluster kc = KafkaCluster.fromConfigMap(cm);
+        StatefulSet ss = kc.generateStatefulSet(true);
+        checkStatefulSet(ss, cm);
+    }
+
+    private void checkStatefulSet(StatefulSet ss, ConfigMap cm) {
         assertEquals(KafkaCluster.kafkaClusterName(cluster), ss.getMetadata().getName());
         // ... in the same namespace ...
         assertEquals(namespace, ss.getMetadata().getNamespace());
@@ -105,6 +123,41 @@ public class KafkaClusterTest {
         assertEquals(new Integer(healthTimeout), ss.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds());
         assertEquals(new Integer(healthDelay), ss.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds());
         assertEquals("foo=bar\n", AbstractModel.containerEnvVars(ss.getSpec().getTemplate().getSpec().getContainers().get(0)).get(KafkaCluster.ENV_VAR_KAFKA_CONFIGURATION));
+
+        if (cm.getData().get("kafka-rack") != null) {
+
+            RackConfig rackConfig = RackConfig.fromJson(cm.getData().get("kafka-rack"));
+
+            // check that the pod spec contains anti-affinity rules with the right topology key
+            PodSpec podSpec = ss.getSpec().getTemplate().getSpec();
+            assertNotNull(podSpec.getAffinity());
+            assertNotNull(podSpec.getAffinity().getPodAntiAffinity());
+            assertNotNull(podSpec.getAffinity().getPodAntiAffinity().getPreferredDuringSchedulingIgnoredDuringExecution());
+            List<WeightedPodAffinityTerm> terms = podSpec.getAffinity().getPodAntiAffinity().getPreferredDuringSchedulingIgnoredDuringExecution();
+            assertNotNull(terms);
+            assertTrue(terms.size() > 0);
+
+            boolean isTopologyKey = false;
+            for (WeightedPodAffinityTerm term: terms) {
+                isTopologyKey = term.getPodAffinityTerm().getTopologyKey().equals(rackConfig.getTopologyKey());
+                if (isTopologyKey)
+                    break;
+            }
+            assertTrue(isTopologyKey);
+
+            // check that pod spec contains the init Kafka container
+            List<Container> initContainers = podSpec.getInitContainers();
+            assertNotNull(initContainers);
+            assertTrue(initContainers.size() > 0);
+
+            boolean isInitKafka = false;
+            for (Container container: initContainers) {
+                isInitKafka = container.getName().equals(KafkaCluster.INIT_KAFKA_NAME);
+                if (isInitKafka)
+                    break;
+            }
+            assertTrue(isInitKafka);
+        }
     }
 
     /**
@@ -117,7 +170,7 @@ public class KafkaClusterTest {
         // Don't check the metrics CM, since this isn't restored from the StatefulSet
         checkService(kc2.generateService());
         checkHeadlessService(kc2.generateHeadlessService());
-        checkStatefulSet(kc2.generateStatefulSet(true));
+        checkStatefulSet(kc2.generateStatefulSet(true), cm);
     }
 
     // TODO test volume claim templates
