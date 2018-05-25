@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
+import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -34,7 +35,9 @@ import java.util.function.Predicate;
  */
 public abstract class StatefulSetOperator extends AbstractScalableResourceOperator<KubernetesClient, StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> {
 
-    public static final String ANNOTATION_GENERATION = "cluster-controller.strimzi.io/statefulset-generation";
+    public static final String ANNOTATION_GENERATION = ClusterOperator.STRIMZI_CLUSTER_OPERATOR_DOMAIN + "/statefulset-generation";
+    private static final int NO_GENERATION = -1;
+    private static final int INIT_GENERATION = 0;
 
     private static final Logger log = LogManager.getLogger(StatefulSetOperator.class.getName());
     private final PodOperator podOperations;
@@ -223,13 +226,18 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
 
     private static int getGeneration(ObjectMeta objectMeta) {
         if (objectMeta.getAnnotations().get(ANNOTATION_GENERATION) == null) {
-            new RuntimeException().printStackTrace();
+            return NO_GENERATION;
         }
-        return Integer.parseInt(objectMeta.getAnnotations().getOrDefault(ANNOTATION_GENERATION, "-2"));
+        String generationAnno = objectMeta.getAnnotations().get(ANNOTATION_GENERATION);
+        if (generationAnno == null) {
+            return NO_GENERATION;
+        } else {
+            return Integer.parseInt(generationAnno);
+        }
     }
 
     protected void incrementGeneration(StatefulSet current, StatefulSet desired) {
-        final int generation = Integer.parseInt(templateMetadata(current).getAnnotations().getOrDefault(ANNOTATION_GENERATION, "1"));
+        final int generation = Integer.parseInt(templateMetadata(current).getAnnotations().getOrDefault(ANNOTATION_GENERATION, String.valueOf(INIT_GENERATION)));
         final int nextGeneration = generation + 1;
         setGeneration(desired, nextGeneration);
     }
@@ -238,14 +246,14 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
 
     private static int getSsGeneration(StatefulSet resource) {
         if (resource == null) {
-            return -3;
+            return NO_GENERATION;
         }
         return getGeneration(templateMetadata(resource));
     }
 
     private static int getPodGeneration(Pod resource) {
         if (resource == null) {
-            return -4;
+            return NO_GENERATION;
         }
         return getGeneration(resource.getMetadata());
     }
@@ -254,7 +262,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
     protected Future<ReconcileResult<StatefulSet>> internalCreate(String namespace, String name, StatefulSet desired) {
         // Create the SS...
         Future<ReconcileResult<StatefulSet>> result = Future.future();
-        setGeneration(desired, 1);
+        setGeneration(desired, INIT_GENERATION);
         Future<ReconcileResult<StatefulSet>> crt = super.internalCreate(namespace, name, desired);
 
         // ... then wait for the SS to be ready...
