@@ -26,11 +26,11 @@ import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 
@@ -40,7 +40,7 @@ import static io.strimzi.operator.cluster.ResourceUtils.set;
 @RunWith(VertxUnitRunner.class)
 public class PartialRollingUpdateTest {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(PartialRollingUpdateTest.class);
+    private static final Logger LOGGER = LogManager.getLogger(PartialRollingUpdateTest.class);
 
     private static final String NAMESPACE = "my-namespace";
     private static final String CLUSTER_NAME = "my-cluster";
