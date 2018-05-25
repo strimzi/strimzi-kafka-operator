@@ -22,10 +22,9 @@ import org.apache.logging.log4j.Logger;
  * @param <L> The list variant of the Kubernetes resource type.
  * @param <D> The doneable variant of the Kubernetes resource type.
  * @param <R> The resource operations.
- * @param <P> The type of the {@link #reconcile(String, String, HasMetadata)}result
  */
-public abstract class AbstractReadyResourceOperator<C, T extends HasMetadata, L extends KubernetesResourceList/*<T>*/, D, R extends Resource<T, D>, P>
-        extends AbstractResourceOperator<C, T, L, D, R, P> {
+public abstract class AbstractReadyResourceOperator<C, T extends HasMetadata, L extends KubernetesResourceList/*<T>*/, D, R extends Resource<T, D>>
+        extends AbstractResourceOperator<C, T, L, D, R> {
 
     private final Logger log = LogManager.getLogger(getClass());
 

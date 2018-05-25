@@ -16,7 +16,7 @@ import io.vertx.core.Vertx;
 /**
  * Operations for {@code DeploymentConfigs}s.
  */
-public class DeploymentConfigOperator extends AbstractScalableResourceOperator<OpenShiftClient, DeploymentConfig, DeploymentConfigList, DoneableDeploymentConfig, DeployableScalableResource<DeploymentConfig, DoneableDeploymentConfig>, Void> {
+public class DeploymentConfigOperator extends AbstractScalableResourceOperator<OpenShiftClient, DeploymentConfig, DeploymentConfigList, DoneableDeploymentConfig, DeployableScalableResource<DeploymentConfig, DoneableDeploymentConfig>> {
     /**
      * Constructor
      * @param vertx The Vertx instance
@@ -41,7 +41,8 @@ public class DeploymentConfigOperator extends AbstractScalableResourceOperator<O
         }
     }
 
-    protected Future<ReconcileResult<Void>> internalPatch(String namespace, String name, DeploymentConfig current, DeploymentConfig desired) {
+    @Override
+    protected Future<ReconcileResult<DeploymentConfig>> internalPatch(String namespace, String name, DeploymentConfig current, DeploymentConfig desired) {
         desired.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(current.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
         return super.internalPatch(namespace, name, current, desired);
     }

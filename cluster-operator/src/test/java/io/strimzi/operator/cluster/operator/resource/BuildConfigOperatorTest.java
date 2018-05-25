@@ -18,7 +18,7 @@ import io.vertx.core.Vertx;
 import static org.mockito.Mockito.when;
 
 public class BuildConfigOperatorTest extends AbstractResourceOperatorTest<OpenShiftClient, BuildConfig,
-        BuildConfigList, DoneableBuildConfig, BuildConfigResource<BuildConfig, DoneableBuildConfig, Void, Build>, Void> {
+        BuildConfigList, DoneableBuildConfig, BuildConfigResource<BuildConfig, DoneableBuildConfig, Void, Build>> {
 
     @Override
     protected void mocker(OpenShiftClient mockClient, MixedOperation mockCms) {

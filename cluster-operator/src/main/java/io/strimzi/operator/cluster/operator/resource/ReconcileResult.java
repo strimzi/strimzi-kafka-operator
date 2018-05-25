@@ -4,32 +4,33 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
-public class ReconcileResult<D> {
-    private static final ReconcileResult CREATED = new ReconcileResult() {
-        public String toString() {
-            return "CREATED";
-        }
-    };
-    private static final ReconcileResult DELETED = new ReconcileResult() {
+public abstract class ReconcileResult<R> {
+
+    private static final ReconcileResult DELETED = new ReconcileResult(null) {
         public String toString() {
             return "DELETED";
         }
     };
-    private static final ReconcileResult NOOP = new ReconcileResult() {
+    private static final ReconcileResult NOOP = new ReconcileResult(null) {
         public String toString() {
             return "NOOP";
         }
     };
 
-    public static class Patched<D> extends ReconcileResult<D> {
-        private final D differences;
-
-        private Patched(D differences) {
-            this.differences = differences;
+    public static class Created<R> extends ReconcileResult<R> {
+        private Created(R resource) {
+            super(resource);
         }
 
-        public D differences() {
-            return differences;
+        public String toString() {
+            return "CREATED";
+        }
+    }
+
+    public static class Patched<R> extends ReconcileResult<R> {
+
+        private Patched(R resource) {
+            super(resource);
         }
 
         public String toString() {
@@ -38,20 +39,32 @@ public class ReconcileResult<D> {
     }
 
     /** The resource was patched. */
-    public static final <D> Patched<D> patched(D differences) {
-        return new Patched(differences);
+    public static final <D> Patched<D> patched(D resource) {
+        return new Patched(resource);
     }
+
     /** The resource was created. */
-    public static final <P> ReconcileResult<P> created() {
-        return CREATED;
+    public static final <D> ReconcileResult<D> created(D resource) {
+        return new Created<>(resource);
     }
+
     /** The resource was deleted. */
     public static final <P> ReconcileResult<P> deleted() {
         return DELETED;
     }
+
     /** No action was performed. */
     public static final <P> ReconcileResult<P> noop() {
         return NOOP;
     }
-    private ReconcileResult() {}
+
+    private final R resource;
+
+    private ReconcileResult(R resource) {
+        this.resource = resource;
+    }
+
+    public R resource() {
+        return this.resource;
+    }
 }

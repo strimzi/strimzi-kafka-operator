@@ -21,8 +21,8 @@ import org.apache.logging.log4j.Logger;
  * @param <D> The doneable variant of the Kubernetes resource type.
  * @param <R> The resource operations.
  */
-public abstract class AbstractScalableResourceOperator<C, T extends HasMetadata, L extends KubernetesResourceList/*<T>*/, D, R extends ScalableResource<T, D>, P>
-        extends AbstractReadyResourceOperator<C, T, L, D, R, P> {
+public abstract class AbstractScalableResourceOperator<C, T extends HasMetadata, L extends KubernetesResourceList/*<T>*/, D, R extends ScalableResource<T, D>>
+        extends AbstractReadyResourceOperator<C, T, L, D, R> {
 
     private final Logger log = LogManager.getLogger(getClass());
 

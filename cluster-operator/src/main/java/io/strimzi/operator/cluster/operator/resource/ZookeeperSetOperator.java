@@ -6,7 +6,6 @@ package io.strimzi.operator.cluster.operator.resource;
 
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -15,7 +14,7 @@ import org.apache.logging.log4j.Logger;
 /**
  * Specialization of {@link StatefulSetOperator} for StatefulSets of Zookeeper nodes
  */
-public class ZookeeperSetOperator extends StatefulSetOperator<Boolean> {
+public class ZookeeperSetOperator extends StatefulSetOperator {
 
     private static final Logger log = LogManager.getLogger(ZookeeperSetOperator.class);
 
@@ -30,24 +29,13 @@ public class ZookeeperSetOperator extends StatefulSetOperator<Boolean> {
     }
 
     @Override
-    protected Future<ReconcileResult<Boolean>> internalPatch(String namespace, String name, StatefulSet current, StatefulSet desired) {
+    protected boolean shouldIncrementGeneration(StatefulSet current, StatefulSet desired) {
         StatefulSetDiff diff = new StatefulSetDiff(current, desired);
         if (diff.changesVolumeClaimTemplates()) {
             log.warn("Changing Zookeeper storage type or size is not possible. The changes will be ignored.");
             diff = revertStorageChanges(current, desired);
         }
-        if (diff.isEmpty()) {
-            return Future.succeededFuture(ReconcileResult.noop());
-        } else {
-            boolean different = needsRollingUpdate(diff);
-            return super.internalPatch(namespace, name, current, desired).map(r -> {
-                if (r instanceof ReconcileResult.Patched) {
-                    return ReconcileResult.patched(different);
-                } else {
-                    return r;
-                }
-            });
-        }
+        return !diff.isEmpty() && needsRollingUpdate(diff);
     }
 
     public static boolean needsRollingUpdate(StatefulSetDiff diff) {
