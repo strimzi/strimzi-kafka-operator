@@ -28,6 +28,9 @@
 // Source and download links
 :ReleaseDownload: https://github.com/strimzi/strimzi/releases[GitHub]
 
+// External links
+:KafkaRacks: https://kafka.apache.org/documentation/#basic_ops_racks[Kafka racks documentation]
+
 // Docker image names
 :DockerTag: {ProductVersion}
 :DockerRepository: https://hub.docker.com/u/strimzi[Docker Hub]

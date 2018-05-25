@@ -26,6 +26,7 @@ import io.strimzi.operator.cluster.operator.resource.DeploymentOperator;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.PvcOperator;
 import io.strimzi.operator.cluster.operator.resource.ServiceOperator;
+import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperSetOperator;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
@@ -47,11 +48,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static io.strimzi.operator.cluster.ResourceUtils.map;
 import static java.util.Collections.emptySet;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -198,17 +199,6 @@ public class KafkaAssemblyOperatorMockTest {
         this.vertx.close();
     }
 
-    private static <T> Map<T, T> map(T... pairs) {
-        if (pairs.length % 2 != 0) {
-            throw new IllegalArgumentException();
-        }
-        Map<T, T> result = new HashMap<>(pairs.length / 2);
-        for (int i = 0; i < pairs.length; i += 2) {
-            result.put(pairs[i], pairs[i + 1]);
-        }
-        return result;
-    }
-
     private KafkaAssemblyOperator createCluster(TestContext context) {
         ConfigMapOperator cmops = new ConfigMapOperator(vertx, mockClient);
         ServiceOperator svcops = new ServiceOperator(vertx, mockClient);
@@ -224,8 +214,12 @@ public class KafkaAssemblyOperatorMockTest {
         kco.reconcileAssembly(new Reconciliation("test-trigger", AssemblyType.KAFKA, NAMESPACE, CLUSTER_NAME), ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.assertTrue(ar.succeeded());
-            context.assertNotNull(mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaClusterName(CLUSTER_NAME)).get());
-            context.assertNotNull(mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(ZookeeperCluster.zookeeperClusterName(CLUSTER_NAME)).get());
+            StatefulSet kafkaSs = mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaClusterName(CLUSTER_NAME)).get();
+            context.assertNotNull(kafkaSs);
+            context.assertEquals("0", kafkaSs.getSpec().getTemplate().getMetadata().getAnnotations().get(StatefulSetOperator.ANNOTATION_GENERATION));
+            StatefulSet zkSs = mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(ZookeeperCluster.zookeeperClusterName(CLUSTER_NAME)).get();
+            context.assertEquals("0", zkSs.getSpec().getTemplate().getMetadata().getAnnotations().get(StatefulSetOperator.ANNOTATION_GENERATION));
+            context.assertNotNull(zkSs);
             context.assertNotNull(mockClient.extensions().deployments().inNamespace(NAMESPACE).withName(TopicOperator.topicOperatorName(CLUSTER_NAME)).get());
             context.assertNotNull(mockClient.configMaps().inNamespace(NAMESPACE).withName(KafkaCluster.metricConfigsName(CLUSTER_NAME)).get());
             context.assertNotNull(mockClient.configMaps().inNamespace(NAMESPACE).withName(ZookeeperCluster.zookeeperMetricsName(CLUSTER_NAME)).get());
@@ -775,6 +769,13 @@ public class KafkaAssemblyOperatorMockTest {
         context.assertTrue(mockClient.services().inNamespace(NAMESPACE).list().getItems().isEmpty());
         context.assertTrue(mockClient.apps().statefulSets().inNamespace(NAMESPACE).list().getItems().isEmpty());
         context.assertTrue(mockClient.extensions().deployments().inNamespace(NAMESPACE).list().getItems().isEmpty());
+    }
+
+    @Test
+    public void testResumePartialRoll(TestContext context) {
+
+
+        KafkaAssemblyOperator kco = createCluster(context);
     }
 
 }

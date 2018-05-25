@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.strimzi.operator.cluster.InvalidConfigMapException;
 import io.strimzi.operator.cluster.Reconciliation;
 import io.strimzi.operator.cluster.model.AssemblyType;
 import io.strimzi.operator.cluster.model.Labels;
@@ -124,7 +125,15 @@ public abstract class AbstractAssemblyOperator {
                         createOrUpdate(reconciliation, cm, createResult -> {
                             lock.release();
                             log.debug("{}: Lock {} released", reconciliation, lockName);
-                            handler.handle(createResult);
+                            if (createResult.failed()) {
+                                if (createResult.cause() instanceof InvalidConfigMapException) {
+                                    log.error(createResult.cause().getMessage());
+                                } else {
+                                    log.error(createResult.cause().toString());
+                                }
+                            } else {
+                                handler.handle(createResult);
+                            }
                         });
                     } else {
                         log.info("{}: assembly {} should be deleted", reconciliation, assemblyName);
@@ -187,7 +196,12 @@ public abstract class AbstractAssemblyOperator {
                 if (result.succeeded()) {
                     log.info("{}: Assembly reconciled", reconciliation);
                 } else {
-                    log.error("{}: Failed to reconcile", reconciliation, result.cause());
+                    Throwable cause = result.cause();
+                    if (cause instanceof InvalidConfigMapException) {
+                        log.warn("{}: Failed to reconcile {}", reconciliation, cause.getMessage());
+                    } else {
+                        log.warn("{}: Failed to reconcile {}", reconciliation, cause);
+                    }
                 }
                 latch.countDown();
             });

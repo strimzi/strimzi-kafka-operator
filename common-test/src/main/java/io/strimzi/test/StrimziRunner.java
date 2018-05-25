@@ -5,6 +5,7 @@
 package io.strimzi.test;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
@@ -455,6 +456,15 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                             }
                         }
                     }
+                }
+
+                if ("06-role-binding-kafka.yaml".equals(f.getName())) {
+                    String ns = annotations(element, Namespace.class).get(0).value();
+                    ArrayNode subjects = (ArrayNode) node.get("subjects");
+                    JsonNodeFactory factory = new JsonNodeFactory(false);
+                    ObjectNode subject = new ObjectNode(factory);
+                    subject.put("kind", "ServiceAccount").put("name", "strimzi-kafka").put("namespace", ns);
+                    subjects.set(0, subject);
                 }
             })).collect(Collectors.toList());
             last = new Bracket(last) {

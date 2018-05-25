@@ -64,6 +64,9 @@ the related ConfigMap :
 Number of Kafka broker nodes. Default is 3.
 `kafka-image`::
 The Docker image to use for the Kafka brokers. Default is determined by the value of the `<<STRIMZI_DEFAULT_KAFKA_IMAGE,STRIMZI_DEFAULT_KAFKA_IMAGE>>` environment variable of the Cluster Operator.
+`init-kafka-image`::
+The Docker image to use for the init container which does some initial configuration work (i.e. rack support).
+Default is determined by the value of the `<<STRIMZI_DEFAULT_INIT_KAFKA_IMAGE,STRIMZI_DEFAULT_INIT_KAFKA_IMAGE>>` environment variable of the Cluster Operator.
 `kafka-healthcheck-delay`::
 The initial delay for the liveness and readiness probes for each Kafka broker node. Default is 15.
 `kafka-healthcheck-timeout`::
@@ -482,6 +485,38 @@ suffix. This is in contrast to the units used for <<resources_json_config,memory
 In the above example, the JVM will use 2 GiB (=2,147,483,648 bytes) for its heap.
 Its total memory usage will be approximately 8GiB.
 
+`-server`::
+Selects the server JVM. This option can be set to true or false. Optional.
+
+`-XX`::
+A JSON Object for configuring advanced runtime options of a JVM. Optional
+
+The `-server` and `-XX` options are used to configure the `KAFKA_JVM_PERFORMANCE_OPTS` option of Apache Kafka.
+
+.Example advanced runtime JVM configuration
+[source,json]
+----
+{
+  "-server": true,
+  "-XX": {
+             "UseG1GC": true,
+             "MaxGCPauseMillis": 20,
+             "InitiatingHeapOccupancyPercent": 35,
+             "ExplicitGCInvokesConcurrent": true,
+             "UseParNewGC": false
+         }
+}
+----
+
+The example configuration above will result in the following JVM options:
+
+[source]
+----
+-server -XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -XX:+ExplicitGCInvokesConcurrent -XX:-UseParNewGC
+----
+
+When neither of the two options (`-server` and `-XX`) is specified, the default Apache Kafka configuration of `KAFKA_JVM_PERFORMANCE_OPTS` will be used.
+
 [[setting_xmx]]
 ====== Setting `-Xmx`
 
@@ -521,13 +556,14 @@ memory used by the JVM.
 [[kafka_rack]]
 ===== Kafka rack
 
-It is possible to enable Kafka rack-awareness by specifying a JSON string for the `kafka-rack` field in the cluster ConfigMap.
-Such a JSON object has one mandatory field named `topologyKey`.
+It is possible to enable Kafka rack-awareness (more information can be found on the {KafkaRacks})
+by specifying a JSON object for the `kafka-rack` field in the cluster ConfigMap.
+The `kafka-rack` JSON object has one mandatory field named `topologyKey`.
 This key needs to match one of the labels assigned to the {ProductPlatformName} cluster nodes.
-The label is used by {ProductPlatformName} when scheduling Kafka broker pods to nodes. 
-{ProductPlatformName} will try to minimize the number of pods scheduled on nodes with the same label value.
+The label is used by {ProductPlatformName} when scheduling Kafka broker pods to nodes.
 If the {ProductPlatformName} cluster is running on a cloud provider platform, that label should represent the availability zone where the node is running.
-This will have the effect of spreading the broker pods across the availability zones, and also setting the brokers `rack.id` configuration parameter.
+Usually, the nodes are labeled with `failure-domain.beta.kubernetes.io/zone` that can be easily used as `topologyKey` value.
+This will have the effect of spreading the broker pods across zones, and also setting the brokers `broker.rack` configuration parameter.
 
 .Example Kafka rack JSON configuration
 [source,json]
@@ -828,11 +864,22 @@ The Deployment of the operator then needs to specify this in the `serviceAccount
 [source,yaml,numbered,options="nowrap",highlight='12']
 .Partial example Deployment for the Cluster Operator
 ----
-include::examples/install/cluster-operator/04-deployment.yaml[lines=1..13]
+include::examples/install/cluster-operator/07-deployment.yaml[lines=1..13]
 # etc ...
 ----
 
 Note line 12, where the the `strimzi-cluster-operator` ServiceAccount is specified as the `serviceAccountName`.
+
+If the rack awareness feature is used, a Kafka init container will be started before the broker container in order to enable it.
+The application inside this container is best run using a ServiceAccount:
+
+[source,yaml,options="nowrap"]
+.Example ServiceAccount for the Kafka init container
+----
+include::examples/install/cluster-operator/04-service-account-kafka.yaml[]
+----
+
+The Cluster Operator will be in charge of configuring this ServiceAccount as `serviceAccountName` for the Kafka init container during cluster deployment.
 
 ==== Defining a Role
 
@@ -850,6 +897,16 @@ include::examples/install/cluster-operator/02-role.yaml[]
 ----
 
 When the Role cannot be created, the predefined ClusterRole named `edit` can be used instead.
+
+If the rack awareness feature is used, the started Kafka init container needs to operate using a ClusterRole that gives it access to the necessary resources.
+
+[source,yaml,options="nowrap"]
+.Example Role for the Kafka init container
+----
+include::examples/install/cluster-operator/05-role-kafka.yaml[]
+----
+
+The assigned privileges allow the Kafka init container to get Nodes information.
 
 ==== Defining a RoleBinding
 
@@ -881,6 +938,16 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
 ----
 
+If the rack awareness feature is used, the Kafka init container needs a ClusterRoleBinding which associates its ClusterRole with its ServiceAccount:
+
+[source,yaml,options="nowrap"]
+.Example ClusterRoleBinding for the Kafka init container
+----
+include::examples/install/cluster-operator/06-role-binding-kafka.yaml[]
+----
+
+It's important to highlight that the `namespace` field, specified in the ServiceAccount subject, needs to be the same namespace where the Kafka cluster will be deployed.
+
 === Operator configuration
 
 The operator itself can be configured through the following environment variables.
@@ -907,6 +974,10 @@ increased when using {ProductName} on clusters where regular {ProductPlatformNam
 [[STRIMZI_DEFAULT_KAFKA_IMAGE]] `STRIMZI_DEFAULT_KAFKA_IMAGE`:: Optional, default `strimzi/kafka:latest`.
 The image name to use as a default when deploying Kafka, if
 no image is specified as the `kafka-image` in the <<kafka_config_map_details,Kafka cluster ConfigMap>>.
+
+[[STRIMZI_DEFAULT_INIT_KAFKA_IMAGE]] `STRIMZI_DEFAULT_INIT_KAFKA_IMAGE`:: Optional, default `strimzi/init-kafka:latest`.
+The image name to use as default for the init container started before the broker for doing initial configuration work (i.e. rack support), if
+no image is specified as the `init-kafka-image` in the <<kafka_config_map_details,Kafka cluster ConfigMap>>.
 
 [[STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE]] `STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE`:: Optional, default `strimzi/kafka-connect:latest`.
 The image name to use as a default when deploying Kafka Connect, if

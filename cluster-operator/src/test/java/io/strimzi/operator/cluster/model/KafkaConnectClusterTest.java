@@ -206,7 +206,7 @@ public class KafkaConnectClusterTest {
             KafkaCluster.fromConfigMap(cm);
             fail("Expected it to throw an exception");
         } catch (InvalidConfigMapException e) {
-            assertEquals("JSON braces", e.getKey());
+            assertEquals("JSON bracing", e.getKey());
         }
     }
 

@@ -26,11 +26,9 @@ import java.util.List;
  * @param <L> The list variant of the Kubernetes resource type.
  * @param <D> The doneable variant of the Kubernetes resource type.
  * @param <R> The resource operations.
- * @param <P> The type of the {@link #reconcile(String, String, HasMetadata)}result
  */
 public abstract class AbstractResourceOperator<C, T extends HasMetadata,
-        L extends KubernetesResourceList/*<T>*/, D, R extends Resource<T, D>,
-        P> {
+        L extends KubernetesResourceList/*<T>*/, D, R extends Resource<T, D>> {
 
     private final Logger log = LogManager.getLogger(getClass());
     protected final Vertx vertx;
@@ -57,7 +55,7 @@ public abstract class AbstractResourceOperator<C, T extends HasMetadata,
      * If the resource with that name already exists the future completes successfully.
      * @param resource The resource to create.
      */
-    public Future<ReconcileResult<P>> createOrUpdate(T resource) {
+    public Future<ReconcileResult<T>> createOrUpdate(T resource) {
         if (resource == null) {
             throw new NullPointerException();
         }
@@ -68,14 +66,14 @@ public abstract class AbstractResourceOperator<C, T extends HasMetadata,
      * Asynchronously reconciles the resource with the given namespace and name to match the given
      * desired resource, returning a future for the result.
      */
-    public Future<ReconcileResult<P>> reconcile(String namespace, String name, T desired) {
+    public Future<ReconcileResult<T>> reconcile(String namespace, String name, T desired) {
         if (desired != null && !namespace.equals(desired.getMetadata().getNamespace())) {
             return Future.failedFuture("Given namespace " + namespace + " incompatible with desired namespace " + desired.getMetadata().getNamespace());
         } else if (desired != null && !name.equals(desired.getMetadata().getName())) {
             return Future.failedFuture("Given name " + name + " incompatible with desired name " + desired.getMetadata().getName());
         }
 
-        Future<ReconcileResult<P>> fut = Future.future();
+        Future<ReconcileResult<T>> fut = Future.future();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
             future -> {
                 T current = operation().inNamespace(namespace).withName(name).get();
@@ -109,7 +107,7 @@ public abstract class AbstractResourceOperator<C, T extends HasMetadata,
      * Deletes the resource with the given namespace and name
      * and completes the given future accordingly
      */
-    protected Future<ReconcileResult<P>> internalDelete(String namespace, String name) {
+    protected Future<ReconcileResult<T>> internalDelete(String namespace, String name) {
         try {
             operation().inNamespace(namespace).withName(name).delete();
             log.debug("{} {} in namespace {} has been deleted", resourceKind, name, namespace);
@@ -124,11 +122,11 @@ public abstract class AbstractResourceOperator<C, T extends HasMetadata,
      * Patches the resource with the given namespace and name to match the given desired resource
      * and completes the given future accordingly.
      */
-    protected Future<ReconcileResult<P>> internalPatch(String namespace, String name, T current, T desired) {
+    protected Future<ReconcileResult<T>> internalPatch(String namespace, String name, T current, T desired) {
         try {
-            operation().inNamespace(namespace).withName(name).cascading(true).patch(desired);
+            ReconcileResult.Patched<T> result = ReconcileResult.patched(operation().inNamespace(namespace).withName(name).cascading(true).patch(desired));
             log.debug("{} {} in namespace {} has been patched", resourceKind, name, namespace);
-            return Future.succeededFuture(ReconcileResult.patched(null));
+            return Future.succeededFuture(result);
         } catch (Exception e) {
             log.error("Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
             return Future.failedFuture(e);
@@ -139,11 +137,11 @@ public abstract class AbstractResourceOperator<C, T extends HasMetadata,
      * Creates a resource with the given namespace and name with the given desired state
      * and completes the given future accordingly.
      */
-    protected Future<ReconcileResult<P>> internalCreate(String namespace, String name, T desired) {
+    protected Future<ReconcileResult<T>> internalCreate(String namespace, String name, T desired) {
         try {
-            operation().inNamespace(namespace).withName(name).create(desired);
+            ReconcileResult<T> result = ReconcileResult.created(operation().inNamespace(namespace).withName(name).create(desired));
             log.debug("{} {} in namespace {} has been created", resourceKind, name, namespace);
-            return Future.succeededFuture(ReconcileResult.created());
+            return Future.succeededFuture(result);
         } catch (Exception e) {
             log.error("Caught exception while creating {} {} in namespace {}", resourceKind, name, namespace, e);
             return Future.failedFuture(e);

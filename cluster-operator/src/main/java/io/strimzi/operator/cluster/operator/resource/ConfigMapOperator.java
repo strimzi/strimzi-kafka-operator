@@ -15,7 +15,7 @@ import io.vertx.core.Vertx;
 /**
  * Operations for {@code ConfigMap}s.
  */
-public class ConfigMapOperator extends AbstractResourceOperator<KubernetesClient, ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>, Void> {
+public class ConfigMapOperator extends AbstractResourceOperator<KubernetesClient, ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> {
     /**
      * Constructor
      * @param vertx The Vertx instance
