@@ -28,6 +28,9 @@ import org.apache.kafka.clients.admin.NewPartitions;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
+import org.apache.kafka.common.utils.CopyOnWriteMap;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -36,8 +39,8 @@ import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+
 
 import java.lang.reflect.Field;
 import java.nio.file.Files;
@@ -60,7 +63,7 @@ import static org.junit.Assert.assertNotNull;
 @RunWith(VertxUnitRunner.class)
 public class TopicOperatorIT {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(TopicOperatorIT.class);
+    private static final Logger LOGGER = LogManager.getLogger(TopicOperatorIT.class);
 
     @ClassRule
     public static KubeClusterResource testCluster = new KubeClusterResource();
@@ -589,7 +592,7 @@ public class TopicOperatorIT {
 
             // modify configmap
             if (createdCm != null) {
-                Map<String, String> data = new HashMap<>(createdCm.getData());
+                Map<String, String> data = new CopyOnWriteMap<>(createdCm.getData());
                 data.put("partitions", "2");
                 createdCm.setData(data);
                 kubeClient.configMaps().inNamespace(NAMESPACE).withName(configMapName).patch(createdCm);

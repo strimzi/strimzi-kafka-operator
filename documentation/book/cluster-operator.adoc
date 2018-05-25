@@ -926,6 +926,9 @@ of the Kafka cluster ConfigMap.
 The image name to use as a default when deploying Zookeeper, if
 no image is specified as the `zookeeper-image` in the <<kafka_config_map_details,Kafka cluster ConfigMap>>.
 
+[[STRIMZI_LOG_LEVEL]] `STRIMZI_LOG_LEVEL`:: Optional, default `INFO`.
+The level for printing logging messages. The value can be set to: `ERROR`, `WARNING`, `INFO`, `DEBUG` and `TRACE`.
+
 [[multi-namespace]]
 ==== Watching multiple namespaces
 

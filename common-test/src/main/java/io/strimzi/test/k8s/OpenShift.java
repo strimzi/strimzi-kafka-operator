@@ -5,12 +5,12 @@
 package io.strimzi.test.k8s;
 
 import io.strimzi.test.TestUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class OpenShift implements KubeCluster {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(OpenShift.class);
+    private static final Logger LOGGER = LogManager.getLogger(OpenShift.class);
 
     private static final String OC = "oc";
 

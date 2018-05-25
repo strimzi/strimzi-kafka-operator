@@ -8,15 +8,17 @@ import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+
 
 @RunWith(VertxUnitRunner.class)
 public class InFlightTest {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(InFlightTest.class);
+    private static final Logger LOGGER = LogManager.getLogger(InFlightTest.class);
 
     private final Vertx vertx = Vertx.vertx();
 

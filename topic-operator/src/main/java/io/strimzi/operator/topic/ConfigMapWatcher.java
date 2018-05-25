@@ -10,14 +10,14 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.Map;
 
 class ConfigMapWatcher implements Watcher<ConfigMap> {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(ConfigMapWatcher.class);
+    private final static Logger LOGGER = LogManager.getLogger(ConfigMapWatcher.class);
 
     private TopicOperator topicOperator;
     private final LabelPredicate cmPredicate;

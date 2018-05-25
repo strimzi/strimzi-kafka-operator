@@ -4,8 +4,8 @@
  */
 package io.strimzi.test.k8s;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.List;
 import java.util.Map;
@@ -17,7 +17,7 @@ import static java.util.Collections.emptyMap;
  */
 public class Oc extends BaseKubeClient<Oc> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(Oc.class);
+    private static final Logger LOGGER = LogManager.getLogger(Oc.class);
 
     private static final String OC = "oc";
 

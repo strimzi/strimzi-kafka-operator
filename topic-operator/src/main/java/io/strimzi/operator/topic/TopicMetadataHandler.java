@@ -7,8 +7,8 @@ package io.strimzi.operator.topic;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.concurrent.TimeUnit;
 
@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
  */
 public abstract class TopicMetadataHandler implements Handler<AsyncResult<TopicMetadata>> {
 
-    private static final Logger log = LoggerFactory.getLogger(TopicMetadataHandler.class);
+    private static final Logger log = LogManager.getLogger(TopicMetadataHandler.class);
 
     private final BackOff backOff;
 

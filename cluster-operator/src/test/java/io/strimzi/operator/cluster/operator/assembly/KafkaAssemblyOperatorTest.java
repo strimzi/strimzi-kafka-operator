@@ -46,6 +46,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
@@ -639,7 +640,7 @@ public class KafkaAssemblyOperatorTest {
     }
 
     @Test
-    public void testReconcile(TestContext context) {
+    public void testReconcile(TestContext context) throws InterruptedException {
         Async async = context.async(3);
 
         // create CM, Service, headless service, statefulset
@@ -681,8 +682,8 @@ public class KafkaAssemblyOperatorTest {
                 asList(KafkaCluster.fromConfigMap(baz).generateStatefulSet(openShift))
         );
 
-        Set<String> createdOrUpdated = new HashSet<>();
-        Set<String> deleted = new HashSet<>();
+        Set<String> createdOrUpdated = new CopyOnWriteArraySet<>();
+        Set<String> deleted = new CopyOnWriteArraySet<>();
 
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, openShift,
                 ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS,
@@ -704,7 +705,7 @@ public class KafkaAssemblyOperatorTest {
         };
 
         // Now try to reconcile all the Kafka clusters
-        ops.reconcileAll("test", clusterCmNamespace, Labels.EMPTY);
+        ops.reconcileAll("test", clusterCmNamespace, Labels.EMPTY).await();
 
         async.await();
 

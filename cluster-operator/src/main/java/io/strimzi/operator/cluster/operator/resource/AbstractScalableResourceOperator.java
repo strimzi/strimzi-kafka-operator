@@ -9,8 +9,9 @@ import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.dsl.ScalableResource;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 
 /**
  * An {@link AbstractResourceOperator} that can be scaled up and down in addition to the usual operations.
@@ -23,7 +24,7 @@ import org.slf4j.LoggerFactory;
 public abstract class AbstractScalableResourceOperator<C, T extends HasMetadata, L extends KubernetesResourceList/*<T>*/, D, R extends ScalableResource<T, D>, P>
         extends AbstractReadyResourceOperator<C, T, L, D, R, P> {
 
-    private final Logger log = LoggerFactory.getLogger(getClass());
+    private final Logger log = LogManager.getLogger(getClass());
 
     /**
      * Constructor

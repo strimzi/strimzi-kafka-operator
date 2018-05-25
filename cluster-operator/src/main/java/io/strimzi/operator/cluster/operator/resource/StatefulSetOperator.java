@@ -19,8 +19,9 @@ import io.strimzi.operator.cluster.model.AbstractModel;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,7 +33,7 @@ import java.util.function.Predicate;
  */
 public class StatefulSetOperator<P> extends AbstractScalableResourceOperator<KubernetesClient, StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>, P> {
 
-    private static final Logger log = LoggerFactory.getLogger(StatefulSetOperator.class.getName());
+    private static final Logger log = LogManager.getLogger(StatefulSetOperator.class.getName());
     private final PodOperator podOperations;
     private final long operationTimeoutMs;
 
@@ -167,7 +168,7 @@ public class StatefulSetOperator<P> extends AbstractScalableResourceOperator<Kub
     }
 
     static class RollingUpdateWatcher implements Watcher<Pod> {
-        //private static final Logger log = LoggerFactory.getLogger(RollingUpdateWatcher.class.getName());
+        //private static final Logger log = LogManager.getLogger(RollingUpdateWatcher.class.getName());
         private final Future deleted;
 
         public RollingUpdateWatcher(Future deleted) {

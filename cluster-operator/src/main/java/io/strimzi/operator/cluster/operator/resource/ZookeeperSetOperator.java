@@ -8,15 +8,16 @@ import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 
 /**
  * Specialization of {@link StatefulSetOperator} for StatefulSets of Zookeeper nodes
  */
 public class ZookeeperSetOperator extends StatefulSetOperator<Boolean> {
 
-    private static final Logger log = LoggerFactory.getLogger(ZookeeperSetOperator.class);
+    private static final Logger log = LogManager.getLogger(ZookeeperSetOperator.class);
 
     /**
      * Constructor

@@ -25,8 +25,9 @@ import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 
 import java.net.URL;
 import java.util.ArrayList;
@@ -35,7 +36,7 @@ import java.util.List;
 import java.util.Map;
 
 public class Main {
-    private static final Logger log = LoggerFactory.getLogger(Main.class.getName());
+    private static final Logger log = LogManager.getLogger(Main.class.getName());
 
     public static void main(String[] args) {
         ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(System.getenv());

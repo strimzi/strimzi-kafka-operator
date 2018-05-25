@@ -32,13 +32,15 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunnerWithParametersFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -58,7 +60,7 @@ import static org.junit.Assert.assertNull;
 @Parameterized.UseParametersRunnerFactory(VertxUnitRunnerWithParametersFactory.class)
 public class KafkaAssemblyOperatorMockTest {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaAssemblyOperatorMockTest.class);
+    private static final Logger LOGGER = LogManager.getLogger(KafkaAssemblyOperatorMockTest.class);
 
     private static final String NAMESPACE = "my-namespace";
     private static final String CLUSTER_NAME = "my-cluster";

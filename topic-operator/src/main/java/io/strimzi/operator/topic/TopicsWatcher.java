@@ -5,8 +5,8 @@
 package io.strimzi.operator.topic;
 
 import io.strimzi.operator.topic.zk.Zk;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.HashSet;
 import java.util.List;
@@ -19,7 +19,7 @@ import java.util.Set;
  */
 class TopicsWatcher {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(TopicsWatcher.class);
+    private final static Logger LOGGER = LogManager.getLogger(TopicsWatcher.class);
 
     private static final String TOPICS_ZNODE = "/brokers/topics";
 

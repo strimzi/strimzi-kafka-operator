@@ -13,8 +13,9 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import org.apache.kafka.common.errors.TopicExistsException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,8 +28,8 @@ import static java.util.Collections.disjoint;
 
 public class TopicOperator {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(TopicOperator.class);
-    private final static Logger EVENT_LOGGER = LoggerFactory.getLogger("Event");
+    private final static Logger LOGGER = LogManager.getLogger(TopicOperator.class);
+    private final static Logger EVENT_LOGGER = LogManager.getLogger("Event");
     private final Kafka kafka;
     private final K8s k8s;
     private final Vertx vertx;

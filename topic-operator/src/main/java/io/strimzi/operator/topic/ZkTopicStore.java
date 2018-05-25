@@ -9,11 +9,11 @@ import io.strimzi.operator.topic.zk.Zk;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.ACL;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -22,7 +22,7 @@ import java.util.List;
  */
 public class ZkTopicStore implements TopicStore {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(ZkTopicStore.class);
+    private final static Logger LOGGER = LogManager.getLogger(ZkTopicStore.class);
     public static final String TOPICS_PATH = "/strimzi/topics";
 
     private final Zk zk;

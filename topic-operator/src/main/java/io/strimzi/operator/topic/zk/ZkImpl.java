@@ -8,6 +8,8 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -16,8 +18,6 @@ import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
@@ -30,7 +30,7 @@ import java.util.concurrent.ExecutionException;
  */
 public class ZkImpl implements Zk {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(ZkImpl.class);
+    private final static Logger LOGGER = LogManager.getLogger(ZkImpl.class);
     public static final String PREFIX_DATA = "data:";
     public static final String PREFIX_CHILDREN = "children:";
     public static final String PREFIX_EXISTS = "exists:";

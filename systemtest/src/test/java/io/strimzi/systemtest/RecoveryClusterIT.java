@@ -9,10 +9,12 @@ import io.strimzi.test.JUnitGroup;
 import io.strimzi.test.KafkaCluster;
 import io.strimzi.test.Namespace;
 import io.strimzi.test.StrimziRunner;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+
 
 import static io.strimzi.test.k8s.BaseKubeClient.CM;
 import static io.strimzi.test.k8s.BaseKubeClient.DEPLOYMENT;
@@ -29,7 +31,7 @@ public class RecoveryClusterIT extends AbstractClusterIT {
     static final String NAMESPACE = "recovery-cluster-test";
     static final String CLUSTER_NAME = "recovery-cluster";
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(RecoveryClusterIT.class);
+    private static final Logger LOGGER = LogManager.getLogger(RecoveryClusterIT.class);
 
     @Test
     public void testRecoveryFromTopicOperatorDeletion() {

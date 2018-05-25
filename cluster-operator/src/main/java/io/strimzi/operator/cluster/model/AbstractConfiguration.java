@@ -7,8 +7,9 @@ package io.strimzi.operator.cluster.model;
 
 import io.strimzi.operator.cluster.InvalidConfigMapException;
 import io.vertx.core.json.JsonObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -24,7 +25,7 @@ import java.util.stream.Collectors;
  * Abstract class for processing and generating configuration passed by the user.
  */
 public abstract class AbstractConfiguration {
-    private static final Logger log = LoggerFactory.getLogger(AbstractConfiguration.class.getName());
+    private static final Logger log = LogManager.getLogger(AbstractConfiguration.class.getName());
 
     private final Properties options;
 
