@@ -376,8 +376,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
 
         //Deleting first topic by deletion of CM
         kubeClient.deleteByName("cm", "topic-from-cli");
-        assertThat(listTopicsUsingPodCLI(CLUSTER_NAME, kafkaPodName(CLUSTER_NAME, 1)), not(hasItems("topic-from-cli")));
-
+        
         //Deleting another topic using pod CLI
         deleteTopicUsingPodCLI(CLUSTER_NAME, kafkaPodName(CLUSTER_NAME, 1), "my-topic");
         List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, kafkaPodName(CLUSTER_NAME, 1));
