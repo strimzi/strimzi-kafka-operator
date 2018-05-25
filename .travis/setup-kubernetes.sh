@@ -33,6 +33,18 @@ function wait_for_minikube {
     return 1
 }
 
+function label_node {
+
+    if [ "$TEST_CLUSTER" = "minikube" ]; then
+        echo $(kubectl get nodes)
+        kubectl label node minikube rack-key=zone
+    elif [ "$TEST_CLUSTER" = "minishift" ]; then
+        oc label node minishift rack-key=zone
+    elif [ "$TEST_CLUSTER" = "oc" ]; then
+        oc label node localhost rack-key=zone
+    fi
+}
+
 if [ "$TEST_CLUSTER" = "minikube" ]; then
     install_kubectl
     if [ "${TEST_MINIKUBE_VERSION:-latest}" = "latest" ]; then
@@ -89,4 +101,8 @@ elif [ "$TEST_CLUSTER" = "oc" ]; then
 else
     echo "Unsupported TEST_CLUSTER '$TEST_CLUSTER'"
     exit 1
+fi
+
+if [ "$TRAVIS" = false ]; then
+    label_node
 fi

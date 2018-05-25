@@ -36,8 +36,8 @@ fi
 export LOG_DIR="$KAFKA_HOME"
 
 # get broker rack if it's enabled
-if [ -e /rack/rack.id ]; then
-  export KAFKA_RACK=$(cat /rack/rack.id)
+if [ -e $KAFKA_HOME/rack/rack.id ]; then
+  export KAFKA_RACK=$(cat $KAFKA_HOME/rack/rack.id)
 fi
 
 # Generate and print the config file

@@ -217,7 +217,7 @@ public class AbstractClusterIT {
         assertEquals(cpuRequest, requests.get("cpu").getAmount());
     }
 
-    protected void assertExpectedJavaOpts(String podName, String expectedXmx, String expectedXms) {
+    protected void assertExpectedJavaOpts(String podName, String expectedXmx, String expectedXms, String expectedServer, String expectedXx) {
         List<List<String>> cmdLines = commandLines(podName, "java");
         assertEquals("Expected exactly 1 java process to be running",
                 1, cmdLines.size());
@@ -231,6 +231,8 @@ public class AbstractClusterIT {
         }
         assertCmdOption(cmd, expectedXmx);
         assertCmdOption(cmd, expectedXms);
+        assertCmdOption(cmd, expectedServer);
+        assertCmdOption(cmd, expectedXx);
     }
 
     private void assertCmdOption(List<String> cmd, String expectedXmx) {
