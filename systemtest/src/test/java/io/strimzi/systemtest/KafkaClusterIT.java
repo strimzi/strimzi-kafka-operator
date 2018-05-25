@@ -390,7 +390,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
             zkNodes = 1,
             config = {
                     @CmData(key = "kafka-rack",
-                            value = "{\"topologyKey\": \"my-key\"}")
+                            value = "{\"topologyKey\": \"rack-key\"}")
             })
     public void testRackAware() {
 
