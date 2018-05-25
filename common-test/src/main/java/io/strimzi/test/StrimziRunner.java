@@ -460,11 +460,11 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
 
                 if ("06-role-binding-kafka.yaml".equals(f.getName())) {
                     String ns = annotations(element, Namespace.class).get(0).value();
-                    ArrayNode a = (ArrayNode) node.get("subjects");
+                    ArrayNode subjects = (ArrayNode) node.get("subjects");
                     JsonNodeFactory factory = new JsonNodeFactory(false);
                     ObjectNode subject = new ObjectNode(factory);
                     subject.put("kind", "ServiceAccount").put("name", "strimzi-kafka").put("namespace", ns);
-                    a.set(0, subject);
+                    subjects.set(0, subject);
                 }
             })).collect(Collectors.toList());
             last = new Bracket(last) {
