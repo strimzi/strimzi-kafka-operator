@@ -15,7 +15,6 @@ import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.TestContext;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.mockito.Mockito.mock;
