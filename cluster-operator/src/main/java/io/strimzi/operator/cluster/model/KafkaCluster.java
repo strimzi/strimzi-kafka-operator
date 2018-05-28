@@ -36,10 +36,9 @@ public class KafkaCluster extends AbstractModel {
 
     public static final String KAFKA_SERVICE_ACCOUNT = "strimzi-kafka";
 
-    protected static final String INIT_KAFKA_IMAGE = "strimzi/init-kafka:latest";
-    protected static final String INIT_KAFKA_NAME = "init-kafka";
-    protected static final String INIT_KAFKA_VOLUME_NAME = "rack-volume";
-    protected static final String INIT_KAFKA_VOLUME_MOUNT = "/opt/kafka/rack";
+    protected static final String INIT_NAME = "init-kafka";
+    protected static final String RACK_VOLUME_NAME = "rack-volume";
+    protected static final String RACK_VOLUME_MOUNT = "/opt/kafka/rack";
     private static final String ENV_VAR_INIT_KAFKA_RACK_TOPOLOGY_KEY = "RACK_TOPOLOGY_KEY";
     private static final String ENV_VAR_INIT_KAFKA_NODE_NAME = "NODE_NAME";
 
@@ -56,10 +55,14 @@ public class KafkaCluster extends AbstractModel {
     // Kafka configuration
     private String zookeeperConnect = DEFAULT_KAFKA_ZOOKEEPER_CONNECT;
     private RackConfig rackConfig;
+    private String initImage;
 
     // Configuration defaults
     private static final String DEFAULT_IMAGE =
             System.getenv().getOrDefault("STRIMZI_DEFAULT_KAFKA_IMAGE", "strimzi/kafka:latest");
+    private static final String DEFAULT_INIT_IMAGE =
+            System.getenv().getOrDefault("STRIMZI_DEFAULT_INIT_KAFKA_IMAGE", "strimzi/init-kafka:latest");
+
 
     private static final int DEFAULT_REPLICAS = 3;
     private static final int DEFAULT_HEALTHCHECK_DELAY = 15;
@@ -80,6 +83,7 @@ public class KafkaCluster extends AbstractModel {
     public static final String KEY_JVM_OPTIONS = "kafka-jvmOptions";
     public static final String KEY_RESOURCES = "kafka-resources";
     public static final String KEY_RACK = "kafka-rack";
+    public static final String KEY_INIT_IMAGE = "init-kafka-image";
 
     // Kafka configuration keys (EnvVariables)
     public static final String ENV_VAR_KAFKA_ZOOKEEPER_CONNECT = "KAFKA_ZOOKEEPER_CONNECT";
@@ -108,6 +112,8 @@ public class KafkaCluster extends AbstractModel {
         this.mountPath = "/var/lib/kafka";
         this.metricsConfigVolumeName = "kafka-metrics-config";
         this.metricsConfigMountPath = "/opt/prometheus/config/";
+
+        this.initImage = DEFAULT_INIT_IMAGE;
     }
 
     public static String kafkaClusterName(String cluster) {
@@ -162,6 +168,7 @@ public class KafkaCluster extends AbstractModel {
         if (rackConfig != null) {
             kafka.setRackConfig(rackConfig);
         }
+        kafka.setInitImage(Utils.getNonEmptyString(data, KEY_INIT_IMAGE, DEFAULT_INIT_IMAGE));
 
         return kafka;
     }
@@ -215,6 +222,14 @@ public class KafkaCluster extends AbstractModel {
         if (affinity != null) {
             String rackTopologyKey = affinity.getPodAntiAffinity().getPreferredDuringSchedulingIgnoredDuringExecution().get(0).getPodAffinityTerm().getTopologyKey();
             kafka.setRackConfig(new RackConfig(rackTopologyKey));
+        }
+
+        List<Container> initContainers = ss.getSpec().getTemplate().getSpec().getInitContainers();
+        if (initContainers != null && !initContainers.isEmpty()) {
+
+            initContainers.stream()
+                    .filter(ic -> ic.getName().equals(INIT_NAME))
+                    .forEach(ic -> kafka.setInitImage(ic.getImage()));
         }
 
         return kafka;
@@ -302,7 +317,7 @@ public class KafkaCluster extends AbstractModel {
             volumeList.add(createConfigMapVolume(metricsConfigVolumeName, metricsConfigName));
         }
         if (rackConfig != null) {
-            volumeList.add(createEmptyDirVolume(INIT_KAFKA_VOLUME_NAME));
+            volumeList.add(createEmptyDirVolume(RACK_VOLUME_NAME));
         }
 
         return volumeList;
@@ -323,7 +338,7 @@ public class KafkaCluster extends AbstractModel {
             volumeMountList.add(createVolumeMount(metricsConfigVolumeName, metricsConfigMountPath));
         }
         if (rackConfig != null) {
-            volumeMountList.add(createVolumeMount(INIT_KAFKA_VOLUME_NAME, INIT_KAFKA_VOLUME_MOUNT));
+            volumeMountList.add(createVolumeMount(RACK_VOLUME_NAME, RACK_VOLUME_MOUNT));
         }
 
         return volumeMountList;
@@ -374,10 +389,10 @@ public class KafkaCluster extends AbstractModel {
                             buildEnvVar(ENV_VAR_INIT_KAFKA_RACK_TOPOLOGY_KEY, rackConfig.getTopologyKey()));
 
             Container initContainer = new ContainerBuilder()
-                    .withName(INIT_KAFKA_NAME)
-                    .withImage(INIT_KAFKA_IMAGE)
+                    .withName(INIT_NAME)
+                    .withImage(initImage)
                     .withEnv(varList)
-                    .withVolumeMounts(createVolumeMount(INIT_KAFKA_VOLUME_NAME, INIT_KAFKA_VOLUME_MOUNT))
+                    .withVolumeMounts(createVolumeMount(RACK_VOLUME_NAME, RACK_VOLUME_MOUNT))
                     .build();
 
             initContainers.add(initContainer);
@@ -411,5 +426,9 @@ public class KafkaCluster extends AbstractModel {
 
     protected void setRackConfig(RackConfig rackConfig) {
         this.rackConfig = rackConfig;
+    }
+
+    protected void setInitImage(String initImage) {
+        this.initImage = initImage;
     }
 }

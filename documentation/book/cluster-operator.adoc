@@ -64,6 +64,9 @@ the related ConfigMap :
 Number of Kafka broker nodes. Default is 3.
 `kafka-image`::
 The Docker image to use for the Kafka brokers. Default is determined by the value of the `<<STRIMZI_DEFAULT_KAFKA_IMAGE,STRIMZI_DEFAULT_KAFKA_IMAGE>>` environment variable of the Cluster Operator.
+`init-kafka-image`::
+The Docker image to use for the init container which does some initial configuration work (i.e. rack support).
+Default is determined by the value of the `<<STRIMZI_DEFAULT_INIT_KAFKA_IMAGE,STRIMZI_DEFAULT_INIT_KAFKA_IMAGE>>` environment variable of the Cluster Operator.
 `kafka-healthcheck-delay`::
 The initial delay for the liveness and readiness probes for each Kafka broker node. Default is 15.
 `kafka-healthcheck-timeout`::
@@ -907,6 +910,10 @@ increased when using {ProductName} on clusters where regular {ProductPlatformNam
 [[STRIMZI_DEFAULT_KAFKA_IMAGE]] `STRIMZI_DEFAULT_KAFKA_IMAGE`:: Optional, default `strimzi/kafka:latest`.
 The image name to use as a default when deploying Kafka, if
 no image is specified as the `kafka-image` in the <<kafka_config_map_details,Kafka cluster ConfigMap>>.
+
+[[STRIMZI_DEFAULT_INIT_KAFKA_IMAGE]] `STRIMZI_DEFAULT_INIT_KAFKA_IMAGE`:: Optional, default `strimzi/init-kafka:latest`.
+The image name to use as default for the init container started before the broker for doing initial configuration work (i.e. rack support), if
+no image is specified as the `init-kafka-image` in the <<kafka_config_map_details,Kafka cluster ConfigMap>>.
 
 [[STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE]] `STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE`:: Optional, default `strimzi/kafka-connect:latest`.
 The image name to use as a default when deploying Kafka Connect, if
