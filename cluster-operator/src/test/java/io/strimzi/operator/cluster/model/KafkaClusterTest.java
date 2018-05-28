@@ -152,7 +152,7 @@ public class KafkaClusterTest {
 
             boolean isInitKafka = false;
             for (Container container: initContainers) {
-                isInitKafka = container.getName().equals(KafkaCluster.INIT_KAFKA_NAME);
+                isInitKafka = container.getName().equals(KafkaCluster.INIT_NAME);
                 if (isInitKafka)
                     break;
             }
