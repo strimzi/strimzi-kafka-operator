@@ -16,6 +16,9 @@ import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PodAffinityTerm;
 import io.fabric8.kubernetes.api.model.PodAntiAffinity;
 import io.fabric8.kubernetes.api.model.PodAntiAffinityBuilder;
+import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.Volume;
@@ -384,6 +387,13 @@ public class KafkaCluster extends AbstractModel {
 
         if (rackConfig != null) {
 
+            ResourceRequirements resources = new ResourceRequirementsBuilder()
+                    .addToRequests("cpu", new Quantity("100m"))
+                    .addToRequests("memory", new Quantity("128Mi"))
+                    .addToLimits("cpu", new Quantity("1000m"))
+                    .addToLimits("memory", new Quantity("256Mi"))
+                    .build();
+
             List<EnvVar> varList =
                     Arrays.asList(buildEnvVarFromFieldRef(ENV_VAR_INIT_KAFKA_NODE_NAME, "spec.nodeName"),
                             buildEnvVar(ENV_VAR_INIT_KAFKA_RACK_TOPOLOGY_KEY, rackConfig.getTopologyKey()));
@@ -391,6 +401,7 @@ public class KafkaCluster extends AbstractModel {
             Container initContainer = new ContainerBuilder()
                     .withName(INIT_NAME)
                     .withImage(initImage)
+                    .withResources(resources)
                     .withEnv(varList)
                     .withVolumeMounts(createVolumeMount(RACK_VOLUME_NAME, RACK_VOLUME_MOUNT))
                     .build();
