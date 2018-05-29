@@ -382,4 +382,30 @@ public class KafkaClusterIT extends AbstractClusterIT {
         List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, kafkaPodName(CLUSTER_NAME, 1));
         assertThat(topics, not(hasItems("topic-from-cli", "my-topic")));
     }
+
+    @Test
+    @JUnitGroup(name = "regression")
+    @KafkaCluster(name = CLUSTER_NAME,
+            kafkaNodes = 1,
+            zkNodes = 1,
+            config = {
+                    @CmData(key = "kafka-rack",
+                            value = "{\"topologyKey\": \"rack-key\"}")
+            })
+    public void testRackAware() {
+
+        String cm = kubeClient.get("cm", CLUSTER_NAME);
+        assertThat(cm, valueOfCmEquals("kafka-rack", "{\"topologyKey\": \"rack-key\"}"));
+
+        kubeClient.waitForStatefulSet(kafkaClusterName(CLUSTER_NAME), 1);
+        String kafkaPodName = kafkaPodName(CLUSTER_NAME, 0);
+        kubeClient.waitForPod(kafkaPodName);
+
+        String out = kubeClient.exec(kafkaPodName, "cat /opt/kafka/rack/rack.id").out();
+        assertEquals("zone", out);
+
+        List<Event> events = getEvents("Pod", kafkaPodName);
+        assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
+        assertThat(events, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
+    }
 }
