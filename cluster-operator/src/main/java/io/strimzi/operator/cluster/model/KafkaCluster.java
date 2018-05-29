@@ -390,7 +390,7 @@ public class KafkaCluster extends AbstractModel {
             ResourceRequirements resources = new ResourceRequirementsBuilder()
                     .addToRequests("cpu", new Quantity("100m"))
                     .addToRequests("memory", new Quantity("128Mi"))
-                    .addToLimits("cpu", new Quantity("1000m"))
+                    .addToLimits("cpu", new Quantity("1"))
                     .addToLimits("memory", new Quantity("256Mi"))
                     .build();
 
