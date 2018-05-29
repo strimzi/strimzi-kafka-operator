@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 public class AbstractModelTest {
 
@@ -36,7 +37,7 @@ public class AbstractModelTest {
         AbstractModel am = new AbstractModel(null, null, Labels.forCluster("foo")) { };
         am.setJvmOptions(jvmOptions(xmx, xms));
         List<EnvVar> envVars = new ArrayList<>(1);
-        am.kafkaHeapOptions(envVars, dynamicFraction, dynamicMax);
+        am.heapOptions(envVars, dynamicFraction, dynamicMax);
         return envVars.stream().collect(Collectors.toMap(e -> e.getName(), e -> e.getValue()));
     }
 
@@ -62,5 +63,41 @@ public class AbstractModelTest {
         assertEquals(null, env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS));
         assertEquals("0.7", env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION));
         assertEquals("10000000000", env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX));
+    }
+
+    @Test
+    public void testJvmPerformanceOptions() {
+        JvmOptions opts = JvmOptions.fromJson("{}");
+
+        assertNull(getPerformanceOptions(opts));
+
+        opts = JvmOptions.fromJson("{\n" +
+                "  \"-server\": \"true\"\n" +
+                "}");
+
+        assertEquals("-server", getPerformanceOptions(opts));
+
+        opts = JvmOptions.fromJson("{\n" +
+                "    \"-XX\":\n" +
+                "            {\"key1\": \"value1\",\n" +
+                "            \"key2\": \"true\",\n" +
+                "            \"key3\": false,\n" +
+                "            \"key4\": 10}\n" +
+                "}");
+
+        assertEquals("-XX:key1=value1 -XX:+key2 -XX:-key3 -XX:key4=10", getPerformanceOptions(opts));
+    }
+
+    private String getPerformanceOptions(JvmOptions opts) {
+        AbstractModel am = new AbstractModel(null, null, Labels.forCluster("foo")) { };
+        am.setJvmOptions(opts);
+        List<EnvVar> envVars = new ArrayList<>(1);
+        am.jvmPerformanceOptions(envVars);
+
+        if (!envVars.isEmpty()) {
+            return envVars.get(0).getValue();
+        } else {
+            return null;
+        }
     }
 }
