@@ -15,13 +15,11 @@ import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.TestContext;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@Ignore
 public class StatefulSetOperatorTest
         extends ScalableResourceOperatorTest<KubernetesClient, StatefulSet, StatefulSetList,
                         DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> {
@@ -45,6 +43,10 @@ public class StatefulSetOperatorTest
                 .endMetadata()
                 .withNewSpec()
                     .withReplicas(3)
+                    .withNewTemplate()
+                        .withNewMetadata()
+                        .endMetadata()
+                    .endTemplate()
                 .endSpec()
                 .build();
     }
@@ -58,6 +60,16 @@ public class StatefulSetOperatorTest
 
     @Override
     protected StatefulSetOperator createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
+        return new StatefulSetOperator(vertx, mockClient, 60_000L) {
+            @Override
+            protected boolean shouldIncrementGeneration(StatefulSet current, StatefulSet desired) {
+                return true;
+            }
+        };
+    }
+
+    @Override
+    protected StatefulSetOperator createResourceOperationsWithMockedReadiness(Vertx vertx, KubernetesClient mockClient) {
         return new StatefulSetOperator(vertx, mockClient, 60_000L) {
             @Override
             public Future<Void> readiness(String namespace, String name, long pollIntervalMs, long timeoutMs) {

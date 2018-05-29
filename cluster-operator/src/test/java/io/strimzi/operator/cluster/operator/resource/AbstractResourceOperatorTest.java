@@ -72,6 +72,11 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
     /** Create the subclass of ResourceOperation to be tested */
     protected abstract AbstractResourceOperator<C, T, L, D, R> createResourceOperations(Vertx vertx, C mockClient);
 
+    /** Create the subclass of ResourceOperation to be tested with mocked readiness checks*/
+    protected AbstractResourceOperator<C, T, L, D, R> createResourceOperationsWithMockedReadiness(Vertx vertx, C mockClient)    {
+        return createResourceOperations(vertx, mockClient);
+    }
+
     @Test
     public void createWhenExistsIsAPatch(TestContext context) {
         createWhenExistsIsAPatch(context, true);
@@ -152,7 +157,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractResourceOperator<C, T, L, D, R> op = createResourceOperations(vertx, mockClient);
+        AbstractResourceOperator<C, T, L, D, R> op = createResourceOperationsWithMockedReadiness(vertx, mockClient);
 
         Async async = context.async();
         op.createOrUpdate(resource).setHandler(ar -> {
