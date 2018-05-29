@@ -20,11 +20,13 @@ import io.strimzi.test.k8s.KubeClusterException;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.ProcessResult;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -46,6 +48,11 @@ import static org.junit.Assert.fail;
 public class AbstractClusterIT {
 
     private static final Logger LOGGER = LogManager.getLogger(AbstractClusterIT.class);
+    protected static final String ZK_IMAGE = "STRIMZI_DEFAULT_ZOOKEEPER_IMAGE";
+    protected static final String KAFKA_IMAGE = "STRIMZI_DEFAULT_KAFKA_IMAGE";
+    protected static final String CONNECT_IMAGE = "STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE";
+    protected static final String S2I_IMAGE = "STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE";
+    protected static final String TO_IMAGE = "STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE";
 
     @ClassRule
     public static KubeClusterResource cluster = new KubeClusterResource();
@@ -280,5 +287,36 @@ public class AbstractClusterIT {
     public String updateTopicPartitionsCountUsingPodCLI(String clusterName, String podName, String topic, int partitions) {
         return kubeClient.exec(podName, "/bin/bash", "-c",
                 "bin/kafka-topics.sh --zookeeper " + clusterName + "-zookeeper:2181 --alter --topic " + topic + " --partitions " + partitions).out();
+    }
+
+    public Map<String, String> getImagesFromConfig(String configJson) {
+        kubeClient.getResourceAsJson("deployment", "strimzi-cluster-operator");
+        Map<String, String> images = new HashMap<>();
+        images.put(ZK_IMAGE, getImageNameFromJSON(configJson, ZK_IMAGE));
+        images.put(KAFKA_IMAGE, getImageNameFromJSON(configJson, KAFKA_IMAGE));
+        images.put(CONNECT_IMAGE, getImageNameFromJSON(configJson, CONNECT_IMAGE));
+        images.put(S2I_IMAGE, getImageNameFromJSON(configJson, S2I_IMAGE));
+        images.put(TO_IMAGE, getImageNameFromJSON(configJson, TO_IMAGE));
+        return images;
+    }
+
+    private String getImageNameFromJSON(String json, String image) {
+        return JsonPath.parse(json).read("$.spec.template.spec.containers[*].env[?(@.name =='" + image + "')].value").toString();
+    }
+
+    public String  getImageNameFromPod(String podName) {
+        String clusterOperatorJson = kubeClient.getResourceAsJson("pod", podName);
+        return JsonPath.parse(clusterOperatorJson).read("$.spec.containers[*].image").toString();
+    }
+
+    public JsonNode yamlFileToJSON(String filePath) {
+        JsonNode node = null;
+        try {
+            YAMLMapper mapper = new YAMLMapper();
+            node = mapper.readTree(new File(filePath));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return node;
     }
 }

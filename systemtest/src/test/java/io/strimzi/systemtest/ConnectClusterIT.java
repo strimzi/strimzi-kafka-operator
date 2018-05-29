@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.kubernetes.api.model.Event;
 import io.strimzi.test.ClusterOperator;
 import io.strimzi.test.CmData;
@@ -72,6 +73,8 @@ public class ConnectClusterIT extends AbstractClusterIT {
             "internal.key.converter=org.apache.kafka.connect.json.JsonConverter\\n" +
             "internal.value.converter.schemas.enable=false\\n" +
             "internal.value.converter=org.apache.kafka.connect.json.JsonConverter\\n";
+    private static final String DEPLOYMENT_CONFIG = "../examples/install/cluster-operator/07-deployment.yaml";
+
 
     @Test
     @JUnitGroup(name = "regression")
@@ -84,6 +87,24 @@ public class ConnectClusterIT extends AbstractClusterIT {
                 "KAFKA_CONNECT_BOOTSTRAP_SERVERS", KAFKA_CONNECT_BOOTSTRAP_SERVERS));
         String deploymentName = clusterName + "-connect";
         oc.waitForDeployment(deploymentName);
+
+        //Verifying docker image for cluster-operator
+        JsonNode deploymentYaml = yamlFileToJSON(DEPLOYMENT_CONFIG);
+        String coImgNameFromYaml = deploymentYaml.findValue("image").toString();
+        String coImgNameFromPod = getImageNameFromPod(kubeClient.listResourcesByLabel("pod",
+                "name=strimzi-cluster-operator").get(0)).toString().replaceAll("[\\[\\]\\\\]", "");
+        assertEquals(coImgNameFromPod, coImgNameFromYaml);
+
+        Map<String, String> imgFromDeplYAMLFile = getImagesFromConfig(deploymentYaml.toString());
+        Map<String, String> imgFromDeplConf = getImagesFromConfig(kubeClient.getResourceAsJson(
+                "deployment", "strimzi-cluster-operator"));
+
+        //Verifying docker image for kafka connect
+        String connectImageName = getImageNameFromPod(kubeClient.listResourcesByLabel("pod",
+                "strimzi.io/type=kafka-connect").get(0));
+        assertEquals(imgFromDeplConf.get(CONNECT_IMAGE), connectImageName);
+        assertEquals(imgFromDeplYAMLFile.get(CONNECT_IMAGE), connectImageName);
+
         oc.deleteByName("cm", clusterName);
         oc.waitForResourceDeletion("deployment", deploymentName);
     }
