@@ -654,7 +654,7 @@ public abstract class AbstractModel {
     /**
      * Adds KAFKA_HEAP_OPTS variable to the EnvVar list if any heap related options were specified.
      *
-     * @param envVars
+     * @param envVars List of Environment Variables
      */
     protected void heapOptions(List<EnvVar> envVars, double dynamicHeapFraction, long dynamicHeapMaxBytes) {
         StringBuilder kafkaHeapOpts = new StringBuilder();
@@ -685,7 +685,7 @@ public abstract class AbstractModel {
     /**
      * Adds KAFKA_JVM_PERFORMANCE_OPTS variable to the EnvVar list if any performance related options were specified.
      *
-     * @param envVars
+     * @param envVars List of Environment Variables
      */
     protected void jvmPerformanceOptions(List<EnvVar> envVars) {
         StringBuilder jvmPerformanceOpts = new StringBuilder();
@@ -708,7 +708,6 @@ public abstract class AbstractModel {
                     jvmPerformanceOpts.append(k).append("=").append(v);
                 }
             });
-
         }
 
         String trim = jvmPerformanceOpts.toString().trim();
