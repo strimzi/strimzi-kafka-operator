@@ -59,7 +59,7 @@ public abstract class AbstractModel {
     protected static final Logger log = LogManager.getLogger(AbstractModel.class.getName());
 
     private static final String VOLUME_MOUNT_HACK_IMAGE = "busybox";
-    private static final String VOLUME_MOUNT_HACK_NAME = "volume-mount-hack";
+    protected static final String VOLUME_MOUNT_HACK_NAME = "volume-mount-hack";
     private static final Long VOLUME_MOUNT_HACK_GROUPID = 1001L;
 
     public static final String METRICS_CONFIG_FILE = "config.yml";
