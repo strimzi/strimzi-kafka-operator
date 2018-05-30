@@ -314,33 +314,36 @@ public class KafkaClusterIT extends AbstractClusterIT {
         kafkaNodes = 1,
         zkNodes = 1,
         config = {
+            @CmData(key = "kafka-storage",
+                    value = "{ \"type\": \"ephemeral\" }"),
             @CmData(key = "kafka-resources",
                     value = "{ \"limits\": {\"memory\": \"2Gi\", \"cpu\": \"400m\"}, " +
                             "\"requests\": {\"memory\": \"2Gi\", \"cpu\": \"400m\"}}"),
             @CmData(key = "kafka-jvmOptions",
-                    value = "{\"-Xmx\": \"1g\", \"-Xms\": \"1G\"}"),
+                    value = "{\"-Xmx\": \"1g\", \"-Xms\": \"1G\", \"-server\": true, \"-XX\": { \"UseG1GC\": true }}"),
+            @CmData(key = "zookeeper-storage",
+                    value = "{ \"type\": \"ephemeral\" }"),
             @CmData(key = "zookeeper-resources",
                     value = "{ \"limits\": {\"memory\": \"1G\", \"cpu\": \"300m\"}, " +
                             "\"requests\": {\"memory\": \"1G\", \"cpu\": \"300m\"} }"),
             @CmData(key = "zookeeper-jvmOptions",
-                    value = "{\"-Xmx\": \"600m\", \"-Xms\": \"300m\"}"),
+                    value = "{\"-Xmx\": \"600m\", \"-Xms\": \"300m\", \"-server\": true, \"-XX\": { \"UseG1GC\": true }}"),
             @CmData(key = "topic-operator-config",
                     value = "{\"resources\": { \"limits\": {\"memory\": \"500M\", \"cpu\": \"300m\"}, " +
                             "\"requests\": {\"memory\": \"500M\", \"cpu\": \"300m\"} } }")
     })
-
     @Test
     @JUnitGroup(name = "acceptance")
     public void testJvmAndResources() {
         assertResources(NAMESPACE, "jvm-resource-cluster-kafka-0",
                 "2Gi", "400m", "2Gi", "400m");
         assertExpectedJavaOpts("jvm-resource-cluster-kafka-0",
-                "-Xmx1g", "-Xms1G");
+                "-Xmx1g", "-Xms1G", "-server", "-XX:+UseG1GC");
 
         assertResources(NAMESPACE, "jvm-resource-cluster-zookeeper-0",
                 "1G", "300m", "1G", "300m");
         assertExpectedJavaOpts("jvm-resource-cluster-zookeeper-0",
-                "-Xmx600m", "-Xms300m");
+                "-Xmx600m", "-Xms300m", "-server", "-XX:+UseG1GC");
 
         String podName = client.pods().inNamespace(NAMESPACE).list().getItems().stream().filter(p -> p.getMetadata().getName().startsWith("jvm-resource-cluster-topic-operator-")).findFirst().get().getMetadata().getName();
 
