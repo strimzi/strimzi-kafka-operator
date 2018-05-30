@@ -71,18 +71,18 @@ public class AbstractModelTest {
 
         assertNull(getPerformanceOptions(opts));
 
-        opts = JvmOptions.fromJson("{\n" +
-                "  \"-server\": \"true\"\n" +
+        opts = JvmOptions.fromJson("{" +
+                "  \"-server\": \"true\"" +
                 "}");
 
         assertEquals("-server", getPerformanceOptions(opts));
 
-        opts = JvmOptions.fromJson("{\n" +
-                "    \"-XX\":\n" +
-                "            {\"key1\": \"value1\",\n" +
-                "            \"key2\": \"true\",\n" +
-                "            \"key3\": false,\n" +
-                "            \"key4\": 10}\n" +
+        opts = JvmOptions.fromJson("{" +
+                "    \"-XX\":" +
+                "            {\"key1\": \"value1\"," +
+                "            \"key2\": \"true\"," +
+                "            \"key3\": false," +
+                "            \"key4\": 10}" +
                 "}");
 
         assertEquals("-XX:key1=value1 -XX:+key2 -XX:-key3 -XX:key4=10", getPerformanceOptions(opts));

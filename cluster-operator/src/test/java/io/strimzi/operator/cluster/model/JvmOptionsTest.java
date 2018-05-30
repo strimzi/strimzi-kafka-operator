@@ -16,9 +16,9 @@ import static org.junit.Assert.assertTrue;
 public class JvmOptionsTest {
     @Test
     public void testXmxXms() {
-        JvmOptions opts = JvmOptions.fromJson("{\n" +
-                "  \"-Xmx\": \"2g\",\n" +
-                "  \"-Xms\": \"1g\"\n" +
+        JvmOptions opts = JvmOptions.fromJson("{" +
+                "  \"-Xmx\": \"2g\"," +
+                "  \"-Xms\": \"1g\"" +
                 "}");
 
         assertEquals("1g", opts.getXms());
@@ -35,21 +35,21 @@ public class JvmOptionsTest {
 
     @Test
     public void testServer() {
-        JvmOptions opts = JvmOptions.fromJson("{\n" +
-                "  \"-server\": \"true\"\n" +
+        JvmOptions opts = JvmOptions.fromJson("{" +
+                "  \"-server\": \"true\"" +
                 "}");
 
         assertTrue(opts.getServer());
 
 
-        opts = JvmOptions.fromJson("{\n" +
-                "  \"-server\": true\n" +
+        opts = JvmOptions.fromJson("{" +
+                "  \"-server\": true" +
                 "}");
 
         assertTrue(opts.getServer());
 
-        opts = JvmOptions.fromJson("{\n" +
-                "  \"-server\": \"false\"\n" +
+        opts = JvmOptions.fromJson("{" +
+                "  \"-server\": \"false\"" +
                 "}");
 
         assertFalse(opts.getServer());
@@ -61,13 +61,13 @@ public class JvmOptionsTest {
 
     @Test
     public void testXx() {
-        JvmOptions opts = JvmOptions.fromJson("{\n" +
-                "    \"-XX\":\n" +
-                "            {\"key1\": \"value1\",\n" +
-                "            \"key2\": \"value2\",\n" +
-                "            \"key3\": \"true\",\n" +
-                "            \"key4\": true,\n" +
-                "            \"key5\": 10}\n" +
+        JvmOptions opts = JvmOptions.fromJson("{" +
+                "    \"-XX\":" +
+                "            {\"key1\": \"value1\"," +
+                "            \"key2\": \"value2\"," +
+                "            \"key3\": \"true\"," +
+                "            \"key4\": true," +
+                "            \"key5\": 10}" +
                 "}");
 
         assertEquals(ResourceUtils.map("key1", "value1", "key2", "value2", "key3", "true", "key4", "true", "key5", "10"), opts.getXx());
