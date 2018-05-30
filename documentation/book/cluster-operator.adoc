@@ -508,7 +508,7 @@ The `-server` and `-XX` options are used to configure the `KAFKA_JVM_PERFORMANCE
 }
 ----
 
-The example configuration above will result in following JVM options:
+The example configuration above will result in the following JVM options:
 
 [source]
 ----
