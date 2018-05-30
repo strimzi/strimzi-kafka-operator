@@ -485,6 +485,36 @@ suffix. This is in contrast to the units used for <<resources_json_config,memory
 In the above example, the JVM will use 2 GiB (=2,147,483,648 bytes) for its heap.
 Its total memory usage will be approximately 8GiB.
 
+`-server`::
+Selects the server JVM. This option can be set to true or false. Optional.
+
+`-XX`::
+A JSON Object for configuring advanced runtime options of a JVM. Optional
+
+The `-server` and `-XX` options are used to configure the `KAFKA_JVM_PERFORMANCE_OPTS` option of Apache Kafka.
+
+.Example advanced runtime JVM configuration
+[source,json]
+{
+  "-server": true,
+  "-XX": {
+             "UseG1GC": true,
+             "MaxGCPauseMillis": 20,
+             "InitiatingHeapOccupancyPercent": 35,
+             "ExplicitGCInvokesConcurrent": true,
+             "UseParNewGC": false
+         }
+}
+----
+
+The example configuration above will result in following JVM options:
+
+[source]
+-server -XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -XX:+ExplicitGCInvokesConcurrent -XX:-UseParNewGC
+----
+
+When none of the two options (`-server` and `-XX`) is specified, the default Apache Kafka configuration of `KAFKA_JVM_PERFORMANCE_OPTS` will be used.
+
 [[setting_xmx]]
 ====== Setting `-Xmx`
 
