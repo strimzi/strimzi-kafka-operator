@@ -510,6 +510,7 @@ The `-server` and `-XX` options are used to configure the `KAFKA_JVM_PERFORMANCE
 The example configuration above will result in following JVM options:
 
 [source]
+----
 -server -XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -XX:+ExplicitGCInvokesConcurrent -XX:-UseParNewGC
 ----
 
