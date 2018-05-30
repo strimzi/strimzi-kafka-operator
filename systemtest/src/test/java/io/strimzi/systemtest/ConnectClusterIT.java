@@ -47,7 +47,15 @@ import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 @RunWith(StrimziRunner.class)
 @Namespace(ConnectClusterIT.NAMESPACE)
 @ClusterOperator
-@KafkaCluster(name = ConnectClusterIT.KAFKA_CLUSTER_NAME)
+@KafkaCluster(
+        name = ConnectClusterIT.KAFKA_CLUSTER_NAME,
+        config = {
+                @CmData(key = "kafka-storage",
+                        value = "{ \"type\": \"ephemeral\" }"),
+                @CmData(key = "zookeeper-storage",
+                        value = "{ \"type\": \"ephemeral\" }")
+        }
+)
 public class ConnectClusterIT extends AbstractClusterIT {
 
     private static final Logger LOGGER = LogManager.getLogger(ConnectClusterIT.class);
@@ -108,14 +116,14 @@ public class ConnectClusterIT extends AbstractClusterIT {
         config = {
                 @CmData(key = "resources", value = "{ \"limits\": {\"memory\": \"400M\", \"cpu\": 2}, " +
                         "\"requests\": {\"memory\": \"300M\", \"cpu\": 1} }"),
-                @CmData(key = "jvmOptions", value = "{\"-Xmx\": \"200m\", \"-Xms\": \"200m\"}")
+                @CmData(key = "jvmOptions", value = "{\"-Xmx\": \"200m\", \"-Xms\": \"200m\", \"-server\": true, \"-XX\": { \"UseG1GC\": true }}")
         })
     public void testJvmAndResources() {
         String podName = kubeClient.list("Pod").stream().filter(n -> n.startsWith("jvm-resource-connect-")).findFirst().get();
         assertResources(NAMESPACE, podName,
                 "400M", "2", "300M", "1");
         assertExpectedJavaOpts(podName,
-                "-Xmx200m", "-Xms200m");
+                "-Xmx200m", "-Xms200m", "-server", "-XX:+UseG1GC");
     }
 
     @Test

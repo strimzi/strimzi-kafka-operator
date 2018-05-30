@@ -225,7 +225,8 @@ public class ZookeeperCluster extends AbstractModel {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_NODE_COUNT, Integer.toString(replicas)));
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
-        kafkaHeapOptions(varList, 0.75, 2L * 1024L * 1024L * 1024L);
+        heapOptions(varList, 0.75, 2L * 1024L * 1024L * 1024L);
+        jvmPerformanceOptions(varList);
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_CONFIGURATION, configuration.getConfiguration()));
 
         return varList;

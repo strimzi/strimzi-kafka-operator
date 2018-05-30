@@ -65,6 +65,7 @@ public abstract class AbstractModel {
     public static final String METRICS_CONFIG_FILE = "config.yml";
     public static final String ENV_VAR_DYNAMIC_HEAP_FRACTION = "DYNAMIC_HEAP_FRACTION";
     public static final String ENV_VAR_KAFKA_HEAP_OPTS = "KAFKA_HEAP_OPTS";
+    public static final String ENV_VAR_KAFKA_JVM_PERFORMANCE_OPTS = "KAFKA_JVM_PERFORMANCE_OPTS";
     public static final String ENV_VAR_DYNAMIC_HEAP_MAX = "DYNAMIC_HEAP_MAX";
 
     protected final String cluster;
@@ -650,7 +651,12 @@ public abstract class AbstractModel {
         this.jvmOptions = jvmOptions;
     }
 
-    protected void kafkaHeapOptions(List<EnvVar> envVars, double dynamicHeapFraction, long dynamicHeapMaxBytes) {
+    /**
+     * Adds KAFKA_HEAP_OPTS variable to the EnvVar list if any heap related options were specified.
+     *
+     * @param envVars List of Environment Variables
+     */
+    protected void heapOptions(List<EnvVar> envVars, double dynamicHeapFraction, long dynamicHeapMaxBytes) {
         StringBuilder kafkaHeapOpts = new StringBuilder();
         String xms = jvmOptions != null ? jvmOptions.getXms() : null;
 
@@ -673,6 +679,40 @@ public abstract class AbstractModel {
         String trim = kafkaHeapOpts.toString().trim();
         if (!trim.isEmpty()) {
             envVars.add(buildEnvVar(ENV_VAR_KAFKA_HEAP_OPTS, trim));
+        }
+    }
+
+    /**
+     * Adds KAFKA_JVM_PERFORMANCE_OPTS variable to the EnvVar list if any performance related options were specified.
+     *
+     * @param envVars List of Environment Variables
+     */
+    protected void jvmPerformanceOptions(List<EnvVar> envVars) {
+        StringBuilder jvmPerformanceOpts = new StringBuilder();
+        Boolean server = jvmOptions != null ? jvmOptions.getServer() : null;
+
+        if (server != null && server) {
+            jvmPerformanceOpts.append("-server");
+        }
+
+        Map<String, String> xx = jvmOptions != null ? jvmOptions.getXx() : null;
+        if (xx != null) {
+            xx.forEach((k, v) -> {
+                jvmPerformanceOpts.append(' ').append("-XX:");
+
+                if ("true".equalsIgnoreCase(v))   {
+                    jvmPerformanceOpts.append("+").append(k);
+                } else if ("false".equalsIgnoreCase(v)) {
+                    jvmPerformanceOpts.append("-").append(k);
+                } else  {
+                    jvmPerformanceOpts.append(k).append("=").append(v);
+                }
+            });
+        }
+
+        String trim = jvmPerformanceOpts.toString().trim();
+        if (!trim.isEmpty()) {
+            envVars.add(buildEnvVar(ENV_VAR_KAFKA_JVM_PERFORMANCE_OPTS, trim));
         }
     }
 }

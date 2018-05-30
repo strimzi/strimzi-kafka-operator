@@ -150,7 +150,8 @@ public class KafkaConnectCluster extends AbstractModel {
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_CONFIGURATION, configuration.getConfiguration()));
-        kafkaHeapOptions(varList, 1.0, 0L);
+        heapOptions(varList, 1.0, 0L);
+        jvmPerformanceOptions(varList);
 
         return varList;
     }
