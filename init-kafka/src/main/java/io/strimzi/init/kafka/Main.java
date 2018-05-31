@@ -9,43 +9,20 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.Map;
-
 public class Main {
 
     private static final Logger log = LogManager.getLogger(Main.class);
 
-    private static final String RACK_FILE_PATH = "./rack/rack.id";
-
     public static void main(String[] args) {
 
-        // passed by the cluster operator when creating the init container
-        String rackTopologyKey = System.getenv("RACK_TOPOLOGY_KEY");
-        log.info("RACK_TOPOLOGY_KEY = {}", rackTopologyKey);
-
-        // using Downward API for getting current node
-        String nodeName = System.getenv("NODE_NAME");
-        log.info("NODE_NAME = {}", nodeName);
-
+        RackWriterConfig config = RackWriterConfig.fromMap(System.getenv());
         KubernetesClient client = new DefaultKubernetesClient();
 
-        Map<String, String> nodeLabels = client.nodes().withName(nodeName).get().getMetadata().getLabels();
-        log.info("nodeLabels = {}", nodeLabels);
-        String rackId = nodeLabels.get(rackTopologyKey);
-        log.info("Rack: {} = {}", rackTopologyKey, rackId);
+        log.info("Init-kafka started with config: {}", config);
 
-        PrintWriter writer = null;
-        try {
-            writer = new PrintWriter(RACK_FILE_PATH, "UTF-8");
-            writer.write(rackId);
-            log.info("Rack written successfully");
-        } catch (IOException e) {
-            log.error("Error writing the rackid", e);
-        } finally {
-            if (writer != null)
-                writer.close();
+        RackWriter writer = new RackWriter(client);
+        if (!writer.write(config)) {
+            System.exit(1);
         }
 
         client.close();

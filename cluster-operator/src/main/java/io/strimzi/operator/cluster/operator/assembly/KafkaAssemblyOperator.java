@@ -112,14 +112,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
                 .compose(i -> serviceOperations.reconcile(namespace, kafka.getHeadlessName(), headlessService))
                 .compose(i -> configMapOperations.reconcile(namespace, kafka.getMetricsConfigName(), metricsConfigMap))
                 .compose(i -> kafkaSetOperations.reconcile(namespace, kafka.getName(), statefulSet))
-                .compose(diffs -> {
-                    if (diffs instanceof ReconcileResult.Patched
-                            && ((ReconcileResult.Patched<Boolean>) diffs).differences()) {
-                        return kafkaSetOperations.rollingUpdate(namespace, kafka.getName());
-                    } else {
-                        return Future.succeededFuture();
-                    }
-                })
+                .compose(diffs -> kafkaSetOperations.maybeRollingUpdate(diffs.resource()))
                 .compose(i -> kafkaSetOperations.scaleUp(namespace, kafka.getName(), kafka.getReplicas()))
                 .compose(scale -> serviceOperations.endpointReadiness(namespace, service, 1_000, operationTimeoutMs))
                 .compose(i -> serviceOperations.endpointReadiness(namespace, headlessService, 1_000, operationTimeoutMs))
@@ -172,15 +165,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
                 .compose(i -> serviceOperations.reconcile(namespace, zk.getHeadlessName(), headlessService))
                 .compose(i -> configMapOperations.reconcile(namespace, zk.getMetricsConfigName(), zk.generateMetricsConfigMap()))
                 .compose(i -> zkSetOperations.reconcile(namespace, zk.getName(), zk.generateStatefulSet(isOpenShift)))
-                //.compose(i -> zkSetOperations.rollingUpdate(namespace, zk.getName()))
-                .compose(diffs -> {
-                    if (diffs instanceof ReconcileResult.Patched
-                            && ((ReconcileResult.Patched<Boolean>) diffs).differences()) {
-                        return zkSetOperations.rollingUpdate(namespace, zk.getName());
-                    } else {
-                        return Future.succeededFuture();
-                    }
-                })
+                .compose(diffs -> zkSetOperations.maybeRollingUpdate(diffs.resource()))
                 .compose(i -> zkSetOperations.scaleUp(namespace, zk.getName(), zk.getReplicas()))
                 .compose(scale -> serviceOperations.endpointReadiness(namespace, service, 1_000, operationTimeoutMs))
                 .compose(i -> serviceOperations.endpointReadiness(namespace, headlessService, 1_000, operationTimeoutMs))
@@ -212,7 +197,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
         return CompositeFuture.join(result);
     };
 
-    private final Future<ReconcileResult<Void>> createOrUpdateTopicOperator(Reconciliation reconciliation, ConfigMap assemblyCm) {
+    private final Future<ReconcileResult<Deployment>> createOrUpdateTopicOperator(Reconciliation reconciliation, ConfigMap assemblyCm) {
         String namespace = assemblyCm.getMetadata().getNamespace();
         String name = assemblyCm.getMetadata().getName();
         log.debug("{}: create/update topic operator {}", reconciliation, name);
@@ -226,7 +211,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
         return deploymentOperations.reconcile(namespace, topicOperatorName(name), deployment);
     };
 
-    private final Future<ReconcileResult<Void>> deleteTopicOperator(Reconciliation reconciliation) {
+    private final Future<ReconcileResult<Deployment>> deleteTopicOperator(Reconciliation reconciliation) {
         String namespace = reconciliation.namespace();
         String name = reconciliation.assemblyName();
         log.debug("{}: delete topic operator {}", reconciliation, name);

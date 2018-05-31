@@ -16,7 +16,7 @@ import io.vertx.core.Vertx;
 import static java.util.Collections.singletonMap;
 import static org.mockito.Mockito.when;
 
-public class ConfigMapOperatorTest extends AbstractResourceOperatorTest<KubernetesClient, ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>, Void> {
+public class ConfigMapOperatorTest extends AbstractResourceOperatorTest<KubernetesClient, ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> {
 
     @Override
     protected void  mocker(KubernetesClient mockClient, MixedOperation mockCms) {
@@ -24,7 +24,7 @@ public class ConfigMapOperatorTest extends AbstractResourceOperatorTest<Kubernet
     }
 
     @Override
-    protected AbstractResourceOperator<KubernetesClient, ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>, Void> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
+    protected AbstractResourceOperator<KubernetesClient, ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
         return new ConfigMapOperator(vertx, mockClient);
     }
 

@@ -16,7 +16,7 @@ import io.vertx.core.Vertx;
 /**
  * Operations for {@code Service}s.
  */
-public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, Service, ServiceList, DoneableService, Resource<Service, DoneableService>, Void> {
+public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, Service, ServiceList, DoneableService, Resource<Service, DoneableService>> {
 
     private final EndpointOperator endpointOperations;
     /**

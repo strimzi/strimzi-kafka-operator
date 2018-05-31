@@ -15,7 +15,7 @@ import io.vertx.core.Vertx;
 /**
  * Operations for {@code Deployment}s.
  */
-public class DeploymentOperator extends AbstractScalableResourceOperator<KubernetesClient, Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>, Void> {
+public class DeploymentOperator extends AbstractScalableResourceOperator<KubernetesClient, Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>> {
     /**
      * Constructor
      * @param vertx The Vertx instance

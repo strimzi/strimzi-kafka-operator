@@ -156,7 +156,12 @@ public class ClusterOperator extends AbstractVerticle {
                                     if (result.succeeded()) {
                                         log.info("{}: assembly reconciled", reconciliation);
                                     } else {
-                                        log.error("{}: Failed to reconcile", reconciliation, result.cause());
+                                        Throwable cause = result.cause();
+                                        if (cause instanceof InvalidConfigMapException) {
+                                            log.warn("{}: Failed to reconcile {}", reconciliation, cause.getMessage());
+                                        } else {
+                                            log.warn("{}: Failed to reconcile {}", reconciliation, cause);
+                                        }
                                     }
                                 });
                                 break;

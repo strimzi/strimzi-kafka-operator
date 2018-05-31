@@ -15,7 +15,7 @@ import io.vertx.core.Vertx;
 /**
  * Operations for {@code ImageStream}s.
  */
-public class ImageStreamOperator extends AbstractResourceOperator<OpenShiftClient, ImageStream, ImageStreamList, DoneableImageStream, Resource<ImageStream, DoneableImageStream>, Void> {
+public class ImageStreamOperator extends AbstractResourceOperator<OpenShiftClient, ImageStream, ImageStreamList, DoneableImageStream, Resource<ImageStream, DoneableImageStream>> {
     /**
      * Constructor
      * @param vertx The Vertx instance

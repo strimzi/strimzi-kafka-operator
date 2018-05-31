@@ -81,7 +81,7 @@ public final class Utils {
                 return "Unexpected character - " + token;
             }
             if (token.contains("Failed to decode: Unexpected end-of-input")) {
-                return "JSON braces";
+                return "JSON bracing";
             }
             token = token.replace("Failed to decode: Unrecognized token '", "");
             token = token.substring(0, token.indexOf("'"));
@@ -92,6 +92,8 @@ public final class Utils {
             int i;
             String blame = "";
             for (i = 0; i < entries.length; ++i) {
+                if (entries[i].length() < 1)
+                    continue;
                 if (entries[i].split(":")[1].equals(token)) {
                     blame = entries[i].split(":")[0];
                     break;
