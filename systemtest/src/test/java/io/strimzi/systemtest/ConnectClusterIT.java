@@ -16,6 +16,7 @@ import io.strimzi.test.OpenShiftOnly;
 import io.strimzi.test.Resources;
 import io.strimzi.test.StrimziRunner;
 import io.strimzi.test.k8s.Oc;
+import io.strimzi.test.TestUtils;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -87,24 +88,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
                 "KAFKA_CONNECT_BOOTSTRAP_SERVERS", KAFKA_CONNECT_BOOTSTRAP_SERVERS));
         String deploymentName = clusterName + "-connect";
         oc.waitForDeployment(deploymentName);
-
-        //Verifying docker image for cluster-operator
-        JsonNode deploymentYaml = yamlFileToJSON(DEPLOYMENT_CONFIG);
-        String coImgNameFromYaml = deploymentYaml.findValue("image").toString();
-        String coImgNameFromPod = getImageNameFromPod(kubeClient.listResourcesByLabel("pod",
-                "name=strimzi-cluster-operator").get(0)).toString().replaceAll("[\\[\\]\\\\]", "");
-        assertEquals(coImgNameFromPod, coImgNameFromYaml);
-
-        Map<String, String> imgFromDeplYAMLFile = getImagesFromConfig(deploymentYaml.toString());
-        Map<String, String> imgFromDeplConf = getImagesFromConfig(kubeClient.getResourceAsJson(
-                "deployment", "strimzi-cluster-operator"));
-
-        //Verifying docker image for kafka connect
-        String connectImageName = getImageNameFromPod(kubeClient.listResourcesByLabel("pod",
-                "strimzi.io/type=kafka-connect").get(0));
-        assertEquals(imgFromDeplConf.get(CONNECT_IMAGE), connectImageName);
-        assertEquals(imgFromDeplYAMLFile.get(CONNECT_IMAGE), connectImageName);
-
+        testDockerImagesForKafkaConnect();
         oc.deleteByName("cm", clusterName);
         oc.waitForResourceDeletion("deployment", deploymentName);
     }
@@ -120,6 +104,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
 
         assertEquals(EXPECTED_CONFIG.replaceAll("\\p{P}", ""), getValueFromJson(kafkaPodJson,
                 globalVariableJsonPathBuilder("KAFKA_CONNECT_CONFIGURATION")));
+        testDockerImagesForKafkaConnect();
     }
 
     @Test
@@ -212,5 +197,25 @@ public class ConnectClusterIT extends AbstractClusterIT {
             assertThat(connectPodJson, containsString("offset.storage.replication.factor=1"));
             assertThat(connectPodJson, containsString("status.storage.replication.factor=1"));
         }
+    }
+
+    private void testDockerImagesForKafkaConnect() {
+        LOGGER.info("Verifying docker image names");
+        //Verifying docker image for cluster-operator
+        JsonNode deploymentYaml = TestUtils.yamlFileToJSON(DEPLOYMENT_CONFIG);
+        String coImgNameFromYaml = deploymentYaml.findValue("image").toString();
+        String coImgNameFromPod = getImageNameFromPod(kubeClient.listResourcesByLabel("pod",
+                "name=strimzi-cluster-operator").get(0)).replaceAll("[\\[\\]\\\\]", "");
+        assertEquals(coImgNameFromPod, coImgNameFromYaml);
+
+        Map<String, String> imgFromDeplYAMLFile = getImagesFromConfig(deploymentYaml.toString());
+        Map<String, String> imgFromDeplConf = getImagesFromConfig(kubeClient.getResourceAsJson(
+                "deployment", "strimzi-cluster-operator"));
+        //Verifying docker image for kafka connect
+        String connectImageName = getImageNameFromPod(kubeClient.listResourcesByLabel("pod",
+                "strimzi.io/type=kafka-connect").get(0));
+        assertEquals(imgFromDeplConf.get(CONNECT_IMAGE), connectImageName);
+        assertEquals(imgFromDeplYAMLFile.get(CONNECT_IMAGE), connectImageName);
+        LOGGER.info("Docker images verified");
     }
 }

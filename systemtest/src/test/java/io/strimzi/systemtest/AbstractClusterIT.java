@@ -20,7 +20,6 @@ import io.strimzi.test.k8s.KubeClusterException;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.ProcessResult;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -309,14 +308,4 @@ public class AbstractClusterIT {
         return JsonPath.parse(clusterOperatorJson).read("$.spec.containers[*].image").toString();
     }
 
-    public JsonNode yamlFileToJSON(String filePath) {
-        JsonNode node = null;
-        try {
-            YAMLMapper mapper = new YAMLMapper();
-            node = mapper.readTree(new File(filePath));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return node;
-    }
 }

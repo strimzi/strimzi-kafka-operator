@@ -4,9 +4,13 @@
  */
 package io.strimzi.test;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BooleanSupplier;
@@ -73,5 +77,16 @@ public final class TestUtils {
             sb.append("    ").append(line).append(System.lineSeparator());
         }
         return sb.toString();
+    }
+
+    public static JsonNode yamlFileToJSON(String relativeFilePath) {
+        JsonNode node = null;
+        try {
+            YAMLMapper mapper = new YAMLMapper();
+            node = mapper.readTree(new File(relativeFilePath));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return node;
     }
 }
