@@ -74,7 +74,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
             "internal.key.converter=org.apache.kafka.connect.json.JsonConverter\\n" +
             "internal.value.converter.schemas.enable=false\\n" +
             "internal.value.converter=org.apache.kafka.connect.json.JsonConverter\\n";
-    private static final String DEPLOYMENT_CONFIG = "../examples/install/cluster-operator/07-deployment.yaml";
+    private static final String CO_DEPLOYMENT_CONFIG = "../examples/install/cluster-operator/07-deployment.yaml";
 
 
     @Test
@@ -202,7 +202,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
     private void testDockerImagesForKafkaConnect() {
         LOGGER.info("Verifying docker image names");
         //Verifying docker image for cluster-operator
-        JsonNode deploymentYaml = TestUtils.yamlFileToJSON(DEPLOYMENT_CONFIG);
+        JsonNode deploymentYaml = TestUtils.yamlFileToJSON(CO_DEPLOYMENT_CONFIG);
         String coImgNameFromYaml = deploymentYaml.findValue("image").toString();
         String coImgNameFromPod = getImageNameFromPod(kubeClient.listResourcesByLabel("pod",
                 "name=strimzi-cluster-operator").get(0)).replaceAll("[\\[\\]\\\\]", "");
