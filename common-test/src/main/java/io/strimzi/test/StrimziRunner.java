@@ -416,10 +416,6 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         return last;
     }
 
-    private String changeOrgAndTag(String image, String newOrg, String newTag) {
-        return image.replaceFirst("^strimzi/", newOrg + "/").replaceFirst(":[^:]+$", ":" + newTag);
-    }
-
     private Statement withClusterOperator(Annotatable element,
                                     Statement statement) {
         Statement last = statement;
@@ -441,13 +437,13 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     resources.set("limits", limits);
                     containerNode.replace("resources", resources);
                     JsonNode ccImageNode = containerNode.get("image");
-                    ((ObjectNode) containerNode).put("image", changeOrgAndTag(ccImageNode.asText(), dockerOrg, dockerTag));
+                    ((ObjectNode) containerNode).put("image", TestUtils.changeOrgAndTag(ccImageNode.asText(), dockerOrg, dockerTag));
                     for (JsonNode envVar : containerNode.get("env")) {
                         String varName = envVar.get("name").textValue();
                         // Replace all the default images with ones from the $DOCKER_ORG org and with the $DOCKER_TAG tag
                         if (varName.matches("STRIMZI_DEFAULT_.*_IMAGE")) {
                             String value = envVar.get("value").textValue();
-                            ((ObjectNode) envVar).put("value", changeOrgAndTag(value, dockerOrg, dockerTag));
+                            ((ObjectNode) envVar).put("value", TestUtils.changeOrgAndTag(value, dockerOrg, dockerTag));
                         }
                         // Updates default values of env variables
                         for (EnvVariables envVariable : cc.envVariables()) {

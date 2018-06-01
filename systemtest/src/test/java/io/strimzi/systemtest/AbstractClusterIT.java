@@ -304,12 +304,15 @@ public class AbstractClusterIT {
     }
 
     private String getImageNameFromJSON(String json, String image) {
-        return JsonPath.parse(json).read("$.spec.template.spec.containers[*].env[?(@.name =='" + image + "')].value").toString();
+        String dockerOrg = System.getenv().getOrDefault("DOCKER_ORG", "strimzi");
+        String dockerTag = System.getenv().getOrDefault("DOCKER_TAG", "latest");
+        String imageName = JsonPath.parse(json).read("$.spec.template.spec.containers[*].env[?(@.name =='" + image + "')].value").toString().replaceAll("[\"\\[\\]\\\\]", "");
+        return TestUtils.changeOrgAndTag(imageName, dockerOrg, dockerTag);
     }
 
     public String  getImageNameFromPod(String podName) {
         String clusterOperatorJson = kubeClient.getResourceAsJson("pod", podName);
-        return JsonPath.parse(clusterOperatorJson).read("$.spec.containers[*].image").toString();
+        return JsonPath.parse(clusterOperatorJson).read("$.spec.containers[*].image").toString().replaceAll("[\"\\[\\]\\\\]", "");
     }
 
     public String  getInitContainerImageName(String podName) {

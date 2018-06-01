@@ -89,4 +89,8 @@ public final class TestUtils {
         }
         return node;
     }
+
+    public static String changeOrgAndTag(String image, String newOrg, String newTag) {
+        return image.replaceFirst("^strimzi/", newOrg + "/").replaceFirst(":[^:]+$", ":" + newTag);
+    }
 }

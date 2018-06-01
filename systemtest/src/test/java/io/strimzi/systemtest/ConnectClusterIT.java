@@ -209,11 +209,19 @@ public class ConnectClusterIT extends AbstractClusterIT {
 
     private void testDockerImagesForKafkaConnect() {
         LOGGER.info("Verifying docker image names");
-        //Verifying docker image for cluster-operator
+        //Verifying docker image for cluster-operator""
+        String dockerOrg = System.getenv().getOrDefault("DOCKER_ORG", "strimzi");
+        String dockerTag = System.getenv().getOrDefault("DOCKER_TAG", "latest");
+
         JsonNode deploymentYaml = TestUtils.yamlFileToJSON(CO_DEPLOYMENT_CONFIG);
-        String coImgNameFromYaml = deploymentYaml.findValue("image").toString();
+        String coImgNameFromYaml = TestUtils.changeOrgAndTag(deploymentYaml.findValue("image").toString().
+                replaceAll("\"", ""), dockerOrg, dockerTag);
         String coImgNameFromPod = getImageNameFromPod(kubeClient.listResourcesByLabel("pod",
-                "name=strimzi-cluster-operator").get(0)).replaceAll("[\\[\\]\\\\]", "");
+                "name=strimzi-cluster-operator").get(0));
+
+        coImgNameFromYaml = TestUtils.changeOrgAndTag(coImgNameFromYaml, dockerOrg, dockerTag);
+        coImgNameFromPod = TestUtils.changeOrgAndTag(coImgNameFromPod, dockerOrg, dockerTag);
+
         assertEquals(coImgNameFromPod, coImgNameFromYaml);
 
         Map<String, String> imgFromDeplYAMLFile = getImagesFromConfig(deploymentYaml.toString());
@@ -226,4 +234,5 @@ public class ConnectClusterIT extends AbstractClusterIT {
         assertEquals(imgFromDeplYAMLFile.get(CONNECT_IMAGE), connectImageName);
         LOGGER.info("Docker images verified");
     }
+
 }

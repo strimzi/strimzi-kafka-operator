@@ -98,9 +98,9 @@ public class KafkaClusterIT extends AbstractClusterIT {
     @JUnitGroup(name = "acceptance")
     @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 3, zkNodes = 1)
     public void testKafkaAndZookeeperScaleUpScaleDown() {
+        testDockerImagesForKafkaCluster(CLUSTER_NAME, 3, 3, false);
         // kafka cluster already deployed via annotation
         LOGGER.info("Running kafkaScaleUpScaleDown {}", CLUSTER_NAME);
-
         //kubeClient.waitForStatefulSet(kafkaStatefulSetName(clusterName), 3);
 
         final int initialReplicas = client.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaClusterName(CLUSTER_NAME)).get().getStatus().getReplicas();
@@ -396,11 +396,21 @@ public class KafkaClusterIT extends AbstractClusterIT {
     private void testDockerImagesForKafkaCluster(String clusterName, int kafkaPods, int zkPods, boolean rackAwareEnabled) {
         LOGGER.info("Verifying docker image names");
         //Verifying docker image for cluster-operator
+        //Verifying docker image for cluster-operator""
+        String dockerOrg = System.getenv().getOrDefault("DOCKER_ORG", "strimzi");
+        String dockerTag = System.getenv().getOrDefault("DOCKER_TAG", "latest");
+
         JsonNode deploymentYaml = TestUtils.yamlFileToJSON(CO_DEPLOYMENT_CONFIG);
-        String coImgNameFromYaml = deploymentYaml.findValue("image").toString();
+
+        String coImgNameFromYaml = TestUtils.changeOrgAndTag(deploymentYaml.findValue("image").toString().
+                replaceAll("\"", ""), dockerOrg, dockerTag);
         String coImgNameFromPod = getImageNameFromPod(kubeClient.listResourcesByLabel("pod",
-                "name=strimzi-cluster-operator").get(0)).replaceAll("[\\[\\]\\\\]", "");
-        assertEquals(coImgNameFromPod, coImgNameFromYaml);
+                "name=strimzi-cluster-operator").get(0));
+
+        coImgNameFromYaml = TestUtils.changeOrgAndTag(coImgNameFromYaml, dockerOrg, dockerTag);
+        coImgNameFromPod = TestUtils.changeOrgAndTag(coImgNameFromPod, dockerOrg, dockerTag);
+
+        assertEquals(coImgNameFromYaml, coImgNameFromPod);
 
         Map<String, String> imgFromDeplYAMLFile = getImagesFromConfig(deploymentYaml.toString());
         Map<String, String> imgFromDeplConf = getImagesFromConfig(kubeClient.getResourceAsJson(
