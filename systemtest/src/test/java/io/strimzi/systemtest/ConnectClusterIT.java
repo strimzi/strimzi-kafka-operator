@@ -175,6 +175,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
         List<String> connectPods = kubeClient.listResourcesByLabel("pod", "strimzi.io/type=kafka-connect");
         //
         //
+        //
         String conncectConfig = "{\n" +
                 "      \"bootstrap.servers\": \"" + KAFKA_CONNECT_BOOTSTRAP_SERVERS + "\",\n" +
                 "      \"config.storage.replication.factor\": \"1\",\n" +
