@@ -155,8 +155,7 @@ public class Storage {
     public enum StorageType {
 
         EPHEMERAL("ephemeral"),
-        PERSISTENT_CLAIM("persistent-claim"),
-        LOCAL("local");
+        PERSISTENT_CLAIM("persistent-claim");
 
         private final String type;
 
@@ -175,8 +174,6 @@ public class Storage {
                 return EPHEMERAL;
             } else if (type.equals(PERSISTENT_CLAIM.type)) {
                 return PERSISTENT_CLAIM;
-            } else if (type.equals(LOCAL.type)) {
-                return LOCAL;
             } else {
                 throw new IllegalArgumentException("Unknown type: " + type + ". Allowed types are: " + Arrays.toString(values()));
             }

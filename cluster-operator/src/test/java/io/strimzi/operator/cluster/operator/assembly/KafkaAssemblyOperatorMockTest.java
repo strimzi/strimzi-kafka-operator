@@ -115,11 +115,7 @@ public class KafkaAssemblyOperatorMockTest {
             new JsonObject("{\"type\": \"persistent-claim\", " +
                     "\"size\": \"123\", " +
                     "\"class\": \"foo\"," +
-                    "\"delete-claim\": false}"),
-
-            new JsonObject("{\"type\": \"local\", " +
-                    "\"size\": \"123\", " +
-                    "\"class\": \"foo\"}")
+                    "\"delete-claim\": false}")
         };
         String[] resources = {
             "{ \"limits\" : { \"cpu\": 5, \"memory\": 5000 }, \"requests\": { \"cpu\": 5, \"memory\": 5000 } }"
@@ -556,11 +552,6 @@ public class KafkaAssemblyOperatorMockTest {
 
     @Test
     public void testUpdateKafkaWithChangedStorageType(TestContext context) {
-        if (!Storage.StorageType.LOCAL.equals(storageType(kafkaStorage))) {
-            LOGGER.info("Skipping change storage type test because using storage type {}", kafkaStorage);
-            return;
-        }
-
         KafkaAssemblyOperator kco = createCluster(context);
         List<PersistentVolumeClaim> originalPVCs = mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaClusterName(CLUSTER_NAME)).get().getSpec().getVolumeClaimTemplates();
         List<Volume> originalVolumes = mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaClusterName(CLUSTER_NAME)).get().getSpec().getTemplate().getSpec().getVolumes();
