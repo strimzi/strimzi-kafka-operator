@@ -114,10 +114,7 @@ public class KafkaAssemblyOperatorTest {
             "{\"type\": \"persistent-claim\", " +
                     "\"size\": \"123\", " +
                     "\"class\": \"foo\"," +
-                    "\"delete-claim\": true}",
-            "{\"type\": \"local\", " +
-                    "\"size\": \"123\", " +
-                    "\"class\": \"foo\"}"
+                    "\"delete-claim\": true}"
         };
         String[] kafkaConfigs = {
             null,
