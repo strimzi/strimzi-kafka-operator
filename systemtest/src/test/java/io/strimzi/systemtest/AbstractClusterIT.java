@@ -304,10 +304,7 @@ public class AbstractClusterIT {
     }
 
     private String getImageNameFromJSON(String json, String image) {
-        String dockerOrg = System.getenv().getOrDefault("DOCKER_ORG", "strimzi");
-        String dockerTag = System.getenv().getOrDefault("DOCKER_TAG", "latest");
-        String imageName = JsonPath.parse(json).read("$.spec.template.spec.containers[*].env[?(@.name =='" + image + "')].value").toString().replaceAll("[\"\\[\\]\\\\]", "");
-        return TestUtils.changeOrgAndTag(imageName, dockerOrg, dockerTag);
+        return JsonPath.parse(json).read("$.spec.template.spec.containers[*].env[?(@.name =='" + image + "')].value").toString().replaceAll("[\"\\[\\]\\\\]", "");
     }
 
     public String  getImageNameFromPod(String podName) {

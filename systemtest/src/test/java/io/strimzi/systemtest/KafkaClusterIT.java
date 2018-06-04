@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -18,7 +17,6 @@ import io.strimzi.test.Resources;
 import io.strimzi.test.StrimziRunner;
 import io.strimzi.test.Topic;
 import io.strimzi.test.k8s.Oc;
-import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.BeforeClass;
@@ -98,7 +96,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
     @JUnitGroup(name = "acceptance")
     @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 3, zkNodes = 1)
     public void testKafkaAndZookeeperScaleUpScaleDown() {
-        testDockerImagesForKafkaCluster(CLUSTER_NAME, 3, 3, false);
+        testDockerImagesForKafkaCluster(CLUSTER_NAME, 3, 1, false);
         // kafka cluster already deployed via annotation
         LOGGER.info("Running kafkaScaleUpScaleDown {}", CLUSTER_NAME);
         //kubeClient.waitForStatefulSet(kafkaStatefulSetName(clusterName), 3);
@@ -396,23 +394,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
     private void testDockerImagesForKafkaCluster(String clusterName, int kafkaPods, int zkPods, boolean rackAwareEnabled) {
         LOGGER.info("Verifying docker image names");
         //Verifying docker image for cluster-operator
-        //Verifying docker image for cluster-operator""
-        String dockerOrg = System.getenv().getOrDefault("DOCKER_ORG", "strimzi");
-        String dockerTag = System.getenv().getOrDefault("DOCKER_TAG", "latest");
 
-        JsonNode deploymentYaml = TestUtils.yamlFileToJSON(CO_DEPLOYMENT_CONFIG);
-
-        String coImgNameFromYaml = TestUtils.changeOrgAndTag(deploymentYaml.findValue("image").toString().
-                replaceAll("\"", ""), dockerOrg, dockerTag);
-        String coImgNameFromPod = getImageNameFromPod(kubeClient.listResourcesByLabel("pod",
-                "name=strimzi-cluster-operator").get(0));
-
-        coImgNameFromYaml = TestUtils.changeOrgAndTag(coImgNameFromYaml, dockerOrg, dockerTag);
-        coImgNameFromPod = TestUtils.changeOrgAndTag(coImgNameFromPod, dockerOrg, dockerTag);
-
-        assertEquals(coImgNameFromYaml, coImgNameFromPod);
-
-        Map<String, String> imgFromDeplYAMLFile = getImagesFromConfig(deploymentYaml.toString());
         Map<String, String> imgFromDeplConf = getImagesFromConfig(kubeClient.getResourceAsJson(
                 "deployment", "strimzi-cluster-operator"));
 
@@ -420,18 +402,15 @@ public class KafkaClusterIT extends AbstractClusterIT {
         for (int i = 0; i < zkPods; i++) {
             String imgFromPod = getImageNameFromPod(zookeeperPodName(clusterName, i));
             assertEquals(imgFromDeplConf.get(ZK_IMAGE), imgFromPod);
-            assertEquals(imgFromDeplYAMLFile.get(ZK_IMAGE), imgFromPod);
         }
 
         //Verifying docker image for kafka pods
         for (int i = 0; i < kafkaPods; i++) {
             String imgFromPod = getImageNameFromPod(kafkaPodName(clusterName, i));
             assertEquals(imgFromDeplConf.get(KAFKA_IMAGE), imgFromPod);
-            assertEquals(imgFromDeplYAMLFile.get(KAFKA_IMAGE), imgFromPod);
             if (rackAwareEnabled) {
                 String initContainerImage = getInitContainerImageName(kafkaPodName(clusterName, i));
                 assertEquals(imgFromDeplConf.get(DEFAULT_INIT_KAFKA_IMAGE), initContainerImage);
-                assertEquals(imgFromDeplYAMLFile.get(DEFAULT_INIT_KAFKA_IMAGE), initContainerImage);
             }
         }
 
@@ -439,7 +418,6 @@ public class KafkaClusterIT extends AbstractClusterIT {
         String topicOperatorImageName = getImageNameFromPod(kubeClient.listResourcesByLabel("pod",
                 "strimzi.io/name=" + clusterName + "-topic-operator").get(0));
         assertEquals(imgFromDeplConf.get("STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE"), topicOperatorImageName);
-        assertEquals(imgFromDeplYAMLFile.get("STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE"), topicOperatorImageName);
         LOGGER.info("Docker images verified");
     }
 

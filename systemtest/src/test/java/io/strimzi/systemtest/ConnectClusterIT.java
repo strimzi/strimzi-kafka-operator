@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.kubernetes.api.model.Event;
 import io.strimzi.test.ClusterOperator;
 import io.strimzi.test.CmData;
@@ -16,7 +15,6 @@ import io.strimzi.test.OpenShiftOnly;
 import io.strimzi.test.Resources;
 import io.strimzi.test.StrimziRunner;
 import io.strimzi.test.k8s.Oc;
-import io.strimzi.test.TestUtils;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -209,29 +207,14 @@ public class ConnectClusterIT extends AbstractClusterIT {
 
     private void testDockerImagesForKafkaConnect() {
         LOGGER.info("Verifying docker image names");
-        //Verifying docker image for cluster-operator""
-        String dockerOrg = System.getenv().getOrDefault("DOCKER_ORG", "strimzi");
-        String dockerTag = System.getenv().getOrDefault("DOCKER_TAG", "latest");
+        //Verifying docker image for cluster-operator
 
-        JsonNode deploymentYaml = TestUtils.yamlFileToJSON(CO_DEPLOYMENT_CONFIG);
-        String coImgNameFromYaml = TestUtils.changeOrgAndTag(deploymentYaml.findValue("image").toString().
-                replaceAll("\"", ""), dockerOrg, dockerTag);
-        String coImgNameFromPod = getImageNameFromPod(kubeClient.listResourcesByLabel("pod",
-                "name=strimzi-cluster-operator").get(0));
-
-        coImgNameFromYaml = TestUtils.changeOrgAndTag(coImgNameFromYaml, dockerOrg, dockerTag);
-        coImgNameFromPod = TestUtils.changeOrgAndTag(coImgNameFromPod, dockerOrg, dockerTag);
-
-        assertEquals(coImgNameFromPod, coImgNameFromYaml);
-
-        Map<String, String> imgFromDeplYAMLFile = getImagesFromConfig(deploymentYaml.toString());
         Map<String, String> imgFromDeplConf = getImagesFromConfig(kubeClient.getResourceAsJson(
                 "deployment", "strimzi-cluster-operator"));
         //Verifying docker image for kafka connect
         String connectImageName = getImageNameFromPod(kubeClient.listResourcesByLabel("pod",
                 "strimzi.io/type=kafka-connect").get(0));
         assertEquals(imgFromDeplConf.get(CONNECT_IMAGE), connectImageName);
-        assertEquals(imgFromDeplYAMLFile.get(CONNECT_IMAGE), connectImageName);
         LOGGER.info("Docker images verified");
     }
 
