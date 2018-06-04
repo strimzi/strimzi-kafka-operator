@@ -14,6 +14,8 @@ import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.function.BiPredicate;
+
 /**
  * Specializes {@link AbstractResourceOperator} for resources which also have a notion
  * of being "ready".
@@ -39,6 +41,10 @@ public abstract class AbstractReadyResourceOperator<C, T extends HasMetadata, L 
         super(vertx, client, resourceKind);
     }
 
+    public Future<Void> readiness(String namespace, String name, long pollIntervalMs, long timeoutMs) {
+        return waitFor(namespace, name, pollIntervalMs, timeoutMs, this::isReady);
+    }
+
     /**
      * Returns a future that completes when the resource identified by the given {@code namespace} and {@code name}
      * is ready.
@@ -47,8 +53,9 @@ public abstract class AbstractReadyResourceOperator<C, T extends HasMetadata, L 
      * @param name The resource name.
      * @param pollIntervalMs The poll interval in milliseconds.
      * @param timeoutMs The timeout, in milliseconds.
+     * @param predicate The predicate.
      */
-    public Future<Void> readiness(String namespace, String name, long pollIntervalMs, long timeoutMs) {
+    public Future<Void> waitFor(String namespace, String name, long pollIntervalMs, long timeoutMs, BiPredicate<String, String> predicate) {
         Future<Void> fut = Future.future();
         log.debug("Waiting for {} resource {} in namespace {} to get ready", resourceKind, name, namespace);
         long deadline = System.currentTimeMillis() + timeoutMs;
@@ -58,7 +65,7 @@ public abstract class AbstractReadyResourceOperator<C, T extends HasMetadata, L 
                 vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                     future -> {
                         try {
-                            if (isReady(namespace, name))   {
+                            if (predicate.test(namespace, name))   {
                                 future.complete();
                             } else {
                                 log.trace("{} {} in namespace {} is not ready", resourceKind, name, namespace);

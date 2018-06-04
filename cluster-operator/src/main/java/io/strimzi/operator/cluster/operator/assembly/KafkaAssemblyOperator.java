@@ -138,6 +138,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
         result.add(kafkaSetOperations.reconcile(namespace, KafkaCluster.kafkaClusterName(name), null));
 
         if (deleteClaims) {
+            log.debug("{}: delete kafka {} PVCs", reconciliation, name);
+
             for (int i = 0; i < kafka.getReplicas(); i++) {
                 result.add(pvcOperations.reconcile(namespace,
                         kafka.getPersistentVolumeClaimName(i), null));
@@ -189,6 +191,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
         result.add(zkSetOperations.reconcile(namespace, ZookeeperCluster.zookeeperClusterName(name), null));
 
         if (deleteClaims) {
+            log.debug("{}: delete zookeeper {} PVCs", reconciliation, name);
+
             for (int i = 0; i < zk.getReplicas(); i++) {
                 result.add(pvcOperations.reconcile(namespace, zk.getPersistentVolumeClaimName(i), null));
             }
