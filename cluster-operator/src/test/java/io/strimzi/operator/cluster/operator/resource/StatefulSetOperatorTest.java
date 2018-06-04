@@ -11,12 +11,21 @@ import io.fabric8.kubernetes.api.model.extensions.StatefulSetList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.AppsAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.TestContext;
 import org.junit.Test;
 
+import java.util.function.BiPredicate;
+
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.matches;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -92,5 +101,172 @@ public class StatefulSetOperatorTest
     @Test
     public void createWhenExistsIsAPatch(TestContext context) {
         createWhenExistsIsAPatch(context, false);
+    }
+
+    @Test
+    public void rollingUpdateSuccess() {
+        StatefulSet resource = resource();
+        Resource mockResource = mock(resourceType());
+        when(mockResource.get()).thenReturn(resource);
+
+        PodOperator podOperator = mock(PodOperator.class);
+        when(podOperator.waitFor(anyString(), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(Future.succeededFuture());
+        when(podOperator.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(podOperator.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+
+        NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
+        when(mockNameable.withName(matches(resource.getMetadata().getName()))).thenReturn(mockResource);
+
+        MixedOperation mockCms = mock(MixedOperation.class);
+        when(mockCms.inNamespace(matches(resource.getMetadata().getNamespace()))).thenReturn(mockNameable);
+
+        KubernetesClient mockClient = mock(KubernetesClient.class);
+        mocker(mockClient, mockCms);
+
+        StatefulSetOperator op = new StatefulSetOperator(vertx, mockClient, 5_000L, podOperator) {
+            @Override
+            protected boolean shouldIncrementGeneration(StatefulSet current, StatefulSet desired) {
+                return true;
+            }
+
+            @Override
+            protected boolean isPodUpToDate(StatefulSet ss, String podName) {
+                return false;
+            }
+
+            @Override
+            protected Future<Integer> getGeneration(String namespace, String podName) {
+                return Future.succeededFuture(1);
+            }
+        };
+
+        Future result = op.maybeRestartPod(resource, "my-pod-0");
+        assertTrue(result.succeeded());
+    }
+    @Test
+    public void rollingUpdateDeletionTimeout() {
+        StatefulSet resource = resource();
+        Resource mockResource = mock(resourceType());
+        when(mockResource.get()).thenReturn(resource);
+
+        PodOperator podOperator = mock(PodOperator.class);
+        when(podOperator.waitFor(anyString(), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(Future.failedFuture(new TimeoutException()));
+        when(podOperator.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(podOperator.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+
+        NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
+        when(mockNameable.withName(matches(resource.getMetadata().getName()))).thenReturn(mockResource);
+
+        MixedOperation mockCms = mock(MixedOperation.class);
+        when(mockCms.inNamespace(matches(resource.getMetadata().getNamespace()))).thenReturn(mockNameable);
+
+        KubernetesClient mockClient = mock(KubernetesClient.class);
+        mocker(mockClient, mockCms);
+
+        StatefulSetOperator op = new StatefulSetOperator(vertx, mockClient, 5_000L, podOperator) {
+            @Override
+            protected boolean shouldIncrementGeneration(StatefulSet current, StatefulSet desired) {
+                return true;
+            }
+
+            @Override
+            protected boolean isPodUpToDate(StatefulSet ss, String podName) {
+                return false;
+            }
+
+            @Override
+            protected Future<Integer> getGeneration(String namespace, String podName) {
+                return Future.succeededFuture(1);
+            }
+
+        };
+
+        Future result = op.maybeRestartPod(resource, "my-pod-0");
+        assertTrue(result.failed());
+        assertTrue(result.cause() instanceof TimeoutException);
+    }
+
+    @Test
+    public void rollingUpdateReadinessTimeout() {
+        StatefulSet resource = resource();
+        Resource mockResource = mock(resourceType());
+        when(mockResource.get()).thenReturn(resource);
+
+        PodOperator podOperator = mock(PodOperator.class);
+        when(podOperator.waitFor(anyString(), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(Future.succeededFuture());
+        when(podOperator.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.failedFuture(new TimeoutException()));
+        when(podOperator.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+
+        NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
+        when(mockNameable.withName(matches(resource.getMetadata().getName()))).thenReturn(mockResource);
+
+        MixedOperation mockCms = mock(MixedOperation.class);
+        when(mockCms.inNamespace(matches(resource.getMetadata().getNamespace()))).thenReturn(mockNameable);
+
+        KubernetesClient mockClient = mock(KubernetesClient.class);
+        mocker(mockClient, mockCms);
+
+        StatefulSetOperator op = new StatefulSetOperator(vertx, mockClient, 5_000L, podOperator) {
+            @Override
+            protected boolean shouldIncrementGeneration(StatefulSet current, StatefulSet desired) {
+                return true;
+            }
+
+            @Override
+            protected boolean isPodUpToDate(StatefulSet ss, String podName) {
+                return false;
+            }
+
+            @Override
+            protected Future<Integer> getGeneration(String namespace, String podName) {
+                return Future.succeededFuture(1);
+            }
+        };
+
+        Future result = op.maybeRestartPod(resource, "my-pod-0");
+        assertTrue(result.failed());
+        assertTrue(result.cause() instanceof TimeoutException);
+    }
+
+    @Test
+    public void rollingUpdateReconcileFailed() {
+        StatefulSet resource = resource();
+        Resource mockResource = mock(resourceType());
+        when(mockResource.get()).thenReturn(resource);
+
+        PodOperator podOperator = mock(PodOperator.class);
+        when(podOperator.waitFor(anyString(), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(Future.succeededFuture());
+        when(podOperator.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(podOperator.reconcile(anyString(), anyString(), any())).thenReturn(Future.failedFuture("reconcile failed"));
+
+        NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
+        when(mockNameable.withName(matches(resource.getMetadata().getName()))).thenReturn(mockResource);
+
+        MixedOperation mockCms = mock(MixedOperation.class);
+        when(mockCms.inNamespace(matches(resource.getMetadata().getNamespace()))).thenReturn(mockNameable);
+
+        KubernetesClient mockClient = mock(KubernetesClient.class);
+        mocker(mockClient, mockCms);
+
+        StatefulSetOperator op = new StatefulSetOperator(vertx, mockClient, 5_000L, podOperator) {
+            @Override
+            protected boolean shouldIncrementGeneration(StatefulSet current, StatefulSet desired) {
+                return true;
+            }
+
+            @Override
+            protected boolean isPodUpToDate(StatefulSet ss, String podName) {
+                return false;
+            }
+
+            @Override
+            protected Future<Integer> getGeneration(String namespace, String podName) {
+                return Future.succeededFuture(1);
+            }
+        };
+
+        Future result = op.maybeRestartPod(resource, "my-pod-0");
+        assertTrue(result.failed());
+        assertTrue(result.cause().getMessage().equals("reconcile failed"));
     }
 }
