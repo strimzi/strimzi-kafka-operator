@@ -154,7 +154,7 @@ public class ClusterOperator extends AbstractVerticle {
                                 log.info("{}: ConfigMap {} in namespace {} was {}", reconciliation, name, namespace, action);
                                 cluster.reconcileAssembly(reconciliation, result -> {
                                     if (result.succeeded()) {
-                                        log.info("{}: assembly reconciled", reconciliation);
+                                        log.info("{}: Assembly reconciled", reconciliation);
                                     } else {
                                         Throwable cause = result.cause();
                                         if (cause instanceof InvalidConfigMapException) {
