@@ -176,6 +176,8 @@ public class ConnectClusterIT extends AbstractClusterIT {
         //
         //
         //
+        //
+        //
         String conncectConfig = "{\n" +
                 "      \"bootstrap.servers\": \"" + KAFKA_CONNECT_BOOTSTRAP_SERVERS + "\",\n" +
                 "      \"config.storage.replication.factor\": \"1\",\n" +
