@@ -172,6 +172,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
     @JUnitGroup(name = "regression")
     @ConnectCluster(name = CONNECT_CLUSTER_NAME, connectConfig = CONNECT_CONFIG)
     public void testForUpdateValuesInConnectCM() {
+        //
         List<String> connectPods = kubeClient.listResourcesByLabel("pod", "strimzi.io/type=kafka-connect");
         String conncectConfig = "{\n" +
                 "      \"bootstrap.servers\": \"" + KAFKA_CONNECT_BOOTSTRAP_SERVERS + "\",\n" +
