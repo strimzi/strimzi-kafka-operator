@@ -52,7 +52,7 @@ public class AbstractClusterIT {
     protected static final String CONNECT_IMAGE = "STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE";
     protected static final String S2I_IMAGE = "STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE";
     protected static final String TO_IMAGE = "STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE";
-    protected static final String DEFAULT_INIT_KAFKA_IMAGE = "STRIMZI_DEFAULT_INIT_KAFKA_IMAGE";
+    protected static final String INIT_KAFKA_IMAGE = "STRIMZI_DEFAULT_INIT_KAFKA_IMAGE";
 
     @ClassRule
     public static KubeClusterResource cluster = new KubeClusterResource();
@@ -299,7 +299,7 @@ public class AbstractClusterIT {
         images.put(CONNECT_IMAGE, getImageNameFromJSON(configJson, CONNECT_IMAGE));
         images.put(S2I_IMAGE, getImageNameFromJSON(configJson, S2I_IMAGE));
         images.put(TO_IMAGE, getImageNameFromJSON(configJson, TO_IMAGE));
-        images.put(DEFAULT_INIT_KAFKA_IMAGE, getImageNameFromJSON(configJson, DEFAULT_INIT_KAFKA_IMAGE));
+        images.put(INIT_KAFKA_IMAGE, getImageNameFromJSON(configJson, INIT_KAFKA_IMAGE));
         return images;
     }
 

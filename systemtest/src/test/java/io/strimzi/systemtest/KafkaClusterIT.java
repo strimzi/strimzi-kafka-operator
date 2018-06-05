@@ -410,7 +410,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
             assertEquals(imgFromDeplConf.get(KAFKA_IMAGE), imgFromPod);
             if (rackAwareEnabled) {
                 String initContainerImage = getInitContainerImageName(kafkaPodName(clusterName, i));
-                assertEquals(imgFromDeplConf.get(DEFAULT_INIT_KAFKA_IMAGE), initContainerImage);
+                assertEquals(imgFromDeplConf.get(INIT_KAFKA_IMAGE), initContainerImage);
             }
         }
 
