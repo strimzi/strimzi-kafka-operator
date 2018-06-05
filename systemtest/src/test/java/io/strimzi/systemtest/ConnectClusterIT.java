@@ -185,7 +185,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
         changes.put("healthcheck-delay", "61");
         changes.put("healthcheck-timeout", "6");
         replaceCm(CONNECT_CLUSTER_NAME, changes);
-
+//
         kubeClient.waitForDeployment(kafkaConnectName(CONNECT_CLUSTER_NAME));
         for (int i = 0; i < connectPods.size(); i++) {
             kubeClient.waitForResourceDeletion("pod", connectPods.get(i));
