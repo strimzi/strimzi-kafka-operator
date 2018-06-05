@@ -65,6 +65,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
     public static final String NAMESPACE = "kafka-cluster-test";
     private static final String CLUSTER_NAME = "my-cluster";
     private static final String TOPIC_NAME = "test-topic";
+    private static final String CO_DEPLOYMENT_CONFIG = "../examples/install/cluster-operator/07-deployment.yaml";
 
     @BeforeClass
     public static void waitForCc() {
@@ -82,6 +83,10 @@ public class KafkaClusterIT extends AbstractClusterIT {
         oc.newApp("strimzi-ephemeral", map("CLUSTER_NAME", clusterName));
         oc.waitForStatefulSet(zookeeperClusterName(clusterName), 3);
         oc.waitForStatefulSet(kafkaClusterName(clusterName), 3);
+
+        //Testing docker images
+        testDockerImagesForKafkaCluster(clusterName, 3, 3, false);
+
         oc.deleteByName("cm", clusterName);
         oc.waitForResourceDeletion("statefulset", kafkaClusterName(clusterName));
         oc.waitForResourceDeletion("statefulset", zookeeperClusterName(clusterName));
@@ -91,14 +96,13 @@ public class KafkaClusterIT extends AbstractClusterIT {
     @JUnitGroup(name = "acceptance")
     @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 3, zkNodes = 1)
     public void testKafkaAndZookeeperScaleUpScaleDown() {
+        testDockerImagesForKafkaCluster(CLUSTER_NAME, 3, 1, false);
         // kafka cluster already deployed via annotation
         LOGGER.info("Running kafkaScaleUpScaleDown {}", CLUSTER_NAME);
-
         //kubeClient.waitForStatefulSet(kafkaStatefulSetName(clusterName), 3);
 
         final int initialReplicas = client.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaClusterName(CLUSTER_NAME)).get().getStatus().getReplicas();
         assertEquals(3, initialReplicas);
-
         // scale up
         final int scaleTo = initialReplicas + 1;
         final int newPodId = initialReplicas;
@@ -379,11 +383,42 @@ public class KafkaClusterIT extends AbstractClusterIT {
 
         //Deleting first topic by deletion of CM
         kubeClient.deleteByName("cm", "topic-from-cli");
-        
+
         //Deleting another topic using pod CLI
         deleteTopicUsingPodCLI(CLUSTER_NAME, kafkaPodName(CLUSTER_NAME, 1), "my-topic");
+        kubeClient.waitForResourceDeletion("cm", "my-topic");
         List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, kafkaPodName(CLUSTER_NAME, 1));
         assertThat(topics, not(hasItems("topic-from-cli", "my-topic")));
+    }
+
+    private void testDockerImagesForKafkaCluster(String clusterName, int kafkaPods, int zkPods, boolean rackAwareEnabled) {
+        LOGGER.info("Verifying docker image names");
+        //Verifying docker image for cluster-operator
+
+        Map<String, String> imgFromDeplConf = getImagesFromConfig(kubeClient.getResourceAsJson(
+                "deployment", "strimzi-cluster-operator"));
+
+        //Verifying docker image for zookeeper pods
+        for (int i = 0; i < zkPods; i++) {
+            String imgFromPod = getImageNameFromPod(zookeeperPodName(clusterName, i));
+            assertEquals(imgFromDeplConf.get(ZK_IMAGE), imgFromPod);
+        }
+
+        //Verifying docker image for kafka pods
+        for (int i = 0; i < kafkaPods; i++) {
+            String imgFromPod = getImageNameFromPod(kafkaPodName(clusterName, i));
+            assertEquals(imgFromDeplConf.get(KAFKA_IMAGE), imgFromPod);
+            if (rackAwareEnabled) {
+                String initContainerImage = getInitContainerImageName(kafkaPodName(clusterName, i));
+                assertEquals(imgFromDeplConf.get(INIT_KAFKA_IMAGE), initContainerImage);
+            }
+        }
+
+        //Verifying docker image for topic-operator
+        String topicOperatorImageName = getImageNameFromPod(kubeClient.listResourcesByLabel("pod",
+                "strimzi.io/name=" + clusterName + "-topic-operator").get(0));
+        assertEquals(imgFromDeplConf.get("STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE"), topicOperatorImageName);
+        LOGGER.info("Docker images verified");
     }
 
     @Test
@@ -396,6 +431,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
                             value = "{\"topologyKey\": \"rack-key\"}")
             })
     public void testRackAware() {
+        testDockerImagesForKafkaCluster(CLUSTER_NAME, 1, 1, true);
 
         String cm = kubeClient.get("cm", CLUSTER_NAME);
         assertThat(cm, valueOfCmEquals("kafka-rack", "{\"topologyKey\": \"rack-key\"}"));

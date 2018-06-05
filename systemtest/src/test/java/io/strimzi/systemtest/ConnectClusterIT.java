@@ -80,6 +80,8 @@ public class ConnectClusterIT extends AbstractClusterIT {
             "internal.key.converter=org.apache.kafka.connect.json.JsonConverter\\n" +
             "internal.value.converter.schemas.enable=false\\n" +
             "internal.value.converter=org.apache.kafka.connect.json.JsonConverter\\n";
+    private static final String CO_DEPLOYMENT_CONFIG = "../examples/install/cluster-operator/07-deployment.yaml";
+
 
     @Test
     @JUnitGroup(name = "regression")
@@ -92,6 +94,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
                 "KAFKA_CONNECT_BOOTSTRAP_SERVERS", KAFKA_CONNECT_BOOTSTRAP_SERVERS));
         String deploymentName = clusterName + "-connect";
         oc.waitForDeployment(deploymentName);
+        testDockerImagesForKafkaConnect();
         oc.deleteByName("cm", clusterName);
         oc.waitForResourceDeletion("deployment", deploymentName);
     }
@@ -107,6 +110,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
 
         assertEquals(EXPECTED_CONFIG.replaceAll("\\p{P}", ""), getValueFromJson(kafkaPodJson,
                 globalVariableJsonPathBuilder("KAFKA_CONNECT_CONFIGURATION")));
+        testDockerImagesForKafkaConnect();
     }
 
     @Test
@@ -200,4 +204,18 @@ public class ConnectClusterIT extends AbstractClusterIT {
             assertThat(connectPodJson, containsString("status.storage.replication.factor=1"));
         }
     }
+
+    private void testDockerImagesForKafkaConnect() {
+        LOGGER.info("Verifying docker image names");
+        //Verifying docker image for cluster-operator
+
+        Map<String, String> imgFromDeplConf = getImagesFromConfig(kubeClient.getResourceAsJson(
+                "deployment", "strimzi-cluster-operator"));
+        //Verifying docker image for kafka connect
+        String connectImageName = getImageNameFromPod(kubeClient.listResourcesByLabel("pod",
+                "strimzi.io/type=kafka-connect").get(0));
+        assertEquals(imgFromDeplConf.get(CONNECT_IMAGE), connectImageName);
+        LOGGER.info("Docker images verified");
+    }
+
 }
