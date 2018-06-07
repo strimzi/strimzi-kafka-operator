@@ -381,7 +381,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
             });
             last = new Bracket(last) {
                 private final String kafkaStatefulSetName = cluster.name() + "-kafka";
-                private final String zkStatefulSetName = cluster.name() + "-zookeeper";
+                //private final String zkStatefulSetName = cluster.name() + "-zookeeper";
                 private final String tcDeploymentName = cluster.name() + "-topic-operator";
                 @Override
                 protected void before() {
@@ -391,7 +391,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     try {
                         // wait for ss
                         kubeClient().waitForStatefulSet(kafkaStatefulSetName, cluster.kafkaNodes());
-                        // wait fot TC
+                        // wait for TOs
                         kubeClient().waitForDeployment(tcDeploymentName);
                     } catch (TimeoutException e) {
                         logState(e);
@@ -405,7 +405,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     kubeClient().deleteContent(yaml);
                     // wait for ss to go
                     try {
-                        kubeClient().waitForResourceDeletion("statefulset", zkStatefulSetName);
+                        kubeClient().waitForResourceDeletion("statefulset", kafkaStatefulSetName);
                     } catch (Exception e) {
                         LOGGER.info("Exception {} while cleaning up. ", e.toString());
                         onError(e);
