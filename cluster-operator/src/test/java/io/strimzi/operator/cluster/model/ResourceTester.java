@@ -9,6 +9,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import org.junit.rules.MethodRule;
+import org.junit.runners.model.FrameworkMethod;
+import org.junit.runners.model.Statement;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -21,20 +24,15 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
-class ResourceTestHelper<M extends AbstractModel> {
+class ResourceTester<M extends AbstractModel> implements MethodRule {
 
-    private final String prefix;
-    private final M model;
+    private String prefix;
+    private M model;
+    private Function<ConfigMap, M> fromConfigMap;
+    private String resourceName;
 
-    ResourceTestHelper(String prefix, Function<ConfigMap, M> fromConfigMap) {
-        this.prefix = prefix;
-        // Parse resource into CM
-        String resourceName = prefix + "-CM.yaml";
-        URL resource = getClass().getResource(resourceName);
-        assertNotNull("The resource " + resourceName + " does not exist", resource);
-        ConfigMap cm = fromYaml(resource, ConfigMap.class);
-        // Construct the desired resources from the CM
-        model = fromConfigMap.apply(cm);
+    ResourceTester(Function<ConfigMap, M> fromConfigMap) {
+        this.fromConfigMap = fromConfigMap;
     }
 
     static <T> T fromYaml(URL url, Class<T> c) {
@@ -61,6 +59,7 @@ class ResourceTestHelper<M extends AbstractModel> {
     }
 
     protected void assertDesiredResource(String suffix, Function<M, ?> fn) throws IOException {
+        assertNotNull("The resource " + resourceName + " does not exist", model);
         String content = readResource(prefix + suffix);
         if (content != null) {
             String ssStr = toYamlString(fn.apply(model));
@@ -88,5 +87,21 @@ class ResourceTestHelper<M extends AbstractModel> {
         } else {
             return null;
         }
+    }
+
+    @Override
+    public Statement apply(Statement base, FrameworkMethod method, Object target) {
+        this.prefix = method.getMethod().getDeclaringClass().getSimpleName() + "." + method.getName();
+        // Parse resource into CM
+        resourceName = prefix + "-CM.yaml";
+        URL resource = getClass().getResource(resourceName);
+        if (resource == null) {
+            model = null;
+        } else {
+            ConfigMap cm = fromYaml(resource, ConfigMap.class);
+            // Construct the desired resources from the CM
+            model = fromConfigMap.apply(cm);
+        }
+        return base;
     }
 }
