@@ -81,9 +81,11 @@ public class KafkaClusterTest {
         assertEquals(2, headless.getSpec().getPorts().size());
         assertEquals(KafkaCluster.CLIENT_PORT_NAME, headless.getSpec().getPorts().get(0).getName());
         assertEquals(new Integer(KafkaCluster.CLIENT_PORT), headless.getSpec().getPorts().get(0).getPort());
+        assertEquals("TCP", headless.getSpec().getPorts().get(0).getProtocol());
         assertEquals(KafkaCluster.REPLICATION_PORT_NAME, headless.getSpec().getPorts().get(1).getName());
         assertEquals(new Integer(KafkaCluster.REPLICATION_PORT), headless.getSpec().getPorts().get(1).getPort());
-        assertEquals("TCP", headless.getSpec().getPorts().get(0).getProtocol());
+        assertEquals("TCP", headless.getSpec().getPorts().get(1).getProtocol());
+
     }
 
     @Test
