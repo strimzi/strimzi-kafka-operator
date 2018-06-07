@@ -238,9 +238,26 @@ public class KafkaCluster extends AbstractModel {
         return kafka;
     }
 
-
-
+    /**
+     * Generates ports for bootstrap service.
+     * The bootstrap service contains only the client interfaces.
+     * Not the replication interface which doesn't need bootstrap service.
+     *
+     * @return List with generated ports
+     */
     private List<ServicePort> getServicePorts() {
+        List<ServicePort> ports = new ArrayList<>(2);
+        ports.add(createServicePort(CLIENT_PORT_NAME, CLIENT_PORT, CLIENT_PORT, "TCP"));
+        return ports;
+    }
+
+    /**
+     * Generates ports for headless service.
+     * The headless service contains both the client interfaces as well as replication interface.
+     *
+     * @return List with generated ports
+     */
+    private List<ServicePort> getHeadlessServicePorts() {
         List<ServicePort> ports = new ArrayList<>(2);
         ports.add(createServicePort(CLIENT_PORT_NAME, CLIENT_PORT, CLIENT_PORT, "TCP"));
         ports.add(createServicePort(REPLICATION_PORT_NAME, REPLICATION_PORT, REPLICATION_PORT, "TCP"));
@@ -262,7 +279,7 @@ public class KafkaCluster extends AbstractModel {
      */
     public Service generateHeadlessService() {
         Map<String, String> annotations = Collections.singletonMap("service.alpha.kubernetes.io/tolerate-unready-endpoints", "true");
-        return createHeadlessService(headlessName, getServicePorts(), annotations);
+        return createHeadlessService(headlessName, getHeadlessServicePorts(), annotations);
     }
 
     /**

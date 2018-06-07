@@ -58,11 +58,9 @@ public class KafkaClusterTest {
                 Labels.STRIMZI_TYPE_LABEL, "kafka",
                 "my-user-label", "cromulent",
                 Labels.STRIMZI_NAME_LABEL, KafkaCluster.kafkaClusterName(cluster)), headful.getSpec().getSelector());
-        assertEquals(2, headful.getSpec().getPorts().size());
+        assertEquals(1, headful.getSpec().getPorts().size());
         assertEquals(KafkaCluster.CLIENT_PORT_NAME, headful.getSpec().getPorts().get(0).getName());
         assertEquals(new Integer(KafkaCluster.CLIENT_PORT), headful.getSpec().getPorts().get(0).getPort());
-        assertEquals(KafkaCluster.REPLICATION_PORT_NAME, headful.getSpec().getPorts().get(1).getName());
-        assertEquals(new Integer(KafkaCluster.REPLICATION_PORT), headful.getSpec().getPorts().get(1).getPort());
         assertEquals("TCP", headful.getSpec().getPorts().get(0).getProtocol());
     }
 
