@@ -286,18 +286,18 @@ public class KafkaClusterTest {
     @Test
     public void withAffinityWithoutRack() throws IOException {
         resourceTester.assertDesiredResource("-SS.yaml",
-                kc -> kc.generateStatefulSet(true).getSpec().getTemplate().getSpec().getAffinity());
+            kc -> kc.generateStatefulSet(true).getSpec().getTemplate().getSpec().getAffinity());
     }
 
     @Test
     public void withRackWithoutAffinity() throws IOException {
         resourceTester.assertDesiredResource("-SS.yaml",
-                kc -> kc.generateStatefulSet(true).getSpec().getTemplate().getSpec().getAffinity());
+            kc -> kc.generateStatefulSet(true).getSpec().getTemplate().getSpec().getAffinity());
     }
 
     @Test
     public void withRackAndAffinity() throws IOException {
         resourceTester.assertDesiredResource("-SS.yaml",
-                kc -> kc.generateStatefulSet(true).getSpec().getTemplate().getSpec().getAffinity());
+            kc -> kc.generateStatefulSet(true).getSpec().getTemplate().getSpec().getAffinity());
     }
 }
