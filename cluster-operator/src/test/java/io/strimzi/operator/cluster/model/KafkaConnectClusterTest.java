@@ -14,6 +14,7 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.vertx.core.json.JsonObject;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -292,5 +293,12 @@ public class KafkaConnectClusterTest {
         } catch (InvalidConfigMapException e) {
             assertEquals("Unexpected character - }", e.getKey());
         }
+    }
+
+    @Test
+    public void withAffinity() throws IOException {
+        new ResourceTestHelper<KafkaConnectCluster>("KafkaConnectClusterTest.withAffinity",
+                KafkaConnectCluster::fromConfigMap)
+                .assertDesiredResource("-Deployment.yaml", kcc -> kcc.generateDeployment().getSpec().getTemplate().getSpec().getAffinity());
     }
 }

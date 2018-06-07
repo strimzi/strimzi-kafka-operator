@@ -12,6 +12,8 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import org.junit.Test;
 
+import java.io.IOException;
+
 import static io.strimzi.operator.cluster.ResourceUtils.labels;
 import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
@@ -149,6 +151,13 @@ public class ZookeeperClusterTest {
         } catch (InvalidConfigMapException e) {
             assertEquals("key.name", e.getKey());
         }
+    }
+
+    @Test
+    public void withAffinity() throws IOException {
+        new ResourceTestHelper<ZookeeperCluster>("ZookeeperClusterTest.withAffinity",
+                ZookeeperCluster::fromConfigMap)
+                .assertDesiredResource("-SS.yaml", zc -> zc.generateStatefulSet(true).getSpec().getTemplate().getSpec().getAffinity());
     }
 
 }

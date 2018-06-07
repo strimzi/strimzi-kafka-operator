@@ -57,6 +57,7 @@ public class ZookeeperCluster extends AbstractModel {
     public static final String KEY_JVM_OPTIONS = "zookeeper-jvmOptions";
     public static final String KEY_RESOURCES = "zookeeper-resources";
     public static final String KEY_ZOOKEEPER_CONFIG = "zookeeper-config";
+    public static final String KEY_AFFINITY = "zookeeper-affinity";
 
     // Zookeeper configuration keys (EnvVariables)
     public static final String ENV_VAR_ZOOKEEPER_NODE_COUNT = "ZOOKEEPER_NODE_COUNT";
@@ -136,6 +137,7 @@ public class ZookeeperCluster extends AbstractModel {
 
         zk.setResources(Resources.fromJson(data.get(KEY_RESOURCES)));
         zk.setJvmOptions(JvmOptions.fromJson(data.get(KEY_JVM_OPTIONS)));
+        zk.setUserAffinity(Utils.getAffinity(data.get(KEY_AFFINITY)));
 
         return zk;
     }
@@ -205,7 +207,7 @@ public class ZookeeperCluster extends AbstractModel {
                 createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout),
                 createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout),
                 resources(),
-                getAffinity(),
+                getMergedAffinity(),
                 getInitContainers(),
                 isOpenShift);
     }

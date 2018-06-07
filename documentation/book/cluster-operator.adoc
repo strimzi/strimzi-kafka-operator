@@ -575,6 +575,50 @@ This will have the effect of spreading the broker pods across zones, and also se
 
 In the above example, the `failure-domain.beta.kubernetes.io/zone` node label will be used for scheduling Kafka broker Pods.
 
+[[affinity]]
+===== Node and Pod Affinity
+
+Node and Pod Affinity provide a flexible mechanism to guide the scheduling of pods to nodes by {ProductPlatformName}.
+Node affinity can be used so that broker pods are preferentially scheduled to nodes with fast disks, for example.
+Similarly, pod affinity could be used to try to schedule Kafka clients on the same nodes as Kafka brokers.
+More information can be found on the {K8sAffinity}.
+
+Affinities for a Kafka cluster can be configured using:
+
+:: the `kafka-affinity` key in the cluster ConfigMap to set affinity for the Kafka brokers
+:: the `zookeeper-affinity` key in the cluster ConfigMap to set affinity for the Zookeeper nodes
+
+The format of the corresponding key is the same as the content supported in the Pod `affinity` in {ProductPlatformName}, as a string in JSON or YAML format, that is: `nodeAffinity`, `podAffinity` and `podAntiAffinity`.
+
+.Example fragment of a cluster ConfigMap with a nodeAffinity
+[source,yaml]
+----
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-cluster
+  labels:
+    strimzi.io/kind: cluster
+    strimzi.io/type: kafka
+data:
+  ...
+  kafka-affinity: |
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/e2e-az-name
+            operator: In
+            values:
+            - e2e-az1
+            - e2e-az2
+  ...
+----
+
+NOTE: When using both `kafka-affinity` and <<kafka_rack,`kafka-rack`>> be aware that `kafka-rack` uses a pod anti-affinity.
+This is necessary so that broker pods are scheduled in different failure domains, as specified via the `topologyKey`.
+This anti-affinity will not be present in the `kafka-affinity`, but is still present on the StatefulSet and thus will still be considered by the scheduler.
+
 [[topic_operator_json_config]]
 ===== Topic Operator
 
@@ -606,6 +650,8 @@ many partitions / replicas). Default is `6`.
 `resources`::
 An object configuring the resource limits and requests for the topic operator container. The accepted JSON format is
 described in the <<resources_json_config>> section.
+`affinity`::
+Node and Pod affinity for the Topic Operator, as described in the <<affinity>> section.
 
 .Example Topic Operator JSON configuration
 [source,json]
@@ -633,6 +679,8 @@ for more details.
 The accepted JSON format is described in the <<resources_json_config>> section.
 `jvmOptions`:: A JSON string allowing the JVM running Kafka Connect to be configured.
 The accepted JSON format is described in the <<jvm_json_config>> section.
+`affinity`::
+Node and Pod affinity for the Kafka Connect pods, as described in the <<affinity>> section.
 
 The following is an example of a Kafka Connect configuration ConfigMap.
 

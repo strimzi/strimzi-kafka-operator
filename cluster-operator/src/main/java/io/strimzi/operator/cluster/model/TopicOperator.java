@@ -189,6 +189,7 @@ public class TopicOperator extends AbstractModel {
             topicOperator.setZookeeperSessionTimeoutMs(tcConfig.getZookeeperSessionTimeout());
             topicOperator.setTopicMetadataMaxAttempts(tcConfig.getTopicMetadataMaxAttempts());
             topicOperator.setResources(tcConfig.getResources());
+            topicOperator.setUserAffinity(tcConfig.getAffinity());
         }
 
         return topicOperator;
@@ -243,7 +244,7 @@ public class TopicOperator extends AbstractModel {
                 Collections.emptyMap(),
                 Collections.emptyMap(),
                 resources(),
-                getAffinity(),
+                getMergedAffinity(),
                 getInitContainers());
     }
 

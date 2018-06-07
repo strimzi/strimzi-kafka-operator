@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.fabric8.kubernetes.api.model.Affinity;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TopicOperatorConfig {
@@ -14,6 +15,7 @@ public class TopicOperatorConfig {
     private String zookeeperSessionTimeout = TopicOperator.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_MS;
     private int topicMetadataMaxAttempts = TopicOperator.DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS;
     private Resources resources;
+    private Affinity affinity;
 
     public String getWatchedNamespace() {
         return watchedNamespace;
@@ -61,6 +63,14 @@ public class TopicOperatorConfig {
 
     public void setResources(Resources resources) {
         this.resources = resources;
+    }
+
+    public Affinity getAffinity() {
+        return affinity;
+    }
+
+    public void setAffinity(Affinity affinity) {
+        this.affinity = affinity;
     }
 
     public static TopicOperatorConfig fromJson(String json) {

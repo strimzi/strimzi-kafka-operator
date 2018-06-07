@@ -15,6 +15,7 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.vertx.core.json.JsonObject;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.List;
 
 import static io.strimzi.operator.cluster.ResourceUtils.labels;
@@ -277,5 +278,33 @@ public class KafkaClusterTest {
         } catch (InvalidConfigMapException e) {
             assertEquals("lowercaseOutputName", e.getKey());
         }
+    }
+
+    @Test
+    public void withAffinityWithoutRack() throws IOException {
+        new ResourceTestHelper<KafkaCluster>("KafkaClusterTest.withAffinityWithoutRack",
+                KafkaCluster::fromConfigMap)
+                .assertDesiredResource("-SS.yaml", kc -> kc.generateStatefulSet(true).getSpec().getTemplate().getSpec().getAffinity());
+    }
+
+    @Test
+    public void withRackWithoutAffinity() throws IOException {
+        new ResourceTestHelper<KafkaCluster>("KafkaClusterTest.withRackWithoutAffinity",
+                KafkaCluster::fromConfigMap)
+            .assertDesiredResource("-SS.yaml", kc -> kc.generateStatefulSet(true).getSpec().getTemplate().getSpec().getAffinity());
+    }
+
+    @Test
+    public void withRackAndAffinity() throws IOException {
+        new ResourceTestHelper<KafkaCluster>("KafkaClusterTest.withRackAndAffinity",
+                KafkaCluster::fromConfigMap)
+                .assertDesiredResource("-SS.yaml", kc -> kc.generateStatefulSet(true).getSpec().getTemplate().getSpec().getAffinity());
+    }
+
+    @Test
+    public void withCollidingRackAndAffinity() throws IOException {
+        new ResourceTestHelper<KafkaCluster>("KafkaClusterTest.withCollidingRackAndAffinity",
+                KafkaCluster::fromConfigMap)
+                .assertDesiredResource("-SS.yaml", kc -> kc.generateStatefulSet(true).getSpec().getTemplate().getSpec().getAffinity());
     }
 }
