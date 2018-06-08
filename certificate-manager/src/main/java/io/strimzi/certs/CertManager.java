@@ -10,7 +10,7 @@ import java.io.IOException;
 public interface CertManager {
 
     /**
-     * Generate a self signed certificate
+     * Generate a self-signed certificate
      *
      * @param keyFile path to the file which will contain the private key
      * @param certFile path to the file which will contain the self signed certificate
@@ -21,7 +21,7 @@ public interface CertManager {
     void generateSelfSignedCert(File keyFile, File certFile, Subject sbj, int days) throws IOException;
 
     /**
-     * Generate a self signed certificate
+     * Generate a self-signed certificate
      *
      * @param keyFile path to the file which will contain the private key
      * @param certFile path to the file which will contain the self signed certificate

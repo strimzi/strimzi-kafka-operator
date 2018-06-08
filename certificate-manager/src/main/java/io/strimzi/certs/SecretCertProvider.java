@@ -7,10 +7,9 @@ package io.strimzi.certs;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 
-import java.io.DataInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
@@ -55,8 +54,8 @@ public class SecretCertProvider {
 
         Base64.Encoder encoder = Base64.getEncoder();
 
-        data.put(keyKey, encoder.encodeToString(readFileToByteArray(keyFile)));
-        data.put(certKey, encoder.encodeToString(readFileToByteArray(certFile)));
+        data.put(keyKey, encoder.encodeToString(Files.readAllBytes(keyFile.toPath())));
+        data.put(certKey, encoder.encodeToString(Files.readAllBytes(certFile.toPath())));
 
         Secret secret = new SecretBuilder()
                 .withNewMetadata()
@@ -66,14 +65,5 @@ public class SecretCertProvider {
                 .build();
 
         return secret;
-    }
-
-    private byte[] readFileToByteArray(File file) throws IOException {
-        FileInputStream fis = new FileInputStream(file);
-        DataInputStream dis = new DataInputStream(fis);
-        byte[] bytes = new byte[(int) file.length()];
-        dis.readFully(bytes);
-        dis.close();
-        return bytes;
     }
 }
