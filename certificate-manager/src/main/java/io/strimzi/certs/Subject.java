@@ -4,6 +4,8 @@
  */
 package io.strimzi.certs;
 
+import java.util.Map;
+
 /**
  * Represents the subject for a certificate
  */
@@ -11,6 +13,7 @@ public class Subject {
 
     private String organizationName;
     private String commonName;
+    private Map<String, String> subjectAltNames;
 
     public String organizationName() {
         return organizationName;
@@ -26,6 +29,14 @@ public class Subject {
 
     public void setCommonName(String commonName) {
         this.commonName = commonName;
+    }
+
+    public Map<String, String> subjectAltNames() {
+        return subjectAltNames;
+    }
+
+    public void setSubjectAltNames(Map<String, String> subjectAltNames) {
+        this.subjectAltNames = subjectAltNames;
     }
 
     @Override

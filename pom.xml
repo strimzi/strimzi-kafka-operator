@@ -42,7 +42,7 @@
         <module>cluster-operator</module>
         <module>systemtest</module>
         <module>init-kafka</module>
-        <module>certs-manager</module>
+        <module>certificate-manager</module>
     </modules>
 
     <dependencyManagement>

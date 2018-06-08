@@ -8,10 +8,9 @@ import io.fabric8.kubernetes.api.model.Secret;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.io.DataInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Base64;
 
@@ -43,19 +42,10 @@ public class SecretCertProviderTest {
 
         assertEquals("secret", secret.getMetadata().getName());
         assertEquals(2, secret.getData().size());
-        assertTrue(Arrays.equals(readFileToByteArray(key), decoder.decode(secret.getData().get("tls.key"))));
-        assertTrue(Arrays.equals(readFileToByteArray(cert), decoder.decode(secret.getData().get("tls.crt"))));
+        assertTrue(Arrays.equals(Files.readAllBytes(key.toPath()), decoder.decode(secret.getData().get("tls.key"))));
+        assertTrue(Arrays.equals(Files.readAllBytes(cert.toPath()), decoder.decode(secret.getData().get("tls.crt"))));
 
         key.delete();
         cert.delete();
-    }
-
-    private byte[] readFileToByteArray(File file) throws IOException {
-        FileInputStream fis = new FileInputStream(file);
-        DataInputStream dis = new DataInputStream(fis);
-        byte[] bytes = new byte[(int) file.length()];
-        dis.readFully(bytes);
-        dis.close();
-        return bytes;
     }
 }
