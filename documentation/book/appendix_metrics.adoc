@@ -26,7 +26,7 @@ where `[namespace]` is the namespace/project where the Apache Kafka cluster was 
 Finally, create the Prometheus service by running
 
 [source,shell]
-oc create -f https://raw.githubusercontent.com/strimzi/strimzi/master/metrics/examples/prometheus/kubernetes.yaml
+oc create -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/metrics/examples/prometheus/kubernetes.yaml
 
 ==== Grafana
 
@@ -35,7 +35,7 @@ A Grafana server is necessary only to get a visualisation of the Prometheus metr
 To deploy Grafana on {OpenShiftName}, the following commands should be executed:
 
 [source,shell]
-oc create -f https://raw.githubusercontent.com/strimzi/strimzi/master/metrics/examples/grafana/kubernetes.yaml
+oc create -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/metrics/examples/grafana/kubernetes.yaml
 
 ifdef::Kubernetes[]
 === Deploying on {KubernetesName}
@@ -48,7 +48,7 @@ If the RBAC is enabled in your {KubernetesName} deployment then in order to have
 [source,shell]
 export NAMESPACE=[namespace]
 kubectl create sa prometheus-server
-kubectl create -f https://raw.githubusercontent.com/strimzi/strimzi/master/metrics/examples/prometheus/cluster-reader.yaml
+kubectl create -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/metrics/examples/prometheus/cluster-reader.yaml
 kubectl create clusterrolebinding read-pods-binding --clusterrole=cluster-reader --serviceaccount=${NAMESPACE}:prometheus-server
 
 where `[namespace]` is the namespace/project where the Apache Kafka cluster was deployed.
@@ -56,7 +56,7 @@ where `[namespace]` is the namespace/project where the Apache Kafka cluster was 
 Finally, create the Prometheus service by running
 
 [source,shell]
-kubectl apply -f https://raw.githubusercontent.com/strimzi/strimzi/master/metrics/examples/prometheus/kubernetes.yaml
+kubectl apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/metrics/examples/prometheus/kubernetes.yaml
 
 ==== Grafana
 
@@ -65,11 +65,11 @@ A Grafana server is necessary only to get a visualisation of Prometheus metrics.
 To deploy Grafana on {KubernetesName}, the following commands should be executed:
 
 [source,shell]
-kubectl apply -f https://raw.githubusercontent.com/strimzi/strimzi/master/metrics/examples/grafana/kubernetes.yaml
+kubectl apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/metrics/examples/grafana/kubernetes.yaml
 
 === Grafana dashboard
 
-As an example, and in order to visualize the exported metrics in Grafana, the simple dashboard https://github.com/strimzi/strimzi/blob/master/metrics/examples/grafana/kafka-dashboard.json[`kafka-dashboard.json`] file is provided.
+As an example, and in order to visualize the exported metrics in Grafana, the simple dashboard https://github.com/strimzi/strimzi-kafka-operator/blob/master/metrics/examples/grafana/kafka-dashboard.json[`kafka-dashboard.json`] file is provided.
 The Prometheus data source, and the above dashboard, can be set up in Grafana by following these steps.
 
 NOTE: For accessing the dashboard, you can use the `port-forward` command for forwarding traffic from the Grafana pod to the host. For example, you can access the Grafana UI by running `oc port-forward grafana-1-fbl7s 3000:3000` (or using `kubectl` instead of `oc`) and then pointing a browser to `http://localhost:3000`.
@@ -86,7 +86,7 @@ image::grafana_home.png[Grafana home]
 +
 image::grafana_prometheus_data_source.png[Add Prometheus data source]
 
-. From the top left menu, click on "Dashboards" and then "Import" to open the "Import Dashboard" window where the provided https://github.com/strimzi/strimzi/blob/master/metrics/examples/grafana/kafka-dashboard.json[`kafka-dashboard.json`] file can be imported or its content pasted.
+. From the top left menu, click on "Dashboards" and then "Import" to open the "Import Dashboard" window where the provided https://github.com/strimzi/strimzi-kafka-operator/blob/master/metrics/examples/grafana/kafka-dashboard.json[`kafka-dashboard.json`] file can be imported or its content pasted.
 +
 image::grafana_import_dashboard.png[Add Grafana dashboard]
 
