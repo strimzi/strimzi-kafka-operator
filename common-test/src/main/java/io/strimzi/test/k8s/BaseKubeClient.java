@@ -33,6 +33,7 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
 
     public static final String CREATE = "create";
     public static final String DELETE = "delete";
+    public static final String APPLY = "apply";
     public static final String DEPLOYMENT = "deployment";
     public static final String STATEFUL_SET = "statefulset";
     public static final String SERVICE = "service";
@@ -64,8 +65,15 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
     }
 
     @Override
+    public K inNamespace(String namespace) {
+        this.namespace = namespace;
+        return (K) this;
+    }
+
+
+    @Override
     public String namespace() {
-        return namespace;
+        return this.namespace;
     }
 
     @Override
@@ -374,4 +382,24 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
     public List<String> listResourcesByLabel(String resourceType, String label) {
         return asList(Exec.exec(namespacedCommand("get", resourceType, "-l", label, "-o", "jsonpath={range .items[*]}{.metadata.name} ")).out().split("\\s+"));
     }
+    public List<String> listResourcesByLabel(String resourceType, String label, String namespace) {
+        return asList(Exec.exec(cmd(), "get", resourceType, "-l", label, "--namespace", namespace, "-o", "jsonpath={range .items[*]}{.metadata.name} ").out().split("\\s+"));
+    }
+
+    public K deleteByName(String resourceType, String resourceName, String namespace) {
+        Exec.exec(cmd(), DELETE, resourceType, resourceName, "--namespace", namespace);
+        return (K) this;
+    }
+
+    public void installTemplates(String namespace, String pathToConfig) {
+        LOGGER.info("Installing templates for namespace " + namespace);
+        Exec.exec(cmd(), APPLY, "-f", pathToConfig, "--namespace", namespace);
+    }
+
+    public void deployCOFromCommandLine(String namespace, String pathToConfig) {
+        Exec.exec("bash", "-c", "oc login -u system:admin");
+        LOGGER.info("Applying CO config for namespace " + namespace);
+        Exec.exec(cmd(), APPLY, "-f", pathToConfig, "--namespace", namespace);
+    }
+
 }

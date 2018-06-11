@@ -80,8 +80,6 @@ public class ConnectClusterIT extends AbstractClusterIT {
             "internal.key.converter=org.apache.kafka.connect.json.JsonConverter\\n" +
             "internal.value.converter.schemas.enable=false\\n" +
             "internal.value.converter=org.apache.kafka.connect.json.JsonConverter\\n";
-    private static final String CO_DEPLOYMENT_CONFIG = "../examples/install/cluster-operator/07-deployment.yaml";
-
 
     @Test
     @JUnitGroup(name = "regression")
@@ -143,7 +141,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
         final int scaleTo = initialReplicas + 1;
 
         LOGGER.info("Scaling up to {}", scaleTo);
-        replaceCm(CONNECT_CLUSTER_NAME, "nodes", String.valueOf(initialReplicas + 1));
+        replaceCm(CONNECT_CLUSTER_NAME, NAMESPACE, "nodes", String.valueOf(initialReplicas + 1));
         kubeClient.waitForDeployment(kafkaConnectName(CONNECT_CLUSTER_NAME));
         connectPods = kubeClient.listResourcesByLabel("pod", "strimzi.io/type=kafka-connect");
         assertEquals(scaleTo, connectPods.size());
@@ -155,7 +153,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
         }
 
         LOGGER.info("Scaling down to {}", initialReplicas);
-        replaceCm(CONNECT_CLUSTER_NAME, "nodes", String.valueOf(initialReplicas));
+        replaceCm(CONNECT_CLUSTER_NAME, NAMESPACE, "nodes", String.valueOf(initialReplicas));
         while (kubeClient.listResourcesByLabel("pod", "strimzi.io/type=kafka-connect").size() == scaleTo) {
             LOGGER.info("Waiting for connect pod deletion");
         }
@@ -184,7 +182,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
         changes.put("connect-config", conncectConfig);
         changes.put("healthcheck-delay", "61");
         changes.put("healthcheck-timeout", "6");
-        replaceCm(CONNECT_CLUSTER_NAME, changes);
+        replaceCm(CONNECT_CLUSTER_NAME, NAMESPACE, changes);
 
         kubeClient.waitForDeployment(kafkaConnectName(CONNECT_CLUSTER_NAME));
         for (int i = 0; i < connectPods.size(); i++) {

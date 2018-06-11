@@ -110,13 +110,13 @@ public class AbstractClusterIT {
         return clusterName + "-topic-operator";
     }
 
-    void replaceCm(String cmName, String fieldName, String fieldValue) {
-        replaceCm(cmName, Collections.singletonMap(fieldName, fieldValue));
+    void replaceCm(String cmName, String namespace, String fieldName, String fieldValue) {
+        replaceCm(cmName, namespace, Collections.singletonMap(fieldName, fieldValue));
     }
 
-    void replaceCm(String cmName, Map<String, String> changes) {
+    void replaceCm(String cmName, String namespace, Map<String, String> changes) {
         try {
-            String jsonString = kubeClient.get("cm", cmName);
+            String jsonString = kubeClient.inNamespace(namespace).get("cm", cmName);
             YAMLMapper mapper = new YAMLMapper();
             JsonNode node = mapper.readTree(jsonString);
 
@@ -125,7 +125,7 @@ public class AbstractClusterIT {
             }
 
             String content = mapper.writeValueAsString(node);
-            kubeClient.replaceContent(content);
+            kubeClient.inNamespace(namespace).replaceContent(content);
             LOGGER.info("Value in ConfigMap replaced");
         } catch (IOException e) {
             throw new RuntimeException(e);
