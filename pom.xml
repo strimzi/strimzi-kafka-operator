@@ -145,6 +145,11 @@
             </dependency>
             <dependency>
                 <groupId>io.strimzi</groupId>
+                <artifactId>certificate-manager</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.strimzi</groupId>
                 <artifactId>common-test</artifactId>
                 <version>${project.version}</version>
                 <scope>test</scope>

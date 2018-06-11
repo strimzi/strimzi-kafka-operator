@@ -6,12 +6,14 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.operator.cluster.Reconciliation;
 import io.strimzi.operator.cluster.model.AssemblyType;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.Labels;
 import io.strimzi.operator.cluster.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.cluster.operator.resource.DeploymentOperator;
+import io.strimzi.operator.cluster.operator.resource.SecretOperator;
 import io.strimzi.operator.cluster.operator.resource.ServiceOperator;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
@@ -43,18 +45,20 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator {
      * @param configMapOperations For operating on ConfigMaps
      * @param deploymentOperations For operating on Deployments
      * @param serviceOperations For operating on Services
+     * @param secretOperations For operating on Secrets
      */
     public KafkaConnectAssemblyOperator(Vertx vertx, boolean isOpenShift,
                                         ConfigMapOperator configMapOperations,
                                         DeploymentOperator deploymentOperations,
-                                        ServiceOperator serviceOperations) {
-        super(vertx, isOpenShift, AssemblyType.CONNECT, configMapOperations);
+                                        ServiceOperator serviceOperations,
+                                        SecretOperator secretOperations) {
+        super(vertx, isOpenShift, AssemblyType.CONNECT, configMapOperations, secretOperations);
         this.serviceOperations = serviceOperations;
         this.deploymentOperations = deploymentOperations;
     }
 
     @Override
-    protected void createOrUpdate(Reconciliation reconciliation, ConfigMap assemblyCm, Handler<AsyncResult<Void>> handler) {
+    protected void createOrUpdate(Reconciliation reconciliation, ConfigMap assemblyCm, List<Secret> assemblySecrets, Handler<AsyncResult<Void>> handler) {
 
         String namespace = reconciliation.namespace();
         String name = reconciliation.assemblyName();

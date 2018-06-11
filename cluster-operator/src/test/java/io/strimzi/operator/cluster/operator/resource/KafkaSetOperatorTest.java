@@ -12,6 +12,7 @@ import io.strimzi.operator.cluster.model.KafkaCluster;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,8 +30,8 @@ public class KafkaSetOperatorTest {
 
     @Before
     public void before() {
-        a = KafkaCluster.fromConfigMap(getConfigMap()).generateStatefulSet(true);
-        b = KafkaCluster.fromConfigMap(getConfigMap()).generateStatefulSet(true);
+        a = KafkaCluster.fromDescription(getConfigMap(), Collections.EMPTY_LIST).generateStatefulSet(true);
+        b = KafkaCluster.fromDescription(getConfigMap(), Collections.EMPTY_LIST).generateStatefulSet(true);
     }
 
     private ConfigMap getConfigMap() {

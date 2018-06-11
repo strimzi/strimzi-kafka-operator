@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
@@ -16,6 +17,7 @@ import io.strimzi.operator.cluster.operator.resource.DeploymentOperator;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.PvcOperator;
 import io.strimzi.operator.cluster.operator.resource.ReconcileResult;
+import io.strimzi.operator.cluster.operator.resource.SecretOperator;
 import io.strimzi.operator.cluster.operator.resource.ServiceOperator;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.Labels;
@@ -56,6 +58,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
     private final PvcOperator pvcOperations;
     private final DeploymentOperator deploymentOperations;
 
+    private KafkaCluster kafka;
+    private Service service;
+    private Service headlessService;
+    private ConfigMap metricsConfigMap;
+    private StatefulSet statefulSet;
+
     /**
      * @param vertx The Vertx instance
      * @param isOpenShift Whether we're running with OpenShift
@@ -64,6 +72,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
      * @param zkSetOperations For operating on StatefulSets
      * @param pvcOperations For operating on PersistentVolumeClaims
      * @param deploymentOperations For operating on Deployments
+     * @param secretOperations For operating on Secrets
      */
     public KafkaAssemblyOperator(Vertx vertx, boolean isOpenShift,
                                  long operationTimeoutMs,
@@ -72,8 +81,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
                                  ZookeeperSetOperator zkSetOperations,
                                  KafkaSetOperator kafkaSetOperations,
                                  PvcOperator pvcOperations,
-                                 DeploymentOperator deploymentOperations) {
-        super(vertx, isOpenShift, AssemblyType.KAFKA, configMapOperations);
+                                 DeploymentOperator deploymentOperations,
+                                 SecretOperator secretOperations) {
+        super(vertx, isOpenShift, AssemblyType.KAFKA, configMapOperations, secretOperations);
         this.operationTimeoutMs = operationTimeoutMs;
         this.zkSetOperations = zkSetOperations;
         this.serviceOperations = serviceOperations;
@@ -83,31 +93,49 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
     }
 
     @Override
-    public void createOrUpdate(Reconciliation reconciliation, ConfigMap assemblyCm, Handler<AsyncResult<Void>> handler) {
+    public void createOrUpdate(Reconciliation reconciliation, ConfigMap assemblyCm, List<Secret> assemblySecrets, Handler<AsyncResult<Void>> handler) {
         Future<Void> f = Future.<Void>future().setHandler(handler);
         createOrUpdateZk(reconciliation, assemblyCm)
-            .compose(i -> createOrUpdateKafka(reconciliation, assemblyCm))
+            .compose(i -> createOrUpdateKafka(reconciliation, assemblyCm, assemblySecrets))
             .compose(i -> createOrUpdateTopicOperator(reconciliation, assemblyCm))
             .compose(ar -> f.complete(), f);
     }
 
-    private final Future<Void> createOrUpdateKafka(Reconciliation reconciliation, ConfigMap assemblyCm) {
+    private final Future<Void> getKafkaCluster(ConfigMap assemblyCm, List<Secret> assemblySecrets) {
+        Future<Void> fut = Future.future();
+        vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
+                future -> {
+                    try {
+                        kafka = KafkaCluster.fromDescription(assemblyCm, assemblySecrets);
+                        future.complete();
+                    } catch (Exception e) {
+                        future.fail(e);
+                    }
+                }, true,
+                res -> {
+                    if (res.succeeded()) {
+                        service = kafka.generateService();
+                        headlessService = kafka.generateHeadlessService();
+                        metricsConfigMap = kafka.generateMetricsConfigMap();
+                        statefulSet = kafka.generateStatefulSet(isOpenShift);
+                        // TODO: generate secrets
+                        fut.complete();
+                    } else {
+                        fut.fail("");
+                    }
+                }
+        );
+        return fut;
+    }
+
+    private final Future<Void> createOrUpdateKafka(Reconciliation reconciliation, ConfigMap assemblyCm, List<Secret> assemblySecrets) {
         String namespace = assemblyCm.getMetadata().getNamespace();
         String name = assemblyCm.getMetadata().getName();
         log.debug("{}: create/update kafka {}", reconciliation, name);
-        KafkaCluster kafka;
-        try {
-            kafka = KafkaCluster.fromConfigMap(assemblyCm);
-        } catch (Exception e) {
-            return Future.failedFuture(e);
-        }
-        Service service = kafka.generateService();
-        Service headlessService = kafka.generateHeadlessService();
-        ConfigMap metricsConfigMap = kafka.generateMetricsConfigMap();
-        StatefulSet statefulSet = kafka.generateStatefulSet(isOpenShift);
 
         Future<Void> chainFuture = Future.future();
-        kafkaSetOperations.scaleDown(namespace, kafka.getName(), kafka.getReplicas())
+        getKafkaCluster(assemblyCm, assemblySecrets)
+                .compose(v -> kafkaSetOperations.scaleDown(namespace, kafka.getName(), kafka.getReplicas()))
                 .compose(scale -> serviceOperations.reconcile(namespace, kafka.getName(), service))
                 .compose(i -> serviceOperations.reconcile(namespace, kafka.getHeadlessName(), headlessService))
                 .compose(i -> configMapOperations.reconcile(namespace, kafka.getMetricsConfigName(), metricsConfigMap))
@@ -117,6 +145,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
                 .compose(scale -> serviceOperations.endpointReadiness(namespace, service, 1_000, operationTimeoutMs))
                 .compose(i -> serviceOperations.endpointReadiness(namespace, headlessService, 1_000, operationTimeoutMs))
                 .compose(chainFuture::complete, chainFuture);
+        // TODO: secrets reconcile
 
         return chainFuture;
     };

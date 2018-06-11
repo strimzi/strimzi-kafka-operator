@@ -19,6 +19,7 @@ import io.strimzi.operator.cluster.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.cluster.operator.resource.DeploymentOperator;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.PvcOperator;
+import io.strimzi.operator.cluster.operator.resource.SecretOperator;
 import io.strimzi.operator.cluster.operator.resource.ServiceOperator;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperSetOperator;
@@ -60,6 +61,7 @@ public class PartialRollingUpdateTest {
     private ZookeeperSetOperator zksops;
     private DeploymentOperator depops;
     private PvcOperator pvcops;
+    private SecretOperator secretops;
     private KubernetesClient mockClient;
     private KafkaAssemblyOperator kco;
     private Pod zkPod0;
@@ -97,8 +99,9 @@ public class PartialRollingUpdateTest {
         zksops = new ZookeeperSetOperator(vertx, bootstrapClient, 60_000L);
         depops = new DeploymentOperator(vertx, bootstrapClient);
         pvcops = new PvcOperator(vertx, bootstrapClient);
+        secretops = new SecretOperator(vertx, bootstrapClient);
         KafkaAssemblyOperator kco = new KafkaAssemblyOperator(vertx, true, 2_000,
-                cmops, svcops, zksops, ksops, pvcops, depops);
+                cmops, svcops, zksops, ksops, pvcops, depops, secretops);
 
         LOGGER.info("bootstrap reconciliation");
         Async createAsync = context.async();
@@ -134,9 +137,10 @@ public class PartialRollingUpdateTest {
         zksops = new ZookeeperSetOperator(vertx, mockClient, 60_000L);
         depops = new DeploymentOperator(vertx, mockClient);
         pvcops = new PvcOperator(vertx, mockClient);
+        secretops = new SecretOperator(vertx, mockClient);
 
         this.kco = new KafkaAssemblyOperator(vertx, true, 2_000,
-                cmops, svcops, zksops, ksops, pvcops, depops);
+                cmops, svcops, zksops, ksops, pvcops, depops, secretops);
         LOGGER.info("Started test KafkaAssemblyOperator");
     }
 
