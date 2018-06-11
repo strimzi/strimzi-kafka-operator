@@ -31,6 +31,8 @@ public class ZookeeperCluster extends AbstractModel {
     protected static final String CLUSTERING_PORT_NAME = "clustering";
     protected static final int LEADER_ELECTION_PORT = 3888;
     protected static final String LEADER_ELECTION_PORT_NAME = "leader-election";
+    protected static final int METRICS_PORT = 9404;
+    protected static final String METRICS_PORT_NAME = "metrics";
 
     private static final String NAME_SUFFIX = "-zookeeper";
     private static final String HEADLESS_NAME_SUFFIX = NAME_SUFFIX + "-headless";
@@ -185,9 +187,13 @@ public class ZookeeperCluster extends AbstractModel {
     }
 
     public Service generateService() {
+        List<ServicePort> ports = new ArrayList<>(2);
+        if (isMetricsEnabled()) {
+            ports.add(createServicePort(METRICS_PORT_NAME, METRICS_PORT, METRICS_PORT, "TCP"));
+        }
+        ports.add(createServicePort(CLIENT_PORT_NAME, CLIENT_PORT, CLIENT_PORT, "TCP"));
 
-        return createService("ClusterIP",
-                Collections.singletonList(createServicePort(CLIENT_PORT_NAME, CLIENT_PORT, CLIENT_PORT, "TCP")));
+        return createService("ClusterIP", ports);
     }
 
     public Service generateHeadlessService() {
