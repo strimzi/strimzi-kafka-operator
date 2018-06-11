@@ -87,6 +87,10 @@ The accepted JSON format is described in the <<jvm_json_config>> section.
 `kafka-rack`::
 A JSON string allowing the Kafka rack feature to be configured and used in rack-aware partition assignment for fault tolerance.
 The accepted JSON format is described in the <<kafka_rack>> section.
+`kafka-affinity`::
+A JSON or YAML string allowing control over how the Kafka pods are scheduled to nodes.
+The format of the corresponding key is the same as the content supported in the Pod `affinity` in {ProductPlatformName}.
+See section <<affinity>> for more details.
 `zookeeper-nodes`::
 Number of Zookeeper nodes.
 `zookeeper-image`::
@@ -108,6 +112,10 @@ A JSON string configuring the resource limits and requests for Zookeeper broker 
 described in the <<resources_json_config>> section.
 `zookeeper-jvmOptions`::
 A JSON string allowing the JVM running Zookeeper to be configured. The accepted JSON format is described in the <<jvm_json_config>> section.
+`zookeeper-affinity`::
+A JSON or YAML string allowing control over how the Zookeeper pods are scheduled to nodes.
+The format of the corresponding key is the same as the content supported in the Pod `affinity` in {ProductPlatformName}.
+See section <<affinity>> for more details.
 `topic-operator-config`::
 A JSON string representing the topic operator configuration. See the <<topic_operator_json_config>> documentation for
 further details. More info about the topic operator in the related <<Topic operator>> documentation page.
@@ -583,11 +591,6 @@ Node affinity can be used so that broker pods are preferentially scheduled to no
 Similarly, pod affinity could be used to try to schedule Kafka clients on the same nodes as Kafka brokers.
 More information can be found on the {K8sAffinity}.
 
-Affinities for a Kafka cluster can be configured using:
-
-:: the `kafka-affinity` key in the cluster ConfigMap to set affinity for the Kafka brokers
-:: the `zookeeper-affinity` key in the cluster ConfigMap to set affinity for the Zookeeper nodes
-
 The format of the corresponding key is the same as the content supported in the Pod `affinity` in {ProductPlatformName}, as a string in JSON or YAML format, that is: `nodeAffinity`, `podAffinity` and `podAntiAffinity`.
 
 .Example fragment of a cluster ConfigMap with a nodeAffinity
@@ -652,6 +655,7 @@ An object configuring the resource limits and requests for the topic operator co
 described in the <<resources_json_config>> section.
 `affinity`::
 Node and Pod affinity for the Topic Operator, as described in the <<affinity>> section.
+The format of the corresponding key is the same as the content supported in the Pod `affinity` in {ProductPlatformName}.
 
 .Example Topic Operator JSON configuration
 [source,json]
@@ -681,6 +685,7 @@ The accepted JSON format is described in the <<resources_json_config>> section.
 The accepted JSON format is described in the <<jvm_json_config>> section.
 `affinity`::
 Node and Pod affinity for the Kafka Connect pods, as described in the <<affinity>> section.
+The format of the corresponding key is the same as the content supported in the Pod `affinity` in {ProductPlatformName}.
 
 The following is an example of a Kafka Connect configuration ConfigMap.
 

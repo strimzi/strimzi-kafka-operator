@@ -25,13 +25,13 @@ class JsonUtils {
         }
     }
 
-    static <T> T fromYaml(String json, Class<T> c) {
-        if (json == null) {
+    static <T> T fromYaml(String yaml, Class<T> c) {
+        if (yaml == null) {
             return null;
         }
         ObjectMapper mapper = new YAMLMapper();
         try {
-            return mapper.readValue(json, c);
+            return mapper.readValue(yaml, c);
         } catch (InvalidFormatException e) {
             throw new IllegalArgumentException(e);
         } catch (IOException e) {
