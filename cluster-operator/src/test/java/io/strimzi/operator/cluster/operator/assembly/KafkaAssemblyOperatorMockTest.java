@@ -25,6 +25,7 @@ import io.strimzi.operator.cluster.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.cluster.operator.resource.DeploymentOperator;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.PvcOperator;
+import io.strimzi.operator.cluster.operator.resource.SecretOperator;
 import io.strimzi.operator.cluster.operator.resource.ServiceOperator;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperSetOperator;
@@ -202,8 +203,9 @@ public class KafkaAssemblyOperatorMockTest {
         ZookeeperSetOperator zksops = new ZookeeperSetOperator(vertx, mockClient, 60_000L);
         DeploymentOperator depops = new DeploymentOperator(vertx, mockClient);
         PvcOperator pvcops = new PvcOperator(vertx, mockClient);
+        SecretOperator secretops = new SecretOperator(vertx, mockClient);
         KafkaAssemblyOperator kco = new KafkaAssemblyOperator(vertx, true, 2_000,
-                cmops, svcops, zksops, ksops, pvcops, depops);
+                cmops, svcops, zksops, ksops, pvcops, depops, secretops);
 
         LOGGER.info("Reconciling initially -> create");
         Async createAsync = context.async();

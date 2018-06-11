@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.operator.cluster.Reconciliation;
 import io.strimzi.operator.cluster.model.AssemblyType;
 import io.strimzi.operator.cluster.model.KafkaConnectS2ICluster;
@@ -14,6 +15,7 @@ import io.strimzi.operator.cluster.operator.resource.BuildConfigOperator;
 import io.strimzi.operator.cluster.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.cluster.operator.resource.DeploymentConfigOperator;
 import io.strimzi.operator.cluster.operator.resource.ImageStreamOperator;
+import io.strimzi.operator.cluster.operator.resource.SecretOperator;
 import io.strimzi.operator.cluster.operator.resource.ServiceOperator;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
@@ -51,14 +53,16 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator {
      * @param serviceOperations          For operating on Services
      * @param imagesStreamOperations     For operating on ImageStreams, may be null
      * @param buildConfigOperations      For operating on BuildConfigs, may be null
+     * @param secretOperations           For operating on Secrets
      */
     public KafkaConnectS2IAssemblyOperator(Vertx vertx, boolean isOpenShift,
                                            ConfigMapOperator configMapOperations,
                                            DeploymentConfigOperator deploymentConfigOperations,
                                            ServiceOperator serviceOperations,
                                            ImageStreamOperator imagesStreamOperations,
-                                           BuildConfigOperator buildConfigOperations) {
-        super(vertx, isOpenShift, AssemblyType.CONNECT_S2I, configMapOperations);
+                                           BuildConfigOperator buildConfigOperations,
+                                           SecretOperator secretOperations) {
+        super(vertx, isOpenShift, AssemblyType.CONNECT_S2I, configMapOperations, secretOperations);
         this.serviceOperations = serviceOperations;
         this.deploymentConfigOperations = deploymentConfigOperations;
         this.imagesStreamOperations = imagesStreamOperations;
@@ -66,7 +70,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator {
     }
 
     @Override
-    public void createOrUpdate(Reconciliation reconciliation, ConfigMap assemblyCm, Handler<AsyncResult<Void>> handler) {
+    public void createOrUpdate(Reconciliation reconciliation, ConfigMap assemblyCm, List<Secret> assemblySecrets, Handler<AsyncResult<Void>> handler) {
         String namespace = reconciliation.namespace();
         if (isOpenShift) {
             KafkaConnectS2ICluster connect;

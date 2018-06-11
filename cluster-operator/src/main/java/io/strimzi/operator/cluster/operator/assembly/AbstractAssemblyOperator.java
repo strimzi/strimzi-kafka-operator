@@ -7,11 +7,13 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.operator.cluster.InvalidConfigMapException;
 import io.strimzi.operator.cluster.Reconciliation;
 import io.strimzi.operator.cluster.model.AssemblyType;
 import io.strimzi.operator.cluster.model.Labels;
 import io.strimzi.operator.cluster.operator.resource.ConfigMapOperator;
+import io.strimzi.operator.cluster.operator.resource.SecretOperator;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -45,17 +47,22 @@ public abstract class AbstractAssemblyOperator {
     protected final boolean isOpenShift;
     protected final AssemblyType assemblyType;
     protected final ConfigMapOperator configMapOperations;
+    protected final SecretOperator secretOperations;
 
     /**
      * @param vertx The Vertx instance
      * @param isOpenShift True iff running on OpenShift
+     * @param assemblyType Assembly type
+     * @param configMapOperations For operating on ConfigMaps
+     * @param secretOperations For operating on Secrets
      */
     protected AbstractAssemblyOperator(Vertx vertx, boolean isOpenShift, AssemblyType assemblyType,
-                                       ConfigMapOperator configMapOperations) {
+                                       ConfigMapOperator configMapOperations, SecretOperator secretOperations) {
         this.vertx = vertx;
         this.isOpenShift = isOpenShift;
         this.assemblyType = assemblyType;
         this.configMapOperations = configMapOperations;
+        this.secretOperations = secretOperations;
     }
 
     /**
@@ -73,10 +80,12 @@ public abstract class AbstractAssemblyOperator {
      * Subclasses implement this method to create or update the cluster. The implementation
      * should not assume that any resources are in any particular state (e.g. that the absence on
      * one resource means that all resources need to be created).
-     * @param assemblyCm The name of the cluster.
+     * @param reconciliation Unique identification for the reconciliation
+     * @param assemblyCm ConfigMap with cluster configuration.
+     * @param assemblySecrets Secrets related to the cluster
      * @param handler Completion handler
      */
-    protected abstract void createOrUpdate(Reconciliation reconciliation, ConfigMap assemblyCm, Handler<AsyncResult<Void>> handler);
+    protected abstract void createOrUpdate(Reconciliation reconciliation, ConfigMap assemblyCm, List<Secret> assemblySecrets, Handler<AsyncResult<Void>> handler);
 
     /**
      * Subclasses implement this method to delete the cluster.
@@ -103,7 +112,7 @@ public abstract class AbstractAssemblyOperator {
      * Reconciliation works by getting the assembly ConfigMap in the given namespace with the given assemblyName and
      * comparing with the corresponding {@linkplain #getResources(String) resource}.
      * <ul>
-     * <li>An assembly will be {@linkplain #createOrUpdate(Reconciliation, ConfigMap, Handler) created or updated} if ConfigMap is without same-named resources</li>
+     * <li>An assembly will be {@linkplain #createOrUpdate(Reconciliation, ConfigMap, List, Handler) created or updated} if ConfigMap is without same-named resources</li>
      * <li>An assembly will be {@linkplain #delete(Reconciliation, Handler) deleted} if resources without same-named ConfigMap</li>
      * </ul>
      */
@@ -119,10 +128,12 @@ public abstract class AbstractAssemblyOperator {
                 try {
                     // get ConfigMap and related resources for the specific cluster
                     ConfigMap cm = configMapOperations.get(namespace, assemblyName);
+                    Labels labels = Labels.forCluster(assemblyName);
+                    List<Secret> secrets = secretOperations.list(namespace, labels);
 
                     if (cm != null) {
                         log.info("{}: Assembly {} should be created or updated", reconciliation, assemblyName);
-                        createOrUpdate(reconciliation, cm, createResult -> {
+                        createOrUpdate(reconciliation, cm, secrets, createResult -> {
                             lock.release();
                             log.debug("{}: Lock {} released", reconciliation, lockName);
                             if (createResult.failed()) {
@@ -159,7 +170,7 @@ public abstract class AbstractAssemblyOperator {
      * Reconciliation works by getting the assembly ConfigMaps in the given namespace with the given selector and
      * comparing with the corresponding {@linkplain #getResources(String) resource}.
      * <ul>
-     * <li>An assembly will be {@linkplain #createOrUpdate(Reconciliation, ConfigMap, Handler) created} for all ConfigMaps without same-named resources</li>
+     * <li>An assembly will be {@linkplain #createOrUpdate(Reconciliation, ConfigMap, List, Handler) created} for all ConfigMaps without same-named resources</li>
      * <li>An assembly will be {@linkplain #delete(Reconciliation, Handler) deleted} for all resources without same-named ConfigMaps</li>
      * </ul>
      *
