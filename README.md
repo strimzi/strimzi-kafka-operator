@@ -26,11 +26,11 @@ You can contribute by:
 - Fixing issues by opening Pull Requests
 - Talking about Strimzi
 
-All bugs, tasks or enhancements are tracked as [GitHub issues](https://github.com/strimzi/strimzi/issues). Issues which 
-might be a good start for new contributors are marked with ["good-start"](https://github.com/strimzi/strimzi/labels/good-start)
+All bugs, tasks or enhancements are tracked as [GitHub issues](https://github.com/strimzi/strimzi-kafka-operator/issues). Issues which 
+might be a good start for new contributors are marked with ["good-start"](https://github.com/strimzi/strimzi-kafka-operator/labels/good-start)
 label.
 
-The [Hacking guide](https://github.com/strimzi/strimzi/blob/master/HACKING.md) describes how to build Strimzi and how to 
+The [Hacking guide](https://github.com/strimzi/strimzi-kafka-operator/blob/master/HACKING.md) describes how to build Strimzi and how to 
 test your changes before submitting a patch or opening a PR.
 
 If you want to get in touch with us first before contributing, you can use:

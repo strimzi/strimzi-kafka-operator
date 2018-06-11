@@ -26,7 +26,7 @@
 :ProductPlatformLongName: {OpenShiftLongName} or {KubernetesLongName}
 
 // Source and download links
-:ReleaseDownload: https://github.com/strimzi/strimzi/releases[GitHub]
+:ReleaseDownload: https://github.com/strimzi/strimzi-kafka-operator/releases[GitHub]
 
 // External links
 :KafkaRacks: https://kafka.apache.org/documentation/#basic_ops_racks[Kafka racks documentation]
