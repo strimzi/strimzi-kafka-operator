@@ -10,7 +10,10 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
+import org.junit.Rule;
 import org.junit.Test;
+
+import java.io.IOException;
 
 import static io.strimzi.operator.cluster.ResourceUtils.labels;
 import static junit.framework.TestCase.fail;
@@ -29,6 +32,8 @@ public class ZookeeperClusterTest {
     private final String zooConfigurationJson = "{\"foo\":\"bar\"}";
     private final ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson);
     private final ZookeeperCluster zc = ZookeeperCluster.fromConfigMap(cm);
+    @Rule
+    public ResourceTester<ZookeeperCluster> resourceTester = new ResourceTester<>(ZookeeperCluster::fromConfigMap);
 
     @Test
     public void testMetricsConfigMap() {
@@ -149,6 +154,11 @@ public class ZookeeperClusterTest {
         } catch (InvalidConfigMapException e) {
             assertEquals("key.name", e.getKey());
         }
+    }
+
+    @Test
+    public void withAffinity() throws IOException {
+        resourceTester.assertDesiredResource("-SS.yaml", zc -> zc.generateStatefulSet(true).getSpec().getTemplate().getSpec().getAffinity());
     }
 
 }

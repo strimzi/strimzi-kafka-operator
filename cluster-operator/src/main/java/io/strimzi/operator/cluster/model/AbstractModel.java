@@ -103,6 +103,7 @@ public abstract class AbstractModel {
 
     private JvmOptions jvmOptions;
     private Resources resources;
+    private Affinity userAffinity;
 
     /**
      * Constructor
@@ -271,10 +272,27 @@ public abstract class AbstractModel {
     }
 
     /**
-     * @return the affinity rules used for deploying Pods from the related StatefulSet/Deployment
+     * Sets the affinity as configured by the user in the cluster CM
+     * @param affinity
      */
-    protected Affinity getAffinity() {
-        return null;
+    protected void setUserAffinity(Affinity affinity) {
+        this.userAffinity = affinity;
+    }
+
+    /**
+     * Gets the affinity as configured by the user in the cluster CM
+     */
+    protected Affinity getUserAffinity() {
+        return this.userAffinity;
+    }
+
+    /**
+     * Gets the affinity to use in a template Pod (in a StatefulSet, or Deployment).
+     * In general this may include extra rules than just the {@link #userAffinity}.
+     * By default it is just the {@link #userAffinity}.
+     */
+    protected Affinity getMergedAffinity() {
+        return getUserAffinity();
     }
 
     /**

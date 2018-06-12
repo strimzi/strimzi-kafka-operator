@@ -296,7 +296,7 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
     @Override
     public K waitForResourceDeletion(String resourceType, String resourceName) {
         TestUtils.waitFor(resourceType + " " + resourceName + " removal",
-            1_000L, 240_000L, () -> {
+            1_000L, 480_000L, () -> {
                 try {
                     get(resourceType, resourceName);
                     return false;

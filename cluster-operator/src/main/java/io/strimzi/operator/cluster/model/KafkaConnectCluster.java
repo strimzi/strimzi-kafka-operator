@@ -42,6 +42,7 @@ public class KafkaConnectCluster extends AbstractModel {
     public static final String KEY_JVM_OPTIONS = "jvmOptions";
     public static final String KEY_RESOURCES = "resources";
     public static final String KEY_CONNECT_CONFIG = "connect-config";
+    public static final String KEY_AFFINITY = "affinity";
 
     // Kafka Connect configuration keys (EnvVariables)
     protected static final String ENV_VAR_KAFKA_CONNECT_CONFIGURATION = "KAFKA_CONNECT_CONFIGURATION";
@@ -86,6 +87,7 @@ public class KafkaConnectCluster extends AbstractModel {
         kafkaConnect.setHealthCheckTimeout(Integer.parseInt(data.getOrDefault(KEY_HEALTHCHECK_TIMEOUT, String.valueOf(DEFAULT_HEALTHCHECK_TIMEOUT))));
 
         kafkaConnect.setConfiguration(Utils.getKafkaConnectConfiguration(data, KEY_CONNECT_CONFIG));
+        kafkaConnect.setUserAffinity(Utils.getAffinity(data.get(KEY_AFFINITY)));
 
         return kafkaConnect;
     }
@@ -142,7 +144,7 @@ public class KafkaConnectCluster extends AbstractModel {
                 Collections.emptyMap(),
                 Collections.emptyMap(),
                 resources(),
-                getAffinity(),
+                getMergedAffinity(),
                 getInitContainers());
     }
 

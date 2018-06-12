@@ -11,11 +11,7 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
-import io.fabric8.kubernetes.api.model.PodAffinityTerm;
-import io.fabric8.kubernetes.api.model.PodAntiAffinity;
-import io.fabric8.kubernetes.api.model.PodAntiAffinityBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
@@ -23,7 +19,6 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
-import io.fabric8.kubernetes.api.model.WeightedPodAffinityTerm;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.operator.cluster.ClusterOperator;
 import io.vertx.core.json.JsonObject;
@@ -87,6 +82,7 @@ public class KafkaCluster extends AbstractModel {
     public static final String KEY_RESOURCES = "kafka-resources";
     public static final String KEY_RACK = "kafka-rack";
     public static final String KEY_INIT_IMAGE = "init-kafka-image";
+    public static final String KEY_AFFINITY = "kafka-affinity";
 
     // Kafka configuration keys (EnvVariables)
     public static final String ENV_VAR_KAFKA_ZOOKEEPER_CONNECT = "KAFKA_ZOOKEEPER_CONNECT";
@@ -172,6 +168,7 @@ public class KafkaCluster extends AbstractModel {
             kafka.setRackConfig(rackConfig);
         }
         kafka.setInitImage(Utils.getNonEmptyString(data, KEY_INIT_IMAGE, DEFAULT_INIT_IMAGE));
+        kafka.setUserAffinity(Utils.getAffinity(data.get(KEY_AFFINITY)));
 
         return kafka;
     }
@@ -222,7 +219,9 @@ public class KafkaCluster extends AbstractModel {
         }
 
         Affinity affinity = ss.getSpec().getTemplate().getSpec().getAffinity();
-        if (affinity != null) {
+        if (affinity != null
+                && affinity.getPodAntiAffinity() != null
+                && affinity.getPodAntiAffinity().getPreferredDuringSchedulingIgnoredDuringExecution() != null) {
             String rackTopologyKey = affinity.getPodAntiAffinity().getPreferredDuringSchedulingIgnoredDuringExecution().get(0).getPodAffinityTerm().getTopologyKey();
             kafka.setRackConfig(new RackConfig(rackTopologyKey));
         }
@@ -297,7 +296,7 @@ public class KafkaCluster extends AbstractModel {
                 createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout),
                 createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout),
                 resources(),
-                getAffinity(),
+                getMergedAffinity(),
                 getInitContainers(),
                 isOpenShift);
     }
@@ -364,37 +363,31 @@ public class KafkaCluster extends AbstractModel {
         return volumeMountList;
     }
 
+    /**
+     * Returns a combined affinity: Adding the affinity needed for the "kafka-rack" to the {@link #getUserAffinity()}.
+     */
     @Override
-    protected Affinity getAffinity() {
-
-        List<WeightedPodAffinityTerm> weightedPodAffinityTerms = new ArrayList<>();
-        Affinity affinity = null;
-
-        // adding the affinity term for rack feature only if it's enabled
+    protected Affinity getMergedAffinity() {
+        Affinity userAffinity = getUserAffinity();
+        AffinityBuilder builder = new AffinityBuilder(userAffinity == null ? new Affinity() : userAffinity);
         if (rackConfig != null) {
-            Map<String, String> matchLabels = new HashMap<>();
-            matchLabels.put(Labels.STRIMZI_CLUSTER_LABEL, cluster);
-            matchLabels.put(Labels.STRIMZI_NAME_LABEL, name);
-            matchLabels.put(Labels.STRIMZI_TYPE_LABEL, AssemblyType.KAFKA.toString());
-            LabelSelector labelSelector = new LabelSelector(null, matchLabels);
-
-            PodAffinityTerm podAffinityTerm = new PodAffinityTerm(labelSelector, null, rackConfig.getTopologyKey());
-            WeightedPodAffinityTerm weightedPodAffinityTerm = new WeightedPodAffinityTerm(podAffinityTerm, 100);
-            weightedPodAffinityTerms.add(weightedPodAffinityTerm);
+            // If there's a rack config, we need to add a podAntiAffinity to spread the brokers among the racks
+            builder = builder
+                    .editOrNewPodAntiAffinity()
+                        .addNewPreferredDuringSchedulingIgnoredDuringExecution()
+                            .withWeight(100)
+                            .withNewPodAffinityTerm()
+                                .withTopologyKey(rackConfig.getTopologyKey())
+                                .withNewLabelSelector()
+                                    .addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, cluster)
+                                    .addToMatchLabels(Labels.STRIMZI_TYPE_LABEL, AssemblyType.KAFKA.toString())
+                                    .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, name)
+                                .endLabelSelector()
+                            .endPodAffinityTerm()
+                        .endPreferredDuringSchedulingIgnoredDuringExecution()
+                    .endPodAntiAffinity();
         }
-
-        // creating the affinity only if related terms were added
-        if (weightedPodAffinityTerms.size() > 0) {
-            PodAntiAffinity podAntiAffinity = new PodAntiAffinityBuilder()
-                    .withPreferredDuringSchedulingIgnoredDuringExecution(weightedPodAffinityTerms)
-                    .build();
-
-            affinity = new AffinityBuilder()
-                    .withPodAntiAffinity(podAntiAffinity)
-                    .build();
-        }
-
-        return affinity;
+        return builder.build();
     }
 
     @Override

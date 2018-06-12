@@ -9,8 +9,10 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.strimzi.operator.cluster.ResourceUtils;
+import org.junit.Rule;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -151,6 +153,14 @@ public class TopicOperatorTest {
     @Test
     public void testEnvVars()   {
         assertEquals(getExpectedEnvVars(), tc.getEnvVars());
+    }
+
+    @Rule
+    public ResourceTester<TopicOperator> helper = new ResourceTester<>(TopicOperator::fromConfigMap);
+
+    @Test
+    public void withAffinity() throws IOException {
+        helper.assertDesiredResource("-Deployment.yaml", zc -> zc.generateDeployment().getSpec().getTemplate().getSpec().getAffinity());
     }
 
 }

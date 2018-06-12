@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.fabric8.kubernetes.api.model.Affinity;
 import io.strimzi.operator.cluster.InvalidConfigMapException;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonObject;
@@ -131,5 +132,9 @@ public final class Utils {
             throw new InvalidConfigMapException(getJsonCorruptionBlame(de, config), " corrupts JSON");
         }
         return new JsonObject(config);
+    }
+
+    public static Affinity getAffinity(String json) {
+        return JsonUtils.fromYaml(json, Affinity.class);
     }
 }

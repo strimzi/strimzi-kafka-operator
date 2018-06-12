@@ -13,8 +13,10 @@ import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.operator.cluster.InvalidConfigMapException;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.vertx.core.json.JsonObject;
+import org.junit.Rule;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.List;
 
 import static io.strimzi.operator.cluster.ResourceUtils.labels;
@@ -35,6 +37,8 @@ public class KafkaClusterTest {
     private final String configurationJson = "{\"foo\":\"bar\"}";
     private final ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson);
     private final KafkaCluster kc = KafkaCluster.fromConfigMap(cm);
+    @Rule
+    public ResourceTester<KafkaCluster> resourceTester = new ResourceTester<>(KafkaCluster::fromConfigMap);
 
     @Test
     public void testMetricsConfigMap() {
@@ -277,5 +281,23 @@ public class KafkaClusterTest {
         } catch (InvalidConfigMapException e) {
             assertEquals("lowercaseOutputName", e.getKey());
         }
+    }
+
+    @Test
+    public void withAffinityWithoutRack() throws IOException {
+        resourceTester.assertDesiredResource("-SS.yaml",
+            kc -> kc.generateStatefulSet(true).getSpec().getTemplate().getSpec().getAffinity());
+    }
+
+    @Test
+    public void withRackWithoutAffinity() throws IOException {
+        resourceTester.assertDesiredResource("-SS.yaml",
+            kc -> kc.generateStatefulSet(true).getSpec().getTemplate().getSpec().getAffinity());
+    }
+
+    @Test
+    public void withRackAndAffinity() throws IOException {
+        resourceTester.assertDesiredResource("-SS.yaml",
+            kc -> kc.generateStatefulSet(true).getSpec().getTemplate().getSpec().getAffinity());
     }
 }

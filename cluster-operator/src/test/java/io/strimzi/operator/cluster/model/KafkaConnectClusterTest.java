@@ -12,8 +12,10 @@ import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.strimzi.operator.cluster.InvalidConfigMapException;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.vertx.core.json.JsonObject;
+import org.junit.Rule;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -57,6 +59,9 @@ public class KafkaConnectClusterTest {
     private final ConfigMap cm = ResourceUtils.createKafkaConnectClusterConfigMap(namespace, cluster, replicas, image,
             healthDelay, healthTimeout, configurationJson);
     private final KafkaConnectCluster kc = KafkaConnectCluster.fromConfigMap(cm);
+
+    @Rule
+    public ResourceTester<KafkaConnectCluster> resourceTester = new ResourceTester<>(KafkaConnectCluster::fromConfigMap);
 
     protected List<EnvVar> getExpectedEnvVars() {
         List<EnvVar> expected = new ArrayList<EnvVar>();
@@ -292,5 +297,11 @@ public class KafkaConnectClusterTest {
         } catch (InvalidConfigMapException e) {
             assertEquals("Unexpected character - }", e.getKey());
         }
+    }
+
+    @Test
+    public void withAffinity() throws IOException {
+        resourceTester
+                .assertDesiredResource("-Deployment.yaml", kcc -> kcc.generateDeployment().getSpec().getTemplate().getSpec().getAffinity());
     }
 }
