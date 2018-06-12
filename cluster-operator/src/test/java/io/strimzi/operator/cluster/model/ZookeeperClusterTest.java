@@ -57,9 +57,11 @@ public class ZookeeperClusterTest {
                 Labels.STRIMZI_TYPE_LABEL, "kafka",
                 "my-user-label", "cromulent",
                 Labels.STRIMZI_NAME_LABEL, ZookeeperCluster.zookeeperClusterName(cluster)), headful.getSpec().getSelector());
-        assertEquals(1, headful.getSpec().getPorts().size());
-        assertEquals(ZookeeperCluster.CLIENT_PORT_NAME, headful.getSpec().getPorts().get(0).getName());
-        assertEquals(new Integer(ZookeeperCluster.CLIENT_PORT), headful.getSpec().getPorts().get(0).getPort());
+        assertEquals(2, headful.getSpec().getPorts().size());
+        assertEquals(ZookeeperCluster.METRICS_PORT_NAME, headful.getSpec().getPorts().get(0).getName());
+        assertEquals(ZookeeperCluster.CLIENT_PORT_NAME, headful.getSpec().getPorts().get(1).getName());
+        assertEquals(new Integer(ZookeeperCluster.METRICS_PORT), headful.getSpec().getPorts().get(0).getPort());
+        assertEquals(new Integer(ZookeeperCluster.CLIENT_PORT), headful.getSpec().getPorts().get(1).getPort());
         assertEquals("TCP", headful.getSpec().getPorts().get(0).getProtocol());
     }
 

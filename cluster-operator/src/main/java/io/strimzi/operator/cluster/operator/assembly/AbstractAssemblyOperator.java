@@ -121,7 +121,7 @@ public abstract class AbstractAssemblyOperator {
                     ConfigMap cm = configMapOperations.get(namespace, assemblyName);
 
                     if (cm != null) {
-                        log.info("{}: assembly {} should be created or updated", reconciliation, assemblyName);
+                        log.info("{}: Assembly {} should be created or updated", reconciliation, assemblyName);
                         createOrUpdate(reconciliation, cm, createResult -> {
                             lock.release();
                             log.debug("{}: Lock {} released", reconciliation, lockName);
@@ -136,7 +136,7 @@ public abstract class AbstractAssemblyOperator {
                             }
                         });
                     } else {
-                        log.info("{}: assembly {} should be deleted", reconciliation, assemblyName);
+                        log.info("{}: Assembly {} should be deleted", reconciliation, assemblyName);
                         delete(reconciliation, deleteResult -> {
                             lock.release();
                             log.debug("{}: Lock {} released", reconciliation, lockName);

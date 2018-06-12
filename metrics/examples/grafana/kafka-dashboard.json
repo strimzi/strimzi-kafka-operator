@@ -83,7 +83,7 @@
             "steppedLine": false,
             "targets": [
               {
-                "expr": "rate(process_cpu_seconds_total{job=\"kafka_job\"}[1m])",
+                "expr": "rate(process_cpu_seconds_total{job=\"kafka_pod_job\"}[1m])",
                 "intervalFactor": 2,
                 "legendFormat": "{{kubernetes_pod_name}}",
                 "metric": "process_cpu_seconds_total",
@@ -163,7 +163,7 @@
             "steppedLine": false,
             "targets": [
               {
-                "expr": "sum without(area)(jvm_memory_bytes_used{job=\"kafka_job\"})",
+                "expr": "sum without(area)(jvm_memory_bytes_used{job=\"kafka_pod_job\"})",
                 "intervalFactor": 2,
                 "legendFormat": "{{kubernetes_pod_name}}",
                 "metric": "jvm_memory_bytes_used",
@@ -243,7 +243,7 @@
             "steppedLine": false,
             "targets": [
               {
-                "expr": "sum without(gc)(rate(jvm_gc_collection_seconds_sum{job=\"kafka_job\"}[5m]))",
+                "expr": "sum without(gc)(rate(jvm_gc_collection_seconds_sum{job=\"kafka_pod_job\"}[5m]))",
                 "intervalFactor": 2,
                 "legendFormat": "{{kubernetes_pod_name}}",
                 "metric": "jvm_gc_collection_seconds_sum",
@@ -329,7 +329,7 @@
             "steppedLine": false,
             "targets": [
               {
-                "expr": "sum without(instance)(rate(kafka_server_brokertopicmetrics_messagesin_total{job=\"kafka_job\",topic!=\"\"}[5m]))",
+                "expr": "sum without(instance)(rate(kafka_server_brokertopicmetrics_messagesin_total{job=\"kafka_pod_job\",topic!=\"\",topic!=\"__consumer_offsets\"}[5m]))",
                 "intervalFactor": 2,
                 "legendFormat": "{{topic}}",
                 "metric": "kafka_server_brokertopicmetrics_messagesin_total",
@@ -407,7 +407,7 @@
             "steppedLine": false,
             "targets": [
               {
-                "expr": "sum without(instance)(rate(kafka_server_brokertopicmetrics_bytesin_total{job=\"kafka_job\",topic!=\"\"}[5m]))",
+                "expr": "sum without(instance)(rate(kafka_server_brokertopicmetrics_bytesin_total{job=\"kafka_pod_job\",topic!=\"\",topic!=\"__consumer_offsets\"}[5m]))",
                 "intervalFactor": 2,
                 "legendFormat": "{{topic}}",
                 "metric": "kafka_server_brokertopicmetrics_bytesin_total",
@@ -485,7 +485,7 @@
             "steppedLine": false,
             "targets": [
               {
-                "expr": "sum without(instance)(rate(kafka_server_brokertopicmetrics_bytesout_total{job=\"kafka_job\",topic!=\"\"}[5m]))",
+                "expr": "sum without(instance)(rate(kafka_server_brokertopicmetrics_bytesout_total{job=\"kafka_pod_job\",topic!=\"\",topic!=\"__consumer_offsets\"}[5m]))",
                 "intervalFactor": 2,
                 "legendFormat": "{{topic}}",
                 "metric": "kafka_server_brokertopicmetrics_bytesin_total",
