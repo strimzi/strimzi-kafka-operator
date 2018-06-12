@@ -27,6 +27,10 @@ import io.fabric8.kubernetes.api.model.ProbeBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
+import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.fabric8.kubernetes.api.model.SecretVolumeSource;
+import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.ServicePort;
@@ -103,6 +107,8 @@ public abstract class AbstractModel {
     private JvmOptions jvmOptions;
     private Resources resources;
     private Affinity userAffinity;
+
+    protected boolean isEncryptionEnabled;
 
     /**
      * Constructor
@@ -183,6 +189,14 @@ public abstract class AbstractModel {
 
     protected void setMetricsConfigName(String metricsConfigName) {
         this.metricsConfigName = metricsConfigName;
+    }
+
+    public boolean isEncryptionEnabled() {
+        return isEncryptionEnabled;
+    }
+
+    protected void setEncryptionEnabled(boolean isEncryptionEnabled) {
+        this.isEncryptionEnabled = isEncryptionEnabled;
     }
 
     protected List<EnvVar> getEnvVars() {
@@ -368,6 +382,34 @@ public abstract class AbstractModel {
                 .build();
 
         return cm;
+    }
+
+    protected Volume createSecretVolume(String name, String secretName) {
+
+        SecretVolumeSource secretVolumeSource = new SecretVolumeSourceBuilder()
+                .withSecretName(secretName)
+                .build();
+
+        Volume volume = new VolumeBuilder()
+                .withName(name)
+                .withSecret(secretVolumeSource)
+                .build();
+        log.trace("Created secret Volume named '{}' with source secret '{}'", name, secretName);
+        return volume;
+    }
+
+    protected Secret createSecret(String name, Map<String, String> data) {
+
+        Secret s = new SecretBuilder()
+                .withNewMetadata()
+                    .withName(name)
+                    .withNamespace(namespace)
+                    .withLabels(labels.toMap())
+                .endMetadata()
+                .withData(data)
+                .build();
+
+        return s;
     }
 
     protected Probe createExecProbe(String command, int initialDelay, int timeout) {

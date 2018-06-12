@@ -8,6 +8,9 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.strimzi.certs.CertManager;
+import io.strimzi.certs.OpenSslCertManager;
+import io.strimzi.certs.SecretCertProvider;
 import io.strimzi.operator.cluster.InvalidConfigMapException;
 import io.strimzi.operator.cluster.Reconciliation;
 import io.strimzi.operator.cluster.model.AssemblyType;
@@ -22,7 +25,9 @@ import io.vertx.core.shareddata.Lock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-
+import java.io.File;
+import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -107,6 +112,52 @@ public abstract class AbstractAssemblyOperator {
         return null;
     }
 
+    private final void reconcileCertificate(String namespace, Handler<AsyncResult<Void>> handler) {
+
+        vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
+                future -> {
+
+                    if (secretOperations.get(namespace, "internal-ca") == null) {
+                        log.info("Generating internal CA certificate ...");
+                        File internalCAkeyFile = null;
+                        File internalCAcertFile = null;
+                        try {
+                            CertManager certManager = new OpenSslCertManager();
+                            internalCAkeyFile = File.createTempFile("tls", "internal-ca-key");
+                            internalCAcertFile = File.createTempFile("tls", "internal-ca-cert");
+                            certManager.generateSelfSignedCert(internalCAkeyFile, internalCAcertFile, 365);
+
+                            SecretCertProvider secretCertProvider = new SecretCertProvider();
+                            Secret secret = secretCertProvider.createSecret(namespace, "internal-ca",
+                                    "internal-ca.key", "internal-ca.crt",
+                                    internalCAkeyFile, internalCAcertFile, Collections.emptyMap());
+
+                            secretOperations.reconcile(namespace, "internal-ca", secret)
+                                    .compose(future::complete, future);
+
+                        } catch (IOException e) {
+                            future.fail(e);
+                        } finally {
+                            if (internalCAkeyFile != null)
+                                internalCAkeyFile.delete();
+                            if (internalCAcertFile != null)
+                                internalCAcertFile.delete();
+                        }
+                        log.info("... end generating certificate");
+                    } else {
+                        log.info("The internal CA certificate already exists");
+                        future.complete();
+                    }
+                }, true,
+                res -> {
+                    if (res.succeeded())
+                        handler.handle(Future.succeededFuture());
+                    else
+                        handler.handle(Future.failedFuture(res.cause()));
+                }
+        );
+    }
+
     /**
      * Reconcile assembly resources in the given namespace having the given {@code assemblyName}.
      * Reconciliation works by getting the assembly ConfigMap in the given namespace with the given assemblyName and
@@ -128,22 +179,32 @@ public abstract class AbstractAssemblyOperator {
                 try {
                     // get ConfigMap and related resources for the specific cluster
                     ConfigMap cm = configMapOperations.get(namespace, assemblyName);
-                    Labels labels = Labels.forCluster(assemblyName);
-                    List<Secret> secrets = secretOperations.list(namespace, labels);
 
                     if (cm != null) {
                         log.info("{}: Assembly {} should be created or updated", reconciliation, assemblyName);
-                        createOrUpdate(reconciliation, cm, secrets, createResult -> {
-                            lock.release();
-                            log.debug("{}: Lock {} released", reconciliation, lockName);
-                            if (createResult.failed()) {
-                                if (createResult.cause() instanceof InvalidConfigMapException) {
-                                    log.error(createResult.cause().getMessage());
-                                } else {
-                                    log.error(createResult.cause().toString());
-                                }
+                        reconcileCertificate(namespace, certResult -> {
+
+                            Labels labels = Labels.forCluster(assemblyName);
+                            List<Secret> secrets = secretOperations.list(namespace, labels);
+                            secrets.add(secretOperations.get(namespace, "internal-ca"));
+                            //Map<String, Secret> map = secrets.stream().collect(Collectors.toMap(s -> s.getMetadata().getName(), s -> s));
+
+                            if (certResult.succeeded()) {
+                                createOrUpdate(reconciliation, cm, secrets, createResult -> {
+                                    lock.release();
+                                    log.debug("{}: Lock {} released", reconciliation, lockName);
+                                    if (createResult.failed()) {
+                                        if (createResult.cause() instanceof InvalidConfigMapException) {
+                                            log.error(createResult.cause().getMessage());
+                                        } else {
+                                            log.error(createResult.cause().toString());
+                                        }
+                                    } else {
+                                        handler.handle(createResult);
+                                    }
+                                });
                             } else {
-                                handler.handle(createResult);
+                                log.error(certResult.cause().toString());
                             }
                         });
                     } else {

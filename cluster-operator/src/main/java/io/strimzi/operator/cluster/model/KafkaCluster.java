@@ -21,15 +21,24 @@ import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
+import io.strimzi.certs.Cert;
+import io.strimzi.certs.CertManager;
+import io.strimzi.certs.OpenSslCertManager;
+import io.strimzi.certs.Subject;
 import io.strimzi.operator.cluster.ClusterOperator;
 import io.vertx.core.json.JsonObject;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public class KafkaCluster extends AbstractModel {
 
@@ -89,6 +98,11 @@ public class KafkaCluster extends AbstractModel {
     public static final String ENV_VAR_KAFKA_ZOOKEEPER_CONNECT = "KAFKA_ZOOKEEPER_CONNECT";
     private static final String ENV_VAR_KAFKA_METRICS_ENABLED = "KAFKA_METRICS_ENABLED";
     protected static final String ENV_VAR_KAFKA_CONFIGURATION = "KAFKA_CONFIGURATION";
+
+    private Cert internalCA;
+    private Cert clientsCA;
+    private Map<String, Cert> internalCerts;
+    private Map<String, Cert> clientsCerts;
 
     /**
      * Constructor
@@ -172,15 +186,10 @@ public class KafkaCluster extends AbstractModel {
         kafka.setInitImage(Utils.getNonEmptyString(data, KEY_INIT_IMAGE, DEFAULT_INIT_IMAGE));
         kafka.setUserAffinity(Utils.getAffinity(data.get(KEY_AFFINITY)));
 
-        if (secrets == null || secrets.isEmpty()) {
-            // TODO: generate certs
-            log.info("Generating certificates ...");
-            try {
-                Thread.sleep(5000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            log.info("... end generating certificates");
+        // TODO: checking configuration for enabling TLS
+        kafka.setEncryptionEnabled(true);
+        if (kafka.isEncryptionEnabled()) {
+            kafka.generateCertificates(secrets);
         }
 
         return kafka;
@@ -248,6 +257,69 @@ public class KafkaCluster extends AbstractModel {
         }
 
         return kafka;
+    }
+
+    public void generateCertificates(List<Secret> secrets) {
+        log.info("Generating certificates ...");
+
+        try {
+
+            Optional<Secret> internalCAsecret = secrets.stream().filter(s -> s.getMetadata().getName().equals("internal-ca")).findFirst();
+            if (internalCAsecret.isPresent()) {
+
+                // get the generated CA private + certificate for internal communications
+                Base64.Decoder decoder = Base64.getDecoder();
+                internalCA = new Cert(
+                        decoder.decode(internalCAsecret.get().getData().get("internal-ca.key")),
+                        decoder.decode(internalCAsecret.get().getData().get("internal-ca.crt")));
+
+                CertManager certManager = new OpenSslCertManager();
+                // CA private key + certificate for clients communications
+                File clientsCAkeyFile = File.createTempFile("tls", "clients-ca-key");
+                File clientsCAcertFile = File.createTempFile("tls", "clients-ca-cert");
+                certManager.generateSelfSignedCert(clientsCAkeyFile, clientsCAcertFile, 365);
+                clientsCA =
+                        new Cert(Files.readAllBytes(clientsCAkeyFile.toPath()), Files.readAllBytes(clientsCAcertFile.toPath()));
+
+                internalCerts = new HashMap<>();
+                clientsCerts = new HashMap<>();
+
+                File brokerCsrFile = File.createTempFile("tls", "broker-csr");
+                File brokerKeyFile = File.createTempFile("tls", "broker-key");
+                File brokerCertFile = File.createTempFile("tls", "broker-cert");
+                for (int i = 0; i < replicas; i++) {
+
+                    // TODO : to check the content for Subject
+                    Subject sbj = new Subject();
+                    sbj.setOrganizationName("io.strimzi");
+                    sbj.setCommonName(KafkaCluster.kafkaPodName(cluster, i));
+
+                    certManager.generateCsr(brokerKeyFile, brokerCsrFile, sbj);
+                    certManager.generateCert(brokerCsrFile, internalCA.key(), internalCA.cert(), brokerCertFile, 365);
+
+                    internalCerts.put(KafkaCluster.kafkaPodName(cluster, i),
+                            new Cert(Files.readAllBytes(brokerKeyFile.toPath()), Files.readAllBytes(brokerCertFile.toPath())));
+
+                    certManager.generateCsr(brokerKeyFile, brokerCsrFile, sbj);
+                    certManager.generateCert(brokerCsrFile, clientsCAkeyFile, clientsCAcertFile, brokerCertFile, 365);
+
+                    clientsCerts.put(KafkaCluster.kafkaPodName(cluster, i),
+                            new Cert(Files.readAllBytes(brokerKeyFile.toPath()), Files.readAllBytes(brokerCertFile.toPath())));
+                }
+
+                clientsCAkeyFile.delete();
+                clientsCAcertFile.delete();
+
+                brokerCsrFile.delete();
+                brokerKeyFile.delete();
+                brokerCertFile.delete();
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        log.info("... end generating certificates");
     }
 
     /**
@@ -332,6 +404,52 @@ public class KafkaCluster extends AbstractModel {
         }
     }
 
+    public Secret generateClientsCASecret() {
+        Map<String, String> data = new HashMap<>();
+        data.put("clients-ca.key", Base64.getEncoder().encodeToString(clientsCA.key()));
+        data.put("clients-ca.crt", Base64.getEncoder().encodeToString(clientsCA.cert()));
+        return createSecret(name + "-clients-ca", data);
+    }
+
+    public Secret generateClientsPublicSecret() {
+        Map<String, String> data = new HashMap<>();
+        data.put("clients-ca.crt", Base64.getEncoder().encodeToString(clientsCA.cert()));
+        return createSecret(name + "-clients-ca-cert", data);
+    }
+
+    public Secret generateBrokersInternalSecret() {
+        Base64.Encoder encoder = Base64.getEncoder();
+
+        Map<String, String> data = new HashMap<>();
+        data.put("internal-ca.crt", encoder.encodeToString(internalCA.cert()));
+
+        for (int i = 0; i < replicas; i++) {
+
+            Cert cert = internalCerts.get(KafkaCluster.kafkaPodName(cluster, i));
+            data.put(KafkaCluster.kafkaPodName(cluster, i) + ".key", encoder.encodeToString(cert.key()));
+            data.put(KafkaCluster.kafkaPodName(cluster, i) + ".crt", encoder.encodeToString(cert.cert()));
+        }
+
+        return createSecret(name + "-brokers-internal", data);
+    }
+
+    public Secret generateBrokersClientsSecret() {
+        Base64.Encoder encoder = Base64.getEncoder();
+
+        Map<String, String> data = new HashMap<>();
+        data.put("internal-ca.crt", encoder.encodeToString(internalCA.cert()));
+        data.put("clients-ca.crt", encoder.encodeToString(clientsCA.cert()));
+
+        for (int i = 0; i < replicas; i++) {
+
+            Cert cert = clientsCerts.get(KafkaCluster.kafkaPodName(cluster, i));
+            data.put(KafkaCluster.kafkaPodName(cluster, i) + ".key", encoder.encodeToString(cert.key()));
+            data.put(KafkaCluster.kafkaPodName(cluster, i) + ".crt", encoder.encodeToString(cert.cert()));
+        }
+
+        return createSecret(name + "-brokers-clients", data);
+    }
+
     private List<ContainerPort> getContainerPortList() {
         List<ContainerPort> portList = new ArrayList<>(3);
         portList.add(createContainerPort(CLIENT_PORT_NAME, CLIENT_PORT, "TCP"));
@@ -354,6 +472,10 @@ public class KafkaCluster extends AbstractModel {
         if (rackConfig != null) {
             volumeList.add(createEmptyDirVolume(RACK_VOLUME_NAME));
         }
+        if (isEncryptionEnabled) {
+            volumeList.add(createSecretVolume("internal-certs", name + "-brokers-internal"));
+            volumeList.add(createSecretVolume("clients-certs", name + "-brokers-clients"));
+        }
 
         return volumeList;
     }
@@ -374,6 +496,10 @@ public class KafkaCluster extends AbstractModel {
         }
         if (rackConfig != null) {
             volumeMountList.add(createVolumeMount(RACK_VOLUME_NAME, RACK_VOLUME_MOUNT));
+        }
+        if (isEncryptionEnabled) {
+            volumeMountList.add(createVolumeMount("internal-certs", "/var/lib/kafka/internal-certs"));
+            volumeMountList.add(createVolumeMount("clients-certs", "/var/lib/kafka/clients-certs"));
         }
 
         return volumeMountList;

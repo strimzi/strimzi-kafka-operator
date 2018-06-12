@@ -18,6 +18,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -135,6 +136,21 @@ public class OpenSslCertManager implements CertManager {
         exec("openssl", "x509", "-req", "-days", String.valueOf(days), "-in", csrFile.getAbsolutePath(),
                 "-CA", caCert.getAbsolutePath(), "-CAkey", caKey.getAbsolutePath(), "-CAcreateserial",
                 "-out", crtFile.getAbsolutePath());
+    }
+
+    @Override
+    public void generateCert(File csrFile, byte[] caKey, byte[] caCert, File crtFile, int days) throws IOException {
+
+        File caKeyFile = File.createTempFile("tls", "ca");
+        Files.write(caKeyFile.toPath(), caKey);
+
+        File caCertFile = File.createTempFile("tls", "ca");
+        Files.write(caCertFile.toPath(), caCert);
+
+        generateCert(csrFile, caKeyFile, caCertFile, crtFile, days);
+
+        caKeyFile.delete();
+        caCertFile.delete();
     }
 
     private void exec(String... cmd) throws IOException {
