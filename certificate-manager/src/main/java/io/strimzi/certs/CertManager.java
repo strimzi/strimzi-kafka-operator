@@ -50,4 +50,16 @@ public interface CertManager {
      * @throws IOException
      */
     void generateCert(File csrFile, File caKey, File caCert, File crtFile, int days) throws IOException;
+
+    /**
+     * Generate a certificate signed by a Certificate Authority
+     *
+     * @param csrFile path to the file containing the certificate sign request
+     * @param caKey CA private key bytes
+     * @param caCert CA certificate bytes
+     * @param crtFile path to the file which will contain the signed certificate
+     * @param days certificate duration
+     * @throws IOException
+     */
+    void generateCert(File csrFile, byte[] caKey, byte[] caCert, File crtFile, int days) throws IOException;
 }

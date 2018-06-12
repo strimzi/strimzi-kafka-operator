@@ -63,6 +63,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
     private Service headlessService;
     private ConfigMap metricsConfigMap;
     private StatefulSet statefulSet;
+    private Secret clientsCASecret;
+    private Secret clientsPublicSecret;
+    private Secret brokersClientsSecret;
+    private Secret brokersInternalSecret;
 
     /**
      * @param vertx The Vertx instance
@@ -118,7 +122,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
                         headlessService = kafka.generateHeadlessService();
                         metricsConfigMap = kafka.generateMetricsConfigMap();
                         statefulSet = kafka.generateStatefulSet(isOpenShift);
-                        // TODO: generate secrets
+                        clientsCASecret = kafka.generateClientsCASecret();
+                        clientsPublicSecret = kafka.generateClientsPublicSecret();
+                        brokersClientsSecret = kafka.generateBrokersClientsSecret();
+                        brokersInternalSecret = kafka.generateBrokersInternalSecret();
                         fut.complete();
                     } else {
                         fut.fail("");
@@ -139,13 +146,16 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
                 .compose(scale -> serviceOperations.reconcile(namespace, kafka.getName(), service))
                 .compose(i -> serviceOperations.reconcile(namespace, kafka.getHeadlessName(), headlessService))
                 .compose(i -> configMapOperations.reconcile(namespace, kafka.getMetricsConfigName(), metricsConfigMap))
+                .compose(i -> secretOperations.reconcile(namespace, kafka.getName() + "-clients-ca", clientsCASecret))
+                .compose(i -> secretOperations.reconcile(namespace, kafka.getName() + "-clients-ca-cert", clientsPublicSecret))
+                .compose(i -> secretOperations.reconcile(namespace, kafka.getName() + "-brokers-clients", brokersClientsSecret))
+                .compose(i -> secretOperations.reconcile(namespace, kafka.getName() + "-brokers-internal", brokersInternalSecret))
                 .compose(i -> kafkaSetOperations.reconcile(namespace, kafka.getName(), statefulSet))
                 .compose(diffs -> kafkaSetOperations.maybeRollingUpdate(diffs.resource()))
                 .compose(i -> kafkaSetOperations.scaleUp(namespace, kafka.getName(), kafka.getReplicas()))
                 .compose(scale -> serviceOperations.endpointReadiness(namespace, service, 1_000, operationTimeoutMs))
                 .compose(i -> serviceOperations.endpointReadiness(namespace, headlessService, 1_000, operationTimeoutMs))
                 .compose(chainFuture::complete, chainFuture);
-        // TODO: secrets reconcile
 
         return chainFuture;
     };

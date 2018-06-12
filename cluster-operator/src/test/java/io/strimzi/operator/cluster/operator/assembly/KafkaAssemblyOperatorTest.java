@@ -181,7 +181,7 @@ public class KafkaAssemblyOperatorTest {
 
     private void createCluster(TestContext context, ConfigMap clusterCm) {
 
-        KafkaCluster kafkaCluster = KafkaCluster.fromDescription(clusterCm, Collections.EMPTY_LIST);
+        KafkaCluster kafkaCluster = KafkaCluster.fromDescription(clusterCm, Collections.emptyList());
         ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromConfigMap(clusterCm);
         TopicOperator topicOperator = TopicOperator.fromConfigMap(clusterCm);
 
@@ -235,7 +235,7 @@ public class KafkaAssemblyOperatorTest {
 
         // Now try to create a KafkaCluster based on this CM
         Async async = context.async();
-        ops.createOrUpdate(new Reconciliation("test-trigger", AssemblyType.KAFKA, clusterCmNamespace, clusterCmName), clusterCm, Collections.EMPTY_LIST, createResult -> {
+        ops.createOrUpdate(new Reconciliation("test-trigger", AssemblyType.KAFKA, clusterCmNamespace, clusterCmName), clusterCm, Collections.emptyList(), createResult -> {
             if (createResult.failed()) {
                 createResult.cause().printStackTrace();
             }
@@ -300,7 +300,7 @@ public class KafkaAssemblyOperatorTest {
     private void deleteCluster(TestContext context, ConfigMap clusterCm) {
 
         ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromConfigMap(clusterCm);
-        KafkaCluster kafkaCluster = KafkaCluster.fromDescription(clusterCm, Collections.EMPTY_LIST);
+        KafkaCluster kafkaCluster = KafkaCluster.fromDescription(clusterCm, Collections.emptyList());
         TopicOperator topicOperator = TopicOperator.fromConfigMap(clusterCm);
         // create CM, Service, headless service, statefulset
         ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
@@ -491,8 +491,8 @@ public class KafkaAssemblyOperatorTest {
 
     private void updateCluster(TestContext context, ConfigMap originalCm, ConfigMap clusterCm) {
 
-        KafkaCluster originalKafkaCluster = KafkaCluster.fromDescription(originalCm, Collections.EMPTY_LIST);
-        KafkaCluster updatedKafkaCluster = KafkaCluster.fromDescription(clusterCm, Collections.EMPTY_LIST);
+        KafkaCluster originalKafkaCluster = KafkaCluster.fromDescription(originalCm, Collections.emptyList());
+        KafkaCluster updatedKafkaCluster = KafkaCluster.fromDescription(clusterCm, Collections.emptyList());
         ZookeeperCluster originalZookeeperCluster = ZookeeperCluster.fromConfigMap(originalCm);
         ZookeeperCluster updatedZookeeperCluster = ZookeeperCluster.fromConfigMap(clusterCm);
         TopicOperator originalTopicOperator = TopicOperator.fromConfigMap(originalCm);
@@ -612,7 +612,7 @@ public class KafkaAssemblyOperatorTest {
 
         // Now try to update a KafkaCluster based on this CM
         Async async = context.async();
-        ops.createOrUpdate(new Reconciliation("test-trigger", AssemblyType.KAFKA, clusterCmNamespace, clusterCmName), clusterCm, Collections.EMPTY_LIST, createResult -> {
+        ops.createOrUpdate(new Reconciliation("test-trigger", AssemblyType.KAFKA, clusterCmNamespace, clusterCmName), clusterCm, Collections.emptyList(), createResult -> {
             if (createResult.failed()) createResult.cause().printStackTrace();
             context.assertTrue(createResult.succeeded());
 
@@ -665,19 +665,19 @@ public class KafkaAssemblyOperatorTest {
         // providing the list of ALL StatefulSets for all the Kafka clusters
         Labels newLabels = Labels.forType(AssemblyType.KAFKA);
         when(mockKsOps.list(eq(clusterCmNamespace), eq(newLabels))).thenReturn(
-                asList(KafkaCluster.fromDescription(bar, Collections.EMPTY_LIST).generateStatefulSet(openShift),
-                        KafkaCluster.fromDescription(baz, Collections.EMPTY_LIST).generateStatefulSet(openShift))
+                asList(KafkaCluster.fromDescription(bar, Collections.emptyList()).generateStatefulSet(openShift),
+                        KafkaCluster.fromDescription(baz, Collections.emptyList()).generateStatefulSet(openShift))
         );
 
         // providing the list StatefulSets for already "existing" Kafka clusters
         Labels barLabels = Labels.forCluster("bar");
         when(mockKsOps.list(eq(clusterCmNamespace), eq(barLabels))).thenReturn(
-                asList(KafkaCluster.fromDescription(bar, Collections.EMPTY_LIST).generateStatefulSet(openShift))
+                asList(KafkaCluster.fromDescription(bar, Collections.emptyList()).generateStatefulSet(openShift))
         );
 
         Labels bazLabels = Labels.forCluster("baz");
         when(mockKsOps.list(eq(clusterCmNamespace), eq(bazLabels))).thenReturn(
-                asList(KafkaCluster.fromDescription(baz, Collections.EMPTY_LIST).generateStatefulSet(openShift))
+                asList(KafkaCluster.fromDescription(baz, Collections.emptyList()).generateStatefulSet(openShift))
         );
 
         Set<String> createdOrUpdated = new CopyOnWriteArraySet<>();

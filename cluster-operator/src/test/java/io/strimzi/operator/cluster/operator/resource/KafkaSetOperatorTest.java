@@ -30,8 +30,8 @@ public class KafkaSetOperatorTest {
 
     @Before
     public void before() {
-        a = KafkaCluster.fromDescription(getConfigMap(), Collections.EMPTY_LIST).generateStatefulSet(true);
-        b = KafkaCluster.fromDescription(getConfigMap(), Collections.EMPTY_LIST).generateStatefulSet(true);
+        a = KafkaCluster.fromDescription(getConfigMap(), Collections.emptyList()).generateStatefulSet(true);
+        b = KafkaCluster.fromDescription(getConfigMap(), Collections.emptyList()).generateStatefulSet(true);
     }
 
     private ConfigMap getConfigMap() {
