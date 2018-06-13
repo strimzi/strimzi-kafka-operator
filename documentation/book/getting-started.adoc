@@ -59,6 +59,8 @@ endif::Kubernetes[]
 
 ==== Deploying to {OpenShiftName}
 
+IMPORTANT: To successfully deploy the Cluster Operator on {OpenShiftName} a user with `cluster-admin` role needs to be used (i.e. like `system:admin`).
+
 To deploy the Cluster Operator on {OpenShiftName}, the following commands should be executed:
 
 [source,shell]
