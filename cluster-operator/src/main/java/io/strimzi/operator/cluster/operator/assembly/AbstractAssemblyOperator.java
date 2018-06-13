@@ -205,6 +205,7 @@ public abstract class AbstractAssemblyOperator {
                                 });
                             } else {
                                 log.error(certResult.cause().toString());
+                                lock.release();
                             }
                         });
                     } else {

@@ -58,16 +58,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
     private final PvcOperator pvcOperations;
     private final DeploymentOperator deploymentOperations;
 
-    private KafkaCluster kafka;
-    private Service service;
-    private Service headlessService;
-    private ConfigMap metricsConfigMap;
-    private StatefulSet statefulSet;
-    private Secret clientsCASecret;
-    private Secret clientsPublicSecret;
-    private Secret brokersClientsSecret;
-    private Secret brokersInternalSecret;
-
     /**
      * @param vertx The Vertx instance
      * @param isOpenShift Whether we're running with OpenShift
@@ -105,28 +95,111 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
             .compose(ar -> f.complete(), f);
     }
 
-    private final Future<Void> getKafkaCluster(ConfigMap assemblyCm, List<Secret> assemblySecrets) {
-        Future<Void> fut = Future.future();
+    /**
+     * Brings the description of a Kafka cluster entity
+     */
+    private static class KafkaClusterDescription {
+
+        private final KafkaCluster kafka;
+        private final Service service;
+        private final Service headlessService;
+        private final ConfigMap metricsConfigMap;
+        private final StatefulSet statefulSet;
+        private final Secret clientsCASecret;
+        private final Secret clientsPublicKeySecret;
+        private final Secret brokersClientsSecret;
+        private final Secret brokersInternalSecret;
+        private ReconcileResult<StatefulSet> diffs;
+
+        KafkaClusterDescription(KafkaCluster kafka, Service service, Service headlessService,
+                                ConfigMap metricsConfigMap, StatefulSet statefulSet,
+                                Secret clientsCASecret, Secret clientsPublicKeySecret,
+                                Secret brokersClientsSecret, Secret brokersInternalSecret) {
+            this.kafka = kafka;
+            this.service = service;
+            this.headlessService = headlessService;
+            this.metricsConfigMap = metricsConfigMap;
+            this.statefulSet = statefulSet;
+            this.clientsCASecret = clientsCASecret;
+            this.clientsPublicKeySecret = clientsPublicKeySecret;
+            this.brokersClientsSecret = brokersClientsSecret;
+            this.brokersInternalSecret = brokersInternalSecret;
+        }
+
+        KafkaCluster kafka() {
+            return this.kafka;
+        }
+
+        Service service() {
+            return this.service;
+        }
+
+        Service headlessService() {
+            return this.headlessService;
+        }
+
+        ConfigMap metricsConfigMap() {
+            return this.metricsConfigMap;
+        }
+
+        StatefulSet statefulSet() {
+            return this.statefulSet;
+        }
+
+        Secret clientsCASecret() {
+            return this.clientsCASecret;
+        }
+
+        Secret clientsPublicKeySecret() {
+            return this.clientsPublicKeySecret;
+        }
+
+        Secret brokersClientsSecret() {
+            return this.brokersClientsSecret;
+        }
+
+        Secret brokersInternalSecret() {
+            return this.brokersInternalSecret;
+        }
+
+        ReconcileResult<StatefulSet> diffs() {
+            return this.diffs;
+        }
+
+        Future<KafkaClusterDescription> withDiff(Future<ReconcileResult<StatefulSet>> r) {
+            return r.map(rr -> {
+               this.diffs = rr;
+               return this;
+            });
+        }
+
+        Future<KafkaClusterDescription> withVoid(Future<?> r) {
+            return r.map(this);
+        }
+    }
+
+    private final Future<KafkaClusterDescription> getKafkaCluster(ConfigMap assemblyCm, List<Secret> assemblySecrets) {
+        Future<KafkaClusterDescription> fut = Future.future();
+
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
                     try {
-                        kafka = KafkaCluster.fromDescription(assemblyCm, assemblySecrets);
-                        future.complete();
+                        KafkaCluster kafka = KafkaCluster.fromDescription(assemblyCm, assemblySecrets);
+
+                        KafkaClusterDescription desc =
+                                new KafkaClusterDescription(kafka, kafka.generateService(), kafka.generateHeadlessService(),
+                                        kafka.generateMetricsConfigMap(), kafka.generateStatefulSet(isOpenShift),
+                                        kafka.generateClientsCASecret(), kafka.generateClientsPublicKeySecret(),
+                                        kafka.generateBrokersClientsSecret(), kafka.generateBrokersInternalSecret());
+
+                        future.complete(desc);
                     } catch (Exception e) {
                         future.fail(e);
                     }
                 }, true,
                 res -> {
                     if (res.succeeded()) {
-                        service = kafka.generateService();
-                        headlessService = kafka.generateHeadlessService();
-                        metricsConfigMap = kafka.generateMetricsConfigMap();
-                        statefulSet = kafka.generateStatefulSet(isOpenShift);
-                        clientsCASecret = kafka.generateClientsCASecret();
-                        clientsPublicSecret = kafka.generateClientsPublicSecret();
-                        brokersClientsSecret = kafka.generateBrokersClientsSecret();
-                        brokersInternalSecret = kafka.generateBrokersInternalSecret();
-                        fut.complete();
+                        fut.complete((KafkaClusterDescription) res.result());
                     } else {
                         fut.fail("");
                     }
@@ -142,20 +215,20 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
 
         Future<Void> chainFuture = Future.future();
         getKafkaCluster(assemblyCm, assemblySecrets)
-                .compose(v -> kafkaSetOperations.scaleDown(namespace, kafka.getName(), kafka.getReplicas()))
-                .compose(scale -> serviceOperations.reconcile(namespace, kafka.getName(), service))
-                .compose(i -> serviceOperations.reconcile(namespace, kafka.getHeadlessName(), headlessService))
-                .compose(i -> configMapOperations.reconcile(namespace, kafka.getMetricsConfigName(), metricsConfigMap))
-                .compose(i -> secretOperations.reconcile(namespace, kafka.getName() + "-clients-ca", clientsCASecret))
-                .compose(i -> secretOperations.reconcile(namespace, kafka.getName() + "-clients-ca-cert", clientsPublicSecret))
-                .compose(i -> secretOperations.reconcile(namespace, kafka.getName() + "-brokers-clients", brokersClientsSecret))
-                .compose(i -> secretOperations.reconcile(namespace, kafka.getName() + "-brokers-internal", brokersInternalSecret))
-                .compose(i -> kafkaSetOperations.reconcile(namespace, kafka.getName(), statefulSet))
-                .compose(diffs -> kafkaSetOperations.maybeRollingUpdate(diffs.resource()))
-                .compose(i -> kafkaSetOperations.scaleUp(namespace, kafka.getName(), kafka.getReplicas()))
-                .compose(scale -> serviceOperations.endpointReadiness(namespace, service, 1_000, operationTimeoutMs))
-                .compose(i -> serviceOperations.endpointReadiness(namespace, headlessService, 1_000, operationTimeoutMs))
-                .compose(chainFuture::complete, chainFuture);
+                .compose(desc -> desc.withVoid(kafkaSetOperations.scaleDown(namespace, desc.kafka().getName(), desc.kafka().getReplicas())))
+                .compose(desc -> desc.withVoid(serviceOperations.reconcile(namespace, desc.kafka().getName(), desc.service())))
+                .compose(desc -> desc.withVoid(serviceOperations.reconcile(namespace, desc.kafka().getHeadlessName(), desc.headlessService())))
+                .compose(desc -> desc.withVoid(configMapOperations.reconcile(namespace, desc.kafka().getMetricsConfigName(), desc.metricsConfigMap())))
+                .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, desc.kafka().getName() + "-clients-ca", desc.clientsCASecret())))
+                .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, desc.kafka().getName() + "-clients-ca-cert", desc.clientsPublicKeySecret())))
+                .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, desc.kafka().getName() + "-brokers-clients", desc.brokersClientsSecret())))
+                .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, desc.kafka().getName() + "-brokers-internal", desc.brokersInternalSecret())))
+                .compose(desc -> desc.withDiff(kafkaSetOperations.reconcile(namespace, desc.kafka().getName(), desc.statefulSet())))
+                .compose(desc -> desc.withVoid(kafkaSetOperations.maybeRollingUpdate(desc.diffs().resource())))
+                .compose(desc -> desc.withVoid(kafkaSetOperations.scaleUp(namespace, desc.kafka().getName(), desc.kafka().getReplicas())))
+                .compose(desc -> desc.withVoid(serviceOperations.endpointReadiness(namespace, desc.service(), 1_000, operationTimeoutMs)))
+                .compose(desc -> desc.withVoid(serviceOperations.endpointReadiness(namespace, desc.headlessService(), 1_000, operationTimeoutMs)))
+                .compose(desc -> chainFuture.complete(), chainFuture);
 
         return chainFuture;
     };

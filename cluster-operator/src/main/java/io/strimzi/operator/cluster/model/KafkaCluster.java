@@ -404,6 +404,11 @@ public class KafkaCluster extends AbstractModel {
         }
     }
 
+    /**
+     * Generate the Secret containing CA private key and self-signed certificate used
+     * for signing brokers certificates used for communication with clients
+     * @return The generated Secret
+     */
     public Secret generateClientsCASecret() {
         Map<String, String> data = new HashMap<>();
         data.put("clients-ca.key", Base64.getEncoder().encodeToString(clientsCA.key()));
@@ -411,12 +416,24 @@ public class KafkaCluster extends AbstractModel {
         return createSecret(name + "-clients-ca", data);
     }
 
-    public Secret generateClientsPublicSecret() {
+    /**
+     * Generate the Secret containing just the self-signed CA certificate used
+     * for signing brokers certificates used for communication with clients
+     * It's useful for users to extract the certificate itself to put as trusted on the clients
+     * @return The generated Secret
+     */
+    public Secret generateClientsPublicKeySecret() {
         Map<String, String> data = new HashMap<>();
         data.put("clients-ca.crt", Base64.getEncoder().encodeToString(clientsCA.cert()));
         return createSecret(name + "-clients-ca-cert", data);
     }
 
+    /**
+     * Generate the Secret containing CA self-signed certificate for internal communication.
+     * It also contains the private key-certificate (signed by internal CA) for each brokers for communicating
+     * internally with Zookeeper as well
+     * @return The generated Secret
+     */
     public Secret generateBrokersInternalSecret() {
         Base64.Encoder encoder = Base64.getEncoder();
 
@@ -433,6 +450,12 @@ public class KafkaCluster extends AbstractModel {
         return createSecret(name + "-brokers-internal", data);
     }
 
+    /**
+     * Generate the Secret containing CA self-signed certificates for internal and clients communication.
+     * It also contains the private key-certificate (signed by clients CA) for each brokers for communicating
+     * with clients
+     * @return The generated Secret
+     */
     public Secret generateBrokersClientsSecret() {
         Base64.Encoder encoder = Base64.getEncoder();
 
