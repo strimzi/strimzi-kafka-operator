@@ -50,6 +50,7 @@ public class StatefulSetDiff {
             "/spec/template/spec/securityContext",
             "/spec/template/spec/terminationGracePeriodSeconds",
             "/spec/template/spec/volumes/[0-9]+/configMap/defaultMode",
+            "/spec/template/spec/volumes/[0-9]+/secret/defaultMode",
             "/spec/volumeClaimTemplates/[0-9]+/status",
             "/spec/template/spec/serviceAccount",
             "/status").stream().map(Pattern::compile).collect(Collectors.toList());
