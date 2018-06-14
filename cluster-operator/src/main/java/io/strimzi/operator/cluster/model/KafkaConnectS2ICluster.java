@@ -9,6 +9,8 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.ObjectReference;
+import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.openshift.api.model.BinaryBuildSource;
 import io.fabric8.openshift.api.model.BuildConfig;
 import io.fabric8.openshift.api.model.BuildConfigBuilder;
@@ -29,6 +31,8 @@ import io.fabric8.openshift.api.model.TagReference;
 import io.fabric8.openshift.api.model.TagReferencePolicyBuilder;
 import io.vertx.core.json.JsonObject;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public class KafkaConnectS2ICluster extends KafkaConnectCluster {
@@ -55,6 +59,17 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
     private KafkaConnectS2ICluster(String namespace, String cluster, Labels labels) {
         super(namespace, cluster, labels);
         setImage(DEFAULT_IMAGE);
+    }
+
+    @Override
+    public Service generateService() {
+        List<ServicePort> ports = new ArrayList<>(2);
+        ports.add(createServicePort(REST_API_PORT_NAME, REST_API_PORT, REST_API_PORT, "TCP"));
+        if (isMetricsEnabled()) {
+            ports.add(createServicePort(METRICS_PORT_NAME, METRICS_PORT, METRICS_PORT, "TCP"));
+        }
+
+        return createService("ClusterIP", AssemblySubType.KAFKA_CONNECT_S2I, ports);
     }
 
     /**

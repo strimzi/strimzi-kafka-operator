@@ -393,11 +393,11 @@ public abstract class AbstractModel {
         return probe;
     }
 
-    protected Service createService(String type, List<ServicePort> ports) {
+    protected Service createService(String type, AssemblySubType assemblySubType, List<ServicePort> ports) {
         Service service = new ServiceBuilder()
                 .withNewMetadata()
                     .withName(name)
-                    .withLabels(getLabelsWithName())
+                    .withLabels(labels.withName(name).withSubType(assemblySubType).toMap())
                     .withNamespace(namespace)
                 .endMetadata()
                 .withNewSpec()
@@ -410,15 +410,15 @@ public abstract class AbstractModel {
         return service;
     }
 
-    protected Service createHeadlessService(String name, List<ServicePort> ports) {
-        return createHeadlessService(name, ports, Collections.emptyMap());
+    protected Service createHeadlessService(String name, AssemblySubType assemblySubType, List<ServicePort> ports) {
+        return createHeadlessService(name, assemblySubType, ports, Collections.emptyMap());
     }
 
-    protected Service createHeadlessService(String name, List<ServicePort> ports, Map<String, String> annotations) {
+    protected Service createHeadlessService(String name, AssemblySubType assemblySubType, List<ServicePort> ports, Map<String, String> annotations) {
         Service service = new ServiceBuilder()
                 .withNewMetadata()
                     .withName(name)
-                    .withLabels(getLabelsWithName(name))
+                    .withLabels(labels.withName(name).withSubType(assemblySubType).toMap())
                     .withNamespace(namespace)
                     .withAnnotations(annotations)
                 .endMetadata()

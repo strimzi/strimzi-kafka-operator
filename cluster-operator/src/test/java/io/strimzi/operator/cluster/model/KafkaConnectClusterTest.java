@@ -137,10 +137,15 @@ public class KafkaConnectClusterTest {
         assertEquals("ClusterIP", svc.getSpec().getType());
         Map<String, String> expectedLabels = ResourceUtils.labels(Labels.STRIMZI_CLUSTER_LABEL, this.cluster,
                 Labels.STRIMZI_TYPE_LABEL, "kafka-connect",
+                Labels.STRIMZI_SUB_TYPE_LABEL, "kafka-connect",
+                "my-user-label", "cromulent",
+                Labels.STRIMZI_NAME_LABEL, kc.kafkaConnectClusterName(cluster));
+        Map<String, String> expectedSelector = ResourceUtils.labels(Labels.STRIMZI_CLUSTER_LABEL, this.cluster,
+                Labels.STRIMZI_TYPE_LABEL, "kafka-connect",
                 "my-user-label", "cromulent",
                 Labels.STRIMZI_NAME_LABEL, kc.kafkaConnectClusterName(cluster));
         assertEquals(expectedLabels, svc.getMetadata().getLabels());
-        assertEquals(expectedLabels, svc.getSpec().getSelector());
+        assertEquals(expectedSelector, svc.getSpec().getSelector());
         assertEquals(2, svc.getSpec().getPorts().size());
         assertEquals(new Integer(KafkaConnectCluster.REST_API_PORT), svc.getSpec().getPorts().get(0).getPort());
         assertEquals(KafkaConnectCluster.REST_API_PORT_NAME, svc.getSpec().getPorts().get(0).getName());

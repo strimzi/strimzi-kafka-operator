@@ -40,6 +40,12 @@ public class Labels {
     public static final String STRIMZI_TYPE_LABEL = STRIMZI_DOMAIN + "type";
 
     /**
+     * The sub type of Strimzi assembly piece.
+     * @see AssemblySubType
+     */
+    public static final String STRIMZI_SUB_TYPE_LABEL = STRIMZI_DOMAIN + "subtype";
+
+    /**
      * The Strimzi cluster the resource is part of.
      * The value is the cluster name (i.e. the name of the cluster CM)
      */
@@ -73,6 +79,14 @@ public class Labels {
     public static AssemblyType type(HasMetadata resource) {
         String type = resource.getMetadata().getLabels().get(Labels.STRIMZI_TYPE_LABEL);
         return type != null ? AssemblyType.fromName(type) : null;
+    }
+
+    /**
+     * Returns the value of the {@code strimzi.io/subtype} label of the given {@code resource}.
+     */
+    public static AssemblySubType subtype(HasMetadata resource) {
+        String subtype = resource.getMetadata().getLabels().get(Labels.STRIMZI_SUB_TYPE_LABEL);
+        return subtype != null ? AssemblySubType.fromName(subtype) : null;
     }
 
     /**
@@ -132,10 +146,24 @@ public class Labels {
     }
 
     /**
+     * The same labels as this instance, but with the given {@code subtype} for the {@code strimzi.io/subtype} key.
+     */
+    public Labels withSubType(AssemblySubType subtype) {
+        return with(STRIMZI_SUB_TYPE_LABEL, subtype.toString());
+    }
+
+    /**
      * The same labels as this instance, but without any {@code strimzi.io/type} key.
      */
     public Labels withoutType() {
         return without(STRIMZI_TYPE_LABEL);
+    }
+
+    /**
+     * The same labels as this instance, but without any {@code strimzi.io/subtype} key.
+     */
+    public Labels withoutSubType() {
+        return without(STRIMZI_SUB_TYPE_LABEL);
     }
 
     /**
@@ -188,6 +216,13 @@ public class Labels {
     }
 
     /**
+     * A singleton instance with the given {@code subtype} for the {@code strimzi.io/subtype} key.
+     */
+    public static Labels forSubType(AssemblySubType subtype) {
+        return new Labels(singletonMap(STRIMZI_SUB_TYPE_LABEL, subtype.toString()));
+    }
+
+    /**
      * A singleton instance with the given {@code kind} for the {@code strimzi.io/kind} key.
      */
     public static Labels forKind(String kind) {
@@ -200,6 +235,14 @@ public class Labels {
     public AssemblyType type() {
         String type = labels.get(STRIMZI_TYPE_LABEL);
         return type != null ? AssemblyType.fromName(type) : null;
+    }
+
+    /**
+     * Return the value of the {@code strimzi.io/subtype}.
+     */
+    public AssemblySubType subtype() {
+        String subtype = labels.get(STRIMZI_SUB_TYPE_LABEL);
+        return subtype != null ? AssemblySubType.fromName(subtype) : null;
     }
 
     @Override

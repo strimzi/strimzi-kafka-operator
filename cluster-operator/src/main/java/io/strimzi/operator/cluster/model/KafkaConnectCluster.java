@@ -161,7 +161,7 @@ public class KafkaConnectCluster extends AbstractModel {
             ports.add(createServicePort(METRICS_PORT_NAME, METRICS_PORT, METRICS_PORT, "TCP"));
         }
 
-        return createService("ClusterIP", ports);
+        return createService("ClusterIP", AssemblySubType.KAFKA_CONNECT, ports);
     }
 
     public ConfigMap generateMetricsConfigMap() {

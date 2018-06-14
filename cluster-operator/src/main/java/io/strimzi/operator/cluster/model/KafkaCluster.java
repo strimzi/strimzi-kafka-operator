@@ -272,7 +272,7 @@ public class KafkaCluster extends AbstractModel {
      */
     public Service generateService() {
 
-        return createService("ClusterIP", getServicePorts());
+        return createService("ClusterIP", AssemblySubType.KAFKA, getServicePorts());
     }
 
     /**
@@ -281,7 +281,7 @@ public class KafkaCluster extends AbstractModel {
      */
     public Service generateHeadlessService() {
         Map<String, String> annotations = Collections.singletonMap("service.alpha.kubernetes.io/tolerate-unready-endpoints", "true");
-        return createHeadlessService(headlessName, getHeadlessServicePorts(), annotations);
+        return createHeadlessService(headlessName, AssemblySubType.KAFKA_HEADLESS, getHeadlessServicePorts(), annotations);
     }
 
     /**

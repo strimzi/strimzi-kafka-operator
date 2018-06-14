@@ -195,12 +195,12 @@ public class ZookeeperCluster extends AbstractModel {
         }
         ports.add(createServicePort(CLIENT_PORT_NAME, CLIENT_PORT, CLIENT_PORT, "TCP"));
 
-        return createService("ClusterIP", ports);
+        return createService("ClusterIP", AssemblySubType.ZOOKEEPER, ports);
     }
 
     public Service generateHeadlessService() {
         Map<String, String> annotations = Collections.singletonMap("service.alpha.kubernetes.io/tolerate-unready-endpoints", "true");
-        return createHeadlessService(headlessName, getServicePortList(), annotations);
+        return createHeadlessService(headlessName, AssemblySubType.ZOOKEEPER_HEADLESS, getServicePortList(), annotations);
     }
 
     public StatefulSet generateStatefulSet(boolean isOpenShift) {
