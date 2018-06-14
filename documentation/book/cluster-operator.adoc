@@ -77,7 +77,7 @@ A JSON string with Kafka configuration. See section <<kafka_configuration_json_c
 A JSON string representing the storage configuration for the Kafka broker nodes. See section <<storage_configuration_json_config>> for more details.
 `kafka-metrics-config`::
 A JSON string representing the JMX exporter configuration for exposing metrics from Kafka broker nodes.
- Removing this field means having no metrics exposed.
+When this field is absent no metrics will be exposed.
 `kafka-resources`::
 A JSON string configuring the resource limits and requests for Kafka broker containers. The accepted JSON format is
 described in the <<resources_json_config>> section.
@@ -105,7 +105,8 @@ A JSON string with Zookeeper configuration. See section <<zookeeper_configuratio
 `zookeeper-storage`::
 A JSON string representing the storage configuration for the Zookeeper nodes. See section <<storage_configuration_json_config>> for more details.
 `zookeeper-metrics-config`::
-A JSON string representing the JMX exporter configuration for exposing metrics from Zookeeper nodes. Removing this field
+A JSON string representing the JMX exporter configuration for exposing metrics from Zookeeper nodes.
+When this field is absent no metrics will be exposed.
  eans having no metrics exposed.
 `zookeeper-resources`::
 A JSON string configuring the resource limits and requests for Zookeeper broker containers. The accepted JSON format is
@@ -679,6 +680,8 @@ If S2I is used (only on {OpenShiftName}), then it should be the related S2I imag
 `healthcheck-timeout`:: The timeout on the liveness and readiness probes for each Kafka Connect worker node. Default is 5.
 `connect-config`:: A JSON string with Kafka Connect configuration. See section <<kafka_connect_configuration_json_config>>
 for more details.
+`metrics-config`:: A JSON string representing the JMX exporter configuration for exposing metrics from Kafka Connect nodes.
+When this field is absent no metrics will be exposed.
 `resources`:: A JSON string configuring the resource limits and requests for Kafka Connect containers.
 The accepted JSON format is described in the <<resources_json_config>> section.
 `jvmOptions`:: A JSON string allowing the JVM running Kafka Connect to be configured.
@@ -714,6 +717,7 @@ The resources created by the Cluster Operator into the {ProductPlatformName} clu
 
 * [connect-cluster-name]-connect Deployment which is in charge to create the Kafka Connect worker node pods
 * [connect-cluster-name]-connect Service which exposes the REST interface for managing the Kafka Connect cluster
+* [connect-cluster-name]-metrics-config ConfigMap which contains the Kafka Connect metrics configuration and is mounted as a volume by the Kafka Connect pods
 
 [[kafka_connect_configuration_json_config]]
 ===== Kafka Connect configuration

@@ -96,3 +96,7 @@ objects:
         "offset.storage.replication.factor": "${KAFKA_CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR}",
         "status.storage.replication.factor": "${KAFKA_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR}"
       }
+    metrics-config: |-
+      {
+        "lowercaseOutputName": true
+      }

@@ -532,15 +532,19 @@ public abstract class AbstractModel {
             Map<String, String> podAnnotations,
             ResourceRequirements resources,
             Affinity affinity,
-            List<Container> initContainers) {
+            List<Container> initContainers,
+            List<Volume> volumes,
+            List<VolumeMount> volumeMounts,
+            List<EnvVar> envVars) {
 
         Container container = new ContainerBuilder()
                 .withName(name)
                 .withImage(getImage())
-                .withEnv(getEnvVars())
+                .withEnv(envVars)
                 .withPorts(ports)
                 .withLivenessProbe(livenessProbe)
                 .withReadinessProbe(readinessProbe)
+                .withVolumeMounts(volumeMounts)
                 .withResources(resources)
                 .build();
 
@@ -564,6 +568,7 @@ public abstract class AbstractModel {
                             .withServiceAccountName(getServiceAccountName())
                             .withInitContainers(initContainers)
                             .withContainers(container)
+                            .withVolumes(volumes)
                         .endSpec()
                     .endTemplate()
                 .endSpec()

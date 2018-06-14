@@ -245,7 +245,11 @@ public class TopicOperator extends AbstractModel {
                 Collections.emptyMap(),
                 resources(),
                 getMergedAffinity(),
-                getInitContainers());
+                getInitContainers(),
+                null,
+                null,
+                getEnvVars()
+                );
     }
 
     @Override

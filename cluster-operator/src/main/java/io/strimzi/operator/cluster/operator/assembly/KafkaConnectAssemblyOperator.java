@@ -69,6 +69,7 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator {
         Future<Void> chainFuture = Future.future();
         deploymentOperations.scaleDown(namespace, connect.getName(), connect.getReplicas())
                 .compose(scale -> serviceOperations.reconcile(namespace, connect.getName(), connect.generateService()))
+                .compose(i -> configMapOperations.reconcile(namespace, connect.getMetricsConfigName(), connect.generateMetricsConfigMap()))
                 .compose(i -> deploymentOperations.reconcile(namespace, connect.getName(), connect.generateDeployment()))
                 .compose(i -> deploymentOperations.scaleUp(namespace, connect.getName(), connect.getReplicas()).map((Void) null))
                 .compose(chainFuture::complete, chainFuture);
@@ -80,7 +81,9 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator {
         String namespace = reconciliation.namespace();
         String assemblyName = reconciliation.assemblyName();
         String name = KafkaConnectCluster.kafkaConnectClusterName(assemblyName);
+
         CompositeFuture.join(serviceOperations.reconcile(namespace, name, null),
+            configMapOperations.reconcile(namespace, KafkaConnectCluster.metricsConfigName(name), null),
             deploymentOperations.reconcile(namespace, name, null))
             .map((Void) null).setHandler(handler);
     }
@@ -88,8 +91,10 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator {
     @Override
     protected List<HasMetadata> getResources(String namespace) {
         List<HasMetadata> result = new ArrayList<>();
-        result.addAll(serviceOperations.list(namespace, Labels.forType(AssemblyType.CONNECT)));
-        result.addAll(deploymentOperations.list(namespace, Labels.forType(AssemblyType.CONNECT)));
+        Labels selector = Labels.forType(AssemblyType.CONNECT);
+        result.addAll(serviceOperations.list(namespace, selector));
+        result.addAll(deploymentOperations.list(namespace, selector));
+        result.addAll(configMapOperations.list(namespace, selector));
         return result;
     }
 }
