@@ -1,6 +1,6 @@
 FROM strimzi/kafka-base:latest
 
-EXPOSE 8083
+EXPOSE 8083 9404
 
 # copy configs for Kafka Connect
 COPY ./config/ $KAFKA_HOME/config/

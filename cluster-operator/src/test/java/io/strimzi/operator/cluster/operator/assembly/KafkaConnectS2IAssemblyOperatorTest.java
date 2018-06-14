@@ -5,17 +5,20 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.openshift.api.model.BuildConfig;
 import io.fabric8.openshift.api.model.DeploymentConfig;
 import io.fabric8.openshift.api.model.ImageStream;
 import io.strimzi.operator.cluster.Reconciliation;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.AssemblyType;
 import io.strimzi.operator.cluster.operator.resource.BuildConfigOperator;
 import io.strimzi.operator.cluster.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.cluster.operator.resource.DeploymentConfigOperator;
 import io.strimzi.operator.cluster.operator.resource.ImageStreamOperator;
+import io.strimzi.operator.cluster.operator.resource.ReconcileResult;
 import io.strimzi.operator.cluster.operator.resource.ServiceOperator;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaConnectS2ICluster;
@@ -32,9 +35,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
@@ -52,6 +57,7 @@ import static org.mockito.Mockito.when;
 public class KafkaConnectS2IAssemblyOperatorTest {
 
     protected static Vertx vertx;
+    public static final String METRICS_CONFIG = "{\"foo\":\"bar\"}";
 
     @BeforeClass
     public static void before() {
@@ -91,6 +97,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         ArgumentCaptor<BuildConfig> bcCaptor = ArgumentCaptor.forClass(BuildConfig.class);
         when(mockBcOps.reconcile(anyString(), anyString(), bcCaptor.capture())).thenReturn(Future.succeededFuture());
 
+        when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, true,
                 mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps);
 
@@ -189,6 +196,8 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         ArgumentCaptor<BuildConfig> bcCaptor = ArgumentCaptor.forClass(BuildConfig.class);
         when(mockBcOps.reconcile(bcNamespaceCaptor.capture(), bcNameCaptor.capture(), bcCaptor.capture())).thenReturn(Future.succeededFuture());
 
+        when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
+
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, true,
                 mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps);
 
@@ -271,6 +280,25 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         ArgumentCaptor<String> bcNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<BuildConfig> bcCaptor = ArgumentCaptor.forClass(BuildConfig.class);
         when(mockBcOps.reconcile(bcNamespaceCaptor.capture(), bcNameCaptor.capture(), bcCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
+
+        // Mock CM get
+        when(mockCmOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
+        ConfigMap metricsCm = new ConfigMapBuilder().withNewMetadata()
+                    .withName(KafkaConnectS2ICluster.metricsConfigName(clusterCmName))
+                    .withNamespace(clusterCmNamespace)
+                .endMetadata()
+                .withData(Collections.singletonMap(AbstractModel.METRICS_CONFIG_FILE, METRICS_CONFIG))
+                .build();
+        when(mockCmOps.get(clusterCmNamespace, KafkaConnectS2ICluster.metricsConfigName(clusterCmName))).thenReturn(metricsCm);
+
+        // Mock CM patch
+        Set<String> metricsCms = ResourceUtils.set();
+        doAnswer(invocation -> {
+            metricsCms.add(invocation.getArgument(1));
+            return Future.succeededFuture();
+        }).when(mockCmOps).reconcile(eq(clusterCmNamespace), anyString(), any());
 
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, true,
                 mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps);
@@ -372,6 +400,8 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         ArgumentCaptor<BuildConfig> bcCaptor = ArgumentCaptor.forClass(BuildConfig.class);
         when(mockBcOps.reconcile(bcNamespaceCaptor.capture(), bcNameCaptor.capture(), bcCaptor.capture())).thenReturn(Future.succeededFuture());
 
+        when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
+
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, true,
                 mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps);
 
@@ -417,6 +447,8 @@ public class KafkaConnectS2IAssemblyOperatorTest {
 
         doAnswer(i -> Future.succeededFuture(scaleTo))
                 .when(mockDcOps).scaleDown(clusterCmNamespace, connect.getName(), scaleTo);
+
+        when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
 
         when(mockIsOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
 
@@ -470,6 +502,8 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         doAnswer(i -> Future.succeededFuture(scaleTo))
                 .when(mockDcOps).scaleDown(clusterCmNamespace, connect.getName(), scaleTo);
 
+        when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
+
         when(mockIsOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
 
         when(mockBcOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
@@ -520,6 +554,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         ArgumentCaptor<String> bcNameCaptor = ArgumentCaptor.forClass(String.class);
         when(mockBcOps.reconcile(bcNamespaceCaptor.capture(), bcNameCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
 
+        when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, true,
                 mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps);
 
@@ -592,8 +627,8 @@ public class KafkaConnectS2IAssemblyOperatorTest {
                 asList(KafkaConnectS2ICluster.fromConfigMap(baz).generateDeploymentConfig())
         );
 
-        Set<String> createdOrUpdated = new HashSet<>();
-        Set<String> deleted = new HashSet<>();
+        Set<String> createdOrUpdated = new CopyOnWriteArraySet<>();
+        Set<String> deleted = new CopyOnWriteArraySet<>();
 
         Async async = context.async(3);
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, true,

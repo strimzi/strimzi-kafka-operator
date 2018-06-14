@@ -33,6 +33,7 @@ public class KafkaConnectClusterTest {
     private final String image = "my-image:latest";
     private final int healthDelay = 100;
     private final int healthTimeout = 10;
+    private final String metricsCmJson = "{\"animal\":\"wombat\"}";
     private final String configurationJson = "{\"foo\":\"bar\"}";
     private final String expectedConfiguration = "group.id=connect-cluster\n" +
             "key.converter=org.apache.kafka.connect.json.JsonConverter\n" +
@@ -57,15 +58,26 @@ public class KafkaConnectClusterTest {
             "internal.value.converter=org.apache.kafka.connect.json.JsonConverter\n";
 
     private final ConfigMap cm = ResourceUtils.createKafkaConnectClusterConfigMap(namespace, cluster, replicas, image,
-            healthDelay, healthTimeout, configurationJson);
+            healthDelay, healthTimeout, metricsCmJson, configurationJson);
     private final KafkaConnectCluster kc = KafkaConnectCluster.fromConfigMap(cm);
 
     @Rule
     public ResourceTester<KafkaConnectCluster> resourceTester = new ResourceTester<>(KafkaConnectCluster::fromConfigMap);
 
+    @Test
+    public void testMetricsConfigMap() {
+        ConfigMap metricsCm = kc.generateMetricsConfigMap();
+        checkMetricsConfigMap(metricsCm);
+    }
+
+    private void checkMetricsConfigMap(ConfigMap metricsCm) {
+        assertEquals(metricsCmJson, metricsCm.getData().get(AbstractModel.METRICS_CONFIG_FILE));
+    }
+
     protected List<EnvVar> getExpectedEnvVars() {
         List<EnvVar> expected = new ArrayList<EnvVar>();
         expected.add(new EnvVarBuilder().withName(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_CONFIGURATION).withValue(expectedConfiguration).build());
+        expected.add(new EnvVarBuilder().withName(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_METRICS_ENABLED).withValue(String.valueOf(true)).build());
         expected.add(new EnvVarBuilder().withName(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION).withValue("1.0").build());
         return expected;
     }
@@ -129,7 +141,7 @@ public class KafkaConnectClusterTest {
                 Labels.STRIMZI_NAME_LABEL, kc.kafkaConnectClusterName(cluster));
         assertEquals(expectedLabels, svc.getMetadata().getLabels());
         assertEquals(expectedLabels, svc.getSpec().getSelector());
-        assertEquals(1, svc.getSpec().getPorts().size());
+        assertEquals(2, svc.getSpec().getPorts().size());
         assertEquals(new Integer(KafkaConnectCluster.REST_API_PORT), svc.getSpec().getPorts().get(0).getPort());
         assertEquals(KafkaConnectCluster.REST_API_PORT_NAME, svc.getSpec().getPorts().get(0).getName());
         assertEquals("TCP", svc.getSpec().getPorts().get(0).getProtocol());
@@ -156,7 +168,7 @@ public class KafkaConnectClusterTest {
         assertEquals(new Integer(healthTimeout), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getTimeoutSeconds());
         assertEquals(new Integer(healthDelay), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds());
         assertEquals(new Integer(healthTimeout), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds());
-        assertEquals(1, dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().size());
+        assertEquals(2, dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().size());
         assertEquals(new Integer(KafkaConnectCluster.REST_API_PORT), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().get(0).getContainerPort());
         assertEquals(KafkaConnectCluster.REST_API_PORT_NAME, dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().get(0).getName());
         assertEquals("TCP", dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().get(0).getProtocol());
@@ -266,6 +278,59 @@ public class KafkaConnectClusterTest {
             fail("Expected it to throw an exception");
         } catch (InvalidConfigMapException e) {
             assertEquals("bool.value4", e.getKey());
+        }
+    }
+
+    @Test
+    public void testCorruptedConfigMapMetrics() {
+        try {
+            ConfigMap cm = ResourceUtils.createKafkaConnectClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout,
+                    "", configurationJson);
+            KafkaConnectCluster.fromConfigMap(cm);
+            fail("Expected it to throw an exception");
+        } catch (InvalidConfigMapException e) {
+            assertEquals("JSON - empty value", e.getKey());
+        }
+
+        try {
+            ConfigMap cm = ResourceUtils.createKafkaConnectClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout,
+                    "{\"lowercaseOutputName\" : true \n," +
+                            "\"rules\": }", configurationJson);
+            KafkaConnectCluster.fromConfigMap(cm);
+            fail("Expected it to throw an exception");
+        } catch (InvalidConfigMapException e) {
+            assertEquals("Unexpected character - }", e.getKey());
+        }
+
+        try {
+            ConfigMap cm = ResourceUtils.createKafkaConnectClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout,
+                    "    {\n" +
+                            "    \"lowercaseOutputName\": true,\n" +
+                            "    \"rules\": [{\n" +
+                            "    \"pattern\": \"kafka.server<type=(.+), name=(.+)PerSec\\\\w*><>Count\",\n" +
+                            "    \"name\": \"kafka_server_$1_$2_total\"\n" +
+                            "    },\n" +
+                            "    {\n" +
+                            "    \"pattern\": \"kafka.server<type=(.+), name=(.+)PerSec\\\\w*, topic=(.+)><>Count\",\n" +
+                            "    \"name\": \"x\",\n" +
+                            "    \"labels\": \n" +
+                            "    }\n" +
+                            "    ]\n" +
+                            "    }", configurationJson);
+            KafkaConnectCluster.fromConfigMap(cm);
+            fail("Expected it to throw an exception");
+        } catch (InvalidConfigMapException e) {
+            assertEquals("Unexpected character - }", e.getKey());
+        }
+
+        try {
+            ConfigMap cm = ResourceUtils.createKafkaConnectClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout,
+                    "{\"lowercaseOutputName\" : tru \n," +
+                            "\"rules\": \"I am valid\" }", configurationJson);
+            KafkaConnectCluster.fromConfigMap(cm);
+            fail("Expected it to throw an exception");
+        } catch (InvalidConfigMapException e) {
+            assertEquals("lowercaseOutputName", e.getKey());
         }
     }
 

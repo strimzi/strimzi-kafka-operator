@@ -27,8 +27,8 @@ import io.fabric8.openshift.api.model.TagImportPolicy;
 import io.fabric8.openshift.api.model.TagImportPolicyBuilder;
 import io.fabric8.openshift.api.model.TagReference;
 import io.fabric8.openshift.api.model.TagReferencePolicyBuilder;
+import io.vertx.core.json.JsonObject;
 
-import java.util.Collections;
 import java.util.Map;
 
 public class KafkaConnectS2ICluster extends KafkaConnectCluster {
@@ -77,6 +77,12 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
         kafkaConnect.setConfiguration(Utils.getKafkaConnectConfiguration(data, KEY_CONNECT_CONFIG));
         kafkaConnect.setInsecureSourceRepository(Utils.getBoolean(data, KEY_INSECURE_SOURCE_REPO, false));
 
+        JsonObject metricsConfig = Utils.getJson(data, KEY_METRICS_CONFIG);
+        kafkaConnect.setMetricsEnabled(metricsConfig != null);
+        if (kafkaConnect.isMetricsEnabled()) {
+            kafkaConnect.setMetricsConfig(metricsConfig);
+        }
+
         return kafkaConnect;
     }
 
@@ -97,14 +103,22 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
         KafkaConnectS2ICluster kafkaConnect =  new KafkaConnectS2ICluster(namespace, cluster, Labels.fromResource(dep));
 
         kafkaConnect.setReplicas(dep.getSpec().getReplicas());
-        kafkaConnect.setHealthCheckInitialDelay(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds());
-        kafkaConnect.setHealthCheckTimeout(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds());
+        Container container = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
+        kafkaConnect.setHealthCheckInitialDelay(container.getReadinessProbe().getInitialDelaySeconds());
+        kafkaConnect.setHealthCheckTimeout(container.getReadinessProbe().getTimeoutSeconds());
 
-        String connectConfiguration = containerEnvVars(dep.getSpec().getTemplate().getSpec().getContainers().get(0)).getOrDefault(ENV_VAR_KAFKA_CONNECT_CONFIGURATION, "");
+        String connectConfiguration = containerEnvVars(container).getOrDefault(ENV_VAR_KAFKA_CONNECT_CONFIGURATION, "");
         kafkaConnect.setConfiguration(new KafkaConnectConfiguration(connectConfiguration));
 
         String sourceImage = sis.getSpec().getTags().get(0).getFrom().getName();
         kafkaConnect.setImage(sourceImage);
+
+        Map<String, String> vars = containerEnvVars(container);
+
+        kafkaConnect.setMetricsEnabled(Utils.getBoolean(vars, ENV_VAR_KAFKA_CONNECT_METRICS_ENABLED, DEFAULT_KAFKA_CONNECT_METRICS_ENABLED));
+        if (kafkaConnect.isMetricsEnabled()) {
+            kafkaConnect.setMetricsConfigName(metricsConfigName(cluster));
+        }
 
         TagImportPolicy policy = sis.getSpec().getTags().get(0).getImportPolicy();
         if (policy != null) {
@@ -127,9 +141,11 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                 .withName(name)
                 .withImage(image)
                 .withEnv(getEnvVars())
-                .withPorts(Collections.singletonList(createContainerPort(REST_API_PORT_NAME, REST_API_PORT, "TCP")))
+                .withPorts(getContainerPortList())
                 .withLivenessProbe(createHttpProbe(healthCheckPath, REST_API_PORT_NAME, healthCheckInitialDelay, healthCheckTimeout))
                 .withReadinessProbe(createHttpProbe(healthCheckPath, REST_API_PORT_NAME, healthCheckInitialDelay, healthCheckTimeout))
+                .withVolumeMounts(getVolumeMounts())
+                .withResources(resources())
                 .build();
 
         DeploymentTriggerPolicy configChangeTrigger = new DeploymentTriggerPolicyBuilder()
@@ -170,6 +186,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                         .endMetadata()
                         .withNewSpec()
                             .withContainers(container)
+                            .withVolumes(getVolumes())
                         .endSpec()
                     .endTemplate()
                     .withTriggers(configChangeTrigger, imageChangeTrigger)

@@ -13,3 +13,7 @@ data:
     {
       "bootstrap.servers": "my-cluster-kafka:9092"
     }
+  metrics-config: |-
+    {
+      "lowercaseOutputName": true
+    }

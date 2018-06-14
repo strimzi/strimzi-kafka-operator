@@ -129,13 +129,14 @@ public class ResourceUtils {
      * Generate ConfigMap for Kafka Connect S2I cluster
      */
     public static ConfigMap createKafkaConnectS2IClusterConfigMap(String clusterCmNamespace, String clusterCmName, int replicas,
-                                                                  String image, int healthDelay, int healthTimeout, String connectConfig,
-                                                                  boolean insecureSourceRepo) {
+                                                                  String image, int healthDelay, int healthTimeout, String metricsCmJson,
+                                                                  String connectConfig, boolean insecureSourceRepo) {
         Map<String, String> cmData = new HashMap<>();
         cmData.put(KafkaConnectS2ICluster.KEY_IMAGE, image);
         cmData.put(KafkaConnectS2ICluster.KEY_REPLICAS, Integer.toString(replicas));
         cmData.put(KafkaConnectS2ICluster.KEY_HEALTHCHECK_DELAY, Integer.toString(healthDelay));
         cmData.put(KafkaConnectS2ICluster.KEY_HEALTHCHECK_TIMEOUT, Integer.toString(healthTimeout));
+        cmData.put(KafkaConnectCluster.KEY_METRICS_CONFIG, metricsCmJson);
         if (connectConfig != null) {
             cmData.put(KafkaConnectS2ICluster.KEY_CONNECT_CONFIG, connectConfig);
         }
@@ -169,14 +170,15 @@ public class ResourceUtils {
      * Generate ConfigMap for Kafka Connect cluster
      */
     public static ConfigMap createKafkaConnectClusterConfigMap(String clusterCmNamespace, String clusterCmName, int replicas,
-                                                                  String image, int healthDelay, int healthTimeout, String connectConfig) {
+                                                                  String image, int healthDelay, int healthTimeout, String metricsCmJson, String connectConfig) {
         Map<String, String> cmData = new HashMap<>();
         cmData.put(KafkaConnectCluster.KEY_IMAGE, image);
         cmData.put(KafkaConnectCluster.KEY_REPLICAS, Integer.toString(replicas));
         cmData.put(KafkaConnectCluster.KEY_HEALTHCHECK_DELAY, Integer.toString(healthDelay));
         cmData.put(KafkaConnectCluster.KEY_HEALTHCHECK_TIMEOUT, Integer.toString(healthTimeout));
+        cmData.put(KafkaConnectCluster.KEY_METRICS_CONFIG, metricsCmJson);
         if (connectConfig != null) {
-            cmData.put(KafkaConnectS2ICluster.KEY_CONNECT_CONFIG, connectConfig);
+            cmData.put(KafkaConnectCluster.KEY_CONNECT_CONFIG, connectConfig);
         }
 
         ConfigMap cm = createEmptyKafkaConnectClusterConfigMap(clusterCmNamespace, clusterCmName);

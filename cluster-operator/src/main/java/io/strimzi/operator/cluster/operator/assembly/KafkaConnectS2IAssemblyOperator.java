@@ -80,6 +80,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator {
 
             deploymentConfigOperations.scaleDown(namespace, connect.getName(), connect.getReplicas())
                     .compose(scale -> serviceOperations.reconcile(namespace, connect.getName(), connect.generateService()))
+                    .compose(i -> configMapOperations.reconcile(namespace, connect.getMetricsConfigName(), connect.generateMetricsConfigMap()))
                     .compose(i -> deploymentConfigOperations.reconcile(namespace, connect.getName(), connect.generateDeploymentConfig()))
                     .compose(i -> imagesStreamOperations.reconcile(namespace, connect.getSourceImageStreamName(), connect.generateSourceImageStream()))
                     .compose(i -> imagesStreamOperations.reconcile(namespace, connect.getName(), connect.generateTargetImageStream()))
@@ -98,7 +99,9 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator {
             String namespace = reconciliation.namespace();
             String assemblyName = reconciliation.assemblyName();
             String clusterName = KafkaConnectS2ICluster.kafkaConnectClusterName(assemblyName);
+
             CompositeFuture.join(serviceOperations.reconcile(namespace, clusterName, null),
+                configMapOperations.reconcile(namespace, KafkaConnectS2ICluster.metricsConfigName(clusterName), null),
                 deploymentConfigOperations.reconcile(namespace, clusterName, null),
                 imagesStreamOperations.reconcile(namespace, KafkaConnectS2ICluster.getSourceImageStreamName(clusterName), null),
                 imagesStreamOperations.reconcile(namespace, clusterName, null),
@@ -112,10 +115,12 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator {
     @Override
     protected List<HasMetadata> getResources(String namespace) {
         List<HasMetadata> result = new ArrayList<>();
-        result.addAll(serviceOperations.list(namespace, Labels.forType(AssemblyType.CONNECT_S2I)));
-        result.addAll(deploymentConfigOperations.list(namespace, Labels.forType(AssemblyType.CONNECT_S2I)));
-        result.addAll(imagesStreamOperations.list(namespace, Labels.forType(AssemblyType.CONNECT_S2I)));
-        result.addAll(buildConfigOperations.list(namespace, Labels.forType(AssemblyType.CONNECT_S2I)));
+        Labels selector = Labels.forType(AssemblyType.CONNECT_S2I);
+        result.addAll(serviceOperations.list(namespace, selector));
+        result.addAll(deploymentConfigOperations.list(namespace, selector));
+        result.addAll(imagesStreamOperations.list(namespace, selector));
+        result.addAll(buildConfigOperations.list(namespace, selector));
+        result.addAll(configMapOperations.list(namespace, selector));
         return result;
     }
 

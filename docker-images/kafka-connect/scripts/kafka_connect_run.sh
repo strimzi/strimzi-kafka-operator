@@ -25,6 +25,11 @@ fi
 # directory avoids trying to create it (and logging a permission denied error)
 export LOG_DIR="$KAFKA_HOME"
 
+# enabling Prometheus JMX exporter as Java agent
+if [ "$KAFKA_CONNECT_METRICS_ENABLED" = "true" ]; then
+  export KAFKA_OPTS="-javaagent:/opt/prometheus/jmx_prometheus_javaagent.jar=9404:/opt/prometheus/config/config.yml"
+fi
+
 if [ -z "$KAFKA_HEAP_OPTS" -a -n "${DYNAMIC_HEAP_FRACTION}" ]; then
     . ./dynamic_resources.sh
     # Calculate a max heap size based some DYNAMIC_HEAP_FRACTION of the heap
