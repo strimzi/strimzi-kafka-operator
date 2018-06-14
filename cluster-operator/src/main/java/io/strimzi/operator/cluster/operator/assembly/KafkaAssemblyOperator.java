@@ -248,6 +248,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
         result.add(serviceOperations.reconcile(namespace, KafkaCluster.kafkaClusterName(name), null));
         result.add(serviceOperations.reconcile(namespace, KafkaCluster.headlessName(name), null));
         result.add(kafkaSetOperations.reconcile(namespace, KafkaCluster.kafkaClusterName(name), null));
+        result.add(secretOperations.reconcile(namespace, KafkaCluster.kafkaClusterName(name) + "-clients-ca", null));
+        result.add(secretOperations.reconcile(namespace, KafkaCluster.kafkaClusterName(name) + "-clients-ca-cert", null));
+        result.add(secretOperations.reconcile(namespace, KafkaCluster.kafkaClusterName(name) + "-brokers-clients", null));
+        result.add(secretOperations.reconcile(namespace, KafkaCluster.kafkaClusterName(name) + "-brokers-internal", null));
 
         if (deleteClaims) {
             log.debug("{}: delete kafka {} PVCs", reconciliation, name);

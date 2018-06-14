@@ -267,19 +267,31 @@ public class KafkaCluster extends AbstractModel {
             Optional<Secret> internalCAsecret = secrets.stream().filter(s -> s.getMetadata().getName().equals("internal-ca")).findFirst();
             if (internalCAsecret.isPresent()) {
 
+                CertManager certManager = new OpenSslCertManager();
+
                 // get the generated CA private + certificate for internal communications
                 Base64.Decoder decoder = Base64.getDecoder();
                 internalCA = new Cert(
                         decoder.decode(internalCAsecret.get().getData().get("internal-ca.key")),
                         decoder.decode(internalCAsecret.get().getData().get("internal-ca.crt")));
 
-                CertManager certManager = new OpenSslCertManager();
                 // CA private key + certificate for clients communications
-                File clientsCAkeyFile = File.createTempFile("tls", "clients-ca-key");
-                File clientsCAcertFile = File.createTempFile("tls", "clients-ca-cert");
-                certManager.generateSelfSignedCert(clientsCAkeyFile, clientsCAcertFile, 365);
-                clientsCA =
-                        new Cert(Files.readAllBytes(clientsCAkeyFile.toPath()), Files.readAllBytes(clientsCAcertFile.toPath()));
+                Optional<Secret> clientsCAsecret = secrets.stream().filter(s -> s.getMetadata().getName().equals(name + "-clients-ca")).findFirst();
+                if (!clientsCAsecret.isPresent()) {
+                    log.info("Clients CA to generate");
+                    File clientsCAkeyFile = File.createTempFile("tls", "clients-ca-key");
+                    File clientsCAcertFile = File.createTempFile("tls", "clients-ca-cert");
+                    certManager.generateSelfSignedCert(clientsCAkeyFile, clientsCAcertFile, 365);
+                    clientsCA =
+                            new Cert(Files.readAllBytes(clientsCAkeyFile.toPath()), Files.readAllBytes(clientsCAcertFile.toPath()));
+                    clientsCAkeyFile.delete();
+                    clientsCAcertFile.delete();
+                } else {
+                    log.info("Clients CA already exists");
+                    clientsCA = new Cert(
+                            decoder.decode(clientsCAsecret.get().getData().get("clients-ca.key")),
+                            decoder.decode(clientsCAsecret.get().getData().get("clients-ca.crt")));
+                }
 
                 internalCerts = new HashMap<>();
                 clientsCerts = new HashMap<>();
@@ -287,8 +299,51 @@ public class KafkaCluster extends AbstractModel {
                 File brokerCsrFile = File.createTempFile("tls", "broker-csr");
                 File brokerKeyFile = File.createTempFile("tls", "broker-key");
                 File brokerCertFile = File.createTempFile("tls", "broker-cert");
-                for (int i = 0; i < replicas; i++) {
 
+                int replicasInSecret = 0;
+                Optional<Secret> internalSecret = secrets.stream().filter(s -> s.getMetadata().getName().equals(name + "-brokers-internal")).findFirst();
+                Optional<Secret> clientsSecret = secrets.stream().filter(s -> s.getMetadata().getName().equals(name + "-brokers-clients")).findFirst();
+
+                if (internalSecret.isPresent() ^ clientsSecret.isPresent()) {
+                    log.error("Inconsistency!!!");
+                    // TODO: what to do ? raising exception ?
+                } else {
+
+                    if (internalSecret.isPresent() && clientsSecret.isPresent()) {
+                        if ((internalSecret.get().getData().size() - 1) != (clientsSecret.get().getData().size() - 2)) {
+                            log.error("Inconsistency!!!");
+                            // TODO: what to do ? raising exception ?
+                        } else {
+                            replicasInSecret = (internalSecret.get().getData().size() - 1) / 2;
+                        }
+                    }
+                }
+
+                // copying the minimum number of certificates already existing in the secret
+                // scale up -> it will copy all certificates
+                // scale down -> it will copy just the requested number of replicas
+                for (int i = 0; i < Math.min(replicasInSecret, replicas); i++) {
+                    log.info("{} already exists", KafkaCluster.kafkaPodName(cluster, i));
+                    internalCerts.put(
+                            KafkaCluster.kafkaPodName(cluster, i),
+                            new Cert(
+                                    decoder.decode(internalSecret.get().getData().get(KafkaCluster.kafkaPodName(cluster, i) + ".key")),
+                                    decoder.decode(internalSecret.get().getData().get(KafkaCluster.kafkaPodName(cluster, i) + ".crt"))
+                            ));
+
+                    clientsCerts.put(
+                            KafkaCluster.kafkaPodName(cluster, i),
+                            new Cert(
+                                    decoder.decode(clientsSecret.get().getData().get(KafkaCluster.kafkaPodName(cluster, i) + ".key")),
+                                    decoder.decode(clientsSecret.get().getData().get(KafkaCluster.kafkaPodName(cluster, i) + ".crt"))
+                            ));
+                }
+
+                // generate the missing number of certificates
+                // scale up -> generate new certificates for added replicas
+                // scale down -> does nothing
+                for (int i = replicasInSecret; i < replicas; i++) {
+                    log.info("{} to generate", KafkaCluster.kafkaPodName(cluster, i));
                     // TODO : to check the content for Subject
                     Subject sbj = new Subject();
                     sbj.setOrganizationName("io.strimzi");
@@ -301,14 +356,11 @@ public class KafkaCluster extends AbstractModel {
                             new Cert(Files.readAllBytes(brokerKeyFile.toPath()), Files.readAllBytes(brokerCertFile.toPath())));
 
                     certManager.generateCsr(brokerKeyFile, brokerCsrFile, sbj);
-                    certManager.generateCert(brokerCsrFile, clientsCAkeyFile, clientsCAcertFile, brokerCertFile, 365);
+                    certManager.generateCert(brokerCsrFile, clientsCA.key(), clientsCA.cert(), brokerCertFile, 365);
 
                     clientsCerts.put(KafkaCluster.kafkaPodName(cluster, i),
                             new Cert(Files.readAllBytes(brokerKeyFile.toPath()), Files.readAllBytes(brokerCertFile.toPath())));
                 }
-
-                clientsCAkeyFile.delete();
-                clientsCAcertFile.delete();
 
                 brokerCsrFile.delete();
                 brokerKeyFile.delete();
