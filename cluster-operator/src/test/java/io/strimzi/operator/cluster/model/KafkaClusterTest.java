@@ -13,11 +13,12 @@ import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.operator.cluster.InvalidConfigMapException;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.vertx.core.json.JsonObject;
-import org.junit.Rule;
-import org.junit.Test;
 
 import java.io.IOException;
 import java.util.List;
+
+import org.junit.Rule;
+import org.junit.Test;
 
 import static io.strimzi.operator.cluster.ResourceUtils.labels;
 import static junit.framework.TestCase.fail;
@@ -138,7 +139,7 @@ public class KafkaClusterTest {
         assertEquals(new Integer(healthDelay), ss.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getInitialDelaySeconds());
         assertEquals(new Integer(healthTimeout), ss.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds());
         assertEquals(new Integer(healthDelay), ss.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds());
-        assertEquals("foo=bar\n", AbstractModel.containerEnvVars(ss.getSpec().getTemplate().getSpec().getContainers().get(0)).get(KafkaCluster.ENV_VAR_KAFKA_CONFIGURATION));
+        assertEquals("controlled.shutdown.enable=true\nauto.leader.rebalance.enable=true\nfoo=bar\n", AbstractModel.containerEnvVars(ss.getSpec().getTemplate().getSpec().getContainers().get(0)).get(KafkaCluster.ENV_VAR_KAFKA_CONFIGURATION));
 
         if (cm.getData().get("kafka-storage") != null) {
 

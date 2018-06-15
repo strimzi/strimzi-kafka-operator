@@ -261,6 +261,13 @@ below.
 }
 ----
 
+Selected options have default values:
+
+* `controlled.shutdown.enable` with default value `true`
+* `auto.leader.rebalance.enable` with default value `true`
+
+These options will be automatically configured in case they are not present in the `kafka-config` field.
+
 NOTE:: The Cluster Operator doesn't validate the provided configuration. When invalid configuration is provided, the
 Kafka cluster might not start or might become unstable. In such cases, the configuration in the `kafka-config` field
 should be fixed and the cluster operator will roll out the new configuration to all Kafka brokers.
