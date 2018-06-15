@@ -8,6 +8,7 @@ package io.strimzi.operator.cluster.model;
 import io.vertx.core.json.JsonObject;
 
 import java.util.List;
+import java.util.Properties;
 
 import static java.util.Arrays.asList;
 
@@ -16,6 +17,7 @@ import static java.util.Arrays.asList;
  */
 public class KafkaConfiguration extends AbstractConfiguration {
     private static final List<String> FORBIDDEN_OPTIONS;
+    private static final Properties DEFAULTS;
 
     static {
         FORBIDDEN_OPTIONS = asList(
@@ -36,6 +38,10 @@ public class KafkaConfiguration extends AbstractConfiguration {
                 "zookeeper.set.acl",
                 "authorizer.",
                 "super.user");
+
+        DEFAULTS = new Properties();
+        DEFAULTS.setProperty("controlled.shutdown.enable", "true");
+        DEFAULTS.setProperty("auto.leader.rebalance.enable", "true");
     }
 
     /**
@@ -46,7 +52,7 @@ public class KafkaConfiguration extends AbstractConfiguration {
      *                      pairs.
      */
     public KafkaConfiguration(String configuration) {
-        super(configuration, FORBIDDEN_OPTIONS);
+        super(configuration, FORBIDDEN_OPTIONS, DEFAULTS);
     }
 
     /**
@@ -56,6 +62,6 @@ public class KafkaConfiguration extends AbstractConfiguration {
      * @param jsonOptions     Json object with configuration options as key ad value pairs.
      */
     public KafkaConfiguration(JsonObject jsonOptions) {
-        super(jsonOptions, FORBIDDEN_OPTIONS);
+        super(jsonOptions, FORBIDDEN_OPTIONS, DEFAULTS);
     }
 }
