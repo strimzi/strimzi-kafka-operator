@@ -40,6 +40,41 @@ if [ -e $KAFKA_HOME/rack/rack.id ]; then
   export KAFKA_RACK=$(cat $KAFKA_HOME/rack/rack.id)
 fi
 
+
+# set up for encryption support
+if [ "$KAFKA_ENCRYPTION_ENABLED" = "true" ]; then
+    export ENC_PASSWORD=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${1:-32})
+    echo "ENC_PASSWORD" $ENC_PASSWORD
+
+    # Import certificates into keystore and truststore
+    echo "Importing certificates for internal communication ..."
+    keytool -keystore /var/lib/kafka/replication.truststore.jks -storepass $ENC_PASSWORD -noprompt -alias internal-ca -import -file /var/lib/kafka/internal-certs/internal-ca.crt
+    openssl pkcs12 -export -in /var/lib/kafka/internal-certs/$HOSTNAME.crt -inkey /var/lib/kafka/internal-certs/$HOSTNAME.key -chain -CAfile /var/lib/kafka/internal-certs/internal-ca.crt -name $HOSTNAME -password pass:$ENC_PASSWORD -out /var/lib/kafka/$HOSTNAME-internal.p12
+    keytool -importkeystore -deststorepass $ENC_PASSWORD -destkeystore /var/lib/kafka/replication.keystore.jks -srcstorepass $ENC_PASSWORD -srckeystore /var/lib/kafka/$HOSTNAME-internal.p12 -srcstoretype PKCS12
+    echo "... end importing certificates"
+
+    echo "Importing certificates for clients communication ..."
+    keytool -keystore /var/lib/kafka/clients.truststore.jks -storepass $ENC_PASSWORD -noprompt -alias clients-ca -import -file /var/lib/kafka/clients-certs/clients-ca.crt
+    keytool -keystore /var/lib/kafka/clients.truststore.jks -storepass $ENC_PASSWORD -noprompt -alias internal-ca -import -file /var/lib/kafka/internal-certs/internal-ca.crt
+    openssl pkcs12 -export -in /var/lib/kafka/clients-certs/$HOSTNAME.crt -inkey /var/lib/kafka/clients-certs/$HOSTNAME.key -chain -CAfile /var/lib/kafka/clients-certs/clients-ca.crt -name $HOSTNAME -password pass:$ENC_PASSWORD -out /var/lib/kafka/$HOSTNAME-clients.p12
+    keytool -importkeystore -deststorepass $ENC_PASSWORD -destkeystore /var/lib/kafka/clients.keystore.jks -srcstorepass $ENC_PASSWORD -srckeystore /var/lib/kafka/$HOSTNAME-clients.p12 -srcstoretype PKCS12
+    echo "... end importing certificates"
+
+    # Generate the SSL healthcheck config file
+    ./kafka_healthcheck_ssl_config.sh | tee /tmp/healthcheck.properties
+
+    export KAFKA_SECURITY="listener.name.replication.ssl.keystore.location=/var/lib/kafka/replication.keystore.jks
+listener.name.replication.ssl.keystore.password=${ENC_PASSWORD}
+listener.name.replication.ssl.truststore.location=/var/lib/kafka/replication.truststore.jks
+listener.name.replication.ssl.truststore.password=${ENC_PASSWORD}
+listener.name.client.ssl.keystore.location=/var/lib/kafka/clients.keystore.jks
+listener.name.client.ssl.keystore.password=${ENC_PASSWORD}
+listener.name.client.ssl.truststore.location=/var/lib/kafka/clients.truststore.jks
+listener.name.client.ssl.truststore.password=${ENC_PASSWORD}"
+
+    export KAFKA_LISTENER_SECURITY_PROTOCOL="SSL"
+fi
+
 # Generate and print the config file
 echo "Starting Kafka with configuration:"
 ./kafka_config_generator.sh | tee /tmp/strimzi.properties
