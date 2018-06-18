@@ -47,6 +47,9 @@ public abstract class AbstractAssemblyOperator {
     private static final Logger log = LogManager.getLogger(AbstractAssemblyOperator.class.getName());
 
     protected static final int LOCK_TIMEOUT = 60000;
+    protected static final int DEFAULT_CERTS_EXPIRATION_DAYS = 365;
+
+    public static final String INTERNAL_CA_NAME = "internal-ca";
 
     protected final Vertx vertx;
     protected final boolean isOpenShift;
@@ -115,46 +118,46 @@ public abstract class AbstractAssemblyOperator {
     private final void reconcileCertificate(String namespace, Handler<AsyncResult<Void>> handler) {
 
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
-                future -> {
+            future -> {
 
-                    if (secretOperations.get(namespace, "internal-ca") == null) {
-                        log.info("Generating internal CA certificate ...");
-                        File internalCAkeyFile = null;
-                        File internalCAcertFile = null;
-                        try {
-                            CertManager certManager = new OpenSslCertManager();
-                            internalCAkeyFile = File.createTempFile("tls", "internal-ca-key");
-                            internalCAcertFile = File.createTempFile("tls", "internal-ca-cert");
-                            certManager.generateSelfSignedCert(internalCAkeyFile, internalCAcertFile, 365);
+                if (secretOperations.get(namespace, INTERNAL_CA_NAME) == null) {
+                    log.info("Generating internal CA certificate");
+                    File internalCAkeyFile = null;
+                    File internalCAcertFile = null;
+                    try {
+                        CertManager certManager = new OpenSslCertManager();
+                        internalCAkeyFile = File.createTempFile("tls", "internal-ca-key");
+                        internalCAcertFile = File.createTempFile("tls", "internal-ca-cert");
+                        certManager.generateSelfSignedCert(internalCAkeyFile, internalCAcertFile, DEFAULT_CERTS_EXPIRATION_DAYS);
 
-                            SecretCertProvider secretCertProvider = new SecretCertProvider();
-                            Secret secret = secretCertProvider.createSecret(namespace, "internal-ca",
-                                    "internal-ca.key", "internal-ca.crt",
-                                    internalCAkeyFile, internalCAcertFile, Collections.emptyMap());
+                        SecretCertProvider secretCertProvider = new SecretCertProvider();
+                        Secret secret = secretCertProvider.createSecret(namespace, INTERNAL_CA_NAME,
+                                "internal-ca.key", "internal-ca.crt",
+                                internalCAkeyFile, internalCAcertFile, Collections.emptyMap());
 
-                            secretOperations.reconcile(namespace, "internal-ca", secret)
-                                    .compose(future::complete, future);
+                        secretOperations.reconcile(namespace, INTERNAL_CA_NAME, secret)
+                                .compose(future::complete, future);
 
-                        } catch (IOException e) {
-                            future.fail(e);
-                        } finally {
-                            if (internalCAkeyFile != null)
-                                internalCAkeyFile.delete();
-                            if (internalCAcertFile != null)
-                                internalCAcertFile.delete();
-                        }
-                        log.info("... end generating certificate");
-                    } else {
-                        log.info("The internal CA certificate already exists");
-                        future.complete();
+                    } catch (IOException e) {
+                        future.fail(e);
+                    } finally {
+                        if (internalCAkeyFile != null)
+                            internalCAkeyFile.delete();
+                        if (internalCAcertFile != null)
+                            internalCAcertFile.delete();
                     }
-                }, true,
-                res -> {
-                    if (res.succeeded())
-                        handler.handle(Future.succeededFuture());
-                    else
-                        handler.handle(Future.failedFuture(res.cause()));
+                    log.info("End generating certificate");
+                } else {
+                    log.debug("The internal CA certificate already exists");
+                    future.complete();
                 }
+            }, true,
+            res -> {
+                if (res.succeeded())
+                    handler.handle(Future.succeededFuture());
+                else
+                    handler.handle(Future.failedFuture(res.cause()));
+            }
         );
     }
 
@@ -186,8 +189,7 @@ public abstract class AbstractAssemblyOperator {
 
                             Labels labels = Labels.forCluster(assemblyName);
                             List<Secret> secrets = secretOperations.list(namespace, labels);
-                            secrets.add(secretOperations.get(namespace, "internal-ca"));
-                            //Map<String, Secret> map = secrets.stream().collect(Collectors.toMap(s -> s.getMetadata().getName(), s -> s));
+                            secrets.add(secretOperations.get(namespace, INTERNAL_CA_NAME));
 
                             if (certResult.succeeded()) {
                                 createOrUpdate(reconciliation, cm, secrets, createResult -> {

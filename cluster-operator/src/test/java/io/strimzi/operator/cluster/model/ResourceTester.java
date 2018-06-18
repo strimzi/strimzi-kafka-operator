@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.Secret;
 import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
@@ -18,6 +19,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.util.Collections;
+import java.util.List;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import static org.junit.Assert.assertEquals;
@@ -33,6 +37,12 @@ class ResourceTester<M extends AbstractModel> implements MethodRule {
 
     ResourceTester(Function<ConfigMap, M> fromConfigMap) {
         this.fromConfigMap = fromConfigMap;
+    }
+
+    ResourceTester(BiFunction<ConfigMap, List<Secret>, M> fromConfigMap) {
+        this.fromConfigMap = cm -> {
+            return fromConfigMap.apply(cm, Collections.emptyList());
+        };
     }
 
     static <T> T fromYaml(URL url, Class<T> c) {

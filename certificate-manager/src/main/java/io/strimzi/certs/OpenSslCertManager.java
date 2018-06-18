@@ -18,7 +18,6 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -149,8 +148,12 @@ public class OpenSslCertManager implements CertManager {
 
         generateCert(csrFile, caKeyFile, caCertFile, crtFile, days);
 
-        caKeyFile.delete();
-        caCertFile.delete();
+        if (!caKeyFile.delete()) {
+            log.warn("{} cannot be deleted", caKeyFile.getName());
+        }
+        if (!caCertFile.delete()) {
+            log.warn("{} cannot be deleted", caCertFile.getName());
+        }
     }
 
     private void exec(String... cmd) throws IOException {
