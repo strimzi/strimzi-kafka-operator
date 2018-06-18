@@ -62,6 +62,8 @@ public abstract class AbstractModel {
 
     protected static final Logger log = LogManager.getLogger(AbstractModel.class.getName());
 
+    protected static final int DEFAULT_CERTS_EXPIRATION_DAYS = 365;
+
     private static final String VOLUME_MOUNT_HACK_IMAGE = "busybox";
     protected static final String VOLUME_MOUNT_HACK_NAME = "volume-mount-hack";
     private static final Long VOLUME_MOUNT_HACK_GROUPID = 1001L;

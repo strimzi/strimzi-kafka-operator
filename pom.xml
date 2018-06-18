@@ -319,6 +319,8 @@
                     <xmlOutput>true</xmlOutput>
                     <!-- Configures the directory in which the XML report is created -->
                     <findbugsXmlOutputDirectory>${project.build.directory}/findbugs</findbugsXmlOutputDirectory>
+                    <!-- Configures the file for excluding warnings -->
+                    <excludeFilterFile>.findbugs/findbugs-exclude.xml</excludeFilterFile>
                 </configuration>
                 <executions>
                     <!--
