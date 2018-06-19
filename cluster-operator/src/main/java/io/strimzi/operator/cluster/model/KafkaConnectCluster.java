@@ -41,6 +41,7 @@ public class KafkaConnectCluster extends AbstractModel {
     protected static final String METRICS_PORT_NAME = "metrics";
 
     private static final String NAME_SUFFIX = "-connect";
+
     private static final String METRICS_AND_LOG_CONFIG_SUFFIX = NAME_SUFFIX + "-config";
 
     // Configuration defaults

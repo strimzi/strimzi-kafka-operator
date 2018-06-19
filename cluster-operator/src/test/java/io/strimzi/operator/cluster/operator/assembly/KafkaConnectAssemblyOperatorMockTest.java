@@ -107,7 +107,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
             if (ar.failed()) ar.cause().printStackTrace();
             context.assertTrue(ar.succeeded());
             context.assertNull(mockClient.extensions().deployments().inNamespace(NAMESPACE).withName(KafkaConnectCluster.kafkaConnectClusterName(CLUSTER_NAME)).get());
-            //FIXME: context.assertNull(mockClient.configMaps().inNamespace(NAMESPACE).withName(KafkaConnectCluster.metricsConfigName(CLUSTER_NAME)).get());
+            context.assertNull(mockClient.configMaps().inNamespace(NAMESPACE).withName(KafkaConnectCluster.metricsConfigName(CLUSTER_NAME)).get());
             context.assertNull(mockClient.services().inNamespace(NAMESPACE).withName(KafkaConnectCluster.kafkaConnectClusterName(CLUSTER_NAME)).get());
             deleteAsync.complete();
         });
