@@ -57,6 +57,9 @@ public class KafkaCluster extends AbstractModel {
     protected static final int REPLICATION_PORT = 9091;
     protected static final String REPLICATION_PORT_NAME = "replication";
 
+    protected static final int CLIENT_ENC_PORT = 9093;
+    protected static final String CLIENT_ENC_PORT_NAME = "clientsenc";
+
     private static final String NAME_SUFFIX = "-kafka";
     private static final String HEADLESS_NAME_SUFFIX = NAME_SUFFIX + "-headless";
     private static final String METRICS_CONFIG_SUFFIX = NAME_SUFFIX + "-metrics-config";
@@ -75,7 +78,6 @@ public class KafkaCluster extends AbstractModel {
             System.getenv().getOrDefault("STRIMZI_DEFAULT_KAFKA_IMAGE", "strimzi/kafka:latest");
     private static final String DEFAULT_INIT_IMAGE =
             System.getenv().getOrDefault("STRIMZI_DEFAULT_INIT_KAFKA_IMAGE", "strimzi/init-kafka:latest");
-    private static final boolean DEFAULT_ENCRYPTION_ENABLED = true;
 
 
     private static final int DEFAULT_REPLICAS = 3;
@@ -104,7 +106,6 @@ public class KafkaCluster extends AbstractModel {
     public static final String ENV_VAR_KAFKA_ZOOKEEPER_CONNECT = "KAFKA_ZOOKEEPER_CONNECT";
     private static final String ENV_VAR_KAFKA_METRICS_ENABLED = "KAFKA_METRICS_ENABLED";
     protected static final String ENV_VAR_KAFKA_CONFIGURATION = "KAFKA_CONFIGURATION";
-    private static final String ENV_VAR_KAFKA_ENCRYPTION_ENABLED = "KAFKA_ENCRYPTION_ENABLED";
 
     private Cert internalCA;
     private Cert clientsCA;
@@ -209,10 +210,7 @@ public class KafkaCluster extends AbstractModel {
         kafka.setInitImage(Utils.getNonEmptyString(data, KEY_INIT_IMAGE, DEFAULT_INIT_IMAGE));
         kafka.setUserAffinity(Utils.getAffinity(data.get(KEY_AFFINITY)));
 
-        kafka.setEncryptionEnabled(DEFAULT_ENCRYPTION_ENABLED);
-        if (kafka.isEncryptionEnabled()) {
-            kafka.generateCertificates(secrets);
-        }
+        kafka.generateCertificates(secrets);
 
         return kafka;
     }
@@ -428,6 +426,7 @@ public class KafkaCluster extends AbstractModel {
     private List<ServicePort> getServicePorts() {
         List<ServicePort> ports = new ArrayList<>(2);
         ports.add(createServicePort(CLIENT_PORT_NAME, CLIENT_PORT, CLIENT_PORT, "TCP"));
+        ports.add(createServicePort(CLIENT_ENC_PORT_NAME, CLIENT_ENC_PORT, CLIENT_ENC_PORT, "TCP"));
         if (isMetricsEnabled()) {
             ports.add(createServicePort(metricsPortName, metricsPort, metricsPort, "TCP"));
         }
@@ -444,6 +443,7 @@ public class KafkaCluster extends AbstractModel {
         List<ServicePort> ports = new ArrayList<>(2);
         ports.add(createServicePort(CLIENT_PORT_NAME, CLIENT_PORT, CLIENT_PORT, "TCP"));
         ports.add(createServicePort(REPLICATION_PORT_NAME, REPLICATION_PORT, REPLICATION_PORT, "TCP"));
+        ports.add(createServicePort(CLIENT_ENC_PORT_NAME, CLIENT_ENC_PORT, CLIENT_ENC_PORT, "TCP"));
         return ports;
     }
 
@@ -506,14 +506,10 @@ public class KafkaCluster extends AbstractModel {
      * @return The generated Secret
      */
     public Secret generateClientsCASecret() {
-        if (isEncryptionEnabled()) {
-            Map<String, String> data = new HashMap<>();
-            data.put("clients-ca.key", Base64.getEncoder().encodeToString(clientsCA.key()));
-            data.put("clients-ca.crt", Base64.getEncoder().encodeToString(clientsCA.cert()));
-            return createSecret(KafkaCluster.clientsCASecretName(cluster), data);
-        } else {
-            return null;
-        }
+        Map<String, String> data = new HashMap<>();
+        data.put("clients-ca.key", Base64.getEncoder().encodeToString(clientsCA.key()));
+        data.put("clients-ca.crt", Base64.getEncoder().encodeToString(clientsCA.cert()));
+        return createSecret(KafkaCluster.clientsCASecretName(cluster), data);
     }
 
     /**
@@ -523,13 +519,9 @@ public class KafkaCluster extends AbstractModel {
      * @return The generated Secret
      */
     public Secret generateClientsPublicKeySecret() {
-        if (isEncryptionEnabled()) {
-            Map<String, String> data = new HashMap<>();
-            data.put("clients-ca.crt", Base64.getEncoder().encodeToString(clientsCA.cert()));
-            return createSecret(KafkaCluster.clientsPublicKeyName(cluster), data);
-        } else {
-            return null;
-        }
+        Map<String, String> data = new HashMap<>();
+        data.put("clients-ca.crt", Base64.getEncoder().encodeToString(clientsCA.cert()));
+        return createSecret(KafkaCluster.clientsPublicKeyName(cluster), data);
     }
 
     /**
@@ -539,21 +531,17 @@ public class KafkaCluster extends AbstractModel {
      * @return The generated Secret
      */
     public Secret generateBrokersInternalSecret() {
-        if (isEncryptionEnabled()) {
-            Base64.Encoder encoder = Base64.getEncoder();
+        Base64.Encoder encoder = Base64.getEncoder();
 
-            Map<String, String> data = new HashMap<>();
-            data.put("internal-ca.crt", encoder.encodeToString(internalCA.cert()));
+        Map<String, String> data = new HashMap<>();
+        data.put("internal-ca.crt", encoder.encodeToString(internalCA.cert()));
 
-            for (int i = 0; i < replicas; i++) {
-                Cert cert = internalCerts.get(KafkaCluster.kafkaPodName(cluster, i));
-                data.put(KafkaCluster.kafkaPodName(cluster, i) + ".key", encoder.encodeToString(cert.key()));
-                data.put(KafkaCluster.kafkaPodName(cluster, i) + ".crt", encoder.encodeToString(cert.cert()));
-            }
-            return createSecret(KafkaCluster.brokersInternalSecretName(cluster), data);
-        } else {
-            return null;
+        for (int i = 0; i < replicas; i++) {
+            Cert cert = internalCerts.get(KafkaCluster.kafkaPodName(cluster, i));
+            data.put(KafkaCluster.kafkaPodName(cluster, i) + ".key", encoder.encodeToString(cert.key()));
+            data.put(KafkaCluster.kafkaPodName(cluster, i) + ".crt", encoder.encodeToString(cert.cert()));
         }
+        return createSecret(KafkaCluster.brokersInternalSecretName(cluster), data);
     }
 
     /**
@@ -563,28 +551,25 @@ public class KafkaCluster extends AbstractModel {
      * @return The generated Secret
      */
     public Secret generateBrokersClientsSecret() {
-        if (isEncryptionEnabled()) {
-            Base64.Encoder encoder = Base64.getEncoder();
+        Base64.Encoder encoder = Base64.getEncoder();
 
-            Map<String, String> data = new HashMap<>();
-            data.put("internal-ca.crt", encoder.encodeToString(internalCA.cert()));
-            data.put("clients-ca.crt", encoder.encodeToString(clientsCA.cert()));
+        Map<String, String> data = new HashMap<>();
+        data.put("internal-ca.crt", encoder.encodeToString(internalCA.cert()));
+        data.put("clients-ca.crt", encoder.encodeToString(clientsCA.cert()));
 
-            for (int i = 0; i < replicas; i++) {
-                Cert cert = clientsCerts.get(KafkaCluster.kafkaPodName(cluster, i));
-                data.put(KafkaCluster.kafkaPodName(cluster, i) + ".key", encoder.encodeToString(cert.key()));
-                data.put(KafkaCluster.kafkaPodName(cluster, i) + ".crt", encoder.encodeToString(cert.cert()));
-            }
-            return createSecret(KafkaCluster.brokersClientsSecret(cluster), data);
-        } else {
-            return null;
+        for (int i = 0; i < replicas; i++) {
+            Cert cert = clientsCerts.get(KafkaCluster.kafkaPodName(cluster, i));
+            data.put(KafkaCluster.kafkaPodName(cluster, i) + ".key", encoder.encodeToString(cert.key()));
+            data.put(KafkaCluster.kafkaPodName(cluster, i) + ".crt", encoder.encodeToString(cert.cert()));
         }
+        return createSecret(KafkaCluster.brokersClientsSecret(cluster), data);
     }
 
     private List<ContainerPort> getContainerPortList() {
         List<ContainerPort> portList = new ArrayList<>(3);
         portList.add(createContainerPort(CLIENT_PORT_NAME, CLIENT_PORT, "TCP"));
         portList.add(createContainerPort(REPLICATION_PORT_NAME, REPLICATION_PORT, "TCP"));
+        portList.add(createContainerPort(CLIENT_ENC_PORT_NAME, CLIENT_ENC_PORT, "TCP"));
         if (isMetricsEnabled) {
             portList.add(createContainerPort(metricsPortName, metricsPort, "TCP"));
         }
@@ -603,10 +588,8 @@ public class KafkaCluster extends AbstractModel {
         if (rackConfig != null) {
             volumeList.add(createEmptyDirVolume(RACK_VOLUME_NAME));
         }
-        if (isEncryptionEnabled) {
-            volumeList.add(createSecretVolume("internal-certs", KafkaCluster.brokersInternalSecretName(cluster)));
-            volumeList.add(createSecretVolume("clients-certs", KafkaCluster.brokersClientsSecret(cluster)));
-        }
+        volumeList.add(createSecretVolume("internal-certs", KafkaCluster.brokersInternalSecretName(cluster)));
+        volumeList.add(createSecretVolume("clients-certs", KafkaCluster.brokersClientsSecret(cluster)));
 
         return volumeList;
     }
@@ -628,10 +611,8 @@ public class KafkaCluster extends AbstractModel {
         if (rackConfig != null) {
             volumeMountList.add(createVolumeMount(RACK_VOLUME_NAME, RACK_VOLUME_MOUNT));
         }
-        if (isEncryptionEnabled) {
-            volumeMountList.add(createVolumeMount("internal-certs", "/opt/kafka/internal-certs"));
-            volumeMountList.add(createVolumeMount("clients-certs", "/opt/kafka/clients-certs"));
-        }
+        volumeMountList.add(createVolumeMount("internal-certs", "/opt/kafka/internal-certs"));
+        volumeMountList.add(createVolumeMount("clients-certs", "/opt/kafka/clients-certs"));
 
         return volumeMountList;
     }
@@ -705,7 +686,6 @@ public class KafkaCluster extends AbstractModel {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(buildEnvVar(ENV_VAR_KAFKA_ZOOKEEPER_CONNECT, zookeeperConnect));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
-        varList.add(buildEnvVar(ENV_VAR_KAFKA_ENCRYPTION_ENABLED, String.valueOf(isEncryptionEnabled)));
         heapOptions(varList, 0.5, 5L * 1024L * 1024L * 1024L);
         jvmPerformanceOptions(varList);
 

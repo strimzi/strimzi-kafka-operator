@@ -110,8 +110,6 @@ public abstract class AbstractModel {
     private Resources resources;
     private Affinity userAffinity;
 
-    protected boolean isEncryptionEnabled;
-
     /**
      * Constructor
      *
@@ -191,14 +189,6 @@ public abstract class AbstractModel {
 
     protected void setMetricsConfigName(String metricsConfigName) {
         this.metricsConfigName = metricsConfigName;
-    }
-
-    public boolean isEncryptionEnabled() {
-        return isEncryptionEnabled;
-    }
-
-    protected void setEncryptionEnabled(boolean isEncryptionEnabled) {
-        this.isEncryptionEnabled = isEncryptionEnabled;
     }
 
     protected List<EnvVar> getEnvVars() {
