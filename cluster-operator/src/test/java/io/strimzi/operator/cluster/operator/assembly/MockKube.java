@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.DoneableConfigMap;
 import io.fabric8.kubernetes.api.model.DoneableEndpoints;
 import io.fabric8.kubernetes.api.model.DoneablePersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.DoneablePod;
+import io.fabric8.kubernetes.api.model.DoneableSecret;
 import io.fabric8.kubernetes.api.model.DoneableService;
 import io.fabric8.kubernetes.api.model.Endpoints;
 import io.fabric8.kubernetes.api.model.EndpointsList;
@@ -23,6 +24,8 @@ import io.fabric8.kubernetes.api.model.PersistentVolumeClaimList;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.PodList;
+import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretList;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceList;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
@@ -75,6 +78,7 @@ public class MockKube {
     private final Map<String, Pod> podDb = db(emptySet(), Pod.class, DoneablePod.class);
     private final Map<String, StatefulSet> ssDb = db(emptySet(), StatefulSet.class, DoneableStatefulSet.class);
     private final Map<String, Deployment> depDb = db(emptySet(), Deployment.class, DoneableDeployment.class);
+    private final Map<String, Secret> secretDb = db(emptySet(), Secret.class, DoneableSecret.class);
 
     public MockKube withInitialCms(Set<ConfigMap> initialCms) {
         this.cmDb.putAll(db(initialCms, ConfigMap.class, DoneableConfigMap.class));
@@ -91,6 +95,11 @@ public class MockKube {
         return this;
     }
 
+    public MockKube withInitialSecrets(Set<Secret> initial) {
+        this.secretDb.putAll(db(initial, Secret.class, DoneableSecret.class));
+        return this;
+    }
+
     public KubernetesClient build() {
         KubernetesClient mockClient = mock(KubernetesClient.class);
         MixedOperation<ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> mockCms = buildConfigMaps();
@@ -100,6 +109,7 @@ public class MockKube {
         MixedOperation<Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> mockPods = buildPods();
         MixedOperation<StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> mockSs = buildStatefulSets(mockPods);
         MixedOperation<Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>> mockDep = buildDeployments();
+        MixedOperation<Secret, SecretList, DoneableSecret, Resource<Secret, DoneableSecret>> mockSecrets = buildSecrets();
 
         when(mockClient.configMaps()).thenReturn(mockCms);
 
@@ -114,6 +124,8 @@ public class MockKube {
         when(mockClient.pods()).thenReturn(mockPods);
         when(mockClient.endpoints()).thenReturn(mockEndpoints);
         when(mockClient.persistentVolumeClaims()).thenReturn(mockPvcs);
+
+        when(mockClient.secrets()).thenReturn(mockSecrets);
 
         return mockClient;
     }
@@ -360,6 +372,20 @@ public class MockKube {
             protected void nameScopedMocks(Resource<ConfigMap, DoneableConfigMap> resource, String resourceName) {
                 mockGet(resourceName, resource);
                 mockWatch(resourceName, resource);
+                mockCreate(resourceName, resource);
+                mockCascading(resource);
+                mockPatch(resourceName, resource);
+                mockDelete(resourceName, resource);
+            }
+        }.build();
+    }
+
+    private MixedOperation<Secret, SecretList, DoneableSecret, Resource<Secret, DoneableSecret>> buildSecrets() {
+        return new AbstractMockBuilder<Secret, SecretList, DoneableSecret, Resource<Secret, DoneableSecret>>(
+                Secret.class, SecretList.class, DoneableSecret.class, castClass(Resource.class), secretDb) {
+            @Override
+            protected void nameScopedMocks(Resource<Secret, DoneableSecret> resource, String resourceName) {
+                mockGet(resourceName, resource);
                 mockCreate(resourceName, resource);
                 mockCascading(resource);
                 mockPatch(resourceName, resource);

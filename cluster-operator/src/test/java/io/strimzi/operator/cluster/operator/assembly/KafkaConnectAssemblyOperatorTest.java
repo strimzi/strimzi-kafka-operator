@@ -487,6 +487,8 @@ public class KafkaConnectAssemblyOperatorTest {
                 asList(KafkaConnectCluster.fromConfigMap(baz).generateDeployment())
         );
 
+        when(mockSecretOps.reconcile(eq(clusterCmNamespace), any(), any())).thenReturn(Future.succeededFuture());
+
         Set<String> createdOrUpdated = new HashSet<>();
         Set<String> deleted = new HashSet<>();
 

@@ -638,6 +638,8 @@ public class KafkaConnectS2IAssemblyOperatorTest {
                 asList(KafkaConnectS2ICluster.fromConfigMap(baz).generateDeploymentConfig())
         );
 
+        when(mockSecretOps.reconcile(eq(clusterCmNamespace), any(), any())).thenReturn(Future.succeededFuture());
+
         Set<String> createdOrUpdated = new CopyOnWriteArraySet<>();
         Set<String> deleted = new CopyOnWriteArraySet<>();
 
