@@ -75,6 +75,7 @@ public class KafkaCluster extends AbstractModel {
             System.getenv().getOrDefault("STRIMZI_DEFAULT_KAFKA_IMAGE", "strimzi/kafka:latest");
     private static final String DEFAULT_INIT_IMAGE =
             System.getenv().getOrDefault("STRIMZI_DEFAULT_INIT_KAFKA_IMAGE", "strimzi/init-kafka:latest");
+    private static final boolean DEFAULT_ENCRYPTION_ENABLED = true;
 
 
     private static final int DEFAULT_REPLICAS = 3;
@@ -208,8 +209,7 @@ public class KafkaCluster extends AbstractModel {
         kafka.setInitImage(Utils.getNonEmptyString(data, KEY_INIT_IMAGE, DEFAULT_INIT_IMAGE));
         kafka.setUserAffinity(Utils.getAffinity(data.get(KEY_AFFINITY)));
 
-        // TODO: checking configuration for enabling TLS
-        kafka.setEncryptionEnabled(true);
+        kafka.setEncryptionEnabled(DEFAULT_ENCRYPTION_ENABLED);
         if (kafka.isEncryptionEnabled()) {
             kafka.generateCertificates(secrets);
         }
@@ -292,6 +292,11 @@ public class KafkaCluster extends AbstractModel {
         return Base64.getDecoder().decode(secret.getData().get(key));
     }
 
+    /**
+     * Manage certificates generation based on those already present in the Secrets
+     *
+     * @param secrets The Secrets storing certificates
+     */
     public void generateCertificates(List<Secret> secrets) {
         log.info("Generating certificates");
 
@@ -303,12 +308,12 @@ public class KafkaCluster extends AbstractModel {
 
                 CertManager certManager = new OpenSslCertManager();
 
-                // get the generated CA private + certificate for internal communications
+                // get the generated CA private key + self-signed certificate for internal communications
                 internalCA = new Cert(
                         decodeFromSecret(internalCAsecret.get(), "internal-ca.key"),
                         decodeFromSecret(internalCAsecret.get(), "internal-ca.crt"));
 
-                // CA private key + certificate for clients communications
+                // CA private key + self-signed certificate for clients communications
                 Optional<Secret> clientsCAsecret = secrets.stream().filter(s -> s.getMetadata().getName().equals(KafkaCluster.clientsCASecretName(cluster))).findFirst();
                 if (!clientsCAsecret.isPresent()) {
                     log.info("Clients CA to generate");
@@ -330,85 +335,22 @@ public class KafkaCluster extends AbstractModel {
                             decodeFromSecret(clientsCAsecret.get(), "clients-ca.crt"));
                 }
 
+                // recover or generates the private key + certificate for each broker for internal and clients communication
                 internalCerts = new HashMap<>();
                 clientsCerts = new HashMap<>();
 
-                File brokerCsrFile = File.createTempFile("tls", "broker-csr");
-                File brokerKeyFile = File.createTempFile("tls", "broker-key");
-                File brokerCertFile = File.createTempFile("tls", "broker-cert");
-
-                int replicasInSecret = 0;
                 Optional<Secret> internalSecret = secrets.stream().filter(s -> s.getMetadata().getName().equals(KafkaCluster.brokersInternalSecretName(cluster)))
                         .findFirst();
                 Optional<Secret> clientsSecret = secrets.stream().filter(s -> s.getMetadata().getName().equals(KafkaCluster.brokersClientsSecret(cluster)))
                         .findFirst();
 
-                if (internalSecret.isPresent() ^ clientsSecret.isPresent()) {
-                    log.error("Inconsistency!!!");
-                    // TODO: what to do ? raising exception ?
-                } else if (internalSecret.isPresent() && clientsSecret.isPresent()) {
+                int replicasInternalSecret = !internalSecret.isPresent() ? 0 : (internalSecret.get().getData().size() - 1) / 2;
+                int replicasClientsSecret = !clientsSecret.isPresent() ? 0 : (clientsSecret.get().getData().size() - 2) / 2;
 
-                    // internalSecret contains private and public keys for each broker + CA cert for internal communication
-                    // clientsSecret contains private and public keys for each broker + CA cert for internal communication + CA cert for clients
-                    // comparing the sizes not considering CA certs
-                    if ((internalSecret.get().getData().size() - 1) != (clientsSecret.get().getData().size() - 2)) {
-                        log.error("Inconsistency!!!");
-                        // TODO: what to do ? raising exception ?
-                    } else {
-                        replicasInSecret = (internalSecret.get().getData().size() - 1) / 2;
-                    }
-                }
-
-                // copying the minimum number of certificates already existing in the secret
-                // scale up -> it will copy all certificates
-                // scale down -> it will copy just the requested number of replicas
-                for (int i = 0; i < Math.min(replicasInSecret, replicas); i++) {
-                    log.info("{} already exists", KafkaCluster.kafkaPodName(cluster, i));
-                    internalCerts.put(
-                            KafkaCluster.kafkaPodName(cluster, i),
-                            new Cert(
-                                    decodeFromSecret(internalSecret.get(), KafkaCluster.kafkaPodName(cluster, i) + ".key"),
-                                    decodeFromSecret(internalSecret.get(), KafkaCluster.kafkaPodName(cluster, i) + ".crt")));
-
-                    clientsCerts.put(
-                            KafkaCluster.kafkaPodName(cluster, i),
-                            new Cert(
-                                    decodeFromSecret(clientsSecret.get(), KafkaCluster.kafkaPodName(cluster, i) + ".key"),
-                                    decodeFromSecret(clientsSecret.get(), KafkaCluster.kafkaPodName(cluster, i) + ".crt")));
-                }
-
-                // generate the missing number of certificates
-                // scale up -> generate new certificates for added replicas
-                // scale down -> does nothing
-                for (int i = replicasInSecret; i < replicas; i++) {
-                    log.info("{} to generate", KafkaCluster.kafkaPodName(cluster, i));
-
-                    Subject sbj = new Subject();
-                    sbj.setOrganizationName("io.strimzi");
-                    sbj.setCommonName(KafkaCluster.kafkaPodName(cluster, i));
-
-                    certManager.generateCsr(brokerKeyFile, brokerCsrFile, sbj);
-                    certManager.generateCert(brokerCsrFile, internalCA.key(), internalCA.cert(), brokerCertFile, DEFAULT_CERTS_EXPIRATION_DAYS);
-
-                    internalCerts.put(KafkaCluster.kafkaPodName(cluster, i),
-                            new Cert(Files.readAllBytes(brokerKeyFile.toPath()), Files.readAllBytes(brokerCertFile.toPath())));
-
-                    certManager.generateCsr(brokerKeyFile, brokerCsrFile, sbj);
-                    certManager.generateCert(brokerCsrFile, clientsCA.key(), clientsCA.cert(), brokerCertFile, DEFAULT_CERTS_EXPIRATION_DAYS);
-
-                    clientsCerts.put(KafkaCluster.kafkaPodName(cluster, i),
-                            new Cert(Files.readAllBytes(brokerKeyFile.toPath()), Files.readAllBytes(brokerCertFile.toPath())));
-                }
-
-                if (!brokerCsrFile.delete()) {
-                    log.warn("{} cannot be deleted", brokerCsrFile.getName());
-                }
-                if (!brokerKeyFile.delete()) {
-                    log.warn("{} cannot be deleted", brokerKeyFile.getName());
-                }
-                if (!brokerCertFile.delete()) {
-                    log.warn("{} cannot be deleted", brokerCertFile.getName());
-                }
+                log.info("Internal communication certificates");
+                maybeCopyOrGenerateCerts(internalCerts, internalSecret, replicasInternalSecret, internalCA);
+                log.info("Clients communication certificates");
+                maybeCopyOrGenerateCerts(clientsCerts, clientsSecret, replicasClientsSecret, clientsCA);
             }
 
         } catch (IOException e) {
@@ -416,6 +358,64 @@ public class KafkaCluster extends AbstractModel {
         }
 
         log.info("End generating certificates");
+    }
+
+    /**
+     * Copy already existing certificates from provided Secret based on number of effective replicas
+     * and maybe generate new ones for new replicas (i.e. scale-up)
+     *
+     * @param certs Collection where to put certificates
+     * @param secret The Secret from which getting already existing certificates
+     * @param replicasInSecret How many certificates are in the Secret
+     * @param caCert CA certificate to use for signing new certificates
+     * @throws IOException
+     */
+    private void maybeCopyOrGenerateCerts(Map<String, Cert> certs, Optional<Secret> secret, int replicasInSecret, Cert caCert) throws IOException {
+
+        // copying the minimum number of certificates already existing in the secret
+        // scale up -> it will copy all certificates
+        // scale down -> it will copy just the requested number of replicas
+        for (int i = 0; i < Math.min(replicasInSecret, replicas); i++) {
+            log.info("{} already exists", KafkaCluster.kafkaPodName(cluster, i));
+            certs.put(
+                    KafkaCluster.kafkaPodName(cluster, i),
+                    new Cert(
+                            decodeFromSecret(secret.get(), KafkaCluster.kafkaPodName(cluster, i) + ".key"),
+                            decodeFromSecret(secret.get(), KafkaCluster.kafkaPodName(cluster, i) + ".crt")));
+        }
+
+        CertManager certManager = new OpenSslCertManager();
+
+        File brokerCsrFile = File.createTempFile("tls", "broker-csr");
+        File brokerKeyFile = File.createTempFile("tls", "broker-key");
+        File brokerCertFile = File.createTempFile("tls", "broker-cert");
+
+        // generate the missing number of certificates
+        // scale up -> generate new certificates for added replicas
+        // scale down -> does nothing
+        for (int i = replicasInSecret; i < replicas; i++) {
+            log.info("{} to generate", KafkaCluster.kafkaPodName(cluster, i));
+
+            Subject sbj = new Subject();
+            sbj.setOrganizationName("io.strimzi");
+            sbj.setCommonName(KafkaCluster.kafkaPodName(cluster, i));
+
+            certManager.generateCsr(brokerKeyFile, brokerCsrFile, sbj);
+            certManager.generateCert(brokerCsrFile, caCert.key(), caCert.cert(), brokerCertFile, DEFAULT_CERTS_EXPIRATION_DAYS);
+
+            certs.put(KafkaCluster.kafkaPodName(cluster, i),
+                    new Cert(Files.readAllBytes(brokerKeyFile.toPath()), Files.readAllBytes(brokerCertFile.toPath())));
+        }
+
+        if (!brokerCsrFile.delete()) {
+            log.warn("{} cannot be deleted", brokerCsrFile.getName());
+        }
+        if (!brokerKeyFile.delete()) {
+            log.warn("{} cannot be deleted", brokerKeyFile.getName());
+        }
+        if (!brokerCertFile.delete()) {
+            log.warn("{} cannot be deleted", brokerCertFile.getName());
+        }
     }
 
     /**
