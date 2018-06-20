@@ -6,6 +6,8 @@ package io.strimzi.operator.cluster;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.operator.cluster.model.AssemblyType;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
@@ -13,9 +15,13 @@ import io.strimzi.operator.cluster.model.KafkaConnectS2ICluster;
 import io.strimzi.operator.cluster.model.Labels;
 import io.strimzi.operator.cluster.model.TopicOperator;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
+import io.strimzi.operator.cluster.operator.assembly.AbstractAssemblyOperator;
 
+import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -122,6 +128,106 @@ public class ResourceUtils {
                 .endMetadata()
                 .withData(cmData)
                 .build();
+    }
+
+    public static List<Secret> createKafkaClusterInitialSecrets(String clusterCmNamespace) {
+
+        List<Secret> secrets = new ArrayList<>();
+
+        Map<String, String> data = new HashMap<>();
+        data.put("internal-ca.key", Base64.getEncoder().encodeToString("internal-ca-base64key".getBytes()));
+        data.put("internal-ca.crt", Base64.getEncoder().encodeToString("internal-ca-base64crt".getBytes()));
+        secrets.add(
+                new SecretBuilder()
+                .withNewMetadata()
+                    .withName(AbstractAssemblyOperator.INTERNAL_CA_NAME)
+                    .withNamespace(clusterCmNamespace)
+                .endMetadata()
+                .withData(data)
+                .build()
+        );
+        return secrets;
+    }
+
+    public static List<Secret> createKafkaClusterSecretsWithReplicas(String clusterCmNamespace, String clusterCmName, int replicas) {
+
+        List<Secret> secrets = new ArrayList<>();
+
+        Map<String, String> data = new HashMap<>();
+        data.put("internal-ca.key", Base64.getEncoder().encodeToString("internal-ca-base64key".getBytes()));
+        data.put("internal-ca.crt", Base64.getEncoder().encodeToString("internal-ca-base64crt".getBytes()));
+        secrets.add(
+                new SecretBuilder()
+                        .withNewMetadata()
+                            .withName(AbstractAssemblyOperator.INTERNAL_CA_NAME)
+                            .withNamespace(clusterCmNamespace)
+                        .endMetadata()
+                        .withData(data)
+                        .build()
+        );
+
+        data = new HashMap<>();
+        data.put("clients-ca.key", Base64.getEncoder().encodeToString("clients-ca-base64key".getBytes()));
+        data.put("clients-ca.crt", Base64.getEncoder().encodeToString("clients-ca-base64crt".getBytes()));
+        secrets.add(
+                new SecretBuilder()
+                        .withNewMetadata()
+                            .withName(KafkaCluster.clientsCASecretName(clusterCmName))
+                            .withNamespace(clusterCmNamespace)
+                            .withLabels(Labels.forCluster(clusterCmName).withType(AssemblyType.KAFKA).toMap())
+                        .endMetadata()
+                        .withData(data)
+                        .build()
+        );
+
+        data = new HashMap<>();
+        data.put("clients-ca.crt", Base64.getEncoder().encodeToString("clients-ca-base64crt".getBytes()));
+        secrets.add(
+                new SecretBuilder()
+                        .withNewMetadata()
+                            .withName(KafkaCluster.clientsPublicKeyName(clusterCmName))
+                            .withNamespace(clusterCmNamespace)
+                            .withLabels(Labels.forCluster(clusterCmName).withType(AssemblyType.KAFKA).toMap())
+                        .endMetadata()
+                        .withData(data)
+                        .build()
+        );
+
+        data = new HashMap<>();
+        data.put("internal-ca.crt", Base64.getEncoder().encodeToString("internal-ca-base64crt".getBytes()));
+        for (int i = 0; i < replicas; i++) {
+            data.put(KafkaCluster.kafkaPodName(clusterCmName, i) + ".key", Base64.getEncoder().encodeToString("brokers-internal-base64key".getBytes()));
+            data.put(KafkaCluster.kafkaPodName(clusterCmName, i) + ".crt", Base64.getEncoder().encodeToString("brokers-internal-base64crt".getBytes()));
+        }
+        secrets.add(
+                new SecretBuilder()
+                        .withNewMetadata()
+                            .withName(KafkaCluster.brokersInternalSecretName(clusterCmName))
+                            .withNamespace(clusterCmNamespace)
+                            .withLabels(Labels.forCluster(clusterCmName).withType(AssemblyType.KAFKA).toMap())
+                        .endMetadata()
+                        .withData(data)
+                        .build()
+        );
+
+        data = new HashMap<>();
+        data.put("internal-ca.crt", Base64.getEncoder().encodeToString("internal-ca-base64crt".getBytes()));
+        data.put("clients-ca.crt", Base64.getEncoder().encodeToString("clients-ca-base64crt".getBytes()));
+        for (int i = 0; i < replicas; i++) {
+            data.put(KafkaCluster.kafkaPodName(clusterCmName, i) + ".key", Base64.getEncoder().encodeToString("brokers-clients-base64key".getBytes()));
+            data.put(KafkaCluster.kafkaPodName(clusterCmName, i) + ".crt", Base64.getEncoder().encodeToString("brokers-clients-base64crt".getBytes()));
+        }
+        secrets.add(
+                new SecretBuilder()
+                        .withNewMetadata()
+                            .withName(KafkaCluster.brokersClientsSecret(clusterCmName))
+                            .withNamespace(clusterCmNamespace)
+                            .withLabels(Labels.forCluster(clusterCmName).withType(AssemblyType.KAFKA).toMap())
+                        .endMetadata()
+                        .withData(data)
+                        .build()
+        );
+        return secrets;
     }
 
 

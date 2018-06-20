@@ -245,7 +245,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
         final KafkaCluster kafka = ss == null ? null : KafkaCluster.fromAssembly(ss, namespace, name);
         boolean deleteClaims = kafka != null && kafka.getStorage().type() == Storage.StorageType.PERSISTENT_CLAIM
             && kafka.getStorage().isDeleteClaim();
-        List<Future> result = new ArrayList<>(4 + (deleteClaims ? kafka.getReplicas() : 0));
+        List<Future> result = new ArrayList<>(8 + (deleteClaims ? kafka.getReplicas() : 0));
 
         result.add(configMapOperations.reconcile(namespace, KafkaCluster.metricConfigsName(name), null));
         result.add(serviceOperations.reconcile(namespace, KafkaCluster.kafkaClusterName(name), null));
