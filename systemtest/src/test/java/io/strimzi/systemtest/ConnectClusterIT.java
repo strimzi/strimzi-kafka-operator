@@ -172,8 +172,8 @@ public class ConnectClusterIT extends AbstractClusterIT {
     @JUnitGroup(name = "regression")
     @ConnectCluster(name = CONNECT_CLUSTER_NAME, connectConfig = CONNECT_CONFIG)
     public void testForUpdateValuesInConnectCM() {
-        //
         List<String> connectPods = kubeClient.listResourcesByLabel("pod", "strimzi.io/type=kafka-connect");
+
         String conncectConfig = "{\n" +
                 "      \"bootstrap.servers\": \"" + KAFKA_CONNECT_BOOTSTRAP_SERVERS + "\",\n" +
                 "      \"config.storage.replication.factor\": \"1\",\n" +
@@ -185,8 +185,6 @@ public class ConnectClusterIT extends AbstractClusterIT {
         changes.put("healthcheck-delay", "61");
         changes.put("healthcheck-timeout", "6");
         replaceCm(CONNECT_CLUSTER_NAME, changes);
-//
-//
         kubeClient.waitForDeployment(kafkaConnectName(CONNECT_CLUSTER_NAME));
         for (int i = 0; i < connectPods.size(); i++) {
             kubeClient.waitForResourceDeletion("pod", connectPods.get(i));
