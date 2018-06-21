@@ -314,6 +314,9 @@ public class AbstractClusterIT {
 
     public String  getInitContainerImageName(String podName) {
         String clusterOperatorJson = kubeClient.getResourceAsJson("pod", podName);
+
+        LOGGER.info("Get pod info for {} : {}", podName, clusterOperatorJson);
+
         return JsonPath.parse(clusterOperatorJson).read("$.status.initContainerStatuses[-1].image");
     }
 
