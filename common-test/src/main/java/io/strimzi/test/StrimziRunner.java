@@ -447,7 +447,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                         }
                         // Set log level
                         String logLevel = System.getenv().getOrDefault("ST_STRIMZI_LOG_LEVEL", "INFO");
-                        if(varName.matches("STRIMZI_LOG_LEVEL")){
+                        if (varName.matches("STRIMZI_LOG_LEVEL")) {
                             ((ObjectNode) envVar).put("value", logLevel);
                         }
                         // Updates default values of env variables
