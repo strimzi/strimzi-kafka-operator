@@ -128,4 +128,4 @@ If `junitgroup` system property isn't defined, all tests without an explicitly d
 
 ### Log level
 
-To set the log level of Strimzi for system tests need to add system property `ST_STRIMZI_LOG_LEVEL` with one of the following values: `ERROR`, `WARNING`, `INFO`, `DEBUG`, `TRACE`.
+To set the log level of Strimzi for system tests need to add system property `TEST_STRIMZI_LOG_LEVEL` with one of the following values: `ERROR`, `WARNING`, `INFO`, `DEBUG`, `TRACE`.
