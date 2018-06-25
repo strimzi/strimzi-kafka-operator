@@ -48,7 +48,7 @@ public class OpenShiftTemplatesIT {
     private KubernetesClient client = new DefaultKubernetesClient();
 
     @Test
-    @JUnitGroup(name = "acceptance")
+    @JUnitGroup(name = "regression")
     public void testStrimziEphemeral() throws IOException {
         String clusterName = "foo";
         oc.newApp("strimzi-ephemeral", map("CLUSTER_NAME", clusterName,
@@ -65,7 +65,7 @@ public class OpenShiftTemplatesIT {
     }
 
     @Test
-    @JUnitGroup(name = "acceptance")
+    @JUnitGroup(name = "regression")
     public void testStrimziPersistent() throws IOException {
         String clusterName = "bar";
         oc.newApp("strimzi-persistent", map("CLUSTER_NAME", clusterName,
@@ -82,7 +82,7 @@ public class OpenShiftTemplatesIT {
     }
 
     @Test
-    @JUnitGroup(name = "acceptance")
+    @JUnitGroup(name = "regression")
     public void testStrimziEphemeralWithCustomParameters() throws IOException {
         String clusterName = "test-ephemeral-with-custom-parameters";
         oc.newApp("strimzi-ephemeral", map("CLUSTER_NAME", clusterName,
@@ -108,7 +108,7 @@ public class OpenShiftTemplatesIT {
     }
 
     @Test
-    @JUnitGroup(name = "acceptance")
+    @JUnitGroup(name = "regression")
     public void testStrimziPersistentWithCustomParameters() throws IOException {
         String clusterName = "test-persistent-with-custom-parameters";
         oc.newApp("strimzi-persistent", map("CLUSTER_NAME", clusterName,
@@ -138,7 +138,7 @@ public class OpenShiftTemplatesIT {
     }
 
     @Test
-    @JUnitGroup(name = "acceptance")
+    @JUnitGroup(name = "regression")
     public void testConnect() {
         String clusterName = "test-connect";
         oc.newApp("strimzi-connect", map("CLUSTER_NAME", clusterName,
@@ -151,7 +151,7 @@ public class OpenShiftTemplatesIT {
     }
 
     @Test
-    @JUnitGroup(name = "acceptance")
+    @JUnitGroup(name = "regression")
     public void testS2i() {
         String clusterName = "test-s2i";
         oc.newApp("strimzi-connect-s2i", map("CLUSTER_NAME", clusterName,
@@ -164,7 +164,7 @@ public class OpenShiftTemplatesIT {
     }
 
     @Test
-    @JUnitGroup(name = "acceptance")
+    @JUnitGroup(name = "regression")
     public void testTopicOperator() {
         String topicName = "test-topic-cm";
         String mapName = "test-topic-cm-foo";

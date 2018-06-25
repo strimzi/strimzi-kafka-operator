@@ -114,7 +114,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
     }
 
     @Test
-    @JUnitGroup(name = "acceptance")
+    @JUnitGroup(name = "regression")
     @ConnectCluster(name = "jvm-resource", connectConfig = CONNECT_CONFIG,
         nodes = 1,
         config = {
