@@ -34,11 +34,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.ClassRule;
 
-
-
+import static io.strimzi.systemtest.matchers.Matchers.isLoghasUnexpectedErrors;
 import static io.strimzi.test.TestUtils.indent;
 import static java.util.Arrays.asList;
-import static org.hamcrest.Matchers.isEmptyString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
@@ -261,8 +259,8 @@ public class AbstractClusterIT {
     }
 
     void assertNoCoErrorsLogged() {
-        //TODO add blacklist for unexpected errors
-        assertThat(kubeClient.searchInLog("deploy", "strimzi-cluster-operator", "60", "Exception", "Error", "Throwable"), isEmptyString());
+        String clusterOperatorLog = kubeClient.searchInLog("deploy", "strimzi-cluster-operator", "60", "Exception", "Error", "Throwable");
+        assertThat(clusterOperatorLog, isLoghasUnexpectedErrors());
     }
 
     public List<String> listTopicsUsingPodCLI(String clusterName, String podName) {

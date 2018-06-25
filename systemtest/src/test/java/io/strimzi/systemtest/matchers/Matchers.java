@@ -50,4 +50,11 @@ public class Matchers {
     public static Matcher<List<Event>> hasNoneOfReasons(Events... eventReasons) {
         return not(hasAnyOfReasons(eventReasons));
     }
+
+    /**
+     * A matcher checks that log doesn't have unexpected errors
+     */
+    public static Matcher<String> isLoghasUnexpectedErrors() {
+        return new IsLogHasUnexpectedErrors();
+    }
 }
