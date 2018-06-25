@@ -43,31 +43,31 @@ fi
 
 # set up for encryption support
 
-export ENC_PASSWORD=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${1:-32})
-echo "ENC_PASSWORD" $ENC_PASSWORD
+export CERTS_STORE_PASSWORD=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${1:-32})
+echo "CERTS_STORE_PASSWORD" $CERTS_STORE_PASSWORD
 
 mkdir -p /tmp/kafka
 
 # Import certificates into keystore and truststore
 echo "Importing certificates for internal communication"
-keytool -keystore /tmp/kafka/replication.truststore.jks -storepass $ENC_PASSWORD -noprompt -alias internal-ca -import -file /opt/kafka/internal-certs/internal-ca.crt
-openssl pkcs12 -export -in /opt/kafka/internal-certs/$HOSTNAME.crt -inkey /opt/kafka/internal-certs/$HOSTNAME.key -chain -CAfile /opt/kafka/internal-certs/internal-ca.crt -name $HOSTNAME -password pass:$ENC_PASSWORD -out /tmp/kafka/$HOSTNAME-internal.p12
-keytool -importkeystore -deststorepass $ENC_PASSWORD -destkeystore /tmp/kafka/replication.keystore.jks -srcstorepass $ENC_PASSWORD -srckeystore /tmp/kafka/$HOSTNAME-internal.p12 -srcstoretype PKCS12
+keytool -keystore /tmp/kafka/replication.truststore.jks -storepass $CERTS_STORE_PASSWORD -noprompt -alias internal-ca -import -file /opt/kafka/internal-certs/internal-ca.crt
+openssl pkcs12 -export -in /opt/kafka/internal-certs/$HOSTNAME.crt -inkey /opt/kafka/internal-certs/$HOSTNAME.key -chain -CAfile /opt/kafka/internal-certs/internal-ca.crt -name $HOSTNAME -password pass:$CERTS_STORE_PASSWORD -out /tmp/kafka/$HOSTNAME-internal.p12
+keytool -importkeystore -deststorepass $CERTS_STORE_PASSWORD -destkeystore /tmp/kafka/replication.keystore.jks -srcstorepass $CERTS_STORE_PASSWORD -srckeystore /tmp/kafka/$HOSTNAME-internal.p12 -srcstoretype PKCS12
 echo "End importing certificates"
 
 echo "Importing certificates for clients communication"
-keytool -keystore /tmp/kafka/clients.truststore.jks -storepass $ENC_PASSWORD -noprompt -alias clients-ca -import -file /opt/kafka/clients-certs/clients-ca.crt
-keytool -keystore /tmp/kafka/clients.truststore.jks -storepass $ENC_PASSWORD -noprompt -alias internal-ca -import -file /opt/kafka/internal-certs/internal-ca.crt
-openssl pkcs12 -export -in /opt/kafka/clients-certs/$HOSTNAME.crt -inkey /opt/kafka/clients-certs/$HOSTNAME.key -chain -CAfile /opt/kafka/clients-certs/clients-ca.crt -name $HOSTNAME -password pass:$ENC_PASSWORD -out /tmp/kafka/$HOSTNAME-clients.p12
-keytool -importkeystore -deststorepass $ENC_PASSWORD -destkeystore /tmp/kafka/clients.keystore.jks -srcstorepass $ENC_PASSWORD -srckeystore /tmp/kafka/$HOSTNAME-clients.p12 -srcstoretype PKCS12
+keytool -keystore /tmp/kafka/clients.truststore.jks -storepass $CERTS_STORE_PASSWORD -noprompt -alias clients-ca -import -file /opt/kafka/clients-certs/clients-ca.crt
+keytool -keystore /tmp/kafka/clients.truststore.jks -storepass $CERTS_STORE_PASSWORD -noprompt -alias internal-ca -import -file /opt/kafka/internal-certs/internal-ca.crt
+openssl pkcs12 -export -in /opt/kafka/clients-certs/$HOSTNAME.crt -inkey /opt/kafka/clients-certs/$HOSTNAME.key -chain -CAfile /opt/kafka/clients-certs/clients-ca.crt -name $HOSTNAME -password pass:$CERTS_STORE_PASSWORD -out /tmp/kafka/$HOSTNAME-clients.p12
+keytool -importkeystore -deststorepass $CERTS_STORE_PASSWORD -destkeystore /tmp/kafka/clients.keystore.jks -srcstorepass $CERTS_STORE_PASSWORD -srckeystore /tmp/kafka/$HOSTNAME-clients.p12 -srcstoretype PKCS12
 echo "End importing certificates"
 
 export KAFKA_SECURITY="listener.name.replication.ssl.keystore.location=/tmp/kafka/replication.keystore.jks
 listener.name.replication.ssl.truststore.location=/tmp/kafka/replication.truststore.jks
-listener.name.clientenc.ssl.keystore.location=/tmp/kafka/clients.keystore.jks
-listener.name.clientenc.ssl.truststore.location=/tmp/kafka/clients.truststore.jks
-ssl.keystore.password=${ENC_PASSWORD}
-ssl.truststore.password=${ENC_PASSWORD}"
+listener.name.clienttls.ssl.keystore.location=/tmp/kafka/clients.keystore.jks
+listener.name.clienttls.ssl.truststore.location=/tmp/kafka/clients.truststore.jks
+ssl.keystore.password=${CERTS_STORE_PASSWORD}
+ssl.truststore.password=${CERTS_STORE_PASSWORD}"
 
 # Generate and print the config file
 echo "Starting Kafka with configuration:"

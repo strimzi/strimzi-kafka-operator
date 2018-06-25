@@ -47,7 +47,7 @@ public abstract class AbstractAssemblyOperator {
     private static final Logger log = LogManager.getLogger(AbstractAssemblyOperator.class.getName());
 
     protected static final int LOCK_TIMEOUT = 60000;
-    protected static final int DEFAULT_CERTS_EXPIRATION_DAYS = 365;
+    protected static final int CERTS_EXPIRATION_DAYS = 365;
 
     public static final String INTERNAL_CA_NAME = "internal-ca";
 
@@ -128,7 +128,7 @@ public abstract class AbstractAssemblyOperator {
                         CertManager certManager = new OpenSslCertManager();
                         internalCAkeyFile = File.createTempFile("tls", "internal-ca-key");
                         internalCAcertFile = File.createTempFile("tls", "internal-ca-cert");
-                        certManager.generateSelfSignedCert(internalCAkeyFile, internalCAcertFile, DEFAULT_CERTS_EXPIRATION_DAYS);
+                        certManager.generateSelfSignedCert(internalCAkeyFile, internalCAcertFile, CERTS_EXPIRATION_DAYS);
 
                         SecretCertProvider secretCertProvider = new SecretCertProvider();
                         Secret secret = secretCertProvider.createSecret(namespace, INTERNAL_CA_NAME,
