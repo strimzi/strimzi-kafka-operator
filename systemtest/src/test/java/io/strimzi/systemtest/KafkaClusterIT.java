@@ -337,7 +337,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
                             "\"requests\": {\"memory\": \"500M\", \"cpu\": \"300m\"} } }")
     })
     @Test
-    @JUnitGroup(name = "acceptance")
+    @JUnitGroup(name = "regression")
     public void testJvmAndResources() {
         assertResources(NAMESPACE, "jvm-resource-cluster-kafka-0",
                 "2Gi", "400m", "2Gi", "400m");
