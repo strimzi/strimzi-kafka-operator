@@ -57,8 +57,8 @@ public class KafkaCluster extends AbstractModel {
     protected static final int REPLICATION_PORT = 9091;
     protected static final String REPLICATION_PORT_NAME = "replication";
 
-    protected static final int CLIENT_ENC_PORT = 9093;
-    protected static final String CLIENT_ENC_PORT_NAME = "clientsenc";
+    protected static final int CLIENT_TLS_PORT = 9093;
+    protected static final String CLIENT_TLS_PORT_NAME = "clientstls";
 
     private static final String NAME_SUFFIX = "-kafka";
     private static final String HEADLESS_NAME_SUFFIX = NAME_SUFFIX + "-headless";
@@ -317,7 +317,7 @@ public class KafkaCluster extends AbstractModel {
                     log.info("Clients CA to generate");
                     File clientsCAkeyFile = File.createTempFile("tls", "clients-ca-key");
                     File clientsCAcertFile = File.createTempFile("tls", "clients-ca-cert");
-                    certManager.generateSelfSignedCert(clientsCAkeyFile, clientsCAcertFile, DEFAULT_CERTS_EXPIRATION_DAYS);
+                    certManager.generateSelfSignedCert(clientsCAkeyFile, clientsCAcertFile, CERTS_EXPIRATION_DAYS);
                     clientsCA =
                             new Cert(Files.readAllBytes(clientsCAkeyFile.toPath()), Files.readAllBytes(clientsCAcertFile.toPath()));
                     if (!clientsCAkeyFile.delete()) {
@@ -399,7 +399,7 @@ public class KafkaCluster extends AbstractModel {
             sbj.setCommonName(KafkaCluster.kafkaPodName(cluster, i));
 
             certManager.generateCsr(brokerKeyFile, brokerCsrFile, sbj);
-            certManager.generateCert(brokerCsrFile, caCert.key(), caCert.cert(), brokerCertFile, DEFAULT_CERTS_EXPIRATION_DAYS);
+            certManager.generateCert(brokerCsrFile, caCert.key(), caCert.cert(), brokerCertFile, CERTS_EXPIRATION_DAYS);
 
             certs.put(KafkaCluster.kafkaPodName(cluster, i),
                     new Cert(Files.readAllBytes(brokerKeyFile.toPath()), Files.readAllBytes(brokerCertFile.toPath())));
@@ -426,7 +426,7 @@ public class KafkaCluster extends AbstractModel {
     private List<ServicePort> getServicePorts() {
         List<ServicePort> ports = new ArrayList<>(2);
         ports.add(createServicePort(CLIENT_PORT_NAME, CLIENT_PORT, CLIENT_PORT, "TCP"));
-        ports.add(createServicePort(CLIENT_ENC_PORT_NAME, CLIENT_ENC_PORT, CLIENT_ENC_PORT, "TCP"));
+        ports.add(createServicePort(CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, CLIENT_TLS_PORT, "TCP"));
         if (isMetricsEnabled()) {
             ports.add(createServicePort(metricsPortName, metricsPort, metricsPort, "TCP"));
         }
@@ -443,7 +443,7 @@ public class KafkaCluster extends AbstractModel {
         List<ServicePort> ports = new ArrayList<>(2);
         ports.add(createServicePort(CLIENT_PORT_NAME, CLIENT_PORT, CLIENT_PORT, "TCP"));
         ports.add(createServicePort(REPLICATION_PORT_NAME, REPLICATION_PORT, REPLICATION_PORT, "TCP"));
-        ports.add(createServicePort(CLIENT_ENC_PORT_NAME, CLIENT_ENC_PORT, CLIENT_ENC_PORT, "TCP"));
+        ports.add(createServicePort(CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, CLIENT_TLS_PORT, "TCP"));
         return ports;
     }
 
@@ -569,7 +569,7 @@ public class KafkaCluster extends AbstractModel {
         List<ContainerPort> portList = new ArrayList<>(3);
         portList.add(createContainerPort(CLIENT_PORT_NAME, CLIENT_PORT, "TCP"));
         portList.add(createContainerPort(REPLICATION_PORT_NAME, REPLICATION_PORT, "TCP"));
-        portList.add(createContainerPort(CLIENT_ENC_PORT_NAME, CLIENT_ENC_PORT, "TCP"));
+        portList.add(createContainerPort(CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, "TCP"));
         if (isMetricsEnabled) {
             portList.add(createContainerPort(metricsPortName, metricsPort, "TCP"));
         }
