@@ -33,7 +33,8 @@ public class IsLogHasUnexpectedErrors extends BaseMatcher<String> {
 
     enum LogWhiteList {
         CO_TIMEOUT_EXCEPTION("io.strimzi.operator.cluster.operator.resource.TimeoutException"),
-        VERTEX_EXCEPTION("io.vertx.core.VertxException: Thread blocked");
+        VERTEX_EXCEPTION("io.vertx.core.VertxException: Thread blocked"),
+        NO_ERROR("NoError");
 
         final String name;
 
