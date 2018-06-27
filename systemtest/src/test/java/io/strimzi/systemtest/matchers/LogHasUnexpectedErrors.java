@@ -8,14 +8,14 @@ import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 
 /**
- * <p>A IsLogHasUnexpectedErrors is custom matcher to check log form kubernetes client
+ * <p>A LogHasUnexpectedErrors is custom matcher to check log form kubernetes client
  * doesn't have any unexpected errors. </p>
  */
-public class IsLogHasUnexpectedErrors extends BaseMatcher<String> {
+public class LogHasUnexpectedErrors extends BaseMatcher<String> {
 
     @Override
     public boolean matches(Object actualValue) {
-        if (actualValue != null && actualValue instanceof String && !actualValue.equals("")) {
+        if (!"".equals(actualValue)) {
             for (LogWhiteList value : LogWhiteList.values()) {
                 if (((String) actualValue).contains(value.name)) {
                     return true;
@@ -33,8 +33,8 @@ public class IsLogHasUnexpectedErrors extends BaseMatcher<String> {
 
     enum LogWhiteList {
         CO_TIMEOUT_EXCEPTION("io.strimzi.operator.cluster.operator.resource.TimeoutException"),
-        VERTEX_EXCEPTION("io.vertx.core.VertxException: Thread blocked"),
-        NO_ERROR("NoError");
+        // "NO_ERROR" is necessary because DnsNameResolver prints debug information `QUERY(0), NoError(0), RD RA` after `recived` operation
+        NO_ERROR("NoError(0)");
 
         final String name;
 
