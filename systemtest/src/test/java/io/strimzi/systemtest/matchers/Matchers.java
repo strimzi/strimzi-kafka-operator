@@ -54,7 +54,7 @@ public class Matchers {
     /**
      * A matcher checks that log doesn't have unexpected errors
      */
-    public static Matcher<String> logHasUnexpectedErrors() {
-        return new LogHasUnexpectedErrors();
+    public static Matcher<String> logHasNoUnexpectedErrors() {
+        return new LogHasNoUnexpectedErrors();
     }
 }

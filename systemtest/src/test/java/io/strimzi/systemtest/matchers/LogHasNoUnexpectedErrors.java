@@ -8,10 +8,10 @@ import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 
 /**
- * <p>A LogHasUnexpectedErrors is custom matcher to check log form kubernetes client
+ * <p>A LogHasNoUnexpectedErrors is custom matcher to check log form kubernetes client
  * doesn't have any unexpected errors. </p>
  */
-public class LogHasUnexpectedErrors extends BaseMatcher<String> {
+public class LogHasNoUnexpectedErrors extends BaseMatcher<String> {
 
     @Override
     public boolean matches(Object actualValue) {
