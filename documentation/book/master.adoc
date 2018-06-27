@@ -23,6 +23,8 @@ include::cluster-operator.adoc[]
 
 include::topic-operator.adoc[]
 
+include::security.adoc[]
+
 include::faq.adoc[]
 
 ifdef::InstallationAppendix[]
