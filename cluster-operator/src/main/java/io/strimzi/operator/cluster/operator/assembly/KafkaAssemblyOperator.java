@@ -196,7 +196,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
                                     kafka.generateBrokersClientsSecret(), kafka.generateBrokersInternalSecret());
 
                     future.complete(desc);
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     future.fail(e);
                 }
             }, true,
@@ -204,7 +204,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
                 if (res.succeeded()) {
                     fut.complete((KafkaClusterDescription) res.result());
                 } else {
-                    fut.fail("");
+                    fut.fail(res.cause());
                 }
             }
         );

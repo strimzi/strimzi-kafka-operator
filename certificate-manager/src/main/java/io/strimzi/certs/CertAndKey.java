@@ -4,12 +4,12 @@
  */
 package io.strimzi.certs;
 
-public class Cert {
+public class CertAndKey {
 
     private final byte[] key;
     private final byte[] cert;
 
-    public Cert(byte[] key, byte[] cert) {
+    public CertAndKey(byte[] key, byte[] cert) {
         this.key = key;
         this.cert = cert;
     }

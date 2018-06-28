@@ -2,8 +2,6 @@
 <FindBugsFilter>
   <Match>
     <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
-  </Match>
-  <Match>
     <Package name="io.strimzi.certs"/>
   </Match>
 </FindBugsFilter>

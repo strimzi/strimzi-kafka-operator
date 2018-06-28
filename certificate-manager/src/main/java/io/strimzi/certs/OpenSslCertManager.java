@@ -7,21 +7,21 @@ package io.strimzi.certs;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+
+import static java.util.Arrays.asList;
 
 /**
  * An OpenSSL based certificates manager
@@ -38,21 +38,25 @@ public class OpenSslCertManager implements CertManager {
     @Override
     public void generateSelfSignedCert(File keyFile, File certFile, Subject sbj, int days) throws IOException {
 
-        List<String> cmd = new ArrayList<>(Arrays.asList("openssl", "req", "-x509", "-new", "-days", String.valueOf(days), "-batch", "-nodes",
+        List<String> cmd = new ArrayList<>(asList("openssl", "req", "-x509", "-new", "-days", String.valueOf(days), "-batch", "-nodes",
                 "-out", certFile.getAbsolutePath(), "-keyout", keyFile.getAbsolutePath()));
 
         File sna = null;
+        File openSslConf = null;
         if (sbj != null) {
 
             if (sbj.subjectAltNames() != null && sbj.subjectAltNames().size() > 0) {
 
                 // subject alt names need to be in an openssl configuration file
-                File file = new File(getClass().getClassLoader().getResource("openssl.conf").getFile());
-                sna = addSubjectAltNames(file, sbj);
-                cmd.addAll(Arrays.asList("-config", sna.toPath().toString(), "-extensions", "v3_req"));
+                InputStream is = getClass().getClassLoader().getResourceAsStream("openssl.conf");
+                openSslConf = File.createTempFile("openssl", "conf");
+                Files.copy(is, openSslConf.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+                sna = addSubjectAltNames(openSslConf, sbj);
+                cmd.addAll(asList("-config", sna.toPath().toString(), "-extensions", "v3_req"));
             }
 
-            cmd.addAll(Arrays.asList("-subj", sbj.toString()));
+            cmd.addAll(asList("-subj", sbj.toString()));
         }
 
         exec(cmd);
@@ -60,6 +64,11 @@ public class OpenSslCertManager implements CertManager {
         if (sna != null) {
             if (!sna.delete()) {
                 log.warn("{} cannot be deleted", sna.getName());
+            }
+        }
+        if (openSslConf != null) {
+            if (!openSslConf.delete()) {
+                log.warn("{} cannot be deleted", openSslConf.getName());
             }
         }
     }
@@ -77,25 +86,21 @@ public class OpenSslCertManager implements CertManager {
         File sna = File.createTempFile("sna", "sna");
         Files.copy(opensslConf.toPath(), sna.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
-        StringBuilder sb = new StringBuilder();
-        boolean newline = false;
-        for (Map.Entry entry: sbj.subjectAltNames().entrySet()) {
-            if (newline) {
-                sb.append("\n");
-            }
-            sb.append(entry.getKey()).append(" = ").append(entry.getValue());
-            newline = true;
-        }
-
-        PrintWriter out = null;
+        BufferedWriter out = null;
         try {
-            out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(sna, true), "UTF8")));
-            out.append(sb.toString());
-        } catch (IOException e) {
-            log.error("Error writing the subject alternative names", e);
+            out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(sna, true), "UTF8"));
+            boolean newline = false;
+            for (Map.Entry<String, String> entry : sbj.subjectAltNames().entrySet()) {
+                if (newline) {
+                    out.append("\n");
+                }
+                out.append(entry.getKey()).append(" = ").append(entry.getValue());
+                newline = true;
+            }
         } finally {
-            if (out != null)
+            if (out != null) {
                 out.close();
+            }
         }
 
         return sna;
@@ -104,21 +109,25 @@ public class OpenSslCertManager implements CertManager {
     @Override
     public void generateCsr(File keyFile, File csrFile, Subject sbj) throws IOException {
 
-        List<String> cmd = new ArrayList<>(Arrays.asList("openssl", "req", "-new", "-batch", "-nodes",
+        List<String> cmd = new ArrayList<>(asList("openssl", "req", "-new", "-batch", "-nodes",
                 "-keyout", keyFile.getAbsolutePath(), "-out", csrFile.getAbsolutePath()));
 
         File sna = null;
+        File openSslConf = null;
         if (sbj != null) {
 
             if (sbj.subjectAltNames() != null && sbj.subjectAltNames().size() > 0) {
 
                 // subject alt names need to be in an openssl configuration file
-                File file = new File(getClass().getClassLoader().getResource("openssl.conf").getFile());
-                sna = addSubjectAltNames(file, sbj);
-                cmd.addAll(Arrays.asList("-config", sna.toPath().toString(), "-extensions", "v3_req"));
+                InputStream is = getClass().getClassLoader().getResourceAsStream("openssl.conf");
+                openSslConf = File.createTempFile("openssl", "conf");
+                Files.copy(is, openSslConf.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+                sna = addSubjectAltNames(openSslConf, sbj);
+                cmd.addAll(asList("-config", sna.toPath().toString(), "-extensions", "v3_req"));
             }
 
-            cmd.addAll(Arrays.asList("-subj", sbj.toString()));
+            cmd.addAll(asList("-subj", sbj.toString()));
         }
 
         exec(cmd);
@@ -126,6 +135,11 @@ public class OpenSslCertManager implements CertManager {
         if (sna != null) {
             if (!sna.delete()) {
                 log.warn("{} cannot be deleted", sna.getName());
+            }
+        }
+        if (openSslConf != null) {
+            if (!openSslConf.delete()) {
+                log.warn("{} cannot be deleted", openSslConf.getName());
             }
         }
     }
@@ -157,28 +171,40 @@ public class OpenSslCertManager implements CertManager {
     }
 
     private void exec(String... cmd) throws IOException {
-        exec(Arrays.asList(cmd));
+        exec(asList(cmd));
     }
 
     private void exec(List<String> cmd) throws IOException {
-        ProcessBuilder processBuilder = new ProcessBuilder(cmd).redirectErrorStream(true);
-        log.info("Running command {}", processBuilder.command());
+        File out = null;
 
-        BufferedReader reader = null;
         try {
+
+            out = File.createTempFile("openssl", Integer.toString(cmd.hashCode()));
+
+            ProcessBuilder processBuilder = new ProcessBuilder(cmd)
+                    .redirectOutput(out)
+                    .redirectErrorStream(true);
+            log.info("Running command {}", processBuilder.command());
+
             Process proc = processBuilder.start();
-            InputStream stdout = proc.getInputStream();
-            reader = new BufferedReader(new InputStreamReader(stdout, "UTF8"));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                System.out.println(line);
-            }
+
+            OutputStream outputStream = proc.getOutputStream();
+            // close subprocess' stdin
+            outputStream.close();
+
             int result = proc.waitFor();
+            String stdout = new String(Files.readAllBytes(out.toPath()), Charset.defaultCharset());
+
+            log.debug(stdout);
             log.info("result {}", result);
+
         } catch (InterruptedException ignored) {
         } finally {
-            if (reader != null)
-                reader.close();
+            if (out != null) {
+                if (!out.delete()) {
+                    log.warn("{} cannot be deleted", out.getName());
+                }
+            }
         }
     }
 }

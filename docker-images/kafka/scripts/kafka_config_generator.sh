@@ -1,5 +1,12 @@
 #!/bin/bash
 
+export KAFKA_SECURITY="listener.name.replication.ssl.keystore.location=/tmp/kafka/replication.keystore.jks
+listener.name.replication.ssl.truststore.location=/tmp/kafka/replication.truststore.jks
+listener.name.clienttls.ssl.keystore.location=/tmp/kafka/clients.keystore.jks
+listener.name.clienttls.ssl.truststore.location=/tmp/kafka/clients.truststore.jks
+ssl.keystore.password=${CERTS_STORE_PASSWORD}
+ssl.truststore.password=${CERTS_STORE_PASSWORD}"
+
 # Write the config file
 cat <<EOF
 broker.id=${KAFKA_BROKER_ID}
