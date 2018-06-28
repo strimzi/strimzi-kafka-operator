@@ -1,40 +1,43 @@
 == Security
 
-The Apache Kafka project supports data encryption by means of SSL/TLS protocol.
-It's possible to encrypt data transferred between brokers and clients and between brokers (intra cluster communication).
-Leveraging the SSL/TLS support, it's also possible to have mutual authentication with the connected client providing its own certificate for being authenticated by the Kafka cluster.
-The Cluster Operator is in charge to setting up the SSL/TLS infrastructure by means of certificates for providing the security.
+The Apache Kafka project supports data encryption by means of the SSL/TLS protocol.
+This makes it possible to encrypt data transferred between brokers (interbroker communication) and between clients and brokers.
+Leveraging the SSL/TLS support, it is also possible to have mutual authentication, where the Kafka broker authenticates the client's certificate, and the client authenticates the server's certificate.
+
+The Cluster Operator sets up the SSL/TLS certificates to provide this encryption and authentication.
 
 === Certificates
 
 Each Kafka broker needs its own private and public keys in order to support encryption.
-The public key has to be signed in order to have a related X.509 certificate for providing server authentication and encrypting the communication channel with the client (which could be another broker as well).
-More precisely, each broker has two different certificates (and related private keys) for intra cluster communication (with other brokers, i.e. during transferring messages from leader to follower partitions) and for communication with clients.
-For signing broker certificates, two different private CA (Certification Autorithy) self-signed certificates are used : the first one named "internal-ca" is used across different deployed Kafka clusters for signing broker certificates used in the intra cluster communication; the second one is named "clients-ca" which is cluster specific (one CA for each cluster) and it's used for signing broker certificates used for communicating with clients.
+The public key has to be signed by a certificate authority (CA) in order to have a related X.509 certificate for providing server authentication and encrypting the communication channel with the client (which could be another broker as well).
+More precisely, each broker has two different certificates (and related private keys), one for interbroker communication  and one for communication with clients.
+These broker certificates are signed using different CAs: The "internal-ca" signs the certificates used for interbroker communication, and the "clients-ca" signs the certificates used for client communication.
+The CAs themselves use self-signed certificates.
+The "internal-ca" is used across multiple clusters (i.e. there is a single "internal-ca" for each instance of a cluster operator). The "clients-ca" is specific to a particular Kafka cluster.
 
-All the generated certificates are saved as Secrets in the {ProductPlatformName} cluster.
+All the generated certificates are saved as Secrets in the {ProductPlatformName} cluster, named as follows:
 
-* `internal-ca`: it contains the private and public keys, so the self-signed certificate, used for signing broker certificates used for intra cluster communication. It's common to all the Kafka clusters deployed by the Cluster Operator.
-* `<cluster-name>-kafka-clients-ca`: it contains the private and public keys, so the self-signed certificate, used for signing broker certificates used for communicating with clients. It's specific for each deployed Kafka cluster as specified in the <cluster-name> prefix.
-* `<cluster-name>-kafka-cert`: it contains only the public keys, so the self-signed certificate, used for signing broker certificates used for communicating with clients. This Secret should be used by the final Kafka cluster user in order to extract this certificate to put into the trusted store of his clients for verifying broker identities (server authentication).
-* `<cluster-name>-kafka-brokers-internal`: it contains all the brokers private and public keys (certificates signed with "internal-ca") used for intra cluster communication.
-* `<cluster-name>-kafka-brokers-clients`: it contains all the brokers private and public keys (certificates signed with specific cluster "clients-ca") used for communicating with clients.
+* `internal-ca`: contains the private and public keys, so the self-signed certificate, used for signing broker certificates used for interbroker communication. It is common to all the Kafka clusters deployed by the Cluster Operator.
+* `<cluster-name>-kafka-clients-ca`: contains the private and public keys, so the self-signed certificate, used for signing broker certificates used for communicating with clients. It iss specific for each deployed Kafka cluster as specified in the <cluster-name> prefix.
+* `<cluster-name>-kafka-cert`: contains only the public keys, so the self-signed certificate, used for signing broker certificates used for communicating with clients. This Secret should be used by the final Kafka cluster user in order to extract this certificate to put into the ther client's truststores for verifying broker identities (server authentication).
+* `<cluster-name>-kafka-brokers-internal`: contains all the brokers private and public keys (certificates signed with "internal-ca") used for interbroker communication.
+* `<cluster-name>-kafka-brokers-clients`: contains all the brokers private and public keys (certificates signed with specific cluster "clients-ca") used for communicating with clients.
 
-All the keys are generate with 2048 bits as size and all the certificates have an expiration of 365 days.
+All the keys are 2048 bits in size and are valid for 365 days from initial generation.
 
 === Listeners
 
 The data encryption is provided on two different listeners exposed by each Kafka broker.
 
-The intra cluster communication is through the REPLICATION listener (on port 9091) which is encrypted by default.
+Interbroker communication is through the `REPLICATION` listener on port 9091, which is encrypted by default.
 
-The encrypted communication with clients is provided with the CLIENTTLS listener (on port 9093).
+Encrypted communication with clients is provided through the `CLIENTTLS` listener on port 9093.
 
-NOTE: Un-encrypted communication with clients is still possible through the CLIENT listener (on port 9092).
+NOTE: Un-encrypted communication with clients is still possible through the `CLIENT` listener on port 9092.
 
 === Clients connection via TLS
 
-If the Kafka client wants to connect to the encrypted listener (CLIENTTLS) on port 9093, it needs the clients CA certificate in order to validate the broker certificate received during the SSL/TLS handshake (server authentication).
+If a Kafka client wants to connect to the encrypted listener (CLIENTTLS) on port 9093, it needs to trust the clients CA certificate in order to authentics the broker certificate received during the SSL/TLS handshake.
 The clients CA certificate can be extracted from the generated `<cluster-name>-kafka-cert` Secret with the following command if the Kafka cluster is running on {OpenShiftName}.
 
 [source,shell]
@@ -47,7 +50,7 @@ If the Kafka cluster is running on {KubernetesName}, the same result can be achi
 kubectl get secret <cluster-name>-kafka-cert -o jsonpath='{.data.clients-ca\.crt}' | base64 -d > clients-ca.crt
 
 endif::Kubernetes[]
-The native Kafka client, in order to use it, needs the certificate to be imported in a trust store using the `keytool` command line tool.
+The native Kafka client, in order to use it, needs the certificate to be imported in a truststore using the `keytool` command line tool.
 
 [source,shell]
 keytool -keystore client.truststore.jks -alias CARoot -import -file clients-ca.crt
