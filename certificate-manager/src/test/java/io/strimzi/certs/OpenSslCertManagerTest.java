@@ -9,7 +9,6 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.security.Principal;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
@@ -22,6 +21,7 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 public class OpenSslCertManagerTest {
@@ -36,7 +36,7 @@ public class OpenSslCertManagerTest {
     }
 
     @Test
-    public void testGenerateSelfSignedCert() throws IOException, CertificateException {
+    public void testGenerateSelfSignedCert() throws Exception {
 
         File key = File.createTempFile("tls", "key");
         File cert = File.createTempFile("tls", "crt");
@@ -48,7 +48,7 @@ public class OpenSslCertManagerTest {
     }
 
     @Test
-    public void testGenerateSelfSignedCertWithSubject() throws IOException, CertificateException {
+    public void testGenerateSelfSignedCertWithSubject() throws Exception {
 
         File key = File.createTempFile("tls", "key");
         File cert = File.createTempFile("tls", "crt");
@@ -63,7 +63,7 @@ public class OpenSslCertManagerTest {
     }
 
     @Test
-    public void testGenerateSelfSignedCertWithSubjectAndAltNames() throws IOException, CertificateException {
+    public void testGenerateSelfSignedCertWithSubjectAndAltNames() throws Exception {
 
         File key = File.createTempFile("tls", "key");
         File cert = File.createTempFile("tls", "crt");
@@ -81,16 +81,12 @@ public class OpenSslCertManagerTest {
         cert.delete();
     }
 
-    private void testGenerateSelfSignedCert(File key, File cert, Subject sbj) throws IOException, CertificateException {
+    private void testGenerateSelfSignedCert(File key, File cert, Subject sbj) throws Exception {
         ssl.generateSelfSignedCert(key, cert, sbj, 365);
 
         Certificate c = certFactory.generateCertificate(new FileInputStream(cert));
 
-        try {
-            c.verify(c.getPublicKey());
-        } catch (Exception e) {
-            fail();
-        }
+        c.verify(c.getPublicKey());
 
         // subject verification if provided
         if (sbj != null) {
@@ -101,14 +97,11 @@ public class OpenSslCertManagerTest {
                 assertEquals(String.format("CN=%s, O=%s", sbj.commonName(), sbj.organizationName()), p.getName());
 
                 if (sbj.subjectAltNames() != null && sbj.subjectAltNames().size() > 0) {
-                    final Collection<List<?>> snas = x509Certificate.getSubjectAlternativeNames();
-                    if (snas != null) {
-                        assertEquals(sbj.subjectAltNames().size(), snas.size());
-                        for (final List<?> sanItem : snas) {
-                            assertTrue(sbj.subjectAltNames().containsValue(sanItem.get(1)));
-                        }
-                    } else {
-                        fail();
+                    final Collection<List<?>> sans = x509Certificate.getSubjectAlternativeNames();
+                    assertNotNull(sans);
+                    assertEquals(sbj.subjectAltNames().size(), sans.size());
+                    for (final List<?> sanItem : sans) {
+                        assertTrue(sbj.subjectAltNames().containsValue(sanItem.get(1)));
                     }
                 }
             } else {
@@ -118,7 +111,7 @@ public class OpenSslCertManagerTest {
     }
 
     @Test
-    public void testGenerateSignedCert() throws IOException, CertificateException {
+    public void testGenerateSignedCert() throws Exception {
 
         File caKey = File.createTempFile("tls", "key");
         File caCert = File.createTempFile("tls", "crt");
@@ -144,11 +137,7 @@ public class OpenSslCertManagerTest {
         Certificate c = cf.generateCertificate(new FileInputStream(cert));
         Certificate ca = cf.generateCertificate(new FileInputStream(caCert));
 
-        try {
-            c.verify(ca.getPublicKey());
-        } catch (Exception e) {
-            fail();
-        }
+        c.verify(ca.getPublicKey());
 
         if (c instanceof X509Certificate) {
             X509Certificate x509Certificate = (X509Certificate) c;
@@ -156,7 +145,6 @@ public class OpenSslCertManagerTest {
 
             assertEquals(String.format("CN=%s, O=%s", sbj.commonName(), sbj.organizationName()), p.getName());
 
-            // TODO : check about "copy_extensions" option for enabling the following code
             // subject alternative names are not transferred automatically from a CSR to the final certificate
             // copy_extensions option is involved but it seems it's a risk to enable it
             /*

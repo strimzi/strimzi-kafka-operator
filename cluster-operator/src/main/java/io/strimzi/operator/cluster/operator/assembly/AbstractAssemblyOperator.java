@@ -26,7 +26,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -138,7 +137,7 @@ public abstract class AbstractAssemblyOperator {
                         secretOperations.reconcile(namespace, INTERNAL_CA_NAME, secret)
                                 .compose(future::complete, future);
 
-                    } catch (IOException e) {
+                    } catch (Throwable e) {
                         future.fail(e);
                     } finally {
                         if (internalCAkeyFile != null)
