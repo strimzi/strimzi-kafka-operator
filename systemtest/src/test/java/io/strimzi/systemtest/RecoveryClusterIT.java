@@ -14,12 +14,11 @@ import org.apache.logging.log4j.Logger;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-
-
 import static io.strimzi.test.k8s.BaseKubeClient.CM;
 import static io.strimzi.test.k8s.BaseKubeClient.DEPLOYMENT;
 import static io.strimzi.test.k8s.BaseKubeClient.SERVICE;
 import static io.strimzi.test.k8s.BaseKubeClient.STATEFUL_SET;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 @RunWith(StrimziRunner.class)
 @JUnitGroup(name = "regression")
@@ -46,7 +45,7 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         kubeClient.waitForDeployment(topicOperatorDeploymentName);
 
         //Test that CO doesn't have any exceptions in log
-        assertNoCoErrorsLogged();
+        assertNoCoErrorsLogged(stopwatch.runtime(SECONDS));
     }
 
     @Test
@@ -62,7 +61,7 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         kubeClient.waitForStatefulSet(kafkaStatefulSetName, 1);
 
         //Test that CO doesn't have any exceptions in log
-        assertNoCoErrorsLogged();
+        assertNoCoErrorsLogged(stopwatch.runtime(SECONDS));
     }
 
     @Test
@@ -78,7 +77,7 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         kubeClient.waitForStatefulSet(zookeeperStatefulSetName, 1);
 
         //Test that CO doesn't have any exceptions in log
-        assertNoCoErrorsLogged();
+        assertNoCoErrorsLogged(stopwatch.runtime(SECONDS));
     }
 
     @Test
@@ -93,7 +92,7 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         kubeClient.waitForResourceCreation(SERVICE, kafkaServiceName);
 
         //Test that CO doesn't have any exceptions in log
-        assertNoCoErrorsLogged();
+        assertNoCoErrorsLogged(stopwatch.runtime(SECONDS));
     }
 
     @Test
@@ -109,7 +108,7 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         kubeClient.waitForResourceCreation(SERVICE, zookeeperServiceName);
 
         //Test that CO doesn't have any exceptions in log
-        assertNoCoErrorsLogged();
+        assertNoCoErrorsLogged(stopwatch.runtime(SECONDS));
     }
 
     @Test
@@ -124,7 +123,7 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         kubeClient.waitForResourceCreation(SERVICE, kafkaHeadlessServiceName);
 
         //Test that CO doesn't have any exceptions in log
-        assertNoCoErrorsLogged();
+        assertNoCoErrorsLogged(stopwatch.runtime(SECONDS));
     }
 
     @Test
@@ -139,7 +138,7 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         kubeClient.waitForResourceCreation(SERVICE, zookeeperHeadlessServiceName);
 
         //Test that CO doesn't have any exceptions in log
-        assertNoCoErrorsLogged();
+        assertNoCoErrorsLogged(stopwatch.runtime(SECONDS));
     }
 
     @Test
@@ -155,7 +154,7 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         kubeClient.waitForResourceCreation(CM, kafkaMetricsConfigName);
 
         //Test that CO doesn't have any exceptions in log
-        assertNoCoErrorsLogged();
+        assertNoCoErrorsLogged(stopwatch.runtime(SECONDS));
     }
 
     @Test
@@ -171,6 +170,6 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         kubeClient.waitForResourceCreation(CM, zookeeperMetricsConfigName);
 
         //Test that CO doesn't have any exceptions in log
-        assertNoCoErrorsLogged();
+        assertNoCoErrorsLogged(stopwatch.runtime(SECONDS));
     }
 }
