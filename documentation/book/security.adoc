@@ -2,7 +2,7 @@
 
 The Apache Kafka project supports data encryption by means of the SSL/TLS protocol.
 This makes it possible to encrypt data transferred between brokers (interbroker communication) and between clients and brokers.
-Leveraging the SSL/TLS support, it is also possible to have mutual authentication, where the Kafka broker authenticates the client's certificate, and the client authenticates the server's certificate.
+Leveraging the SSL/TLS support, it is also possible to have mutual authentication, where the Kafka broker authenticates the client by verifying its certificate, and the client does likewise with the server's certificate.
 
 The Cluster Operator sets up the SSL/TLS certificates to provide this encryption and authentication.
 
@@ -18,7 +18,7 @@ The "internal-ca" is used across multiple clusters (i.e. there is a single "inte
 All the generated certificates are saved as Secrets in the {ProductPlatformName} cluster, named as follows:
 
 * `internal-ca`: contains the private and public keys, so the self-signed certificate, used for signing broker certificates used for interbroker communication. It is common to all the Kafka clusters deployed by the Cluster Operator.
-* `<cluster-name>-kafka-clients-ca`: contains the private and public keys, so the self-signed certificate, used for signing broker certificates used for communicating with clients. It iss specific for each deployed Kafka cluster as specified in the <cluster-name> prefix.
+* `<cluster-name>-kafka-clients-ca`: contains the private and public keys, so the self-signed certificate, used for signing broker certificates used for communicating with clients. It is specific for each deployed Kafka cluster as specified in the <cluster-name> prefix.
 * `<cluster-name>-kafka-cert`: contains only the public keys, so the self-signed certificate, used for signing broker certificates used for communicating with clients. This Secret should be used by the final Kafka cluster user in order to extract this certificate to put into the ther client's truststores for verifying broker identities (server authentication).
 * `<cluster-name>-kafka-brokers-internal`: contains all the brokers private and public keys (certificates signed with "internal-ca") used for interbroker communication.
 * `<cluster-name>-kafka-brokers-clients`: contains all the brokers private and public keys (certificates signed with specific cluster "clients-ca") used for communicating with clients.
@@ -37,7 +37,7 @@ NOTE: Un-encrypted communication with clients is still possible through the `CLI
 
 === Clients connection via TLS
 
-If a Kafka client wants to connect to the encrypted listener (CLIENTTLS) on port 9093, it needs to trust the clients CA certificate in order to authentics the broker certificate received during the SSL/TLS handshake.
+If a Kafka client wants to connect to the encrypted listener (CLIENTTLS) on port 9093, it needs to trust the client's CA certificate in order to verify the broker certificate received during the SSL/TLS handshake.
 The clients CA certificate can be extracted from the generated `<cluster-name>-kafka-cert` Secret with the following command if the Kafka cluster is running on {OpenShiftName}.
 
 [source,shell]
