@@ -55,7 +55,9 @@ public class AbstractClusterIT {
     protected static final String INIT_KAFKA_IMAGE = "STRIMZI_DEFAULT_INIT_KAFKA_IMAGE";
 
     @Rule
-    public Stopwatch stopwatch = new Stopwatch(){};
+    public Stopwatch stopwatch = new Stopwatch() {
+        //TODO Add integration with Polarion in this code
+    };
 
     @ClassRule
     public static KubeClusterResource cluster = new KubeClusterResource();
