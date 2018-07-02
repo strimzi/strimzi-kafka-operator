@@ -23,8 +23,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -47,6 +45,7 @@ import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.valueOfCmEquals;
 import static io.strimzi.test.StrimziRunner.TOPIC_CM;
 import static io.strimzi.test.TestUtils.map;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static junit.framework.TestCase.assertTrue;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
@@ -125,7 +124,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
         assertThat(events, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
         //Test that CO doesn't have any exceptions in log
-        assertNoCoErrorsLogged();
+        assertNoCoErrorsLogged(stopwatch.runtime(SECONDS));
 
         // scale down
         LOGGER.info("Scaling down");
@@ -145,7 +144,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
         //Test that stateful set has event 'SuccessfulDelete'
         assertThat(getEvents("StatefulSet", kafkaClusterName(CLUSTER_NAME)), hasAllOfReasons(SuccessfulDelete));
         //Test that CO doesn't have any exceptions in log
-        assertNoCoErrorsLogged();
+        assertNoCoErrorsLogged(stopwatch.runtime(SECONDS));
     }
 
     @Test
@@ -188,7 +187,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
         assertThat(eventsForSecondPod, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
 
         //Test that CO doesn't have any exceptions in log
-        assertNoCoErrorsLogged();
+        assertNoCoErrorsLogged(stopwatch.runtime(SECONDS));
 
         // scale down
         LOGGER.info("Scaling down");
@@ -202,7 +201,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
         //Test that stateful set has event 'SuccessfulDelete'
         assertThat(getEvents("StatefulSet", zookeeperClusterName(CLUSTER_NAME)), hasAllOfReasons(SuccessfulDelete));
         //Test that CO doesn't have any exceptions in log
-        assertNoCoErrorsLogged();
+        assertNoCoErrorsLogged(stopwatch.runtime(SECONDS));
     }
 
     @Test

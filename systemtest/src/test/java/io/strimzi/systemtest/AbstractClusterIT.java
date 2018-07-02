@@ -33,12 +33,12 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.ClassRule;
+import org.junit.Rule;
+import org.junit.rules.Stopwatch;
 
-
-
+import static io.strimzi.systemtest.matchers.Matchers.logHasNoUnexpectedErrors;
 import static io.strimzi.test.TestUtils.indent;
 import static java.util.Arrays.asList;
-import static org.hamcrest.Matchers.isEmptyString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
@@ -53,6 +53,11 @@ public class AbstractClusterIT {
     protected static final String S2I_IMAGE = "STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE";
     protected static final String TO_IMAGE = "STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE";
     protected static final String INIT_KAFKA_IMAGE = "STRIMZI_DEFAULT_INIT_KAFKA_IMAGE";
+
+    @Rule
+    public Stopwatch stopwatch = new Stopwatch() {
+        //TODO Add integration with Polarion in this code
+    };
 
     @ClassRule
     public static KubeClusterResource cluster = new KubeClusterResource();
@@ -260,9 +265,9 @@ public class AbstractClusterIT {
         return result;
     }
 
-    void assertNoCoErrorsLogged() {
-        //TODO add blacklist for unexpected errors
-        assertThat(kubeClient.searchInLog("deploy", "strimzi-cluster-operator", "60", "Exception", "Error", "Throwable"), isEmptyString());
+    void assertNoCoErrorsLogged(long sinceSeconds) {
+        String clusterOperatorLog = kubeClient.searchInLog("deploy", "strimzi-cluster-operator", sinceSeconds, "Exception", "Error", "Throwable");
+        assertThat(clusterOperatorLog, logHasNoUnexpectedErrors());
     }
 
     public List<String> listTopicsUsingPodCLI(String clusterName, String podName) {
