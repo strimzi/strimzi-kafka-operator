@@ -115,6 +115,9 @@ Attach the TAR.GZ and ZIP archives to the release
 For example to update the next version to `0.6.0-SNAPSHOT` run: `make NEXT_VERSION=0.6.0-SNAPSHOT next_version`.
 
 ## Running system tests
+
+### Test groups
+
 To execute an expected group of system tests need to add system property `junitgroup` with following value:
 
 `-Djunitgroup=integration` - to execute one test group
@@ -122,3 +125,7 @@ To execute an expected group of system tests need to add system property `junitg
 `-Djunitgroup=all` - to execute all test groups
 
 If `junitgroup` system property isn't defined, all tests without an explicitly declared test group will be executed.
+
+### Log level
+
+To set the log level of Strimzi for system tests need to add system property `TEST_STRIMZI_LOG_LEVEL` with one of the following values: `ERROR`, `WARNING`, `INFO`, `DEBUG`, `TRACE`.

@@ -445,6 +445,11 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                             String value = envVar.get("value").textValue();
                             ((ObjectNode) envVar).put("value", TestUtils.changeOrgAndTag(value, dockerOrg, dockerTag));
                         }
+                        // Set log level
+                        if (varName.equals("STRIMZI_LOG_LEVEL")) {
+                            String logLevel = System.getenv().getOrDefault("TEST_STRIMZI_LOG_LEVEL", "INFO");
+                            ((ObjectNode) envVar).put("value", logLevel);
+                        }
                         // Updates default values of env variables
                         for (EnvVariables envVariable : cc.envVariables()) {
                             if (varName.equals(envVariable.key())) {
