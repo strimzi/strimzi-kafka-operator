@@ -430,9 +430,9 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     JsonNodeFactory factory = new JsonNodeFactory(false);
                     ObjectNode resources = new ObjectNode(factory);
                     ObjectNode requests = new ObjectNode(factory);
-                    requests.put("cpu", "200m").put("memory", "192Mi");
+                    requests.put("cpu", "200m").put("memory", "256Mi");
                     ObjectNode limits = new ObjectNode(factory);
-                    limits.put("cpu", "1000m").put("memory", "192Mi");
+                    limits.put("cpu", "1000m").put("memory", "256Mi");
                     resources.set("requests", requests);
                     resources.set("limits", limits);
                     containerNode.replace("resources", resources);
