@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.operator.cluster.Reconciliation;
 import io.strimzi.operator.cluster.model.AssemblyType;
+import io.strimzi.operator.cluster.model.ExternalLogging;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.Labels;
 import io.strimzi.operator.cluster.operator.resource.ConfigMapOperator;
@@ -69,11 +70,14 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator {
             handler.handle(Future.failedFuture(e));
             return;
         }
+        ConfigMap logAndMetricsConfigMap = connect.generateMetricsAndLogConfigMap(connect.getLogging() instanceof ExternalLogging ?
+                configMapOperations.get(namespace, ((ExternalLogging) connect.getLogging()).name) :
+                null);
         log.debug("{}: Updating Kafka Connect cluster", reconciliation, name, namespace);
         Future<Void> chainFuture = Future.future();
         deploymentOperations.scaleDown(namespace, connect.getName(), connect.getReplicas())
                 .compose(scale -> serviceOperations.reconcile(namespace, connect.getName(), connect.generateService()))
-                .compose(i -> configMapOperations.reconcile(namespace, connect.getMetricsConfigName(), connect.generateMetricsConfigMap()))
+                .compose(i -> configMapOperations.reconcile(namespace, connect.getAncillaryConfigName(), logAndMetricsConfigMap))
                 .compose(i -> deploymentOperations.reconcile(namespace, connect.getName(), connect.generateDeployment()))
                 .compose(i -> deploymentOperations.scaleUp(namespace, connect.getName(), connect.getReplicas()).map((Void) null))
                 .compose(chainFuture::complete, chainFuture);
@@ -87,7 +91,7 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator {
         String name = KafkaConnectCluster.kafkaConnectClusterName(assemblyName);
 
         CompositeFuture.join(serviceOperations.reconcile(namespace, name, null),
-            configMapOperations.reconcile(namespace, KafkaConnectCluster.metricsConfigName(name), null),
+            configMapOperations.reconcile(namespace, KafkaConnectCluster.logAndMetricsConfigName(name), null),
             deploymentOperations.reconcile(namespace, name, null))
             .map((Void) null).setHandler(handler);
     }

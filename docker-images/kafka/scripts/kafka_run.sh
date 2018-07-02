@@ -19,16 +19,13 @@ export GC_LOG_ENABLED="false"
 # ... but enable equivalent GC logging to stdout
 export KAFKA_GC_LOG_OPTS="-verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps"
 
-if [ -z "$KAFKA_LOG_LEVEL" ]; then
-  KAFKA_LOG_LEVEL="INFO"
-fi
 if [ -z "$KAFKA_LOG4J_OPTS" ]; then
-  export KAFKA_LOG4J_OPTS="-Dlog4j.configuration=file:$KAFKA_HOME/config/log4j.properties -Dkafka.root.logger.level=$KAFKA_LOG_LEVEL,CONSOLE"
+  export KAFKA_LOG4J_OPTS="-Dlog4j.configuration=file:$KAFKA_HOME/config/log4j.properties"
 fi
 
 # enabling Prometheus JMX exporter as Java agent
 if [ "$KAFKA_METRICS_ENABLED" = "true" ]; then
-  export KAFKA_OPTS="-javaagent:/opt/prometheus/jmx_prometheus_javaagent.jar=9404:/opt/prometheus/config/config.yml"
+  export KAFKA_OPTS="-javaagent:/opt/prometheus/jmx_prometheus_javaagent.jar=9404:$KAFKA_HOME/config/metrics-config.yml"
 fi
 
 # We don't need LOG_DIR because we write no log files, but setting it to a

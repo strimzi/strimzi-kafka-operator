@@ -182,10 +182,12 @@ public class KafkaAssemblyOperatorMockTest {
                 .withData(map(KafkaCluster.KEY_REPLICAS, String.valueOf(kafkaReplicas),
                         KafkaCluster.KEY_STORAGE, kafkaStorage.toString(),
                         KafkaCluster.KEY_METRICS_CONFIG, "{}",
+                        KafkaCluster.KEY_KAFKA_LOG_CONFIG, "{}",
                         KafkaCluster.KEY_RESOURCES, resources != null ? resources : null,
                         ZookeeperCluster.KEY_REPLICAS, String.valueOf(zkReplicas),
                         ZookeeperCluster.KEY_STORAGE, zkStorage.toString(),
                         ZookeeperCluster.KEY_METRICS_CONFIG, "{}",
+                        ZookeeperCluster.KEY_ZOOKEEPER_LOG_CONFIG, "{}",
                         TopicOperator.KEY_CONFIG, "{}"))
                 .build();
         mockClient = new MockKube().withInitialCms(Collections.singleton(cluster)).build();
@@ -219,8 +221,8 @@ public class KafkaAssemblyOperatorMockTest {
             context.assertEquals("0", zkSs.getSpec().getTemplate().getMetadata().getAnnotations().get(StatefulSetOperator.ANNOTATION_GENERATION));
             context.assertNotNull(zkSs);
             context.assertNotNull(mockClient.extensions().deployments().inNamespace(NAMESPACE).withName(TopicOperator.topicOperatorName(CLUSTER_NAME)).get());
-            context.assertNotNull(mockClient.configMaps().inNamespace(NAMESPACE).withName(KafkaCluster.metricConfigsName(CLUSTER_NAME)).get());
-            context.assertNotNull(mockClient.configMaps().inNamespace(NAMESPACE).withName(ZookeeperCluster.zookeeperMetricsName(CLUSTER_NAME)).get());
+            context.assertNotNull(mockClient.configMaps().inNamespace(NAMESPACE).withName(KafkaCluster.metricAndLogConfigsName(CLUSTER_NAME)).get());
+            context.assertNotNull(mockClient.configMaps().inNamespace(NAMESPACE).withName(ZookeeperCluster.zookeeperMetricAndLogConfigsName(CLUSTER_NAME)).get());
             assertResourceRequirements(context, KafkaCluster.kafkaClusterName(CLUSTER_NAME));
             context.assertNotNull(mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.clientsCASecretName(CLUSTER_NAME)).get());
             context.assertNotNull(mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.clientsPublicKeyName(CLUSTER_NAME)).get());

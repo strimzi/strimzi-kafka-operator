@@ -25,6 +25,8 @@ import static org.junit.Assert.assertTrue;
 public class KafkaSetOperatorTest {
 
     public static final String METRICS_CONFIG = "{\"foo\":\"bar\"}";
+    public static final String KAFKA_LOG_CONFIG = "{\"kafka.root.logger.level\":\"OFF\"}";
+    public static final String ZOOKEEPER_LOG_CONFIG = "{\"zookeeper.root.logger\":\"OFF\"}";
 
     private StatefulSet a;
     private StatefulSet b;
@@ -46,7 +48,7 @@ public class KafkaSetOperatorTest {
                 "{\"type\": \"persistent-claim\", " +
                         "\"size\": \"123\", " +
                         "\"class\": \"foo\"," +
-                        "\"delete-claim\": true}");
+                        "\"delete-claim\": true}", KAFKA_LOG_CONFIG, ZOOKEEPER_LOG_CONFIG);
     }
 
     private List<Secret> getInitialSecrets() {

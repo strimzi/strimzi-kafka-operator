@@ -18,7 +18,7 @@ if [ -z "$KAFKA_CONNECT_LOG_LEVEL" ]; then
 KAFKA_CONNECT_LOG_LEVEL="INFO"
 fi
 if [ -z "$KAFKA_LOG4J_OPTS" ]; then
-export KAFKA_LOG4J_OPTS="-Dlog4j.configuration=file:$KAFKA_HOME/config/connect-log4j.properties -Dconnect.root.logger.level=$KAFKA_CONNECT_LOG_LEVEL,CONSOLE"
+export KAFKA_LOG4J_OPTS="-Dlog4j.configuration=file:$KAFKA_HOME/config/log4j.properties"
 fi
 
 # We don't need LOG_DIR because we write no log files, but setting it to a
@@ -27,7 +27,7 @@ export LOG_DIR="$KAFKA_HOME"
 
 # enabling Prometheus JMX exporter as Java agent
 if [ "$KAFKA_CONNECT_METRICS_ENABLED" = "true" ]; then
-  export KAFKA_OPTS="-javaagent:/opt/prometheus/jmx_prometheus_javaagent.jar=9404:/opt/prometheus/config/config.yml"
+  export KAFKA_OPTS="-javaagent:/opt/prometheus/jmx_prometheus_javaagent.jar=9404:$KAFKA_HOME/config/metrics-config.yml"
 fi
 
 if [ -z "$KAFKA_HEAP_OPTS" -a -n "${DYNAMIC_HEAP_FRACTION}" ]; then

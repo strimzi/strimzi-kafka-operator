@@ -67,15 +67,16 @@ public class KafkaConnectClusterTest {
 
     @Test
     public void testMetricsConfigMap() {
-        ConfigMap metricsCm = kc.generateMetricsConfigMap();
+        ConfigMap metricsCm = kc.generateMetricsAndLogConfigMap(null);
         checkMetricsConfigMap(metricsCm);
     }
 
     private void checkMetricsConfigMap(ConfigMap metricsCm) {
-        assertEquals(metricsCmJson, metricsCm.getData().get(AbstractModel.METRICS_CONFIG_FILE));
+        assertEquals(metricsCmJson, metricsCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_METRICS));
     }
 
     protected List<EnvVar> getExpectedEnvVars() {
+
         List<EnvVar> expected = new ArrayList<EnvVar>();
         expected.add(new EnvVarBuilder().withName(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_CONFIGURATION).withValue(expectedConfiguration).build());
         expected.add(new EnvVarBuilder().withName(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_METRICS_ENABLED).withValue(String.valueOf(true)).build());

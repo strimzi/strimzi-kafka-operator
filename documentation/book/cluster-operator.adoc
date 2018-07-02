@@ -78,6 +78,25 @@ A JSON string representing the storage configuration for the Kafka broker nodes.
 `kafka-metrics-config`::
 A JSON string representing the JMX exporter configuration for exposing metrics from Kafka broker nodes.
 When this field is absent no metrics will be exposed.
+`kafka-logging`::
+This field can be populated by either a JSON/YAML string that specifies inline logging levels or the name of external config map that specifies the logging levels.
+When this field is absent default values are used.
+List of loggers which can be set:
+[source]
+kafka.root.logger.level
+log4j.logger.org.I0Itec.zkclient.ZkClient
+log4j.logger.org.apache.zookeeper
+log4j.logger.kafka
+log4j.logger.org.apache.kafka
+log4j.logger.kafka.request.logger
+log4j.logger.kafka.network.Processor
+log4j.logger.kafka.server.KafkaApis
+log4j.logger.kafka.network.RequestChannel$
+log4j.logger.kafka.controller
+log4j.logger.kafka.log.LogCleaner
+log4j.logger.state.change.logger
+log4j.logger.kafka.authorizer.logger
+
 `kafka-resources`::
 A JSON string configuring the resource limits and requests for Kafka broker containers. The accepted JSON format is
 described in the <<resources_json_config>> section.
@@ -107,7 +126,14 @@ A JSON string representing the storage configuration for the Zookeeper nodes. Se
 `zookeeper-metrics-config`::
 A JSON string representing the JMX exporter configuration for exposing metrics from Zookeeper nodes.
 When this field is absent no metrics will be exposed.
- eans having no metrics exposed.
+`zookeeper-logging`::
+This field can be populated by either a JSON/YAML string that specifies inline logging levels or the name of external config map that specifies the logging levels.
+When this field is absent default values are used.
+List of loggers which can be set:
+[source]
+zookeeper.root.logger
+
+
 `zookeeper-resources`::
 A JSON string configuring the resource limits and requests for Zookeeper broker containers. The accepted JSON format is
 described in the <<resources_json_config>> section.
@@ -164,6 +190,11 @@ data:
           }
       ]
     }
+  kafka-logging: |-
+    {
+      "type": "external",
+      "name": "customConfigMap"
+    }
   zookeeper-nodes: "1"
   zookeeper-image: "{DockerZookeeper}"
   zookeeper-healthcheck-delay: "15"
@@ -181,6 +212,13 @@ data:
     {
       "lowercaseOutputName": true
     }
+  zookeeper-logging: |-
+    {
+      "type" : "inline",
+      "loggers" : {
+        "zookeeper.root.logger": "INFO"
+      }
+    }
 ----
 
 The resources created by the Cluster Operator into the {ProductPlatformName} cluster will be the following :
@@ -191,9 +229,9 @@ The resources created by the Cluster Operator into the {ProductPlatformName} clu
 * `[cluster-name]-kafka-headless` Service needed to have DNS resolve the Kafka broker pods IP addresses directly
 * `[cluster-name]-zookeeper` Service used by Kafka brokers to connect to Zookeeper nodes as clients
 * `[cluster-name]-kafka` Service can be used as bootstrap servers for Kafka clients
-* `[cluster-name]-zookeeper-metrics-config` ConfigMap which contains the Zookeeper metrics configuration and mounted as
+* `[cluster-name]-zookeeper-config` ConfigMap which contains the Zookeeper ancillary configuration and is mounted as
 a volume by the Zookeeper node pods
-* `[cluster-name]-kafka-metrics-config` ConfigMap which contains the Kafka metrics configuration and mounted as
+* `[cluster-name]-kafka-config` ConfigMap which contains the Kafka ancillary configuration and is mounted as
 a volume by the Kafka broker pods
 
 [[kafka_configuration_json_config]]
@@ -721,6 +759,27 @@ The resources created by the Cluster Operator into the {ProductPlatformName} clu
 
 [[kafka_connect_configuration_json_config]]
 ===== Kafka Connect configuration
+
+The `logging` field allows the configuration of loggers. These loggers are:
+[source]
+log4j.rootLogger
+connect.root.logger.level
+log4j.logger.org.apache.zookeeper
+log4j.logger.org.I0Itec.zkclient
+log4j.logger.org.reflections
+
+The setting can be done in one of two ways. Either by specifying the key value in JSON or by using a custom config map.
+An example of the latter would look like this::
+`{
+    "fromConfigMap" :
+        {
+            "name" : "customConfigMap"
+        }
+ }
+`
+The difference between these two options is that latter is not validated and does not support default values.
+That means user can supply any logging configuration, even if it is incorrect.
+First option supports default values.
 
 The `connect-config` field allows detailed configuration of Apache Kafka Connect and Connect S2I. This field should contain
 a JSON object with Kafka Connect configuration options as keys. The values could be in one of the following JSON types:

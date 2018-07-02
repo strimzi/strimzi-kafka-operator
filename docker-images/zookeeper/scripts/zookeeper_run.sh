@@ -29,16 +29,13 @@ echo "Starting Zookeeper with configuration:"
 ./zookeeper_config_generator.sh | tee /tmp/zookeeper.properties
 echo ""
 
-if [ -z "$ZOOKEEPER_LOG_LEVEL" ]; then
-  ZOOKEEPER_LOG_LEVEL="DEBUG"
-fi
-if [ -z "$ZOO_LOG4J_PROP" ]; then
-  export ZOO_LOG4J_PROP="$ZOOKEEPER_LOG_LEVEL,CONSOLE"
+if [ -z "$KAFKA_LOG4J_OPTS" ]; then
+  export KAFKA_LOG4J_OPTS="-Dlog4j.configuration=file:$KAFKA_HOME/config/log4j.properties"
 fi
 
 # enabling Prometheus JMX exporter as Java agent
 if [ "$ZOOKEEPER_METRICS_ENABLED" = "true" ]; then
-  export KAFKA_OPTS="-javaagent:/opt/prometheus/jmx_prometheus_javaagent.jar=9404:/opt/prometheus/config/config.yml"
+  export KAFKA_OPTS="-javaagent:/opt/prometheus/jmx_prometheus_javaagent.jar=9404:$KAFKA_HOME/config/metrics-config.yml"
 fi
 
 if [ -z "$KAFKA_HEAP_OPTS" -a -n "${DYNAMIC_HEAP_FRACTION}" ]; then

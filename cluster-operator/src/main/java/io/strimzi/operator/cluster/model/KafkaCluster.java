@@ -40,6 +40,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 
 public class KafkaCluster extends AbstractModel {
 
@@ -62,11 +63,13 @@ public class KafkaCluster extends AbstractModel {
 
     private static final String NAME_SUFFIX = "-kafka";
     private static final String HEADLESS_NAME_SUFFIX = NAME_SUFFIX + "-headless";
-    private static final String METRICS_CONFIG_SUFFIX = NAME_SUFFIX + "-metrics-config";
+
     private static final String CLIENTS_CA_SUFFIX = NAME_SUFFIX + "-clients-ca";
     private static final String BROKERS_INTERNAL_SUFFIX = NAME_SUFFIX + "-brokers-internal";
     private static final String BROKERS_CLIENTS_SUFFIX = NAME_SUFFIX + "-brokers-clients";
     private static final String CLIENTS_PUBLIC_KEY_SUFFIX = NAME_SUFFIX + "-cert";
+
+    protected static final String METRICS_AND_LOG_CONFIG_SUFFIX = NAME_SUFFIX + "-config";
 
     // Kafka configuration
     private String zookeeperConnect = DEFAULT_KAFKA_ZOOKEEPER_CONNECT;
@@ -101,11 +104,13 @@ public class KafkaCluster extends AbstractModel {
     public static final String KEY_RACK = "kafka-rack";
     public static final String KEY_INIT_IMAGE = "init-kafka-image";
     public static final String KEY_AFFINITY = "kafka-affinity";
+    public static final String KEY_KAFKA_LOG_CONFIG = "kafka-logging";
 
     // Kafka configuration keys (EnvVariables)
     public static final String ENV_VAR_KAFKA_ZOOKEEPER_CONNECT = "KAFKA_ZOOKEEPER_CONNECT";
     private static final String ENV_VAR_KAFKA_METRICS_ENABLED = "KAFKA_METRICS_ENABLED";
     protected static final String ENV_VAR_KAFKA_CONFIGURATION = "KAFKA_CONFIGURATION";
+    protected static final String ENV_VAR_KAFKA_LOG_CONFIGURATION = "KAFKA_LOG_CONFIGURATION";
 
     private CertAndKey internalCA;
     private CertAndKey clientsCA;
@@ -123,7 +128,7 @@ public class KafkaCluster extends AbstractModel {
         super(namespace, cluster, labels);
         this.name = kafkaClusterName(cluster);
         this.headlessName = headlessName(cluster);
-        this.metricsConfigName = metricConfigsName(cluster);
+        this.ancillaryConfigName = metricAndLogConfigsName(cluster);
         this.image = DEFAULT_IMAGE;
         this.replicas = DEFAULT_REPLICAS;
         this.healthCheckPath = "/opt/kafka/kafka_healthcheck.sh";
@@ -132,18 +137,20 @@ public class KafkaCluster extends AbstractModel {
         this.isMetricsEnabled = DEFAULT_KAFKA_METRICS_ENABLED;
 
         this.mountPath = "/var/lib/kafka";
-        this.metricsConfigVolumeName = "kafka-metrics-config";
-        this.metricsConfigMountPath = "/opt/prometheus/config/";
+
+        this.logAndMetricsConfigVolumeName = "kafka-metrics-and-logging";
+        this.logAndMetricsConfigMountPath = "/opt/kafka/config/";
 
         this.initImage = DEFAULT_INIT_IMAGE;
+        this.validLoggerFields = getDefaultLogConfig();
     }
 
     public static String kafkaClusterName(String cluster) {
         return cluster + KafkaCluster.NAME_SUFFIX;
     }
 
-    public static String metricConfigsName(String cluster) {
-        return cluster + KafkaCluster.METRICS_CONFIG_SUFFIX;
+    public static String metricAndLogConfigsName(String cluster) {
+        return cluster + KafkaCluster.METRICS_AND_LOG_CONFIG_SUFFIX;
     }
 
     public static String headlessName(String cluster) {
@@ -197,8 +204,9 @@ public class KafkaCluster extends AbstractModel {
         }
 
         kafka.setStorage(Utils.getStorage(data, KEY_STORAGE));
-
         kafka.setConfiguration(Utils.getKafkaConfiguration(data, KEY_KAFKA_CONFIG));
+
+        kafka.setLogging(Utils.getLogging(data.get(KEY_KAFKA_LOG_CONFIG)));
 
         kafka.setResources(Resources.fromJson(data.get(KEY_RESOURCES)));
         kafka.setJvmOptions(JvmOptions.fromJson(data.get(KEY_JVM_OPTIONS)));
@@ -239,8 +247,10 @@ public class KafkaCluster extends AbstractModel {
 
         kafka.setMetricsEnabled(Utils.getBoolean(vars, ENV_VAR_KAFKA_METRICS_ENABLED, DEFAULT_KAFKA_METRICS_ENABLED));
         if (kafka.isMetricsEnabled()) {
-            kafka.setMetricsConfigName(metricConfigsName(cluster));
+            kafka.setMetricsConfigName(metricAndLogConfigsName(cluster));
         }
+        kafka.setLogConfigName(metricAndLogConfigsName(cluster));
+        kafka.setLogging(Utils.getLogging(vars.get(KEY_KAFKA_LOG_CONFIG)));
 
         if (!ss.getSpec().getVolumeClaimTemplates().isEmpty()) {
 
@@ -492,14 +502,17 @@ public class KafkaCluster extends AbstractModel {
      * Generates a metrics ConfigMap according to configured defaults
      * @return The generated ConfigMap
      */
-    public ConfigMap generateMetricsConfigMap() {
+    public ConfigMap generateMetricsAndLogConfigMap(ConfigMap cm) {
+        Map<String, String> data = new HashMap<>();
+        data.put(ANCILLARY_CM_KEY_LOG_CONFIG, parseLogging(getLogging(), cm));
         if (isMetricsEnabled()) {
-            Map<String, String> data = new HashMap<>();
-            data.put(METRICS_CONFIG_FILE, getMetricsConfig().toString());
-            return createConfigMap(getMetricsConfigName(), data);
-        } else {
-            return null;
+            data.put(ANCILLARY_CM_KEY_METRICS, getMetricsConfig().toString());
         }
+        ConfigMap result = createConfigMap(getAncillaryConfigName(), data);
+        if (getLogging() != null) {
+            getLogging().setCm(result);
+        }
+        return result;
     }
 
     /**
@@ -584,14 +597,12 @@ public class KafkaCluster extends AbstractModel {
         if (storage.type() == Storage.StorageType.EPHEMERAL) {
             volumeList.add(createEmptyDirVolume(VOLUME_NAME));
         }
-        if (isMetricsEnabled) {
-            volumeList.add(createConfigMapVolume(metricsConfigVolumeName, metricsConfigName));
-        }
         if (rackConfig != null) {
             volumeList.add(createEmptyDirVolume(RACK_VOLUME_NAME));
         }
         volumeList.add(createSecretVolume("internal-certs", KafkaCluster.brokersInternalSecretName(cluster)));
         volumeList.add(createSecretVolume("clients-certs", KafkaCluster.brokersClientsSecret(cluster)));
+        volumeList.add(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
 
         return volumeList;
     }
@@ -607,14 +618,12 @@ public class KafkaCluster extends AbstractModel {
     private List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> volumeMountList = new ArrayList<>();
         volumeMountList.add(createVolumeMount(VOLUME_NAME, mountPath));
-        if (isMetricsEnabled) {
-            volumeMountList.add(createVolumeMount(metricsConfigVolumeName, metricsConfigMountPath));
-        }
         if (rackConfig != null) {
             volumeMountList.add(createVolumeMount(RACK_VOLUME_NAME, RACK_VOLUME_MOUNT));
         }
         volumeMountList.add(createVolumeMount("internal-certs", "/opt/kafka/internal-certs"));
         volumeMountList.add(createVolumeMount("clients-certs", "/opt/kafka/clients-certs"));
+        volumeMountList.add(createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
 
         return volumeMountList;
     }
@@ -694,6 +703,9 @@ public class KafkaCluster extends AbstractModel {
         if (configuration != null) {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_CONFIGURATION, configuration.getConfiguration()));
         }
+        if (getLogging() != null && getLogging().getCm() != null) {
+            varList.add(buildEnvVar(ENV_VAR_KAFKA_LOG_CONFIGURATION, getLogging().getCm().toString()));
+        }
 
         return varList;
     }
@@ -708,5 +720,16 @@ public class KafkaCluster extends AbstractModel {
 
     protected void setInitImage(String initImage) {
         this.initImage = initImage;
+    }
+
+    @Override
+    protected Properties getDefaultLogConfig() {
+        Properties properties = new Properties();
+        try {
+            properties = getDefaultLoggingProperties("kafkaDefaultLoggingProperties");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return properties;
     }
 }

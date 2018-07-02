@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.strimzi.operator.cluster.InvalidConfigMapException;
 import io.strimzi.operator.cluster.ResourceUtils;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
@@ -16,8 +15,8 @@ import org.junit.Test;
 import java.io.IOException;
 
 import static io.strimzi.operator.cluster.ResourceUtils.labels;
-import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class ZookeeperClusterTest {
 
@@ -29,20 +28,22 @@ public class ZookeeperClusterTest {
     private final int healthTimeout = 30;
     private final String metricsCmJson = "{\"animal\":\"wombat\"}";
     private final String configurationJson = "{}";
+    private final String kafkaLogConfigJson = "{\"kafka.root.logger.level\": \"OFF\"}";
+    private final String zooLogConfigJson = "{\"zookeeper.root.logger\": \"OFF\"}";
     private final String zooConfigurationJson = "{\"foo\":\"bar\"}";
-    private final ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson);
+    private final ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson, kafkaLogConfigJson, zooLogConfigJson);
     private final ZookeeperCluster zc = ZookeeperCluster.fromConfigMap(cm);
     @Rule
     public ResourceTester<ZookeeperCluster> resourceTester = new ResourceTester<>(ZookeeperCluster::fromConfigMap);
 
     @Test
     public void testMetricsConfigMap() {
-        ConfigMap metricsCm = zc.generateMetricsConfigMap();
+        ConfigMap metricsCm = zc.generateMetricsAndLogConfigMap(null);
         checkMetricsConfigMap(metricsCm);
     }
 
     private void checkMetricsConfigMap(ConfigMap metricsCm) {
-        assertEquals(metricsCmJson, metricsCm.getData().get(AbstractModel.METRICS_CONFIG_FILE));
+        assertEquals(metricsCmJson, metricsCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_METRICS));
     }
 
     @Test
@@ -148,14 +149,17 @@ public class ZookeeperClusterTest {
     }
 
     @Test
-    public void testCorruptedConfigMap() {
-        try {
-            ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, "{\"key.name\":oops}");
-            ZookeeperCluster.fromConfigMap(cm);
-            fail("Expected it to throw an exception");
-        } catch (InvalidConfigMapException e) {
-            assertEquals("key.name", e.getKey());
-        }
+    public void testLoggingCorruptedConfigMap() {
+        ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, "{\"key.name\":oops}");
+        ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromConfigMap(cm);
+        assertTrue(zookeeperCluster.getLogging() instanceof InlineLogging);
+    }
+
+    @Test
+    public void testLoggingConfigMap() {
+        ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, "{\"type\": \"external\", \"name\":\"karel\"}");
+        ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromConfigMap(cm);
+        assertTrue(zookeeperCluster.getLogging() instanceof ExternalLogging);
     }
 
     @Test

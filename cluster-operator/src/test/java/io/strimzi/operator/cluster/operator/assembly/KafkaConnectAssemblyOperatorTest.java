@@ -101,7 +101,7 @@ public class KafkaConnectAssemblyOperatorTest {
             // No metrics config  => no CMs created
             Set<String> metricsNames = new HashSet<>();
             if (connect.isMetricsEnabled()) {
-                metricsNames.add(KafkaConnectCluster.metricsConfigName(clusterCmName));
+                metricsNames.add(KafkaConnectCluster.logAndMetricsConfigName(clusterCmName));
             }
 
             // Vertify service
@@ -218,12 +218,12 @@ public class KafkaConnectAssemblyOperatorTest {
         // Mock CM get
         when(mockCmOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
         ConfigMap metricsCm = new ConfigMapBuilder().withNewMetadata()
-                    .withName(KafkaConnectCluster.metricsConfigName(clusterCmName))
+                    .withName(KafkaConnectCluster.logAndMetricsConfigName(clusterCmName))
                     .withNamespace(clusterCmNamespace)
                 .endMetadata()
-                .withData(Collections.singletonMap(AbstractModel.METRICS_CONFIG_FILE, METRICS_CONFIG))
+                .withData(Collections.singletonMap(AbstractModel.ANCILLARY_CM_KEY_METRICS, METRICS_CONFIG))
                 .build();
-        when(mockCmOps.get(clusterCmNamespace, KafkaConnectCluster.metricsConfigName(clusterCmName))).thenReturn(metricsCm);
+        when(mockCmOps.get(clusterCmNamespace, KafkaConnectCluster.logAndMetricsConfigName(clusterCmName))).thenReturn(metricsCm);
 
         // Mock CM patch
         Set<String> metricsCms = ResourceUtils.set();

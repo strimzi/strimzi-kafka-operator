@@ -10,6 +10,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -34,7 +35,12 @@ public class AbstractModelTest {
     }
 
     private Map<String, String> getStringStringMap(String xmx, String xms, double dynamicFraction, long dynamicMax) {
-        AbstractModel am = new AbstractModel(null, null, Labels.forCluster("foo")) { };
+        AbstractModel am = new AbstractModel(null, null, Labels.forCluster("foo")) {
+            @Override
+            protected Properties getDefaultLogConfig() {
+                return new Properties();
+            }
+        };
         am.setJvmOptions(jvmOptions(xmx, xms));
         List<EnvVar> envVars = new ArrayList<>(1);
         am.heapOptions(envVars, dynamicFraction, dynamicMax);
@@ -89,7 +95,12 @@ public class AbstractModelTest {
     }
 
     private String getPerformanceOptions(JvmOptions opts) {
-        AbstractModel am = new AbstractModel(null, null, Labels.forCluster("foo")) { };
+        AbstractModel am = new AbstractModel(null, null, Labels.forCluster("foo")) {
+            @Override
+            protected Properties getDefaultLogConfig() {
+                return new Properties();
+            }
+        };
         am.setJvmOptions(opts);
         List<EnvVar> envVars = new ArrayList<>(1);
         am.jvmPerformanceOptions(envVars);
