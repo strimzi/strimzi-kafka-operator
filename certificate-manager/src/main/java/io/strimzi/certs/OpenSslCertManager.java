@@ -184,7 +184,7 @@ public class OpenSslCertManager implements CertManager {
             ProcessBuilder processBuilder = new ProcessBuilder(cmd)
                     .redirectOutput(out)
                     .redirectErrorStream(true);
-            log.info("Running command {}", processBuilder.command());
+            log.debug("Running command {}", processBuilder.command());
 
             Process proc = processBuilder.start();
 
@@ -196,7 +196,7 @@ public class OpenSslCertManager implements CertManager {
             String stdout = new String(Files.readAllBytes(out.toPath()), Charset.defaultCharset());
 
             log.debug(stdout);
-            log.info("result {}", result);
+            log.debug("result {}", result);
 
         } catch (InterruptedException ignored) {
         } finally {

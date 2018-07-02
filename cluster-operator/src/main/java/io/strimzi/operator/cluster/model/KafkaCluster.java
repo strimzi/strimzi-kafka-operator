@@ -296,7 +296,7 @@ public class KafkaCluster extends AbstractModel {
      * @param secrets The Secrets storing certificates
      */
     public void generateCertificates(List<Secret> secrets) {
-        log.info("Generating certificates");
+        log.debug("Generating certificates");
 
         try {
 
@@ -345,9 +345,9 @@ public class KafkaCluster extends AbstractModel {
                 int replicasInternalSecret = !internalSecret.isPresent() ? 0 : (internalSecret.get().getData().size() - 1) / 2;
                 int replicasClientsSecret = !clientsSecret.isPresent() ? 0 : (clientsSecret.get().getData().size() - 2) / 2;
 
-                log.info("Internal communication certificates");
+                log.debug("Internal communication certificates");
                 maybeCopyOrGenerateCerts(internalCerts, internalSecret, replicasInternalSecret, internalCA);
-                log.info("Clients communication certificates");
+                log.debug("Clients communication certificates");
                 maybeCopyOrGenerateCerts(clientsCerts, clientsSecret, replicasClientsSecret, clientsCA);
             } else {
                 throw new NoCertificateSecretException("The internal CA certificate Secret is missing");
@@ -357,7 +357,7 @@ public class KafkaCluster extends AbstractModel {
             e.printStackTrace();
         }
 
-        log.info("End generating certificates");
+        log.debug("End generating certificates");
     }
 
     /**
