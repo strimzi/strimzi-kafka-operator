@@ -37,7 +37,7 @@ public class KafkaClusterTest {
     private final String metricsCmJson = "{\"animal\":\"wombat\"}";
     private final String configurationJson = "{\"foo\":\"bar\"}";
     private final ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson);
-    private final KafkaCluster kc = KafkaCluster.fromConfigMap(cm, Collections.emptyList());
+    private final KafkaCluster kc = KafkaCluster.fromConfigMap(cm, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
     @Rule
     public ResourceTester<KafkaCluster> resourceTester = new ResourceTester<>(KafkaCluster::fromConfigMap);
 
@@ -63,7 +63,7 @@ public class KafkaClusterTest {
                 Labels.STRIMZI_TYPE_LABEL, "kafka",
                 "my-user-label", "cromulent",
                 Labels.STRIMZI_NAME_LABEL, KafkaCluster.kafkaClusterName(cluster)), headful.getSpec().getSelector());
-        assertEquals(2, headful.getSpec().getPorts().size());
+        assertEquals(3, headful.getSpec().getPorts().size());
         assertEquals(KafkaCluster.CLIENT_PORT_NAME, headful.getSpec().getPorts().get(0).getName());
         assertEquals(new Integer(KafkaCluster.CLIENT_PORT), headful.getSpec().getPorts().get(0).getPort());
         assertEquals("TCP", headful.getSpec().getPorts().get(0).getProtocol());
@@ -83,7 +83,7 @@ public class KafkaClusterTest {
                 Labels.STRIMZI_TYPE_LABEL, "kafka",
                 "my-user-label", "cromulent",
                 Labels.STRIMZI_NAME_LABEL, KafkaCluster.kafkaClusterName(cluster)), headless.getSpec().getSelector());
-        assertEquals(2, headless.getSpec().getPorts().size());
+        assertEquals(3, headless.getSpec().getPorts().size());
         assertEquals(KafkaCluster.CLIENT_PORT_NAME, headless.getSpec().getPorts().get(0).getName());
         assertEquals(new Integer(KafkaCluster.CLIENT_PORT), headless.getSpec().getPorts().get(0).getPort());
         assertEquals("TCP", headless.getSpec().getPorts().get(0).getProtocol());
@@ -105,7 +105,7 @@ public class KafkaClusterTest {
                 ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout,
                         metricsCmJson, configurationJson, "{}", "{\"type\": \"ephemeral\"}",
                         null, "{\"topologyKey\": \"rack-key\"}");
-        KafkaCluster kc = KafkaCluster.fromConfigMap(cm, Collections.emptyList());
+        KafkaCluster kc = KafkaCluster.fromConfigMap(cm, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
         StatefulSet ss = kc.generateStatefulSet(true);
         checkStatefulSet(ss, cm, true);
     }
@@ -117,7 +117,7 @@ public class KafkaClusterTest {
                 ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout,
                         metricsCmJson, configurationJson, "{}", "{ \"type\": \"persistent-claim\", \"size\": \"1Gi\" }",
                         null, "{\"topologyKey\": \"rack-key\"}");
-        KafkaCluster kc = KafkaCluster.fromConfigMap(cm, Collections.emptyList());
+        KafkaCluster kc = KafkaCluster.fromConfigMap(cm, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
         StatefulSet ss = kc.generateStatefulSet(false);
         checkStatefulSet(ss, cm, false);
     }
@@ -224,7 +224,7 @@ public class KafkaClusterTest {
     public void testCorruptedConfigMap() {
         try {
             ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, "{\"key.name\": oops}");
-            KafkaCluster.fromConfigMap(cm, Collections.emptyList());
+            KafkaCluster.fromConfigMap(cm, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
             fail("Expected it to throw an exception");
         } catch (InvalidConfigMapException e) {
             assertEquals("key.name", e.getKey());
@@ -236,7 +236,7 @@ public class KafkaClusterTest {
         try {
             ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout,
                     "", configurationJson);
-            KafkaCluster.fromConfigMap(cm, Collections.emptyList());
+            KafkaCluster.fromConfigMap(cm, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
             fail("Expected it to throw an exception");
         } catch (InvalidConfigMapException e) {
             assertEquals("JSON - empty value", e.getKey());
