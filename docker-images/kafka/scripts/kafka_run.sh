@@ -39,7 +39,6 @@ fi
 
 # Generate temporary keystore password
 export CERTS_STORE_PASSWORD=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${1:-32})
-echo "CERTS_STORE_PASSWORD" $CERTS_STORE_PASSWORD
 
 mkdir -p /tmp/kafka
 
