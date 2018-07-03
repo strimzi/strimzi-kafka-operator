@@ -5,4 +5,6 @@ if [ -n "$TESTCASE" ]; then
     EXTRA_ARGS="-Dtest=$TESTCASE"
 fi
 
+minikube docker-env
+
 mvn -q verify -pl systemtest -Djava.net.preferIPv4Stack=true -DtrimStackTrace=false -Djunitgroup=acceptance $EXTRA_ARGS
