@@ -91,10 +91,76 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
     @Override
     public void createOrUpdate(Reconciliation reconciliation, ConfigMap assemblyCm, List<Secret> assemblySecrets, Handler<AsyncResult<Void>> handler) {
         Future<Void> f = Future.<Void>future().setHandler(handler);
-        createOrUpdateZk(reconciliation, assemblyCm)
+        createOrUpdateZk(reconciliation, assemblyCm, assemblySecrets)
             .compose(i -> createOrUpdateKafka(reconciliation, assemblyCm, assemblySecrets))
             .compose(i -> createOrUpdateTopicOperator(reconciliation, assemblyCm))
             .compose(ar -> f.complete(), f);
+    }
+
+    /**
+     * Brings the description of a Zookeeper cluster entity
+     * An instance of this class is used during the Future(s) composition when a Zookeeper cluster
+     * is created or updated. It brings information used from a call to the next one and can be
+     * enriched if the subsequent call needs more information.
+     */
+    private static class ZookeeperClusterDescription {
+
+        private final ZookeeperCluster zookeeper;
+        private final Service service;
+        private final Service headlessService;
+        private final ConfigMap metricsAndLogsConfigMap;
+        private final StatefulSet statefulSet;
+        private final Secret nodesSecret;
+        private ReconcileResult<StatefulSet> diffs;
+
+        ZookeeperClusterDescription(ZookeeperCluster zookeeper, Service service, Service headlessService,
+                                    ConfigMap metricsAndLogsConfigMap, StatefulSet statefulSet, Secret nodesSecret) {
+            this.zookeeper = zookeeper;
+            this.service = service;
+            this.headlessService = headlessService;
+            this.metricsAndLogsConfigMap = metricsAndLogsConfigMap;
+            this.statefulSet = statefulSet;
+            this.nodesSecret = nodesSecret;
+        }
+
+        ZookeeperCluster zookeeper() {
+            return this.zookeeper;
+        }
+
+        Service service() {
+            return this.service;
+        }
+
+        Service headlessService() {
+            return this.headlessService;
+        }
+
+        ConfigMap metricsAndLogsConfigMap() {
+            return this.metricsAndLogsConfigMap;
+        }
+
+        StatefulSet statefulSet() {
+            return this.statefulSet;
+        }
+
+        Secret nodesSecret() {
+            return this.nodesSecret;
+        }
+
+        ReconcileResult<StatefulSet> diffs() {
+            return this.diffs;
+        }
+
+        Future<ZookeeperClusterDescription> withDiff(Future<ReconcileResult<StatefulSet>> r) {
+            return r.map(rr -> {
+                this.diffs = rr;
+                return this;
+            });
+        }
+
+        Future<ZookeeperClusterDescription> withVoid(Future<?> r) {
+            return r.map(this);
+        }
     }
 
     /**
@@ -230,7 +296,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
                 .compose(desc -> desc.withVoid(configMapOperations.reconcile(namespace, desc.kafka().getAncillaryConfigName(), desc.metricsAndLogsConfigMap())))
                 .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, KafkaCluster.clientsCASecretName(name), desc.clientsCASecret())))
                 .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, KafkaCluster.clientsPublicKeyName(name), desc.clientsPublicKeySecret())))
-                .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, KafkaCluster.brokersClientsSecret(name), desc.brokersClientsSecret())))
+                .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, KafkaCluster.brokersClientsSecretName(name), desc.brokersClientsSecret())))
                 .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, KafkaCluster.brokersInternalSecretName(name), desc.brokersInternalSecret())))
                 .compose(desc -> desc.withDiff(kafkaSetOperations.reconcile(namespace, desc.kafka().getName(), desc.statefulSet())))
                 .compose(desc -> desc.withVoid(kafkaSetOperations.maybeRollingUpdate(desc.diffs().resource())))
@@ -259,7 +325,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
         result.add(kafkaSetOperations.reconcile(namespace, KafkaCluster.kafkaClusterName(name), null));
         result.add(secretOperations.reconcile(namespace, KafkaCluster.clientsCASecretName(name), null));
         result.add(secretOperations.reconcile(namespace, KafkaCluster.clientsPublicKeyName(name), null));
-        result.add(secretOperations.reconcile(namespace, KafkaCluster.brokersClientsSecret(name), null));
+        result.add(secretOperations.reconcile(namespace, KafkaCluster.brokersClientsSecretName(name), null));
         result.add(secretOperations.reconcile(namespace, KafkaCluster.brokersInternalSecretName(name), null));
 
         if (deleteClaims) {
@@ -272,39 +338,63 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
         }
 
         return CompositeFuture.join(result);
-    };
+    }
 
-    private final Future<Void> createOrUpdateZk(Reconciliation reconciliation, ConfigMap assemblyCm) {
+    private final Future<ZookeeperClusterDescription> getZookeeperClusterDescription(ConfigMap assemblyCm, List<Secret> assemblySecrets) {
+        Future<ZookeeperClusterDescription> fut = Future.future();
+
+        vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
+            future -> {
+                try {
+                    ZookeeperCluster zk = ZookeeperCluster.fromConfigMap(certManager, assemblyCm, assemblySecrets);
+
+                    ConfigMap logAndMetricsConfigMap = zk.generateMetricsAndLogConfigMap(zk.getLogging() instanceof ExternalLogging ?
+                            configMapOperations.get(assemblyCm.getMetadata().getNamespace(), ((ExternalLogging) zk.getLogging()).name) :
+                            null);
+
+                    ZookeeperClusterDescription desc =
+                            new ZookeeperClusterDescription(zk, zk.generateService(), zk.generateHeadlessService(),
+                                    logAndMetricsConfigMap, zk.generateStatefulSet(isOpenShift), zk.generateNodesSecret());
+
+                    future.complete(desc);
+                } catch (Throwable e) {
+                    future.fail(e);
+                }
+            }, true,
+            res -> {
+                if (res.succeeded()) {
+                    fut.complete((ZookeeperClusterDescription) res.result());
+                } else {
+                    fut.fail(res.cause());
+                }
+            }
+        );
+
+        return fut;
+    }
+
+    private final Future<Void> createOrUpdateZk(Reconciliation reconciliation, ConfigMap assemblyCm, List<Secret> assemblySecrets) {
         String namespace = assemblyCm.getMetadata().getNamespace();
         String name = assemblyCm.getMetadata().getName();
         log.debug("{}: create/update zookeeper {}", reconciliation, name);
-        ZookeeperCluster zk;
-        try {
-            zk = ZookeeperCluster.fromConfigMap(assemblyCm);
-        } catch (Exception e) {
-            return Future.failedFuture(e);
-        }
 
-        Service service = zk.generateService();
-        Service headlessService = zk.generateHeadlessService();
-        ConfigMap logAndMetricsConfigMap = zk.generateMetricsAndLogConfigMap(zk.getLogging() instanceof ExternalLogging ?
-                configMapOperations.get(namespace, ((ExternalLogging) zk.getLogging()).name) :
-                null);
-        StatefulSet statefulSet = zk.generateStatefulSet(isOpenShift);
+
         Future<Void> chainFuture = Future.future();
+        getZookeeperClusterDescription(assemblyCm, assemblySecrets)
+                .compose(desc -> desc.withVoid(zkSetOperations.scaleDown(namespace, desc.zookeeper().getName(), desc.zookeeper().getReplicas())))
+                .compose(desc -> desc.withVoid(serviceOperations.reconcile(namespace, desc.zookeeper().getName(), desc.service())))
+                .compose(desc -> desc.withVoid(serviceOperations.reconcile(namespace, desc.zookeeper().getHeadlessName(), desc.headlessService())))
+                .compose(desc -> desc.withVoid(configMapOperations.reconcile(namespace, desc.zookeeper().getAncillaryConfigName(), desc.metricsAndLogsConfigMap())))
+                .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, ZookeeperCluster.nodesSecretName(name), desc.nodesSecret())))
+                .compose(desc -> desc.withDiff(zkSetOperations.reconcile(namespace, desc.zookeeper().getName(), desc.statefulSet())))
+                .compose(desc -> desc.withVoid(zkSetOperations.maybeRollingUpdate(desc.diffs().resource())))
+                .compose(desc -> desc.withVoid(zkSetOperations.scaleUp(namespace, desc.zookeeper().getName(), desc.zookeeper().getReplicas())))
+                .compose(desc -> desc.withVoid(serviceOperations.endpointReadiness(namespace, desc.service(), 1_000, operationTimeoutMs)))
+                .compose(desc -> desc.withVoid(serviceOperations.endpointReadiness(namespace, desc.headlessService(), 1_000, operationTimeoutMs)))
+                .compose(desc -> chainFuture.complete(), chainFuture);
 
-        zkSetOperations.scaleDown(namespace, zk.getName(), zk.getReplicas())
-                .compose(scale -> serviceOperations.reconcile(namespace, zk.getName(), service))
-                .compose(i -> serviceOperations.reconcile(namespace, zk.getHeadlessName(), headlessService))
-                .compose(i -> configMapOperations.reconcile(namespace, zk.getAncillaryConfigName(), logAndMetricsConfigMap))
-                .compose(i -> zkSetOperations.reconcile(namespace, zk.getName(), statefulSet))
-                .compose(diffs -> zkSetOperations.maybeRollingUpdate(diffs.resource()))
-                .compose(i -> zkSetOperations.scaleUp(namespace, zk.getName(), zk.getReplicas()))
-                .compose(scale -> serviceOperations.endpointReadiness(namespace, service, 1_000, operationTimeoutMs))
-                .compose(i -> serviceOperations.endpointReadiness(namespace, headlessService, 1_000, operationTimeoutMs))
-                .compose(chainFuture::complete, chainFuture);
         return chainFuture;
-    };
+    }
 
     private final Future<CompositeFuture> deleteZk(Reconciliation reconciliation) {
         String namespace = reconciliation.namespace();
@@ -320,6 +410,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
         result.add(serviceOperations.reconcile(namespace, ZookeeperCluster.zookeeperClusterName(name), null));
         result.add(serviceOperations.reconcile(namespace, ZookeeperCluster.zookeeperHeadlessName(name), null));
         result.add(zkSetOperations.reconcile(namespace, ZookeeperCluster.zookeeperClusterName(name), null));
+        result.add(secretOperations.reconcile(namespace, ZookeeperCluster.nodesSecretName(name), null));
 
         if (deleteClaims) {
             log.debug("{}: delete zookeeper {} PVCs", reconciliation, name);

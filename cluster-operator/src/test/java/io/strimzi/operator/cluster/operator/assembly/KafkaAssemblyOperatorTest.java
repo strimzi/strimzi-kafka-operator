@@ -186,7 +186,7 @@ public class KafkaAssemblyOperatorTest {
     private void createCluster(TestContext context, ConfigMap clusterCm, List<Secret> secrets) {
 
         KafkaCluster kafkaCluster = KafkaCluster.fromConfigMap(certManager, clusterCm, secrets);
-        ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromConfigMap(clusterCm);
+        ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromConfigMap(certManager, clusterCm, secrets);
         TopicOperator topicOperator = TopicOperator.fromConfigMap(clusterCm);
 
         // create CM, Service, headless service, statefulset and so on
@@ -295,8 +295,9 @@ public class KafkaAssemblyOperatorTest {
             context.assertEquals(set(
                     KafkaCluster.clientsCASecretName(clusterCmName),
                     KafkaCluster.clientsPublicKeyName(clusterCmName),
-                    KafkaCluster.brokersClientsSecret(clusterCmName),
-                    KafkaCluster.brokersInternalSecretName(clusterCmName)),
+                    KafkaCluster.brokersClientsSecretName(clusterCmName),
+                    KafkaCluster.brokersInternalSecretName(clusterCmName),
+                    ZookeeperCluster.nodesSecretName(clusterCmName)),
                     captured(secretsCaptor));
 
             // Verify that we wait for readiness
@@ -313,7 +314,7 @@ public class KafkaAssemblyOperatorTest {
 
     private void deleteCluster(TestContext context, ConfigMap clusterCm, List<Secret> secrets) {
 
-        ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromConfigMap(clusterCm);
+        ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromConfigMap(certManager, clusterCm, secrets);
         KafkaCluster kafkaCluster = KafkaCluster.fromConfigMap(certManager, clusterCm, secrets);
         TopicOperator topicOperator = TopicOperator.fromConfigMap(clusterCm);
         // create CM, Service, headless service, statefulset
@@ -337,10 +338,12 @@ public class KafkaAssemblyOperatorTest {
         Secret clientsPublicKeySecret = kafkaCluster.generateClientsPublicKeySecret();
         Secret brokersInternalSecret = kafkaCluster.generateBrokersInternalSecret();
         Secret brokersClientsSecret = kafkaCluster.generateBrokersClientsSecret();
+        Secret nodesSecret = zookeeperCluster.generateNodesSecret();
         when(mockSecretOps.get(clusterCmNamespace, KafkaCluster.clientsCASecretName(clusterCmName))).thenReturn(clientsCASecret);
         when(mockSecretOps.get(clusterCmNamespace, KafkaCluster.clientsPublicKeyName(clusterCmName))).thenReturn(clientsPublicKeySecret);
         when(mockSecretOps.get(clusterCmNamespace, KafkaCluster.brokersInternalSecretName(clusterCmName))).thenReturn(brokersInternalSecret);
-        when(mockSecretOps.get(clusterCmNamespace, KafkaCluster.brokersClientsSecret(clusterCmName))).thenReturn(brokersClientsSecret);
+        when(mockSecretOps.get(clusterCmNamespace, KafkaCluster.brokersClientsSecretName(clusterCmName))).thenReturn(brokersClientsSecret);
+        when(mockSecretOps.get(clusterCmNamespace, ZookeeperCluster.nodesSecretName(clusterCmName))).thenReturn(nodesSecret);
 
         ArgumentCaptor<String> secretsCaptor = ArgumentCaptor.forClass(String.class);
         when(mockSecretOps.reconcile(eq(clusterCmNamespace), secretsCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
@@ -407,7 +410,8 @@ public class KafkaAssemblyOperatorTest {
                     KafkaCluster.clientsCASecretName(clusterCmName),
                     KafkaCluster.clientsPublicKeyName(clusterCmName),
                     KafkaCluster.brokersInternalSecretName(clusterCmName),
-                    KafkaCluster.brokersClientsSecret(clusterCmName)),
+                    KafkaCluster.brokersClientsSecretName(clusterCmName),
+                    ZookeeperCluster.nodesSecretName(clusterCmName)),
                     captured(secretsCaptor));
 
             // PvcOperations only used for deletion
@@ -451,9 +455,9 @@ public class KafkaAssemblyOperatorTest {
         return ResourceUtils.createKafkaClusterInitialSecrets(clusterCmNamespace);
     }
 
-    private List<Secret> getClusterSecrets(String clusterCmName, int replicas) {
+    private List<Secret> getClusterSecrets(String clusterCmName, int kafkaReplicas, int zkReplicas) {
         String clusterCmNamespace = "test";
-        return ResourceUtils.createKafkaClusterSecretsWithReplicas(clusterCmNamespace, clusterCmName, replicas);
+        return ResourceUtils.createKafkaClusterSecretsWithReplicas(clusterCmNamespace, clusterCmName, kafkaReplicas, zkReplicas);
     }
 
     private static <T> Set<T> set(T... elements) {
@@ -468,7 +472,8 @@ public class KafkaAssemblyOperatorTest {
     public void testDeleteCluster(TestContext context) {
         ConfigMap clusterCm = getConfigMap("baz", "kafka");
         List<Secret> secrets = getClusterSecrets("baz",
-                Integer.valueOf(clusterCm.getData().get(KafkaCluster.KEY_REPLICAS)));
+                Integer.valueOf(clusterCm.getData().get(KafkaCluster.KEY_REPLICAS)),
+                Integer.valueOf(clusterCm.getData().get(ZookeeperCluster.KEY_REPLICAS)));
         deleteCluster(context, clusterCm, secrets);
 
     }
@@ -477,7 +482,8 @@ public class KafkaAssemblyOperatorTest {
     public void testUpdateClusterNoop(TestContext context) {
         ConfigMap clusterCm = getConfigMap("bar", "kafka");
         List<Secret> secrets = getClusterSecrets("bar",
-                Integer.valueOf(clusterCm.getData().get(KafkaCluster.KEY_REPLICAS)));
+                Integer.valueOf(clusterCm.getData().get(KafkaCluster.KEY_REPLICAS)),
+                Integer.valueOf(clusterCm.getData().get(ZookeeperCluster.KEY_REPLICAS)));
         updateCluster(context, getConfigMap("bar", "kafka"), clusterCm, secrets);
     }
 
@@ -486,7 +492,8 @@ public class KafkaAssemblyOperatorTest {
         ConfigMap clusterCm = getConfigMap("bar", "kafka");
         clusterCm.getData().put(KafkaCluster.KEY_IMAGE, "a-changed-image");
         List<Secret> secrets = getClusterSecrets("bar",
-                Integer.valueOf(clusterCm.getData().get(KafkaCluster.KEY_REPLICAS)));
+                Integer.valueOf(clusterCm.getData().get(KafkaCluster.KEY_REPLICAS)),
+                Integer.valueOf(clusterCm.getData().get(ZookeeperCluster.KEY_REPLICAS)));
         updateCluster(context, getConfigMap("bar", "kafka"), clusterCm, secrets);
     }
 
@@ -495,7 +502,8 @@ public class KafkaAssemblyOperatorTest {
         ConfigMap clusterCm = getConfigMap("bar", "zookeeper");
         clusterCm.getData().put(ZookeeperCluster.KEY_IMAGE, "a-changed-image");
         List<Secret> secrets = getClusterSecrets("bar",
-                Integer.valueOf(clusterCm.getData().get(KafkaCluster.KEY_REPLICAS)));
+                Integer.valueOf(clusterCm.getData().get(KafkaCluster.KEY_REPLICAS)),
+                Integer.valueOf(clusterCm.getData().get(ZookeeperCluster.KEY_REPLICAS)));
         updateCluster(context, getConfigMap("bar", "zookeeper"), clusterCm, secrets);
     }
 
@@ -504,7 +512,8 @@ public class KafkaAssemblyOperatorTest {
         ConfigMap clusterCm = getConfigMap("bar", "kafka");
         clusterCm.getData().put(KafkaCluster.KEY_REPLICAS, "4");
         List<Secret> secrets = getClusterSecrets("bar",
-                Integer.valueOf(clusterCm.getData().get(KafkaCluster.KEY_REPLICAS)));
+                Integer.valueOf(clusterCm.getData().get(KafkaCluster.KEY_REPLICAS)),
+                Integer.valueOf(clusterCm.getData().get(ZookeeperCluster.KEY_REPLICAS)));
         updateCluster(context, getConfigMap("bar", "kafka"), clusterCm, secrets);
     }
 
@@ -513,7 +522,8 @@ public class KafkaAssemblyOperatorTest {
         ConfigMap clusterCm = getConfigMap("bar", "kafka");
         clusterCm.getData().put(KafkaCluster.KEY_REPLICAS, "2");
         List<Secret> secrets = getClusterSecrets("bar",
-                Integer.valueOf(clusterCm.getData().get(KafkaCluster.KEY_REPLICAS)));
+                Integer.valueOf(clusterCm.getData().get(KafkaCluster.KEY_REPLICAS)),
+                Integer.valueOf(clusterCm.getData().get(ZookeeperCluster.KEY_REPLICAS)));
         updateCluster(context, getConfigMap("bar", "kafka"), clusterCm, secrets);
     }
 
@@ -522,7 +532,8 @@ public class KafkaAssemblyOperatorTest {
         ConfigMap clusterCm = getConfigMap("bar", "zookeeper");
         clusterCm.getData().put(ZookeeperCluster.KEY_REPLICAS, "4");
         List<Secret> secrets = getClusterSecrets("bar",
-                Integer.valueOf(clusterCm.getData().get(KafkaCluster.KEY_REPLICAS)));
+                Integer.valueOf(clusterCm.getData().get(KafkaCluster.KEY_REPLICAS)),
+                Integer.valueOf(clusterCm.getData().get(ZookeeperCluster.KEY_REPLICAS)));
         updateCluster(context, getConfigMap("bar", "zookeeper"), clusterCm, secrets);
     }
 
@@ -531,7 +542,8 @@ public class KafkaAssemblyOperatorTest {
         ConfigMap clusterCm = getConfigMap("bar", "zookeeper");
         clusterCm.getData().put(ZookeeperCluster.KEY_REPLICAS, "2");
         List<Secret> secrets = getClusterSecrets("bar",
-                Integer.valueOf(clusterCm.getData().get(KafkaCluster.KEY_REPLICAS)));
+                Integer.valueOf(clusterCm.getData().get(KafkaCluster.KEY_REPLICAS)),
+                Integer.valueOf(clusterCm.getData().get(ZookeeperCluster.KEY_REPLICAS)));
         updateCluster(context, getConfigMap("bar", "zookeeper"), clusterCm, secrets);
     }
 
@@ -540,7 +552,8 @@ public class KafkaAssemblyOperatorTest {
         ConfigMap clusterCm = getConfigMap("bar", "kafka");
         clusterCm.getData().put(KafkaCluster.KEY_METRICS_CONFIG, "{\"something\":\"changed\"}");
         List<Secret> secrets = getClusterSecrets("bar",
-                Integer.valueOf(clusterCm.getData().get(KafkaCluster.KEY_REPLICAS)));
+                Integer.valueOf(clusterCm.getData().get(KafkaCluster.KEY_REPLICAS)),
+                Integer.valueOf(clusterCm.getData().get(ZookeeperCluster.KEY_REPLICAS)));
         updateCluster(context, getConfigMap("bar", "kafka"), clusterCm, secrets);
     }
 
@@ -549,7 +562,8 @@ public class KafkaAssemblyOperatorTest {
         ConfigMap clusterCm = getConfigMap("bar", "kafka");
         clusterCm.getData().put(KafkaCluster.KEY_KAFKA_LOG_CONFIG, "{\"kafka.root.logger.level\":\"DEBUG\"}");
         List<Secret> secrets = getClusterSecrets("bar",
-                Integer.valueOf(clusterCm.getData().get(KafkaCluster.KEY_REPLICAS)));
+                Integer.valueOf(clusterCm.getData().get(KafkaCluster.KEY_REPLICAS)),
+                Integer.valueOf(clusterCm.getData().get(ZookeeperCluster.KEY_REPLICAS)));
         updateCluster(context, getConfigMap("bar", "kafka"), clusterCm, secrets);
     }
 
@@ -558,7 +572,8 @@ public class KafkaAssemblyOperatorTest {
         ConfigMap clusterCm = getConfigMap("bar", "zookeeper");
         clusterCm.getData().put(ZookeeperCluster.KEY_METRICS_CONFIG, "{\"something\":\"changed\"}");
         List<Secret> secrets = getClusterSecrets("bar",
-                Integer.valueOf(clusterCm.getData().get(KafkaCluster.KEY_REPLICAS)));
+                Integer.valueOf(clusterCm.getData().get(KafkaCluster.KEY_REPLICAS)),
+                Integer.valueOf(clusterCm.getData().get(ZookeeperCluster.KEY_REPLICAS)));
         updateCluster(context, getConfigMap("bar", "zookeeper"), clusterCm, secrets);
     }
 
@@ -567,6 +582,7 @@ public class KafkaAssemblyOperatorTest {
         ConfigMap clusterCm = getConfigMap("bar", "zookeeper");
         clusterCm.getData().put(ZookeeperCluster.KEY_ZOOKEEPER_LOG_CONFIG, "{\"zookeeper.root.logger\":\"OFF\"}");
         List<Secret> secrets = getClusterSecrets("bar",
+                Integer.valueOf(clusterCm.getData().get(ZookeeperCluster.KEY_REPLICAS)),
                 Integer.valueOf(clusterCm.getData().get(ZookeeperCluster.KEY_REPLICAS)));
         updateCluster(context, getConfigMap("bar", "zookeeper"), clusterCm, secrets);
     }
@@ -577,7 +593,8 @@ public class KafkaAssemblyOperatorTest {
         if (tcConfig != null) {
             clusterCm.getData().put(TopicOperator.KEY_CONFIG, "{\"something\":\"changed\"}");
             List<Secret> secrets = getClusterSecrets("bar",
-                    Integer.valueOf(clusterCm.getData().get(KafkaCluster.KEY_REPLICAS)));
+                    Integer.valueOf(clusterCm.getData().get(KafkaCluster.KEY_REPLICAS)),
+                    Integer.valueOf(clusterCm.getData().get(ZookeeperCluster.KEY_REPLICAS)));
             updateCluster(context, getConfigMap("bar", "kafka"), clusterCm, secrets);
 
         }
@@ -588,8 +605,8 @@ public class KafkaAssemblyOperatorTest {
 
         KafkaCluster originalKafkaCluster = KafkaCluster.fromConfigMap(certManager, originalCm, secrets);
         KafkaCluster updatedKafkaCluster = KafkaCluster.fromConfigMap(certManager, clusterCm, secrets);
-        ZookeeperCluster originalZookeeperCluster = ZookeeperCluster.fromConfigMap(originalCm);
-        ZookeeperCluster updatedZookeeperCluster = ZookeeperCluster.fromConfigMap(clusterCm);
+        ZookeeperCluster originalZookeeperCluster = ZookeeperCluster.fromConfigMap(certManager, originalCm, secrets);
+        ZookeeperCluster updatedZookeeperCluster = ZookeeperCluster.fromConfigMap(certManager, clusterCm, secrets);
         TopicOperator originalTopicOperator = TopicOperator.fromConfigMap(originalCm);
 
         // create CM, Service, headless service, statefulset and so on
@@ -662,7 +679,7 @@ public class KafkaAssemblyOperatorTest {
         when(mockSecretOps.get(clusterCmNamespace, KafkaCluster.clientsPublicKeyName(clusterCmName))).thenReturn(
                 originalKafkaCluster.generateClientsPublicKeySecret()
         );
-        when(mockSecretOps.get(clusterCmNamespace, KafkaCluster.brokersClientsSecret(clusterCmName))).thenReturn(
+        when(mockSecretOps.get(clusterCmNamespace, KafkaCluster.brokersClientsSecretName(clusterCmName))).thenReturn(
                 originalKafkaCluster.generateBrokersClientsSecret()
         );
         when(mockSecretOps.get(clusterCmNamespace, KafkaCluster.brokersInternalSecretName(clusterCmName))).thenReturn(
@@ -797,9 +814,11 @@ public class KafkaAssemblyOperatorTest {
 
         // providing certificates Secrets for existing clusters
         List<Secret> barSecrets = ResourceUtils.createKafkaClusterSecretsWithReplicas(clusterCmNamespace, "bar",
-                Integer.valueOf(bar.getData().get(KafkaCluster.KEY_REPLICAS)));
+                Integer.valueOf(bar.getData().get(KafkaCluster.KEY_REPLICAS)),
+                Integer.valueOf(bar.getData().get(ZookeeperCluster.KEY_REPLICAS)));
         List<Secret> bazSecrets = ResourceUtils.createKafkaClusterSecretsWithReplicas(clusterCmNamespace, "baz",
-                Integer.valueOf(baz.getData().get(KafkaCluster.KEY_REPLICAS)));
+                Integer.valueOf(baz.getData().get(KafkaCluster.KEY_REPLICAS)),
+                Integer.valueOf(baz.getData().get(ZookeeperCluster.KEY_REPLICAS)));
 
         // providing the list of ALL StatefulSets for all the Kafka clusters
         Labels newLabels = Labels.forType(AssemblyType.KAFKA);
