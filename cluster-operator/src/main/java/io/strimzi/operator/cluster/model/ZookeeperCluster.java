@@ -17,11 +17,13 @@ import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.operator.cluster.ClusterOperator;
 import io.vertx.core.json.JsonObject;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 public class ZookeeperCluster extends AbstractModel {
 
@@ -36,7 +38,8 @@ public class ZookeeperCluster extends AbstractModel {
 
     private static final String NAME_SUFFIX = "-zookeeper";
     private static final String HEADLESS_NAME_SUFFIX = NAME_SUFFIX + "-headless";
-    private static final String METRICS_CONFIG_SUFFIX = NAME_SUFFIX + "-metrics-config";
+    private static final String METRICS_AND_LOG_CONFIG_SUFFIX = NAME_SUFFIX + "-config";
+    private static final String LOG_CONFIG_SUFFIX = NAME_SUFFIX + "-logging";
 
     // Zookeeper configuration
     // N/A
@@ -60,18 +63,24 @@ public class ZookeeperCluster extends AbstractModel {
     public static final String KEY_RESOURCES = "zookeeper-resources";
     public static final String KEY_ZOOKEEPER_CONFIG = "zookeeper-config";
     public static final String KEY_AFFINITY = "zookeeper-affinity";
+    public static final String KEY_ZOOKEEPER_LOG_CONFIG = "zookeeper-logging";
 
     // Zookeeper configuration keys (EnvVariables)
     public static final String ENV_VAR_ZOOKEEPER_NODE_COUNT = "ZOOKEEPER_NODE_COUNT";
     public static final String ENV_VAR_ZOOKEEPER_METRICS_ENABLED = "ZOOKEEPER_METRICS_ENABLED";
     public static final String ENV_VAR_ZOOKEEPER_CONFIGURATION = "ZOOKEEPER_CONFIGURATION";
+    public static final String ENV_VAR_ZOOKEEPER_LOG_CONFIGURATION = "ZOOKEEPER_LOG_CONFIGURATION";
 
     public static String zookeeperClusterName(String cluster) {
         return cluster + ZookeeperCluster.NAME_SUFFIX;
     }
 
-    public static String zookeeperMetricsName(String cluster) {
-        return cluster + ZookeeperCluster.METRICS_CONFIG_SUFFIX;
+    public static String zookeeperMetricAndLogConfigsName(String cluster) {
+        return cluster + ZookeeperCluster.METRICS_AND_LOG_CONFIG_SUFFIX;
+    }
+
+    public static String logConfigsName(String cluster) {
+        return cluster + ZookeeperCluster.LOG_CONFIG_SUFFIX;
     }
 
     public static String zookeeperHeadlessName(String cluster) {
@@ -97,7 +106,7 @@ public class ZookeeperCluster extends AbstractModel {
         super(namespace, cluster, labels.withType(AssemblyType.KAFKA));
         this.name = zookeeperClusterName(cluster);
         this.headlessName = zookeeperHeadlessName(cluster);
-        this.metricsConfigName = zookeeperMetricsName(cluster);
+        this.ancillaryConfigName = zookeeperMetricAndLogConfigsName(cluster);
         this.image = DEFAULT_IMAGE;
         this.replicas = DEFAULT_REPLICAS;
         this.healthCheckPath = "/opt/kafka/zookeeper_healthcheck.sh";
@@ -106,8 +115,10 @@ public class ZookeeperCluster extends AbstractModel {
         this.isMetricsEnabled = DEFAULT_ZOOKEEPER_METRICS_ENABLED;
 
         this.mountPath = "/var/lib/zookeeper";
-        this.metricsConfigVolumeName = "zookeeper-metrics-config";
-        this.metricsConfigMountPath = "/opt/prometheus/config/";
+
+        this.logAndMetricsConfigVolumeName = "zookeeper-metrics-and-logging";
+        this.logAndMetricsConfigMountPath = "/opt/kafka/config/";
+        this.validLoggerFields = getDefaultLogConfig();
     }
 
 
@@ -127,6 +138,7 @@ public class ZookeeperCluster extends AbstractModel {
         zk.setHealthCheckInitialDelay(Utils.getInteger(data, KEY_HEALTHCHECK_DELAY, DEFAULT_HEALTHCHECK_DELAY));
         zk.setHealthCheckTimeout(Utils.getInteger(data, KEY_HEALTHCHECK_TIMEOUT, DEFAULT_HEALTHCHECK_TIMEOUT));
 
+        zk.setLogging(Utils.getLogging(data.get(KEY_ZOOKEEPER_LOG_CONFIG)));
         JsonObject metricsConfig = Utils.getJson(data, KEY_METRICS_CONFIG);
         zk.setMetricsEnabled(metricsConfig != null);
         if (zk.isMetricsEnabled()) {
@@ -164,9 +176,10 @@ public class ZookeeperCluster extends AbstractModel {
 
         Map<String, String> vars = containerEnvVars(container);
 
+        zk.setLogConfigName(zookeeperMetricAndLogConfigsName(cluster));
         zk.setMetricsEnabled(Utils.getBoolean(vars, ENV_VAR_ZOOKEEPER_METRICS_ENABLED, DEFAULT_ZOOKEEPER_METRICS_ENABLED));
         if (zk.isMetricsEnabled()) {
-            zk.setMetricsConfigName(zookeeperMetricsName(cluster));
+            zk.setMetricsConfigName(zookeeperMetricAndLogConfigsName(cluster));
         }
 
         if (!ss.getSpec().getVolumeClaimTemplates().isEmpty()) {
@@ -218,14 +231,17 @@ public class ZookeeperCluster extends AbstractModel {
                 isOpenShift);
     }
 
-    public ConfigMap generateMetricsConfigMap() {
+    public ConfigMap generateMetricsAndLogConfigMap(ConfigMap cm) {
+        Map<String, String> data = new HashMap<>();
+        data.put(ANCILLARY_CM_KEY_LOG_CONFIG, parseLogging(getLogging(), cm));
         if (isMetricsEnabled()) {
-            Map<String, String> data = new HashMap<>();
-            data.put(METRICS_CONFIG_FILE, getMetricsConfig().toString());
-            return createConfigMap(getMetricsConfigName(), data);
-        } else {
-            return null;
+            data.put(ANCILLARY_CM_KEY_METRICS, getMetricsConfig().toString());
         }
+        ConfigMap result = createConfigMap(getAncillaryConfigName(), data);
+        if (getLogging() != null) {
+            getLogging().setCm(result);
+        }
+        return result;
     }
 
     @Override
@@ -236,7 +252,9 @@ public class ZookeeperCluster extends AbstractModel {
         heapOptions(varList, 0.75, 2L * 1024L * 1024L * 1024L);
         jvmPerformanceOptions(varList);
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_CONFIGURATION, configuration.getConfiguration()));
-
+        if (getLogging() != null && getLogging().getCm() != null) {
+            varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_LOG_CONFIGURATION, getLogging().getCm().toString()));
+        }
         return varList;
     }
 
@@ -266,10 +284,7 @@ public class ZookeeperCluster extends AbstractModel {
         if (storage.type() == Storage.StorageType.EPHEMERAL) {
             volumeList.add(createEmptyDirVolume(VOLUME_NAME));
         }
-        if (isMetricsEnabled) {
-            volumeList.add(createConfigMapVolume(metricsConfigVolumeName, metricsConfigName));
-        }
-
+        volumeList.add(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
         return volumeList;
     }
 
@@ -284,11 +299,19 @@ public class ZookeeperCluster extends AbstractModel {
     private List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> volumeMountList = new ArrayList<>();
         volumeMountList.add(createVolumeMount(VOLUME_NAME, mountPath));
-        if (isMetricsEnabled) {
-            volumeMountList.add(createVolumeMount(metricsConfigVolumeName, metricsConfigMountPath));
-        }
+        volumeMountList.add(createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
 
         return volumeMountList;
     }
 
+    @Override
+    protected Properties getDefaultLogConfig() {
+        Properties properties = new Properties();
+        try {
+            properties = getDefaultLoggingProperties("zookeeperDefaultLoggingProperties");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return properties;
+    }
 }

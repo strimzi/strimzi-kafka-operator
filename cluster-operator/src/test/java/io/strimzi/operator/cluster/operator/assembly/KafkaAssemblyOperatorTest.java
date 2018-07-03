@@ -73,6 +73,9 @@ import static org.mockito.Mockito.when;
 public class KafkaAssemblyOperatorTest {
 
     public static final String METRICS_CONFIG = "{\"foo\":\"bar\"}";
+    public static final String LOG_KAFKA_CONFIG = "{\"kafka.root.logger.level\":\"INFO\"}";
+    public static final String LOG_ZOOKEEPER_CONFIG = "{\"zookeeper.root.logger\":\"INFO\"}";
+    public static final String LOG_CONNECT_CONFIG = "{\"connect.root.logger.level\":\"INFO\"}";
     private final boolean openShift;
     private final boolean metrics;
     private final String kafkaConfig;
@@ -176,7 +179,7 @@ public class KafkaAssemblyOperatorTest {
 
     @Test
     public void testCreateCluster(TestContext context) {
-        createCluster(context, getConfigMap("foo"), getInitialSecrets());
+        createCluster(context, getConfigMap("foo", "kafka"), getInitialSecrets());
     }
 
     private void createCluster(TestContext context, ConfigMap clusterCm, List<Secret> secrets) {
@@ -229,6 +232,10 @@ public class KafkaAssemblyOperatorTest {
         ArgumentCaptor<String> metricsNameCaptor = ArgumentCaptor.forClass(String.class);
         when(mockCmOps.reconcile(anyString(), metricsNameCaptor.capture(), metricsCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
 
+        ArgumentCaptor<ConfigMap> logCaptor = ArgumentCaptor.forClass(ConfigMap.class);
+        ArgumentCaptor<String> logNameCaptor = ArgumentCaptor.forClass(String.class);
+        when(mockCmOps.reconcile(anyString(), logNameCaptor.capture(), logCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
+
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, openShift,
                 ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS,
                 mockCmOps,
@@ -244,13 +251,8 @@ public class KafkaAssemblyOperatorTest {
             context.assertTrue(createResult.succeeded());
 
             // No metrics config  => no CMs created
-            Set<String> metricsNames = new HashSet<>();
-            if (kafkaCluster.isMetricsEnabled()) {
-                metricsNames.add(KafkaCluster.metricConfigsName(clusterCmName));
-            }
-            if (zookeeperCluster.isMetricsEnabled()) {
-                metricsNames.add(ZookeeperCluster.zookeeperMetricsName(clusterCmName));
-            }
+            Set<String> logsAndMetricsNames = new HashSet<>();
+            logsAndMetricsNames.add(KafkaCluster.metricAndLogConfigsName(clusterCmName));
             /*
             Map<String, ConfigMap> cmsByName = new HashMap<>();
             Iterator<ConfigMap> it2 = metricsCaptor.getAllValues().iterator();
@@ -348,6 +350,9 @@ public class KafkaAssemblyOperatorTest {
         ArgumentCaptor<String> metricsCaptor = ArgumentCaptor.forClass(String.class);
         when(mockCmOps.reconcile(eq(clusterCmNamespace), metricsCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
 
+        ArgumentCaptor<String> logCaptor = ArgumentCaptor.forClass(String.class);
+        when(mockCmOps.reconcile(eq(clusterCmNamespace), logCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
+
         when(mockServiceOps.reconcile(eq(clusterCmNamespace), serviceCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
         when(mockKsOps.reconcile(anyString(), ssCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
         when(mockZsOps.reconcile(anyString(), ssCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
@@ -423,14 +428,19 @@ public class KafkaAssemblyOperatorTest {
         });
     }
 
-    private ConfigMap getConfigMap(String clusterCmName) {
+    private ConfigMap getConfigMap(String clusterCmName, String model) {
         String clusterCmNamespace = "test";
         int replicas = 3;
         String image = "bar";
         int healthDelay = 120;
+        String zooLogCmJson = LOG_ZOOKEEPER_CONFIG;
+        String kafkaLogCmJson = LOG_KAFKA_CONFIG;
+        String connectLogCmJson = LOG_CONNECT_CONFIG;
         int healthTimeout = 30;
         String metricsCmJson = metrics ? METRICS_CONFIG : null;
-        return ResourceUtils.createKafkaClusterConfigMap(clusterCmNamespace, clusterCmName, replicas, image, healthDelay, healthTimeout, metricsCmJson, kafkaConfig, zooConfig, storage, tcConfig, null);
+
+
+        return ResourceUtils.createKafkaClusterConfigMap(clusterCmNamespace, clusterCmName, replicas, image, healthDelay, healthTimeout, metricsCmJson, kafkaConfig, zooConfig, storage, tcConfig, null, kafkaLogCmJson, zooLogCmJson);
     }
 
     private List<Secret> getInitialSecrets() {
@@ -453,100 +463,120 @@ public class KafkaAssemblyOperatorTest {
 
     @Test
     public void testDeleteCluster(TestContext context) {
-        ConfigMap clusterCm = getConfigMap("baz");
+        ConfigMap clusterCm = getConfigMap("baz", "kafka");
         List<Secret> secrets = getClusterSecrets("baz",
                 Integer.valueOf(clusterCm.getData().get(KafkaCluster.KEY_REPLICAS)));
         deleteCluster(context, clusterCm, secrets);
+
     }
 
     @Test
     public void testUpdateClusterNoop(TestContext context) {
-        ConfigMap clusterCm = getConfigMap("bar");
+        ConfigMap clusterCm = getConfigMap("bar", "kafka");
         List<Secret> secrets = getClusterSecrets("bar",
                 Integer.valueOf(clusterCm.getData().get(KafkaCluster.KEY_REPLICAS)));
-        updateCluster(context, getConfigMap("bar"), clusterCm, secrets);
+        updateCluster(context, getConfigMap("bar", "kafka"), clusterCm, secrets);
     }
 
     @Test
     public void testUpdateKafkaClusterChangeImage(TestContext context) {
-        ConfigMap clusterCm = getConfigMap("bar");
+        ConfigMap clusterCm = getConfigMap("bar", "kafka");
         clusterCm.getData().put(KafkaCluster.KEY_IMAGE, "a-changed-image");
         List<Secret> secrets = getClusterSecrets("bar",
                 Integer.valueOf(clusterCm.getData().get(KafkaCluster.KEY_REPLICAS)));
-        updateCluster(context, getConfigMap("bar"), clusterCm, secrets);
+        updateCluster(context, getConfigMap("bar", "kafka"), clusterCm, secrets);
     }
 
     @Test
     public void testUpdateZookeeperClusterChangeImage(TestContext context) {
-        ConfigMap clusterCm = getConfigMap("bar");
+        ConfigMap clusterCm = getConfigMap("bar", "zookeeper");
         clusterCm.getData().put(ZookeeperCluster.KEY_IMAGE, "a-changed-image");
         List<Secret> secrets = getClusterSecrets("bar",
                 Integer.valueOf(clusterCm.getData().get(KafkaCluster.KEY_REPLICAS)));
-        updateCluster(context, getConfigMap("bar"), clusterCm, secrets);
+        updateCluster(context, getConfigMap("bar", "zookeeper"), clusterCm, secrets);
     }
 
     @Test
     public void testUpdateKafkaClusterScaleUp(TestContext context) {
-        ConfigMap clusterCm = getConfigMap("bar");
+        ConfigMap clusterCm = getConfigMap("bar", "kafka");
         clusterCm.getData().put(KafkaCluster.KEY_REPLICAS, "4");
         List<Secret> secrets = getClusterSecrets("bar",
                 Integer.valueOf(clusterCm.getData().get(KafkaCluster.KEY_REPLICAS)));
-        updateCluster(context, getConfigMap("bar"), clusterCm, secrets);
+        updateCluster(context, getConfigMap("bar", "kafka"), clusterCm, secrets);
     }
 
     @Test
     public void testUpdateKafkaClusterScaleDown(TestContext context) {
-        ConfigMap clusterCm = getConfigMap("bar");
+        ConfigMap clusterCm = getConfigMap("bar", "kafka");
         clusterCm.getData().put(KafkaCluster.KEY_REPLICAS, "2");
         List<Secret> secrets = getClusterSecrets("bar",
                 Integer.valueOf(clusterCm.getData().get(KafkaCluster.KEY_REPLICAS)));
-        updateCluster(context, getConfigMap("bar"), clusterCm, secrets);
+        updateCluster(context, getConfigMap("bar", "kafka"), clusterCm, secrets);
     }
 
     @Test
     public void testUpdateZookeeperClusterScaleUp(TestContext context) {
-        ConfigMap clusterCm = getConfigMap("bar");
+        ConfigMap clusterCm = getConfigMap("bar", "zookeeper");
         clusterCm.getData().put(ZookeeperCluster.KEY_REPLICAS, "4");
         List<Secret> secrets = getClusterSecrets("bar",
                 Integer.valueOf(clusterCm.getData().get(KafkaCluster.KEY_REPLICAS)));
-        updateCluster(context, getConfigMap("bar"), clusterCm, secrets);
+        updateCluster(context, getConfigMap("bar", "zookeeper"), clusterCm, secrets);
     }
 
     @Test
     public void testUpdateZookeeperClusterScaleDown(TestContext context) {
-        ConfigMap clusterCm = getConfigMap("bar");
+        ConfigMap clusterCm = getConfigMap("bar", "zookeeper");
         clusterCm.getData().put(ZookeeperCluster.KEY_REPLICAS, "2");
         List<Secret> secrets = getClusterSecrets("bar",
                 Integer.valueOf(clusterCm.getData().get(KafkaCluster.KEY_REPLICAS)));
-        updateCluster(context, getConfigMap("bar"), clusterCm, secrets);
+        updateCluster(context, getConfigMap("bar", "zookeeper"), clusterCm, secrets);
     }
 
     @Test
     public void testUpdateClusterMetricsConfig(TestContext context) {
-        ConfigMap clusterCm = getConfigMap("bar");
+        ConfigMap clusterCm = getConfigMap("bar", "kafka");
         clusterCm.getData().put(KafkaCluster.KEY_METRICS_CONFIG, "{\"something\":\"changed\"}");
         List<Secret> secrets = getClusterSecrets("bar",
                 Integer.valueOf(clusterCm.getData().get(KafkaCluster.KEY_REPLICAS)));
-        updateCluster(context, getConfigMap("bar"), clusterCm, secrets);
+        updateCluster(context, getConfigMap("bar", "kafka"), clusterCm, secrets);
+    }
+
+    @Test
+    public void testUpdateClusterLogConfig(TestContext context) {
+        ConfigMap clusterCm = getConfigMap("bar", "kafka");
+        clusterCm.getData().put(KafkaCluster.KEY_KAFKA_LOG_CONFIG, "{\"kafka.root.logger.level\":\"DEBUG\"}");
+        List<Secret> secrets = getClusterSecrets("bar",
+                Integer.valueOf(clusterCm.getData().get(KafkaCluster.KEY_REPLICAS)));
+        updateCluster(context, getConfigMap("bar", "kafka"), clusterCm, secrets);
     }
 
     @Test
     public void testUpdateZkClusterMetricsConfig(TestContext context) {
-        ConfigMap clusterCm = getConfigMap("bar");
+        ConfigMap clusterCm = getConfigMap("bar", "zookeeper");
         clusterCm.getData().put(ZookeeperCluster.KEY_METRICS_CONFIG, "{\"something\":\"changed\"}");
         List<Secret> secrets = getClusterSecrets("bar",
                 Integer.valueOf(clusterCm.getData().get(KafkaCluster.KEY_REPLICAS)));
-        updateCluster(context, getConfigMap("bar"), clusterCm, secrets);
+        updateCluster(context, getConfigMap("bar", "zookeeper"), clusterCm, secrets);
+    }
+
+    @Test
+    public void testUpdateZkClusterLogConfig(TestContext context) {
+        ConfigMap clusterCm = getConfigMap("bar", "zookeeper");
+        clusterCm.getData().put(ZookeeperCluster.KEY_ZOOKEEPER_LOG_CONFIG, "{\"zookeeper.root.logger\":\"OFF\"}");
+        List<Secret> secrets = getClusterSecrets("bar",
+                Integer.valueOf(clusterCm.getData().get(ZookeeperCluster.KEY_REPLICAS)));
+        updateCluster(context, getConfigMap("bar", "zookeeper"), clusterCm, secrets);
     }
 
     @Test
     public void testUpdateTopicOperatorConfig(TestContext context) {
-        ConfigMap clusterCm = getConfigMap("bar");
+        ConfigMap clusterCm = getConfigMap("bar", "kafka");
         if (tcConfig != null) {
             clusterCm.getData().put(TopicOperator.KEY_CONFIG, "{\"something\":\"changed\"}");
             List<Secret> secrets = getClusterSecrets("bar",
                     Integer.valueOf(clusterCm.getData().get(KafkaCluster.KEY_REPLICAS)));
-            updateCluster(context, getConfigMap("bar"), clusterCm, secrets);
+            updateCluster(context, getConfigMap("bar", "kafka"), clusterCm, secrets);
+
         }
     }
 
@@ -574,19 +604,35 @@ public class KafkaAssemblyOperatorTest {
         // Mock CM get
         when(mockCmOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
         ConfigMap metricsCm = new ConfigMapBuilder().withNewMetadata()
-                    .withName(KafkaCluster.metricConfigsName(clusterCmName))
+                    .withName(KafkaCluster.metricAndLogConfigsName(clusterCmName))
                     .withNamespace(clusterCmNamespace)
                 .endMetadata()
-                .withData(Collections.singletonMap(AbstractModel.METRICS_CONFIG_FILE, METRICS_CONFIG))
+                .withData(Collections.singletonMap(AbstractModel.ANCILLARY_CM_KEY_METRICS, METRICS_CONFIG))
                 .build();
-        when(mockCmOps.get(clusterCmNamespace, KafkaCluster.metricConfigsName(clusterCmName))).thenReturn(metricsCm);
+        when(mockCmOps.get(clusterCmNamespace, KafkaCluster.metricAndLogConfigsName(clusterCmName))).thenReturn(metricsCm);
         ConfigMap zkMetricsCm = new ConfigMapBuilder().withNewMetadata()
-                .withName(ZookeeperCluster.zookeeperMetricsName(clusterCmName))
+                .withName(ZookeeperCluster.zookeeperMetricAndLogConfigsName(clusterCmName))
                 .withNamespace(clusterCmNamespace)
                 .endMetadata()
-                .withData(Collections.singletonMap(AbstractModel.METRICS_CONFIG_FILE, METRICS_CONFIG))
+                .withData(Collections.singletonMap(AbstractModel.ANCILLARY_CM_KEY_METRICS, METRICS_CONFIG))
                 .build();
-        when(mockCmOps.get(clusterCmNamespace, ZookeeperCluster.zookeeperMetricsName(clusterCmName))).thenReturn(zkMetricsCm);
+        when(mockCmOps.get(clusterCmNamespace, ZookeeperCluster.zookeeperMetricAndLogConfigsName(clusterCmName))).thenReturn(zkMetricsCm);
+
+
+        ConfigMap logCm = new ConfigMapBuilder().withNewMetadata()
+                .withName(KafkaCluster.metricAndLogConfigsName(clusterCmName))
+                .withNamespace(clusterCmNamespace)
+                .endMetadata()
+                .withData(Collections.singletonMap(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG, LOG_KAFKA_CONFIG))
+                .build();
+        when(mockCmOps.get(clusterCmNamespace, KafkaCluster.metricAndLogConfigsName(clusterCmName))).thenReturn(logCm);
+        ConfigMap zklogsCm = new ConfigMapBuilder().withNewMetadata()
+                .withName(ZookeeperCluster.zookeeperMetricAndLogConfigsName(clusterCmName))
+                .withNamespace(clusterCmNamespace)
+                .endMetadata()
+                .withData(Collections.singletonMap(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG, LOG_KAFKA_CONFIG))
+                .build();
+        when(mockCmOps.get(clusterCmNamespace, ZookeeperCluster.zookeeperMetricAndLogConfigsName(clusterCmName))).thenReturn(zklogsCm);
 
 
         // Mock Service gets
@@ -638,6 +684,12 @@ public class KafkaAssemblyOperatorTest {
         Set<String> metricsCms = set();
         doAnswer(invocation -> {
             metricsCms.add(invocation.getArgument(1));
+            return Future.succeededFuture();
+        }).when(mockCmOps).reconcile(eq(clusterCmNamespace), anyString(), any());
+
+        Set<String> logCms = set();
+        doAnswer(invocation -> {
+            logCms.add(invocation.getArgument(1));
             return Future.succeededFuture();
         }).when(mockCmOps).reconcile(eq(clusterCmNamespace), anyString(), any());
 
@@ -729,9 +781,9 @@ public class KafkaAssemblyOperatorTest {
 
         String clusterCmNamespace = "myNamespace";
 
-        ConfigMap foo = getConfigMap("foo");
-        ConfigMap bar = getConfigMap("bar");
-        ConfigMap baz = getConfigMap("baz");
+        ConfigMap foo = getConfigMap("foo", "kafka");
+        ConfigMap bar = getConfigMap("bar", "kafka");
+        ConfigMap baz = getConfigMap("baz", "kafka");
         when(mockCmOps.list(eq(clusterCmNamespace), any())).thenReturn(
             asList(foo, bar)
         );

@@ -84,12 +84,14 @@ public class PartialRollingUpdateTest {
                                 "\"class\": \"foo\"," +
                                 "\"delete-claim\": true}",
                         KafkaCluster.KEY_METRICS_CONFIG, "{}",
+                        KafkaCluster.KEY_KAFKA_LOG_CONFIG, "{}",
                         ZookeeperCluster.KEY_REPLICAS, String.valueOf(3),
                         ZookeeperCluster.KEY_STORAGE, "{\"type\": \"persistent-claim\", " +
                                 "\"size\": \"123\", " +
                                 "\"class\": \"foo\"," +
                                 "\"delete-claim\": true}",
                         ZookeeperCluster.KEY_METRICS_CONFIG, "{}",
+                        ZookeeperCluster.KEY_ZOOKEEPER_LOG_CONFIG, "{}",
                         TopicOperator.KEY_CONFIG, "{}"))
                 .build();
         KubernetesClient bootstrapClient = new MockKube().withInitialCms(Collections.singleton(cluster)).build();

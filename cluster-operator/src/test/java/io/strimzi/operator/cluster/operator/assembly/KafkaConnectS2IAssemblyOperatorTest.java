@@ -292,12 +292,12 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         // Mock CM get
         when(mockCmOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
         ConfigMap metricsCm = new ConfigMapBuilder().withNewMetadata()
-                    .withName(KafkaConnectS2ICluster.metricsConfigName(clusterCmName))
+                    .withName(KafkaConnectS2ICluster.logAndMetricsConfigName(clusterCmName))
                     .withNamespace(clusterCmNamespace)
                 .endMetadata()
-                .withData(Collections.singletonMap(AbstractModel.METRICS_CONFIG_FILE, METRICS_CONFIG))
+                .withData(Collections.singletonMap(AbstractModel.ANCILLARY_CM_KEY_METRICS, METRICS_CONFIG))
                 .build();
-        when(mockCmOps.get(clusterCmNamespace, KafkaConnectS2ICluster.metricsConfigName(clusterCmName))).thenReturn(metricsCm);
+        when(mockCmOps.get(clusterCmNamespace, KafkaConnectS2ICluster.logAndMetricsConfigName(clusterCmName))).thenReturn(metricsCm);
 
         // Mock CM patch
         Set<String> metricsCms = ResourceUtils.set();

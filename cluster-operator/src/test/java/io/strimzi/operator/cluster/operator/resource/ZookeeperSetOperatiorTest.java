@@ -23,6 +23,8 @@ import static org.junit.Assert.assertTrue;
 public class ZookeeperSetOperatiorTest {
 
     public static final String METRICS_CONFIG = "{\"foo\":\"bar\"}";
+    public static final String LOG_ZOOKEEPER_CONFIG = "{\"zookeeper.root.logger\":\"INFO\"}";
+    public static final String LOG_KAFKA_CONFIG = "{\"kafka.root.logger.level\":\"INFO\"}";
 
     private StatefulSet a;
     private StatefulSet b;
@@ -40,7 +42,7 @@ public class ZookeeperSetOperatiorTest {
         String image = "bar";
         int healthDelay = 120;
         int healthTimeout = 30;
-        return ResourceUtils.createKafkaClusterConfigMap(clusterCmNamespace, clusterCmName, replicas, image, healthDelay, healthTimeout, METRICS_CONFIG);
+        return ResourceUtils.createKafkaClusterConfigMap(clusterCmNamespace, clusterCmName, replicas, image, healthDelay, healthTimeout, METRICS_CONFIG, LOG_KAFKA_CONFIG, LOG_ZOOKEEPER_CONFIG);
     }
 
     private StatefulSetDiff diff() {

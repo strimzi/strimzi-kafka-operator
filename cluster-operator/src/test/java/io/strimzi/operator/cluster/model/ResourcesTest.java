@@ -6,6 +6,8 @@ package io.strimzi.operator.cluster.model;
 
 import org.junit.Test;
 
+import java.util.Properties;
+
 import static org.junit.Assert.assertEquals;
 
 public class ResourcesTest {
@@ -20,6 +22,10 @@ public class ResourcesTest {
         assertEquals(1000, opts.getLimits().getMilliCpu());
         assertEquals("1", opts.getLimits().getCpuFormatted());
         AbstractModel abstractModel = new AbstractModel("", "", Labels.forCluster("")) {
+            @Override
+            protected Properties getDefaultLogConfig() {
+                return new Properties();
+            }
         };
         abstractModel.setResources(opts);
         assertEquals("1", abstractModel.resources().getLimits().get("cpu").getAmount());

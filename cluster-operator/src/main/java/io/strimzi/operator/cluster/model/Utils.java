@@ -137,4 +137,13 @@ public final class Utils {
     public static Affinity getAffinity(String json) {
         return JsonUtils.fromYaml(json, Affinity.class);
     }
+
+    public static Logging getLogging(String json) {
+        try {
+            return JsonUtils.fromYaml(json, Logging.class);
+        } catch (Exception e) {
+            // this means no custom config had been provided -> uses default settings
+            return new InlineLogging();
+        }
+    }
 }

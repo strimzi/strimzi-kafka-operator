@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 /**
  * Represents the topic operator deployment
@@ -56,6 +57,7 @@ public class TopicOperator extends AbstractModel {
     public static final String KEY_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
     public static final String KEY_ZOOKEEPER_SESSION_TIMEOUT_MS = "STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS";
     public static final String KEY_TOPIC_METADATA_MAX_ATTEMPTS = "STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS";
+    public static final String KEY_TOPIC_LOG_CONFIG = "topic-logging";
 
     // Kafka bootstrap servers and Zookeeper nodes can't be specified in the JSON
     private String kafkaBootstrapServers;
@@ -190,6 +192,7 @@ public class TopicOperator extends AbstractModel {
             topicOperator.setTopicMetadataMaxAttempts(tcConfig.getTopicMetadataMaxAttempts());
             topicOperator.setResources(tcConfig.getResources());
             topicOperator.setUserAffinity(tcConfig.getAffinity());
+            topicOperator.setLogging(Utils.getLogging(kafkaClusterCm.getData().get(KEY_TOPIC_LOG_CONFIG)));
         }
 
         return topicOperator;
@@ -199,8 +202,8 @@ public class TopicOperator extends AbstractModel {
      * Create a Topic Operator from the deployed Deployment resource
      *
      * @param namespace Kubernetes/OpenShift namespace where cluster resources are going to be created
-     * @param cluster overall cluster name
-     * @param dep the deployment from which to recover the topic operator state
+     * @param cluster   overall cluster name
+     * @param dep       the deployment from which to recover the topic operator state
      * @return Topic Operator instance, null if the corresponding Deployment doesn't exist
      */
     public static TopicOperator fromAssembly(String namespace, String cluster, Deployment dep) {
@@ -249,7 +252,7 @@ public class TopicOperator extends AbstractModel {
                 null,
                 null,
                 getEnvVars()
-                );
+        );
     }
 
     @Override
@@ -269,5 +272,26 @@ public class TopicOperator extends AbstractModel {
     @Override
     protected String getServiceAccountName() {
         return ClusterOperator.STRIMZI_CLUSTER_OPERATOR_SERVICE_ACCOUNT;
+    }
+
+    @Override
+    protected Properties getDefaultLogConfig() {
+        Properties defaultSettings = new Properties();
+
+        defaultSettings.put("name", "TOConfig");
+        defaultSettings.put("appender.console.type", "Console");
+        defaultSettings.put("appender.console.name", "STDOUT");
+        defaultSettings.put("appender.console.layout.type", "PatternLayout");
+        defaultSettings.put("appender.console.layout.pattern", "[%d] %-5p <%-12.12c{1}:%L> [%-12.12t] %m%n");
+
+        defaultSettings.put("rootLogger.level", "${env:STRIMZI_LOG_LEVEL:-INFO}");
+        defaultSettings.put("rootLogger.appenderRefs", "stdout");
+        defaultSettings.put("rootLogger.appenderRef.console.ref", "STDOUT");
+        defaultSettings.put("rootLogger.additivity", "false");
+
+        defaultSettings.put("log4j.appender.CONSOLE", "org.apache.log4j.ConsoleAppender");
+        defaultSettings.put("log4j.appender.CONSOLE.layout", "org.apache.log4j.PatternLayout");
+        defaultSettings.put("log4j.appender.CONSOLE.layout.ConversionPattern", "%d{ISO8601} %p %m (%c) [%t]%n");
+        return  defaultSettings;
     }
 }

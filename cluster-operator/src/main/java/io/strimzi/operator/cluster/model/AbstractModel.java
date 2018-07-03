@@ -50,13 +50,21 @@ import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static java.util.Arrays.asList;
 
 public abstract class AbstractModel {
 
@@ -68,7 +76,8 @@ public abstract class AbstractModel {
     protected static final String VOLUME_MOUNT_HACK_NAME = "volume-mount-hack";
     private static final Long VOLUME_MOUNT_HACK_GROUPID = 1001L;
 
-    public static final String METRICS_CONFIG_FILE = "config.yml";
+    public static final String ANCILLARY_CM_KEY_METRICS = "metrics-config.yml";
+    public static final String ANCILLARY_CM_KEY_LOG_CONFIG = "log4j.properties";
     public static final String ENV_VAR_DYNAMIC_HEAP_FRACTION = "DYNAMIC_HEAP_FRACTION";
     public static final String ENV_VAR_KAFKA_HEAP_OPTS = "KAFKA_HEAP_OPTS";
     public static final String ENV_VAR_KAFKA_JVM_PERFORMANCE_OPTS = "KAFKA_JVM_PERFORMANCE_OPTS";
@@ -95,7 +104,9 @@ public abstract class AbstractModel {
     protected boolean isMetricsEnabled;
 
     protected JsonObject metricsConfig;
-    protected String metricsConfigName;
+    protected String ancillaryConfigName;
+
+    protected String logConfigName;
 
     protected Storage storage;
 
@@ -103,12 +114,17 @@ public abstract class AbstractModel {
 
     protected String mountPath;
     public static final String VOLUME_NAME = "data";
-    protected String metricsConfigVolumeName;
-    protected String metricsConfigMountPath;
+    protected String logAndMetricsConfigMountPath;
+
+    protected String logAndMetricsConfigVolumeName;
 
     private JvmOptions jvmOptions;
     private Resources resources;
     private Affinity userAffinity;
+
+    protected Map validLoggerFields;
+    private String[] validLoggerValues = new String[]{"INFO", "ERROR", "WARN", "TRACE", "DEBUG", "FATAL", "OFF" };
+    private Logging logging;
 
     /**
      * Constructor
@@ -175,6 +191,130 @@ public abstract class AbstractModel {
         this.isMetricsEnabled = isMetricsEnabled;
     }
 
+    /**
+     * Returns map with all available loggers for current pod and default values.
+     * @return
+     */
+    abstract protected Properties getDefaultLogConfig();
+
+    /**
+     * Takes resource file containing default log4j properties and returns it as a Properties.
+     * @param defaultConfigResourceFileName name of file, where default log4j properties are stored
+     * @return
+     */
+    protected Properties getDefaultLoggingProperties(String defaultConfigResourceFileName) throws IOException {
+        Properties defaultSettings = new Properties();
+        InputStream is = null;
+        try {
+            is = AbstractModel.class.getResourceAsStream("/" + defaultConfigResourceFileName);
+            defaultSettings.load(is);
+        } finally {
+            if (is != null) {
+                is.close();
+            }
+        }
+        return defaultSettings;
+    }
+
+    /**
+     * Transforms map to log4j properties file format
+     * @param newSettings map with properties
+     * @return
+     */
+    protected static String createPropertiesString(Properties newSettings) {
+        StringWriter sw = new StringWriter();
+        try {
+            newSettings.store(sw, "Do not change this generated file. To change logging settings please use cluster config map.");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        // remove date comment, because it is updated with each reconciliation which leads to restarting pods
+        return sw.toString().replaceAll("#[A-Za-z]+ [A-Za-z]+ [0-9]+ [0-9]+:[0-9]+:[0-9]+ [A-Z]+ [0-9]+", "");
+    }
+
+    public Logging getLogging() {
+        return logging;
+    }
+
+    protected void setLogging(Logging logging) {
+        this.logging = logging;
+    }
+
+    protected String parseLogging(Logging logging, ConfigMap externalCm) {
+        if (logging instanceof InlineLogging) {
+            // validate all entries
+            ((InlineLogging) logging).getLoggers().forEach((key, tmpEntry) -> {
+                if (validLoggerFields.containsKey(key)) {
+                    // correct logger
+                } else {
+                    // incorrect logger
+                    log.warn(key + " is not valid logger");
+                    return;
+                }
+                if (key.toString().contains("log4j.appender.CONSOLE")) {
+                    log.warn("You cannot set appender");
+                    return;
+                }
+                if ((asList(validLoggerValues).contains(tmpEntry.toString().replaceAll(", CONSOLE", ""))) || (asList(validLoggerValues).contains(tmpEntry))) {
+                    // correct value
+                } else {
+                    Pattern p = Pattern.compile("\\$\\{(.*)\\}, ([A-Z]+)");
+                    Matcher m = p.matcher(tmpEntry.toString());
+
+                    String logger = "";
+                    String value = "";
+                    boolean regexMatch = false;
+                    while (m.find()) {
+                        logger = m.group(1);
+                        value = m.group(2);
+                        regexMatch = true;
+                    }
+                    if (regexMatch) {
+                        if (!validLoggerFields.containsKey(logger)) {
+                            log.warn(logger + " is not a valid logger");
+                            return;
+                        }
+                        if (!value.equals("CONSOLE")) {
+                            log.warn(value + " is not a valid value.");
+                            return;
+                        }
+                    } else {
+                        log.warn(tmpEntry + " is not a valid value. Use one of " + Arrays.toString(validLoggerValues));
+                        return;
+                    }
+                }
+            });
+            // update fields otherwise use default values
+            Properties newSettings = getDefaultLogConfig();
+            ((InlineLogging) logging).loggers.forEach((key, value) -> newSettings.replace(key, value));
+            return createPropertiesString(newSettings);
+        } else if (logging instanceof ExternalLogging) {
+            if (externalCm != null) {
+                return externalCm.getData().get(ANCILLARY_CM_KEY_LOG_CONFIG);
+            } else {
+                log.warn("Configmap " + ((ExternalLogging) getLogging()).getName() + " does not exist. Default settings are used");
+                return createPropertiesString(getDefaultLogConfig());
+            }
+
+        } else {
+            // field is not in the cluster CM
+            return createPropertiesString(getDefaultLogConfig());
+
+        }
+    }
+
+    public String getLogConfigName() {
+        return logConfigName;
+    }
+
+    /**
+     * Sets name of field in cluster config map, where logging configuration is stored
+     * @param logConfigName
+     */
+    protected void setLogConfigName(String logConfigName) {
+        this.logConfigName = logConfigName;
+    }
+
     protected JsonObject getMetricsConfig() {
         return metricsConfig;
     }
@@ -183,12 +323,16 @@ public abstract class AbstractModel {
         this.metricsConfig = metricsConfig;
     }
 
-    public String getMetricsConfigName() {
-        return metricsConfigName;
+    /**
+     * Returns name of config map used for storing metrics and logging configuration
+     * @return
+     */
+    public String getAncillaryConfigName() {
+        return ancillaryConfigName;
     }
 
-    protected void setMetricsConfigName(String metricsConfigName) {
-        this.metricsConfigName = metricsConfigName;
+    protected void setMetricsConfigName(String metricsAndLogsConfigName) {
+        this.ancillaryConfigName = metricsAndLogsConfigName;
     }
 
     protected List<EnvVar> getEnvVars() {
