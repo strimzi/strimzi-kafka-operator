@@ -48,11 +48,11 @@ mkdir -p /tmp/kafka
 # Import certificates into keystore and truststore
 echo "Preparing certificates for internal communication"
 ./kafka_internal_certs_import.sh
-echo "Preparing certificates for internal communication is compelete"
+echo "Preparing certificates for internal communication is complete"
 
 echo "Preparing certificates for clients communication"
 ./kafka_clients_certs_import.sh
-echo "Preparing certificates for clients communication is compelete"
+echo "Preparing certificates for clients communication is complete"
 
 # Generate and print the config file
 echo "Starting Kafka with configuration:"
