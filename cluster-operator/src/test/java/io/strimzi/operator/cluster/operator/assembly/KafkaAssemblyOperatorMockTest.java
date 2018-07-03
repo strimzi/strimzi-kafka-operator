@@ -207,6 +207,7 @@ public class KafkaAssemblyOperatorMockTest {
         PvcOperator pvcops = new PvcOperator(vertx, mockClient);
         SecretOperator secretops = new SecretOperator(vertx, mockClient);
         KafkaAssemblyOperator kco = new KafkaAssemblyOperator(vertx, true, 2_000,
+                new MockCertManager(),
                 cmops, svcops, zksops, ksops, pvcops, depops, secretops);
 
         LOGGER.info("Reconciling initially -> create");

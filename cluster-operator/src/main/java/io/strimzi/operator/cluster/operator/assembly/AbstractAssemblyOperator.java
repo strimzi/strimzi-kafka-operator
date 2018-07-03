@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.certs.CertManager;
-import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.certs.SecretCertProvider;
 import io.strimzi.operator.cluster.InvalidConfigMapException;
 import io.strimzi.operator.cluster.Reconciliation;
@@ -55,6 +54,7 @@ public abstract class AbstractAssemblyOperator {
     protected final AssemblyType assemblyType;
     protected final ConfigMapOperator configMapOperations;
     protected final SecretOperator secretOperations;
+    protected final CertManager certManager;
 
     /**
      * @param vertx The Vertx instance
@@ -64,10 +64,12 @@ public abstract class AbstractAssemblyOperator {
      * @param secretOperations For operating on Secrets
      */
     protected AbstractAssemblyOperator(Vertx vertx, boolean isOpenShift, AssemblyType assemblyType,
+                                       CertManager certManager,
                                        ConfigMapOperator configMapOperations, SecretOperator secretOperations) {
         this.vertx = vertx;
         this.isOpenShift = isOpenShift;
         this.assemblyType = assemblyType;
+        this.certManager = certManager;
         this.configMapOperations = configMapOperations;
         this.secretOperations = secretOperations;
     }
@@ -124,7 +126,6 @@ public abstract class AbstractAssemblyOperator {
                     File internalCAkeyFile = null;
                     File internalCAcertFile = null;
                     try {
-                        CertManager certManager = new OpenSslCertManager();
                         internalCAkeyFile = File.createTempFile("tls", "internal-ca-key");
                         internalCAcertFile = File.createTempFile("tls", "internal-ca-cert");
                         certManager.generateSelfSignedCert(internalCAkeyFile, internalCAcertFile, CERTS_EXPIRATION_DAYS);

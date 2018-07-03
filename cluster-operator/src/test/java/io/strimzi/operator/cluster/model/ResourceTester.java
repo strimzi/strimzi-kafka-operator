@@ -10,7 +10,9 @@ import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.cluster.operator.assembly.MockCertManager;
 import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
@@ -21,7 +23,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.List;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import static org.junit.Assert.assertEquals;
@@ -39,9 +40,13 @@ class ResourceTester<M extends AbstractModel> implements MethodRule {
         this.fromConfigMap = fromConfigMap;
     }
 
-    ResourceTester(BiFunction<ConfigMap, List<Secret>, M> fromConfigMap) {
+    interface TriFunction<X, Y, Z, R> {
+        public R apply(X x, Y y, Z z);
+    }
+
+    ResourceTester(TriFunction<CertManager, ConfigMap, List<Secret>, M> fromConfigMap) {
         this.fromConfigMap = cm -> {
-            return fromConfigMap.apply(cm, ResourceUtils.createKafkaClusterInitialSecrets(cm.getMetadata().getNamespace()));
+            return fromConfigMap.apply(new MockCertManager(), cm, ResourceUtils.createKafkaClusterInitialSecrets(cm.getMetadata().getNamespace()));
         };
     }
 

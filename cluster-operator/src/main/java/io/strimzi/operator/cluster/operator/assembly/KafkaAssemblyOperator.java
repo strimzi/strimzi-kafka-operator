@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
+import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.Reconciliation;
 import io.strimzi.operator.cluster.model.AssemblyType;
 import io.strimzi.operator.cluster.model.ExternalLogging;
@@ -70,6 +71,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
      */
     public KafkaAssemblyOperator(Vertx vertx, boolean isOpenShift,
                                  long operationTimeoutMs,
+                                 CertManager certManager,
                                  ConfigMapOperator configMapOperations,
                                  ServiceOperator serviceOperations,
                                  ZookeeperSetOperator zkSetOperations,
@@ -77,7 +79,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
                                  PvcOperator pvcOperations,
                                  DeploymentOperator deploymentOperations,
                                  SecretOperator secretOperations) {
-        super(vertx, isOpenShift, AssemblyType.KAFKA, configMapOperations, secretOperations);
+        super(vertx, isOpenShift, AssemblyType.KAFKA, certManager, configMapOperations, secretOperations);
         this.operationTimeoutMs = operationTimeoutMs;
         this.zkSetOperations = zkSetOperations;
         this.serviceOperations = serviceOperations;
@@ -187,7 +189,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
             future -> {
                 try {
-                    KafkaCluster kafka = KafkaCluster.fromConfigMap(assemblyCm, assemblySecrets);
+                    KafkaCluster kafka = KafkaCluster.fromConfigMap(certManager, assemblyCm, assemblySecrets);
 
                     ConfigMap logAndMetricsConfigMap = kafka.generateMetricsAndLogConfigMap(
                             kafka.getLogging() instanceof ExternalLogging ?

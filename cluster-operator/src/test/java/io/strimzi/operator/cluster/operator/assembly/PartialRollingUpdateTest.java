@@ -103,6 +103,7 @@ public class PartialRollingUpdateTest {
         pvcops = new PvcOperator(vertx, bootstrapClient);
         secretops = new SecretOperator(vertx, bootstrapClient);
         KafkaAssemblyOperator kco = new KafkaAssemblyOperator(vertx, true, 2_000,
+                new MockCertManager(),
                 cmops, svcops, zksops, ksops, pvcops, depops, secretops);
 
         LOGGER.info("bootstrap reconciliation");
@@ -142,6 +143,7 @@ public class PartialRollingUpdateTest {
         secretops = new SecretOperator(vertx, mockClient);
 
         this.kco = new KafkaAssemblyOperator(vertx, true, 2_000,
+                new MockCertManager(),
                 cmops, svcops, zksops, ksops, pvcops, depops, secretops);
         LOGGER.info("Started test KafkaAssemblyOperator");
     }
