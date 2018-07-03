@@ -26,6 +26,6 @@ create_keystore /tmp/kafka/replication.keystore.p12 $CERTS_STORE_PASSWORD /opt/k
 echo "Preparing certificates for internal communication is complete"
 
 echo "Preparing certificates for clients communication"
-create_truststore /tmp/kafka/clients.truststore.p12 $CERTS_STORE_PASSWORD /opt/kafka/clients-certs/internal-ca.crt clients-ca
+create_truststore /tmp/kafka/clients.truststore.p12 $CERTS_STORE_PASSWORD /opt/kafka/clients-certs/clients-ca.crt clients-ca
 create_keystore /tmp/kafka/clients.keystore.p12 $CERTS_STORE_PASSWORD /opt/kafka/clients-certs/$HOSTNAME.crt /opt/kafka/clients-certs/$HOSTNAME.key /opt/kafka/clients-certs/clients-ca.crt $HOSTNAME
 echo "Preparing certificates for clients communication is complete"
