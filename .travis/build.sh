@@ -14,12 +14,12 @@ echo "Login into Docker Hub ..."
 docker login -u $DOCKER_USER -p $DOCKER_PASS
 
 export DOCKER_TAG=$BRANCH
-echo "Pushing to docker org $DOCKER_ORG under tag $DOCKER_TAG"
-make docker_push
+echo "Tag with docker org $DOCKER_ORG under tag $DOCKER_TAG"
+make docker_tag
 
 export DOCKER_TAG=$COMMIT
-echo "Pushing to docker org $DOCKER_ORG under tag $DOCKER_TAG"
-make docker_push
+echo "Tag with docker org $DOCKER_ORG under tag $DOCKER_TAG"
+make docker_tag
 
 echo "Running systemtests"
 ./systemtest/scripts/run_tests.sh ${SYSTEMTEST_ARGS}
@@ -30,6 +30,9 @@ if [ "$PULL_REQUEST" != "false" ] ; then
 elif [ "$TAG" = "latest" ] && [ "$BRANCH" != "master" ]; then
     echo "Not in master branch and not in release tag - nothing to push"
 else
+    echo "Login into Docker Hub ..."
+    docker login -u $DOCKER_USER -p $DOCKER_PASS
+
     export DOCKER_ORG=strimzi
     export DOCKER_TAG=$TAG
     echo "Pushing to docker org $DOCKER_ORG"
