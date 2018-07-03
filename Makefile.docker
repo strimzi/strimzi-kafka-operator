@@ -20,7 +20,7 @@ docker_build:
 
 docker_tag:
 	# Tag the "latest" image we built with the given tag
-	docker tag strimzi/$(PROJECT_NAME):latest $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG)
+	docker tag strimzi/$(PROJECT_NAME):latest $(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG)
 
 docker_push: docker_tag
 	# Push the tagged image to the registry

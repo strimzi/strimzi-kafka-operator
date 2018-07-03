@@ -8,8 +8,6 @@ export DOCKER_ORG=${DOCKER_ORG:-strimzici}
 export DOCKER_REGISTRY=${DOCKER_REGISTRY:-docker.io}
 export DOCKER_TAG=$COMMIT
 
-minikube docker-env
-
 make docker_build
 
 export DOCKER_TAG=$BRANCH
