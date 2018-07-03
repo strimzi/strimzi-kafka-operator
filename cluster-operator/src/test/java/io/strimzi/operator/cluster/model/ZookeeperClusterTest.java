@@ -4,11 +4,13 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ResourceUtils;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
+import io.strimzi.operator.cluster.operator.assembly.MockCertManager;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -31,8 +33,9 @@ public class ZookeeperClusterTest {
     private final String kafkaLogConfigJson = "{\"kafka.root.logger.level\": \"OFF\"}";
     private final String zooLogConfigJson = "{\"zookeeper.root.logger\": \"OFF\"}";
     private final String zooConfigurationJson = "{\"foo\":\"bar\"}";
+    private final CertManager certManager = new MockCertManager();
     private final ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson, kafkaLogConfigJson, zooLogConfigJson);
-    private final ZookeeperCluster zc = ZookeeperCluster.fromConfigMap(cm);
+    private final ZookeeperCluster zc = ZookeeperCluster.fromConfigMap(certManager, cm, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
     @Rule
     public ResourceTester<ZookeeperCluster> resourceTester = new ResourceTester<>(ZookeeperCluster::fromConfigMap);
 
@@ -151,14 +154,14 @@ public class ZookeeperClusterTest {
     @Test
     public void testLoggingCorruptedConfigMap() {
         ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, "{\"key.name\":oops}");
-        ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromConfigMap(cm);
+        ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromConfigMap(certManager, cm, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
         assertTrue(zookeeperCluster.getLogging() instanceof InlineLogging);
     }
 
     @Test
     public void testLoggingConfigMap() {
         ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, "{\"type\": \"external\", \"name\":\"karel\"}");
-        ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromConfigMap(cm);
+        ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromConfigMap(certManager, cm, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
         assertTrue(zookeeperCluster.getLogging() instanceof ExternalLogging);
     }
 

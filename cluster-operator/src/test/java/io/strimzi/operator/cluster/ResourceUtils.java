@@ -136,41 +136,34 @@ public class ResourceUtils {
 
         List<Secret> secrets = new ArrayList<>();
 
-        Map<String, String> data = new HashMap<>();
-        data.put("internal-ca.key", Base64.getEncoder().encodeToString("internal-ca-base64key".getBytes()));
-        data.put("internal-ca.crt", Base64.getEncoder().encodeToString("internal-ca-base64crt".getBytes()));
         secrets.add(
                 new SecretBuilder()
                 .withNewMetadata()
                     .withName(AbstractAssemblyOperator.INTERNAL_CA_NAME)
                     .withNamespace(clusterCmNamespace)
                 .endMetadata()
-                .withData(data)
+                .addToData("internal-ca.key", Base64.getEncoder().encodeToString("internal-ca-base64key".getBytes()))
+                .addToData("internal-ca.crt", Base64.getEncoder().encodeToString("internal-ca-base64crt".getBytes()))
                 .build()
         );
         return secrets;
     }
 
-    public static List<Secret> createKafkaClusterSecretsWithReplicas(String clusterCmNamespace, String clusterCmName, int replicas) {
+    public static List<Secret> createKafkaClusterSecretsWithReplicas(String clusterCmNamespace, String clusterCmName, int kafkaReplicas, int zkReplicas) {
 
         List<Secret> secrets = new ArrayList<>();
 
-        Map<String, String> data = new HashMap<>();
-        data.put("internal-ca.key", Base64.getEncoder().encodeToString("internal-ca-base64key".getBytes()));
-        data.put("internal-ca.crt", Base64.getEncoder().encodeToString("internal-ca-base64crt".getBytes()));
         secrets.add(
                 new SecretBuilder()
                         .withNewMetadata()
                             .withName(AbstractAssemblyOperator.INTERNAL_CA_NAME)
                             .withNamespace(clusterCmNamespace)
                         .endMetadata()
-                        .withData(data)
+                        .addToData("internal-ca.key", Base64.getEncoder().encodeToString("internal-ca-base64key".getBytes()))
+                        .addToData("internal-ca.crt", Base64.getEncoder().encodeToString("internal-ca-base64crt".getBytes()))
                         .build()
         );
 
-        data = new HashMap<>();
-        data.put("clients-ca.key", Base64.getEncoder().encodeToString("clients-ca-base64key".getBytes()));
-        data.put("clients-ca.crt", Base64.getEncoder().encodeToString("clients-ca-base64crt".getBytes()));
         secrets.add(
                 new SecretBuilder()
                         .withNewMetadata()
@@ -178,12 +171,11 @@ public class ResourceUtils {
                             .withNamespace(clusterCmNamespace)
                             .withLabels(Labels.forCluster(clusterCmName).withType(AssemblyType.KAFKA).toMap())
                         .endMetadata()
-                        .withData(data)
+                        .addToData("clients-ca.key", Base64.getEncoder().encodeToString("clients-ca-base64key".getBytes()))
+                        .addToData("clients-ca.crt", Base64.getEncoder().encodeToString("clients-ca-base64crt".getBytes()))
                         .build()
         );
 
-        data = new HashMap<>();
-        data.put("clients-ca.crt", Base64.getEncoder().encodeToString("clients-ca-base64crt".getBytes()));
         secrets.add(
                 new SecretBuilder()
                         .withNewMetadata()
@@ -191,44 +183,55 @@ public class ResourceUtils {
                             .withNamespace(clusterCmNamespace)
                             .withLabels(Labels.forCluster(clusterCmName).withType(AssemblyType.KAFKA).toMap())
                         .endMetadata()
-                        .withData(data)
+                        .addToData("clients-ca.crt", Base64.getEncoder().encodeToString("clients-ca-base64crt".getBytes()))
                         .build()
         );
 
-        data = new HashMap<>();
-        data.put("internal-ca.crt", Base64.getEncoder().encodeToString("internal-ca-base64crt".getBytes()));
-        for (int i = 0; i < replicas; i++) {
-            data.put(KafkaCluster.kafkaPodName(clusterCmName, i) + ".key", Base64.getEncoder().encodeToString("brokers-internal-base64key".getBytes()));
-            data.put(KafkaCluster.kafkaPodName(clusterCmName, i) + ".crt", Base64.getEncoder().encodeToString("brokers-internal-base64crt".getBytes()));
-        }
-        secrets.add(
+        SecretBuilder builder =
                 new SecretBuilder()
                         .withNewMetadata()
                             .withName(KafkaCluster.brokersInternalSecretName(clusterCmName))
                             .withNamespace(clusterCmNamespace)
                             .withLabels(Labels.forCluster(clusterCmName).withType(AssemblyType.KAFKA).toMap())
                         .endMetadata()
-                        .withData(data)
-                        .build()
-        );
+                        .addToData("internal-ca.crt", Base64.getEncoder().encodeToString("internal-ca-base64crt".getBytes()));
 
-        data = new HashMap<>();
-        data.put("internal-ca.crt", Base64.getEncoder().encodeToString("internal-ca-base64crt".getBytes()));
-        data.put("clients-ca.crt", Base64.getEncoder().encodeToString("clients-ca-base64crt".getBytes()));
-        for (int i = 0; i < replicas; i++) {
-            data.put(KafkaCluster.kafkaPodName(clusterCmName, i) + ".key", Base64.getEncoder().encodeToString("brokers-clients-base64key".getBytes()));
-            data.put(KafkaCluster.kafkaPodName(clusterCmName, i) + ".crt", Base64.getEncoder().encodeToString("brokers-clients-base64crt".getBytes()));
+        for (int i = 0; i < kafkaReplicas; i++) {
+            builder.addToData(KafkaCluster.kafkaPodName(clusterCmName, i) + ".key", Base64.getEncoder().encodeToString("brokers-internal-base64key".getBytes()))
+                    .addToData(KafkaCluster.kafkaPodName(clusterCmName, i) + ".crt", Base64.getEncoder().encodeToString("brokers-internal-base64crt".getBytes()));
         }
-        secrets.add(
-                new SecretBuilder()
+        secrets.add(builder.build());
+
+        builder = new SecretBuilder()
                         .withNewMetadata()
-                            .withName(KafkaCluster.brokersClientsSecret(clusterCmName))
+                            .withName(KafkaCluster.brokersClientsSecretName(clusterCmName))
                             .withNamespace(clusterCmNamespace)
                             .withLabels(Labels.forCluster(clusterCmName).withType(AssemblyType.KAFKA).toMap())
                         .endMetadata()
-                        .withData(data)
-                        .build()
-        );
+                        .addToData("internal-ca.crt", Base64.getEncoder().encodeToString("internal-ca-base64crt".getBytes()))
+                        .addToData("clients-ca.crt", Base64.getEncoder().encodeToString("clients-ca-base64crt".getBytes()));
+
+
+        for (int i = 0; i < kafkaReplicas; i++) {
+            builder.addToData(KafkaCluster.kafkaPodName(clusterCmName, i) + ".key", Base64.getEncoder().encodeToString("brokers-clients-base64key".getBytes()))
+                    .addToData(KafkaCluster.kafkaPodName(clusterCmName, i) + ".crt", Base64.getEncoder().encodeToString("brokers-clients-base64crt".getBytes()));
+        }
+        secrets.add(builder.build());
+
+        builder = new SecretBuilder()
+                        .withNewMetadata()
+                            .withName(ZookeeperCluster.nodesSecretName(clusterCmName))
+                            .withNamespace(clusterCmNamespace)
+                            .withLabels(Labels.forCluster(clusterCmName).withType(AssemblyType.KAFKA).toMap())
+                        .endMetadata()
+                        .addToData("internal-ca.crt", Base64.getEncoder().encodeToString("internal-ca-base64crt".getBytes()));
+
+        for (int i = 0; i < zkReplicas; i++) {
+            builder.addToData(ZookeeperCluster.zookeeperPodName(clusterCmName, i) + ".key", Base64.getEncoder().encodeToString("nodes-base64key".getBytes()))
+                    .addToData(ZookeeperCluster.zookeeperPodName(clusterCmName, i) + ".crt", Base64.getEncoder().encodeToString("nodes-base64crt".getBytes()));
+        }
+        secrets.add(builder.build());
+
         return secrets;
     }
 

@@ -10,20 +10,26 @@ import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
+import io.strimzi.certs.CertAndKey;
+import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ClusterOperator;
+import io.strimzi.operator.cluster.operator.assembly.AbstractAssemblyOperator;
 import io.vertx.core.json.JsonObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 
 public class ZookeeperCluster extends AbstractModel {
@@ -41,6 +47,7 @@ public class ZookeeperCluster extends AbstractModel {
     private static final String HEADLESS_NAME_SUFFIX = NAME_SUFFIX + "-headless";
     private static final String METRICS_AND_LOG_CONFIG_SUFFIX = NAME_SUFFIX + "-config";
     private static final String LOG_CONFIG_SUFFIX = NAME_SUFFIX + "-logging";
+    private static final String NODES_CERTS_SUFFIX = NAME_SUFFIX + "-nodes";
 
     // Zookeeper configuration
     // N/A
@@ -72,6 +79,12 @@ public class ZookeeperCluster extends AbstractModel {
     public static final String ENV_VAR_ZOOKEEPER_CONFIGURATION = "ZOOKEEPER_CONFIGURATION";
     public static final String ENV_VAR_ZOOKEEPER_LOG_CONFIGURATION = "ZOOKEEPER_LOG_CONFIGURATION";
 
+    /**
+     * Private key and certificate for each Zookeeper Pod name
+     * used for for encrypting the communication in the Zookeeper ensemble
+     */
+    private Map<String, CertAndKey> certs;
+
     public static String zookeeperClusterName(String cluster) {
         return cluster + ZookeeperCluster.NAME_SUFFIX;
     }
@@ -94,6 +107,10 @@ public class ZookeeperCluster extends AbstractModel {
 
     public static String getPersistentVolumeClaimName(String clusterName, int podId) {
         return VOLUME_NAME + "-" + clusterName + "-" + podId;
+    }
+
+    public static String nodesSecretName(String cluster) {
+        return cluster + ZookeeperCluster.NODES_CERTS_SUFFIX;
     }
 
     /**
@@ -126,10 +143,12 @@ public class ZookeeperCluster extends AbstractModel {
     /**
      * Create a Zookeeper cluster from the related ConfigMap resource
      *
+     * @param certManager CertManager instance for handling certificates creation
      * @param kafkaClusterCm ConfigMap with cluster configuration
+     * @param secrets Secrets related to the cluster
      * @return Zookeeper cluster instance
      */
-    public static ZookeeperCluster fromConfigMap(ConfigMap kafkaClusterCm) {
+    public static ZookeeperCluster fromConfigMap(CertManager certManager, ConfigMap kafkaClusterCm, List<Secret> secrets) {
         ZookeeperCluster zk = new ZookeeperCluster(kafkaClusterCm.getMetadata().getNamespace(), kafkaClusterCm.getMetadata().getName(),
                 Labels.fromResource(kafkaClusterCm));
 
@@ -153,6 +172,8 @@ public class ZookeeperCluster extends AbstractModel {
         zk.setResources(Resources.fromJson(data.get(KEY_RESOURCES)));
         zk.setJvmOptions(JvmOptions.fromJson(data.get(KEY_JVM_OPTIONS)));
         zk.setUserAffinity(Utils.getAffinity(data.get(KEY_AFFINITY)));
+
+        zk.generateCertificates(certManager, secrets);
 
         return zk;
     }
@@ -202,6 +223,43 @@ public class ZookeeperCluster extends AbstractModel {
         return zk;
     }
 
+    /**
+     * Manage certificates generation based on those already present in the Secrets
+     *
+     * @param certManager CertManager instance for handling certificates creation
+     * @param secrets The Secrets storing certificates
+     */
+    public void generateCertificates(CertManager certManager, List<Secret> secrets) {
+        log.debug("Generating certificates");
+
+        try {
+            Optional<Secret> internalCAsecret = secrets.stream().filter(s -> s.getMetadata().getName().equals(AbstractAssemblyOperator.INTERNAL_CA_NAME))
+                    .findFirst();
+            if (internalCAsecret.isPresent()) {
+
+                // get the generated CA private key + self-signed certificate for internal communications
+                internalCA = new CertAndKey(
+                        decodeFromSecret(internalCAsecret.get(), "internal-ca.key"),
+                        decodeFromSecret(internalCAsecret.get(), "internal-ca.crt"));
+
+                // recover or generates the private key + certificate for each node
+                Optional<Secret> nodesSecret = secrets.stream().filter(s -> s.getMetadata().getName().equals(ZookeeperCluster.nodesSecretName(cluster)))
+                        .findFirst();
+
+                int replicasSecret = !nodesSecret.isPresent() ? 0 : (nodesSecret.get().getData().size() - 1) / 2;
+
+                log.debug("Internal communication certificates");
+                certs = maybeCopyOrGenerateCerts(certManager, nodesSecret, replicasSecret, internalCA, ZookeeperCluster::zookeeperPodName);
+            } else {
+                throw new NoCertificateSecretException("The internal CA certificate Secret is missing");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        log.debug("End generating certificates");
+    }
+
     public Service generateService() {
         List<ServicePort> ports = new ArrayList<>(2);
         if (isMetricsEnabled()) {
@@ -240,6 +298,26 @@ public class ZookeeperCluster extends AbstractModel {
             getLogging().setCm(result);
         }
         return result;
+    }
+
+    /**
+     * Generate the Secret containing CA self-signed certificate for internal communication.
+     * It also contains the private key-certificate (signed by internal CA) for each brokers for communicating
+     * internally within the cluster
+     * @return The generated Secret
+     */
+    public Secret generateNodesSecret() {
+        Base64.Encoder encoder = Base64.getEncoder();
+
+        Map<String, String> data = new HashMap<>();
+        data.put("internal-ca.crt", encoder.encodeToString(internalCA.cert()));
+
+        for (int i = 0; i < replicas; i++) {
+            CertAndKey cert = certs.get(ZookeeperCluster.zookeeperPodName(cluster, i));
+            data.put(ZookeeperCluster.zookeeperPodName(cluster, i) + ".key", encoder.encodeToString(cert.key()));
+            data.put(ZookeeperCluster.zookeeperPodName(cluster, i) + ".crt", encoder.encodeToString(cert.cert()));
+        }
+        return createSecret(ZookeeperCluster.nodesSecretName(cluster), data);
     }
 
     @Override

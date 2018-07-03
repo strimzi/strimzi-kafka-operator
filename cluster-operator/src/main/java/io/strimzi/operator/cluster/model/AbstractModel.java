@@ -45,21 +45,29 @@ import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategy;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSetUpdateStrategyBuilder;
+import io.strimzi.certs.CertAndKey;
+import io.strimzi.certs.CertManager;
+import io.strimzi.certs.Subject;
 import io.strimzi.operator.cluster.ClusterOperator;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
+import java.util.function.BiFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -125,6 +133,8 @@ public abstract class AbstractModel {
     protected Map validLoggerFields;
     private String[] validLoggerValues = new String[]{"INFO", "ERROR", "WARN", "TRACE", "DEBUG", "FATAL", "OFF" };
     private Logging logging;
+
+    protected CertAndKey internalCA;
 
     /**
      * Constructor
@@ -867,5 +877,78 @@ public abstract class AbstractModel {
         if (!trim.isEmpty()) {
             envVars.add(buildEnvVar(ENV_VAR_KAFKA_JVM_PERFORMANCE_OPTS, trim));
         }
+    }
+
+    /**
+     * Decode from Base64 a keyed value from a Secret
+     *
+     * @param secret Secret from which decoding the value
+     * @param key Key of the value to decode
+     * @return decoded value
+     */
+    protected byte[] decodeFromSecret(Secret secret, String key) {
+        return Base64.getDecoder().decode(secret.getData().get(key));
+    }
+
+    /**
+     * Copy already existing certificates from provided Secret based on number of effective replicas
+     * and maybe generate new ones for new replicas (i.e. scale-up)
+     *
+     * @param certManager CertManager instance for handling certificates creation
+     * @param secret The Secret from which getting already existing certificates
+     * @param replicasInSecret How many certificates are in the Secret
+     * @param caCert CA certificate to use for signing new certificates
+     * @param podName A function for resolving the Pod name
+     * @return Collection with certificates
+     * @throws IOException
+     */
+    protected Map<String, CertAndKey> maybeCopyOrGenerateCerts(CertManager certManager, Optional<Secret> secret, int replicasInSecret, CertAndKey caCert, BiFunction<String, Integer, String> podName) throws IOException {
+
+        Map<String, CertAndKey> certs = new HashMap<>();
+
+        // copying the minimum number of certificates already existing in the secret
+        // scale up -> it will copy all certificates
+        // scale down -> it will copy just the requested number of replicas
+        for (int i = 0; i < Math.min(replicasInSecret, replicas); i++) {
+            log.debug("{} already exists", podName.apply(cluster, i));
+            certs.put(
+                    podName.apply(cluster, i),
+                    new CertAndKey(
+                            decodeFromSecret(secret.get(), podName.apply(cluster, i) + ".key"),
+                            decodeFromSecret(secret.get(), podName.apply(cluster, i) + ".crt")));
+        }
+
+        File brokerCsrFile = File.createTempFile("tls", "broker-csr");
+        File brokerKeyFile = File.createTempFile("tls", "broker-key");
+        File brokerCertFile = File.createTempFile("tls", "broker-cert");
+
+        // generate the missing number of certificates
+        // scale up -> generate new certificates for added replicas
+        // scale down -> does nothing
+        for (int i = replicasInSecret; i < replicas; i++) {
+            log.debug("{} to generate", podName.apply(cluster, i));
+
+            Subject sbj = new Subject();
+            sbj.setOrganizationName("io.strimzi");
+            sbj.setCommonName(podName.apply(cluster, i));
+
+            certManager.generateCsr(brokerKeyFile, brokerCsrFile, sbj);
+            certManager.generateCert(brokerCsrFile, caCert.key(), caCert.cert(), brokerCertFile, CERTS_EXPIRATION_DAYS);
+
+            certs.put(podName.apply(cluster, i),
+                    new CertAndKey(Files.readAllBytes(brokerKeyFile.toPath()), Files.readAllBytes(brokerCertFile.toPath())));
+        }
+
+        if (!brokerCsrFile.delete()) {
+            log.warn("{} cannot be deleted", brokerCsrFile.getName());
+        }
+        if (!brokerKeyFile.delete()) {
+            log.warn("{} cannot be deleted", brokerKeyFile.getName());
+        }
+        if (!brokerCertFile.delete()) {
+            log.warn("{} cannot be deleted", brokerCertFile.getName());
+        }
+
+        return certs;
     }
 }
