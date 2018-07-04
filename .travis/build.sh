@@ -10,6 +10,8 @@ export DOCKER_TAG=$COMMIT
 
 make docker_build
 
+# Use local registry and strimzici or for system tests
+OLD_DOCKER_REGISTRY=$DOCKER_REGISTRY
 export DOCKER_REGISTRY="localhost:5000"
 export DOCKER_TAG=$BRANCH
 echo "Push with docker org $DOCKER_ORG under tag $DOCKER_TAG"
@@ -19,10 +21,15 @@ export DOCKER_TAG=$COMMIT
 echo "Push with docker org $DOCKER_ORG under tag $DOCKER_TAG"
 make docker_push
 
+OLD_DOCKER_ORG=$DOCKER_ORG
 export DOCKER_ORG="localhost:5000/strimzici"
 
 echo "Running systemtests"
 ./systemtest/scripts/run_tests.sh ${SYSTEMTEST_ARGS}
+
+# Revert modified DOCKER_REGISTRY and DOCKER_ORG after system tests
+export DOCKER_REGISTRY=$OLD_DOCKER_REGISTRY
+export DOCKER_ORG=$OLD_DOCKER_ORG
 
 # If that worked we can push to the real docker org
 if [ "$PULL_REQUEST" != "false" ] ; then
