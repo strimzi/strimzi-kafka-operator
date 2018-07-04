@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategy;
@@ -240,19 +241,34 @@ public class TopicOperator extends AbstractModel {
                 .build();
 
         return createDeployment(
-                Collections.singletonList(createContainerPort(HEALTHCHECK_PORT_NAME, HEALTHCHECK_PORT, "TCP")),
-                createHttpProbe(healthCheckPath + "healthy", HEALTHCHECK_PORT_NAME, DEFAULT_HEALTHCHECK_DELAY, DEFAULT_HEALTHCHECK_TIMEOUT),
-                createHttpProbe(healthCheckPath + "ready", HEALTHCHECK_PORT_NAME, DEFAULT_HEALTHCHECK_DELAY, DEFAULT_HEALTHCHECK_TIMEOUT),
                 updateStrategy,
                 Collections.emptyMap(),
                 Collections.emptyMap(),
-                resources(),
                 getMergedAffinity(),
                 getInitContainers(),
-                null,
-                null,
-                getEnvVars()
+                getContainers(),
+                null
         );
+    }
+
+    @Override
+    protected List<Container> getContainers() {
+
+        List<Container> containers = new ArrayList<>();
+
+        Container container = new ContainerBuilder()
+                .withName(name)
+                .withImage(getImage())
+                .withEnv(getEnvVars())
+                .withPorts(Collections.singletonList(createContainerPort(HEALTHCHECK_PORT_NAME, HEALTHCHECK_PORT, "TCP")))
+                .withLivenessProbe(createHttpProbe(healthCheckPath + "healthy", HEALTHCHECK_PORT_NAME, DEFAULT_HEALTHCHECK_DELAY, DEFAULT_HEALTHCHECK_TIMEOUT))
+                .withReadinessProbe(createHttpProbe(healthCheckPath + "ready", HEALTHCHECK_PORT_NAME, DEFAULT_HEALTHCHECK_DELAY, DEFAULT_HEALTHCHECK_TIMEOUT))
+                .withResources(resources())
+                .build();
+
+        containers.add(container);
+
+        return containers;
     }
 
     @Override

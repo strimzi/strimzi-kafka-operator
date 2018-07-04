@@ -4,10 +4,13 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.fabric8.kubernetes.api.model.Container;
 import org.junit.Test;
 
+import java.util.List;
 import java.util.Properties;
 
+import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
 
 public class ResourcesTest {
@@ -25,6 +28,11 @@ public class ResourcesTest {
             @Override
             protected Properties getDefaultLogConfig() {
                 return new Properties();
+            }
+
+            @Override
+            protected List<Container> getContainers() {
+                return emptyList();
             }
         };
         abstractModel.setResources(opts);

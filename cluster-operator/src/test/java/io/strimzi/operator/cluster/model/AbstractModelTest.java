@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import org.junit.Test;
 
@@ -13,6 +14,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
+import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
@@ -39,6 +41,11 @@ public class AbstractModelTest {
             @Override
             protected Properties getDefaultLogConfig() {
                 return new Properties();
+            }
+
+            @Override
+            protected List<Container> getContainers() {
+                return emptyList();
             }
         };
         am.setJvmOptions(jvmOptions(xmx, xms));
@@ -99,6 +106,11 @@ public class AbstractModelTest {
             @Override
             protected Properties getDefaultLogConfig() {
                 return new Properties();
+            }
+
+            @Override
+            protected List<Container> getContainers() {
+                return emptyList();
             }
         };
         am.setJvmOptions(opts);

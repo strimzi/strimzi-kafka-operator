@@ -430,6 +430,11 @@ public abstract class AbstractModel {
         return null;
     }
 
+    /**
+     * @return a list of containers to add to the StatefulSet/Deployment
+     */
+    protected abstract List<Container> getContainers();
+
     protected VolumeMount createVolumeMount(String name, String path) {
         VolumeMount volumeMount = new VolumeMountBuilder()
                 .withName(name)
@@ -612,31 +617,17 @@ public abstract class AbstractModel {
     }
 
     protected StatefulSet createStatefulSet(
-            List<ContainerPort> ports,
             List<Volume> volumes,
             List<PersistentVolumeClaim> volumeClaims,
             List<VolumeMount> volumeMounts,
-            Probe livenessProbe,
-            Probe readinessProbe,
-            ResourceRequirements resources,
             Affinity affinity,
             List<Container> initContainers,
+            List<Container> containers,
             boolean isOpenShift) {
 
         Map<String, String> annotations = new HashMap<>();
         annotations.put(String.format("%s/%s", ClusterOperator.STRIMZI_CLUSTER_OPERATOR_DOMAIN, Storage.DELETE_CLAIM_FIELD),
                 String.valueOf(storage.isDeleteClaim()));
-
-        Container container = new ContainerBuilder()
-                .withName(name)
-                .withImage(getImage())
-                .withEnv(getEnvVars())
-                .withVolumeMounts(volumeMounts)
-                .withPorts(ports)
-                .withLivenessProbe(livenessProbe)
-                .withReadinessProbe(readinessProbe)
-                .withResources(resources)
-                .build();
 
         List<Container> initContainersInternal = new ArrayList<>();
         PodSecurityContext securityContext = null;
@@ -690,7 +681,7 @@ public abstract class AbstractModel {
                             .withAffinity(affinity)
                             .withSecurityContext(securityContext)
                             .withInitContainers(initContainersInternal)
-                            .withContainers(container)
+                            .withContainers(containers)
                             .withVolumes(volumes)
                         .endSpec()
                     .endTemplate()
@@ -702,29 +693,13 @@ public abstract class AbstractModel {
     }
 
     protected Deployment createDeployment(
-            List<ContainerPort> ports,
-            Probe livenessProbe,
-            Probe readinessProbe,
             DeploymentStrategy updateStrategy,
             Map<String, String> deploymentAnnotations,
             Map<String, String> podAnnotations,
-            ResourceRequirements resources,
             Affinity affinity,
             List<Container> initContainers,
-            List<Volume> volumes,
-            List<VolumeMount> volumeMounts,
-            List<EnvVar> envVars) {
-
-        Container container = new ContainerBuilder()
-                .withName(name)
-                .withImage(getImage())
-                .withEnv(envVars)
-                .withPorts(ports)
-                .withLivenessProbe(livenessProbe)
-                .withReadinessProbe(readinessProbe)
-                .withVolumeMounts(volumeMounts)
-                .withResources(resources)
-                .build();
+            List<Container> containers,
+            List<Volume> volumes) {
 
         Deployment dep = new DeploymentBuilder()
                 .withNewMetadata()
@@ -745,7 +720,7 @@ public abstract class AbstractModel {
                             .withAffinity(affinity)
                             .withServiceAccountName(getServiceAccountName())
                             .withInitContainers(initContainers)
-                            .withContainers(container)
+                            .withContainers(containers)
                             .withVolumes(volumes)
                         .endSpec()
                     .endTemplate()
