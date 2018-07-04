@@ -28,12 +28,16 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretList;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceList;
+import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
+import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinitionList;
+import io.fabric8.kubernetes.api.model.apiextensions.DoneableCustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentList;
 import io.fabric8.kubernetes.api.model.extensions.DoneableDeployment;
 import io.fabric8.kubernetes.api.model.extensions.DoneableStatefulSet;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSetList;
+import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
@@ -42,10 +46,13 @@ import io.fabric8.kubernetes.client.dsl.AppsAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.EditReplacePatchDeletable;
 import io.fabric8.kubernetes.client.dsl.ExtensionsAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.dsl.ScalableResource;
+import io.strimzi.api.kafka.DoneableKafkaAssembly;
+import io.strimzi.api.kafka.model.KafkaAssembly;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mockito.invocation.InvocationOnMock;
@@ -53,10 +60,11 @@ import org.mockito.stubbing.OngoingStubbing;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -72,6 +80,7 @@ public class MockKube {
 
     private static final Logger LOGGER = LogManager.getLogger(MockKube.class);
 
+    private final Map<String, KafkaAssembly> kafkaDb = db(emptySet(), KafkaAssembly.class, DoneableKafkaAssembly.class);
     private final Map<String, ConfigMap> cmDb = db(emptySet(), ConfigMap.class, DoneableConfigMap.class);
     private final Map<String, PersistentVolumeClaim> pvcDb = db(emptySet(), PersistentVolumeClaim.class, DoneablePersistentVolumeClaim.class);
     private final Map<String, Service> svcDb = db(emptySet(), Service.class, DoneableService.class);
@@ -101,6 +110,43 @@ public class MockKube {
         return this;
     }
 
+    public MockKube withInitialKafkaAssembly(Set<KafkaAssembly> initial) {
+        this.kafkaDb.putAll(db(initial, KafkaAssembly.class, DoneableKafkaAssembly.class));
+        return this;
+    }
+
+    private final List<MockedCrd> mockedCrds = new ArrayList<>();
+
+    public class MockedCrd<T extends CustomResource, L extends KubernetesResourceList<T>, D extends Doneable<T>> {
+        private final CustomResourceDefinition crd;
+        private final Class<T> crClass;
+        private final Class<L> crListClass;
+        private final Class<D> crDoneableClass;
+        private final Map<String, T> instances;
+        private MockedCrd(CustomResourceDefinition crd, Class<T> crClass, Class<L> crListClass, Class<D> crDoneableClass) {
+            this.crd = crd;
+            this.crClass = crClass;
+            this.crListClass = crListClass;
+            this.crDoneableClass = crDoneableClass;
+            instances = db(emptySet(), crClass, crDoneableClass);
+        }
+        public MockedCrd<T, L, D> withInitialInstances(Set<T> instances) {
+            for (T instance : instances) {
+                this.instances.put(instance.getMetadata().getName(), instance);
+            }
+            return this;
+        }
+        public MockKube end() {
+            return MockKube.this;
+        }
+    }
+
+    public <T extends CustomResource, L extends KubernetesResourceList<T>, D extends Doneable<T>> MockedCrd<T, L, D> withCustomResourceDefinition(CustomResourceDefinition crd, Class<T> instanceClass, Class<L> instanceListClass, Class<D> doneableInstanceClass) {
+        MockedCrd mockedCrd = new MockedCrd(crd, instanceClass, instanceListClass, doneableInstanceClass);
+        this.mockedCrds.add(mockedCrd);
+        return mockedCrd;
+    }
+
     public KubernetesClient build() {
         KubernetesClient mockClient = mock(KubernetesClient.class);
         MixedOperation<ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> mockCms = buildConfigMaps();
@@ -125,6 +171,29 @@ public class MockKube {
         when(mockClient.pods()).thenReturn(mockPods);
         when(mockClient.endpoints()).thenReturn(mockEndpoints);
         when(mockClient.persistentVolumeClaims()).thenReturn(mockPvcs);
+        if (mockedCrds != null && !mockedCrds.isEmpty()) {
+            NonNamespaceOperation<CustomResourceDefinition, CustomResourceDefinitionList, DoneableCustomResourceDefinition, Resource<CustomResourceDefinition, DoneableCustomResourceDefinition>>
+                    crds = mock(NonNamespaceOperation.class);
+            for (MockedCrd<?, ?, ?> mockedCrd : this.mockedCrds) {
+                CustomResourceDefinition crd = mockedCrd.crd;
+                Resource crdResource = mock(Resource.class);
+                when(crdResource.get()).thenReturn(crd);
+                when(crds.withName(crd.getMetadata().getName())).thenReturn(crdResource);
+                when(mockClient.customResources(any(CustomResourceDefinition.class), any(Class.class), any(Class.class), any(Class.class))).thenAnswer(invocation -> {
+                    CustomResourceDefinition crdArg = invocation.getArgument(0);
+                    Class<? extends CustomResource> crType = invocation.getArgument(1);
+                    Class<? extends KubernetesResourceList> crListType = invocation.getArgument(2);
+                    Class<? extends Doneable> crDoneableType = invocation.getArgument(3);
+                    if (crd.getSpec().getGroup().equals(crdArg.getSpec().getGroup())
+                            && crd.getSpec().getVersion().equals(crdArg.getSpec().getVersion())) {
+                        return buildCrd((MockedCrd) mockedCrd);
+                    } else {
+                        throw new RuntimeException();
+                    }
+                });
+            }
+            when(mockClient.customResourceDefinitions()).thenReturn(crds);
+        }
 
         when(mockClient.secrets()).thenReturn(mockSecrets);
 
@@ -381,6 +450,7 @@ public class MockKube {
         }.build();
     }
 
+
     private MixedOperation<Secret, SecretList, DoneableSecret, Resource<Secret, DoneableSecret>> buildSecrets() {
         return new AbstractMockBuilder<Secret, SecretList, DoneableSecret, Resource<Secret, DoneableSecret>>(
                 Secret.class, SecretList.class, DoneableSecret.class, castClass(Resource.class), secretDb) {
@@ -395,10 +465,28 @@ public class MockKube {
         }.build();
     }
 
+    private <T extends CustomResource,
+            L extends KubernetesResource & KubernetesResourceList<T>,
+            D extends Doneable<T>>
+        MixedOperation<T, L, D, Resource<T, D>> buildCrd(MockedCrd<T, L, D> mockedCrd) {
+        return new AbstractMockBuilder<T, L, D, Resource<T, D>>(
+                mockedCrd.crClass, mockedCrd.crListClass, mockedCrd.crDoneableClass, castClass(Resource.class), mockedCrd.instances) {
+            @Override
+            protected void nameScopedMocks(Resource<T, D> resource, String resourceName) {
+                mockGet(resourceName, resource);
+                mockWatch(resourceName, resource);
+                mockCreate(resourceName, resource);
+                mockCascading(resource);
+                mockPatch(resourceName, resource);
+                mockDelete(resourceName, resource);
+            }
+        }.build();
+    }
+
     private static <T extends HasMetadata, D extends Doneable<T>> Map<String, T> db(Collection<T> initialResources, Class<T> cls, Class<D> doneableClass) {
-        return Collections.synchronizedMap(new HashMap(initialResources.stream().collect(Collectors.toMap(
+        return new ConcurrentHashMap<>(initialResources.stream().collect(Collectors.toMap(
             c -> c.getMetadata().getName(),
-            c -> copyResource(c, cls, doneableClass)))));
+            c -> copyResource(c, cls, doneableClass))));
     }
 
     private static <T extends HasMetadata, D extends Doneable<T>> T copyResource(T resource, Class<T> resourceClass, Class<D> doneableClass) {
@@ -465,6 +553,30 @@ public class MockKube {
             MixedOperation<CM, CML, DCM, R> mixed = mock(MixedOperation.class);
 
             when(mixed.inNamespace(any())).thenReturn(mixed);
+            when(mixed.list()).thenAnswer(i -> mockList(p -> true));
+            when(mixed.withLabels(any())).thenAnswer(i -> {
+                MixedOperation<CM, CML, DCM, R> mixedWithLabels = mock(MixedOperation.class);
+                Map<String, String> labels = i.getArgument(0);
+                when(mixedWithLabels.list()).thenAnswer(i2 -> mockList(p -> {
+                    Map<String, String> m = new HashMap(p.getMetadata().getLabels());
+                    m.keySet().retainAll(labels.keySet());
+                    return labels.equals(m);
+                }));
+                return mixedWithLabels;
+            });
+            when(mixed.withName(any())).thenAnswer(invocation -> {
+                String resourceName = invocation.getArgument(0);
+                R resource = mock(resourceClass);
+                nameScopedMocks(resource, resourceName);
+                return resource;
+            });
+            return mixed;
+        }
+
+        public NonNamespaceOperation<CM, CML, DCM, R> buildNonNamespaced() {
+            // TODO factor out common with build(), which is more-or-less identical
+            NonNamespaceOperation<CM, CML, DCM, R> mixed = mock(NonNamespaceOperation.class);
+
             when(mixed.list()).thenAnswer(i -> mockList(p -> true));
             when(mixed.withLabels(any())).thenAnswer(i -> {
                 MixedOperation<CM, CML, DCM, R> mixedWithLabels = mock(MixedOperation.class);

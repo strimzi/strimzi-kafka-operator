@@ -15,10 +15,15 @@
     <suppress checks="MethodLength|NPathComplexity|CyclomaticComplexity"
               files="io[/\\]strimzi[/\\]operator[/\\]cluster[/\\]operator[/\\]assembly[/\\]KafkaAssemblyOperatorTest.java"/>
 
+    <suppress checks="ClassFanOutComplexity|ClassDataAbstractionCoupling"
+              files="io[/\\]strimzi[/\\]operator[/\\]cluster[/\\]model[/\\]AbstractModel.java"/>
+
     <!-- topic operator -->
     <suppress checks="NPathComplexity|CyclomaticComplexity"
               files="io[/\\]strimzi[/\\]operator[/\\]topic[/\\]TopicOperator.java"/>
 
     <suppress checks="NPathComplexity|CyclomaticComplexity"
               files="io[/\\]strimzi[/\\]operator[/\\]topic[/\\]TopicName.java"/>
+
+
 </suppressions>

@@ -4,11 +4,15 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.strimzi.api.kafka.model.KafkaAssembly;
+import io.strimzi.api.kafka.model.KafkaConnectAssembly;
+import io.strimzi.api.kafka.model.KafkaConnectS2IAssembly;
+
 public enum AssemblyType {
 
-    KAFKA("kafka"),
-    CONNECT("kafka-connect"),
-    CONNECT_S2I("kafka-connect-s2i");
+    KAFKA(KafkaAssembly.RESOURCE_KIND),
+    CONNECT(KafkaConnectAssembly.RESOURCE_KIND),
+    CONNECT_S2I(KafkaConnectS2IAssembly.RESOURCE_KIND);
 
     public final String name;
 
@@ -22,11 +26,11 @@ public enum AssemblyType {
 
     public static AssemblyType fromName(String name) {
         switch (name) {
-            case "kafka":
+            case KafkaAssembly.RESOURCE_KIND:
                 return AssemblyType.KAFKA;
-            case "kafka-connect":
+            case KafkaConnectAssembly.RESOURCE_KIND:
                 return AssemblyType.CONNECT;
-            case "kafka-connect-s2i":
+            case KafkaConnectS2IAssembly.RESOURCE_KIND:
                 return AssemblyType.CONNECT_S2I;
         }
         throw new IllegalArgumentException(name);

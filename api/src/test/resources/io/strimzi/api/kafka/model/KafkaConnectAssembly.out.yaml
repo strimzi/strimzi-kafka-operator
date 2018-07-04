@@ -1,0 +1,13 @@
+---
+apiVersion: "kafka.strimzi.io/v1alpha1"
+kind: "KafkaConnect"
+metadata:
+  finalizers: []
+  name: "test-kafka-connect"
+  ownerReferences: []
+spec:
+  replicas: 6
+  image: "foo"
+  metrics: {}
+  config:
+    name: "bar"

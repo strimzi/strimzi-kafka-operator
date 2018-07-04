@@ -18,6 +18,8 @@ import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategy;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategyBuilder;
 import io.fabric8.kubernetes.api.model.extensions.RollingUpdateDeploymentBuilder;
+import io.strimzi.api.kafka.model.KafkaConnectAssembly;
+import io.strimzi.api.kafka.model.KafkaConnectAssemblySpec;
 import io.vertx.core.json.JsonObject;
 
 import java.io.IOException;
@@ -27,6 +29,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+
+import static java.util.Collections.emptySet;
 
 public class KafkaConnectCluster extends AbstractModel {
 
@@ -77,9 +81,12 @@ public class KafkaConnectCluster extends AbstractModel {
         this.ancillaryConfigName = logAndMetricsConfigName(cluster);
         this.image = DEFAULT_IMAGE;
         this.replicas = DEFAULT_REPLICAS;
-        this.healthCheckPath = "/";
-        this.healthCheckTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
-        this.healthCheckInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
+        this.readinessPath = "/";
+        this.readinessTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
+        this.readinessInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
+        this.livenessPath = "/";
+        this.livenessTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
+        this.livenessInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
         this.isMetricsEnabled = DEFAULT_KAFKA_CONNECT_METRICS_ENABLED;
 
         this.mountPath = "/var/lib/kafka";
@@ -94,70 +101,43 @@ public class KafkaConnectCluster extends AbstractModel {
     public static String logAndMetricsConfigName(String cluster) {
         return cluster + KafkaConnectCluster.METRICS_AND_LOG_CONFIG_SUFFIX;
     }
-    /**
-     * Create a Kafka Connect cluster from the related ConfigMap resource
-     *
-     * @param cm ConfigMap with cluster configuration
-     * @return Kafka Connect cluster instance
-     */
-    public static KafkaConnectCluster fromConfigMap(ConfigMap cm) {
-        KafkaConnectCluster kafkaConnect = new KafkaConnectCluster(cm.getMetadata().getNamespace(),
-                cm.getMetadata().getName(),
-                Labels.fromResource(cm));
 
-        Map<String, String> data = cm.getData();
-        kafkaConnect.setReplicas(Integer.parseInt(data.getOrDefault(KEY_REPLICAS, String.valueOf(DEFAULT_REPLICAS))));
-        kafkaConnect.setImage(data.getOrDefault(KEY_IMAGE, DEFAULT_IMAGE));
-        kafkaConnect.setResources(Resources.fromJson(data.get(KEY_RESOURCES)));
-        kafkaConnect.setJvmOptions(JvmOptions.fromJson(data.get(KEY_JVM_OPTIONS)));
-        kafkaConnect.setHealthCheckInitialDelay(Integer.parseInt(data.getOrDefault(KEY_HEALTHCHECK_DELAY, String.valueOf(DEFAULT_HEALTHCHECK_DELAY))));
-        kafkaConnect.setHealthCheckTimeout(Integer.parseInt(data.getOrDefault(KEY_HEALTHCHECK_TIMEOUT, String.valueOf(DEFAULT_HEALTHCHECK_TIMEOUT))));
-
-        JsonObject metricsConfig = Utils.getJson(data, KEY_METRICS_CONFIG);
-        kafkaConnect.setMetricsEnabled(metricsConfig != null);
-        if (kafkaConnect.isMetricsEnabled()) {
-            kafkaConnect.setMetricsConfig(metricsConfig);
-        }
-        kafkaConnect.setLogging(Utils.getLogging(data.get(KEY_CONNECT_LOG_CONFIG)));
-
-        kafkaConnect.setConfiguration(Utils.getKafkaConnectConfiguration(data, KEY_CONNECT_CONFIG));
-        kafkaConnect.setUserAffinity(Utils.getAffinity(data.get(KEY_AFFINITY)));
-
-        return kafkaConnect;
+    public static KafkaConnectCluster fromCrd(KafkaConnectAssembly crd) {
+        return fromSpec(crd.getSpec(),
+                new KafkaConnectCluster(crd.getMetadata().getNamespace(),
+                    crd.getMetadata().getName(),
+                    Labels.fromResource(crd)));
     }
 
     /**
-     * Create a Kafka Connect cluster from the deployed Deployment resource
-     *
-     * @param namespace Kubernetes/OpenShift namespace where cluster resources belong to
-     * @param cluster   overall cluster name
-     * @param dep The deployment from which to recover the cluster state
-     * @return  Kafka Connect cluster instance
+     * Abstracts the calling of setters on a (subclass of) KafkaConnectCluster
+     * from the instantiation of the (subclass of) KafkaConnectCluster,
+     * thus permitting reuse of the setter-calling code for subclasses.
      */
-    public static KafkaConnectCluster fromAssembly(
-            String namespace, String cluster,
-            Deployment dep) {
-        if (dep == null) {
-            return null;
+    protected static <C extends KafkaConnectCluster> C fromSpec(KafkaConnectAssemblySpec spec, C kafkaConnect) {
+        kafkaConnect.setReplicas(spec != null && spec.getReplicas() > 0 ? spec.getReplicas() : DEFAULT_REPLICAS);
+        kafkaConnect.setImage(spec != null && spec.getImage() != null ? spec.getImage() : DEFAULT_IMAGE);
+        kafkaConnect.setConfiguration(new KafkaConnectConfiguration(spec != null ? spec.getConfig().entrySet() : emptySet()));
+        if (spec != null) {
+            kafkaConnect.setResources(spec.getResources());
+            kafkaConnect.setLogging(spec.getLogging());
+            kafkaConnect.setJvmOptions(spec.getJvmOptions());
+            if (spec.getReadinessProbe() != null) {
+                kafkaConnect.setReadinessInitialDelay(spec.getReadinessProbe().getInitialDelaySeconds());
+                kafkaConnect.setReadinessTimeout(spec.getReadinessProbe().getTimeoutSeconds());
+            }
+            if (spec.getLivenessProbe() != null) {
+                kafkaConnect.setLivenessInitialDelay(spec.getLivenessProbe().getInitialDelaySeconds());
+                kafkaConnect.setLivenessTimeout(spec.getLivenessProbe().getTimeoutSeconds());
+            }
+
+            Map<String, Object> metrics = spec.getMetrics();
+            if (metrics != null && !metrics.isEmpty()) {
+                kafkaConnect.setMetricsEnabled(true);
+                kafkaConnect.setMetricsConfig(metrics.entrySet());
+            }
+            kafkaConnect.setUserAffinity(spec.getAffinity());
         }
-
-        KafkaConnectCluster kafkaConnect =  new KafkaConnectCluster(namespace, cluster, Labels.fromResource(dep));
-
-        kafkaConnect.setReplicas(dep.getSpec().getReplicas());
-        Container container = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
-        kafkaConnect.setImage(container.getImage());
-        kafkaConnect.setHealthCheckInitialDelay(container.getReadinessProbe().getInitialDelaySeconds());
-        kafkaConnect.setHealthCheckTimeout(container.getReadinessProbe().getTimeoutSeconds());
-
-        String connectConfiguration = containerEnvVars(container).getOrDefault(ENV_VAR_KAFKA_CONNECT_CONFIGURATION, "");
-        kafkaConnect.setConfiguration(new KafkaConnectConfiguration(connectConfiguration));
-        Map<String, String> vars = containerEnvVars(container);
-
-        kafkaConnect.setMetricsEnabled(Utils.getBoolean(vars, ENV_VAR_KAFKA_CONNECT_METRICS_ENABLED, DEFAULT_KAFKA_CONNECT_METRICS_ENABLED));
-        if (kafkaConnect.isMetricsEnabled()) {
-            kafkaConnect.setMetricsConfigName(logAndMetricsConfigName(cluster));
-        }
-        kafkaConnect.setLogConfigName(KafkaCluster.metricAndLogConfigsName(cluster));
         return kafkaConnect;
     }
 
@@ -175,7 +155,11 @@ public class KafkaConnectCluster extends AbstractModel {
         Map<String, String> data  = new HashMap<>();
         data.put(ANCILLARY_CM_KEY_LOG_CONFIG, parseLogging(getLogging(), cm));
         if (isMetricsEnabled()) {
-            data.put(ANCILLARY_CM_KEY_METRICS, getMetricsConfig().toString());
+            HashMap m = new HashMap();
+            for (Map.Entry<String, Object> entry : getMetricsConfig()) {
+                m.put(entry.getKey(), entry.getValue());
+            }
+            data.put(ANCILLARY_CM_KEY_METRICS, new JsonObject(m).toString());
         }
         ConfigMap result = createConfigMap(getAncillaryConfigName(), data);
         if (getLogging() != null) {
@@ -238,8 +222,8 @@ public class KafkaConnectCluster extends AbstractModel {
                 .withImage(getImage())
                 .withEnv(getEnvVars())
                 .withPorts(getContainerPortList())
-                .withLivenessProbe(createHttpProbe(healthCheckPath, REST_API_PORT_NAME, healthCheckInitialDelay, healthCheckTimeout))
-                .withReadinessProbe(createHttpProbe(healthCheckPath, REST_API_PORT_NAME, healthCheckInitialDelay, healthCheckTimeout))
+                .withLivenessProbe(createHttpProbe(livenessPath, REST_API_PORT_NAME, livenessInitialDelay, livenessTimeout))
+                .withReadinessProbe(createHttpProbe(readinessPath, REST_API_PORT_NAME, readinessInitialDelay, readinessTimeout))
                 .withVolumeMounts(getVolumeMounts())
                 .withResources(resources())
                 .build();

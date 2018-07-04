@@ -29,16 +29,12 @@ manage RBAC resources (Roles and Role Bindings).
 === Cluster Operator
 
 {ProductName} uses a component called the Cluster Operator to deploy and manage Kafka (including Zookeeper) and Kafka Connect
-clusters. The Cluster Operator is deployed as a process running inside your {ProductPlatformName} cluster. To deploy a
-Kafka cluster, a ConfigMap with the cluster configuration has to be created. Based on the information in that ConfigMap,
-the Cluster Operator will deploy a corresponding Kafka cluster. By default, the ConfigMap needs to be labeled with
-following labels:
-
-[source,yaml]
-strimzi.io/type: kafka
-strimzi.io/kind: cluster
-
-and contain the cluster configuration in a specific format. The ConfigMap format is described in <<config_map_details>>.
+clusters.
+The Cluster Operator is deployed as a process running inside your {ProductPlatformName} cluster.
+To deploy a Kafka cluster, a `Kafka` resource with the cluster configuration has to be created within the {ProductPlatformName} cluster.
+Based on the information in that `Kafka` resource,
+the Cluster Operator will deploy a corresponding Kafka cluster.
+The format of the `Kafka` resource is described in <<kafka_assembly_details>>.
 
 {ProductName} contains example YAML files which make deploying a Cluster Operator easier.
 
@@ -75,7 +71,7 @@ oc describe all
 
 === Kafka broker
 
-{ProductName} uses StatefulSets feature of {ProductPlatformName} to deploy Kafka brokers.
+{ProductName} uses the StatefulSets feature of {ProductPlatformName} to deploy Kafka brokers.
 With StatefulSets, the pods receive a unique name and network identity and that makes it easier to identify the
 individual Kafka broker pods and set their identity (broker ID). The deployment uses **regular** and **headless**
 services:
@@ -101,35 +97,30 @@ ifdef::Kubernetes[HostPath volumes on Minikube or]
 Amazon EBS volumes in Amazon AWS deployments without any changes in the YAML files. The PersistentVolumeClaim can use
 a StorageClass to trigger automatic volume provisioning.
 
-To deploy a Kafka cluster, a ConfigMap with the cluster configuration has to be created. The ConfigMap
-should have the following labels:
-
-[source,yaml]
-strimzi.io/type: kafka
-strimzi.io/kind: cluster
-
-Example ConfigMaps and the details about the ConfigMap format are in <<kafka_config_map_details>>.
+To deploy a Kafka cluster, a `Kafka` resource with the cluster configuration has to be created.
+Example resources and the details about the `Kafka` format are in <<kafka_assembly_details>>.
 
 ifdef::Kubernetes[]
 ==== Deploying to {KubernetesName}
 
-To deploy a Kafka broker on {KubernetesName}, the corresponding ConfigMap has to be created. To create the ephemeral
-cluster using the provided example ConfigMap, the following command should be executed:
+To deploy a Kafka broker on {KubernetesName}, the corresponding `Kafka` has to be created.
+To create an ephemeral cluster using the provided example `Kafka`, the following command should be executed:
 
 [source,shell]
-kubectl apply -f examples/configmaps/cluster-operator/kafka-ephemeral.yaml
+kubectl apply -f examples/kafka/kafka-ephemeral.yaml
 
-Another example ConfigMap is provided for persistent Kafka cluster. To deploy it, the following command should be run:
+Another example `Kafka` is provided for a persistent Kafka cluster.
+To deploy it, the following command should be run:
 
 [source,shell]
-kubectl apply -f examples/configmaps/cluster-operator/kafka-persistent.yaml
+kubectl apply -f examples/kafka/kafka-persistent.yaml
 endif::Kubernetes[]
 
 ==== Deploying to {OpenShiftName}
 
-For {OpenShiftName}, the Kafka broker is provided in the form of a template. The cluster can be deployed from the template either
-using the command line or using the {OpenShiftName} console. To create the ephemeral cluster, the following command should be
-executed:
+For {OpenShiftName}, the Kafka broker is provided in the form of a template.
+The cluster can be deployed from the template either using the command line or using the {OpenShiftName} console.
+To create the ephemeral cluster, the following command should be executed:
 
 [source,shell]
 oc new-app strimzi-ephemeral
@@ -141,42 +132,38 @@ oc new-app strimzi-persistent
 
 === Kafka Connect
 
-The Cluster Operator can also deploy a https://kafka.apache.org/documentation/#connect[Kafka Connect] cluster which
-can be used with either of the Kafka broker deployments described above. It is implemented as a Deployment with a
-configurable number of workers. The default image currently contains only the Connectors distributed with Apache Kafka
-Connect: `FileStreamSinkConnector` and `FileStreamSourceConnector`. The REST interface for managing the Kafka Connect
-cluster is exposed internally within the {ProductPlatformName} cluster as `kafka-connect` service on port `8083`.
+The Cluster Operator can also deploy a https://kafka.apache.org/documentation/#connect[Kafka Connect] cluster which can be used with either of the Kafka broker deployments described above.
+It is implemented as a Deployment with a configurable number of workers.
+The default image currently contains only the Connectors distributed with Apache Kafka Connect: `FileStreamSinkConnector` and `FileStreamSourceConnector`.
+The REST interface for managing the Kafka Connect cluster is exposed internally within the {ProductPlatformName} cluster as `kafka-connect` service on port `8083`.
 
-Example ConfigMaps and the details about the ConfigMap format for deploying Kafka Connect can be found in
+Example `KafkaConnect` resources and the details about the `KafkaConnect` format for deploying Kafka Connect can be found in
 <<kafka_connect_config_map_details>>.
 
 ifdef::Kubernetes[]
 ==== Deploying to {KubernetesName}
 
-To deploy Kafka Connect on {KubernetesName}, the corresponding ConfigMap has to be created. An example ConfigMap can be
-created using the following command:
+To deploy Kafka Connect on {KubernetesName}, the corresponding `KafkaConnect` resource has to be created.
+An example resource can be created using the following command:
 
 [source,shell]
-kubectl apply -f examples/configmaps/cluster-operator/kafka-connect.yaml
+kubectl apply -f examples/kafka-connect/kafka-connect.yaml
 endif::Kubernetes[]
 
 ==== Deploying to {OpenShiftName}
 
-On {OpenShiftName}, Kafka Connect is provided in the form of a template. It can be deployed from the template either
-using the command line or using the {OpenShiftName} console. To create a Kafka Connect cluster from the command line, the following
-command should be run:
+On {OpenShiftName}, Kafka Connect is provided in the form of a template. It can be deployed from the template either using the command line or using the {OpenShiftName} console.
+To create a Kafka Connect cluster from the command line, the following command should be run:
 
 [source,shell]
 oc new-app strimzi-connect
 
 ==== Using Kafka Connect with additional plugins
 
-{ProductName} Docker images for Kafka Connect contain, by default, only the `FileStreamSinkConnector` and
-`FileStreamSourceConnector` connectors which are part of Apache Kafka.
+{ProductName} Docker images for Kafka Connect contain, by default, only the `FileStreamSinkConnector` and `FileStreamSourceConnector` connectors which are part of Apache Kafka.
 
-To facilitate deployment with 3rd party connectors, Kafka Connect is configured to automatically load all
-plugins/connectors which are present in the `/opt/kafka/plugins` directory during startup. There are two ways of adding
-custom plugins into this directory:
+To facilitate deployment with 3rd party connectors, Kafka Connect is configured to automatically load all plugins/connectors which are present in the `/opt/kafka/plugins` directory during startup.
+There are two ways of adding custom plugins into this directory:
 
 - Using a custom Docker image
 - Using the {OpenShiftName} build system with the {ProductName} S2I image
@@ -184,8 +171,9 @@ custom plugins into this directory:
 ===== Create a new image based on our base image
 
 {ProductName} provides its own Docker image for running Kafka Connect which can be found on {DockerRepository} as
-`{DockerKafkaConnect}`. This image could be used as a base image for
-building a new custom image with additional plugins. The following steps describe the process for creating such a custom image:
+`{DockerKafkaConnect}`.
+This image could be used as a base image for building a new custom image with additional plugins.
+The following steps describe the process for creating such a custom image:
 
 1. Create a new `Dockerfile` which uses `{DockerKafkaConnect}` as the base image
 +
@@ -198,9 +186,8 @@ USER {DockerImageUser}
 ----
 2. Build the Docker image and upload it to the appropriate Docker repository
 3. Use the new Docker image in the Kafka Connect deployment:
-  - On {OpenShiftName}, the template parameters `IMAGE_REPO_NAME`, `IMAGE_NAME` and `IMAGE_TAG` can be changed to point to the
-  new image when the Kafka Connect cluster is being deployed
-ifdef::Kubernetes[  - On {KubernetesName}, the Kafka Connect ConfigMap has to be modified to use the new image]
+  - On {OpenShiftName}, the template parameters `IMAGE_REPO_NAME`, `IMAGE_NAME` and `IMAGE_TAG` can be changed to point to the new image when the Kafka Connect cluster is being deployed
+ifdef::Kubernetes[  - On {KubernetesName}, the KafkaConnect resource has to be modified to use the new image]
 
 ===== Using {OpenShiftName} Build and S2I image
 
@@ -278,16 +265,16 @@ is deployed as a process running inside a {ProductPlatformName} cluster. To crea
 with the related configuration (name, partitions, replication factor, ...) has to be created. Based on the information
 in that ConfigMap, the Topic Operator will create a corresponding Kafka topic in the cluster.
 
-Deleting a topic ConfigMap raises the deletion of the corresponding Kafka topic as well.
+Deleting a topic ConfigMap causes the deletion of the corresponding Kafka topic as well.
 
-The Cluster Operator is able to deploy a Topic Operator, which can be configured in the cluster ConfigMap.
+The Cluster Operator is able to deploy a Topic Operator, which can be configured in the `Kafka` resource.
 Alternatively, it is possible to deploy a Topic Operator manually, rather than having it deployed
 by the Cluster Operator.
 
 ==== Deploying through the Cluster Operator
 
-To deploy the Topic Operator through the Cluster Operator, its configuration needs to be provided in the cluster
-ConfigMap in the `topic-operator-config` field as a JSON string.
+To deploy the Topic Operator through the Cluster Operator, its configuration needs to be provided in the
+`Kafka` resource in the `topicOperator` field as a JSON string.
 
 For more information on the JSON configuration format see <<topic_operator_json_config>>.
 

@@ -1,0 +1,9 @@
+apiVersion: kafka.strimzi.io/v1alpha1
+kind: KafkaConnect
+metadata:
+  name: test-kafka-connect
+spec:
+  image: foo
+  replicas: oops, this is not an int
+  config:
+    name: bar

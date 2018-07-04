@@ -6,23 +6,20 @@ package io.strimzi.systemtest;
 
 import io.fabric8.kubernetes.api.model.Event;
 import io.strimzi.test.ClusterOperator;
-import io.strimzi.test.CmData;
-import io.strimzi.test.ConnectCluster;
 import io.strimzi.test.JUnitGroup;
-import io.strimzi.test.KafkaCluster;
+import io.strimzi.test.KafkaConnectFromClasspathYaml;
+import io.strimzi.test.KafkaFromClasspathYaml;
 import io.strimzi.test.Namespace;
 import io.strimzi.test.OpenShiftOnly;
 import io.strimzi.test.Resources;
 import io.strimzi.test.StrimziRunner;
+import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.Oc;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -47,15 +44,7 @@ import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 @RunWith(StrimziRunner.class)
 @Namespace(ConnectClusterIT.NAMESPACE)
 @ClusterOperator
-@KafkaCluster(
-        name = ConnectClusterIT.KAFKA_CLUSTER_NAME,
-        config = {
-                @CmData(key = "kafka-storage",
-                        value = "{ \"type\": \"ephemeral\" }"),
-                @CmData(key = "zookeeper-storage",
-                        value = "{ \"type\": \"ephemeral\" }")
-        }
-)
+@KafkaFromClasspathYaml
 public class ConnectClusterIT extends AbstractClusterIT {
 
     private static final Logger LOGGER = LogManager.getLogger(ConnectClusterIT.class);
@@ -80,7 +69,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
             "internal.key.converter=org.apache.kafka.connect.json.JsonConverter\\n" +
             "internal.value.converter.schemas.enable=false\\n" +
             "internal.value.converter=org.apache.kafka.connect.json.JsonConverter\\n";
-    private static final String CO_DEPLOYMENT_CONFIG = "../examples/install/cluster-operator/07-deployment.yaml";
+    private static final String CO_DEPLOYMENT_CONFIG = "../examples/install/cluster-operator/08-deployment.yaml";
 
 
     @Test
@@ -101,7 +90,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
 
     @Test
     @JUnitGroup(name = "acceptance")
-    @ConnectCluster(name = "my-cluster", connectConfig = CONNECT_CONFIG)
+    @KafkaConnectFromClasspathYaml
     public void testDeployUndeploy() {
         LOGGER.info("Looks like the connect cluster my-cluster deployed OK");
 
@@ -115,13 +104,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
 
     @Test
     @JUnitGroup(name = "regression")
-    @ConnectCluster(name = "jvm-resource", connectConfig = CONNECT_CONFIG,
-        nodes = 1,
-        config = {
-                @CmData(key = "resources", value = "{ \"limits\": {\"memory\": \"400M\", \"cpu\": 2}, " +
-                        "\"requests\": {\"memory\": \"300M\", \"cpu\": 1} }"),
-                @CmData(key = "jvmOptions", value = "{\"-Xmx\": \"200m\", \"-Xms\": \"200m\", \"-server\": true, \"-XX\": { \"UseG1GC\": true }}")
-        })
+    @KafkaConnectFromClasspathYaml
     public void testJvmAndResources() {
         String podName = kubeClient.list("Pod").stream().filter(n -> n.startsWith("jvm-resource-connect-")).findFirst().get();
         assertResources(NAMESPACE, podName,
@@ -132,7 +115,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
 
     @Test
     @JUnitGroup(name = "regression")
-    @ConnectCluster(name = CONNECT_CLUSTER_NAME, connectConfig = CONNECT_CONFIG)
+    @KafkaConnectFromClasspathYaml
     public void testKafkaConnectScaleUpScaleDown() {
         // kafka cluster Connect already deployed via annotation
         LOGGER.info("Running kafkaConnectScaleUP {}", CONNECT_CLUSTER_NAME);
@@ -143,7 +126,9 @@ public class ConnectClusterIT extends AbstractClusterIT {
         final int scaleTo = initialReplicas + 1;
 
         LOGGER.info("Scaling up to {}", scaleTo);
-        replaceCm(CONNECT_CLUSTER_NAME, "nodes", String.valueOf(initialReplicas + 1));
+        replaceKafkaConnectResource(CONNECT_CLUSTER_NAME, c -> {
+            c.getSpec().setReplicas(initialReplicas + 1);
+        });
         kubeClient.waitForDeployment(kafkaConnectName(CONNECT_CLUSTER_NAME));
         connectPods = kubeClient.listResourcesByLabel("pod", "strimzi.io/type=kafka-connect");
         assertEquals(scaleTo, connectPods.size());
@@ -155,7 +140,9 @@ public class ConnectClusterIT extends AbstractClusterIT {
         }
 
         LOGGER.info("Scaling down to {}", initialReplicas);
-        replaceCm(CONNECT_CLUSTER_NAME, "nodes", String.valueOf(initialReplicas));
+        replaceKafkaConnectResource(CONNECT_CLUSTER_NAME, c -> {
+            c.getSpec().setReplicas(initialReplicas);
+        });
         while (kubeClient.listResourcesByLabel("pod", "strimzi.io/type=kafka-connect").size() == scaleTo) {
             LOGGER.info("Waiting for connect pod deletion");
         }
@@ -170,21 +157,23 @@ public class ConnectClusterIT extends AbstractClusterIT {
 
     @Test
     @JUnitGroup(name = "regression")
-    @ConnectCluster(name = CONNECT_CLUSTER_NAME, connectConfig = CONNECT_CONFIG)
+    @KafkaConnectFromClasspathYaml
     public void testForUpdateValuesInConnectCM() {
         List<String> connectPods = kubeClient.listResourcesByLabel("pod", "strimzi.io/type=kafka-connect");
 
-        String conncectConfig = "{\n" +
+        String connectConfig = "{\n" +
                 "      \"bootstrap.servers\": \"" + KAFKA_CONNECT_BOOTSTRAP_SERVERS + "\",\n" +
                 "      \"config.storage.replication.factor\": \"1\",\n" +
                 "      \"offset.storage.replication.factor\": \"1\",\n" +
                 "      \"status.storage.replication.factor\": \"1\"\n" +
                 "    }";
-        Map<String, String> changes = new HashMap<>();
-        changes.put("connect-config", conncectConfig);
-        changes.put("healthcheck-delay", "61");
-        changes.put("healthcheck-timeout", "6");
-        replaceCm(CONNECT_CLUSTER_NAME, changes);
+        replaceKafkaConnectResource(CONNECT_CLUSTER_NAME, c -> {
+            c.getSpec().setConfig(TestUtils.fromJson(connectConfig, Map.class));
+            c.getSpec().getLivenessProbe().setInitialDelaySeconds(61);
+            c.getSpec().getReadinessProbe().setInitialDelaySeconds(61);
+            c.getSpec().getLivenessProbe().setTimeoutSeconds(6);
+            c.getSpec().getReadinessProbe().setTimeoutSeconds(6);
+        });
 
         kubeClient.waitForDeployment(kafkaConnectName(CONNECT_CLUSTER_NAME));
         for (int i = 0; i < connectPods.size(); i++) {
@@ -213,7 +202,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
                 "deployment", "strimzi-cluster-operator"));
         //Verifying docker image for kafka connect
         String connectImageName = getImageNameFromPod(kubeClient.listResourcesByLabel("pod",
-                "strimzi.io/type=kafka-connect").get(0));
+                "type=kafka-connect").get(0));
         assertEquals(imgFromDeplConf.get(CONNECT_IMAGE), connectImageName);
         LOGGER.info("Docker images verified");
     }

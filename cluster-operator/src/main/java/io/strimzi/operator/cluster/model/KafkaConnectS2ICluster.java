@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.IntOrString;
@@ -23,13 +22,11 @@ import io.fabric8.openshift.api.model.ImageChangeTrigger;
 import io.fabric8.openshift.api.model.ImageLookupPolicyBuilder;
 import io.fabric8.openshift.api.model.ImageStream;
 import io.fabric8.openshift.api.model.ImageStreamBuilder;
-import io.fabric8.openshift.api.model.TagImportPolicy;
 import io.fabric8.openshift.api.model.TagImportPolicyBuilder;
 import io.fabric8.openshift.api.model.TagReference;
 import io.fabric8.openshift.api.model.TagReferencePolicyBuilder;
-import io.vertx.core.json.JsonObject;
-
-import java.util.Map;
+import io.strimzi.api.kafka.model.KafkaConnectS2IAssembly;
+import io.strimzi.api.kafka.model.KafkaConnectS2IAssemblySpec;
 
 public class KafkaConnectS2ICluster extends KafkaConnectCluster {
 
@@ -40,8 +37,6 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
     protected boolean insecureSourceRepository = false;
 
     // Configuration defaults
-    protected static final String DEFAULT_IMAGE =
-            System.getenv().getOrDefault("STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE", "strimzi/kafka-connect-s2i:latest");
 
     // Configuration keys (in ConfigMap)
     public static final String KEY_INSECURE_SOURCE_REPO = "insecure-source-repo";
@@ -58,80 +53,13 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
         this.validLoggerFields = getDefaultLogConfig();
     }
 
-    /**
-     * Create a Kafka Connect cluster from the related ConfigMap resource
-     *
-     * @param cm ConfigMap with cluster configuration
-     * @return Kafka Connect cluster instance
-     */
-    public static KafkaConnectS2ICluster fromConfigMap(ConfigMap cm) {
-        KafkaConnectS2ICluster kafkaConnect = new KafkaConnectS2ICluster(cm.getMetadata().getNamespace(), cm.getMetadata().getName(), Labels.fromResource(cm));
-
-        Map<String, String> data = cm.getData();
-        kafkaConnect.setReplicas(Utils.getInteger(data, KEY_REPLICAS, DEFAULT_REPLICAS));
-        kafkaConnect.setImage(Utils.getNonEmptyString(data, KEY_IMAGE, DEFAULT_IMAGE));
-        kafkaConnect.setResources(Resources.fromJson(data.get(KEY_RESOURCES)));
-        kafkaConnect.setJvmOptions(JvmOptions.fromJson(data.get(KEY_JVM_OPTIONS)));
-        kafkaConnect.setHealthCheckInitialDelay(Utils.getInteger(data, KEY_HEALTHCHECK_DELAY, DEFAULT_HEALTHCHECK_DELAY));
-        kafkaConnect.setHealthCheckTimeout(Utils.getInteger(data, KEY_HEALTHCHECK_TIMEOUT, DEFAULT_HEALTHCHECK_TIMEOUT));
-
-        kafkaConnect.setConfiguration(Utils.getKafkaConnectConfiguration(data, KEY_CONNECT_CONFIG));
-        kafkaConnect.setInsecureSourceRepository(Utils.getBoolean(data, KEY_INSECURE_SOURCE_REPO, false));
-
-        JsonObject metricsConfig = Utils.getJson(data, KEY_METRICS_CONFIG);
-        kafkaConnect.setMetricsEnabled(metricsConfig != null);
-        if (kafkaConnect.isMetricsEnabled()) {
-            kafkaConnect.setMetricsConfig(metricsConfig);
-        }
-        kafkaConnect.setLogging(Utils.getLogging(data.get(KEY_CONNECT_LOG_CONFIG)));
-
-        return kafkaConnect;
-    }
-
-    /**
-     * Create a Kafka Connect cluster from the deployed Deployment resource
-     *
-     * @param namespace Kubernetes/OpenShift namespace where cluster resources belong to
-     * @param cluster   overall cluster name
-     * @param dep The deployment from which to recover the cluster state
-     * @param sis ImageStream
-     * @return  Kafka Connect cluster instance
-     */
-    public static KafkaConnectS2ICluster fromAssembly(
-            String namespace, String cluster,
-            DeploymentConfig dep,
-            ImageStream sis) {
-
-        KafkaConnectS2ICluster kafkaConnect =  new KafkaConnectS2ICluster(namespace, cluster, Labels.fromResource(dep));
-
-        kafkaConnect.setReplicas(dep.getSpec().getReplicas());
-        Container container = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
-        kafkaConnect.setHealthCheckInitialDelay(container.getReadinessProbe().getInitialDelaySeconds());
-        kafkaConnect.setHealthCheckTimeout(container.getReadinessProbe().getTimeoutSeconds());
-
-        String connectConfiguration = containerEnvVars(container).getOrDefault(ENV_VAR_KAFKA_CONNECT_CONFIGURATION, "");
-        kafkaConnect.setConfiguration(new KafkaConnectConfiguration(connectConfiguration));
-
-        String sourceImage = sis.getSpec().getTags().get(0).getFrom().getName();
-        kafkaConnect.setImage(sourceImage);
-
-        Map<String, String> vars = containerEnvVars(container);
-        kafkaConnect.setLogConfigName(KafkaCluster.metricAndLogConfigsName(cluster));
-
-        kafkaConnect.setMetricsEnabled(Utils.getBoolean(vars, ENV_VAR_KAFKA_CONNECT_METRICS_ENABLED, DEFAULT_KAFKA_CONNECT_METRICS_ENABLED));
-        if (kafkaConnect.isMetricsEnabled()) {
-            kafkaConnect.setMetricsConfigName(logAndMetricsConfigName(cluster));
-        }
-
-        TagImportPolicy policy = sis.getSpec().getTags().get(0).getImportPolicy();
-        if (policy != null) {
-            Boolean insecure = policy.getInsecure();
-            if (insecure != null) {
-                kafkaConnect.setInsecureSourceRepository(insecure);
-            }
-        }
-
-        return kafkaConnect;
+    public static KafkaConnectS2ICluster fromCrd(KafkaConnectS2IAssembly crd) {
+        KafkaConnectS2IAssemblySpec spec = crd.getSpec();
+        KafkaConnectS2ICluster cluster = fromSpec(spec, new KafkaConnectS2ICluster(crd.getMetadata().getNamespace(),
+                crd.getMetadata().getName(),
+                Labels.fromResource(crd)));
+        cluster.setInsecureSourceRepository(spec != null ? spec.isInsecureSourceRepository() : false);
+        return cluster;
     }
 
     /**
@@ -145,8 +73,8 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                 .withImage(image)
                 .withEnv(getEnvVars())
                 .withPorts(getContainerPortList())
-                .withLivenessProbe(createHttpProbe(healthCheckPath, REST_API_PORT_NAME, healthCheckInitialDelay, healthCheckTimeout))
-                .withReadinessProbe(createHttpProbe(healthCheckPath, REST_API_PORT_NAME, healthCheckInitialDelay, healthCheckTimeout))
+                .withLivenessProbe(createHttpProbe(livenessPath, REST_API_PORT_NAME, livenessInitialDelay, livenessTimeout))
+                .withReadinessProbe(createHttpProbe(readinessPath, REST_API_PORT_NAME, readinessInitialDelay, readinessTimeout))
                 .withVolumeMounts(getVolumeMounts())
                 .withResources(resources())
                 .build();

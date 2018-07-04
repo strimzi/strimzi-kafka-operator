@@ -16,9 +16,12 @@ import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
+import io.strimzi.api.kafka.model.EphemeralStorage;
+import io.strimzi.api.kafka.model.KafkaAssembly;
+import io.strimzi.api.kafka.model.PersistentClaimStorage;
+import io.strimzi.api.kafka.model.Zookeeper;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
-import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.operator.assembly.AbstractAssemblyOperator;
 import io.vertx.core.json.JsonObject;
 
@@ -53,9 +56,7 @@ public class ZookeeperCluster extends AbstractModel {
     // N/A
 
     // Configuration defaults
-    private static final String DEFAULT_IMAGE =
-            System.getenv().getOrDefault("STRIMZI_DEFAULT_ZOOKEEPER_IMAGE", "strimzi/zookeeper:latest");
-    private static final int DEFAULT_REPLICAS = 3;
+
     private static final int DEFAULT_HEALTHCHECK_DELAY = 15;
     private static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
     private static final boolean DEFAULT_ZOOKEEPER_METRICS_ENABLED = false;
@@ -121,15 +122,18 @@ public class ZookeeperCluster extends AbstractModel {
      */
     private ZookeeperCluster(String namespace, String cluster, Labels labels) {
 
-        super(namespace, cluster, labels.withType(AssemblyType.KAFKA));
+        super(namespace, cluster, labels);
         this.name = zookeeperClusterName(cluster);
         this.headlessName = zookeeperHeadlessName(cluster);
         this.ancillaryConfigName = zookeeperMetricAndLogConfigsName(cluster);
-        this.image = DEFAULT_IMAGE;
-        this.replicas = DEFAULT_REPLICAS;
-        this.healthCheckPath = "/opt/kafka/zookeeper_healthcheck.sh";
-        this.healthCheckTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
-        this.healthCheckInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
+        this.image = Zookeeper.DEFAULT_IMAGE;
+        this.replicas = Zookeeper.DEFAULT_REPLICAS;
+        this.readinessPath = "/opt/kafka/zookeeper_healthcheck.sh";
+        this.readinessTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
+        this.readinessInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
+        this.livenessPath = "/opt/kafka/zookeeper_healthcheck.sh";
+        this.livenessTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
+        this.livenessInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
         this.isMetricsEnabled = DEFAULT_ZOOKEEPER_METRICS_ENABLED;
 
         this.mountPath = "/var/lib/zookeeper";
@@ -139,87 +143,40 @@ public class ZookeeperCluster extends AbstractModel {
         this.validLoggerFields = getDefaultLogConfig();
     }
 
-
-    /**
-     * Create a Zookeeper cluster from the related ConfigMap resource
-     *
-     * @param certManager CertManager instance for handling certificates creation
-     * @param kafkaClusterCm ConfigMap with cluster configuration
-     * @param secrets Secrets related to the cluster
-     * @return Zookeeper cluster instance
-     */
-    public static ZookeeperCluster fromConfigMap(CertManager certManager, ConfigMap kafkaClusterCm, List<Secret> secrets) {
-        ZookeeperCluster zk = new ZookeeperCluster(kafkaClusterCm.getMetadata().getNamespace(), kafkaClusterCm.getMetadata().getName(),
-                Labels.fromResource(kafkaClusterCm));
-
-        Map<String, String> data = kafkaClusterCm.getData();
-        zk.setReplicas(Utils.getInteger(data, KEY_REPLICAS, DEFAULT_REPLICAS));
-        zk.setImage(Utils.getNonEmptyString(data, KEY_IMAGE, DEFAULT_IMAGE));
-        zk.setHealthCheckInitialDelay(Utils.getInteger(data, KEY_HEALTHCHECK_DELAY, DEFAULT_HEALTHCHECK_DELAY));
-        zk.setHealthCheckTimeout(Utils.getInteger(data, KEY_HEALTHCHECK_TIMEOUT, DEFAULT_HEALTHCHECK_TIMEOUT));
-
-        zk.setLogging(Utils.getLogging(data.get(KEY_ZOOKEEPER_LOG_CONFIG)));
-        JsonObject metricsConfig = Utils.getJson(data, KEY_METRICS_CONFIG);
-        zk.setMetricsEnabled(metricsConfig != null);
-        if (zk.isMetricsEnabled()) {
-            zk.setMetricsConfig(metricsConfig);
+    public static ZookeeperCluster fromCrd(CertManager certManager, KafkaAssembly kafkaAssembly, List<Secret> secrets) {
+        ZookeeperCluster zk = new ZookeeperCluster(kafkaAssembly.getMetadata().getNamespace(), kafkaAssembly.getMetadata().getName(),
+                Labels.fromResource(kafkaAssembly));
+        Zookeeper zookeeper = kafkaAssembly.getSpec().getZookeeper();
+        int replicas = zookeeper.getReplicas();
+        if (replicas <= 0) {
+            replicas = Zookeeper.DEFAULT_REPLICAS;
         }
-
-        zk.setStorage(Utils.getStorage(data, KEY_STORAGE));
-
-        zk.setConfiguration(Utils.getZookeeperConfiguration(data, KEY_ZOOKEEPER_CONFIG));
-
-        zk.setResources(Resources.fromJson(data.get(KEY_RESOURCES)));
-        zk.setJvmOptions(JvmOptions.fromJson(data.get(KEY_JVM_OPTIONS)));
-        zk.setUserAffinity(Utils.getAffinity(data.get(KEY_AFFINITY)));
-
+        zk.setReplicas(replicas);
+        String image = zookeeper.getImage();
+        if (image == null) {
+            image = Zookeeper.DEFAULT_IMAGE;
+        }
+        zk.setImage(image);
+        if (zookeeper.getReadinessProbe() != null) {
+            zk.setReadinessInitialDelay(zookeeper.getReadinessProbe().getInitialDelaySeconds());
+            zk.setReadinessTimeout(zookeeper.getReadinessProbe().getTimeoutSeconds());
+        }
+        if (zookeeper.getLivenessProbe() != null) {
+            zk.setLivenessInitialDelay(zookeeper.getLivenessProbe().getInitialDelaySeconds());
+            zk.setLivenessTimeout(zookeeper.getLivenessProbe().getTimeoutSeconds());
+        }
+        zk.setLogging(zookeeper.getLogging());
+        Map<String, Object> metrics = zookeeper.getMetrics();
+        if (metrics != null && !metrics.isEmpty()) {
+            zk.setMetricsEnabled(true);
+            zk.setMetricsConfig(metrics.entrySet());
+        }
+        zk.setStorage(zookeeper.getStorage());
+        zk.setConfiguration(new ZookeeperConfiguration(zookeeper.getConfig().entrySet()));
+        zk.setResources(zookeeper.getResources());
+        zk.setJvmOptions(zookeeper.getJvmOptions());
+        zk.setUserAffinity(zookeeper.getAffinity());
         zk.generateCertificates(certManager, secrets);
-
-        return zk;
-    }
-
-    /**
-     * Create a Zookeeper cluster from the deployed StatefulSet resource
-     *
-     * @param namespace Kubernetes/OpenShift namespace where cluster resources belong to
-     * @param cluster   overall cluster name
-     * @return  Zookeeper cluster instance
-     */
-    public static ZookeeperCluster fromAssembly(StatefulSet ss,
-                                                String namespace, String cluster) {
-        ZookeeperCluster zk =  new ZookeeperCluster(namespace, cluster,
-                Labels.fromResource(ss));
-
-        zk.setReplicas(ss.getSpec().getReplicas());
-        Container container = ss.getSpec().getTemplate().getSpec().getContainers().get(0);
-        zk.setImage(container.getImage());
-        zk.setHealthCheckInitialDelay(container.getReadinessProbe().getInitialDelaySeconds());
-        zk.setHealthCheckTimeout(container.getReadinessProbe().getTimeoutSeconds());
-
-        Map<String, String> vars = containerEnvVars(container);
-
-        zk.setLogConfigName(zookeeperMetricAndLogConfigsName(cluster));
-        zk.setMetricsEnabled(Utils.getBoolean(vars, ENV_VAR_ZOOKEEPER_METRICS_ENABLED, DEFAULT_ZOOKEEPER_METRICS_ENABLED));
-        if (zk.isMetricsEnabled()) {
-            zk.setMetricsConfigName(zookeeperMetricAndLogConfigsName(cluster));
-        }
-
-        if (!ss.getSpec().getVolumeClaimTemplates().isEmpty()) {
-
-            Storage storage = Storage.fromPersistentVolumeClaim(ss.getSpec().getVolumeClaimTemplates().get(0));
-            if (ss.getMetadata().getAnnotations() != null) {
-                String deleteClaimAnnotation = String.format("%s/%s", ClusterOperator.STRIMZI_CLUSTER_OPERATOR_DOMAIN, Storage.DELETE_CLAIM_FIELD);
-                storage.withDeleteClaim(Boolean.valueOf(ss.getMetadata().getAnnotations().computeIfAbsent(deleteClaimAnnotation, s -> "false")));
-            }
-            zk.setStorage(storage);
-        } else {
-            Storage storage = new Storage(Storage.StorageType.EPHEMERAL);
-            zk.setStorage(storage);
-        }
-
-        String zookeeperConfiguration = containerEnvVars(container).getOrDefault(ENV_VAR_ZOOKEEPER_CONFIGURATION, "");
-        zk.setConfiguration(new ZookeeperConfiguration(zookeeperConfiguration));
-
         return zk;
     }
 
@@ -287,13 +244,8 @@ public class ZookeeperCluster extends AbstractModel {
                 isOpenShift);
     }
 
-    public ConfigMap generateMetricsAndLogConfigMap(ConfigMap cm) {
-        Map<String, String> data = new HashMap<>();
-        data.put(ANCILLARY_CM_KEY_LOG_CONFIG, parseLogging(getLogging(), cm));
-        if (isMetricsEnabled()) {
-            data.put(ANCILLARY_CM_KEY_METRICS, getMetricsConfig().toString());
-        }
-        ConfigMap result = createConfigMap(getAncillaryConfigName(), data);
+    public ConfigMap generateMetricsAndLogConfigMap(ConfigMap externalLoggingCm) {
+        ConfigMap result = createConfigMap(getAncillaryConfigName(), getAncillaryCm(externalLoggingCm));
         if (getLogging() != null) {
             getLogging().setCm(result);
         }
@@ -331,14 +283,28 @@ public class ZookeeperCluster extends AbstractModel {
                 .withEnv(getEnvVars())
                 .withVolumeMounts(getVolumeMounts())
                 .withPorts(getContainerPortList())
-                .withLivenessProbe(createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout))
-                .withReadinessProbe(createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout))
+                .withLivenessProbe(createExecProbe(livenessPath, livenessInitialDelay, livenessTimeout))
+                .withReadinessProbe(createExecProbe(readinessPath, readinessInitialDelay, readinessTimeout))
                 .withResources(resources())
                 .build();
 
         containers.add(container);
 
         return containers;
+    }
+
+    private Map<String, String> getAncillaryCm(ConfigMap cm) {
+        Map<String, String> data = new HashMap<>();
+        data.put(ANCILLARY_CM_KEY_LOG_CONFIG, parseLogging(getLogging(), cm));
+        if (isMetricsEnabled()) {
+            JsonObject ffs = new JsonObject();
+            for (Map.Entry<String, Object> entry : getMetricsConfig()) {
+                ffs.put(entry.getKey(), entry.getValue());
+            }
+            data.put(ANCILLARY_CM_KEY_METRICS, ffs.toString());
+
+        }
+        return data;
     }
 
     @Override
@@ -378,7 +344,7 @@ public class ZookeeperCluster extends AbstractModel {
 
     private List<Volume> getVolumes() {
         List<Volume> volumeList = new ArrayList<>();
-        if (storage.type() == Storage.StorageType.EPHEMERAL) {
+        if (storage instanceof EphemeralStorage) {
             volumeList.add(createEmptyDirVolume(VOLUME_NAME));
         }
         volumeList.add(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
@@ -387,7 +353,7 @@ public class ZookeeperCluster extends AbstractModel {
 
     private List<PersistentVolumeClaim> getVolumeClaims() {
         List<PersistentVolumeClaim> pvcList = new ArrayList<>();
-        if (storage.type() == Storage.StorageType.PERSISTENT_CLAIM) {
+        if (storage instanceof PersistentClaimStorage) {
             pvcList.add(createPersistentVolumeClaim(VOLUME_NAME));
         }
         return pvcList;

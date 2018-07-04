@@ -4,20 +4,23 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.strimzi.certs.CertManager;
-import io.strimzi.operator.cluster.ResourceUtils;
-
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
+import io.strimzi.api.kafka.model.InlineLogging;
+import io.strimzi.api.kafka.model.KafkaAssembly;
+import io.strimzi.certs.CertManager;
+import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.operator.assembly.MockCertManager;
 import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Collections;
 
 import static io.strimzi.operator.cluster.ResourceUtils.labels;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class ZookeeperClusterTest {
@@ -30,14 +33,20 @@ public class ZookeeperClusterTest {
     private final int healthTimeout = 30;
     private final String metricsCmJson = "{\"animal\":\"wombat\"}";
     private final String configurationJson = "{}";
-    private final String kafkaLogConfigJson = "{\"kafka.root.logger.level\": \"OFF\"}";
-    private final String zooLogConfigJson = "{\"zookeeper.root.logger\": \"OFF\"}";
+    private final InlineLogging kafkaLogConfigJson = new InlineLogging();
+    private final InlineLogging zooLogConfigJson = new InlineLogging();
+    {
+        kafkaLogConfigJson.setLoggers(Collections.singletonMap("kafka.root.logger.level", "OFF"));
+        zooLogConfigJson.setLoggers(Collections.singletonMap("zookeeper.root.logger", "OFF"));
+    }
     private final String zooConfigurationJson = "{\"foo\":\"bar\"}";
+
     private final CertManager certManager = new MockCertManager();
-    private final ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson, kafkaLogConfigJson, zooLogConfigJson);
-    private final ZookeeperCluster zc = ZookeeperCluster.fromConfigMap(certManager, cm, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
+    private final KafkaAssembly cm = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson, null, null, null, kafkaLogConfigJson, zooLogConfigJson);
+    private final ZookeeperCluster zc = ZookeeperCluster.fromCrd(certManager, cm, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
+
     @Rule
-    public ResourceTester<ZookeeperCluster> resourceTester = new ResourceTester<>(ZookeeperCluster::fromConfigMap);
+    public ResourceTester<KafkaAssembly, ZookeeperCluster> resourceTester = new ResourceTester<>(KafkaAssembly.class, ZookeeperCluster::fromCrd);
 
     @Test
     public void testMetricsConfigMap() {
@@ -57,8 +66,7 @@ public class ZookeeperClusterTest {
 
     private void checkService(Service headful) {
         assertEquals("ClusterIP", headful.getSpec().getType());
-        assertEquals(ResourceUtils.labels(Labels.STRIMZI_CLUSTER_LABEL, cluster,
-                Labels.STRIMZI_TYPE_LABEL, "kafka",
+        assertEquals(labels(Labels.STRIMZI_CLUSTER_LABEL, cluster,
                 "my-user-label", "cromulent",
                 Labels.STRIMZI_NAME_LABEL, ZookeeperCluster.zookeeperClusterName(cluster)), headful.getSpec().getSelector());
         assertEquals(2, headful.getSpec().getPorts().size());
@@ -80,7 +88,6 @@ public class ZookeeperClusterTest {
         assertEquals("ClusterIP", headless.getSpec().getType());
         assertEquals("None", headless.getSpec().getClusterIP());
         assertEquals(labels(Labels.STRIMZI_CLUSTER_LABEL, cluster,
-                Labels.STRIMZI_TYPE_LABEL, "kafka",
                 "my-user-label", "cromulent",
                 Labels.STRIMZI_NAME_LABEL, ZookeeperCluster.zookeeperClusterName(cluster)), headless.getSpec().getSelector());
         assertEquals(3, headless.getSpec().getPorts().size());
@@ -106,7 +113,6 @@ public class ZookeeperClusterTest {
         assertEquals(namespace, ss.getMetadata().getNamespace());
         // ... with these labels
         assertEquals(labels("strimzi.io/cluster", cluster,
-                "strimzi.io/type", "kafka",
                 "my-user-label", "cromulent",
                 "strimzi.io/name", ZookeeperCluster.zookeeperClusterName(cluster)),
                 ss.getMetadata().getLabels());
@@ -124,13 +130,24 @@ public class ZookeeperClusterTest {
      * Check that a ZookeeperCluster from a statefulset matches the one from a ConfigMap
      */
     @Test
-    public void testClusterFromStatefulSet() {
+    public void testDeleteClaim() {
+        KafkaAssembly cm = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson,
+                "{\"type\": \"ephemeral\"}", null, null, null, null);
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(certManager, cm, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
         StatefulSet ss = zc.generateStatefulSet(true);
-        ZookeeperCluster zc2 = ZookeeperCluster.fromAssembly(ss, namespace, cluster);
-        // Don't check the metrics CM, since this isn't restored from the StatefulSet
-        checkService(zc2.generateService());
-        checkHeadlessService(zc2.generateHeadlessService());
-        checkStatefulSet(zc2.generateStatefulSet(true));
+        assertFalse(ZookeeperCluster.deleteClaim(ss));
+
+        cm = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson,
+                "{\"type\": \"persistent-claim\", \"deleteClaim\": false}", null, null, null, null);
+        zc = ZookeeperCluster.fromCrd(certManager, cm, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
+        ss = zc.generateStatefulSet(true);
+        assertFalse(ZookeeperCluster.deleteClaim(ss));
+
+        cm = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson,
+                "{\"type\": \"persistent-claim\", \"deleteClaim\": true}", null, null, null, null);
+        zc = ZookeeperCluster.fromCrd(certManager, cm, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
+        ss = zc.generateStatefulSet(true);
+        assertTrue(ZookeeperCluster.deleteClaim(ss));
     }
 
     // TODO test volume claim templates
@@ -149,20 +166,6 @@ public class ZookeeperClusterTest {
         for (int i = 0; i < replicas; i++) {
             assertEquals(zc.VOLUME_NAME + "-" + ZookeeperCluster.zookeeperClusterName(cluster) + "-" + i, zc.getPersistentVolumeClaimName(i));
         }
-    }
-
-    @Test
-    public void testLoggingCorruptedConfigMap() {
-        ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, "{\"key.name\":oops}");
-        ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromConfigMap(certManager, cm, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
-        assertTrue(zookeeperCluster.getLogging() instanceof InlineLogging);
-    }
-
-    @Test
-    public void testLoggingConfigMap() {
-        ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, "{\"type\": \"external\", \"name\":\"karel\"}");
-        ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromConfigMap(certManager, cm, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
-        assertTrue(zookeeperCluster.getLogging() instanceof ExternalLogging);
     }
 
     @Test

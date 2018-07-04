@@ -1,0 +1,9 @@
+apiVersion: kafka.strimzi.io/v1alpha1
+kind: Kafka
+metadata:
+  name: missing-required-property
+spec:
+  topicOperator:
+    watchedNamespace: my-ns
+  someUnsupportedFields: sdfsa
+

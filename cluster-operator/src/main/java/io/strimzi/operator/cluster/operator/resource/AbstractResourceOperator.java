@@ -6,7 +6,9 @@ package io.strimzi.operator.cluster.operator.resource;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.cluster.model.Labels;
 import io.vertx.core.Future;
@@ -14,8 +16,8 @@ import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-
 import java.util.List;
+import java.util.Map;
 
 /**
  * Abstract resource creation, for a generic resource type {@code R}.
@@ -27,7 +29,7 @@ import java.util.List;
  * @param <D> The doneable variant of the Kubernetes resource type.
  * @param <R> The resource operations.
  */
-public abstract class AbstractResourceOperator<C, T extends HasMetadata,
+public abstract class AbstractResourceOperator<C extends KubernetesClient, T extends HasMetadata,
         L extends KubernetesResourceList/*<T>*/, D, R extends Resource<T, D>> {
 
     private final Logger log = LogManager.getLogger(getClass());
@@ -166,6 +168,16 @@ public abstract class AbstractResourceOperator<C, T extends HasMetadata,
      */
     @SuppressWarnings("unchecked")
     public List<T> list(String namespace, Labels selector) {
-        return operation().inNamespace(namespace).withLabels(selector.toMap()).list().getItems();
+        NonNamespaceOperation<T, L, D, R> tldrNonNamespaceOperation = operation().inNamespace(namespace);
+        if (selector != null) {
+            Map<String, String> labels = selector.toMap();
+            return tldrNonNamespaceOperation.withLabels(labels)
+            .list()
+                    .getItems();
+        } else {
+            return tldrNonNamespaceOperation
+                    .list()
+                    .getItems();
+        }
     }
 }

@@ -8,8 +8,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.operator.assembly.MockCertManager;
@@ -29,24 +30,27 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
-class ResourceTester<M extends AbstractModel> implements MethodRule {
+class ResourceTester<R extends HasMetadata, M extends AbstractModel> implements MethodRule {
 
+    private final Class<R> cls;
     private String prefix;
     private M model;
-    private Function<ConfigMap, M> fromConfigMap;
+    private Function<R, M> fromK8sResource;
     private String resourceName;
 
-    ResourceTester(Function<ConfigMap, M> fromConfigMap) {
-        this.fromConfigMap = fromConfigMap;
+    ResourceTester(Class<R> cls, Function<R, M> fromK8sResource) {
+        this.cls = cls;
+        this.fromK8sResource = fromK8sResource;
     }
 
     interface TriFunction<X, Y, Z, R> {
         public R apply(X x, Y y, Z z);
     }
 
-    ResourceTester(TriFunction<CertManager, ConfigMap, List<Secret>, M> fromConfigMap) {
-        this.fromConfigMap = cm -> {
-            return fromConfigMap.apply(new MockCertManager(), cm, ResourceUtils.createKafkaClusterInitialSecrets(cm.getMetadata().getNamespace()));
+    ResourceTester(Class<R> cls, TriFunction<CertManager, R, List<Secret>, M> fromResource) {
+        this.cls = cls;
+        this.fromK8sResource = resource -> {
+            return fromResource.apply(new MockCertManager(), resource, ResourceUtils.createKafkaClusterInitialSecrets(resource.getMetadata().getNamespace()));
         };
     }
 
@@ -108,14 +112,20 @@ class ResourceTester<M extends AbstractModel> implements MethodRule {
     public Statement apply(Statement base, FrameworkMethod method, Object target) {
         this.prefix = method.getMethod().getDeclaringClass().getSimpleName() + "." + method.getName();
         // Parse resource into CM
-        resourceName = prefix + "-CM.yaml";
+        try {
+            resourceName = CustomResource.class.isAssignableFrom(cls) ?
+                    prefix + "-" + cls.newInstance().getKind() + ".yaml" :
+                    prefix + "-" + cls.getSimpleName() + ".yaml";
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
         URL resource = getClass().getResource(resourceName);
         if (resource == null) {
             model = null;
         } else {
-            ConfigMap cm = fromYaml(resource, ConfigMap.class);
+            R cm = fromYaml(resource, cls);
             // Construct the desired resources from the CM
-            model = fromConfigMap.apply(cm);
+            model = fromK8sResource.apply(cm);
         }
         return base;
     }

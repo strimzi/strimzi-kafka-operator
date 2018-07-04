@@ -23,7 +23,6 @@ podAntiAffinity:
         matchExpressions: []
         matchLabels:
           strimzi.io/cluster: "my-cluster"
-          strimzi.io/type: "kafka"
           strimzi.io/name: "my-cluster-kafka"
       namespaces: []
       topologyKey: "failure-domain.beta.kubernetes.io/zone"

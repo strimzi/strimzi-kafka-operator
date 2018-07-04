@@ -4,15 +4,28 @@
  */
 package io.strimzi.operator.cluster;
 
+import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.openshift.client.OpenShiftClient;
+import io.strimzi.api.kafka.Crds;
+import io.strimzi.api.kafka.DoneableKafkaAssembly;
+import io.strimzi.api.kafka.DoneableKafkaConnectAssembly;
+import io.strimzi.api.kafka.DoneableKafkaConnectS2IAssembly;
+import io.strimzi.api.kafka.KafkaAssemblyList;
+import io.strimzi.api.kafka.KafkaConnectAssemblyList;
+import io.strimzi.api.kafka.KafkaConnectS2IAssemblyList;
+import io.strimzi.api.kafka.model.KafkaAssembly;
+import io.strimzi.api.kafka.model.KafkaConnectAssembly;
+import io.strimzi.api.kafka.model.KafkaConnectS2IAssembly;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectS2IAssemblyOperator;
 import io.strimzi.operator.cluster.operator.resource.BuildConfigOperator;
 import io.strimzi.operator.cluster.operator.resource.ConfigMapOperator;
+import io.strimzi.operator.cluster.operator.resource.CrdOperator;
 import io.strimzi.operator.cluster.operator.resource.DeploymentConfigOperator;
 import io.strimzi.operator.cluster.operator.resource.DeploymentOperator;
 import io.strimzi.operator.cluster.operator.resource.ImageStreamOperator;
@@ -27,6 +40,8 @@ import io.vertx.core.Vertx;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -34,13 +49,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 public class Main {
     private static final Logger log = LogManager.getLogger(Main.class.getName());
 
+    static {
+        try {
+            Crds.registerCustomKinds();
+        } catch (Error | RuntimeException t) {
+            t.printStackTrace();
+        }
+    }
+
     public static void main(String[] args) {
+        log.info("ClusterOperator is starting");
         ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(System.getenv());
         Vertx vertx = Vertx.vertx();
         KubernetesClient client = new DefaultKubernetesClient();
@@ -69,23 +90,19 @@ public class Main {
         PvcOperator pvcOperations = new PvcOperator(vertx, client);
         DeploymentOperator deploymentOperations = new DeploymentOperator(vertx, client);
         SecretOperator secretOperations = new SecretOperator(vertx, client);
+        CrdOperator<KubernetesClient, KafkaAssembly, KafkaAssemblyList, DoneableKafkaAssembly> ko = new CrdOperator<>(vertx, client, KafkaAssembly.class, KafkaAssemblyList.class, DoneableKafkaAssembly.class);
+        CrdOperator<KubernetesClient, KafkaConnectAssembly, KafkaConnectAssemblyList, DoneableKafkaConnectAssembly> kco = new CrdOperator<>(vertx, client, KafkaConnectAssembly.class, KafkaConnectAssemblyList.class, DoneableKafkaConnectAssembly.class);
 
         OpenSslCertManager certManager = new OpenSslCertManager();
-        KafkaAssemblyOperator kafkaClusterOperations = new KafkaAssemblyOperator(vertx, isOpenShift, config.getOperationTimeoutMs(), certManager, configMapOperations, serviceOperations, zookeeperSetOperations, kafkaSetOperations, pvcOperations, deploymentOperations, secretOperations);
-        KafkaConnectAssemblyOperator kafkaConnectClusterOperations = new KafkaConnectAssemblyOperator(vertx, isOpenShift, certManager, configMapOperations, deploymentOperations, serviceOperations, secretOperations);
+        KafkaAssemblyOperator kafkaClusterOperations = new KafkaAssemblyOperator(vertx, isOpenShift, config.getOperationTimeoutMs(), certManager, ko, configMapOperations, serviceOperations, zookeeperSetOperations, kafkaSetOperations, pvcOperations, deploymentOperations, secretOperations);
+        KafkaConnectAssemblyOperator kafkaConnectClusterOperations = new KafkaConnectAssemblyOperator(vertx, isOpenShift, certManager, kco, configMapOperations, deploymentOperations, serviceOperations, secretOperations);
 
-        DeploymentConfigOperator deploymentConfigOperations = null;
-        ImageStreamOperator imagesStreamOperations = null;
-        BuildConfigOperator buildConfigOperations = null;
         KafkaConnectS2IAssemblyOperator kafkaConnectS2IClusterOperations = null;
+        CrdOperator<OpenShiftClient, KafkaConnectS2IAssembly, KafkaConnectS2IAssemblyList, DoneableKafkaConnectS2IAssembly> kafkaConnectS2iCrdOperator = null;
         if (isOpenShift) {
-            imagesStreamOperations = new ImageStreamOperator(vertx, client.adapt(OpenShiftClient.class));
-            buildConfigOperations = new BuildConfigOperator(vertx, client.adapt(OpenShiftClient.class));
-            deploymentConfigOperations = new DeploymentConfigOperator(vertx, client.adapt(OpenShiftClient.class));
-            kafkaConnectS2IClusterOperations = new KafkaConnectS2IAssemblyOperator(vertx, isOpenShift,
-                    certManager,
-                    configMapOperations, deploymentConfigOperations,
-                    serviceOperations, imagesStreamOperations, buildConfigOperations, secretOperations);
+            kafkaConnectS2IClusterOperations = createS2iOperator(vertx, client, isOpenShift, serviceOperations, configMapOperations, secretOperations, certManager);
+        } else {
+            maybeLogS2iOnKubeWarning(vertx, client);
         }
 
         List<Future> futures = new ArrayList<>();
@@ -110,6 +127,38 @@ public class Main {
                 });
         }
         return CompositeFuture.join(futures);
+    }
+
+    private static void maybeLogS2iOnKubeWarning(Vertx vertx, KubernetesClient client) {
+        try {
+            // Check the KafkaConnectS2I isn't installed and whinge if it is
+            CustomResourceDefinition crd = client.customResourceDefinitions().withName(KafkaConnectS2IAssembly.CRD_NAME).get();
+            if (crd != null) {
+                log.warn("The KafkaConnectS2I custom resource definition can only be installed on OpenShift, because plain Kubernetes doesn't support S2I. " +
+                        "Execute 'kubectl delete crd " + KafkaConnectS2IAssembly.CRD_NAME + "' to remove this warning.");
+            }
+        } catch (KubernetesClientException e) {
+
+        }
+    }
+
+    private static KafkaConnectS2IAssemblyOperator createS2iOperator(Vertx vertx, KubernetesClient client, boolean isOpenShift, ServiceOperator serviceOperations, ConfigMapOperator configMapOperations, SecretOperator secretOperations, OpenSslCertManager certManager) {
+        ImageStreamOperator imagesStreamOperations;
+        BuildConfigOperator buildConfigOperations;
+        DeploymentConfigOperator deploymentConfigOperations;
+        CrdOperator<OpenShiftClient, KafkaConnectS2IAssembly, KafkaConnectS2IAssemblyList, DoneableKafkaConnectS2IAssembly> kafkaConnectS2iCrdOperator;
+        KafkaConnectS2IAssemblyOperator kafkaConnectS2IClusterOperations;
+        OpenShiftClient osClient = client.adapt(OpenShiftClient.class);
+        imagesStreamOperations = new ImageStreamOperator(vertx, osClient);
+        buildConfigOperations = new BuildConfigOperator(vertx, osClient);
+        deploymentConfigOperations = new DeploymentConfigOperator(vertx, osClient);
+        kafkaConnectS2iCrdOperator = new CrdOperator<>(vertx, osClient, KafkaConnectS2IAssembly.class, KafkaConnectS2IAssemblyList.class, DoneableKafkaConnectS2IAssembly.class);
+        kafkaConnectS2IClusterOperations = new KafkaConnectS2IAssemblyOperator(vertx, isOpenShift,
+                certManager,
+                kafkaConnectS2iCrdOperator,
+                 configMapOperations, deploymentConfigOperations,
+                serviceOperations, imagesStreamOperations, buildConfigOperations, secretOperations);
+        return kafkaConnectS2IClusterOperations;
     }
 
     static Future<Boolean> isOnOpenShift(Vertx vertx, KubernetesClient client)  {

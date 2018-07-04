@@ -5,9 +5,10 @@
 
 package io.strimzi.operator.cluster.model;
 
-import io.vertx.core.json.JsonObject;
+import io.strimzi.api.kafka.model.KafkaConnectAssemblySpec;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import static java.util.Arrays.asList;
@@ -20,13 +21,7 @@ public class KafkaConnectConfiguration extends AbstractConfiguration {
     private static final Properties DEFAULTS;
 
     static {
-        FORBIDDEN_OPTIONS = asList(
-                "ssl.",
-                "sasl.",
-                "security.",
-                "listeners",
-                "plugin.path",
-                "rest.");
+        FORBIDDEN_OPTIONS = asList(KafkaConnectAssemblySpec.FORBIDDEN_PREFIXES.split(", "));
 
         DEFAULTS = new Properties();
         DEFAULTS.setProperty("group.id", "connect-cluster");
@@ -58,7 +53,7 @@ public class KafkaConnectConfiguration extends AbstractConfiguration {
      *
      * @param jsonOptions     Json object with configuration options as key ad value pairs.
      */
-    public KafkaConnectConfiguration(JsonObject jsonOptions) {
+    public KafkaConnectConfiguration(Iterable<Map.Entry<String, Object>> jsonOptions) {
         super(jsonOptions, FORBIDDEN_OPTIONS, DEFAULTS);
     }
 }

@@ -10,16 +10,21 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.dsl.Resource;
+import io.strimzi.api.kafka.DoneableKafkaAssembly;
+import io.strimzi.api.kafka.KafkaAssemblyList;
+import io.strimzi.api.kafka.model.ExternalLogging;
+import io.strimzi.api.kafka.model.KafkaAssembly;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.Reconciliation;
 import io.strimzi.operator.cluster.model.AssemblyType;
-import io.strimzi.operator.cluster.model.ExternalLogging;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.Labels;
-import io.strimzi.operator.cluster.model.Storage;
 import io.strimzi.operator.cluster.model.TopicOperator;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ConfigMapOperator;
+import io.strimzi.operator.cluster.operator.resource.CrdOperator;
 import io.strimzi.operator.cluster.operator.resource.DeploymentOperator;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.PvcOperator;
@@ -48,7 +53,7 @@ import static io.strimzi.operator.cluster.model.TopicOperator.topicOperatorName;
  *     <li>Optionally, a TopicOperator Deployment</li>
  * </ul>
  */
-public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
+public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesClient, KafkaAssembly, KafkaAssemblyList, DoneableKafkaAssembly, Resource<KafkaAssembly, DoneableKafkaAssembly>> {
     private static final Logger log = LogManager.getLogger(KafkaAssemblyOperator.class.getName());
 
     private final long operationTimeoutMs;
@@ -58,6 +63,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
     private final ServiceOperator serviceOperations;
     private final PvcOperator pvcOperations;
     private final DeploymentOperator deploymentOperations;
+    private final ConfigMapOperator configMapOperations;
 
     /**
      * @param vertx The Vertx instance
@@ -72,28 +78,30 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
     public KafkaAssemblyOperator(Vertx vertx, boolean isOpenShift,
                                  long operationTimeoutMs,
                                  CertManager certManager,
+                                 CrdOperator<KubernetesClient, KafkaAssembly, KafkaAssemblyList, DoneableKafkaAssembly> kafkaAssemblyCrdOperator,
                                  ConfigMapOperator configMapOperations,
                                  ServiceOperator serviceOperations,
                                  ZookeeperSetOperator zkSetOperations,
                                  KafkaSetOperator kafkaSetOperations,
                                  PvcOperator pvcOperations,
                                  DeploymentOperator deploymentOperations,
-                                 SecretOperator secretOperations) {
-        super(vertx, isOpenShift, AssemblyType.KAFKA, certManager, configMapOperations, secretOperations);
+                                SecretOperator secretOperations) {
+        super(vertx, isOpenShift, AssemblyType.KAFKA, certManager, kafkaAssemblyCrdOperator, secretOperations);
         this.operationTimeoutMs = operationTimeoutMs;
         this.zkSetOperations = zkSetOperations;
         this.serviceOperations = serviceOperations;
         this.pvcOperations = pvcOperations;
         this.deploymentOperations = deploymentOperations;
         this.kafkaSetOperations = kafkaSetOperations;
+        this.configMapOperations = configMapOperations;
     }
 
     @Override
-    public void createOrUpdate(Reconciliation reconciliation, ConfigMap assemblyCm, List<Secret> assemblySecrets, Handler<AsyncResult<Void>> handler) {
+    public void createOrUpdate(Reconciliation reconciliation, KafkaAssembly kafkaAssembly, List<Secret> assemblySecrets, Handler<AsyncResult<Void>> handler) {
         Future<Void> f = Future.<Void>future().setHandler(handler);
-        createOrUpdateZk(reconciliation, assemblyCm, assemblySecrets)
-            .compose(i -> createOrUpdateKafka(reconciliation, assemblyCm, assemblySecrets))
-            .compose(i -> createOrUpdateTopicOperator(reconciliation, assemblyCm))
+        createOrUpdateZk(reconciliation, kafkaAssembly, assemblySecrets)
+            .compose(i -> createOrUpdateKafka(reconciliation, kafkaAssembly, assemblySecrets))
+            .compose(i -> createOrUpdateTopicOperator(reconciliation, kafkaAssembly))
             .compose(ar -> f.complete(), f);
     }
 
@@ -249,17 +257,17 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
         }
     }
 
-    private final Future<KafkaClusterDescription> getKafkaClusterDescription(ConfigMap assemblyCm, List<Secret> assemblySecrets) {
+    private final Future<KafkaClusterDescription> getKafkaClusterDescription(KafkaAssembly assemblyCm, List<Secret> assemblySecrets) {
         Future<KafkaClusterDescription> fut = Future.future();
 
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
             future -> {
                 try {
-                    KafkaCluster kafka = KafkaCluster.fromConfigMap(certManager, assemblyCm, assemblySecrets);
+                    KafkaCluster kafka = KafkaCluster.fromCrd(certManager, assemblyCm, assemblySecrets);
 
                     ConfigMap logAndMetricsConfigMap = kafka.generateMetricsAndLogConfigMap(
                             kafka.getLogging() instanceof ExternalLogging ?
-                                    configMapOperations.get(assemblyCm.getMetadata().getNamespace(), ((ExternalLogging) kafka.getLogging()).name) :
+                                    configMapOperations.get(assemblyCm.getMetadata().getNamespace(), ((ExternalLogging) kafka.getLogging()).getName()) :
                                     null);
                     KafkaClusterDescription desc =
                             new KafkaClusterDescription(kafka, kafka.generateService(), kafka.generateHeadlessService(),
@@ -283,7 +291,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
         return fut;
     }
 
-    private final Future<Void> createOrUpdateKafka(Reconciliation reconciliation, ConfigMap assemblyCm, List<Secret> assemblySecrets) {
+    private final Future<Void> createOrUpdateKafka(Reconciliation reconciliation, KafkaAssembly assemblyCm, List<Secret> assemblySecrets) {
         String namespace = assemblyCm.getMetadata().getNamespace();
         String name = assemblyCm.getMetadata().getName();
         log.debug("{}: create/update kafka {}", reconciliation, name);
@@ -312,12 +320,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
         String namespace = reconciliation.namespace();
         String name = reconciliation.assemblyName();
         log.debug("{}: delete kafka {}", reconciliation, name);
-        StatefulSet ss = kafkaSetOperations.get(namespace, KafkaCluster.kafkaClusterName(name));
-
-        final KafkaCluster kafka = ss == null ? null : KafkaCluster.fromAssembly(ss, namespace, name);
-        boolean deleteClaims = kafka != null && kafka.getStorage().type() == Storage.StorageType.PERSISTENT_CLAIM
-            && kafka.getStorage().isDeleteClaim();
-        List<Future> result = new ArrayList<>(8 + (deleteClaims ? kafka.getReplicas() : 0));
+        String kafkaSsName = KafkaCluster.kafkaClusterName(name);
+        StatefulSet ss = kafkaSetOperations.get(namespace, kafkaSsName);
+        boolean deleteClaims = ss == null ? false : KafkaCluster.deleteClaim(ss);
+        List<Future> result = new ArrayList<>(8 + (deleteClaims ? ss.getSpec().getReplicas() : 0));
 
         result.add(configMapOperations.reconcile(namespace, KafkaCluster.metricAndLogConfigsName(name), null));
         result.add(serviceOperations.reconcile(namespace, KafkaCluster.kafkaClusterName(name), null));
@@ -331,25 +337,25 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
         if (deleteClaims) {
             log.debug("{}: delete kafka {} PVCs", reconciliation, name);
 
-            for (int i = 0; i < kafka.getReplicas(); i++) {
+            for (int i = 0; i < ss.getSpec().getReplicas(); i++) {
                 result.add(pvcOperations.reconcile(namespace,
-                        kafka.getPersistentVolumeClaimName(i), null));
+                        KafkaCluster.getPersistentVolumeClaimName(kafkaSsName, i), null));
             }
         }
 
         return CompositeFuture.join(result);
     }
 
-    private final Future<ZookeeperClusterDescription> getZookeeperClusterDescription(ConfigMap assemblyCm, List<Secret> assemblySecrets) {
+    private final Future<ZookeeperClusterDescription> getZookeeperClusterDescription(KafkaAssembly kafkaAssembly, List<Secret> assemblySecrets) {
         Future<ZookeeperClusterDescription> fut = Future.future();
 
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
             future -> {
                 try {
-                    ZookeeperCluster zk = ZookeeperCluster.fromConfigMap(certManager, assemblyCm, assemblySecrets);
+                    ZookeeperCluster zk = ZookeeperCluster.fromCrd(certManager, kafkaAssembly, assemblySecrets);
 
                     ConfigMap logAndMetricsConfigMap = zk.generateMetricsAndLogConfigMap(zk.getLogging() instanceof ExternalLogging ?
-                            configMapOperations.get(assemblyCm.getMetadata().getNamespace(), ((ExternalLogging) zk.getLogging()).name) :
+                            configMapOperations.get(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) zk.getLogging()).getName()) :
                             null);
 
                     ZookeeperClusterDescription desc =
@@ -373,14 +379,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
         return fut;
     }
 
-    private final Future<Void> createOrUpdateZk(Reconciliation reconciliation, ConfigMap assemblyCm, List<Secret> assemblySecrets) {
-        String namespace = assemblyCm.getMetadata().getNamespace();
-        String name = assemblyCm.getMetadata().getName();
+    private final Future<Void> createOrUpdateZk(Reconciliation reconciliation, KafkaAssembly kafkaAssembly, List<Secret> assemblySecrets) {
+        String namespace = kafkaAssembly.getMetadata().getNamespace();
+        String name = kafkaAssembly.getMetadata().getName();
         log.debug("{}: create/update zookeeper {}", reconciliation, name);
-
-
         Future<Void> chainFuture = Future.future();
-        getZookeeperClusterDescription(assemblyCm, assemblySecrets)
+        getZookeeperClusterDescription(kafkaAssembly, assemblySecrets)
                 .compose(desc -> desc.withVoid(zkSetOperations.scaleDown(namespace, desc.zookeeper().getName(), desc.zookeeper().getReplicas())))
                 .compose(desc -> desc.withVoid(serviceOperations.reconcile(namespace, desc.zookeeper().getName(), desc.service())))
                 .compose(desc -> desc.withVoid(serviceOperations.reconcile(namespace, desc.zookeeper().getHeadlessName(), desc.headlessService())))
@@ -400,36 +404,34 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
         String namespace = reconciliation.namespace();
         String name = reconciliation.assemblyName();
         log.debug("{}: delete zookeeper {}", reconciliation, name);
-        StatefulSet ss = zkSetOperations.get(namespace, ZookeeperCluster.zookeeperClusterName(name));
-        ZookeeperCluster zk = ss == null ? null : ZookeeperCluster.fromAssembly(ss, namespace, name);
-        boolean deleteClaims = zk != null && zk.getStorage().type() == Storage.StorageType.PERSISTENT_CLAIM
-                && zk.getStorage().isDeleteClaim();
-        List<Future> result = new ArrayList<>(4 + (deleteClaims ? zk.getReplicas() : 0));
+        String zkSsName = ZookeeperCluster.zookeeperClusterName(name);
+        StatefulSet ss = zkSetOperations.get(namespace, zkSsName);
+        boolean deleteClaims = ss == null ? false : ZookeeperCluster.deleteClaim(ss);
+        List<Future> result = new ArrayList<>(4 + (deleteClaims ? ss.getSpec().getReplicas() : 0));
 
         result.add(configMapOperations.reconcile(namespace, ZookeeperCluster.zookeeperMetricAndLogConfigsName(name), null));
-        result.add(serviceOperations.reconcile(namespace, ZookeeperCluster.zookeeperClusterName(name), null));
+        result.add(serviceOperations.reconcile(namespace, zkSsName, null));
         result.add(serviceOperations.reconcile(namespace, ZookeeperCluster.zookeeperHeadlessName(name), null));
-        result.add(zkSetOperations.reconcile(namespace, ZookeeperCluster.zookeeperClusterName(name), null));
+        result.add(zkSetOperations.reconcile(namespace, zkSsName, null));
         result.add(secretOperations.reconcile(namespace, ZookeeperCluster.nodesSecretName(name), null));
 
         if (deleteClaims) {
             log.debug("{}: delete zookeeper {} PVCs", reconciliation, name);
-
-            for (int i = 0; i < zk.getReplicas(); i++) {
-                result.add(pvcOperations.reconcile(namespace, zk.getPersistentVolumeClaimName(i), null));
+            for (int i = 0; i < ss.getSpec().getReplicas(); i++) {
+                result.add(pvcOperations.reconcile(namespace, ZookeeperCluster.getPersistentVolumeClaimName(zkSsName, i), null));
             }
         }
 
         return CompositeFuture.join(result);
     };
 
-    private final Future<ReconcileResult<Deployment>> createOrUpdateTopicOperator(Reconciliation reconciliation, ConfigMap assemblyCm) {
-        String namespace = assemblyCm.getMetadata().getNamespace();
-        String name = assemblyCm.getMetadata().getName();
+    private final Future<ReconcileResult<Deployment>> createOrUpdateTopicOperator(Reconciliation reconciliation, KafkaAssembly kafkaAssembly) {
+        String namespace = kafkaAssembly.getMetadata().getNamespace();
+        String name = kafkaAssembly.getMetadata().getName();
         log.debug("{}: create/update topic operator {}", reconciliation, name);
         TopicOperator topicOperator;
         try {
-            topicOperator = TopicOperator.fromConfigMap(assemblyCm);
+            topicOperator = TopicOperator.fromCrd(kafkaAssembly);
         } catch (Exception e) {
             return Future.failedFuture(e);
         }
@@ -460,7 +462,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator {
         result.addAll(zkSetOperations.list(namespace, Labels.forType(AssemblyType.KAFKA)));
         result.addAll(deploymentOperations.list(namespace, Labels.forType(AssemblyType.KAFKA)));
         result.addAll(serviceOperations.list(namespace, Labels.forType(AssemblyType.KAFKA)));
-        result.addAll(configMapOperations.list(namespace, Labels.forType(AssemblyType.KAFKA)));
+        result.addAll(resourceOperator.list(namespace, Labels.forType(AssemblyType.KAFKA)));
         return result;
     }
 }

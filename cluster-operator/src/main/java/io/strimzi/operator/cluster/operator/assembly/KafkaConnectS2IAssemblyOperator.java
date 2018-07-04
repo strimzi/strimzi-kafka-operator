@@ -7,14 +7,20 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.openshift.client.OpenShiftClient;
+import io.strimzi.api.kafka.DoneableKafkaConnectS2IAssembly;
+import io.strimzi.api.kafka.KafkaConnectS2IAssemblyList;
+import io.strimzi.api.kafka.model.ExternalLogging;
+import io.strimzi.api.kafka.model.KafkaConnectS2IAssembly;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.Reconciliation;
 import io.strimzi.operator.cluster.model.AssemblyType;
-import io.strimzi.operator.cluster.model.ExternalLogging;
 import io.strimzi.operator.cluster.model.KafkaConnectS2ICluster;
 import io.strimzi.operator.cluster.model.Labels;
 import io.strimzi.operator.cluster.operator.resource.BuildConfigOperator;
 import io.strimzi.operator.cluster.operator.resource.ConfigMapOperator;
+import io.strimzi.operator.cluster.operator.resource.CrdOperator;
 import io.strimzi.operator.cluster.operator.resource.DeploymentConfigOperator;
 import io.strimzi.operator.cluster.operator.resource.ImageStreamOperator;
 import io.strimzi.operator.cluster.operator.resource.SecretOperator;
@@ -27,7 +33,6 @@ import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,13 +44,14 @@ import java.util.List;
  *     <li>A BuildConfig</li>
  * </ul>
  */
-public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator {
+public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<OpenShiftClient, KafkaConnectS2IAssembly, KafkaConnectS2IAssemblyList, DoneableKafkaConnectS2IAssembly, Resource<KafkaConnectS2IAssembly, DoneableKafkaConnectS2IAssembly>> {
 
     private static final Logger log = LogManager.getLogger(KafkaConnectS2IAssemblyOperator.class.getName());
     private final ServiceOperator serviceOperations;
     private final DeploymentConfigOperator deploymentConfigOperations;
     private final ImageStreamOperator imagesStreamOperations;
     private final BuildConfigOperator buildConfigOperations;
+    private final ConfigMapOperator configMapOperations;
 
     /**
      * @param vertx                      The Vertx instance
@@ -59,13 +65,15 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator {
      */
     public KafkaConnectS2IAssemblyOperator(Vertx vertx, boolean isOpenShift,
                                            CertManager certManager,
+                                           CrdOperator<OpenShiftClient, KafkaConnectS2IAssembly, KafkaConnectS2IAssemblyList, DoneableKafkaConnectS2IAssembly> connectOperator,
                                            ConfigMapOperator configMapOperations,
                                            DeploymentConfigOperator deploymentConfigOperations,
                                            ServiceOperator serviceOperations,
                                            ImageStreamOperator imagesStreamOperations,
                                            BuildConfigOperator buildConfigOperations,
                                            SecretOperator secretOperations) {
-        super(vertx, isOpenShift, AssemblyType.CONNECT_S2I, certManager, configMapOperations, secretOperations);
+        super(vertx, isOpenShift, AssemblyType.CONNECT_S2I, certManager, connectOperator, secretOperations);
+        this.configMapOperations = configMapOperations;
         this.serviceOperations = serviceOperations;
         this.deploymentConfigOperations = deploymentConfigOperations;
         this.imagesStreamOperations = imagesStreamOperations;
@@ -73,12 +81,12 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator {
     }
 
     @Override
-    public void createOrUpdate(Reconciliation reconciliation, ConfigMap assemblyCm, List<Secret> assemblySecrets, Handler<AsyncResult<Void>> handler) {
+    public void createOrUpdate(Reconciliation reconciliation, KafkaConnectS2IAssembly assemblyCm, List<Secret> assemblySecrets, Handler<AsyncResult<Void>> handler) {
         String namespace = reconciliation.namespace();
         if (isOpenShift) {
             KafkaConnectS2ICluster connect;
             try {
-                connect = KafkaConnectS2ICluster.fromConfigMap(assemblyCm);
+                connect = KafkaConnectS2ICluster.fromCrd(assemblyCm);
             } catch (Exception e) {
                 handler.handle(Future.failedFuture(e));
                 return;
@@ -86,7 +94,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator {
             Future<Void> chainFuture = Future.future();
             connect.generateBuildConfig();
             ConfigMap logAndMetricsConfigMap = connect.generateMetricsAndLogConfigMap(connect.getLogging() instanceof ExternalLogging ?
-                    configMapOperations.get(namespace, ((ExternalLogging) connect.getLogging()).name) :
+                    configMapOperations.get(namespace, ((ExternalLogging) connect.getLogging()).getName()) :
                     null);
 
             deploymentConfigOperations.scaleDown(namespace, connect.getName(), connect.getReplicas())
@@ -131,7 +139,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator {
         result.addAll(deploymentConfigOperations.list(namespace, selector));
         result.addAll(imagesStreamOperations.list(namespace, selector));
         result.addAll(buildConfigOperations.list(namespace, selector));
-        result.addAll(configMapOperations.list(namespace, selector));
+        result.addAll(resourceOperator.list(namespace, selector));
         return result;
     }
 

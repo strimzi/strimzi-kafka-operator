@@ -5,9 +5,10 @@
 
 package io.strimzi.operator.cluster.model;
 
-import io.vertx.core.json.JsonObject;
+import io.strimzi.api.kafka.model.Kafka;
 
 import java.util.List;
+import java.util.Map;
 
 import static java.util.Arrays.asList;
 
@@ -15,27 +16,13 @@ import static java.util.Arrays.asList;
  * Class for handling Kafka configuration passed by the user
  */
 public class KafkaConfiguration extends AbstractConfiguration {
+
+
+
     private static final List<String> FORBIDDEN_OPTIONS;
 
     static {
-        FORBIDDEN_OPTIONS = asList(
-                "listeners",
-                "advertised.",
-                "broker.",
-                "listener.",
-                "host.name",
-                "port",
-                "inter.broker.listener.name",
-                "sasl.",
-                "ssl.",
-                "security.",
-                "password.",
-                "principal.builder.class",
-                "log.dir",
-                "zookeeper.connect",
-                "zookeeper.set.acl",
-                "authorizer.",
-                "super.user");
+        FORBIDDEN_OPTIONS = asList(Kafka.FORBIDDEN_PREFIXES.split(", "));
     }
 
     /**
@@ -55,7 +42,7 @@ public class KafkaConfiguration extends AbstractConfiguration {
      *
      * @param jsonOptions     Json object with configuration options as key ad value pairs.
      */
-    public KafkaConfiguration(JsonObject jsonOptions) {
+    public KafkaConfiguration(Iterable<Map.Entry<String, Object>> jsonOptions) {
         super(jsonOptions, FORBIDDEN_OPTIONS);
     }
 }

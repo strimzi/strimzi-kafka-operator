@@ -1,0 +1,26 @@
+apiVersion: kafka.strimzi.io/v1alpha1
+kind: Kafka
+metadata:
+  name: recovery-cluster
+spec:
+  kafka:
+    replicas: 1
+    readiness:
+      initialDelaySeconds: 15
+      timeoutSeconds: 5
+    liveness:
+      initialDelaySeconds: 15
+      timeoutSeconds: 5
+    storage:
+      type: ephemeral
+  zookeeper:
+    replicas: 1
+    readiness:
+      initialDelaySeconds: 15
+      timeoutSeconds: 5
+    liveness:
+      initialDelaySeconds: 15
+      timeoutSeconds: 5
+    storage:
+      type: ephemeral
+  topicOperator: {}

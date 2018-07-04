@@ -39,7 +39,7 @@ parameters:
 - description: Set to false to use schemaless format
   displayName: Enable schemas for key converters
   name: KAFKA_CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE
-  value: "true"
+  value: true
 - description: Converter class used to convert between Kafka Connect format and the serialized form that is written to Kafka.
   displayName: Value Converter
   name: KAFKA_CONNECT_VALUE_CONVERTER
@@ -48,55 +48,54 @@ parameters:
 - description: Set to false to use schemaless format
   displayName: Enable schemas for value converters
   name: KAFKA_CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE
-  value: "true"
+  value: true
 - description: Replication factor for config storage topic
   displayName: Config replication factor
   name: KAFKA_CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR
-  value: "3"
+  value: 3
 - description: Replication factor for offset storage topic
   displayName: Offset replication factor
   name: KAFKA_CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR
-  value: "3"
+  value: 3
 - description: Replication factor for status storage topic
   displayName: Status replication factor
   name: KAFKA_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR
-  value: "3"
+  value: 3
 - description: Number of seconds after the container has started before healthcheck probes are initiated.
   displayName: Kafka Connect healthcheck initial delay
   name: HEALTHCHECK_DELAY
-  value: "60"
+  value: 60
 - description: Number of seconds after which the probe times out.
   displayName: Kafka Connect healthcheck timeout
   name: HEALTHCHECK_TIMEOUT
-  value: "5"
+  value: 5
 objects:
-- apiVersion: v1
-  kind: ConfigMap
+- apiVersion: kafka.strimzi.io/v1alpha1
+  kind: KafkaConnect
   metadata:
     name: ${CLUSTER_NAME}
     labels:
-      strimzi.io/kind: cluster
-      strimzi.io/type: kafka-connect
-  data:
-    nodes: "${INSTANCES}"
-    healthcheck-delay: "${HEALTHCHECK_DELAY}"
-    healthcheck-timeout: "${HEALTHCHECK_TIMEOUT}"
-    connect-config: |-
-      {
-        "bootstrap.servers": "${KAFKA_CONNECT_BOOTSTRAP_SERVERS}",
-        "group.id": "${KAFKA_CONNECT_GROUP_ID}",
-        "offset.storage.topic": "${KAFKA_CONNECT_GROUP_ID}-offsets",
-        "config.storage.topic": "${KAFKA_CONNECT_GROUP_ID}-configs",
-        "status.storage.topic": "${KAFKA_CONNECT_GROUP_ID}-status",
-        "key.converter": "${KAFKA_CONNECT_KEY_CONVERTER}",
-        "value.converter": "${KAFKA_CONNECT_VALUE_CONVERTER}",
-        "key.converter.schemas.enable": "${KAFKA_CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE}",
-        "value.converter.schemas.enable": "${KAFKA_CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE}",
-        "config.storage.replication.factor": "${KAFKA_CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR}",
-        "offset.storage.replication.factor": "${KAFKA_CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR}",
-        "status.storage.replication.factor": "${KAFKA_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR}"
-      }
-    metrics-config: |-
-      {
-        "lowercaseOutputName": true
-      }
+      type: kafka-connect
+  spec:
+    replicas: ${INSTANCES}
+    livenessProbe:
+      initialDelaySeconds: ${HEALTHCHECK_DELAY}
+      timeoutSeconds: ${HEALTHCHECK_TIMEOUT}
+    readinessProbe:
+      initialDelaySeconds: ${HEALTHCHECK_DELAY}
+      timeoutSeconds: ${HEALTHCHECK_TIMEOUT}
+    config:
+      bootstrap.servers: "${KAFKA_CONNECT_BOOTSTRAP_SERVERS}"
+      group.id: "${KAFKA_CONNECT_GROUP_ID}"
+      offset.storage.topic: "${KAFKA_CONNECT_GROUP_ID}-offsets"
+      config.storage.topic: "${KAFKA_CONNECT_GROUP_ID}-configs"
+      status.storage.topic: "${KAFKA_CONNECT_GROUP_ID}-status"
+      key.converter: "${KAFKA_CONNECT_KEY_CONVERTER}"
+      value.converter: "${KAFKA_CONNECT_VALUE_CONVERTER}"
+      key.converter.schemas.enable: ${KAFKA_CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE}
+      value.converter.schemas.enable: ${KAFKA_CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE}
+      config.storage.replication.factor: ${KAFKA_CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR}
+      offset.storage.replication.factor: ${KAFKA_CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR}
+      status.storage.replication.factor: ${KAFKA_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR}
+    metrics:
+      lowercaseOutputName: true
