@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.IntOrString;
@@ -217,19 +218,35 @@ public class KafkaConnectCluster extends AbstractModel {
                 .build();
 
         return createDeployment(
-                getContainerPortList(),
-                createHttpProbe(healthCheckPath, REST_API_PORT_NAME, healthCheckInitialDelay, healthCheckTimeout),
-                createHttpProbe(healthCheckPath, REST_API_PORT_NAME, healthCheckInitialDelay, healthCheckTimeout),
                 updateStrategy,
                 Collections.emptyMap(),
                 Collections.emptyMap(),
-                resources(),
                 getMergedAffinity(),
                 getInitContainers(),
-                getVolumes(),
-                getVolumeMounts(),
-                getEnvVars()
+                getContainers(),
+                getVolumes()
                 );
+    }
+
+    @Override
+    protected List<Container> getContainers() {
+
+        List<Container> containers = new ArrayList<>();
+
+        Container container = new ContainerBuilder()
+                .withName(name)
+                .withImage(getImage())
+                .withEnv(getEnvVars())
+                .withPorts(getContainerPortList())
+                .withLivenessProbe(createHttpProbe(healthCheckPath, REST_API_PORT_NAME, healthCheckInitialDelay, healthCheckTimeout))
+                .withReadinessProbe(createHttpProbe(healthCheckPath, REST_API_PORT_NAME, healthCheckInitialDelay, healthCheckTimeout))
+                .withVolumeMounts(getVolumeMounts())
+                .withResources(resources())
+                .build();
+
+        containers.add(container);
+
+        return containers;
     }
 
     @Override

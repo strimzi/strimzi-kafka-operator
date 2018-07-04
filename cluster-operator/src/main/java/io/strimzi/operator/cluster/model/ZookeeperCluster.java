@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
@@ -219,15 +220,12 @@ public class ZookeeperCluster extends AbstractModel {
     public StatefulSet generateStatefulSet(boolean isOpenShift) {
 
         return createStatefulSet(
-                getContainerPortList(),
                 getVolumes(),
                 getVolumeClaims(),
                 getVolumeMounts(),
-                createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout),
-                createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout),
-                resources(),
                 getMergedAffinity(),
                 getInitContainers(),
+                getContainers(),
                 isOpenShift);
     }
 
@@ -242,6 +240,27 @@ public class ZookeeperCluster extends AbstractModel {
             getLogging().setCm(result);
         }
         return result;
+    }
+
+    @Override
+    protected List<Container> getContainers() {
+
+        List<Container> containers = new ArrayList<>();
+
+        Container container = new ContainerBuilder()
+                .withName(name)
+                .withImage(getImage())
+                .withEnv(getEnvVars())
+                .withVolumeMounts(getVolumeMounts())
+                .withPorts(getContainerPortList())
+                .withLivenessProbe(createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout))
+                .withReadinessProbe(createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout))
+                .withResources(resources())
+                .build();
+
+        containers.add(container);
+
+        return containers;
     }
 
     @Override

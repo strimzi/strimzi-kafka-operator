@@ -41,6 +41,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 
+import static java.util.Collections.singletonList;
+
 public class KafkaCluster extends AbstractModel {
 
     public static final String KAFKA_SERVICE_ACCOUNT = "strimzi-kafka";
@@ -480,15 +482,12 @@ public class KafkaCluster extends AbstractModel {
     public StatefulSet generateStatefulSet(boolean isOpenShift) {
 
         return createStatefulSet(
-                getContainerPortList(),
                 getVolumes(),
                 getVolumeClaims(),
                 getVolumeMounts(),
-                createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout),
-                createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout),
-                resources(),
                 getMergedAffinity(),
                 getInitContainers(),
+                getContainers(),
                 isOpenShift);
     }
 
@@ -680,6 +679,21 @@ public class KafkaCluster extends AbstractModel {
         }
 
         return initContainers;
+    }
+
+    @Override
+    protected List<Container> getContainers() {
+
+        return singletonList(new ContainerBuilder()
+                .withName(name)
+                .withImage(getImage())
+                .withEnv(getEnvVars())
+                .withVolumeMounts(getVolumeMounts())
+                .withPorts(getContainerPortList())
+                .withLivenessProbe(createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout))
+                .withReadinessProbe(createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout))
+                .withResources(resources())
+                .build());
     }
 
     @Override
