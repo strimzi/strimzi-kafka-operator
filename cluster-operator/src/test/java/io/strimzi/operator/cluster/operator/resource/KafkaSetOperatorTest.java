@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaCluster;
+import io.strimzi.operator.cluster.operator.assembly.MockCertManager;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -33,8 +34,9 @@ public class KafkaSetOperatorTest {
 
     @Before
     public void before() {
-        a = KafkaCluster.fromConfigMap(getConfigMap(), getInitialSecrets()).generateStatefulSet(true);
-        b = KafkaCluster.fromConfigMap(getConfigMap(), getInitialSecrets()).generateStatefulSet(true);
+        MockCertManager certManager = new MockCertManager();
+        a = KafkaCluster.fromConfigMap(certManager, getConfigMap(), getInitialSecrets()).generateStatefulSet(true);
+        b = KafkaCluster.fromConfigMap(certManager, getConfigMap(), getInitialSecrets()).generateStatefulSet(true);
     }
 
     private ConfigMap getConfigMap() {

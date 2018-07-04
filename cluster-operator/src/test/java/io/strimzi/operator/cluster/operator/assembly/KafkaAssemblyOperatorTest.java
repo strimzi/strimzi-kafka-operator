@@ -83,6 +83,7 @@ public class KafkaAssemblyOperatorTest {
     private final String storage;
     private final String tcConfig;
     private final boolean deleteClaim;
+    private MockCertManager certManager = new MockCertManager();
 
     public static class Params {
         private final boolean openShift;
@@ -184,7 +185,7 @@ public class KafkaAssemblyOperatorTest {
 
     private void createCluster(TestContext context, ConfigMap clusterCm, List<Secret> secrets) {
 
-        KafkaCluster kafkaCluster = KafkaCluster.fromConfigMap(clusterCm, secrets);
+        KafkaCluster kafkaCluster = KafkaCluster.fromConfigMap(certManager, clusterCm, secrets);
         ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromConfigMap(clusterCm);
         TopicOperator topicOperator = TopicOperator.fromConfigMap(clusterCm);
 
@@ -238,6 +239,7 @@ public class KafkaAssemblyOperatorTest {
 
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, openShift,
                 ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS,
+                certManager,
                 mockCmOps,
                 mockServiceOps, mockZsOps, mockKsOps,
                 mockPvcOps, mockDepOps, mockSecretOps);
@@ -312,7 +314,7 @@ public class KafkaAssemblyOperatorTest {
     private void deleteCluster(TestContext context, ConfigMap clusterCm, List<Secret> secrets) {
 
         ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromConfigMap(clusterCm);
-        KafkaCluster kafkaCluster = KafkaCluster.fromConfigMap(clusterCm, secrets);
+        KafkaCluster kafkaCluster = KafkaCluster.fromConfigMap(certManager, clusterCm, secrets);
         TopicOperator topicOperator = TopicOperator.fromConfigMap(clusterCm);
         // create CM, Service, headless service, statefulset
         ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
@@ -369,6 +371,7 @@ public class KafkaAssemblyOperatorTest {
 
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, openShift,
                 ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS,
+                certManager,
                 mockCmOps,
                 mockServiceOps, mockZsOps, mockKsOps,
                 mockPvcOps,
@@ -583,8 +586,8 @@ public class KafkaAssemblyOperatorTest {
 
     private void updateCluster(TestContext context, ConfigMap originalCm, ConfigMap clusterCm, List<Secret> secrets) {
 
-        KafkaCluster originalKafkaCluster = KafkaCluster.fromConfigMap(originalCm, secrets);
-        KafkaCluster updatedKafkaCluster = KafkaCluster.fromConfigMap(clusterCm, secrets);
+        KafkaCluster originalKafkaCluster = KafkaCluster.fromConfigMap(certManager, originalCm, secrets);
+        KafkaCluster updatedKafkaCluster = KafkaCluster.fromConfigMap(certManager, clusterCm, secrets);
         ZookeeperCluster originalZookeeperCluster = ZookeeperCluster.fromConfigMap(originalCm);
         ZookeeperCluster updatedZookeeperCluster = ZookeeperCluster.fromConfigMap(clusterCm);
         TopicOperator originalTopicOperator = TopicOperator.fromConfigMap(originalCm);
@@ -736,6 +739,7 @@ public class KafkaAssemblyOperatorTest {
 
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, openShift,
                 ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS,
+                certManager,
                 mockCmOps,
                 mockServiceOps, mockZsOps, mockKsOps,
                 mockPvcOps, mockDepOps, mockSecretOps);
@@ -800,13 +804,13 @@ public class KafkaAssemblyOperatorTest {
         // providing the list of ALL StatefulSets for all the Kafka clusters
         Labels newLabels = Labels.forType(AssemblyType.KAFKA);
         when(mockKsOps.list(eq(clusterCmNamespace), eq(newLabels))).thenReturn(
-                asList(KafkaCluster.fromConfigMap(bar, barSecrets).generateStatefulSet(openShift),
-                        KafkaCluster.fromConfigMap(baz, bazSecrets).generateStatefulSet(openShift))
+                asList(KafkaCluster.fromConfigMap(certManager, bar, barSecrets).generateStatefulSet(openShift),
+                        KafkaCluster.fromConfigMap(certManager, baz, bazSecrets).generateStatefulSet(openShift))
         );
 
         // providing the list StatefulSets for already "existing" Kafka clusters
         Labels barLabels = Labels.forCluster("bar");
-        KafkaCluster barCluster = KafkaCluster.fromConfigMap(bar, barSecrets);
+        KafkaCluster barCluster = KafkaCluster.fromConfigMap(certManager, bar, barSecrets);
         when(mockKsOps.list(eq(clusterCmNamespace), eq(barLabels))).thenReturn(
                 asList(barCluster.generateStatefulSet(openShift))
         );
@@ -817,7 +821,7 @@ public class KafkaAssemblyOperatorTest {
         when(mockSecretOps.get(eq(clusterCmNamespace), eq(AbstractAssemblyOperator.INTERNAL_CA_NAME))).thenReturn(barSecrets.get(0));
 
         Labels bazLabels = Labels.forCluster("baz");
-        KafkaCluster bazCluster = KafkaCluster.fromConfigMap(baz, bazSecrets);
+        KafkaCluster bazCluster = KafkaCluster.fromConfigMap(certManager, baz, bazSecrets);
         when(mockKsOps.list(eq(clusterCmNamespace), eq(bazLabels))).thenReturn(
                 asList(bazCluster.generateStatefulSet(openShift))
         );
@@ -832,6 +836,7 @@ public class KafkaAssemblyOperatorTest {
 
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, openShift,
                 ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS,
+                certManager,
                 mockCmOps,
                 mockServiceOps, mockZsOps, mockKsOps,
                 mockPvcOps, mockDepOps, mockSecretOps) {

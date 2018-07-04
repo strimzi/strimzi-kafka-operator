@@ -30,6 +30,8 @@ public class OpenSslCertManager implements CertManager {
 
     private static final Logger log = LogManager.getLogger(OpenSslCertManager.class);
 
+    public OpenSslCertManager() {}
+
     @Override
     public void generateSelfSignedCert(File keyFile, File certFile, int days) throws IOException {
         generateSelfSignedCert(keyFile, certFile, null, days);

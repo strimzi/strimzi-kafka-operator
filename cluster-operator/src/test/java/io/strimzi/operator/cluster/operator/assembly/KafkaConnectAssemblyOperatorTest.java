@@ -90,6 +90,7 @@ public class KafkaConnectAssemblyOperatorTest {
 
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, true,
+                new MockCertManager(),
                 mockCmOps, mockDcOps, mockServiceOps, mockSecretOps);
 
         KafkaConnectCluster connect = KafkaConnectCluster.fromConfigMap(clusterCm);
@@ -157,6 +158,7 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
 
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, true,
+                new MockCertManager(),
                 mockCmOps, mockDcOps, mockServiceOps, mockSecretOps);
 
         Async async = context.async();
@@ -233,6 +235,7 @@ public class KafkaConnectAssemblyOperatorTest {
         }).when(mockCmOps).reconcile(eq(clusterCmNamespace), anyString(), any());
 
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, true,
+                new MockCertManager(),
                 mockCmOps, mockDcOps, mockServiceOps, mockSecretOps);
 
         Async async = context.async();
@@ -306,6 +309,7 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
 
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, true,
+                new MockCertManager(),
                 mockCmOps, mockDcOps, mockServiceOps, mockSecretOps);
 
         Async async = context.async();
@@ -350,6 +354,7 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
 
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, true,
+                new MockCertManager(),
                 mockCmOps, mockDcOps, mockServiceOps, mockSecretOps);
 
         Async async = context.async();
@@ -396,6 +401,7 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
 
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, true,
+                new MockCertManager(),
                 mockCmOps, mockDcOps, mockServiceOps, mockSecretOps);
 
         Async async = context.async();
@@ -432,6 +438,7 @@ public class KafkaConnectAssemblyOperatorTest {
 
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, true,
+                new MockCertManager(),
                 mockCmOps, mockDcOps, mockServiceOps, mockSecretOps);
 
         Async async = context.async();
@@ -494,6 +501,7 @@ public class KafkaConnectAssemblyOperatorTest {
 
         Async async = context.async(3);
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, true,
+                new MockCertManager(),
                 mockCmOps, mockDcOps, mockServiceOps, mockSecretOps) {
 
             @Override

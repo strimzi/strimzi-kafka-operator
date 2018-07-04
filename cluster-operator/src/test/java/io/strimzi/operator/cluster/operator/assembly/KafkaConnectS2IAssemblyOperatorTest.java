@@ -103,6 +103,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
 
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, true,
+                new MockCertManager(),
                 mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps, mockSecretOps);
 
         KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromConfigMap(clusterCm);
@@ -204,6 +205,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
 
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, true,
+                new MockCertManager(),
                 mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps, mockSecretOps);
 
         Async async = context.async();
@@ -307,6 +309,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         }).when(mockCmOps).reconcile(eq(clusterCmNamespace), anyString(), any());
 
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, true,
+                new MockCertManager(),
                 mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps, mockSecretOps);
 
         Async async = context.async();
@@ -410,6 +413,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
 
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, true,
+                new MockCertManager(),
                 mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps, mockSecretOps);
 
         Async async = context.async();
@@ -463,6 +467,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         when(mockBcOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
 
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, true,
+                new MockCertManager(),
                 mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps, mockSecretOps);
 
         Async async = context.async();
@@ -518,6 +523,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         when(mockBcOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
 
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, true,
+                new MockCertManager(),
                 mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps, mockSecretOps);
 
         Async async = context.async();
@@ -566,6 +572,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
 
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, true,
+                new MockCertManager(),
                 mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps, mockSecretOps);
 
         Async async = context.async();
@@ -645,6 +652,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
 
         Async async = context.async(3);
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, true,
+                new MockCertManager(),
                 mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps, mockSecretOps) {
 
             @Override

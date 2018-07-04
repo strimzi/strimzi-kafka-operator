@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.Reconciliation;
 import io.strimzi.operator.cluster.model.AssemblyType;
 import io.strimzi.operator.cluster.model.ExternalLogging;
@@ -49,11 +50,12 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator {
      * @param secretOperations For operating on Secrets
      */
     public KafkaConnectAssemblyOperator(Vertx vertx, boolean isOpenShift,
+                                        CertManager certManager,
                                         ConfigMapOperator configMapOperations,
                                         DeploymentOperator deploymentOperations,
                                         ServiceOperator serviceOperations,
                                         SecretOperator secretOperations) {
-        super(vertx, isOpenShift, AssemblyType.CONNECT, configMapOperations, secretOperations);
+        super(vertx, isOpenShift, AssemblyType.CONNECT, certManager, configMapOperations, secretOperations);
         this.serviceOperations = serviceOperations;
         this.deploymentOperations = deploymentOperations;
     }

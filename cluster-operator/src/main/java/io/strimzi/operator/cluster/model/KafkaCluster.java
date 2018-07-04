@@ -23,7 +23,6 @@ import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
-import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.operator.assembly.AbstractAssemblyOperator;
@@ -184,7 +183,7 @@ public class KafkaCluster extends AbstractModel {
      * @param secrets Secrets related to the cluster
      * @return Kafka cluster instance
      */
-    public static KafkaCluster fromConfigMap(ConfigMap kafkaClusterCm, List<Secret> secrets) {
+    public static KafkaCluster fromConfigMap(CertManager certManager, ConfigMap kafkaClusterCm, List<Secret> secrets) {
         KafkaCluster kafka = new KafkaCluster(kafkaClusterCm.getMetadata().getNamespace(),
                 kafkaClusterCm.getMetadata().getName(),
                 Labels.fromResource(kafkaClusterCm));
@@ -218,7 +217,7 @@ public class KafkaCluster extends AbstractModel {
         kafka.setInitImage(Utils.getNonEmptyString(data, KEY_INIT_IMAGE, DEFAULT_INIT_IMAGE));
         kafka.setUserAffinity(Utils.getAffinity(data.get(KEY_AFFINITY)));
 
-        kafka.generateCertificates(secrets);
+        kafka.generateCertificates(certManager, secrets);
 
         return kafka;
     }
@@ -305,7 +304,7 @@ public class KafkaCluster extends AbstractModel {
      *
      * @param secrets The Secrets storing certificates
      */
-    public void generateCertificates(List<Secret> secrets) {
+    public void generateCertificates(CertManager certManager, List<Secret> secrets) {
         log.debug("Generating certificates");
 
         try {
@@ -313,8 +312,6 @@ public class KafkaCluster extends AbstractModel {
             Optional<Secret> internalCAsecret = secrets.stream().filter(s -> s.getMetadata().getName().equals(AbstractAssemblyOperator.INTERNAL_CA_NAME))
                     .findFirst();
             if (internalCAsecret.isPresent()) {
-
-                CertManager certManager = new OpenSslCertManager();
 
                 // get the generated CA private key + self-signed certificate for internal communications
                 internalCA = new CertAndKey(
@@ -356,9 +353,9 @@ public class KafkaCluster extends AbstractModel {
                 int replicasClientsSecret = !clientsSecret.isPresent() ? 0 : (clientsSecret.get().getData().size() - 2) / 2;
 
                 log.debug("Internal communication certificates");
-                maybeCopyOrGenerateCerts(internalCerts, internalSecret, replicasInternalSecret, internalCA);
+                maybeCopyOrGenerateCerts(certManager, internalCerts, internalSecret, replicasInternalSecret, internalCA);
                 log.debug("Clients communication certificates");
-                maybeCopyOrGenerateCerts(clientsCerts, clientsSecret, replicasClientsSecret, clientsCA);
+                maybeCopyOrGenerateCerts(certManager, clientsCerts, clientsSecret, replicasClientsSecret, clientsCA);
             } else {
                 throw new NoCertificateSecretException("The internal CA certificate Secret is missing");
             }
@@ -380,7 +377,7 @@ public class KafkaCluster extends AbstractModel {
      * @param caCert CA certificate to use for signing new certificates
      * @throws IOException
      */
-    private void maybeCopyOrGenerateCerts(Map<String, CertAndKey> certs, Optional<Secret> secret, int replicasInSecret, CertAndKey caCert) throws IOException {
+    private void maybeCopyOrGenerateCerts(CertManager certManager, Map<String, CertAndKey> certs, Optional<Secret> secret, int replicasInSecret, CertAndKey caCert) throws IOException {
 
         // copying the minimum number of certificates already existing in the secret
         // scale up -> it will copy all certificates
@@ -393,8 +390,6 @@ public class KafkaCluster extends AbstractModel {
                             decodeFromSecret(secret.get(), KafkaCluster.kafkaPodName(cluster, i) + ".key"),
                             decodeFromSecret(secret.get(), KafkaCluster.kafkaPodName(cluster, i) + ".crt")));
         }
-
-        CertManager certManager = new OpenSslCertManager();
 
         File brokerCsrFile = File.createTempFile("tls", "broker-csr");
         File brokerKeyFile = File.createTempFile("tls", "broker-key");

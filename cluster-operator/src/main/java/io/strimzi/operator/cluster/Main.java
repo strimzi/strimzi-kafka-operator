@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.openshift.client.OpenShiftClient;
 
+import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectS2IAssemblyOperator;
@@ -69,8 +70,9 @@ public class Main {
         DeploymentOperator deploymentOperations = new DeploymentOperator(vertx, client);
         SecretOperator secretOperations = new SecretOperator(vertx, client);
 
-        KafkaAssemblyOperator kafkaClusterOperations = new KafkaAssemblyOperator(vertx, isOpenShift, config.getOperationTimeoutMs(), configMapOperations, serviceOperations, zookeeperSetOperations, kafkaSetOperations, pvcOperations, deploymentOperations, secretOperations);
-        KafkaConnectAssemblyOperator kafkaConnectClusterOperations = new KafkaConnectAssemblyOperator(vertx, isOpenShift, configMapOperations, deploymentOperations, serviceOperations, secretOperations);
+        OpenSslCertManager certManager = new OpenSslCertManager();
+        KafkaAssemblyOperator kafkaClusterOperations = new KafkaAssemblyOperator(vertx, isOpenShift, config.getOperationTimeoutMs(), certManager, configMapOperations, serviceOperations, zookeeperSetOperations, kafkaSetOperations, pvcOperations, deploymentOperations, secretOperations);
+        KafkaConnectAssemblyOperator kafkaConnectClusterOperations = new KafkaConnectAssemblyOperator(vertx, isOpenShift, certManager, configMapOperations, deploymentOperations, serviceOperations, secretOperations);
 
         DeploymentConfigOperator deploymentConfigOperations = null;
         ImageStreamOperator imagesStreamOperations = null;
@@ -81,6 +83,7 @@ public class Main {
             buildConfigOperations = new BuildConfigOperator(vertx, client.adapt(OpenShiftClient.class));
             deploymentConfigOperations = new DeploymentConfigOperator(vertx, client.adapt(OpenShiftClient.class));
             kafkaConnectS2IClusterOperations = new KafkaConnectS2IAssemblyOperator(vertx, isOpenShift,
+                    certManager,
                     configMapOperations, deploymentConfigOperations,
                     serviceOperations, imagesStreamOperations, buildConfigOperations, secretOperations);
         }
