@@ -14,11 +14,11 @@ make docker_build
 OLD_DOCKER_REGISTRY=$DOCKER_REGISTRY
 export DOCKER_REGISTRY="localhost:5000"
 export DOCKER_TAG=$BRANCH
-echo "Push with docker org $DOCKER_ORG under tag $DOCKER_TAG"
+echo "Docker push with registry $DOCKER_REGISTRY and org $DOCKER_ORG under tag $DOCKER_TAG"
 make docker_push
 
 export DOCKER_TAG=$COMMIT
-echo "Push with docker org $DOCKER_ORG under tag $DOCKER_TAG"
+echo "Docker push with registry $DOCKER_REGISTRY and org $DOCKER_ORG under tag $DOCKER_TAG"
 make docker_push
 
 OLD_DOCKER_ORG=$DOCKER_ORG
