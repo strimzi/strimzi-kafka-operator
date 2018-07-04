@@ -117,7 +117,7 @@ public class ZookeeperCluster extends AbstractModel {
         this.mountPath = "/var/lib/zookeeper";
 
         this.logAndMetricsConfigVolumeName = "zookeeper-metrics-and-logging";
-        this.logAndMetricsConfigMountPath = "/opt/kafka/config/";
+        this.logAndMetricsConfigMountPath = "/opt/kafka/custom-config/";
         this.validLoggerFields = getDefaultLogConfig();
     }
 
