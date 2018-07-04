@@ -10,13 +10,16 @@ export DOCKER_TAG=$COMMIT
 
 make docker_build
 
+export DOCKER_REGISTRY="localhost:5000"
 export DOCKER_TAG=$BRANCH
-echo "Tag with docker org $DOCKER_ORG under tag $DOCKER_TAG"
-make docker_tag
+echo "Push with docker org $DOCKER_ORG under tag $DOCKER_TAG"
+make docker_push
 
 export DOCKER_TAG=$COMMIT
-echo "Tag with docker org $DOCKER_ORG under tag $DOCKER_TAG"
-make docker_tag
+echo "Push with docker org $DOCKER_ORG under tag $DOCKER_TAG"
+make docker_push
+
+export DOCKER_ORG="localhost:5000/strimzici"
 
 echo "Running systemtests"
 ./systemtest/scripts/run_tests.sh ${SYSTEMTEST_ARGS}
