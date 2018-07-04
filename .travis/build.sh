@@ -10,7 +10,7 @@ export DOCKER_TAG=$COMMIT
 
 make docker_build
 
-# Use local registry and strimzici or for system tests
+# Use local registry for system tests
 OLD_DOCKER_REGISTRY=$DOCKER_REGISTRY
 export DOCKER_REGISTRY="localhost:5000"
 export DOCKER_TAG=$BRANCH
