@@ -37,22 +37,13 @@ if [ -e $KAFKA_HOME/rack/rack.id ]; then
   export KAFKA_RACK=$(cat $KAFKA_HOME/rack/rack.id)
 fi
 
-
-# set up for encryption support
-
+# Generate temporary keystore password
 export CERTS_STORE_PASSWORD=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${1:-32})
-echo "CERTS_STORE_PASSWORD" $CERTS_STORE_PASSWORD
 
 mkdir -p /tmp/kafka
 
 # Import certificates into keystore and truststore
-echo "Importing certificates for internal communication"
-./kafka_internal_certs_import.sh
-echo "End importing certificates"
-
-echo "Importing certificates for clients communication"
-./kafka_clients_certs_import.sh
-echo "End importing certificates"
+./kafka_tls_prepare_certificates.sh
 
 # Generate and print the config file
 echo "Starting Kafka with configuration:"
