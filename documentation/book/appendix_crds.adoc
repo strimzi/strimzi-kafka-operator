@@ -260,6 +260,8 @@ Used in: <<type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
 |https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[Affinity]
 |metrics               1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
 |map
+|stunnelImage          1.2+<.<|The Docker image for the stunnel sidecar
+|string
 |additionalProperties  1.2+<.<|
 |map
 |config                1.2+<.<|The zookeeper broker config. Properties with the following prefixes cannot be set: server., dataDir, dataLogDir, clientPort, authProvider, quorum.auth, requireClientAuthScheme
