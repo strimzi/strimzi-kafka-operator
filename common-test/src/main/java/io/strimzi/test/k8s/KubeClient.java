@@ -38,7 +38,11 @@ public interface KubeClient<K extends KubeClient<K>> {
     /** Deletes the resources by resource name. */
     K deleteByName(String resourceType, String resourceName);
 
+    K deleteByName(String resourceType, String resourceName, String namespace);
+
     String namespace(String namespace);
+
+    K inNamespace(String namespace);
 
     /** Returns namespace for cluster */
     String namespace();
@@ -151,4 +155,10 @@ public interface KubeClient<K extends KubeClient<K>> {
     Date getResourceCreateTimestamp(String pod, String s);
 
     List<String> listResourcesByLabel(String resourceType, String label);
+
+    List<String> listResourcesByLabel(String resourceType, String label, String namespace);
+
+    void deployCOFromCommandLine(String namespace, String pathToConfig);
+
+    void installTemplates(String namespace, String pathToConfig);
 }

@@ -109,7 +109,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
         final String newPodName = kafkaPodName(CLUSTER_NAME,  newPodId);
         final String firstPodName = kafkaPodName(CLUSTER_NAME,  0);
         LOGGER.info("Scaling up to {}", scaleTo);
-        replaceCm(CLUSTER_NAME, "kafka-nodes", String.valueOf(initialReplicas + 1));
+        replaceCm(CLUSTER_NAME, NAMESPACE, "kafka-nodes", String.valueOf(initialReplicas + 1));
         kubeClient.waitForStatefulSet(kafkaClusterName(CLUSTER_NAME), initialReplicas + 1);
 
         // Test that the new broker has joined the kafka cluster by checking it knows about all the other broker's API versions
@@ -129,7 +129,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
         // scale down
         LOGGER.info("Scaling down");
         //client.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaStatefulSetName(CLUSTER_NAME)).scale(initialReplicas, true);
-        replaceCm(CLUSTER_NAME, "kafka-nodes", String.valueOf(initialReplicas));
+        replaceCm(CLUSTER_NAME, NAMESPACE, "kafka-nodes", String.valueOf(initialReplicas));
         kubeClient.waitForStatefulSet(kafkaClusterName(CLUSTER_NAME), initialReplicas);
 
         final int finalReplicas = client.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaClusterName(CLUSTER_NAME)).get().getStatus().getReplicas();
@@ -167,7 +167,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
         };
         final String firstZkPodName = zookeeperPodName(CLUSTER_NAME,  0);
         LOGGER.info("Scaling up to {}", scaleZkTo);
-        replaceCm(CLUSTER_NAME, "zookeeper-nodes", String.valueOf(scaleZkTo));
+        replaceCm(CLUSTER_NAME, NAMESPACE, "zookeeper-nodes", String.valueOf(scaleZkTo));
         kubeClient.waitForPod(newZkPodName[0]);
         kubeClient.waitForPod(newZkPodName[1]);
 
@@ -191,7 +191,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
 
         // scale down
         LOGGER.info("Scaling down");
-        replaceCm(CLUSTER_NAME, "zookeeper-nodes", String.valueOf(1));
+        replaceCm(CLUSTER_NAME, NAMESPACE, "zookeeper-nodes", String.valueOf(1));
         kubeClient.waitForResourceDeletion("po", zookeeperPodName(CLUSTER_NAME,  1));
         // Wait for the one remaining node to enter standalone mode
         waitForZkMntr(firstZkPodName, Pattern.compile("zk_server_state\\s+standalone"));
@@ -259,7 +259,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
         changes.put("kafka-healthcheck-timeout", "11");
         changes.put("kafka-config", "{\"default.replication.factor\": 2,\"offsets.topic.replication.factor\": 2,\"transaction.state.log.replication.factor\": 2}");
         changes.put("zookeeper-config", "{\"timeTick\": 2100, \"initLimit\": 6, \"syncLimit\": 3}");
-        replaceCm(clusterName, changes);
+        replaceCm(clusterName, NAMESPACE, changes);
 
         for (int i = 0; i < expectedZKPods; i++) {
             kubeClient.waitForResourceUpdate("pod", zookeeperPodName(clusterName, i), zkPodStartTime.get(i));
@@ -374,7 +374,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
         assertThat(testTopicCM, valueOfCmEquals("partitions", "2"));
 
         //Updating second topic via CM update
-        replaceCm("topic-from-cli", "partitions", "2");
+        replaceCm("topic-from-cli", NAMESPACE, "partitions", "2");
         assertThat(describeTopicUsingPodCLI(CLUSTER_NAME, kafkaPodName(CLUSTER_NAME, 1), "topic-from-cli"),
                 hasItems("PartitionCount:2"));
         testTopicCM = kubeClient.get("cm", "topic-from-cli");
