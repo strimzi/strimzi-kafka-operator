@@ -733,6 +733,9 @@ spec:
                   type: object
                   description: The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter
                     for details of the structure of this configuration.
+                stunnelImage:
+                  type: string
+                  description: The Docker image for the stunnel sidecar
                 additionalProperties:
                   type: object
                 config:
