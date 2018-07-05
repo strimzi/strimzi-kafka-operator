@@ -83,7 +83,7 @@ public class KafkaConnectCluster extends AbstractModel {
 
         this.mountPath = "/var/lib/kafka";
         this.logAndMetricsConfigVolumeName = "kafka-metrics-and-logging";
-        this.logAndMetricsConfigMountPath = "/opt/kafka/config/";
+        this.logAndMetricsConfigMountPath = "/opt/kafka/custom-config/";
     }
 
     public static String kafkaConnectClusterName(String cluster) {
