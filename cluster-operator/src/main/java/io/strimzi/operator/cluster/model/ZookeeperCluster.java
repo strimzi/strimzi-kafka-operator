@@ -10,6 +10,9 @@ import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
+import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
@@ -32,6 +35,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
+
 public class ZookeeperCluster extends AbstractModel {
 
     protected static final int CLIENT_PORT = 2181;
@@ -43,6 +49,7 @@ public class ZookeeperCluster extends AbstractModel {
     protected static final int METRICS_PORT = 9404;
     protected static final String METRICS_PORT_NAME = "metrics";
 
+    protected static final String STUNNEL_NAME = "stunnel-zookeeper";
     private static final String NAME_SUFFIX = "-zookeeper";
     private static final String HEADLESS_NAME_SUFFIX = NAME_SUFFIX + "-headless";
     private static final String METRICS_AND_LOG_CONFIG_SUFFIX = NAME_SUFFIX + "-config";
@@ -50,11 +57,13 @@ public class ZookeeperCluster extends AbstractModel {
     private static final String NODES_CERTS_SUFFIX = NAME_SUFFIX + "-nodes";
 
     // Zookeeper configuration
-    // N/A
+    private String stunnelImage;
 
     // Configuration defaults
     private static final String DEFAULT_IMAGE =
             System.getenv().getOrDefault("STRIMZI_DEFAULT_ZOOKEEPER_IMAGE", "strimzi/zookeeper:latest");
+    private static final String DEFAULT_STUNNEL_IMAGE =
+            System.getenv().getOrDefault("STRIMZI_DEFAULT_STUNNEL_ZOOKEEPER_IMAGE", "strimzi/stunnel-zookeeper:latest");
     private static final int DEFAULT_REPLICAS = 3;
     private static final int DEFAULT_HEALTHCHECK_DELAY = 15;
     private static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
@@ -72,6 +81,7 @@ public class ZookeeperCluster extends AbstractModel {
     public static final String KEY_ZOOKEEPER_CONFIG = "zookeeper-config";
     public static final String KEY_AFFINITY = "zookeeper-affinity";
     public static final String KEY_ZOOKEEPER_LOG_CONFIG = "zookeeper-logging";
+    public static final String KEY_STUNNEL_IMAGE = "stunnel-zookeeper-image";
 
     // Zookeeper configuration keys (EnvVariables)
     public static final String ENV_VAR_ZOOKEEPER_NODE_COUNT = "ZOOKEEPER_NODE_COUNT";
@@ -137,6 +147,8 @@ public class ZookeeperCluster extends AbstractModel {
         this.logAndMetricsConfigVolumeName = "zookeeper-metrics-and-logging";
         this.logAndMetricsConfigMountPath = "/opt/kafka/custom-config/";
         this.validLoggerFields = getDefaultLogConfig();
+
+        this.stunnelImage = DEFAULT_STUNNEL_IMAGE;
     }
 
 
@@ -173,6 +185,8 @@ public class ZookeeperCluster extends AbstractModel {
         zk.setJvmOptions(JvmOptions.fromJson(data.get(KEY_JVM_OPTIONS)));
         zk.setUserAffinity(Utils.getAffinity(data.get(KEY_AFFINITY)));
 
+        zk.setStunnelImage(Utils.getNonEmptyString(data, KEY_STUNNEL_IMAGE, DEFAULT_STUNNEL_IMAGE));
+
         zk.generateCertificates(certManager, secrets);
 
         return zk;
@@ -193,6 +207,16 @@ public class ZookeeperCluster extends AbstractModel {
         zk.setReplicas(ss.getSpec().getReplicas());
         Container container = ss.getSpec().getTemplate().getSpec().getContainers().get(0);
         zk.setImage(container.getImage());
+
+        // TODO: just loop on the containers stream for getting the main container properties as well
+        List<Container> containers = ss.getSpec().getTemplate().getSpec().getContainers();
+        if (containers != null && !containers.isEmpty()) {
+
+            containers.stream()
+                    .filter(ic -> ic.getName().equals(STUNNEL_NAME))
+                    .forEach(ic -> zk.setStunnelImage(ic.getImage()));
+        }
+
         zk.setHealthCheckInitialDelay(container.getReadinessProbe().getInitialDelaySeconds());
         zk.setHealthCheckTimeout(container.getReadinessProbe().getTimeoutSeconds());
 
@@ -336,7 +360,29 @@ public class ZookeeperCluster extends AbstractModel {
                 .withResources(resources())
                 .build();
 
+        ResourceRequirements resources = new ResourceRequirementsBuilder()
+                .addToRequests("cpu", new Quantity("100m"))
+                .addToRequests("memory", new Quantity("128Mi"))
+                .addToLimits("cpu", new Quantity("1"))
+                .addToLimits("memory", new Quantity("128Mi"))
+                .build();
+
+        Container stunnelContainer = new ContainerBuilder()
+                .withName(STUNNEL_NAME)
+                .withImage(stunnelImage)
+                .withResources(resources)
+                .withEnv(singletonList(buildEnvVar(ENV_VAR_ZOOKEEPER_NODE_COUNT, Integer.toString(replicas))))
+                .withVolumeMounts(createVolumeMount("stunnel-certs", "/etc/stunnel/certs/"))
+                .withPorts(
+                        asList(
+                                createContainerPort(CLUSTERING_PORT_NAME, CLUSTERING_PORT, "TCP"),
+                                createContainerPort(LEADER_ELECTION_PORT_NAME, LEADER_ELECTION_PORT, "TCP")
+                        )
+                )
+                .build();
+
         containers.add(container);
+        containers.add(stunnelContainer);
 
         return containers;
     }
@@ -367,8 +413,8 @@ public class ZookeeperCluster extends AbstractModel {
     private List<ContainerPort> getContainerPortList() {
         List<ContainerPort> portList = new ArrayList<>();
         portList.add(createContainerPort(CLIENT_PORT_NAME, CLIENT_PORT, "TCP"));
-        portList.add(createContainerPort(CLUSTERING_PORT_NAME, CLUSTERING_PORT, "TCP"));
-        portList.add(createContainerPort(LEADER_ELECTION_PORT_NAME, LEADER_ELECTION_PORT, "TCP"));
+        portList.add(createContainerPort(CLUSTERING_PORT_NAME, CLUSTERING_PORT * 10, "TCP"));
+        portList.add(createContainerPort(LEADER_ELECTION_PORT_NAME, LEADER_ELECTION_PORT * 10, "TCP"));
         if (isMetricsEnabled) {
             portList.add(createContainerPort(metricsPortName, metricsPort, "TCP"));
         }
@@ -382,6 +428,7 @@ public class ZookeeperCluster extends AbstractModel {
             volumeList.add(createEmptyDirVolume(VOLUME_NAME));
         }
         volumeList.add(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
+        volumeList.add(createSecretVolume("stunnel-certs", ZookeeperCluster.nodesSecretName(cluster)));
         return volumeList;
     }
 
@@ -399,6 +446,10 @@ public class ZookeeperCluster extends AbstractModel {
         volumeMountList.add(createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
 
         return volumeMountList;
+    }
+
+    protected void setStunnelImage(String stunnelImage) {
+        this.stunnelImage = stunnelImage;
     }
 
     @Override
