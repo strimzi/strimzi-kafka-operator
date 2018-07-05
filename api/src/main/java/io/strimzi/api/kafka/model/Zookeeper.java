@@ -23,12 +23,14 @@ import java.util.Map;
 )
 @JsonPropertyOrder({ "replicas", "image", "storage",
         "livenessProbe", "readinessProbe", "jvmOptions",
-        "affinity", "metrics"})
+        "affinity", "metrics", "stunnelImage"})
 public class Zookeeper extends ReplicatedJvmPods {
     public static final String FORBIDDEN_PREFIXES = "server., dataDir, dataLogDir, clientPort, authProvider, quorum.auth, requireClientAuthScheme";
 
     public static final String DEFAULT_IMAGE =
             System.getenv().getOrDefault("STRIMZI_DEFAULT_ZOOKEEPER_IMAGE", "strimzi/zookeeper:latest");
+    public static final String DEFAULT_STUNNEL_IMAGE =
+            System.getenv().getOrDefault("STRIMZI_DEFAULT_STUNNEL_ZOOKEEPER_IMAGE", "strimzi/stunnel-zookeeper:latest");
     public static final int DEFAULT_REPLICAS = 3;
 
     protected Storage storage;
@@ -36,6 +38,8 @@ public class Zookeeper extends ReplicatedJvmPods {
     private Map<String, Object> config = new HashMap<>(0);
 
     private Logging logging;
+
+    private String stunnelImage;
 
     @Description("The zookeeper broker config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)
     public Map<String, Object> getConfig() {
@@ -64,5 +68,15 @@ public class Zookeeper extends ReplicatedJvmPods {
 
     public void setLogging(Logging logging) {
         this.logging = logging;
+    }
+
+    @Description("The Docker image for the stunnel sidecar")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public String getStunnelImage() {
+        return stunnelImage;
+    }
+
+    public void setStunnelImage(String stunnelImage) {
+        this.stunnelImage = stunnelImage;
     }
 }

@@ -653,6 +653,8 @@ spec:
                       type: object
                 metrics:
                   type: object
+                stunnelImage:
+                  type: string
                 additionalProperties:
                   type: object
                 config:
