@@ -9,22 +9,21 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
-
 import io.strimzi.operator.cluster.model.AssemblyType;
 import io.strimzi.operator.cluster.model.Labels;
 import io.strimzi.operator.cluster.operator.assembly.AbstractAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectS2IAssemblyOperator;
-
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.concurrent.TimeUnit;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * An "operator" for managing assemblies of various types <em>in a particular namespace</em>.
@@ -139,7 +138,12 @@ public class ClusterOperator extends AbstractVerticle {
                                     cluster = kafkaConnectAssemblyOperator;
                                     break;
                                 case CONNECT_S2I:
-                                    cluster = kafkaConnectS2IAssemblyOperator;
+                                    if (kafkaConnectS2IAssemblyOperator != null) {
+                                        cluster = kafkaConnectS2IAssemblyOperator;
+                                    } else {
+                                        log.error("Kafka Connect S2I can be deployed only on OpenShift");
+                                        return;
+                                    }
                                     break;
                                 default:
                                     return;
