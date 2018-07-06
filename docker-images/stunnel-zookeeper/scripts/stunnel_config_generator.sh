@@ -2,13 +2,15 @@
 	      
 CERTS=/etc/stunnel/certs/
 
+echo "foreground = yes"
+#echo "pid=/tmp/stunnel.pid"
+echo "debug = info"
+ 
 declare -a PORTS=("2888" "3888")
 for port in "${PORTS[@]}"
 do
 NODE=1
-  #echo "foreground = yes"
-  echo "debug = info"
-  while [ $NODE -le $ZOOKEEPER_NODE_COUNT ]; do
+ while [ $NODE -le $ZOOKEEPER_NODE_COUNT ]; do
 	        
 		PEER=${BASE_HOSTNAME}-$((NODE-1))
 		KEY_AND_CERT=${CERTS}${PEER}	

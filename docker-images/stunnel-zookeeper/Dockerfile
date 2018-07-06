@@ -20,5 +20,4 @@ WORKDIR $KAFKA_HOME
 
 USER kafka:kafka
 
-#CMD ["/opt/kafka/stunnel_run.sh"]
-CMD ["sh", "-c", "tail -f /dev/null"]
+CMD ["/opt/kafka/stunnel_run.sh"]
