@@ -6,8 +6,8 @@ declare -a PORTS=("2888" "3888")
 for port in "${PORTS[@]}"
 do
 NODE=1
-  #echo "debug = 7"
-  #echo "output = /tmp/stunnel.log"
+  #echo "foreground = yes"
+  echo "debug = info"
   while [ $NODE -le $ZOOKEEPER_NODE_COUNT ]; do
 	        
 		PEER=${BASE_HOSTNAME}-$((NODE-1))
@@ -16,12 +16,12 @@ NODE=1
 
 		# Not necessarily the way to create pem file, might have to use openssl
 		cat ${KEY_AND_CERT}.crt ${KEY_AND_CERT}.key > ${PEM}
-		
+		chmod 640 ${PEM}
+
 		# Stunnel client configuration
 		cat <<-EOF
 		[${PEER})]
 		client=yes
-		key=${KEY_AND_CERT}.key
 		cert=${PEM}
 		accept=127.0.0.1:$(expr $port \* 10 + $NODE)
 		connect=${PEER}.${BASE_FQDN}:$port
@@ -36,7 +36,6 @@ NODE=1
 	cat <<-EOF
 	[listener-$port]
 	client=no
-	key=${KEY_AND_CERT}.key
 	cert=${PEM}
 	accept=127.0.0.1:$port
 	connect=127.0.0.1:$CONNECTOR_PORT

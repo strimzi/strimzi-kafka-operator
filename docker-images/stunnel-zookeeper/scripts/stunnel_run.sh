@@ -11,4 +11,6 @@ echo "Starting Stunnel with configuration:"
 echo ""
 
 # starting Stunnel with final configuration
-exec stunnel /tmp/stunnel.conf
+exec /usr/bin/stunnel /tmp/stunnel.conf
+
+echo "================================"

@@ -1,6 +1,6 @@
-FROM centos:7
+FROM fedora:27
 
-RUN yum -y install stunnel openssl && yum clean all -y 
+RUN yum -y install stunnel hostname procps-ng openssl && yum clean all -y 
 
 # set Kafka home folder
 ENV KAFKA_HOME=/opt/kafka
