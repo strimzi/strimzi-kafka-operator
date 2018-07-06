@@ -24,7 +24,8 @@ NODE=1
 		cat <<-EOF
 		[${PEER})]
 		client=yes
-		cert=${PEM}
+		#cert=${PEM}
+		CAfile=${CERTS}internal-ca.crt
 		accept=127.0.0.1:$(expr $port \* 10 + $NODE)
 		connect=${PEER}.${BASE_FQDN}:$port
 
