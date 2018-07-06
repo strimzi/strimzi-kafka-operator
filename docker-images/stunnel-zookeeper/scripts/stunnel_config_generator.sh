@@ -26,14 +26,14 @@ NODE=1
 		client=yes
 		#cert=${PEM}
 		CAfile=${CERTS}internal-ca.crt
-		accept=127.0.0.1:$(expr $port \* 10 + $NODE)
+		accept=127.0.0.1:$(expr $port \* 10 + $NODE - 1)
 		connect=${PEER}.${BASE_FQDN}:$port
 
 		EOF
 		let NODE=NODE+1
   done
-	# Zookeeper port where stunnel forwards recieved traffic
-	CONNECTOR_PORT=$(expr $port \* 10)
+	# Zookeeper port where stunnel forwards received traffic
+	CONNECTOR_PORT=$(expr $port \* 10 + $ZOOKEEPER_ID - 1)
 
 	# Stunnel listener configuration
 	cat <<-EOF

@@ -413,8 +413,6 @@ public class ZookeeperCluster extends AbstractModel {
     private List<ContainerPort> getContainerPortList() {
         List<ContainerPort> portList = new ArrayList<>();
         portList.add(createContainerPort(CLIENT_PORT_NAME, CLIENT_PORT, "TCP"));
-        portList.add(createContainerPort(CLUSTERING_PORT_NAME, CLUSTERING_PORT * 10, "TCP"));
-        portList.add(createContainerPort(LEADER_ELECTION_PORT_NAME, LEADER_ELECTION_PORT * 10, "TCP"));
         if (isMetricsEnabled) {
             portList.add(createContainerPort(metricsPortName, metricsPort, "TCP"));
         }
