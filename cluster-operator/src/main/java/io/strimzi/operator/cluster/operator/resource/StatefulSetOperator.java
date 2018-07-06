@@ -70,7 +70,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
         String namespace = ss.getMetadata().getNamespace();
         String name = ss.getMetadata().getName();
         final int replicas = ss.getSpec().getReplicas();
-        log.info("Starting rolling update of {}/{}", namespace, name);
+        log.debug("Considering rolling update of {}/{}", namespace, name);
         Future<Void> f = Future.succeededFuture();
         // Then for each replica, maybe restart it
         for (int i = 0; i < replicas; i++) {
