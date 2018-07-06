@@ -7,35 +7,35 @@ package io.strimzi.operator.cluster;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.openshift.client.OpenShiftClient;
-
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectS2IAssemblyOperator;
-import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
-import io.strimzi.operator.cluster.operator.resource.SecretOperator;
-import io.strimzi.operator.cluster.operator.resource.ZookeeperSetOperator;
 import io.strimzi.operator.cluster.operator.resource.BuildConfigOperator;
 import io.strimzi.operator.cluster.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.cluster.operator.resource.DeploymentConfigOperator;
 import io.strimzi.operator.cluster.operator.resource.DeploymentOperator;
 import io.strimzi.operator.cluster.operator.resource.ImageStreamOperator;
+import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.PvcOperator;
+import io.strimzi.operator.cluster.operator.resource.SecretOperator;
 import io.strimzi.operator.cluster.operator.resource.ServiceOperator;
+import io.strimzi.operator.cluster.operator.resource.ZookeeperSetOperator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
-
-import java.net.URL;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class Main {
     private static final Logger log = LogManager.getLogger(Main.class.getName());
@@ -113,38 +113,32 @@ public class Main {
     }
 
     static Future<Boolean> isOnOpenShift(Vertx vertx, KubernetesClient client)  {
-        URL kubernetesApi = client.getMasterUrl();
-        Future<Boolean> fut = Future.future();
+        if (client.isAdaptable(OkHttpClient.class)) {
+            OkHttpClient ok = client.adapt(OkHttpClient.class);
+            Future<Boolean> fut = Future.future();
 
-        HttpClientOptions httpClientOptions = new HttpClientOptions();
-        httpClientOptions.setDefaultHost(kubernetesApi.getHost());
+            vertx.executeBlocking(request -> {
+                try (Response resp = ok.newCall(new Request.Builder().get().url(client.getMasterUrl().toString() + "oapi").build()).execute()) {
+                    if (resp.code() == 200) {
+                        log.debug("{} returned {}. We are on OpenShift.", resp.request().url(), resp.code());
+                        // We should be on OpenShift based on the /oapi result. We can now safely try isAdaptable() to be 100% sure.
+                        Boolean isOpenShift = Boolean.TRUE.equals(client.isAdaptable(OpenShiftClient.class));
+                        request.complete(isOpenShift);
+                    } else {
+                        log.debug("{} returned {}. We are not on OpenShift.", resp.request().url(), resp.code());
+                        request.complete(Boolean.FALSE);
+                    }
+                } catch (IOException e) {
+                    log.error("OpenShift detection failed", e);
+                    request.fail(e);
+                }
+            }, fut.completer());
 
-        if (kubernetesApi.getPort() == -1) {
-            httpClientOptions.setDefaultPort(kubernetesApi.getDefaultPort());
+            return fut;
         } else {
-            httpClientOptions.setDefaultPort(kubernetesApi.getPort());
+            log.error("Cannot adapt KubernetesClient to OkHttpClient");
+            return Future.failedFuture("Cannot adapt KubernetesClient to OkHttpClient");
         }
-
-        if (kubernetesApi.getProtocol().equals("https")) {
-            httpClientOptions.setSsl(true);
-            httpClientOptions.setTrustAll(true);
-        }
-
-        HttpClient httpClient = vertx.createHttpClient(httpClientOptions);
-
-        httpClient.getNow("/oapi", res -> {
-            if (res.statusCode() == 200) {
-                log.debug("{} returned {}. We are on OpenShift.", res.request().absoluteURI(), res.statusCode());
-                // We should be on OpenShift based on the /oapi result. We can now safely try isAdaptable() to be 100% sure.
-                Boolean isOpenShift = Boolean.TRUE.equals(client.isAdaptable(OpenShiftClient.class));
-                fut.complete(isOpenShift);
-            } else {
-                log.debug("{} returned {}. We are not on OpenShift.", res.request().absoluteURI(), res.statusCode());
-                fut.complete(Boolean.FALSE);
-            }
-        });
-
-        return fut;
     }
 
     static void printEnvInfo() {
