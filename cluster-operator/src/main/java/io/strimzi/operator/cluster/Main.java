@@ -118,9 +118,7 @@ public class Main {
             Future<Boolean> fut = Future.future();
 
             vertx.executeBlocking(request -> {
-                try {
-                    Response resp = ok.newCall(new Request.Builder().get().url(client.getMasterUrl().toString() + "/oapi").build()).execute();
-
+                try (Response resp = ok.newCall(new Request.Builder().get().url(client.getMasterUrl().toString() + "/oapi").build()).execute()) {
                     if (resp.code() == 200) {
                         log.debug("{} returned {}. We are on OpenShift.", resp.request().url(), resp.code());
                         // We should be on OpenShift based on the /oapi result. We can now safely try isAdaptable() to be 100% sure.
@@ -130,7 +128,6 @@ public class Main {
                         log.debug("{} returned {}. We are not on OpenShift.", resp.request().url(), resp.code());
                         request.complete(Boolean.FALSE);
                     }
-
                 } catch (IOException e) {
                     log.error("OpenShift detection failed", e);
                     request.fail(e);
