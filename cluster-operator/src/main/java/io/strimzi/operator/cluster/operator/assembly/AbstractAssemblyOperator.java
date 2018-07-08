@@ -199,7 +199,7 @@ public abstract class AbstractAssemblyOperator {
                                         if (createResult.cause() instanceof InvalidConfigMapException) {
                                             log.error(createResult.cause().getMessage());
                                         } else {
-                                            log.error("{}: createOfUpdate failed", reconciliation, createResult.cause());
+                                            log.error("{}: createOrUpdate failed", reconciliation, createResult.cause());
                                         }
                                     } else {
                                         handler.handle(createResult);
