@@ -139,7 +139,12 @@ public class ClusterOperator extends AbstractVerticle {
                                     cluster = kafkaConnectAssemblyOperator;
                                     break;
                                 case CONNECT_S2I:
-                                    cluster = kafkaConnectS2IAssemblyOperator;
+                                    if (kafkaConnectS2IAssemblyOperator != null) {
+                                        cluster = kafkaConnectS2IAssemblyOperator;
+                                    } else {
+                                        log.error("Kafka Connect S2I can be deployed only on OpenShift");
+                                        return;
+                                    }
                                     break;
                                 default:
                                     return;
