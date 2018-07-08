@@ -112,7 +112,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator {
             String clusterName = KafkaConnectS2ICluster.kafkaConnectClusterName(assemblyName);
 
             CompositeFuture.join(serviceOperations.reconcile(namespace, clusterName, null),
-                configMapOperations.reconcile(namespace, KafkaConnectS2ICluster.logAndMetricsConfigName(clusterName), null),
+                configMapOperations.reconcile(namespace, KafkaConnectS2ICluster.logAndMetricsConfigName(assemblyName), null),
                 deploymentConfigOperations.reconcile(namespace, clusterName, null),
                 imagesStreamOperations.reconcile(namespace, KafkaConnectS2ICluster.getSourceImageStreamName(clusterName), null),
                 imagesStreamOperations.reconcile(namespace, clusterName, null),

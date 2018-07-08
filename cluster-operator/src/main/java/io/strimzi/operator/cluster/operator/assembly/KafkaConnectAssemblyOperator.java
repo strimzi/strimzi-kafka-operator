@@ -90,11 +90,11 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator {
     protected void delete(Reconciliation reconciliation, Handler<AsyncResult<Void>> handler) {
         String namespace = reconciliation.namespace();
         String assemblyName = reconciliation.assemblyName();
-        String name = KafkaConnectCluster.kafkaConnectClusterName(assemblyName);
+        String clusterName = KafkaConnectCluster.kafkaConnectClusterName(assemblyName);
 
-        CompositeFuture.join(serviceOperations.reconcile(namespace, name, null),
-            configMapOperations.reconcile(namespace, KafkaConnectCluster.logAndMetricsConfigName(name), null),
-            deploymentOperations.reconcile(namespace, name, null))
+        CompositeFuture.join(serviceOperations.reconcile(namespace, clusterName, null),
+            configMapOperations.reconcile(namespace, KafkaConnectCluster.logAndMetricsConfigName(assemblyName), null),
+            deploymentOperations.reconcile(namespace, clusterName, null))
             .map((Void) null).setHandler(handler);
     }
 
