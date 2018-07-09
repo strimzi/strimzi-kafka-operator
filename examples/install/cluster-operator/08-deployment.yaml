@@ -36,6 +36,8 @@ spec:
               value: strimzi/topic-operator:latest
             - name: STRIMZI_DEFAULT_INIT_KAFKA_IMAGE
               value: strimzi/init-kafka:latest
+            - name: STRIMZI_DEFAULT_STUNNEL_ZOOKEEPER_IMAGE
+              value: strimzi/stunnel-zookeeper:latest
             - name: STRIMZI_LOG_LEVEL
               value: INFO
           livenessProbe:
