@@ -42,7 +42,6 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
 @RunWith(StrimziRunner.class)
@@ -213,9 +212,9 @@ public class ConnectClusterIT extends AbstractClusterIT {
         Map<String, String> imgFromDeplConf = getImagesFromConfig(kubeClient.getResourceAsJson(
                 "deployment", "strimzi-cluster-operator"));
         //Verifying docker image for kafka connect
-        List<String> connectImageName = getImageNameFromPod(kubeClient.listResourcesByLabel("pod",
+        String connectImageName = getImageNameFromPod(kubeClient.listResourcesByLabel("pod",
                 "strimzi.io/type=kafka-connect").get(0));
-        assertTrue(connectImageName.contains(imgFromDeplConf.get(CONNECT_IMAGE)));
+        assertEquals(imgFromDeplConf.get(CONNECT_IMAGE), connectImageName);
         LOGGER.info("Docker images verified");
     }
 

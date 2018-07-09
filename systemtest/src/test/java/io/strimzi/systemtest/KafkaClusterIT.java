@@ -45,7 +45,6 @@ import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.valueOfCmEquals;
 import static io.strimzi.test.StrimziRunner.TOPIC_CM;
 import static io.strimzi.test.TestUtils.map;
-import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static junit.framework.TestCase.assertTrue;
 import static org.hamcrest.Matchers.hasItem;
@@ -400,14 +399,14 @@ public class KafkaClusterIT extends AbstractClusterIT {
 
         //Verifying docker image for zookeeper pods
         for (int i = 0; i < zkPods; i++) {
-            List<String> imgFromPod = getImageNameFromPod(zookeeperPodName(clusterName, i));
-            assertTrue(imgFromPod.containsAll(asList(imgFromDeplConf.get(ZK_IMAGE), imgFromDeplConf.get(STUNNEL_ZOOKEEPER_IMAGE))));
+            String imgFromPod = getImageNameFromPod(zookeeperPodName(clusterName, i));
+            assertEquals(imgFromDeplConf.get(ZK_IMAGE), imgFromPod);
         }
 
         //Verifying docker image for kafka pods
         for (int i = 0; i < kafkaPods; i++) {
-            List<String> imgFromPod = getImageNameFromPod(kafkaPodName(clusterName, i));
-            assertTrue(imgFromPod.contains(imgFromDeplConf.get(KAFKA_IMAGE)));
+            String imgFromPod = getImageNameFromPod(kafkaPodName(clusterName, i));
+            assertEquals(imgFromDeplConf.get(KAFKA_IMAGE), imgFromPod);
             if (rackAwareEnabled) {
                 String initContainerImage = getInitContainerImageName(kafkaPodName(clusterName, i));
                 assertEquals(imgFromDeplConf.get(INIT_KAFKA_IMAGE), initContainerImage);
@@ -415,9 +414,9 @@ public class KafkaClusterIT extends AbstractClusterIT {
         }
 
         //Verifying docker image for topic-operator
-        List<String> topicOperatorImageName = getImageNameFromPod(kubeClient.listResourcesByLabel("pod",
+        String topicOperatorImageName = getImageNameFromPod(kubeClient.listResourcesByLabel("pod",
                 "strimzi.io/name=" + clusterName + "-topic-operator").get(0));
-        assertTrue(topicOperatorImageName.contains(imgFromDeplConf.get(TO_IMAGE)));
+        assertEquals(imgFromDeplConf.get("STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE"), topicOperatorImageName);
         LOGGER.info("Docker images verified");
     }
 
