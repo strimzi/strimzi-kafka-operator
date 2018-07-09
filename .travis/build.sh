@@ -24,7 +24,7 @@ make docker_push
 OLD_DOCKER_ORG=$DOCKER_ORG
 export DOCKER_ORG="localhost:5000/strimzici"
 
-source ./.travis/check_docs.sh
+./.travis/check_docs.sh
 
 echo "Running systemtests"
 ./systemtest/scripts/run_tests.sh ${SYSTEMTEST_ARGS}
