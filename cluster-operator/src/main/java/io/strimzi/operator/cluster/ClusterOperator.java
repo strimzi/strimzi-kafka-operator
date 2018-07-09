@@ -4,27 +4,24 @@
  */
 package io.strimzi.operator.cluster;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
-import io.fabric8.kubernetes.client.Watcher;
-
-import io.strimzi.operator.cluster.model.AssemblyType;
 import io.strimzi.operator.cluster.model.Labels;
 import io.strimzi.operator.cluster.operator.assembly.AbstractAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectS2IAssemblyOperator;
-
 import io.vertx.core.AbstractVerticle;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
+import io.vertx.core.http.HttpServer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 /**
  * An "operator" for managing assemblies of various types <em>in a particular namespace</em>.
@@ -45,7 +42,7 @@ public class ClusterOperator extends AbstractVerticle {
     private final String namespace;
     private final long reconciliationInterval;
 
-    private volatile Watch configMapWatch;
+    private final Map<String, Watch> watchByKind = new ConcurrentHashMap();
 
     private long reconcileTimer;
     private final KafkaAssemblyOperator kafkaAssemblyOperator;
@@ -60,13 +57,29 @@ public class ClusterOperator extends AbstractVerticle {
                            KafkaConnectS2IAssemblyOperator kafkaConnectS2IAssemblyOperator) {
         log.info("Creating ClusterOperator for namespace {}", namespace);
         this.namespace = namespace;
-        this.selector = Labels.forKind("cluster");
+        this.selector = Labels.EMPTY;
         this.reconciliationInterval = reconciliationInterval;
         this.client = client;
         this.kafkaAssemblyOperator = kafkaAssemblyOperator;
         this.kafkaConnectAssemblyOperator = kafkaConnectAssemblyOperator;
         this.kafkaConnectS2IAssemblyOperator = kafkaConnectS2IAssemblyOperator;
     }
+
+    Consumer<KubernetesClientException> recreateWatch(AbstractAssemblyOperator op) {
+        Consumer<KubernetesClientException> cons = new Consumer<KubernetesClientException>() {
+            @Override
+            public void accept(KubernetesClientException e) {
+                if (e != null) {
+                    log.error("Watcher closed with exception in namespace {}", namespace, e);
+                    op.createWatch(namespace, this);
+                } else {
+                    log.info("Watcher closed in namespace {}", namespace);
+                }
+            }
+        };
+        return cons;
+    }
+
 
     @Override
     public void start(Future<Void> start) {
@@ -75,145 +88,49 @@ public class ClusterOperator extends AbstractVerticle {
         // Configure the executor here, but it is used only in other places
         getVertx().createSharedWorkerExecutor("kubernetes-ops-pool", 10, TimeUnit.SECONDS.toNanos(120));
 
-        createConfigMapWatch(res -> {
-            if (res.succeeded())    {
-                configMapWatch = res.result();
-
+        kafkaAssemblyOperator.createWatch(namespace, recreateWatch(kafkaAssemblyOperator))
+            .compose(w -> {
+                log.info("Started operator for {} kind", "Kafka");
+                watchByKind.put("Kafka", w);
+                return kafkaConnectAssemblyOperator.createWatch(namespace, recreateWatch(kafkaConnectAssemblyOperator));
+            })
+            .compose(w -> {
+                log.info("Started operator for {} kind", "KafkaConnect");
+                watchByKind.put("KafkaConnect", w);
+                if (kafkaConnectS2IAssemblyOperator != null) {
+                    // only on OS
+                    return kafkaConnectS2IAssemblyOperator.createWatch(namespace, recreateWatch(kafkaConnectS2IAssemblyOperator));
+                } else {
+                    return Future.succeededFuture(null);
+                }
+            }).compose(w -> {
+                if (w != null) {
+                    log.info("Started operator for {} kind", "KafkaConnectS2I");
+                    watchByKind.put("KafkaS2IConnect", w);
+                }
                 log.info("Setting up periodical reconciliation for namespace {}", namespace);
                 this.reconcileTimer = vertx.setPeriodic(this.reconciliationInterval, res2 -> {
                     log.info("Triggering periodic reconciliation for namespace {}...", namespace);
                     reconcileAll("timer");
                 });
-
-                log.info("ClusterOperator running for namespace {}", namespace);
-
-                // start the HTTP server for healthchecks
-                this.startHealthServer();
-
-                start.complete();
-            } else {
-                log.error("ClusterOperator startup failed for namespace {}", namespace, res.cause());
-                start.fail("ClusterOperator startup failed for namespace " + namespace);
-            }
-        });
+                return startHealthServer().map((Void) null);
+            }).compose(start::complete, start);
     }
+
 
     @Override
     public void stop(Future<Void> stop) {
         log.info("Stopping ClusterOperator for namespace {}", namespace);
         vertx.cancelTimer(reconcileTimer);
-        configMapWatch.close();
+        for (Watch watch : watchByKind.values()) {
+            if (watch != null) {
+                watch.close();
+            }
+            // TODO remove the watch from the watchByKind
+        }
         client.close();
 
         stop.complete();
-    }
-
-    private void createConfigMapWatch(Handler<AsyncResult<Watch>> handler) {
-        getVertx().executeBlocking(
-            future -> {
-                Watch watch = client.configMaps().inNamespace(namespace).withLabels(selector.toMap()).watch(new Watcher<ConfigMap>() {
-                    @Override
-                    public void eventReceived(Action action, ConfigMap cm) {
-                        Labels labels = Labels.fromResource(cm);
-                        AssemblyType type;
-                        try {
-                            type = labels.type();
-                        } catch (IllegalArgumentException e) {
-                            log.warn("Unknown {} label {} received in ConfigMap {} in namespace {}",
-                                    Labels.STRIMZI_TYPE_LABEL,
-                                    cm.getMetadata().getLabels().get(Labels.STRIMZI_TYPE_LABEL),
-                                    cm.getMetadata().getName(), namespace);
-                            return;
-                        }
-
-                        final AbstractAssemblyOperator cluster;
-                        if (type == null) {
-                            log.warn("Missing label {} in ConfigMap {} in namespace {}", Labels.STRIMZI_TYPE_LABEL, cm.getMetadata().getName(), namespace);
-                            return;
-                        } else {
-                            switch (type) {
-                                case KAFKA:
-                                    cluster = kafkaAssemblyOperator;
-                                    break;
-                                case CONNECT:
-                                    cluster = kafkaConnectAssemblyOperator;
-                                    break;
-                                case CONNECT_S2I:
-                                    if (kafkaConnectS2IAssemblyOperator != null) {
-                                        cluster = kafkaConnectS2IAssemblyOperator;
-                                    } else {
-                                        log.error("Kafka Connect S2I can be deployed only on OpenShift");
-                                        return;
-                                    }
-                                    break;
-                                default:
-                                    return;
-                            }
-                        }
-                        String name = cm.getMetadata().getName();
-                        switch (action) {
-                            case ADDED:
-                            case DELETED:
-                            case MODIFIED:
-                                Reconciliation reconciliation = new Reconciliation("watch", type, namespace, name);
-                                log.info("{}: ConfigMap {} in namespace {} was {}", reconciliation, name, namespace, action);
-                                cluster.reconcileAssembly(reconciliation, result -> {
-                                    if (result.succeeded()) {
-                                        log.info("{}: Assembly reconciled", reconciliation);
-                                    } else {
-                                        Throwable cause = result.cause();
-                                        if (cause instanceof InvalidConfigMapException) {
-                                            log.warn("{}: Failed to reconcile {}", reconciliation, cause.getMessage());
-                                        } else {
-                                            log.warn("{}: Failed to reconcile {}", reconciliation, cause);
-                                        }
-                                    }
-                                });
-                                break;
-                            case ERROR:
-                                log.error("Failed ConfigMap {} in namespace{} ", name, namespace);
-                                reconcileAll("watch error");
-                                break;
-                            default:
-                                log.error("Unknown action: {} in namespace {}", name, namespace);
-                                reconcileAll("watch unknown");
-                        }
-                    }
-
-                    @Override
-                    public void onClose(KubernetesClientException e) {
-                        if (e != null) {
-                            log.error("Watcher closed with exception in namespace {}", namespace, e);
-                            recreateConfigMapWatch();
-                        } else {
-                            log.info("Watcher closed in namespace {}", namespace);
-                        }
-                    }
-                });
-                future.complete(watch);
-            }, res -> {
-                if (res.succeeded())    {
-                    log.info("ConfigMap watcher running for labels {}", selector);
-                    handler.handle(Future.succeededFuture((Watch) res.result()));
-                } else {
-                    log.info("ConfigMap watcher failed to start", res.cause());
-                    handler.handle(Future.failedFuture("ConfigMap watcher failed to start"));
-                }
-            }
-        );
-    }
-
-    private void recreateConfigMapWatch() {
-        createConfigMapWatch(res -> {
-            if (res.succeeded())    {
-                log.info("ConfigMap watch recreated in namespace {}", namespace);
-                configMapWatch = res.result();
-            } else {
-                log.error("Failed to recreate ConfigMap watch in namespace {}", namespace);
-                // We failed to recreate the Watch. We cannot continue without it. Lets close Vert.x and exit.
-                vertx.close();
-            }
-        });
     }
 
     /**
@@ -231,8 +148,8 @@ public class ClusterOperator extends AbstractVerticle {
     /**
      * Start an HTTP health server
      */
-    private void startHealthServer() {
-
+    private Future<HttpServer> startHealthServer() {
+        Future<HttpServer> result = Future.future();
         this.vertx.createHttpServer()
                 .requestHandler(request -> {
 
@@ -242,7 +159,15 @@ public class ClusterOperator extends AbstractVerticle {
                         request.response().setStatusCode(200).end();
                     }
                 })
-                .listen(HEALTH_SERVER_PORT);
+                .listen(HEALTH_SERVER_PORT, ar -> {
+                    if (ar.succeeded()) {
+                        log.info("ClusterOperator is now ready (health server listening on {})", HEALTH_SERVER_PORT);
+                    } else {
+                        log.error("Unable to bind health server on {}", HEALTH_SERVER_PORT, ar.cause());
+                    }
+                    result.handle(ar);
+                });
+        return result;
     }
 
 }

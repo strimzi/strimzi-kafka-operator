@@ -42,6 +42,11 @@
 :DockerTopicController: strimzi/topic-controller:{DockerTag}
 :DockerImageUser: kafka:kafka
 
+// API Versions
+:KafkaApiVersion: kafka.strimzi.io/v1alpha1
+:KafkaConnectApiVersion: kafka.strimzi.io/v1alpha1
+:KafkaConnectS2IApiVersion: kafka.strimzi.io/v1alpha1
+
 // Section enablers
 :Kubernetes:
 :InstallationAppendix:

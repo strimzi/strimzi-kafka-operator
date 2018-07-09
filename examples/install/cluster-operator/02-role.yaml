@@ -18,6 +18,20 @@ rules:
   - patch
   - update
 - apiGroups:
+  - "kafka.strimzi.io"
+  resources:
+  - kafkas
+  - kafkaconnects
+  - kafkaconnects2is
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+  - patch
+  - update
+- apiGroups:
   - ""
   resources:
   - pods

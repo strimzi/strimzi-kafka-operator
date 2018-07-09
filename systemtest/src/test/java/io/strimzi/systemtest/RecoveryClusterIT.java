@@ -6,7 +6,7 @@ package io.strimzi.systemtest;
 
 import io.strimzi.test.ClusterOperator;
 import io.strimzi.test.JUnitGroup;
-import io.strimzi.test.KafkaCluster;
+import io.strimzi.test.KafkaFromClasspathYaml;
 import io.strimzi.test.Namespace;
 import io.strimzi.test.StrimziRunner;
 import org.apache.logging.log4j.LogManager;
@@ -24,7 +24,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 @JUnitGroup(name = "regression")
 @Namespace(RecoveryClusterIT.NAMESPACE)
 @ClusterOperator
-@KafkaCluster(name = RecoveryClusterIT.CLUSTER_NAME, kafkaNodes = 1)
+@KafkaFromClasspathYaml
 public class RecoveryClusterIT extends AbstractClusterIT {
 
     static final String NAMESPACE = "recovery-cluster-test";

@@ -32,11 +32,13 @@ public class Labels {
      *         by the topic operator.</li>
      * </ul>
      */
+    @Deprecated
     public static final String STRIMZI_KIND_LABEL = STRIMZI_DOMAIN + "kind";
     /**
      * The type of Strimzi assembly.
      * @see AssemblyType
      */
+    @Deprecated
     public static final String STRIMZI_TYPE_LABEL = STRIMZI_DOMAIN + "type";
 
     /**
@@ -70,6 +72,7 @@ public class Labels {
     /**
      * Returns the value of the {@code strimzi.io/type} label of the given {@code resource}.
      */
+    @Deprecated
     public static AssemblyType type(HasMetadata resource) {
         String type = resource.getMetadata().getLabels().get(Labels.STRIMZI_TYPE_LABEL);
         return type != null ? AssemblyType.fromName(type) : null;
@@ -85,6 +88,7 @@ public class Labels {
     /**
      * Returns the value of the {@code strimzi.io/kind} label of the given {@code resource}.
      */
+    @Deprecated
     public static String kind(HasMetadata resource) {
         return resource.getMetadata().getLabels().get(Labels.STRIMZI_KIND_LABEL);
     }
@@ -104,7 +108,7 @@ public class Labels {
      * Returns the labels of the given {@code resource}.
      */
     public static Labels fromResource(HasMetadata resource) {
-        return new Labels(resource.getMetadata().getLabels());
+        return new Labels(resource.getMetadata().getLabels() != null ? resource.getMetadata().getLabels() : emptyMap());
     }
 
     private Labels(Map<String, String> labels) {
@@ -127,6 +131,7 @@ public class Labels {
     /**
      * The same labels as this instance, but with the given {@code type} for the {@code strimzi.io/type} key.
      */
+    @Deprecated
     public Labels withType(AssemblyType type) {
         return with(STRIMZI_TYPE_LABEL, type.toString());
     }
@@ -134,6 +139,7 @@ public class Labels {
     /**
      * The same labels as this instance, but without any {@code strimzi.io/type} key.
      */
+    @Deprecated
     public Labels withoutType() {
         return without(STRIMZI_TYPE_LABEL);
     }
@@ -141,6 +147,7 @@ public class Labels {
     /**
      * The same labels as this instance, but with the given {@code kind} for the {@code strimzi.io/kind} key.
      */
+    @Deprecated
     public Labels withKind(String kind) {
         return with(STRIMZI_KIND_LABEL, kind);
     }
@@ -148,6 +155,7 @@ public class Labels {
     /**
      * The same labels as this instance, but without any {@code strimzi.io/kind} key.
      */
+    @Deprecated
     public Labels withoutKind() {
         return without(STRIMZI_KIND_LABEL);
     }
@@ -183,6 +191,7 @@ public class Labels {
     /**
      * A singleton instance with the given {@code type} for the {@code strimzi.io/type} key.
      */
+    @Deprecated
     public static Labels forType(AssemblyType type) {
         return new Labels(singletonMap(STRIMZI_TYPE_LABEL, type.toString()));
     }
@@ -190,6 +199,7 @@ public class Labels {
     /**
      * A singleton instance with the given {@code kind} for the {@code strimzi.io/kind} key.
      */
+    @Deprecated
     public static Labels forKind(String kind) {
         return new Labels(singletonMap(STRIMZI_KIND_LABEL, kind));
     }
@@ -197,6 +207,7 @@ public class Labels {
     /**
      * Return the value of the {@code strimzi.io/type}.
      */
+    @Deprecated
     public AssemblyType type() {
         String type = labels.get(STRIMZI_TYPE_LABEL);
         return type != null ? AssemblyType.fromName(type) : null;

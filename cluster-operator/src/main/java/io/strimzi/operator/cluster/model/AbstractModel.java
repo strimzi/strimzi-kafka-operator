@@ -45,11 +45,18 @@ import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategy;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSetUpdateStrategyBuilder;
+import io.strimzi.api.kafka.model.CpuMemory;
+import io.strimzi.api.kafka.model.ExternalLogging;
+import io.strimzi.api.kafka.model.InlineLogging;
+import io.strimzi.api.kafka.model.JvmOptions;
+import io.strimzi.api.kafka.model.Logging;
+import io.strimzi.api.kafka.model.PersistentClaimStorage;
+import io.strimzi.api.kafka.model.Resources;
+import io.strimzi.api.kafka.model.Storage;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.cluster.ClusterOperator;
-import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -91,6 +98,9 @@ public abstract class AbstractModel {
     public static final String ENV_VAR_KAFKA_JVM_PERFORMANCE_OPTS = "KAFKA_JVM_PERFORMANCE_OPTS";
     public static final String ENV_VAR_DYNAMIC_HEAP_MAX = "DYNAMIC_HEAP_MAX";
 
+    private static final String DELETE_CLAIM_ANNOTATION =
+            ClusterOperator.STRIMZI_CLUSTER_OPERATOR_DOMAIN + "/delete-claim";
+
     protected final String cluster;
     protected final String namespace;
     protected final Labels labels;
@@ -100,9 +110,12 @@ public abstract class AbstractModel {
     // Number of replicas
     protected int replicas;
 
-    protected String healthCheckPath;
-    protected int healthCheckTimeout;
-    protected int healthCheckInitialDelay;
+    protected String readinessPath;
+    protected int readinessTimeout;
+    protected int readinessInitialDelay;
+    protected String livenessPath;
+    protected int livenessTimeout;
+    protected int livenessInitialDelay;
 
     protected String headlessName;
     protected String name;
@@ -111,9 +124,8 @@ public abstract class AbstractModel {
     protected final String metricsPortName = "kafkametrics";
     protected boolean isMetricsEnabled;
 
-    protected JsonObject metricsConfig;
+    protected Iterable<Map.Entry<String, Object>> metricsConfig;
     protected String ancillaryConfigName;
-
     protected String logConfigName;
 
     protected Storage storage;
@@ -164,12 +176,20 @@ public abstract class AbstractModel {
         this.image = image;
     }
 
-    protected void setHealthCheckTimeout(int healthCheckTimeout) {
-        this.healthCheckTimeout = healthCheckTimeout;
+    protected void setReadinessTimeout(int readinessTimeout) {
+        this.readinessTimeout = readinessTimeout;
     }
 
-    protected void setHealthCheckInitialDelay(int healthCheckInitialDelay) {
-        this.healthCheckInitialDelay = healthCheckInitialDelay;
+    protected void setReadinessInitialDelay(int readinessInitialDelay) {
+        this.readinessInitialDelay = readinessInitialDelay;
+    }
+
+    protected void setLivenessTimeout(int livenessTimeout) {
+        this.livenessTimeout = livenessTimeout;
+    }
+
+    protected void setLivenessInitialDelay(int livenessInitialDelay) {
+        this.livenessInitialDelay = livenessInitialDelay;
     }
 
     /**
@@ -200,6 +220,7 @@ public abstract class AbstractModel {
     protected void setMetricsEnabled(boolean isMetricsEnabled) {
         this.isMetricsEnabled = isMetricsEnabled;
     }
+
 
     /**
      * Returns map with all available loggers for current pod and default values.
@@ -234,7 +255,7 @@ public abstract class AbstractModel {
     protected static String createPropertiesString(Properties newSettings) {
         StringWriter sw = new StringWriter();
         try {
-            newSettings.store(sw, "Do not change this generated file. To change logging settings please use cluster config map.");
+            newSettings.store(sw, "Do not change this generated file. Logging can be configured in the corresponding kubernetes/openshift resource.");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -250,7 +271,7 @@ public abstract class AbstractModel {
         this.logging = logging;
     }
 
-    protected String parseLogging(Logging logging, ConfigMap externalCm) {
+    public String parseLogging(Logging logging, ConfigMap externalCm) {
         if (logging instanceof InlineLogging) {
             // validate all entries
             ((InlineLogging) logging).getLoggers().forEach((key, tmpEntry) -> {
@@ -296,7 +317,7 @@ public abstract class AbstractModel {
             });
             // update fields otherwise use default values
             Properties newSettings = getDefaultLogConfig();
-            ((InlineLogging) logging).loggers.forEach((key, value) -> newSettings.replace(key, value));
+            newSettings.putAll(((InlineLogging) logging).getLoggers());
             return createPropertiesString(newSettings);
         } else if (logging instanceof ExternalLogging) {
             if (externalCm != null) {
@@ -325,11 +346,11 @@ public abstract class AbstractModel {
         this.logConfigName = logConfigName;
     }
 
-    protected JsonObject getMetricsConfig() {
+    protected Iterable<Map.Entry<String, Object>>  getMetricsConfig() {
         return metricsConfig;
     }
 
-    protected void setMetricsConfig(JsonObject metricsConfig) {
+    protected void setMetricsConfig(Iterable<Map.Entry<String, Object>> metricsConfig) {
         this.metricsConfig = metricsConfig;
     }
 
@@ -477,8 +498,9 @@ public abstract class AbstractModel {
 
     protected PersistentVolumeClaim createPersistentVolumeClaim(String name) {
 
+        PersistentClaimStorage storage = (PersistentClaimStorage) this.storage;
         Map<String, Quantity> requests = new HashMap<>();
-        requests.put("storage", storage.size());
+        requests.put("storage", new Quantity(storage.getSize(), null));
 
         PersistentVolumeClaim pvc = new PersistentVolumeClaimBuilder()
                 .withNewMetadata()
@@ -489,8 +511,8 @@ public abstract class AbstractModel {
                 .withNewResources()
                 .withRequests(requests)
                 .endResources()
-                .withStorageClassName(storage.storageClass())
-                .withSelector(storage.selector())
+                .withStorageClassName(storage.getStorageClass())
+                .withNewSelector().withMatchLabels(storage.getSelector()).endSelector()
                 .endSpec()
                 .build();
 
@@ -636,14 +658,17 @@ public abstract class AbstractModel {
             boolean isOpenShift) {
 
         Map<String, String> annotations = new HashMap<>();
-        annotations.put(String.format("%s/%s", ClusterOperator.STRIMZI_CLUSTER_OPERATOR_DOMAIN, Storage.DELETE_CLAIM_FIELD),
-                String.valueOf(storage.isDeleteClaim()));
+
+        annotations.put(DELETE_CLAIM_ANNOTATION,
+                String.valueOf(storage instanceof PersistentClaimStorage
+                        && ((PersistentClaimStorage) storage).isDeleteClaim()));
+
 
         List<Container> initContainersInternal = new ArrayList<>();
         PodSecurityContext securityContext = null;
         // if a persistent volume claim is requested and the running cluster is a Kubernetes one
         // there is an hack on volume mounting which needs an "init-container"
-        if ((this.storage.type() == Storage.StorageType.PERSISTENT_CLAIM) && !isOpenShift) {
+        if (this.storage instanceof PersistentClaimStorage && !isOpenShift) {
 
             String chown = String.format("chown -R %d:%d %s",
                     AbstractModel.VOLUME_MOUNT_HACK_GROUPID,
@@ -783,23 +808,23 @@ public abstract class AbstractModel {
     protected ResourceRequirements resources() {
         if (resources != null) {
             ResourceRequirementsBuilder builder = new ResourceRequirementsBuilder();
-            Resources.CpuMemory limits = resources.getLimits();
+            CpuMemory limits = resources.getLimits();
             if (limits != null
-                    && limits.getMilliCpu() > 0) {
-                builder.addToLimits("cpu", new Quantity(limits.getCpuFormatted()));
+                    && limits.milliCpuAsInt() > 0) {
+                builder.addToLimits("cpu", new Quantity(limits.getMilliCpu()));
             }
             if (limits != null
-                    && limits.getMemory() > 0) {
-                builder.addToLimits("memory", new Quantity(limits.getMemoryFormatted()));
+                    && limits.memoryAsLong() > 0) {
+                builder.addToLimits("memory", new Quantity(limits.getMemory()));
             }
-            Resources.CpuMemory requests = resources.getRequests();
+            CpuMemory requests = resources.getRequests();
             if (requests != null
-                    && requests.getMilliCpu() > 0) {
-                builder.addToRequests("cpu", new Quantity(requests.getCpuFormatted()));
+                    && requests.milliCpuAsInt() > 0) {
+                builder.addToRequests("cpu", new Quantity(requests.getMilliCpu()));
             }
             if (requests != null
-                    && requests.getMemory() > 0) {
-                builder.addToRequests("memory", new Quantity(requests.getMemoryFormatted()));
+                    && requests.memoryAsLong() > 0) {
+                builder.addToRequests("memory", new Quantity(requests.getMemory()));
             }
             return builder.build();
         }
@@ -950,5 +975,14 @@ public abstract class AbstractModel {
         }
 
         return certs;
+    }
+
+    public static boolean deleteClaim(StatefulSet ss) {
+        if (!ss.getSpec().getVolumeClaimTemplates().isEmpty()
+                && ss.getMetadata().getAnnotations() != null) {
+            return Boolean.valueOf(ss.getMetadata().getAnnotations().computeIfAbsent(DELETE_CLAIM_ANNOTATION, s -> "false"));
+        } else {
+            return false;
+        }
     }
 }

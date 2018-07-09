@@ -6,6 +6,10 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.strimzi.api.kafka.model.JvmOptions;
+import io.strimzi.api.kafka.model.Resources;
+import io.strimzi.test.TestUtils;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -80,23 +84,23 @@ public class AbstractModelTest {
 
     @Test
     public void testJvmPerformanceOptions() {
-        JvmOptions opts = JvmOptions.fromJson("{}");
+        JvmOptions opts = TestUtils.fromJson("{}", JvmOptions.class);
 
         assertNull(getPerformanceOptions(opts));
 
-        opts = JvmOptions.fromJson("{" +
+        opts = TestUtils.fromJson("{" +
                 "  \"-server\": \"true\"" +
-                "}");
+                "}", JvmOptions.class);
 
         assertEquals("-server", getPerformanceOptions(opts));
 
-        opts = JvmOptions.fromJson("{" +
+        opts = TestUtils.fromJson("{" +
                 "    \"-XX\":" +
                 "            {\"key1\": \"value1\"," +
                 "            \"key2\": \"true\"," +
                 "            \"key3\": false," +
                 "            \"key4\": 10}" +
-                "}");
+                "}", JvmOptions.class);
 
         assertEquals("-XX:key1=value1 -XX:+key2 -XX:-key3 -XX:key4=10", getPerformanceOptions(opts));
     }
@@ -122,5 +126,38 @@ public class AbstractModelTest {
         } else {
             return null;
         }
+    }
+
+
+    @Test
+    public void testDeserializeSuffixes() {
+        Resources opts = TestUtils.fromJson("{\"limits\": {\"memory\": \"10Gi\", \"cpu\": \"1\"}, \"requests\": {\"memory\": \"5G\", \"cpu\": 1}}", Resources.class);
+        assertEquals(10737418240L, opts.getLimits().memoryAsLong());
+        assertEquals(1000, opts.getLimits().milliCpuAsInt());
+        assertEquals("1", opts.getLimits().getMilliCpu());
+        assertEquals(5000000000L, opts.getRequests().memoryAsLong());
+        assertEquals(1000, opts.getLimits().milliCpuAsInt());
+        assertEquals("1", opts.getLimits().getMilliCpu());
+        AbstractModel abstractModel = new AbstractModel("", "", Labels.forCluster("")) {
+            /**
+             * Returns map with all available loggers for current pod and default values.
+             *
+             * @return
+             */
+            @Override
+            protected Properties getDefaultLogConfig() {
+                return null;
+            }
+
+            /**
+             * @return a list of containers to add to the StatefulSet/Deployment
+             */
+            @Override
+            protected List<Container> getContainers() {
+                return null;
+            }
+        };
+        abstractModel.setResources(opts);
+        Assert.assertEquals("1", abstractModel.resources().getLimits().get("cpu").getAmount());
     }
 }

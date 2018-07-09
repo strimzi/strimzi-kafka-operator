@@ -10,14 +10,12 @@ import io.fabric8.zjsonpatch.JsonDiff;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
+import static java.lang.Integer.parseInt;
 import static java.util.Arrays.asList;
 
 public class StatefulSetDiff {
@@ -28,6 +26,7 @@ public class StatefulSetDiff {
     static {
         IGNORABLE_PATHS = asList(
             "/spec/revisionHistoryLimit",
+            "/spec/template/metadata/annotations", // Actually it's only the statefulset-generation annotation we care about
             "/spec/template/spec/initContainers/[0-9]+/imagePullPolicy",
             "/spec/template/spec/initContainers/[0-9]+/resources",
             "/spec/template/spec/initContainers/[0-9]+/terminationMessagePath",
@@ -56,15 +55,6 @@ public class StatefulSetDiff {
             "/status").stream().map(Pattern::compile).collect(Collectors.toList());
     }
 
-    private static boolean containsPathOrChild(Iterable<String> paths, String path) {
-        for (String pathValue : paths) {
-            if (equalsOrPrefix(path, pathValue)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     private static boolean equalsOrPrefix(String path, String pathValue) {
         return pathValue.equals(path)
                 || pathValue.startsWith(path + "/");
@@ -76,9 +66,13 @@ public class StatefulSetDiff {
     private final boolean changesLabels;
     private final boolean changesSpecReplicas;
 
-    public StatefulSetDiff(StatefulSet current, StatefulSet updated) {
-        JsonNode diff = JsonDiff.asJson(patchMapper().valueToTree(current), patchMapper().valueToTree(updated));
-        Set<String> paths = new HashSet<>();
+    public StatefulSetDiff(StatefulSet current, StatefulSet desired) {
+        JsonNode diff = JsonDiff.asJson(patchMapper().valueToTree(current), patchMapper().valueToTree(desired));
+        int num = 0;
+        boolean changesVolumeClaimTemplate = false;
+        boolean changesSpecTemplateSpec = false;
+        boolean changesLabels = false;
+        boolean changesSpecReplicas = false;
         outer: for (JsonNode d : diff) {
             String pathValue = d.get("path").asText();
             for (Pattern pattern : IGNORABLE_PATHS) {
@@ -87,34 +81,68 @@ public class StatefulSetDiff {
                     continue outer;
                 }
             }
-            log.debug("StatefulSet {}/{} differs at path {}", current.getMetadata().getNamespace(), current.getMetadata().getName(), pathValue);
-            paths.add(pathValue);
+            if (log.isDebugEnabled()) {
+                log.debug("StatefulSet {}/{} differs: {}", current.getMetadata().getNamespace(), current.getMetadata().getName(), d);
+                log.debug("Current StatefulSet path {} has value {}", pathValue, getFromPath(current, pathValue));
+                log.debug("Desired StatefulSet path {} has value {}", pathValue, getFromPath(desired, pathValue));
+            }
+
+            num++;
+            changesVolumeClaimTemplate |= equalsOrPrefix("/spec/volumeClaimTemplates", pathValue);
+            // Change changes to /spec/template/spec, except to imagePullPolicy, which gets changed
+            // by k8s
+            changesSpecTemplateSpec |= equalsOrPrefix("/spec/template/spec", pathValue);
+            changesLabels |= equalsOrPrefix("/metadata/labels", pathValue);
+            changesSpecReplicas |= equalsOrPrefix("/spec/replicas", pathValue);
         }
-        isEmpty = paths.isEmpty();
-        changesVolumeClaimTemplate = containsPathOrChild(paths, "/spec/volumeClaimTemplates");
-        // Change changes to /spec/template/spec, except to imagePullPolicy, which gets changed
-        // by k8s
-        changesSpecTemplateSpec = containsPathOrChild(paths, "/spec/template/spec");
-        changesLabels = containsPathOrChild(paths, "/metadata/labels");
-        changesSpecReplicas = containsPathOrChild(paths, "/spec/replicas");
+        this.isEmpty = num == 0;
+        this.changesLabels = changesLabels;
+        this.changesSpecReplicas = changesSpecReplicas;
+        this.changesSpecTemplateSpec = changesSpecTemplateSpec;
+        this.changesVolumeClaimTemplate = changesVolumeClaimTemplate;
+    }
+
+    private JsonNode getFromPath(StatefulSet current, String pathValue) {
+        JsonNode node1 = patchMapper().valueToTree(current);
+        for (String field : pathValue.replaceFirst("^/", "").split("/")) {
+            JsonNode node2 = node1.get(field);
+            if (node2 == null) {
+                try {
+                    int index = parseInt(field);
+                    node2 = node1.get(index);
+                } catch (NumberFormatException e) {
+                }
+            }
+            if (node2 == null) {
+                node1 = null;
+                break;
+            } else {
+                node1 = node2;
+            }
+        }
+        return node1;
     }
 
     public boolean isEmpty() {
         return isEmpty;
     }
 
+    /** Returns true if there's a difference in {@code /spec/volumeClaimTemplates} */
     public boolean changesVolumeClaimTemplates() {
         return changesVolumeClaimTemplate;
     }
 
+    /** Returns true if there's a difference in {@code /spec/template/spec} */
     public boolean changesSpecTemplateSpec() {
         return changesSpecTemplateSpec;
     }
 
+    /** Returns true if there's a difference in {@code /metadata/labels} */
     public boolean changesLabels() {
         return changesLabels;
     }
 
+    /** Returns true if there's a difference in {@code /spec/replicas} */
     public boolean changesSpecReplicas() {
         return changesSpecReplicas;
     }

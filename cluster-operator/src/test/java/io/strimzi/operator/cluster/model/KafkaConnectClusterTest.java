@@ -9,25 +9,19 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
+import io.strimzi.api.kafka.model.KafkaConnectAssembly;
 import io.strimzi.certs.CertManager;
-import io.strimzi.operator.cluster.InvalidConfigMapException;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.operator.assembly.MockCertManager;
-import io.vertx.core.json.JsonObject;
 import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 public class KafkaConnectClusterTest {
     private final String namespace = "test";
@@ -61,12 +55,12 @@ public class KafkaConnectClusterTest {
             "internal.value.converter=org.apache.kafka.connect.json.JsonConverter\n";
 
     private CertManager certManager = new MockCertManager();
-    private final ConfigMap cm = ResourceUtils.createKafkaConnectClusterConfigMap(namespace, cluster, replicas, image,
+    private final KafkaConnectAssembly resource = ResourceUtils.createKafkaConnectCluster(namespace, cluster, replicas, image,
             healthDelay, healthTimeout, metricsCmJson, configurationJson);
-    private final KafkaConnectCluster kc = KafkaConnectCluster.fromConfigMap(cm);
+    private final KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource);
 
     @Rule
-    public ResourceTester<KafkaConnectCluster> resourceTester = new ResourceTester<>(KafkaConnectCluster::fromConfigMap);
+    public ResourceTester<KafkaConnectAssembly, KafkaConnectCluster> resourceTester = new ResourceTester<>(KafkaConnectAssembly.class, KafkaConnectCluster::fromCrd);
 
     @Test
     public void testMetricsConfigMap() {
@@ -89,12 +83,14 @@ public class KafkaConnectClusterTest {
 
     @Test
     public void testDefaultValues() {
-        KafkaConnectCluster kc = KafkaConnectCluster.fromConfigMap(ResourceUtils.createEmptyKafkaConnectClusterConfigMap(namespace, cluster));
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(ResourceUtils.createEmptyKafkaConnectCluster(namespace, cluster));
 
         assertEquals(KafkaConnectCluster.DEFAULT_IMAGE, kc.image);
         assertEquals(KafkaConnectCluster.DEFAULT_REPLICAS, kc.replicas);
-        assertEquals(KafkaConnectCluster.DEFAULT_HEALTHCHECK_DELAY, kc.healthCheckInitialDelay);
-        assertEquals(KafkaConnectCluster.DEFAULT_HEALTHCHECK_TIMEOUT, kc.healthCheckTimeout);
+        assertEquals(KafkaConnectCluster.DEFAULT_HEALTHCHECK_DELAY, kc.readinessInitialDelay);
+        assertEquals(KafkaConnectCluster.DEFAULT_HEALTHCHECK_TIMEOUT, kc.readinessTimeout);
+        assertEquals(KafkaConnectCluster.DEFAULT_HEALTHCHECK_DELAY, kc.livenessInitialDelay);
+        assertEquals(KafkaConnectCluster.DEFAULT_HEALTHCHECK_TIMEOUT, kc.livenessTimeout);
         assertEquals(defaultConfiguration, kc.getConfiguration().getConfiguration());
     }
 
@@ -102,32 +98,11 @@ public class KafkaConnectClusterTest {
     public void testFromConfigMap() {
         assertEquals(replicas, kc.replicas);
         assertEquals(image, kc.image);
-        assertEquals(healthDelay, kc.healthCheckInitialDelay);
-        assertEquals(healthTimeout, kc.healthCheckTimeout);
+        assertEquals(healthDelay, kc.readinessInitialDelay);
+        assertEquals(healthTimeout, kc.readinessTimeout);
+        assertEquals(healthDelay, kc.livenessInitialDelay);
+        assertEquals(healthTimeout, kc.livenessTimeout);
         assertEquals(expectedConfiguration, kc.getConfiguration().getConfiguration());
-    }
-
-    @Test
-    public void testFromDeployment() {
-        KafkaConnectCluster newKc = KafkaConnectCluster.fromAssembly(namespace, cluster, kc.generateDeployment());
-
-        assertEquals(replicas, newKc.replicas);
-        assertEquals(image, newKc.image);
-        assertEquals(healthDelay, newKc.healthCheckInitialDelay);
-        assertEquals(healthTimeout, newKc.healthCheckTimeout);
-        assertEquals(expectedConfiguration, kc.getConfiguration().getConfiguration());
-    }
-
-    @Test
-    public void testFromDeploymentWithDefaultValues() {
-        KafkaConnectCluster defaultsKc = KafkaConnectCluster.fromConfigMap(ResourceUtils.createEmptyKafkaConnectClusterConfigMap(namespace, cluster));
-        KafkaConnectCluster newKc = KafkaConnectCluster.fromAssembly(namespace, cluster, defaultsKc.generateDeployment());
-
-        assertEquals(KafkaConnectCluster.DEFAULT_REPLICAS, newKc.replicas);
-        assertEquals(KafkaConnectCluster.DEFAULT_IMAGE, newKc.image);
-        assertEquals(KafkaConnectCluster.DEFAULT_HEALTHCHECK_DELAY, newKc.healthCheckInitialDelay);
-        assertEquals(KafkaConnectCluster.DEFAULT_HEALTHCHECK_TIMEOUT, newKc.healthCheckTimeout);
-        assertEquals(defaultsKc.getConfiguration().getConfiguration(), newKc.getConfiguration().getConfiguration());
     }
 
     @Test
@@ -180,193 +155,6 @@ public class KafkaConnectClusterTest {
         assertEquals("RollingUpdate", dep.getSpec().getStrategy().getType());
         assertEquals(new Integer(1), dep.getSpec().getStrategy().getRollingUpdate().getMaxSurge().getIntVal());
         assertEquals(new Integer(0), dep.getSpec().getStrategy().getRollingUpdate().getMaxUnavailable().getIntVal());
-    }
-
-    @Test
-    public void testCorruptedValues() {
-        ConfigMap cm = ResourceUtils.createEmptyKafkaConnectClusterConfigMap(namespace, cluster);
-
-        // type mismatch
-        cm.getData().put("kafka-healthcheck-delay", "1z");
-        try {
-            KafkaCluster.fromConfigMap(certManager, cm, Collections.emptyList());
-            fail("Expected it to throw an exception");
-        } catch (InvalidConfigMapException e) {
-            assertEquals(e.getKey(), "kafka-healthcheck-delay");
-        }
-
-        // unknown type
-        cm.getData().clear();
-        cm.getData().put("kafka-storage", "{ \"type\": \"zidan\" }");
-        try {
-            KafkaCluster.fromConfigMap(certManager, cm, Collections.emptyList());
-            fail("Expected it to throw an exception");
-        } catch (InvalidConfigMapException e) {
-            assertEquals(e.getKey(), "kafka-storage");
-        }
-
-        // corrupted JSON (missing quotes)
-        cm.getData().clear();
-        cm.getData().put("kafka-config", "{" +
-                "\"num.recovery.threads.per.data.dir\": \"1\",\n" +
-                "\"default.replication.factor\": e,\n" +
-                "\"num.io.threads\": \"1\"" +
-                "}");
-        try {
-            KafkaCluster.fromConfigMap(certManager, cm, Collections.emptyList());
-            fail("Expected it to throw an exception");
-        } catch (InvalidConfigMapException e) {
-            assertEquals("default.replication.factor", e.getKey());
-        }
-
-        // corrupted JSON (missing quotes)
-        cm.getData().clear();
-        cm.getData().put("kafka-config", "{" +
-                "\"num.recovery.threads.per.data.dir\": \"1\",\n" +
-                "\"num.io.threads\": \"1\"");
-        try {
-            KafkaCluster.fromConfigMap(certManager, cm, Collections.emptyList());
-            fail("Expected it to throw an exception");
-        } catch (InvalidConfigMapException e) {
-            assertEquals("JSON bracing", e.getKey());
-        }
-    }
-
-    @Test
-    public void testCorruptedBooleans() {
-        ConfigMap cm = ResourceUtils.createEmptyKafkaConnectClusterConfigMap(namespace, cluster);
-
-        // typo in boolean value
-        cm.getData().put("kafka-config", "{" +
-                "\"num.recovery.threads.per.data.dir\": \"1\",\n" +
-                "\"default.replication.factor\": 3,\n" +
-                "\"num.io.threads\": \"1\",\n" +
-                "\"bool.value\": tru" +
-                "}");
-        try {
-            KafkaCluster.fromConfigMap(certManager, cm, Collections.emptyList());
-            fail("Expected it to throw an exception");
-        } catch (InvalidConfigMapException e) {
-            assertEquals("bool.value", e.getKey());
-        }
-
-        // test parsing boolean values
-        cm.getData().clear();
-        cm.getData().put("kafka-config", "{" +
-                "\"num.recovery.threads.per.data.dir\": \"1\",\n" +
-                "\"default.replication.factor\": 3,\n" +
-                "\"num.io.threads\": \"1\",\n" +
-                "\"bool.value\": true,\n" +
-                "\"bool.value2\": \"true\",\n" +
-                "\"bool.value3\": false,\n" +
-                "\"bool.value4\": \"truuue\"" +
-                "}");
-
-        // we have to prepare map before parsing booleans
-        Map<String, String> data = cm.getData();
-        String config = data.get("kafka-config");
-        Map<String, Object> map = new JsonObject(config).getMap();
-        Map<String, String> newMap = new HashMap<String, String>();
-        for (Map.Entry<String, Object> entry : map.entrySet()) {
-            if (entry.getValue() instanceof String) {
-                newMap.put(entry.getKey(), (String) entry.getValue());
-            } else if (entry.getValue() instanceof Integer || entry.getValue() instanceof Long || entry.getValue() instanceof Boolean || entry.getValue() instanceof Double || entry.getValue() instanceof Float) {
-                newMap.put(entry.getKey(), String.valueOf(entry.getValue()));
-            }
-        }
-        assertTrue(Utils.getBoolean(newMap, "bool.value", false));
-        assertTrue(Utils.getBoolean(newMap, "bool.value2", true));
-        assertFalse(Utils.getBoolean(newMap, "bool.value3", true));
-
-        try {
-            assertTrue(Utils.getBoolean(newMap, "bool.value4", false));
-            fail("Expected it to throw an exception");
-        } catch (InvalidConfigMapException e) {
-            assertEquals("bool.value4", e.getKey());
-        }
-    }
-
-    @Test
-    public void testCorruptedConfigMapMetrics() {
-        try {
-            ConfigMap cm = ResourceUtils.createKafkaConnectClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout,
-                    "", configurationJson);
-            KafkaConnectCluster.fromConfigMap(cm);
-            fail("Expected it to throw an exception");
-        } catch (InvalidConfigMapException e) {
-            assertEquals("JSON - empty value", e.getKey());
-        }
-
-        try {
-            ConfigMap cm = ResourceUtils.createKafkaConnectClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout,
-                    "{\"lowercaseOutputName\" : true \n," +
-                            "\"rules\": }", configurationJson);
-            KafkaConnectCluster.fromConfigMap(cm);
-            fail("Expected it to throw an exception");
-        } catch (InvalidConfigMapException e) {
-            assertEquals("Unexpected character - }", e.getKey());
-        }
-
-        try {
-            ConfigMap cm = ResourceUtils.createKafkaConnectClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout,
-                    "    {\n" +
-                            "    \"lowercaseOutputName\": true,\n" +
-                            "    \"rules\": [{\n" +
-                            "    \"pattern\": \"kafka.server<type=(.+), name=(.+)PerSec\\\\w*><>Count\",\n" +
-                            "    \"name\": \"kafka_server_$1_$2_total\"\n" +
-                            "    },\n" +
-                            "    {\n" +
-                            "    \"pattern\": \"kafka.server<type=(.+), name=(.+)PerSec\\\\w*, topic=(.+)><>Count\",\n" +
-                            "    \"name\": \"x\",\n" +
-                            "    \"labels\": \n" +
-                            "    }\n" +
-                            "    ]\n" +
-                            "    }", configurationJson);
-            KafkaConnectCluster.fromConfigMap(cm);
-            fail("Expected it to throw an exception");
-        } catch (InvalidConfigMapException e) {
-            assertEquals("Unexpected character - }", e.getKey());
-        }
-
-        try {
-            ConfigMap cm = ResourceUtils.createKafkaConnectClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout,
-                    "{\"lowercaseOutputName\" : tru \n," +
-                            "\"rules\": \"I am valid\" }", configurationJson);
-            KafkaConnectCluster.fromConfigMap(cm);
-            fail("Expected it to throw an exception");
-        } catch (InvalidConfigMapException e) {
-            assertEquals("lowercaseOutputName", e.getKey());
-        }
-    }
-
-    @Test
-    public void testEmptyValue() {
-        ConfigMap cm = ResourceUtils.createEmptyKafkaConnectClusterConfigMap(namespace, cluster);
-
-        // in the middle
-        cm.getData().put("kafka-config", "{" +
-                "\"offsets .topic.replication.factor\": \"3\",\n" +
-                "\"transaction.state.log.min.isr\": ,\n" +
-                "\"default.replication.factor\": 2 }");
-        try {
-            KafkaCluster.fromConfigMap(certManager, cm, Collections.emptyList());
-            fail("Expected it to throw an exception");
-        } catch (InvalidConfigMapException e) {
-            assertEquals("Unexpected character - ,", e.getKey());
-        }
-
-        // end
-        cm.getData().clear();
-        cm.getData().put("kafka-config", "{" +
-                "\"offsets .topic.replication.factor\": \"3\",\n" +
-                "\"transaction.state.log.min.isr\": 7,\n" +
-                "\"default.replication.factor\": }");
-        try {
-            KafkaCluster.fromConfigMap(certManager, cm, Collections.emptyList());
-            fail("Expected it to throw an exception");
-        } catch (InvalidConfigMapException e) {
-            assertEquals("Unexpected character - }", e.getKey());
-        }
     }
 
     @Test

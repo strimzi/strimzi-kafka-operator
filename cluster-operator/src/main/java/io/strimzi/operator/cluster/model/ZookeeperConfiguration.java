@@ -5,10 +5,11 @@
 
 package io.strimzi.operator.cluster.model;
 
-import java.util.List;
-import java.util.Properties;
+import io.strimzi.api.kafka.model.Zookeeper;
 
-import io.vertx.core.json.JsonObject;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 import static java.util.Arrays.asList;
 
@@ -16,18 +17,13 @@ import static java.util.Arrays.asList;
  * Class for handling Zookeeper configuration passed by the user
  */
 public class ZookeeperConfiguration extends AbstractConfiguration {
+
     private static final List<String> FORBIDDEN_OPTIONS;
     private static final Properties DEFAULTS;
 
     static {
         FORBIDDEN_OPTIONS = asList(
-                "server.",
-                "dataDir",
-                "dataLogDir",
-                "clientPort",
-                "authProvider",
-                "quorum.auth",
-                "requireClientAuthScheme");
+                Zookeeper.FORBIDDEN_PREFIXES.split(" *, *"));
 
         DEFAULTS = new Properties();
         DEFAULTS.setProperty("timeTick", "2000");
@@ -53,7 +49,7 @@ public class ZookeeperConfiguration extends AbstractConfiguration {
      *
      * @param jsonOptions     Json object with configuration options as key ad value pairs.
      */
-    public ZookeeperConfiguration(JsonObject jsonOptions) {
+    public ZookeeperConfiguration(Iterable<Map.Entry<String, Object>> jsonOptions) {
         super(jsonOptions, FORBIDDEN_OPTIONS, DEFAULTS);
     }
 }

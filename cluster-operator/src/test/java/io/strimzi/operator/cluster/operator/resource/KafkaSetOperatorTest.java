@@ -4,16 +4,18 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
+import io.strimzi.api.kafka.model.InlineLogging;
+import io.strimzi.api.kafka.model.KafkaAssembly;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.operator.assembly.MockCertManager;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,8 +28,12 @@ import static org.junit.Assert.assertTrue;
 public class KafkaSetOperatorTest {
 
     public static final String METRICS_CONFIG = "{\"foo\":\"bar\"}";
-    public static final String KAFKA_LOG_CONFIG = "{\"kafka.root.logger.level\":\"OFF\"}";
-    public static final String ZOOKEEPER_LOG_CONFIG = "{\"zookeeper.root.logger\":\"OFF\"}";
+    public static final InlineLogging KAFKA_LOG_CONFIG = new InlineLogging();
+    public static final InlineLogging ZOOKEEPER_LOG_CONFIG = new InlineLogging();
+    static {
+        KAFKA_LOG_CONFIG.setLoggers(Collections.singletonMap("zookeeper.root.logger", "OFF"));
+        ZOOKEEPER_LOG_CONFIG.setLoggers(Collections.singletonMap("kafka.root.logger.level", "OFF"));
+    }
 
     private StatefulSet a;
     private StatefulSet b;
@@ -35,18 +41,18 @@ public class KafkaSetOperatorTest {
     @Before
     public void before() {
         MockCertManager certManager = new MockCertManager();
-        a = KafkaCluster.fromConfigMap(certManager, getConfigMap(), getInitialSecrets()).generateStatefulSet(true);
-        b = KafkaCluster.fromConfigMap(certManager, getConfigMap(), getInitialSecrets()).generateStatefulSet(true);
+        a = KafkaCluster.fromCrd(certManager, getResource(), getInitialSecrets()).generateStatefulSet(true);
+        b = KafkaCluster.fromCrd(certManager, getResource(), getInitialSecrets()).generateStatefulSet(true);
     }
 
-    private ConfigMap getConfigMap() {
+    private KafkaAssembly getResource() {
         String clusterCmName = "foo";
         String clusterCmNamespace = "test";
         int replicas = 3;
         String image = "bar";
         int healthDelay = 120;
         int healthTimeout = 30;
-        return ResourceUtils.createKafkaClusterConfigMap(clusterCmNamespace, clusterCmName, replicas, image, healthDelay, healthTimeout, METRICS_CONFIG,
+        return ResourceUtils.createKafkaCluster(clusterCmNamespace, clusterCmName, replicas, image, healthDelay, healthTimeout, METRICS_CONFIG,
                 "{\"type\": \"persistent-claim\", " +
                         "\"size\": \"123\", " +
                         "\"class\": \"foo\"," +

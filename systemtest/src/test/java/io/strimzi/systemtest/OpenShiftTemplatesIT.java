@@ -6,8 +6,13 @@ package io.strimzi.systemtest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.strimzi.api.kafka.DoneableKafkaAssembly;
+import io.strimzi.api.kafka.KafkaAssemblyList;
+import io.strimzi.api.kafka.model.KafkaAssembly;
+import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.test.JUnitGroup;
 import io.strimzi.test.Namespace;
 import io.strimzi.test.OpenShiftOnly;
@@ -47,6 +52,12 @@ public class OpenShiftTemplatesIT {
     private Oc oc = (Oc) cluster.client();
     private KubernetesClient client = new DefaultKubernetesClient();
 
+    private KafkaAssembly getKafkaWithName(String clusterName) {
+        CustomResourceDefinition crd = client.customResourceDefinitions().withName(KafkaAssembly.CRD_NAME).get();
+        KafkaAssembly kafka = client.customResources(crd, KafkaAssembly.class, KafkaAssemblyList.class, DoneableKafkaAssembly.class).inNamespace(NAMESPACE).withName(clusterName).get();
+        return kafka;
+    }
+
     @Test
     @JUnitGroup(name = "regression")
     public void testStrimziEphemeral() throws IOException {
@@ -55,13 +66,13 @@ public class OpenShiftTemplatesIT {
                 "ZOOKEEPER_NODE_COUNT", "1",
                 "KAFKA_NODE_COUNT", "1"));
 
-        ConfigMap cm = client.configMaps().inNamespace(NAMESPACE).withName(clusterName).get();
-        assertNotNull(cm);
-        Map<String, String> cmData = cm.getData();
-        assertEquals("1", cmData.get("kafka-nodes"));
-        assertEquals("1", cmData.get("zookeeper-nodes"));
-        assertEquals("ephemeral", mapper.readTree(cmData.get("kafka-storage")).get("type").asText());
-        assertEquals("ephemeral", mapper.readTree(cmData.get("zookeeper-storage")).get("type").asText());
+        KafkaAssembly kafka = getKafkaWithName(clusterName);
+        assertNotNull(kafka);
+
+        assertEquals(1, kafka.getSpec().getKafka().getReplicas());
+        assertEquals(1, kafka.getSpec().getZookeeper().getReplicas());
+        assertEquals("ephemeral", kafka.getSpec().getKafka().getStorage().getType());
+        assertEquals("ephemeral", kafka.getSpec().getZookeeper().getStorage().getType());
     }
 
     @Test
@@ -72,13 +83,12 @@ public class OpenShiftTemplatesIT {
                 "ZOOKEEPER_NODE_COUNT", "1",
                 "KAFKA_NODE_COUNT", "1"));
 
-        ConfigMap cm = client.configMaps().inNamespace(NAMESPACE).withName(clusterName).get();
-        assertNotNull(cm);
-        Map<String, String> cmData = cm.getData();
-        assertEquals("1", cmData.get("kafka-nodes"));
-        assertEquals("1", cmData.get("zookeeper-nodes"));
-        assertEquals("persistent-claim", mapper.readTree(cmData.get("kafka-storage")).get("type").asText());
-        assertEquals("persistent-claim", mapper.readTree(cmData.get("zookeeper-storage")).get("type").asText());
+        KafkaAssembly kafka = getKafkaWithName(clusterName);
+        assertNotNull(kafka);
+        assertEquals(1, kafka.getSpec().getKafka().getReplicas());
+        assertEquals(1, kafka.getSpec().getZookeeper().getReplicas());
+        assertEquals("persistent-claim", kafka.getSpec().getKafka().getStorage().getType());
+        assertEquals("persistent-claim", kafka.getSpec().getZookeeper().getStorage().getType());
     }
 
     @Test
@@ -95,16 +105,20 @@ public class OpenShiftTemplatesIT {
                 "KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", "5"));
 
         //TODO Add assertions to check that Kafka brokers have a custom configuration
-        ConfigMap cm = client.configMaps().inNamespace(NAMESPACE).withName(clusterName).get();
-        assertNotNull(cm);
-        Map<String, String> cmData = cm.getData();
-        assertEquals("30", cmData.get("zookeeper-healthcheck-delay"));
-        assertEquals("10", cmData.get("zookeeper-healthcheck-timeout"));
-        assertEquals("30", cmData.get("kafka-healthcheck-delay"));
-        assertEquals("10", cmData.get("kafka-healthcheck-timeout"));
-        assertEquals("2", mapper.readTree(cmData.get("kafka-config")).get("default.replication.factor").asText());
-        assertEquals("5", mapper.readTree(cmData.get("kafka-config")).get("offsets.topic.replication.factor").asText());
-        assertEquals("5", mapper.readTree(cmData.get("kafka-config")).get("transaction.state.log.replication.factor").asText());
+        KafkaAssembly kafka = getKafkaWithName(clusterName);
+        assertNotNull(kafka);
+
+        assertEquals("30", kafka.getSpec().getZookeeper().getLivenessProbe().getInitialDelaySeconds());
+        assertEquals("30", kafka.getSpec().getZookeeper().getReadinessProbe().getInitialDelaySeconds());
+        assertEquals("10", kafka.getSpec().getZookeeper().getLivenessProbe().getTimeoutSeconds());
+        assertEquals("10", kafka.getSpec().getZookeeper().getReadinessProbe().getTimeoutSeconds());
+        assertEquals("30", kafka.getSpec().getKafka().getLivenessProbe().getInitialDelaySeconds());
+        assertEquals("30", kafka.getSpec().getKafka().getReadinessProbe().getInitialDelaySeconds());
+        assertEquals("10", kafka.getSpec().getKafka().getLivenessProbe().getTimeoutSeconds());
+        assertEquals("10", kafka.getSpec().getKafka().getReadinessProbe().getTimeoutSeconds());
+        assertEquals("2", kafka.getSpec().getKafka().getConfig().get("default.replication.factor"));
+        assertEquals("5", kafka.getSpec().getKafka().getConfig().get("offsets.topic.replication.factor"));
+        assertEquals("5", kafka.getSpec().getKafka().getConfig().get("transaction.state.log.replication.factor"));
     }
 
     @Test
@@ -123,18 +137,22 @@ public class OpenShiftTemplatesIT {
                 "KAFKA_VOLUME_CAPACITY", "2Gi"));
 
         //TODO Add assertions to check that Kafka brokers have a custom configuration
-        ConfigMap cm = client.configMaps().inNamespace(NAMESPACE).withName(clusterName).get();
-        assertNotNull(cm);
-        Map<String, String> cmData = cm.getData();
-        assertEquals("30", cmData.get("zookeeper-healthcheck-delay"));
-        assertEquals("10", cmData.get("zookeeper-healthcheck-timeout"));
-        assertEquals("30", cmData.get("kafka-healthcheck-delay"));
-        assertEquals("10", cmData.get("kafka-healthcheck-timeout"));
-        assertEquals("2", mapper.readTree(cmData.get("kafka-config")).get("default.replication.factor").asText());
-        assertEquals("5", mapper.readTree(cmData.get("kafka-config")).get("offsets.topic.replication.factor").asText());
-        assertEquals("5", mapper.readTree(cmData.get("kafka-config")).get("transaction.state.log.replication.factor").asText());
-        assertEquals("2Gi", mapper.readTree(cmData.get("kafka-storage")).get("size").asText());
-        assertEquals("2Gi", mapper.readTree(cmData.get("zookeeper-storage")).get("size").asText());
+        KafkaAssembly kafka = getKafkaWithName(clusterName);
+        assertNotNull(kafka);
+
+        assertEquals("30", kafka.getSpec().getZookeeper().getLivenessProbe().getInitialDelaySeconds());
+        assertEquals("30", kafka.getSpec().getZookeeper().getReadinessProbe().getInitialDelaySeconds());
+        assertEquals("10", kafka.getSpec().getZookeeper().getLivenessProbe().getTimeoutSeconds());
+        assertEquals("10", kafka.getSpec().getZookeeper().getReadinessProbe().getTimeoutSeconds());
+        assertEquals("30", kafka.getSpec().getKafka().getLivenessProbe().getInitialDelaySeconds());
+        assertEquals("30", kafka.getSpec().getKafka().getReadinessProbe().getInitialDelaySeconds());
+        assertEquals("10", kafka.getSpec().getKafka().getLivenessProbe().getTimeoutSeconds());
+        assertEquals("10", kafka.getSpec().getKafka().getReadinessProbe().getTimeoutSeconds());
+        assertEquals("2", kafka.getSpec().getKafka().getConfig().get("default.replication.factor"));
+        assertEquals("5", kafka.getSpec().getKafka().getConfig().get("offsets.topic.replication.factor"));
+        assertEquals("5", kafka.getSpec().getKafka().getConfig().get("transaction.state.log.replication.factor"));
+        assertEquals("2Gi", ((PersistentClaimStorage) kafka.getSpec().getKafka().getStorage()).getSize());
+        assertEquals("2Gi", ((PersistentClaimStorage) kafka.getSpec().getZookeeper().getStorage()).getSize());
     }
 
     @Test

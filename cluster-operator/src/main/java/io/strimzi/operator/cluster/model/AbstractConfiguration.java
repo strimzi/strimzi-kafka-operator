@@ -6,10 +6,8 @@
 package io.strimzi.operator.cluster.model;
 
 import io.strimzi.operator.cluster.InvalidConfigMapException;
-import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -70,11 +68,12 @@ public abstract class AbstractConfiguration {
      * @param json  JSON object with the configuration
      * @return  Map with configuration values as String
      */
-    private Map<String, String> convertToStrings(JsonObject json)  {
+    private Map<String, String> convertToStrings(Iterable<Map.Entry<String, Object>> json)  {
         Map<String, String> map = new HashMap<>();
 
-        for (String key : json.fieldNames())    {
-            Object value = json.getValue(key);
+        for (Map.Entry<String, Object> entry : json)    {
+            String key = entry.getKey();
+            Object value = entry.getValue();
 
             if (value instanceof String)    {
                 map.put(key, (String) value);
@@ -97,7 +96,7 @@ public abstract class AbstractConfiguration {
      * @param forbiddenOptions   List with configuration keys which are not allowed. All keys which start with one of
      *                           these keys will be ignored.
      */
-    public AbstractConfiguration(JsonObject jsonOptions, List<String> forbiddenOptions) {
+    public AbstractConfiguration(Iterable<Map.Entry<String, Object>> jsonOptions, List<String> forbiddenOptions) {
         this(jsonOptions, forbiddenOptions, new Properties());
     }
 
@@ -110,7 +109,7 @@ public abstract class AbstractConfiguration {
      *                           these keys will be ignored.
      * @param defaults          Properties object with default options
      */
-    public AbstractConfiguration(JsonObject jsonOptions, List<String> forbiddenOptions, Properties defaults) {
+    public AbstractConfiguration(Iterable<Map.Entry<String, Object>> jsonOptions, List<String> forbiddenOptions, Properties defaults) {
         Properties options = new Properties();
         options.putAll(defaults);
         options.putAll(convertToStrings(jsonOptions));

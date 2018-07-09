@@ -7,13 +7,19 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.dsl.Resource;
+import io.strimzi.api.kafka.DoneableKafkaConnectAssembly;
+import io.strimzi.api.kafka.KafkaConnectAssemblyList;
+import io.strimzi.api.kafka.model.ExternalLogging;
+import io.strimzi.api.kafka.model.KafkaConnectAssembly;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.Reconciliation;
 import io.strimzi.operator.cluster.model.AssemblyType;
-import io.strimzi.operator.cluster.model.ExternalLogging;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.Labels;
 import io.strimzi.operator.cluster.operator.resource.ConfigMapOperator;
+import io.strimzi.operator.cluster.operator.resource.CrdOperator;
 import io.strimzi.operator.cluster.operator.resource.DeploymentOperator;
 import io.strimzi.operator.cluster.operator.resource.SecretOperator;
 import io.strimzi.operator.cluster.operator.resource.ServiceOperator;
@@ -25,7 +31,6 @@ import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,11 +40,12 @@ import java.util.List;
  *     <li>A Kafka Connect Deployment and related Services</li>
  * </ul>
  */
-public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator {
+public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<KubernetesClient, KafkaConnectAssembly, KafkaConnectAssemblyList, DoneableKafkaConnectAssembly, Resource<KafkaConnectAssembly, DoneableKafkaConnectAssembly>> {
 
     private static final Logger log = LogManager.getLogger(KafkaConnectAssemblyOperator.class.getName());
     private final ServiceOperator serviceOperations;
     private final DeploymentOperator deploymentOperations;
+    private final ConfigMapOperator configMapOperations;
 
     /**
      * @param vertx The Vertx instance
@@ -51,29 +57,31 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator {
      */
     public KafkaConnectAssemblyOperator(Vertx vertx, boolean isOpenShift,
                                         CertManager certManager,
+                                        CrdOperator<KubernetesClient, KafkaConnectAssembly, KafkaConnectAssemblyList, DoneableKafkaConnectAssembly> connectOperator,
                                         ConfigMapOperator configMapOperations,
                                         DeploymentOperator deploymentOperations,
                                         ServiceOperator serviceOperations,
-                                        SecretOperator secretOperations) {
-        super(vertx, isOpenShift, AssemblyType.CONNECT, certManager, configMapOperations, secretOperations);
+        SecretOperator secretOperations) {
+        super(vertx, isOpenShift, AssemblyType.CONNECT, certManager, connectOperator, secretOperations);
+        this.configMapOperations = configMapOperations;
         this.serviceOperations = serviceOperations;
         this.deploymentOperations = deploymentOperations;
     }
 
     @Override
-    protected void createOrUpdate(Reconciliation reconciliation, ConfigMap assemblyCm, List<Secret> assemblySecrets, Handler<AsyncResult<Void>> handler) {
+    protected void createOrUpdate(Reconciliation reconciliation, KafkaConnectAssembly assemblyCm, List<Secret> assemblySecrets, Handler<AsyncResult<Void>> handler) {
 
         String namespace = reconciliation.namespace();
         String name = reconciliation.assemblyName();
         KafkaConnectCluster connect;
         try {
-            connect = KafkaConnectCluster.fromConfigMap(assemblyCm);
+            connect = KafkaConnectCluster.fromCrd(assemblyCm);
         } catch (Exception e) {
             handler.handle(Future.failedFuture(e));
             return;
         }
         ConfigMap logAndMetricsConfigMap = connect.generateMetricsAndLogConfigMap(connect.getLogging() instanceof ExternalLogging ?
-                configMapOperations.get(namespace, ((ExternalLogging) connect.getLogging()).name) :
+                configMapOperations.get(namespace, ((ExternalLogging) connect.getLogging()).getName()) :
                 null);
         log.debug("{}: Updating Kafka Connect cluster", reconciliation, name, namespace);
         Future<Void> chainFuture = Future.future();
@@ -104,7 +112,7 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator {
         Labels selector = Labels.forType(AssemblyType.CONNECT);
         result.addAll(serviceOperations.list(namespace, selector));
         result.addAll(deploymentOperations.list(namespace, selector));
-        result.addAll(configMapOperations.list(namespace, selector));
+        result.addAll(resourceOperator.list(namespace, selector));
         return result;
     }
 }

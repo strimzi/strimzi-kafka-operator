@@ -1,0 +1,30 @@
+apiVersion: kafka.strimzi.io/v1alpha1
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    replicas: 3
+    readiness:
+      initialDelaySeconds: "15"
+      timeoutSeconds: "5"
+    liveness:
+      initialDelaySeconds: "15"
+      timeoutSeconds: "5"
+    config:
+      offsets.topic.replication.factor: 3
+      transaction.state.log.replication.factor: 3
+      transaction.state.log.min.isr: 2
+    storage:
+      type: ephemeral
+  zookeeper:
+    replicas: 1
+    readiness:
+      initialDelaySeconds: "15"
+      timeoutSeconds: "5"
+    liveness:
+      initialDelaySeconds: "15"
+      timeoutSeconds: "5"
+    storage:
+      type: ephemeral
+  topicOperator: {}

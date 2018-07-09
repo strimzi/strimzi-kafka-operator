@@ -4,17 +4,23 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.fabric8.kubernetes.client.Watch;
+import io.fabric8.kubernetes.client.Watcher;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.certs.CertManager;
 import io.strimzi.certs.SecretCertProvider;
 import io.strimzi.operator.cluster.InvalidConfigMapException;
 import io.strimzi.operator.cluster.Reconciliation;
 import io.strimzi.operator.cluster.model.AssemblyType;
 import io.strimzi.operator.cluster.model.Labels;
-import io.strimzi.operator.cluster.operator.resource.ConfigMapOperator;
+import io.strimzi.operator.cluster.operator.resource.AbstractWatchableResourceOperator;
 import io.strimzi.operator.cluster.operator.resource.SecretOperator;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -29,6 +35,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -40,7 +47,8 @@ import java.util.stream.Collectors;
  * <p>This class manages a per-assembly locking strategy so only one operation per assembly
  * can proceed at once.</p>
  */
-public abstract class AbstractAssemblyOperator {
+public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T extends HasMetadata,
+        L extends KubernetesResourceList/*<T>*/, D extends Doneable<T>, R extends Resource<T, D>> {
 
     private static final Logger log = LogManager.getLogger(AbstractAssemblyOperator.class.getName());
 
@@ -52,25 +60,27 @@ public abstract class AbstractAssemblyOperator {
     protected final Vertx vertx;
     protected final boolean isOpenShift;
     protected final AssemblyType assemblyType;
-    protected final ConfigMapOperator configMapOperations;
+    protected final AbstractWatchableResourceOperator<C, T, L, D, R> resourceOperator;
     protected final SecretOperator secretOperations;
     protected final CertManager certManager;
+    private final String kind;
 
     /**
      * @param vertx The Vertx instance
      * @param isOpenShift True iff running on OpenShift
      * @param assemblyType Assembly type
-     * @param configMapOperations For operating on ConfigMaps
+     * @param resourceOperator For operating on the desired resource
      * @param secretOperations For operating on Secrets
      */
     protected AbstractAssemblyOperator(Vertx vertx, boolean isOpenShift, AssemblyType assemblyType,
                                        CertManager certManager,
-                                       ConfigMapOperator configMapOperations, SecretOperator secretOperations) {
+                                       AbstractWatchableResourceOperator<C, T, L, D, R> resourceOperator, SecretOperator secretOperations) {
         this.vertx = vertx;
         this.isOpenShift = isOpenShift;
         this.assemblyType = assemblyType;
+        this.kind = assemblyType.name;
+        this.resourceOperator = resourceOperator;
         this.certManager = certManager;
-        this.configMapOperations = configMapOperations;
         this.secretOperations = secretOperations;
     }
 
@@ -90,11 +100,11 @@ public abstract class AbstractAssemblyOperator {
      * should not assume that any resources are in any particular state (e.g. that the absence on
      * one resource means that all resources need to be created).
      * @param reconciliation Unique identification for the reconciliation
-     * @param assemblyCm ConfigMap with cluster configuration.
+     * @param assemblyResource Resources with the desired cluster configuration.
      * @param assemblySecrets Secrets related to the cluster
      * @param handler Completion handler
      */
-    protected abstract void createOrUpdate(Reconciliation reconciliation, ConfigMap assemblyCm, List<Secret> assemblySecrets, Handler<AsyncResult<Void>> handler);
+    protected abstract void createOrUpdate(Reconciliation reconciliation, T assemblyResource, List<Secret> assemblySecrets, Handler<AsyncResult<Void>> handler);
 
     /**
      * Subclasses implement this method to delete the cluster.
@@ -163,10 +173,10 @@ public abstract class AbstractAssemblyOperator {
 
     /**
      * Reconcile assembly resources in the given namespace having the given {@code assemblyName}.
-     * Reconciliation works by getting the assembly ConfigMap in the given namespace with the given assemblyName and
+     * Reconciliation works by getting the assembly resource (e.g. {@code KafkaAssembly}) in the given namespace with the given assemblyName and
      * comparing with the corresponding {@linkplain #getResources(String) resource}.
      * <ul>
-     * <li>An assembly will be {@linkplain #createOrUpdate(Reconciliation, ConfigMap, List, Handler) created or updated} if ConfigMap is without same-named resources</li>
+     * <li>An assembly will be {@linkplain #createOrUpdate(Reconciliation, T, List, Handler) created or updated} if ConfigMap is without same-named resources</li>
      * <li>An assembly will be {@linkplain #delete(Reconciliation, Handler) deleted} if resources without same-named ConfigMap</li>
      * </ul>
      */
@@ -181,7 +191,7 @@ public abstract class AbstractAssemblyOperator {
 
                 try {
                     // get ConfigMap and related resources for the specific cluster
-                    ConfigMap cm = configMapOperations.get(namespace, assemblyName);
+                    T cm = resourceOperator.get(namespace, assemblyName);
 
                     if (cm != null) {
                         log.info("{}: Assembly {} should be created or updated", reconciliation, assemblyName);
@@ -234,7 +244,7 @@ public abstract class AbstractAssemblyOperator {
      * Reconciliation works by getting the assembly ConfigMaps in the given namespace with the given selector and
      * comparing with the corresponding {@linkplain #getResources(String) resource}.
      * <ul>
-     * <li>An assembly will be {@linkplain #createOrUpdate(Reconciliation, ConfigMap, List, Handler) created} for all ConfigMaps without same-named resources</li>
+     * <li>An assembly will be {@linkplain #createOrUpdate(Reconciliation, T, List, Handler) created} for all ConfigMaps without same-named resources</li>
      * <li>An assembly will be {@linkplain #delete(Reconciliation, Handler) deleted} for all resources without same-named ConfigMaps</li>
      * </ul>
      *
@@ -243,41 +253,31 @@ public abstract class AbstractAssemblyOperator {
      * @param selector The selector
      */
     public final CountDownLatch reconcileAll(String trigger, String namespace, Labels selector) {
-        Labels selectorWithCluster = selector.withType(assemblyType);
 
         // get ConfigMaps with kind=cluster&type=kafka (or connect, or connect-s2i) for the corresponding cluster type
-        List<ConfigMap> cms = configMapOperations.list(namespace, selectorWithCluster);
-        Set<String> cmsNames = cms.stream().map(cm -> cm.getMetadata().getName()).collect(Collectors.toSet());
-        log.debug("reconcileAll({}, {}): ConfigMaps with labels {}: {}", assemblyType, trigger, selectorWithCluster, cmsNames);
+        List<T> desiredResources = resourceOperator.list(namespace, selector);
+        Set<String> desiredNames = desiredResources.stream().map(cm -> cm.getMetadata().getName()).collect(Collectors.toSet());
+        log.debug("reconcileAll({}, {}): desired resources with labels {}: {}", assemblyType, trigger, selector, desiredNames);
 
         // get resources with kind=cluster&type=kafka (or connect, or connect-s2i)
         List<? extends HasMetadata> resources = getResources(namespace);
         // now extract the cluster name from those
         Set<String> resourceNames = resources.stream()
-                .filter(r -> Labels.kind(r) == null) // exclude Cluster CM, which won't have a cluster label
+                .filter(r -> !r.getKind().equals(kind)) // exclude desired resource
                 .map(Labels::cluster)
                 .collect(Collectors.toSet());
-        log.debug("reconcileAll({}, {}): Other resources with labels {}: {}", assemblyType, trigger, selectorWithCluster, resourceNames);
+        log.debug("reconcileAll({}, {}): Other resources with labels {}: {}", assemblyType, trigger, selector, resourceNames);
 
-        cmsNames.addAll(resourceNames);
+        desiredNames.addAll(resourceNames);
 
         // We use a latch so that callers (specifically, test callers) know when the reconciliation is complete
         // Using futures would be more complex for no benefit
-        CountDownLatch latch = new CountDownLatch(cmsNames.size());
+        CountDownLatch latch = new CountDownLatch(desiredNames.size());
 
-        for (String name: cmsNames) {
+        for (String name: desiredNames) {
             Reconciliation reconciliation = new Reconciliation(trigger, assemblyType, namespace, name);
             reconcileAssembly(reconciliation, result -> {
-                if (result.succeeded()) {
-                    log.info("{}: Assembly reconciled", reconciliation);
-                } else {
-                    Throwable cause = result.cause();
-                    if (cause instanceof InvalidConfigMapException) {
-                        log.warn("{}: Failed to reconcile {}", reconciliation, cause.getMessage());
-                    } else {
-                        log.warn("{}: Failed to reconcile {}", reconciliation, cause);
-                    }
-                }
+                handleResult(reconciliation, result);
                 latch.countDown();
             });
         }
@@ -287,10 +287,65 @@ public abstract class AbstractAssemblyOperator {
 
     /**
      * Gets all the assembly resources (for all assemblies) in the given namespace.
-     * Assembly CMs may be included in the result.
+     * Assembly resources (e.g. the {@code KafkaAssembly} resource) may be included in the result.
      * @param namespace The namespace
      * @return The matching resources.
      */
     protected abstract List<HasMetadata> getResources(String namespace);
 
+    public Future<Watch> createWatch(String namespace, Consumer<KubernetesClientException> onClose) {
+        Future<Watch> result = Future.future();
+        Labels selector = Labels.EMPTY;
+        vertx.<Watch>executeBlocking(
+            future -> {
+                Watch watch = resourceOperator.watch(namespace, new Watcher<T>() {
+                    @Override
+                    public void eventReceived(Action action, T cm) {
+                        String name = cm.getMetadata().getName();
+                        switch (action) {
+                            case ADDED:
+                            case DELETED:
+                            case MODIFIED:
+                                Reconciliation reconciliation = new Reconciliation("watch", assemblyType, namespace, name);
+                                log.info("{}: {} {} in namespace {} was {}", reconciliation, kind, name, namespace, action);
+                                reconcileAssembly(reconciliation, result -> {
+                                    handleResult(reconciliation, result);
+                                });
+                                break;
+                            case ERROR:
+                                log.error("Failed {} {} in namespace{} ", kind, name, namespace);
+                                reconcileAll("watch error", namespace, selector);
+                                break;
+                            default:
+                                log.error("Unknown action: {} in namespace {}", name, namespace);
+                                reconcileAll("watch unknown", namespace, selector);
+                        }
+                    }
+
+                    @Override
+                    public void onClose(KubernetesClientException e) {
+                        onClose.accept(e);
+                    }
+                });
+                future.complete(watch);
+            }, result.completer()
+        );
+        return result;
+    }
+
+    /**
+     * Log the reconciliation outcome.
+     */
+    private void handleResult(Reconciliation reconciliation, AsyncResult<Void> result) {
+        if (result.succeeded()) {
+            log.info("{}: Assembly reconciled", reconciliation);
+        } else {
+            Throwable cause = result.cause();
+            if (cause instanceof InvalidConfigMapException) {
+                log.warn("{}: Failed to reconcile {}", reconciliation, cause.getMessage());
+            } else {
+                log.warn("{}: Failed to reconcile {}", reconciliation, cause);
+            }
+        }
+    }
 }

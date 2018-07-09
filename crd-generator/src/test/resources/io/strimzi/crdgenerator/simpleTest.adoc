@@ -1,0 +1,137 @@
+[[kind-Example]]
+[[type-ExampleCrd]]
+# `Example` kind v1alpha1 crdgenerator.strimzi.io
+
+
+[options="header"]
+|====
+|Field                          |Description
+|affinity                1.2+<.<|See external documentation of {KubeApiReferenceBase}#affinity-v1-core[core/v1 affinity]
+
+
+|{KubeApiReferenceBase}#affinity-v1-core[Affinity]
+|arrayOfBoundTypeVar     1.2+<.<|
+|<<type-Number,`Number`>> array
+|arrayOfBoundTypeVar2    1.2+<.<|
+|<<type-Number,`Number`>> array
+|arrayOfList             1.2+<.<|
+|string array of dimension 2
+|arrayOfRawList          1.2+<.<|
+|object array of dimension 2
+|arrayOfTypeVar          1.2+<.<|
+|object array
+|arrayProperty           1.2+<.<|
+|string array
+|arrayProperty2          1.2+<.<|
+|string array of dimension 2
+|booleanProperty         1.2+<.<|
+|boolean
+|fieldProperty           1.2+<.<|Example of field property.
+|string
+|intProperty             1.2+<.<|An example int property
+|integer
+|listOfArray             1.2+<.<|
+|string array of dimension 2
+|listOfBoundTypeVar      1.2+<.<|
+|<<type-Number,`Number`>> array
+|listOfBoundTypeVar2     1.2+<.<|
+|<<type-Number,`Number`>> array
+|listOfInts              1.2+<.<|
+|integer array
+|listOfInts2             1.2+<.<|
+|integer array of dimension 2
+|listOfObjects           1.2+<.<|
+|<<type-ObjectProperty,`ObjectProperty`>> array
+|listOfPolymorphic       1.2+<.<|
+|<<type-PolymorphicLeft,`PolymorphicLeft`>>, <<type-PolymorphicRight,`PolymorphicRight`>> array
+|listOfRawList           1.2+<.<|
+|object array of dimension 2
+|listOfTypeVar           1.2+<.<|
+|object array
+|listOfWildcardTypeVar1  1.2+<.<|
+|string array
+|listOfWildcardTypeVar2  1.2+<.<|
+|<<type-Number,`Number`>> array
+|listOfWildcardTypeVar3  1.2+<.<|
+|<<type-Number,`Number`>> array
+|listOfWildcardTypeVar4  1.2+<.<|
+|<<type-Number,`Number`>> array of dimension 2
+|longProperty            1.2+<.<|An example long property
+|integer
+|mapProperty             1.2+<.<|
+|map
+|objectProperty          1.2+<.<|
+|<<type-ObjectProperty,`ObjectProperty`>>
+|polymorphicProperty     1.2+<.<| The type depends on the value of the `polymorphicProperty.discrim` property within the given object, which must be one of [left, right]
+|<<type-PolymorphicLeft,`PolymorphicLeft`>>, <<type-PolymorphicRight,`PolymorphicRight`>>
+|rawList                 1.2+<.<|
+|object array
+|stringProperty          1.2+<.<|
+|string
+|====
+
+[[type-Number]]
+# `Number` type v1alpha1 crdgenerator.strimzi.io
+
+Used in: <<kind-Example,`ExampleCrd`>>
+
+
+[options="header"]
+|====
+|Field|Description
+|====
+
+[[type-ObjectProperty]]
+# `ObjectProperty` type v1alpha1 crdgenerator.strimzi.io
+
+Used in: <<kind-Example,`ExampleCrd`>>
+
+Example of complex type.
+
+[options="header"]
+|====
+|Field       |Description
+|bar  1.2+<.<|
+|string
+|foo  1.2+<.<|
+|string
+|====
+
+[[type-PolymorphicLeft]]
+# `PolymorphicLeft` type v1alpha1 crdgenerator.strimzi.io
+
+Used in: <<kind-Example,`ExampleCrd`>>
+
+
+The `discrim` property is a discriminator that distinguishes the use of the type `PolymorphicLeft` from <<type-PolymorphicRight,`PolymorphicRight`>>.
+It must have the value `left` for the type `PolymorphicLeft`.
+[options="header"]
+|====
+|Field                  |Description
+|commonProperty  1.2+<.<|
+|string
+|discrim         1.2+<.<|
+|string
+|leftProperty    1.2+<.<|when descrim=left, the left-hand property
+|string
+|====
+
+[[type-PolymorphicRight]]
+# `PolymorphicRight` type v1alpha1 crdgenerator.strimzi.io
+
+Used in: <<kind-Example,`ExampleCrd`>>
+
+
+The `discrim` property is a discriminator that distinguishes the use of the type `PolymorphicRight` from <<type-PolymorphicLeft,`PolymorphicLeft`>>.
+It must have the value `right` for the type `PolymorphicRight`.
+[options="header"]
+|====
+|Field                  |Description
+|commonProperty  1.2+<.<|
+|string
+|discrim         1.2+<.<|
+|string
+|rightProperty   1.2+<.<|when descrim=right, the right-hand property
+|string
+|====
+

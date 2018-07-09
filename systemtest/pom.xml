@@ -12,6 +12,10 @@
     <artifactId>systemtest</artifactId>
     <dependencies>
         <dependency>
+            <groupId>io.strimzi</groupId>
+            <artifactId>api</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-core</artifactId>
         </dependency>
@@ -52,7 +56,9 @@
         </dependency>
         <dependency>
             <groupId>io.strimzi</groupId>
-            <artifactId>common-test</artifactId>
+            <artifactId>api</artifactId>
+            <classifier>tests</classifier>
+            <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>

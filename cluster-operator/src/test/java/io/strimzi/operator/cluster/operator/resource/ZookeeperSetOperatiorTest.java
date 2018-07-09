@@ -4,10 +4,10 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
+import io.strimzi.api.kafka.model.KafkaAssembly;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.assembly.MockCertManager;
@@ -35,18 +35,18 @@ public class ZookeeperSetOperatiorTest {
     @Before
     public void before() {
         MockCertManager certManager = new MockCertManager();
-        a = ZookeeperCluster.fromConfigMap(certManager, getConfigMap(), getInitialSecrets()).generateStatefulSet(true);
-        b = ZookeeperCluster.fromConfigMap(certManager, getConfigMap(), getInitialSecrets()).generateStatefulSet(true);
+        a = ZookeeperCluster.fromCrd(certManager, getResource(), getInitialSecrets()).generateStatefulSet(true);
+        b = ZookeeperCluster.fromCrd(certManager, getResource(), getInitialSecrets()).generateStatefulSet(true);
     }
 
-    private ConfigMap getConfigMap() {
+    private KafkaAssembly getResource() {
         String clusterCmName = "foo";
         String clusterCmNamespace = "test";
         int replicas = 3;
         String image = "bar";
         int healthDelay = 120;
         int healthTimeout = 30;
-        return ResourceUtils.createKafkaClusterConfigMap(clusterCmNamespace, clusterCmName, replicas, image, healthDelay, healthTimeout, METRICS_CONFIG, LOG_KAFKA_CONFIG, LOG_ZOOKEEPER_CONFIG);
+        return ResourceUtils.createKafkaCluster(clusterCmNamespace, clusterCmName, replicas, image, healthDelay, healthTimeout, METRICS_CONFIG, LOG_KAFKA_CONFIG, LOG_ZOOKEEPER_CONFIG);
     }
 
     private List<Secret> getInitialSecrets() {

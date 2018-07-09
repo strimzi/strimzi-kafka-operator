@@ -4,8 +4,10 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
+import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.ScalableResource;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -21,7 +23,11 @@ import org.apache.logging.log4j.Logger;
  * @param <D> The doneable variant of the Kubernetes resource type.
  * @param <R> The resource operations.
  */
-public abstract class AbstractScalableResourceOperator<C, T extends HasMetadata, L extends KubernetesResourceList/*<T>*/, D, R extends ScalableResource<T, D>>
+public abstract class AbstractScalableResourceOperator<C extends KubernetesClient,
+            T extends HasMetadata,
+            L extends KubernetesResourceList/*<T>*/,
+            D extends Doneable<T>,
+            R extends ScalableResource<T, D>>
         extends AbstractReadyResourceOperator<C, T, L, D, R> {
 
     private final Logger log = LogManager.getLogger(getClass());

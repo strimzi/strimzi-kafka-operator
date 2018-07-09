@@ -21,9 +21,13 @@ import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
+import io.strimzi.api.kafka.model.EphemeralStorage;
+import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaAssembly;
+import io.strimzi.api.kafka.model.PersistentClaimStorage;
+import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
-import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.operator.assembly.AbstractAssemblyOperator;
 import io.vertx.core.json.JsonObject;
 
@@ -73,16 +77,10 @@ public class KafkaCluster extends AbstractModel {
 
     // Kafka configuration
     private String zookeeperConnect = DEFAULT_KAFKA_ZOOKEEPER_CONNECT;
-    private RackConfig rackConfig;
+    private Rack rack;
     private String initImage;
 
     // Configuration defaults
-    private static final String DEFAULT_IMAGE =
-            System.getenv().getOrDefault("STRIMZI_DEFAULT_KAFKA_IMAGE", "strimzi/kafka:latest");
-    private static final String DEFAULT_INIT_IMAGE =
-            System.getenv().getOrDefault("STRIMZI_DEFAULT_INIT_KAFKA_IMAGE", "strimzi/init-kafka:latest");
-
-
     private static final int DEFAULT_REPLICAS = 3;
     private static final int DEFAULT_HEALTHCHECK_DELAY = 15;
     private static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
@@ -136,11 +134,14 @@ public class KafkaCluster extends AbstractModel {
         this.name = kafkaClusterName(cluster);
         this.headlessName = headlessName(cluster);
         this.ancillaryConfigName = metricAndLogConfigsName(cluster);
-        this.image = DEFAULT_IMAGE;
+        this.image = Kafka.DEFAULT_IMAGE;
         this.replicas = DEFAULT_REPLICAS;
-        this.healthCheckPath = "/opt/kafka/kafka_healthcheck.sh";
-        this.healthCheckTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
-        this.healthCheckInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
+        this.readinessPath = "/opt/kafka/kafka_healthcheck.sh";
+        this.livenessPath = this.readinessPath;
+        this.readinessTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
+        this.readinessInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
+        this.livenessTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
+        this.livenessInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
         this.isMetricsEnabled = DEFAULT_KAFKA_METRICS_ENABLED;
 
         this.mountPath = "/var/lib/kafka";
@@ -148,7 +149,7 @@ public class KafkaCluster extends AbstractModel {
         this.logAndMetricsConfigVolumeName = "kafka-metrics-and-logging";
         this.logAndMetricsConfigMountPath = "/opt/kafka/custom-config/";
 
-        this.initImage = DEFAULT_INIT_IMAGE;
+        this.initImage = Kafka.DEFAULT_INIT_IMAGE;
         this.validLoggerFields = getDefaultLogConfig();
     }
 
@@ -184,117 +185,49 @@ public class KafkaCluster extends AbstractModel {
         return cluster + KafkaCluster.CLIENTS_PUBLIC_KEY_SUFFIX;
     }
 
-    /**
-     * Create a Kafka cluster from the related ConfigMap resource
-     *
-     * @param certManager CertManager instance for handling certificates creation
-     * @param kafkaClusterCm ConfigMap with cluster configuration
-     * @param secrets Secrets related to the cluster
-     * @return Kafka cluster instance
-     */
-    public static KafkaCluster fromConfigMap(CertManager certManager, ConfigMap kafkaClusterCm, List<Secret> secrets) {
-        KafkaCluster kafka = new KafkaCluster(kafkaClusterCm.getMetadata().getNamespace(),
-                kafkaClusterCm.getMetadata().getName(),
-                Labels.fromResource(kafkaClusterCm));
-
-        Map<String, String> data = kafkaClusterCm.getData();
-        kafka.setReplicas(Utils.getInteger(data, KEY_REPLICAS, DEFAULT_REPLICAS));
-        kafka.setImage(Utils.getNonEmptyString(data, KEY_IMAGE, DEFAULT_IMAGE));
-        kafka.setHealthCheckInitialDelay(Utils.getInteger(data, KEY_HEALTHCHECK_DELAY, DEFAULT_HEALTHCHECK_DELAY));
-        kafka.setHealthCheckTimeout(Utils.getInteger(data, KEY_HEALTHCHECK_TIMEOUT, DEFAULT_HEALTHCHECK_TIMEOUT));
-
-        kafka.setZookeeperConnect(kafkaClusterCm.getMetadata().getName() + "-zookeeper:2181");
-
-        JsonObject metricsConfig = Utils.getJson(data, KEY_METRICS_CONFIG);
-        kafka.setMetricsEnabled(metricsConfig != null);
-        if (kafka.isMetricsEnabled()) {
-            kafka.setMetricsConfig(metricsConfig);
+    public static KafkaCluster fromCrd(CertManager certManager, KafkaAssembly kafkaAssembly, List<Secret> secrets) {
+        KafkaCluster result = new KafkaCluster(kafkaAssembly.getMetadata().getNamespace(),
+                kafkaAssembly.getMetadata().getName(),
+                Labels.fromResource(kafkaAssembly));
+        Kafka kafka = kafkaAssembly.getSpec().getKafka();
+        result.setReplicas(kafka.getReplicas());
+        String image = kafka.getImage();
+        log.debug("#### got kafka image from KafkaAssembly" + image);
+        if (image == null) {
+            image = Kafka.DEFAULT_IMAGE;
         }
-
-        kafka.setStorage(Utils.getStorage(data, KEY_STORAGE));
-        kafka.setConfiguration(Utils.getKafkaConfiguration(data, KEY_KAFKA_CONFIG));
-
-        kafka.setLogging(Utils.getLogging(data.get(KEY_KAFKA_LOG_CONFIG)));
-
-        kafka.setResources(Resources.fromJson(data.get(KEY_RESOURCES)));
-        kafka.setJvmOptions(JvmOptions.fromJson(data.get(KEY_JVM_OPTIONS)));
-
-        RackConfig rackConfig = RackConfig.fromJson(data.get(KEY_RACK));
-        if (rackConfig != null) {
-            kafka.setRackConfig(rackConfig);
+        result.setImage(image);
+        if (kafka.getReadinessProbe() != null) {
+            result.setReadinessInitialDelay(kafka.getReadinessProbe().getInitialDelaySeconds());
+            result.setReadinessTimeout(kafka.getReadinessProbe().getTimeoutSeconds());
         }
-        kafka.setInitImage(Utils.getNonEmptyString(data, KEY_INIT_IMAGE, DEFAULT_INIT_IMAGE));
-        kafka.setUserAffinity(Utils.getAffinity(data.get(KEY_AFFINITY)));
-
-        kafka.generateCertificates(certManager, secrets);
-
-        return kafka;
-    }
-
-    /**
-     * Create a Kafka cluster from the deployed StatefulSet resource
-     *
-     * @param ss The StatefulSet from which the cluster state should be recovered.
-     * @param namespace Kubernetes/OpenShift namespace where cluster resources belong to
-     * @param cluster   overall cluster name
-     * @return  Kafka cluster instance
-     */
-    public static KafkaCluster fromAssembly(StatefulSet ss, String namespace, String cluster) {
-
-        KafkaCluster kafka = new KafkaCluster(namespace, cluster, Labels.fromResource(ss));
-
-        kafka.setReplicas(ss.getSpec().getReplicas());
-        Container container = ss.getSpec().getTemplate().getSpec().getContainers().get(0);
-        kafka.setImage(container.getImage());
-        kafka.setHealthCheckInitialDelay(container.getReadinessProbe().getInitialDelaySeconds());
-        kafka.setHealthCheckTimeout(container.getReadinessProbe().getTimeoutSeconds());
-
-        Map<String, String> vars = containerEnvVars(container);
-
-        kafka.setZookeeperConnect(vars.getOrDefault(ENV_VAR_KAFKA_ZOOKEEPER_CONNECT, ss.getMetadata().getName() + "-zookeeper:2181"));
-
-        kafka.setMetricsEnabled(Utils.getBoolean(vars, ENV_VAR_KAFKA_METRICS_ENABLED, DEFAULT_KAFKA_METRICS_ENABLED));
-        if (kafka.isMetricsEnabled()) {
-            kafka.setMetricsConfigName(metricAndLogConfigsName(cluster));
+        if (kafka.getLivenessProbe() != null) {
+            result.setLivenessInitialDelay(kafka.getLivenessProbe().getInitialDelaySeconds());
+            result.setLivenessTimeout(kafka.getLivenessProbe().getTimeoutSeconds());
         }
-        kafka.setLogConfigName(metricAndLogConfigsName(cluster));
-        kafka.setLogging(Utils.getLogging(vars.get(KEY_KAFKA_LOG_CONFIG)));
+        result.setRack(kafka.getRack());
 
-        if (!ss.getSpec().getVolumeClaimTemplates().isEmpty()) {
-
-            Storage storage = Storage.fromPersistentVolumeClaim(ss.getSpec().getVolumeClaimTemplates().get(0));
-            if (ss.getMetadata().getAnnotations() != null) {
-                String deleteClaimAnnotation = String.format("%s/%s", ClusterOperator.STRIMZI_CLUSTER_OPERATOR_DOMAIN, Storage.DELETE_CLAIM_FIELD);
-                storage.withDeleteClaim(Boolean.valueOf(ss.getMetadata().getAnnotations().computeIfAbsent(deleteClaimAnnotation, s -> "false")));
-            }
-            kafka.setStorage(storage);
-        } else {
-            Storage storage = new Storage(Storage.StorageType.EPHEMERAL);
-            kafka.setStorage(storage);
+        String initImage = kafka.getBrokerRackInitImage();
+        if (initImage == null) {
+            initImage = Kafka.DEFAULT_INIT_IMAGE;
         }
-
-        String kafkaConfiguration = containerEnvVars(container).get(ENV_VAR_KAFKA_CONFIGURATION);
-        if (kafkaConfiguration != null) {
-            kafka.setConfiguration(new KafkaConfiguration(kafkaConfiguration));
+        result.setInitImage(initImage);
+        result.setLogging(kafka.getLogging());
+        result.setJvmOptions(kafka.getJvmOptions());
+        result.setConfiguration(new KafkaConfiguration(kafka.getConfig().entrySet()));
+        Map<String, Object> metrics = kafka.getMetrics();
+        if (metrics != null && !metrics.isEmpty()) {
+            result.setMetricsEnabled(true);
+            result.setMetricsConfig(metrics.entrySet());
         }
+        result.setZookeeperConnect(kafkaAssembly.getMetadata().getName() + "-zookeeper:2181");
+        result.setStorage(kafka.getStorage());
+        result.setUserAffinity(kafka.getAffinity());
+        result.setResources(kafka.getResources());
 
-        Affinity affinity = ss.getSpec().getTemplate().getSpec().getAffinity();
-        if (affinity != null
-                && affinity.getPodAntiAffinity() != null
-                && affinity.getPodAntiAffinity().getPreferredDuringSchedulingIgnoredDuringExecution() != null) {
-            String rackTopologyKey = affinity.getPodAntiAffinity().getPreferredDuringSchedulingIgnoredDuringExecution().get(0).getPodAffinityTerm().getTopologyKey();
-            kafka.setRackConfig(new RackConfig(rackTopologyKey));
-        }
+        result.generateCertificates(certManager, secrets);
 
-        List<Container> initContainers = ss.getSpec().getTemplate().getSpec().getInitContainers();
-        if (initContainers != null && !initContainers.isEmpty()) {
-
-            initContainers.stream()
-                    .filter(ic -> ic.getName().equals(INIT_NAME))
-                    .forEach(ic -> kafka.setInitImage(ic.getImage()));
-        }
-
-        return kafka;
+        return result;
     }
 
     /**
@@ -438,13 +371,18 @@ public class KafkaCluster extends AbstractModel {
         Map<String, String> data = new HashMap<>();
         data.put(ANCILLARY_CM_KEY_LOG_CONFIG, parseLogging(getLogging(), cm));
         if (isMetricsEnabled()) {
-            data.put(ANCILLARY_CM_KEY_METRICS, getMetricsConfig().toString());
+            HashMap m = new HashMap();
+            for (Map.Entry<String, Object> entry : getMetricsConfig()) {
+                m.put(entry.getKey(), entry.getValue());
+            }
+            data.put(ANCILLARY_CM_KEY_METRICS, new JsonObject(m).toString());
         }
-        ConfigMap result = createConfigMap(getAncillaryConfigName(), data);
+
+        ConfigMap configMap = createConfigMap(getAncillaryConfigName(), data);
         if (getLogging() != null) {
-            getLogging().setCm(result);
+            getLogging().setCm(configMap);
         }
-        return result;
+        return configMap;
     }
 
     /**
@@ -526,10 +464,11 @@ public class KafkaCluster extends AbstractModel {
 
     private List<Volume> getVolumes() {
         List<Volume> volumeList = new ArrayList<>();
-        if (storage.type() == Storage.StorageType.EPHEMERAL) {
+        if (storage instanceof EphemeralStorage) {
             volumeList.add(createEmptyDirVolume(VOLUME_NAME));
         }
-        if (rackConfig != null) {
+
+        if (rack != null) {
             volumeList.add(createEmptyDirVolume(RACK_VOLUME_NAME));
         }
         volumeList.add(createSecretVolume("internal-certs", KafkaCluster.brokersInternalSecretName(cluster)));
@@ -541,7 +480,7 @@ public class KafkaCluster extends AbstractModel {
 
     private List<PersistentVolumeClaim> getVolumeClaims() {
         List<PersistentVolumeClaim> pvcList = new ArrayList<>();
-        if (storage.type() == Storage.StorageType.PERSISTENT_CLAIM) {
+        if (storage instanceof PersistentClaimStorage) {
             pvcList.add(createPersistentVolumeClaim(VOLUME_NAME));
         }
         return pvcList;
@@ -550,7 +489,8 @@ public class KafkaCluster extends AbstractModel {
     private List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> volumeMountList = new ArrayList<>();
         volumeMountList.add(createVolumeMount(VOLUME_NAME, mountPath));
-        if (rackConfig != null) {
+
+        if (rack != null) {
             volumeMountList.add(createVolumeMount(RACK_VOLUME_NAME, RACK_VOLUME_MOUNT));
         }
         volumeMountList.add(createVolumeMount("internal-certs", "/opt/kafka/internal-certs"));
@@ -567,17 +507,16 @@ public class KafkaCluster extends AbstractModel {
     protected Affinity getMergedAffinity() {
         Affinity userAffinity = getUserAffinity();
         AffinityBuilder builder = new AffinityBuilder(userAffinity == null ? new Affinity() : userAffinity);
-        if (rackConfig != null) {
+        if (rack != null) {
             // If there's a rack config, we need to add a podAntiAffinity to spread the brokers among the racks
             builder = builder
                     .editOrNewPodAntiAffinity()
                         .addNewPreferredDuringSchedulingIgnoredDuringExecution()
                             .withWeight(100)
                             .withNewPodAffinityTerm()
-                                .withTopologyKey(rackConfig.getTopologyKey())
+                                .withTopologyKey(rack.getTopologyKey())
                                 .withNewLabelSelector()
                                     .addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, cluster)
-                                    .addToMatchLabels(Labels.STRIMZI_TYPE_LABEL, AssemblyType.KAFKA.toString())
                                     .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, name)
                                 .endLabelSelector()
                             .endPodAffinityTerm()
@@ -592,7 +531,7 @@ public class KafkaCluster extends AbstractModel {
 
         List<Container> initContainers = new ArrayList<>();
 
-        if (rackConfig != null) {
+        if (rack != null) {
 
             ResourceRequirements resources = new ResourceRequirementsBuilder()
                     .addToRequests("cpu", new Quantity("100m"))
@@ -603,7 +542,7 @@ public class KafkaCluster extends AbstractModel {
 
             List<EnvVar> varList =
                     Arrays.asList(buildEnvVarFromFieldRef(ENV_VAR_INIT_KAFKA_NODE_NAME, "spec.nodeName"),
-                            buildEnvVar(ENV_VAR_INIT_KAFKA_RACK_TOPOLOGY_KEY, rackConfig.getTopologyKey()));
+                            buildEnvVar(ENV_VAR_INIT_KAFKA_RACK_TOPOLOGY_KEY, rack.getTopologyKey()));
 
             Container initContainer = new ContainerBuilder()
                     .withName(INIT_NAME)
@@ -621,15 +560,14 @@ public class KafkaCluster extends AbstractModel {
 
     @Override
     protected List<Container> getContainers() {
-
         return singletonList(new ContainerBuilder()
                 .withName(name)
                 .withImage(getImage())
                 .withEnv(getEnvVars())
                 .withVolumeMounts(getVolumeMounts())
                 .withPorts(getContainerPortList())
-                .withLivenessProbe(createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout))
-                .withReadinessProbe(createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout))
+                .withLivenessProbe(createExecProbe(livenessPath, livenessInitialDelay, livenessTimeout))
+                .withReadinessProbe(createExecProbe(readinessPath, readinessInitialDelay, readinessTimeout))
                 .withResources(resources())
                 .build());
     }
@@ -650,6 +588,7 @@ public class KafkaCluster extends AbstractModel {
         if (configuration != null) {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_CONFIGURATION, configuration.getConfiguration()));
         }
+        // A hack to force rolling when the logging config changes
         if (getLogging() != null && getLogging().getCm() != null) {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_LOG_CONFIGURATION, getLogging().getCm().toString()));
         }
@@ -661,8 +600,8 @@ public class KafkaCluster extends AbstractModel {
         this.zookeeperConnect = zookeeperConnect;
     }
 
-    protected void setRackConfig(RackConfig rackConfig) {
-        this.rackConfig = rackConfig;
+    protected void setRack(Rack rack) {
+        this.rack = rack;
     }
 
     protected void setInitImage(String initImage) {

@@ -7,14 +7,16 @@ package io.strimzi.systemtest;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.Zookeeper;
 import io.strimzi.test.ClusterOperator;
-import io.strimzi.test.CmData;
 import io.strimzi.test.JUnitGroup;
-import io.strimzi.test.KafkaCluster;
+import io.strimzi.test.KafkaFromClasspathYaml;
 import io.strimzi.test.Namespace;
 import io.strimzi.test.OpenShiftOnly;
 import io.strimzi.test.Resources;
 import io.strimzi.test.StrimziRunner;
+import io.strimzi.test.TestUtils;
 import io.strimzi.test.Topic;
 import io.strimzi.test.k8s.Oc;
 import org.apache.logging.log4j.LogManager;
@@ -25,7 +27,6 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -64,7 +65,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
     public static final String NAMESPACE = "kafka-cluster-test";
     private static final String CLUSTER_NAME = "my-cluster";
     private static final String TOPIC_NAME = "test-topic";
-    private static final String CO_DEPLOYMENT_CONFIG = "../examples/install/cluster-operator/07-deployment.yaml";
+    private static final String CO_DEPLOYMENT_CONFIG = "../examples/install/cluster-operator/08-deployment.yaml";
 
     @BeforeClass
     public static void waitForCc() {
@@ -93,7 +94,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
 
     @Test
     @JUnitGroup(name = "acceptance")
-    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 3, zkNodes = 1)
+    @KafkaFromClasspathYaml()
     public void testKafkaAndZookeeperScaleUpScaleDown() {
         testDockerImagesForKafkaCluster(CLUSTER_NAME, 3, 1, false);
         // kafka cluster already deployed via annotation
@@ -109,7 +110,9 @@ public class KafkaClusterIT extends AbstractClusterIT {
         final String newPodName = kafkaPodName(CLUSTER_NAME,  newPodId);
         final String firstPodName = kafkaPodName(CLUSTER_NAME,  0);
         LOGGER.info("Scaling up to {}", scaleTo);
-        replaceCm(CLUSTER_NAME, "kafka-nodes", String.valueOf(initialReplicas + 1));
+        replaceKafkaResource(CLUSTER_NAME, k -> {
+            k.getSpec().getKafka().setReplicas(initialReplicas + 1);
+        });
         kubeClient.waitForStatefulSet(kafkaClusterName(CLUSTER_NAME), initialReplicas + 1);
 
         // Test that the new broker has joined the kafka cluster by checking it knows about all the other broker's API versions
@@ -129,7 +132,9 @@ public class KafkaClusterIT extends AbstractClusterIT {
         // scale down
         LOGGER.info("Scaling down");
         //client.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaStatefulSetName(CLUSTER_NAME)).scale(initialReplicas, true);
-        replaceCm(CLUSTER_NAME, "kafka-nodes", String.valueOf(initialReplicas));
+        replaceKafkaResource(CLUSTER_NAME, k -> {
+            k.getSpec().getKafka().setReplicas(initialReplicas);
+        });
         kubeClient.waitForStatefulSet(kafkaClusterName(CLUSTER_NAME), initialReplicas);
 
         final int finalReplicas = client.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaClusterName(CLUSTER_NAME)).get().getStatus().getReplicas();
@@ -149,7 +154,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
 
     @Test
     @JUnitGroup(name = "regression")
-    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 1, zkNodes = 1)
+    @KafkaFromClasspathYaml()
     public void testZookeeperScaleUpScaleDown() {
         // kafka cluster already deployed via annotation
         LOGGER.info("Running zookeeperScaleUpScaleDown with cluster {}", CLUSTER_NAME);
@@ -167,7 +172,9 @@ public class KafkaClusterIT extends AbstractClusterIT {
         };
         final String firstZkPodName = zookeeperPodName(CLUSTER_NAME,  0);
         LOGGER.info("Scaling up to {}", scaleZkTo);
-        replaceCm(CLUSTER_NAME, "zookeeper-nodes", String.valueOf(scaleZkTo));
+        replaceKafkaResource(CLUSTER_NAME, k -> {
+            k.getSpec().getZookeeper().setReplicas(scaleZkTo);
+        });
         kubeClient.waitForPod(newZkPodName[0]);
         kubeClient.waitForPod(newZkPodName[1]);
 
@@ -191,7 +198,9 @@ public class KafkaClusterIT extends AbstractClusterIT {
 
         // scale down
         LOGGER.info("Scaling down");
-        replaceCm(CLUSTER_NAME, "zookeeper-nodes", String.valueOf(1));
+        replaceKafkaResource(CLUSTER_NAME, k -> {
+            k.getSpec().getZookeeper().setReplicas(1);
+        });
         kubeClient.waitForResourceDeletion("po", zookeeperPodName(CLUSTER_NAME,  1));
         // Wait for the one remaining node to enter standalone mode
         waitForZkMntr(firstZkPodName, Pattern.compile("zk_server_state\\s+standalone"));
@@ -206,14 +215,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
 
     @Test
     @JUnitGroup(name = "regression")
-    @KafkaCluster(name = "my-cluster", kafkaNodes = 2, zkNodes = 2, config = {
-            @CmData(key = "zookeeper-healthcheck-delay", value = "30"),
-            @CmData(key = "zookeeper-healthcheck-timeout", value = "10"),
-            @CmData(key = "kafka-healthcheck-delay", value = "30"),
-            @CmData(key = "kafka-healthcheck-timeout", value = "10"),
-            @CmData(key = "kafka-config", value = "{\"default.replication.factor\": 1,\"offsets.topic.replication.factor\": 1,\"transaction.state.log.replication.factor\": 1}"),
-            @CmData(key = "zookeeper-config", value = "{\"timeTick\": 2000, \"initLimit\": 5, \"syncLimit\": 2}")
-    })
+    @KafkaFromClasspathYaml()
     public void testCustomAndUpdatedValues() {
         String clusterName = "my-cluster";
         int expectedZKPods = 2;
@@ -228,7 +230,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
         }
 
         LOGGER.info("Verify values before update");
-        String configMapBefore = kubeClient.get("cm", clusterName);
+        String configMapBefore = kubeClient.get("kafka", clusterName);
         assertThat(configMapBefore, valueOfCmEquals("zookeeper-healthcheck-delay", "30"));
         assertThat(configMapBefore, valueOfCmEquals("zookeeper-healthcheck-timeout", "10"));
         assertThat(configMapBefore, valueOfCmEquals("kafka-healthcheck-delay", "30"));
@@ -252,14 +254,16 @@ public class KafkaClusterIT extends AbstractClusterIT {
             assertThat(zkPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.timeoutSeconds", hasItem(10)));
         }
 
-        Map<String, String> changes = new HashMap<>();
-        changes.put("zookeeper-healthcheck-delay", "31");
-        changes.put("zookeeper-healthcheck-timeout", "11");
-        changes.put("kafka-healthcheck-delay", "31");
-        changes.put("kafka-healthcheck-timeout", "11");
-        changes.put("kafka-config", "{\"default.replication.factor\": 2,\"offsets.topic.replication.factor\": 2,\"transaction.state.log.replication.factor\": 2}");
-        changes.put("zookeeper-config", "{\"timeTick\": 2100, \"initLimit\": 6, \"syncLimit\": 3}");
-        replaceCm(clusterName, changes);
+        replaceKafkaResource(clusterName, k -> {
+            Kafka kafka = k.getSpec().getKafka();
+            kafka.getLivenessProbe().setInitialDelaySeconds(31);
+            kafka.getReadinessProbe().setInitialDelaySeconds(31);
+            kafka.getLivenessProbe().setTimeoutSeconds(11);
+            kafka.getReadinessProbe().setTimeoutSeconds(11);
+            kafka.setConfig(TestUtils.fromJson("{\"default.replication.factor\": 2,\"offsets.topic.replication.factor\": 2,\"transaction.state.log.replication.factor\": 2}", Map.class));
+            Zookeeper z = k.getSpec().getZookeeper();
+            z.setConfig(TestUtils.fromJson("{\"timeTick\": 2100, \"initLimit\": 6, \"syncLimit\": 3}", Map.class));
+        });
 
         for (int i = 0; i < expectedZKPods; i++) {
             kubeClient.waitForResourceUpdate("pod", zookeeperPodName(clusterName, i), zkPodStartTime.get(i));
@@ -299,9 +303,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
 
     @Test
     @JUnitGroup(name = "regression")
-    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 3, config = {
-            @CmData(key = "kafka-config", value = "{\"default.replication.factor\": 3,\"offsets.topic.replication.factor\": 3,\"transaction.state.log.replication.factor\": 3}")
-            })
+    @KafkaFromClasspathYaml()
     @Topic(name = TOPIC_NAME, clusterName = "my-cluster")
     public void testSendMessages() {
         int messagesCount = 20;
@@ -313,28 +315,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
 
     }
 
-    @KafkaCluster(name = "jvm-resource-cluster",
-        kafkaNodes = 1,
-        zkNodes = 1,
-        config = {
-            @CmData(key = "kafka-storage",
-                    value = "{ \"type\": \"ephemeral\" }"),
-            @CmData(key = "kafka-resources",
-                    value = "{ \"limits\": {\"memory\": \"2Gi\", \"cpu\": \"400m\"}, " +
-                            "\"requests\": {\"memory\": \"2Gi\", \"cpu\": \"400m\"}}"),
-            @CmData(key = "kafka-jvmOptions",
-                    value = "{\"-Xmx\": \"1g\", \"-Xms\": \"1G\", \"-server\": true, \"-XX\": { \"UseG1GC\": true }}"),
-            @CmData(key = "zookeeper-storage",
-                    value = "{ \"type\": \"ephemeral\" }"),
-            @CmData(key = "zookeeper-resources",
-                    value = "{ \"limits\": {\"memory\": \"1G\", \"cpu\": \"300m\"}, " +
-                            "\"requests\": {\"memory\": \"1G\", \"cpu\": \"300m\"} }"),
-            @CmData(key = "zookeeper-jvmOptions",
-                    value = "{\"-Xmx\": \"600m\", \"-Xms\": \"300m\", \"-server\": true, \"-XX\": { \"UseG1GC\": true }}"),
-            @CmData(key = "topic-operator-config",
-                    value = "{\"resources\": { \"limits\": {\"memory\": \"500M\", \"cpu\": \"300m\"}, " +
-                            "\"requests\": {\"memory\": \"500M\", \"cpu\": \"300m\"} } }")
-    })
+    @KafkaFromClasspathYaml
     @Test
     @JUnitGroup(name = "regression")
     public void testJvmAndResources() {
@@ -356,7 +337,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
 
     @Test
     @JUnitGroup(name = "regression")
-    @KafkaCluster(name = CLUSTER_NAME)
+    @KafkaFromClasspathYaml
     public void testForTopicOperator() {
         //Createing topics for testing
         kubeClient.create(TOPIC_CM);
@@ -422,13 +403,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
 
     @Test
     @JUnitGroup(name = "regression")
-    @KafkaCluster(name = CLUSTER_NAME,
-            kafkaNodes = 1,
-            zkNodes = 1,
-            config = {
-                    @CmData(key = "kafka-rack",
-                            value = "{\"topologyKey\": \"rack-key\"}")
-            })
+    @KafkaFromClasspathYaml
     public void testRackAware() {
         testDockerImagesForKafkaCluster(CLUSTER_NAME, 1, 1, true);
 
