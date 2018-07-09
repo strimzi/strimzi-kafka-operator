@@ -6,17 +6,15 @@ package io.strimzi.systemtest;
 
 import io.fabric8.kubernetes.api.model.Event;
 import io.strimzi.test.ClusterOperator;
-import io.strimzi.test.ConnectCluster;
-import io.strimzi.test.ConnectS2ICluster;
 import io.strimzi.test.JUnitGroup;
 import io.strimzi.test.KafkaConnectFromClasspathYaml;
 import io.strimzi.test.KafkaFromClasspathYaml;
-import io.strimzi.test.ConnectS2ICluster;
 import io.strimzi.test.Namespace;
 import io.strimzi.test.OpenShiftOnly;
 import io.strimzi.test.Resources;
 import io.strimzi.test.StrimziRunner;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.Topic;
 import io.strimzi.test.k8s.Oc;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -56,8 +54,8 @@ public class ConnectClusterIT extends AbstractClusterIT {
     public static final String NAMESPACE = "connect-cluster-test";
     public static final String KAFKA_CLUSTER_NAME = "connect-tests";
     public static final String CONNECT_CLUSTER_NAME = "my-cluster";
-    public static final String KAFKA_CONNECT_BOOTSTRAP_SERVERS = KAFKA_CLUSTER_NAME + "-kafka-bootstrap:9092";
-    public static final String KAFKA_CONNECT_BOOTSTRAP_SERVERS_ESCAPED = KAFKA_CLUSTER_NAME + "-kafka-bootstrap\\:9092";
+    public static final String KAFKA_CONNECT_BOOTSTRAP_SERVERS = KAFKA_CLUSTER_NAME + "-kafka:9092";
+    public static final String KAFKA_CONNECT_BOOTSTRAP_SERVERS_ESCAPED = KAFKA_CLUSTER_NAME + "-kafka\\:9092";
     public static final String CONNECT_CONFIG_CONVERTER_SCHEMAS_DISABLED = "{\n" +
             "\"bootstrap.servers\": \"" + KAFKA_CONNECT_BOOTSTRAP_SERVERS + "\", " +
             "\"key.converter.schemas.enable\": \"" + "false" + "\", " +
@@ -79,7 +77,6 @@ public class ConnectClusterIT extends AbstractClusterIT {
             "internal.key.converter=org.apache.kafka.connect.json.JsonConverter\\n" +
             "internal.value.converter.schemas.enable=false\\n" +
             "internal.value.converter=org.apache.kafka.connect.json.JsonConverter\\n";
-    private static final String CO_DEPLOYMENT_CONFIG = "../examples/install/cluster-operator/08-deployment.yaml";
 
     @Test
     @JUnitGroup(name = "regression")
@@ -114,7 +111,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
     @Test
     @JUnitGroup(name = "regression")
     @Topic(name = TEST_TOPIC_NAME, clusterName = KAFKA_CLUSTER_NAME)
-    @ConnectCluster(name = CONNECT_CLUSTER_NAME, connectConfig = CONNECT_CONFIG_CONVERTER_SCHEMAS_DISABLED)
+    @KafkaConnectFromClasspathYaml
     public void testKafkaConnectWithFileSinkPlugin() {
 
         String connectorConfig = getFileAsString("../systemtest/src/test/resources/file/sink/connector.json");

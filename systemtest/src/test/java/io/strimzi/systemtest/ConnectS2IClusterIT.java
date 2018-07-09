@@ -5,35 +5,21 @@
 package io.strimzi.systemtest;
 
 import io.strimzi.test.ClusterOperator;
-import io.strimzi.test.CmData;
 import io.strimzi.test.ConnectS2ICluster;
-import io.strimzi.test.JUnitGroup;
-import io.strimzi.test.KafkaCluster;
+import io.strimzi.test.KafkaFromClasspathYaml;
 import io.strimzi.test.Namespace;
 import io.strimzi.test.OpenShiftOnly;
 import io.strimzi.test.StrimziRunner;
-import io.strimzi.test.k8s.ProcessResult;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static io.strimzi.test.TestUtils.waitFor;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertThat;
 
 @RunWith(StrimziRunner.class)
 @Namespace(ConnectS2IClusterIT.NAMESPACE)
 @ClusterOperator
-@KafkaCluster(
-        name = ConnectS2IClusterIT.KAFKA_CLUSTER_NAME,
-        config = {
-                @CmData(key = "kafka-storage",
-                        value = "{ \"type\": \"ephemeral\" }"),
-                @CmData(key = "zookeeper-storage",
-                        value = "{ \"type\": \"ephemeral\" }")
-        }
-)
+@KafkaFromClasspathYaml
 public class ConnectS2IClusterIT extends AbstractClusterIT {
 
     public static final String NAMESPACE = "connect-s2i-cluster-test";
