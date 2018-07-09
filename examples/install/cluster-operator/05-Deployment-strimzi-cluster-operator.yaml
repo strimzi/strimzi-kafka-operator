@@ -1,7 +1,15 @@
+##---
+# Source: strimzi-kafka-operator/templates/05-Deployment-strimzi-cluster-operator.yaml
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: strimzi-cluster-operator
+  labels:
+    app: strimzi-kafka-operator
+    chart: strimzi-kafka-operator-0.1.0
+    component: deployment
+    release: RELEASE-NAME
+    heritage: Tiller
 spec:
   replicas: 1
   template:
@@ -13,6 +21,7 @@ spec:
       containers:
         - name: strimzi-cluster-operator
           image: strimzi/cluster-operator:latest
+          imagePullPolicy: "IfNotPresent"
           env:
             - name: STRIMZI_NAMESPACE
               valueFrom:
@@ -23,25 +32,25 @@ spec:
             - name: STRIMZI_OPERATION_TIMEOUT_MS
               value: "300000"
             - name: STRIMZI_DEFAULT_ZOOKEEPER_IMAGE
-              value: strimzi/zookeeper:latest
+              value: "strimzi/zookeeper:latest"
             - name: STRIMZI_DEFAULT_KAFKA_IMAGE
-              value: strimzi/kafka:latest
+              value: "strimzi/kafka:latest"
             - name: STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE
-              value: strimzi/kafka-connect:latest
+              value: "strimzi/kafka-connect:latest"
             - name: STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE
-              value: strimzi/kafka-connect-s2i:latest
+              value: "strimzi/kafka-connect-s2i:latest"
             - name: STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE
-              value: strimzi/topic-operator:latest
+              value: "strimzi/topic-operator:latest"
             - name: STRIMZI_DEFAULT_KAFKA_INIT_IMAGE
-              value: strimzi/kafka-init:latest
+              value: "strimzi/kafka-init:latest"
             - name: STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE
-              value: strimzi/zookeeper-stunnel:latest
+              value: "strimzi/zookeeper-stunnel:latest"
             - name: STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE
-              value: strimzi/kafka-stunnel:latest
+              value: "strimzi/kafka-stunnel:latest"
             - name: STRIMZI_DEFAULT_TLS_SIDECAR_TOPIC_OPERATOR_IMAGE
-              value: strimzi/topic-operator-stunnel:latest
+              value: "strimzi/topic-operator-stunnel:latest"
             - name: STRIMZI_LOG_LEVEL
-              value: INFO
+              value: "INFO"
           livenessProbe:
             httpGet:
               path: /healthy
@@ -56,10 +65,11 @@ spec:
             periodSeconds: 30
           resources:
             limits:
-              memory: 256Mi
               cpu: 1000m
-            requests:
               memory: 256Mi
+            requests:
               cpu: 200m
+              memory: 256Mi
+            
   strategy:
     type: Recreate

@@ -29,6 +29,10 @@
 // Source and download links
 :ReleaseDownload: https://github.com/strimzi/strimzi-kafka-operator/releases[GitHub^]
 
+// Helm Chart
+:ChartName: strimzi-kafka-operator
+:ChartReleaseDownload: https://github.com/strimzi/strimzi-kafka-operator/releases/download/{ProductVersion}/{ChartName}-{ProductVersion}.tgz
+
 // External links
 :KafkaRacks: https://kafka.apache.org/documentation/#basic_ops_racks[Kafka racks documentation^]
 :K8sAffinity: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/[Kubernetes node and pod affinity documentation^]

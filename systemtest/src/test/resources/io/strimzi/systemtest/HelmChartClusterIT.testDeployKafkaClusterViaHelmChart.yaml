@@ -1,0 +1,41 @@
+apiVersion: kafka.strimzi.io/v1alpha1
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    replicas: 3
+    readinessProbe:
+      initialDelaySeconds: 15
+      timeoutSeconds: 5
+    livenessProbe:
+      initialDelaySeconds: 15
+      timeoutSeconds: 5
+    config:
+      offsets.topic.replication.factor: 3
+      transaction.state.log.replication.factor: 3
+      transaction.state.log.min.isr: 2
+    storage:
+      type: ephemeral
+    metrics:
+      lowercaseOutputName: true
+      rules:
+        - pattern: "kafka.server<type=(.+), name=(.+)PerSec\\w*><>Count"
+          name: "kafka_server_$1_$2_total"
+        - pattern: "kafka.server<type=(.+), name=(.+)PerSec\\w*, topic=(.+)><>Count"
+          name: "kafka_server_$1_$2_total"
+          labels:
+            topic: "$3"
+  zookeeper:
+    replicas: 3
+    readinessProbe:
+      initialDelaySeconds: 15
+      timeoutSeconds: 5
+    livenessProbe:
+      initialDelaySeconds: 15
+      timeoutSeconds: 5
+    storage:
+      type: ephemeral
+    metrics:
+      lowercaseOutputName: true
+  topicOperator: { }

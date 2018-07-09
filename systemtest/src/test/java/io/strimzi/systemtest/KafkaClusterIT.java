@@ -94,7 +94,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
         LOGGER.info("Running kafkaScaleUpScaleDown {}", CLUSTER_NAME);
         //kubeClient.waitForStatefulSet(kafkaStatefulSetName(clusterName), 3);
 
-        final int initialReplicas = client.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaClusterName(CLUSTER_NAME)).get().getStatus().getReplicas();
+        final int initialReplicas = client.apps().statefulSets().inNamespace(kubeClient.namespace()).withName(kafkaClusterName(CLUSTER_NAME)).get().getStatus().getReplicas();
         assertEquals(3, initialReplicas);
         // scale up
         final int scaleTo = initialReplicas + 1;
@@ -130,7 +130,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
         });
         kubeClient.waitForStatefulSet(kafkaClusterName(CLUSTER_NAME), initialReplicas);
 
-        final int finalReplicas = client.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaClusterName(CLUSTER_NAME)).get().getStatus().getReplicas();
+        final int finalReplicas = client.apps().statefulSets().inNamespace(kubeClient.namespace()).withName(kafkaClusterName(CLUSTER_NAME)).get().getStatus().getReplicas();
         assertEquals(initialReplicas, finalReplicas);
         versions = getBrokerApiVersions(firstPodName);
 
@@ -153,7 +153,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
         LOGGER.info("Running zookeeperScaleUpScaleDown with cluster {}", CLUSTER_NAME);
         //kubeClient.waitForStatefulSet(zookeeperStatefulSetName(CLUSTER_NAME), 1);
         KubernetesClient client = new DefaultKubernetesClient();
-        final int initialZkReplicas = client.apps().statefulSets().inNamespace(NAMESPACE).withName(zookeeperClusterName(CLUSTER_NAME)).get().getStatus().getReplicas();
+        final int initialZkReplicas = client.apps().statefulSets().inNamespace(kubeClient.namespace()).withName(zookeeperClusterName(CLUSTER_NAME)).get().getStatus().getReplicas();
         assertEquals(1, initialZkReplicas);
 
         // scale up
@@ -298,19 +298,19 @@ public class KafkaClusterIT extends AbstractClusterIT {
     @Test
     @JUnitGroup(name = "regression")
     public void testJvmAndResources() {
-        assertResources(NAMESPACE, "jvm-resource-cluster-kafka-0",
+        assertResources(client.getNamespace(), "jvm-resource-cluster-kafka-0",
                 "2Gi", "400m", "2Gi", "400m");
         assertExpectedJavaOpts("jvm-resource-cluster-kafka-0",
                 "-Xmx1g", "-Xms1G", "-server", "-XX:+UseG1GC");
 
-        assertResources(NAMESPACE, "jvm-resource-cluster-zookeeper-0",
+        assertResources(client.getNamespace(), "jvm-resource-cluster-zookeeper-0",
                 "1Gi", "300m", "1Gi", "300m");
         assertExpectedJavaOpts("jvm-resource-cluster-zookeeper-0",
                 "-Xmx600m", "-Xms300m", "-server", "-XX:+UseG1GC");
 
-        String podName = client.pods().inNamespace(NAMESPACE).list().getItems().stream().filter(p -> p.getMetadata().getName().startsWith("jvm-resource-cluster-topic-operator-")).findFirst().get().getMetadata().getName();
+        String podName = client.pods().inNamespace(kubeClient.namespace()).list().getItems().stream().filter(p -> p.getMetadata().getName().startsWith("jvm-resource-cluster-topic-operator-")).findFirst().get().getMetadata().getName();
 
-        assertResources(NAMESPACE, podName,
+        assertResources(client.getNamespace(), podName,
                 "500M", "300m", "500M", "300m");
     }
 

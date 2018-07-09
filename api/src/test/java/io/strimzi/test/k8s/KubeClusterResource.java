@@ -20,6 +20,7 @@ public class KubeClusterResource extends ExternalResource {
     private final boolean bootstrap;
     private KubeCluster cluster;
     private KubeClient client;
+    private HelmClient helmClient;
 
     public KubeClusterResource() {
         bootstrap = true;
@@ -29,6 +30,13 @@ public class KubeClusterResource extends ExternalResource {
         bootstrap = false;
         this.cluster = cluster;
         this.client = client;
+    }
+
+    public KubeClusterResource(KubeCluster cluster, KubeClient client, HelmClient helmClient) {
+        bootstrap = false;
+        this.cluster = cluster;
+        this.client = client;
+        this.helmClient = helmClient;
     }
 
     /** Gets the namespace in use */
@@ -41,6 +49,13 @@ public class KubeClusterResource extends ExternalResource {
             this.client = KubeClient.findClient(cluster());
         }
         return client;
+    }
+
+    public HelmClient helmClient() {
+        if (bootstrap && helmClient == null) {
+            this.helmClient = HelmClient.findClient(client());
+        }
+        return helmClient;
     }
 
     public KubeCluster cluster() {
