@@ -51,6 +51,8 @@ environment variables:
 `make all` command can be used to triger all the tasks above - build the 
 Docker images, tag them and push them to the configured repository.
 
+During the make, Maven is used for packaging Java based applications (i.e. Cluster Operator, Topic Operator, ...) and the `mvn` command can be customized setting the `MVN_ARGS` environment variable before launching the `make all`. For example, it can be used to avoid running the unit tests just setting `MVN_ARGS=-DskipTests`.
+
 ## Pushing images to the cluster's Docker repo
 
 When developing locally you might want to push the docker images to the docker
