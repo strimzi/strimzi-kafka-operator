@@ -380,13 +380,15 @@ public class KafkaClusterIT extends AbstractClusterIT {
 
         //Verifying docker image for zookeeper pods
         for (int i = 0; i < zkPods; i++) {
-            String imgFromPod = getImageNameFromPod(zookeeperPodName(clusterName, i));
+            String imgFromPod = getContainerImageNameFromPod(zookeeperPodName(clusterName, i), zookeeperClusterName(clusterName));
             assertEquals(imgFromDeplConf.get(ZK_IMAGE), imgFromPod);
+            imgFromPod = getContainerImageNameFromPod(zookeeperPodName(clusterName, i), "stunnel-zookeeper");
+            assertEquals(imgFromDeplConf.get(STUNNEL_ZOOKEEPER_IMAGE), imgFromPod);
         }
 
         //Verifying docker image for kafka pods
         for (int i = 0; i < kafkaPods; i++) {
-            String imgFromPod = getImageNameFromPod(kafkaPodName(clusterName, i));
+            String imgFromPod = getContainerImageNameFromPod(kafkaPodName(clusterName, i));
             assertEquals(imgFromDeplConf.get(KAFKA_IMAGE), imgFromPod);
             if (rackAwareEnabled) {
                 String initContainerImage = getInitContainerImageName(kafkaPodName(clusterName, i));
@@ -395,7 +397,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
         }
 
         //Verifying docker image for topic-operator
-        String topicOperatorImageName = getImageNameFromPod(kubeClient.listResourcesByLabel("pod",
+        String topicOperatorImageName = getContainerImageNameFromPod(kubeClient.listResourcesByLabel("pod",
                 "strimzi.io/name=" + clusterName + "-topic-operator").get(0));
         assertEquals(imgFromDeplConf.get("STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE"), topicOperatorImageName);
         LOGGER.info("Docker images verified");

@@ -1,4 +1,4 @@
-SUBDIRS=kafka-base zookeeper kafka kafka-connect kafka-connect/s2i
+SUBDIRS=kafka-base zookeeper kafka kafka-connect kafka-connect/s2i stunnel-zookeeper
 DOCKER_TARGETS=docker_build docker_push docker_tag
 
 all: $(SUBDIRS)
