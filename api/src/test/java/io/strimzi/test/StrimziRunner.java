@@ -506,7 +506,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     // delete cm
                     kubeClient().deleteContent(yaml);
                     // wait for ss to go
-                    kubeClient().waitForResourceDeletion("deployment", deploymentName);
+                    kubeClient().waitForResourceDeletion("deploymentConfig", deploymentName);
                 }
             };
         }
