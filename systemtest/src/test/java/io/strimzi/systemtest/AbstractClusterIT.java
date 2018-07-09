@@ -68,6 +68,8 @@ public class AbstractClusterIT {
     protected static final String CONNECT_IMAGE = "STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE";
     protected static final String S2I_IMAGE = "STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE";
     protected static final String TO_IMAGE = "STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE";
+    protected static final String INIT_KAFKA_IMAGE = "STRIMZI_DEFAULT_INIT_KAFKA_IMAGE";
+    protected static final String TEST_TOPIC_NAME = "test-topic";
     protected static final String KAFKA_INIT_IMAGE = "STRIMZI_DEFAULT_KAFKA_INIT_IMAGE";
     protected static final String TLS_SIDECAR_ZOOKEEPER_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE";
     protected static final String TLS_SIDECAR_KAFKA_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE";
@@ -239,14 +241,14 @@ public class AbstractClusterIT {
                 .collect(Collectors.toList());
     }
 
-    public void sendMessages(String clusterName, String topic, int messagesCount, int kafkaPodID) {
+    public void sendMessages(String podName, String clusterName, String topic, int messagesCount) {
         LOGGER.info("Sending messages");
         String command = "sh bin/kafka-verifiable-producer.sh --broker-list " +
                 clusterName + "-kafka-bootstrap:9092 --topic " + topic + " --max-messages " + messagesCount + "";
 
         LOGGER.info("Command for kafka-verifiable-producer.sh {}", command);
 
-        kubeClient.exec(kafkaPodName(clusterName, kafkaPodID), "/bin/bash", "-c", command);
+        kubeClient.exec(podName, "/bin/bash", "-c", command);
     }
 
     public String consumeMessages(String clusterName, String topic, int groupID, int timeout, int kafkaPodID) {

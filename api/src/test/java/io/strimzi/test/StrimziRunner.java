@@ -70,6 +70,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
     public static final String NOTEARDOWN = "NOTEARDOWN";
     public static final String KAFKA_PERSISTENT_YAML = "../examples/kafka/kafka-persistent.yaml";
     public static final String KAFKA_CONNECT_YAML = "../examples/kafka-connect/kafka-connect.yaml";
+    public static final String KAFKA_CONNECT_S2I_CM = "../examples/configmaps/cluster-operator/kafka-connect-s2i.yaml";
     public static final String CO_INSTALL_DIR = "../examples/install/cluster-operator";
     public static final String CO_DEPLOYMENT_NAME = "strimzi-cluster-operator";
     public static final String TOPIC_CM = "../examples/configmaps/topic-operator/kafka-topic-configmap.yaml";
@@ -167,6 +168,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
             protected void after() {
             }
         };
+        statement = withConnectS2IClusters(method, statement);
         statement = withConnectClusters(method, statement);
         statement = withKafkaClusters(method, statement);
         statement = withClusterOperator(method, statement);
@@ -475,6 +477,42 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 t, System.lineSeparator(), "----------------------------------------------------------------------");
     }
 
+    private Statement withConnectS2IClusters(Annotatable element,
+                                          Statement statement) {
+        Statement last = statement;
+        for (ConnectS2ICluster cluster : annotations(element, ConnectS2ICluster.class)) {
+            // use the example kafka-connect.yaml as a template, but modify it according to the annotation
+            String yaml = getContent(new File(KAFKA_CONNECT_S2I_CM), node -> {
+                JsonNode metadata = node.get("metadata");
+                ((ObjectNode) metadata).put("name", cluster.name());
+                JsonNode data = node.get("data");
+                ((ObjectNode) data).put("nodes", String.valueOf(cluster.nodes()));
+                ((ObjectNode) data).put("connect-config", cluster.connectConfig());
+            });
+            last = new Bracket(last) {
+                private final String deploymentName = cluster.name() + "-connect";
+                @Override
+                protected void before() {
+                    LOGGER.info("Creating connect cluster '{}' before test per @ConnectCluster annotation on {}", cluster.name(), name(element));
+                    // create cm
+                    kubeClient().createContent(yaml);
+                    // wait for deployment config
+                    kubeClient().waitForResourceReady("deploymentConfig", deploymentName);
+                }
+
+                @Override
+                protected void after() {
+                    LOGGER.info("Deleting connect cluster '{}' after test per @ConnectCluster annotation on {}", cluster.name(), name(element));
+                    // delete cm
+                    kubeClient().deleteContent(yaml);
+                    // wait for ss to go
+                    kubeClient().waitForResourceDeletion("deployment", deploymentName);
+                }
+            };
+        }
+        return last;
+    }
+
     private Statement withConnectClusters(Annotatable element,
                                           Statement statement) {
         Statement last = statement;
@@ -747,6 +785,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 protected void after() {
                 }
             };
+            statement = withConnectS2IClusters(testClass, statement);
             statement = withConnectClusters(testClass, statement);
             statement = withKafkaClusters(testClass, statement);
             statement = withClusterOperator(testClass, statement);

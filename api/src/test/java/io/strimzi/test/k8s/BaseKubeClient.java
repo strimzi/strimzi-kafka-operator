@@ -210,6 +210,11 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
         return Exec.exec(cmd);
     }
 
+    @Override
+    public ProcessResult execInKubeWorkspace(String... command) {
+        return Exec.exec(asList(command));
+    }
+
     enum ExType {
         BREAK,
         CONTINUE,

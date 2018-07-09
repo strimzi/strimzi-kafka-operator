@@ -21,7 +21,6 @@ import io.strimzi.test.Topic;
 import io.strimzi.test.k8s.Oc;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -64,12 +63,6 @@ public class KafkaClusterIT extends AbstractClusterIT {
 
     public static final String NAMESPACE = "kafka-cluster-test";
     private static final String TOPIC_NAME = "test-topic";
-
-    @BeforeClass
-    public static void waitForCc() {
-        // TODO Build this into the annos, or get rid of the annos
-        //cluster.client().waitForDeployment("strimzi-cluster-operator");
-    }
 
     @Test
     @JUnitGroup(name = "regression")
@@ -291,7 +284,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
     @Topic(name = TOPIC_NAME, clusterName = "my-cluster")
     public void testSendMessages() {
         int messagesCount = 20;
-        sendMessages(CLUSTER_NAME, TOPIC_NAME, messagesCount, 1);
+        sendMessages(kafkaPodName(CLUSTER_NAME, 1), CLUSTER_NAME, TOPIC_NAME, messagesCount);
         String consumedMessages = consumeMessages(CLUSTER_NAME, TOPIC_NAME, 1, 30, 2);
 
         assertThat(consumedMessages, hasJsonPath("$[*].count", hasItem(messagesCount)));
