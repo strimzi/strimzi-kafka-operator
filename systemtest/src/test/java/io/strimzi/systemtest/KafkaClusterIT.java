@@ -395,10 +395,10 @@ public class KafkaClusterIT extends AbstractClusterIT {
         String kafkaPodName = kafkaPodName(CLUSTER_NAME, 0);
         kubeClient.waitForPod(kafkaPodName);
 
-        String rackId = kubeClient.exec(kafkaPodName, "/bin/bash", "-c", "cat /opt/kafka/rack/rack.id").out();
+        String rackId = kubeClient.execInPod(kafkaPodName, "/bin/bash", "-c", "cat /opt/kafka/rack/rack.id").out();
         assertEquals("zone", rackId);
 
-        String brokerRack = kubeClient.exec(kafkaPodName, "/bin/bash", "-c", "cat /tmp/strimzi.properties | grep broker.rack").out();
+        String brokerRack = kubeClient.execInPod(kafkaPodName, "/bin/bash", "-c", "cat /tmp/strimzi.properties | grep broker.rack").out();
         assertTrue(brokerRack.contains("broker.rack=zone"));
 
         List<Event> events = getEvents("Pod", kafkaPodName);

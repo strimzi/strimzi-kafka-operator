@@ -497,7 +497,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     // create cm
                     kubeClient().createContent(yaml);
                     // wait for deployment config
-                    kubeClient().waitForResourceReady("deploymentConfig", deploymentName);
+                    kubeClient().waitForDeploymentConfig(deploymentName);
                 }
 
                 @Override
