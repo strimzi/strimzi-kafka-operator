@@ -489,8 +489,11 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 ((ObjectNode) data).put("nodes", String.valueOf(cluster.nodes()));
                 ((ObjectNode) data).put("connect-config", cluster.connectConfig());
             });
-            last = new Bracket(last) {
-                private final String deploymentName = cluster.name() + "-connect";
+            final String deploymentName = cluster.name() + "-connect";
+            last = new Bracket(last, new ResourceAction()
+                    .getDep(deploymentName)
+                    .getPo(deploymentName + ".*")
+                    .logs(deploymentName + ".*")) {
                 @Override
                 protected void before() {
                     LOGGER.info("Creating connect cluster '{}' before test per @ConnectCluster annotation on {}", cluster.name(), name(element));
