@@ -51,8 +51,6 @@ import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.dsl.ScalableResource;
-import io.strimzi.api.kafka.DoneableKafkaAssembly;
-import io.strimzi.api.kafka.model.KafkaAssembly;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mockito.invocation.InvocationOnMock;
@@ -80,7 +78,6 @@ public class MockKube {
 
     private static final Logger LOGGER = LogManager.getLogger(MockKube.class);
 
-    private final Map<String, KafkaAssembly> kafkaDb = db(emptySet(), KafkaAssembly.class, DoneableKafkaAssembly.class);
     private final Map<String, ConfigMap> cmDb = db(emptySet(), ConfigMap.class, DoneableConfigMap.class);
     private final Map<String, PersistentVolumeClaim> pvcDb = db(emptySet(), PersistentVolumeClaim.class, DoneablePersistentVolumeClaim.class);
     private final Map<String, Service> svcDb = db(emptySet(), Service.class, DoneableService.class);
@@ -107,11 +104,6 @@ public class MockKube {
 
     public MockKube withInitialSecrets(Set<Secret> initial) {
         this.secretDb.putAll(db(initial, Secret.class, DoneableSecret.class));
-        return this;
-    }
-
-    public MockKube withInitialKafkaAssembly(Set<KafkaAssembly> initial) {
-        this.kafkaDb.putAll(db(initial, KafkaAssembly.class, DoneableKafkaAssembly.class));
         return this;
     }
 
@@ -181,9 +173,6 @@ public class MockKube {
                 when(crds.withName(crd.getMetadata().getName())).thenReturn(crdResource);
                 when(mockClient.customResources(any(CustomResourceDefinition.class), any(Class.class), any(Class.class), any(Class.class))).thenAnswer(invocation -> {
                     CustomResourceDefinition crdArg = invocation.getArgument(0);
-                    Class<? extends CustomResource> crType = invocation.getArgument(1);
-                    Class<? extends KubernetesResourceList> crListType = invocation.getArgument(2);
-                    Class<? extends Doneable> crDoneableType = invocation.getArgument(3);
                     if (crd.getSpec().getGroup().equals(crdArg.getSpec().getGroup())
                             && crd.getSpec().getVersion().equals(crdArg.getSpec().getVersion())) {
                         return buildCrd((MockedCrd) mockedCrd);
