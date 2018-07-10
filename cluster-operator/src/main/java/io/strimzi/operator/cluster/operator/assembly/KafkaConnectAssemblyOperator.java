@@ -61,7 +61,7 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
                                         ConfigMapOperator configMapOperations,
                                         DeploymentOperator deploymentOperations,
                                         ServiceOperator serviceOperations,
-        SecretOperator secretOperations) {
+                                        SecretOperator secretOperations) {
         super(vertx, isOpenShift, AssemblyType.CONNECT, certManager, connectOperator, secretOperations);
         this.configMapOperations = configMapOperations;
         this.serviceOperations = serviceOperations;
