@@ -37,6 +37,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
     protected boolean insecureSourceRepository = false;
 
     // Configuration defaults
+    protected static final String DEFAULT_IMAGE = System.getenv().getOrDefault("STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE", "strimzi/kafka-connect-s2i:latest");
 
     // Configuration keys (in ConfigMap)
     public static final String KEY_INSECURE_SOURCE_REPO = "insecure-source-repo";
@@ -254,7 +255,6 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
         this.sourceImageBaseName = image.substring(0, image.lastIndexOf(":"));
         this.sourceImageTag = image.substring(image.lastIndexOf(":") + 1);
         this.image = name + ":" + tag;
-
     }
 
     /**
