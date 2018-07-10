@@ -467,7 +467,7 @@ public class KafkaAssemblyOperatorTest {
         int healthDelay = 120;
         int healthTimeout = 30;
         Map<String, Object> metricsCmJson = metrics ? METRICS_CONFIG : null;
-        return ResourceUtils.createKafkaCluster(clusterNamespace, clusterName, replicas, image, healthDelay, healthTimeout, metricsCmJson, kafkaConfig, zooConfig, storage, tcConfig, null, LOG_KAFKA_CONFIG, LOG_ZOOKEEPER_CONFIG);
+        return ResourceUtils.createKafkaCluster(clusterNamespace, clusterName, replicas, image, healthDelay, healthTimeout, metricsCmJson, kafkaConfig, zooConfig, storage, tcConfig, LOG_KAFKA_CONFIG, LOG_ZOOKEEPER_CONFIG);
     }
 
     private List<Secret> getInitialSecrets() {

@@ -46,7 +46,7 @@ public class ZookeeperClusterTest {
     private final Map<String, Object> zooConfigurationJson = singletonMap("foo", "bar");
 
     private final CertManager certManager = new MockCertManager();
-    private final KafkaAssembly cm = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson, null, null, null, kafkaLogConfigJson, zooLogConfigJson);
+    private final KafkaAssembly cm = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson, null, null, kafkaLogConfigJson, zooLogConfigJson);
     private final ZookeeperCluster zc = ZookeeperCluster.fromCrd(certManager, cm, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
 
     @Rule

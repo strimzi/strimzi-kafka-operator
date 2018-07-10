@@ -10,14 +10,12 @@ import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.WeightedPodAffinityTerm;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
-import io.strimzi.api.kafka.model.EphemeralStorage;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.KafkaAssembly;
 import io.strimzi.api.kafka.model.KafkaAssemblyBuilder;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.Rack;
-import io.strimzi.api.kafka.model.RackBuilder;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.operator.assembly.MockCertManager;
@@ -115,9 +113,14 @@ public class KafkaClusterTest {
 
     @Test
     public void testGenerateStatefulSetWithRack() {
-        KafkaAssembly kafkaAssembly = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout,
-                metricsCm, configuration, emptyMap(), new EphemeralStorage(),
-                new RackBuilder().withTopologyKey("rack-key").build(), null, null);
+        KafkaAssembly kafkaAssembly = new KafkaAssemblyBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewRack().withTopologyKey("rack-key").endRack()
+                    .endKafka()
+                .endSpec()
+                .build();
         KafkaCluster kc = KafkaCluster.fromCrd(certManager, kafkaAssembly, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
         StatefulSet ss = kc.generateStatefulSet(true);
         checkStatefulSet(ss, kafkaAssembly, true);
@@ -204,21 +207,33 @@ public class KafkaClusterTest {
 
     @Test
     public void testDeleteClaim() {
-        KafkaAssembly cm = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap(),
-                new EphemeralStorage());
-        KafkaCluster kc = KafkaCluster.fromCrd(certManager, cm, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
+        KafkaAssembly assembly = ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap());
+        KafkaCluster kc = KafkaCluster.fromCrd(certManager, assembly, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
         StatefulSet ss = kc.generateStatefulSet(true);
         assertFalse(KafkaCluster.deleteClaim(ss));
 
-        cm = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap(),
-                new PersistentClaimStorageBuilder().withDeleteClaim(false).build());
-        kc = KafkaCluster.fromCrd(certManager, cm, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
+        assembly = new KafkaAssemblyBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withStorage(new PersistentClaimStorageBuilder().withDeleteClaim(false).build())
+                    .endKafka()
+                .endSpec()
+                .build();
+        kc = KafkaCluster.fromCrd(certManager, assembly, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
         ss = kc.generateStatefulSet(true);
         assertFalse(KafkaCluster.deleteClaim(ss));
 
-        cm = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap(),
-                new PersistentClaimStorageBuilder().withDeleteClaim(true).build());
-        kc = KafkaCluster.fromCrd(certManager, cm, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
+        assembly = new KafkaAssemblyBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withStorage(new PersistentClaimStorageBuilder().withDeleteClaim(true).build())
+                    .endKafka()
+                .endSpec()
+                .build();
+        kc = KafkaCluster.fromCrd(certManager, assembly, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
         ss = kc.generateStatefulSet(true);
         assertTrue(KafkaCluster.deleteClaim(ss));
     }

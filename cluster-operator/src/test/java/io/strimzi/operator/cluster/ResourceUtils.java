@@ -21,7 +21,6 @@ import io.strimzi.api.kafka.model.KafkaConnectS2IAssemblyBuilder;
 import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
-import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.api.kafka.model.Storage;
 import io.strimzi.api.kafka.model.TopicOperator;
 import io.strimzi.api.kafka.model.Zookeeper;
@@ -205,22 +204,6 @@ public class ResourceUtils {
     @Deprecated
     public static KafkaAssembly createKafkaCluster(String clusterCmNamespace, String clusterCmName, int replicas,
                                                    String image, int healthDelay, int healthTimeout,
-                                                   Map<String, Object> metricsCm, Map<String, Object> kafkaConfigurationJson) {
-        return new KafkaAssemblyBuilder(createKafkaCluster(clusterCmNamespace, clusterCmName, replicas, image, healthDelay,
-                healthTimeout)).editSpec()
-                .editKafka()
-                .withMetrics(metricsCm)
-                .withConfig(kafkaConfigurationJson)
-                .endKafka()
-                .editZookeeper()
-                .endZookeeper()
-                .endSpec().build();
-    }
-
-    /** @deprecated use the {@link io.strimzi.api.kafka.model.KafkaAssemblyBuilder} */
-    @Deprecated
-    public static KafkaAssembly createKafkaCluster(String clusterCmNamespace, String clusterCmName, int replicas,
-                                                   String image, int healthDelay, int healthTimeout,
                                                    Map<String, Object> metricsCm,
                                                    Map<String, Object> kafkaConfigurationJson,
                                                    Logging kafkaLogging, Logging zkLogging) {
@@ -237,47 +220,6 @@ public class ResourceUtils {
         .build();
     }
 
-    /** @deprecated use the {@link io.strimzi.api.kafka.model.KafkaAssemblyBuilder} */
-    @Deprecated
-    public static KafkaAssembly createKafkaCluster(String clusterCmNamespace, String clusterCmName, int replicas,
-                                                   String image, int healthDelay, int healthTimeout,
-                                                   Map<String, Object> metricsCm,
-                                                   Map<String, Object> kafkaConfiguration,
-                                                   Map<String, Object> zooConfiguration,
-                                                   Storage storage) {
-        return new KafkaAssemblyBuilder(createKafkaCluster(clusterCmNamespace, clusterCmName, replicas,
-                image, healthDelay, healthTimeout, metricsCm, kafkaConfiguration, zooConfiguration))
-                .editSpec()
-                    .editKafka()
-                        .withStorage(storage)
-                    .endKafka()
-                .endSpec()
-            .build();
-    }
-
-    @Deprecated
-    public static KafkaAssembly createKafkaCluster(String clusterCmNamespace, String clusterCmName, int replicas,
-                                                   String image, int healthDelay, int healthTimeout,
-                                                   Map<String, Object> metricsCm,
-                                                   Map<String, Object> kafkaConfiguration,
-                                                   Map<String, Object> zooConfiguration,
-                                                   Storage storage,
-                                                   Rack rack,
-                                                   Logging kafkaLogging, Logging zkLogging) {
-        return new KafkaAssemblyBuilder(createKafkaCluster(clusterCmNamespace, clusterCmName, replicas,
-                image, healthDelay, healthTimeout, metricsCm, kafkaConfiguration, zooConfiguration, storage))
-                .editSpec()
-                    .editKafka()
-                        .withRack(rack)
-                        .withLogging(kafkaLogging)
-                    .endKafka()
-                    .editZookeeper()
-                        .withLogging(zkLogging)
-                    .endZookeeper()
-                .endSpec()
-            .build();
-    }
-
     @Deprecated
     public static KafkaAssembly createKafkaCluster(String clusterCmNamespace, String clusterCmName, int replicas,
                                                    String image, int healthDelay, int healthTimeout,
@@ -286,7 +228,6 @@ public class ResourceUtils {
                                                    Map<String, Object> zooConfiguration,
                                                    Storage storage,
                                                    TopicOperator topicOperator,
-                                                   Rack rack,
                                                    Logging kafkaLogging, Logging zkLogging) {
         KafkaAssembly result = new KafkaAssembly();
         ObjectMeta meta = new ObjectMeta();
@@ -316,10 +257,6 @@ public class ResourceUtils {
             kafka.setConfig(kafkaConfiguration);
         }
         kafka.setStorage(storage);
-        if (rack != null && (rack.getTopologyKey() == null || rack.getTopologyKey().equals(""))) {
-            throw new IllegalArgumentException("In rack configuration the 'topologyKey' field is mandatory");
-        }
-        kafka.setRack(rack);
         spec.setKafka(kafka);
 
         Zookeeper zk = new Zookeeper();
@@ -381,25 +318,6 @@ public class ResourceUtils {
                 .build())
                 .withNewSpec().endSpec()
                 .build();
-    }
-
-    /*** @deprecated use the {@link io.strimzi.api.kafka.model.KafkaConnectAssemblyBuilder} */
-    @Deprecated
-    public static KafkaConnectAssembly createKafkaConnectCluster(String clusterCmNamespace, String clusterCmName, int replicas,
-                                                                 String image, int healthDelay, int healthTimeout, String metricsCmJson, String connectConfig) {
-
-        KafkaConnectAssembly cm = createEmptyKafkaConnectCluster(clusterCmNamespace, clusterCmName);
-        return new KafkaConnectAssemblyBuilder(cm)
-                .withNewSpec()
-                    .withMetrics((Map<String, Object>) TestUtils.fromJson(metricsCmJson, Map.class))
-                    .withConfig((Map<String, Object>) TestUtils.fromJson(connectConfig, Map.class))
-                    .withImage(image)
-                    .withReplicas(replicas)
-                    .withReadinessProbe(new Probe(healthDelay, healthTimeout))
-                    .withLivenessProbe(new Probe(healthDelay, healthTimeout))
-                .endSpec()
-            .build();
-
     }
 
     /**

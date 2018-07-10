@@ -10,6 +10,8 @@ import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.strimzi.api.kafka.model.KafkaConnectAssembly;
+import io.strimzi.api.kafka.model.KafkaConnectAssemblyBuilder;
+import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.operator.assembly.MockCertManager;
@@ -56,8 +58,16 @@ public class KafkaConnectClusterTest {
             "internal.value.converter=org.apache.kafka.connect.json.JsonConverter\n";
 
     private CertManager certManager = new MockCertManager();
-    private final KafkaConnectAssembly resource = ResourceUtils.createKafkaConnectCluster(namespace, cluster, replicas, image,
-            healthDelay, healthTimeout, metricsCmJson, configurationJson);
+    private final KafkaConnectAssembly resource = new KafkaConnectAssemblyBuilder(ResourceUtils.createEmptyKafkaConnectCluster(namespace, cluster))
+            .withNewSpec()
+            .withMetrics((Map<String, Object>) TestUtils.fromJson(metricsCmJson, Map.class))
+            .withConfig((Map<String, Object>) TestUtils.fromJson(configurationJson, Map.class))
+            .withImage(image)
+            .withReplicas(replicas)
+            .withReadinessProbe(new Probe(healthDelay, healthTimeout))
+            .withLivenessProbe(new Probe(healthDelay, healthTimeout))
+            .endSpec()
+            .build();
     private final KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource);
 
     @Rule

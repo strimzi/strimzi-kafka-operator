@@ -59,7 +59,7 @@ public class TopicOperatorTest {
             .withTopicMetadataMaxAttempts(tcTopicMetadataMaxAttempts).build();
 
 
-    private final KafkaAssembly resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, kafkaConfig, zooConfig, storage, topicOperator, null, kafkaLogJson, zooLogJson);
+    private final KafkaAssembly resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, kafkaConfig, zooConfig, storage, topicOperator, kafkaLogJson, zooLogJson);
     private final TopicOperator tc = TopicOperator.fromCrd(resource);
 
     private List<EnvVar> getExpectedEnvVars() {
@@ -87,7 +87,7 @@ public class TopicOperatorTest {
     public void testFromConfigMapDefaultConfig() {
         KafkaAssembly resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout, metricsCm, kafkaConfig, zooConfig,
-                storage, new io.strimzi.api.kafka.model.TopicOperator(), null, kafkaLogJson, zooLogJson);
+                storage, new io.strimzi.api.kafka.model.TopicOperator(), kafkaLogJson, zooLogJson);
         TopicOperator tc = TopicOperator.fromCrd(resource);
         Assert.assertEquals(io.strimzi.api.kafka.model.TopicOperator.DEFAULT_IMAGE, tc.getImage());
         assertEquals(namespace, tc.getWatchedNamespace());
