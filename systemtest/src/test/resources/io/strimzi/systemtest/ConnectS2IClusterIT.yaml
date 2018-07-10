@@ -1,7 +1,7 @@
 apiVersion: kafka.strimzi.io/v1alpha1
 kind: Kafka
 metadata:
-  name: connect-tests
+  name: connect-s2i-tests
 spec:
   kafka:
     replicas: 3

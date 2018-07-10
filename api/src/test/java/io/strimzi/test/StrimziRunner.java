@@ -480,38 +480,38 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
     private Statement withConnectS2IClusters(Annotatable element,
                                           Statement statement) {
         Statement last = statement;
-        for (ConnectS2ICluster cluster : annotations(element, ConnectS2ICluster.class)) {
-            // use the example kafka-connect.yaml as a template, but modify it according to the annotation
-            String yaml = getContent(new File(KAFKA_CONNECT_S2I_CM), node -> {
-                JsonNode metadata = node.get("metadata");
-                ((ObjectNode) metadata).put("name", cluster.name());
-                JsonNode data = node.get("data");
-                ((ObjectNode) data).put("nodes", String.valueOf(cluster.nodes()));
-                ((ObjectNode) data).put("connect-config", cluster.connectConfig());
-            });
-            final String deploymentName = cluster.name() + "-connect";
-            last = new Bracket(last, new ResourceAction()
-                    .getDep(deploymentName)
-                    .getPo(deploymentName + ".*")
-                    .logs(deploymentName + ".*")) {
-                @Override
-                protected void before() {
-                    LOGGER.info("Creating connect cluster '{}' before test per @ConnectCluster annotation on {}", cluster.name(), name(element));
-                    // create cm
-                    kubeClient().createContent(yaml);
-                    // wait for deployment config
-                    kubeClient().waitForDeploymentConfig(deploymentName);
-                }
+        KafkaConnectS2IFromClasspathYaml cluster = element.getAnnotation(KafkaConnectS2IFromClasspathYaml.class);
+        if (cluster != null) {
+            String[] resources = cluster.value().length == 0 ? new String[]{classpathResourceName(element)} : cluster.value();
+            for (String resource : resources) {
+                // use the example kafka-ephemeral as a template, but modify it according to the annotation
+                String yaml = TestUtils.readResource(testClass(element), resource);
+                KafkaConnectAssembly kafkaAssembly = TestUtils.fromYamlString(yaml, KafkaConnectAssembly.class);
+                String clusterName = kafkaAssembly.getMetadata().getName();
+                final String deploymentName = clusterName + "-connect";
+                last = new Bracket(last, new ResourceAction()
+                        .getDep(deploymentName)
+                        .getPo(deploymentName + ".*")
+                        .logs(deploymentName + ".*")) {
+                    @Override
+                    protected void before() {
+                        LOGGER.info("Creating connect cluster '{}' before test per @ConnectCluster annotation on {}", clusterName, name(element));
+                        // create cm
+                        kubeClient().createContent(yaml);
+                        // wait for deployment config
+                        kubeClient().waitForDeploymentConfig(deploymentName);
+                    }
 
-                @Override
-                protected void after() {
-                    LOGGER.info("Deleting connect cluster '{}' after test per @ConnectCluster annotation on {}", cluster.name(), name(element));
-                    // delete cm
-                    kubeClient().deleteContent(yaml);
-                    // wait for ss to go
-                    kubeClient().waitForResourceDeletion("deploymentConfig", deploymentName);
-                }
-            };
+                    @Override
+                    protected void after() {
+                        LOGGER.info("Deleting connect cluster '{}' after test per @ConnectCluster annotation on {}", clusterName, name(element));
+                        // delete cm
+                        kubeClient().deleteContent(yaml);
+                        // wait for ss to go
+                        kubeClient().waitForResourceDeletion("deploymentCOnfig", deploymentName);
+                    }
+                };
+            }
         }
         return last;
     }

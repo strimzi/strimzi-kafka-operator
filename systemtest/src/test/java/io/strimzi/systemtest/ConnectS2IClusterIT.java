@@ -5,7 +5,8 @@
 package io.strimzi.systemtest;
 
 import io.strimzi.test.ClusterOperator;
-import io.strimzi.test.ConnectS2ICluster;
+import io.strimzi.test.JUnitGroup;
+import io.strimzi.test.KafkaConnectS2IFromClasspathYaml;
 import io.strimzi.test.KafkaFromClasspathYaml;
 import io.strimzi.test.Namespace;
 import io.strimzi.test.OpenShiftOnly;
@@ -34,8 +35,8 @@ public class ConnectS2IClusterIT extends AbstractClusterIT {
 
     @Test
     @OpenShiftOnly
-//    @JUnitGroup(name = "regression")
-    @ConnectS2ICluster(name = CONNECT_CLUSTER_NAME, connectConfig = CONNECT_CONFIG_CONVERTER_SCHEMAS_DISABLED)
+    @JUnitGroup(name = "regression")
+    @KafkaConnectS2IFromClasspathYaml
     public void testDeployS2IWithMongoDBPlugin() {
         String pathToDebeziumMongodb = "https://repo1.maven.org/maven2/io/debezium/debezium-connector-mongodb/0.3.0/debezium-connector-mongodb-0.3.0-plugin.tar.gz";
         // Create directory for plugin
