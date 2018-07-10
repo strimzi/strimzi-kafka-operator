@@ -83,12 +83,32 @@ you can push the images to OpenShift's Docker repo like this:
 
         DOCKER_REGISTRY=172.30.1.1:5000 DOCKER_ORG=`oc project -q` make all
         
-4. Finally, when creating the new app from the template you need to
-   specify the Docker repo, otherwise OpenShift will still try to pull 
-   the image from docker.io:
-   
-        oc new-app strimzi-ephemeral -p IMAGE_REPO_NAME=172.30.1.1:5000/myproject
+4. In order to use the built images, you need to update the `image` field in the `examples/install/cluster-operator/07-deployment.yml` with the new value `172.30.1.1:5000/myproject/cluster-operator:latest` related to the Cluster Operator and all the defaul images used for Kafka, Zookeeper, Topic Operator and so on. Following the main fields you have to update:
 
+```yaml
+- name: STRIMZI_DEFAULT_ZOOKEEPER_IMAGE
+  value: 172.30.1.1:5000/myproject/zookeeper:latest
+- name: STRIMZI_DEFAULT_KAFKA_IMAGE
+  value: 172.30.1.1:5000/myproject/kafka:latest
+- name: STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE
+  value: 172.30.1.1:5000/myproject/kafka-connect:latest
+- name: STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE
+  value: 172.30.1.1:5000/myproject/kafka-connect-s2i:latest
+- name: STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE
+  value: 172.30.1.1:5000/myproject/topic-operator:latest
+- name: STRIMZI_DEFAULT_INIT_KAFKA_IMAGE
+  value: 172.30.1.1:5000/myproject/init-kafka:latest
+- name: STRIMZI_DEFAULT_STUNNEL_ZOOKEEPER_IMAGE
+  value: 172.30.1.1:5000/myproject/stunnel-zookeeper:latest
+```
+
+5. Then you can deploy the Cluster Operator running:
+
+    oc create -f examples/install/cluster-operator
+
+6. Finally, you can deploy the cluster ConfigMap runnig:
+
+    oc create -f examples/configmaps/cluster-operator/kafka-ephemeral.yaml
 
 ## Release
 
