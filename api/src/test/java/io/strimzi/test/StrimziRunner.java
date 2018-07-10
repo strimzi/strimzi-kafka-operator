@@ -493,7 +493,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     protected void before() {
                         LOGGER.info("Creating connect cluster '{}' before test per @ConnectCluster annotation on {}", clusterName, name(element));
                         // create cm
-                        kubeClient().createContent(yaml);
+                        kubeClient().clientWithAdmin().createContent(yaml);
                         // wait for deployment
                         kubeClient().waitForDeployment(deploymentName);
                     }
@@ -502,7 +502,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     protected void after() {
                         LOGGER.info("Deleting connect cluster '{}' after test per @ConnectCluster annotation on {}", clusterName, name(element));
                         // delete cm
-                        kubeClient().deleteContent(yaml);
+                        kubeClient().clientWithAdmin().deleteContent(yaml);
                         // wait for ss to go
                         kubeClient().waitForResourceDeletion("deployment", deploymentName);
                     }
@@ -542,7 +542,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     protected void before() {
                         LOGGER.info("Creating kafka cluster '{}' before test per @KafkaCluster annotation on {}", kafkaAssembly.getMetadata().getName(), name(element));
                         // create cm
-                        kubeClient().createContent(yaml);
+                        kubeClient().clientWithAdmin().createContent(yaml);
                         // wait for ss
                         LOGGER.info("Waiting for Zookeeper SS");
                         kubeClient().waitForStatefulSet(zookeeperStatefulSetName, kafkaAssembly.getSpec().getZookeeper().getReplicas());
@@ -558,7 +558,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     protected void after() {
                         LOGGER.info("Deleting kafka cluster '{}' after test per @KafkaCluster annotation on {}", kafkaAssembly.getMetadata().getName(), name(element));
                         // delete cm
-                        kubeClient().deleteContent(yaml);
+                        kubeClient().clientWithAdmin().deleteContent(yaml);
                         // wait for ss to go
                         kubeClient().waitForResourceDeletion("statefulset", kafkaStatefulSetName);
                     }
