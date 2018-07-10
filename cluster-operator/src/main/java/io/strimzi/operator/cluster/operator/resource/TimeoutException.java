@@ -8,4 +8,11 @@ package io.strimzi.operator.cluster.operator.resource;
  * Thrown to indicate that timeout has been exceeded.
  */
 public class TimeoutException extends RuntimeException {
+    public TimeoutException() {
+        super();
+    }
+
+    public TimeoutException(String message) {
+        super(message);
+    }
 }
