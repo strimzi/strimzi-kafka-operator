@@ -10,21 +10,28 @@ import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.WeightedPodAffinityTerm;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
+import io.strimzi.api.kafka.model.EphemeralStorage;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.KafkaAssembly;
+import io.strimzi.api.kafka.model.KafkaAssemblyBuilder;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
+import io.strimzi.api.kafka.model.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.Rack;
+import io.strimzi.api.kafka.model.RackBuilder;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.operator.assembly.MockCertManager;
+import io.strimzi.test.TestUtils;
 import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
-import static io.strimzi.operator.cluster.ResourceUtils.labels;
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -38,17 +45,17 @@ public class KafkaClusterTest {
     private final String image = "image";
     private final int healthDelay = 120;
     private final int healthTimeout = 30;
-    private final String metricsCmJson = "{\"animal\":\"wombat\"}";
-    private final String configurationJson = "{\"foo\":\"bar\"}";
-    private final InlineLogging kafkaLogJson = new InlineLogging();
-    private final InlineLogging zooLogJson = new InlineLogging();
+    private final Map<String, Object> metricsCm = singletonMap("animal", "wombat");
+    private final Map<String, Object> configuration = singletonMap("foo", "bar");
+    private final InlineLogging kafkaLog = new InlineLogging();
+    private final InlineLogging zooLog = new InlineLogging();
     {
-        kafkaLogJson.setLoggers(Collections.singletonMap("kafka.root.logger.level", "OFF"));
-        zooLogJson.setLoggers(Collections.singletonMap("zookeeper.root.logger", "OFF"));
+        kafkaLog.setLoggers(Collections.singletonMap("kafka.root.logger.level", "OFF"));
+        zooLog.setLoggers(Collections.singletonMap("zookeeper.root.logger", "OFF"));
     }
 
     private final CertManager certManager = new MockCertManager();
-    private final KafkaAssembly kafkaAssembly = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, kafkaLogJson, zooLogJson);
+    private final KafkaAssembly kafkaAssembly = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, configuration, kafkaLog, zooLog);
     private final KafkaCluster kc = KafkaCluster.fromCrd(certManager, kafkaAssembly, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
 
     @Rule
@@ -61,7 +68,7 @@ public class KafkaClusterTest {
     }
 
     private void checkMetricsConfigMap(ConfigMap metricsCm) {
-        assertEquals(metricsCmJson, metricsCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_METRICS));
+        assertEquals(TestUtils.toJsonString(this.metricsCm), metricsCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_METRICS));
     }
 
     @Test
@@ -72,9 +79,7 @@ public class KafkaClusterTest {
 
     private void checkService(Service headful) {
         assertEquals("ClusterIP", headful.getSpec().getType());
-        assertEquals(ResourceUtils.labels(Labels.STRIMZI_CLUSTER_LABEL, cluster,
-                "my-user-label", "cromulent",
-                Labels.STRIMZI_NAME_LABEL, KafkaCluster.kafkaClusterName(cluster)), headful.getSpec().getSelector());
+        assertEquals(TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, cluster, "my-user-label", "cromulent", Labels.STRIMZI_NAME_LABEL, KafkaCluster.kafkaClusterName(cluster)), headful.getSpec().getSelector());
         assertEquals(3, headful.getSpec().getPorts().size());
         assertEquals(KafkaCluster.CLIENT_PORT_NAME, headful.getSpec().getPorts().get(0).getName());
         assertEquals(new Integer(KafkaCluster.CLIENT_PORT), headful.getSpec().getPorts().get(0).getPort());
@@ -91,9 +96,7 @@ public class KafkaClusterTest {
         assertEquals(KafkaCluster.headlessName(cluster), headless.getMetadata().getName());
         assertEquals("ClusterIP", headless.getSpec().getType());
         assertEquals("None", headless.getSpec().getClusterIP());
-        assertEquals(labels(Labels.STRIMZI_CLUSTER_LABEL, cluster,
-                "my-user-label", "cromulent",
-                Labels.STRIMZI_NAME_LABEL, KafkaCluster.kafkaClusterName(cluster)), headless.getSpec().getSelector());
+        assertEquals(TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, cluster, "my-user-label", "cromulent", Labels.STRIMZI_NAME_LABEL, KafkaCluster.kafkaClusterName(cluster)), headless.getSpec().getSelector());
         assertEquals(3, headless.getSpec().getPorts().size());
         assertEquals(KafkaCluster.CLIENT_PORT_NAME, headless.getSpec().getPorts().get(0).getName());
         assertEquals(new Integer(KafkaCluster.CLIENT_PORT), headless.getSpec().getPorts().get(0).getPort());
@@ -113,8 +116,8 @@ public class KafkaClusterTest {
     @Test
     public void testGenerateStatefulSetWithRack() {
         KafkaAssembly kafkaAssembly = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout,
-                metricsCmJson, configurationJson, "{}", "{\"type\": \"ephemeral\"}",
-                null, "{\"topologyKey\": \"rack-key\"}", null, null);
+                metricsCm, configuration, emptyMap(), new EphemeralStorage(),
+                new RackBuilder().withTopologyKey("rack-key").build(), null, null);
         KafkaCluster kc = KafkaCluster.fromCrd(certManager, kafkaAssembly, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
         StatefulSet ss = kc.generateStatefulSet(true);
         checkStatefulSet(ss, kafkaAssembly, true);
@@ -123,9 +126,14 @@ public class KafkaClusterTest {
     @Test
     public void testGenerateStatefulSetWithInitContainers() {
         KafkaAssembly kafkaAssembly =
-                ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout,
-                        metricsCmJson, configurationJson, "{}", "{ \"type\": \"persistent-claim\", \"size\": \"1Gi\" }",
-                        null, "{\"topologyKey\": \"rack-key\"}", null, null);
+                new KafkaAssemblyBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout,
+                        metricsCm, configuration, emptyMap()))
+                        .editSpec()
+                            .editKafka()
+                                .withNewPersistentClaimStorageStorage().withSize("1Gi").endPersistentClaimStorageStorage()
+                                .withNewRack().withTopologyKey("rack-key").endRack()
+                            .endKafka()
+                        .endSpec().build();
         KafkaCluster kc = KafkaCluster.fromCrd(certManager, kafkaAssembly, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
         StatefulSet ss = kc.generateStatefulSet(false);
         checkStatefulSet(ss, kafkaAssembly, false);
@@ -136,9 +144,7 @@ public class KafkaClusterTest {
         // ... in the same namespace ...
         assertEquals(namespace, ss.getMetadata().getNamespace());
         // ... with these labels
-        assertEquals(labels("strimzi.io/cluster", cluster,
-                "my-user-label", "cromulent",
-                "strimzi.io/name", KafkaCluster.kafkaClusterName(cluster)),
+        assertEquals(TestUtils.map("strimzi.io/cluster", cluster, "my-user-label", "cromulent", "strimzi.io/name", KafkaCluster.kafkaClusterName(cluster)),
                 ss.getMetadata().getLabels());
 
         assertEquals(new Integer(replicas), ss.getSpec().getReplicas());
@@ -198,20 +204,20 @@ public class KafkaClusterTest {
 
     @Test
     public void testDeleteClaim() {
-        KafkaAssembly cm = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, "{}",
-                "{\"type\": \"ephemeral\"}", null, null, null, null);
+        KafkaAssembly cm = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap(),
+                new EphemeralStorage());
         KafkaCluster kc = KafkaCluster.fromCrd(certManager, cm, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
         StatefulSet ss = kc.generateStatefulSet(true);
         assertFalse(KafkaCluster.deleteClaim(ss));
 
-        cm = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, "{}",
-                "{\"type\": \"persistent-claim\", \"deleteClaim\": false}", null, null, null, null);
+        cm = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap(),
+                new PersistentClaimStorageBuilder().withDeleteClaim(false).build());
         kc = KafkaCluster.fromCrd(certManager, cm, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
         ss = kc.generateStatefulSet(true);
         assertFalse(KafkaCluster.deleteClaim(ss));
 
-        cm = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, "{}",
-                "{\"type\": \"persistent-claim\", \"deleteClaim\": true}", null, null, null, null);
+        cm = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap(),
+                new PersistentClaimStorageBuilder().withDeleteClaim(true).build());
         kc = KafkaCluster.fromCrd(certManager, cm, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
         ss = kc.generateStatefulSet(true);
         assertTrue(KafkaCluster.deleteClaim(ss));

@@ -798,11 +798,13 @@ spec:
                   type: string
                   description: The image to use for the topic operator
                 reconciliationIntervalSeconds:
-                  type: string
+                  type: integer
                   description: Interval between periodic reconciliations.
+                  minimum: 0
                 zookeeperSessionTimeoutSeconds:
-                  type: string
+                  type: integer
                   description: Timeout for the Zookeeper session
+                  minimum: 0
                 affinity:
                   description: Pod affinity rules.
                   type: object
@@ -1070,6 +1072,7 @@ spec:
                 topicMetadataMaxAttempts:
                   type: integer
                   description: The number of attempts at getting topic metadata
+                  minimum: 0
                 additionalProperties:
                   type: object
                 logging:

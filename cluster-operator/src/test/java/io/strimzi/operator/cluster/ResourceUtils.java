@@ -4,14 +4,15 @@
  */
 package io.strimzi.operator.cluster;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.strimzi.api.kafka.model.EphemeralStorage;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaAssembly;
+import io.strimzi.api.kafka.model.KafkaAssemblyBuilder;
 import io.strimzi.api.kafka.model.KafkaAssemblySpec;
 import io.strimzi.api.kafka.model.KafkaConnectAssembly;
 import io.strimzi.api.kafka.model.KafkaConnectAssemblyBuilder;
@@ -19,6 +20,7 @@ import io.strimzi.api.kafka.model.KafkaConnectS2IAssembly;
 import io.strimzi.api.kafka.model.KafkaConnectS2IAssemblyBuilder;
 import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.Probe;
+import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.api.kafka.model.Storage;
 import io.strimzi.api.kafka.model.TopicOperator;
@@ -30,13 +32,12 @@ import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.assembly.AbstractAssemblyOperator;
 import io.strimzi.test.TestUtils;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 
 public class ResourceUtils {
@@ -45,43 +46,56 @@ public class ResourceUtils {
 
     }
 
-    /**
-     * Creates a map of labels
-     * @param pairs (key, value) pairs. There must be an even number, obviously.
-     * @return a map of labels
-     * @deprecated Use method method in TestUtils
-     */
-    @Deprecated
-    public static Map<String, String> labels(String... pairs) {
-        if (pairs.length % 2 != 0) {
-            throw new IllegalArgumentException();
-        }
-        HashMap<String, String> map = new HashMap<>();
-        for (int i = 0; i < pairs.length; i += 2) {
-            map.put(pairs[i], pairs[i + 1]);
-        }
-        return map;
-    }
-
     /** @deprecated use the {@link io.strimzi.api.kafka.model.KafkaAssemblyBuilder} */
     @Deprecated
     public static KafkaAssembly createKafkaCluster(String clusterCmNamespace, String clusterCmName, int replicas,
-                                                   String image, int healthDelay, int healthTimeout,
-                                                   String metricsCmJson) {
-        return createKafkaCluster(clusterCmNamespace, clusterCmName, replicas, image, healthDelay,
-                healthTimeout, metricsCmJson, "{}", "{}",
-                "{\"type\": \"ephemeral\"}", null, null, null, null);
+                                                   String image, int healthDelay, int healthTimeout) {
+        Probe probe = new ProbeBuilder()
+                .withInitialDelaySeconds(healthDelay)
+                .withTimeoutSeconds(healthTimeout)
+                .build();
+
+        ObjectMetaBuilder meta = new ObjectMetaBuilder();
+        meta.withNamespace(clusterCmNamespace);
+        meta.withName(clusterCmName);
+        meta.withLabels(Labels.userLabels(singletonMap("my-user-label", "cromulent")).toMap());
+        KafkaAssemblyBuilder builder = new KafkaAssemblyBuilder();
+        return builder.withMetadata(meta.build())
+                .withNewSpec()
+                    .withNewKafka()
+                        .withReplicas(replicas)
+                        .withImage(image)
+                        .withLivenessProbe(probe)
+                        .withReadinessProbe(probe)
+                        .withStorage(new EphemeralStorage())
+                    .endKafka()
+                    .withNewZookeeper()
+                        .withReplicas(replicas)
+                        .withImage(image + "-zk")
+                        .withLivenessProbe(probe)
+                        .withReadinessProbe(probe)
+                    .endZookeeper()
+                .endSpec()
+            .build();
     }
 
     /** @deprecated use the {@link io.strimzi.api.kafka.model.KafkaAssemblyBuilder} */
     @Deprecated
     public static KafkaAssembly createKafkaCluster(String clusterCmNamespace, String clusterCmName, int replicas,
                                                         String image, int healthDelay, int healthTimeout,
-                                                        String metricsCmJson, String kafkaConfigurationJson,
-                                                        String zooConfigurationJson) {
-        return createKafkaCluster(clusterCmNamespace, clusterCmName, replicas, image, healthDelay,
-                healthTimeout, metricsCmJson, kafkaConfigurationJson, zooConfigurationJson,
-                "{\"type\": \"ephemeral\"}", null, null, null, null);
+                                                        Map<String, Object> metricsCm,
+                                                        Map<String, Object> kafkaConfigurationJson,
+                                                        Map<String, Object> zooConfigurationJson) {
+        return new KafkaAssemblyBuilder(createKafkaCluster(clusterCmNamespace, clusterCmName, replicas, image, healthDelay,
+                healthTimeout)).editSpec()
+                    .editKafka()
+                        .withMetrics(metricsCm)
+                        .withConfig(kafkaConfigurationJson)
+                    .endKafka()
+                    .editZookeeper()
+                        .withConfig(zooConfigurationJson)
+                    .endZookeeper()
+                .endSpec().build();
     }
 
     public static List<Secret> createKafkaClusterInitialSecrets(String clusterCmNamespace) {
@@ -191,92 +205,144 @@ public class ResourceUtils {
     @Deprecated
     public static KafkaAssembly createKafkaCluster(String clusterCmNamespace, String clusterCmName, int replicas,
                                                    String image, int healthDelay, int healthTimeout,
-                                                   String metricsCmJson, String kafkaConfigurationJson) {
-        return createKafkaCluster(clusterCmNamespace, clusterCmName, replicas, image, healthDelay,
-                healthTimeout, metricsCmJson, kafkaConfigurationJson, "{}",
-                "{\"type\": \"ephemeral\"}", null, null, null, null);
+                                                   Map<String, Object> metricsCm, Map<String, Object> kafkaConfigurationJson) {
+        return new KafkaAssemblyBuilder(createKafkaCluster(clusterCmNamespace, clusterCmName, replicas, image, healthDelay,
+                healthTimeout)).editSpec()
+                .editKafka()
+                .withMetrics(metricsCm)
+                .withConfig(kafkaConfigurationJson)
+                .endKafka()
+                .editZookeeper()
+                .endZookeeper()
+                .endSpec().build();
     }
 
     /** @deprecated use the {@link io.strimzi.api.kafka.model.KafkaAssemblyBuilder} */
     @Deprecated
     public static KafkaAssembly createKafkaCluster(String clusterCmNamespace, String clusterCmName, int replicas,
                                                    String image, int healthDelay, int healthTimeout,
-                                                   String metricsCmJson, String kafkaConfigurationJson,
+                                                   Map<String, Object> metricsCm,
+                                                   Map<String, Object> kafkaConfigurationJson,
                                                    Logging kafkaLogging, Logging zkLogging) {
-        return createKafkaCluster(clusterCmNamespace, clusterCmName, replicas, image, healthDelay,
-                healthTimeout, metricsCmJson, kafkaConfigurationJson, "{}",
-                "{\"type\": \"ephemeral\"}", null, null, kafkaLogging, zkLogging);
+        return new KafkaAssemblyBuilder(createKafkaCluster(clusterCmNamespace, clusterCmName, replicas, image, healthDelay,
+                healthTimeout, metricsCm, kafkaConfigurationJson, emptyMap()))
+                .editSpec()
+                .editKafka()
+                    .withLogging(kafkaLogging)
+                .endKafka()
+                .editZookeeper()
+                    .withLogging(zkLogging)
+                .endZookeeper()
+            .endSpec()
+        .build();
     }
 
     /** @deprecated use the {@link io.strimzi.api.kafka.model.KafkaAssemblyBuilder} */
     @Deprecated
     public static KafkaAssembly createKafkaCluster(String clusterCmNamespace, String clusterCmName, int replicas,
-                                                   String image, int healthDelay, int healthTimeout, String metricsCmJson,
-                                                   String kafkaConfigurationJson, String zooConfigurationJson,
-                                                   String storageJson, String topicOperator, String rackJson,
+                                                   String image, int healthDelay, int healthTimeout,
+                                                   Map<String, Object> metricsCm,
+                                                   Map<String, Object> kafkaConfiguration,
+                                                   Map<String, Object> zooConfiguration,
+                                                   Storage storage) {
+        return new KafkaAssemblyBuilder(createKafkaCluster(clusterCmNamespace, clusterCmName, replicas,
+                image, healthDelay, healthTimeout, metricsCm, kafkaConfiguration, zooConfiguration))
+                .editSpec()
+                    .editKafka()
+                        .withStorage(storage)
+                    .endKafka()
+                .endSpec()
+            .build();
+    }
+
+    @Deprecated
+    public static KafkaAssembly createKafkaCluster(String clusterCmNamespace, String clusterCmName, int replicas,
+                                                   String image, int healthDelay, int healthTimeout,
+                                                   Map<String, Object> metricsCm,
+                                                   Map<String, Object> kafkaConfiguration,
+                                                   Map<String, Object> zooConfiguration,
+                                                   Storage storage,
+                                                   Rack rack,
                                                    Logging kafkaLogging, Logging zkLogging) {
-        try {
-            KafkaAssembly result = new KafkaAssembly();
-            ObjectMeta meta = new ObjectMeta();
-            meta.setNamespace(clusterCmNamespace);
-            meta.setName(clusterCmName);
-            meta.setLabels(Labels.userLabels(singletonMap("my-user-label", "cromulent")).toMap());
-            result.setMetadata(meta);
+        return new KafkaAssemblyBuilder(createKafkaCluster(clusterCmNamespace, clusterCmName, replicas,
+                image, healthDelay, healthTimeout, metricsCm, kafkaConfiguration, zooConfiguration, storage))
+                .editSpec()
+                    .editKafka()
+                        .withRack(rack)
+                        .withLogging(kafkaLogging)
+                    .endKafka()
+                    .editZookeeper()
+                        .withLogging(zkLogging)
+                    .endZookeeper()
+                .endSpec()
+            .build();
+    }
 
-            KafkaAssemblySpec spec = new KafkaAssemblySpec();
+    @Deprecated
+    public static KafkaAssembly createKafkaCluster(String clusterCmNamespace, String clusterCmName, int replicas,
+                                                   String image, int healthDelay, int healthTimeout,
+                                                   Map<String, Object> metricsCm,
+                                                   Map<String, Object> kafkaConfiguration,
+                                                   Map<String, Object> zooConfiguration,
+                                                   Storage storage,
+                                                   TopicOperator topicOperator,
+                                                   Rack rack,
+                                                   Logging kafkaLogging, Logging zkLogging) {
+        KafkaAssembly result = new KafkaAssembly();
+        ObjectMeta meta = new ObjectMeta();
+        meta.setNamespace(clusterCmNamespace);
+        meta.setName(clusterCmName);
+        meta.setLabels(Labels.userLabels(singletonMap("my-user-label", "cromulent")).toMap());
+        result.setMetadata(meta);
 
-            Kafka kafka = new Kafka();
-            kafka.setReplicas(replicas);
-            kafka.setImage(image);
-            if (kafkaLogging != null) {
-                kafka.setLogging(kafkaLogging);
-            }
-            Probe livenessProbe = new Probe();
-            livenessProbe.setInitialDelaySeconds(healthDelay);
-            livenessProbe.setTimeoutSeconds(healthTimeout);
-            kafka.setLivenessProbe(livenessProbe);
-            kafka.setReadinessProbe(livenessProbe);
-            ObjectMapper om = new ObjectMapper();
-            TypeReference<HashMap<String, Object>> typeRef
-                    = new TypeReference<HashMap<String, Object>>() { };
-            if (metricsCmJson != null) {
-                kafka.setMetrics(om.readValue(metricsCmJson, typeRef));
-            }
-            if (kafkaConfigurationJson != null) {
-                kafka.setConfig(om.readValue(kafkaConfigurationJson, typeRef));
-            }
-            kafka.setStorage(TestUtils.fromJson(storageJson, Storage.class));
-            Rack rack = TestUtils.fromJson(rackJson, Rack.class);
-            if (rack != null && (rack.getTopologyKey() == null || rack.getTopologyKey().equals(""))) {
-                throw new IllegalArgumentException("In rack configuration the 'topologyKey' field is mandatory");
-            }
-            kafka.setRack(rack);
-            spec.setKafka(kafka);
+        KafkaAssemblySpec spec = new KafkaAssemblySpec();
 
-            Zookeeper zk = new Zookeeper();
-            zk.setReplicas(replicas);
-            zk.setImage(image + "-zk");
-            if (zkLogging != null) {
-                zk.setLogging(zkLogging);
-            }
-            zk.setLivenessProbe(livenessProbe);
-            zk.setReadinessProbe(livenessProbe);
-            if (zooConfigurationJson != null) {
-                zk.setConfig(om.readValue(zooConfigurationJson, typeRef));
-            }
-            zk.setStorage(TestUtils.fromJson(storageJson, Storage.class));
-            if (metricsCmJson != null) {
-                zk.setMetrics(om.readValue(metricsCmJson, typeRef));
-            }
-
-            spec.setTopicOperator(TestUtils.fromJson(topicOperator, TopicOperator.class));
-
-            spec.setZookeeper(zk);
-            result.setSpec(spec);
-            return result;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        Kafka kafka = new Kafka();
+        kafka.setReplicas(replicas);
+        kafka.setImage(image);
+        if (kafkaLogging != null) {
+            kafka.setLogging(kafkaLogging);
         }
+        Probe livenessProbe = new Probe();
+        livenessProbe.setInitialDelaySeconds(healthDelay);
+        livenessProbe.setTimeoutSeconds(healthTimeout);
+        kafka.setLivenessProbe(livenessProbe);
+        kafka.setReadinessProbe(livenessProbe);
+        ObjectMapper om = new ObjectMapper();
+        if (metricsCm != null) {
+            kafka.setMetrics(metricsCm);
+        }
+        if (kafkaConfiguration != null) {
+            kafka.setConfig(kafkaConfiguration);
+        }
+        kafka.setStorage(storage);
+        if (rack != null && (rack.getTopologyKey() == null || rack.getTopologyKey().equals(""))) {
+            throw new IllegalArgumentException("In rack configuration the 'topologyKey' field is mandatory");
+        }
+        kafka.setRack(rack);
+        spec.setKafka(kafka);
+
+        Zookeeper zk = new Zookeeper();
+        zk.setReplicas(replicas);
+        zk.setImage(image + "-zk");
+        if (zkLogging != null) {
+            zk.setLogging(zkLogging);
+        }
+        zk.setLivenessProbe(livenessProbe);
+        zk.setReadinessProbe(livenessProbe);
+        if (zooConfiguration != null) {
+            zk.setConfig(zooConfiguration);
+        }
+        zk.setStorage(storage);
+        if (metricsCm != null) {
+            zk.setMetrics(metricsCm);
+        }
+
+        spec.setTopicOperator(topicOperator);
+
+        spec.setZookeeper(zk);
+        result.setSpec(spec);
+        return result;
     }
 
 
@@ -311,9 +377,7 @@ public class ResourceUtils {
                 .withMetadata(new ObjectMetaBuilder()
                 .withName(clusterCmName)
                 .withNamespace(clusterCmNamespace)
-                .withLabels(labels(Labels.STRIMZI_KIND_LABEL, "cluster",
-                        Labels.STRIMZI_TYPE_LABEL, "kafka-connect-s2i",
-                        "my-user-label", "cromulent"))
+                .withLabels(TestUtils.map(Labels.STRIMZI_KIND_LABEL, "cluster", Labels.STRIMZI_TYPE_LABEL, "kafka-connect-s2i", "my-user-label", "cromulent"))
                 .build())
                 .withNewSpec().endSpec()
                 .build();
@@ -348,11 +412,10 @@ public class ResourceUtils {
                 .withMetadata(new ObjectMetaBuilder()
                         .withName(clusterCmName)
                         .withNamespace(clusterCmNamespace)
-                        .withLabels(labels(Labels.STRIMZI_KIND_LABEL, "cluster",
-                                Labels.STRIMZI_TYPE_LABEL, "kafka-connect",
-                                "my-user-label", "cromulent"))
+                        .withLabels(TestUtils.map(Labels.STRIMZI_KIND_LABEL, "cluster", Labels.STRIMZI_TYPE_LABEL, "kafka-connect", "my-user-label", "cromulent"))
                         .build())
                 .withNewSpec().endSpec()
                 .build();
     }
+
 }
