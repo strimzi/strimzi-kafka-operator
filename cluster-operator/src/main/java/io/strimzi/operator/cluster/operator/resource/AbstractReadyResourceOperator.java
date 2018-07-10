@@ -90,8 +90,8 @@ public abstract class AbstractReadyResourceOperator<C extends KubernetesClient,
                         } else {
                             long timeLeft = deadline - System.currentTimeMillis();
                             if (timeLeft <= 0) {
-                                log.error("Exceeded timeoutMs of {} ms while waiting for {} {} in namespace {} to be ready", timeoutMs, resourceKind, name, namespace);
-                                String exceptionMessage = String.format("Exceeded timeoutMs of %d ms while waiting for %s %s in namespace %s to be ready", timeoutMs, resourceKind, name, namespace);
+                                String exceptionMessage = String.format("Exceeded timeout of %dms while waiting for %s %s in namespace %s to be ready", timeoutMs, resourceKind, name, namespace);
+                                log.error(exceptionMessage);
                                 fut.fail(new TimeoutException(exceptionMessage));
                             } else {
                                 // Schedule ourselves to run again
