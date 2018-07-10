@@ -34,49 +34,43 @@ The full API is described in <<kafka_resource_reference>>.
 Whatever other labels are applied to the desired Kafka resource will also be applied to the {ProductPlatformName} resources making up the Kafka cluster.
 This provides a convenient mechanism for those resources to be labelled in whatever way the user requires.
 
-The following is an example of a Kafka resource.
-
-<<<<<<< HEAD
-.Example `Kafka` resource
-=======
-Whatever other labels are applied to the ConfigMap will also be applied to the {ProductPlatformName} resources making
-up the Kafka or Kafka Connect cluster. This provides a convenient mechanism for those resource to be labelled
-in whatever way the user requires.
-
-The `data` section of such ConfigMaps contains different keys depending on the "type" of deployment as described in the 
-following sections.
-
 [[kafka_config_map_details]]
 ==== Kafka
 
-In order to configure a Kafka cluster deployment, it is possible to specify the following fields in the `data` section of the related ConfigMap :
+In order to configure a Kafka cluster deployment, it is possible to specify the following fields in Kafka resource (a dot is used to denote a nested YAML object):
 
-`kafka-nodes`::
-Number of Kafka broker nodes. 
+`spec.kafka.replicas`::
+The number of Kafka broker nodes.
 Default is 3.
-`kafka-image`::
+`spec.kafka.image`::
 The Docker image to use for the Kafka brokers. 
 Default is determined by the value of the `<<STRIMZI_DEFAULT_KAFKA_IMAGE,STRIMZI_DEFAULT_KAFKA_IMAGE>>` environment variable of the Cluster Operator.
-`init-kafka-image`::
+`spec.kafka.brokerRackInitImage`::
 The Docker image to use for the init container which does some initial configuration work (that is, rack support).
 Default is determined by the value of the `<<STRIMZI_DEFAULT_INIT_KAFKA_IMAGE,STRIMZI_DEFAULT_INIT_KAFKA_IMAGE>>` environment variable of the Cluster Operator.
-`kafka-healthcheck-delay`::
-The initial delay for the liveness and readiness probes for each Kafka broker node. 
+`spec.kafka.livenessProbe.initialDelaySeconds`::
+The initial delay for the liveness probe for each Kafka broker node. 
 Default is 15.
-`kafka-healthcheck-timeout`::
-The timeout on the liveness and readiness probes for each Kafka broker node. 
+`spec.kafka.livenessProbe.timeoutSeconds`::
+The timeout on the liveness probe for each Kafka broker node. 
 Default is 5.
-`kafka-config`::
-A JSON string with Kafka configuration. 
+`spec.kafka.readinessProbe.initialDelaySeconds`::
+The initial delay for the readiness probe for each Kafka broker node. 
+Default is 15.
+`spec.kafka.readinessProbe.timeoutSeconds`::
+The timeout on the readiness probe for each Kafka broker node. 
+Default is 5.
+`spec.kafka.config`::
+The Kafka broker configuration. 
 See section <<kafka_configuration_json_config>> for more details.
-`kafka-storage`::
-A JSON string representing the storage configuration for the Kafka broker nodes. 
+`spec.kafka.storage`::
+The storage configuration for the Kafka broker nodes. 
 See section <<storage_configuration_json_config>> for more details.
-`kafka-metrics-config`::
-A JSON string representing the JMX exporter configuration for exposing metrics from Kafka broker nodes.
+`spec.kafka.metrics`::
+The JMX exporter configuration for exposing metrics from Kafka broker nodes.
 When this field is absent no metrics will be exposed.
-`kafka-logging`::
-This field can be populated by either a JSON/YAML string that specifies inline logging levels or the name of external config map that specifies the logging levels.
+`spec.kafka.logging`::
+An object that specifies inline logging levels or the name of external config map that specifies the logging levels.
 When this field is absent default values are used.
 List of loggers which can be set:
 [source]
@@ -94,69 +88,74 @@ log4j.logger.kafka.log.LogCleaner
 log4j.logger.state.change.logger
 log4j.logger.kafka.authorizer.logger
 
-`kafka-resources`::
-A JSON string configuring the resource limits and requests for Kafka broker containers. The accepted JSON format is
-described in the <<resources_json_config>> section.
-`kafka-jvmOptions`::
-A JSON string allowing the JVM running Kafka to be configured.
-The accepted JSON format is described in the <<jvm_json_config>> section.
-`kafka-rack`::
-A JSON string allowing the Kafka rack feature to be configured and used in rack-aware partition assignment for fault tolerance.
+`spec.kafka.resources`::
+The resource limits and requests for Kafka broker containers. 
+The accepted format is described in the <<resources_json_config>> section.
+`spec.kafka.jvmOptions`::
+An object allowing the JVM running Kafka to be configured.
+The accepted format is described in the <<jvm_json_config>> section.
+`spec.kafka.rack`::
+An object allowing the Kafka rack feature to be configured and used in rack-aware partition assignment for fault tolerance.
 The accepted JSON format is described in the <<kafka_rack>> section.
-`kafka-affinity`::
-A JSON or YAML string allowing control over how the Kafka pods are scheduled to nodes.
+`spec.kafka.affinity`::
+An object allowing control over how the Kafka pods are scheduled to nodes.
 The format of the corresponding key is the same as the content supported in the Pod `affinity` in {ProductPlatformName}.
 See section <<affinity>> for more details.
-`zookeeper-nodes`::
-Number of Zookeeper nodes.
-`zookeeper-image`::
-The Docker image to use for the Zookeeper nodes. Default is determined by the value of the
-`<<STRIMZI_DEFAULT_ZOOKEEPER_IMAGE,STRIMZI_DEFAULT_ZOOKEEPER_IMAGE>>` environment variable of the Cluster Operator.
-`zookeeper-healthcheck-delay`::
-The initial delay for the liveness and readiness probes for each Zookeeper node. Default is 15.
-`zookeeper-healthcheck-timeout`::
-The timeout on the liveness and readiness probes for each Zookeeper node. Default is 5.
-`zookeeper-config`::
-A JSON string with Zookeeper configuration. See section <<zookeeper_configuration_json_config>> for more details.
-`zookeeper-storage`::
-A JSON string representing the storage configuration for the Zookeeper nodes. See section <<storage_configuration_json_config>> for more details.
-`zookeeper-metrics-config`::
-A JSON string representing the JMX exporter configuration for exposing metrics from Zookeeper nodes.
+`spec.zookeeper.replicas`::
+The number of Zookeeper nodes.
+`spec.zookeeper.image`::
+The Docker image to use for the Zookeeper nodes. 
+Default is determined by the value of the `<<STRIMZI_DEFAULT_ZOOKEEPER_IMAGE,STRIMZI_DEFAULT_ZOOKEEPER_IMAGE>>` environment variable of the Cluster Operator.
+`spec.zookeeper.livenessProbe.initialDelaySeconds`::
+The initial delay for the liveness probe for each Zookeeper node. 
+Default is 15.
+`spec.zookeeper.livenessProbe.initialDelaySeconds`::
+The timeout on the liveness probe for each Zookeeper node. 
+Default is 5.
+`spec.zookeeper.readinessProbe.initialDelaySeconds`::
+The initial delay for the readiness probe for each Zookeeper node. 
+Default is 15.
+`spec.zookeeper.readinessProbe.initialDelaySeconds`::
+The timeout on the readiness probe for each Zookeeper node. 
+Default is 5.
+`spec.zookeeper.config`::
+The Zookeeper configuration. See section <<zookeeper_configuration_json_config>> for more details.
+`spec.zookeeper.storage`::
+The storage configuration for the Zookeeper nodes. See section <<storage_configuration_json_config>> for more details.
+`spec.zookeeper.metrics`::
+The JMX exporter configuration for exposing metrics from Zookeeper nodes.
 When this field is absent no metrics will be exposed.
-`zookeeper-logging`::
-This field can be populated by either a JSON/YAML string that specifies inline logging levels or the name of external config map that specifies the logging levels.
+`spec.zookeeper.logging`::
+An object that specifies inline logging levels or the name of external config map that specifies the logging levels.
 When this field is absent default values are used.
 List of loggers which can be set:
 [source]
 zookeeper.root.logger
 
-
-`zookeeper-resources`::
-A JSON string configuring the resource limits and requests for Zookeeper broker containers. The accepted JSON format is
-described in the <<resources_json_config>> section.
-`zookeeper-jvmOptions`::
-A JSON string allowing the JVM running Zookeeper to be configured. The accepted JSON format is described in the <<jvm_json_config>> section.
-`zookeeper-affinity`::
-A JSON or YAML string allowing control over how the Zookeeper pods are scheduled to nodes.
+`spec.zookeeper.resources`::
+An object configuring the resource limits and requests for Zookeeper broker containers.
+The accepted JSON format is described in the <<resources_json_config>> section.
+`spec.zookeeper.jvmOptions`::
+An object allowing the JVM running Zookeeper to be configured. 
+The accepted JSON format is described in the <<jvm_json_config>> section.
+`spec.zookeeper.affinity`::
+An object allowing control over how the Zookeeper pods are scheduled to nodes.
 The format of the corresponding key is the same as the content supported in the Pod `affinity` in {ProductPlatformName}.
 See section <<affinity>> for more details.
-`topic-operator-config`::
-A JSON string representing the topic operator configuration. See the <<topic_operator_json_config>> documentation for
-further details. More info about the topic operator in the related <<Topic operator>> documentation page.
+`spec.topicOperator`::
+An object representing the topic operator configuration. 
+See the <<topic_operator_json_config>> documentation for further details.
+More info about the topic operator in the related <<Topic operator>> documentation page.
  
-The following is an example of a ConfigMap for a Kafka cluster.
+The following is an example of a Kafka resource.
 
-.Example Kafka cluster ConfigMap
->>>>>>> 1279fb53... enable to set up kafka/zk logging level via configmaps
+.Example `Kafka` resource
 [source,yaml,options="nowrap",subs="attributes"]
 ----
 apiVersion: {KafkaApiVersion}
 kind: Kafka
 metadata:
   name: my-cluster
-  labels:
-    strimzi.io/kind: cluster
-    strimzi.io/type: kafka
 spec:
   kafka:
     replicas: 3
@@ -545,19 +544,19 @@ spec:
 :k8s-docs-version: v1-7
 :k8s-resource-request-limit-docs-link: https://{k8s-docs-version}.docs.kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
 
-`requests/memory`::
+`requests.memory`::
 the memory request for the container, corresponding directly to {k8s-resource-request-limit-docs-link}[`spec.containers[\].resources.requests.memory`] setting.
 {ProductPlatformName} will ensure the containers have at least this much memory by running the pod on a node with at
 least as much free memory as all the containers require. Optional with no default.
-`requests/cpu`::
+`requests.cpu`::
 the cpu request for the container, corresponding directly to {k8s-resource-request-limit-docs-link}[`spec.containers[\].resources.requests.cpu`] setting.
 {ProductPlatformName} will ensure the containers have at least this much CPU by running the pod on a node with at least
 as much uncommitted CPU as all the containers require. Optional with no default.
-`limits/memory`::
+`limits.memory`::
 the memory limit for the container, corresponding directly to {k8s-resource-request-limit-docs-link}[`spec.containers[\].resources.limits.memory`] setting.
 {ProductPlatformName} will limit the containers to this much memory, potentially terminating their pod if they use more.
 Optional with no default.
-`limits/cpu`::
+`limits.cpu`::
 the cpu limit for the container, corresponding directly to {k8s-resource-request-limit-docs-link}[`spec.containers[\].resources.limits.cpu`] setting.
 {ProductPlatformName} will cap the containers CPU usage to this limit. Optional with no default.
 
