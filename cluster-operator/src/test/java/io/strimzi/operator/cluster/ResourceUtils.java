@@ -45,8 +45,6 @@ public class ResourceUtils {
 
     }
 
-    /** @deprecated use the {@link io.strimzi.api.kafka.model.KafkaAssemblyBuilder} */
-    @Deprecated
     public static KafkaAssembly createKafkaCluster(String clusterCmNamespace, String clusterCmName, int replicas,
                                                    String image, int healthDelay, int healthTimeout) {
         Probe probe = new ProbeBuilder()
@@ -78,8 +76,6 @@ public class ResourceUtils {
             .build();
     }
 
-    /** @deprecated use the {@link io.strimzi.api.kafka.model.KafkaAssemblyBuilder} */
-    @Deprecated
     public static KafkaAssembly createKafkaCluster(String clusterCmNamespace, String clusterCmName, int replicas,
                                                         String image, int healthDelay, int healthTimeout,
                                                         Map<String, Object> metricsCm,
@@ -200,8 +196,6 @@ public class ResourceUtils {
         return secrets;
     }
 
-    /** @deprecated use the {@link io.strimzi.api.kafka.model.KafkaAssemblyBuilder} */
-    @Deprecated
     public static KafkaAssembly createKafkaCluster(String clusterCmNamespace, String clusterCmName, int replicas,
                                                    String image, int healthDelay, int healthTimeout,
                                                    Map<String, Object> metricsCm,
@@ -220,7 +214,6 @@ public class ResourceUtils {
         .build();
     }
 
-    @Deprecated
     public static KafkaAssembly createKafkaCluster(String clusterCmNamespace, String clusterCmName, int replicas,
                                                    String image, int healthDelay, int healthTimeout,
                                                    Map<String, Object> metricsCm,
@@ -285,9 +278,7 @@ public class ResourceUtils {
 
     /**
      * Generate ConfigMap for Kafka Connect S2I cluster
-     * @deprecated use the {@link io.strimzi.api.kafka.model.KafkaConnectS2IAssemblyBuilder}
      */
-    @Deprecated
     public static KafkaConnectS2IAssembly createKafkaConnectS2ICluster(String clusterCmNamespace, String clusterCmName, int replicas,
                                                                        String image, int healthDelay, int healthTimeout, String metricsCmJson,
                                                                        String connectConfig, boolean insecureSourceRepo) {
@@ -306,9 +297,7 @@ public class ResourceUtils {
 
     /**
      * Generate empty Kafka Connect S2I ConfigMap
-     * @deprecated use the {@link io.strimzi.api.kafka.model.KafkaConnectS2IAssemblyBuilder}
      */
-    @Deprecated
     public static KafkaConnectS2IAssembly createEmptyKafkaConnectS2ICluster(String clusterCmNamespace, String clusterCmName) {
         return new KafkaConnectS2IAssemblyBuilder()
                 .withMetadata(new ObjectMetaBuilder()
@@ -322,9 +311,7 @@ public class ResourceUtils {
 
     /**
      * Generate empty Kafka Connect ConfigMap
-     * @deprecated use the {@link io.strimzi.api.kafka.model.KafkaConnectAssemblyBuilder}
      */
-    @Deprecated
     public static KafkaConnectAssembly createEmptyKafkaConnectCluster(String clusterCmNamespace, String clusterCmName) {
         return new KafkaConnectAssemblyBuilder()
                 .withMetadata(new ObjectMetaBuilder()
