@@ -116,9 +116,12 @@ public class KafkaConnectCluster extends AbstractModel {
      */
     protected static <C extends KafkaConnectCluster> C fromSpec(KafkaConnectAssemblySpec spec, C kafkaConnect) {
         kafkaConnect.setReplicas(spec != null && spec.getReplicas() > 0 ? spec.getReplicas() : DEFAULT_REPLICAS);
-        kafkaConnect.setImage(spec != null && spec.getImage() != null ? spec.getImage() : DEFAULT_IMAGE);
         kafkaConnect.setConfiguration(new KafkaConnectConfiguration(spec != null ? spec.getConfig().entrySet() : emptySet()));
         if (spec != null) {
+            if (spec.getImage() != null) {
+                kafkaConnect.setImage(spec.getImage());
+            }
+
             kafkaConnect.setResources(spec.getResources());
             kafkaConnect.setLogging(spec.getLogging());
             kafkaConnect.setJvmOptions(spec.getJvmOptions());
