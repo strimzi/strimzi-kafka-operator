@@ -462,7 +462,7 @@ public class KafkaAssemblyOperatorTest {
         int healthDelay = 120;
         int healthTimeout = 30;
         String metricsCmJson = metrics ? METRICS_CONFIG : null;
-        return ResourceUtils.createKafkaCluster(clusterNamespace, clusterName, replicas, image, healthDelay, healthTimeout, metricsCmJson, kafkaConfig, zooConfig, storage, tcConfig, null, LOG_ZOOKEEPER_CONFIG, LOG_KAFKA_CONFIG);
+        return ResourceUtils.createKafkaCluster(clusterNamespace, clusterName, replicas, image, healthDelay, healthTimeout, metricsCmJson, kafkaConfig, zooConfig, storage, tcConfig, null, LOG_KAFKA_CONFIG, LOG_ZOOKEEPER_CONFIG);
     }
 
     private List<Secret> getInitialSecrets() {
@@ -593,7 +593,7 @@ public class KafkaAssemblyOperatorTest {
     public void testUpdateZkClusterLogConfig(TestContext context) {
         KafkaAssembly kafkaAssembly = getKafkaAssembly("bar");
         InlineLogging logger = new InlineLogging();
-        logger.setLoggers(singletonMap("kafka.root.logger.level", "DEBUG"));
+        logger.setLoggers(singletonMap("zookeeper.root.logger", "DEBUG"));
         kafkaAssembly.getSpec().getZookeeper().setLogging(logger);
         List<Secret> secrets = getClusterSecrets("bar",
                 kafkaAssembly.getSpec().getKafka().getReplicas(),
