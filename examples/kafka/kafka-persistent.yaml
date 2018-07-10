@@ -31,11 +31,11 @@ spec:
   zookeeper:
     replicas: 3
     readinessProbe:
-      initialDelaySeconds: "15"
-      timeoutSeconds: "5"
+      initialDelaySeconds: 15
+      timeoutSeconds: 5
     livenessProbe:
-      initialDelaySeconds: "15"
-      timeoutSeconds: "5"
+      initialDelaySeconds: 15
+      timeoutSeconds: 5
     storage:
       type: persistent-claim
       size: 1Gi
