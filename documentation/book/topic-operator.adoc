@@ -27,17 +27,15 @@ applications deployment and the operator will take care of creating
 the topic for you, so your application just needs to deal with producing 
 and/or consuming from the necessary topics.
 
-Should the topic be reconfigured, reassigned to different Kafka nodes etc, 
+Should the topic be reconfigured, reassigned to different Kafka nodes and so on, 
 the ConfigMap will always be up to date.
 
 
 === Reconciliation
 
-A fundamental problem that the operator has to solve is that there is no
-single source of truth: 
+A fundamental problem that the operator has to solve is that there is no single source of truth: 
 Both the ConfigMap and the topic can be modified independently of the operator.
-Complicating this, the Topic Operator might not always be able to observe
-changes at each end in real time (the operator might be down etc).
+Complicating this, the Topic Operator might not always be able to observe changes at each end in real time (for example, the operator might be down).
  
 To resolve this, the operator maintains its own private copy of the
 information about each topic. 
@@ -52,13 +50,9 @@ so it can infer that the ConfigMap has been created since it was last running.
 The operator will create the topic corresponding to "my-topic" and also store a private copy of the
 metadata for "my-topic".
 
-The private copy allows the operator to cope with scenarios where the topic
-config gets changed both in Kafka and in {ProductPlatformName}, so long as the
-changes are not incompatible (e.g. both changing the same topic config key, but to 
-different values). 
-In the case of incompatible changes, the Kafka configuration wins, and the ConfigMap will 
-be updated to reflect that. Defaulting to the Kafka configuration ensures that, 
-in the worst case, data won't be lost. 
+The private copy allows the operator to cope with scenarios where the topic config gets changed both in Kafka and in {ProductPlatformName}, so long as the changes are not incompatible (for example, both changing the same topic config key, but to different values). 
+In the case of incompatible changes, the Kafka configuration wins, and the ConfigMap will be updated to reflect that. 
+Defaulting to the Kafka configuration ensures that, in the worst case, data won't be lost. 
 
 The private copy is held in the same ZooKeeper ensemble used by Kafka itself. 
 This mitigates availability concerns, because if ZooKeeper is not running
@@ -75,7 +69,7 @@ than it would even if it was stateless.
       To do this, the topic name will have to be a https://github.com/kubernetes/community/blob/master/contributors/design-proposals/architecture/identifiers.md[valid {KubernetesName} resource name].
 . When creating a topic:
     * Remember that the name cannot be easily changed later.
-    * It's best to use a name that is a https://github.com/kubernetes/community/blob/master/contributors/design-proposals/architecture/identifiers.md[valid {KubernetesName} resource name],
+    * It is best to use a name that is a https://github.com/kubernetes/community/blob/master/contributors/design-proposals/architecture/identifiers.md[valid {KubernetesName} resource name],
       otherwise the operator will have to sanitize the name when creating
       the corresponding ConfigMap.
 
@@ -208,8 +202,8 @@ NOTE: When the Topic Operator is deployed manually the `strimzi.io/cluster` labe
 
 === Unsupported operations
 
-* The `data.name` cannot be changed key in a ConfigMap, because Kafka doesn't support changing topic names.
-* The `data.partitions` cannot be decreased, because Kafka doesn't support this.
+* The `data.name` cannot be changed key in a ConfigMap, because Kafka does not support changing topic names.
+* The `data.partitions` cannot be decreased, because Kafka does not support this.
 * Increasing `data.partitions` for topics with keys should be exercised with caution, as it will change
   how records are partitioned. 
 
@@ -221,19 +215,26 @@ The operator is configured from environment variables:
 – The label selector used to identify ConfigMaps to be managed by the operator.
   Default: `strimzi.io/kind=topic`.
 * `STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS`
-– The Zookeeper session timeout, in milliseconds. For example `10000`. Default: `20000` (20 seconds).
+– The Zookeeper session timeout, in milliseconds. 
+For example `10000`. 
+Default: `20000` (20 seconds).
 * `STRIMZI_KAFKA_BOOTSTRAP_SERVERS`
-– The list of Kafka bootstrap servers. This variable is mandatory.
+– The list of Kafka bootstrap servers. 
+This variable is mandatory.
 * `STRIMZI_ZOOKEEPER_CONNECT`
-– The Zookeeper connection information. This variable is mandatory.
+– The Zookeeper connection information. 
+This variable is mandatory.
 * `STRIMZI_FULL_RECONCILIATION_INTERVAL_MS`
 – The interval between periodic reconciliations, in milliseconds.
 * `STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS`
-– The number of attempts for getting topics metadata from Kafka. The time between each attempt is defined as an exponential
-back-off. You might want to increase this value when topic creation could take more time due to its larger size
-(i.e. many partitions/replicas). Default `6`.
+– The number of attempts for getting topics metadata from Kafka. 
+The time between each attempt is defined as an exponential back-off. 
+You might want to increase this value when topic creation could take more time due to its larger size (that is, many partitions/replicas). 
+Default `6`.
 * `STRIMZI_LOG_LEVEL`
-– The level for printing logging messages. The value can be set to: `ERROR`, `WARNING`, `INFO`, `DEBUG` and `TRACE`. Default `INFO`.
+– The level for printing logging messages. 
+The value can be set to: `ERROR`, `WARNING`, `INFO`, `DEBUG` and `TRACE`. 
+Default `INFO`.
 
 
 If the operator configuration needs to be changed the process must be killed and restarted.

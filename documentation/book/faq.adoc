@@ -9,7 +9,7 @@ For each cluster, the Cluster Operator always executes only one operation at a t
 to make sure that there are never two parallel operations running for the same cluster. In case an operation requires
 more time to complete, other operations will wait until it is completed and the lock is released.
 
-INFO:: Examples of cluster operations are _cluster creation_, _rolling update_, _scale down_ or _scale up_ etc.
+INFO:: Examples of cluster operations are _cluster creation_, _rolling update_, _scale down_ or _scale up_ and so on.
 
 If the wait for the lock takes too long, the operation times out and the following warning message will be printed to
 the log:
