@@ -61,7 +61,7 @@ Finally, in order to configure the Kafka client, following properties should be 
 
 * `security.protocol`: SSL is the value for using encryption.
 * `ssl.truststore.location`: the truststore location where the certificates were imported.
-* `ssl.truststore.password`: password for accessing the truststore. This property can be omitted if it's not needed by the truststore.
+* `ssl.truststore.password`: password for accessing the truststore. This property can be omitted if it is not needed by the truststore.
 
-The current implementation doesn't support Subject Alternative Names (SAN) so the hostname verification should be disabled on the client side.
+The current implementation does not support Subject Alternative Names (SAN) so the hostname verification should be disabled on the client side.
 For doing so the `ssl.endpoint.identification.algorithm` property needs to be set as empty.

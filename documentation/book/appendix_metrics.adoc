@@ -12,7 +12,7 @@ endif::InstallationAppendix[]
 ==== Prometheus
 
 The Prometheus server configuration uses a service discovery feature in order to discover the pods in the cluster from which it gets metrics.
-In order to have this feature working, it's necessary for the service account used for running the Prometheus service pod to have access to the API server to get the pod list. By default the service account `prometheus-server` is used.
+In order to have this feature working, it is necessary for the service account used for running the Prometheus service pod to have access to the API server to get the pod list. By default the service account `prometheus-server` is used.
 
 [source,shell]
 export NAMESPACE=[namespace]
@@ -43,7 +43,7 @@ ifdef::Kubernetes[]
 ==== Prometheus
 
 The Prometheus server configuration uses a service discovery feature in order to discover the pods in the cluster from which it gets metrics.
-If the RBAC is enabled in your {KubernetesName} deployment then in order to have this feature working, it's necessary for the service account used for running the Prometheus service pod to have access to the API server to get the pod list. By default the service account `prometheus-server` is used.
+If the RBAC is enabled in your {KubernetesName} deployment then in order to have this feature working, it is necessary for the service account used for running the Prometheus service pod to have access to the API server to get the pod list. By default the service account `prometheus-server` is used.
 
 [source,shell]
 export NAMESPACE=[namespace]
@@ -82,7 +82,7 @@ image::grafana_login.png[Grafana login]
 +
 image::grafana_home.png[Grafana home]
 
-. Fill in the information about the Prometheus data source, specifying a name and "Prometheus" as type. In the URL field, the connection string to the Prometheus server (i.e. `http://prometheus:9090`) should be specified. After "Add" is clicked, Grafana will test the connection to the data source.
+. Fill in the information about the Prometheus data source, specifying a name and "Prometheus" as type. In the URL field, the connection string to the Prometheus server (that is, `http://prometheus:9090`) should be specified. After "Add" is clicked, Grafana will test the connection to the data source.
 +
 image::grafana_prometheus_data_source.png[Add Prometheus data source]
 

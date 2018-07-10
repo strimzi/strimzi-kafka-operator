@@ -11,7 +11,7 @@ image::cluster_operator.png[Cluster Operator]
 When the Cluster Operator is up, it starts to "watch" for certain {ProductPlatformName} resources containing the desired Kafka or Kafka Connect cluster configuration.
 A `Kafka` resource is used for Kafka cluster configuration, and a `KafkaConnect` resource is used for Kafka Connect cluster configuration.
 
-When a new desired resource (that is, a `Kafka` or `KafkaConnect` resource) is created in the {ProductPlatformName} cluster, the operator gets the cluster configuration from the desired resource and starts creating a new Kafka or Kafka Connect cluster by creating the necessary other {ProductPlatformName} resources, such as StatefulSets, Services, ConfigMaps etc.
+When a new desired resource (that is, a `Kafka` or `KafkaConnect` resource) is created in the {ProductPlatformName} cluster, the operator gets the cluster configuration from the desired resource and starts creating a new Kafka or Kafka Connect cluster by creating the necessary other {ProductPlatformName} resources, such as StatefulSets, Services, ConfigMaps, and so on.
 
 Every time the desired resource is updated by the user, the operator performs corresponding updates on the {ProductPlatformName} resources which make up the Kafka or Kafka Connect cluster.
 Resources are either patched or deleted and then re-created in order to make the Kafka or Kafka Connect cluster reflect the state of the desired cluster resource.
@@ -49,24 +49,29 @@ following sections.
 [[kafka_config_map_details]]
 ==== Kafka
 
-In order to configure a Kafka cluster deployment, it's possible to specify the following fields in the `data` section of 
-the related ConfigMap :
+In order to configure a Kafka cluster deployment, it is possible to specify the following fields in the `data` section of the related ConfigMap :
 
 `kafka-nodes`::
-Number of Kafka broker nodes. Default is 3.
+Number of Kafka broker nodes. 
+Default is 3.
 `kafka-image`::
-The Docker image to use for the Kafka brokers. Default is determined by the value of the `<<STRIMZI_DEFAULT_KAFKA_IMAGE,STRIMZI_DEFAULT_KAFKA_IMAGE>>` environment variable of the Cluster Operator.
+The Docker image to use for the Kafka brokers. 
+Default is determined by the value of the `<<STRIMZI_DEFAULT_KAFKA_IMAGE,STRIMZI_DEFAULT_KAFKA_IMAGE>>` environment variable of the Cluster Operator.
 `init-kafka-image`::
-The Docker image to use for the init container which does some initial configuration work (i.e. rack support).
+The Docker image to use for the init container which does some initial configuration work (that is, rack support).
 Default is determined by the value of the `<<STRIMZI_DEFAULT_INIT_KAFKA_IMAGE,STRIMZI_DEFAULT_INIT_KAFKA_IMAGE>>` environment variable of the Cluster Operator.
 `kafka-healthcheck-delay`::
-The initial delay for the liveness and readiness probes for each Kafka broker node. Default is 15.
+The initial delay for the liveness and readiness probes for each Kafka broker node. 
+Default is 15.
 `kafka-healthcheck-timeout`::
-The timeout on the liveness and readiness probes for each Kafka broker node. Default is 5.
+The timeout on the liveness and readiness probes for each Kafka broker node. 
+Default is 5.
 `kafka-config`::
-A JSON string with Kafka configuration. See section <<kafka_configuration_json_config>> for more details.
+A JSON string with Kafka configuration. 
+See section <<kafka_configuration_json_config>> for more details.
 `kafka-storage`::
-A JSON string representing the storage configuration for the Kafka broker nodes. See section <<storage_configuration_json_config>> for more details.
+A JSON string representing the storage configuration for the Kafka broker nodes. 
+See section <<storage_configuration_json_config>> for more details.
 `kafka-metrics-config`::
 A JSON string representing the JMX exporter configuration for exposing metrics from Kafka broker nodes.
 When this field is absent no metrics will be exposed.
@@ -294,7 +299,7 @@ spec:
     # ...
 ----
 
-NOTE:: The Cluster Operator doesn't validate keys or values in the provided `config` object.
+NOTE:: The Cluster Operator does not validate keys or values in the provided `config` object.
 When invalid configuration is provided, the Kafka cluster might not start or might become unstable.
 In such cases, the configuration in the `spec.kafka.config` object should be fixed and the cluster operator will roll out the new configuration to all Kafka brokers.
 
@@ -359,7 +364,7 @@ Selected options have default values:
 
 These options will be automatically configured in case they are not present in the `spec.zookeeper.config` object.
 
-NOTE:: The Cluster Operator doesn't validate keys or values in the provided `config` object.
+NOTE:: The Cluster Operator does not validate keys or values in the provided `config` object.
 When invalid configuration is provided, the Zookeeper cluster might not start or might become unstable.
 In such cases, the configuration in the `spec.zookeeper.config` object should be fixed and the cluster operator will roll out the new configuration to all Zookeeper nodes.
 
@@ -562,7 +567,7 @@ More details about resource limits and requests can be found on {k8s-resource-re
 
 Testing has shown that the Cluster Operator functions adequately with 256Mi of memory and 200m CPU when watching two clusters.
 It is therefore recommended to use these as a minimum when configuring resource requests and not to run it with lower limits than these.
-Configuring more generous limits is recommended, especially when it's controlling multiple clusters.
+Configuring more generous limits is recommended, especially when it is controlling multiple clusters.
 
 
 [[jvm_json_config]]
@@ -748,8 +753,8 @@ This anti-affinity will not be present in the `Kafka` resource's `affinity`, but
 Alongside the Kafka cluster and the Zookeeper ensemble, the Cluster Operator can also deploy the topic operator.
 In order to do that, a `spec.topicOperator` object has to be included in the `Kafka` resource.
 This object contains the topic operator configuration.
-Without this object, the Cluster Operator doesn't deploy the topic operator. It is still possible to deploy the topic
-operator by creating appropriate {ProductPlatformName} resources.
+Without this object, the Cluster Operator does not deploy the topic operator. 
+It is still possible to deploy the topic operator by creating appropriate {ProductPlatformName} resources.
 
 The YAML representation of the 'topicOperator` has no mandatory fields and if the value is an empty object
 (just "{ }"), the Cluster Operator will deploy the topic operator with a default configuration.
@@ -939,9 +944,9 @@ Selected options have default values:
 
 These options will be automatically configured in case they are not present in the `config` object.
 
-INFO:: The Cluster Operator doesn't validate the provided configuration. When invalid configuration is provided, the
-Kafka Connect cluster might not start or might become unstable. In such cases, the configuration in the `config` object
-should be fixed and the Cluster Operator will roll out the new configuration to all Kafka Connect instances.
+INFO:: The Cluster Operator does not validate the provided configuration. 
+When invalid configuration is provided, the Kafka Connect cluster might not start or might become unstable. 
+In such cases, the configuration in the `config` object should be fixed and the Cluster Operator will roll out the new configuration to all Kafka Connect instances.
 
 ===== Kafka Connect S2I deployment
 
@@ -1059,7 +1064,7 @@ To add multiple plugins to the deployment, they all have to be added within the 
 === Provisioning Role-Based Access Control (RBAC) for the operator
 
 For the operator to function it needs permission within the {ProductPlatformName} cluster to interact with
-the resources it manages (ConfigMaps, Pods, Deployments, StatefulSets, Services etc).
+the resources it manages (ConfigMaps, Pods, Deployments, StatefulSets, Services and so on).
 Such permission is described in terms of {ProductPlatformName} role-based access controls.
 
 ==== Using a ServiceAccount
@@ -1072,14 +1077,13 @@ The operator is best run using a ServiceAccount:
 include::examples/install/cluster-operator/01-service-account.yaml[]
 ----
 
-The Deployment of the operator then needs to specify this in the `serviceAccountName` of its `template`´s
- `spec`:
+The Deployment of the operator then needs to specify this in the `serviceAccountName` of its `template.spec`:
 
 [source,yaml,numbered,options="nowrap",highlight='12']
 .Partial example Deployment for the Cluster Operator
 ----
-include::examples/install/cluster-operator/07-deployment.yaml[lines=1..13]
-# etc ...
+include::examples/install/cluster-operator/08-deployment.yaml[lines=1..13]
+      # ...
 ----
 
 Note line 12, where the the `strimzi-cluster-operator` ServiceAccount is specified as the `serviceAccountName`.
@@ -1100,7 +1104,7 @@ The Cluster Operator will be in charge of configuring this ServiceAccount as `se
 The Cluster Operator needs to operate using a Role that gives it access to the necessary resources.
 Depending on the {ProductPlatformName} cluster setup, a cluster administrator might be needed to create the Role.
 Cluster administrator rights are only needed for the creation of the Role.
-The Role itself doesn't contain any cluster administrator privileges, and the Cluster Operator will not run under the cluster admin account.
+The Role itself does not contain any cluster administrator privileges, and the Cluster Operator will not run under the cluster admin account.
 The Role follows the "principle of least privilege" and contains only those privileges needed by the Cluster Operator to operate Kafka, Kafka Connect and Zookeeper clusters.
 The assigned privileges allow the Cluster Operator to manage {ProductPlatformName} resources such as StatefulSets, Deployments, Pods and ConfigMaps.
 
@@ -1190,8 +1194,7 @@ The image name to use as a default when deploying Kafka, if
 no image is specified as the `kafka-image` in the <<kafka_config_map_details,Kafka cluster ConfigMap>>.
 
 [[STRIMZI_DEFAULT_INIT_KAFKA_IMAGE]] `STRIMZI_DEFAULT_INIT_KAFKA_IMAGE`:: Optional, default `strimzi/init-kafka:latest`.
-The image name to use as default for the init container started before the broker for doing initial configuration work (i.e. rack support), if
-no image is specified as the `init-kafka-image` in the <<kafka_config_map_details,Kafka cluster ConfigMap>>.
+The image name to use as default for the init container started before the broker for doing initial configuration work (that is, rack support), if no image is specified as the `init-kafka-image` in the <<kafka_config_map_details,Kafka cluster ConfigMap>>.
 
 [[STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE]] `STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE`:: Optional, default `strimzi/kafka-connect:latest`.
 The image name to use as a default when deploying Kafka Connect, if
