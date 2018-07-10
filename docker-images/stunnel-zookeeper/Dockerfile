@@ -1,23 +1,19 @@
-FROM fedora:27
+FROM centos:7
 
-RUN yum -y install stunnel hostname procps-ng openssl && yum clean all -y 
+RUN yum -y install stunnel && yum clean all -y 
 
-# set Kafka home folder
-ENV KAFKA_HOME=/opt/kafka
-
-# Add kafka group / user
-RUN groupadd -r -g 1001 kafka && useradd -r -m -u 1001 -g kafka kafka
+# set Stunnel home folder
+ENV STUNNEL_HOME=/opt/stunnel
 
 # exposing Zookeeper ports
 EXPOSE 2888 3888
 
-RUN mkdir $KAFKA_HOME 
+# Create Stunnel home and place for the stunnel.pid file
+RUN mkdir $STUNNEL_HOME && mkdir -p -m g+rw /usr/local/var/run/ 
 
 # copy scripts for starting Stunnel
-COPY ./scripts/ $KAFKA_HOME
+COPY ./scripts/ $STUNNEL_HOME
 
-WORKDIR $KAFKA_HOME
+WORKDIR $STUNNEL_HOME
 
-USER kafka:kafka
-
-CMD ["/opt/kafka/stunnel_run.sh"]
+CMD ["/opt/stunnel/stunnel_run.sh"]
