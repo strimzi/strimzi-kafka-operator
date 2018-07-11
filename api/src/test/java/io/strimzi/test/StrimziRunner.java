@@ -497,7 +497,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     protected void before() {
                         LOGGER.info("Creating connect cluster '{}' before test per @ConnectCluster annotation on {}", clusterName, name(element));
                         // create cm
-                        kubeClient().createContent(yaml);
+                        kubeClient().clientWithAdmin().createContent(yaml);
                         // wait for deployment config
                         kubeClient().waitForDeploymentConfig(deploymentName);
                     }
@@ -506,7 +506,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     protected void after() {
                         LOGGER.info("Deleting connect cluster '{}' after test per @ConnectCluster annotation on {}", clusterName, name(element));
                         // delete cm
-                        kubeClient().deleteContent(yaml);
+                        kubeClient().clientWithAdmin().deleteContent(yaml);
                         // wait for ss to go
                         kubeClient().waitForResourceDeletion("deploymentCOnfig", deploymentName);
                     }
