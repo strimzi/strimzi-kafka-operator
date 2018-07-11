@@ -23,14 +23,14 @@ import java.util.Map;
 )
 @JsonPropertyOrder({ "replicas", "image", "storage",
         "livenessProbe", "readinessProbe", "jvmOptions",
-        "affinity", "metrics", "stunnelImage"})
+        "affinity", "metrics", "tlsSidecarImage"})
 public class Zookeeper extends ReplicatedJvmPods {
     public static final String FORBIDDEN_PREFIXES = "server., dataDir, dataLogDir, clientPort, authProvider, quorum.auth, requireClientAuthScheme";
 
     public static final String DEFAULT_IMAGE =
             System.getenv().getOrDefault("STRIMZI_DEFAULT_ZOOKEEPER_IMAGE", "strimzi/zookeeper:latest");
-    public static final String DEFAULT_STUNNEL_IMAGE =
-            System.getenv().getOrDefault("STRIMZI_DEFAULT_STUNNEL_ZOOKEEPER_IMAGE", "strimzi/stunnel-zookeeper:latest");
+    public static final String DEFAULT_TLS_SIDECAR_IMAGE =
+            System.getenv().getOrDefault("STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE", "strimzi/zookeeper-stunnel:latest");
     public static final int DEFAULT_REPLICAS = 3;
 
     protected Storage storage;
@@ -39,7 +39,7 @@ public class Zookeeper extends ReplicatedJvmPods {
 
     private Logging logging;
 
-    private String stunnelImage;
+    private String tlsSidecarImage;
 
     @Description("The zookeeper broker config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)
     public Map<String, Object> getConfig() {
@@ -70,13 +70,13 @@ public class Zookeeper extends ReplicatedJvmPods {
         this.logging = logging;
     }
 
-    @Description("The Docker image for the stunnel sidecar")
+    @Description("The Docker image for the TLS sidecar")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-    public String getStunnelImage() {
-        return stunnelImage;
+    public String getTlsSidecarImage() {
+        return tlsSidecarImage;
     }
 
-    public void setStunnelImage(String stunnelImage) {
-        this.stunnelImage = stunnelImage;
+    public void setTlsSidecarImage(String tlsSidecarImage) {
+        this.tlsSidecarImage = tlsSidecarImage;
     }
 }

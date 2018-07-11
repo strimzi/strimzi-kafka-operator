@@ -525,7 +525,7 @@ public class KafkaAssemblyOperatorTest {
     @Test
     public void testUpdateZookeeperClusterChangeStunnelImage(TestContext context) {
         KafkaAssembly kafkaAssembly = getKafkaAssembly("bar");
-        kafkaAssembly.getSpec().getZookeeper().setStunnelImage("a-changed-stunnel-image");
+        kafkaAssembly.getSpec().getZookeeper().setTlsSidecarImage("a-changed-tls-sidecar-image");
         List<Secret> secrets = getClusterSecrets("bar",
                 kafkaAssembly.getSpec().getKafka().getReplicas(),
                 kafkaAssembly.getSpec().getZookeeper().getReplicas());

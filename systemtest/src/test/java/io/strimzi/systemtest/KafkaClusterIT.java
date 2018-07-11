@@ -380,10 +380,10 @@ public class KafkaClusterIT extends AbstractClusterIT {
 
         //Verifying docker image for zookeeper pods
         for (int i = 0; i < zkPods; i++) {
-            String imgFromPod = getContainerImageNameFromPod(zookeeperPodName(clusterName, i), zookeeperClusterName(clusterName));
+            String imgFromPod = getContainerImageNameFromPod(zookeeperPodName(clusterName, i), "zookeeper");
             assertEquals(imgFromDeplConf.get(ZK_IMAGE), imgFromPod);
-            imgFromPod = getContainerImageNameFromPod(zookeeperPodName(clusterName, i), "stunnel-zookeeper");
-            assertEquals(imgFromDeplConf.get(STUNNEL_ZOOKEEPER_IMAGE), imgFromPod);
+            imgFromPod = getContainerImageNameFromPod(zookeeperPodName(clusterName, i), "tls-sidecar");
+            assertEquals(imgFromDeplConf.get(TLS_SIDECAR_ZOOKEEPER_IMAGE), imgFromPod);
         }
 
         //Verifying docker image for kafka pods

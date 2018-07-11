@@ -98,8 +98,8 @@ you can push the images to OpenShift's Docker repo like this:
   value: 172.30.1.1:5000/myproject/topic-operator:latest
 - name: STRIMZI_DEFAULT_INIT_KAFKA_IMAGE
   value: 172.30.1.1:5000/myproject/init-kafka:latest
-- name: STRIMZI_DEFAULT_STUNNEL_ZOOKEEPER_IMAGE
-  value: 172.30.1.1:5000/myproject/stunnel-zookeeper:latest
+- name: STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE
+  value: 172.30.1.1:5000/myproject/zookeeper-stunnel:latest
 ```
 
 5. Then you can deploy the Cluster Operator running:

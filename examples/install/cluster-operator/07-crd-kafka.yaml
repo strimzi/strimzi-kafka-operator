@@ -653,7 +653,7 @@ spec:
                       type: object
                 metrics:
                   type: object
-                stunnelImage:
+                tlsSidecarImage:
                   type: string
                 additionalProperties:
                   type: object
