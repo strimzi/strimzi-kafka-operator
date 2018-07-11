@@ -25,6 +25,7 @@ public class ConnectS2IClusterIT extends AbstractClusterIT {
 
     public static final String NAMESPACE = "connect-s2i-cluster-test";
     public static final String CONNECT_CLUSTER_NAME = "my-cluster";
+    public static final String CONNECT_DEPLOYMENT_NAME = CONNECT_CLUSTER_NAME + "-connect";
 
     @Test
     @OpenShiftOnly
@@ -37,17 +38,18 @@ public class ConnectS2IClusterIT extends AbstractClusterIT {
         // Download and unzip MongoDB plugin
         kubeClient.exec("wget", "-O", "debezium-connector-mongodb-plugin.tar.gz", "-P", "./my-plugins/", pathToDebeziumMongodb);
         kubeClient.exec("tar", "xf", "debezium-connector-mongodb-plugin.tar.gz", "-C", "./my-plugins/");
+
+        String connectS2IPodName = kubeClient.listResourcesByLabel("pod", "type=kafka-connect-s2i").get(0);
+
         // Start a new image build using the plugins directory
-        kubeClient.exec("oc", "start-build", "my-cluster-connect", "--from-dir", "./my-plugins/");
+        kubeClient.exec("oc", "start-build", CONNECT_DEPLOYMENT_NAME, "--from-dir", "./my-plugins/");
+        kubeClient.waitForResourceDeletion("pod", connectS2IPodName);
 
-        kubeClient.waitForDeploymentConfig(CONNECT_CLUSTER_NAME + "-connect");
+        kubeClient.waitForDeploymentConfig(CONNECT_DEPLOYMENT_NAME);
 
-        String connectS2IPodName = kubeClient.listResourcesByLabel("pod", "strimzi.io/type=kafka-connect-s2i").get(0);
+        connectS2IPodName = kubeClient.listResourcesByLabel("pod", "type=kafka-connect-s2i").get(0);
         String plugins = kubeClient.execInPod(connectS2IPodName, "curl", "-X", "GET", "http://localhost:8083/connector-plugins").out();
 
         assertThat(plugins, containsString("io.debezium.connector.mongodb.MongoDbConnector"));
-
-//        waitFor("Wait message in pod log", 5000, 60000,
-//            () -> !kubeClient.searchInLog("deploymentConfig", "my-cluster-connect", stopwatch.runtime(SECONDS), "\"Added plugin \'io.debezium.connector.mongodb.MongoDbConnector\'\"").isEmpty());
     }
 }

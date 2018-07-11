@@ -508,7 +508,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                         // delete cm
                         kubeClient().clientWithAdmin().deleteContent(yaml);
                         // wait for ss to go
-                        kubeClient().waitForResourceDeletion("deploymentCOnfig", deploymentName);
+                        kubeClient().waitForResourceDeletion("deploymentConfig", deploymentName);
                     }
                 };
             }
@@ -558,7 +558,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
     private Statement withKafkaClusters(Annotatable element,
                                         Statement statement) {
         Statement last = statement;
-        KafkaFromClasspathYaml cluster = element.getAnnotation(KafkaFromClasspathYaml.class);
+         KafkaFromClasspathYaml cluster = element.getAnnotation(KafkaFromClasspathYaml.class);
         if (cluster != null) {
             String[] resources = cluster.value().length == 0 ? new String[]{classpathResourceName(element)} : cluster.value();
             for (String resource : resources) {
