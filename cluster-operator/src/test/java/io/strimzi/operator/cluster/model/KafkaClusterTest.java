@@ -69,6 +69,10 @@ public class KafkaClusterTest {
         assertEquals(TestUtils.toJsonString(this.metricsCm), metricsCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_METRICS));
     }
 
+    private Map<String, String> expectedLabels()    {
+        return TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, cluster, "my-user-label", "cromulent", Labels.STRIMZI_NAME_LABEL, KafkaCluster.kafkaClusterName(cluster), Labels.STRIMZI_KIND_LABEL, KafkaAssembly.RESOURCE_KIND);
+    }
+
     @Test
     public void testGenerateService() {
         Service headful = kc.generateService();
@@ -77,7 +81,7 @@ public class KafkaClusterTest {
 
     private void checkService(Service headful) {
         assertEquals("ClusterIP", headful.getSpec().getType());
-        assertEquals(TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, cluster, "my-user-label", "cromulent", Labels.STRIMZI_NAME_LABEL, KafkaCluster.kafkaClusterName(cluster)), headful.getSpec().getSelector());
+        assertEquals(expectedLabels(), headful.getSpec().getSelector());
         assertEquals(3, headful.getSpec().getPorts().size());
         assertEquals(KafkaCluster.CLIENT_PORT_NAME, headful.getSpec().getPorts().get(0).getName());
         assertEquals(new Integer(KafkaCluster.CLIENT_PORT), headful.getSpec().getPorts().get(0).getPort());
@@ -94,7 +98,7 @@ public class KafkaClusterTest {
         assertEquals(KafkaCluster.headlessName(cluster), headless.getMetadata().getName());
         assertEquals("ClusterIP", headless.getSpec().getType());
         assertEquals("None", headless.getSpec().getClusterIP());
-        assertEquals(TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, cluster, "my-user-label", "cromulent", Labels.STRIMZI_NAME_LABEL, KafkaCluster.kafkaClusterName(cluster)), headless.getSpec().getSelector());
+        assertEquals(expectedLabels(), headless.getSpec().getSelector());
         assertEquals(3, headless.getSpec().getPorts().size());
         assertEquals(KafkaCluster.CLIENT_PORT_NAME, headless.getSpec().getPorts().get(0).getName());
         assertEquals(new Integer(KafkaCluster.CLIENT_PORT), headless.getSpec().getPorts().get(0).getPort());
@@ -147,8 +151,7 @@ public class KafkaClusterTest {
         // ... in the same namespace ...
         assertEquals(namespace, ss.getMetadata().getNamespace());
         // ... with these labels
-        assertEquals(TestUtils.map("strimzi.io/cluster", cluster, "my-user-label", "cromulent", "strimzi.io/name", KafkaCluster.kafkaClusterName(cluster)),
-                ss.getMetadata().getLabels());
+        assertEquals(expectedLabels(), ss.getMetadata().getLabels());
 
         assertEquals(new Integer(replicas), ss.getSpec().getReplicas());
         assertEquals(image, ss.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());

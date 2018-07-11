@@ -95,7 +95,7 @@ public class KafkaConnectCluster extends AbstractModel {
         return fromSpec(crd.getSpec(),
                 new KafkaConnectCluster(crd.getMetadata().getNamespace(),
                     crd.getMetadata().getName(),
-                    Labels.fromResource(crd)));
+                    Labels.fromResource(crd).withKind(crd.getKind())));
     }
 
     /**

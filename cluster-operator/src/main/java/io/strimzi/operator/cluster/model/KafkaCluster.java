@@ -173,11 +173,10 @@ public class KafkaCluster extends AbstractModel {
     public static KafkaCluster fromCrd(CertManager certManager, KafkaAssembly kafkaAssembly, List<Secret> secrets) {
         KafkaCluster result = new KafkaCluster(kafkaAssembly.getMetadata().getNamespace(),
                 kafkaAssembly.getMetadata().getName(),
-                Labels.fromResource(kafkaAssembly));
+                Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
         Kafka kafka = kafkaAssembly.getSpec().getKafka();
         result.setReplicas(kafka.getReplicas());
         String image = kafka.getImage();
-        log.debug("#### got kafka image from KafkaAssembly" + image);
         if (image == null) {
             image = Kafka.DEFAULT_IMAGE;
         }

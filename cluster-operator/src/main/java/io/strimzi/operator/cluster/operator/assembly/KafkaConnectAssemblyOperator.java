@@ -107,9 +107,8 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
     }
 
     @Override
-    protected List<HasMetadata> getResources(String namespace) {
+    protected List<HasMetadata> getResources(String namespace, Labels selector) {
         List<HasMetadata> result = new ArrayList<>();
-        Labels selector = Labels.forType(AssemblyType.CONNECT);
         result.addAll(serviceOperations.list(namespace, selector));
         result.addAll(deploymentOperations.list(namespace, selector));
         result.addAll(resourceOperator.list(namespace, selector));

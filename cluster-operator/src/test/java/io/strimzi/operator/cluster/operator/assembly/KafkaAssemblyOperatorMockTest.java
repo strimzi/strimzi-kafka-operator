@@ -180,7 +180,7 @@ public class KafkaAssemblyOperatorMockTest {
                 .withMetadata(new ObjectMetaBuilder()
                         .withName(CLUSTER_NAME)
                         .withNamespace(NAMESPACE)
-                        .withLabels(Labels.forKind("cluster").withType(AssemblyType.KAFKA).toMap())
+                        .withLabels(Labels.userLabels(TestUtils.map("foo", "bar")).toMap())
                         .build())
                 .withNewSpec()
                     .withNewKafka()
@@ -827,8 +827,9 @@ public class KafkaAssemblyOperatorMockTest {
         kafkaAssembly(NAMESPACE, CLUSTER_NAME).delete();
 
         LOGGER.info("reconcileAll after KafkaAssembly deletion -> All resources should be deleted");
-        kco.reconcileAll("test-trigger", NAMESPACE, Labels.forKind("cluster")).await();
+        kco.reconcileAll("test-trigger", NAMESPACE).await();
 
+        // TODO: Should verify that all resources were removed from MockKube
         // Assert no CMs, Services, StatefulSets, Deployments, Secrets are left
         context.assertTrue(mockClient.configMaps().inNamespace(NAMESPACE).list().getItems().isEmpty());
         context.assertTrue(mockClient.services().inNamespace(NAMESPACE).list().getItems().isEmpty());

@@ -14,11 +14,14 @@ import io.strimzi.api.kafka.model.KafkaConnectAssemblyBuilder;
 import io.strimzi.operator.cluster.Reconciliation;
 import io.strimzi.operator.cluster.model.AssemblyType;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
+import io.strimzi.operator.cluster.model.Labels;
 import io.strimzi.operator.cluster.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.cluster.operator.resource.CrdOperator;
 import io.strimzi.operator.cluster.operator.resource.DeploymentOperator;
 import io.strimzi.operator.cluster.operator.resource.SecretOperator;
 import io.strimzi.operator.cluster.operator.resource.ServiceOperator;
+import io.strimzi.test.TestUtils;
+
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -31,6 +34,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.Collections;
+import java.util.concurrent.TimeUnit;
 
 @RunWith(VertxUnitRunner.class)
 public class KafkaConnectAssemblyOperatorMockTest {
@@ -55,7 +59,8 @@ public class KafkaConnectAssemblyOperatorMockTest {
                 .withMetadata(new ObjectMetaBuilder()
                     .withName(CLUSTER_NAME)
                     .withNamespace(NAMESPACE)
-                .build())
+                    .withLabels(Labels.userLabels(TestUtils.map("foo", "bar")).toMap())
+                    .build())
                 .withNewSpec()
                     .withReplicas(replicas)
                 .endSpec()
@@ -116,10 +121,27 @@ public class KafkaConnectAssemblyOperatorMockTest {
         kco.reconcileAssembly(new Reconciliation("test-trigger", AssemblyType.CONNECT, NAMESPACE, CLUSTER_NAME), ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.assertTrue(ar.succeeded());
+            // TODO: Should verify that all resources were removed from MockKube
             context.assertNull(mockClient.extensions().deployments().inNamespace(NAMESPACE).withName(KafkaConnectCluster.kafkaConnectClusterName(CLUSTER_NAME)).get());
             context.assertNull(mockClient.configMaps().inNamespace(NAMESPACE).withName(KafkaConnectCluster.logAndMetricsConfigName(CLUSTER_NAME)).get());
             context.assertNull(mockClient.services().inNamespace(NAMESPACE).withName(KafkaConnectCluster.kafkaConnectClusterName(CLUSTER_NAME)).get());
             deleteAsync.complete();
         });
+    }
+
+    /** Test that the cluster resources will be discovered even when the DELETE event is missed */
+    @Test
+    public void testReconcileAllDeleteCase(TestContext context) throws InterruptedException {
+        KafkaConnectAssemblyOperator kco = createConnectCluster(context);
+        LOGGER.info("Reconciling again -> delete");
+        mockClient.customResources(Crds.kafkaConnect(),
+                KafkaConnectAssembly.class, KafkaConnectAssemblyList.class, DoneableKafkaConnectAssembly.class).
+                inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
+        kco.reconcileAll("test-trigger", NAMESPACE).await(60, TimeUnit.SECONDS);
+
+        // TODO: Should verify that all resources were removed from MockKube
+        context.assertNull(mockClient.extensions().deployments().inNamespace(NAMESPACE).withName(KafkaConnectCluster.kafkaConnectClusterName(CLUSTER_NAME)).get());
+        context.assertNull(mockClient.configMaps().inNamespace(NAMESPACE).withName(KafkaConnectCluster.logAndMetricsConfigName(CLUSTER_NAME)).get());
+        context.assertNull(mockClient.services().inNamespace(NAMESPACE).withName(KafkaConnectCluster.kafkaConnectClusterName(CLUSTER_NAME)).get());
     }
 }

@@ -55,7 +55,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
         KafkaConnectS2IAssemblySpec spec = crd.getSpec();
         KafkaConnectS2ICluster cluster = fromSpec(spec, new KafkaConnectS2ICluster(crd.getMetadata().getNamespace(),
                 crd.getMetadata().getName(),
-                Labels.fromResource(crd)));
+                Labels.fromResource(crd).withKind(crd.getKind())));
         cluster.setInsecureSourceRepository(spec != null ? spec.isInsecureSourceRepository() : false);
         return cluster;
     }

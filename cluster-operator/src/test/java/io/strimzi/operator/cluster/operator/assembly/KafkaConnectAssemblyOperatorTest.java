@@ -499,7 +499,7 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockConnectOps.get(eq(clusterCmNamespace), eq("bar"))).thenReturn(bar);
 
         // providing the list of ALL Deployments for all the Kafka Connect clusters
-        Labels newLabels = Labels.forType(AssemblyType.CONNECT);
+        Labels newLabels = Labels.forKind(KafkaConnectAssembly.RESOURCE_KIND);
         when(mockDcOps.list(eq(clusterCmNamespace), eq(newLabels))).thenReturn(
                 asList(KafkaConnectCluster.fromCrd(bar).generateDeployment(),
                         KafkaConnectCluster.fromCrd(baz).generateDeployment()));
@@ -541,7 +541,7 @@ public class KafkaConnectAssemblyOperatorTest {
         };
 
         // Now try to reconcile all the Kafka Connect clusters
-        ops.reconcileAll("test", clusterCmNamespace, Labels.EMPTY);
+        ops.reconcileAll("test", clusterCmNamespace);
 
         async.await();
 
