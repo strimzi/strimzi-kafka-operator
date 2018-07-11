@@ -10,9 +10,12 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
+import io.strimzi.api.kafka.model.EphemeralStorage;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.KafkaAssembly;
+import io.strimzi.api.kafka.model.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.Storage;
+import io.strimzi.api.kafka.model.TopicOperatorBuilder;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.Reconciliation;
 import io.strimzi.operator.cluster.ResourceUtils;
@@ -48,15 +51,16 @@ import org.junit.runners.Parameterized;
 import org.mockito.ArgumentCaptor;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
 
 import static io.strimzi.test.TestUtils.set;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonMap;
 import static org.mockito.ArgumentMatchers.any;
@@ -77,7 +81,7 @@ import static org.mockito.Mockito.when;
 @Parameterized.UseParametersRunnerFactory(VertxUnitRunnerWithParametersFactory.class)
 public class KafkaAssemblyOperatorTest {
 
-    public static final String METRICS_CONFIG = "{\"foo\":\"bar\"}";
+    public static final Map<String, Object> METRICS_CONFIG = singletonMap("foo", "bar");
     public static final InlineLogging LOG_KAFKA_CONFIG = new InlineLogging();
     public static final InlineLogging LOG_ZOOKEEPER_CONFIG = new InlineLogging();
     public static final InlineLogging LOG_CONNECT_CONFIG = new InlineLogging();
@@ -88,22 +92,22 @@ public class KafkaAssemblyOperatorTest {
     }
     private final boolean openShift;
     private final boolean metrics;
-    private final String kafkaConfig;
-    private final String zooConfig;
-    private final String storage;
-    private final String tcConfig;
+    private final Map<String, Object> kafkaConfig;
+    private final Map<String, Object> zooConfig;
+    private final Storage storage;
+    private final io.strimzi.api.kafka.model.TopicOperator tcConfig;
     private final boolean deleteClaim;
     private MockCertManager certManager = new MockCertManager();
 
     public static class Params {
         private final boolean openShift;
         private final boolean metrics;
-        private final String kafkaConfig;
-        private final String zooConfig;
-        private final String storage;
-        private final String tcConfig;
+        private final Map<String, Object> kafkaConfig;
+        private final Map<String, Object> zooConfig;
+        private final Storage storage;
+        private final io.strimzi.api.kafka.model.TopicOperator tcConfig;
 
-        public Params(boolean openShift, boolean metrics, String kafkaConfig, String zooConfig, String storage, String tcConfig) {
+        public Params(boolean openShift, boolean metrics, Map<String, Object> kafkaConfig, Map<String, Object> zooConfig, Storage storage, io.strimzi.api.kafka.model.TopicOperator tcConfig) {
             this.openShift = openShift;
             this.metrics = metrics;
             this.kafkaConfig = kafkaConfig;
@@ -126,36 +130,37 @@ public class KafkaAssemblyOperatorTest {
     public static Iterable<Params> data() {
         boolean[] shiftiness = {true, false};
         boolean[] metrics = {true, false};
-        String[] storageConfigs = {
-            "{\"type\": \"ephemeral\"}",
-            "{\"type\": \"persistent-claim\", " +
-                    "\"size\": \"123\", " +
-                    "\"class\": \"foo\"," +
-                    "\"deleteClaim\": true}"
+        Storage[] storageConfigs = {
+            new EphemeralStorage(),
+            new PersistentClaimStorageBuilder()
+                    .withSize("123")
+                    .withStorageClass("foo")
+                    .withDeleteClaim(true)
+                .build()
         };
-        String[] kafkaConfigs = {
+        Map[] kafkaConfigs = {
             null,
-            "{ }",
-            "{\"foo\": \"bar\"}"
+            emptyMap(),
+            singletonMap("foo", "bar")
         };
-        String[] zooConfigs = {
+        Map[] zooConfigs = {
             null,
-            "{ }",
-            "{\"foo\": \"bar\"}"
+            emptyMap(),
+            singletonMap("foo", "bar")
         };
-        String[] tcConfigs = {
+        io.strimzi.api.kafka.model.TopicOperator[] tcConfigs = {
             null,
-            "{ }",
-            "{\"reconciliationInterval\": \"10 minutes\", " +
-                    "\"zookeeperSessionTimeout\": \"10 seconds\"}"
+            new io.strimzi.api.kafka.model.TopicOperator(),
+            new TopicOperatorBuilder().withReconciliationIntervalSeconds(600)
+                    .withZookeeperSessionTimeoutSeconds(10).build()
         };
         List<Params> result = new ArrayList();
         for (boolean shift: shiftiness) {
             for (boolean metric: metrics) {
-                for (String kafkaConfig: kafkaConfigs) {
-                    for (String zooConfig: zooConfigs) {
-                        for (String storage : storageConfigs) {
-                            for (String tcConfig : tcConfigs) {
+                for (Map kafkaConfig: kafkaConfigs) {
+                    for (Map zooConfig: zooConfigs) {
+                        for (Storage storage : storageConfigs) {
+                            for (io.strimzi.api.kafka.model.TopicOperator tcConfig : tcConfigs) {
                                 result.add(new Params(shift, metric, kafkaConfig, zooConfig, storage, tcConfig));
                             }
                         }
@@ -173,7 +178,7 @@ public class KafkaAssemblyOperatorTest {
         this.zooConfig = params.zooConfig;
         this.storage = params.storage;
         this.tcConfig = params.tcConfig;
-        this.deleteClaim = Storage.deleteClaim(TestUtils.fromJson(params.storage, Storage.class));
+        this.deleteClaim = Storage.deleteClaim(params.storage);
     }
 
     protected static Vertx vertx;
@@ -461,8 +466,8 @@ public class KafkaAssemblyOperatorTest {
         String image = "bar";
         int healthDelay = 120;
         int healthTimeout = 30;
-        String metricsCmJson = metrics ? METRICS_CONFIG : null;
-        return ResourceUtils.createKafkaCluster(clusterNamespace, clusterName, replicas, image, healthDelay, healthTimeout, metricsCmJson, kafkaConfig, zooConfig, storage, tcConfig, null, LOG_KAFKA_CONFIG, LOG_ZOOKEEPER_CONFIG);
+        Map<String, Object> metricsCmJson = metrics ? METRICS_CONFIG : null;
+        return ResourceUtils.createKafkaCluster(clusterNamespace, clusterName, replicas, image, healthDelay, healthTimeout, metricsCmJson, kafkaConfig, zooConfig, storage, tcConfig, LOG_KAFKA_CONFIG, LOG_ZOOKEEPER_CONFIG);
     }
 
     private List<Secret> getInitialSecrets() {
@@ -641,7 +646,7 @@ public class KafkaAssemblyOperatorTest {
                 .withName(KafkaCluster.metricAndLogConfigsName(clusterName))
                     .withNamespace(clusterNamespace)
                 .endMetadata()
-                .withData(Collections.singletonMap(AbstractModel.ANCILLARY_CM_KEY_METRICS, METRICS_CONFIG))
+                .withData(singletonMap(AbstractModel.ANCILLARY_CM_KEY_METRICS, TestUtils.toYamlString(METRICS_CONFIG)))
                 .build();
 
         when(mockCmOps.get(clusterNamespace, KafkaCluster.metricAndLogConfigsName(clusterName))).thenReturn(metricsCm);
@@ -649,7 +654,7 @@ public class KafkaAssemblyOperatorTest {
                 .withName(ZookeeperCluster.zookeeperMetricAndLogConfigsName(clusterName))
                 .withNamespace(clusterNamespace)
                 .endMetadata()
-                .withData(Collections.singletonMap(AbstractModel.ANCILLARY_CM_KEY_METRICS, METRICS_CONFIG))
+                .withData(singletonMap(AbstractModel.ANCILLARY_CM_KEY_METRICS, TestUtils.toYamlString(METRICS_CONFIG)))
                 .build();
         when(mockCmOps.get(clusterNamespace, ZookeeperCluster.zookeeperMetricAndLogConfigsName(clusterName))).thenReturn(zkMetricsCm);
 
@@ -657,7 +662,7 @@ public class KafkaAssemblyOperatorTest {
                 .withName(KafkaCluster.metricAndLogConfigsName(clusterName))
                 .withNamespace(clusterNamespace)
                 .endMetadata()
-                .withData(Collections.singletonMap(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG,
+                .withData(singletonMap(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG,
                         updatedKafkaCluster.parseLogging(LOG_KAFKA_CONFIG, null)))
                 .build();
         when(mockCmOps.get(clusterNamespace, KafkaCluster.metricAndLogConfigsName(clusterName))).thenReturn(logCm);
@@ -665,7 +670,7 @@ public class KafkaAssemblyOperatorTest {
                 .withName(ZookeeperCluster.zookeeperMetricAndLogConfigsName(clusterName))
                 .withNamespace(clusterNamespace)
                 .endMetadata()
-                .withData(Collections.singletonMap(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG,
+                .withData(singletonMap(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG,
                         updatedKafkaCluster.parseLogging(LOG_ZOOKEEPER_CONFIG, null)))
                 .build();
 

@@ -55,8 +55,8 @@ public class TopicOperator extends AbstractModel {
     private String zookeeperConnect;
 
     private String watchedNamespace;
-    private String reconciliationIntervalMs;
-    private String zookeeperSessionTimeoutMs;
+    private int reconciliationIntervalMs;
+    private int zookeeperSessionTimeoutMs;
     private String topicConfigMapLabels;
     private int topicMetadataMaxAttempts;
 
@@ -81,8 +81,8 @@ public class TopicOperator extends AbstractModel {
         this.kafkaBootstrapServers = defaultBootstrapServers(cluster);
         this.zookeeperConnect = defaultZookeeperConnect(cluster);
         this.watchedNamespace = namespace;
-        this.reconciliationIntervalMs = io.strimzi.api.kafka.model.TopicOperator.DEFAULT_FULL_RECONCILIATION_INTERVAL_MS;
-        this.zookeeperSessionTimeoutMs = io.strimzi.api.kafka.model.TopicOperator.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_MS;
+        this.reconciliationIntervalMs = io.strimzi.api.kafka.model.TopicOperator.DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS;
+        this.zookeeperSessionTimeoutMs = io.strimzi.api.kafka.model.TopicOperator.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS;
         this.topicConfigMapLabels = defaultTopicConfigMapLabels(cluster);
         this.topicMetadataMaxAttempts = io.strimzi.api.kafka.model.TopicOperator.DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS;
     }
@@ -104,19 +104,19 @@ public class TopicOperator extends AbstractModel {
         return topicConfigMapLabels;
     }
 
-    public void setReconciliationIntervalMs(String reconciliationIntervalMs) {
+    public void setReconciliationIntervalMs(int reconciliationIntervalMs) {
         this.reconciliationIntervalMs = reconciliationIntervalMs;
     }
 
-    public String getReconciliationIntervalMs() {
+    public int getReconciliationIntervalMs() {
         return reconciliationIntervalMs;
     }
 
-    public void setZookeeperSessionTimeoutMs(String zookeeperSessionTimeoutMs) {
+    public void setZookeeperSessionTimeoutMs(int zookeeperSessionTimeoutMs) {
         this.zookeeperSessionTimeoutMs = zookeeperSessionTimeoutMs;
     }
 
-    public String getZookeeperSessionTimeoutMs() {
+    public int getZookeeperSessionTimeoutMs() {
         return zookeeperSessionTimeoutMs;
     }
 
@@ -179,8 +179,8 @@ public class TopicOperator extends AbstractModel {
             io.strimzi.api.kafka.model.TopicOperator tcConfig = resource.getSpec().getTopicOperator();
             result.setImage(tcConfig.getImage());
             result.setWatchedNamespace(tcConfig.getWatchedNamespace() != null ? tcConfig.getWatchedNamespace() : namespace);
-            result.setReconciliationIntervalMs(tcConfig.getReconciliationIntervalSeconds());
-            result.setZookeeperSessionTimeoutMs(tcConfig.getZookeeperSessionTimeoutSeconds());
+            result.setReconciliationIntervalMs(tcConfig.getReconciliationIntervalSeconds() * 1_000);
+            result.setZookeeperSessionTimeoutMs(tcConfig.getZookeeperSessionTimeoutSeconds() * 1_000);
             result.setTopicMetadataMaxAttempts(tcConfig.getTopicMetadataMaxAttempts());
             result.setLogging(tcConfig.getLogging());
             result.setResources(tcConfig.getResources());
@@ -232,8 +232,8 @@ public class TopicOperator extends AbstractModel {
         varList.add(buildEnvVar(KEY_KAFKA_BOOTSTRAP_SERVERS, kafkaBootstrapServers));
         varList.add(buildEnvVar(KEY_ZOOKEEPER_CONNECT, zookeeperConnect));
         varList.add(buildEnvVar(KEY_WATCHED_NAMESPACE, watchedNamespace));
-        varList.add(buildEnvVar(KEY_FULL_RECONCILIATION_INTERVAL_MS, reconciliationIntervalMs));
-        varList.add(buildEnvVar(KEY_ZOOKEEPER_SESSION_TIMEOUT_MS, zookeeperSessionTimeoutMs));
+        varList.add(buildEnvVar(KEY_FULL_RECONCILIATION_INTERVAL_MS, Integer.toString(reconciliationIntervalMs)));
+        varList.add(buildEnvVar(KEY_ZOOKEEPER_SESSION_TIMEOUT_MS, Integer.toString(zookeeperSessionTimeoutMs)));
         varList.add(buildEnvVar(KEY_TOPIC_METADATA_MAX_ATTEMPTS, String.valueOf(topicMetadataMaxAttempts)));
 
         return varList;

@@ -284,9 +284,9 @@ Used in: <<type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
 |image                           1.2+<.<|The image to use for the topic operator
 |string
 |reconciliationIntervalSeconds   1.2+<.<|Interval between periodic reconciliations.
-|string
+|integer
 |zookeeperSessionTimeoutSeconds  1.2+<.<|Timeout for the Zookeeper session
-|string
+|integer
 |affinity                        1.2+<.<|Pod affinity rules.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[core/v1 affinity]
 
 

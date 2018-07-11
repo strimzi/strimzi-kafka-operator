@@ -25,9 +25,9 @@ import static org.junit.Assert.assertTrue;
 
 public class ZookeeperSetOperatiorTest {
 
-    public static final String METRICS_CONFIG = "{\"foo\":\"bar\"}";
-    public static final String LOG_ZOOKEEPER_CONFIG = "{\"zookeeper.root.logger\":\"INFO\"}";
-    public static final String LOG_KAFKA_CONFIG = "{\"kafka.root.logger.level\":\"INFO\"}";
+    //public static final Map<String, Object> METRICS_CONFIG = singletonMap("foo", "bar");
+    //public static final Map<String, Object> LOG_ZOOKEEPER_CONFIG = singletonMap("zookeeper.root.logger", "INFO");
+    //public static final Map<String, Object> LOG_KAFKA_CONFIG = singletonMap("kafka.root.logger.level", "INFO");
 
     private StatefulSet a;
     private StatefulSet b;
@@ -46,7 +46,7 @@ public class ZookeeperSetOperatiorTest {
         String image = "bar";
         int healthDelay = 120;
         int healthTimeout = 30;
-        return ResourceUtils.createKafkaCluster(clusterCmNamespace, clusterCmName, replicas, image, healthDelay, healthTimeout, METRICS_CONFIG, LOG_KAFKA_CONFIG, LOG_ZOOKEEPER_CONFIG);
+        return ResourceUtils.createKafkaCluster(clusterCmNamespace, clusterCmName, replicas, image, healthDelay, healthTimeout);
     }
 
     private List<Secret> getInitialSecrets() {

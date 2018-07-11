@@ -10,9 +10,12 @@ import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.strimzi.api.kafka.model.KafkaConnectAssembly;
+import io.strimzi.api.kafka.model.KafkaConnectAssemblyBuilder;
+import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.operator.assembly.MockCertManager;
+import io.strimzi.test.TestUtils;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -55,8 +58,16 @@ public class KafkaConnectClusterTest {
             "internal.value.converter=org.apache.kafka.connect.json.JsonConverter\n";
 
     private CertManager certManager = new MockCertManager();
-    private final KafkaConnectAssembly resource = ResourceUtils.createKafkaConnectCluster(namespace, cluster, replicas, image,
-            healthDelay, healthTimeout, metricsCmJson, configurationJson);
+    private final KafkaConnectAssembly resource = new KafkaConnectAssemblyBuilder(ResourceUtils.createEmptyKafkaConnectCluster(namespace, cluster))
+            .withNewSpec()
+            .withMetrics((Map<String, Object>) TestUtils.fromJson(metricsCmJson, Map.class))
+            .withConfig((Map<String, Object>) TestUtils.fromJson(configurationJson, Map.class))
+            .withImage(image)
+            .withReplicas(replicas)
+            .withReadinessProbe(new Probe(healthDelay, healthTimeout))
+            .withLivenessProbe(new Probe(healthDelay, healthTimeout))
+            .endSpec()
+            .build();
     private final KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource);
 
     @Rule
@@ -115,10 +126,7 @@ public class KafkaConnectClusterTest {
         Service svc = kc.generateService();
 
         assertEquals("ClusterIP", svc.getSpec().getType());
-        Map<String, String> expectedLabels = ResourceUtils.labels(Labels.STRIMZI_CLUSTER_LABEL, this.cluster,
-                Labels.STRIMZI_TYPE_LABEL, "kafka-connect",
-                "my-user-label", "cromulent",
-                Labels.STRIMZI_NAME_LABEL, kc.kafkaConnectClusterName(cluster));
+        Map<String, String> expectedLabels = TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, this.cluster, Labels.STRIMZI_TYPE_LABEL, "kafka-connect", "my-user-label", "cromulent", Labels.STRIMZI_NAME_LABEL, kc.kafkaConnectClusterName(cluster));
         assertEquals(expectedLabels, svc.getMetadata().getLabels());
         assertEquals(expectedLabels, svc.getSpec().getSelector());
         assertEquals(2, svc.getSpec().getPorts().size());
@@ -133,10 +141,7 @@ public class KafkaConnectClusterTest {
 
         assertEquals(kc.kafkaConnectClusterName(cluster), dep.getMetadata().getName());
         assertEquals(namespace, dep.getMetadata().getNamespace());
-        Map<String, String> expectedLabels = ResourceUtils.labels(Labels.STRIMZI_CLUSTER_LABEL, this.cluster,
-                Labels.STRIMZI_TYPE_LABEL, "kafka-connect",
-                "my-user-label", "cromulent",
-                Labels.STRIMZI_NAME_LABEL, kc.kafkaConnectClusterName(cluster));
+        Map<String, String> expectedLabels = TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, this.cluster, Labels.STRIMZI_TYPE_LABEL, "kafka-connect", "my-user-label", "cromulent", Labels.STRIMZI_NAME_LABEL, kc.kafkaConnectClusterName(cluster));
         assertEquals(expectedLabels, dep.getMetadata().getLabels());
         assertEquals(new Integer(replicas), dep.getSpec().getReplicas());
         assertEquals(expectedLabels, dep.getSpec().getTemplate().getMetadata().getLabels());

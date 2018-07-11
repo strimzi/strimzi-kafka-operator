@@ -251,4 +251,14 @@ public final class TestUtils {
             throw new RuntimeException(e);
         }
     }
+
+    public static String toJsonString(Object instance) {
+        ObjectMapper mapper = new ObjectMapper()
+                .setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        try {
+            return mapper.writeValueAsString(instance);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }
