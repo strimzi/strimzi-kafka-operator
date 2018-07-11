@@ -3,6 +3,8 @@
 Strimzi is using `make` as its main build system. Our make build supports 
 several different targets mainly for building and pushing Docker images.
 
+The build also uses an Java annotation processor. Some IDEs (such as IntelliJ) doesn't, by default, run the annotation processor in their build process. You can run `mvn clean install -DskipTests -DskipITs` to run the annotation processor as the maven build and the IDE should then be able to use the generated classes. It is also possible to configure the IDE to run the annotation processor itself.
+
 <!-- TOC depthFrom:2 -->
 
 - [Docker images](#docker-images)
