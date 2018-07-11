@@ -827,7 +827,7 @@ public class KafkaAssemblyOperatorMockTest {
         kafkaAssembly(NAMESPACE, CLUSTER_NAME).delete();
 
         LOGGER.info("reconcileAll after KafkaAssembly deletion -> All resources should be deleted");
-        kco.reconcileAll("test-trigger", NAMESPACE, Labels.forKind("cluster")).await();
+        kco.reconcileAll("test-trigger", NAMESPACE, Labels.EMPTY).await();
 
         // Assert no CMs, Services, StatefulSets, Deployments, Secrets are left
         context.assertTrue(mockClient.configMaps().inNamespace(NAMESPACE).list().getItems().isEmpty());

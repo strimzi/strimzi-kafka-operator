@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.KafkaConnectAssemblyBuilder;
 import io.strimzi.operator.cluster.Reconciliation;
 import io.strimzi.operator.cluster.model.AssemblyType;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
+import io.strimzi.operator.cluster.model.Labels;
 import io.strimzi.operator.cluster.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.cluster.operator.resource.CrdOperator;
 import io.strimzi.operator.cluster.operator.resource.DeploymentOperator;
@@ -31,6 +32,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.Collections;
+import java.util.concurrent.TimeUnit;
 
 @RunWith(VertxUnitRunner.class)
 public class KafkaConnectAssemblyOperatorMockTest {
@@ -121,5 +123,20 @@ public class KafkaConnectAssemblyOperatorMockTest {
             context.assertNull(mockClient.services().inNamespace(NAMESPACE).withName(KafkaConnectCluster.kafkaConnectClusterName(CLUSTER_NAME)).get());
             deleteAsync.complete();
         });
+    }
+
+    /** Test that the cluster resources will be discovered even when the DELETE event is missed */
+    @Test
+    public void testReconcileAllDeleteCase(TestContext context) throws InterruptedException {
+        KafkaConnectAssemblyOperator kco = createConnectCluster(context);
+        LOGGER.info("Reconciling again -> delete");
+        mockClient.customResources(Crds.kafkaConnect(),
+                KafkaConnectAssembly.class, KafkaConnectAssemblyList.class, DoneableKafkaConnectAssembly.class).
+                inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
+        kco.reconcileAll("test-trigger", NAMESPACE, Labels.EMPTY).await(60, TimeUnit.SECONDS);
+
+        context.assertNull(mockClient.extensions().deployments().inNamespace(NAMESPACE).withName(KafkaConnectCluster.kafkaConnectClusterName(CLUSTER_NAME)).get());
+        context.assertNull(mockClient.configMaps().inNamespace(NAMESPACE).withName(KafkaConnectCluster.logAndMetricsConfigName(CLUSTER_NAME)).get());
+        context.assertNull(mockClient.services().inNamespace(NAMESPACE).withName(KafkaConnectCluster.kafkaConnectClusterName(CLUSTER_NAME)).get());
     }
 }
