@@ -62,6 +62,10 @@ public class ZookeeperClusterTest {
         assertEquals(TestUtils.toJsonString(metricsCmJson), metricsCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_METRICS));
     }
 
+    private Map<String, String> getLabels()    {
+        return TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, cluster, "my-user-label", "cromulent", Labels.STRIMZI_NAME_LABEL, ZookeeperCluster.zookeeperClusterName(cluster), Labels.STRIMZI_KIND_LABEL, KafkaAssembly.RESOURCE_KIND);
+    }
+
     @Test
     public void testGenerateService() {
         Service headful = zc.generateService();
@@ -70,7 +74,7 @@ public class ZookeeperClusterTest {
 
     private void checkService(Service headful) {
         assertEquals("ClusterIP", headful.getSpec().getType());
-        assertEquals(TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, cluster, "my-user-label", "cromulent", Labels.STRIMZI_NAME_LABEL, ZookeeperCluster.zookeeperClusterName(cluster)), headful.getSpec().getSelector());
+        assertEquals(getLabels(), headful.getSpec().getSelector());
         assertEquals(2, headful.getSpec().getPorts().size());
         assertEquals(ZookeeperCluster.METRICS_PORT_NAME, headful.getSpec().getPorts().get(0).getName());
         assertEquals(ZookeeperCluster.CLIENT_PORT_NAME, headful.getSpec().getPorts().get(1).getName());
@@ -89,7 +93,7 @@ public class ZookeeperClusterTest {
         assertEquals(ZookeeperCluster.zookeeperHeadlessName(cluster), headless.getMetadata().getName());
         assertEquals("ClusterIP", headless.getSpec().getType());
         assertEquals("None", headless.getSpec().getClusterIP());
-        assertEquals(TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, cluster, "my-user-label", "cromulent", Labels.STRIMZI_NAME_LABEL, ZookeeperCluster.zookeeperClusterName(cluster)), headless.getSpec().getSelector());
+        assertEquals(getLabels(), headless.getSpec().getSelector());
         assertEquals(3, headless.getSpec().getPorts().size());
         assertEquals(ZookeeperCluster.CLIENT_PORT_NAME, headless.getSpec().getPorts().get(0).getName());
         assertEquals(new Integer(ZookeeperCluster.CLIENT_PORT), headless.getSpec().getPorts().get(0).getPort());
@@ -112,8 +116,7 @@ public class ZookeeperClusterTest {
         // ... in the same namespace ...
         assertEquals(namespace, ss.getMetadata().getNamespace());
         // ... with these labels
-        assertEquals(TestUtils.map("strimzi.io/cluster", cluster, "my-user-label", "cromulent", "strimzi.io/name", ZookeeperCluster.zookeeperClusterName(cluster)),
-                ss.getMetadata().getLabels());
+        assertEquals(getLabels(), ss.getMetadata().getLabels());
 
         assertEquals(new Integer(replicas), ss.getSpec().getReplicas());
         assertEquals(image + "-zk", ss.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());

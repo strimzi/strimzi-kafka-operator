@@ -157,7 +157,7 @@ public abstract class AbstractModel {
     protected AbstractModel(String namespace, String cluster, Labels labels) {
         this.cluster = cluster;
         this.namespace = namespace;
-        this.labels = labels.withoutKind().withCluster(cluster);
+        this.labels = labels.withCluster(cluster);
     }
 
     public Labels getLabels() {

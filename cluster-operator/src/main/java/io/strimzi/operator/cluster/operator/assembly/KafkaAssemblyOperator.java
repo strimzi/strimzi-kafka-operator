@@ -456,13 +456,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     }
 
     @Override
-    protected List<HasMetadata> getResources(String namespace) {
+    protected List<HasMetadata> getResources(String namespace, Labels selector) {
         List<HasMetadata> result = new ArrayList<>();
-        result.addAll(kafkaSetOperations.list(namespace, Labels.forType(AssemblyType.KAFKA)));
-        result.addAll(zkSetOperations.list(namespace, Labels.forType(AssemblyType.KAFKA)));
-        result.addAll(deploymentOperations.list(namespace, Labels.forType(AssemblyType.KAFKA)));
-        result.addAll(serviceOperations.list(namespace, Labels.forType(AssemblyType.KAFKA)));
-        result.addAll(resourceOperator.list(namespace, Labels.forType(AssemblyType.KAFKA)));
+        result.addAll(kafkaSetOperations.list(namespace, selector));
+        result.addAll(zkSetOperations.list(namespace, selector));
+        result.addAll(deploymentOperations.list(namespace, selector));
+        result.addAll(serviceOperations.list(namespace, selector));
+        result.addAll(resourceOperator.list(namespace, selector));
         return result;
     }
 }

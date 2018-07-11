@@ -847,7 +847,7 @@ public class KafkaAssemblyOperatorTest {
                 baz.getSpec().getZookeeper().getReplicas());
 
         // providing the list of ALL StatefulSets for all the Kafka clusters
-        Labels newLabels = Labels.forType(AssemblyType.KAFKA);
+        Labels newLabels = Labels.forKind(KafkaAssembly.RESOURCE_KIND);
         when(mockKsOps.list(eq(clusterCmNamespace), eq(newLabels))).thenReturn(
                 asList(KafkaCluster.fromCrd(certManager, bar, barSecrets).generateStatefulSet(openShift),
                         KafkaCluster.fromCrd(certManager, baz, bazSecrets).generateStatefulSet(openShift))

@@ -83,6 +83,10 @@ public class KafkaConnectClusterTest {
         assertEquals(metricsCmJson, metricsCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_METRICS));
     }
 
+    private Map<String, String> getLabels()    {
+        return TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, this.cluster, Labels.STRIMZI_TYPE_LABEL, "kafka-connect", "my-user-label", "cromulent", Labels.STRIMZI_NAME_LABEL, kc.kafkaConnectClusterName(cluster), Labels.STRIMZI_KIND_LABEL, KafkaConnectAssembly.RESOURCE_KIND);
+    }
+
     protected List<EnvVar> getExpectedEnvVars() {
 
         List<EnvVar> expected = new ArrayList<EnvVar>();
@@ -126,7 +130,7 @@ public class KafkaConnectClusterTest {
         Service svc = kc.generateService();
 
         assertEquals("ClusterIP", svc.getSpec().getType());
-        Map<String, String> expectedLabels = TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, this.cluster, Labels.STRIMZI_TYPE_LABEL, "kafka-connect", "my-user-label", "cromulent", Labels.STRIMZI_NAME_LABEL, kc.kafkaConnectClusterName(cluster));
+        Map<String, String> expectedLabels = getLabels();
         assertEquals(expectedLabels, svc.getMetadata().getLabels());
         assertEquals(expectedLabels, svc.getSpec().getSelector());
         assertEquals(2, svc.getSpec().getPorts().size());
@@ -141,7 +145,7 @@ public class KafkaConnectClusterTest {
 
         assertEquals(kc.kafkaConnectClusterName(cluster), dep.getMetadata().getName());
         assertEquals(namespace, dep.getMetadata().getNamespace());
-        Map<String, String> expectedLabels = TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, this.cluster, Labels.STRIMZI_TYPE_LABEL, "kafka-connect", "my-user-label", "cromulent", Labels.STRIMZI_NAME_LABEL, kc.kafkaConnectClusterName(cluster));
+        Map<String, String> expectedLabels = getLabels();
         assertEquals(expectedLabels, dep.getMetadata().getLabels());
         assertEquals(new Integer(replicas), dep.getSpec().getReplicas());
         assertEquals(expectedLabels, dep.getSpec().getTemplate().getMetadata().getLabels());

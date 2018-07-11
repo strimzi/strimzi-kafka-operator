@@ -651,7 +651,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         when(mockConnectOps.get(eq(clusterCmNamespace), eq("bar"))).thenReturn(bar);
 
         // providing the list of ALL DeploymentConfigs for all the Kafka Connect S2I clusters
-        Labels newLabels = Labels.forType(AssemblyType.CONNECT_S2I);
+        Labels newLabels = Labels.forKind(KafkaConnectS2IAssembly.RESOURCE_KIND);
         when(mockDcOps.list(eq(clusterCmNamespace), eq(newLabels))).thenReturn(
                 asList(KafkaConnectS2ICluster.fromCrd(bar).generateDeploymentConfig(),
                         KafkaConnectS2ICluster.fromCrd(baz).generateDeploymentConfig()));

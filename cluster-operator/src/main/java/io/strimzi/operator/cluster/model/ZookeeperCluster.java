@@ -145,7 +145,7 @@ public class ZookeeperCluster extends AbstractModel {
 
     public static ZookeeperCluster fromCrd(CertManager certManager, KafkaAssembly kafkaAssembly, List<Secret> secrets) {
         ZookeeperCluster zk = new ZookeeperCluster(kafkaAssembly.getMetadata().getNamespace(), kafkaAssembly.getMetadata().getName(),
-                Labels.fromResource(kafkaAssembly));
+                Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
         Zookeeper zookeeper = kafkaAssembly.getSpec().getZookeeper();
         int replicas = zookeeper.getReplicas();
         if (replicas <= 0) {

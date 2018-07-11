@@ -175,7 +175,7 @@ public class TopicOperator extends AbstractModel {
             result = new TopicOperator(
                     namespace,
                     resource.getMetadata().getName(),
-                    Labels.fromResource(resource));
+                    Labels.fromResource(resource).withKind(resource.getKind()));
             io.strimzi.api.kafka.model.TopicOperator tcConfig = resource.getSpec().getTopicOperator();
             result.setImage(tcConfig.getImage());
             result.setWatchedNamespace(tcConfig.getWatchedNamespace() != null ? tcConfig.getWatchedNamespace() : namespace);

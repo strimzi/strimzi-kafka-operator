@@ -32,8 +32,8 @@ public class Labels {
      *         by the topic operator.</li>
      * </ul>
      */
-    @Deprecated
     public static final String STRIMZI_KIND_LABEL = STRIMZI_DOMAIN + "kind";
+
     /**
      * The type of Strimzi assembly.
      * @see AssemblyType
@@ -147,7 +147,6 @@ public class Labels {
     /**
      * The same labels as this instance, but with the given {@code kind} for the {@code strimzi.io/kind} key.
      */
-    @Deprecated
     public Labels withKind(String kind) {
         return with(STRIMZI_KIND_LABEL, kind);
     }
@@ -199,7 +198,6 @@ public class Labels {
     /**
      * A singleton instance with the given {@code kind} for the {@code strimzi.io/kind} key.
      */
-    @Deprecated
     public static Labels forKind(String kind) {
         return new Labels(singletonMap(STRIMZI_KIND_LABEL, kind));
     }

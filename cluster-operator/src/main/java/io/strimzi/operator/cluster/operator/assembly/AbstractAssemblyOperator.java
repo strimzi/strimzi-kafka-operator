@@ -260,13 +260,14 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
         log.debug("reconcileAll({}, {}): desired resources with labels {}: {}", assemblyType, trigger, selector, desiredNames);
 
         // get resources with kind=cluster&type=kafka (or connect, or connect-s2i)
-        List<? extends HasMetadata> resources = getResources(namespace);
+        Labels resourceSelector = Labels.EMPTY.withKind(assemblyType.name);
+        List<? extends HasMetadata> resources = getResources(namespace, resourceSelector);
         // now extract the cluster name from those
         Set<String> resourceNames = resources.stream()
                 .filter(r -> !r.getKind().equals(kind)) // exclude desired resource
                 .map(Labels::cluster)
                 .collect(Collectors.toSet());
-        log.debug("reconcileAll({}, {}): Other resources with labels {}: {}", assemblyType, trigger, selector, resourceNames);
+        log.debug("reconcileAll({}, {}): Other resources with labels {}: {}", assemblyType, trigger, resourceSelector, resourceNames);
 
         desiredNames.addAll(resourceNames);
 
@@ -291,7 +292,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
      * @param namespace The namespace
      * @return The matching resources.
      */
-    protected abstract List<HasMetadata> getResources(String namespace);
+    protected abstract List<HasMetadata> getResources(String namespace, Labels selector);
 
     public Future<Watch> createWatch(String namespace, Consumer<KubernetesClientException> onClose) {
         Future<Watch> result = Future.future();
