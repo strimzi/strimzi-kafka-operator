@@ -180,7 +180,7 @@ public class KafkaAssemblyOperatorMockTest {
                 .withMetadata(new ObjectMetaBuilder()
                         .withName(CLUSTER_NAME)
                         .withNamespace(NAMESPACE)
-                        .withLabels(Labels.forKind("cluster").withType(AssemblyType.KAFKA).toMap())
+                        .withLabels(Labels.userLabels(TestUtils.map("foo", "bar")).toMap())
                         .build())
                 .withNewSpec()
                     .withNewKafka()

@@ -20,6 +20,8 @@ import io.strimzi.operator.cluster.operator.resource.CrdOperator;
 import io.strimzi.operator.cluster.operator.resource.DeploymentOperator;
 import io.strimzi.operator.cluster.operator.resource.SecretOperator;
 import io.strimzi.operator.cluster.operator.resource.ServiceOperator;
+import io.strimzi.test.TestUtils;
+
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -57,7 +59,8 @@ public class KafkaConnectAssemblyOperatorMockTest {
                 .withMetadata(new ObjectMetaBuilder()
                     .withName(CLUSTER_NAME)
                     .withNamespace(NAMESPACE)
-                .build())
+                    .withLabels(Labels.userLabels(TestUtils.map("foo", "bar")).toMap())
+                    .build())
                 .withNewSpec()
                     .withReplicas(replicas)
                 .endSpec()
