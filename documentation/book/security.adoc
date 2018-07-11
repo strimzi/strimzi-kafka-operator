@@ -1,7 +1,7 @@
 == Security
 
 The Strimzi project supports data encryption of communication between the different Kafka and Strimzi components (Kafka brokers, Zookeeper nodes, Kafka Connect and Strimzi Topic Operator) by means of the SSL/TLS protocol.
-This makes it possible to encrypt data transferred between brokers (interbroker communication) and between clients and brokers.
+This makes it possible to encrypt data transferred between Kafka brokers (interbroker communication), between Zookeeper nodes, and between clients and Kafka brokers.
 For the Kafka and Strimzi components, TLS certificates are also used for authentication.
 
 The Cluster Operator sets up the SSL/TLS certificates to provide this encryption and authentication.
@@ -79,3 +79,9 @@ Finally, in order to configure the Kafka client, following properties should be 
 
 The current implementation does not support Subject Alternative Names (SAN) so the hostname verification should be disabled on the client side.
 For doing so the `ssl.endpoint.identification.algorithm` property needs to be set as empty.
+
+=== Secure Zookeeper Communication
+
+By deploying a Stunnel sidecar within every Zookeeper pod, the Cluster Operator is able to provide data encryption and authentication between Zookeeper nodes in a cluster.
+The Stunnel sidecar proxies all Zookeeper traffic, TLS decrypting data upon entry into a Zookeeper pod and TLS encrypting data upon departure from a Zookeeper pod.
+This TLS encrypting Stunnel proxy is instantiated from the `stunnelImage` specified in the Zookeeper Custom Resource Definition.
