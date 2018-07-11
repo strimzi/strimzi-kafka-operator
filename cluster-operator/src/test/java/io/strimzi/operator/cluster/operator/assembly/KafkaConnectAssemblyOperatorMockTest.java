@@ -121,6 +121,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
         kco.reconcileAssembly(new Reconciliation("test-trigger", AssemblyType.CONNECT, NAMESPACE, CLUSTER_NAME), ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.assertTrue(ar.succeeded());
+            // TODO: Should verify that all resources were removed from MockKube
             context.assertNull(mockClient.extensions().deployments().inNamespace(NAMESPACE).withName(KafkaConnectCluster.kafkaConnectClusterName(CLUSTER_NAME)).get());
             context.assertNull(mockClient.configMaps().inNamespace(NAMESPACE).withName(KafkaConnectCluster.logAndMetricsConfigName(CLUSTER_NAME)).get());
             context.assertNull(mockClient.services().inNamespace(NAMESPACE).withName(KafkaConnectCluster.kafkaConnectClusterName(CLUSTER_NAME)).get());
@@ -138,6 +139,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
                 inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
         kco.reconcileAll("test-trigger", NAMESPACE, Labels.EMPTY).await(60, TimeUnit.SECONDS);
 
+        // TODO: Should verify that all resources were removed from MockKube
         context.assertNull(mockClient.extensions().deployments().inNamespace(NAMESPACE).withName(KafkaConnectCluster.kafkaConnectClusterName(CLUSTER_NAME)).get());
         context.assertNull(mockClient.configMaps().inNamespace(NAMESPACE).withName(KafkaConnectCluster.logAndMetricsConfigName(CLUSTER_NAME)).get());
         context.assertNull(mockClient.services().inNamespace(NAMESPACE).withName(KafkaConnectCluster.kafkaConnectClusterName(CLUSTER_NAME)).get());
