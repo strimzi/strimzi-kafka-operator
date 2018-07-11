@@ -5,14 +5,9 @@ RUN yum -y install stunnel && yum clean all -y
 # set Stunnel home folder
 ENV STUNNEL_HOME=/opt/stunnel
 
-# exposing Zookeeper ports
-EXPOSE 2888 3888
+# Add stunnel group / user
+RUN groupadd -r -g 1001 stunnel && useradd -r -m -u 1001 -g stunnel stunnel
 
 RUN mkdir $STUNNEL_HOME && mkdir -p -m g+rw /usr/local/var/run/
 
-# copy scripts for starting Stunnel
-COPY ./scripts/ $STUNNEL_HOME
-
 WORKDIR $STUNNEL_HOME
-
-CMD ["/opt/stunnel/stunnel_run.sh"]

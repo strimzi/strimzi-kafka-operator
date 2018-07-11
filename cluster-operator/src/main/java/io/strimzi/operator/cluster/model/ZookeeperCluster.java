@@ -52,9 +52,10 @@ public class ZookeeperCluster extends AbstractModel {
     protected static final int METRICS_PORT = 9404;
     protected static final String METRICS_PORT_NAME = "metrics";
 
-    protected static final String STUNNEL_NAME = "stunnel-zookeeper";
-    protected static final String STUNNEL_VOLUME_NAME = "stunnel-certs";
-    protected static final String STUNNEL_VOLUME_MOUNT = "/etc/stunnel/certs/";
+    protected static final String ZOOKEEPER_NAME = "zookeeper";
+    protected static final String TLS_SIDECAR_NAME = "tls-sidecar";
+    protected static final String TLS_SIDECAR_VOLUME_NAME = "tls-sidecar-certs";
+    protected static final String TLS_SIDECAR_VOLUME_MOUNT = "/etc/tls-sidecar/certs/";
     private static final String NAME_SUFFIX = "-zookeeper";
     private static final String HEADLESS_NAME_SUFFIX = NAME_SUFFIX + "-headless";
     private static final String METRICS_AND_LOG_CONFIG_SUFFIX = NAME_SUFFIX + "-config";
@@ -62,7 +63,7 @@ public class ZookeeperCluster extends AbstractModel {
     private static final String NODES_CERTS_SUFFIX = NAME_SUFFIX + "-nodes";
 
     // Zookeeper configuration
-    private String stunnelImage;
+    private String tlsSidecarImage;
 
     // Configuration defaults
     private static final int DEFAULT_HEALTHCHECK_DELAY = 15;
@@ -137,7 +138,7 @@ public class ZookeeperCluster extends AbstractModel {
         this.logAndMetricsConfigMountPath = "/opt/kafka/custom-config/";
         this.validLoggerFields = getDefaultLogConfig();
 
-        this.stunnelImage = Zookeeper.DEFAULT_STUNNEL_IMAGE;
+        this.tlsSidecarImage = Zookeeper.DEFAULT_TLS_SIDECAR_IMAGE;
     }
 
     public static ZookeeperCluster fromCrd(CertManager certManager, KafkaAssembly kafkaAssembly, List<Secret> secrets) {
@@ -154,11 +155,11 @@ public class ZookeeperCluster extends AbstractModel {
             image = Zookeeper.DEFAULT_IMAGE;
         }
         zk.setImage(image);
-        String stunnelImage = zookeeper.getStunnelImage();
-        if (stunnelImage == null) {
-            stunnelImage = Zookeeper.DEFAULT_STUNNEL_IMAGE;
+        String tlsSidecarImage = zookeeper.getTlsSidecarImage();
+        if (tlsSidecarImage == null) {
+            tlsSidecarImage = Zookeeper.DEFAULT_TLS_SIDECAR_IMAGE;
         }
-        zk.setStunnelImage(stunnelImage);
+        zk.setTlsSidecarImage(tlsSidecarImage);
         if (zookeeper.getReadinessProbe() != null) {
             zk.setReadinessInitialDelay(zookeeper.getReadinessProbe().getInitialDelaySeconds());
             zk.setReadinessTimeout(zookeeper.getReadinessProbe().getTimeoutSeconds());
@@ -280,7 +281,7 @@ public class ZookeeperCluster extends AbstractModel {
         List<Container> containers = new ArrayList<>();
 
         Container container = new ContainerBuilder()
-                .withName(name)
+                .withName(ZOOKEEPER_NAME)
                 .withImage(getImage())
                 .withEnv(getEnvVars())
                 .withVolumeMounts(getVolumeMounts())
@@ -297,18 +298,18 @@ public class ZookeeperCluster extends AbstractModel {
                 .addToLimits("memory", new Quantity("128Mi"))
                 .build();
 
-        Container stunnelContainer = new ContainerBuilder()
-                .withName(STUNNEL_NAME)
-                .withImage(stunnelImage)
+        Container tlsSidecarContainer = new ContainerBuilder()
+                .withName(TLS_SIDECAR_NAME)
+                .withImage(tlsSidecarImage)
                 .withResources(resources)
                 .withEnv(singletonList(buildEnvVar(ENV_VAR_ZOOKEEPER_NODE_COUNT, Integer.toString(replicas))))
-                .withVolumeMounts(createVolumeMount(STUNNEL_VOLUME_NAME, STUNNEL_VOLUME_MOUNT))
+                .withVolumeMounts(createVolumeMount(TLS_SIDECAR_VOLUME_NAME, TLS_SIDECAR_VOLUME_MOUNT))
                 .withPorts(asList(createContainerPort(CLUSTERING_PORT_NAME, CLUSTERING_PORT, "TCP"),
                                 createContainerPort(LEADER_ELECTION_PORT_NAME, LEADER_ELECTION_PORT, "TCP")))
                 .build();
 
         containers.add(container);
-        containers.add(stunnelContainer);
+        containers.add(tlsSidecarContainer);
 
         return containers;
     }
@@ -366,7 +367,7 @@ public class ZookeeperCluster extends AbstractModel {
             volumeList.add(createEmptyDirVolume(VOLUME_NAME));
         }
         volumeList.add(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
-        volumeList.add(createSecretVolume(STUNNEL_VOLUME_NAME, ZookeeperCluster.nodesSecretName(cluster)));
+        volumeList.add(createSecretVolume(TLS_SIDECAR_VOLUME_NAME, ZookeeperCluster.nodesSecretName(cluster)));
         return volumeList;
     }
 
@@ -386,8 +387,8 @@ public class ZookeeperCluster extends AbstractModel {
         return volumeMountList;
     }
 
-    protected void setStunnelImage(String stunnelImage) {
-        this.stunnelImage = stunnelImage;
+    protected void setTlsSidecarImage(String tlsSidecarImage) {
+        this.tlsSidecarImage = tlsSidecarImage;
     }
 
     @Override

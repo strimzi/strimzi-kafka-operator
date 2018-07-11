@@ -1,4 +1,4 @@
-PROJECT_NAME=stunnel-zookeeper
+PROJECT_NAME=zookeeper-stunnel
 
 include ../../Makefile.docker
 

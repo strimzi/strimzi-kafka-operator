@@ -134,7 +134,7 @@ public class ZookeeperClusterTest {
         assertEquals("timeTick=2000\nautopurge.purgeInterval=1\nsyncLimit=2\ninitLimit=5\nfoo=bar\n", AbstractModel.containerEnvVars(containers.get(0)).get(ZookeeperCluster.ENV_VAR_ZOOKEEPER_CONFIGURATION));
         assertEquals(ZookeeperCluster.CLIENT_PORT_NAME, containers.get(0).getPorts().get(0).getName());
         assertEquals(new Integer(ZookeeperCluster.CLIENT_PORT), containers.get(0).getPorts().get(0).getContainerPort());
-        // checks on the stunnel sidecar container
+        // checks on the TLS sidecar container
         assertEquals(new Integer(replicas), Integer.valueOf(AbstractModel.containerEnvVars(containers.get(1)).get(ZookeeperCluster.ENV_VAR_ZOOKEEPER_NODE_COUNT)));
         assertEquals(ZookeeperCluster.CLUSTERING_PORT_NAME, containers.get(1).getPorts().get(0).getName());
         assertEquals(new Integer(ZookeeperCluster.CLUSTERING_PORT), containers.get(1).getPorts().get(0).getContainerPort());
