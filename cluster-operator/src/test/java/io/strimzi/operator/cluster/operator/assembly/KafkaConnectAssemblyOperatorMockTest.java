@@ -137,7 +137,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
         mockClient.customResources(Crds.kafkaConnect(),
                 KafkaConnectAssembly.class, KafkaConnectAssemblyList.class, DoneableKafkaConnectAssembly.class).
                 inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
-        kco.reconcileAll("test-trigger", NAMESPACE, Labels.EMPTY).await(60, TimeUnit.SECONDS);
+        kco.reconcileAll("test-trigger", NAMESPACE).await(60, TimeUnit.SECONDS);
 
         // TODO: Should verify that all resources were removed from MockKube
         context.assertNull(mockClient.extensions().deployments().inNamespace(NAMESPACE).withName(KafkaConnectCluster.kafkaConnectClusterName(CLUSTER_NAME)).get());

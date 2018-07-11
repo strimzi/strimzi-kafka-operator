@@ -693,7 +693,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         };
 
         // Now try to reconcile all the Kafka Connect S2I clusters
-        ops.reconcileAll("test", clusterCmNamespace, Labels.EMPTY);
+        ops.reconcileAll("test", clusterCmNamespace);
 
         async.await();
 

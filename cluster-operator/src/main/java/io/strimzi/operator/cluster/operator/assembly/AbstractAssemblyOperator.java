@@ -250,14 +250,13 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
      *
      * @param trigger A description of the triggering event (timer or watch), used for logging
      * @param namespace The namespace
-     * @param selector The selector
      */
-    public final CountDownLatch reconcileAll(String trigger, String namespace, Labels selector) {
+    public final CountDownLatch reconcileAll(String trigger, String namespace) {
 
         // get ConfigMaps with kind=cluster&type=kafka (or connect, or connect-s2i) for the corresponding cluster type
-        List<T> desiredResources = resourceOperator.list(namespace, selector);
+        List<T> desiredResources = resourceOperator.list(namespace, Labels.EMPTY);
         Set<String> desiredNames = desiredResources.stream().map(cm -> cm.getMetadata().getName()).collect(Collectors.toSet());
-        log.debug("reconcileAll({}, {}): desired resources with labels {}: {}", assemblyType, trigger, selector, desiredNames);
+        log.debug("reconcileAll({}, {}): desired resources with labels {}: {}", assemblyType, trigger, Labels.EMPTY, desiredNames);
 
         // get resources with kind=cluster&type=kafka (or connect, or connect-s2i)
         Labels resourceSelector = Labels.EMPTY.withKind(assemblyType.name);
@@ -296,7 +295,6 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
 
     public Future<Watch> createWatch(String namespace, Consumer<KubernetesClientException> onClose) {
         Future<Watch> result = Future.future();
-        Labels selector = Labels.EMPTY;
         vertx.<Watch>executeBlocking(
             future -> {
                 Watch watch = resourceOperator.watch(namespace, new Watcher<T>() {
@@ -315,11 +313,11 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
                                 break;
                             case ERROR:
                                 log.error("Failed {} {} in namespace{} ", kind, name, namespace);
-                                reconcileAll("watch error", namespace, selector);
+                                reconcileAll("watch error", namespace);
                                 break;
                             default:
                                 log.error("Unknown action: {} in namespace {}", name, namespace);
-                                reconcileAll("watch unknown", namespace, selector);
+                                reconcileAll("watch unknown", namespace);
                         }
                     }
 

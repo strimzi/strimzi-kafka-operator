@@ -901,7 +901,7 @@ public class KafkaAssemblyOperatorTest {
         };
 
         // Now try to reconcile all the Kafka clusters
-        ops.reconcileAll("test", clusterCmNamespace, Labels.EMPTY).await();
+        ops.reconcileAll("test", clusterCmNamespace).await();
 
         async.await();
 
