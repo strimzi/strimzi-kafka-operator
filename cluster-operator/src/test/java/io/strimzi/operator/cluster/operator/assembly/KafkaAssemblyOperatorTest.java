@@ -523,6 +523,16 @@ public class KafkaAssemblyOperatorTest {
     }
 
     @Test
+    public void testUpdateZookeeperClusterChangeStunnelImage(TestContext context) {
+        KafkaAssembly kafkaAssembly = getKafkaAssembly("bar");
+        kafkaAssembly.getSpec().getZookeeper().setStunnelImage("a-changed-stunnel-image");
+        List<Secret> secrets = getClusterSecrets("bar",
+                kafkaAssembly.getSpec().getKafka().getReplicas(),
+                kafkaAssembly.getSpec().getZookeeper().getReplicas());
+        updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly, secrets);
+    }
+
+    @Test
     public void testUpdateKafkaClusterScaleUp(TestContext context) {
         KafkaAssembly kafkaAssembly = getKafkaAssembly("bar");
         kafkaAssembly.getSpec().getKafka().setReplicas(4);

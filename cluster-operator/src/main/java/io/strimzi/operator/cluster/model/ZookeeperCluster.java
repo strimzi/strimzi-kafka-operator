@@ -53,6 +53,8 @@ public class ZookeeperCluster extends AbstractModel {
     protected static final String METRICS_PORT_NAME = "metrics";
 
     protected static final String STUNNEL_NAME = "stunnel-zookeeper";
+    protected static final String STUNNEL_VOLUME_NAME = "stunnel-certs";
+    protected static final String STUNNEL_VOLUME_MOUNT = "/etc/stunnel/certs/";
     private static final String NAME_SUFFIX = "-zookeeper";
     private static final String HEADLESS_NAME_SUFFIX = NAME_SUFFIX + "-headless";
     private static final String METRICS_AND_LOG_CONFIG_SUFFIX = NAME_SUFFIX + "-config";
@@ -300,13 +302,9 @@ public class ZookeeperCluster extends AbstractModel {
                 .withImage(stunnelImage)
                 .withResources(resources)
                 .withEnv(singletonList(buildEnvVar(ENV_VAR_ZOOKEEPER_NODE_COUNT, Integer.toString(replicas))))
-                .withVolumeMounts(createVolumeMount("stunnel-certs", "/etc/stunnel/certs/"))
-                .withPorts(
-                        asList(
-                                createContainerPort(CLUSTERING_PORT_NAME, CLUSTERING_PORT, "TCP"),
-                                createContainerPort(LEADER_ELECTION_PORT_NAME, LEADER_ELECTION_PORT, "TCP")
-                        )
-                )
+                .withVolumeMounts(createVolumeMount(STUNNEL_VOLUME_NAME, STUNNEL_VOLUME_MOUNT))
+                .withPorts(asList(createContainerPort(CLUSTERING_PORT_NAME, CLUSTERING_PORT, "TCP"),
+                                createContainerPort(LEADER_ELECTION_PORT_NAME, LEADER_ELECTION_PORT, "TCP")))
                 .build();
 
         containers.add(container);
@@ -368,7 +366,7 @@ public class ZookeeperCluster extends AbstractModel {
             volumeList.add(createEmptyDirVolume(VOLUME_NAME));
         }
         volumeList.add(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
-        volumeList.add(createSecretVolume("stunnel-certs", ZookeeperCluster.nodesSecretName(cluster)));
+        volumeList.add(createSecretVolume(STUNNEL_VOLUME_NAME, ZookeeperCluster.nodesSecretName(cluster)));
         return volumeList;
     }
 

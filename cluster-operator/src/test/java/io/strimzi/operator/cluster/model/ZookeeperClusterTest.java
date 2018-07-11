@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.api.kafka.model.InlineLogging;
@@ -19,6 +20,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import static java.util.Collections.emptyMap;
@@ -118,13 +120,26 @@ public class ZookeeperClusterTest {
         // ... with these labels
         assertEquals(expectedLabels(), ss.getMetadata().getLabels());
 
+        List<Container> containers = ss.getSpec().getTemplate().getSpec().getContainers();
+
+        assertEquals(2, containers.size());
+
+        // checks on the main Zookeeper container
         assertEquals(new Integer(replicas), ss.getSpec().getReplicas());
-        assertEquals(image + "-zk", ss.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
-        assertEquals(new Integer(healthTimeout), ss.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getTimeoutSeconds());
-        assertEquals(new Integer(healthDelay), ss.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getInitialDelaySeconds());
-        assertEquals(new Integer(healthTimeout), ss.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds());
-        assertEquals(new Integer(healthDelay), ss.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds());
-        assertEquals("timeTick=2000\nautopurge.purgeInterval=1\nsyncLimit=2\ninitLimit=5\nfoo=bar\n", AbstractModel.containerEnvVars(ss.getSpec().getTemplate().getSpec().getContainers().get(0)).get(ZookeeperCluster.ENV_VAR_ZOOKEEPER_CONFIGURATION));
+        assertEquals(image + "-zk", containers.get(0).getImage());
+        assertEquals(new Integer(healthTimeout), containers.get(0).getLivenessProbe().getTimeoutSeconds());
+        assertEquals(new Integer(healthDelay), containers.get(0).getLivenessProbe().getInitialDelaySeconds());
+        assertEquals(new Integer(healthTimeout), containers.get(0).getReadinessProbe().getTimeoutSeconds());
+        assertEquals(new Integer(healthDelay), containers.get(0).getReadinessProbe().getInitialDelaySeconds());
+        assertEquals("timeTick=2000\nautopurge.purgeInterval=1\nsyncLimit=2\ninitLimit=5\nfoo=bar\n", AbstractModel.containerEnvVars(containers.get(0)).get(ZookeeperCluster.ENV_VAR_ZOOKEEPER_CONFIGURATION));
+        assertEquals(ZookeeperCluster.CLIENT_PORT_NAME, containers.get(0).getPorts().get(0).getName());
+        assertEquals(new Integer(ZookeeperCluster.CLIENT_PORT), containers.get(0).getPorts().get(0).getContainerPort());
+        // checks on the stunnel sidecar container
+        assertEquals(new Integer(replicas), Integer.valueOf(AbstractModel.containerEnvVars(containers.get(1)).get(ZookeeperCluster.ENV_VAR_ZOOKEEPER_NODE_COUNT)));
+        assertEquals(ZookeeperCluster.CLUSTERING_PORT_NAME, containers.get(1).getPorts().get(0).getName());
+        assertEquals(new Integer(ZookeeperCluster.CLUSTERING_PORT), containers.get(1).getPorts().get(0).getContainerPort());
+        assertEquals(ZookeeperCluster.LEADER_ELECTION_PORT_NAME, containers.get(1).getPorts().get(1).getName());
+        assertEquals(new Integer(ZookeeperCluster.LEADER_ELECTION_PORT), containers.get(1).getPorts().get(1).getContainerPort());
     }
 
     /**
