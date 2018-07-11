@@ -39,9 +39,6 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
     // Configuration defaults
     protected static final String DEFAULT_IMAGE = System.getenv().getOrDefault("STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE", "strimzi/kafka-connect-s2i:latest");
 
-    // Configuration keys (in ConfigMap)
-    public static final String KEY_INSECURE_SOURCE_REPO = "insecure-source-repo";
-
     /**
      * Constructor
      *

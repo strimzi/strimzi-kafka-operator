@@ -89,21 +89,6 @@ public class KafkaCluster extends AbstractModel {
     // Kafka configuration defaults
     private static final String DEFAULT_KAFKA_ZOOKEEPER_CONNECT = "zookeeper:2181";
 
-    // Configuration keys (in ConfigMap)
-    public static final String KEY_IMAGE = "kafka-image";
-    public static final String KEY_REPLICAS = "kafka-nodes";
-    public static final String KEY_HEALTHCHECK_DELAY = "kafka-healthcheck-delay";
-    public static final String KEY_HEALTHCHECK_TIMEOUT = "kafka-healthcheck-timeout";
-    public static final String KEY_METRICS_CONFIG = "kafka-metrics-config";
-    public static final String KEY_STORAGE = "kafka-storage";
-    public static final String KEY_KAFKA_CONFIG = "kafka-config";
-    public static final String KEY_JVM_OPTIONS = "kafka-jvmOptions";
-    public static final String KEY_RESOURCES = "kafka-resources";
-    public static final String KEY_RACK = "kafka-rack";
-    public static final String KEY_INIT_IMAGE = "init-kafka-image";
-    public static final String KEY_AFFINITY = "kafka-affinity";
-    public static final String KEY_KAFKA_LOG_CONFIG = "kafka-logging";
-
     // Kafka configuration keys (EnvVariables)
     public static final String ENV_VAR_KAFKA_ZOOKEEPER_CONNECT = "KAFKA_ZOOKEEPER_CONNECT";
     private static final String ENV_VAR_KAFKA_METRICS_ENABLED = "KAFKA_METRICS_ENABLED";

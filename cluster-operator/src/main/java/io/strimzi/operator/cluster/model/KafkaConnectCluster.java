@@ -52,18 +52,6 @@ public class KafkaConnectCluster extends AbstractModel {
     protected static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
     protected static final boolean DEFAULT_KAFKA_CONNECT_METRICS_ENABLED = false;
 
-    // Configuration keys (in ConfigMap)
-    public static final String KEY_IMAGE = "image";
-    public static final String KEY_REPLICAS = "nodes";
-    public static final String KEY_HEALTHCHECK_DELAY = "healthcheck-delay";
-    public static final String KEY_HEALTHCHECK_TIMEOUT = "healthcheck-timeout";
-    public static final String KEY_METRICS_CONFIG = "metrics-config";
-    public static final String KEY_JVM_OPTIONS = "jvmOptions";
-    public static final String KEY_RESOURCES = "resources";
-    public static final String KEY_CONNECT_CONFIG = "connect-config";
-    public static final String KEY_AFFINITY = "affinity";
-    public static final String KEY_CONNECT_LOG_CONFIG = "logging";
-
     // Kafka Connect configuration keys (EnvVariables)
     protected static final String ENV_VAR_KAFKA_CONNECT_CONFIGURATION = "KAFKA_CONNECT_CONFIGURATION";
     protected static final String ENV_VAR_KAFKA_CONNECT_METRICS_ENABLED = "KAFKA_CONNECT_METRICS_ENABLED";

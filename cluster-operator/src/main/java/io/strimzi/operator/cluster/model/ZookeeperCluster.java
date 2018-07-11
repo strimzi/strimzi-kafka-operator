@@ -61,19 +61,6 @@ public class ZookeeperCluster extends AbstractModel {
     private static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
     private static final boolean DEFAULT_ZOOKEEPER_METRICS_ENABLED = false;
 
-    // Configuration keys (ConfigMap)
-    public static final String KEY_IMAGE = "zookeeper-image";
-    public static final String KEY_REPLICAS = "zookeeper-nodes";
-    public static final String KEY_HEALTHCHECK_DELAY = "zookeeper-healthcheck-delay";
-    public static final String KEY_HEALTHCHECK_TIMEOUT = "zookeeper-healthcheck-timeout";
-    public static final String KEY_METRICS_CONFIG = "zookeeper-metrics-config";
-    public static final String KEY_STORAGE = "zookeeper-storage";
-    public static final String KEY_JVM_OPTIONS = "zookeeper-jvmOptions";
-    public static final String KEY_RESOURCES = "zookeeper-resources";
-    public static final String KEY_ZOOKEEPER_CONFIG = "zookeeper-config";
-    public static final String KEY_AFFINITY = "zookeeper-affinity";
-    public static final String KEY_ZOOKEEPER_LOG_CONFIG = "zookeeper-logging";
-
     // Zookeeper configuration keys (EnvVariables)
     public static final String ENV_VAR_ZOOKEEPER_NODE_COUNT = "ZOOKEEPER_NODE_COUNT";
     public static final String ENV_VAR_ZOOKEEPER_METRICS_ENABLED = "ZOOKEEPER_METRICS_ENABLED";
