@@ -74,7 +74,7 @@ public class KafkaConnectS2IClusterTest {
         assertEquals(metricsCmJson, metricsCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_METRICS));
     }
 
-    private Map<String, String> getLabels(String name)    {
+    private Map<String, String> expectedLabels(String name)    {
         return TestUtils.map("my-user-label", "cromulent", Labels.STRIMZI_CLUSTER_LABEL, cluster, Labels.STRIMZI_TYPE_LABEL, "kafka-connect-s2i", Labels.STRIMZI_NAME_LABEL, name, Labels.STRIMZI_KIND_LABEL, KafkaConnectS2IAssembly.RESOURCE_KIND);
     }
 
@@ -124,7 +124,7 @@ public class KafkaConnectS2IClusterTest {
         Service svc = kc.generateService();
 
         assertEquals("ClusterIP", svc.getSpec().getType());
-        Map<String, String> expectedLabels = getLabels(kc.kafkaConnectClusterName(cluster));
+        Map<String, String> expectedLabels = expectedLabels(kc.kafkaConnectClusterName(cluster));
         assertEquals(expectedLabels, svc.getMetadata().getLabels());
         assertEquals(expectedLabels, svc.getSpec().getSelector());
         assertEquals(2, svc.getSpec().getPorts().size());
@@ -139,7 +139,7 @@ public class KafkaConnectS2IClusterTest {
 
         assertEquals(kc.kafkaConnectClusterName(cluster), dep.getMetadata().getName());
         assertEquals(namespace, dep.getMetadata().getNamespace());
-        Map<String, String> expectedLabels = getLabels(kc.kafkaConnectClusterName(cluster));
+        Map<String, String> expectedLabels = expectedLabels(kc.kafkaConnectClusterName(cluster));
         assertEquals(expectedLabels, dep.getMetadata().getLabels());
         assertEquals(new Integer(replicas), dep.getSpec().getReplicas());
         assertEquals(expectedLabels, dep.getSpec().getTemplate().getMetadata().getLabels());
@@ -174,7 +174,7 @@ public class KafkaConnectS2IClusterTest {
 
         assertEquals(kc.kafkaConnectClusterName(cluster), bc.getMetadata().getName());
         assertEquals(namespace, bc.getMetadata().getNamespace());
-        assertEquals(getLabels(kc.kafkaConnectClusterName(cluster)), bc.getMetadata().getLabels());
+        assertEquals(expectedLabels(kc.kafkaConnectClusterName(cluster)), bc.getMetadata().getLabels());
         assertEquals("ImageStreamTag", bc.getSpec().getOutput().getTo().getKind());
         assertEquals(kc.image, bc.getSpec().getOutput().getTo().getName());
         assertEquals("Serial", bc.getSpec().getRunPolicy());
@@ -195,7 +195,7 @@ public class KafkaConnectS2IClusterTest {
 
         assertEquals(kc.getSourceImageStreamName(), is.getMetadata().getName());
         assertEquals(namespace, is.getMetadata().getNamespace());
-        assertEquals(getLabels(kc.getSourceImageStreamName()), is.getMetadata().getLabels());
+        assertEquals(expectedLabels(kc.getSourceImageStreamName()), is.getMetadata().getLabels());
         assertEquals(false, is.getSpec().getLookupPolicy().getLocal());
         assertEquals(1, is.getSpec().getTags().size());
         assertEquals(image.substring(image.lastIndexOf(":") + 1), is.getSpec().getTags().get(0).getName());
@@ -216,7 +216,7 @@ public class KafkaConnectS2IClusterTest {
 
         assertEquals(kc.getSourceImageStreamName(), is.getMetadata().getName());
         assertEquals(namespace, is.getMetadata().getNamespace());
-        assertEquals(getLabels(kc.getSourceImageStreamName()), is.getMetadata().getLabels());
+        assertEquals(expectedLabels(kc.getSourceImageStreamName()), is.getMetadata().getLabels());
         assertEquals(false, is.getSpec().getLookupPolicy().getLocal());
         assertEquals(1, is.getSpec().getTags().size());
         assertEquals(image.substring(image.lastIndexOf(":") + 1), is.getSpec().getTags().get(0).getName());
@@ -232,7 +232,7 @@ public class KafkaConnectS2IClusterTest {
 
         assertEquals(kc.kafkaConnectClusterName(cluster), is.getMetadata().getName());
         assertEquals(namespace, is.getMetadata().getNamespace());
-        assertEquals(getLabels(kc.kafkaConnectClusterName(cluster)), is.getMetadata().getLabels());
+        assertEquals(expectedLabels(kc.kafkaConnectClusterName(cluster)), is.getMetadata().getLabels());
         assertEquals(true, is.getSpec().getLookupPolicy().getLocal());
     }
 }

@@ -174,7 +174,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
     /**
      * Reconcile assembly resources in the given namespace having the given {@code assemblyName}.
      * Reconciliation works by getting the assembly resource (e.g. {@code KafkaAssembly}) in the given namespace with the given assemblyName and
-     * comparing with the corresponding {@linkplain #getResources(String) resource}.
+     * comparing with the corresponding {@linkplain #getResources(String, Labels) resource}.
      * <ul>
      * <li>An assembly will be {@linkplain #createOrUpdate(Reconciliation, T, List, Handler) created or updated} if ConfigMap is without same-named resources</li>
      * <li>An assembly will be {@linkplain #delete(Reconciliation, Handler) deleted} if resources without same-named ConfigMap</li>
@@ -242,7 +242,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
     /**
      * Reconcile assembly resources in the given namespace having the given selector.
      * Reconciliation works by getting the assembly ConfigMaps in the given namespace with the given selector and
-     * comparing with the corresponding {@linkplain #getResources(String) resource}.
+     * comparing with the corresponding {@linkplain #getResources(String, Labels) resource}.
      * <ul>
      * <li>An assembly will be {@linkplain #createOrUpdate(Reconciliation, T, List, Handler) created} for all ConfigMaps without same-named resources</li>
      * <li>An assembly will be {@linkplain #delete(Reconciliation, Handler) deleted} for all resources without same-named ConfigMaps</li>

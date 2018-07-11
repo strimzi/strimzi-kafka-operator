@@ -22,14 +22,13 @@ public class Labels {
     public static final String STRIMZI_DOMAIN = "strimzi.io/";
 
     /**
-     * The kind of a ConfigMap:
+     * The kind of a Kubernetes / OpenShift Resource. It contains the same value as the Kind of the corresponding
+     * Custom Resource. It should have on of the following values:
+     *
      * <ul>
-     *     <li>{@code strimzi.io/kind=cluster}
-     *         identifies a ConfigMap that is intended to be consumed by
-     *         the cluster operator.</li>
-     *     <li>{@code strimzi.io/kind=topic}
-     *         identifies a ConfigMap that is intended to be consumed
-     *         by the topic operator.</li>
+     *   <li>Kafka</li>
+     *   <li>KafkaConnect</li>
+     *   <li>KafkaConnectS2I</li>
      * </ul>
      */
     public static final String STRIMZI_KIND_LABEL = STRIMZI_DOMAIN + "kind";
