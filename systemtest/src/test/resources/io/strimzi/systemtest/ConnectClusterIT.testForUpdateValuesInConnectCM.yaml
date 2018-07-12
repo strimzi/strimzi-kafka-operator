@@ -4,5 +4,11 @@ metadata:
   name: my-cluster
 spec:
   replicas: 1
+  readinessProbe:
+    initialDelaySeconds: 15
+    timeoutSeconds: 5
+  livenessProbe:
+    initialDelaySeconds: 15
+    timeoutSeconds: 5
   config:
     bootstrap.servers: connect-tests-kafka:9092
