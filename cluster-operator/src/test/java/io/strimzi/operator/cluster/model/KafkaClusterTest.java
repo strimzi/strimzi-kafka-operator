@@ -116,6 +116,37 @@ public class KafkaClusterTest {
     }
 
     @Test
+    public void testGenerateStatefulSetWithSetStorageSelector() {
+        Map<String, String> selector = TestUtils.map("foo", "bar");
+        KafkaAssembly kafkaAssembly = new KafkaAssemblyBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                .editKafka()
+                .withNewPersistentClaimStorageStorage().withSelector(selector).endPersistentClaimStorageStorage()
+                .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster kc = KafkaCluster.fromCrd(certManager, kafkaAssembly, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
+        StatefulSet ss = kc.generateStatefulSet(false);
+        assertEquals(selector, ss.getSpec().getVolumeClaimTemplates().get(0).getSpec().getSelector().getMatchLabels());
+    }
+
+    @Test
+    public void testGenerateStatefulSetWithEmptyStorageSelector() {
+        KafkaAssembly kafkaAssembly = new KafkaAssemblyBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                .editKafka()
+                .withNewPersistentClaimStorageStorage().withSelector(emptyMap()).endPersistentClaimStorageStorage()
+                .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster kc = KafkaCluster.fromCrd(certManager, kafkaAssembly, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
+        StatefulSet ss = kc.generateStatefulSet(false);
+        assertEquals(null, ss.getSpec().getVolumeClaimTemplates().get(0).getSpec().getSelector());
+    }
+
+    @Test
     public void testGenerateStatefulSetWithRack() {
         KafkaAssembly kafkaAssembly = new KafkaAssemblyBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))

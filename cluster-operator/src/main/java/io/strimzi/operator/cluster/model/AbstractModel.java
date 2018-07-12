@@ -17,6 +17,7 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.EnvVarSource;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
@@ -501,8 +502,12 @@ public abstract class AbstractModel {
         PersistentClaimStorage storage = (PersistentClaimStorage) this.storage;
         Map<String, Quantity> requests = new HashMap<>();
         requests.put("storage", new Quantity(storage.getSize(), null));
+        LabelSelector selector = null;
+        if (storage.getSelector() != null && !storage.getSelector().isEmpty()) {
+            selector = new LabelSelector(null, storage.getSelector());
+        }
 
-        PersistentVolumeClaim pvc = new PersistentVolumeClaimBuilder()
+        PersistentVolumeClaimBuilder pvcb = new PersistentVolumeClaimBuilder()
                 .withNewMetadata()
                 .withName(name)
                 .endMetadata()
@@ -512,11 +517,10 @@ public abstract class AbstractModel {
                 .withRequests(requests)
                 .endResources()
                 .withStorageClassName(storage.getStorageClass())
-                .withNewSelector().withMatchLabels(storage.getSelector()).endSelector()
-                .endSpec()
-                .build();
+                .withSelector(selector)
+                .endSpec();
 
-        return pvc;
+        return pvcb.build();
     }
 
     protected Volume createEmptyDirVolume(String name) {
