@@ -407,9 +407,6 @@ public class KafkaClusterIT extends AbstractClusterIT {
     public void testRackAware() {
         testDockerImagesForKafkaCluster(CLUSTER_NAME, 1, 1, true);
 
-        String cm = kubeClient.get("cm", CLUSTER_NAME);
-        assertThat(cm, valueOfCmEquals("kafka-rack", "{\"topologyKey\": \"rack-key\"}"));
-
         kubeClient.waitForStatefulSet(kafkaClusterName(CLUSTER_NAME), 1);
         String kafkaPodName = kafkaPodName(CLUSTER_NAME, 0);
         kubeClient.waitForPod(kafkaPodName);
