@@ -206,14 +206,23 @@ public class CrdGenerator {
 
     private ObjectNode buildValidation(Class<? extends CustomResource> crdClass) {
         ObjectNode result = nf.objectNode();
-        result.set("openAPIV3Schema", buildObjectSchema(crdClass, crdClass));
+        // OpenShift Origin 3.10-rc0 doesn't like the `type: object` in schema root
+        result.set("openAPIV3Schema", buildObjectSchema(crdClass, crdClass, false));
         return result;
     }
 
     private ObjectNode buildObjectSchema(AnnotatedElement annotatedElement, Class<?> crdClass) {
+        return buildObjectSchema(annotatedElement, crdClass, true);
+    }
+
+    private ObjectNode buildObjectSchema(AnnotatedElement annotatedElement, Class<?> crdClass, boolean printType) {
         ObjectNode result = nf.objectNode();
         addDescription(result, annotatedElement);
-        result.put("type", "object");
+
+        if (printType) {
+            result.put("type", "object");
+        }
+
         result.set("properties", buildSchemaProperties(crdClass));
         ArrayNode required = buildSchemaRequired(crdClass);
         if (required.size() > 0) {
@@ -353,7 +362,8 @@ public class CrdGenerator {
     private void addDescription(ObjectNode result, AnnotatedElement element) {
         Description description = element.getAnnotation(Description.class);
         if (description != null) {
-            result.put("description", description.value());
+            // OpenShift Origin 3.10-rc0 doesn't like the `description` in CRD
+            //result.put("description", description.value());
         } else {
             warn("Missing @Description on " + element);
         }

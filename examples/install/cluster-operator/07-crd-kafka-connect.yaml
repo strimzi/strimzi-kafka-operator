@@ -14,7 +14,6 @@ spec:
     plural: kafkaconnects
   validation:
     openAPIV3Schema:
-      type: object
       properties:
         spec:
           type: object
@@ -23,57 +22,42 @@ spec:
               type: integer
             image:
               type: string
-              description: The docker image for the pods.
             livenessProbe:
-              description: Pod liveness checking.
               type: object
               properties:
                 additionalProperties:
                   type: object
                 initialDelaySeconds:
                   type: integer
-                  description: The initial delay before first the health is first
-                    checked.
                   minimum: 0
                 timeoutSeconds:
                   type: integer
-                  description: The timeout for each attempted health check.
                   minimum: 0
             readinessProbe:
-              description: Pod readiness checking.
               type: object
               properties:
                 additionalProperties:
                   type: object
                 initialDelaySeconds:
                   type: integer
-                  description: The initial delay before first the health is first
-                    checked.
                   minimum: 0
                 timeoutSeconds:
                   type: integer
-                  description: The timeout for each attempted health check.
                   minimum: 0
             jvmOptions:
-              description: JVM Options for pods
               type: object
               properties:
                 -XX:
                   type: object
-                  description: A map of -XX options to the JVM
                 -Xms:
                   type: string
-                  description: -Xms option to to the JVM
                   pattern: '[0-9]+[mMgG]?'
                 -Xmx:
                   type: string
-                  description: -Xmx option to to the JVM
                   pattern: '[0-9]+[mMgG]?'
                 -server:
                   type: boolean
-                  description: -server option to to the JVM
             affinity:
-              description: Pod affinity rules.
               type: object
               properties:
                 nodeAffinity:
@@ -305,17 +289,11 @@ spec:
                   type: object
             metrics:
               type: object
-              description: The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter
-                for details of the structure of this configuration.
             additionalProperties:
               type: object
             config:
               type: object
-              description: 'The Kafka Connect configuration. Properties with the following
-                prefixes cannot be set: ssl., sasl., security., listeners, plugin.path,
-                rest.'
             logging:
-              description: Logging configuration for Kafka Connect
               type: object
               properties:
                 loggers:
@@ -325,38 +303,31 @@ spec:
                 type:
                   type: string
             resources:
-              description: Resource constraints (limits and requests).
               type: object
               properties:
                 additionalProperties:
                   type: object
                 limits:
-                  description: Resource limits applied at runtime.
                   type: object
                   properties:
                     additionalProperties:
                       type: object
                     cpu:
                       type: string
-                      description: CPU
                       pattern: '[0-9]+m?$'
                     memory:
                       type: string
-                      description: Memory
                       pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
                 requests:
-                  description: Resource requests applied during pod scheduling.
                   type: object
                   properties:
                     additionalProperties:
                       type: object
                     cpu:
                       type: string
-                      description: CPU
                       pattern: '[0-9]+m?$'
                     memory:
                       type: string
-                      description: Memory
                       pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
           required:
           - config
