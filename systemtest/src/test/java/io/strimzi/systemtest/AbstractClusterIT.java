@@ -98,11 +98,7 @@ public class AbstractClusterIT {
     }
 
     static String kafkaMetricsConfigName(String clusterName) {
-        return kafkaClusterName(clusterName) + "-metrics-config";
-    }
-
-    static String kafkaPVCName(String clusterName, int podId) {
-        return "data-" + kafkaClusterName(clusterName) + "-" + podId;
+        return kafkaClusterName(clusterName) + "-config";
     }
 
     // can be used as zookeeper stateful set or service names
@@ -119,7 +115,7 @@ public class AbstractClusterIT {
     }
 
     static String zookeeperMetricsConfigName(String clusterName) {
-        return zookeeperClusterName(clusterName) + "-metrics-config";
+        return zookeeperClusterName(clusterName) + "-config";
     }
 
     static String zookeeperPVCName(String clusterName, int podId) {
