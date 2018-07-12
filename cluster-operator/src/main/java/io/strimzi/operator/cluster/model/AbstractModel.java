@@ -502,6 +502,10 @@ public abstract class AbstractModel {
         PersistentClaimStorage storage = (PersistentClaimStorage) this.storage;
         Map<String, Quantity> requests = new HashMap<>();
         requests.put("storage", new Quantity(storage.getSize(), null));
+        LabelSelector selector = null;
+        if (storage.getSelector() != null && !storage.getSelector().isEmpty()) {
+            selector = new LabelSelector(null, storage.getSelector());
+        }
 
         PersistentVolumeClaimBuilder pvcb = new PersistentVolumeClaimBuilder()
                 .withNewMetadata()
@@ -513,11 +517,8 @@ public abstract class AbstractModel {
                 .withRequests(requests)
                 .endResources()
                 .withStorageClassName(storage.getStorageClass())
+                .withSelector(selector)
                 .endSpec();
-
-        if (!storage.getSelector().isEmpty()) {
-            pvcb.editSpec().withSelector(new LabelSelector(null, storage.getSelector())).endSpec();
-        }
 
         return pvcb.build();
     }
