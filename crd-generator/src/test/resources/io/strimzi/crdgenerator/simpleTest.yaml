@@ -14,7 +14,6 @@ spec:
     plural: "examples"
   validation:
     openAPIV3Schema:
-      type: "object"
       properties:
         affinity:
           type: "object"
@@ -288,10 +287,8 @@ spec:
           type: "boolean"
         fieldProperty:
           type: "string"
-          description: "Example of field property."
         intProperty:
           type: "integer"
-          description: "An example int property"
           example: "42"
           minimum: 42
           deprecated: true
@@ -344,10 +341,8 @@ spec:
                 - "right"
               leftProperty:
                 type: "string"
-                description: "when descrim=left, the left-hand property"
               rightProperty:
                 type: "string"
-                description: "when descrim=right, the right-hand property"
         listOfRawList:
           type: "array"
           items:
@@ -383,7 +378,6 @@ spec:
               properties: {}
         longProperty:
           type: "integer"
-          description: "An example long property"
           example: "42"
           minimum: 42
         mapProperty:
@@ -407,10 +401,8 @@ spec:
               - "right"
             leftProperty:
               type: "string"
-              description: "when descrim=left, the left-hand property"
             rightProperty:
               type: "string"
-              description: "when descrim=right, the right-hand property"
           required:
           - "discrim"
         rawList:
