@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.ContainerPort;
@@ -25,7 +24,6 @@ import io.strimzi.api.kafka.model.Zookeeper;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.operator.assembly.AbstractAssemblyOperator;
-import io.vertx.core.json.JsonObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -35,7 +33,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Properties;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -246,14 +243,6 @@ public class ZookeeperCluster extends AbstractModel {
                 isOpenShift);
     }
 
-    public ConfigMap generateMetricsAndLogConfigMap(ConfigMap externalLoggingCm) {
-        ConfigMap result = createConfigMap(getAncillaryConfigName(), getAncillaryCm(externalLoggingCm));
-        if (getLogging() != null) {
-            getLogging().setCm(result);
-        }
-        return result;
-    }
-
     /**
      * Generate the Secret containing CA self-signed certificate for internal communication.
      * It also contains the private key-certificate (signed by internal CA) for each brokers for communicating
@@ -309,20 +298,6 @@ public class ZookeeperCluster extends AbstractModel {
         containers.add(tlsSidecarContainer);
 
         return containers;
-    }
-
-    private Map<String, String> getAncillaryCm(ConfigMap cm) {
-        Map<String, String> data = new HashMap<>();
-        data.put(ANCILLARY_CM_KEY_LOG_CONFIG, parseLogging(getLogging(), cm));
-        if (isMetricsEnabled()) {
-            JsonObject ffs = new JsonObject();
-            for (Map.Entry<String, Object> entry : getMetricsConfig()) {
-                ffs.put(entry.getKey(), entry.getValue());
-            }
-            data.put(ANCILLARY_CM_KEY_METRICS, ffs.toString());
-
-        }
-        return data;
     }
 
     @Override
@@ -389,13 +364,7 @@ public class ZookeeperCluster extends AbstractModel {
     }
 
     @Override
-    protected Properties getDefaultLogConfig() {
-        Properties properties = new Properties();
-        try {
-            properties = getDefaultLoggingProperties("zookeeperDefaultLoggingProperties");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return properties;
+    protected String getDefaultLogConfigFileName() {
+        return "zookeeperDefaultLoggingProperties";
     }
 }

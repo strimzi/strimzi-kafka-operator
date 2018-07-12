@@ -1,0 +1,5 @@
+log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender
+log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout
+log4j.appender.CONSOLE.layout.ConversionPattern=[%d] %-5p <%-12.12c{1}:%L> [%-12.12t] %m%n
+topic-operator.root.logger=INFO
+log4j.rootLogger=${topic-operator.root.logger}, CONSOLE

@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.ContainerPort;
@@ -20,15 +19,11 @@ import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategyBuilder;
 import io.fabric8.kubernetes.api.model.extensions.RollingUpdateDeploymentBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectAssembly;
 import io.strimzi.api.kafka.model.KafkaConnectAssemblySpec;
-import io.vertx.core.json.JsonObject;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 import static java.util.Collections.emptySet;
 
@@ -149,23 +144,6 @@ public class KafkaConnectCluster extends AbstractModel {
         return createService("ClusterIP", ports, getPrometheusAnnotations());
     }
 
-    public ConfigMap generateMetricsAndLogConfigMap(ConfigMap cm) {
-        Map<String, String> data  = new HashMap<>();
-        data.put(ANCILLARY_CM_KEY_LOG_CONFIG, parseLogging(getLogging(), cm));
-        if (isMetricsEnabled()) {
-            HashMap m = new HashMap();
-            for (Map.Entry<String, Object> entry : getMetricsConfig()) {
-                m.put(entry.getKey(), entry.getValue());
-            }
-            data.put(ANCILLARY_CM_KEY_METRICS, new JsonObject(m).toString());
-        }
-        ConfigMap result = createConfigMap(getAncillaryConfigName(), data);
-        if (getLogging() != null) {
-            getLogging().setCm(result);
-        }
-        return result;
-    }
-
     protected List<ContainerPort> getContainerPortList() {
         List<ContainerPort> portList = new ArrayList<>(2);
         portList.add(createContainerPort(REST_API_PORT_NAME, REST_API_PORT, "TCP"));
@@ -245,13 +223,7 @@ public class KafkaConnectCluster extends AbstractModel {
     }
 
     @Override
-    protected Properties getDefaultLogConfig() {
-        Properties properties = new Properties();
-        try {
-            properties = getDefaultLoggingProperties("kafkaConnectDefaultLoggingProperties");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return properties;
+    protected String getDefaultLogConfigFileName() {
+        return "kafkaConnectDefaultLoggingProperties";
     }
 }

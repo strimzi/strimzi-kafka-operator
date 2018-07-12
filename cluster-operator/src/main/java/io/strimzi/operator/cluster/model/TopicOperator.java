@@ -4,9 +4,12 @@
  */
 package io.strimzi.operator.cluster.model;
 
+
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.Volume;
+import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategy;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategyBuilder;
@@ -16,7 +19,6 @@ import io.strimzi.operator.cluster.ClusterOperator;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Properties;
 
 /**
  * Represents the topic operator deployment
@@ -29,6 +31,8 @@ public class TopicOperator extends AbstractModel {
     public static final String TOPIC_CM_KIND = "topic";
 
     private static final String NAME_SUFFIX = "-topic-operator";
+
+    protected static final String METRICS_AND_LOG_CONFIG_SUFFIX = NAME_SUFFIX + "-config";
 
     // Port configuration
     protected static final int HEALTHCHECK_PORT = 8080;
@@ -81,6 +85,11 @@ public class TopicOperator extends AbstractModel {
         this.zookeeperSessionTimeoutMs = io.strimzi.api.kafka.model.TopicOperator.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS;
         this.topicConfigMapLabels = defaultTopicConfigMapLabels(cluster);
         this.topicMetadataMaxAttempts = io.strimzi.api.kafka.model.TopicOperator.DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS;
+
+        this.ancillaryConfigName = metricAndLogConfigsName(cluster);
+        this.logAndMetricsConfigVolumeName = "topic-operator-metrics-and-logging";
+        this.logAndMetricsConfigMountPath = "/opt/topic-operator/custom-config/";
+        this.validLoggerFields = getDefaultLogConfig();
     }
 
 
@@ -144,6 +153,10 @@ public class TopicOperator extends AbstractModel {
         return cluster + io.strimzi.operator.cluster.model.TopicOperator.NAME_SUFFIX;
     }
 
+    public static String metricAndLogConfigsName(String cluster) {
+        return cluster + TopicOperator.METRICS_AND_LOG_CONFIG_SUFFIX;
+    }
+
     protected static String defaultZookeeperConnect(String cluster) {
         return ZookeeperCluster.serviceName(cluster) + ":" + io.strimzi.api.kafka.model.TopicOperator.DEFAULT_ZOOKEEPER_PORT;
     }
@@ -199,7 +212,7 @@ public class TopicOperator extends AbstractModel {
                 getMergedAffinity(),
                 getInitContainers(),
                 getContainers(),
-                null
+                getVolumes()
         );
     }
 
@@ -213,6 +226,7 @@ public class TopicOperator extends AbstractModel {
                 .withPorts(Collections.singletonList(createContainerPort(HEALTHCHECK_PORT_NAME, HEALTHCHECK_PORT, "TCP")))
                 .withLivenessProbe(createHttpProbe(livenessPath + "healthy", HEALTHCHECK_PORT_NAME, livenessInitialDelay, livenessTimeout))
                 .withReadinessProbe(createHttpProbe(readinessPath + "ready", HEALTHCHECK_PORT_NAME, readinessInitialDelay, readinessTimeout))
+                .withVolumeMounts(getVolumeMounts())
                 .withResources(resources(getResources()))
                 .build();
 
@@ -241,23 +255,16 @@ public class TopicOperator extends AbstractModel {
     }
 
     @Override
-    protected Properties getDefaultLogConfig() {
-        Properties defaultSettings = new Properties();
+    protected String getDefaultLogConfigFileName() {
+        return "topicOperatorDefaultLoggingProperties";
+    }
 
-        defaultSettings.put("name", "TOConfig");
-        defaultSettings.put("appender.console.type", "Console");
-        defaultSettings.put("appender.console.name", "STDOUT");
-        defaultSettings.put("appender.console.layout.type", "PatternLayout");
-        defaultSettings.put("appender.console.layout.pattern", "[%d] %-5p <%-12.12c{1}:%L> [%-12.12t] %m%n");
 
-        defaultSettings.put("rootLogger.level", "${env:STRIMZI_LOG_LEVEL:-INFO}");
-        defaultSettings.put("rootLogger.appenderRefs", "stdout");
-        defaultSettings.put("rootLogger.appenderRef.console.ref", "STDOUT");
-        defaultSettings.put("rootLogger.additivity", "false");
+    private List<Volume> getVolumes() {
+        return Collections.singletonList(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
+    }
 
-        defaultSettings.put("log4j.appender.CONSOLE", "org.apache.log4j.ConsoleAppender");
-        defaultSettings.put("log4j.appender.CONSOLE.layout", "org.apache.log4j.PatternLayout");
-        defaultSettings.put("log4j.appender.CONSOLE.layout.ConversionPattern", "%d{ISO8601} %p %m (%c) [%t]%n");
-        return  defaultSettings;
+    private List<VolumeMount> getVolumeMounts() {
+        return Collections.singletonList(createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
     }
 }

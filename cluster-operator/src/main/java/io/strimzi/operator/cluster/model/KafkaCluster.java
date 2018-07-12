@@ -6,7 +6,6 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.AffinityBuilder;
-import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.ContainerPort;
@@ -29,7 +28,6 @@ import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.operator.assembly.AbstractAssemblyOperator;
-import io.vertx.core.json.JsonObject;
 
 import java.io.File;
 import java.io.IOException;
@@ -42,7 +40,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Properties;
 
 import static java.util.Collections.singletonList;
 
@@ -346,29 +343,6 @@ public class KafkaCluster extends AbstractModel {
                 isOpenShift);
     }
 
-
-    /**
-     * Generates a metrics ConfigMap according to configured defaults
-     * @return The generated ConfigMap
-     */
-    public ConfigMap generateMetricsAndLogConfigMap(ConfigMap cm) {
-        Map<String, String> data = new HashMap<>();
-        data.put(ANCILLARY_CM_KEY_LOG_CONFIG, parseLogging(getLogging(), cm));
-        if (isMetricsEnabled()) {
-            HashMap m = new HashMap();
-            for (Map.Entry<String, Object> entry : getMetricsConfig()) {
-                m.put(entry.getKey(), entry.getValue());
-            }
-            data.put(ANCILLARY_CM_KEY_METRICS, new JsonObject(m).toString());
-        }
-
-        ConfigMap configMap = createConfigMap(getAncillaryConfigName(), data);
-        if (getLogging() != null) {
-            getLogging().setCm(configMap);
-        }
-        return configMap;
-    }
-
     /**
      * Generate the Secret containing CA private key and self-signed certificate used
      * for signing brokers certificates used for communication with clients
@@ -593,13 +567,7 @@ public class KafkaCluster extends AbstractModel {
     }
 
     @Override
-    protected Properties getDefaultLogConfig() {
-        Properties properties = new Properties();
-        try {
-            properties = getDefaultLoggingProperties("kafkaDefaultLoggingProperties");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return properties;
+    protected String getDefaultLogConfigFileName() {
+        return "kafkaDefaultLoggingProperties";
     }
 }

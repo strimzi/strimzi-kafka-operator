@@ -435,16 +435,50 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         } catch (Exception e) {
             return Future.failedFuture(e);
         }
-        Deployment deployment = topicOperator != null ? topicOperator.generateDeployment() : null;
-        return deploymentOperations.reconcile(namespace, topicOperatorName(name), deployment);
+        if (topicOperator != null) {
+            return getTopicOperatorLogAndMetricsConfigMap(kafkaAssembly, topicOperator)
+                    .compose(m -> configMapOperations.reconcile(namespace, topicOperator.getAncillaryConfigName(), m))
+                    .compose(i -> deploymentOperations.reconcile(namespace, topicOperatorName(name), topicOperator.generateDeployment()));
+        } else {
+            return deploymentOperations.reconcile(namespace, topicOperatorName(name), null);
+        }
     };
 
-    private final Future<ReconcileResult<Deployment>> deleteTopicOperator(Reconciliation reconciliation) {
+    private Future<ConfigMap> getTopicOperatorLogAndMetricsConfigMap(KafkaAssembly kafkaAssembly, TopicOperator topicOperator) {
+        Future<ConfigMap> fut = Future.future();
+
+        vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
+            future -> {
+                try {
+                    ConfigMap logAndMetricsConfigMap = topicOperator.generateMetricsAndLogConfigMap(
+                            topicOperator.getLogging() instanceof ExternalLogging ?
+                                    configMapOperations.get(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) topicOperator.getLogging()).getName()) :
+                                    null);
+                    future.complete(logAndMetricsConfigMap);
+                } catch (Throwable e) {
+                    future.fail(e);
+                }
+            }, true,
+            res -> {
+                if (res.succeeded()) {
+                    fut.complete((ConfigMap) res.result());
+                } else {
+                    fut.fail(res.cause());
+                }
+            }
+        );
+        return fut;
+    }
+
+    private final Future<CompositeFuture> deleteTopicOperator(Reconciliation reconciliation) {
         String namespace = reconciliation.namespace();
         String name = reconciliation.assemblyName();
         log.debug("{}: delete topic operator {}", reconciliation, name);
-        return deploymentOperations.reconcile(namespace, topicOperatorName(name), null);
-    };
+
+        return CompositeFuture.join(
+                configMapOperations.reconcile(namespace, TopicOperator.metricAndLogConfigsName(name), null),
+                deploymentOperations.reconcile(namespace, topicOperatorName(name), null));
+    }
 
     @Override
     protected void delete(Reconciliation reconciliation, Handler<AsyncResult<Void>> handler) {

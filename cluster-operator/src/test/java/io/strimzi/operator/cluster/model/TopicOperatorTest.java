@@ -6,6 +6,8 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
+import io.fabric8.kubernetes.api.model.Volume;
+import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.strimzi.api.kafka.model.EphemeralStorage;
 import io.strimzi.api.kafka.model.InlineLogging;
@@ -19,12 +21,14 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 
 public class TopicOperatorTest {
 
@@ -40,9 +44,12 @@ public class TopicOperatorTest {
     private final Storage storage = new EphemeralStorage();
     private final InlineLogging kafkaLogJson = new InlineLogging();
     private final InlineLogging zooLogJson = new InlineLogging();
+    private final InlineLogging topicOperatorLogging = new InlineLogging();
+
     {
         kafkaLogJson.setLoggers(singletonMap("kafka.root.logger.level", "OFF"));
         zooLogJson.setLoggers(singletonMap("zookeeper.root.logger", "OFF"));
+        topicOperatorLogging.setLoggers(Collections.singletonMap("topic-operator.root.logger", "OFF"));
     }
 
     private final String tcWatchedNamespace = "my-topic-namespace";
@@ -56,7 +63,9 @@ public class TopicOperatorTest {
             .withImage(tcImage)
             .withReconciliationIntervalSeconds(tcReconciliationInterval)
             .withZookeeperSessionTimeoutSeconds(tcZookeeperSessionTimeout)
-            .withTopicMetadataMaxAttempts(tcTopicMetadataMaxAttempts).build();
+            .withTopicMetadataMaxAttempts(tcTopicMetadataMaxAttempts)
+            .withLogging(topicOperatorLogging)
+            .build();
 
 
     private final KafkaAssembly resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, kafkaConfig, zooConfig, storage, topicOperator, kafkaLogJson, zooLogJson);
@@ -97,6 +106,7 @@ public class TopicOperatorTest {
         Assert.assertEquals(TopicOperator.defaultZookeeperConnect(cluster), tc.getZookeeperConnect());
         Assert.assertEquals(TopicOperator.defaultTopicConfigMapLabels(cluster), tc.getTopicConfigMapLabels());
         Assert.assertEquals(io.strimzi.api.kafka.model.TopicOperator.DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS, tc.getTopicMetadataMaxAttempts());
+        assertNull(tc.getLogging());
     }
 
     @Test
@@ -118,6 +128,7 @@ public class TopicOperatorTest {
         Assert.assertEquals(TopicOperator.defaultZookeeperConnect(cluster), tc.getZookeeperConnect());
         Assert.assertEquals(TopicOperator.defaultTopicConfigMapLabels(cluster), tc.getTopicConfigMapLabels());
         assertEquals(tcTopicMetadataMaxAttempts, tc.getTopicMetadataMaxAttempts());
+        assertSame(topicOperatorLogging, tc.getLogging());
     }
 
     @Test
@@ -141,6 +152,7 @@ public class TopicOperatorTest {
         assertEquals(TopicOperator.HEALTHCHECK_PORT_NAME, dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().get(0).getName());
         assertEquals("TCP", dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().get(0).getProtocol());
         assertEquals("Recreate", dep.getSpec().getStrategy().getType());
+        assertLoggingConfig(dep);
     }
 
     @Test
@@ -156,4 +168,13 @@ public class TopicOperatorTest {
         helper.assertDesiredResource("-Deployment.yaml", zc -> zc.generateDeployment().getSpec().getTemplate().getSpec().getAffinity());
     }
 
+    private void assertLoggingConfig(Deployment dep) {
+        Volume volume = dep.getSpec().getTemplate().getSpec().getVolumes().get(0);
+        VolumeMount volumeMount = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getVolumeMounts().get(0);
+
+        assertEquals("/opt/topic-operator/custom-config/", volumeMount.getMountPath());
+        assertEquals("topic-operator-metrics-and-logging", volumeMount.getName());
+        assertEquals("topic-operator-metrics-and-logging", volume.getName());
+        assertEquals("foo-topic-operator-config", volume.getConfigMap().getName());
+    }
 }
