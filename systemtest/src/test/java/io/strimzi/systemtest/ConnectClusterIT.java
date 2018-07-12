@@ -180,12 +180,11 @@ public class ConnectClusterIT extends AbstractClusterIT {
             kubeClient.waitForResourceDeletion("pod", connectPods.get(i));
         }
         LOGGER.info("Verify values after update");
-        String configMapAfter = kubeClient.get("cm", CONNECT_CLUSTER_NAME);
-        assertThat(configMapAfter, valueOfCmEquals("healthcheck-delay", "61"));
-        assertThat(configMapAfter, valueOfCmEquals("healthcheck-timeout", "6"));
         connectPods = kubeClient.listResourcesByLabel("pod", "strimzi.io/kind=KafkaConnect");
         for (int i = 0; i < connectPods.size(); i++) {
             String connectPodJson = kubeClient.getResourceAsJson("pod", connectPods.get(i));
+            assertThat(connectPodJson, hasJsonPath("$.spec.containers[*].readinessProbe.initialDelaySeconds", hasItem(61)));
+            assertThat(connectPodJson, hasJsonPath("$.spec.containers[*].readinessProbe.timeoutSeconds", hasItem(6)));
             assertThat(connectPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(61)));
             assertThat(connectPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.timeoutSeconds", hasItem(6)));
             assertThat(connectPodJson, containsString("config.storage.replication.factor=1"));
