@@ -633,6 +633,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     ObjectNode subject = new ObjectNode(factory);
                     subject.put("kind", "ServiceAccount").put("name", "strimzi-kafka").put("namespace", ns);
                     subjects.set(0, subject);
+                    LOGGER.info("Modified binding: {}", node);
                 }
             }), (x, y) -> x, LinkedHashMap::new));
             last = new Bracket(last, new ResourceAction().getPo(CO_DEPLOYMENT_NAME + ".*")
@@ -644,7 +645,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     // Here we record the state of the cluster
                     LOGGER.info("Creating cluster operator {} before test per @ClusterOperator annotation on {}", cc, name(element));
                     for (Map.Entry<File, String> entry: yamls.entrySet()) {
-                        LOGGER.info("creating possible modified version of {}", entry.getKey());
+                        LOGGER.info("creating possibly modified version of {}", entry.getKey());
                         deletable.push(entry.getValue());
                         kubeClient().clientWithAdmin().applyContent(entry.getValue());
                     }
