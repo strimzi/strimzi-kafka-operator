@@ -1002,7 +1002,7 @@ public abstract class AbstractModel {
      */
     protected Map<String, String> getPrometheusAnnotations()    {
         Map<String, String> annotations = new HashMap<String, String>(3);
-        annotations.put("prometheus.io/port", "9404");
+        annotations.put("prometheus.io/port", String.valueOf(metricsPort));
         annotations.put("prometheus.io/scrape", "true");
         annotations.put("prometheus.io/path", "/metrics");
 
