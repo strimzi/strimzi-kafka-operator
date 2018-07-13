@@ -63,7 +63,7 @@ public class WorkaroundRbacOperator<T> {
         vertx.executeBlocking(fut -> {
             try {
                 Request getRequest = new Request.Builder().get().url(urlWithName(name)).build();
-                int getCode = checkStatusCode(execute(getRequest), 200, 404);
+                int getCode = execute(getRequest, 200, 404);
                 if (getCode == 200) {
                     if (resource != null) {
                         // exists and wanted => replace
@@ -99,37 +99,42 @@ public class WorkaroundRbacOperator<T> {
 
     private void delete(String name) {
         Request postRequest = new Request.Builder().delete().url(urlWithName(name)).build();
-        checkStatusCode(execute(postRequest), 200);
-    }
-
-    private int checkStatusCode(Response response, int... expectedCodes) {
-        final int code = response.code();
-        for (int i = 0; i < expectedCodes.length; i++) {
-            if (expectedCodes[i] == code) {
-                return code;
-            }
-        }
-        throw new KubernetesClientException("Got unexpected " + response.request().method() + " status code " + code + ": " + response.message(),
-                code, OperationSupport.createStatus(response));
-    }
-
-    private Response execute(Request request) {
-        try {
-            String method = request.method();
-            log.debug("Making {} request {}", method, request);
-            Response response = client.newCall(request).execute();
-            log.debug("Got {} response {}", method, response);
-            return response;
-        } catch (IOException e) {
-            throw new KubernetesClientException("Executing request", e);
-        }
+        execute(postRequest, 200);
     }
 
     private void replace(String name, T resource) {
         logJson(resource);
         RequestBody postBody = RequestBody.create(OperationSupport.JSON, resource.toString());
         Request postRequest = new Request.Builder().put(postBody).url(urlWithName(name)).build();
-        checkStatusCode(execute(postRequest), 200, 201);
+        execute(postRequest, 200, 201);
+    }
+
+    private int execute(Request request, int... expectedCodes) {
+        try {
+            String method = request.method();
+            log.debug("Making {} request {}", method, request);
+            Response response = null;
+            try {
+                response = client.newCall(request).execute();
+            } finally {
+                if (response != null) {
+                    response.close();
+                }
+            }
+            log.debug("Got {} response {}", method, response);
+            final int code = response.code();
+            for (int i = 0; i < expectedCodes.length; i++) {
+                if (expectedCodes[i] == code) {
+                    return code;
+                }
+            }
+            throw new KubernetesClientException("Got unexpected " + request.method() + " status code " + code + ": " + response.message(),
+                    code, OperationSupport.createStatus(response));
+
+        } catch (IOException e) {
+            throw new KubernetesClientException("Executing request", e);
+        }
+
     }
 
     private void logJson(T resource) {
@@ -147,7 +152,7 @@ public class WorkaroundRbacOperator<T> {
         logJson(resource);
         RequestBody postBody = RequestBody.create(OperationSupport.JSON, resource.toString());
         Request postRequest = new Request.Builder().post(postBody).url(urlWithoutName()).build();
-        checkStatusCode(execute(postRequest), 200, 201, 202);
+        execute(postRequest, 200, 201, 202);
     }
 
 }
