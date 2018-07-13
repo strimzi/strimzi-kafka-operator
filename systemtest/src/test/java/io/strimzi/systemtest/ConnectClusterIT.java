@@ -128,7 +128,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
         replaceKafkaConnectResource(CONNECT_CLUSTER_NAME, c -> {
             c.getSpec().setReplicas(initialReplicas + 1);
         });
-        kubeClient.waitForDeployment(kafkaConnectName(CONNECT_CLUSTER_NAME));
+        kubeClient.waitForDeployment(kafkaConnectName(CONNECT_CLUSTER_NAME), 2);
         connectPods = kubeClient.listResourcesByLabel("pod", "strimzi.io/kind=KafkaConnect");
         assertEquals(scaleTo, connectPods.size());
         for (String pod : connectPods) {

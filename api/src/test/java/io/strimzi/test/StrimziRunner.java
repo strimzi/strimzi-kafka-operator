@@ -645,7 +645,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     for (Map.Entry<File, String> entry: yamls.entrySet()) {
                         LOGGER.info("creating possible modified version of {}", entry.getKey());
                         deletable.push(entry.getValue());
-                        kubeClient().clientWithAdmin().createContent(entry.getValue());
+                        kubeClient().clientWithAdmin().applyContent(entry.getValue());
                     }
                     kubeClient().waitForDeployment(CO_DEPLOYMENT_NAME);
                 }

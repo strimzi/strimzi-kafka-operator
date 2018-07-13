@@ -74,6 +74,8 @@ public interface KubeClient<K extends KubeClient<K>> {
 
     K createContent(String yamlContent);
 
+    K applyContent(String yamlContent);
+
     K deleteContent(String yamlContent);
 
     K createNamespace(String name);
@@ -95,6 +97,15 @@ public interface KubeClient<K extends KubeClient<K>> {
      * @return This kube client.
      */
     K waitForDeployment(String name);
+
+    /**
+     * Wait for the deployment with the given {@code name} to
+     * have replicas==readyReplicas && replicas==expected.
+     * @param name The deployment name.
+     * @param expected Number of expected pods
+     * @return This kube client.
+     */
+    K waitForDeployment(String name, int expected);
 
     /**
      * Wait for the pod with the given {@code name} to be in the ready state.
