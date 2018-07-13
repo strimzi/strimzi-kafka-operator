@@ -34,7 +34,7 @@ parameters:
 - description: Converter class used to convert between Kafka Connect format and the serialized form that is written to Kafka.
   displayName: Key Converter
   name: KAFKA_CONNECT_KEY_CONVERTER
-  required: "true"
+  required: true
   value: org.apache.kafka.connect.json.JsonConverter
 - description: Set to false to use schemaless format
   displayName: Enable schemas for key converters
