@@ -586,6 +586,7 @@ public class KafkaCluster extends AbstractModel {
                     .withNewMetadata()
                         .withName(getInitContainerServiceAccountName(name))
                         .addToLabels("app", "strimzi")
+                        .withNamespace(namespace)
                     .endMetadata()
                 .build();
         } else {
