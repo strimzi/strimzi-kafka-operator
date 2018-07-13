@@ -1,5 +1,5 @@
 apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: ClusterRole
+kind: Role
 metadata:
   name: strimzi-cluster-operator-role
   labels:
@@ -20,7 +20,6 @@ rules:
 - apiGroups:
   - "rbac.authorization.k8s.io"
   resources:
-  - clusteroles
   - clusterolebindings
   verbs:
     - get
@@ -28,14 +27,6 @@ rules:
     - delete
     - patch
     - update
-# Privilege escalation prevention means CO needs the same ClusterRole privs that it will create ClusterRoles for
-# https://kubernetes.io/docs/reference/access-authn-authz/rbac/#privilege-escalation-prevention-and-bootstrapping
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
-  - get
 - apiGroups:
   - ""
   resources:
