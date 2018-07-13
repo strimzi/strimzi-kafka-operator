@@ -17,6 +17,8 @@ import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.ServiceAccount;
+import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
@@ -29,6 +31,8 @@ import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.operator.assembly.AbstractAssemblyOperator;
+import io.strimzi.operator.cluster.operator.resource.ClusterRoleBindingOperator;
+import io.strimzi.operator.cluster.operator.resource.ClusterRoleOperator;
 import io.vertx.core.json.JsonObject;
 
 import java.io.File;
@@ -603,4 +607,46 @@ public class KafkaCluster extends AbstractModel {
         }
         return properties;
     }
+
+    public ClusterRoleOperator.ClusterRole generateClusterRole() {
+        return new ClusterRoleOperator.ClusterRole(getInitContainerClusterRoleName(name));
+    }
+
+    public ServiceAccount generateInitContainerServiceAccount() {
+        if (rack != null) {
+            return new ServiceAccountBuilder()
+                    .withNewMetadata()
+                        .withName(getInitContainerServiceAccountName(name))
+                        .addToLabels("app", "strimzi")
+                    .endMetadata()
+                .build();
+        } else {
+            return null;
+        }
+    }
+
+    public static String getInitContainerServiceAccountName(String name) {
+        return name + "-kafka-init";
+    }
+
+    public static String getInitContainerClusterRoleName(String name) {
+        return "strimzi-" + name + "-kafka-init";
+    }
+
+    public static String getInitContainerClusterRoleBindingName(String name) {
+        return "strimzi-" + name + "-kafka-init";
+    }
+
+    public ClusterRoleBindingOperator.ClusterRoleBinding generateClusterRoleBinding(String namespace) {
+        if (rack != null) {
+            return new ClusterRoleBindingOperator.ClusterRoleBinding(
+                    getInitContainerClusterRoleBindingName(name),
+                    "strimzi-kafka-role",
+                    namespace, getInitContainerServiceAccountName(name));
+        } else {
+            return null;
+        }
+    }
+
+
 }

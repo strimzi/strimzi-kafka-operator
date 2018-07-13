@@ -7,6 +7,7 @@ package io.strimzi.api.kafka.model;
 import io.strimzi.test.Namespace;
 import io.strimzi.test.Resources;
 import io.strimzi.test.StrimziRunner;
+import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -21,7 +22,7 @@ import static org.junit.Assert.assertTrue;
  */
 @RunWith(StrimziRunner.class)
 @Namespace(KafkaConnectCrdIT.NAMESPACE)
-@Resources(value = "../examples/install/cluster-operator/07-crd-kafka-connect.yaml", asAdmin = true)
+@Resources(value = TestUtils.KAFKA_CONNECT_CRD, asAdmin = true)
 public class KafkaConnectCrdIT extends AbstractCrdIT {
     public static final String NAMESPACE = "kafkaconnect-crd-it";
 

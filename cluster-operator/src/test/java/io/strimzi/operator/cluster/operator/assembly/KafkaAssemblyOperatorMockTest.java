@@ -30,15 +30,8 @@ import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.Labels;
 import io.strimzi.operator.cluster.model.TopicOperator;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
-import io.strimzi.operator.cluster.operator.resource.ConfigMapOperator;
-import io.strimzi.operator.cluster.operator.resource.CrdOperator;
-import io.strimzi.operator.cluster.operator.resource.DeploymentOperator;
-import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
-import io.strimzi.operator.cluster.operator.resource.PvcOperator;
-import io.strimzi.operator.cluster.operator.resource.SecretOperator;
-import io.strimzi.operator.cluster.operator.resource.ServiceOperator;
+import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
-import io.strimzi.operator.cluster.operator.resource.ZookeeperSetOperator;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
@@ -200,7 +193,7 @@ public class KafkaAssemblyOperatorMockTest {
                 .endSpec()
                 .build();
 
-        CustomResourceDefinition kafkaAssemblyCrd = TestUtils.fromYamlFile("../examples/install/cluster-operator/07-crd-kafka.yaml", CustomResourceDefinition.class);
+        CustomResourceDefinition kafkaAssemblyCrd = TestUtils.fromYamlFile(TestUtils.KAFKA_CRD, CustomResourceDefinition.class);
 
         mockClient = new MockKube().withCustomResourceDefinition(kafkaAssemblyCrd, KafkaAssembly.class, KafkaAssemblyList.class, DoneableKafkaAssembly.class)
                 .withInitialInstances(Collections.singleton(cluster)).end().build();
@@ -211,18 +204,14 @@ public class KafkaAssemblyOperatorMockTest {
         this.vertx.close();
     }
 
+    private ResourceOperatorSupplier supplierWithMocks() {
+        return new ResourceOperatorSupplier(vertx, mockClient, 2_000);
+    }
+
     private KafkaAssemblyOperator createCluster(TestContext context) {
-        ConfigMapOperator cmops = new ConfigMapOperator(vertx, mockClient);
-        CrdOperator<KubernetesClient, KafkaAssembly, KafkaAssemblyList, DoneableKafkaAssembly> kafkaops = new CrdOperator<>(vertx, mockClient, KafkaAssembly.class, KafkaAssemblyList.class, DoneableKafkaAssembly.class);
-        ServiceOperator svcops = new ServiceOperator(vertx, mockClient);
-        KafkaSetOperator ksops = new KafkaSetOperator(vertx, mockClient, 60_000L);
-        ZookeeperSetOperator zksops = new ZookeeperSetOperator(vertx, mockClient, 60_000L);
-        DeploymentOperator depops = new DeploymentOperator(vertx, mockClient);
-        PvcOperator pvcops = new PvcOperator(vertx, mockClient);
-        SecretOperator secretops = new SecretOperator(vertx, mockClient);
+        ResourceOperatorSupplier supplier = supplierWithMocks();
         KafkaAssemblyOperator kco = new KafkaAssemblyOperator(vertx, true, 2_000,
-                new MockCertManager(),
-                kafkaops, cmops, svcops, zksops, ksops, pvcops, depops, secretops);
+                new MockCertManager(), supplier);
 
         LOGGER.info("Reconciling initially -> create");
         Async createAsync = context.async();
@@ -435,7 +424,6 @@ public class KafkaAssemblyOperatorMockTest {
     }
 
     private void deleteClusterWithoutServices(TestContext context, String... services) {
-
         KafkaAssemblyOperator kco = createCluster(context);
         Set<String> ssNames = mockClient.apps().statefulSets().inNamespace(NAMESPACE).list().getItems().stream().map(r -> r.getMetadata().getName()).collect(Collectors.toSet());
         Set<String> deploymentNames = mockClient.extensions().deployments().inNamespace(NAMESPACE).list().getItems().stream().map(r -> r.getMetadata().getName()).collect(Collectors.toSet());

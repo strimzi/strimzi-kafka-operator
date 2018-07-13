@@ -18,6 +18,9 @@
     <suppress checks="ClassFanOutComplexity|ClassDataAbstractionCoupling"
               files="io[/\\]strimzi[/\\]operator[/\\]cluster[/\\]model[/\\]AbstractModel.java"/>
 
+    <suppress checks="ClassFanOutComplexity"
+              files="io[/\\]strimzi[/\\]operator[/\\]cluster[/\\]operator[/\\]assembly[/\\]KafkaAssemblyOperatorTest.java"/>
+
     <!-- topic operator -->
     <suppress checks="NPathComplexity|CyclomaticComplexity"
               files="io[/\\]strimzi[/\\]operator[/\\]topic[/\\]TopicOperator.java"/>

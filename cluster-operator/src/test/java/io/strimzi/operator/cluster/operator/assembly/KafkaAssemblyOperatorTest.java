@@ -25,13 +25,17 @@ import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.Labels;
 import io.strimzi.operator.cluster.model.TopicOperator;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
+import io.strimzi.operator.cluster.operator.resource.ClusterRoleBindingOperator;
+import io.strimzi.operator.cluster.operator.resource.ClusterRoleOperator;
 import io.strimzi.operator.cluster.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.cluster.operator.resource.CrdOperator;
 import io.strimzi.operator.cluster.operator.resource.DeploymentOperator;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.PvcOperator;
 import io.strimzi.operator.cluster.operator.resource.ReconcileResult;
+import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.SecretOperator;
+import io.strimzi.operator.cluster.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.cluster.operator.resource.ServiceOperator;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetDiff;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperSetOperator;
@@ -204,14 +208,15 @@ public class KafkaAssemblyOperatorTest {
         TopicOperator topicOperator = TopicOperator.fromCrd(clusterCm);
 
         // create CM, Service, headless service, statefulset and so on
-        CrdOperator mockKafkaOps = mock(CrdOperator.class);
-        ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
-        ServiceOperator mockServiceOps = mock(ServiceOperator.class);
-        ZookeeperSetOperator mockZsOps = mock(ZookeeperSetOperator.class);
-        KafkaSetOperator mockKsOps = mock(KafkaSetOperator.class);
-        PvcOperator mockPvcOps = mock(PvcOperator.class);
-        DeploymentOperator mockDepOps = mock(DeploymentOperator.class);
-        SecretOperator mockSecretOps = mock(SecretOperator.class);
+        ResourceOperatorSupplier supplier = supplierWithMocks();
+        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        ZookeeperSetOperator mockZsOps = supplier.zkSetOperations;
+        KafkaSetOperator mockKsOps = supplier.kafkaSetOperations;
+        PvcOperator mockPvcOps = supplier.pvcOperations;
+        DeploymentOperator mockDepOps = supplier.deploymentOperations;
+        SecretOperator mockSecretOps = supplier.secretOperations;
 
         // Create a CM
         String clusterCmName = clusterCm.getMetadata().getName();
@@ -256,10 +261,7 @@ public class KafkaAssemblyOperatorTest {
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, openShift,
                 ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS,
                 certManager,
-                mockKafkaOps,
-                mockCmOps,
-                mockServiceOps, mockZsOps, mockKsOps,
-                mockPvcOps, mockDepOps, mockSecretOps);
+                supplier);
 
         // Now try to create a KafkaCluster based on this CM
         Async async = context.async();
@@ -336,14 +338,18 @@ public class KafkaAssemblyOperatorTest {
         TopicOperator topicOperator = TopicOperator.fromCrd(clusterCm);
 
         // create CM, Service, headless service, statefulset
-        CrdOperator mockKafkaOps = mock(CrdOperator.class);
-        ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
-        ServiceOperator mockServiceOps = mock(ServiceOperator.class);
-        ZookeeperSetOperator mockZsOps = mock(ZookeeperSetOperator.class);
-        KafkaSetOperator mockKsOps = mock(KafkaSetOperator.class);
-        PvcOperator mockPvcOps = mock(PvcOperator.class);
-        DeploymentOperator mockDepOps = mock(DeploymentOperator.class);
-        SecretOperator mockSecretOps = mock(SecretOperator.class);
+        ResourceOperatorSupplier supplier = supplierWithMocks();
+        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        ZookeeperSetOperator mockZsOps = supplier.zkSetOperations;
+        KafkaSetOperator mockKsOps = supplier.kafkaSetOperations;
+        PvcOperator mockPvcOps = supplier.pvcOperations;
+        DeploymentOperator mockDepOps = supplier.deploymentOperations;
+        SecretOperator mockSecretOps = supplier.secretOperations;
+        ServiceAccountOperator mockSao = supplier.serviceAccountOperator;
+        ClusterRoleOperator mockCro = supplier.cro;
+        ClusterRoleBindingOperator mockCrbo = supplier.crbo;
 
         String assemblyName = clusterCm.getMetadata().getName();
         String assemblyNamespace = clusterCm.getMetadata().getNamespace();
@@ -396,11 +402,7 @@ public class KafkaAssemblyOperatorTest {
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, openShift,
                 ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS,
                 certManager,
-                mockKafkaOps,
-                mockCmOps,
-                mockServiceOps, mockZsOps, mockKsOps,
-                mockPvcOps,
-                mockDepOps, mockSecretOps);
+                supplier);
 
         // Now try to delete a KafkaCluster based on this CM
         Async async = context.async();
@@ -628,14 +630,18 @@ public class KafkaAssemblyOperatorTest {
         TopicOperator originalTopicOperator = TopicOperator.fromCrd(originalAssembly);
 
         // create CM, Service, headless service, statefulset and so on
-        CrdOperator mockKafkaOps = mock(CrdOperator.class);
-        ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
-        ServiceOperator mockServiceOps = mock(ServiceOperator.class);
-        ZookeeperSetOperator mockZsOps = mock(ZookeeperSetOperator.class);
-        KafkaSetOperator mockKsOps = mock(KafkaSetOperator.class);
-        PvcOperator mockPvcOps = mock(PvcOperator.class);
-        DeploymentOperator mockDepOps = mock(DeploymentOperator.class);
-        SecretOperator mockSecretOps = mock(SecretOperator.class);
+        ResourceOperatorSupplier supplier = supplierWithMocks();
+        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        ZookeeperSetOperator mockZsOps = supplier.zkSetOperations;
+        KafkaSetOperator mockKsOps = supplier.kafkaSetOperations;
+        PvcOperator mockPvcOps = supplier.pvcOperations;
+        DeploymentOperator mockDepOps = supplier.deploymentOperations;
+        SecretOperator mockSecretOps = supplier.secretOperations;
+        ServiceAccountOperator mockSao = supplier.serviceAccountOperator;
+        ClusterRoleOperator mockCro = supplier.cro;
+        ClusterRoleBindingOperator mockCrbo = supplier.crbo;
 
         String clusterName = updatedAssembly.getMetadata().getName();
         String clusterNamespace = updatedAssembly.getMetadata().getNamespace();
@@ -781,10 +787,7 @@ public class KafkaAssemblyOperatorTest {
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, openShift,
                 ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS,
                 certManager,
-                mockKafkaOps,
-                mockCmOps,
-                mockServiceOps, mockZsOps, mockKsOps,
-                mockPvcOps, mockDepOps, mockSecretOps);
+                supplier);
 
         // Now try to update a KafkaCluster based on this CM
         Async async = context.async();
@@ -817,15 +820,18 @@ public class KafkaAssemblyOperatorTest {
         Async async = context.async(3);
 
         // create CM, Service, headless service, statefulset
-        CrdOperator mockKafkaOps = mock(CrdOperator.class);
-        ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
-        ServiceOperator mockServiceOps = mock(ServiceOperator.class);
-        ZookeeperSetOperator mockZsOps = mock(ZookeeperSetOperator.class);
-        KafkaSetOperator mockKsOps = mock(KafkaSetOperator.class);
-        PvcOperator mockPvcOps = mock(PvcOperator.class);
-        DeploymentOperator mockDepOps = mock(DeploymentOperator.class);
-        SecretOperator mockSecretOps = mock(SecretOperator.class);
-
+        ResourceOperatorSupplier supplier = supplierWithMocks();
+        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        ZookeeperSetOperator mockZsOps = supplier.zkSetOperations;
+        KafkaSetOperator mockKsOps = supplier.kafkaSetOperations;
+        PvcOperator mockPvcOps = supplier.pvcOperations;
+        DeploymentOperator mockDepOps = supplier.deploymentOperations;
+        SecretOperator mockSecretOps = supplier.secretOperations;
+        ServiceAccountOperator mockSao = supplier.serviceAccountOperator;
+        ClusterRoleOperator mockCro = supplier.cro;
+        ClusterRoleBindingOperator mockCrbo = supplier.crbo;
         String clusterCmNamespace = "myNamespace";
 
         KafkaAssembly foo = getKafkaAssembly("foo");
@@ -882,10 +888,7 @@ public class KafkaAssemblyOperatorTest {
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, openShift,
                 ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS,
                 certManager,
-                mockKafkaOps,
-                mockCmOps,
-                mockServiceOps, mockZsOps, mockKsOps,
-                mockPvcOps, mockDepOps, mockSecretOps) {
+                supplier) {
             @Override
             public void createOrUpdate(Reconciliation reconciliation, KafkaAssembly assemblyCm, List<Secret> assemblySecrets, Handler<AsyncResult<Void>> h) {
                 createdOrUpdated.add(assemblyCm.getMetadata().getName());
@@ -907,5 +910,18 @@ public class KafkaAssemblyOperatorTest {
 
         context.assertEquals(new HashSet(asList("foo", "bar")), createdOrUpdated);
         context.assertEquals(singleton("baz"), deleted);
+    }
+
+    private static ResourceOperatorSupplier supplierWithMocks() {
+        ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(
+                mock(ServiceOperator.class), mock(ZookeeperSetOperator.class),
+                mock(KafkaSetOperator.class), mock(ConfigMapOperator.class), mock(SecretOperator.class),
+                mock(PvcOperator.class), mock(DeploymentOperator.class),
+                mock(ServiceAccountOperator.class), mock(ClusterRoleOperator.class), mock(ClusterRoleBindingOperator.class),
+                mock(CrdOperator.class));
+        when(supplier.serviceAccountOperator.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+        when(supplier.cro.reconcile(anyString(), any())).thenReturn(Future.succeededFuture());
+        when(supplier.crbo.reconcile(anyString(), any())).thenReturn(Future.succeededFuture());
+        return supplier;
     }
 }
