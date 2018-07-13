@@ -142,6 +142,12 @@ The accepted JSON format is described in the <<jvm_json_config>> section.
 An object allowing control over how the Zookeeper pods are scheduled to nodes.
 The format of the corresponding key is the same as the content supported in the Pod `affinity` in {ProductPlatformName}.
 See section <<affinity>> for more details.
+`spec.zookeeper.tlsSidecar.image`::
+The Docker image to use for the sidecar container which provides TLS support for Zookeeper nodes.
+Default is determined by the value of the `<<STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE,STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE>>` environment variable of the Cluster Operator.
+`spec.zookeeper.tlsSidecar.resources`::
+An object configuring the resource limits and requests for the sidecar container which provides TLS support for Zookeeper nodes.
+The accepted JSON format is described in the <<resources_json_config>> section.
 `spec.topicOperator`::
 An object representing the topic operator configuration. 
 See the <<topic_operator_json_config>> documentation for further details.
@@ -1242,6 +1248,10 @@ of the Kafka cluster ConfigMap.
 [[STRIMZI_DEFAULT_ZOOKEEPER_IMAGE]] `STRIMZI_DEFAULT_ZOOKEEPER_IMAGE`:: Optional, default `strimzi/zookeeper:latest`.
 The image name to use as a default when deploying Zookeeper, if
 no image is specified as the `zookeeper-image` in the <<kafka_config_map_details,Kafka cluster ConfigMap>>.
+
+[[STRIMZI_DEFAULT_TLS_SIDECAR_IMAGE]] `STRIMZI_DEFAULT_TLS_SIDECAR_IMAGE`:: Optional, default `strimzi/zookeeper-stunnel:latest`.
+The image name to use as a default when deploying the sidecar container which provides TLS support for Zookeeper, if
+no image is specified as the `spec.zookeeper.tlsSidecar.image` in the <<kafka_config_map_details,Kafka cluster ConfigMap>>.
 
 [[STRIMZI_LOG_LEVEL]] `STRIMZI_LOG_LEVEL`:: Optional, default `INFO`.
 The level for printing logging messages. The value can be set to: `ERROR`, `WARNING`, `INFO`, `DEBUG` and `TRACE`.
