@@ -217,7 +217,7 @@ public class KafkaConnectCluster extends AbstractModel {
                 .withLivenessProbe(createHttpProbe(livenessPath, REST_API_PORT_NAME, livenessInitialDelay, livenessTimeout))
                 .withReadinessProbe(createHttpProbe(readinessPath, REST_API_PORT_NAME, readinessInitialDelay, readinessTimeout))
                 .withVolumeMounts(getVolumeMounts())
-                .withResources(resources())
+                .withResources(resources(getResources()))
                 .build();
 
         containers.add(container);

@@ -10,9 +10,6 @@ import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
-import io.fabric8.kubernetes.api.model.Quantity;
-import io.fabric8.kubernetes.api.model.ResourceRequirements;
-import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
@@ -22,6 +19,8 @@ import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.api.kafka.model.EphemeralStorage;
 import io.strimzi.api.kafka.model.KafkaAssembly;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
+import io.strimzi.api.kafka.model.Resources;
+import io.strimzi.api.kafka.model.Sidecar;
 import io.strimzi.api.kafka.model.Zookeeper;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
@@ -63,7 +62,7 @@ public class ZookeeperCluster extends AbstractModel {
     private static final String NODES_CERTS_SUFFIX = NAME_SUFFIX + "-nodes";
 
     // Zookeeper configuration
-    private String tlsSidecarImage;
+    private Sidecar tlsSidecar;
 
     // Configuration defaults
     private static final int DEFAULT_HEALTHCHECK_DELAY = 15;
@@ -137,8 +136,6 @@ public class ZookeeperCluster extends AbstractModel {
         this.logAndMetricsConfigVolumeName = "zookeeper-metrics-and-logging";
         this.logAndMetricsConfigMountPath = "/opt/kafka/custom-config/";
         this.validLoggerFields = getDefaultLogConfig();
-
-        this.tlsSidecarImage = Zookeeper.DEFAULT_TLS_SIDECAR_IMAGE;
     }
 
     public static ZookeeperCluster fromCrd(CertManager certManager, KafkaAssembly kafkaAssembly, List<Secret> secrets) {
@@ -155,11 +152,6 @@ public class ZookeeperCluster extends AbstractModel {
             image = Zookeeper.DEFAULT_IMAGE;
         }
         zk.setImage(image);
-        String tlsSidecarImage = zookeeper.getTlsSidecarImage();
-        if (tlsSidecarImage == null) {
-            tlsSidecarImage = Zookeeper.DEFAULT_TLS_SIDECAR_IMAGE;
-        }
-        zk.setTlsSidecarImage(tlsSidecarImage);
         if (zookeeper.getReadinessProbe() != null) {
             zk.setReadinessInitialDelay(zookeeper.getReadinessProbe().getInitialDelaySeconds());
             zk.setReadinessTimeout(zookeeper.getReadinessProbe().getTimeoutSeconds());
@@ -180,6 +172,7 @@ public class ZookeeperCluster extends AbstractModel {
         zk.setJvmOptions(zookeeper.getJvmOptions());
         zk.setUserAffinity(zookeeper.getAffinity());
         zk.generateCertificates(certManager, secrets);
+        zk.setTlsSidecar(zookeeper.getTlsSidecar());
         return zk;
     }
 
@@ -288,20 +281,18 @@ public class ZookeeperCluster extends AbstractModel {
                 .withPorts(getContainerPortList())
                 .withLivenessProbe(createExecProbe(livenessPath, livenessInitialDelay, livenessTimeout))
                 .withReadinessProbe(createExecProbe(readinessPath, readinessInitialDelay, readinessTimeout))
-                .withResources(resources())
+                .withResources(resources(getResources()))
                 .build();
 
-        ResourceRequirements resources = new ResourceRequirementsBuilder()
-                .addToRequests("cpu", new Quantity("100m"))
-                .addToRequests("memory", new Quantity("128Mi"))
-                .addToLimits("cpu", new Quantity("1"))
-                .addToLimits("memory", new Quantity("128Mi"))
-                .build();
+        String tlsSidecarImage = (tlsSidecar != null && tlsSidecar.getImage() != null) ?
+                tlsSidecar.getImage() : Zookeeper.DEFAULT_TLS_SIDECAR_IMAGE;
+
+        Resources tlsSidecarResources = (tlsSidecar != null) ? tlsSidecar.getResources() : null;
 
         Container tlsSidecarContainer = new ContainerBuilder()
                 .withName(TLS_SIDECAR_NAME)
                 .withImage(tlsSidecarImage)
-                .withResources(resources)
+                .withResources(resources(tlsSidecarResources))
                 .withEnv(singletonList(buildEnvVar(ENV_VAR_ZOOKEEPER_NODE_COUNT, Integer.toString(replicas))))
                 .withVolumeMounts(createVolumeMount(TLS_SIDECAR_VOLUME_NAME, TLS_SIDECAR_VOLUME_MOUNT))
                 .withPorts(asList(createContainerPort(CLUSTERING_PORT_NAME, CLUSTERING_PORT, "TCP"),
@@ -387,8 +378,8 @@ public class ZookeeperCluster extends AbstractModel {
         return volumeMountList;
     }
 
-    protected void setTlsSidecarImage(String tlsSidecarImage) {
-        this.tlsSidecarImage = tlsSidecarImage;
+    protected void setTlsSidecar(Sidecar tlsSidecar) {
+        this.tlsSidecar = tlsSidecar;
     }
 
     @Override

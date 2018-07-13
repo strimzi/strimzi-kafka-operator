@@ -39,7 +39,7 @@ public class Zookeeper extends ReplicatedJvmPods {
 
     private Logging logging;
 
-    private String tlsSidecarImage;
+    private Sidecar tlsSidecar;
 
     @Description("The zookeeper broker config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)
     public Map<String, Object> getConfig() {
@@ -70,13 +70,13 @@ public class Zookeeper extends ReplicatedJvmPods {
         this.logging = logging;
     }
 
-    @Description("The Docker image for the TLS sidecar")
-    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-    public String getTlsSidecarImage() {
-        return tlsSidecarImage;
+    @Description("TLS sidecar configuration")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Sidecar getTlsSidecar() {
+        return tlsSidecar;
     }
 
-    public void setTlsSidecarImage(String tlsSidecarImage) {
-        this.tlsSidecarImage = tlsSidecarImage;
+    public void setTlsSidecar(Sidecar tlsSidecar) {
+        this.tlsSidecar = tlsSidecar;
     }
 }
