@@ -83,6 +83,7 @@ public class ZookeeperClusterTest {
         assertEquals(new Integer(ZookeeperCluster.METRICS_PORT), headful.getSpec().getPorts().get(0).getPort());
         assertEquals(new Integer(ZookeeperCluster.CLIENT_PORT), headful.getSpec().getPorts().get(1).getPort());
         assertEquals("TCP", headful.getSpec().getPorts().get(0).getProtocol());
+        assertEquals(zc.getPrometheusAnnotations(), headful.getMetadata().getAnnotations());
     }
 
     @Test

@@ -137,6 +137,7 @@ public class KafkaConnectClusterTest {
         assertEquals(new Integer(KafkaConnectCluster.REST_API_PORT), svc.getSpec().getPorts().get(0).getPort());
         assertEquals(KafkaConnectCluster.REST_API_PORT_NAME, svc.getSpec().getPorts().get(0).getName());
         assertEquals("TCP", svc.getSpec().getPorts().get(0).getProtocol());
+        assertEquals(kc.getPrometheusAnnotations(), svc.getMetadata().getAnnotations());
     }
 
     @Test

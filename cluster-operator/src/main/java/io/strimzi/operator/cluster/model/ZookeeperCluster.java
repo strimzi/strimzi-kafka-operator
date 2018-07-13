@@ -227,7 +227,7 @@ public class ZookeeperCluster extends AbstractModel {
         }
         ports.add(createServicePort(CLIENT_PORT_NAME, CLIENT_PORT, CLIENT_PORT, "TCP"));
 
-        return createService("ClusterIP", ports);
+        return createService("ClusterIP", ports, getPrometheusAnnotations());
     }
 
     public Service generateHeadlessService() {

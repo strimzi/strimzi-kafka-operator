@@ -86,6 +86,7 @@ public class KafkaClusterTest {
         assertEquals(KafkaCluster.CLIENT_PORT_NAME, headful.getSpec().getPorts().get(0).getName());
         assertEquals(new Integer(KafkaCluster.CLIENT_PORT), headful.getSpec().getPorts().get(0).getPort());
         assertEquals("TCP", headful.getSpec().getPorts().get(0).getProtocol());
+        assertEquals(kc.getPrometheusAnnotations(), headful.getMetadata().getAnnotations());
     }
 
     @Test

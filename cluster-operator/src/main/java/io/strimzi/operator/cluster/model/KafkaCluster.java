@@ -316,8 +316,7 @@ public class KafkaCluster extends AbstractModel {
      * @return The generated Service
      */
     public Service generateService() {
-
-        return createService("ClusterIP", getServicePorts());
+        return createService("ClusterIP", getServicePorts(), getPrometheusAnnotations());
     }
 
     /**
