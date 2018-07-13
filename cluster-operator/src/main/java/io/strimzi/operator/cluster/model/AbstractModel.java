@@ -612,12 +612,17 @@ public abstract class AbstractModel {
         return probe;
     }
 
-    protected Service createService(String type, List<ServicePort> ports) {
+    protected Service createService(String name, List<ServicePort> ports) {
+        return createService(name, ports, Collections.emptyMap());
+    }
+
+    protected Service createService(String type, List<ServicePort> ports,  Map<String, String> annotations) {
         Service service = new ServiceBuilder()
                 .withNewMetadata()
                     .withName(name)
                     .withLabels(getLabelsWithName())
                     .withNamespace(namespace)
+                    .withAnnotations(annotations)
                 .endMetadata()
                 .withNewSpec()
                     .withType(type)
@@ -992,5 +997,19 @@ public abstract class AbstractModel {
         } else {
             return false;
         }
+    }
+
+    /**
+     * Generated a Map with Prometheus annotations
+     *
+     * @return Map with Prometheus annotations using the default port (9404) and path (/metrics)
+     */
+    protected Map<String, String> getPrometheusAnnotations()    {
+        Map<String, String> annotations = new HashMap<String, String>(3);
+        annotations.put("prometheus.io/port", String.valueOf(metricsPort));
+        annotations.put("prometheus.io/scrape", "true");
+        annotations.put("prometheus.io/path", "/metrics");
+
+        return annotations;
     }
 }

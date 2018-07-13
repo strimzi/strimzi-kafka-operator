@@ -140,7 +140,7 @@ public class KafkaConnectCluster extends AbstractModel {
             ports.add(createServicePort(METRICS_PORT_NAME, METRICS_PORT, METRICS_PORT, "TCP"));
         }
 
-        return createService("ClusterIP", ports);
+        return createService("ClusterIP", ports, getPrometheusAnnotations());
     }
 
     public ConfigMap generateMetricsAndLogConfigMap(ConfigMap cm) {
