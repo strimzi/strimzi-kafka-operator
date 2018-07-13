@@ -100,9 +100,9 @@
                                 <argument>${pom.basedir}${file.separator}target${file.separator}classes${path.separator}${pom.basedir}${file.separator}..${file.separator}crd-generator${file.separator}target${file.separator}crd-generator-${project.version}.jar</argument>
                                 <argument>io.strimzi.crdgenerator.CrdGenerator</argument>
                                 <argument>--yaml</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaAssembly=${pom.basedir}${file.separator}..${file.separator}examples${file.separator}install${file.separator}cluster-operator${file.separator}07-crd-kafka.yaml</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaConnectAssembly=${pom.basedir}${file.separator}..${file.separator}examples${file.separator}install${file.separator}cluster-operator${file.separator}07-crd-kafka-connect.yaml</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaConnectS2IAssembly=${pom.basedir}${file.separator}..${file.separator}examples${file.separator}install${file.separator}cluster-operator${file.separator}07-crd-kafka-connect-s2i.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.KafkaAssembly=${pom.basedir}${file.separator}..${file.separator}examples${file.separator}install${file.separator}cluster-operator${file.separator}04-crd-kafka.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.KafkaConnectAssembly=${pom.basedir}${file.separator}..${file.separator}examples${file.separator}install${file.separator}cluster-operator${file.separator}04-crd-kafka-connect.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.KafkaConnectS2IAssembly=${pom.basedir}${file.separator}..${file.separator}examples${file.separator}install${file.separator}cluster-operator${file.separator}04-crd-kafka-connect-s2i.yaml</argument>
                             </arguments>
                         </configuration>
                     </execution>

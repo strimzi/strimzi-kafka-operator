@@ -1,10 +1,41 @@
 apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: Role
+kind: ClusterRole
 metadata:
   name: strimzi-cluster-operator-role
   labels:
     app: strimzi
 rules:
+# CO creates a ServiceAccount for the init container
+- apiGroups:
+  - ""
+  resources:
+  - serviceaccounts
+  verbs:
+  - get
+  - create
+  - delete
+  - patch
+  - update
+# ServiceAccount for the init container will be bound to a ClusterRole which can get nodes
+- apiGroups:
+  - "rbac.authorization.k8s.io"
+  resources:
+  - clusteroles
+  - clusterolebindings
+  verbs:
+    - get
+    - create
+    - delete
+    - patch
+    - update
+# Privilege escalation prevention means CO needs the same ClusterRole privs that it will create ClusterRoles for
+# https://kubernetes.io/docs/reference/access-authn-authz/rbac/#privilege-escalation-prevention-and-bootstrapping
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
 - apiGroups:
   - ""
   resources:

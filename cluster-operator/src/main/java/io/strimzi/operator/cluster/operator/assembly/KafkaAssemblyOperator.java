@@ -23,13 +23,15 @@ import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.Labels;
 import io.strimzi.operator.cluster.model.TopicOperator;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
+import io.strimzi.operator.cluster.operator.resource.ClusterRoleBindingOperator;
+import io.strimzi.operator.cluster.operator.resource.ClusterRoleOperator;
 import io.strimzi.operator.cluster.operator.resource.ConfigMapOperator;
-import io.strimzi.operator.cluster.operator.resource.CrdOperator;
 import io.strimzi.operator.cluster.operator.resource.DeploymentOperator;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.PvcOperator;
 import io.strimzi.operator.cluster.operator.resource.ReconcileResult;
-import io.strimzi.operator.cluster.operator.resource.SecretOperator;
+import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.cluster.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.cluster.operator.resource.ServiceOperator;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperSetOperator;
 import io.vertx.core.AsyncResult;
@@ -64,36 +66,29 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     private final PvcOperator pvcOperations;
     private final DeploymentOperator deploymentOperations;
     private final ConfigMapOperator configMapOperations;
+    private final ServiceAccountOperator serviceAccountOperator;
+    private final ClusterRoleOperator cro;
+    private final ClusterRoleBindingOperator crbo;
 
     /**
      * @param vertx The Vertx instance
      * @param isOpenShift Whether we're running with OpenShift
-     * @param configMapOperations For operating on ConfigMaps
-     * @param serviceOperations For operating on Services
-     * @param zkSetOperations For operating on StatefulSets
-     * @param pvcOperations For operating on PersistentVolumeClaims
-     * @param deploymentOperations For operating on Deployments
-     * @param secretOperations For operating on Secrets
      */
     public KafkaAssemblyOperator(Vertx vertx, boolean isOpenShift,
                                  long operationTimeoutMs,
                                  CertManager certManager,
-                                 CrdOperator<KubernetesClient, KafkaAssembly, KafkaAssemblyList, DoneableKafkaAssembly> kafkaAssemblyCrdOperator,
-                                 ConfigMapOperator configMapOperations,
-                                 ServiceOperator serviceOperations,
-                                 ZookeeperSetOperator zkSetOperations,
-                                 KafkaSetOperator kafkaSetOperations,
-                                 PvcOperator pvcOperations,
-                                 DeploymentOperator deploymentOperations,
-                                SecretOperator secretOperations) {
-        super(vertx, isOpenShift, AssemblyType.KAFKA, certManager, kafkaAssemblyCrdOperator, secretOperations);
+                                 ResourceOperatorSupplier supplier) {
+        super(vertx, isOpenShift, AssemblyType.KAFKA, certManager, supplier.kafkaOperator, supplier.secretOperations);
         this.operationTimeoutMs = operationTimeoutMs;
-        this.zkSetOperations = zkSetOperations;
-        this.serviceOperations = serviceOperations;
-        this.pvcOperations = pvcOperations;
-        this.deploymentOperations = deploymentOperations;
-        this.kafkaSetOperations = kafkaSetOperations;
-        this.configMapOperations = configMapOperations;
+        this.serviceOperations = supplier.serviceOperations;
+        this.zkSetOperations = supplier.zkSetOperations;
+        this.kafkaSetOperations = supplier.kafkaSetOperations;
+        this.configMapOperations = supplier.configMapOperations;
+        this.pvcOperations = supplier.pvcOperations;
+        this.deploymentOperations = supplier.deploymentOperations;
+        this.serviceAccountOperator = supplier.serviceAccountOperator;
+        this.cro = supplier.cro;
+        this.crbo = supplier.crbo;
     }
 
     @Override
@@ -297,7 +292,18 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         log.debug("{}: create/update kafka {}", reconciliation, name);
 
         Future<Void> chainFuture = Future.future();
+
         getKafkaClusterDescription(assemblyCm, assemblySecrets)
+                //.compose(desc -> desc.withVoid(cro.reconcile(
+                //        KafkaCluster.getInitContainerClusterRoleName(desc.kafka().getName()),
+                //        desc.kafka.generateClusterRole())))
+                .compose(desc -> desc.withVoid(
+                        serviceAccountOperator.reconcile(namespace,
+                        KafkaCluster.getInitContainerServiceAccountName(desc.kafka().getName()),
+                        desc.kafka.generateInitContainerServiceAccount())))
+                .compose(desc -> desc.withVoid(crbo.reconcile(
+                        KafkaCluster.getInitContainerClusterRoleBindingName(desc.kafka().getName()),
+                        desc.kafka.generateClusterRoleBinding(namespace))))
                 .compose(desc -> desc.withVoid(kafkaSetOperations.scaleDown(namespace, desc.kafka().getName(), desc.kafka().getReplicas())))
                 .compose(desc -> desc.withVoid(serviceOperations.reconcile(namespace, desc.kafka().getServiceName(), desc.service())))
                 .compose(desc -> desc.withVoid(serviceOperations.reconcile(namespace, desc.kafka().getHeadlessServiceName(), desc.headlessService())))
@@ -315,6 +321,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         return chainFuture;
     }
+
 
     private final Future<CompositeFuture> deleteKafka(Reconciliation reconciliation) {
         String namespace = reconciliation.namespace();
@@ -342,7 +349,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         KafkaCluster.getPersistentVolumeClaimName(kafkaSsName, i), null));
             }
         }
-
+        result.add(crbo.reconcile(KafkaCluster.getInitContainerClusterRoleBindingName(name), null));
+        result.add(serviceAccountOperator.reconcile(namespace, KafkaCluster.getInitContainerServiceAccountName(name), null));
+        //result.add(cro.reconcile(KafkaCluster.getInitContainerClusterRoleName(name), null));
         return CompositeFuture.join(result);
     }
 

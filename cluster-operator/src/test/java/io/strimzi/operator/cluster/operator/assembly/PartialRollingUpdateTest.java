@@ -17,15 +17,8 @@ import io.strimzi.operator.cluster.Reconciliation;
 import io.strimzi.operator.cluster.model.AssemblyType;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
-import io.strimzi.operator.cluster.operator.resource.ConfigMapOperator;
-import io.strimzi.operator.cluster.operator.resource.CrdOperator;
-import io.strimzi.operator.cluster.operator.resource.DeploymentOperator;
-import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
-import io.strimzi.operator.cluster.operator.resource.PvcOperator;
-import io.strimzi.operator.cluster.operator.resource.SecretOperator;
-import io.strimzi.operator.cluster.operator.resource.ServiceOperator;
+import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
-import io.strimzi.operator.cluster.operator.resource.ZookeeperSetOperator;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
@@ -49,7 +42,7 @@ public class PartialRollingUpdateTest {
 
     private static final String NAMESPACE = "my-namespace";
     private static final String CLUSTER_NAME = "my-cluster";
-    public static final String KAFKA_CRD_FILE = "../examples/install/cluster-operator/07-crd-kafka.yaml";
+    public static final String KAFKA_CRD_FILE = TestUtils.KAFKA_CRD;
 
     private Vertx vertx;
     private KafkaAssembly cluster;
@@ -60,14 +53,6 @@ public class PartialRollingUpdateTest {
     private Pod kafkaPod2;
     private Pod kafkaPod3;
     private Pod kafkaPod4;
-    private CrdOperator kafkaops;
-    private ConfigMapOperator cmops;
-    private ServiceOperator svcops;
-    private KafkaSetOperator ksops;
-    private ZookeeperSetOperator zksops;
-    private DeploymentOperator depops;
-    private PvcOperator pvcops;
-    private SecretOperator secretops;
     private KubernetesClient mockClient;
     private KafkaAssemblyOperator kco;
     private Pod zkPod0;
@@ -114,17 +99,9 @@ public class PartialRollingUpdateTest {
                 .end()
                 .build();
 
-        kafkaops = new CrdOperator(vertx, bootstrapClient, KafkaAssembly.class, KafkaAssemblyList.class, DoneableKafkaAssembly.class);
-        cmops = new ConfigMapOperator(vertx, bootstrapClient);
-        svcops = new ServiceOperator(vertx, bootstrapClient);
-        ksops = new KafkaSetOperator(vertx, bootstrapClient, 60_000L);
-        zksops = new ZookeeperSetOperator(vertx, bootstrapClient, 60_000L);
-        depops = new DeploymentOperator(vertx, bootstrapClient);
-        pvcops = new PvcOperator(vertx, bootstrapClient);
-        secretops = new SecretOperator(vertx, bootstrapClient);
+        ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(vertx, bootstrapClient, 60_000L);
         KafkaAssemblyOperator kco = new KafkaAssemblyOperator(vertx, true, 2_000,
-                new MockCertManager(),
-                kafkaops, cmops, svcops, zksops, ksops, pvcops, depops, secretops);
+                new MockCertManager(), supplier);
 
         LOGGER.info("bootstrap reconciliation");
         Async createAsync = context.async();
@@ -159,23 +136,10 @@ public class PartialRollingUpdateTest {
                 .withInitialPods(set(zkPod0, zkPod1, zkPod2, kafkaPod0, kafkaPod1, kafkaPod2, kafkaPod3, kafkaPod4))
                 .build();
 
-
-        /*this.mockClient = new MockKube()
-                .withInitialCms(Collections.singleton(cluster))
-                .withInitialStatefulSets(set(zkSs, kafkaSs))
-                .withInitialPods(set(zkPod0, zkPod1, zkPod2, kafkaPod0, kafkaPod1, kafkaPod2, kafkaPod3, kafkaPod4))
-                .build();*/
-        cmops = new ConfigMapOperator(vertx, mockClient);
-        svcops = new ServiceOperator(vertx, mockClient);
-        ksops = new KafkaSetOperator(vertx, mockClient, 60_000L);
-        zksops = new ZookeeperSetOperator(vertx, mockClient, 60_000L);
-        depops = new DeploymentOperator(vertx, mockClient);
-        pvcops = new PvcOperator(vertx, mockClient);
-        secretops = new SecretOperator(vertx, mockClient);
+        ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(vertx, mockClient, 60_000L);
 
         this.kco = new KafkaAssemblyOperator(vertx, true, 2_000,
-                new MockCertManager(),
-                kafkaops, cmops, svcops, zksops, ksops, pvcops, depops, secretops);
+                new MockCertManager(), supplier);
         LOGGER.info("Started test KafkaAssemblyOperator");
     }
 
