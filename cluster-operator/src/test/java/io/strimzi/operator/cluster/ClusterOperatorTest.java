@@ -124,7 +124,6 @@ public class ClusterOperatorTest {
 
         Map<String, String> env = new HashMap<>();
         env.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, namespaces);
-        env.put(ClusterOperatorConfig.STRIMZI_CONFIGMAP_LABELS, STRIMZI_IO_KIND_CLUSTER);
         env.put(ClusterOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, "120000");
         Main.run(vertx, client, openShift, ClusterOperatorConfig.fromMap(env)).setHandler(ar -> {
             context.assertNull(ar.cause(), "Expected all verticles to start OK");
