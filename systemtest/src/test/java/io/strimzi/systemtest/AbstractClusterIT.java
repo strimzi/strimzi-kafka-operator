@@ -81,7 +81,6 @@ public class AbstractClusterIT {
     static KubernetesClient client = new DefaultKubernetesClient();
     KubeClient<?> kubeClient = cluster.client();
 
-    // can be used as kafka stateful set or service names
     static String kafkaClusterName(String clusterName) {
         return clusterName + "-kafka";
     }
@@ -94,15 +93,18 @@ public class AbstractClusterIT {
         return kafkaClusterName(clusterName) + "-" + podId;
     }
 
+    static String kafkaServiceName(String clusterName) {
+        return kafkaClusterName(clusterName) + "-bootstrap";
+    }
+
     static String kafkaHeadlessServiceName(String clusterName) {
-        return kafkaClusterName(clusterName) + "-headless";
+        return kafkaClusterName(clusterName) + "-brokers";
     }
 
     static String kafkaMetricsConfigName(String clusterName) {
         return kafkaClusterName(clusterName) + "-config";
     }
 
-    // can be used as zookeeper stateful set or service names
     static String zookeeperClusterName(String clusterName) {
         return clusterName + "-zookeeper";
     }
@@ -111,8 +113,12 @@ public class AbstractClusterIT {
         return zookeeperClusterName(clusterName) + "-" + podId;
     }
 
+    static String zookeeperServiceName(String clusterName) {
+        return zookeeperClusterName(clusterName) + "-client";
+    }
+
     static String zookeeperHeadlessServiceName(String clusterName) {
-        return zookeeperClusterName(clusterName) + "-headless";
+        return zookeeperClusterName(clusterName) + "-nodes";
     }
 
     static String zookeeperMetricsConfigName(String clusterName) {
@@ -228,7 +234,7 @@ public class AbstractClusterIT {
     public void sendMessages(String clusterName, String topic, int messagesCount, int kafkaPodID) {
         LOGGER.info("Sending messages");
         String command = "sh bin/kafka-verifiable-producer.sh --broker-list " +
-                clusterName + "-kafka:9092 --topic " + topic + " --max-messages " + messagesCount + "";
+                clusterName + "-kafka-bootstrap:9092 --topic " + topic + " --max-messages " + messagesCount + "";
 
         LOGGER.info("Command for kafka-verifiable-producer.sh {}", command);
 
@@ -239,7 +245,7 @@ public class AbstractClusterIT {
         LOGGER.info("Consuming messages");
         String output = kubeClient.exec(kafkaPodName(clusterName, kafkaPodID), "/bin/bash", "-c",
                 "bin/kafka-verifiable-consumer.sh --broker-list " + clusterName +
-                        "-kafka:9092 --topic " + topic + " --group-id " + groupID + " & sleep "
+                        "-kafka-bootstrap:9092 --topic " + topic + " --group-id " + groupID + " & sleep "
                         + timeout + "; kill %1").out();
         output = "[" + output.replaceAll("\n", ",") + "]";
         LOGGER.info("Output for kafka-verifiable-consumer.sh {}", output);

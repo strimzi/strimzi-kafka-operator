@@ -297,10 +297,10 @@ public class KafkaAssemblyOperatorTest {
             // We expect a headless and headful service
             List<Service> capturedServices = serviceCaptor.getAllValues();
             context.assertEquals(4, capturedServices.size());
-            context.assertEquals(set(KafkaCluster.kafkaClusterName(clusterCmName),
-                    KafkaCluster.headlessName(clusterCmName),
-                    ZookeeperCluster.zookeeperClusterName(clusterCmName),
-                    ZookeeperCluster.zookeeperHeadlessName(clusterCmName)), capturedServices.stream().map(svc -> svc.getMetadata().getName()).collect(Collectors.toSet()));
+            context.assertEquals(set(KafkaCluster.serviceName(clusterCmName),
+                    KafkaCluster.headlessServiceName(clusterCmName),
+                    ZookeeperCluster.serviceName(clusterCmName),
+                    ZookeeperCluster.headlessServiceName(clusterCmName)), capturedServices.stream().map(svc -> svc.getMetadata().getName()).collect(Collectors.toSet()));
 
             // Assertions on the statefulset
             List<StatefulSet> capturedSs = ssCaptor.getAllValues();
@@ -420,11 +420,12 @@ public class KafkaAssemblyOperatorTest {
             context.assertEquals(metricsNames, captured(metricsCaptor));*/
             verify(mockZsOps).reconcile(eq(assemblyNamespace), eq(ZookeeperCluster.zookeeperClusterName(assemblyName)), isNull());
 
+            //Verify deleted services
             context.assertEquals(set(
-                    ZookeeperCluster.zookeeperHeadlessName(assemblyName),
-                    ZookeeperCluster.zookeeperClusterName(assemblyName),
-                    KafkaCluster.kafkaClusterName(assemblyName),
-                    KafkaCluster.headlessName(assemblyName)),
+                    ZookeeperCluster.headlessServiceName(assemblyName),
+                    ZookeeperCluster.serviceName(assemblyName),
+                    KafkaCluster.serviceName(assemblyName),
+                    KafkaCluster.headlessServiceName(assemblyName)),
                     captured(serviceCaptor));
 
             // verify deleted Statefulsets
@@ -658,8 +659,8 @@ public class KafkaAssemblyOperatorTest {
                 .endMetadata()
                 .withData(singletonMap(AbstractModel.ANCILLARY_CM_KEY_METRICS, TestUtils.toYamlString(METRICS_CONFIG)))
                 .build();
-
         when(mockCmOps.get(clusterNamespace, KafkaCluster.metricAndLogConfigsName(clusterName))).thenReturn(metricsCm);
+
         ConfigMap zkMetricsCm = new ConfigMapBuilder().withNewMetadata()
                 .withName(ZookeeperCluster.zookeeperMetricAndLogConfigsName(clusterName))
                 .withNamespace(clusterNamespace)
@@ -676,15 +677,14 @@ public class KafkaAssemblyOperatorTest {
                         updatedKafkaCluster.parseLogging(LOG_KAFKA_CONFIG, null)))
                 .build();
         when(mockCmOps.get(clusterNamespace, KafkaCluster.metricAndLogConfigsName(clusterName))).thenReturn(logCm);
+
         ConfigMap zklogsCm = new ConfigMapBuilder().withNewMetadata()
                 .withName(ZookeeperCluster.zookeeperMetricAndLogConfigsName(clusterName))
                 .withNamespace(clusterNamespace)
                 .endMetadata()
                 .withData(singletonMap(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG,
-                        updatedKafkaCluster.parseLogging(LOG_ZOOKEEPER_CONFIG, null)))
+                        updatedZookeeperCluster.parseLogging(LOG_ZOOKEEPER_CONFIG, null)))
                 .build();
-
-        when(mockCmOps.get(clusterNamespace, ZookeeperCluster.zookeeperMetricAndLogConfigsName(clusterName))).thenReturn(zkMetricsCm);
         when(mockCmOps.get(clusterNamespace, ZookeeperCluster.zookeeperMetricAndLogConfigsName(clusterName))).thenReturn(zklogsCm);
 
 
@@ -692,13 +692,13 @@ public class KafkaAssemblyOperatorTest {
         when(mockServiceOps.get(clusterNamespace, KafkaCluster.kafkaClusterName(clusterName))).thenReturn(
                 originalKafkaCluster.generateService()
         );
-        when(mockServiceOps.get(clusterNamespace, KafkaCluster.headlessName(clusterName))).thenReturn(
+        when(mockServiceOps.get(clusterNamespace, KafkaCluster.headlessServiceName(clusterName))).thenReturn(
                 originalKafkaCluster.generateHeadlessService()
         );
         when(mockServiceOps.get(clusterNamespace, ZookeeperCluster.zookeeperClusterName(clusterName))).thenReturn(
                 originalKafkaCluster.generateService()
         );
-        when(mockServiceOps.get(clusterNamespace, ZookeeperCluster.zookeeperHeadlessName(clusterName))).thenReturn(
+        when(mockServiceOps.get(clusterNamespace, ZookeeperCluster.headlessServiceName(clusterName))).thenReturn(
                 originalZookeeperCluster.generateHeadlessService()
         );
         when(mockServiceOps.endpointReadiness(eq(clusterNamespace), any(), anyLong(), anyLong())).thenReturn(

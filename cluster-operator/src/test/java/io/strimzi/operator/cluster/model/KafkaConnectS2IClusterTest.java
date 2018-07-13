@@ -124,9 +124,8 @@ public class KafkaConnectS2IClusterTest {
         Service svc = kc.generateService();
 
         assertEquals("ClusterIP", svc.getSpec().getType());
-        Map<String, String> expectedLabels = expectedLabels(kc.kafkaConnectClusterName(cluster));
-        assertEquals(expectedLabels, svc.getMetadata().getLabels());
-        assertEquals(expectedLabels, svc.getSpec().getSelector());
+        assertEquals(expectedLabels(kc.serviceName(cluster)), svc.getMetadata().getLabels());
+        assertEquals(expectedLabels(kc.kafkaConnectClusterName(cluster)), svc.getSpec().getSelector());
         assertEquals(2, svc.getSpec().getPorts().size());
         assertEquals(new Integer(KafkaConnectCluster.REST_API_PORT), svc.getSpec().getPorts().get(0).getPort());
         assertEquals(KafkaConnectCluster.REST_API_PORT_NAME, svc.getSpec().getPorts().get(0).getName());

@@ -92,7 +92,7 @@ public class ZookeeperClusterTest {
     }
 
     private void checkHeadlessService(Service headless) {
-        assertEquals(ZookeeperCluster.zookeeperHeadlessName(cluster), headless.getMetadata().getName());
+        assertEquals(ZookeeperCluster.headlessServiceName(cluster), headless.getMetadata().getName());
         assertEquals("ClusterIP", headless.getSpec().getType());
         assertEquals("None", headless.getSpec().getClusterIP());
         assertEquals(expectedLabels(), headless.getSpec().getSelector());

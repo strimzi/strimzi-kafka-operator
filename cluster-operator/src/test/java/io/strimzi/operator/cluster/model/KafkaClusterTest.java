@@ -95,7 +95,7 @@ public class KafkaClusterTest {
     }
 
     private void checkHeadlessService(Service headless) {
-        assertEquals(KafkaCluster.headlessName(cluster), headless.getMetadata().getName());
+        assertEquals(KafkaCluster.headlessServiceName(cluster), headless.getMetadata().getName());
         assertEquals("ClusterIP", headless.getSpec().getType());
         assertEquals("None", headless.getSpec().getClusterIP());
         assertEquals(expectedLabels(), headless.getSpec().getSelector());

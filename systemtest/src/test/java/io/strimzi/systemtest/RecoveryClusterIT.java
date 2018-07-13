@@ -83,7 +83,7 @@ public class RecoveryClusterIT extends AbstractClusterIT {
     @Test
     public void testRecoveryFromKafkaServiceDeletion() {
         // kafka cluster already deployed via annotation
-        String kafkaServiceName = kafkaClusterName(CLUSTER_NAME);
+        String kafkaServiceName = kafkaServiceName(CLUSTER_NAME);
         LOGGER.info("Running deleteKafkaService with cluster {}", CLUSTER_NAME);
 
         kubeClient.deleteByName(SERVICE, kafkaServiceName);
@@ -98,7 +98,7 @@ public class RecoveryClusterIT extends AbstractClusterIT {
     @Test
     public void testRecoveryFromZookeeperServiceDeletion() {
         // kafka cluster already deployed via annotation
-        String zookeeperServiceName = zookeeperClusterName(CLUSTER_NAME);
+        String zookeeperServiceName = zookeeperServiceName(CLUSTER_NAME);
 
         LOGGER.info("Running deleteKafkaService with cluster {}", CLUSTER_NAME);
 

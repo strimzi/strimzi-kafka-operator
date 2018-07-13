@@ -41,6 +41,7 @@ public class KafkaConnectCluster extends AbstractModel {
     protected static final String METRICS_PORT_NAME = "metrics";
 
     private static final String NAME_SUFFIX = "-connect";
+    private static final String SERVICE_NAME_SUFFIX = NAME_SUFFIX + "-api";
 
     private static final String METRICS_AND_LOG_CONFIG_SUFFIX = NAME_SUFFIX + "-config";
 
@@ -66,6 +67,7 @@ public class KafkaConnectCluster extends AbstractModel {
     protected KafkaConnectCluster(String namespace, String cluster, Labels labels) {
         super(namespace, cluster, labels);
         this.name = kafkaConnectClusterName(cluster);
+        this.serviceName = serviceName(cluster);
         this.validLoggerFields = getDefaultLogConfig();
         this.ancillaryConfigName = logAndMetricsConfigName(cluster);
         this.image = DEFAULT_IMAGE;
@@ -85,6 +87,10 @@ public class KafkaConnectCluster extends AbstractModel {
 
     public static String kafkaConnectClusterName(String cluster) {
         return cluster + KafkaConnectCluster.NAME_SUFFIX;
+    }
+
+    public static String serviceName(String cluster) {
+        return cluster + KafkaConnectCluster.SERVICE_NAME_SUFFIX;
     }
 
     public static String logAndMetricsConfigName(String cluster) {

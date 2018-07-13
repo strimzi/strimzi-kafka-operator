@@ -12,7 +12,7 @@ listener.security.protocol.map=CLIENT:PLAINTEXT,REPLICATION:SSL,CLIENTTLS:SSL
 inter.broker.listener.name=REPLICATION
 
 # Zookeeper
-zookeeper.connect=${KAFKA_ZOOKEEPER_CONNECT:-zookeeper:2181}
+zookeeper.connect=${KAFKA_ZOOKEEPER_CONNECT:-zookeeper-client:2181}
 zookeeper.connection.timeout.ms=6000
 
 # Logs

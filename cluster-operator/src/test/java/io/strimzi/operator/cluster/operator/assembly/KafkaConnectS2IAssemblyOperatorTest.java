@@ -121,7 +121,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
             List<Service> capturedServices = serviceCaptor.getAllValues();
             context.assertEquals(1, capturedServices.size());
             Service service = capturedServices.get(0);
-            context.assertEquals(connect.getName(), service.getMetadata().getName());
+            context.assertEquals(connect.getServiceName(), service.getMetadata().getName());
             context.assertEquals(connect.generateService(), service, "Services are not equal");
 
             // Verify Deployment Config
@@ -332,7 +332,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
             List<Service> capturedServices = serviceCaptor.getAllValues();
             context.assertEquals(1, capturedServices.size());
             Service service = capturedServices.get(0);
-            context.assertEquals(compareTo.getName(), service.getMetadata().getName());
+            context.assertEquals(compareTo.getServiceName(), service.getMetadata().getName());
             context.assertEquals(compareTo.generateService(), service, "Services are not equal");
 
             // Verify Deployment Config
@@ -603,7 +603,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
             // Verify service
             context.assertEquals(1, serviceNameCaptor.getAllValues().size());
             context.assertEquals(clusterCmNamespace, serviceNamespaceCaptor.getValue());
-            context.assertEquals(connect.getName(), serviceNameCaptor.getValue());
+            context.assertEquals(connect.getServiceName(), serviceNameCaptor.getValue());
 
             // Vertify deployment Config
             context.assertEquals(1, dcNameCaptor.getAllValues().size());

@@ -57,7 +57,8 @@ public class ZookeeperCluster extends AbstractModel {
     protected static final String TLS_SIDECAR_VOLUME_NAME = "tls-sidecar-certs";
     protected static final String TLS_SIDECAR_VOLUME_MOUNT = "/etc/tls-sidecar/certs/";
     private static final String NAME_SUFFIX = "-zookeeper";
-    private static final String HEADLESS_NAME_SUFFIX = NAME_SUFFIX + "-headless";
+    private static final String SERVICE_NAME_SUFFIX = NAME_SUFFIX + "-client";
+    private static final String HEADLESS_SERVICE_NAME_SUFFIX = NAME_SUFFIX + "-nodes";
     private static final String METRICS_AND_LOG_CONFIG_SUFFIX = NAME_SUFFIX + "-config";
     private static final String LOG_CONFIG_SUFFIX = NAME_SUFFIX + "-logging";
     private static final String NODES_CERTS_SUFFIX = NAME_SUFFIX + "-nodes";
@@ -94,8 +95,12 @@ public class ZookeeperCluster extends AbstractModel {
         return cluster + ZookeeperCluster.LOG_CONFIG_SUFFIX;
     }
 
-    public static String zookeeperHeadlessName(String cluster) {
-        return cluster + ZookeeperCluster.HEADLESS_NAME_SUFFIX;
+    public static String serviceName(String cluster) {
+        return cluster + ZookeeperCluster.SERVICE_NAME_SUFFIX;
+    }
+
+    public static String headlessServiceName(String cluster) {
+        return cluster + ZookeeperCluster.HEADLESS_SERVICE_NAME_SUFFIX;
     }
 
     public static String zookeeperPodName(String cluster, int pod) {
@@ -120,7 +125,8 @@ public class ZookeeperCluster extends AbstractModel {
 
         super(namespace, cluster, labels);
         this.name = zookeeperClusterName(cluster);
-        this.headlessName = zookeeperHeadlessName(cluster);
+        this.serviceName = serviceName(cluster);
+        this.headlessServiceName = headlessServiceName(cluster);
         this.ancillaryConfigName = zookeeperMetricAndLogConfigsName(cluster);
         this.image = Zookeeper.DEFAULT_IMAGE;
         this.replicas = Zookeeper.DEFAULT_REPLICAS;
@@ -232,7 +238,7 @@ public class ZookeeperCluster extends AbstractModel {
 
     public Service generateHeadlessService() {
         Map<String, String> annotations = Collections.singletonMap("service.alpha.kubernetes.io/tolerate-unready-endpoints", "true");
-        return createHeadlessService(headlessName, getServicePortList(), annotations);
+        return createHeadlessService(getServicePortList(), annotations);
     }
 
     public StatefulSet generateStatefulSet(boolean isOpenShift) {
