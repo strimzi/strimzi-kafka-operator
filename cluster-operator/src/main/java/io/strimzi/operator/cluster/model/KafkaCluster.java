@@ -552,7 +552,7 @@ public class KafkaCluster extends AbstractModel {
                 .withPorts(getContainerPortList())
                 .withLivenessProbe(createExecProbe(livenessPath, livenessInitialDelay, livenessTimeout))
                 .withReadinessProbe(createExecProbe(readinessPath, readinessInitialDelay, readinessTimeout))
-                .withResources(resources())
+                .withResources(resources(getResources()))
                 .build());
     }
 

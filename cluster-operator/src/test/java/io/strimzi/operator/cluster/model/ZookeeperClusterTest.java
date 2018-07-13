@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.KafkaAssembly;
 import io.strimzi.api.kafka.model.KafkaAssemblyBuilder;
+import io.strimzi.api.kafka.model.Zookeeper;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.operator.assembly.MockCertManager;
@@ -135,6 +136,7 @@ public class ZookeeperClusterTest {
         assertEquals(ZookeeperCluster.CLIENT_PORT_NAME, containers.get(0).getPorts().get(0).getName());
         assertEquals(new Integer(ZookeeperCluster.CLIENT_PORT), containers.get(0).getPorts().get(0).getContainerPort());
         // checks on the TLS sidecar container
+        assertEquals(Zookeeper.DEFAULT_TLS_SIDECAR_IMAGE, containers.get(1).getImage());
         assertEquals(new Integer(replicas), Integer.valueOf(AbstractModel.containerEnvVars(containers.get(1)).get(ZookeeperCluster.ENV_VAR_ZOOKEEPER_NODE_COUNT)));
         assertEquals(ZookeeperCluster.CLUSTERING_PORT_NAME, containers.get(1).getPorts().get(0).getName());
         assertEquals(new Integer(ZookeeperCluster.CLUSTERING_PORT), containers.get(1).getPorts().get(0).getContainerPort());

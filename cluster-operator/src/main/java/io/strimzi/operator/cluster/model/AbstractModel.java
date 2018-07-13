@@ -809,7 +809,7 @@ public abstract class AbstractModel {
                 (u, v) -> v));
     }
 
-    protected ResourceRequirements resources() {
+    public static ResourceRequirements resources(Resources resources) {
         if (resources != null) {
             ResourceRequirementsBuilder builder = new ResourceRequirementsBuilder();
             CpuMemory limits = resources.getLimits();
@@ -837,6 +837,10 @@ public abstract class AbstractModel {
 
     public void setResources(Resources resources) {
         this.resources = resources;
+    }
+
+    public Resources getResources() {
+        return resources;
     }
 
     public void setJvmOptions(JvmOptions jvmOptions) {

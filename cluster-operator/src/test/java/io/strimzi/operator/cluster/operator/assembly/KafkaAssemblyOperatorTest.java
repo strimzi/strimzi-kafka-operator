@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.api.kafka.model.EphemeralStorage;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.KafkaAssembly;
+import io.strimzi.api.kafka.model.KafkaAssemblyBuilder;
 import io.strimzi.api.kafka.model.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.Storage;
 import io.strimzi.api.kafka.model.TopicOperatorBuilder;
@@ -525,7 +526,10 @@ public class KafkaAssemblyOperatorTest {
     @Test
     public void testUpdateZookeeperClusterChangeStunnelImage(TestContext context) {
         KafkaAssembly kafkaAssembly = getKafkaAssembly("bar");
-        kafkaAssembly.getSpec().getZookeeper().setTlsSidecarImage("a-changed-tls-sidecar-image");
+        kafkaAssembly = new KafkaAssemblyBuilder(kafkaAssembly)
+                .editSpec().editZookeeper()
+                    .editOrNewTlsSidecar().withImage("a-changed-tls-sidecar-image")
+                    .endTlsSidecar().endZookeeper().endSpec().build();
         List<Secret> secrets = getClusterSecrets("bar",
                 kafkaAssembly.getSpec().getKafka().getReplicas(),
                 kafkaAssembly.getSpec().getZookeeper().getReplicas());
