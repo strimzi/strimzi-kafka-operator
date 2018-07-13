@@ -31,7 +31,6 @@ import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.operator.assembly.AbstractAssemblyOperator;
 import io.strimzi.operator.cluster.operator.resource.ClusterRoleBindingOperator;
-import io.strimzi.operator.cluster.operator.resource.ClusterRoleOperator;
 import io.vertx.core.json.JsonObject;
 
 import java.io.File;
@@ -576,10 +575,6 @@ public class KafkaCluster extends AbstractModel {
         return "kafkaDefaultLoggingProperties";
     }
 
-    public ClusterRoleOperator.ClusterRole generateClusterRole() {
-        return new ClusterRoleOperator.ClusterRole(getInitContainerClusterRoleName(name));
-    }
-
     public ServiceAccount generateInitContainerServiceAccount() {
         if (rack != null) {
             return new ServiceAccountBuilder()
@@ -596,10 +591,6 @@ public class KafkaCluster extends AbstractModel {
 
     public static String getInitContainerServiceAccountName(String name) {
         return name + "-kafka-init";
-    }
-
-    public static String getInitContainerClusterRoleName(String name) {
-        return "strimzi-" + name + "-kafka-init";
     }
 
     public static String getInitContainerClusterRoleBindingName(String name) {

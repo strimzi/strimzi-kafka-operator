@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -24,13 +25,13 @@ import io.strimzi.operator.cluster.model.Labels;
 import io.strimzi.operator.cluster.model.TopicOperator;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ClusterRoleBindingOperator;
-import io.strimzi.operator.cluster.operator.resource.ClusterRoleOperator;
 import io.strimzi.operator.cluster.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.cluster.operator.resource.DeploymentOperator;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.PvcOperator;
 import io.strimzi.operator.cluster.operator.resource.ReconcileResult;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.cluster.operator.resource.RoleBindingOperator;
 import io.strimzi.operator.cluster.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.cluster.operator.resource.ServiceOperator;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperSetOperator;
@@ -67,7 +68,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     private final DeploymentOperator deploymentOperations;
     private final ConfigMapOperator configMapOperations;
     private final ServiceAccountOperator serviceAccountOperator;
-    private final ClusterRoleOperator cro;
+    private final RoleBindingOperator rbo;
     private final ClusterRoleBindingOperator crbo;
 
     /**
@@ -87,7 +88,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         this.pvcOperations = supplier.pvcOperations;
         this.deploymentOperations = supplier.deploymentOperations;
         this.serviceAccountOperator = supplier.serviceAccountOperator;
-        this.cro = supplier.cro;
+        this.rbo = supplier.rbo;
         this.crbo = supplier.crbo;
     }
 
@@ -294,9 +295,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<Void> chainFuture = Future.future();
 
         getKafkaClusterDescription(assemblyCm, assemblySecrets)
-                //.compose(desc -> desc.withVoid(cro.reconcile(
-                //        KafkaCluster.getInitContainerClusterRoleName(desc.kafka().getName()),
-                //        desc.kafka.generateClusterRole())))
                 .compose(desc -> desc.withVoid(
                         serviceAccountOperator.reconcile(namespace,
                         KafkaCluster.getInitContainerServiceAccountName(desc.kafka().getName()),
@@ -351,7 +349,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
         result.add(crbo.reconcile(KafkaCluster.getInitContainerClusterRoleBindingName(name), null));
         result.add(serviceAccountOperator.reconcile(namespace, KafkaCluster.getInitContainerServiceAccountName(name), null));
-        //result.add(cro.reconcile(KafkaCluster.getInitContainerClusterRoleName(name), null));
         return CompositeFuture.join(result);
     }
 
@@ -434,7 +431,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         return CompositeFuture.join(result);
     };
 
-    private final Future<ReconcileResult<Deployment>> createOrUpdateTopicOperator(Reconciliation reconciliation, KafkaAssembly kafkaAssembly) {
+    private final Future<Void> createOrUpdateTopicOperator(Reconciliation reconciliation, KafkaAssembly kafkaAssembly) {
         String namespace = kafkaAssembly.getMetadata().getNamespace();
         String name = kafkaAssembly.getMetadata().getName();
         log.debug("{}: create/update topic operator {}", reconciliation, name);
@@ -444,39 +441,45 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         } catch (Exception e) {
             return Future.failedFuture(e);
         }
-        if (topicOperator != null) {
-            return getTopicOperatorLogAndMetricsConfigMap(kafkaAssembly, topicOperator)
-                    .compose(m -> configMapOperations.reconcile(namespace, topicOperator.getAncillaryConfigName(), m))
-                    .compose(i -> deploymentOperations.reconcile(namespace, topicOperatorName(name), topicOperator.generateDeployment()));
-        } else {
-            return deploymentOperations.reconcile(namespace, topicOperatorName(name), null);
-        }
+
+        ServiceAccount sa = topicOperator != null ? topicOperator.generateServiceAccount() : null;
+        RoleBindingOperator.RoleBinding rb = topicOperator != null ? topicOperator.generateRoleBinding(namespace) : null;
+        Deployment deployment = topicOperator != null ? topicOperator.generateDeployment() : null;
+        return getTopicOperatorLogAndMetricsConfigMap(kafkaAssembly, topicOperator)
+                .compose(m -> configMapOperations.reconcile(namespace, topicOperator.getAncillaryConfigName(), m))
+                .compose(i -> serviceAccountOperator.reconcile(namespace, TopicOperator.topicOperatorServiceAccountName(name), sa))
+                .compose(i -> rbo.reconcile(namespace, TopicOperator.TO_ROLE_BINDING_NAME, rb))
+                .compose(i -> deploymentOperations.reconcile(namespace, topicOperatorName(name), deployment).map((Void) null));
     };
 
     private Future<ConfigMap> getTopicOperatorLogAndMetricsConfigMap(KafkaAssembly kafkaAssembly, TopicOperator topicOperator) {
-        Future<ConfigMap> fut = Future.future();
+        if (topicOperator != null) {
+            Future<ConfigMap> fut = Future.future();
 
-        vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
-            future -> {
-                try {
-                    ConfigMap logAndMetricsConfigMap = topicOperator.generateMetricsAndLogConfigMap(
-                            topicOperator.getLogging() instanceof ExternalLogging ?
-                                    configMapOperations.get(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) topicOperator.getLogging()).getName()) :
-                                    null);
-                    future.complete(logAndMetricsConfigMap);
-                } catch (Throwable e) {
-                    future.fail(e);
+            vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
+                future -> {
+                    try {
+                        ConfigMap logAndMetricsConfigMap = topicOperator.generateMetricsAndLogConfigMap(
+                                topicOperator.getLogging() instanceof ExternalLogging ?
+                                        configMapOperations.get(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) topicOperator.getLogging()).getName()) :
+                                        null);
+                        future.complete(logAndMetricsConfigMap);
+                    } catch (Throwable e) {
+                        future.fail(e);
+                    }
+                }, true,
+                res -> {
+                    if (res.succeeded()) {
+                        fut.complete((ConfigMap) res.result());
+                    } else {
+                        fut.fail(res.cause());
+                    }
                 }
-            }, true,
-            res -> {
-                if (res.succeeded()) {
-                    fut.complete((ConfigMap) res.result());
-                } else {
-                    fut.fail(res.cause());
-                }
-            }
-        );
-        return fut;
+            );
+            return fut;
+        } else {
+            return Future.succeededFuture();
+        }
     }
 
     private final Future<CompositeFuture> deleteTopicOperator(Reconciliation reconciliation) {

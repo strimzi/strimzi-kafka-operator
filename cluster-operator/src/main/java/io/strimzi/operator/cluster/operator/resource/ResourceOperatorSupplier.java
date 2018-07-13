@@ -19,7 +19,7 @@ public class ResourceOperatorSupplier {
     public final PvcOperator pvcOperations;
     public final DeploymentOperator deploymentOperations;
     public final ServiceAccountOperator serviceAccountOperator;
-    public final ClusterRoleOperator cro;
+    public final RoleBindingOperator rbo;
     public final ClusterRoleBindingOperator crbo;
     public final CrdOperator<KubernetesClient, KafkaAssembly, KafkaAssemblyList, DoneableKafkaAssembly> kafkaOperator;
 
@@ -32,7 +32,7 @@ public class ResourceOperatorSupplier {
             new PvcOperator(vertx, client),
             new DeploymentOperator(vertx, client),
             new ServiceAccountOperator(vertx, client),
-            new ClusterRoleOperator(vertx, client),
+            new RoleBindingOperator(vertx, client),
             new ClusterRoleBindingOperator(vertx, client),
             new CrdOperator<>(vertx, client, KafkaAssembly .class, KafkaAssemblyList .class, DoneableKafkaAssembly .class));
     }
@@ -45,7 +45,7 @@ public class ResourceOperatorSupplier {
                                     PvcOperator pvcOperations,
                                     DeploymentOperator deploymentOperations,
                                     ServiceAccountOperator serviceAccountOperator,
-                                    ClusterRoleOperator cro,
+                                    RoleBindingOperator rbo,
                                     ClusterRoleBindingOperator crbo,
                                     CrdOperator<KubernetesClient, KafkaAssembly, KafkaAssemblyList, DoneableKafkaAssembly> kafkaOperator) {
         this.serviceOperations = serviceOperations;
@@ -56,7 +56,7 @@ public class ResourceOperatorSupplier {
         this.pvcOperations = pvcOperations;
         this.deploymentOperations = deploymentOperations;
         this.serviceAccountOperator = serviceAccountOperator;
-        this.cro = cro;
+        this.rbo = rbo;
         this.crbo = crbo;
         this.kafkaOperator = kafkaOperator;
     }

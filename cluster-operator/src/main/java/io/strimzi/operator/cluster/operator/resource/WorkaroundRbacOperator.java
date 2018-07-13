@@ -31,10 +31,10 @@ public class WorkaroundRbacOperator<T> {
     private final Logger log = LogManager.getLogger(getClass());
     private final Vertx vertx;
     private final OkHttpClient client;
-    private final String baseUrl;
-    private final String group;
-    private final String apiVersion;
-    private final String plural;
+    protected final String baseUrl;
+    protected final String group;
+    protected final String apiVersion;
+    protected final String plural;
 
 
     public WorkaroundRbacOperator(Vertx vertx, KubernetesClient client, String group, String apiVersion, String plural) {
@@ -50,35 +50,27 @@ public class WorkaroundRbacOperator<T> {
         this.plural = plural;
     }
 
-    private String urlWithoutName() {
-        return baseUrl + "apis/" + group + "/" + apiVersion + "/" + plural;
-    }
-
-    private String urlWithName(String name) {
-        return urlWithoutName() + "/" + name;
-    }
-
-    public Future<Void> reconcile(String name, T resource) {
+    protected Future<Void> doReconcile(String urlWithoutName, String urlWithName, T resource) {
         Future<Void> result = Future.future();
         vertx.executeBlocking(fut -> {
             try {
-                Request getRequest = new Request.Builder().get().url(urlWithName(name)).build();
+                Request getRequest = new Request.Builder().get().url(urlWithName).build();
                 int getCode = execute(getRequest, 200, 404);
                 if (getCode == 200) {
                     if (resource != null) {
                         // exists and wanted => replace
                         log.debug("Replacing");
-                        replace(name, resource);
+                        replace(urlWithName, resource);
                     } else {
                         // exists but not wanted => delete
                         log.debug("Deleting");
-                        delete(name);
+                        delete(urlWithName);
                     }
                 } else if (getCode == 404) {
                     if (resource != null) {
                         // does not exists but wanted => create
                         log.debug("Creating");
-                        create(name, resource);
+                        create(urlWithoutName, resource);
                     } else {
                         // does not exist and not wanted => noop
                         log.debug("No-op (deletion requested, but does not exist)");
@@ -97,15 +89,15 @@ public class WorkaroundRbacOperator<T> {
         return result;
     }
 
-    private void delete(String name) {
-        Request postRequest = new Request.Builder().delete().url(urlWithName(name)).build();
+    private void delete(String urlWithName) {
+        Request postRequest = new Request.Builder().delete().url(urlWithName).build();
         execute(postRequest, 200);
     }
 
-    private void replace(String name, T resource) {
+    private void replace(String urlWithName, T resource) {
         logJson(resource);
         RequestBody postBody = RequestBody.create(OperationSupport.JSON, resource.toString());
-        Request postRequest = new Request.Builder().put(postBody).url(urlWithName(name)).build();
+        Request postRequest = new Request.Builder().put(postBody).url(urlWithName).build();
         execute(postRequest, 200, 201);
     }
 
@@ -113,24 +105,22 @@ public class WorkaroundRbacOperator<T> {
         try {
             String method = request.method();
             log.debug("Making {} request {}", method, request);
-            Response response = null;
+            Response response = client.newCall(request).execute();
             try {
-                response = client.newCall(request).execute();
+                log.debug("Got {} response {}", method, response);
+                final int code = response.code();
+                for (int i = 0; i < expectedCodes.length; i++) {
+                    if (expectedCodes[i] == code) {
+                        return code;
+                    }
+                }
+                throw new KubernetesClientException("Got unexpected " + request.method() + " status code " + code + ": " + response.message(),
+                        code, OperationSupport.createStatus(response));
             } finally {
-                if (response != null) {
+                if (response.body() != null) {
                     response.close();
                 }
             }
-            log.debug("Got {} response {}", method, response);
-            final int code = response.code();
-            for (int i = 0; i < expectedCodes.length; i++) {
-                if (expectedCodes[i] == code) {
-                    return code;
-                }
-            }
-            throw new KubernetesClientException("Got unexpected " + request.method() + " status code " + code + ": " + response.message(),
-                    code, OperationSupport.createStatus(response));
-
         } catch (IOException e) {
             throw new KubernetesClientException("Executing request", e);
         }
@@ -148,10 +138,10 @@ public class WorkaroundRbacOperator<T> {
         }
     }
 
-    private void create(String name, T resource) {
+    private void create(String urlWithoutName, T resource) {
         logJson(resource);
         RequestBody postBody = RequestBody.create(OperationSupport.JSON, resource.toString());
-        Request postRequest = new Request.Builder().post(postBody).url(urlWithoutName()).build();
+        Request postRequest = new Request.Builder().post(postBody).url(urlWithoutName).build();
         execute(postRequest, 200, 201, 202);
     }
 

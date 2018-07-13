@@ -14,19 +14,19 @@ import io.vertx.core.Vertx;
  * @deprecated This can be removed once support for ClusterRoles and ClusterRoleBindings is in Fabric8.
  */
 @Deprecated
-public class ClusterRoleBindingOperator extends WorkaroundRbacOperator<ClusterRoleBindingOperator.ClusterRoleBinding> {
+public class RoleBindingOperator extends WorkaroundRbacOperator<RoleBindingOperator.RoleBinding> {
 
-    public ClusterRoleBindingOperator(Vertx vertx, KubernetesClient client) {
-        super(vertx, client, "rbac.authorization.k8s.io", "v1beta1", "clusterrolebindings");
+    public RoleBindingOperator(Vertx vertx, KubernetesClient client) {
+        super(vertx, client, "rbac.authorization.k8s.io", "v1beta1", "rolebindings");
     }
 
-    public static class ClusterRoleBinding {
+    public static class RoleBinding {
         private final String serviceAccountName;
         private final String serviceAccountNamespace;
         private final String name;
         private final String clusterRoleName;
 
-        public ClusterRoleBinding(
+        public RoleBinding(
                 String name,
                 String clusterRoleName,
                 String serviceAccountNamespace, String serviceAccountName) {
@@ -37,7 +37,7 @@ public class ClusterRoleBindingOperator extends WorkaroundRbacOperator<ClusterRo
         }
         public String toString() {
             return "{\"apiVersion\": \"rbac.authorization.k8s.io/v1beta1\"," +
-                   "\"kind\": \"ClusterRoleBinding\"," +
+                   "\"kind\": \"RoleBinding\"," +
                    "\"metadata\":{" +
                    "  \"name\": \"" + name + "\"," +
                    "  \"labels\":{" +
@@ -58,16 +58,17 @@ public class ClusterRoleBindingOperator extends WorkaroundRbacOperator<ClusterRo
         }
     }
 
-    private String urlWithoutName() {
-        return baseUrl + "apis/" + group + "/" + apiVersion + "/" + plural;
+
+    private String urlWithoutName(String namespace) {
+        return baseUrl + "apis/" + group + "/" + apiVersion + "/" + plural + "/" + namespace;
     }
 
-    private String urlWithName(String name) {
-        return urlWithoutName() + "/" + name;
+    private String urlWithName(String namespace, String name) {
+        return urlWithoutName(namespace) + "/" + name;
     }
 
-    public Future<Void> reconcile(String name, ClusterRoleBinding resource) {
-        return doReconcile(urlWithoutName(), urlWithName(name), resource);
+    public Future<Void> reconcile(String namespace, String name, RoleBindingOperator.RoleBinding resource) {
+        return doReconcile(urlWithoutName(namespace), urlWithName(namespace, name), resource);
     }
 
 }

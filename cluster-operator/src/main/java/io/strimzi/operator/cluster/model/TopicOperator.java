@@ -10,11 +10,13 @@ import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.kubernetes.api.model.ServiceAccount;
+import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategy;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategyBuilder;
 import io.strimzi.api.kafka.model.KafkaAssembly;
-import io.strimzi.operator.cluster.ClusterOperator;
+import io.strimzi.operator.cluster.operator.resource.RoleBindingOperator;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -49,6 +51,8 @@ public class TopicOperator extends AbstractModel {
     public static final String ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
     public static final String ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS = "STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS";
     public static final String ENV_VAR_TOPIC_METADATA_MAX_ATTEMPTS = "STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS";
+    public static final String TO_CLUSTER_ROLE_NAME = "strimzi-topic-operator-role";
+    public static final String TO_ROLE_BINDING_NAME = "strimzi-topic-operator-role-binding";
 
     // Kafka bootstrap servers and Zookeeper nodes can't be specified in the JSON
     private String kafkaBootstrapServers;
@@ -249,9 +253,26 @@ public class TopicOperator extends AbstractModel {
         return varList;
     }
 
+    public static String topicOperatorServiceAccountName(String name) {
+        return name + NAME_SUFFIX;
+    }
+
     @Override
     protected String getServiceAccountName() {
-        return ClusterOperator.STRIMZI_CLUSTER_OPERATOR_SERVICE_ACCOUNT;
+        return topicOperatorServiceAccountName(cluster);
+    }
+
+    public ServiceAccount generateServiceAccount() {
+        return new ServiceAccountBuilder()
+                .withNewMetadata()
+                    .withName(getServiceAccountName())
+                    .withNamespace(namespace)
+                .endMetadata()
+            .build();
+    }
+
+    public RoleBindingOperator.RoleBinding generateRoleBinding(String namespace) {
+        return new RoleBindingOperator.RoleBinding(TO_ROLE_BINDING_NAME, TO_CLUSTER_ROLE_NAME, namespace, getServiceAccountName());
     }
 
     @Override

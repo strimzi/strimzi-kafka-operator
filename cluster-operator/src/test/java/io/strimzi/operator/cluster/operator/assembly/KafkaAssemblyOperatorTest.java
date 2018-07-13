@@ -27,7 +27,6 @@ import io.strimzi.operator.cluster.model.Labels;
 import io.strimzi.operator.cluster.model.TopicOperator;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ClusterRoleBindingOperator;
-import io.strimzi.operator.cluster.operator.resource.ClusterRoleOperator;
 import io.strimzi.operator.cluster.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.cluster.operator.resource.CrdOperator;
 import io.strimzi.operator.cluster.operator.resource.DeploymentOperator;
@@ -35,6 +34,7 @@ import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.PvcOperator;
 import io.strimzi.operator.cluster.operator.resource.ReconcileResult;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.cluster.operator.resource.RoleBindingOperator;
 import io.strimzi.operator.cluster.operator.resource.SecretOperator;
 import io.strimzi.operator.cluster.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.cluster.operator.resource.ServiceOperator;
@@ -349,7 +349,7 @@ public class KafkaAssemblyOperatorTest {
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         SecretOperator mockSecretOps = supplier.secretOperations;
         ServiceAccountOperator mockSao = supplier.serviceAccountOperator;
-        ClusterRoleOperator mockCro = supplier.cro;
+        RoleBindingOperator mockRbo = supplier.rbo;
         ClusterRoleBindingOperator mockCrbo = supplier.crbo;
 
         String assemblyName = clusterCm.getMetadata().getName();
@@ -655,7 +655,7 @@ public class KafkaAssemblyOperatorTest {
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         SecretOperator mockSecretOps = supplier.secretOperations;
         ServiceAccountOperator mockSao = supplier.serviceAccountOperator;
-        ClusterRoleOperator mockCro = supplier.cro;
+        RoleBindingOperator mockRbo = supplier.rbo;
         ClusterRoleBindingOperator mockCrbo = supplier.crbo;
 
         String clusterName = updatedAssembly.getMetadata().getName();
@@ -844,7 +844,7 @@ public class KafkaAssemblyOperatorTest {
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         SecretOperator mockSecretOps = supplier.secretOperations;
         ServiceAccountOperator mockSao = supplier.serviceAccountOperator;
-        ClusterRoleOperator mockCro = supplier.cro;
+        RoleBindingOperator mockRbo = supplier.rbo;
         ClusterRoleBindingOperator mockCrbo = supplier.crbo;
         String clusterCmNamespace = "myNamespace";
 
@@ -931,10 +931,10 @@ public class KafkaAssemblyOperatorTest {
                 mock(ServiceOperator.class), mock(ZookeeperSetOperator.class),
                 mock(KafkaSetOperator.class), mock(ConfigMapOperator.class), mock(SecretOperator.class),
                 mock(PvcOperator.class), mock(DeploymentOperator.class),
-                mock(ServiceAccountOperator.class), mock(ClusterRoleOperator.class), mock(ClusterRoleBindingOperator.class),
+                mock(ServiceAccountOperator.class), mock(RoleBindingOperator.class), mock(ClusterRoleBindingOperator.class),
                 mock(CrdOperator.class));
         when(supplier.serviceAccountOperator.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
-        when(supplier.cro.reconcile(anyString(), any())).thenReturn(Future.succeededFuture());
+        when(supplier.rbo.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
         when(supplier.crbo.reconcile(anyString(), any())).thenReturn(Future.succeededFuture());
         return supplier;
     }
