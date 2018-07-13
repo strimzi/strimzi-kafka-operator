@@ -33,7 +33,6 @@ import static io.strimzi.systemtest.k8s.Events.Started;
 import static io.strimzi.systemtest.k8s.Events.Unhealthy;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
-import static io.strimzi.systemtest.matchers.Matchers.valueOfCmEquals;
 import static io.strimzi.test.TestUtils.map;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
@@ -120,7 +119,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
         // kafka cluster Connect already deployed via annotation
         LOGGER.info("Running kafkaConnectScaleUP {}", CONNECT_CLUSTER_NAME);
 
-        List<String> connectPods = kubeClient.listResourcesByLabel("pod", "strimzi.io/type=kafka-connect");
+        List<String> connectPods = kubeClient.listResourcesByLabel("pod", "strimzi.io/kind=KafkaConnect");
         int initialReplicas = connectPods.size();
         assertEquals(1, initialReplicas);
         final int scaleTo = initialReplicas + 1;
@@ -130,7 +129,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
             c.getSpec().setReplicas(initialReplicas + 1);
         });
         kubeClient.waitForDeployment(kafkaConnectName(CONNECT_CLUSTER_NAME));
-        connectPods = kubeClient.listResourcesByLabel("pod", "strimzi.io/type=kafka-connect");
+        connectPods = kubeClient.listResourcesByLabel("pod", "strimzi.io/kind=KafkaConnect");
         assertEquals(scaleTo, connectPods.size());
         for (String pod : connectPods) {
             kubeClient.waitForPod(pod);
@@ -143,10 +142,10 @@ public class ConnectClusterIT extends AbstractClusterIT {
         replaceKafkaConnectResource(CONNECT_CLUSTER_NAME, c -> {
             c.getSpec().setReplicas(initialReplicas);
         });
-        while (kubeClient.listResourcesByLabel("pod", "strimzi.io/type=kafka-connect").size() == scaleTo) {
+        while (kubeClient.listResourcesByLabel("pod", "strimzi.io/kind=KafkaConnect").size() == scaleTo) {
             LOGGER.info("Waiting for connect pod deletion");
         }
-        connectPods = kubeClient.listResourcesByLabel("pod", "strimzi.io/type=kafka-connect");
+        connectPods = kubeClient.listResourcesByLabel("pod", "strimzi.io/kind=KafkaConnect");
         assertEquals(initialReplicas, connectPods.size());
         for (String pod : connectPods) {
             List<Event> events = getEvents("Pod", pod);
@@ -159,7 +158,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
     @JUnitGroup(name = "regression")
     @KafkaConnectFromClasspathYaml
     public void testForUpdateValuesInConnectCM() {
-        List<String> connectPods = kubeClient.listResourcesByLabel("pod", "strimzi.io/type=kafka-connect");
+        List<String> connectPods = kubeClient.listResourcesByLabel("pod", "strimzi.io/kind=KafkaConnect");
 
         String connectConfig = "{\n" +
                 "      \"bootstrap.servers\": \"" + KAFKA_CONNECT_BOOTSTRAP_SERVERS + "\",\n" +
@@ -180,12 +179,11 @@ public class ConnectClusterIT extends AbstractClusterIT {
             kubeClient.waitForResourceDeletion("pod", connectPods.get(i));
         }
         LOGGER.info("Verify values after update");
-        String configMapAfter = kubeClient.get("cm", CONNECT_CLUSTER_NAME);
-        assertThat(configMapAfter, valueOfCmEquals("healthcheck-delay", "61"));
-        assertThat(configMapAfter, valueOfCmEquals("healthcheck-timeout", "6"));
-        connectPods = kubeClient.listResourcesByLabel("pod", "strimzi.io/type=kafka-connect");
+        connectPods = kubeClient.listResourcesByLabel("pod", "strimzi.io/kind=KafkaConnect");
         for (int i = 0; i < connectPods.size(); i++) {
             String connectPodJson = kubeClient.getResourceAsJson("pod", connectPods.get(i));
+            assertThat(connectPodJson, hasJsonPath("$.spec.containers[*].readinessProbe.initialDelaySeconds", hasItem(61)));
+            assertThat(connectPodJson, hasJsonPath("$.spec.containers[*].readinessProbe.timeoutSeconds", hasItem(6)));
             assertThat(connectPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(61)));
             assertThat(connectPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.timeoutSeconds", hasItem(6)));
             assertThat(connectPodJson, containsString("config.storage.replication.factor=1"));

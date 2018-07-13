@@ -325,7 +325,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
                 "-Xmx1g", "-Xms1G", "-server", "-XX:+UseG1GC");
 
         assertResources(NAMESPACE, "jvm-resource-cluster-zookeeper-0",
-                "1G", "300m", "1G", "300m");
+                "1Gi", "300m", "1Gi", "300m");
         assertExpectedJavaOpts("jvm-resource-cluster-zookeeper-0",
                 "-Xmx600m", "-Xms300m", "-server", "-XX:+UseG1GC");
 
