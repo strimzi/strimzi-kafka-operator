@@ -318,6 +318,5 @@ public class KafkaClusterTest {
         assertEquals(new Integer(1234), probe.getTcpSocket().getPort().getIntVal());
         assertEquals(new Integer(10), probe.getInitialDelaySeconds());
         assertEquals(new Integer(20), probe.getTimeoutSeconds());
-
     }
 }
