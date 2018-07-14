@@ -600,6 +600,20 @@ public abstract class AbstractModel {
         return probe;
     }
 
+    protected Probe createTcpSocketProbe(int port, int initialDelay, int timeout) {
+        Probe probe = new ProbeBuilder()
+                .withNewTcpSocket()
+                    .withNewPort()
+                        .withIntVal(port)
+                    .endPort()
+                .endTcpSocket()
+                .withInitialDelaySeconds(initialDelay)
+                .withTimeoutSeconds(timeout)
+                .build();
+        log.trace("Created TCP socket probe {}", probe);
+        return probe;
+    }
+
     protected Probe createHttpProbe(String path, String port, int initialDelay, int timeout) {
         Probe probe = new ProbeBuilder().withNewHttpGet()
                 .withPath(path)

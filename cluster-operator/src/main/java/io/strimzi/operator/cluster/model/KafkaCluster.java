@@ -121,8 +121,6 @@ public class KafkaCluster extends AbstractModel {
         this.ancillaryConfigName = metricAndLogConfigsName(cluster);
         this.image = Kafka.DEFAULT_IMAGE;
         this.replicas = DEFAULT_REPLICAS;
-        this.readinessPath = "/opt/kafka/kafka_healthcheck.sh";
-        this.livenessPath = this.readinessPath;
         this.readinessTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
         this.readinessInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
         this.livenessTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
@@ -549,8 +547,8 @@ public class KafkaCluster extends AbstractModel {
                 .withEnv(getEnvVars())
                 .withVolumeMounts(getVolumeMounts())
                 .withPorts(getContainerPortList())
-                .withLivenessProbe(createExecProbe(livenessPath, livenessInitialDelay, livenessTimeout))
-                .withReadinessProbe(createExecProbe(readinessPath, readinessInitialDelay, readinessTimeout))
+                .withLivenessProbe(createTcpSocketProbe(REPLICATION_PORT, livenessInitialDelay, livenessTimeout))
+                .withReadinessProbe(createTcpSocketProbe(REPLICATION_PORT, readinessInitialDelay, readinessTimeout))
                 .withResources(resources(getResources()))
                 .build());
     }
