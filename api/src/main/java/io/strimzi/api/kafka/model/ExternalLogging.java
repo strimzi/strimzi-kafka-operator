@@ -4,7 +4,16 @@
  */
 package io.strimzi.api.kafka.model;
 
-/** Logging config comes from an existing, user-supplied config map*/
+import io.sundr.builder.annotations.Buildable;
+
+/**
+ * Logging config comes from an existing, user-supplied config map
+ */
+@Buildable(
+        editableEnabled = false,
+        generateBuilderPackage = true,
+        builderPackage = "io.strimzi.api.kafka.model"
+)
 public class ExternalLogging extends Logging {
 
     /** The name of the configmap from which to get the logging config */
