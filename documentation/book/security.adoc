@@ -5,6 +5,9 @@ This makes it possible to encrypt data transferred between Kafka brokers (interb
 
 The Cluster Operator sets up the SSL/TLS certificates to provide this encryption and authentication.
 
+.Example Architecture diagram of the communication secured by TLS.
+image::secure_communication.png[Secure Communication]
+
 === Certificates
 
 Every Kafka broker and every Zookeeper node needs its own private and public keys in order to support encryption.
