@@ -77,7 +77,7 @@ public class KafkaCluster extends AbstractModel {
     protected static final String METRICS_AND_LOG_CONFIG_SUFFIX = NAME_SUFFIX + "-config";
 
     // Kafka configuration
-    private String zookeeperConnect = DEFAULT_KAFKA_ZOOKEEPER_CONNECT;
+    private String zookeeperConnect;
     private Rack rack;
     private String initImage;
 
@@ -86,9 +86,6 @@ public class KafkaCluster extends AbstractModel {
     private static final int DEFAULT_HEALTHCHECK_DELAY = 15;
     private static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
     private static final boolean DEFAULT_KAFKA_METRICS_ENABLED = false;
-
-    // Kafka configuration defaults
-    private static final String DEFAULT_KAFKA_ZOOKEEPER_CONNECT = "zookeeper-client:2181";
 
     // Kafka configuration keys (EnvVariables)
     public static final String ENV_VAR_KAFKA_ZOOKEEPER_CONNECT = "KAFKA_ZOOKEEPER_CONNECT";
@@ -115,7 +112,6 @@ public class KafkaCluster extends AbstractModel {
      * @param cluster  overall cluster name
      */
     private KafkaCluster(String namespace, String cluster, Labels labels) {
-
         super(namespace, cluster, labels);
         this.name = kafkaClusterName(cluster);
         this.serviceName = serviceName(cluster);
@@ -130,6 +126,8 @@ public class KafkaCluster extends AbstractModel {
         this.livenessTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
         this.livenessInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
         this.isMetricsEnabled = DEFAULT_KAFKA_METRICS_ENABLED;
+
+        setZookeeperConnect(ZookeeperCluster.serviceName(cluster) + ":2181");
 
         this.mountPath = "/var/lib/kafka";
 
@@ -210,7 +208,6 @@ public class KafkaCluster extends AbstractModel {
             result.setMetricsEnabled(true);
             result.setMetricsConfig(metrics.entrySet());
         }
-        result.setZookeeperConnect(ZookeeperCluster.serviceName(kafkaAssembly.getMetadata().getName()) + ":2181");
         result.setStorage(kafka.getStorage());
         result.setUserAffinity(kafka.getAffinity());
         result.setResources(kafka.getResources());
