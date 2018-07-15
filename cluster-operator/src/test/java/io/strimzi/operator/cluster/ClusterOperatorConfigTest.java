@@ -25,7 +25,6 @@ public class ClusterOperatorConfigTest {
         labels = Labels.forKind("cluster");
 
         envVars.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, "namespace");
-        envVars.put(ClusterOperatorConfig.STRIMZI_CONFIGMAP_LABELS, "strimzi.io/kind=cluster");
         envVars.put(ClusterOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, "30000");
         envVars.put(ClusterOperatorConfig.STRIMZI_OPERATION_TIMEOUT_MS, "30000");
     }
@@ -69,7 +68,6 @@ public class ClusterOperatorConfigTest {
 
         Map<String, String> envVars = new HashMap<>(2);
         envVars.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, "namespace");
-        envVars.put(ClusterOperatorConfig.STRIMZI_CONFIGMAP_LABELS, "strimzi.io/kind=cluster");
 
         ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envVars);
 

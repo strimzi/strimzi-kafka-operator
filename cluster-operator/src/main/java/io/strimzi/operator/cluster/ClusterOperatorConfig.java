@@ -17,7 +17,6 @@ import static java.util.Collections.unmodifiableSet;
 public class ClusterOperatorConfig {
 
     public static final String STRIMZI_NAMESPACE = "STRIMZI_NAMESPACE";
-    public static final String STRIMZI_CONFIGMAP_LABELS = "STRIMZI_CONFIGMAP_LABELS";
     public static final String STRIMZI_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
     public static final String STRIMZI_OPERATION_TIMEOUT_MS = "STRIMZI_OPERATION_TIMEOUT_MS";
 

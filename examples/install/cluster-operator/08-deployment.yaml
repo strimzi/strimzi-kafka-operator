@@ -14,8 +14,6 @@ spec:
         - name: strimzi-cluster-operator
           image: strimzi/cluster-operator:latest
           env:
-            - name: STRIMZI_CONFIGMAP_LABELS
-              value: "strimzi.io/kind=cluster"
             - name: STRIMZI_NAMESPACE
               valueFrom:
                 fieldRef:
