@@ -495,7 +495,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                         // create cm
                         kubeClient().clientWithAdmin().applyContent(yaml);
                         // wait for deployment
-                        kubeClient().waitForDeployment(deploymentName);
+                        kubeClient().waitForDeployment(deploymentName, kafkaAssembly.getSpec().getReplicas());
                     }
 
                     @Override
@@ -551,7 +551,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                         kubeClient().waitForStatefulSet(kafkaStatefulSetName, kafkaAssembly.getSpec().getKafka().getReplicas());
                         // wait for TOs
                         LOGGER.info("Waiting for TC Deployment");
-                        kubeClient().waitForDeployment(tcDeploymentName);
+                        kubeClient().waitForDeployment(tcDeploymentName, 1);
                     }
 
                     @Override
@@ -647,7 +647,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                         deletable.push(entry.getValue());
                         kubeClient().clientWithAdmin().applyContent(entry.getValue());
                     }
-                    kubeClient().waitForDeployment(CO_DEPLOYMENT_NAME);
+                    kubeClient().waitForDeployment(CO_DEPLOYMENT_NAME, 1);
                 }
 
                 @Override

@@ -42,7 +42,7 @@ public class RecoveryClusterIT extends AbstractClusterIT {
         kubeClient.waitForResourceDeletion(DEPLOYMENT, topicOperatorDeploymentName);
 
         LOGGER.info("Waiting for recovery {}", topicOperatorDeploymentName);
-        kubeClient.waitForDeployment(topicOperatorDeploymentName);
+        kubeClient.waitForDeployment(topicOperatorDeploymentName, 1);
 
         //Test that CO doesn't have any exceptions in log
         assertNoCoErrorsLogged(stopwatch.runtime(SECONDS));
