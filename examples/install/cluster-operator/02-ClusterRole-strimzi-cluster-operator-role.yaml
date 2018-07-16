@@ -16,7 +16,6 @@ rules:
   - delete
   - patch
   - update
-# ServiceAccount for the init container will be bound to a ClusterRole which can get nodes
 - apiGroups:
   - "rbac.authorization.k8s.io"
   resources:
