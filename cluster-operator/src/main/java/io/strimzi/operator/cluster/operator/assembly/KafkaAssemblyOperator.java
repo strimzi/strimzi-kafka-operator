@@ -299,8 +299,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<Void> chainFuture = Future.future();
         getKafkaClusterDescription(assemblyCm, assemblySecrets)
                 .compose(desc -> desc.withVoid(kafkaSetOperations.scaleDown(namespace, desc.kafka().getName(), desc.kafka().getReplicas())))
-                .compose(desc -> desc.withVoid(serviceOperations.reconcile(namespace, desc.kafka().getName(), desc.service())))
-                .compose(desc -> desc.withVoid(serviceOperations.reconcile(namespace, desc.kafka().getHeadlessName(), desc.headlessService())))
+                .compose(desc -> desc.withVoid(serviceOperations.reconcile(namespace, desc.kafka().getServiceName(), desc.service())))
+                .compose(desc -> desc.withVoid(serviceOperations.reconcile(namespace, desc.kafka().getHeadlessServiceName(), desc.headlessService())))
                 .compose(desc -> desc.withVoid(configMapOperations.reconcile(namespace, desc.kafka().getAncillaryConfigName(), desc.metricsAndLogsConfigMap())))
                 .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, KafkaCluster.clientsCASecretName(name), desc.clientsCASecret())))
                 .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, KafkaCluster.clientsPublicKeyName(name), desc.clientsPublicKeySecret())))
@@ -326,8 +326,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         List<Future> result = new ArrayList<>(8 + (deleteClaims ? ss.getSpec().getReplicas() : 0));
 
         result.add(configMapOperations.reconcile(namespace, KafkaCluster.metricAndLogConfigsName(name), null));
-        result.add(serviceOperations.reconcile(namespace, KafkaCluster.kafkaClusterName(name), null));
-        result.add(serviceOperations.reconcile(namespace, KafkaCluster.headlessName(name), null));
+        result.add(serviceOperations.reconcile(namespace, KafkaCluster.serviceName(name), null));
+        result.add(serviceOperations.reconcile(namespace, KafkaCluster.headlessServiceName(name), null));
         result.add(kafkaSetOperations.reconcile(namespace, KafkaCluster.kafkaClusterName(name), null));
         result.add(secretOperations.reconcile(namespace, KafkaCluster.clientsCASecretName(name), null));
         result.add(secretOperations.reconcile(namespace, KafkaCluster.clientsPublicKeyName(name), null));
@@ -386,8 +386,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<Void> chainFuture = Future.future();
         getZookeeperClusterDescription(kafkaAssembly, assemblySecrets)
                 .compose(desc -> desc.withVoid(zkSetOperations.scaleDown(namespace, desc.zookeeper().getName(), desc.zookeeper().getReplicas())))
-                .compose(desc -> desc.withVoid(serviceOperations.reconcile(namespace, desc.zookeeper().getName(), desc.service())))
-                .compose(desc -> desc.withVoid(serviceOperations.reconcile(namespace, desc.zookeeper().getHeadlessName(), desc.headlessService())))
+                .compose(desc -> desc.withVoid(serviceOperations.reconcile(namespace, desc.zookeeper().getServiceName(), desc.service())))
+                .compose(desc -> desc.withVoid(serviceOperations.reconcile(namespace, desc.zookeeper().getHeadlessServiceName(), desc.headlessService())))
                 .compose(desc -> desc.withVoid(configMapOperations.reconcile(namespace, desc.zookeeper().getAncillaryConfigName(), desc.metricsAndLogsConfigMap())))
                 .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, ZookeeperCluster.nodesSecretName(name), desc.nodesSecret())))
                 .compose(desc -> desc.withDiff(zkSetOperations.reconcile(namespace, desc.zookeeper().getName(), desc.statefulSet())))
@@ -410,8 +410,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         List<Future> result = new ArrayList<>(4 + (deleteClaims ? ss.getSpec().getReplicas() : 0));
 
         result.add(configMapOperations.reconcile(namespace, ZookeeperCluster.zookeeperMetricAndLogConfigsName(name), null));
-        result.add(serviceOperations.reconcile(namespace, zkSsName, null));
-        result.add(serviceOperations.reconcile(namespace, ZookeeperCluster.zookeeperHeadlessName(name), null));
+        result.add(serviceOperations.reconcile(namespace, ZookeeperCluster.serviceName(name), null));
+        result.add(serviceOperations.reconcile(namespace, ZookeeperCluster.headlessServiceName(name), null));
         result.add(zkSetOperations.reconcile(namespace, zkSsName, null));
         result.add(secretOperations.reconcile(namespace, ZookeeperCluster.nodesSecretName(name), null));
 

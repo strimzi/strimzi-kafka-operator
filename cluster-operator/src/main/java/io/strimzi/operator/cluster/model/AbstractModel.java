@@ -118,7 +118,8 @@ public abstract class AbstractModel {
     protected int livenessTimeout;
     protected int livenessInitialDelay;
 
-    protected String headlessName;
+    protected String serviceName;
+    protected String headlessServiceName;
     protected String name;
 
     protected final int metricsPort = 9404;
@@ -202,8 +203,12 @@ public abstract class AbstractModel {
         return name;
     }
 
-    public String getHeadlessName() {
-        return headlessName;
+    public String getServiceName() {
+        return serviceName;
+    }
+
+    public String getHeadlessServiceName() {
+        return headlessServiceName;
     }
 
     protected Map<String, String> getLabelsWithName() {
@@ -619,8 +624,8 @@ public abstract class AbstractModel {
     protected Service createService(String type, List<ServicePort> ports,  Map<String, String> annotations) {
         Service service = new ServiceBuilder()
                 .withNewMetadata()
-                    .withName(name)
-                    .withLabels(getLabelsWithName())
+                    .withName(serviceName)
+                    .withLabels(getLabelsWithName(serviceName))
                     .withNamespace(namespace)
                     .withAnnotations(annotations)
                 .endMetadata()
@@ -634,15 +639,15 @@ public abstract class AbstractModel {
         return service;
     }
 
-    protected Service createHeadlessService(String name, List<ServicePort> ports) {
-        return createHeadlessService(name, ports, Collections.emptyMap());
+    protected Service createHeadlessService(List<ServicePort> ports) {
+        return createHeadlessService(ports, Collections.emptyMap());
     }
 
-    protected Service createHeadlessService(String name, List<ServicePort> ports, Map<String, String> annotations) {
+    protected Service createHeadlessService(List<ServicePort> ports, Map<String, String> annotations) {
         Service service = new ServiceBuilder()
                 .withNewMetadata()
-                    .withName(name)
-                    .withLabels(getLabelsWithName(name))
+                    .withName(headlessServiceName)
+                    .withLabels(getLabelsWithName(headlessServiceName))
                     .withNamespace(namespace)
                     .withAnnotations(annotations)
                 .endMetadata()
@@ -713,7 +718,7 @@ public abstract class AbstractModel {
                     .withPodManagementPolicy("Parallel")
                     .withUpdateStrategy(new StatefulSetUpdateStrategyBuilder().withType("OnDelete").build())
                     .withSelector(new LabelSelectorBuilder().withMatchLabels(getLabelsWithName()).build())
-                    .withServiceName(headlessName)
+                    .withServiceName(headlessServiceName)
                     .withReplicas(replicas)
                     .withNewTemplate()
                         .withNewMetadata()

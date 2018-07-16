@@ -390,15 +390,15 @@ public class KafkaAssemblyOperatorMockTest {
     @Test
     public void testUpdateClusterWithoutZkServices(TestContext context) {
         updateClusterWithoutServices(context,
-                ZookeeperCluster.zookeeperClusterName(CLUSTER_NAME),
-                ZookeeperCluster.zookeeperHeadlessName(CLUSTER_NAME));
+                ZookeeperCluster.serviceName(CLUSTER_NAME),
+                ZookeeperCluster.headlessServiceName(CLUSTER_NAME));
     }
 
     @Test
     public void testUpdateClusterWithoutKafkaServices(TestContext context) {
         updateClusterWithoutServices(context,
-                KafkaCluster.kafkaClusterName(CLUSTER_NAME),
-                KafkaCluster.headlessName(CLUSTER_NAME));
+                KafkaCluster.serviceName(CLUSTER_NAME),
+                KafkaCluster.headlessServiceName(CLUSTER_NAME));
     }
 
     @Test
@@ -492,14 +492,14 @@ public class KafkaAssemblyOperatorMockTest {
     public void testDeleteClusterWithoutZkServices(TestContext context) {
         deleteClusterWithoutServices(context,
                 ZookeeperCluster.zookeeperClusterName(CLUSTER_NAME),
-                ZookeeperCluster.zookeeperHeadlessName(CLUSTER_NAME));
+                ZookeeperCluster.headlessServiceName(CLUSTER_NAME));
     }
 
     @Test
     public void testDeleteClusterWithoutKafkaServices(TestContext context) {
         deleteClusterWithoutServices(context,
                 KafkaCluster.kafkaClusterName(CLUSTER_NAME),
-                KafkaCluster.headlessName(CLUSTER_NAME));
+                KafkaCluster.headlessServiceName(CLUSTER_NAME));
     }
 
     private void deleteClusterWithoutStatefulSet(TestContext context, String... statefulSets) {

@@ -19,4 +19,4 @@ spec:
       "UseG1GC": "true"
     }
   config:
-    bootstrap.servers: connect-tests-kafka:9092
+    bootstrap.servers: connect-tests-kafka-bootstrap:9092

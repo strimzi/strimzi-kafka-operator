@@ -11,6 +11,6 @@ spec:
     initialDelaySeconds: 60
     timeoutSeconds: 5
   config:
-    bootstrap.servers: my-cluster-kafka:9092
+    bootstrap.servers: my-cluster-kafka-bootstrap:9092
   metrics:
     lowercaseOutputName: true

@@ -5,4 +5,4 @@ metadata:
 spec:
   replicas: 1
   config:
-    bootstrap.servers: connect-tests-kafka:9092
+    bootstrap.servers: connect-tests-kafka-bootstrap:9092

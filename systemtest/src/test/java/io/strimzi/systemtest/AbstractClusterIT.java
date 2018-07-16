@@ -81,7 +81,6 @@ public class AbstractClusterIT {
     static KubernetesClient client = new DefaultKubernetesClient();
     KubeClient<?> kubeClient = cluster.client();
 
-    // can be used as kafka stateful set or service names
     static String kafkaClusterName(String clusterName) {
         return clusterName + "-kafka";
     }
@@ -94,15 +93,18 @@ public class AbstractClusterIT {
         return kafkaClusterName(clusterName) + "-" + podId;
     }
 
+    static String kafkaServiceName(String clusterName) {
+        return kafkaClusterName(clusterName) + "-bootstrap";
+    }
+
     static String kafkaHeadlessServiceName(String clusterName) {
-        return kafkaClusterName(clusterName) + "-headless";
+        return kafkaClusterName(clusterName) + "-brokers";
     }
 
     static String kafkaMetricsConfigName(String clusterName) {
         return kafkaClusterName(clusterName) + "-config";
     }
 
-    // can be used as zookeeper stateful set or service names
     static String zookeeperClusterName(String clusterName) {
         return clusterName + "-zookeeper";
     }
@@ -111,8 +113,12 @@ public class AbstractClusterIT {
         return zookeeperClusterName(clusterName) + "-" + podId;
     }
 
+    static String zookeeperServiceName(String clusterName) {
+        return zookeeperClusterName(clusterName) + "-client";
+    }
+
     static String zookeeperHeadlessServiceName(String clusterName) {
-        return zookeeperClusterName(clusterName) + "-headless";
+        return zookeeperClusterName(clusterName) + "-nodes";
     }
 
     static String zookeeperMetricsConfigName(String clusterName) {
@@ -228,7 +234,7 @@ public class AbstractClusterIT {
     public void sendMessages(String clusterName, String topic, int messagesCount, int kafkaPodID) {
         LOGGER.info("Sending messages");
         String command = "sh bin/kafka-verifiable-producer.sh --broker-list " +
-                clusterName + "-kafka:9092 --topic " + topic + " --max-messages " + messagesCount + "";
+                clusterName + "-kafka-bootstrap:9092 --topic " + topic + " --max-messages " + messagesCount + "";
 
         LOGGER.info("Command for kafka-verifiable-producer.sh {}", command);
 
@@ -239,7 +245,7 @@ public class AbstractClusterIT {
         LOGGER.info("Consuming messages");
         String output = kubeClient.exec(kafkaPodName(clusterName, kafkaPodID), "/bin/bash", "-c",
                 "bin/kafka-verifiable-consumer.sh --broker-list " + clusterName +
-                        "-kafka:9092 --topic " + topic + " --group-id " + groupID + " & sleep "
+                        "-kafka-bootstrap:9092 --topic " + topic + " --group-id " + groupID + " & sleep "
                         + timeout + "; kill %1").out();
         output = "[" + output.replaceAll("\n", ",") + "]";
         LOGGER.info("Output for kafka-verifiable-consumer.sh {}", output);
@@ -304,28 +310,28 @@ public class AbstractClusterIT {
 
     public List<String> listTopicsUsingPodCLI(String clusterName, String podName) {
         return asList(kubeClient.exec(podName, "/bin/bash", "-c",
-                "bin/kafka-topics.sh --list --zookeeper " + clusterName + "-zookeeper:2181").out().split("\\s+"));
+                "bin/kafka-topics.sh --list --zookeeper " + clusterName + "-zookeeper-client:2181").out().split("\\s+"));
     }
 
     public String createTopicUsingPodCLI(String clusterName, String podName, String topic, int replicationFactor, int partitions) {
         return kubeClient.exec(podName, "/bin/bash", "-c",
-                "bin/kafka-topics.sh --zookeeper " + clusterName + "-zookeeper:2181  --create " + " --topic " + topic +
+                "bin/kafka-topics.sh --zookeeper " + clusterName + "-zookeeper-client:2181  --create " + " --topic " + topic +
                         " --replication-factor " + replicationFactor + " --partitions " + partitions).out();
     }
 
     public String deleteTopicUsingPodCLI(String clusterName, String podName, String topic) {
         return kubeClient.exec(podName, "/bin/bash", "-c",
-                "bin/kafka-topics.sh --zookeeper " + clusterName + "-zookeeper:2181 --delete --topic " + topic).out();
+                "bin/kafka-topics.sh --zookeeper " + clusterName + "-zookeeper-client:2181 --delete --topic " + topic).out();
     }
 
     public List<String>  describeTopicUsingPodCLI(String clusterName, String podName, String topic) {
         return asList(kubeClient.exec(podName, "/bin/bash", "-c",
-                "bin/kafka-topics.sh --zookeeper " + clusterName + "-zookeeper:2181 --describe --topic " + topic).out().split("\\s+"));
+                "bin/kafka-topics.sh --zookeeper " + clusterName + "-zookeeper-client:2181 --describe --topic " + topic).out().split("\\s+"));
     }
 
     public String updateTopicPartitionsCountUsingPodCLI(String clusterName, String podName, String topic, int partitions) {
         return kubeClient.exec(podName, "/bin/bash", "-c",
-                "bin/kafka-topics.sh --zookeeper " + clusterName + "-zookeeper:2181 --alter --topic " + topic + " --partitions " + partitions).out();
+                "bin/kafka-topics.sh --zookeeper " + clusterName + "-zookeeper-client:2181 --alter --topic " + topic + " --partitions " + partitions).out();
     }
 
     public Map<String, String> getImagesFromConfig(String configJson) {

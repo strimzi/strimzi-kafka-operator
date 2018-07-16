@@ -66,7 +66,8 @@ public class KafkaCluster extends AbstractModel {
     protected static final String CLIENT_TLS_PORT_NAME = "clientstls";
 
     private static final String NAME_SUFFIX = "-kafka";
-    private static final String HEADLESS_NAME_SUFFIX = NAME_SUFFIX + "-headless";
+    private static final String SERVICE_NAME_SUFFIX = NAME_SUFFIX + "-bootstrap";
+    private static final String HEADLESS_SERVICE_NAME_SUFFIX = NAME_SUFFIX + "-brokers";
 
     private static final String CLIENTS_CA_SUFFIX = NAME_SUFFIX + "-clients-ca";
     private static final String BROKERS_INTERNAL_SUFFIX = NAME_SUFFIX + "-brokers-internal";
@@ -76,7 +77,7 @@ public class KafkaCluster extends AbstractModel {
     protected static final String METRICS_AND_LOG_CONFIG_SUFFIX = NAME_SUFFIX + "-config";
 
     // Kafka configuration
-    private String zookeeperConnect = DEFAULT_KAFKA_ZOOKEEPER_CONNECT;
+    private String zookeeperConnect;
     private Rack rack;
     private String initImage;
 
@@ -85,9 +86,6 @@ public class KafkaCluster extends AbstractModel {
     private static final int DEFAULT_HEALTHCHECK_DELAY = 15;
     private static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
     private static final boolean DEFAULT_KAFKA_METRICS_ENABLED = false;
-
-    // Kafka configuration defaults
-    private static final String DEFAULT_KAFKA_ZOOKEEPER_CONNECT = "zookeeper:2181";
 
     // Kafka configuration keys (EnvVariables)
     public static final String ENV_VAR_KAFKA_ZOOKEEPER_CONNECT = "KAFKA_ZOOKEEPER_CONNECT";
@@ -114,10 +112,10 @@ public class KafkaCluster extends AbstractModel {
      * @param cluster  overall cluster name
      */
     private KafkaCluster(String namespace, String cluster, Labels labels) {
-
         super(namespace, cluster, labels);
         this.name = kafkaClusterName(cluster);
-        this.headlessName = headlessName(cluster);
+        this.serviceName = serviceName(cluster);
+        this.headlessServiceName = headlessServiceName(cluster);
         this.ancillaryConfigName = metricAndLogConfigsName(cluster);
         this.image = Kafka.DEFAULT_IMAGE;
         this.replicas = DEFAULT_REPLICAS;
@@ -128,6 +126,8 @@ public class KafkaCluster extends AbstractModel {
         this.livenessTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
         this.livenessInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
         this.isMetricsEnabled = DEFAULT_KAFKA_METRICS_ENABLED;
+
+        setZookeeperConnect(ZookeeperCluster.serviceName(cluster) + ":2181");
 
         this.mountPath = "/var/lib/kafka";
 
@@ -146,8 +146,12 @@ public class KafkaCluster extends AbstractModel {
         return cluster + KafkaCluster.METRICS_AND_LOG_CONFIG_SUFFIX;
     }
 
-    public static String headlessName(String cluster) {
-        return cluster + KafkaCluster.HEADLESS_NAME_SUFFIX;
+    public static String serviceName(String cluster) {
+        return cluster + KafkaCluster.SERVICE_NAME_SUFFIX;
+    }
+
+    public static String headlessServiceName(String cluster) {
+        return cluster + KafkaCluster.HEADLESS_SERVICE_NAME_SUFFIX;
     }
 
     public static String kafkaPodName(String cluster, int pod) {
@@ -204,7 +208,6 @@ public class KafkaCluster extends AbstractModel {
             result.setMetricsEnabled(true);
             result.setMetricsConfig(metrics.entrySet());
         }
-        result.setZookeeperConnect(kafkaAssembly.getMetadata().getName() + "-zookeeper:2181");
         result.setStorage(kafka.getStorage());
         result.setUserAffinity(kafka.getAffinity());
         result.setResources(kafka.getResources());
@@ -325,7 +328,7 @@ public class KafkaCluster extends AbstractModel {
      */
     public Service generateHeadlessService() {
         Map<String, String> annotations = Collections.singletonMap("service.alpha.kubernetes.io/tolerate-unready-endpoints", "true");
-        return createHeadlessService(headlessName, getHeadlessServicePorts(), annotations);
+        return createHeadlessService(getHeadlessServicePorts(), annotations);
     }
 
     /**
