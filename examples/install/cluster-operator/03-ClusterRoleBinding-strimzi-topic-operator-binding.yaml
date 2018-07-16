@@ -10,5 +10,5 @@ subjects:
     namespace: myproject
 roleRef:
   kind: ClusterRole
-  name: strimzi-kafka-role
+  name: strimzi-topic-operator-role
   apiGroup: rbac.authorization.k8s.io
