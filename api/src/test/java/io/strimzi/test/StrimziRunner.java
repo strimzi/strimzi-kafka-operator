@@ -630,7 +630,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     ArrayNode subjects = (ArrayNode) node.get("subjects");
                     JsonNodeFactory factory = new JsonNodeFactory(false);
                     ObjectNode subject = new ObjectNode(factory);
-                    subject.put("kind", "ServiceAccount").put("name", "strimzi-kafka").put("namespace", ns);
+                    subject.put("kind", "ServiceAccount").put("namespace", ns);
                     subjects.set(0, subject);
                     LOGGER.info("Modified binding: {}", node);
                 }
