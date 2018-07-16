@@ -13,7 +13,10 @@
   * `xxx-zookeeper-headless` -> `xxx-zookeeper-nodes`
   * `xxx-connect` -> `xxx-connect-api`
 * Cluster Operator moving to Custom Resources instead of Config Maps
-* TLS support has been added to Kafka and Zookeeper
+* TLS support has been added to Kafka, Zookeeper and Topic Operator. The current channels are now encrypted.
+    * Zookeeper nodes (ports 2888 and 3888)
+    * Kafka brokers and Zookeeper nodes (port 2181)
+    * Topic Operator and Kafka brokers (port 9091) and Zookeeper nodes (port 2181)
 * Logging configuration for Kafka, Kafka Connect and Zookeeper
 * Add support for Pod Affinity and Anti-Affinity
 * Configuring different JVM options

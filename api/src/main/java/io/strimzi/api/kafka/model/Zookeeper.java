@@ -23,7 +23,7 @@ import java.util.Map;
 )
 @JsonPropertyOrder({ "replicas", "image", "storage",
         "livenessProbe", "readinessProbe", "jvmOptions",
-        "affinity", "metrics", "tlsSidecarImage"})
+        "affinity", "metrics", "tlsSidecar"})
 public class Zookeeper extends ReplicatedJvmPods {
     public static final String FORBIDDEN_PREFIXES = "server., dataDir, dataLogDir, clientPort, authProvider, quorum.auth, requireClientAuthScheme";
 

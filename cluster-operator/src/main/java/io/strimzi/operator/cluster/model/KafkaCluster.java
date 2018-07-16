@@ -27,6 +27,8 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaAssembly;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.Rack;
+import io.strimzi.api.kafka.model.Resources;
+import io.strimzi.api.kafka.model.Sidecar;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.operator.resource.ClusterRoleBindingOperator;
@@ -62,6 +64,14 @@ public class KafkaCluster extends AbstractModel {
     protected static final int CLIENT_TLS_PORT = 9093;
     protected static final String CLIENT_TLS_PORT_NAME = "clientstls";
 
+    protected static final String KAFKA_NAME = "kafka";
+    protected static final String BROKER_CERTS_VOLUME = "broker-certs";
+    protected static final String CLIENT_CA_CERTS_VOLUME = "client-ca-cert";
+    protected static final String BROKER_CERTS_VOLUME_MOUNT = "/opt/kafka/broker-certs";
+    protected static final String CLIENT_CA_CERTS_VOLUME_MOUNT = "/opt/kafka/client-ca-cert";
+    protected static final String TLS_SIDECAR_NAME = "tls-sidecar";
+    protected static final String TLS_SIDECAR_VOLUME_MOUNT = "/etc/tls-sidecar/certs/";
+
     private static final String NAME_SUFFIX = "-kafka";
     private static final String SERVICE_NAME_SUFFIX = NAME_SUFFIX + "-bootstrap";
     private static final String HEADLESS_SERVICE_NAME_SUFFIX = NAME_SUFFIX + "-brokers";
@@ -78,6 +88,7 @@ public class KafkaCluster extends AbstractModel {
     private String zookeeperConnect;
     private Rack rack;
     private String initImage;
+    private Sidecar tlsSidecar;
 
     // Configuration defaults
     private static final int DEFAULT_REPLICAS = 3;
@@ -204,6 +215,7 @@ public class KafkaCluster extends AbstractModel {
         result.setResources(kafka.getResources());
 
         result.generateCertificates(certManager, secrets);
+        result.setTlsSidecar(kafka.getTlsSidecar());
 
         return result;
     }
@@ -408,8 +420,8 @@ public class KafkaCluster extends AbstractModel {
         if (rack != null) {
             volumeList.add(createEmptyDirVolume(RACK_VOLUME_NAME));
         }
-        volumeList.add(createSecretVolume("broker-certs", KafkaCluster.brokersSecretName(cluster)));
-        volumeList.add(createSecretVolume("client-ca-cert", KafkaCluster.clientsPublicKeyName(cluster)));
+        volumeList.add(createSecretVolume(BROKER_CERTS_VOLUME, KafkaCluster.brokersSecretName(cluster)));
+        volumeList.add(createSecretVolume(CLIENT_CA_CERTS_VOLUME, KafkaCluster.clientsPublicKeyName(cluster)));
         volumeList.add(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
 
         return volumeList;
@@ -430,8 +442,8 @@ public class KafkaCluster extends AbstractModel {
         if (rack != null) {
             volumeMountList.add(createVolumeMount(RACK_VOLUME_NAME, RACK_VOLUME_MOUNT));
         }
-        volumeMountList.add(createVolumeMount("broker-certs", "/opt/kafka/broker-certs"));
-        volumeMountList.add(createVolumeMount("client-ca-cert", "/opt/kafka/client-ca-cert"));
+        volumeMountList.add(createVolumeMount(BROKER_CERTS_VOLUME, BROKER_CERTS_VOLUME_MOUNT));
+        volumeMountList.add(createVolumeMount(CLIENT_CA_CERTS_VOLUME, CLIENT_CA_CERTS_VOLUME_MOUNT));
         volumeMountList.add(createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
 
         return volumeMountList;
@@ -497,8 +509,11 @@ public class KafkaCluster extends AbstractModel {
 
     @Override
     protected List<Container> getContainers() {
-        return singletonList(new ContainerBuilder()
-                .withName(name)
+
+        List<Container> containers = new ArrayList<>();
+
+        Container container = new ContainerBuilder()
+                .withName(KAFKA_NAME)
                 .withImage(getImage())
                 .withEnv(getEnvVars())
                 .withVolumeMounts(getVolumeMounts())
@@ -506,7 +521,25 @@ public class KafkaCluster extends AbstractModel {
                 .withLivenessProbe(createTcpSocketProbe(REPLICATION_PORT, livenessInitialDelay, livenessTimeout))
                 .withReadinessProbe(createTcpSocketProbe(REPLICATION_PORT, readinessInitialDelay, readinessTimeout))
                 .withResources(resources(getResources()))
-                .build());
+                .build();
+
+        String tlsSidecarImage = (tlsSidecar != null && tlsSidecar.getImage() != null) ?
+                tlsSidecar.getImage() : Kafka.DEFAULT_TLS_SIDECAR_IMAGE;
+
+        Resources tlsSidecarResources = (tlsSidecar != null) ? tlsSidecar.getResources() : null;
+
+        Container tlsSidecarContainer = new ContainerBuilder()
+                .withName(TLS_SIDECAR_NAME)
+                .withImage(tlsSidecarImage)
+                .withResources(resources(tlsSidecarResources))
+                .withEnv(singletonList(buildEnvVar(ENV_VAR_KAFKA_ZOOKEEPER_CONNECT, zookeeperConnect)))
+                .withVolumeMounts(createVolumeMount(BROKER_CERTS_VOLUME, TLS_SIDECAR_VOLUME_MOUNT))
+                .build();
+
+        containers.add(container);
+        containers.add(tlsSidecarContainer);
+
+        return containers;
     }
 
     @Override
@@ -543,6 +576,10 @@ public class KafkaCluster extends AbstractModel {
 
     protected void setInitImage(String initImage) {
         this.initImage = initImage;
+    }
+
+    protected void setTlsSidecar(Sidecar tlsSidecar) {
+        this.tlsSidecar = tlsSidecar;
     }
 
     @Override

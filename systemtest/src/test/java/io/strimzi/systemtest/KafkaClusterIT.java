@@ -328,22 +328,22 @@ public class KafkaClusterIT extends AbstractClusterIT {
     public void testForTopicOperator() {
         //Createing topics for testing
         kubeClient.create(TOPIC_CM);
-        assertThat(listTopicsUsingPodCLI(CLUSTER_NAME, kafkaPodName(CLUSTER_NAME, 1)), hasItem("my-topic"));
+        assertThat(listTopicsUsingPodCLI(CLUSTER_NAME, 0), hasItem("my-topic"));
 
-        createTopicUsingPodCLI(CLUSTER_NAME, kafkaPodName(CLUSTER_NAME, 1), "topic-from-cli", 1, 1);
-        assertThat(listTopicsUsingPodCLI(CLUSTER_NAME, kafkaPodName(CLUSTER_NAME, 1)), hasItems("my-topic", "topic-from-cli"));
+        createTopicUsingPodCLI(CLUSTER_NAME, 0, "topic-from-cli", 1, 1);
+        assertThat(listTopicsUsingPodCLI(CLUSTER_NAME, 0), hasItems("my-topic", "topic-from-cli"));
         assertThat(kubeClient.list("cm"), hasItems("my-topic", "topic-from-cli", "my-topic"));
 
         //Updating first topic using pod CLI
-        updateTopicPartitionsCountUsingPodCLI(CLUSTER_NAME, kafkaPodName(CLUSTER_NAME, 1), "my-topic", 2);
-        assertThat(describeTopicUsingPodCLI(CLUSTER_NAME, kafkaPodName(CLUSTER_NAME, 1), "my-topic"),
+        updateTopicPartitionsCountUsingPodCLI(CLUSTER_NAME, 0, "my-topic", 2);
+        assertThat(describeTopicUsingPodCLI(CLUSTER_NAME, 0, "my-topic"),
                 hasItems("PartitionCount:2"));
         String testTopicCM = kubeClient.get("cm", "my-topic");
         assertThat(testTopicCM, valueOfCmEquals("partitions", "2"));
 
         //Updating second topic via CM update
         replaceCm("topic-from-cli", "partitions", "2");
-        assertThat(describeTopicUsingPodCLI(CLUSTER_NAME, kafkaPodName(CLUSTER_NAME, 1), "topic-from-cli"),
+        assertThat(describeTopicUsingPodCLI(CLUSTER_NAME, 0, "topic-from-cli"),
                 hasItems("PartitionCount:2"));
         testTopicCM = kubeClient.get("cm", "topic-from-cli");
         assertThat(testTopicCM, valueOfCmEquals("partitions", "2"));
@@ -352,9 +352,9 @@ public class KafkaClusterIT extends AbstractClusterIT {
         kubeClient.deleteByName("cm", "topic-from-cli");
 
         //Deleting another topic using pod CLI
-        deleteTopicUsingPodCLI(CLUSTER_NAME, kafkaPodName(CLUSTER_NAME, 1), "my-topic");
+        deleteTopicUsingPodCLI(CLUSTER_NAME, 0, "my-topic");
         kubeClient.waitForResourceDeletion("cm", "my-topic");
-        List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, kafkaPodName(CLUSTER_NAME, 1));
+        List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
         assertThat(topics, not(hasItems("topic-from-cli", "my-topic")));
     }
 
@@ -375,8 +375,10 @@ public class KafkaClusterIT extends AbstractClusterIT {
 
         //Verifying docker image for kafka pods
         for (int i = 0; i < kafkaPods; i++) {
-            String imgFromPod = getContainerImageNameFromPod(kafkaPodName(clusterName, i));
+            String imgFromPod = getContainerImageNameFromPod(kafkaPodName(clusterName, i), "kafka");
             assertEquals(imgFromDeplConf.get(KAFKA_IMAGE), imgFromPod);
+            imgFromPod = getContainerImageNameFromPod(kafkaPodName(clusterName, i), "tls-sidecar");
+            assertEquals(imgFromDeplConf.get(TLS_SIDECAR_KAFKA_IMAGE), imgFromPod);
             if (rackAwareEnabled) {
                 String initContainerImage = getInitContainerImageName(kafkaPodName(clusterName, i));
                 assertEquals(imgFromDeplConf.get(INIT_KAFKA_IMAGE), initContainerImage);
@@ -384,9 +386,13 @@ public class KafkaClusterIT extends AbstractClusterIT {
         }
 
         //Verifying docker image for topic-operator
-        String topicOperatorImageName = getContainerImageNameFromPod(kubeClient.listResourcesByLabel("pod",
-                "strimzi.io/name=" + clusterName + "-topic-operator").get(0));
-        assertEquals(imgFromDeplConf.get("STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE"), topicOperatorImageName);
+        String topicOperatorPodName = kubeClient.listResourcesByLabel("pod",
+                "strimzi.io/name=" + clusterName + "-topic-operator").get(0);
+        String imgFromPod = getContainerImageNameFromPod(topicOperatorPodName, "topic-operator");
+        assertEquals(imgFromDeplConf.get(TO_IMAGE), imgFromPod);
+        imgFromPod = getContainerImageNameFromPod(topicOperatorPodName, "tls-sidecar");
+        assertEquals(imgFromDeplConf.get(TLS_SIDECAR_TO_IMAGE), imgFromPod);
+
         LOGGER.info("Docker images verified");
     }
 

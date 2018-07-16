@@ -60,6 +60,8 @@ Used in: <<type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
 |https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[Affinity]
 |metrics               1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
 |map
+|tlsSidecar            1.2+<.<|TLS sidecar configuration
+|<<type-Sidecar,`Sidecar`>>
 |additionalProperties  1.2+<.<|
 |map
 |config                1.2+<.<|The kafka broker config. Properties with the following prefixes cannot be set: listeners, advertised., broker., listener., host.name, port, inter.broker.listener.name, sasl., ssl., security., password., principal.builder.class, log.dir, zookeeper.connect, zookeeper.set.acl, authorizer., super.user
@@ -150,6 +152,55 @@ Used in: <<type-Kafka,`Kafka`>>, <<type-KafkaConnectAssemblySpec,`KafkaConnectAs
 |boolean
 |====
 
+[[type-Sidecar]]
+### `Sidecar` type v1alpha1 kafka.strimzi.io
+
+Used in: <<type-Kafka,`Kafka`>>, <<type-TopicOperator,`TopicOperator`>>, <<type-Zookeeper,`Zookeeper`>>
+
+
+[options="header"]
+|====
+|Field             |Description
+|image      1.2+<.<|The docker image for the container
+|string
+|resources  1.2+<.<|Resource constraints (limits and requests).
+|<<type-Resources,`Resources`>>
+|====
+
+[[type-Resources]]
+### `Resources` type v1alpha1 kafka.strimzi.io
+
+Used in: <<type-Kafka,`Kafka`>>, <<type-KafkaConnectAssemblySpec,`KafkaConnectAssemblySpec`>>, <<type-KafkaConnectS2IAssemblySpec,`KafkaConnectS2IAssemblySpec`>>, <<type-Sidecar,`Sidecar`>>, <<type-TopicOperator,`TopicOperator`>>, <<type-Zookeeper,`Zookeeper`>>
+
+
+[options="header"]
+|====
+|Field                        |Description
+|additionalProperties  1.2+<.<|
+|map
+|limits                1.2+<.<|Resource limits applied at runtime.
+|<<type-CpuMemory,`CpuMemory`>>
+|requests              1.2+<.<|Resource requests applied during pod scheduling.
+|<<type-CpuMemory,`CpuMemory`>>
+|====
+
+[[type-CpuMemory]]
+### `CpuMemory` type v1alpha1 kafka.strimzi.io
+
+Used in: <<type-Resources,`Resources`>>
+
+
+[options="header"]
+|====
+|Field                        |Description
+|additionalProperties  1.2+<.<|
+|map
+|cpu                   1.2+<.<|CPU
+|string
+|memory                1.2+<.<|Memory
+|string
+|====
+
 [[type-InlineLogging]]
 ### `InlineLogging` type v1alpha1 kafka.strimzi.io
 
@@ -199,40 +250,6 @@ Used in: <<type-Kafka,`Kafka`>>
 |string
 |====
 
-[[type-Resources]]
-### `Resources` type v1alpha1 kafka.strimzi.io
-
-Used in: <<type-Kafka,`Kafka`>>, <<type-KafkaConnectAssemblySpec,`KafkaConnectAssemblySpec`>>, <<type-KafkaConnectS2IAssemblySpec,`KafkaConnectS2IAssemblySpec`>>, <<type-Sidecar,`Sidecar`>>, <<type-TopicOperator,`TopicOperator`>>, <<type-Zookeeper,`Zookeeper`>>
-
-
-[options="header"]
-|====
-|Field                        |Description
-|additionalProperties  1.2+<.<|
-|map
-|limits                1.2+<.<|Resource limits applied at runtime.
-|<<type-CpuMemory,`CpuMemory`>>
-|requests              1.2+<.<|Resource requests applied during pod scheduling.
-|<<type-CpuMemory,`CpuMemory`>>
-|====
-
-[[type-CpuMemory]]
-### `CpuMemory` type v1alpha1 kafka.strimzi.io
-
-Used in: <<type-Resources,`Resources`>>
-
-
-[options="header"]
-|====
-|Field                        |Description
-|additionalProperties  1.2+<.<|
-|map
-|cpu                   1.2+<.<|CPU
-|string
-|memory                1.2+<.<|Memory
-|string
-|====
-
 [[type-Zookeeper]]
 ### `Zookeeper` type v1alpha1 kafka.strimzi.io
 
@@ -260,6 +277,8 @@ Used in: <<type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
 |https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[Affinity]
 |metrics               1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
 |map
+|tlsSidecar            1.2+<.<|TLS sidecar configuration
+|<<type-Sidecar,`Sidecar`>>
 |additionalProperties  1.2+<.<|
 |map
 |config                1.2+<.<|The zookeeper broker config. Properties with the following prefixes cannot be set: server., dataDir, dataLogDir, clientPort, authProvider, quorum.auth, requireClientAuthScheme
@@ -267,23 +286,6 @@ Used in: <<type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
 |logging               1.2+<.<|Logging configuration for Zookeeper The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external]
 |<<type-InlineLogging,`InlineLogging`>>, <<type-ExternalLogging,`ExternalLogging`>>
 |resources             1.2+<.<|Resource constraints (limits and requests).
-|<<type-Resources,`Resources`>>
-|tlsSidecar            1.2+<.<|TLS sidecar configuration
-|<<type-Sidecar,`Sidecar`>>
-|====
-
-[[type-Sidecar]]
-### `Sidecar` type v1alpha1 kafka.strimzi.io
-
-Used in: <<type-Zookeeper,`Zookeeper`>>
-
-
-[options="header"]
-|====
-|Field             |Description
-|image      1.2+<.<|The docker image for the container
-|string
-|resources  1.2+<.<|Resource constraints (limits and requests).
 |<<type-Resources,`Resources`>>
 |====
 
@@ -312,6 +314,8 @@ Used in: <<type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
 |<<type-Resources,`Resources`>>
 |topicMetadataMaxAttempts        1.2+<.<|The number of attempts at getting topic metadata
 |integer
+|tlsSidecar                      1.2+<.<|TLS sidecar configuration
+|<<type-Sidecar,`Sidecar`>>
 |additionalProperties            1.2+<.<|
 |map
 |logging                         1.2+<.<|Logging configuration The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external]

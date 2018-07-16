@@ -110,6 +110,15 @@ public class Session extends AbstractVerticle {
         LOGGER.info("Starting");
         Properties adminClientProps = new Properties();
         adminClientProps.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, config.get(Config.KAFKA_BOOTSTRAP_SERVERS));
+
+        if (Boolean.valueOf(config.get(Config.TLS_ENABLED))) {
+            adminClientProps.setProperty("security.protocol", "SSL");
+            adminClientProps.setProperty("ssl.truststore.location", config.get(Config.TLS_TRUSTSTORE_LOCATION));
+            adminClientProps.setProperty("ssl.truststore.password", config.get(Config.TLS_TRUSTSTORE_PASSWORD));
+            adminClientProps.setProperty("ssl.keystore.location", config.get(Config.TLS_KEYSTORE_LOCATION));
+            adminClientProps.setProperty("ssl.keystore.password", config.get(Config.TLS_KEYSTORE_PASSWORD));
+        }
+
         this.adminClient = AdminClient.create(adminClientProps);
         LOGGER.debug("Using AdminClient {}", adminClient);
         this.kafka = new OperatorAssignedKafkaImpl(adminClient, vertx, config);

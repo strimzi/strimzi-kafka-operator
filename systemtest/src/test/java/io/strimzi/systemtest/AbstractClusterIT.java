@@ -69,6 +69,8 @@ public class AbstractClusterIT {
     protected static final String TO_IMAGE = "STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE";
     protected static final String INIT_KAFKA_IMAGE = "STRIMZI_DEFAULT_INIT_KAFKA_IMAGE";
     protected static final String TLS_SIDECAR_ZOOKEEPER_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE";
+    protected static final String TLS_SIDECAR_KAFKA_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE";
+    protected static final String TLS_SIDECAR_TO_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_TOPIC_OPERATOR_IMAGE";
 
     @Rule
     public Stopwatch stopwatch = new Stopwatch() {
@@ -308,30 +310,40 @@ public class AbstractClusterIT {
         assertThat(clusterOperatorLog, logHasNoUnexpectedErrors());
     }
 
-    public List<String> listTopicsUsingPodCLI(String clusterName, String podName) {
+    public List<String> listTopicsUsingPodCLI(String clusterName, int zkPodId) {
+        String podName = zookeeperPodName(clusterName, zkPodId);
+        int port = 2181 * 10 + zkPodId;
         return asList(kubeClient.exec(podName, "/bin/bash", "-c",
-                "bin/kafka-topics.sh --list --zookeeper " + clusterName + "-zookeeper-client:2181").out().split("\\s+"));
+                "bin/kafka-topics.sh --list --zookeeper localhost:" + port).out().split("\\s+"));
     }
 
-    public String createTopicUsingPodCLI(String clusterName, String podName, String topic, int replicationFactor, int partitions) {
+    public String createTopicUsingPodCLI(String clusterName, int zkPodId, String topic, int replicationFactor, int partitions) {
+        String podName = zookeeperPodName(clusterName, zkPodId);
+        int port = 2181 * 10 + zkPodId;
         return kubeClient.exec(podName, "/bin/bash", "-c",
-                "bin/kafka-topics.sh --zookeeper " + clusterName + "-zookeeper-client:2181  --create " + " --topic " + topic +
+                "bin/kafka-topics.sh --zookeeper localhost:" + port + " --create " + " --topic " + topic +
                         " --replication-factor " + replicationFactor + " --partitions " + partitions).out();
     }
 
-    public String deleteTopicUsingPodCLI(String clusterName, String podName, String topic) {
+    public String deleteTopicUsingPodCLI(String clusterName, int zkPodId, String topic) {
+        String podName = zookeeperPodName(clusterName, zkPodId);
+        int port = 2181 * 10 + zkPodId;
         return kubeClient.exec(podName, "/bin/bash", "-c",
-                "bin/kafka-topics.sh --zookeeper " + clusterName + "-zookeeper-client:2181 --delete --topic " + topic).out();
+                "bin/kafka-topics.sh --zookeeper localhost:" + port + " --delete --topic " + topic).out();
     }
 
-    public List<String>  describeTopicUsingPodCLI(String clusterName, String podName, String topic) {
+    public List<String>  describeTopicUsingPodCLI(String clusterName, int zkPodId, String topic) {
+        String podName = zookeeperPodName(clusterName, zkPodId);
+        int port = 2181 * 10 + zkPodId;
         return asList(kubeClient.exec(podName, "/bin/bash", "-c",
-                "bin/kafka-topics.sh --zookeeper " + clusterName + "-zookeeper-client:2181 --describe --topic " + topic).out().split("\\s+"));
+                "bin/kafka-topics.sh --zookeeper localhost:" + port + " --describe --topic " + topic).out().split("\\s+"));
     }
 
-    public String updateTopicPartitionsCountUsingPodCLI(String clusterName, String podName, String topic, int partitions) {
+    public String updateTopicPartitionsCountUsingPodCLI(String clusterName, int zkPodId, String topic, int partitions) {
+        String podName = zookeeperPodName(clusterName, zkPodId);
+        int port = 2181 * 10 + zkPodId;
         return kubeClient.exec(podName, "/bin/bash", "-c",
-                "bin/kafka-topics.sh --zookeeper " + clusterName + "-zookeeper-client:2181 --alter --topic " + topic + " --partitions " + partitions).out();
+                "bin/kafka-topics.sh --zookeeper localhost:" + port + " --alter --topic " + topic + " --partitions " + partitions).out();
     }
 
     public Map<String, String> getImagesFromConfig(String configJson) {
@@ -344,6 +356,8 @@ public class AbstractClusterIT {
         images.put(TO_IMAGE, getImageNameFromJSON(configJson, TO_IMAGE));
         images.put(INIT_KAFKA_IMAGE, getImageNameFromJSON(configJson, INIT_KAFKA_IMAGE));
         images.put(TLS_SIDECAR_ZOOKEEPER_IMAGE, getImageNameFromJSON(configJson, TLS_SIDECAR_ZOOKEEPER_IMAGE));
+        images.put(TLS_SIDECAR_KAFKA_IMAGE, getImageNameFromJSON(configJson, TLS_SIDECAR_KAFKA_IMAGE));
+        images.put(TLS_SIDECAR_TO_IMAGE, getImageNameFromJSON(configJson, TLS_SIDECAR_TO_IMAGE));
         return images;
     }
 

@@ -28,17 +28,19 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"watchedNamespace", "image",
         "reconciliationIntervalSeconds", "zookeeperSessionTimeoutSeconds",
-        "affinity", "resources", "topicMetadataMaxAttempts"})
+        "affinity", "resources", "topicMetadataMaxAttempts", "tlsSidecar"})
 public class TopicOperator {
 
     public static final String DEFAULT_IMAGE = System.getenv().getOrDefault(
             "STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE",
             "strimzi/topic-operator:latest");
+    public static final String DEFAULT_TLS_SIDECAR_IMAGE =
+            System.getenv().getOrDefault("STRIMZI_DEFAULT_TLS_SIDECAR_TOPIC_OPERATOR_IMAGE", "strimzi/topic-operator-stunnel:latest");
     public static final int DEFAULT_REPLICAS = 1;
     public static final int DEFAULT_HEALTHCHECK_DELAY = 10;
     public static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
     public static final int DEFAULT_ZOOKEEPER_PORT = 2181;
-    public static final int DEFAULT_BOOTSTRAP_SERVERS_PORT = 9092;
+    public static final int DEFAULT_BOOTSTRAP_SERVERS_PORT = 9091;
     public static final int DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS = 90;
     public static final int DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS = 20;
     public static final int DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS = 6;
@@ -51,6 +53,7 @@ public class TopicOperator {
     private Resources resources;
     private Affinity affinity;
     private Logging logging;
+    private Sidecar tlsSidecar;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The namespace the Topic Operator should watch.")
@@ -128,6 +131,16 @@ public class TopicOperator {
 
     public void setLogging(Logging logging) {
         this.logging = logging;
+    }
+
+    @Description("TLS sidecar configuration")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Sidecar getTlsSidecar() {
+        return tlsSidecar;
+    }
+
+    public void setTlsSidecar(Sidecar tlsSidecar) {
+        this.tlsSidecar = tlsSidecar;
     }
 
     @JsonAnyGetter
