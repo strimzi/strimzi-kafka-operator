@@ -1,23 +1,28 @@
 == Security
 
-The Apache Kafka project supports data encryption by means of the SSL/TLS protocol.
-This makes it possible to encrypt data transferred between brokers (interbroker communication) and between clients and brokers.
+The Cluster Operator provides data encryption and authentication for both Apache Kafka and Apache Zookeeper by means of the SSL/TLS protocol.
+This makes it possible to encrypt data transferred between Kafka brokers (interbroker communication), between Zookeeper nodes (internodal communication), and between clients and Kafka brokers.
 
 The Cluster Operator sets up the SSL/TLS certificates to provide this encryption and authentication.
 
+.Example Architecture diagram of the communication secured by TLS.
+image::secure_communication.png[Secure Communication]
+
 === Certificates
 
-Each Kafka broker needs its own private and public keys in order to support encryption.
-The public key has to be signed by a certificate authority (CA) in order to have a related X.509 certificate for providing server authentication and encrypting the communication channel with the client (which could be another broker as well).
-More precisely, each broker has two different certificates (and related private keys), one for interbroker communication  and one for communication with clients.
-These broker certificates are signed using different CAs: The "internal-ca" signs the certificates used for interbroker communication, and the "clients-ca" signs the certificates used for client communication.
-The CAs themselves use self-signed certificates.
+Every Kafka broker and every Zookeeper node needs its own private and public keys in order to support encryption.
+Additionally, every public key must be signed by a certificate authority (CA) in order to have a related X.509 certificate for server authentication and data encryption.
+Each Kafka broker has two different certificates (and related private keys), one for interbroker communication and one for client communication.
+While each Zookeeper node has one certificate which is used for internodal communication.
+Keys used for interbroker and internodal communication are signed using the "internal-ca" certificate authority.
 The "internal-ca" is used across multiple clusters, that is, there is a single "internal-ca" for each instance of a cluster operator. 
+Keys used for client and broker communication are signed using the "clients-ca" certificate authority.
 The "clients-ca" is specific to a particular Kafka cluster.
+Both types of CAs, "internal-ca" and "clients-ca", use self-signed certificates.
 
-All the generated certificates are saved as Secrets in the {ProductPlatformName} cluster, named as follows:
+All of the generated certificates are saved as Secrets in the {ProductPlatformName} cluster, named as follows:
 
-* `internal-ca`: contains the private and public keys, so the self-signed certificate, used for signing broker certificates used for interbroker communication. It is common to all the Kafka clusters deployed by the Cluster Operator.
+* `internal-ca`: contains the private and public keys, so the self-signed certificate, used for signing broker certificates used for interbroker communication and zookeeper node certificates used for internodal communication. It is common to all the Kafka and Zookeeper clusters deployed by the Cluster Operator.
 * `<cluster-name>-kafka-clients-ca`: contains the private and public keys, so the self-signed certificate, used for signing broker certificates used for communicating with clients. It is specific for each deployed Kafka cluster as specified in the <cluster-name> prefix.
 * `<cluster-name>-kafka-cert`: contains only the public keys, so the self-signed certificate, used for signing broker certificates used for communicating with clients. This Secret should be used by the final Kafka cluster user in order to extract this certificate to put into the the client's truststores for verifying broker identities (server authentication).
 * `<cluster-name>-kafka-brokers-internal`: contains all the brokers private and public keys (certificates signed with "internal-ca") used for interbroker communication.
@@ -27,17 +32,24 @@ All the keys are 2048 bits in size and are valid for 365 days from initial gener
 
 NOTE: "certificates rotation" for generating new ones on their expiration will be supported in future releases.
 
-=== Listeners
+=== Interbroker Kafka Communication
 
-The data encryption is provided on two different listeners exposed by each Kafka broker.
+Kafka brokers communicate with one another through the `REPLICATION` listener on port 9091, which is encrypted by default.
 
-Interbroker communication is through the `REPLICATION` listener on port 9091, which is encrypted by default.
+=== Internodal Zookeeper Communication
 
-Encrypted communication with clients is provided through the `CLIENTTLS` listener on port 9093.
+By deploying an stunnel sidecar within every Zookeeper pod, the Cluster Operator is able to provide data encryption and authentication between Zookeeper nodes in a cluster.
+The stunnel sidecar proxies all Zookeeper traffic, TLS decrypting data upon entry into a Zookeeper pod and TLS encrypting data upon departure from a Zookeeper pod.
+This TLS encrypting stunnel proxy is instantiated from the `spec.zookeeper.stunnelImage` specified in the Kafka resource.
+
+WARNING: Currently, the Cluster Operator only encrypts traffic between Zookeeper nodes, through Zookeeper's election port, 3888, and follower port, 2888.
+Traffic going through Zookeeper's client port, 2181, is not encrypted.  
+
+=== Clients connecting to Kafka broker via TLS
+
+Encrypted communication between Kafka brokers and clients is provided through the `CLIENTTLS` listener on port 9093.
 
 NOTE: Un-encrypted communication with clients is still possible through the `CLIENT` listener on port 9092.
-
-=== Clients connection via TLS
 
 If a Kafka client wants to connect to the encrypted listener (CLIENTTLS) on port 9093, it needs to trust the client's CA certificate in order to verify the broker certificate received during the SSL/TLS handshake.
 The clients CA certificate can be extracted from the generated `<cluster-name>-kafka-cert` Secret with the following command if the Kafka cluster is running on {OpenShiftName}.
@@ -65,3 +77,4 @@ Finally, in order to configure the Kafka client, following properties should be 
 
 The current implementation does not support Subject Alternative Names (SAN) so the hostname verification should be disabled on the client side.
 For doing so the `ssl.endpoint.identification.algorithm` property needs to be set as empty.
+
