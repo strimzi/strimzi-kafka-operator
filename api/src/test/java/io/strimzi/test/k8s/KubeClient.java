@@ -72,7 +72,7 @@ public interface KubeClient<K extends KubeClient<K>> {
     /** Returns an equivalent client, but logged in as cluster admin. */
     K clientWithAdmin();
 
-    K createContent(String yamlContent);
+    K applyContent(String yamlContent);
 
     K deleteContent(String yamlContent);
 
@@ -90,11 +90,12 @@ public interface KubeClient<K extends KubeClient<K>> {
 
     /**
      * Wait for the deployment with the given {@code name} to
-     * have replicas==readyReplicas.
+     * have replicas==readyReplicas && replicas==expected.
      * @param name The deployment name.
+     * @param expected Number of expected pods
      * @return This kube client.
      */
-    K waitForDeployment(String name);
+    K waitForDeployment(String name, int expected);
 
     /**
      * Wait for the pod with the given {@code name} to be in the ready state.

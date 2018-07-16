@@ -493,9 +493,9 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     protected void before() {
                         LOGGER.info("Creating connect cluster '{}' before test per @ConnectCluster annotation on {}", clusterName, name(element));
                         // create cm
-                        kubeClient().clientWithAdmin().createContent(yaml);
+                        kubeClient().clientWithAdmin().applyContent(yaml);
                         // wait for deployment
-                        kubeClient().waitForDeployment(deploymentName);
+                        kubeClient().waitForDeployment(deploymentName, kafkaAssembly.getSpec().getReplicas());
                     }
 
                     @Override
@@ -542,7 +542,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     protected void before() {
                         LOGGER.info("Creating kafka cluster '{}' before test per @KafkaCluster annotation on {}", kafkaAssembly.getMetadata().getName(), name(element));
                         // create cm
-                        kubeClient().clientWithAdmin().createContent(yaml);
+                        kubeClient().clientWithAdmin().applyContent(yaml);
                         // wait for ss
                         LOGGER.info("Waiting for Zookeeper SS");
                         kubeClient().waitForStatefulSet(zookeeperStatefulSetName, kafkaAssembly.getSpec().getZookeeper().getReplicas());
@@ -551,7 +551,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                         kubeClient().waitForStatefulSet(kafkaStatefulSetName, kafkaAssembly.getSpec().getKafka().getReplicas());
                         // wait for TOs
                         LOGGER.info("Waiting for TC Deployment");
-                        kubeClient().waitForDeployment(tcDeploymentName);
+                        kubeClient().waitForDeployment(tcDeploymentName, 1);
                     }
 
                     @Override
@@ -645,9 +645,9 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     for (Map.Entry<File, String> entry: yamls.entrySet()) {
                         LOGGER.info("creating possible modified version of {}", entry.getKey());
                         deletable.push(entry.getValue());
-                        kubeClient().clientWithAdmin().createContent(entry.getValue());
+                        kubeClient().clientWithAdmin().applyContent(entry.getValue());
                     }
-                    kubeClient().waitForDeployment(CO_DEPLOYMENT_NAME);
+                    kubeClient().waitForDeployment(CO_DEPLOYMENT_NAME, 1);
                 }
 
                 @Override
@@ -797,7 +797,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 protected void before() {
                     LOGGER.info("Creating Topic {} {}", topic.name(), name(element));
                     // create cm
-                    kubeClient().createContent(configMap);
+                    kubeClient().applyContent(configMap);
                     kubeClient().waitForResourceCreation(BaseKubeClient.CM, topic.name());
                 }
                 @Override

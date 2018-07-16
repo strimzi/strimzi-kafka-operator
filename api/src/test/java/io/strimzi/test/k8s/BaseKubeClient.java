@@ -33,6 +33,7 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
     private static final Logger LOGGER = LogManager.getLogger(BaseKubeClient.class);
 
     public static final String CREATE = "create";
+    public static final String APPLY = "apply";
     public static final String DELETE = "delete";
     public static final String DEPLOYMENT = "deployment";
     public static final String STATEFUL_SET = "statefulset";
@@ -171,9 +172,9 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
     }
 
     @Override
-    public K createContent(String yamlContent) {
+    public K applyContent(String yamlContent) {
         try (Context context = defaultContext()) {
-            Exec.exec(yamlContent, namespacedCommand(CREATE, "-f", "-"));
+            Exec.exec(yamlContent, namespacedCommand(APPLY, "-f", "-"));
             return (K) this;
         }
     }
@@ -235,12 +236,12 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
     }
 
     @Override
-    public K waitForDeployment(String name) {
+    public K waitForDeployment(String name, int expected) {
         return waitFor("deployment", name, actualObj -> {
             JsonNode replicasNode = actualObj.get("status").get("replicas");
             JsonNode readyReplicasName = actualObj.get("status").get("readyReplicas");
             return replicasNode != null && readyReplicasName != null
-                    && replicasNode.asInt() == readyReplicasName.asInt();
+                    && replicasNode.asInt() == readyReplicasName.asInt() && replicasNode.asInt() == expected;
 
         });
     }

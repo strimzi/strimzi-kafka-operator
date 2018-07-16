@@ -81,7 +81,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
         oc.newApp("strimzi-connect", map("CLUSTER_NAME", clusterName,
                 "KAFKA_CONNECT_BOOTSTRAP_SERVERS", KAFKA_CONNECT_BOOTSTRAP_SERVERS));
         String deploymentName = clusterName + "-connect";
-        oc.waitForDeployment(deploymentName);
+        oc.waitForDeployment(deploymentName, 1);
         testDockerImagesForKafkaConnect();
         oc.deleteByName("cm", clusterName);
         oc.waitForResourceDeletion("deployment", deploymentName);
@@ -128,7 +128,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
         replaceKafkaConnectResource(CONNECT_CLUSTER_NAME, c -> {
             c.getSpec().setReplicas(initialReplicas + 1);
         });
-        kubeClient.waitForDeployment(kafkaConnectName(CONNECT_CLUSTER_NAME));
+        kubeClient.waitForDeployment(kafkaConnectName(CONNECT_CLUSTER_NAME), 2);
         connectPods = kubeClient.listResourcesByLabel("pod", "strimzi.io/kind=KafkaConnect");
         assertEquals(scaleTo, connectPods.size());
         for (String pod : connectPods) {
@@ -174,7 +174,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
             c.getSpec().getReadinessProbe().setTimeoutSeconds(6);
         });
 
-        kubeClient.waitForDeployment(kafkaConnectName(CONNECT_CLUSTER_NAME));
+        kubeClient.waitForDeployment(kafkaConnectName(CONNECT_CLUSTER_NAME), 1);
         for (int i = 0; i < connectPods.size(); i++) {
             kubeClient.waitForResourceDeletion("pod", connectPods.get(i));
         }
