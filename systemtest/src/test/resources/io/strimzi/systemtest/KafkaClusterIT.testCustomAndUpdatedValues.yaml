@@ -18,7 +18,7 @@ spec:
     storage:
       type: ephemeral
   zookeeper:
-    replicas: 1
+    replicas: 2
     readiness:
       initialDelaySeconds: "30"
       timeoutSeconds: "10"
