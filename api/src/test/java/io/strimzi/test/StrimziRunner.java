@@ -628,11 +628,13 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 if (f.getName().matches(".*ClusterRoleBinding.*")) {
                     String ns = annotations(element, Namespace.class).get(0).value();
                     ArrayNode subjects = (ArrayNode) node.get("subjects");
-                    JsonNodeFactory factory = new JsonNodeFactory(false);
-                    ObjectNode subject = new ObjectNode(factory);
-                    subject.put("kind", "ServiceAccount").put("namespace", ns);
+                    //JsonNodeFactory factory = new JsonNodeFactory(false);
+                    ObjectNode subject = (ObjectNode) subjects.get(0); //new ObjectNode(factory);
+                    subject.put("kind", "ServiceAccount")
+                            .put("name", "strimzi-cluster-operator")
+                            .put("namespace", ns);
                     subjects.set(0, subject);
-                    LOGGER.info("Modified binding: {}", node);
+                    LOGGER.info("Modified binding from {}: {}", f, node);
                 }
             }), (x, y) -> x, LinkedHashMap::new));
             last = new Bracket(last, new ResourceAction().getPo(CO_DEPLOYMENT_NAME + ".*")

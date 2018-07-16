@@ -601,7 +601,7 @@ public class KafkaCluster extends AbstractModel {
         if (rack != null) {
             return new ClusterRoleBindingOperator.ClusterRoleBinding(
                     getInitContainerClusterRoleBindingName(name),
-                    "strimzi-kafka-role",
+                    "strimzi-kafka-broker",
                     namespace, getInitContainerServiceAccountName(name));
         } else {
             return null;

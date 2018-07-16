@@ -51,7 +51,7 @@ public class TopicOperator extends AbstractModel {
     public static final String ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
     public static final String ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS = "STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS";
     public static final String ENV_VAR_TOPIC_METADATA_MAX_ATTEMPTS = "STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS";
-    public static final String TO_CLUSTER_ROLE_NAME = "strimzi-topic-operator-role";
+    public static final String TO_CLUSTER_ROLE_NAME = "strimzi-topic-operator";
     public static final String TO_ROLE_BINDING_NAME = "strimzi-topic-operator-role-binding";
 
     // Kafka bootstrap servers and Zookeeper nodes can't be specified in the JSON
