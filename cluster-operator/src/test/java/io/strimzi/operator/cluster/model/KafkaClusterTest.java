@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.PodSpec;
+import io.fabric8.kubernetes.api.model.Probe;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.WeightedPodAffinityTerm;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
@@ -307,5 +308,15 @@ public class KafkaClusterTest {
     public void withRackAndAffinity() throws IOException {
         resourceTester.assertDesiredResource("-SS.yaml",
             kc -> kc.generateStatefulSet(true).getSpec().getTemplate().getSpec().getAffinity());
+    }
+
+
+    @Test
+    public void testCreateTcpSocketProbe()  {
+        Probe probe = kc.createTcpSocketProbe(1234, 10, 20);
+
+        assertEquals(new Integer(1234), probe.getTcpSocket().getPort().getIntVal());
+        assertEquals(new Integer(10), probe.getInitialDelaySeconds());
+        assertEquals(new Integer(20), probe.getTimeoutSeconds());
     }
 }
