@@ -1,0 +1,149 @@
+[[style-guide]]
+= Style Guidelines
+
+[[style-guidelines]]
+== Style Guidelines
+
+[[general-styles]]
+=== General Styles
+
+.General Quick Reference
+[cols="33%,33%a,33%a",options="header"]
+|===
+|Item |Use |Not
+|Filesystem names and paths, symbols, and literals.  | \`filename`  |
+|GUI items (_Match the capitalization of the button_)  |\*bold*  |
+|Navigation link text |\*bold*  |
+|Superuser console commands  | $ sudo  |#
+|Emphasis  |\_yay_  |\*yay*
+|List of options (_underline the default if there is one_)  |1\|[.underline]\#2#\|3 |1/2/3
+|Decimal integers < 10  |four  |4
+|Decimal integers >= 10  |12  |twelve
+|Hexadecimal integers (_always numeric, lowercase x_) |0x123 |0X13
+|Number ranges (_always use numerals_)  |1-20 |1-twenty
+.3+|Do not use Latin abbreviations  |that is |i.e.
+|and so on |etc.
+|for example  |e.g.
+|Cannot  |cannot  |can not
+|And |and | &
+.2+|Choices |and |and/or
+|or |
+|Heartbeating |heartbeating |heart-beating
+|===
+
+.Additional General Guidelines
+* Stick to one file per chapter unless the content is too long,
+  excluding reusable topics.
+* Don't use contractions, ;).
+* Document IDs are book-scoped, so they don't need the book title in
+  them.
+* Terminate bulleted and numbered lists with periods unless the items
+  listed are simple names.
+* The words "server" and "broker" are not capitalized unless they
+   begin a sentence or appear in a title.
+* Avoid the word "simply" unless it clarifies.
+* For substitution of `{attr}` in code blocks, use `[subs=+attributes]`.
+* For styling of `++*bold*++` (`*bold*`) in code blocks, use
+  `[subs=+quotes]`.
+* Do not use the word 'the' before 'Broker'. It is just 'Broker'
+
+[[naming-files-style]]
+=== Naming files
+
+.File Names Quick Reference
+[cols="33%,33%a,33%a",options="header"]
+|===
+|Item |Use |Not
+.2+|Custom attributes
+.2+|\`ThisStyle`
+|\`this-style`
+|\`this_style`
+.2+|File and directory names
+.2+|\`module_this-style`
+|\`module-this_style`
+|\`ModuleThisStyle`
+|===
+
+Learn more about naming files in the xref:files-and-attributes[Files and Attributes] appendix.
+
+[[headings-titles]]
+=== Styling headings and titles
+
+AMQ 7 uses sentence-case headings for modules, tables, and figures.
+
+.Headings Quick Reference
+[cols="33%,33%a,33%a",options="header"]
+|===
+|Item |Use |Not
+.2+|Section headings .2+|Configuring the system with RHEL
+|Configuring the System with RHEL
+|Configuring The System With RHEL
+|Procedure Titles (_gerund_) |Configuring | Configure
+.2+|Table and block titles .2+|This is an example
+|This is an Example
+|This Is An Example
+.2+|Hyphenated headings .2+| Configuring point-to-point messaging | Configuring Point-To-Point Messaging | Configuring Point-to-point Messaging
+|Unnumbered titled sections |_[discrete]_ |
+|===
+
+[[ids]]
+=== Section IDs
+
+The format defined here is recommended because it is the most stable and versatile of anchor formats, and supports variables that enable topics to be reused and cross-referenced properly. Other anchor formats include `+++[[anchor-name]]+++` and `+++[#anchor-name]+++`, but these formats either do not support variables for content reuse or do not support certain character types, such as periods. These limitations cause errors at build time.
+
+Learn more about reusing content in the link:https://redhat-documentation.github.io/modular-docs/#reusing-modules[Modular Documentation Reference Guide^].
+
+.IDs quick reference
+[cols="33%,33%a,33%a",options="header"]
+|===
+|Item |Use |Not
+.3+|Document IDs .3+|++[id="same-as-section-heading-{context}"]++
+|\[[this-heading-here]]
+|\[[ThisHeadingHere]]
+|++[#anchor-name]++
+|===
+
+[[replaceables]]
+=== Styling replaceables
+
+Replaceable values in the text and code should be styles using monospace, lowercase, arrow brackets, and hyphens.
+
+.Replaceables quick reference
+[cols="50%,50%a",options="header"]
+|===
+|Item |Use
+|Replaceable value |\`<some-value>`
+|Location of broker instance |\`<broker-instance-dir>`
+|Component install directory |\`<install-dir>`
+|===
+
+TIP: If using a replaceable within a source block, you will need to add
+`subs="+quotes"`` to the source tag for it to render. (For example : `++[source,options="nowrap",subs="+quotes"]++`).
+
+=== Styling Links
+
+.Links Quick Reference
+[cols="33%,33%a,33%a",options="header"]
+|===
+|Item |Use |Not
+.2+|Zip files .2+|zip
+|_.zip_
+|ZIP
+.2+|Tar files .2+|tar
+|_.tar_
+|TAR
+|External links |\link:github.com[GitHub^] |\link:github.com[GitHub]
+|Internal links |\xref:doc_id[Section Title]|\xref:doc_id[Section Title^]
+|===
+
+NOTE: If you use the caret syntax more than once in a single paragraph, you may need to
+escape the first occurrence with a backslash.
+
+IMPORTANT: Links with attributes (including the subject and body segments on mailto links)
+are a feature unique to Asciidoctor. When they are enabled, you must surround the link text
+in double quotes if it contains a comma.
+
+.Additional Link Guidelines
+* Refer to the top-level sections of books as chapters, not sections
+  or topics.
+* Do not split link paths across lines when wrapping text. This will cause issues with the doc builds.

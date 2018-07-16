@@ -1,0 +1,18 @@
+= Introduction
+
+This guide is meant to assist contributors to the Strimzi documentation.
+
+== Dependencies
+
+* asciidoctor
+* python
+
+== Project layout
+
+[source,options="nowrap",subs="+quotes"]
+----
+book/                                # The source for the book
+common/                              # Shared include files
+common/attributes.adoc               # Global book attributes
+images/                              # Shared image files
+----

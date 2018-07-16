@@ -1,0 +1,86 @@
+[[contributing-to-docs]]
+= Contributing to the Documentation
+
+The following guide walks you through contributing to the Strimzi documentation.
+
+[[contribution-getting-started]]
+== Getting Started
+
+Before you begin you need to:
+
+. xref:setting-up-git[Install and set up Git]
+
+[[contributing]]
+== Contributing to the Documentation
+
+Once you have your local repository set up and have up to date copies of upstream content you need to follow these steps to contribute to the documentation.
+
+.Procedure
+. Open your terminal
+. `cd` to the directory where your documentation resides
+. Checkout the master branch
++
+[source]
+----
+$ git checkout master
+----
+. Update your local repository and fork with the upstream content
++
+[source]
+----
+$ git pull upstream master
+$ git push origin master --force
+----
+. Create a new branch for your work (using the issue number is helpful)
++
+[source,options="nowrap",subs="+quotes"]
+----
+$ git checkout -b <branch-name>
+----
+. Make your edits in the editor of your choice
+. Save your changes locally
+. If you are creating new files, add the files to the repository
++
+[source,options="nowrap",subs="+quotes"]
+----
+$ git status
+$ git add <file-name>
+----
+
+. Commit your changes
++
+[source,options="nowrap",subs="+quotes"]
+----
+$ git commit -a -m "<message>"
+----
+. Push your changes to your fork
++
+[source]
+----
+$ git push origin HEAD
+----
+. If the update is rejected because the commit is behind, merge your changes
++
+[source]
+----
+$ git pull upstream master
+$ git push -f origin HEAD
+----
+. Visit your fork on GitHub
+. Click *Compare & pull request*
+. If a SME review is needed:
+.. Add *SME Review Needed* label.
+.. When SME review is complete, remove *SME Review Completed* label and go to step 16.
+. Add *Peer Review Needed* label and assign a Reviewer.
+.. When peer review has been completed, the reviewer deletes the *Peer Review Needed* label and adds the *Peer Review Done* label.
+. When *Peer Review Done* label has been added:
+.. If no changes are needed, remove *Peer Review Done* label and add *Ready for Merge* label.
+.. If changes are needed and the changes are minor, make changes to the files, commit, and push, and then remove *Peer Review Done* label and add *Ready for Merge* label.
+.. If you want an additional review on the updated content, add the *Peer Review Needed* label and ask for another review in a comment.
+
+////
+[[merging-contributions]]
+== Merging Commits
+
+Commits are merged weekly on Friday by the "Mergemaster" following the instructions in the xref:doc-admin-guide[Documentation Administration Guide].
+////
