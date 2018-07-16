@@ -230,14 +230,6 @@ public class KafkaClusterIT extends AbstractClusterIT {
         }
 
         LOGGER.info("Verify values before update");
-        String configMapBefore = kubeClient.get("kafka", clusterName);
-        assertThat(configMapBefore, valueOfCmEquals("zookeeper-healthcheck-delay", "30"));
-        assertThat(configMapBefore, valueOfCmEquals("zookeeper-healthcheck-timeout", "10"));
-        assertThat(configMapBefore, valueOfCmEquals("kafka-healthcheck-delay", "30"));
-        assertThat(configMapBefore, valueOfCmEquals("kafka-healthcheck-timeout", "10"));
-        assertThat(configMapBefore, valueOfCmEquals("kafka-config", "{\"default.replication.factor\": 1,\"offsets.topic.replication.factor\": 1,\"transaction.state.log.replication.factor\": 1}"));
-        assertThat(configMapBefore, valueOfCmEquals("zookeeper-config", "{\"timeTick\": 2000, \"initLimit\": 5, \"syncLimit\": 2}"));
-
         for (int i = 0; i < expectedKafkaPods; i++) {
             String kafkaPodJson = kubeClient.getResourceAsJson("pod", kafkaPodName(clusterName, i));
             assertEquals("transaction.state.log.replication.factor=1\\ndefault.replication.factor=1\\noffsets.topic.replication.factor=1\\n".replaceAll("\\p{P}", ""), getValueFromJson(kafkaPodJson,
@@ -261,8 +253,12 @@ public class KafkaClusterIT extends AbstractClusterIT {
             kafka.getLivenessProbe().setTimeoutSeconds(11);
             kafka.getReadinessProbe().setTimeoutSeconds(11);
             kafka.setConfig(TestUtils.fromJson("{\"default.replication.factor\": 2,\"offsets.topic.replication.factor\": 2,\"transaction.state.log.replication.factor\": 2}", Map.class));
-            Zookeeper z = k.getSpec().getZookeeper();
-            z.setConfig(TestUtils.fromJson("{\"timeTick\": 2100, \"initLimit\": 6, \"syncLimit\": 3}", Map.class));
+            Zookeeper zookeeper = k.getSpec().getZookeeper();
+            zookeeper.getLivenessProbe().setInitialDelaySeconds(31);
+            zookeeper.getReadinessProbe().setInitialDelaySeconds(31);
+            zookeeper.getLivenessProbe().setTimeoutSeconds(11);
+            zookeeper.getReadinessProbe().setTimeoutSeconds(11);
+            zookeeper.setConfig(TestUtils.fromJson("{\"timeTick\": 2100, \"initLimit\": 6, \"syncLimit\": 3}", Map.class));
         });
 
         for (int i = 0; i < expectedZKPods; i++) {
@@ -275,14 +271,6 @@ public class KafkaClusterIT extends AbstractClusterIT {
         }
 
         LOGGER.info("Verify values after update");
-        String configMapAfter = kubeClient.get("cm", clusterName);
-        assertThat(configMapAfter, valueOfCmEquals("zookeeper-healthcheck-delay", "31"));
-        assertThat(configMapAfter, valueOfCmEquals("zookeeper-healthcheck-timeout", "11"));
-        assertThat(configMapAfter, valueOfCmEquals("kafka-healthcheck-delay", "31"));
-        assertThat(configMapAfter, valueOfCmEquals("kafka-healthcheck-timeout", "11"));
-        assertThat(configMapAfter, valueOfCmEquals("kafka-config", "{\"default.replication.factor\": 2,\"offsets.topic.replication.factor\": 2,\"transaction.state.log.replication.factor\": 2}"));
-        assertThat(configMapAfter, valueOfCmEquals("zookeeper-config", "{\"timeTick\": 2100, \"initLimit\": 6, \"syncLimit\": 3}"));
-
         for (int i = 0; i < expectedKafkaPods; i++) {
             String kafkaPodJson = kubeClient.getResourceAsJson("pod", kafkaPodName(clusterName, i));
             assertEquals("transaction.state.log.replication.factor=2\\ndefault.replication.factor=2\\noffsets.topic.replication.factor=2\\n".replaceAll("\\p{P}", ""), getValueFromJson(kafkaPodJson,
