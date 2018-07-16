@@ -30,7 +30,7 @@ public abstract class AbstractCrdIT {
         RuntimeException thrown2 = null;
         try {
             try {
-                cluster.client().createContent(ssStr);
+                cluster.client().applyContent(ssStr);
             } catch (RuntimeException t) {
                 thrown = t;
             }

@@ -493,7 +493,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     protected void before() {
                         LOGGER.info("Creating connect cluster '{}' before test per @ConnectCluster annotation on {}", clusterName, name(element));
                         // create cm
-                        kubeClient().clientWithAdmin().createContent(yaml);
+                        kubeClient().clientWithAdmin().applyContent(yaml);
                         // wait for deployment
                         kubeClient().waitForDeployment(deploymentName);
                     }
@@ -542,7 +542,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     protected void before() {
                         LOGGER.info("Creating kafka cluster '{}' before test per @KafkaCluster annotation on {}", kafkaAssembly.getMetadata().getName(), name(element));
                         // create cm
-                        kubeClient().clientWithAdmin().createContent(yaml);
+                        kubeClient().clientWithAdmin().applyContent(yaml);
                         // wait for ss
                         LOGGER.info("Waiting for Zookeeper SS");
                         kubeClient().waitForStatefulSet(zookeeperStatefulSetName, kafkaAssembly.getSpec().getZookeeper().getReplicas());
@@ -797,7 +797,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 protected void before() {
                     LOGGER.info("Creating Topic {} {}", topic.name(), name(element));
                     // create cm
-                    kubeClient().createContent(configMap);
+                    kubeClient().applyContent(configMap);
                     kubeClient().waitForResourceCreation(BaseKubeClient.CM, topic.name());
                 }
                 @Override
