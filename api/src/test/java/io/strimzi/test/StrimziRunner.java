@@ -625,8 +625,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     }
                 }
 
-                if ("03-role-binding.yaml".equals(f.getName())
-                        || "03-ClusterRoleBinding-2.yaml".equals(f.getName())) {
+                if (f.getName().matches(".*ClusterRoleBinding.*")) {
                     String ns = annotations(element, Namespace.class).get(0).value();
                     ArrayNode subjects = (ArrayNode) node.get("subjects");
                     JsonNodeFactory factory = new JsonNodeFactory(false);
