@@ -5,6 +5,7 @@ _Select the type of your PR_
 - Bugfix
 - Enhancement / new feature
 - Refactoring
+- Design Proposal
 
 ### Description
 
