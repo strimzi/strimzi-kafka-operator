@@ -1060,119 +1060,110 @@ They will not be added to the Docker image from a previous build.
 To add multiple plugins to the deployment, they all have to be added within the same build.
 
 
-=== Provisioning Role-Based Access Control (RBAC) for the Cluster Operator
+=== Provisioning Role-Based Access Control (RBAC) for the operator
 
-For the operator to function correctly it needs permission within the {ProductPlatformName} cluster to interact with the resources it manages (ConfigMaps, Pods, Deployments, StatefulSets, Services and so on).
-Such permission is described in terms of {ProductPlatformName} role-based access control (RBAC) resources:
-
-* ServiceAccount,
-* Role and ClusterRole,
-* RoleBinding and ClusterRoleBinding.
-
-As well as running under its own ServiceAccount with ClusterRoleBindings, the Cluster Operator itself manages some RBAC resources.
-This is because some of the components that are deployed need access to {ProductPlatformName} resources. 
-Furthermore, {ProductPlatformName} includes privilege escalation protections which prevent components operating under one ServiceAccount from granting other ServiceAccounts privileges they do not have. 
-This means that for the Cluster Operator to be able to create the ClusterRoleBindings and RoleBindings needed by resources it manages it needs those same privileges itself.
-
-[[delegated_privileges]]
-==== Delegated Privileges
-
-When the Cluster Operator deploys resources for a desired `Kafka` resource it also creates ServiceAccounts, RoleBindings and ClusterRoleBindings, as follows:
-
-* The Kafka broker pods use a ServiceAccount called `[cluster-name]-kafka-init` (where `[cluster-name]` is a placeholder for the name of the Kafka resource)
-  - When the rack feature is used, the `strimzi-[cluster-name]-kafka-init` ClusterRoleBinding is used to grant this ServiceAccount access to the nodes within the cluster via a ClusterRole called `strimzi-kafka-broker`
-  - When the rack feature is not used no binding is created.
-* The Zookeeper pods use the default ServiceAccount as they have no need to access {ProductPlatformName} resources
-* The Topic Operator pod uses a ServiceAccount called `[cluster-name]-topic-operator` (where `[cluster-name]` is a placeholder for the name of the Kafka resource)
-    - The TopicOperator produces {ProductPlatformName} events with status information, so the ServiceAccount is bound to a `ClusterRole` called `strimzi-topic-operator` which grants this access via the `strimzi-topic-operator-role-binding` RoleBinding.
-
-KafkaConnect and KafkaConnectS2I pods use the default ServiceAccount, since they require no access to {ProductPlatformName} resources.
-
+For the operator to function it needs permission within the {ProductPlatformName} cluster to interact with
+the resources it manages (ConfigMaps, Pods, Deployments, StatefulSets, Services and so on).
+Such permission is described in terms of {ProductPlatformName} role-based access controls.
 
 ==== Using a ServiceAccount
 
-The cluster operator is best run using a ServiceAccount:
+The operator is best run using a ServiceAccount:
 
 [source,yaml,options="nowrap"]
 .Example ServiceAccount for the Cluster Operator
 ----
-include::examples/install/cluster-operator/01-ServiceAccount-strimzi-cluster-operator.yaml[]
+include::examples/install/cluster-operator/01-service-account.yaml[]
 ----
 
-The Deployment of the operator then needs to specify this in its `spec.template.spec.serviceAccountName`:
+The Deployment of the operator then needs to specify this in the `serviceAccountName` of its `template.spec`:
 
 [source,yaml,numbered,options="nowrap",highlight='12']
 .Partial example Deployment for the Cluster Operator
 ----
-include::examples/install/cluster-operator/05-Deployment-strimzi-cluster-operator.yaml[lines=1..13]
+include::examples/install/cluster-operator/08-deployment.yaml[lines=1..13]
       # ...
 ----
 
 Note line 12, where the the `strimzi-cluster-operator` ServiceAccount is specified as the `serviceAccountName`.
 
+If the rack awareness feature is used, a Kafka init container will be started before the broker container in order to enable it.
+The application inside this container is best run using a ServiceAccount:
 
-==== Defining ClusterRoles
+[source,yaml,options="nowrap"]
+.Example ServiceAccount for the Kafka init container
+----
+include::examples/install/cluster-operator/04-service-account-kafka.yaml[]
+----
 
-The Cluster Operator needs to operate using some ClusterRoles that give it access to the necessary resources.
-Depending on the {ProductPlatformName} cluster setup, a cluster administrator might be needed to create the ClusterRoles.
-Cluster administrator rights are only needed for the creation of the ClusterRoles.
-The Cluster Operator will not run under the cluster admin account.
-The ClusterRoles follow the "principle of least privilege" and contain only those privileges needed by the Cluster Operator to operate Kafka, Kafka Connect and Zookeeper clusters.
-The first set of assigned privileges allow the Cluster Operator to manage {ProductPlatformName} resources such as StatefulSets, Deployments, Pods and ConfigMaps.
+The Cluster Operator will be in charge of configuring this ServiceAccount as `serviceAccountName` for the Kafka init container during cluster deployment.
+
+==== Defining a Role
+
+The Cluster Operator needs to operate using a Role that gives it access to the necessary resources.
+Depending on the {ProductPlatformName} cluster setup, a cluster administrator might be needed to create the Role.
+Cluster administrator rights are only needed for the creation of the Role.
+The Role itself does not contain any cluster administrator privileges, and the Cluster Operator will not run under the cluster admin account.
+The Role follows the "principle of least privilege" and contains only those privileges needed by the Cluster Operator to operate Kafka, Kafka Connect and Zookeeper clusters.
+The assigned privileges allow the Cluster Operator to manage {ProductPlatformName} resources such as StatefulSets, Deployments, Pods and ConfigMaps.
 
 [source,yaml,options="nowrap"]
 .Example Role for the Cluster Operator
 ----
-include::examples/install/cluster-operator/02-ClusterRole-strimzi-cluster-operator-role.yaml[]
+include::examples/install/cluster-operator/02-role.yaml[]
 ----
 
-The `strimzi-kafka-broker` ClusterRole represents the access needed by the init container in Kafka pods that is used for the rack feature. As described in the <<delegated_privileges>> section, this role is also needed by the Cluster Operator itself in order to be able to delegate this access.
+When the Role cannot be created, the predefined ClusterRole named `edit` can be used instead.
+
+If the rack awareness feature is used, the started Kafka init container needs to operate using a ClusterRole that gives it access to the necessary resources.
 
 [source,yaml,options="nowrap"]
-.ClusterRole for the Cluster Operator allowing it to delegate access to {ProductPlatformName} nodes to the Kafka broker pods
+.Example Role for the Kafka init container
 ----
-# These are the privileges needed by the init container
-# in Kafka broker pods.
-# The Cluster Operator also needs these privileges since 
-# it binds the Kafka pods' ServiceAccount to this 
-# role.
-include::examples/install/cluster-operator/03-ClusterRole-strimzi-kafka-broker.yaml[]
+include::examples/install/cluster-operator/05-role-kafka.yaml[]
 ----
 
-The `strimzi-topic-operator` ClusterRole represents the access needed by the Topic Operator. As described in the <<delegated_privileges>> section, this role is also needed by the Cluster Operator itself in order to be able to delegate this access.
+The assigned privileges allow the Kafka init container to get Nodes information.
 
-[source,yaml,options="nowrap"]
-.ClusterRole for the Cluster Operator allowing it to delegate access to events to the Topic Operator
-----
-# These are the privileges needed by the Topic Operator.
-# The Cluster Operator also needs these privileges since 
-# it binds the Topic Operator's  ServiceAccount to this 
-# role.
-include::examples/install/cluster-operator/04-ClusterRole-strimzi-topic-operator.yaml[]
-----
+==== Defining a RoleBinding
 
-
-==== Defining ClusterRoleBindings
-
-Finally, the operator needs a ClusterRoleBinding which associates its ClusterRole with its ServiceAccount:
+Finally, the operator needs a RoleBinding which associates its Role with its ServiceAccount:
 
 [source,yaml,options="nowrap"]
 .Example RoleBinding for the Cluster Operator
 ----
-include::examples/install/cluster-operator/02-ClusterRoleBinding-strimzi-cluster-operator.yaml[]
+include::examples/install/cluster-operator/03-role-binding.yaml[]
 ----
 
-Similarly, ClusterRoleBindings are also needed for the ClusterRoles needed for delegation:
+In case the `edit` ClusterRole is being used, the RoleBinding has to be modified to refer to it instead of the `strimzi-cluster-operator-role` Role:
 
 [source,yaml,options="nowrap"]
-.Example RoleBinding for the Cluster Operator
+.Example RoleBinding for the Cluster Operator using the `edit` ClusterRole
 ----
----
-include::examples/install/cluster-operator/03-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml[]
----
-include::examples/install/cluster-operator/04-ClusterRoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml[]
----
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: RoleBinding
+metadata:
+  name: strimzi-cluster-operator-binding
+  labels:
+    app: strimzi
+subjects:
+  - kind: ServiceAccount
+    name: strimzi-cluster-operator
+roleRef:
+  kind: ClusterRole
+  name: edit
+  apiGroup: rbac.authorization.k8s.io
 ----
+
+If the rack awareness feature is used, the Kafka init container needs a ClusterRoleBinding which associates its ClusterRole with its ServiceAccount:
+
+[source,yaml,options="nowrap"]
+.Example ClusterRoleBinding for the Kafka init container
+----
+include::examples/install/cluster-operator/06-role-binding-kafka.yaml[]
+----
+
+It's important to highlight that the `namespace` field, specified in the ServiceAccount subject, needs to be the same namespace where the Kafka cluster will be deployed.
 
 === Operator configuration
 
