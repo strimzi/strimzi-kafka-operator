@@ -32,9 +32,9 @@ User who want to use manual setup of authentication will be able to do so in the
 Alternatively, the end-user can bring own CA for user authentication.
 The CO will accept the CA if the secret exists before the cluster is created. 
 
-### Required changes
+### Required changes to Cluster Operator
 
-To implement this we will need following changes:
+To implement this we will need following changes in the Cluster Operator:
 
 * Make sure the Clients CA is used only for client authentication
 * Change the forbidden options to allow end-users to enable or disable Authentication
@@ -57,9 +57,9 @@ User who want to use manual setup of authorization will be able to do so in the 
   kubectl exec my-cluster-zookepeer-0 -i -t -- bin/kafka-acls.sh --authorizer-properties zookeeper.connect=localhost:2181 --add --allow-principal User:CN=writeuser,OU=Unknown,O=Unknown,L=Unknown,ST=Unknown,C=Unknown --operation Write --topic my-topic
   ```
 
-### Required changes
+### Required changes to Cluster Operator
 
-To implement this we will need following changes:
+To implement this we will need following changes in the Cluster Operator:
 
 * Change the forbidden options to allow end-users to enable or disable Authentication
 * Configure the Kafka cluster nodes as _super users_ so that they can do the replication (option `super.users=User:Bob;User:Alice`)
