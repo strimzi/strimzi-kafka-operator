@@ -60,7 +60,7 @@ public class RoleBindingOperator extends WorkaroundRbacOperator<RoleBindingOpera
 
 
     private String urlWithoutName(String namespace) {
-        return baseUrl + "apis/" + group + "/" + apiVersion + "/" + plural + "/" + namespace;
+        return baseUrl + "apis/" + group + "/" + apiVersion + "/namespaces/" + namespace + "/" + plural;
     }
 
     private String urlWithName(String namespace, String name) {

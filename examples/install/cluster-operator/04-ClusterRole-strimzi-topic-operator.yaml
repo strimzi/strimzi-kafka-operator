@@ -1,6 +1,3 @@
-# These are the privileges needed by the Topic Operator, but since the Cluster
-# Operator creates a ServiceAccount for the Topic Operator it needs the same
-# privileges.
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRole
 metadata:

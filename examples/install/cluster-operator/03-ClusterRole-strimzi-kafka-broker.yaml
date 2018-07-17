@@ -1,6 +1,3 @@
-# When using the rack feature the kafka brokers need access to the nodes within the cluster.
-# In order for the cluster operator to create a service account + binding for the brokers
-# it needs the same privilege.
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRole
 metadata:
