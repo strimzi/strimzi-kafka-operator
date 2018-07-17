@@ -1,7 +1,7 @@
 # Manual Authentication and Authorization workaround
 
 * Status: **Proposal**
-* Discussion: _TODO: Add design document PR link_
+* Discussion: [GitHub PR](https://github.com/strimzi/strimzi-kafka-operator/pull/599)
 
 ## Motivation
 
