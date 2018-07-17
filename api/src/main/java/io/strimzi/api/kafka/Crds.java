@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.internal.KubernetesDeserializer;
 import io.strimzi.api.kafka.model.KafkaAssembly;
 import io.strimzi.api.kafka.model.KafkaConnectAssembly;
 import io.strimzi.api.kafka.model.KafkaConnectS2IAssembly;
+import io.strimzi.api.kafka.model.Topic;
 
 /**
  * "Static" information about the CRDs defined in this package
@@ -120,6 +121,14 @@ public class Crds {
 
     public static <D extends CustomResourceDoneable<T>, T extends CustomResource> MixedOperation<KafkaConnectS2IAssembly, KafkaConnectS2IAssemblyList, DoneableKafkaConnectS2IAssembly, Resource<KafkaConnectS2IAssembly, DoneableKafkaConnectS2IAssembly>> kafkaConnectS2iOperation(KubernetesClient client) {
         return client.customResources(Crds.kafkaConnectS2I(), KafkaConnectS2IAssembly.class, KafkaConnectS2IAssemblyList.class, DoneableKafkaConnectS2IAssembly.class);
+    }
+
+    public static CustomResourceDefinition topic() {
+        return crd(Topic.class);
+    }
+
+    public static MixedOperation<Topic, TopicList, DoneableTopic, Resource<Topic, DoneableTopic>> topicOperation(KubernetesClient client) {
+        return client.customResources(topic(), Topic.class, TopicList.class, DoneableTopic.class);
     }
 
     public static <T extends CustomResource, L extends CustomResourceList<T>, D extends CustomResourceDoneable<T>> MixedOperation<T, L, D, Resource<T, D>>

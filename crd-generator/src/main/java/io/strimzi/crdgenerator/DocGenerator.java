@@ -167,7 +167,7 @@ public class DocGenerator {
                 types.add(documentedType);
             }
 
-            // TODO Deprecated, Minimum?, Pattern?
+            // TODO Deprecated, Minimum?, Maximum?, Pattern?
             appendPropertyType(crd, propertyType, externalUrl);
         }
         out.append("|====").append(NL).append(NL);

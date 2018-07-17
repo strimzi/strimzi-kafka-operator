@@ -18,6 +18,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Example;
+import io.strimzi.crdgenerator.annotations.Maximum;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.strimzi.crdgenerator.annotations.Pattern;
 import io.strimzi.crdgenerator.annotations.Type;
@@ -75,6 +76,11 @@ import static java.util.Arrays.asList;
  *     <dt>@{@link Minimum}</dt>
  *     <dd>A inclusive minimum for checking the bounds of integer-typed properties.
  *     This gets added to the {@code minimum}
+ *     of {@code property}s within the corresponding Schema Object.</dd>
+ *
+ *     <dt>@{@link Maximum}</dt>
+ *     <dd>A inclusive maximum for checking the bounds of integer-typed properties.
+ *     This gets added to the {@code maximum}
  *     of {@code property}s within the corresponding Schema Object.</dd>
  *
  *     <dt>{@code @Deprecated}</dt>
@@ -337,6 +343,10 @@ public class CrdGenerator {
         Minimum minimum = property.getAnnotation(Minimum.class);
         if (minimum != null) {
             result.put("minimum", minimum.value());
+        }
+        Maximum maximum = property.getAnnotation(Maximum.class);
+        if (maximum != null) {
+            result.put("maximum", maximum.value());
         }
         Pattern pattern = property.getAnnotation(Pattern.class);
         if (pattern != null) {
