@@ -49,8 +49,6 @@ import static java.util.Collections.singletonList;
 
 public class KafkaCluster extends AbstractModel {
 
-    public static final String KAFKA_SERVICE_ACCOUNT = "strimzi-kafka";
-
     protected static final String INIT_NAME = "init-kafka";
     protected static final String RACK_VOLUME_NAME = "rack-volume";
     protected static final String RACK_VOLUME_MOUNT = "/opt/kafka/rack";
@@ -536,7 +534,7 @@ public class KafkaCluster extends AbstractModel {
 
     @Override
     protected String getServiceAccountName() {
-        return KAFKA_SERVICE_ACCOUNT;
+        return getInitContainerServiceAccountName(name);
     }
 
     @Override
