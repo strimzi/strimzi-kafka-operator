@@ -165,13 +165,14 @@ public class ExamplesTest {
         }
         for (JsonNode object : rootNode.get("objects")) {
             String s = object.toString();
-            Pattern p = Pattern.compile("\\$\\{(.+?)\\}");
+            Pattern p = Pattern.compile("\\$\\{\\{(.+?)\\}?\\}");
             Matcher matcher = p.matcher(s);
             StringBuilder sb = new StringBuilder();
             int last = 0;
             while (matcher.find()) {
                 sb.append(s, last, matcher.start());
-                sb.append(params.get(matcher.group(1)));
+                String paramName = matcher.group(1);
+                sb.append(params.get(paramName));
                 last = matcher.end();
             }
             sb.append(s.substring(last));

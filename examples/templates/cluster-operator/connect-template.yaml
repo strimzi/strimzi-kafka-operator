@@ -77,13 +77,13 @@ objects:
     labels:
       type: kafka-connect
   spec:
-    replicas: ${INSTANCES}
+    replicas: ${{INSTANCES}}
     livenessProbe:
-      initialDelaySeconds: ${HEALTHCHECK_DELAY}
-      timeoutSeconds: ${HEALTHCHECK_TIMEOUT}
+      initialDelaySeconds: ${{HEALTHCHECK_DELAY}}
+      timeoutSeconds: ${{HEALTHCHECK_TIMEOUT}}
     readinessProbe:
-      initialDelaySeconds: ${HEALTHCHECK_DELAY}
-      timeoutSeconds: ${HEALTHCHECK_TIMEOUT}
+      initialDelaySeconds: ${{HEALTHCHECK_DELAY}}
+      timeoutSeconds: ${{HEALTHCHECK_TIMEOUT}}
     config:
       bootstrap.servers: "${KAFKA_CONNECT_BOOTSTRAP_SERVERS}"
       group.id: "${KAFKA_CONNECT_GROUP_ID}"
@@ -92,10 +92,10 @@ objects:
       status.storage.topic: "${KAFKA_CONNECT_GROUP_ID}-status"
       key.converter: "${KAFKA_CONNECT_KEY_CONVERTER}"
       value.converter: "${KAFKA_CONNECT_VALUE_CONVERTER}"
-      key.converter.schemas.enable: ${KAFKA_CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE}
-      value.converter.schemas.enable: ${KAFKA_CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE}
-      config.storage.replication.factor: ${KAFKA_CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR}
-      offset.storage.replication.factor: ${KAFKA_CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR}
-      status.storage.replication.factor: ${KAFKA_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR}
+      key.converter.schemas.enable: ${{KAFKA_CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE}}
+      value.converter.schemas.enable: ${{KAFKA_CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE}}
+      config.storage.replication.factor: ${{KAFKA_CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR}}
+      offset.storage.replication.factor: ${{KAFKA_CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR}}
+      status.storage.replication.factor: ${{KAFKA_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR}}
     metrics:
       lowercaseOutputName: true

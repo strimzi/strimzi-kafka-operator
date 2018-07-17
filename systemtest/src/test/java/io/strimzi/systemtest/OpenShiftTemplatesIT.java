@@ -6,12 +6,18 @@ package io.strimzi.systemtest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.DoneableKafkaAssembly;
+import io.strimzi.api.kafka.DoneableKafkaConnectAssembly;
+import io.strimzi.api.kafka.DoneableKafkaConnectS2IAssembly;
 import io.strimzi.api.kafka.KafkaAssemblyList;
+import io.strimzi.api.kafka.KafkaConnectAssemblyList;
+import io.strimzi.api.kafka.KafkaConnectS2IAssemblyList;
 import io.strimzi.api.kafka.model.KafkaAssembly;
+import io.strimzi.api.kafka.model.KafkaConnectAssembly;
+import io.strimzi.api.kafka.model.KafkaConnectS2IAssembly;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.test.JUnitGroup;
 import io.strimzi.test.Namespace;
@@ -41,6 +47,10 @@ import static org.junit.Assert.assertNotNull;
 @Namespace(OpenShiftTemplatesIT.NAMESPACE)
 @Resources(value = "../examples/templates/cluster-operator", asAdmin = true)
 @Resources(value = "../examples/templates/topic-operator", asAdmin = true)
+@Resources(value = "../examples/install/cluster-operator/04-crd-kafka.yaml", asAdmin = true)
+@Resources(value = "../examples/install/cluster-operator/04-crd-kafka-connect.yaml", asAdmin = true)
+@Resources(value = "../examples/install/cluster-operator/04-crd-kafka-connect-s2i.yaml", asAdmin = true)
+@Resources(value = "src/rbac/role-edit-kafka.yaml", asAdmin = true)
 public class OpenShiftTemplatesIT {
 
     public static final String NAMESPACE = "template-test";
@@ -53,9 +63,15 @@ public class OpenShiftTemplatesIT {
     private KubernetesClient client = new DefaultKubernetesClient();
 
     private KafkaAssembly getKafkaWithName(String clusterName) {
-        CustomResourceDefinition crd = client.customResourceDefinitions().withName(KafkaAssembly.CRD_NAME).get();
-        KafkaAssembly kafka = client.customResources(crd, KafkaAssembly.class, KafkaAssemblyList.class, DoneableKafkaAssembly.class).inNamespace(NAMESPACE).withName(clusterName).get();
-        return kafka;
+        return client.customResources(Crds.kafka(), KafkaAssembly.class, KafkaAssemblyList.class, DoneableKafkaAssembly.class).inNamespace(NAMESPACE).withName(clusterName).get();
+    }
+
+    private KafkaConnectAssembly getKafkaConnectWithName(String clusterName) {
+        return client.customResources(Crds.kafkaConnect(), KafkaConnectAssembly.class, KafkaConnectAssemblyList.class, DoneableKafkaConnectAssembly.class).inNamespace(NAMESPACE).withName(clusterName).get();
+    }
+
+    private KafkaConnectS2IAssembly getKafkaConnectS2IWithName(String clusterName) {
+        return client.customResources(Crds.kafkaConnectS2I(), KafkaConnectS2IAssembly.class, KafkaConnectS2IAssemblyList.class, DoneableKafkaConnectS2IAssembly.class).inNamespace(NAMESPACE).withName(clusterName).get();
     }
 
     @Test
@@ -108,14 +124,14 @@ public class OpenShiftTemplatesIT {
         KafkaAssembly kafka = getKafkaWithName(clusterName);
         assertNotNull(kafka);
 
-        assertEquals("30", kafka.getSpec().getZookeeper().getLivenessProbe().getInitialDelaySeconds());
-        assertEquals("30", kafka.getSpec().getZookeeper().getReadinessProbe().getInitialDelaySeconds());
-        assertEquals("10", kafka.getSpec().getZookeeper().getLivenessProbe().getTimeoutSeconds());
-        assertEquals("10", kafka.getSpec().getZookeeper().getReadinessProbe().getTimeoutSeconds());
-        assertEquals("30", kafka.getSpec().getKafka().getLivenessProbe().getInitialDelaySeconds());
-        assertEquals("30", kafka.getSpec().getKafka().getReadinessProbe().getInitialDelaySeconds());
-        assertEquals("10", kafka.getSpec().getKafka().getLivenessProbe().getTimeoutSeconds());
-        assertEquals("10", kafka.getSpec().getKafka().getReadinessProbe().getTimeoutSeconds());
+        assertEquals(30, kafka.getSpec().getZookeeper().getLivenessProbe().getInitialDelaySeconds());
+        assertEquals(30, kafka.getSpec().getZookeeper().getReadinessProbe().getInitialDelaySeconds());
+        assertEquals(10, kafka.getSpec().getZookeeper().getLivenessProbe().getTimeoutSeconds());
+        assertEquals(10, kafka.getSpec().getZookeeper().getReadinessProbe().getTimeoutSeconds());
+        assertEquals(30, kafka.getSpec().getKafka().getLivenessProbe().getInitialDelaySeconds());
+        assertEquals(30, kafka.getSpec().getKafka().getReadinessProbe().getInitialDelaySeconds());
+        assertEquals(10, kafka.getSpec().getKafka().getLivenessProbe().getTimeoutSeconds());
+        assertEquals(10, kafka.getSpec().getKafka().getReadinessProbe().getTimeoutSeconds());
         assertEquals("2", kafka.getSpec().getKafka().getConfig().get("default.replication.factor"));
         assertEquals("5", kafka.getSpec().getKafka().getConfig().get("offsets.topic.replication.factor"));
         assertEquals("5", kafka.getSpec().getKafka().getConfig().get("transaction.state.log.replication.factor"));
@@ -140,14 +156,14 @@ public class OpenShiftTemplatesIT {
         KafkaAssembly kafka = getKafkaWithName(clusterName);
         assertNotNull(kafka);
 
-        assertEquals("30", kafka.getSpec().getZookeeper().getLivenessProbe().getInitialDelaySeconds());
-        assertEquals("30", kafka.getSpec().getZookeeper().getReadinessProbe().getInitialDelaySeconds());
-        assertEquals("10", kafka.getSpec().getZookeeper().getLivenessProbe().getTimeoutSeconds());
-        assertEquals("10", kafka.getSpec().getZookeeper().getReadinessProbe().getTimeoutSeconds());
-        assertEquals("30", kafka.getSpec().getKafka().getLivenessProbe().getInitialDelaySeconds());
-        assertEquals("30", kafka.getSpec().getKafka().getReadinessProbe().getInitialDelaySeconds());
-        assertEquals("10", kafka.getSpec().getKafka().getLivenessProbe().getTimeoutSeconds());
-        assertEquals("10", kafka.getSpec().getKafka().getReadinessProbe().getTimeoutSeconds());
+        assertEquals(30, kafka.getSpec().getZookeeper().getLivenessProbe().getInitialDelaySeconds());
+        assertEquals(30, kafka.getSpec().getZookeeper().getReadinessProbe().getInitialDelaySeconds());
+        assertEquals(10, kafka.getSpec().getZookeeper().getLivenessProbe().getTimeoutSeconds());
+        assertEquals(10, kafka.getSpec().getZookeeper().getReadinessProbe().getTimeoutSeconds());
+        assertEquals(30, kafka.getSpec().getKafka().getLivenessProbe().getInitialDelaySeconds());
+        assertEquals(30, kafka.getSpec().getKafka().getReadinessProbe().getInitialDelaySeconds());
+        assertEquals(10, kafka.getSpec().getKafka().getLivenessProbe().getTimeoutSeconds());
+        assertEquals(10, kafka.getSpec().getKafka().getReadinessProbe().getTimeoutSeconds());
         assertEquals("2", kafka.getSpec().getKafka().getConfig().get("default.replication.factor"));
         assertEquals("5", kafka.getSpec().getKafka().getConfig().get("offsets.topic.replication.factor"));
         assertEquals("5", kafka.getSpec().getKafka().getConfig().get("transaction.state.log.replication.factor"));
@@ -162,10 +178,9 @@ public class OpenShiftTemplatesIT {
         oc.newApp("strimzi-connect", map("CLUSTER_NAME", clusterName,
                 "INSTANCES", "1"));
 
-        ConfigMap cm = client.configMaps().inNamespace(NAMESPACE).withName(clusterName).get();
-        assertNotNull(cm);
-        Map<String, String> cmData = cm.getData();
-        assertEquals("1", cmData.get("nodes"));
+        KafkaConnectAssembly connect = getKafkaConnectWithName(clusterName);
+        assertNotNull(connect);
+        assertEquals(1, connect.getSpec().getReplicas());
     }
 
     @Test
@@ -175,10 +190,9 @@ public class OpenShiftTemplatesIT {
         oc.newApp("strimzi-connect-s2i", map("CLUSTER_NAME", clusterName,
                 "INSTANCES", "1"));
 
-        ConfigMap cm = client.configMaps().inNamespace(NAMESPACE).withName(clusterName).get();
+        KafkaConnectS2IAssembly cm = getKafkaConnectS2IWithName(clusterName);
         assertNotNull(cm);
-        Map<String, String> cmData = cm.getData();
-        assertEquals("1", cmData.get("nodes"));
+        assertEquals(1, cm.getSpec().getReplicas());
     }
 
     @Test
