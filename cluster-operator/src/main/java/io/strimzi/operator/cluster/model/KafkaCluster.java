@@ -576,17 +576,13 @@ public class KafkaCluster extends AbstractModel {
     }
 
     public ServiceAccount generateInitContainerServiceAccount() {
-        if (rack != null) {
-            return new ServiceAccountBuilder()
-                    .withNewMetadata()
-                        .withName(getInitContainerServiceAccountName(name))
-                        .addToLabels("app", "strimzi")
-                        .withNamespace(namespace)
-                    .endMetadata()
-                .build();
-        } else {
-            return null;
-        }
+        return new ServiceAccountBuilder()
+                .withNewMetadata()
+                    .withName(getInitContainerServiceAccountName(name))
+                    .addToLabels("app", "strimzi")
+                    .withNamespace(namespace)
+                .endMetadata()
+            .build();
     }
 
     public static String getInitContainerServiceAccountName(String name) {
