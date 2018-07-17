@@ -16,8 +16,11 @@ import io.vertx.core.Vertx;
 @Deprecated
 public class RoleBindingOperator extends WorkaroundRbacOperator<RoleBindingOperator.RoleBinding> {
 
+    public static final String API_VERSION = "v1beta1";
+    public static final String GROUP = "rbac.authorization.k8s.io";
+
     public RoleBindingOperator(Vertx vertx, KubernetesClient client) {
-        super(vertx, client, "rbac.authorization.k8s.io", "v1beta1", "rolebindings");
+        super(vertx, client, GROUP, API_VERSION, "rolebindings");
     }
 
     public static class RoleBinding {
@@ -36,7 +39,7 @@ public class RoleBindingOperator extends WorkaroundRbacOperator<RoleBindingOpera
             this.serviceAccountName = serviceAccountName;
         }
         public String toString() {
-            return "{\"apiVersion\": \"rbac.authorization.k8s.io/v1beta1\"," +
+            return "{\"apiVersion\": \"" + GROUP + "/" + API_VERSION + "\"," +
                    "\"kind\": \"RoleBinding\"," +
                    "\"metadata\":{" +
                    "  \"name\": \"" + name + "\"," +

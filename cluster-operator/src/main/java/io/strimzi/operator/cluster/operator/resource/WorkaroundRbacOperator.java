@@ -128,10 +128,10 @@ public class WorkaroundRbacOperator<T> {
     }
 
     private void logJson(T resource) {
-        if (log.isDebugEnabled()) {
+        if (log.isTraceEnabled()) {
             try {
                 ObjectMapper objectMapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
-                log.debug(objectMapper.writeValueAsString(objectMapper.readTree(resource.toString())));
+                log.trace("{}", objectMapper.writeValueAsString(objectMapper.readTree(resource.toString())));
             } catch (IOException e) {
                 throw new KubernetesClientException("Logging request JSON", e);
             }
