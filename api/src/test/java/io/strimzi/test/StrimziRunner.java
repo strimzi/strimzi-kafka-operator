@@ -362,16 +362,18 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
     class DumpLogsErrorAction implements Consumer<Throwable> {
 
         private final Supplier<List<ResourceName>> podNameSupplier;
+        private final String container;
 
-        public DumpLogsErrorAction(Supplier<List<ResourceName>> podNameSupplier) {
+        public DumpLogsErrorAction(Supplier<List<ResourceName>> podNameSupplier, String container) {
             this.podNameSupplier = podNameSupplier;
+            this.container = container;
         }
 
         @Override
         public void accept(Throwable t) {
             for (ResourceName pod : podNameSupplier.get()) {
                 if (pod.kind.equals("pod") || pod.kind.equals("pods") || pod.kind.equals("po")) {
-                    LOGGER.info("Logs from pod {}:{}{}", pod.name, System.lineSeparator(), indent(kubeClient().logs(pod.name)));
+                    LOGGER.info("Logs from pod {}:{}{}", pod.name, System.lineSeparator(), indent(kubeClient().logs(pod.name, container)));
                 }
             }
         }
@@ -431,8 +433,8 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
             return getResources(new ResourceMatcher("statefulset", pattern));
         }
 
-        public ResourceAction logs(String pattern) {
-            list.add(new DumpLogsErrorAction(new ResourceMatcher("pod", pattern)));
+        public ResourceAction logs(String pattern, String container) {
+            list.add(new DumpLogsErrorAction(new ResourceMatcher("pod", pattern), container));
             return this;
         }
 
@@ -527,16 +529,16 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 final String tcDeploymentName = kafkaAssembly.getMetadata().getName() + "-topic-operator";
                 last = new Bracket(last, new ResourceAction()
                     .getPo(CO_DEPLOYMENT_NAME + ".*")
-                    .logs(CO_DEPLOYMENT_NAME + ".*")
+                    .logs(CO_DEPLOYMENT_NAME + ".*", null)
                     .getDep(CO_DEPLOYMENT_NAME)
                     .getSs(kafkaStatefulSetName)
                     .getPo(kafkaStatefulSetName + ".*")
-                    .logs(kafkaStatefulSetName + ".*")
+                    .logs(kafkaStatefulSetName + ".*", null)
                     .getSs(zookeeperStatefulSetName)
                     .getPo(zookeeperStatefulSetName)
-                    .logs(zookeeperStatefulSetName + ".*")
+                    .logs(zookeeperStatefulSetName + ".*", "zookeeper")
                     .getDep(tcDeploymentName)
-                    .logs(tcDeploymentName + ".*")) {
+                    .logs(tcDeploymentName + ".*", null)) {
 
                     @Override
                     protected void before() {

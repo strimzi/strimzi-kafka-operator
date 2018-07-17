@@ -136,7 +136,11 @@ public interface KubeClient<K extends KubeClient<K>> {
 
     String describe(String resourceType, String resourceName);
 
-    String logs(String pod);
+    default String logs(String pod) {
+        return logs(pod, null);
+    }
+
+    String logs(String pod, String container);
 
     /**
      * @param resourceType The type of resource
