@@ -259,6 +259,10 @@ public class TopicOperator extends AbstractModel {
         return "topicOperatorDefaultLoggingProperties";
     }
 
+    @Override
+    String getAncillaryConfigMapKeyLogConfig() {
+        return "log4j2.properties";
+    }
 
     private List<Volume> getVolumes() {
         return Collections.singletonList(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));

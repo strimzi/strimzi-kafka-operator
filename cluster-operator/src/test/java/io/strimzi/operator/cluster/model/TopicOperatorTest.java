@@ -28,7 +28,6 @@ import java.util.Map;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
 
 public class TopicOperatorTest {
 
@@ -128,7 +127,8 @@ public class TopicOperatorTest {
         Assert.assertEquals(TopicOperator.defaultZookeeperConnect(cluster), tc.getZookeeperConnect());
         Assert.assertEquals(TopicOperator.defaultTopicConfigMapLabels(cluster), tc.getTopicConfigMapLabels());
         assertEquals(tcTopicMetadataMaxAttempts, tc.getTopicMetadataMaxAttempts());
-        assertSame(topicOperatorLogging, tc.getLogging());
+        assertEquals(topicOperatorLogging.getType(), tc.getLogging().getType());
+        assertEquals(topicOperatorLogging.getLoggers(), ((InlineLogging) tc.getLogging()).getLoggers());
     }
 
     @Test

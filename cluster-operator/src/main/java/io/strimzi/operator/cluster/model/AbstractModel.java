@@ -339,7 +339,7 @@ public abstract class AbstractModel {
             return createPropertiesString(newSettings);
         } else if (logging instanceof ExternalLogging) {
             if (externalCm != null) {
-                return externalCm.getData().get(ANCILLARY_CM_KEY_LOG_CONFIG);
+                return externalCm.getData().get(getAncillaryConfigMapKeyLogConfig());
             } else {
                 log.warn("Configmap " + ((ExternalLogging) getLogging()).getName() + " does not exist. Default settings are used");
                 return createPropertiesString(getDefaultLogConfig());
@@ -358,7 +358,7 @@ public abstract class AbstractModel {
      */
     public ConfigMap generateMetricsAndLogConfigMap(ConfigMap cm) {
         Map<String, String> data = new HashMap<>();
-        data.put(ANCILLARY_CM_KEY_LOG_CONFIG, parseLogging(getLogging(), cm));
+        data.put(getAncillaryConfigMapKeyLogConfig(), parseLogging(getLogging(), cm));
         if (isMetricsEnabled()) {
             HashMap m = new HashMap();
             for (Map.Entry<String, Object> entry : getMetricsConfig()) {
@@ -1062,5 +1062,9 @@ public abstract class AbstractModel {
         annotations.put("prometheus.io/path", "/metrics");
 
         return annotations;
+    }
+
+    String getAncillaryConfigMapKeyLogConfig() {
+        return ANCILLARY_CM_KEY_LOG_CONFIG;
     }
 }
