@@ -7,17 +7,15 @@
 // * ID: [id='my-concept-module-a']
 // * Title: = My concept module A
 
-//declare context for ID Generation
-:context: template
-
 // The ID is used as an anchor for linking to the module. Avoid changing it after the module has been published to ensure existing links are not broken.
 [id='concept-explanation-{context}']
 // The `context` attribute enables module reuse. Every module's ID includes {context}, which ensures that the module has a unique ID even if it is reused multiple times in a guide.
 = Concept explanation
-//In the title, include nouns that are used in the body text. This helps readers and search engines find information quickly.
-//Do not start the title with a verb. See also _Wording of headings_ in _The IBM Style Guide_.
+//In the title of concept modules, include nouns or noun phrases that are used in the body text. This helps readers and search engines find the information quickly.
+//Do not start the title of concept modules with a verb. See also _Wording of headings_ in _The IBM Style Guide_.
 
-This paragraph is the concept module introduction and is only optional. Include it to provide a short overview of the module.
+A short introductory paragraph is required for the concept module.
+It will provide an overview of the module.
 
 The contents of a concept module give the user descriptions and explanations needed to understand and use a product.
 
@@ -25,8 +23,7 @@ The contents of a concept module give the user descriptions and explanations nee
 * Explain only things that are visible to users. Even if a concept is interesting, it probably does not require explanation if it is not visible to users.
 * Do not include any instructions to perform an action, such as executing a command. Action items belong in procedure modules.
 
-[discrete]
-== Additional resources
+.Additional resources
 
 * A bulleted list of links to other material closely related to the contents of the concept module.
 * For more details on writing concept modules, see the link:https://github.com/redhat-documentation/modular-docs#modular-documentation-reference-guide[Modular Documentation Reference Guide].

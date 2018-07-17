@@ -7,28 +7,30 @@
 // * ID: [id='my-reference-a']
 // * Title: = My reference A
 
-//declare context for ID Generation
-:context: template
-
 // The ID is used as an anchor for linking to the module. Avoid changing it after the module has been published to ensure existing links are not broken.
-[id='reference-material_{context}'']
+[id='reference-material_{context}']
 // The `context` attribute enables module reuse. Every module's ID includes {context}, which ensures that the module has a unique ID even if it is reused multiple times in a guide.
 = Reference material
-//In the title, include nouns that are used in the body text. This helps readers and search engines find information quickly.
+//In the title of a reference module, include nouns that are used in the body text. For example, "Keyboard shortcuts for ___" or "Command options for ___." This helps readers and search engines find the information quickly.
 
-This paragraph is the reference module introduction and is only optional. Include it to provide a short overview of the module.
+A short introductory paragraph is required for the reference module.
+It will provide an overview of the module.
 
-A reference module provide data that users might want to look up, but do not need to remember. It has a very strict structure, often in the form of a list or a table. A well-organized reference module enables users to scan it quickly to find the details they want. AsciiDoc markup to consider for reference data:
+A reference module provide data that users might want to look up, but do not need to remember.
+It has a very strict structure, often in the form of a list or a table.
+A well-organized reference module enables users to scan it quickly to find the details they want.
+AsciiDoc markup to consider for reference data:
 
-.Unordered lists
+.Unordered list
 * For more details on writing reference modules, see the link:https://github.com/redhat-documentation/modular-docs#modular-documentation-reference-guide[Modular Documentation Reference Guide].
-* Use a consistent system for file names, IDs, and titles. For tips, see _Anchor Names and File Names_ in link:https://github.com/redhat-documentation/modular-docs#modular-documentation-reference-guide[Modular Documentation Reference Guide].
+* Use a consistent system for file names, IDs, and titles.
+For tips, see _Anchor Names and File Names_ in link:https://github.com/redhat-documentation/modular-docs#modular-documentation-reference-guide[Modular Documentation Reference Guide].
 
-.Labeled lists
+.Labeled list
 Term 1:: Definition
 Term 2:: Definition
 
-.Tables
+.Table
 [options="header"]
 |====
 |Column 1|Column 2|Column 3

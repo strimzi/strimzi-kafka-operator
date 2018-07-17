@@ -18,19 +18,14 @@
 
 This paragraph is the procedure module introduction: a short description of the procedure.
 
-[discrete]
-== Prerequisites
+.Prerequisites
 
 *
 
-[discrete]
-== Procedure
+.Procedure
 
 . Start each step with an active verb.
 
-.
-
-[discrete]
-== Additional Resources
+.Additional Resources
 
 *
