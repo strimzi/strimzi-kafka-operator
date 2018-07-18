@@ -349,8 +349,8 @@ public class KafkaAssemblyOperatorTest {
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         SecretOperator mockSecretOps = supplier.secretOperations;
         ServiceAccountOperator mockSao = supplier.serviceAccountOperator;
-        RoleBindingOperator mockRbo = supplier.rbo;
-        ClusterRoleBindingOperator mockCrbo = supplier.crbo;
+        RoleBindingOperator mockRbo = supplier.roleBindingOperator;
+        ClusterRoleBindingOperator mockCrbo = supplier.clusterRoleBindingOperator;
 
         String assemblyName = clusterCm.getMetadata().getName();
         String assemblyNamespace = clusterCm.getMetadata().getNamespace();
@@ -655,8 +655,8 @@ public class KafkaAssemblyOperatorTest {
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         SecretOperator mockSecretOps = supplier.secretOperations;
         ServiceAccountOperator mockSao = supplier.serviceAccountOperator;
-        RoleBindingOperator mockRbo = supplier.rbo;
-        ClusterRoleBindingOperator mockCrbo = supplier.crbo;
+        RoleBindingOperator mockRbo = supplier.roleBindingOperator;
+        ClusterRoleBindingOperator mockCrbo = supplier.clusterRoleBindingOperator;
 
         String clusterName = updatedAssembly.getMetadata().getName();
         String clusterNamespace = updatedAssembly.getMetadata().getNamespace();
@@ -844,8 +844,8 @@ public class KafkaAssemblyOperatorTest {
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         SecretOperator mockSecretOps = supplier.secretOperations;
         ServiceAccountOperator mockSao = supplier.serviceAccountOperator;
-        RoleBindingOperator mockRbo = supplier.rbo;
-        ClusterRoleBindingOperator mockCrbo = supplier.crbo;
+        RoleBindingOperator mockRbo = supplier.roleBindingOperator;
+        ClusterRoleBindingOperator mockCrbo = supplier.clusterRoleBindingOperator;
         String clusterCmNamespace = "myNamespace";
 
         KafkaAssembly foo = getKafkaAssembly("foo");
@@ -934,8 +934,8 @@ public class KafkaAssemblyOperatorTest {
                 mock(ServiceAccountOperator.class), mock(RoleBindingOperator.class), mock(ClusterRoleBindingOperator.class),
                 mock(CrdOperator.class));
         when(supplier.serviceAccountOperator.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
-        when(supplier.rbo.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
-        when(supplier.crbo.reconcile(anyString(), any())).thenReturn(Future.succeededFuture());
+        when(supplier.roleBindingOperator.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+        when(supplier.clusterRoleBindingOperator.reconcile(anyString(), any())).thenReturn(Future.succeededFuture());
         return supplier;
     }
 }

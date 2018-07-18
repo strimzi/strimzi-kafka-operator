@@ -68,8 +68,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     private final DeploymentOperator deploymentOperations;
     private final ConfigMapOperator configMapOperations;
     private final ServiceAccountOperator serviceAccountOperator;
-    private final RoleBindingOperator rbo;
-    private final ClusterRoleBindingOperator crbo;
+    private final RoleBindingOperator roleBindingOperator;
+    private final ClusterRoleBindingOperator clusterRoleBindingOperator;
 
     /**
      * @param vertx The Vertx instance
@@ -88,8 +88,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         this.pvcOperations = supplier.pvcOperations;
         this.deploymentOperations = supplier.deploymentOperations;
         this.serviceAccountOperator = supplier.serviceAccountOperator;
-        this.rbo = supplier.rbo;
-        this.crbo = supplier.crbo;
+        this.roleBindingOperator = supplier.roleBindingOperator;
+        this.clusterRoleBindingOperator = supplier.clusterRoleBindingOperator;
     }
 
     @Override
@@ -299,7 +299,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         serviceAccountOperator.reconcile(namespace,
                         KafkaCluster.getInitContainerServiceAccountName(desc.kafka().getName()),
                         desc.kafka.generateInitContainerServiceAccount())))
-                .compose(desc -> desc.withVoid(crbo.reconcile(
+                .compose(desc -> desc.withVoid(clusterRoleBindingOperator.reconcile(
                         KafkaCluster.getInitContainerClusterRoleBindingName(desc.kafka().getName()),
                         desc.kafka.generateClusterRoleBinding(namespace))))
                 .compose(desc -> desc.withVoid(kafkaSetOperations.scaleDown(namespace, desc.kafka().getName(), desc.kafka().getReplicas())))
@@ -347,7 +347,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         KafkaCluster.getPersistentVolumeClaimName(kafkaSsName, i), null));
             }
         }
-        result.add(crbo.reconcile(KafkaCluster.getInitContainerClusterRoleBindingName(name), null));
+        result.add(clusterRoleBindingOperator.reconcile(KafkaCluster.getInitContainerClusterRoleBindingName(name), null));
         result.add(serviceAccountOperator.reconcile(namespace, KafkaCluster.getInitContainerServiceAccountName(name), null));
         return CompositeFuture.join(result);
     }
@@ -448,7 +448,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         return getTopicOperatorLogAndMetricsConfigMap(kafkaAssembly, topicOperator)
                 .compose(m -> configMapOperations.reconcile(namespace, topicOperator.getAncillaryConfigName(), m))
                 .compose(i -> serviceAccountOperator.reconcile(namespace, TopicOperator.topicOperatorServiceAccountName(name), sa))
-                .compose(i -> rbo.reconcile(namespace, TopicOperator.TO_ROLE_BINDING_NAME, rb))
+                .compose(i -> roleBindingOperator.reconcile(namespace, TopicOperator.TO_ROLE_BINDING_NAME, rb))
                 .compose(i -> deploymentOperations.reconcile(namespace, topicOperatorName(name), deployment).map((Void) null));
     };
 
