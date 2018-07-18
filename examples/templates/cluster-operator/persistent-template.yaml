@@ -73,9 +73,6 @@ objects:
     kafka:
       replicas: ${{KAFKA_NODE_COUNT}}
       image: "strimzi/kafka:latest"
-      resources:
-        limits:
-          memory: "5Gi"
       livenessProbe:
         initialDelaySeconds: ${{KAFKA_HEALTHCHECK_DELAY}}
         timeoutSeconds: ${{KAFKA_HEALTHCHECK_TIMEOUT}}

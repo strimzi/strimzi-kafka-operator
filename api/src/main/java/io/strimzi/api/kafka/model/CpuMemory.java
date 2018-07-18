@@ -65,7 +65,7 @@ public class CpuMemory {
     /** The CPUs in "millicpus". */
     @JsonIgnore
     public int milliCpuAsInt() {
-        return MilliCpuDeserializer.parse(milliCpu);
+        return milliCpu == null ? 0 : MilliCpuDeserializer.parse(milliCpu);
     }
 
     public void milliCpuAsInt(int milliCpu) {
