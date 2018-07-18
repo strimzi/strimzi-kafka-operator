@@ -74,8 +74,6 @@ objects:
   kind: KafkaConnect
   metadata:
     name: ${CLUSTER_NAME}
-    labels:
-      type: kafka-connect
   spec:
     replicas: ${{INSTANCES}}
     livenessProbe:
