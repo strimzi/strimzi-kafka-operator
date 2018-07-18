@@ -16,7 +16,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(VertxUnitRunner.class)
-public class TopicsWatcherTest {
+public class ZkTopicsWatcherTest {
 
     private MockTopicOperator operator;
     private MockZk mockZk;
@@ -38,8 +38,8 @@ public class TopicsWatcherTest {
         mockZk.childrenResult = Future.succeededFuture(asList("foo", "bar"));
         mockZk.dataResult = Future.succeededFuture(new byte[0]);
         TopicConfigsWatcher topicConfigsWatcher = new TopicConfigsWatcher(operator);
-        TopicWatcher topicWatcher = new TopicWatcher(operator);
-        TopicsWatcher topicsWatcher = new TopicsWatcher(operator, topicConfigsWatcher, topicWatcher);
+        ZkTopicWatcher topicWatcher = new ZkTopicWatcher(operator);
+        ZkTopicsWatcher topicsWatcher = new ZkTopicsWatcher(operator, topicConfigsWatcher, topicWatcher);
         topicsWatcher.start(mockZk);
         mockZk.triggerChildren(Future.succeededFuture(asList("foo", "bar", "baz")));
         assertEquals(asList(new MockTopicOperator.MockOperatorEvent(
@@ -68,8 +68,8 @@ public class TopicsWatcherTest {
         mockZk = new MockZk();
         mockZk.childrenResult = Future.succeededFuture(asList("foo", "bar"));
         TopicConfigsWatcher topicConfigsWatcher = new TopicConfigsWatcher(operator);
-        TopicWatcher topicWatcher = new TopicWatcher(operator);
-        TopicsWatcher topicsWatcher = new TopicsWatcher(operator, topicConfigsWatcher, topicWatcher);
+        ZkTopicWatcher topicWatcher = new ZkTopicWatcher(operator);
+        ZkTopicsWatcher topicsWatcher = new ZkTopicsWatcher(operator, topicConfigsWatcher, topicWatcher);
         topicsWatcher.start(mockZk);
         mockZk.triggerChildren(Future.succeededFuture(asList("foo")));
         assertEquals(asList(new MockTopicOperator.MockOperatorEvent(

@@ -6,6 +6,10 @@ package io.strimzi.operator.topic;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
+import io.strimzi.api.kafka.Crds;
+import io.strimzi.api.kafka.DoneableTopic;
+import io.strimzi.api.kafka.TopicList;
+import io.strimzi.api.kafka.model.Topic;
 import io.strimzi.operator.topic.zk.Zk;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
@@ -33,10 +37,10 @@ public class Session extends AbstractVerticle {
     AdminClient adminClient;
     K8sImpl k8s;
     TopicOperator topicOperator;
-    Watch topicCmWatch;
-    TopicsWatcher topicsWatcher;
+    Watch topicWatch;
+    ZkTopicsWatcher topicsWatcher;
     TopicConfigsWatcher topicConfigsWatcher;
-    TopicWatcher topicWatcher;
+    ZkTopicWatcher topicWatcher;
     /** The id of the periodic reconciliation timer. This is null during a periodic reconciliation. */
     private volatile Long timerId;
     private volatile boolean stopped = false;
@@ -68,7 +72,7 @@ public class Session extends AbstractVerticle {
             long timeout = 120_000L;
             LOGGER.info("Stopping");
             LOGGER.debug("Stopping kube watch");
-            topicCmWatch.close();
+            topicWatch.close();
             LOGGER.debug("Stopping zk watches");
             topicsWatcher.stop();
 
@@ -141,15 +145,15 @@ public class Session extends AbstractVerticle {
 
         this.topicConfigsWatcher = new TopicConfigsWatcher(topicOperator);
         LOGGER.debug("Using TopicConfigsWatcher {}", topicConfigsWatcher);
-        this.topicWatcher = new TopicWatcher(topicOperator);
+        this.topicWatcher = new ZkTopicWatcher(topicOperator);
         LOGGER.debug("Using TopicWatcher {}", topicWatcher);
-        this.topicsWatcher = new TopicsWatcher(topicOperator, topicConfigsWatcher, topicWatcher);
+        this.topicsWatcher = new ZkTopicsWatcher(topicOperator, topicConfigsWatcher, topicWatcher);
         LOGGER.debug("Using TopicsWatcher {}", topicsWatcher);
         topicsWatcher.start(zk);
 
         Thread configMapThread = new Thread(() -> {
             LOGGER.debug("Watching configmaps matching {}", cmPredicate);
-            Session.this.topicCmWatch = kubeClient.configMaps().inNamespace(namespace).watch(new ConfigMapWatcher(topicOperator, cmPredicate));
+            Session.this.topicWatch = kubeClient.customResources(Crds.topic(), Topic.class, TopicList.class, DoneableTopic.class).inNamespace(namespace).watch(new K8sTopicWatcher(topicOperator, cmPredicate));
             LOGGER.debug("Watching setup");
 
             // start the HTTP server for healthchecks

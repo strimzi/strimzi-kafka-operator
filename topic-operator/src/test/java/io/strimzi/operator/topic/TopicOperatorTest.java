@@ -108,7 +108,7 @@ public class TopicOperatorTest {
         Async async = context.async();
         topicOperator.onConfigMapAdded(cm, ar -> {
             assertFailed(context, ar);
-            context.assertTrue(ar.cause() instanceof InvalidConfigMapException);
+            context.assertTrue(ar.cause() instanceof InvalidTopicException);
             context.assertEquals("ConfigMap's 'data' section has invalid key 'config': Unexpected character ('n' (code 110)): was expecting double-quote to start field name\n" +
                     " at [Source: UNKNOWN; line: 1, column: 3]", ar.cause().getMessage());
             mockKafka.assertEmpty(context);

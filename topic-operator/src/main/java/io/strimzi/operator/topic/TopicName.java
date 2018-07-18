@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.topic;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
 import org.apache.kafka.common.internals.Topic;
 
 import java.math.BigInteger;
@@ -27,8 +26,8 @@ class TopicName {
         this.name = name;
     }
 
-    public TopicName(ConfigMap cm) {
-        this(cm.getData().getOrDefault("name", cm.getMetadata().getName()));
+    public TopicName(io.strimzi.api.kafka.model.Topic topic) {
+        this(topic.getTopicName() != null ? topic.getTopicName() : topic.getMetadata().getName());
     }
 
     public String toString() {

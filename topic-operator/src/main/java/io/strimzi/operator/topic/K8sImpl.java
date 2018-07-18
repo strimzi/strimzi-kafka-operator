@@ -5,9 +5,15 @@
 package io.strimzi.operator.topic;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.DoneableConfigMap;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.Resource;
+import io.strimzi.api.kafka.Crds;
+import io.strimzi.api.kafka.DoneableTopic;
+import io.strimzi.api.kafka.TopicList;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -35,10 +41,10 @@ public class K8sImpl implements K8s {
     }
 
     @Override
-    public void createConfigMap(ConfigMap cm, Handler<AsyncResult<Void>> handler) {
+    public void createConfigMap(io.strimzi.api.kafka.model.Topic cm, Handler<AsyncResult<Void>> handler) {
         vertx.executeBlocking(future -> {
             try {
-                client.configMaps().inNamespace(namespace).create(cm);
+                operation().inNamespace(namespace).create(cm);
                 future.complete();
             } catch (Exception e) {
                 future.fail(e);
@@ -47,10 +53,10 @@ public class K8sImpl implements K8s {
     }
 
     @Override
-    public void updateConfigMap(ConfigMap cm, Handler<AsyncResult<Void>> handler) {
+    public void updateConfigMap(io.strimzi.api.kafka.model.Topic cm, Handler<AsyncResult<Void>> handler) {
         vertx.executeBlocking(future -> {
             try {
-                client.configMaps().inNamespace(namespace).createOrReplace(cm);
+                operation().inNamespace(namespace).createOrReplace(cm);
                 future.complete();
             } catch (Exception e) {
                 future.fail(e);
@@ -63,7 +69,7 @@ public class K8sImpl implements K8s {
         vertx.executeBlocking(future -> {
             try {
                 // Delete the CM by the topic name, because neither ZK nor Kafka know the CM name
-                client.configMaps().inNamespace(namespace).withName(mapName.toString()).delete();
+                operation().inNamespace(namespace).withName(mapName.toString()).delete();
                 future.complete();
             } catch (Exception e) {
                 future.fail(e);
@@ -71,11 +77,15 @@ public class K8sImpl implements K8s {
         }, handler);
     }
 
+    private MixedOperation<io.strimzi.api.kafka.model.Topic, TopicList, DoneableTopic, Resource<io.strimzi.api.kafka.model.Topic, DoneableTopic>> operation() {
+        return client.customResources(Crds.topic(), io.strimzi.api.kafka.model.Topic.class, TopicList.class, DoneableTopic.class);
+    }
+
     @Override
-    public void listMaps(Handler<AsyncResult<List<ConfigMap>>> handler) {
+    public void listMaps(Handler<AsyncResult<List<io.strimzi.api.kafka.model.Topic>>> handler) {
         vertx.executeBlocking(future -> {
             try {
-                future.complete(client.configMaps().inNamespace(namespace).withLabels(cmPredicate.labels()).list().getItems());
+                future.complete(operation().inNamespace(namespace).withLabels(cmPredicate.labels()).list().getItems());
             } catch (Exception e) {
                 future.fail(e);
             }
@@ -83,10 +93,10 @@ public class K8sImpl implements K8s {
     }
 
     @Override
-    public void getFromName(MapName mapName, Handler<AsyncResult<ConfigMap>> handler) {
+    public void getFromName(MapName mapName, Handler<AsyncResult<io.strimzi.api.kafka.model.Topic>> handler) {
         vertx.executeBlocking(future -> {
             try {
-                future.complete(client.configMaps().inNamespace(namespace).withName(mapName.toString()).get());
+                future.complete(operation().inNamespace(namespace).withName(mapName.toString()).get());
             } catch (Exception e) {
                 future.fail(e);
             }

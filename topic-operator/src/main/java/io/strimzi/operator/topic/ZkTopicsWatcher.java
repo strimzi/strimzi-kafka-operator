@@ -17,15 +17,15 @@ import java.util.Set;
  * calling {@link TopicOperator#onTopicCreated(TopicName, io.vertx.core.Handler)} for new children and
  * {@link TopicOperator#onTopicDeleted(TopicName, io.vertx.core.Handler)} for deleted children.
  */
-class TopicsWatcher {
+class ZkTopicsWatcher {
 
-    private final static Logger LOGGER = LogManager.getLogger(TopicsWatcher.class);
+    private final static Logger LOGGER = LogManager.getLogger(ZkTopicsWatcher.class);
 
     private static final String TOPICS_ZNODE = "/brokers/topics";
 
     private final TopicOperator topicOperator;
     private final TopicConfigsWatcher tcw;
-    private final TopicWatcher tw;
+    private final ZkTopicWatcher tw;
 
     private List<String> children;
 
@@ -38,7 +38,7 @@ class TopicsWatcher {
      * @param tcw   watcher for the topics config changes
      * @param tw    watcher for the topics partitions changes
      */
-    TopicsWatcher(TopicOperator topicOperator, TopicConfigsWatcher tcw, TopicWatcher tw) {
+    ZkTopicsWatcher(TopicOperator topicOperator, TopicConfigsWatcher tcw, ZkTopicWatcher tw) {
         this.topicOperator = topicOperator;
         this.tcw = tcw;
         this.tw = tw;

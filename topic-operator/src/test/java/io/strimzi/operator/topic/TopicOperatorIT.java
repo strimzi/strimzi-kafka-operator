@@ -78,7 +78,7 @@ public class TopicOperatorIT {
     private KafkaCluster kafkaCluster;
     private volatile AdminClient adminClient;
     private KubernetesClient kubeClient;
-    private volatile TopicsWatcher topicsWatcher;
+    private volatile ZkTopicsWatcher topicsWatcher;
     private Thread kafkaHook = new Thread() {
         @Override
         public void run() {
@@ -89,7 +89,7 @@ public class TopicOperatorIT {
     };
     private final long timeout = 120_000L;
     private volatile TopicConfigsWatcher topicsConfigWatcher;
-    private volatile TopicWatcher topicWatcher;
+    private volatile ZkTopicWatcher topicWatcher;
 
     private volatile String deploymentId;
     private Set<String> preExistingEvents;
@@ -205,7 +205,7 @@ public class TopicOperatorIT {
     }
 
 
-    private ConfigMap createCm(TestContext context, ConfigMap cm) {
+    private io.strimzi.api.kafka.model.Topic createCm(TestContext context, io.strimzi.api.kafka.model.Topic cm) {
         String topicName = new TopicName(cm).toString();
         // Create a CM
         kubeClient.configMaps().inNamespace(NAMESPACE).create(cm);
@@ -228,9 +228,9 @@ public class TopicOperatorIT {
         return cm;
     }
 
-    private ConfigMap createCm(TestContext context, String topicName) {
+    private io.strimzi.api.kafka.model.Topic createCm(TestContext context, String topicName) {
         Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap()).build();
-        ConfigMap cm = TopicSerialization.toConfigMap(topic, cmPredicate);
+        io.strimzi.api.kafka.model.Topic cm = TopicSerialization.toTopicResource(topic, cmPredicate);
         return createCm(context, cm);
     }
 
@@ -384,13 +384,13 @@ public class TopicOperatorIT {
         }
     }
 
-    private void waitForEvent(TestContext context, ConfigMap cm, String expectedMessage, TopicOperator.EventType expectedType) {
+    private void waitForEvent(TestContext context, io.strimzi.api.kafka.model.Topic topic, String expectedMessage, TopicOperator.EventType expectedType) {
         waitFor(context, () -> {
             List<Event> items = kubeClient.events().inNamespace(NAMESPACE).withLabels(cmPredicate.labels()).list().getItems();
             List<Event> filtered = items.stream().
                     filter(evt -> !preExistingEvents.contains(evt.getMetadata().getUid())
                     && "ConfigMap".equals(evt.getInvolvedObject().getKind())
-                    && cm.getMetadata().getName().equals(evt.getInvolvedObject().getName())).
+                    && topic.getMetadata().getName().equals(evt.getInvolvedObject().getName())).
                     collect(Collectors.toList());
             LOGGER.debug("Waiting for events: {}", filtered.stream().map(evt -> evt.getMessage()).collect(Collectors.toList()));
             if (!filtered.isEmpty()) {
@@ -401,7 +401,7 @@ public class TopicOperatorIT {
                 assertEquals(expectedType.name, event.getType());
                 assertNotNull(event.getInvolvedObject());
                 assertEquals("ConfigMap", event.getInvolvedObject().getKind());
-                assertEquals(cm.getMetadata().getName(), event.getInvolvedObject().getName());
+                assertEquals(topic.getMetadata().getName(), event.getInvolvedObject().getName());
                 return true;
             } else {
                 return false;
@@ -461,7 +461,7 @@ public class TopicOperatorIT {
     public void testConfigMapAddedWithBadData(TestContext context) {
         String topicName = "test-configmap-created-with-bad-data";
         Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap()).build();
-        ConfigMap cm = TopicSerialization.toConfigMap(topic, cmPredicate);
+        io.strimzi.api.kafka.model.Topic cm = TopicSerialization.toTopicResource(topic, cmPredicate);
         cm.getData().put(TopicSerialization.CM_KEY_PARTITIONS, "foo");
 
         // Create a CM
@@ -480,7 +480,7 @@ public class TopicOperatorIT {
     public void testConfigMapDeleted(TestContext context) {
         // create the cm
         String topicName = "test-configmap-deleted";
-        ConfigMap cm = createCm(context, topicName);
+        io.strimzi.api.kafka.model.Topic cm = createCm(context, topicName);
 
         // can now delete the cm
         kubeClient.configMaps().inNamespace(NAMESPACE).withName(cm.getMetadata().getName()).delete();
@@ -508,7 +508,7 @@ public class TopicOperatorIT {
     public void testConfigMapModifiedRetentionChanged(TestContext context) throws Exception {
         // create the cm
         String topicName = "test-configmap-modified-retention-changed";
-        ConfigMap cm = createCm(context, topicName);
+        io.strimzi.api.kafka.model.Topic cm = createCm(context, topicName);
 
         // now change the cm
         kubeClient.configMaps().inNamespace(NAMESPACE).withName(cm.getMetadata().getName()).edit().addToData(TopicSerialization.CM_KEY_CONFIG, "{\"retention.ms\":\"12341234\"}").done();
@@ -527,7 +527,7 @@ public class TopicOperatorIT {
     public void testConfigMapModifiedWithBadData(TestContext context) throws Exception {
         // create the cm
         String topicName = "test-configmap-modified-with-bad-data";
-        ConfigMap cm = createCm(context, topicName);
+        io.strimzi.api.kafka.model.Topic cm = createCm(context, topicName);
 
         // now change the cm
         kubeClient.configMaps().inNamespace(NAMESPACE).withName(cm.getMetadata().getName()).edit().addToData(TopicSerialization.CM_KEY_PARTITIONS, "foo").done();
@@ -544,7 +544,7 @@ public class TopicOperatorIT {
     public void testConfigMapModifiedNameChanged(TestContext context) throws Exception {
         // create the cm
         String topicName = "test-configmap-modified-name-changed";
-        ConfigMap cm = createCm(context, topicName);
+        io.strimzi.api.kafka.model.Topic cm = createCm(context, topicName);
 
         // now change the cm
         String changedName = topicName.toUpperCase(Locale.ENGLISH);
@@ -563,7 +563,7 @@ public class TopicOperatorIT {
         String topicName = "two-cms-one-topic";
         Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap()).build();
         ConfigMap cm = TopicSerialization.toConfigMap(topic, cmPredicate);
-        ConfigMap cm2 = new ConfigMapBuilder(cm).editMetadata().withName(topicName + "-1").endMetadata().build();
+        io.strimzi.api.kafka.model.Topic cm2 = new ConfigMapBuilder(cm).editMetadata().withName(topicName + "-1").endMetadata().build();
         // create one
         createCm(context, cm2);
         // create another
