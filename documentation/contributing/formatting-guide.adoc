@@ -1,0 +1,39 @@
+[[formatted-text-reference]]
+= AsciiDoc Format Reference
+
+Tips for which AsciiDoc markup to use when formatting text.
+
+Monospace (```)::
+[cols="50%,50%",options="header"]
+|===
+|Item |Example
+|File names and paths |The \`/home/user/.bashrc` file ...
+|Literal values | If the value is \`true` ...
+|Configuration attributes | Set the \`enabled` attribute ...
+|Java class names |The \`java.sql.Connection` class ...
+|Java annotations |The \`@Clustered` annotation ...
+|===
+
+Italics (`_`)::
+[cols="50%,50%",options="header"]
+|===
+|Item |Example
+|Guide titles |See the \_Installation Guide_ ...
+|Emphasis for a term _(only emphasize first time)_ |\_High availability_ refers to the ...
+|===
+
+Bold (`*`)::
+[cols="50%,50%",options="header"]
+|===
+|Item |Example
+|GUI items _(menus, buttons)_|Click the \*Add* button and ...
+|===
+
+Underline (`[.underline]#value#`)::
+[cols="50%,50%",options="header"]
+|===
+|Item |Example
+|Default item in a multi-select|\`yes\|[.underline]\#no#\|maybe`
+|===
+
+//See additional sections below for xref:headings[heading], xref:tables[table title], and xref:images_and_screenshots[image title] syntax.

@@ -1,0 +1,227 @@
+[[setting-up-git]]
+= Setting up Git
+
+Strimzi uses git to manage repositories.  This guide explains how to set up your system to connect to the proper git repositories.
+
+https://github.com/strimzi/strimzi-kafka-operator[`strimzi-kafka-operator`^] (GitHub):: A public GitHub repo that hosts all of the Strimzi code and documentation.
+
+[[install-git]]
+== Install Git
+
+If using Fedora, open your terminal and enter the proper installation command.
+
+[discrete]
+=== Fedora
+[source]
+----
+$ yum install git (up to Fedora 21)
+$ dnf install git (Fedora 22 and later)
+----
+
+[discrete]
+=== Other Operating Systems
+
+* https://git-scm.com/downloads[Download Git^]
+
+[[configure-git]]
+== Configuring Git
+
+Once you have git installed you'll want to set up your git account.
+
+.Procedure
+. Open *Terminal*
+. Set your name and email
++
+[source,options="nowrap",subs="+quotes"]
+----
+$ git config --global user.name "<your-name>"
+$ git config --global user.email "<your-email>"
+----
++
+TIP: The email you specify should be the same one found in your https://help.github.com/articles/adding-an-email-address-to-your-github-account/[email settings^]. To keep your email address hidden, see https://help.github.com/articles/keeping-your-email-address-private[Keeping your email address private^].
+
+. Set your git defaults
++
+[source]
+----
+$ git config --global pull.rebase true
+$ git config --global push.default simple
+----
+
+[[fork-upstream]]
+== Fork the Upstream (GitHub) Repository
+
+Fork the `strimzi-kafka-operator` upstream repository to create a copy under your own GitHub ID. This allows you to work on multiple features and push changes to branches in your own GitHub instance so that you do not have to worry about losing work. When you are ready, you can request the changes to be merged back into the upstream repository.
+
+.Procedure
+. Open a browser and navigate to the upstream repository located at link:https://github.com/strimzi/strimzi-kafka-operator[`https://github.com/strimzi/strimzi-kafka-operator`^]
+. Click *Fork* located in the upper right under your profile icon.
+. Select your user account for the location of the forked repository. This creates your own copy of the repository under your own GitHub ID.
+
+[[add-ssh-github]]
+== Add Your SSH Keys to GitHub
+
+If you choose to use the SSH address for your clones, you will need to add an SSH Key to GitHub first.
+
+.Procedure
+. Open *Terminal*.
+. Check to see if you have a public SSH key:
++
+[source]
+----
+$ ls ~/.ssh/
+----
+. If you don't have a key, generate one:
++
+[source,options="nowrap",subs="+quotes"]
+----
+$ ssh-keygen -t rsa -C "<your-email>"
+----
+. Open your key in an editor:
++
+[source]
+----
+$ cd ~/.ssh/
+$ vi id_rsa.pub
+----
+. Copy the contents of the file to your clipboard.
+. Visit link:https://github.com/settings/keys[https://github.com/settings/keys^]
+. Click *New SSH Key*.
+. Give your key a name and paste the contents of your key file.
+. Click *Add SSH Key*.
+
+[[clone-forked]]
+== Clone Your Forked Upstream Repository
+
+Clone your forked repository to bring your GitHub repository files to your local machine. Your forked repository is now the `origin` repository for your local files.
+
+NOTE: For more information about https://help.github.com/articles/fork-a-repo/[forking^] and https://help.github.com/articles/cloning-a-repository/[cloning^], consult the official https://help.github.com/[GitHub documentation^].
+
+[discrete]
+=== Using SSH
+
+.Procedure
+. Open *Terminal*.
+. Navigate to the directory where you want to create the new repository folder.
+. Type the following command:
++
+[source,options="nowrap",subs="+quotes"]
+----
+$ git clone git@github.com:<username>/strimzi-kafka-operator.git
+----
+. Navigate to the newly created `strimzi-kafka-operator` folder.
++
+[source]
+----
+$ cd strimzi-kafka-operator/
+----
+
+[discrete]
+=== Using HTTPS
+
+While there are fewer steps in this option, you have to enter your GitHub credentials with every change you make.
+
+.Procedure
+. Open *Terminal*.
+. Navigate to the directory where you want to create the new repository folder.
+. Type the following command:
++
+[source,options="nowrap",subs="+quotes"]
+----
+$ git clone https://github.com/<username>/strimzi-kafka-operator.git
+----
+. Enter your GitHub credentials to complete the clone.
+. Navigate to the newly created `strimzi-kafka-operator` folder.
++
+[source]
+----
+$ cd strimzi-kafka-operator/
+----
+
+[[add-upstream]]
+== Add the Upstream as a Remote Repository
+
+Once you have your fork checked out and cloned locally, add the downstream repository as a remote.
+
+[discrete]
+=== Using SSH
+
+.Procedure
+. List the current remote repositories:
++
+[source,options="nowrap",subs="+quotes"]
+----
+$ git remote -v
+origin	git@github.com:<username>/strimzi-kafka-operator.git (fetch)
+origin	git@github.com:<username>/strimzi-kafka-operator.git (push)
+----
+. Add the upstream as a remote repository and fetch its contents. This allows you to check out and work with the latest source code.
++
+[source]
+----
+$ git remote add -f upstream  git@github.com:strimzi/strimzi-kafka-operator.git
+----
+. Enter your GitHub credentials to complete the remote add process.
+. Verify the new remote was added:
++
+[source,options="nowrap",subs="+quotes"]
+----
+$ git remote -v
+origin	git@github.com:<username>/strimzi-kafka-operator.git (fetch)
+origin	git@github.com:<username>/strimzi-kafka-operator.git (push)
+upstream	git@github.com:strimzi/strimzi-kafka-operator.git (fetch)
+upstream	git@github.com:strimzi/strimzi-kafka-operator.git (push)
+----
+
+[discrete]
+=== Using HTTPS
+
+.Procedure
+. List the current remote repositories:
++
+[source,options="nowrap",subs="+quotes"]
+----
+$ git remote -v
+origin	https://github.com/<username>/strimzi-kafka-operator.git (fetch)
+origin	https://github.com/<username>/strimzi-kafka-operator.git (push)
+----
+. Add the upstream as a remote repository and fetch its contents. This allows you to check out and work with the latest source code.
++
+[source]
+----
+$ git remote add -f upstream  https://github.com/strimzi/strimzi-kafka-operator.git
+----
+. Enter your GitHub credentials to complete the remote add process.
+. Verify the new remote was added:
++
+[source,options="nowrap",subs="+quotes"]
+----
+$ git remote -v
+origin	https://github.com/<username>/strimzi-kafka-operator.git (fetch)
+origin	https://github.com/<username>/strimzi-kafka-operator.git (push)
+upstream	https://github.com/strimzi/strimzi-kafka-operator.git (fetch)
+upstream	https://github.com/strimzi/strimzi-kafka-operator.git (push)
+----
+
+[[url-update]]
+== Updating Repository URLs
+
+If the upstream repository is moved, you can change the downstream URL by using the following command:
+
+[source]
+----
+$ git remote set-url upstream https://github.com/strimzi/strimzi-kafka-operator.git
+----
+
+Use the following command any time you need to fetch the latest source code locally:
+
+[source]
+----
+$ git fetch upstream
+----
+
+[[git-setup-references]]
+== References
+
+* https://git-scm.com[Official Git Site^]
+* http://help.github.com[GitHub Help^]

@@ -1,0 +1,78 @@
+[[git-tips]]
+= Git Tips
+
+== Delete Branches
+
+To delete all of your branches except the branch you are on:
+
+[source]
+----
+$ git checkout master
+$ for br in `git branch` ; do git branch -D $br ; done
+----
+
+To delete one branch:
+
+[source,options="nowrap",subs="+quotes"]
+----
+$ git checkout master
+$ git branch -D <branch-name>
+----
+
+== Resolve Conflicts
+
+To resolve a merge conflict in an existing pull request:
+
+[source,options="nowrap",subs="+quotes"]
+----
+$ git checkout <branch-name>
+$ git branch -u origin <branch-name>
+$ git pull --rebase upstream master
+$ git push -f origin HEAD
+----
+
+== Reset Your Fork
+
+If your fork is both ahead of and behind the origin you can reset your fork to match the origin and start with a clean slate.
+
+[source]
+----
+$ git checkout master
+$ git reset --hard upstream/master
+$ git push origin master --force
+$ git pull upstream master
+$ git push origin master --force
+----
+
+== Access Another Writer’s Unmerged Commits
+
+This is the process you can use if you need commits another writer has submitted in a merge request that is not yet merged.
+
+. Check out a new topic branch from upstream/master as you normally do.
++
+[source,options="nowrap",subs="+quotes"]
+----
+$ git fetch upstream
+$ git checkout -b <new-topic-branch> upstream/master
+----
+. If you have not yet added that writer’s remote repository, add it now.
++
+[source,options="nowrap",subs="+quotes"]
+----
+$ git remote add -f <user> git@github.com:<user>/strimzi-kafka-operator.git
+----
+. Rebase to bring in the changes that are in that user’s outstanding
+ `origin/<merge-request-branch>` branch.
++
+[source,options="nowrap",subs="+quotes"]
+----
+$ git rebase <user>/<merge-request-branch>
+----
++
+(you'll see the following response)
++
+[source,options="nowrap",subs="+quotes"]
+----
+First, rewinding head to replay your work on top of it...
+Fast-forwarded <new-topic-branch> to <user>/<merge-request-branch>
+----
