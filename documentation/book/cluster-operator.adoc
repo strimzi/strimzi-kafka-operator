@@ -69,7 +69,7 @@ See section <<storage_configuration_json_config>> for more details.
 `spec.kafka.metrics`::
 The JMX exporter configuration for exposing metrics from Kafka broker nodes.
 When this field is absent no metrics will be exposed.
-`spec.kafka.logging`::
+[[spec.kafka.logging]]`spec.kafka.logging`::
 An object that specifies inline logging levels or the name of external config map that specifies the logging levels.
 When this field is absent default values are used.
 List of loggers which can be set:
@@ -125,7 +125,7 @@ The storage configuration for the Zookeeper nodes. See section <<storage_configu
 `spec.zookeeper.metrics`::
 The JMX exporter configuration for exposing metrics from Zookeeper nodes.
 When this field is absent no metrics will be exposed.
-`spec.zookeeper.logging`::
+[[spec.zookeeper.logging]]`spec.zookeeper.logging`::
 An object that specifies inline logging levels or the name of external config map that specifies the logging levels.
 When this field is absent default values are used.
 List of loggers which can be set:
@@ -490,28 +490,34 @@ You can find more information on how to use it in the corresponding GitHub repo.
 
 For more information about using the metrics with Prometheus and Grafana, see <<_metrics>>
 
-===== Logging
-The `logging` field allows the configuration of loggers. These loggers are:
-[source]
-log4j.rootLogger
-connect.root.logger.level
-log4j.logger.org.apache.zookeeper
-log4j.logger.org.I0Itec.zkclient
-log4j.logger.org.reflections
+===== [[logging_examples]]Logging
+The `logging` field allows the configuration of loggers. These loggers for Zookeeper and Kafka are available in the <<spec.zookeeper.logging,`spec.zookeeper.logging`>> and <<spec.kafka.logging,`spec.kafka.logging`>> sections respectively.
 
 The setting can be done in one of two ways. Either by specifying the loggers and their levels directly or by using a custom config map.
-An example of the latter would look like this::
+An example would look like this:
 
 [source,yaml]
 ----
   logging:
-    fromConfigMap:
-      name : customConfigMap
+    type: inline
+    loggers:
+      logger.name: "INFO"
+----
+The `INFO` can be replaced with any log4j logger level. The available logger levels are `INFO`, `ERROR`, `WARN`, `TRACE`, `DEBUG`, `FATAL` or `OFF`.
+The informations about log levels can be found in the https://logging.apache.org/log4j/2.x/manual/customloglevels.html[log4j manual].
+
+[source,yaml]
+----
+  logging:
+    type: external
+    name: customConfigMap
 ----
 
-The difference between these two options is that latter is not validated and does not support default values.
-That means user can supply any logging configuration, even if it is incorrect.
-First option supports default values.
+When using external ConfigMap remember to place your custom ConfigMap under `log4j.properties` key.
+
+The difference between these two options is that the latter is not validated and does not support default values.
+That means the user can supply any logging configuration, even if it is incorrect.
+The first option supports default values.
 
 
 [[resources_json_config]]
@@ -946,6 +952,17 @@ These options will be automatically configured in case they are not present in t
 INFO:: The Cluster Operator does not validate the provided configuration. 
 When invalid configuration is provided, the Kafka Connect cluster might not start or might become unstable. 
 In such cases, the configuration in the `config` object should be fixed and the Cluster Operator will roll out the new configuration to all Kafka Connect instances.
+
+===== Logging
+The `logging` field allows the configuration of loggers. These loggers are:
+[source]
+log4j.rootLogger
+connect.root.logger.level
+log4j.logger.org.apache.zookeeper
+log4j.logger.org.I0Itec.zkclient
+log4j.logger.org.reflections
+
+For information on the logging options and examples of how to set logging, see <<logging_examples, logging examples>> for Kafka.
 
 ===== Kafka Connect S2I deployment
 
