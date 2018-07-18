@@ -58,6 +58,7 @@ import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.cluster.ClusterOperator;
+import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -228,11 +229,22 @@ public abstract class AbstractModel {
     }
 
 
+    protected abstract String getDefaultLogConfigFileName();
+
     /**
      * Returns map with all available loggers for current pod and default values.
      * @return
      */
-    abstract protected Properties getDefaultLogConfig();
+    protected Properties getDefaultLogConfig() {
+        Properties properties = new Properties();
+        String defaultLogConfigFileName = getDefaultLogConfigFileName();
+        try {
+            properties = getDefaultLoggingProperties(defaultLogConfigFileName);
+        } catch (IOException e) {
+            log.warn("Unable to read default log config from '{}'", defaultLogConfigFileName);
+        }
+        return properties;
+    }
 
     /**
      * Takes resource file containing default log4j properties and returns it as a Properties.
@@ -327,7 +339,7 @@ public abstract class AbstractModel {
             return createPropertiesString(newSettings);
         } else if (logging instanceof ExternalLogging) {
             if (externalCm != null) {
-                return externalCm.getData().get(ANCILLARY_CM_KEY_LOG_CONFIG);
+                return externalCm.getData().get(getAncillaryConfigMapKeyLogConfig());
             } else {
                 log.warn("Configmap " + ((ExternalLogging) getLogging()).getName() + " does not exist. Default settings are used");
                 return createPropertiesString(getDefaultLogConfig());
@@ -338,6 +350,28 @@ public abstract class AbstractModel {
             return createPropertiesString(getDefaultLogConfig());
 
         }
+    }
+
+    /**
+     * Generates a metrics and logging ConfigMap according to configured defaults
+     * @return The generated ConfigMap
+     */
+    public ConfigMap generateMetricsAndLogConfigMap(ConfigMap cm) {
+        Map<String, String> data = new HashMap<>();
+        data.put(getAncillaryConfigMapKeyLogConfig(), parseLogging(getLogging(), cm));
+        if (isMetricsEnabled()) {
+            HashMap m = new HashMap();
+            for (Map.Entry<String, Object> entry : getMetricsConfig()) {
+                m.put(entry.getKey(), entry.getValue());
+            }
+            data.put(ANCILLARY_CM_KEY_METRICS, new JsonObject(m).toString());
+        }
+
+        ConfigMap configMap = createConfigMap(getAncillaryConfigName(), data);
+        if (getLogging() != null) {
+            getLogging().setCm(configMap);
+        }
+        return configMap;
     }
 
     public String getLogConfigName() {
@@ -554,7 +588,7 @@ public abstract class AbstractModel {
 
     protected ConfigMap createConfigMap(String name, Map<String, String> data) {
 
-        ConfigMap cm = new ConfigMapBuilder()
+        return new ConfigMapBuilder()
                 .withNewMetadata()
                     .withName(name)
                     .withNamespace(namespace)
@@ -562,8 +596,6 @@ public abstract class AbstractModel {
                 .endMetadata()
                 .withData(data)
                 .build();
-
-        return cm;
     }
 
     protected Volume createSecretVolume(String name, String secretName) {
@@ -1030,5 +1062,9 @@ public abstract class AbstractModel {
         annotations.put("prometheus.io/path", "/metrics");
 
         return annotations;
+    }
+
+    String getAncillaryConfigMapKeyLogConfig() {
+        return ANCILLARY_CM_KEY_LOG_CONFIG;
     }
 }

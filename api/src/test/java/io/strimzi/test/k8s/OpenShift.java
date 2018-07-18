@@ -36,6 +36,7 @@ public class OpenShift implements KubeCluster {
                             return true;
                         } catch (KubeClusterException e2) {
                             LOGGER.trace("oc cluster still not up");
+                            LOGGER.info("Status for oc: {}", e2.result.out());
                             return false;
                         }
                     });

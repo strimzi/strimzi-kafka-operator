@@ -15,7 +15,6 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
@@ -43,8 +42,8 @@ public class AbstractModelTest {
     private Map<String, String> getStringStringMap(String xmx, String xms, double dynamicFraction, long dynamicMax) {
         AbstractModel am = new AbstractModel(null, null, Labels.forCluster("foo")) {
             @Override
-            protected Properties getDefaultLogConfig() {
-                return new Properties();
+            protected String getDefaultLogConfigFileName() {
+                return "";
             }
 
             @Override
@@ -108,8 +107,8 @@ public class AbstractModelTest {
     private String getPerformanceOptions(JvmOptions opts) {
         AbstractModel am = new AbstractModel(null, null, Labels.forCluster("foo")) {
             @Override
-            protected Properties getDefaultLogConfig() {
-                return new Properties();
+            protected String getDefaultLogConfigFileName() {
+                return "";
             }
 
             @Override
@@ -139,14 +138,9 @@ public class AbstractModelTest {
         assertEquals(1000, opts.getLimits().milliCpuAsInt());
         assertEquals("1", opts.getLimits().getMilliCpu());
         AbstractModel abstractModel = new AbstractModel("", "", Labels.forCluster("")) {
-            /**
-             * Returns map with all available loggers for current pod and default values.
-             *
-             * @return
-             */
             @Override
-            protected Properties getDefaultLogConfig() {
-                return null;
+            protected String getDefaultLogConfigFileName() {
+                return "";
             }
 
             /**
