@@ -534,7 +534,7 @@ public class KafkaCluster extends AbstractModel {
 
     @Override
     protected String getServiceAccountName() {
-        return getInitContainerServiceAccountName(name);
+        return initContainerServiceAccountName(cluster);
     }
 
     @Override
@@ -576,27 +576,38 @@ public class KafkaCluster extends AbstractModel {
     public ServiceAccount generateInitContainerServiceAccount() {
         return new ServiceAccountBuilder()
                 .withNewMetadata()
-                    .withName(getInitContainerServiceAccountName(name))
+                    .withName(initContainerServiceAccountName(cluster))
                     .addToLabels("app", "strimzi")
                     .withNamespace(namespace)
                 .endMetadata()
             .build();
     }
 
-    public static String getInitContainerServiceAccountName(String name) {
-        return name + "-kafka-init";
+
+    /**
+     * Get the name of the kafka service account given the name of the {@code cluster}.
+     */
+    public static String initContainerServiceAccountName(String cluster) {
+        return cluster + "-kafka";
     }
 
-    public static String getInitContainerClusterRoleBindingName(String name) {
-        return "strimzi-" + name + "-kafka-init";
+    /**
+     * Get the name of the kafka cluster role binding given the name of the {@code cluster}.
+     */
+    public static String initContainerClusterRoleBindingName(String cluster) {
+        return "strimzi-" + cluster + "-kafka-init";
     }
 
-    public ClusterRoleBindingOperator.ClusterRoleBinding generateClusterRoleBinding(String namespace) {
+    /**
+     * Creates the ClusterRoleBinding which is used to bind the Kafka SA to the ClusterRole
+     * which permissions the Kafka init container to access K8S nodes (necessary for rack-awareness).
+     */
+    public ClusterRoleBindingOperator.ClusterRoleBinding generateClusterRoleBinding(String assemblyNamespace) {
         if (rack != null) {
             return new ClusterRoleBindingOperator.ClusterRoleBinding(
-                    getInitContainerClusterRoleBindingName(name),
+                    initContainerClusterRoleBindingName(cluster),
                     "strimzi-kafka-broker",
-                    namespace, getInitContainerServiceAccountName(name));
+                    assemblyNamespace, initContainerServiceAccountName(cluster));
         } else {
             return null;
         }

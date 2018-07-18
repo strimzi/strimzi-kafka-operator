@@ -253,8 +253,11 @@ public class TopicOperator extends AbstractModel {
         return varList;
     }
 
-    public static String topicOperatorServiceAccountName(String name) {
-        return name + NAME_SUFFIX;
+    /**
+     * Get the name of the topic operator service account given the name of the {@code cluster}.
+     */
+    public static String topicOperatorServiceAccountName(String cluster) {
+        return cluster + NAME_SUFFIX;
     }
 
     @Override
