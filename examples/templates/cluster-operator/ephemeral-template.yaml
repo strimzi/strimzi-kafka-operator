@@ -65,17 +65,17 @@ objects:
     name: ${CLUSTER_NAME}
   spec:
     kafka:
-      replicas: ${KAFKA_NODE_COUNT}
+      replicas: ${{KAFKA_NODE_COUNT}}
       image: "strimzi/kafka:latest"
       resources:
         limits:
           memory: "5Gi"
       livenessProbe:
-        initialDelaySeconds: ${KAFKA_HEALTHCHECK_DELAY}
-        timeoutSeconds: ${KAFKA_HEALTHCHECK_TIMEOUT}
+        initialDelaySeconds: ${{KAFKA_HEALTHCHECK_DELAY}}
+        timeoutSeconds: ${{KAFKA_HEALTHCHECK_TIMEOUT}}
       readinessProbe:
-        initialDelaySeconds: ${KAFKA_HEALTHCHECK_DELAY}
-        timeoutSeconds: ${KAFKA_HEALTHCHECK_TIMEOUT}
+        initialDelaySeconds: ${{KAFKA_HEALTHCHECK_DELAY}}
+        timeoutSeconds: ${{KAFKA_HEALTHCHECK_TIMEOUT}}
       storage:
         type: ephemeral
       config:
@@ -83,14 +83,14 @@ objects:
         offsets.topic.replication.factor: ${KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR}
         transaction.state.log.replication.factor: ${KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR}
     zookeeper:
-      replicas: ${ZOOKEEPER_NODE_COUNT}
+      replicas: ${{ZOOKEEPER_NODE_COUNT}}
       image: "strimzi/zookeeper:latest"
       livenessProbe:
-        initialDelaySeconds: ${ZOOKEEPER_HEALTHCHECK_DELAY}
-        timeoutSeconds: ${ZOOKEEPER_HEALTHCHECK_TIMEOUT}
+        initialDelaySeconds: ${{ZOOKEEPER_HEALTHCHECK_DELAY}}
+        timeoutSeconds: ${{ZOOKEEPER_HEALTHCHECK_TIMEOUT}}
       readinessProbe:
-        initialDelaySeconds: ${ZOOKEEPER_HEALTHCHECK_DELAY}
-        timeoutSeconds: ${ZOOKEEPER_HEALTHCHECK_TIMEOUT}
+        initialDelaySeconds: ${{ZOOKEEPER_HEALTHCHECK_DELAY}}
+        timeoutSeconds: ${{ZOOKEEPER_HEALTHCHECK_TIMEOUT}}
       storage:
         type: ephemeral
-    topicOperator:
+    topicOperator: {}
