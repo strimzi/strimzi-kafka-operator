@@ -149,7 +149,7 @@ public abstract class AbstractModel {
     private String[] validLoggerValues = new String[]{"INFO", "ERROR", "WARN", "TRACE", "DEBUG", "FATAL", "OFF" };
     private Logging logging;
 
-    protected CertAndKey internalCA;
+    protected CertAndKey clusterCA;
 
     /**
      * Constructor
@@ -1066,5 +1066,9 @@ public abstract class AbstractModel {
 
     String getAncillaryConfigMapKeyLogConfig() {
         return ANCILLARY_CM_KEY_LOG_CONFIG;
+    }
+
+    public static String getClusterCaName(String assemblyName)  {
+        return assemblyName + "-cluster-ca";
     }
 }

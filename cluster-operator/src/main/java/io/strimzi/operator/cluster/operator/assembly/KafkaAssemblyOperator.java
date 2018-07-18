@@ -186,14 +186,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private final StatefulSet statefulSet;
         private final Secret clientsCASecret;
         private final Secret clientsPublicKeySecret;
-        private final Secret brokersClientsSecret;
+        private final Secret clusterPublicKeySecret;
         private final Secret brokersInternalSecret;
         private ReconcileResult<StatefulSet> diffs;
 
         KafkaClusterDescription(KafkaCluster kafka, Service service, Service headlessService,
                                 ConfigMap metricsAndLogsConfigMap, StatefulSet statefulSet,
                                 Secret clientsCASecret, Secret clientsPublicKeySecret,
-                                Secret brokersClientsSecret, Secret brokersInternalSecret) {
+                                Secret clusterPublicKeySecret, Secret brokersInternalSecret) {
             this.kafka = kafka;
             this.service = service;
             this.headlessService = headlessService;
@@ -201,7 +201,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             this.statefulSet = statefulSet;
             this.clientsCASecret = clientsCASecret;
             this.clientsPublicKeySecret = clientsPublicKeySecret;
-            this.brokersClientsSecret = brokersClientsSecret;
+            this.clusterPublicKeySecret = clusterPublicKeySecret;
             this.brokersInternalSecret = brokersInternalSecret;
         }
 
@@ -233,8 +233,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return this.clientsPublicKeySecret;
         }
 
-        Secret brokersClientsSecret() {
-            return this.brokersClientsSecret;
+        Secret clusterPublicKeySecret() {
+            return this.clusterPublicKeySecret;
         }
 
         Secret brokersInternalSecret() {
@@ -273,7 +273,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             new KafkaClusterDescription(kafka, kafka.generateService(), kafka.generateHeadlessService(),
                                     logAndMetricsConfigMap, kafka.generateStatefulSet(isOpenShift),
                                     kafka.generateClientsCASecret(), kafka.generateClientsPublicKeySecret(),
-                                    kafka.generateBrokersClientsSecret(), kafka.generateBrokersInternalSecret());
+                                    kafka.generateClusterPublicKeySecret(), kafka.generateBrokersSecret());
 
                     future.complete(desc);
                 } catch (Throwable e) {
@@ -304,8 +304,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(desc -> desc.withVoid(configMapOperations.reconcile(namespace, desc.kafka().getAncillaryConfigName(), desc.metricsAndLogsConfigMap())))
                 .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, KafkaCluster.clientsCASecretName(name), desc.clientsCASecret())))
                 .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, KafkaCluster.clientsPublicKeyName(name), desc.clientsPublicKeySecret())))
-                .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, KafkaCluster.brokersClientsSecretName(name), desc.brokersClientsSecret())))
-                .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, KafkaCluster.brokersInternalSecretName(name), desc.brokersInternalSecret())))
+                .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, KafkaCluster.clusterPublicKeyName(name), desc.clusterPublicKeySecret())))
+                .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, KafkaCluster.brokersSecretName(name), desc.brokersInternalSecret())))
                 .compose(desc -> desc.withDiff(kafkaSetOperations.reconcile(namespace, desc.kafka().getName(), desc.statefulSet())))
                 .compose(desc -> desc.withVoid(kafkaSetOperations.maybeRollingUpdate(desc.diffs().resource())))
                 .compose(desc -> desc.withVoid(kafkaSetOperations.scaleUp(namespace, desc.kafka().getName(), desc.kafka().getReplicas())))
@@ -331,8 +331,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         result.add(kafkaSetOperations.reconcile(namespace, KafkaCluster.kafkaClusterName(name), null));
         result.add(secretOperations.reconcile(namespace, KafkaCluster.clientsCASecretName(name), null));
         result.add(secretOperations.reconcile(namespace, KafkaCluster.clientsPublicKeyName(name), null));
-        result.add(secretOperations.reconcile(namespace, KafkaCluster.brokersClientsSecretName(name), null));
-        result.add(secretOperations.reconcile(namespace, KafkaCluster.brokersInternalSecretName(name), null));
+        result.add(secretOperations.reconcile(namespace, KafkaCluster.clusterPublicKeyName(name), null));
+        result.add(secretOperations.reconcile(namespace, KafkaCluster.brokersSecretName(name), null));
 
         if (deleteClaims) {
             log.debug("{}: delete kafka {} PVCs", reconciliation, name);

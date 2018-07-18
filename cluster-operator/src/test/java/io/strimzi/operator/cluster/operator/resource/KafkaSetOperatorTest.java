@@ -42,8 +42,8 @@ public class KafkaSetOperatorTest {
     @Before
     public void before() {
         MockCertManager certManager = new MockCertManager();
-        a = KafkaCluster.fromCrd(certManager, getResource(), getInitialSecrets()).generateStatefulSet(true);
-        b = KafkaCluster.fromCrd(certManager, getResource(), getInitialSecrets()).generateStatefulSet(true);
+        a = KafkaCluster.fromCrd(certManager, getResource(), getInitialSecrets(getResource().getMetadata().getName())).generateStatefulSet(true);
+        b = KafkaCluster.fromCrd(certManager, getResource(), getInitialSecrets(getResource().getMetadata().getName())).generateStatefulSet(true);
     }
 
     private KafkaAssembly getResource() {
@@ -71,9 +71,9 @@ public class KafkaSetOperatorTest {
             .build();
     }
 
-    private List<Secret> getInitialSecrets() {
+    private List<Secret> getInitialSecrets(String clusterName) {
         String clusterCmNamespace = "test";
-        return ResourceUtils.createKafkaClusterInitialSecrets(clusterCmNamespace);
+        return ResourceUtils.createKafkaClusterInitialSecrets(clusterCmNamespace, clusterName);
     }
 
     private StatefulSetDiff diff() {

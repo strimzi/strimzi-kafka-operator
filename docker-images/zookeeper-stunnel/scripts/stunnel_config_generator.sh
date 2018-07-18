@@ -24,7 +24,7 @@ do
 			cat <<-EOF
 			[${PEER}-$port]
 			client = yes
-			CAfile = ${CERTS}/internal-ca.crt
+			CAfile = ${CERTS}/cluster-ca.crt
 			cert = ${CERTS}/${CURRENT}.crt
 			key = ${CERTS}/${CURRENT}.key
 			accept = 127.0.0.1:$(expr $port \* 10 + $NODE - 1)
@@ -43,7 +43,7 @@ do
 	cat <<-EOF
 	[listener-$port]
 	client = no
-	CAfile = ${CERTS}/internal-ca.crt
+	CAfile = ${CERTS}/cluster-ca.crt
 	cert = ${CERTS}/${CURRENT}.crt
 	key = ${CERTS}/${CURRENT}.key
 	accept = $port
