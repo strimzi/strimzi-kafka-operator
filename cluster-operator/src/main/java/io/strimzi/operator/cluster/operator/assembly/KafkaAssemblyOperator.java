@@ -446,7 +446,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         RoleBindingOperator.RoleBinding rb = topicOperator != null ? topicOperator.generateRoleBinding(namespace) : null;
         Deployment deployment = topicOperator != null ? topicOperator.generateDeployment() : null;
         return getTopicOperatorLogAndMetricsConfigMap(kafkaAssembly, topicOperator)
-                .compose(m -> configMapOperations.reconcile(namespace, topicOperator.getAncillaryConfigName(), m))
+                .compose(m -> configMapOperations.reconcile(namespace, TopicOperator.metricAndLogConfigsName(name), m))
                 .compose(i -> serviceAccountOperator.reconcile(namespace, TopicOperator.topicOperatorServiceAccountName(name), sa))
                 .compose(i -> roleBindingOperator.reconcile(namespace, TopicOperator.TO_ROLE_BINDING_NAME, rb))
                 .compose(i -> deploymentOperations.reconcile(namespace, topicOperatorName(name), deployment).map((Void) null));

@@ -31,7 +31,6 @@ import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.operator.assembly.AbstractAssemblyOperator;
 import io.strimzi.operator.cluster.operator.resource.ClusterRoleBindingOperator;
-import io.vertx.core.json.JsonObject;
 
 import java.io.File;
 import java.io.IOException;
