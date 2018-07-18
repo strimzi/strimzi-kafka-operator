@@ -41,7 +41,13 @@ The format of the `Kafka` resource is described in <<kafka_assembly_details>>.
 ifdef::Kubernetes[]
 ==== Deploying to {KubernetesName}
 
-To deploy the Cluster Operator on {KubernetesName}, the following command should be executed:
+To deploy the Cluster Operator on {KubernetesName}, you will first need to modify some of of the installation files according to the namespace the Cluster Operator is going to be installed in. 
+To do this, execute the following command, replacing `MY-NAMESPACE` with the correct namespace:
+
+[source,shell]
+sed -i 's/namespace: .*/namespace: MY-NAMESPACE/' examples/install/cluster-operator/*ClusterRoleBinding*.yaml
+
+Next, the following commands should be executed:
 
 [source,shell]
 kubectl create -f examples/install/cluster-operator
@@ -57,7 +63,13 @@ endif::Kubernetes[]
 
 IMPORTANT: To successfully deploy the Cluster Operator on {OpenShiftName} a user with `cluster-admin` role needs to be used (that is, like `system:admin`).
 
-To deploy the Cluster Operator on {OpenShiftName}, the following commands should be executed:
+To deploy the Cluster Operator on {OpenShiftName}, you will first need to modify some of of the installation files according to the namespace the Cluster Operator is going to be installed in. 
+To do this, execute the following command, replacing `MY-NAMESPACE` with the correct namespace:
+
+[source,shell]
+sed -i 's/namespace: .*/namespace: MY-NAMESPACE/' examples/install/cluster-operator/*ClusterRoleBinding*.yaml
+
+Next, the following commands should be executed:
 
 [source,shell]
 oc create -f examples/install/cluster-operator

@@ -1062,7 +1062,8 @@ To add multiple plugins to the deployment, they all have to be added within the 
 
 === Provisioning Role-Based Access Control (RBAC) for the Cluster Operator
 
-For the operator to function correctly it needs permission within the {ProductPlatformName} cluster to interact with the resources it manages (ConfigMaps, Pods, Deployments, StatefulSets, Services and so on).
+For the operator to function correctly it needs permission within the {ProductPlatformName} cluster to interact with the resources it manages and interacts with. 
+These include the desired resources, such as  `Kafka`, `Kafka Connect` and so on, as well as the managed resources, such as ConfigMaps, Pods, Deployments, StatefulSets, Services and so on.
 Such permission is described in terms of {ProductPlatformName} role-based access control (RBAC) resources:
 
 * ServiceAccount,
@@ -1079,7 +1080,7 @@ This means that for the Cluster Operator to be able to create the ClusterRoleBin
 
 When the Cluster Operator deploys resources for a desired `Kafka` resource it also creates ServiceAccounts, RoleBindings and ClusterRoleBindings, as follows:
 
-* The Kafka broker pods use a ServiceAccount called `[cluster-name]-kafka-init` (where `[cluster-name]` is a placeholder for the name of the Kafka resource)
+* The Kafka broker pods use a ServiceAccount called `[cluster-name]-kafka` (where `[cluster-name]` is a placeholder for the name of the Kafka resource)
   - When the rack feature is used, the `strimzi-[cluster-name]-kafka-init` ClusterRoleBinding is used to grant this ServiceAccount access to the nodes within the cluster via a ClusterRole called `strimzi-kafka-broker`
   - When the rack feature is not used no binding is created.
 * The Zookeeper pods use the default ServiceAccount as they have no need to access {ProductPlatformName} resources
