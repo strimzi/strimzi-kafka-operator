@@ -353,7 +353,7 @@ public abstract class AbstractModel {
     }
 
     /**
-     * Generates a metrics ConfigMap according to configured defaults
+     * Generates a metrics and logging ConfigMap according to configured defaults
      * @return The generated ConfigMap
      */
     public ConfigMap generateMetricsAndLogConfigMap(ConfigMap cm) {
