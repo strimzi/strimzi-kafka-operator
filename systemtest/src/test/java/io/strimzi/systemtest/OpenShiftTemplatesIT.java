@@ -47,9 +47,9 @@ import static org.junit.Assert.assertNotNull;
 @Namespace(OpenShiftTemplatesIT.NAMESPACE)
 @Resources(value = "../examples/templates/cluster-operator", asAdmin = true)
 @Resources(value = "../examples/templates/topic-operator", asAdmin = true)
-@Resources(value = "../examples/install/cluster-operator/04-crd-kafka.yaml", asAdmin = true)
-@Resources(value = "../examples/install/cluster-operator/04-crd-kafka-connect.yaml", asAdmin = true)
-@Resources(value = "../examples/install/cluster-operator/04-crd-kafka-connect-s2i.yaml", asAdmin = true)
+@Resources(value = "../examples/install/cluster-operator/07-crd-kafka.yaml", asAdmin = true)
+@Resources(value = "../examples/install/cluster-operator/07-crd-kafka-connect.yaml", asAdmin = true)
+@Resources(value = "../examples/install/cluster-operator/07-crd-kafka-connect-s2i.yaml", asAdmin = true)
 @Resources(value = "src/rbac/role-edit-kafka.yaml", asAdmin = true)
 public class OpenShiftTemplatesIT {
 

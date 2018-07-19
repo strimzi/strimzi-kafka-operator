@@ -83,7 +83,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
         String deploymentName = clusterName + "-connect";
         oc.waitForDeployment(deploymentName, 1);
         testDockerImagesForKafkaConnect();
-        oc.deleteByName("cm", clusterName);
+        oc.deleteByName("deployment", deploymentName);
         oc.waitForResourceDeletion("deployment", deploymentName);
     }
 
@@ -200,7 +200,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
                 "deployment", "strimzi-cluster-operator"));
         //Verifying docker image for kafka connect
         String connectImageName = getContainerImageNameFromPod(kubeClient.listResourcesByLabel("pod",
-                "type=kafka-connect").get(0));
+                "strimzi.io/kind=KafkaConnect").get(0));
 
         assertEquals(imgFromDeplConf.get(CONNECT_IMAGE), connectImageName);
         LOGGER.info("Docker images verified");

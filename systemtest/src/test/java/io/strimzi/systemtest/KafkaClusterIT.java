@@ -87,8 +87,9 @@ public class KafkaClusterIT extends AbstractClusterIT {
         //Testing docker images
         testDockerImagesForKafkaCluster(clusterName, 3, 3, false);
 
-        oc.deleteByName("cm", clusterName);
+        oc.deleteByName("statefulset", kafkaClusterName(clusterName));
         oc.waitForResourceDeletion("statefulset", kafkaClusterName(clusterName));
+        oc.deleteByName("statefulset", zookeeperClusterName(clusterName));
         oc.waitForResourceDeletion("statefulset", zookeeperClusterName(clusterName));
     }
 
@@ -392,7 +393,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
     }
 
     @Test
-    @JUnitGroup(name = "regression")
+//    @JUnitGroup(name = "regression")
     @KafkaFromClasspathYaml
     public void testRackAware() {
         testDockerImagesForKafkaCluster(CLUSTER_NAME, 1, 1, true);
