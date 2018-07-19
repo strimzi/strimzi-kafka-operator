@@ -1,0 +1,15 @@
+# Set default behaviour, in case users don't have core.autocrlf set.
+* text=auto
+
+# Explicitly declare text files we want to always be normalized and converted 
+# to native line endings on checkout.
+*.java text
+
+# Always lf ending
+*.sh text eol=lf
+*.bash text eol=lf
+*.properties text eol=lf
+*.json text eol=lf
+*.xml text eol=lf
+*.txt text eol=lf
+*.yaml text eol=lf
