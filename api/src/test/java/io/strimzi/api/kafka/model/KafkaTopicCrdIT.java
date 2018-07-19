@@ -8,11 +8,8 @@ import io.strimzi.test.Namespace;
 import io.strimzi.test.Resources;
 import io.strimzi.test.StrimziRunner;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.k8s.KubeClusterException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import static org.junit.Assert.assertTrue;
 
 /**
  * The purpose of this test is to confirm that we can create a
@@ -29,35 +26,16 @@ public class KafkaTopicCrdIT extends AbstractCrdIT {
 
     @Test
     public void testKafka() {
-        createDelete(KafkaTopic.class, "Topic.yaml");
+        createDelete(KafkaTopic.class, "KafkaTopic.yaml");
     }
 
     @Test
     public void testKafkaMinimal() {
-        createDelete(KafkaTopic.class, "Topic-minimal.yaml");
+        createDelete(KafkaTopic.class, "KafkaTopic-minimal.yaml");
     }
 
     @Test
     public void testKafkaWithExtraProperty() {
-        createDelete(KafkaTopic.class, "Topic-with-extra-property.yaml");
+        createDelete(KafkaTopic.class, "KafkaTopic-with-extra-property.yaml");
     }
-
-    @Test
-    public void testKafkaWithMissingRequired() {
-        try {
-            createDelete(KafkaTopic.class, "Topic-with-missing-required-property.yaml");
-        } catch (KubeClusterException.InvalidResource e) {
-            assertTrue(e.getMessage().contains("partitions in body is required"));
-        }
-    }
-
-    @Test
-    public void testKafkaWithInvalidResourceMemory() {
-        try {
-            createDelete(KafkaTopic.class, "Topic-with-invalid-partitions.yaml");
-        } catch (KubeClusterException.InvalidResource e) {
-            assertTrue(e.getMessage().contains("spec.kafka.resources.limits.memory in body should match '[0-9]+([kKmMgGtTpPeE]i?)?$'"));
-        }
-    }
-
 }

@@ -4,14 +4,14 @@
  */
 package io.strimzi.operator.topic;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.ConfigMapList;
-import io.fabric8.kubernetes.api.model.ConfigMapListBuilder;
-import io.fabric8.kubernetes.api.model.DoneableConfigMap;
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -36,22 +36,26 @@ public class K8sImplTest {
         Async async = context.async();
 
         KubernetesClient mockClient = mock(KubernetesClient.class);
-        MixedOperation<ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> mockConfigMaps = mock(MixedOperation.class);
-        when(mockClient.configMaps()).thenReturn(mockConfigMaps);
+        MixedOperation<KafkaTopic, KafkaTopicList, TopicOperator.DeleteKafkaTopic, Resource<KafkaTopic, TopicOperator.DeleteKafkaTopic>> mockConfigMaps = mock(MixedOperation.class);
+        when(mockClient.customResources(any(CustomResourceDefinition.class), any(Class.class), any(Class.class), any(Class.class))).thenReturn(mockConfigMaps);
         when(mockConfigMaps.withLabels(any())).thenReturn(mockConfigMaps);
         when(mockConfigMaps.inNamespace(any())).thenReturn(mockConfigMaps);
-        when(mockConfigMaps.list()).thenReturn(new ConfigMapListBuilder()
-                .addNewItem().withKind("ConfigMap")
-                .withNewMetadata()
-                .withName("unrelated")
-                .withLabels(Collections.singletonMap("foo", "bar"))
-                .endMetadata().withData(Collections.singletonMap("foo", "bar")).endItem()
-                .addNewItem().endItem()
-                .build());
+        when(mockConfigMaps.list()).thenAnswer(invocation -> {
+            KafkaTopicList ktl = new KafkaTopicList();
+            ktl.setItems(Collections.singletonList(new KafkaTopicBuilder()
+                .withMetadata(new ObjectMetaBuilder()
+                    .withName("unrelated")
+                    .withLabels(Collections.singletonMap("foo", "bar")).build())
+                .build()));
+            return ktl;
+        });
 
         K8sImpl k8s = new K8sImpl(vertx, mockClient, new LabelPredicate("foo", "bar"), "default");
 
         k8s.listMaps(ar -> {
+            if (ar.failed()) {
+                ar.cause().printStackTrace();
+            }
             List<KafkaTopic> list = ar.result();
             context.assertFalse(list.isEmpty());
             async.complete();

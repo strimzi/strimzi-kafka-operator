@@ -157,7 +157,7 @@ public class TopicSerializationTest {
             TopicSerialization.fromTopicResource(kafkaTopic);
             fail("Should throw");
         } catch (InvalidTopicException e) {
-            assertEquals("ConfigMap's 'data' section lacks a 'name' key and ConfigMap's name is invalid as a topic name: " +
+            assertEquals("Topics's spec.topicName property is absent and Topics's metadata.name is invalid as a topic name: " +
                     "Topic name is illegal, it can't be longer than 249 characters, topic name: " +
                     illegalAsATopicName, e.getMessage());
         }
@@ -177,7 +177,7 @@ public class TopicSerializationTest {
             TopicSerialization.fromTopicResource(kafkaTopic);
             fail("Should throw");
         } catch (InvalidTopicException e) {
-            assertEquals("ConfigMap's 'data' section has invalid 'name' key: Topic name \"An invalid topic name!\" is illegal, it contains a character other than ASCII alphanumerics, '.', '_' and '-'", e.getMessage());
+            assertEquals("Topics's spec.topicName property is invalid as a topic name: Topic name \"An invalid topic name!\" is illegal, it contains a character other than ASCII alphanumerics, '.', '_' and '-'", e.getMessage());
         }
     }
 
@@ -201,7 +201,7 @@ public class TopicSerializationTest {
             TopicSerialization.fromTopicResource(kafkaTopic);
             fail("Should throw");
         } catch (InvalidTopicException e) {
-            assertEquals("ConfigMap's 'data' section has invalid key 'partitions': should be a strictly positive integer but was 'foo'", e.getMessage());
+            assertEquals("Topic's spec.partitions should be strictly greater than 0", e.getMessage());
         }
     }
 
@@ -220,7 +220,7 @@ public class TopicSerializationTest {
             TopicSerialization.fromTopicResource(kafkaTopic);
             fail("Should throw");
         } catch (InvalidTopicException e) {
-            assertEquals("ConfigMap's 'data' section has invalid key 'replicas': should be a strictly positive integer but was 'foo'", e.getMessage());
+            assertEquals("Topic's spec.replicas should be between 1 and 32767 inclusive", e.getMessage());
         }
     }
 
@@ -239,9 +239,7 @@ public class TopicSerializationTest {
             TopicSerialization.fromTopicResource(kafkaTopic);
             fail("Should throw");
         } catch (InvalidTopicException e) {
-            assertEquals("ConfigMap's 'data' section has invalid key 'config': " +
-                            "Unrecognized token 'foobar': was expecting 'null', 'true', 'false' or NaN\n" +
-                            " at [Source: UNKNOWN; line: 1, column: 13]",
+            assertEquals("Topic's spec.config has invalid entry: The key 'foo' of the topic config is invalid: The value corresponding to the key must have a string, number or boolean value but was of type java.lang.Object",
                     e.getMessage());
         }
     }
@@ -261,9 +259,7 @@ public class TopicSerializationTest {
             TopicSerialization.fromTopicResource(kafkaTopic);
             fail("Should throw");
         } catch (InvalidTopicException e) {
-            assertEquals("ConfigMap's 'data' section has invalid key 'config': " +
-                            "Unexpected character ('n' (code 110)): was expecting double-quote to start field name\n" +
-                            " at [Source: UNKNOWN; line: 1, column: 3]",
+            assertEquals("Topic's spec.config has invalid entry: The key 'foo' of the topic config is invalid: The value corresponding to the key must have a string, number or boolean value but the value was null",
                     e.getMessage());
         }
     }

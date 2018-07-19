@@ -115,19 +115,19 @@ class MockTopicOperator extends TopicOperator {
     }
 
     @Override
-    public void onConfigMapAdded(KafkaTopic cm, Handler<AsyncResult<Void>> resultHandler) {
+    public void onResourceAdded(KafkaTopic cm, Handler<AsyncResult<Void>> resultHandler) {
         mockOperatorEvents.add(new MockOperatorEvent(MockOperatorEvent.Type.CREATE, cm));
         resultHandler.handle(resourceAddedResult);
     }
 
     @Override
-    public void onConfigMapModified(KafkaTopic cm, Handler<AsyncResult<Void>> resultHandler) {
+    public void onResourceModified(KafkaTopic cm, Handler<AsyncResult<Void>> resultHandler) {
         mockOperatorEvents.add(new MockOperatorEvent(MockOperatorEvent.Type.MODIFY, cm));
         resultHandler.handle(resourceModifiedResult);
     }
 
     @Override
-    public void onConfigMapDeleted(KafkaTopic cm, Handler<AsyncResult<Void>> resultHandler) {
+    public void onResourceDeleted(KafkaTopic cm, Handler<AsyncResult<Void>> resultHandler) {
         mockOperatorEvents.add(new MockOperatorEvent(MockOperatorEvent.Type.DELETE, cm));
         resultHandler.handle(resourceDeletedResult);
     }

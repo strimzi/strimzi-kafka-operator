@@ -4,10 +4,15 @@
  */
 package io.strimzi.api.kafka.model;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.crdgenerator.annotations.Crd;
@@ -19,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableList;
 
 @JsonDeserialize(
@@ -36,12 +42,13 @@ import static java.util.Collections.unmodifiableList;
                 version = KafkaTopic.VERSION
         )
 )
-@JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec"})
 @Buildable(
         editableEnabled = false,
         generateBuilderPackage = true,
         builderPackage = "io.strimzi.api.kafka.model"
 )
+@JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec"})
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class KafkaTopic extends CustomResource {
 
     private static final long serialVersionUID = 1L;
@@ -91,13 +98,27 @@ public class KafkaTopic extends CustomResource {
         this.spec = spec;
     }
 
+    @JsonAnyGetter
     public Map<String, Object> getAdditionalProperties() {
-        return additionalProperties;
+        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
     }
 
-    public void setAdditionalProperties(Map<String, Object> additionalProperties) {
-        this.additionalProperties = additionalProperties;
+    @JsonAnySetter
+    public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>();
+        }
+        this.additionalProperties.put(name, value);
     }
 
+    @Override
+    public String toString() {
+        YAMLMapper mapper = new YAMLMapper();
+        try {
+            return mapper.writeValueAsString(this);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
 }

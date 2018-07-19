@@ -4,6 +4,9 @@
  */
 package io.strimzi.api.kafka.model;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Maximum;
@@ -14,12 +17,15 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-@JsonPropertyOrder({"partitions", "replicas", "config"})
+import static java.util.Collections.emptyMap;
+
 @Buildable(
         editableEnabled = false,
         generateBuilderPackage = true,
         builderPackage = "io.strimzi.api.kafka.model"
 )
+@JsonPropertyOrder({"partitions", "replicas", "config"})
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class KafkaTopicSpec implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -32,7 +38,7 @@ public class KafkaTopicSpec implements Serializable {
 
     private Map<String, Object> config;
 
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
     @Description("The name of the topic. " +
             "When absent this will default to the metadata.name of the topic. " +
@@ -54,13 +60,15 @@ public class KafkaTopicSpec implements Serializable {
             "This cannot be decreased after topic creation. " +
             "It can be increased after topic creation, " +
             "but it is important to understand the consequences that has, " +
-            "especially for topics with semantic partitioning.")
+            "especially for topics with semantic partitioning. " +
+            "If unspecified this will default to the broker's `num.partitions` config.")
     @Minimum(1)
     public void setPartitions(int partitions) {
         this.partitions = partitions;
     }
 
-    @Description("The number of replicas the topic should have.")
+    @Description("The number of replicas the topic should have. " +
+            "If unspecified this will default to the broker's `default.replication.factor` config.")
     @Minimum(1)
     @Maximum(Short.MAX_VALUE)
     public int getReplicas() {
@@ -80,11 +88,16 @@ public class KafkaTopicSpec implements Serializable {
         this.config = config;
     }
 
+    @JsonAnyGetter
     public Map<String, Object> getAdditionalProperties() {
-        return additionalProperties;
+        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
     }
 
-    public void setAdditionalProperties(Map<String, Object> additionalProperties) {
-        this.additionalProperties = additionalProperties;
+    @JsonAnySetter
+    public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>();
+        }
+        this.additionalProperties.put(name, value);
     }
 }

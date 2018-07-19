@@ -460,7 +460,7 @@ Used in: <<kind-KafkaTopic,`KafkaTopic`>>
 |Field                        |Description
 |partitions            1.2+<.<|
 |integer
-|replicas              1.2+<.<|The number of replicas the topic should have.
+|replicas              1.2+<.<|The number of replicas the topic should have. If unspecified this will default to the broker's `default.replication.factor` config.
 |integer
 |config                1.2+<.<|The topic configuration.
 |map

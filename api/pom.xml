@@ -103,7 +103,7 @@
                                 <argument>io.strimzi.api.kafka.model.KafkaAssembly=${pom.basedir}${file.separator}..${file.separator}examples${file.separator}install${file.separator}cluster-operator${file.separator}04-Crd-kafka.yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaConnectAssembly=${pom.basedir}${file.separator}..${file.separator}examples${file.separator}install${file.separator}cluster-operator${file.separator}04-Crd-kafkaconnect.yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaConnectS2IAssembly=${pom.basedir}${file.separator}..${file.separator}examples${file.separator}install${file.separator}cluster-operator${file.separator}04-Crd-kafkaconnects2i.yaml</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaTopic=${pom.basedir}${file.separator}..${file.separator}examples${file.separator}install${file.separator}topic-operator${file.separator}01-Crd-topic.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.KafkaTopic=${pom.basedir}/../examples/install/topic-operator/01-Crd-kafkatopic.yaml</argument>
                             </arguments>
                         </configuration>
                     </execution>

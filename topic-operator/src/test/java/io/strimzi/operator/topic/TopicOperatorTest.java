@@ -89,7 +89,7 @@ public class TopicOperatorTest {
         KafkaTopic kafkaTopic = new KafkaTopicBuilder().withMetadata(new ObjectMetaBuilder().withName("non-topic").build()).build();
 
         Async async = context.async();
-        topicOperator.onConfigMapAdded(kafkaTopic, ar -> {
+        topicOperator.onResourceAdded(kafkaTopic, ar -> {
             assertSucceeded(context, ar);
             mockKafka.assertEmpty(context);
             mockTopicStore.assertEmpty(context);
@@ -102,7 +102,7 @@ public class TopicOperatorTest {
     @Test
     public void testOnConfigMapAdded_invalidCm(TestContext context) {
         KafkaTopic kafkaTopic = new KafkaTopicBuilder()
-                .withMetadata(new ObjectMetaBuilder().withName("invalid").build())
+                .withMetadata(new ObjectMetaBuilder().withName("invalid").withLabels(cmPredicate.labels()).build())
                 .withNewSpec()
                     .withReplicas(1)
                     .withPartitions(1)
@@ -111,11 +111,10 @@ public class TopicOperatorTest {
             .build();
 
         Async async = context.async();
-        topicOperator.onConfigMapAdded(kafkaTopic, ar -> {
+        topicOperator.onResourceAdded(kafkaTopic, ar -> {
             assertFailed(context, ar);
             context.assertTrue(ar.cause() instanceof InvalidTopicException);
-            context.assertEquals("ConfigMap's 'data' section has invalid key 'config': Unexpected character ('n' (code 110)): was expecting double-quote to start field name\n" +
-                    " at [Source: UNKNOWN; line: 1, column: 3]", ar.cause().getMessage());
+            context.assertEquals("Topic's spec.config has invalid entry: The key 'null' of the topic config is invalid: The value corresponding to the key must have a string, number or boolean value but the value was null", ar.cause().getMessage());
             mockKafka.assertEmpty(context);
             mockTopicStore.assertEmpty(context);
             async.complete();
@@ -124,7 +123,7 @@ public class TopicOperatorTest {
     }
 
     /**
-     * Trigger {@link TopicOperator#onConfigMapAdded(KafkaTopic, Handler)}
+     * Trigger {@link TopicOperator#onResourceAdded(KafkaTopic, Handler)}
      * and have the Kafka and TopicStore respond with the given exceptions.
      */
     private TopicOperator configMapAdded(TestContext context, Exception createException, Exception storeException) {
@@ -142,7 +141,7 @@ public class TopicOperatorTest {
 
         Async async = context.async();
 
-        topicOperator.onConfigMapAdded(kafkaTopic, ar -> {
+        topicOperator.onResourceAdded(kafkaTopic, ar -> {
             if (createException != null
                     || storeException != null) {
                 assertFailed(context, ar);
@@ -288,7 +287,7 @@ public class TopicOperatorTest {
     }
 
     private <T> void assertFailed(TestContext context, AsyncResult<T> ar) {
-        context.assertFalse(ar.succeeded(), ar.failed() ? "" : ar.result().toString());
+        context.assertFalse(ar.succeeded(), String.valueOf(ar.result()));
     }
 
 
@@ -677,7 +676,7 @@ public class TopicOperatorTest {
         KafkaTopic cm = TopicSerialization.toTopicResource(kubeTopic, cmPredicate);
 
         Async async = context.async();
-        topicOperator.onConfigMapDeleted(cm, ar -> {
+        topicOperator.onResourceDeleted(cm, ar -> {
             if (deleteTopicException != null
                     || storeException != null) {
                 assertFailed(context, ar);
@@ -716,7 +715,7 @@ public class TopicOperatorTest {
         mockK8s.setModifyResponse(mapName, null);
 
         Async async = context.async(3);
-        topicOperator.onConfigMapModified(cm, ar -> {
+        topicOperator.onResourceModified(cm, ar -> {
             assertSucceeded(context, ar);
             context.assertEquals("baz", mockKafka.getTopicState(topicName).getConfig().get("cleanup.policy"));
             mockTopicStore.read(topicName, ar2 -> {
@@ -830,7 +829,7 @@ public class TopicOperatorTest {
         Future<?> reconcileFuture = topicOperator.reconcileAllTopics("periodic");
 
         reconcileFuture.setHandler(context.asyncAssertFailure(e -> {
-            context.assertEquals("Error getting ConfigMap my-topic during periodic reconciliation", e.getMessage());
+            context.assertEquals("Error getting KafkaTopic my-topic during periodic reconciliation", e.getMessage());
             context.assertEquals(error, e.getCause());
         }));
     }
@@ -844,7 +843,7 @@ public class TopicOperatorTest {
         Future<?> reconcileFuture = topicOperator.reconcileAllTopics("periodic");
 
         reconcileFuture.setHandler(context.asyncAssertFailure(e -> {
-            context.assertEquals("Error listing existing ConfigMaps during periodic reconciliation", e.getMessage());
+            context.assertEquals("Error listing existing KafkaTopics during periodic reconciliation", e.getMessage());
             context.assertEquals(error, e.getCause());
         }));
     }

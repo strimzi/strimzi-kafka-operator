@@ -33,18 +33,18 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
         Map<String, String> labels = metadata.getLabels();
         if (cmPredicate.test(kafkaTopic)) {
             String name = metadata.getName();
-            LOGGER.info("ConfigMap watch received event {} on map {} with labels {}", action, name, labels);
+            LOGGER.info("KafkaTopic watch received event {} on map {} with labels {}", action, name, labels);
             Handler<AsyncResult<Void>> resultHandler = ar -> {
                 if (ar.succeeded()) {
-                    LOGGER.info("Success processing ConfigMap watch event {} on map {} with labels {}", action, name, labels);
+                    LOGGER.info("Success processing KafkaTopic watch event {} on map {} with labels {}", action, name, labels);
                 } else {
                     String message;
                     if (ar.cause() instanceof InvalidTopicException) {
-                        message = "ConfigMap " + name + " has an invalid 'data' section: " + ar.cause().getMessage();
+                        message = "KafkaTopic " + name + " has an invalid spec section: " + ar.cause().getMessage();
                         LOGGER.error("{}", message);
 
                     } else {
-                        message = "Failure processing ConfigMap watch event " + action + " on map " + name + " with labels " + labels + ": " + ar.cause().getMessage();
+                        message = "Failure processing KafkaTopic watch event " + action + " on map " + name + " with labels " + labels + ": " + ar.cause().getMessage();
                         LOGGER.error("{}", message, ar.cause());
                     }
                     topicOperator.enqueue(topicOperator.new Event(kafkaTopic, message, TopicOperator.EventType.WARNING, errorResult -> { }));
@@ -52,13 +52,13 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
             };
             switch (action) {
                 case ADDED:
-                    topicOperator.onConfigMapAdded(kafkaTopic, resultHandler);
+                    topicOperator.onResourceAdded(kafkaTopic, resultHandler);
                     break;
                 case MODIFIED:
-                    topicOperator.onConfigMapModified(kafkaTopic, resultHandler);
+                    topicOperator.onResourceModified(kafkaTopic, resultHandler);
                     break;
                 case DELETED:
-                    topicOperator.onConfigMapDeleted(kafkaTopic, resultHandler);
+                    topicOperator.onResourceDeleted(kafkaTopic, resultHandler);
                     break;
                 case ERROR:
                     LOGGER.error("Watch received action=ERROR for ConfigMap " + name);

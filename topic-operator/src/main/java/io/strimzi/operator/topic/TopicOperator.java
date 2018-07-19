@@ -104,11 +104,11 @@ public class TopicOperator {
     }
 
     /** Topic created in ZK */
-    class CreateConfigMap implements Handler<Void> {
+    class CreateResource implements Handler<Void> {
         private final Topic topic;
         private final Handler<io.vertx.core.AsyncResult<Void>> handler;
 
-        public CreateConfigMap(Topic topic, Handler<io.vertx.core.AsyncResult<Void>> handler) {
+        public CreateResource(Topic topic, Handler<io.vertx.core.AsyncResult<Void>> handler) {
             this.topic = topic;
             this.handler = handler;
         }
@@ -121,17 +121,17 @@ public class TopicOperator {
 
         @Override
         public String toString() {
-            return "CreateConfigMap(topicName=" + topic.getTopicName() + ")";
+            return "CreateResource(topicName=" + topic.getTopicName() + ")";
         }
     }
 
     /** Topic deleted in ZK */
-    class DeleteConfigMap implements Handler<Void> {
+    class DeleteResource implements Handler<Void> {
 
         private final MapName mapName;
         private final Handler<io.vertx.core.AsyncResult<Void>> handler;
 
-        public DeleteConfigMap(MapName mapName, Handler<io.vertx.core.AsyncResult<Void>> handler) {
+        public DeleteResource(MapName mapName, Handler<io.vertx.core.AsyncResult<Void>> handler) {
             this.mapName = mapName;
             this.handler = handler;
         }
@@ -143,17 +143,17 @@ public class TopicOperator {
 
         @Override
         public String toString() {
-            return "DeleteConfigMap(mapName=" + mapName + ")";
+            return "DeleteResource(mapName=" + mapName + ")";
         }
     }
 
     /** Topic config modified in ZK */
-    class UpdateConfigMap implements Handler<Void> {
+    class UpdateResource implements Handler<Void> {
 
         private final Topic topic;
         private final Handler<io.vertx.core.AsyncResult<Void>> handler;
 
-        public UpdateConfigMap(Topic topic, Handler<AsyncResult<Void>> handler) {
+        public UpdateResource(Topic topic, Handler<AsyncResult<Void>> handler) {
             this.topic = topic;
             this.handler = handler;
         }
@@ -166,7 +166,7 @@ public class TopicOperator {
 
         @Override
         public String toString() {
-            return "UpdateConfigMap(topicName=" + topic.getTopicName() + ")";
+            return "UpdateResource(topicName=" + topic.getTopicName() + ")";
         }
     }
 
@@ -188,7 +188,7 @@ public class TopicOperator {
         public void handle(Void v) throws OperatorException {
             kafka.createTopic(topic, ar -> {
                 if (ar.succeeded()) {
-                    LOGGER.info("Created topic '{}' for ConfigMap '{}'", topic.getTopicName(), topic.getMapName());
+                    LOGGER.info("Created topic '{}' for KafkaTopic '{}'", topic.getTopicName(), topic.getMapName());
                     handler.handle(ar);
                 } else {
                     handler.handle(ar);
@@ -207,7 +207,7 @@ public class TopicOperator {
         }
     }
 
-    /** ConfigMap modified in k8s */
+    /** KafkaTopic modified in k8s */
     class UpdateKafkaConfig implements Handler<Void> {
 
         private final HasMetadata involvedObject;
@@ -238,7 +238,7 @@ public class TopicOperator {
         }
     }
 
-    /** ConfigMap modified in k8s */
+    /** KafkaTopic modified in k8s */
     class IncreaseKafkaPartitions implements Handler<Void> {
 
         private final HasMetadata involvedObject;
@@ -269,7 +269,7 @@ public class TopicOperator {
         }
     }
 
-    /** ConfigMap modified in k8s */
+    /** KafkaTopic modified in k8s */
     class ChangeReplicationFactor implements Handler<Void> {
 
         private final HasMetadata involvedObject;
@@ -300,7 +300,7 @@ public class TopicOperator {
         }
     }
 
-    /** ConfigMap deleted in k8s */
+    /** KafkaTopic deleted in k8s */
     class DeleteKafkaTopic implements Handler<Void> {
 
         public final TopicName topicName;
@@ -339,14 +339,14 @@ public class TopicOperator {
         this.config = config;
     }
 
-    Future<Void> reconcile(KafkaTopic cm, TopicName topicName) {
+    Future<Void> reconcile(KafkaTopic topicResource, TopicName topicName) {
         Future<Void> result = Future.future();
         Handler<Future<Void>> action = new Reconciliation("reconcile") {
             @Override
             public void handle(Future<Void> fut) {
 
                 try {
-                    Topic k8sTopic = cm != null ? TopicSerialization.fromTopicResource(cm) : null;
+                    Topic k8sTopic = topicResource != null ? TopicSerialization.fromTopicResource(topicResource) : null;
                     Future<Topic> topicResult = Future.future();
                     Future<TopicMetadata> metadataResult = Future.future();
                     kafka.topicMetadata(topicName, metadataResult.completer());
@@ -357,25 +357,25 @@ public class TopicOperator {
                             Topic privateTopic = ar.result().resultAt(0);
                             TopicMetadata kafkaTopicMeta = ar.result().resultAt(1);
                             Topic kafkaTopic = TopicSerialization.fromTopicMetadata(kafkaTopicMeta);
-                            reconcile(cm, k8sTopic, kafkaTopic, privateTopic, reconcileResult -> {
+                            reconcile(topicResource, k8sTopic, kafkaTopic, privateTopic, reconcileResult -> {
                                 if (reconcileResult.succeeded()) {
-                                    LOGGER.info("Success reconciling ConfigMap {}", logConfigMap(cm));
+                                    LOGGER.info("Success reconciling KafkaTopic {}", logTopic(topicResource));
                                     fut.complete();
                                 } else {
-                                    LOGGER.error("Error reconciling ConfigMap {}", logConfigMap(cm), reconcileResult.cause());
+                                    LOGGER.error("Error reconciling KafkaTopic {}", logTopic(topicResource), reconcileResult.cause());
                                     fut.fail(reconcileResult.cause());
                                 }
                             });
                         } else {
-                            LOGGER.error("Error reconciling ConfigMap {}", logConfigMap(cm), ar.cause());
+                            LOGGER.error("Error reconciling KafkaTopic {}", logTopic(topicResource), ar.cause());
                             fut.fail(ar.cause());
                         }
                     });
                 } catch (InvalidTopicException e) {
-                    LOGGER.error("Error reconciling ConfigMap {}: Invalid 'data' section: ", logConfigMap(cm), e.getMessage());
+                    LOGGER.error("Error reconciling KafkaTopic {}: Invalid resource: ", logTopic(topicResource), e.getMessage());
                     fut.fail(e);
                 } catch (OperatorException e) {
-                    LOGGER.error("Error reconciling ConfigMap {}", logConfigMap(cm), e);
+                    LOGGER.error("Error reconciling KafkaTopic {}", logTopic(topicResource), e);
                     fut.fail(e);
                 }
             }
@@ -386,7 +386,7 @@ public class TopicOperator {
 
     /**
      * 0. Set up some persistent ZK nodes for us
-     * 1. When updating CM, we also update our ZK nodes
+     * 1. When updating KafkaTopic, we also update our ZK nodes
      * 2. When updating Kafka, we also update our ZK nodes
      * 3. When reconciling we get all three versions of the Topic, k8s, kafka and privateState
      *   - If privateState doesn't exist:
@@ -418,13 +418,13 @@ public class TopicOperator {
         if (privateTopic == null) {
             if (k8sTopic == null) {
                 if (kafkaTopic == null) {
-                    // All three null: This happens reentrantly when a topic or configmap is deleted
+                    // All three null: This happens reentrantly when a topic or KafkaTopic is deleted
                     LOGGER.debug("All three topics null during reconciliation.");
                     reconciliationResultHandler.handle(Future.succeededFuture());
                 } else {
                     // it's been created in Kafka => create in k8s and privateState
-                    LOGGER.debug("topic created in kafka, will create cm in k8s and topicStore");
-                    enqueue(new CreateConfigMap(kafkaTopic, ar -> {
+                    LOGGER.debug("topic created in kafka, will create KafkaTopic in k8s and topicStore");
+                    enqueue(new CreateResource(kafkaTopic, ar -> {
                         // In all cases, create in privateState
                         if (ar.succeeded()) {
                             enqueue(new CreateInTopicStore(kafkaTopic, involvedObject, reconciliationResultHandler));
@@ -435,7 +435,7 @@ public class TopicOperator {
                 }
             } else if (kafkaTopic == null) {
                 // it's been created in k8s => create in Kafka and privateState
-                LOGGER.debug("cm created in k8s, will create topic in kafka and topicStore");
+                LOGGER.debug("KafkaTopic created in k8s, will create topic in kafka and topicStore");
                 enqueue(new CreateKafkaTopic(k8sTopic, involvedObject, ar -> {
                     // In all cases, create in privateState
                     if (ar.succeeded()) {
@@ -451,12 +451,12 @@ public class TopicOperator {
             if (k8sTopic == null) {
                 if (kafkaTopic == null) {
                     // delete privateState
-                    LOGGER.debug("cm deleted in k8s and topic deleted in kafka => delete from topicStore");
+                    LOGGER.debug("KafkaTopic deleted in k8s and topic deleted in kafka => delete from topicStore");
                     enqueue(new DeleteFromTopicStore(privateTopic.getTopicName(), involvedObject, reconciliationResultHandler));
                     reconciliationResultHandler.handle(Future.succeededFuture());
                 } else {
                     // it was deleted in k8s so delete in kafka and privateState
-                    LOGGER.debug("cm deleted in k8s => delete topic from kafka and from topicStore");
+                    LOGGER.debug("KafkaTopic deleted in k8s => delete topic from kafka and from topicStore");
                     enqueue(new DeleteKafkaTopic(kafkaTopic.getTopicName(), ar -> {
                         if (ar.succeeded()) {
                             enqueue(new DeleteFromTopicStore(privateTopic.getTopicName(), involvedObject, reconciliationResultHandler));
@@ -468,8 +468,8 @@ public class TopicOperator {
                 }
             } else if (kafkaTopic == null) {
                 // it was deleted in kafka so delete in k8s and privateState
-                LOGGER.debug("topic deleted in kafkas => delete cm from k8s and from topicStore");
-                enqueue(new DeleteConfigMap(privateTopic.getOrAsMapName(), ar -> {
+                LOGGER.debug("topic deleted in kafkas => delete KafkaTopic from k8s and from topicStore");
+                enqueue(new DeleteResource(privateTopic.getOrAsMapName(), ar -> {
                     if (ar.succeeded()) {
                         enqueue(new DeleteFromTopicStore(privateTopic.getTopicName(), involvedObject, reconciliationResultHandler));
                     } else {
@@ -488,18 +488,18 @@ public class TopicOperator {
         TopicDiff diff = TopicDiff.diff(kafkaTopic, k8sTopic);
         if (diff.isEmpty()) {
             // they're the same => do nothing, but stil create the private copy
-            LOGGER.debug("cm created in k8s and topic created in kafka, but they're identical => just creating in topicStore");
+            LOGGER.debug("KafkaTopic created in k8s and topic created in kafka, but they're identical => just creating in topicStore");
             LOGGER.debug("k8s and kafka versions of topic '{}' are the same", kafkaTopic.getTopicName());
             enqueue(new CreateInTopicStore(kafkaTopic, involvedObject, reconciliationResultHandler));
         } else if (!diff.changesReplicationFactor()
                 && !diff.changesNumPartitions()
                 && diff.changesConfig()
                 && disjoint(kafkaTopic.getConfig().keySet(), k8sTopic.getConfig().keySet())) {
-            LOGGER.debug("cm created in k8s and topic created in kafka, they differ only in topic config, and those configs are disjoint: Updating k8s and kafka, and creating in topic store");
+            LOGGER.debug("KafkaTopic created in k8s and topic created in kafka, they differ only in topic config, and those configs are disjoint: Updating k8s and kafka, and creating in topic store");
             Map<String, String> mergedConfigs = new HashMap<>(kafkaTopic.getConfig());
             mergedConfigs.putAll(k8sTopic.getConfig());
             Topic mergedTopic = new Topic.Builder(kafkaTopic).withConfig(mergedConfigs).build();
-            enqueue(new UpdateConfigMap(mergedTopic, ar -> {
+            enqueue(new UpdateResource(mergedTopic, ar -> {
                 if (ar.succeeded()) {
                     enqueue(new UpdateKafkaConfig(mergedTopic, involvedObject, ar2 -> {
                         if (ar2.succeeded()) {
@@ -514,11 +514,11 @@ public class TopicOperator {
             }));
         } else {
             // Just use kafka version, but also create a warning event
-            LOGGER.debug("cm created in k8s and topic created in kafka, and they are irreconcilably different => kafka version wins");
-            enqueue(new Event(involvedObject, "ConfigMap is incompatible with the topic metadata. " +
+            LOGGER.debug("KafkaTopic created in k8s and topic created in kafka, and they are irreconcilably different => kafka version wins");
+            enqueue(new Event(involvedObject, "KafkaTopic is incompatible with the topic metadata. " +
                     "The topic metadata will be treated as canonical.", EventType.INFO, ar -> {
                 if (ar.succeeded()) {
-                    enqueue(new UpdateConfigMap(kafkaTopic, ar2 -> {
+                    enqueue(new UpdateResource(kafkaTopic, ar2 -> {
                         if (ar2.succeeded()) {
                             enqueue(new CreateInTopicStore(kafkaTopic, involvedObject, reconciliationResultHandler));
                         } else {
@@ -536,7 +536,7 @@ public class TopicOperator {
                             Handler<AsyncResult<Void>> reconciliationResultHandler) {
         if (!privateTopic.getMapName().equals(k8sTopic.getMapName())) {
             reconciliationResultHandler.handle(Future.failedFuture(new OperatorException(involvedObject,
-                    "Topic '" + kafkaTopic.getTopicName() + "' is already managed via ConfigMap '" + privateTopic.getMapName() + "' it cannot also be managed via the ConfiMap '" + k8sTopic.getMapName() + "'")));
+                    "Topic '" + kafkaTopic.getTopicName() + "' is already managed via KafkaTopic '" + privateTopic.getMapName() + "' it cannot also be managed via the KafkaTopic '" + k8sTopic.getMapName() + "'")));
             return;
         }
         TopicDiff oursKafka = TopicDiff.diff(privateTopic, kafkaTopic);
@@ -545,7 +545,7 @@ public class TopicOperator {
         LOGGER.debug("topicStore->k8sTopic: {}", oursK8s);
         String conflict = oursKafka.conflict(oursK8s);
         if (conflict != null) {
-            final String message = "ConfigMap and Topic both changed in a conflicting way: " + conflict;
+            final String message = "KafkaTopic resource and Kafka topic both changed in a conflicting way: " + conflict;
             LOGGER.error(message);
             enqueue(new Event(involvedObject, message, EventType.INFO, eventResult -> { }));
             reconciliationResultHandler.handle(Future.failedFuture(new Exception(message)));
@@ -573,9 +573,9 @@ public class TopicOperator {
                     // such that the old number of replicas < the new min isr? But likewise
                     // we could decrease, so order of tasks in the queue will need to change
                     // depending on what the diffs are.
-                    LOGGER.debug("Updating cm, kafka topic and topicStore");
+                    LOGGER.debug("Updating KafkaTopic, kafka topic and topicStore");
                     // TODO replace this with compose
-                    enqueue(new UpdateConfigMap(result, ar -> {
+                    enqueue(new UpdateResource(result, ar -> {
                         Handler<Void> topicStoreHandler =
                             ignored -> enqueue(new UpdateInTopicStore(
                                 result, involvedObject, reconciliationResultHandler));
@@ -676,9 +676,9 @@ public class TopicOperator {
     }
 
     private void reconcileOnTopicChange(TopicName topicName, Topic kafkaTopic, Handler<AsyncResult<Void>> resultHandler) {
-        // TODO Here I need to lookup the name of the configmap from the name of the topic.
+        // TODO Here I need to lookup the name of the kafkatopic from the name of the topic.
         // I can either do that from the topicStore, or maintain an in-memory map
-        // I can then look up the CM from k8s
+        // I can then look up the KafkaTopic from k8s
         topicStore.read(topicName, storeResult -> {
             if (storeResult.succeeded()) {
                 Topic storeTopic = storeResult.result();
@@ -701,29 +701,6 @@ public class TopicOperator {
                 resultHandler.handle(storeResult.<Void>map((Void) null));
             }
         });
-/*
-        k8s.getFromName(topicName.asMapName(), kubeResult -> {
-            if (kubeResult.succeeded()) {
-                ConfigMap cm = kubeResult.result();
-                topicStore.read(topicName, storeResult -> {
-                    if (storeResult.succeeded()) {
-                        final Topic k8sTopic;
-                        try {
-                            k8sTopic = TopicSerialization.fromConfigMap(cm);
-                        } catch (InvalidConfigMapException e) {
-                            resultHandler.handle(Future.failedFuture(e));
-                            return;
-                        }
-                        reconcile(cm, k8sTopic, kafkaTopic, storeResult.result(), resultHandler);
-                    } else {
-                        resultHandler.handle(storeResult.<Void>map((Void)null));
-                    }
-                });
-            } else {
-                resultHandler.handle(kubeResult.<Void>map((Void)null));
-            }
-        });
-        */
     }
 
     /** Called when a topic znode is created in ZK */
@@ -747,7 +724,7 @@ public class TopicOperator {
                                 retry();
                             } else {
                                 // We now have the metadata we need to create the
-                                // ConfigMap...
+                                // resource...
                                 Topic kafkaTopic = TopicSerialization.fromTopicMetadata(metadataResult.result());
                                 reconcileOnTopicChange(topicName, kafkaTopic, fut);
                             }
@@ -767,8 +744,8 @@ public class TopicOperator {
         inFlight.enqueue(topicName, action, resultHandler);
     }
 
-    /** Called when a ConfigMap is added in k8s */
-    void onConfigMapAdded(KafkaTopic addedTopic, Handler<AsyncResult<Void>> resultHandler) {
+    /** Called when a resource is added in k8s */
+    void onResourceAdded(KafkaTopic addedTopic, Handler<AsyncResult<Void>> resultHandler) {
         if (cmPredicate.test(addedTopic)) {
             final Topic k8sTopic;
             try {
@@ -777,10 +754,10 @@ public class TopicOperator {
                 resultHandler.handle(Future.failedFuture(e));
                 return;
             }
-            Handler<Future<Void>> action = new Reconciliation("onConfigMapAdded") {
+            Handler<Future<Void>> action = new Reconciliation("onResourceAdded") {
                 @Override
                 public void handle(Future<Void> fut) {
-                    TopicOperator.this.reconcileOnCmChange(addedTopic, k8sTopic, false, fut);
+                    TopicOperator.this.reconcileOnResourceChange(addedTopic, k8sTopic, false, fut);
                 }
             };
             inFlight.enqueue(new TopicName(addedTopic), action, resultHandler);
@@ -802,8 +779,8 @@ public class TopicOperator {
         }
     };
 
-    /** Called when a ConfigMap is modified in k8s */
-    void onConfigMapModified(KafkaTopic modifiedTopic, Handler<AsyncResult<Void>> resultHandler) {
+    /** Called when a resource is modified in k8s */
+    void onResourceModified(KafkaTopic modifiedTopic, Handler<AsyncResult<Void>> resultHandler) {
         if (cmPredicate.test(modifiedTopic)) {
             final Topic k8sTopic;
             try {
@@ -812,10 +789,10 @@ public class TopicOperator {
                 resultHandler.handle(Future.failedFuture(e));
                 return;
             }
-            Reconciliation action = new Reconciliation("onConfigMapModified") {
+            Reconciliation action = new Reconciliation("onResourceModified") {
                 @Override
                 public void handle(Future<Void> fut) {
-                    TopicOperator.this.reconcileOnCmChange(modifiedTopic, k8sTopic, true, fut);
+                    TopicOperator.this.reconcileOnResourceChange(modifiedTopic, k8sTopic, true, fut);
                 }
             };
             inFlight.enqueue(new TopicName(modifiedTopic), action, resultHandler);
@@ -824,8 +801,8 @@ public class TopicOperator {
         }
     }
 
-    private void reconcileOnCmChange(KafkaTopic configMap, Topic k8sTopic, boolean isModify, Handler<AsyncResult<Void>> handler) {
-        TopicName topicName = new TopicName(configMap);
+    private void reconcileOnResourceChange(KafkaTopic topicResource, Topic k8sTopic, boolean isModify, Handler<AsyncResult<Void>> handler) {
+        TopicName topicName = new TopicName(topicResource);
         Future<TopicMetadata> f1 = Future.future();
         Future<Topic> f2 = Future.future();
         kafka.topicMetadata(topicName, f1.completer());
@@ -836,9 +813,9 @@ public class TopicOperator {
                 Topic kafkaTopic = TopicSerialization.fromTopicMetadata(topicMetadata);
                 Topic privateTopic = ar.result().resultAt(1);
                 if (privateTopic == null && isModify) {
-                    enqueue(new Event(configMap, "Kafka topics cannot be renamed, but ConfigMap's data." + TopicSerialization.CM_KEY_NAME + " has changed.", EventType.WARNING, handler));
+                    enqueue(new Event(topicResource, "Kafka topics cannot be renamed, but KafkaTopic's spec.topicName has changed.", EventType.WARNING, handler));
                 } else {
-                    reconcile(configMap, k8sTopic, kafkaTopic, privateTopic, handler);
+                    reconcile(topicResource, k8sTopic, kafkaTopic, privateTopic, handler);
                 }
             } else {
                 handler.handle(Future.failedFuture(ar.cause()));
@@ -846,13 +823,13 @@ public class TopicOperator {
         });
     }
 
-    /** Called when a ConfigMap is deleted in k8s */
-    void onConfigMapDeleted(KafkaTopic deletedTopic, Handler<AsyncResult<Void>> resultHandler) {
+    /** Called when a resource is deleted in k8s */
+    void onResourceDeleted(KafkaTopic deletedTopic, Handler<AsyncResult<Void>> resultHandler) {
         if (cmPredicate.test(deletedTopic)) {
-            Reconciliation action = new Reconciliation("onConfigMapDeleted") {
+            Reconciliation action = new Reconciliation("onResourceDeleted") {
                 @Override
                 public void handle(Future<Void> fut) {
-                    TopicOperator.this.reconcileOnCmChange(deletedTopic, null, false, fut);
+                    TopicOperator.this.reconcileOnResourceChange(deletedTopic, null, false, fut);
                 }
             };
             inFlight.enqueue(new TopicName(deletedTopic), action, resultHandler);
@@ -961,11 +938,11 @@ public class TopicOperator {
     }
 
     /**
-     * @param cm ConfigMap instance to log
-     * @return ConfigMap representation as namespace/name for logging purposes
+     * @param resource Resource instance to log
+     * @return Resource representation as namespace/name for logging purposes
      */
-    static String logConfigMap(KafkaTopic cm) {
-        return cm != null ? cm.getMetadata().getNamespace() + "/" + cm.getMetadata().getName() : null;
+    static String logTopic(KafkaTopic resource) {
+        return resource != null ? resource.getMetadata().getNamespace() + "/" + resource.getMetadata().getName() : null;
     }
 
     Future<?> reconcileAllTopics(String reconciliationType) {
@@ -988,35 +965,35 @@ public class TopicOperator {
                             KafkaTopic kafkaTopic = topicResult.result();
                             reconcile(kafkaTopic, topicName).setHandler(topicFuture);
                         } else {
-                            LOGGER.error("Error {} getting ConfigMap {} for topic {}",
+                            LOGGER.error("Error {} getting KafkaTopic {} for topic {}",
                                     reconciliationType,
                                     topicName.asMapName(), topicName, topicResult.cause());
-                            topicFuture.fail(new OperatorException("Error getting ConfigMap " + topicName.asMapName() + " during " + reconciliationType + " reconciliation", topicResult.cause()));
+                            topicFuture.fail(new OperatorException("Error getting KafkaTopic " + topicName.asMapName() + " during " + reconciliationType + " reconciliation", topicResult.cause()));
                         }
                     });
                 }
                 CompositeFuture.join(topicFutures).setHandler(topicsJoin);
-                LOGGER.debug("Reconciling configmaps");
+                LOGGER.debug("Reconciling KafkaTopics");
                 // Then those in k8s which aren't in kafka
-                k8s.listMaps(configMapsListResult -> {
-                    List<Future> cmFutures = new ArrayList<>();
-                    if (configMapsListResult.succeeded()) {
-                        List<KafkaTopic> configMaps = configMapsListResult.result();
-                        Map<String, KafkaTopic> configMapsMap = configMaps.stream().collect(Collectors.toMap(
-                            cm -> cm.getMetadata().getName(),
-                            cm -> cm));
-                        configMapsMap.keySet().removeAll(kafkaTopics);
-                        LOGGER.debug("Reconciling configmaps: {}", configMapsMap.keySet());
-                        for (KafkaTopic cm : configMapsMap.values()) {
-                            LOGGER.debug("{} reconciliation of configmap {}", reconciliationType, cm.getMetadata().getName());
+                k8s.listMaps(resourcesListResult -> {
+                    List<Future> resourceFutures = new ArrayList<>();
+                    if (resourcesListResult.succeeded()) {
+                        List<KafkaTopic> resources = resourcesListResult.result();
+                        Map<String, KafkaTopic> resourcesMap = resources.stream().collect(Collectors.toMap(
+                            resource -> resource.getMetadata().getName(),
+                            resource -> resource));
+                        resourcesMap.keySet().removeAll(kafkaTopics);
+                        LOGGER.debug("Reconciling KafkaTopics: {}", resourcesMap.keySet());
+                        for (KafkaTopic resource : resourcesMap.values()) {
+                            LOGGER.debug("{} reconciliation of KafkaTopic {}", reconciliationType, resource.getMetadata().getName());
 
-                            TopicName topicName = new TopicName(cm);
-                            cmFutures.add(reconcile(cm, topicName));
+                            TopicName topicName = new TopicName(resource);
+                            resourceFutures.add(reconcile(resource, topicName));
                         }
-                        CompositeFuture.join(cmFutures).setHandler(mapsJoin);
+                        CompositeFuture.join(resourceFutures).setHandler(mapsJoin);
                     } else {
-                        LOGGER.error("Unable to list ConfigMaps", configMapsListResult.cause());
-                        mapsJoin.fail(new OperatorException("Error listing existing ConfigMaps during " + reconciliationType + " reconciliation", configMapsListResult.cause()));
+                        LOGGER.error("Unable to list KafkaTopics", resourcesListResult.cause());
+                        mapsJoin.fail(new OperatorException("Error listing existing KafkaTopics during " + reconciliationType + " reconciliation", resourcesListResult.cause()));
                     }
                     // Finally those in private store which we've not dealt with so far...
                     // TODO ^^

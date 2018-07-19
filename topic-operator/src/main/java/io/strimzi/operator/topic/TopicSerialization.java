@@ -53,9 +53,13 @@ public class TopicSerialization {
         for (Map.Entry<String, Object> entry : kafkaTopic.getSpec().getConfig().entrySet()) {
             String key = entry.getKey();
             Object v = entry.getValue();
-            if (v instanceof String
-                    || v instanceof Long
+            boolean isNumberType = v instanceof Long
+                    || v instanceof Integer
+                    || v instanceof Short
                     || v instanceof Double
+                    || v instanceof Float;
+            if (v instanceof String
+                    || isNumberType
                     || v instanceof Boolean) {
                 result.put(key, v.toString());
             } else {
@@ -65,7 +69,7 @@ public class TopicSerialization {
                 } else {
                     msg += " but was of type " + v.getClass().getName();
                 }
-                throw new InvalidTopicException(kafkaTopic, "Topic's 'config' section has invalid entry: " +
+                throw new InvalidTopicException(kafkaTopic, "KafkaTopic's spec.config has invalid entry: " +
                         "The key '" + key + "' of the topic config is invalid: " + msg);
             }
         }
@@ -94,11 +98,11 @@ public class TopicSerialization {
     }
 
     private static String getTopicName(KafkaTopic kafkaTopic) {
-        String prefix = "Topics's 'topicName' property is invalid as a topic name: ";
+        String prefix = "KafkaTopics's spec.topicName property is invalid as a topic name: ";
         String topicName = kafkaTopic.getSpec().getTopicName();
         if (topicName == null) {
             topicName = kafkaTopic.getMetadata().getName();
-            prefix = "Topics's 'topicName' property is absent and Topics's metadata.name is invalid as a topic name: ";
+            prefix = "KafkaTopics's spec.topicName property is absent and KafkaTopics's metadata.name is invalid as a topic name: ";
         }
         try {
             org.apache.kafka.common.internals.Topic.validate(topicName);
@@ -111,7 +115,7 @@ public class TopicSerialization {
     private static short getReplicas(KafkaTopic kafkaTopic) {
         int replicas = kafkaTopic.getSpec().getReplicas();
         if (replicas < 1 || replicas > Short.MAX_VALUE) {
-            throw new InvalidTopicException(kafkaTopic, "Topic's replicas should be between 1 and " + Short.MAX_VALUE + " inclusive");
+            throw new InvalidTopicException(kafkaTopic, "KafkaTopic's spec.replicas should be between 1 and " + Short.MAX_VALUE + " inclusive");
         }
         return (short) replicas;
     }
@@ -119,7 +123,7 @@ public class TopicSerialization {
     private static int getPartitions(KafkaTopic kafkaTopic) {
         int partitions = kafkaTopic.getSpec().getPartitions();
         if (partitions < 1) {
-            throw new InvalidTopicException(kafkaTopic, "Topic's partitions should be strictly greater than 0");
+            throw new InvalidTopicException(kafkaTopic, "KafkaTopic's spec.partitions should be strictly greater than 0");
         }
         return partitions;
     }
@@ -157,7 +161,7 @@ public class TopicSerialization {
             if (topic.getNumPartitions() != assignment.size()) {
                 throw new IllegalArgumentException(
                         format("Topic %s has %d partitions supplied, but the number of partitions " +
-                                        "configured in ConfigMap %s is %d",
+                                        "configured in KafkaTopic %s is %d",
                                 topic.getTopicName(), assignment.size(), topic.getMapName(), topic.getNumPartitions()));
             }
             for (int partition = 0; partition < assignment.size(); partition++) {
@@ -165,7 +169,7 @@ public class TopicSerialization {
                 if (topic.getNumReplicas() != value.size()) {
                     throw new IllegalArgumentException(
                             format("Partition %d of topic %s has %d assigned replicas, " +
-                                    "but the number of replicas configured in ConfigMap %s for the topic is %d",
+                                    "but the number of replicas configured in KafkaTopic %s for the topic is %d",
                                     partition, topic.getTopicName(), value.size(), topic.getMapName(), topic.getNumReplicas()));
                 }
             }
