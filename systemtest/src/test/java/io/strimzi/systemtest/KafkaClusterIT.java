@@ -393,7 +393,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
     }
 
     @Test
-//    @JUnitGroup(name = "regression")
+    @JUnitGroup(name = "regression")
     @KafkaFromClasspathYaml
     public void testRackAware() {
         testDockerImagesForKafkaCluster(CLUSTER_NAME, 1, 1, true);
