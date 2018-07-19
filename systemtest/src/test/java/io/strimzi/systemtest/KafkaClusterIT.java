@@ -65,7 +65,6 @@ public class KafkaClusterIT extends AbstractClusterIT {
     public static final String NAMESPACE = "kafka-cluster-test";
     private static final String CLUSTER_NAME = "my-cluster";
     private static final String TOPIC_NAME = "test-topic";
-    private static final String CO_DEPLOYMENT_CONFIG = "../examples/install/cluster-operator/08-deployment.yaml";
 
     @BeforeClass
     public static void waitForCc() {
@@ -397,7 +396,6 @@ public class KafkaClusterIT extends AbstractClusterIT {
     public void testRackAware() {
         testDockerImagesForKafkaCluster(CLUSTER_NAME, 1, 1, true);
 
-        kubeClient.waitForStatefulSet(kafkaClusterName(CLUSTER_NAME), 1);
         String kafkaPodName = kafkaPodName(CLUSTER_NAME, 0);
         kubeClient.waitForPod(kafkaPodName);
 
