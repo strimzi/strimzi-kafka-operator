@@ -2,22 +2,11 @@ include::common/attributes.adoc[]
 
 = Using {ProductLongName}
 
-{ProductLongName} provides a way to run an Apache Kafka cluster on {ProductPlatformLongName} in various deployment configurations.
-This guide describes how to install and use {ProductLongName}.
+:context: {ContextProduct}
+include::con-introduction.adoc[leveloffset=+1]
 
-== Overview
-
-Apache Kafka is a popular platform for streaming data delivery and processing. For more details about Apache Kafka
-itself visit http://kafka.apache.org[Apache Kafka website]. The aim of {ProductName} is to make it easy to run
-Apache Kafka on {ProductPlatformName}.
-{ProductName} is based on Apache Kafka 1.1.0.
-
-{ProductName} consists of two main components:
-
-Cluster Operator:: Responsible for deploying and managing Apache Kafka clusters within {ProductPlatformName} cluster.
-Topic Operator:: Responsible for managing Kafka topics within a Kafka cluster running within {ProductPlatformName} cluster.
-
-include::getting-started.adoc[]
+:context: {ContextProduct}
+include::assembly-getting-started.adoc[leveloffset=+1]
 
 include::cluster-operator.adoc[]
 

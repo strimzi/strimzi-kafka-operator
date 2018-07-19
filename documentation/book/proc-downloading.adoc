@@ -1,0 +1,13 @@
+include::common/attributes.adoc[]
+
+[id='downloading-{context}']
+= Downloading {ProductName}
+
+The release artifacts contain documentation and example YAML files for deployment on {ProductPlatformName}. The example files are used throughout this documentation and can be used to install {ProductName}.
+
+The Docker images are available on {DockerRepository}.
+
+.Procedure
+
+. Visit {ReleaseDownload}.
+. Download the zip file associated with the version of {ProductName} that you are interested in downloading.
