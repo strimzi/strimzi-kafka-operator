@@ -87,9 +87,8 @@ public class KafkaClusterIT extends AbstractClusterIT {
         //Testing docker images
         testDockerImagesForKafkaCluster(clusterName, 3, 3, false);
 
-        oc.deleteByName("statefulset", kafkaClusterName(clusterName));
+        oc.deleteByName("Kafka", clusterName);
         oc.waitForResourceDeletion("statefulset", kafkaClusterName(clusterName));
-        oc.deleteByName("statefulset", zookeeperClusterName(clusterName));
         oc.waitForResourceDeletion("statefulset", zookeeperClusterName(clusterName));
     }
 
