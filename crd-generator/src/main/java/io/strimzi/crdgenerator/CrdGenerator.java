@@ -435,7 +435,7 @@ public class CrdGenerator {
                 }
             } else {
                 String className = arg.substring(0, arg.indexOf('='));
-                String fileName = arg.substring(arg.indexOf('=') + 1);
+                String fileName = arg.substring(arg.indexOf('=') + 1).replace("/", File.separator);
                 Class<?> cls = Class.forName(className);
                 if (!CustomResource.class.equals(cls)
                         && CustomResource.class.isAssignableFrom(cls)) {

@@ -6,11 +6,16 @@ package io.strimzi.operator.topic;
 
 import io.debezium.kafka.KafkaCluster;
 import io.debezium.kafka.ZookeeperServer;
-import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Event;
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.Resource;
+import io.strimzi.api.kafka.Crds;
+import io.strimzi.api.kafka.DoneableTopic;
+import io.strimzi.api.kafka.TopicList;
+import io.strimzi.api.kafka.model.TopicBuilder;
 import io.strimzi.test.Namespace;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.vertx.core.Future;
@@ -28,7 +33,6 @@ import org.apache.kafka.clients.admin.NewPartitions;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
-import org.apache.kafka.common.utils.CopyOnWriteMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.After;
@@ -39,8 +43,6 @@ import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-
 
 import java.lang.reflect.Field;
 import java.nio.file.Files;
@@ -179,7 +181,7 @@ public class TopicOperatorIT {
     public void teardown(TestContext context) {
         LOGGER.info("Tearing down test");
 
-        kubeClient.configMaps().inNamespace(NAMESPACE).delete();
+        operation().inNamespace(NAMESPACE).delete();
 
         Async async = context.async();
         if (deploymentId != null) {
@@ -208,7 +210,7 @@ public class TopicOperatorIT {
     private io.strimzi.api.kafka.model.Topic createCm(TestContext context, io.strimzi.api.kafka.model.Topic cm) {
         String topicName = new TopicName(cm).toString();
         // Create a CM
-        kubeClient.configMaps().inNamespace(NAMESPACE).create(cm);
+        operation().inNamespace(NAMESPACE).create(cm);
 
         // Wait for the topic to be created
         waitFor(context, () -> {
@@ -243,12 +245,12 @@ public class TopicOperatorIT {
 
         // Wait for the configmap to be created
         waitFor(context, () -> {
-            ConfigMap cm = kubeClient.configMaps().inNamespace(NAMESPACE).withName(configMapName).get();
-            LOGGER.info("Polled configmap {} waiting for creation", configMapName);
+            io.strimzi.api.kafka.model.Topic cm = operation().inNamespace(NAMESPACE).withName(configMapName).get();
+            LOGGER.info("Polled topic {} waiting for creation", configMapName);
             return cm != null;
-        }, timeout, "Expected the configmap to have been created by now");
+        }, timeout, "Expected the topic to have been created by now");
 
-        LOGGER.info("configmap {} has been created", configMapName);
+        LOGGER.info("topic {} has been created", configMapName);
         return configMapName;
     }
 
@@ -279,12 +281,12 @@ public class TopicOperatorIT {
 
         // Wait for the configmap to be modified
         waitFor(context, () -> {
-            ConfigMap cm = kubeClient.configMaps().inNamespace(NAMESPACE).withName(configMapName).get();
-            LOGGER.info("Polled configmap {}, waiting for config change", configMapName);
-            String gotValue = TopicSerialization.fromConfigMap(cm).getConfig().get(key);
+            io.strimzi.api.kafka.model.Topic cm = operation().inNamespace(NAMESPACE).withName(configMapName).get();
+            LOGGER.info("Polled topic {}, waiting for config change", configMapName);
+            String gotValue = TopicSerialization.fromTopicResource(cm).getConfig().get(key);
             LOGGER.info("Got value {}", gotValue);
             return changedValue.equals(gotValue);
-        }, timeout, "Expected the configmap to have been deleted by now");
+        }, timeout, "Expected the topic to have been deleted by now");
     }
 
     private void alterTopicNumPartitions(TestContext context, String topicName, String configMapName) throws InterruptedException, ExecutionException {
@@ -299,12 +301,12 @@ public class TopicOperatorIT {
 
         // Wait for the configmap to be modified
         waitFor(context, () -> {
-            ConfigMap cm = kubeClient.configMaps().inNamespace(NAMESPACE).withName(configMapName).get();
-            LOGGER.info("Polled configmap {}, waiting for partitions change", configMapName);
-            int gotValue = TopicSerialization.fromConfigMap(cm).getNumPartitions();
+            io.strimzi.api.kafka.model.Topic cm = operation().inNamespace(NAMESPACE).withName(configMapName).get();
+            LOGGER.info("Polled topic {}, waiting for partitions change", configMapName);
+            int gotValue = TopicSerialization.fromTopicResource(cm).getNumPartitions();
             LOGGER.info("Got value {}", gotValue);
             return changedValue == gotValue;
-        }, timeout, "Expected the configmap to have been deleted by now");
+        }, timeout, "Expected the topic to have been deleted by now");
     }
 
     private org.apache.kafka.clients.admin.Config getTopicConfig(ConfigResource configResource) {
@@ -335,10 +337,10 @@ public class TopicOperatorIT {
 
         // Wait for the configmap to be deleted
         waitFor(context, () -> {
-            ConfigMap cm = kubeClient.configMaps().inNamespace(NAMESPACE).withName(configMapName).get();
-            LOGGER.info("Polled configmap {}, got {}, waiting for deletion", configMapName, cm);
+            io.strimzi.api.kafka.model.Topic cm = operation().inNamespace(NAMESPACE).withName(configMapName).get();
+            LOGGER.info("Polled topic {}, got {}, waiting for deletion", configMapName, cm);
             return cm == null;
-        }, timeout, "Expected the configmap to have been deleted by now");
+        }, timeout, "Expected the topic to have been deleted by now");
     }
 
     private void createAndDeleteTopic(TestContext context, String topicName) throws InterruptedException, ExecutionException {
@@ -462,10 +464,10 @@ public class TopicOperatorIT {
         String topicName = "test-configmap-created-with-bad-data";
         Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap()).build();
         io.strimzi.api.kafka.model.Topic cm = TopicSerialization.toTopicResource(topic, cmPredicate);
-        cm.getData().put(TopicSerialization.CM_KEY_PARTITIONS, "foo");
+        cm.setPartitions(-1);
 
         // Create a CM
-        kubeClient.configMaps().inNamespace(NAMESPACE).create(cm);
+        operation().inNamespace(NAMESPACE).create(cm);
 
         // Wait for the warning event
         waitForEvent(context, cm,
@@ -483,7 +485,7 @@ public class TopicOperatorIT {
         io.strimzi.api.kafka.model.Topic cm = createCm(context, topicName);
 
         // can now delete the cm
-        kubeClient.configMaps().inNamespace(NAMESPACE).withName(cm.getMetadata().getName()).delete();
+        operation().inNamespace(NAMESPACE).withName(cm.getMetadata().getName()).delete();
 
         // Wait for the topic to be deleted
         waitFor(context, () -> {
@@ -506,12 +508,12 @@ public class TopicOperatorIT {
 
     @Test
     public void testConfigMapModifiedRetentionChanged(TestContext context) throws Exception {
-        // create the cm
+        // create the topic
         String topicName = "test-configmap-modified-retention-changed";
         io.strimzi.api.kafka.model.Topic cm = createCm(context, topicName);
 
-        // now change the cm
-        kubeClient.configMaps().inNamespace(NAMESPACE).withName(cm.getMetadata().getName()).edit().addToData(TopicSerialization.CM_KEY_CONFIG, "{\"retention.ms\":\"12341234\"}").done();
+        // now change the topic
+        operation().inNamespace(NAMESPACE).withName(cm.getMetadata().getName()).edit().addToConfig("retention.ms", 12341234).done();
 
         // Wait for that to be reflected in the topic
         waitFor(context, () -> {
@@ -530,7 +532,7 @@ public class TopicOperatorIT {
         io.strimzi.api.kafka.model.Topic cm = createCm(context, topicName);
 
         // now change the cm
-        kubeClient.configMaps().inNamespace(NAMESPACE).withName(cm.getMetadata().getName()).edit().addToData(TopicSerialization.CM_KEY_PARTITIONS, "foo").done();
+        operation().inNamespace(NAMESPACE).withName(cm.getMetadata().getName()).edit().withPartitions(-1).done();
 
         // Wait for that to be reflected in the topic
         waitForEvent(context, cm,
@@ -549,7 +551,7 @@ public class TopicOperatorIT {
         // now change the cm
         String changedName = topicName.toUpperCase(Locale.ENGLISH);
         LOGGER.info("Changing CM data.name from {} to {}", topicName, changedName);
-        kubeClient.configMaps().inNamespace(NAMESPACE).withName(cm.getMetadata().getName()).edit().addToData(TopicSerialization.CM_KEY_NAME, changedName).done();
+        operation().inNamespace(NAMESPACE).withName(cm.getMetadata().getName()).edit().withTopicName(changedName).done();
 
         // We expect this to cause a warning event
         waitForEvent(context, cm,
@@ -562,12 +564,12 @@ public class TopicOperatorIT {
     public void testCreateTwoConfigMapsManagingOneTopic(TestContext context) {
         String topicName = "two-cms-one-topic";
         Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap()).build();
-        ConfigMap cm = TopicSerialization.toConfigMap(topic, cmPredicate);
-        io.strimzi.api.kafka.model.Topic cm2 = new ConfigMapBuilder(cm).editMetadata().withName(topicName + "-1").endMetadata().build();
+        io.strimzi.api.kafka.model.Topic cm = TopicSerialization.toTopicResource(topic, cmPredicate);
+        io.strimzi.api.kafka.model.Topic cm2 = new TopicBuilder(cm).withMetadata(new ObjectMetaBuilder(cm.getMetadata()).withName(topicName + "-1").build()).build();
         // create one
         createCm(context, cm2);
         // create another
-        kubeClient.configMaps().inNamespace(NAMESPACE).create(cm);
+        operation().inNamespace(NAMESPACE).create(cm);
 
         waitForEvent(context, cm,
                 "Failure processing ConfigMap watch event ADDED on map two-cms-one-topic with labels {strimzi.io/kind=topic}: " +
@@ -575,27 +577,29 @@ public class TopicOperatorIT {
                 TopicOperator.EventType.WARNING);
     }
 
+    private MixedOperation<io.strimzi.api.kafka.model.Topic, TopicList, DoneableTopic, Resource<io.strimzi.api.kafka.model.Topic, DoneableTopic>> operation() {
+        return kubeClient.customResources(Crds.topic(), io.strimzi.api.kafka.model.Topic.class, TopicList.class, DoneableTopic.class);
+    }
+
     @Test
     public void testReconcile(TestContext context) {
         String topicName = "test-reconcile";
 
         Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap()).build();
-        ConfigMap cm = TopicSerialization.toConfigMap(topic, cmPredicate);
+        io.strimzi.api.kafka.model.Topic cm = TopicSerialization.toTopicResource(topic, cmPredicate);
         String configMapName = cm.getMetadata().getName();
 
-        kubeClient.configMaps().inNamespace(NAMESPACE).create(cm);
+        operation().inNamespace(NAMESPACE).create(cm);
 
         // Wait for the configmap to be created
         waitFor(context, () -> {
-            ConfigMap createdCm = kubeClient.configMaps().inNamespace(NAMESPACE).withName(configMapName).get();
+            io.strimzi.api.kafka.model.Topic createdCm = operation().inNamespace(NAMESPACE).withName(configMapName).get();
             LOGGER.info("Polled configmap {} waiting for creation", configMapName);
 
             // modify configmap
             if (createdCm != null) {
-                Map<String, String> data = new CopyOnWriteMap<>(createdCm.getData());
-                data.put("partitions", "2");
-                createdCm.setData(data);
-                kubeClient.configMaps().inNamespace(NAMESPACE).withName(configMapName).patch(createdCm);
+                createdCm.setPartitions(2);
+                operation().inNamespace(NAMESPACE).withName(configMapName).patch(createdCm);
             }
 
             return createdCm != null;

@@ -4,9 +4,9 @@
  */
 package io.strimzi.operator.topic;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.strimzi.api.kafka.model.TopicBuilder;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
+import static java.util.Collections.singletonMap;
 
 @RunWith(VertxUnitRunner.class)
 public class TopicOperatorTest {
@@ -84,10 +85,10 @@ public class TopicOperatorTest {
     /** Test what happens when a non-topic ConfigMap gets created in kubernetes */
     @Test
     public void testOnConfigMapAdded_ignorable(TestContext context) {
-        ConfigMap cm = new ConfigMapBuilder().withNewMetadata().withName("non-topic").endMetadata().build();
+        io.strimzi.api.kafka.model.Topic topic = new TopicBuilder().withMetadata(new ObjectMetaBuilder().withName("non-topic").build()).build();
 
         Async async = context.async();
-        topicOperator.onConfigMapAdded(cm, ar -> {
+        topicOperator.onConfigMapAdded(topic, ar -> {
             assertSucceeded(context, ar);
             mockKafka.assertEmpty(context);
             mockTopicStore.assertEmpty(context);
@@ -99,14 +100,15 @@ public class TopicOperatorTest {
     /** Test what happens when a non-topic ConfigMap gets created in kubernetes */
     @Test
     public void testOnConfigMapAdded_invalidCm(TestContext context) {
-        Map<String, String> data = map(TopicSerialization.CM_KEY_REPLICAS, "1",
-                TopicSerialization.CM_KEY_PARTITIONS, "1",
-                TopicSerialization.CM_KEY_CONFIG, "{null:null}");
-        ConfigMap cm = new ConfigMapBuilder().withNewMetadata().withName("invalid").withLabels(cmPredicate.labels()).endMetadata().
-                withData(data).build();
+        io.strimzi.api.kafka.model.Topic topic = new TopicBuilder()
+                .withMetadata(new ObjectMetaBuilder().withName("invalid").build())
+                .withReplicas(1)
+                .withPartitions(1)
+                .withConfig(singletonMap(null, null))
+                .build();
 
         Async async = context.async();
-        topicOperator.onConfigMapAdded(cm, ar -> {
+        topicOperator.onConfigMapAdded(topic, ar -> {
             assertFailed(context, ar);
             context.assertTrue(ar.cause() instanceof InvalidTopicException);
             context.assertEquals("ConfigMap's 'data' section has invalid key 'config': Unexpected character ('n' (code 110)): was expecting double-quote to start field name\n" +
@@ -119,7 +121,7 @@ public class TopicOperatorTest {
     }
 
     /**
-     * Trigger {@link TopicOperator#onConfigMapAdded(ConfigMap, Handler)}
+     * Trigger {@link TopicOperator#onConfigMapAdded(io.strimzi.api.kafka.model.Topic, Handler)}
      * and have the Kafka and TopicStore respond with the given exceptions.
      */
     private TopicOperator configMapAdded(TestContext context, Exception createException, Exception storeException) {
@@ -127,15 +129,15 @@ public class TopicOperatorTest {
         mockKafka.setTopicMetadataResponse(topicName, null, null);
         mockTopicStore.setCreateTopicResponse(topicName, storeException);
 
-        ConfigMap cm = new ConfigMapBuilder().withNewMetadata()
-                .withName(topicName.toString())
-                .withLabels(cmPredicate.labels()).endMetadata()
-                .withData(map(TopicSerialization.CM_KEY_PARTITIONS, "10",
-                        TopicSerialization.CM_KEY_REPLICAS, "2")).build();
+        io.strimzi.api.kafka.model.Topic topic = new TopicBuilder()
+                .withMetadata(new ObjectMetaBuilder().withName(topicName.toString()).withLabels(cmPredicate.labels()).build())
+                .withReplicas(2)
+                .withPartitions(10)
+                .build();
 
         Async async = context.async();
 
-        topicOperator.onConfigMapAdded(cm, ar -> {
+        topicOperator.onConfigMapAdded(topic, ar -> {
             if (createException != null
                     || storeException != null) {
                 assertFailed(context, ar);
@@ -146,7 +148,7 @@ public class TopicOperatorTest {
                     expectedExceptionType = storeException.getClass();
                 }
                 context.assertEquals(expectedExceptionType, ar.cause().getClass(), ar.cause().getMessage());
-                TopicName topicName = TopicSerialization.fromConfigMap(cm).getTopicName();
+                TopicName topicName = TopicSerialization.fromTopicResource(topic).getTopicName();
                 if (createException != null) {
                     mockKafka.assertNotExists(context, topicName);
                 } else {
@@ -156,7 +158,7 @@ public class TopicOperatorTest {
                 //TODO mockK8s.assertContainsEvent(context, e -> "Error".equals(e.getKind()));
             } else {
                 assertSucceeded(context, ar);
-                Topic expectedTopic = TopicSerialization.fromConfigMap(cm);
+                Topic expectedTopic = TopicSerialization.fromTopicResource(topic);
                 mockKafka.assertContains(context, expectedTopic);
                 mockTopicStore.assertContains(context, expectedTopic);
                 mockK8s.assertNoEvents(context);
@@ -314,7 +316,7 @@ public class TopicOperatorTest {
         Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar")).build();
         Topic kafkaTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "baz")).build();
         Topic privateTopic = kubeTopic;
-        ConfigMap cm = TopicSerialization.toConfigMap(kubeTopic, cmPredicate);
+        io.strimzi.api.kafka.model.Topic cm = TopicSerialization.toTopicResource(kubeTopic, cmPredicate);
 
         mockKafka.setCreateTopicResponse(topicName.toString(), null)
                 .createTopic(kafkaTopic, ar -> { });
@@ -340,7 +342,7 @@ public class TopicOperatorTest {
             });
             mockK8s.getFromName(mapName, ar2 -> {
                 assertSucceeded(context, ar2);
-                context.assertEquals("baz", TopicSerialization.fromConfigMap(ar2.result()).getConfig().get("cleanup.policy"));
+                context.assertEquals("baz", TopicSerialization.fromTopicResource(ar2.result()).getConfig().get("cleanup.policy"));
                 async.countDown();
             });
             async.countDown();
@@ -365,7 +367,7 @@ public class TopicOperatorTest {
 
         mockTopicStore.setCreateTopicResponse(topicName, null);
         mockK8s.setCreateResponse(topicName.asMapName(), null);
-        mockK8s.createConfigMap(TopicSerialization.toConfigMap(kubeTopic, cmPredicate), ar -> async0.countDown());
+        mockK8s.createConfigMap(TopicSerialization.toTopicResource(kubeTopic, cmPredicate), ar -> async0.countDown());
 
         Async async = context.async(1);
         topicOperator.reconcile(null, kubeTopic, kafkaTopic, privateTopic, reconcileResult -> {
@@ -394,7 +396,7 @@ public class TopicOperatorTest {
 
         Async async0 = context.async(2);
         mockK8s.setCreateResponse(mapName, null)
-                .createConfigMap(TopicSerialization.toConfigMap(kubeTopic, cmPredicate), ar -> async0.countDown());
+                .createConfigMap(TopicSerialization.toTopicResource(kubeTopic, cmPredicate), ar -> async0.countDown());
         mockK8s.setDeleteResponse(mapName, null);
         mockTopicStore.setCreateTopicResponse(topicName, null)
                 .create(privateTopic, ar -> async0.countDown());
@@ -443,7 +445,7 @@ public class TopicOperatorTest {
             });
             mockK8s.getFromName(topicName.asMapName(), readResult -> {
                 assertSucceeded(context, readResult);
-                context.assertEquals(kafkaTopic, TopicSerialization.fromConfigMap(readResult.result()));
+                context.assertEquals(kafkaTopic, TopicSerialization.fromTopicResource(readResult.result()));
                 async.countDown();
             });
             context.assertEquals(kafkaTopic, mockKafka.getTopicState(topicName));
@@ -493,7 +495,7 @@ public class TopicOperatorTest {
         mockKafka.setCreateTopicResponse(topicName -> Future.succeededFuture());
         mockKafka.createTopic(kafkaTopic, ar -> async0.countDown());
         mockK8s.setCreateResponse(topicName.asMapName(), null);
-        mockK8s.createConfigMap(TopicSerialization.toConfigMap(kubeTopic, cmPredicate), ar -> async0.countDown());
+        mockK8s.createConfigMap(TopicSerialization.toTopicResource(kubeTopic, cmPredicate), ar -> async0.countDown());
         mockTopicStore.setCreateTopicResponse(topicName, null);
         async0.await();
 
@@ -530,15 +532,15 @@ public class TopicOperatorTest {
         mockKafka.createTopic(kafkaTopic, ar -> async0.countDown());
         mockKafka.setUpdateTopicResponse(topicName -> Future.succeededFuture());
 
-        ConfigMap cm = TopicSerialization.toConfigMap(kubeTopic, cmPredicate);
+        io.strimzi.api.kafka.model.Topic topic = TopicSerialization.toTopicResource(kubeTopic, cmPredicate);
         mockK8s.setCreateResponse(topicName.asMapName(), null);
-        mockK8s.createConfigMap(cm, ar -> async0.countDown());
+        mockK8s.createConfigMap(topic, ar -> async0.countDown());
         mockK8s.setModifyResponse(topicName.asMapName(), null);
         mockTopicStore.setCreateTopicResponse(topicName, null);
         async0.await();
 
         Async async = context.async(2);
-        topicOperator.reconcile(cm, kubeTopic, kafkaTopic, privateTopic, reconcileResult -> {
+        topicOperator.reconcile(topic, kubeTopic, kafkaTopic, privateTopic, reconcileResult -> {
             assertSucceeded(context, reconcileResult);
             mockTopicStore.assertExists(context, topicName);
             mockK8s.assertExists(context, topicName.asMapName());
@@ -550,7 +552,7 @@ public class TopicOperatorTest {
             });
             mockK8s.getFromName(topicName.asMapName(), readResult -> {
                 assertSucceeded(context, readResult);
-                context.assertEquals(mergedTopic, TopicSerialization.fromConfigMap(readResult.result()));
+                context.assertEquals(mergedTopic, TopicSerialization.fromTopicResource(readResult.result()));
                 async.countDown();
             });
             context.assertEquals(mergedTopic, mockKafka.getTopicState(topicName));
@@ -571,15 +573,15 @@ public class TopicOperatorTest {
         mockKafka.setCreateTopicResponse(topicName -> Future.succeededFuture());
         mockKafka.createTopic(kafkaTopic, ar -> async0.countDown());
 
-        ConfigMap cm = TopicSerialization.toConfigMap(kubeTopic, cmPredicate);
+        io.strimzi.api.kafka.model.Topic topic = TopicSerialization.toTopicResource(kubeTopic, cmPredicate);
         mockK8s.setCreateResponse(topicName.asMapName(), null);
-        mockK8s.createConfigMap(cm, ar -> async0.countDown());
+        mockK8s.createConfigMap(topic, ar -> async0.countDown());
         mockK8s.setModifyResponse(topicName.asMapName(), null);
         mockTopicStore.setCreateTopicResponse(topicName, null);
         async0.await();
 
         Async async = context.async(2);
-        topicOperator.reconcile(cm, kubeTopic, kafkaTopic, privateTopic, reconcileResult -> {
+        topicOperator.reconcile(topic, kubeTopic, kafkaTopic, privateTopic, reconcileResult -> {
             assertSucceeded(context, reconcileResult);
             mockK8s.assertContainsEvent(context, e ->
                     e.getMessage().contains("ConfigMap is incompatible with the topic metadata. " +
@@ -594,7 +596,7 @@ public class TopicOperatorTest {
             });
             mockK8s.getFromName(topicName.asMapName(), readResult -> {
                 assertSucceeded(context, readResult);
-                context.assertEquals(kafkaTopic, TopicSerialization.fromConfigMap(readResult.result()));
+                context.assertEquals(kafkaTopic, TopicSerialization.fromTopicResource(readResult.result()));
                 async.countDown();
             });
             context.assertEquals(kafkaTopic, mockKafka.getTopicState(topicName));
@@ -617,7 +619,7 @@ public class TopicOperatorTest {
         mockKafka.createTopic(kafkaTopic, ar -> async0.countDown());
         mockKafka.setUpdateTopicResponse(topicName -> Future.succeededFuture());
 
-        ConfigMap cm = TopicSerialization.toConfigMap(kubeTopic, cmPredicate);
+        io.strimzi.api.kafka.model.Topic cm = TopicSerialization.toTopicResource(kubeTopic, cmPredicate);
         mockK8s.setCreateResponse(topicName.asMapName(), null);
         mockK8s.createConfigMap(cm, ar -> async0.countDown());
         mockK8s.setModifyResponse(topicName.asMapName(), null);
@@ -636,7 +638,7 @@ public class TopicOperatorTest {
             });
             mockK8s.getFromName(topicName.asMapName(), readResult -> {
                 assertSucceeded(context, readResult);
-                context.assertEquals(resultTopic, TopicSerialization.fromConfigMap(readResult.result()));
+                context.assertEquals(resultTopic, TopicSerialization.fromTopicResource(readResult.result()));
                 async.countDown();
             });
             context.assertEquals(resultTopic, mockKafka.getTopicState(topicName));
@@ -667,7 +669,7 @@ public class TopicOperatorTest {
                 .create(privateTopic, ar -> { });
         mockTopicStore.setDeleteTopicResponse(topicName, storeException);
 
-        ConfigMap cm = TopicSerialization.toConfigMap(kubeTopic, cmPredicate);
+        io.strimzi.api.kafka.model.Topic cm = TopicSerialization.toTopicResource(kubeTopic, cmPredicate);
 
         Async async = context.async();
         topicOperator.onConfigMapDeleted(cm, ar -> {
@@ -695,7 +697,7 @@ public class TopicOperatorTest {
         Topic kubeTopic = new Topic.Builder(topicName, mapName, 10, (short) 2, map("cleanup.policy", "baz")).build();
         Topic kafkaTopic = new Topic.Builder(topicName, mapName, 10, (short) 2, map("cleanup.policy", "bar")).build();
         Topic privateTopic = kafkaTopic;
-        ConfigMap cm = TopicSerialization.toConfigMap(kubeTopic, cmPredicate);
+        io.strimzi.api.kafka.model.Topic cm = TopicSerialization.toTopicResource(kubeTopic, cmPredicate);
 
         mockKafka.setCreateTopicResponse(topicName.toString(), null)
                 .createTopic(kafkaTopic, ar -> { });
@@ -719,7 +721,7 @@ public class TopicOperatorTest {
             });
             mockK8s.getFromName(mapName, ar2 -> {
                 assertSucceeded(context, ar2);
-                context.assertEquals("baz", TopicSerialization.fromConfigMap(ar2.result()).getConfig().get("cleanup.policy"));
+                context.assertEquals("baz", TopicSerialization.fromTopicResource(ar2.result()).getConfig().get("cleanup.policy"));
                 async.countDown();
             });
             async.countDown();
@@ -753,7 +755,7 @@ public class TopicOperatorTest {
         Topic privateTopic = kubeTopic;
 
         mockK8s.setCreateResponse(mapName, null)
-                .createConfigMap(TopicSerialization.toConfigMap(kubeTopic, cmPredicate), ar -> { });
+                .createConfigMap(TopicSerialization.toTopicResource(kubeTopic, cmPredicate), ar -> { });
         mockK8s.setDeleteResponse(mapName, k8sException);
 
         mockTopicStore.setCreateTopicResponse(topicName, null)

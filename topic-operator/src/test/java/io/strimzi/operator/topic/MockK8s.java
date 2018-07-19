@@ -4,8 +4,8 @@
  */
 package io.strimzi.operator.topic;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Event;
+import io.strimzi.api.kafka.model.Topic;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -22,12 +22,12 @@ import java.util.stream.Collectors;
 
 public class MockK8s implements K8s {
 
-    private Map<MapName, AsyncResult<ConfigMap>> byName = new HashMap<>();
+    private Map<MapName, AsyncResult<Topic>> byName = new HashMap<>();
     private List<Event> events = new ArrayList<>();
     private Function<MapName, AsyncResult<Void>> createResponse = n -> Future.failedFuture("Unexpected. ");
     private Function<MapName, AsyncResult<Void>> modifyResponse = n -> Future.failedFuture("Unexpected. ");
     private Function<MapName, AsyncResult<Void>> deleteResponse = n -> Future.failedFuture("Unexpected. ");
-    private Supplier<AsyncResult<List<ConfigMap>>> listResponse = () -> Future.succeededFuture(new ArrayList(byName.values().stream().filter(ar -> ar.succeeded()).map(ar -> ar.result()).collect(Collectors.toList())));
+    private Supplier<AsyncResult<List<Topic>>> listResponse = () -> Future.succeededFuture(new ArrayList(byName.values().stream().filter(ar -> ar.succeeded()).map(ar -> ar.result()).collect(Collectors.toList())));
 
     public MockK8s setCreateResponse(MapName mapName, Exception exception) {
         Function<MapName, AsyncResult<Void>> old = createResponse;
@@ -75,10 +75,10 @@ public class MockK8s implements K8s {
     }
 
     @Override
-    public void createConfigMap(ConfigMap cm, Handler<AsyncResult<Void>> handler) {
+    public void createConfigMap(Topic cm, Handler<AsyncResult<Void>> handler) {
         AsyncResult<Void> response = createResponse.apply(new MapName(cm));
         if (response.succeeded()) {
-            AsyncResult<ConfigMap> old = byName.put(new MapName(cm), Future.succeededFuture(cm));
+            AsyncResult<Topic> old = byName.put(new MapName(cm), Future.succeededFuture(cm));
             if (old != null) {
                 handler.handle(Future.failedFuture("configmap already existed: " + cm.getMetadata().getName()));
                 return;
@@ -88,10 +88,10 @@ public class MockK8s implements K8s {
     }
 
     @Override
-    public void updateConfigMap(ConfigMap cm, Handler<AsyncResult<Void>> handler) {
+    public void updateConfigMap(Topic cm, Handler<AsyncResult<Void>> handler) {
         AsyncResult<Void> response = modifyResponse.apply(new MapName(cm));
         if (response.succeeded()) {
-            AsyncResult<ConfigMap> old = byName.put(new MapName(cm), Future.succeededFuture(cm));
+            AsyncResult<Topic> old = byName.put(new MapName(cm), Future.succeededFuture(cm));
             if (old == null) {
                 handler.handle(Future.failedFuture("configmap does not exist, cannot be updated: " + cm.getMetadata().getName()));
                 return;
@@ -113,17 +113,17 @@ public class MockK8s implements K8s {
     }
 
     @Override
-    public void listMaps(Handler<AsyncResult<List<ConfigMap>>> handler) {
+    public void listMaps(Handler<AsyncResult<List<Topic>>> handler) {
         handler.handle(listResponse.get());
     }
 
-    public void setListMapsResult(Supplier<AsyncResult<List<ConfigMap>>> response) {
+    public void setListMapsResult(Supplier<AsyncResult<List<Topic>>> response) {
         this.listResponse = response;
     }
 
     @Override
-    public void getFromName(MapName mapName, Handler<AsyncResult<ConfigMap>> handler) {
-        AsyncResult<ConfigMap> cmFuture = byName.get(mapName);
+    public void getFromName(MapName mapName, Handler<AsyncResult<Topic>> handler) {
+        AsyncResult<Topic> cmFuture = byName.get(mapName);
         handler.handle(cmFuture != null ? cmFuture : Future.succeededFuture());
     }
 
@@ -134,12 +134,12 @@ public class MockK8s implements K8s {
     }
 
     public void assertExists(TestContext context, MapName mapName) {
-        AsyncResult<ConfigMap> got = byName.get(mapName);
+        AsyncResult<Topic> got = byName.get(mapName);
         context.assertTrue(got != null && got.succeeded());
     }
 
-    public void assertContains(TestContext context, ConfigMap cm) {
-        AsyncResult<ConfigMap> configMapResult = byName.get(new MapName(cm));
+    public void assertContains(TestContext context, Topic cm) {
+        AsyncResult<Topic> configMapResult = byName.get(new MapName(cm));
         context.assertTrue(configMapResult.succeeded());
         context.assertEquals(cm, configMapResult.result());
     }
@@ -161,7 +161,7 @@ public class MockK8s implements K8s {
         context.assertTrue(events.isEmpty());
     }
 
-    public void setGetFromNameResponse(MapName mapName, AsyncResult<ConfigMap> futureCm) {
+    public void setGetFromNameResponse(MapName mapName, AsyncResult<Topic> futureCm) {
         this.byName.put(mapName, futureCm);
     }
 }

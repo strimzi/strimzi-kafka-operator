@@ -41,18 +41,18 @@ public class TopicSerializationTest {
         builder.withNumPartitions(2);
         builder.withConfigEntry("cleanup.policy", "bar");
         Topic wroteTopic = builder.build();
-        io.strimzi.api.kafka.model.Topic cm = TopicSerialization.toConfigMap(wroteTopic, cmPredicate);
+        io.strimzi.api.kafka.model.Topic topic = TopicSerialization.toTopicResource(wroteTopic, cmPredicate);
 
-        assertEquals(wroteTopic.getTopicName().toString(), cm.getMetadata().getName());
-        assertEquals(2, cm.getMetadata().getLabels().size());
-        assertEquals("strimzi", cm.getMetadata().getLabels().get("app"));
-        assertEquals("topic", cm.getMetadata().getLabels().get("kind"));
-        assertEquals(wroteTopic.getTopicName().toString(), cm.getTopicName());
-        assertEquals(2, cm.getPartitions());
-        assertEquals(1, cm.getReplicas());
-        assertEquals(singletonMap("cleanup.policy", "bar"), cm.getConfig());
+        assertEquals(wroteTopic.getTopicName().toString(), topic.getMetadata().getName());
+        assertEquals(2, topic.getMetadata().getLabels().size());
+        assertEquals("strimzi", topic.getMetadata().getLabels().get("app"));
+        assertEquals("topic", topic.getMetadata().getLabels().get("kind"));
+        assertEquals(wroteTopic.getTopicName().toString(), topic.getTopicName());
+        assertEquals(2, topic.getPartitions());
+        assertEquals(1, topic.getReplicas());
+        assertEquals(singletonMap("cleanup.policy", "bar"), topic.getConfig());
 
-        Topic readTopic = TopicSerialization.fromConfigMap(cm);
+        Topic readTopic = TopicSerialization.fromTopicResource(topic);
         assertEquals(wroteTopic, readTopic);
     }
 
@@ -148,7 +148,7 @@ public class TopicSerializationTest {
                 .build()).withReplicas(1).withPartitions(1).withConfig(emptyMap()).build();
 
         try {
-            TopicSerialization.fromConfigMap(topic);
+            TopicSerialization.fromTopicResource(topic);
             fail("Should throw");
         } catch (InvalidTopicException e) {
             assertEquals("ConfigMap's 'data' section lacks a 'name' key and ConfigMap's name is invalid as a topic name: " +
@@ -159,10 +159,10 @@ public class TopicSerializationTest {
 
     @Test
     public void testErrorInTopicName() {
-        io.strimzi.api.kafka.model.Topic cm = new TopicBuilder().withMetadata(new ObjectMetaBuilder().withName("foo")
+        io.strimzi.api.kafka.model.Topic topic = new TopicBuilder().withMetadata(new ObjectMetaBuilder().withName("foo")
                 .build()).withReplicas(1).withPartitions(1).withConfig(emptyMap()).withTopicName("An invalid topic name!").build();
         try {
-            TopicSerialization.fromConfigMap(cm);
+            TopicSerialization.fromTopicResource(topic);
             fail("Should throw");
         } catch (InvalidTopicException e) {
             assertEquals("ConfigMap's 'data' section has invalid 'name' key: Topic name \"An invalid topic name!\" is illegal, it contains a character other than ASCII alphanumerics, '.', '_' and '-'", e.getMessage());
@@ -184,7 +184,7 @@ public class TopicSerializationTest {
                 .build();
 
         try {
-            TopicSerialization.fromConfigMap(topic);
+            TopicSerialization.fromTopicResource(topic);
             fail("Should throw");
         } catch (InvalidTopicException e) {
             assertEquals("ConfigMap's 'data' section has invalid key 'partitions': should be a strictly positive integer but was 'foo'", e.getMessage());
@@ -201,7 +201,7 @@ public class TopicSerializationTest {
                 .build();
 
         try {
-            TopicSerialization.fromConfigMap(topic);
+            TopicSerialization.fromTopicResource(topic);
             fail("Should throw");
         } catch (InvalidTopicException e) {
             assertEquals("ConfigMap's 'data' section has invalid key 'replicas': should be a strictly positive integer but was 'foo'", e.getMessage());
@@ -218,7 +218,7 @@ public class TopicSerializationTest {
                 .build();
 
         try {
-            TopicSerialization.fromConfigMap(topic);
+            TopicSerialization.fromTopicResource(topic);
             fail("Should throw");
         } catch (InvalidTopicException e) {
             assertEquals("ConfigMap's 'data' section has invalid key 'config': " +
@@ -238,7 +238,7 @@ public class TopicSerializationTest {
                 .build();
 
         try {
-            TopicSerialization.fromConfigMap(topic);
+            TopicSerialization.fromTopicResource(topic);
             fail("Should throw");
         } catch (InvalidTopicException e) {
             assertEquals("ConfigMap's 'data' section has invalid key 'config': " +
