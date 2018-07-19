@@ -10,6 +10,7 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Pattern;
 import io.sundr.builder.annotations.Buildable;
 
+import java.io.Serializable;
 import java.util.Map;
 
 /**
@@ -21,7 +22,9 @@ import java.util.Map;
         builderPackage = "io.strimzi.api.kafka.model"
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-public class JvmOptions {
+public class JvmOptions implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private String xmx;
     private String xms;

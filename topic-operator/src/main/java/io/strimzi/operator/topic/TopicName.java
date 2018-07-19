@@ -28,7 +28,7 @@ class TopicName {
     }
 
     public TopicName(KafkaTopic kafkaTopic) {
-        this(kafkaTopic.getTopicName() != null ? kafkaTopic.getTopicName() : kafkaTopic.getMetadata().getName());
+        this(kafkaTopic.getSpec().getTopicName() != null ? kafkaTopic.getSpec().getTopicName() : kafkaTopic.getMetadata().getName());
     }
 
     public String toString() {

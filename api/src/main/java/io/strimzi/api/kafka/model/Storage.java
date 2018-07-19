@@ -12,6 +12,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.strimzi.crdgenerator.annotations.Description;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,7 +28,10 @@ import java.util.Map;
         @JsonSubTypes.Type(value = EphemeralStorage.class, name = Storage.TYPE_EPHEMERAL),
         @JsonSubTypes.Type(value = PersistentClaimStorage.class, name = Storage.TYPE_PERSISTENT_CLAIM)}
 )
-public abstract class Storage {
+public abstract class Storage implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     public static final String TYPE_EPHEMERAL = "ephemeral";
     public static final String TYPE_PERSISTENT_CLAIM = "persistent-claim";
     private Map<String, Object> additionalProperties = new HashMap<>(0);

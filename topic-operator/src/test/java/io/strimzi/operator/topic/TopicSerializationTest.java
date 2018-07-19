@@ -48,10 +48,10 @@ public class TopicSerializationTest {
         assertEquals(2, kafkaTopic.getMetadata().getLabels().size());
         assertEquals("strimzi", kafkaTopic.getMetadata().getLabels().get("app"));
         assertEquals("topic", kafkaTopic.getMetadata().getLabels().get("kind"));
-        assertEquals(wroteTopic.getTopicName().toString(), kafkaTopic.getTopicName());
-        assertEquals(2, kafkaTopic.getPartitions());
-        assertEquals(1, kafkaTopic.getReplicas());
-        assertEquals(singletonMap("cleanup.policy", "bar"), kafkaTopic.getConfig());
+        assertEquals(wroteTopic.getTopicName().toString(), kafkaTopic.getSpec().getTopicName());
+        assertEquals(2, kafkaTopic.getSpec().getPartitions());
+        assertEquals(1, kafkaTopic.getSpec().getReplicas());
+        assertEquals(singletonMap("cleanup.policy", "bar"), kafkaTopic.getSpec().getConfig());
 
         Topic readTopic = TopicSerialization.fromTopicResource(kafkaTopic);
         assertEquals(wroteTopic, readTopic);
@@ -146,7 +146,12 @@ public class TopicSerializationTest {
                 "01234567890123456789012345678901234567890123456789012345678901234567890123456789" +
                 "012345678901234567890123456789";
         KafkaTopic kafkaTopic = new KafkaTopicBuilder().withMetadata(new ObjectMetaBuilder().withName(illegalAsATopicName)
-                .build()).withReplicas(1).withPartitions(1).withConfig(emptyMap()).build();
+                .build()).withNewSpec()
+                    .withReplicas(1)
+                    .withPartitions(1)
+                    .withConfig(emptyMap())
+                .endSpec()
+            .build();
 
         try {
             TopicSerialization.fromTopicResource(kafkaTopic);
@@ -161,7 +166,13 @@ public class TopicSerializationTest {
     @Test
     public void testErrorInTopicName() {
         KafkaTopic kafkaTopic = new KafkaTopicBuilder().withMetadata(new ObjectMetaBuilder().withName("foo")
-                .build()).withReplicas(1).withPartitions(1).withConfig(emptyMap()).withTopicName("An invalid topic name!").build();
+                .build()).withNewSpec()
+                    .withReplicas(1)
+                    .withPartitions(1)
+                    .withConfig(emptyMap())
+                    .withTopicName("An invalid topic name!")
+                .endSpec()
+            .build();
         try {
             TopicSerialization.fromTopicResource(kafkaTopic);
             fail("Should throw");
@@ -179,10 +190,12 @@ public class TopicSerializationTest {
 
         KafkaTopic kafkaTopic = new KafkaTopicBuilder()
                 .withMetadata(new ObjectMetaBuilder().withName("my-topic").build())
-                .withReplicas(1)
-                .withPartitions(-1)
-                .withConfig(emptyMap())
-                .build();
+                .withNewSpec()
+                    .withReplicas(1)
+                    .withPartitions(-1)
+                    .withConfig(emptyMap())
+                .endSpec()
+            .build();
 
         try {
             TopicSerialization.fromTopicResource(kafkaTopic);
@@ -196,10 +209,12 @@ public class TopicSerializationTest {
     public void testErrorInReplicas() {
         KafkaTopic kafkaTopic = new KafkaTopicBuilder()
                 .withMetadata(new ObjectMetaBuilder().withName("my-topic").build())
-                .withReplicas(-1)
-                .withPartitions(1)
-                .withConfig(emptyMap())
-                .build();
+                .withNewSpec()
+                    .withReplicas(-1)
+                    .withPartitions(1)
+                    .withConfig(emptyMap())
+                .endSpec()
+            .build();
 
         try {
             TopicSerialization.fromTopicResource(kafkaTopic);
@@ -213,10 +228,12 @@ public class TopicSerializationTest {
     public void testErrorInConfigInvalidValueWrongType() {
         KafkaTopic kafkaTopic = new KafkaTopicBuilder()
                 .withMetadata(new ObjectMetaBuilder().withName("my-topic").build())
-                .withReplicas(1)
-                .withPartitions(1)
-                .withConfig(singletonMap("foo", new Object()))
-                .build();
+                .withNewSpec()
+                    .withReplicas(1)
+                    .withPartitions(1)
+                    .withConfig(singletonMap("foo", new Object()))
+                .endSpec()
+            .build();
 
         try {
             TopicSerialization.fromTopicResource(kafkaTopic);
@@ -233,10 +250,12 @@ public class TopicSerializationTest {
     public void testErrorInConfigInvalidValueNull() {
         KafkaTopic kafkaTopic = new KafkaTopicBuilder()
                 .withMetadata(new ObjectMetaBuilder().withName("my-topic").build())
-                .withReplicas(1)
-                .withPartitions(1)
-                .withConfig(singletonMap("foo", null))
-                .build();
+                .withNewSpec()
+                    .withReplicas(1)
+                    .withPartitions(1)
+                    .withConfig(singletonMap("foo", null))
+                .endSpec()
+            .build();
 
         try {
             TopicSerialization.fromTopicResource(kafkaTopic);

@@ -44,7 +44,9 @@ import java.util.Map;
         builderPackage = "io.strimzi.api.kafka.model"
 )
 public class KafkaConnectAssembly extends CustomResource {
+
     private static final long serialVersionUID = 1L;
+
     public static final String VERSION = "v1alpha1";
     public static final String RESOURCE_KIND = "KafkaConnect";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
@@ -55,7 +57,7 @@ public class KafkaConnectAssembly extends CustomResource {
     public static final String CRD_NAME = RESOURCE_PLURAL + "." + RESOURCE_GROUP;
 
     private String apiVersion;
-    private transient KafkaConnectAssemblySpec spec;
+    private KafkaConnectAssemblySpec spec;
     private ObjectMeta metadata;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 

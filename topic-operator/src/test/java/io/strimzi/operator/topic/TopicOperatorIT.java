@@ -464,14 +464,14 @@ public class TopicOperatorIT {
     public void testConfigMapAddedWithBadData(TestContext context) {
         String topicName = "test-configmap-created-with-bad-data";
         Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap()).build();
-        KafkaTopic cm = TopicSerialization.toTopicResource(topic, cmPredicate);
-        cm.setPartitions(-1);
+        KafkaTopic kafkaTopic = TopicSerialization.toTopicResource(topic, cmPredicate);
+        kafkaTopic.getSpec().setPartitions(-1);
 
         // Create a CM
-        operation().inNamespace(NAMESPACE).create(cm);
+        operation().inNamespace(NAMESPACE).create(kafkaTopic);
 
         // Wait for the warning event
-        waitForEvent(context, cm,
+        waitForEvent(context, kafkaTopic,
                 "ConfigMap test-configmap-created-with-bad-data has an invalid 'data' section: " +
                         "ConfigMap's 'data' section has invalid key 'partitions': " +
                         "should be a strictly positive integer but was 'foo'",
@@ -514,7 +514,7 @@ public class TopicOperatorIT {
         KafkaTopic cm = createCm(context, topicName);
 
         // now change the topic
-        operation().inNamespace(NAMESPACE).withName(cm.getMetadata().getName()).edit().addToConfig("retention.ms", 12341234).done();
+        operation().inNamespace(NAMESPACE).withName(cm.getMetadata().getName()).edit().editOrNewSpec().addToConfig("retention.ms", 12341234).endSpec().done();
 
         // Wait for that to be reflected in the topic
         waitFor(context, () -> {
@@ -533,7 +533,7 @@ public class TopicOperatorIT {
         KafkaTopic cm = createCm(context, topicName);
 
         // now change the cm
-        operation().inNamespace(NAMESPACE).withName(cm.getMetadata().getName()).edit().withPartitions(-1).done();
+        operation().inNamespace(NAMESPACE).withName(cm.getMetadata().getName()).edit().editOrNewSpec().withPartitions(-1).endSpec().done();
 
         // Wait for that to be reflected in the topic
         waitForEvent(context, cm,
@@ -552,7 +552,7 @@ public class TopicOperatorIT {
         // now change the cm
         String changedName = topicName.toUpperCase(Locale.ENGLISH);
         LOGGER.info("Changing CM data.name from {} to {}", topicName, changedName);
-        operation().inNamespace(NAMESPACE).withName(cm.getMetadata().getName()).edit().withTopicName(changedName).done();
+        operation().inNamespace(NAMESPACE).withName(cm.getMetadata().getName()).edit().editOrNewSpec().withTopicName(changedName).endSpec().done();
 
         // We expect this to cause a warning event
         waitForEvent(context, cm,
@@ -599,7 +599,7 @@ public class TopicOperatorIT {
 
             // modify configmap
             if (createdCm != null) {
-                createdCm.setPartitions(2);
+                createdCm.getSpec().setPartitions(2);
                 operation().inNamespace(NAMESPACE).withName(configMapName).patch(createdCm);
             }
 

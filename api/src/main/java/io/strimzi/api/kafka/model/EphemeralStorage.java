@@ -17,6 +17,8 @@ import io.sundr.builder.annotations.Buildable;
 )
 public class EphemeralStorage extends Storage {
 
+    private static final long serialVersionUID = 1L;
+
     @Description("Must be `" + TYPE_EPHEMERAL + "`")
     @Override
     public String getType() {

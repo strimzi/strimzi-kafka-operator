@@ -16,6 +16,8 @@ import io.sundr.builder.annotations.Buildable;
 )
 public class ExternalLogging extends Logging {
 
+    private static final long serialVersionUID = 1L;
+
     /** The name of the configmap from which to get the logging config */
     private String name;
 

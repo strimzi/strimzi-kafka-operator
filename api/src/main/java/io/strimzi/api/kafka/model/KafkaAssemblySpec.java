@@ -13,6 +13,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,7 +26,10 @@ import java.util.Map;
         builderPackage = "io.strimzi.api.kafka.model"
 )
 @JsonPropertyOrder({ "kafka", "zookeeper", "topicOperator" })
-public class KafkaAssemblySpec {
+public class KafkaAssemblySpec implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     private Kafka kafka;
     private Zookeeper zookeeper;
     private TopicOperator topicOperator;

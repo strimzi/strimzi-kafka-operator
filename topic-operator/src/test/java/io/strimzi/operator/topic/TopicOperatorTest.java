@@ -103,10 +103,12 @@ public class TopicOperatorTest {
     public void testOnConfigMapAdded_invalidCm(TestContext context) {
         KafkaTopic kafkaTopic = new KafkaTopicBuilder()
                 .withMetadata(new ObjectMetaBuilder().withName("invalid").build())
-                .withReplicas(1)
-                .withPartitions(1)
-                .withConfig(singletonMap(null, null))
-                .build();
+                .withNewSpec()
+                    .withReplicas(1)
+                    .withPartitions(1)
+                    .withConfig(singletonMap(null, null))
+                .endSpec()
+            .build();
 
         Async async = context.async();
         topicOperator.onConfigMapAdded(kafkaTopic, ar -> {
@@ -132,9 +134,11 @@ public class TopicOperatorTest {
 
         KafkaTopic kafkaTopic = new KafkaTopicBuilder()
                 .withMetadata(new ObjectMetaBuilder().withName(topicName.toString()).withLabels(cmPredicate.labels()).build())
-                .withReplicas(2)
-                .withPartitions(10)
-                .build();
+                .withNewSpec()
+                    .withReplicas(2)
+                    .withPartitions(10)
+                .endSpec()
+            .build();
 
         Async async = context.async();
 

@@ -443,6 +443,21 @@ Used in: <<type-KafkaConnectS2IAssembly,`KafkaConnectS2IAssembly`>>
 [options="header"]
 |====
 |Field                        |Description
+|spec                  1.2+<.<|The specification of the topic.
+|<<type-KafkaTopicSpec,`KafkaTopicSpec`>>
+|additionalProperties  1.2+<.<|
+|map
+|====
+
+[[type-KafkaTopicSpec]]
+### `KafkaTopicSpec` type v1alpha1 kafka.strimzi.io
+
+Used in: <<kind-KafkaTopic,`KafkaTopic`>>
+
+
+[options="header"]
+|====
+|Field                        |Description
 |partitions            1.2+<.<|
 |integer
 |replicas              1.2+<.<|The number of replicas the topic should have.
@@ -451,7 +466,7 @@ Used in: <<type-KafkaConnectS2IAssembly,`KafkaConnectS2IAssembly`>>
 |map
 |additionalProperties  1.2+<.<|
 |map
-|topicName             1.2+<.<|The name of the topic. It is recommended to not set this, and for kafka topic names to be compatible Kubernetes resource names.When absent this will default to the metadata.name of the topic. 
+|topicName             1.2+<.<|The name of the topic. When absent this will default to the metadata.name of the topic. It is recommended to not set this unless the topic name is not a valid Kubernetes resource name.
 |string
 |====
 

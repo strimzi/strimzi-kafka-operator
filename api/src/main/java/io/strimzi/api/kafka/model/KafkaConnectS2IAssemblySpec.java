@@ -16,6 +16,8 @@ import io.sundr.builder.annotations.Buildable;
         "livenessProbe", "readinessProbe", "jvmOptions", "affinity", "metrics"})
 public class KafkaConnectS2IAssemblySpec extends KafkaConnectAssemblySpec {
 
+    private static final long serialVersionUID = 1L;
+
     private boolean insecureSourceRepository = false;
 
     public boolean isInsecureSourceRepository() {

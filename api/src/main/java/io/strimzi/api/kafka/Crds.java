@@ -32,7 +32,8 @@ public class Crds {
     private static final Class<? extends CustomResource>[] CRDS = new Class[] {
         KafkaAssembly.class,
         KafkaConnectAssembly.class,
-        KafkaConnectS2IAssembly.class
+        KafkaConnectS2IAssembly.class,
+        KafkaTopic.class
     };
 
     private Crds() {

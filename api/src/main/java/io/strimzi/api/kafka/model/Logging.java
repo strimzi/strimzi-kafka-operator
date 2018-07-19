@@ -10,6 +10,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.strimzi.crdgenerator.annotations.Description;
 
+import java.io.Serializable;
+
 /**
  * Describes the logging configuration
  */
@@ -18,7 +20,9 @@ import io.strimzi.crdgenerator.annotations.Description;
         @JsonSubTypes.Type(name = "inline", value = InlineLogging.class),
         @JsonSubTypes.Type(name = "external", value = ExternalLogging.class),
 })
-public abstract class Logging {
+public abstract class Logging implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     @Description("Storage type, must be either 'inline' or 'external'.")
     @JsonIgnore

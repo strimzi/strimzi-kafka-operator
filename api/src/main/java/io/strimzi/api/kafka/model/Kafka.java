@@ -25,6 +25,8 @@ import java.util.Map;
         "livenessProbe", "readinessProbe", "jvmOptions", "affinity", "metrics", "tlsSidecar"})
 public class Kafka extends ReplicatedJvmPods {
 
+    private static final long serialVersionUID = 1L;
+
     public static final String DEFAULT_IMAGE =
             System.getenv().getOrDefault("STRIMZI_DEFAULT_KAFKA_IMAGE", "strimzi/kafka:latest");
     public static final String DEFAULT_INIT_IMAGE =

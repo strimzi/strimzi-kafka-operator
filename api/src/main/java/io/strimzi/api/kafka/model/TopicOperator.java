@@ -14,6 +14,7 @@ import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,7 +30,9 @@ import java.util.Map;
 @JsonPropertyOrder({"watchedNamespace", "image",
         "reconciliationIntervalSeconds", "zookeeperSessionTimeoutSeconds",
         "affinity", "resources", "topicMetadataMaxAttempts", "tlsSidecar"})
-public class TopicOperator {
+public class TopicOperator implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     public static final String DEFAULT_IMAGE = System.getenv().getOrDefault(
             "STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE",

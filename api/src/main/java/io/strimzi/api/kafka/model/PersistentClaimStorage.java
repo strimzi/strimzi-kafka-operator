@@ -19,6 +19,9 @@ import java.util.Map;
         builderPackage = "io.strimzi.api.kafka.model"
 )
 public class PersistentClaimStorage extends Storage {
+
+    private static final long serialVersionUID = 1L;
+
     private String size;
     private String storageClass;
     private Map<String, String> selector;

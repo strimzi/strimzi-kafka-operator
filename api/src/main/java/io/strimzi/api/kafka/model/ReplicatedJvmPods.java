@@ -16,6 +16,7 @@ import io.strimzi.crdgenerator.annotations.Minimum;
 import io.fabric8.kubernetes.api.model.Toleration;
 import io.sundr.builder.annotations.Buildable;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,7 +28,9 @@ import java.util.Map;
         generateBuilderPackage = true,
         builderPackage = "io.strimzi.api.kafka.model"
 )
-public abstract class ReplicatedJvmPods {
+public abstract class ReplicatedJvmPods implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private int replicas;
 

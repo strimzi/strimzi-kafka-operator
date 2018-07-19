@@ -19,6 +19,8 @@ import java.util.Map;
 )
 public class InlineLogging extends Logging {
 
+    private static final long serialVersionUID = 1L;
+
     /** A Map from logger name to logger level */
     private Map<String, String> loggers = new HashMap<>();
 

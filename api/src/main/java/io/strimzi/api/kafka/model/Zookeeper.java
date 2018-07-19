@@ -25,6 +25,9 @@ import java.util.Map;
         "livenessProbe", "readinessProbe", "jvmOptions",
         "affinity", "metrics", "tlsSidecar"})
 public class Zookeeper extends ReplicatedJvmPods {
+
+    private static final long serialVersionUID = 1L;
+
     public static final String FORBIDDEN_PREFIXES = "server., dataDir, dataLogDir, clientPort, authProvider, quorum.auth, requireClientAuthScheme";
 
     public static final String DEFAULT_IMAGE =

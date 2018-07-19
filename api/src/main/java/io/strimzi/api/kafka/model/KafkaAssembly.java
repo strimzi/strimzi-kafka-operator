@@ -48,6 +48,7 @@ import java.util.Map;
 public class KafkaAssembly extends CustomResource {
 
     private static final long serialVersionUID = 1L;
+
     public static final String VERSION = "v1alpha1";
     public static final String RESOURCE_KIND = "Kafka";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
@@ -59,7 +60,7 @@ public class KafkaAssembly extends CustomResource {
 
     private String apiVersion;
     private ObjectMeta metadata;
-    private transient KafkaAssemblySpec spec;
+    private KafkaAssemblySpec spec;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Override

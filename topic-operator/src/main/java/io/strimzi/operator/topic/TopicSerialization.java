@@ -49,8 +49,8 @@ public class TopicSerialization {
 
     @SuppressWarnings("unchecked")
     private static Map<String, String> topicConfigFromTopicConfig(KafkaTopic kafkaTopic) {
-        Map<String, String> result = new HashMap<>(kafkaTopic.getConfig().size());
-        for (Map.Entry<String, Object> entry : kafkaTopic.getConfig().entrySet()) {
+        Map<String, String> result = new HashMap<>(kafkaTopic.getSpec().getConfig().size());
+        for (Map.Entry<String, Object> entry : kafkaTopic.getSpec().getConfig().entrySet()) {
             String key = entry.getKey();
             Object v = entry.getValue();
             if (v instanceof String
@@ -95,7 +95,7 @@ public class TopicSerialization {
 
     private static String getTopicName(KafkaTopic kafkaTopic) {
         String prefix = "Topics's 'topicName' property is invalid as a topic name: ";
-        String topicName = kafkaTopic.getTopicName();
+        String topicName = kafkaTopic.getSpec().getTopicName();
         if (topicName == null) {
             topicName = kafkaTopic.getMetadata().getName();
             prefix = "Topics's 'topicName' property is absent and Topics's metadata.name is invalid as a topic name: ";
@@ -109,7 +109,7 @@ public class TopicSerialization {
     }
 
     private static short getReplicas(KafkaTopic kafkaTopic) {
-        int replicas = kafkaTopic.getReplicas();
+        int replicas = kafkaTopic.getSpec().getReplicas();
         if (replicas < 1 || replicas > Short.MAX_VALUE) {
             throw new InvalidTopicException(kafkaTopic, "Topic's replicas should be between 1 and " + Short.MAX_VALUE + " inclusive");
         }
@@ -117,7 +117,7 @@ public class TopicSerialization {
     }
 
     private static int getPartitions(KafkaTopic kafkaTopic) {
-        int partitions = kafkaTopic.getPartitions();
+        int partitions = kafkaTopic.getSpec().getPartitions();
         if (partitions < 1) {
             throw new InvalidTopicException(kafkaTopic, "Topic's partitions should be strictly greater than 0");
         }
@@ -138,12 +138,13 @@ public class TopicSerialization {
                     .withName(mapName.toString())
                     .withLabels(cmPredicate.labels()).build())
                     // TODO .withUid()
-
-                .withTopicName(topic.getTopicName().toString())
-                .withPartitions(topic.getNumPartitions())
-                .withReplicas(topic.getNumReplicas())
-                .withConfig(new LinkedHashMap<>(topic.getConfig()))
-                .build();
+                .withNewSpec()
+                    .withTopicName(topic.getTopicName().toString())
+                    .withPartitions(topic.getNumPartitions())
+                    .withReplicas(topic.getNumReplicas())
+                    .withConfig(new LinkedHashMap<>(topic.getConfig()))
+                .endSpec()
+            .build();
     }
 
 

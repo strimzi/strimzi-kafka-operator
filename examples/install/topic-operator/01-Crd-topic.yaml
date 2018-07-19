@@ -15,15 +15,22 @@ spec:
   validation:
     openAPIV3Schema:
       properties:
-        partitions:
-          type: integer
-        replicas:
-          type: integer
-          minimum: 1
-          maximum: 32767
-        config:
+        spec:
           type: object
+          properties:
+            partitions:
+              type: integer
+            replicas:
+              type: integer
+              minimum: 1
+              maximum: 32767
+            config:
+              type: object
+            additionalProperties:
+              type: object
+            topicName:
+              type: string
         additionalProperties:
           type: object
-        topicName:
-          type: string
+      required:
+      - spec
