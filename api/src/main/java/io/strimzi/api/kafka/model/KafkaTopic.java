@@ -15,22 +15,26 @@ import io.strimzi.crdgenerator.annotations.Maximum;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import static java.util.Arrays.asList;
 
 @JsonDeserialize(
         using = JsonDeserializer.None.class
 )
 @Crd(
-        apiVersion = Topic.CRD_API_VERSION,
+        apiVersion = KafkaTopic.CRD_API_VERSION,
         spec = @Crd.Spec(
                 names = @Crd.Spec.Names(
-                        kind = Topic.RESOURCE_KIND,
-                        plural = Topic.RESOURCE_PLURAL
+                        kind = KafkaTopic.RESOURCE_KIND,
+                        plural = KafkaTopic.RESOURCE_PLURAL
                 ),
-                group = Topic.RESOURCE_GROUP,
+                group = KafkaTopic.RESOURCE_GROUP,
                 scope = "Namespaced",
-                version = Topic.VERSION
+                version = KafkaTopic.VERSION
         )
 )
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "partitions", "replicas", "config"})
@@ -39,18 +43,19 @@ import java.util.Map;
         generateBuilderPackage = true,
         builderPackage = "io.strimzi.api.kafka.model"
 )
-public class Topic extends CustomResource {
+public class KafkaTopic extends CustomResource {
 
     private static final long serialVersionUID = 1L;
 
     public static final String VERSION = "v1alpha1";
-    public static final String RESOURCE_KIND = "Topic";
+    public static final String RESOURCE_KIND = "KafkaTopic";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
     public static final String RESOURCE_GROUP = "kafka.strimzi.io";
-    public static final String RESOURCE_PLURAL = "topics";
-    public static final String RESOURCE_SINGULAR = "topic";
+    public static final String RESOURCE_PLURAL = "kafkatopics";
+    public static final String RESOURCE_SINGULAR = "kafkatopic";
     public static final String CRD_API_VERSION = "apiextensions.k8s.io/v1beta1";
     public static final String CRD_NAME = RESOURCE_PLURAL + "." + RESOURCE_GROUP;
+    public static final List<String> RESOURCE_SHORTNAMES = Collections.unmodifiableList(asList("kt"));
 
     private String apiVersion;
     private ObjectMeta metadata;

@@ -11,7 +11,7 @@ import io.fabric8.kubernetes.api.model.DoneableConfigMap;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.strimzi.api.kafka.model.Topic;
+import io.strimzi.api.kafka.model.KafkaTopic;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -52,7 +52,7 @@ public class K8sImplTest {
         K8sImpl k8s = new K8sImpl(vertx, mockClient, new LabelPredicate("foo", "bar"), "default");
 
         k8s.listMaps(ar -> {
-            List<Topic> list = ar.result();
+            List<KafkaTopic> list = ar.result();
             context.assertFalse(list.isEmpty());
             async.complete();
         });

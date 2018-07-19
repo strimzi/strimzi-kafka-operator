@@ -4,7 +4,7 @@
  */
 package io.strimzi.operator.topic;
 
-import io.strimzi.api.kafka.model.Topic;
+import io.strimzi.api.kafka.model.KafkaTopic;
 
 import java.util.regex.Pattern;
 
@@ -33,7 +33,7 @@ class MapName {
      * Create a MapName from the name of the given ConfigMap
      * @param cm
      */
-    public MapName(Topic cm) {
+    public MapName(KafkaTopic cm) {
         this(cm.getMetadata().getName());
     }
 

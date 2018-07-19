@@ -21,31 +21,31 @@ import static org.junit.Assert.assertTrue;
  * validation done by K8S.
  */
 @RunWith(StrimziRunner.class)
-@Namespace(TopicCrdIT.NAMESPACE)
+@Namespace(KafkaTopicCrdIT.NAMESPACE)
 @Resources(value = TestUtils.CRD_TOPIC, asAdmin = true)
-public class TopicCrdIT extends AbstractCrdIT {
+public class KafkaTopicCrdIT extends AbstractCrdIT {
 
     public static final String NAMESPACE = "topiccrd-it";
 
     @Test
     public void testKafka() {
-        createDelete(KafkaAssembly.class, "Topic.yaml");
+        createDelete(KafkaTopic.class, "Topic.yaml");
     }
 
     @Test
     public void testKafkaMinimal() {
-        createDelete(KafkaAssembly.class, "Topic-minimal.yaml");
+        createDelete(KafkaTopic.class, "Topic-minimal.yaml");
     }
 
     @Test
     public void testKafkaWithExtraProperty() {
-        createDelete(KafkaAssembly.class, "Topic-with-extra-property.yaml");
+        createDelete(KafkaTopic.class, "Topic-with-extra-property.yaml");
     }
 
     @Test
     public void testKafkaWithMissingRequired() {
         try {
-            createDelete(KafkaAssembly.class, "Topic-with-missing-required-property.yaml");
+            createDelete(KafkaTopic.class, "Topic-with-missing-required-property.yaml");
         } catch (KubeClusterException.InvalidResource e) {
             assertTrue(e.getMessage().contains("partitions in body is required"));
         }
@@ -54,7 +54,7 @@ public class TopicCrdIT extends AbstractCrdIT {
     @Test
     public void testKafkaWithInvalidResourceMemory() {
         try {
-            createDelete(KafkaAssembly.class, "Topic-with-invalid-partitions.yaml");
+            createDelete(KafkaTopic.class, "Topic-with-invalid-partitions.yaml");
         } catch (KubeClusterException.InvalidResource e) {
             assertTrue(e.getMessage().contains("spec.kafka.resources.limits.memory in body should match '[0-9]+([kKmMgGtTpPeE]i?)?$'"));
         }

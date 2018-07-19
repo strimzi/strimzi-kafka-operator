@@ -435,9 +435,9 @@ Used in: <<type-KafkaConnectS2IAssembly,`KafkaConnectS2IAssembly`>>
 |https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#tolerations-v1-core[Toleration] array
 |====
 
-[[kind-Topic]]
-[[type-Topic]]
-### `Topic` kind v1alpha1 kafka.strimzi.io
+[[kind-KafkaTopic]]
+[[type-KafkaTopic]]
+### `KafkaTopic` kind v1alpha1 kafka.strimzi.io
 
 
 [options="header"]

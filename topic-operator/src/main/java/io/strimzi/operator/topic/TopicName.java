@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.topic;
 
+import io.strimzi.api.kafka.model.KafkaTopic;
 import org.apache.kafka.common.internals.Topic;
 
 import java.math.BigInteger;
@@ -26,8 +27,8 @@ class TopicName {
         this.name = name;
     }
 
-    public TopicName(io.strimzi.api.kafka.model.Topic topic) {
-        this(topic.getTopicName() != null ? topic.getTopicName() : topic.getMetadata().getName());
+    public TopicName(KafkaTopic kafkaTopic) {
+        this(kafkaTopic.getTopicName() != null ? kafkaTopic.getTopicName() : kafkaTopic.getMetadata().getName());
     }
 
     public String toString() {

@@ -16,7 +16,11 @@ import io.fabric8.kubernetes.internal.KubernetesDeserializer;
 import io.strimzi.api.kafka.model.KafkaAssembly;
 import io.strimzi.api.kafka.model.KafkaConnectAssembly;
 import io.strimzi.api.kafka.model.KafkaConnectS2IAssembly;
-import io.strimzi.api.kafka.model.Topic;
+import io.strimzi.api.kafka.model.KafkaTopic;
+
+import java.util.List;
+
+import static java.util.Collections.emptyList;
 
 /**
  * "Static" information about the CRDs defined in this package
@@ -51,7 +55,7 @@ public class Crds {
         String singular;
         String version;
         String group;
-        String[] shortNames = new String[0];
+        List<String> shortNames = emptyList();
         if (cls.equals(KafkaAssembly.class)) {
             kind = KafkaAssembly.RESOURCE_KIND;
             crdApiVersion = KafkaAssembly.CRD_API_VERSION;
@@ -76,6 +80,15 @@ public class Crds {
             listKind = KafkaConnectS2IAssembly.RESOURCE_LIST_KIND;
             group = KafkaConnectS2IAssembly.RESOURCE_GROUP;
             version = KafkaConnectS2IAssembly.VERSION;
+        } else if (cls.equals(KafkaTopic.class)) {
+            kind = KafkaTopic.RESOURCE_KIND;
+            crdApiVersion = KafkaTopic.CRD_API_VERSION;
+            plural = KafkaTopic.RESOURCE_PLURAL;
+            singular = KafkaTopic.RESOURCE_SINGULAR;
+            listKind = KafkaTopic.RESOURCE_LIST_KIND;
+            group = KafkaTopic.RESOURCE_GROUP;
+            version = KafkaTopic.VERSION;
+            shortNames = KafkaTopic.RESOURCE_SHORTNAMES;
         } else {
             throw new RuntimeException();
         }
@@ -124,11 +137,11 @@ public class Crds {
     }
 
     public static CustomResourceDefinition topic() {
-        return crd(Topic.class);
+        return crd(KafkaTopic.class);
     }
 
-    public static MixedOperation<Topic, TopicList, DoneableTopic, Resource<Topic, DoneableTopic>> topicOperation(KubernetesClient client) {
-        return client.customResources(topic(), Topic.class, TopicList.class, DoneableTopic.class);
+    public static MixedOperation<KafkaTopic, KafkaTopicList, DoneableKafkaTopic, Resource<KafkaTopic, DoneableKafkaTopic>> topicOperation(KubernetesClient client) {
+        return client.customResources(topic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class);
     }
 
     public static <T extends CustomResource, L extends CustomResourceList<T>, D extends CustomResourceDoneable<T>> MixedOperation<T, L, D, Resource<T, D>>

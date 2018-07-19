@@ -6,28 +6,28 @@ package io.strimzi.api.kafka;
 
 import io.fabric8.kubernetes.api.builder.Function;
 import io.fabric8.kubernetes.api.model.Doneable;
-import io.strimzi.api.kafka.model.Topic;
-import io.strimzi.api.kafka.model.TopicFluentImpl;
+import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.api.kafka.model.KafkaTopicFluentImpl;
 
 /**
  * A {@code CustomResourceDoneable<Topic>} required for using Fabric8 CRD support.
  */
-public class DoneableTopic //extends CustomResourceDoneable<Topic>
-    extends TopicFluentImpl<DoneableTopic> implements Doneable<Topic> {
+public class DoneableKafkaTopic //extends CustomResourceDoneable<Topic>
+    extends KafkaTopicFluentImpl<DoneableKafkaTopic> implements Doneable<KafkaTopic> {
 
-    private final Topic resource;
-    private final Function<Topic, Topic> function;
+    private final KafkaTopic resource;
+    private final Function<KafkaTopic, KafkaTopic> function;
 
-    public DoneableTopic(Topic resource, Function<Topic, Topic> function) {
+    public DoneableKafkaTopic(KafkaTopic resource, Function<KafkaTopic, KafkaTopic> function) {
         this.resource = resource;
         this.function = function;
     }
-    public DoneableTopic(Topic resource) {
+    public DoneableKafkaTopic(KafkaTopic resource) {
         this(resource, x -> x);
     }
 
     @Override
-    public Topic done() {
+    public KafkaTopic done() {
         return function.apply(resource);
     }
 

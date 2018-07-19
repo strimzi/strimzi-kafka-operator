@@ -10,8 +10,9 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.DoneableTopic;
-import io.strimzi.api.kafka.TopicList;
+import io.strimzi.api.kafka.DoneableKafkaTopic;
+import io.strimzi.api.kafka.KafkaTopicList;
+import io.strimzi.api.kafka.model.KafkaTopic;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -39,7 +40,7 @@ public class K8sImpl implements K8s {
     }
 
     @Override
-    public void createConfigMap(io.strimzi.api.kafka.model.Topic cm, Handler<AsyncResult<Void>> handler) {
+    public void createConfigMap(KafkaTopic cm, Handler<AsyncResult<Void>> handler) {
         vertx.executeBlocking(future -> {
             try {
                 operation().inNamespace(namespace).create(cm);
@@ -51,7 +52,7 @@ public class K8sImpl implements K8s {
     }
 
     @Override
-    public void updateConfigMap(io.strimzi.api.kafka.model.Topic cm, Handler<AsyncResult<Void>> handler) {
+    public void updateConfigMap(KafkaTopic cm, Handler<AsyncResult<Void>> handler) {
         vertx.executeBlocking(future -> {
             try {
                 operation().inNamespace(namespace).createOrReplace(cm);
@@ -75,12 +76,12 @@ public class K8sImpl implements K8s {
         }, handler);
     }
 
-    private MixedOperation<io.strimzi.api.kafka.model.Topic, TopicList, DoneableTopic, Resource<io.strimzi.api.kafka.model.Topic, DoneableTopic>> operation() {
-        return client.customResources(Crds.topic(), io.strimzi.api.kafka.model.Topic.class, TopicList.class, DoneableTopic.class);
+    private MixedOperation<KafkaTopic, KafkaTopicList, DoneableKafkaTopic, Resource<KafkaTopic, DoneableKafkaTopic>> operation() {
+        return client.customResources(Crds.topic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class);
     }
 
     @Override
-    public void listMaps(Handler<AsyncResult<List<io.strimzi.api.kafka.model.Topic>>> handler) {
+    public void listMaps(Handler<AsyncResult<List<KafkaTopic>>> handler) {
         vertx.executeBlocking(future -> {
             try {
                 future.complete(operation().inNamespace(namespace).withLabels(cmPredicate.labels()).list().getItems());
@@ -91,7 +92,7 @@ public class K8sImpl implements K8s {
     }
 
     @Override
-    public void getFromName(MapName mapName, Handler<AsyncResult<io.strimzi.api.kafka.model.Topic>> handler) {
+    public void getFromName(MapName mapName, Handler<AsyncResult<KafkaTopic>> handler) {
         vertx.executeBlocking(future -> {
             try {
                 future.complete(operation().inNamespace(namespace).withName(mapName.toString()).get());

@@ -5,11 +5,11 @@
 package io.strimzi.api.kafka;
 
 import io.fabric8.kubernetes.client.CustomResourceList;
-import io.strimzi.api.kafka.model.Topic;
+import io.strimzi.api.kafka.model.KafkaTopic;
 
 /**
  * A {@code CustomResourceList<Topic>} required for using Fabric8 CRD support.
  */
-public class TopicList extends CustomResourceList<Topic> {
+public class KafkaTopicList extends CustomResourceList<KafkaTopic> {
     private static final long serialVersionUID = 1L;
 }

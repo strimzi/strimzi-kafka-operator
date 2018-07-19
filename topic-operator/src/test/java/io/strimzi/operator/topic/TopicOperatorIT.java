@@ -13,9 +13,10 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.DoneableTopic;
-import io.strimzi.api.kafka.TopicList;
-import io.strimzi.api.kafka.model.TopicBuilder;
+import io.strimzi.api.kafka.DoneableKafkaTopic;
+import io.strimzi.api.kafka.KafkaTopicList;
+import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.test.Namespace;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.vertx.core.Future;
@@ -207,7 +208,7 @@ public class TopicOperatorIT {
     }
 
 
-    private io.strimzi.api.kafka.model.Topic createCm(TestContext context, io.strimzi.api.kafka.model.Topic cm) {
+    private KafkaTopic createCm(TestContext context, KafkaTopic cm) {
         String topicName = new TopicName(cm).toString();
         // Create a CM
         operation().inNamespace(NAMESPACE).create(cm);
@@ -230,9 +231,9 @@ public class TopicOperatorIT {
         return cm;
     }
 
-    private io.strimzi.api.kafka.model.Topic createCm(TestContext context, String topicName) {
+    private KafkaTopic createCm(TestContext context, String topicName) {
         Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap()).build();
-        io.strimzi.api.kafka.model.Topic cm = TopicSerialization.toTopicResource(topic, cmPredicate);
+        KafkaTopic cm = TopicSerialization.toTopicResource(topic, cmPredicate);
         return createCm(context, cm);
     }
 
@@ -245,7 +246,7 @@ public class TopicOperatorIT {
 
         // Wait for the configmap to be created
         waitFor(context, () -> {
-            io.strimzi.api.kafka.model.Topic cm = operation().inNamespace(NAMESPACE).withName(configMapName).get();
+            KafkaTopic cm = operation().inNamespace(NAMESPACE).withName(configMapName).get();
             LOGGER.info("Polled topic {} waiting for creation", configMapName);
             return cm != null;
         }, timeout, "Expected the topic to have been created by now");
@@ -281,7 +282,7 @@ public class TopicOperatorIT {
 
         // Wait for the configmap to be modified
         waitFor(context, () -> {
-            io.strimzi.api.kafka.model.Topic cm = operation().inNamespace(NAMESPACE).withName(configMapName).get();
+            KafkaTopic cm = operation().inNamespace(NAMESPACE).withName(configMapName).get();
             LOGGER.info("Polled topic {}, waiting for config change", configMapName);
             String gotValue = TopicSerialization.fromTopicResource(cm).getConfig().get(key);
             LOGGER.info("Got value {}", gotValue);
@@ -301,7 +302,7 @@ public class TopicOperatorIT {
 
         // Wait for the configmap to be modified
         waitFor(context, () -> {
-            io.strimzi.api.kafka.model.Topic cm = operation().inNamespace(NAMESPACE).withName(configMapName).get();
+            KafkaTopic cm = operation().inNamespace(NAMESPACE).withName(configMapName).get();
             LOGGER.info("Polled topic {}, waiting for partitions change", configMapName);
             int gotValue = TopicSerialization.fromTopicResource(cm).getNumPartitions();
             LOGGER.info("Got value {}", gotValue);
@@ -337,7 +338,7 @@ public class TopicOperatorIT {
 
         // Wait for the configmap to be deleted
         waitFor(context, () -> {
-            io.strimzi.api.kafka.model.Topic cm = operation().inNamespace(NAMESPACE).withName(configMapName).get();
+            KafkaTopic cm = operation().inNamespace(NAMESPACE).withName(configMapName).get();
             LOGGER.info("Polled topic {}, got {}, waiting for deletion", configMapName, cm);
             return cm == null;
         }, timeout, "Expected the topic to have been deleted by now");
@@ -386,13 +387,13 @@ public class TopicOperatorIT {
         }
     }
 
-    private void waitForEvent(TestContext context, io.strimzi.api.kafka.model.Topic topic, String expectedMessage, TopicOperator.EventType expectedType) {
+    private void waitForEvent(TestContext context, KafkaTopic kafkaTopic, String expectedMessage, TopicOperator.EventType expectedType) {
         waitFor(context, () -> {
             List<Event> items = kubeClient.events().inNamespace(NAMESPACE).withLabels(cmPredicate.labels()).list().getItems();
             List<Event> filtered = items.stream().
                     filter(evt -> !preExistingEvents.contains(evt.getMetadata().getUid())
                     && "ConfigMap".equals(evt.getInvolvedObject().getKind())
-                    && topic.getMetadata().getName().equals(evt.getInvolvedObject().getName())).
+                    && kafkaTopic.getMetadata().getName().equals(evt.getInvolvedObject().getName())).
                     collect(Collectors.toList());
             LOGGER.debug("Waiting for events: {}", filtered.stream().map(evt -> evt.getMessage()).collect(Collectors.toList()));
             if (!filtered.isEmpty()) {
@@ -403,7 +404,7 @@ public class TopicOperatorIT {
                 assertEquals(expectedType.name, event.getType());
                 assertNotNull(event.getInvolvedObject());
                 assertEquals("ConfigMap", event.getInvolvedObject().getKind());
-                assertEquals(topic.getMetadata().getName(), event.getInvolvedObject().getName());
+                assertEquals(kafkaTopic.getMetadata().getName(), event.getInvolvedObject().getName());
                 return true;
             } else {
                 return false;
@@ -463,7 +464,7 @@ public class TopicOperatorIT {
     public void testConfigMapAddedWithBadData(TestContext context) {
         String topicName = "test-configmap-created-with-bad-data";
         Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap()).build();
-        io.strimzi.api.kafka.model.Topic cm = TopicSerialization.toTopicResource(topic, cmPredicate);
+        KafkaTopic cm = TopicSerialization.toTopicResource(topic, cmPredicate);
         cm.setPartitions(-1);
 
         // Create a CM
@@ -482,7 +483,7 @@ public class TopicOperatorIT {
     public void testConfigMapDeleted(TestContext context) {
         // create the cm
         String topicName = "test-configmap-deleted";
-        io.strimzi.api.kafka.model.Topic cm = createCm(context, topicName);
+        KafkaTopic cm = createCm(context, topicName);
 
         // can now delete the cm
         operation().inNamespace(NAMESPACE).withName(cm.getMetadata().getName()).delete();
@@ -510,7 +511,7 @@ public class TopicOperatorIT {
     public void testConfigMapModifiedRetentionChanged(TestContext context) throws Exception {
         // create the topic
         String topicName = "test-configmap-modified-retention-changed";
-        io.strimzi.api.kafka.model.Topic cm = createCm(context, topicName);
+        KafkaTopic cm = createCm(context, topicName);
 
         // now change the topic
         operation().inNamespace(NAMESPACE).withName(cm.getMetadata().getName()).edit().addToConfig("retention.ms", 12341234).done();
@@ -529,7 +530,7 @@ public class TopicOperatorIT {
     public void testConfigMapModifiedWithBadData(TestContext context) throws Exception {
         // create the cm
         String topicName = "test-configmap-modified-with-bad-data";
-        io.strimzi.api.kafka.model.Topic cm = createCm(context, topicName);
+        KafkaTopic cm = createCm(context, topicName);
 
         // now change the cm
         operation().inNamespace(NAMESPACE).withName(cm.getMetadata().getName()).edit().withPartitions(-1).done();
@@ -546,7 +547,7 @@ public class TopicOperatorIT {
     public void testConfigMapModifiedNameChanged(TestContext context) throws Exception {
         // create the cm
         String topicName = "test-configmap-modified-name-changed";
-        io.strimzi.api.kafka.model.Topic cm = createCm(context, topicName);
+        KafkaTopic cm = createCm(context, topicName);
 
         // now change the cm
         String changedName = topicName.toUpperCase(Locale.ENGLISH);
@@ -564,8 +565,8 @@ public class TopicOperatorIT {
     public void testCreateTwoConfigMapsManagingOneTopic(TestContext context) {
         String topicName = "two-cms-one-topic";
         Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap()).build();
-        io.strimzi.api.kafka.model.Topic cm = TopicSerialization.toTopicResource(topic, cmPredicate);
-        io.strimzi.api.kafka.model.Topic cm2 = new TopicBuilder(cm).withMetadata(new ObjectMetaBuilder(cm.getMetadata()).withName(topicName + "-1").build()).build();
+        KafkaTopic cm = TopicSerialization.toTopicResource(topic, cmPredicate);
+        KafkaTopic cm2 = new KafkaTopicBuilder(cm).withMetadata(new ObjectMetaBuilder(cm.getMetadata()).withName(topicName + "-1").build()).build();
         // create one
         createCm(context, cm2);
         // create another
@@ -577,8 +578,8 @@ public class TopicOperatorIT {
                 TopicOperator.EventType.WARNING);
     }
 
-    private MixedOperation<io.strimzi.api.kafka.model.Topic, TopicList, DoneableTopic, Resource<io.strimzi.api.kafka.model.Topic, DoneableTopic>> operation() {
-        return kubeClient.customResources(Crds.topic(), io.strimzi.api.kafka.model.Topic.class, TopicList.class, DoneableTopic.class);
+    private MixedOperation<KafkaTopic, KafkaTopicList, DoneableKafkaTopic, Resource<KafkaTopic, DoneableKafkaTopic>> operation() {
+        return kubeClient.customResources(Crds.topic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class);
     }
 
     @Test
@@ -586,14 +587,14 @@ public class TopicOperatorIT {
         String topicName = "test-reconcile";
 
         Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap()).build();
-        io.strimzi.api.kafka.model.Topic cm = TopicSerialization.toTopicResource(topic, cmPredicate);
+        KafkaTopic cm = TopicSerialization.toTopicResource(topic, cmPredicate);
         String configMapName = cm.getMetadata().getName();
 
         operation().inNamespace(NAMESPACE).create(cm);
 
         // Wait for the configmap to be created
         waitFor(context, () -> {
-            io.strimzi.api.kafka.model.Topic createdCm = operation().inNamespace(NAMESPACE).withName(configMapName).get();
+            KafkaTopic createdCm = operation().inNamespace(NAMESPACE).withName(configMapName).get();
             LOGGER.info("Polled configmap {} waiting for creation", configMapName);
 
             // modify configmap

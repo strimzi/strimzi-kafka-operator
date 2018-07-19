@@ -6,6 +6,7 @@ package io.strimzi.operator.topic;
 
 import io.fabric8.kubernetes.api.model.EventBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.strimzi.api.kafka.model.KafkaTopic;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -114,8 +115,8 @@ public class TopicOperator {
 
         @Override
         public void handle(Void v) throws OperatorException {
-            io.strimzi.api.kafka.model.Topic topic = TopicSerialization.toTopicResource(this.topic, cmPredicate);
-            k8s.createConfigMap(topic, handler);
+            KafkaTopic kafkaTopic = TopicSerialization.toTopicResource(this.topic, cmPredicate);
+            k8s.createConfigMap(kafkaTopic, handler);
         }
 
         @Override
@@ -159,8 +160,8 @@ public class TopicOperator {
 
         @Override
         public void handle(Void v) {
-            io.strimzi.api.kafka.model.Topic topic = TopicSerialization.toTopicResource(this.topic, cmPredicate);
-            k8s.updateConfigMap(topic, handler);
+            KafkaTopic kafkaTopic = TopicSerialization.toTopicResource(this.topic, cmPredicate);
+            k8s.updateConfigMap(kafkaTopic, handler);
         }
 
         @Override
@@ -338,7 +339,7 @@ public class TopicOperator {
         this.config = config;
     }
 
-    Future<Void> reconcile(io.strimzi.api.kafka.model.Topic cm, TopicName topicName) {
+    Future<Void> reconcile(KafkaTopic cm, TopicName topicName) {
         Future<Void> result = Future.future();
         Handler<Future<Void>> action = new Reconciliation("reconcile") {
             @Override
@@ -689,7 +690,7 @@ public class TopicOperator {
                 }
                 k8s.getFromName(mapName, kubeResult -> {
                     if (kubeResult.succeeded()) {
-                        io.strimzi.api.kafka.model.Topic topic = kubeResult.result();
+                        KafkaTopic topic = kubeResult.result();
                         Topic k8sTopic = TopicSerialization.fromTopicResource(topic);
                         reconcile(topic, k8sTopic, kafkaTopic, storeTopic, resultHandler);
                     } else {
@@ -767,7 +768,7 @@ public class TopicOperator {
     }
 
     /** Called when a ConfigMap is added in k8s */
-    void onConfigMapAdded(io.strimzi.api.kafka.model.Topic addedTopic, Handler<AsyncResult<Void>> resultHandler) {
+    void onConfigMapAdded(KafkaTopic addedTopic, Handler<AsyncResult<Void>> resultHandler) {
         if (cmPredicate.test(addedTopic)) {
             final Topic k8sTopic;
             try {
@@ -802,7 +803,7 @@ public class TopicOperator {
     };
 
     /** Called when a ConfigMap is modified in k8s */
-    void onConfigMapModified(io.strimzi.api.kafka.model.Topic modifiedTopic, Handler<AsyncResult<Void>> resultHandler) {
+    void onConfigMapModified(KafkaTopic modifiedTopic, Handler<AsyncResult<Void>> resultHandler) {
         if (cmPredicate.test(modifiedTopic)) {
             final Topic k8sTopic;
             try {
@@ -823,7 +824,7 @@ public class TopicOperator {
         }
     }
 
-    private void reconcileOnCmChange(io.strimzi.api.kafka.model.Topic configMap, Topic k8sTopic, boolean isModify, Handler<AsyncResult<Void>> handler) {
+    private void reconcileOnCmChange(KafkaTopic configMap, Topic k8sTopic, boolean isModify, Handler<AsyncResult<Void>> handler) {
         TopicName topicName = new TopicName(configMap);
         Future<TopicMetadata> f1 = Future.future();
         Future<Topic> f2 = Future.future();
@@ -846,7 +847,7 @@ public class TopicOperator {
     }
 
     /** Called when a ConfigMap is deleted in k8s */
-    void onConfigMapDeleted(io.strimzi.api.kafka.model.Topic deletedTopic, Handler<AsyncResult<Void>> resultHandler) {
+    void onConfigMapDeleted(KafkaTopic deletedTopic, Handler<AsyncResult<Void>> resultHandler) {
         if (cmPredicate.test(deletedTopic)) {
             Reconciliation action = new Reconciliation("onConfigMapDeleted") {
                 @Override
@@ -963,7 +964,7 @@ public class TopicOperator {
      * @param cm ConfigMap instance to log
      * @return ConfigMap representation as namespace/name for logging purposes
      */
-    static String logConfigMap(io.strimzi.api.kafka.model.Topic cm) {
+    static String logConfigMap(KafkaTopic cm) {
         return cm != null ? cm.getMetadata().getNamespace() + "/" + cm.getMetadata().getName() : null;
     }
 
@@ -984,8 +985,8 @@ public class TopicOperator {
                     topicFutures.add(topicFuture);
                     k8s.getFromName(topicName.asMapName(), topicResult -> {
                         if (topicResult.succeeded()) {
-                            io.strimzi.api.kafka.model.Topic topic = topicResult.result();
-                            reconcile(topic, topicName).setHandler(topicFuture);
+                            KafkaTopic kafkaTopic = topicResult.result();
+                            reconcile(kafkaTopic, topicName).setHandler(topicFuture);
                         } else {
                             LOGGER.error("Error {} getting ConfigMap {} for topic {}",
                                     reconciliationType,
@@ -1000,13 +1001,13 @@ public class TopicOperator {
                 k8s.listMaps(configMapsListResult -> {
                     List<Future> cmFutures = new ArrayList<>();
                     if (configMapsListResult.succeeded()) {
-                        List<io.strimzi.api.kafka.model.Topic> configMaps = configMapsListResult.result();
-                        Map<String, io.strimzi.api.kafka.model.Topic> configMapsMap = configMaps.stream().collect(Collectors.toMap(
+                        List<KafkaTopic> configMaps = configMapsListResult.result();
+                        Map<String, KafkaTopic> configMapsMap = configMaps.stream().collect(Collectors.toMap(
                             cm -> cm.getMetadata().getName(),
                             cm -> cm));
                         configMapsMap.keySet().removeAll(kafkaTopics);
                         LOGGER.debug("Reconciling configmaps: {}", configMapsMap.keySet());
-                        for (io.strimzi.api.kafka.model.Topic cm : configMapsMap.values()) {
+                        for (KafkaTopic cm : configMapsMap.values()) {
                             LOGGER.debug("{} reconciliation of configmap {}", reconciliationType, cm.getMetadata().getName());
 
                             TopicName topicName = new TopicName(cm);

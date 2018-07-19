@@ -4,7 +4,7 @@
  */
 package io.strimzi.operator.topic;
 
-import io.strimzi.api.kafka.model.Topic;
+import io.strimzi.api.kafka.model.KafkaTopic;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -29,18 +29,18 @@ class MockTopicOperator extends TopicOperator {
             MODIFY_PARTITIONS
         }
         private final TopicName topicName;
-        private final Topic topicResource;
+        private final KafkaTopic kafkaTopicResource;
 
         public MockOperatorEvent(MockOperatorEvent.Type type, TopicName topicName) {
             this.type = type;
             this.topicName = topicName;
-            this.topicResource = null;
+            this.kafkaTopicResource = null;
         }
 
-        public MockOperatorEvent(MockOperatorEvent.Type type, Topic topicResource) {
+        public MockOperatorEvent(MockOperatorEvent.Type type, KafkaTopic kafkaTopicResource) {
             this.type = type;
             this.topicName = null;
-            this.topicResource = topicResource;
+            this.kafkaTopicResource = kafkaTopicResource;
         }
 
         @Override
@@ -53,14 +53,14 @@ class MockTopicOperator extends TopicOperator {
             if (type != mockOperatorEvent.type) return false;
             if (topicName != null ? !topicName.equals(mockOperatorEvent.topicName) : mockOperatorEvent.topicName != null)
                 return false;
-            return topicResource != null ? topicResource.equals(mockOperatorEvent.topicResource) : mockOperatorEvent.topicResource == null;
+            return kafkaTopicResource != null ? kafkaTopicResource.equals(mockOperatorEvent.kafkaTopicResource) : mockOperatorEvent.kafkaTopicResource == null;
         }
 
         @Override
         public int hashCode() {
             int result = type.hashCode();
             result = 31 * result + (topicName != null ? topicName.hashCode() : 0);
-            result = 31 * result + (topicResource != null ? topicResource.hashCode() : 0);
+            result = 31 * result + (kafkaTopicResource != null ? kafkaTopicResource.hashCode() : 0);
             return result;
         }
 
@@ -69,7 +69,7 @@ class MockTopicOperator extends TopicOperator {
             return "Event{" +
                     "type=" + type +
                     ", topicName=" + topicName +
-                    ", configMap=" + topicResource +
+                    ", configMap=" + kafkaTopicResource +
                     '}';
         }
     }
@@ -115,19 +115,19 @@ class MockTopicOperator extends TopicOperator {
     }
 
     @Override
-    public void onConfigMapAdded(Topic cm, Handler<AsyncResult<Void>> resultHandler) {
+    public void onConfigMapAdded(KafkaTopic cm, Handler<AsyncResult<Void>> resultHandler) {
         mockOperatorEvents.add(new MockOperatorEvent(MockOperatorEvent.Type.CREATE, cm));
         resultHandler.handle(resourceAddedResult);
     }
 
     @Override
-    public void onConfigMapModified(Topic cm, Handler<AsyncResult<Void>> resultHandler) {
+    public void onConfigMapModified(KafkaTopic cm, Handler<AsyncResult<Void>> resultHandler) {
         mockOperatorEvents.add(new MockOperatorEvent(MockOperatorEvent.Type.MODIFY, cm));
         resultHandler.handle(resourceModifiedResult);
     }
 
     @Override
-    public void onConfigMapDeleted(Topic cm, Handler<AsyncResult<Void>> resultHandler) {
+    public void onConfigMapDeleted(KafkaTopic cm, Handler<AsyncResult<Void>> resultHandler) {
         mockOperatorEvents.add(new MockOperatorEvent(MockOperatorEvent.Type.DELETE, cm));
         resultHandler.handle(resourceDeletedResult);
     }

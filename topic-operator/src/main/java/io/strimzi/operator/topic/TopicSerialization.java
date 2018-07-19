@@ -10,7 +10,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.strimzi.api.kafka.model.TopicBuilder;
+import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -47,9 +48,9 @@ public class TopicSerialization {
     public static final String JSON_KEY_CONFIG = "config";
 
     @SuppressWarnings("unchecked")
-    private static Map<String, String> topicConfigFromTopicConfig(io.strimzi.api.kafka.model.Topic topic) {
-        Map<String, String> result = new HashMap<>(topic.getConfig().size());
-        for (Map.Entry<String, Object> entry : topic.getConfig().entrySet()) {
+    private static Map<String, String> topicConfigFromTopicConfig(KafkaTopic kafkaTopic) {
+        Map<String, String> result = new HashMap<>(kafkaTopic.getConfig().size());
+        for (Map.Entry<String, Object> entry : kafkaTopic.getConfig().entrySet()) {
             String key = entry.getKey();
             Object v = entry.getValue();
             if (v instanceof String
@@ -64,7 +65,7 @@ public class TopicSerialization {
                 } else {
                     msg += " but was of type " + v.getClass().getName();
                 }
-                throw new InvalidTopicException(topic, "Topic's 'config' section has invalid entry: " +
+                throw new InvalidTopicException(kafkaTopic, "Topic's 'config' section has invalid entry: " +
                         "The key '" + key + "' of the topic config is invalid: " + msg);
             }
         }
@@ -79,46 +80,46 @@ public class TopicSerialization {
     public static Topic fromConfigMap(ConfigMap cm) {
         return null;
     }
-    public static Topic fromTopicResource(io.strimzi.api.kafka.model.Topic topic) {
-        if (topic == null) {
+    public static Topic fromTopicResource(KafkaTopic kafkaTopic) {
+        if (kafkaTopic == null) {
             return null;
         }
         Topic.Builder builder = new Topic.Builder()
-                .withMapName(topic.getMetadata().getName())
-                .withTopicName(getTopicName(topic))
-                .withNumPartitions(getPartitions(topic))
-                .withNumReplicas(getReplicas(topic))
-                .withConfig(topicConfigFromTopicConfig(topic));
+                .withMapName(kafkaTopic.getMetadata().getName())
+                .withTopicName(getTopicName(kafkaTopic))
+                .withNumPartitions(getPartitions(kafkaTopic))
+                .withNumReplicas(getReplicas(kafkaTopic))
+                .withConfig(topicConfigFromTopicConfig(kafkaTopic));
         return builder.build();
     }
 
-    private static String getTopicName(io.strimzi.api.kafka.model.Topic topic) {
+    private static String getTopicName(KafkaTopic kafkaTopic) {
         String prefix = "Topics's 'topicName' property is invalid as a topic name: ";
-        String topicName = topic.getTopicName();
+        String topicName = kafkaTopic.getTopicName();
         if (topicName == null) {
-            topicName = topic.getMetadata().getName();
+            topicName = kafkaTopic.getMetadata().getName();
             prefix = "Topics's 'topicName' property is absent and Topics's metadata.name is invalid as a topic name: ";
         }
         try {
             org.apache.kafka.common.internals.Topic.validate(topicName);
         } catch (org.apache.kafka.common.errors.InvalidTopicException e) {
-            throw new InvalidTopicException(topic, prefix + e.getMessage());
+            throw new InvalidTopicException(kafkaTopic, prefix + e.getMessage());
         }
         return topicName;
     }
 
-    private static short getReplicas(io.strimzi.api.kafka.model.Topic topic) {
-        int replicas = topic.getReplicas();
+    private static short getReplicas(KafkaTopic kafkaTopic) {
+        int replicas = kafkaTopic.getReplicas();
         if (replicas < 1 || replicas > Short.MAX_VALUE) {
-            throw new InvalidTopicException(topic, "Topic's replicas should be between 1 and " + Short.MAX_VALUE + " inclusive");
+            throw new InvalidTopicException(kafkaTopic, "Topic's replicas should be between 1 and " + Short.MAX_VALUE + " inclusive");
         }
         return (short) replicas;
     }
 
-    private static int getPartitions(io.strimzi.api.kafka.model.Topic topic) {
-        int partitions = topic.getPartitions();
+    private static int getPartitions(KafkaTopic kafkaTopic) {
+        int partitions = kafkaTopic.getPartitions();
         if (partitions < 1) {
-            throw new InvalidTopicException(topic, "Topic's partitions should be strictly greater than 0");
+            throw new InvalidTopicException(kafkaTopic, "Topic's partitions should be strictly greater than 0");
         }
         return partitions;
     }
@@ -130,9 +131,9 @@ public class TopicSerialization {
     /**
      * Create a ConfigMap to reflect the given Topic.
      */
-    public static io.strimzi.api.kafka.model.Topic toTopicResource(Topic topic, LabelPredicate cmPredicate) {
+    public static KafkaTopic toTopicResource(Topic topic, LabelPredicate cmPredicate) {
         MapName mapName = topic.getOrAsMapName();
-        return new TopicBuilder().withApiVersion("v1")
+        return new KafkaTopicBuilder().withApiVersion("v1")
                     .withMetadata(new ObjectMetaBuilder()
                     .withName(mapName.toString())
                     .withLabels(cmPredicate.labels()).build())

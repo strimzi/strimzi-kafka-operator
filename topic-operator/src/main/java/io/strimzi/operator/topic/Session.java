@@ -7,9 +7,9 @@ package io.strimzi.operator.topic;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.DoneableTopic;
-import io.strimzi.api.kafka.TopicList;
-import io.strimzi.api.kafka.model.Topic;
+import io.strimzi.api.kafka.DoneableKafkaTopic;
+import io.strimzi.api.kafka.KafkaTopicList;
+import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.operator.topic.zk.Zk;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
@@ -153,7 +153,7 @@ public class Session extends AbstractVerticle {
 
         Thread configMapThread = new Thread(() -> {
             LOGGER.debug("Watching configmaps matching {}", cmPredicate);
-            Session.this.topicWatch = kubeClient.customResources(Crds.topic(), Topic.class, TopicList.class, DoneableTopic.class).inNamespace(namespace).watch(new K8sTopicWatcher(topicOperator, cmPredicate));
+            Session.this.topicWatch = kubeClient.customResources(Crds.topic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class).inNamespace(namespace).watch(new K8sTopicWatcher(topicOperator, cmPredicate));
             LOGGER.debug("Watching setup");
 
             // start the HTTP server for healthchecks

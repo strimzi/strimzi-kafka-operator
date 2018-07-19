@@ -5,7 +5,8 @@
 package io.strimzi.operator.topic;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.strimzi.api.kafka.model.TopicBuilder;
+import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -41,18 +42,18 @@ public class TopicSerializationTest {
         builder.withNumPartitions(2);
         builder.withConfigEntry("cleanup.policy", "bar");
         Topic wroteTopic = builder.build();
-        io.strimzi.api.kafka.model.Topic topic = TopicSerialization.toTopicResource(wroteTopic, cmPredicate);
+        KafkaTopic kafkaTopic = TopicSerialization.toTopicResource(wroteTopic, cmPredicate);
 
-        assertEquals(wroteTopic.getTopicName().toString(), topic.getMetadata().getName());
-        assertEquals(2, topic.getMetadata().getLabels().size());
-        assertEquals("strimzi", topic.getMetadata().getLabels().get("app"));
-        assertEquals("topic", topic.getMetadata().getLabels().get("kind"));
-        assertEquals(wroteTopic.getTopicName().toString(), topic.getTopicName());
-        assertEquals(2, topic.getPartitions());
-        assertEquals(1, topic.getReplicas());
-        assertEquals(singletonMap("cleanup.policy", "bar"), topic.getConfig());
+        assertEquals(wroteTopic.getTopicName().toString(), kafkaTopic.getMetadata().getName());
+        assertEquals(2, kafkaTopic.getMetadata().getLabels().size());
+        assertEquals("strimzi", kafkaTopic.getMetadata().getLabels().get("app"));
+        assertEquals("topic", kafkaTopic.getMetadata().getLabels().get("kind"));
+        assertEquals(wroteTopic.getTopicName().toString(), kafkaTopic.getTopicName());
+        assertEquals(2, kafkaTopic.getPartitions());
+        assertEquals(1, kafkaTopic.getReplicas());
+        assertEquals(singletonMap("cleanup.policy", "bar"), kafkaTopic.getConfig());
 
-        Topic readTopic = TopicSerialization.fromTopicResource(topic);
+        Topic readTopic = TopicSerialization.fromTopicResource(kafkaTopic);
         assertEquals(wroteTopic, readTopic);
     }
 
@@ -144,11 +145,11 @@ public class TopicSerializationTest {
                 "01234567890123456789012345678901234567890123456789012345678901234567890123456789" +
                 "01234567890123456789012345678901234567890123456789012345678901234567890123456789" +
                 "012345678901234567890123456789";
-        io.strimzi.api.kafka.model.Topic topic = new TopicBuilder().withMetadata(new ObjectMetaBuilder().withName(illegalAsATopicName)
+        KafkaTopic kafkaTopic = new KafkaTopicBuilder().withMetadata(new ObjectMetaBuilder().withName(illegalAsATopicName)
                 .build()).withReplicas(1).withPartitions(1).withConfig(emptyMap()).build();
 
         try {
-            TopicSerialization.fromTopicResource(topic);
+            TopicSerialization.fromTopicResource(kafkaTopic);
             fail("Should throw");
         } catch (InvalidTopicException e) {
             assertEquals("ConfigMap's 'data' section lacks a 'name' key and ConfigMap's name is invalid as a topic name: " +
@@ -159,10 +160,10 @@ public class TopicSerializationTest {
 
     @Test
     public void testErrorInTopicName() {
-        io.strimzi.api.kafka.model.Topic topic = new TopicBuilder().withMetadata(new ObjectMetaBuilder().withName("foo")
+        KafkaTopic kafkaTopic = new KafkaTopicBuilder().withMetadata(new ObjectMetaBuilder().withName("foo")
                 .build()).withReplicas(1).withPartitions(1).withConfig(emptyMap()).withTopicName("An invalid topic name!").build();
         try {
-            TopicSerialization.fromTopicResource(topic);
+            TopicSerialization.fromTopicResource(kafkaTopic);
             fail("Should throw");
         } catch (InvalidTopicException e) {
             assertEquals("ConfigMap's 'data' section has invalid 'name' key: Topic name \"An invalid topic name!\" is illegal, it contains a character other than ASCII alphanumerics, '.', '_' and '-'", e.getMessage());
@@ -176,7 +177,7 @@ public class TopicSerializationTest {
         data.put(TopicSerialization.CM_KEY_PARTITIONS, "foo");
         data.put(TopicSerialization.CM_KEY_CONFIG, "{}");
 
-        io.strimzi.api.kafka.model.Topic topic = new TopicBuilder()
+        KafkaTopic kafkaTopic = new KafkaTopicBuilder()
                 .withMetadata(new ObjectMetaBuilder().withName("my-topic").build())
                 .withReplicas(1)
                 .withPartitions(-1)
@@ -184,7 +185,7 @@ public class TopicSerializationTest {
                 .build();
 
         try {
-            TopicSerialization.fromTopicResource(topic);
+            TopicSerialization.fromTopicResource(kafkaTopic);
             fail("Should throw");
         } catch (InvalidTopicException e) {
             assertEquals("ConfigMap's 'data' section has invalid key 'partitions': should be a strictly positive integer but was 'foo'", e.getMessage());
@@ -193,7 +194,7 @@ public class TopicSerializationTest {
 
     @Test
     public void testErrorInReplicas() {
-        io.strimzi.api.kafka.model.Topic topic = new TopicBuilder()
+        KafkaTopic kafkaTopic = new KafkaTopicBuilder()
                 .withMetadata(new ObjectMetaBuilder().withName("my-topic").build())
                 .withReplicas(-1)
                 .withPartitions(1)
@@ -201,7 +202,7 @@ public class TopicSerializationTest {
                 .build();
 
         try {
-            TopicSerialization.fromTopicResource(topic);
+            TopicSerialization.fromTopicResource(kafkaTopic);
             fail("Should throw");
         } catch (InvalidTopicException e) {
             assertEquals("ConfigMap's 'data' section has invalid key 'replicas': should be a strictly positive integer but was 'foo'", e.getMessage());
@@ -210,7 +211,7 @@ public class TopicSerializationTest {
 
     @Test
     public void testErrorInConfigInvalidValueWrongType() {
-        io.strimzi.api.kafka.model.Topic topic = new TopicBuilder()
+        KafkaTopic kafkaTopic = new KafkaTopicBuilder()
                 .withMetadata(new ObjectMetaBuilder().withName("my-topic").build())
                 .withReplicas(1)
                 .withPartitions(1)
@@ -218,7 +219,7 @@ public class TopicSerializationTest {
                 .build();
 
         try {
-            TopicSerialization.fromTopicResource(topic);
+            TopicSerialization.fromTopicResource(kafkaTopic);
             fail("Should throw");
         } catch (InvalidTopicException e) {
             assertEquals("ConfigMap's 'data' section has invalid key 'config': " +
@@ -230,7 +231,7 @@ public class TopicSerializationTest {
 
     @Test
     public void testErrorInConfigInvalidValueNull() {
-        io.strimzi.api.kafka.model.Topic topic = new TopicBuilder()
+        KafkaTopic kafkaTopic = new KafkaTopicBuilder()
                 .withMetadata(new ObjectMetaBuilder().withName("my-topic").build())
                 .withReplicas(1)
                 .withPartitions(1)
@@ -238,7 +239,7 @@ public class TopicSerializationTest {
                 .build();
 
         try {
-            TopicSerialization.fromTopicResource(topic);
+            TopicSerialization.fromTopicResource(kafkaTopic);
             fail("Should throw");
         } catch (InvalidTopicException e) {
             assertEquals("ConfigMap's 'data' section has invalid key 'config': " +
