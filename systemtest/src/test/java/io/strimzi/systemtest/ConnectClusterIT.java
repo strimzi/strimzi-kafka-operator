@@ -53,9 +53,6 @@ public class ConnectClusterIT extends AbstractClusterIT {
     public static final String CONNECT_CLUSTER_NAME = "my-cluster";
     public static final String KAFKA_CONNECT_BOOTSTRAP_SERVERS = KAFKA_CLUSTER_NAME + "-kafka-bootstrap:9092";
     public static final String KAFKA_CONNECT_BOOTSTRAP_SERVERS_ESCAPED = KAFKA_CLUSTER_NAME + "-kafka-bootstrap\\:9092";
-    public static final String CONNECT_CONFIG = "{\n" +
-            "      \"bootstrap.servers\": \"" + KAFKA_CONNECT_BOOTSTRAP_SERVERS + "\"" +
-            "    }";
 
     private static final String EXPECTED_CONFIG = "group.id=connect-cluster\\n" +
             "key.converter=org.apache.kafka.connect.json.JsonConverter\\n" +
@@ -68,8 +65,6 @@ public class ConnectClusterIT extends AbstractClusterIT {
             "internal.key.converter=org.apache.kafka.connect.json.JsonConverter\\n" +
             "internal.value.converter.schemas.enable=false\\n" +
             "internal.value.converter=org.apache.kafka.connect.json.JsonConverter\\n";
-    private static final String CO_DEPLOYMENT_CONFIG = "../examples/install/cluster-operator/08-deployment.yaml";
-
 
     @Test
     @JUnitGroup(name = "regression")
@@ -83,7 +78,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
         String deploymentName = clusterName + "-connect";
         oc.waitForDeployment(deploymentName, 1);
         testDockerImagesForKafkaConnect();
-        oc.deleteByName("cm", clusterName);
+        oc.deleteByName("KafkaConnect", clusterName);
         oc.waitForResourceDeletion("deployment", deploymentName);
     }
 
@@ -200,7 +195,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
                 "deployment", "strimzi-cluster-operator"));
         //Verifying docker image for kafka connect
         String connectImageName = getContainerImageNameFromPod(kubeClient.listResourcesByLabel("pod",
-                "type=kafka-connect").get(0));
+                "strimzi.io/kind=KafkaConnect").get(0));
 
         assertEquals(imgFromDeplConf.get(CONNECT_IMAGE), connectImageName);
         LOGGER.info("Docker images verified");
