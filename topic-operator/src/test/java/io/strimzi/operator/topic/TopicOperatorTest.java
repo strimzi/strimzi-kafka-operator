@@ -114,7 +114,7 @@ public class TopicOperatorTest {
         topicOperator.onResourceAdded(kafkaTopic, ar -> {
             assertFailed(context, ar);
             context.assertTrue(ar.cause() instanceof InvalidTopicException);
-            context.assertEquals("Topic's spec.config has invalid entry: The key 'null' of the topic config is invalid: The value corresponding to the key must have a string, number or boolean value but the value was null", ar.cause().getMessage());
+            context.assertEquals("KafkaTopic's spec.config has invalid entry: The key 'null' of the topic config is invalid: The value corresponding to the key must have a string, number or boolean value but the value was null", ar.cause().getMessage());
             mockKafka.assertEmpty(context);
             mockTopicStore.assertEmpty(context);
             async.complete();
@@ -588,7 +588,7 @@ public class TopicOperatorTest {
         topicOperator.reconcile(topic, kubeTopic, kafkaTopic, privateTopic, reconcileResult -> {
             assertSucceeded(context, reconcileResult);
             mockK8s.assertContainsEvent(context, e ->
-                    e.getMessage().contains("ConfigMap is incompatible with the topic metadata. " +
+                    e.getMessage().contains("KafkaTopic is incompatible with the topic metadata. " +
                             "The topic metadata will be treated as canonical."));
             mockTopicStore.assertExists(context, topicName);
             mockK8s.assertExists(context, topicName.asMapName());
