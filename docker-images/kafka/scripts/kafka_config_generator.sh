@@ -4,9 +4,9 @@
 KAFKA_NAME=$(hostname | rev | cut -d "-" -f2- | rev)
 ASSEMBLY_NAME=$(echo "${KAFKA_NAME}" | rev | cut -d "-" -f2- | rev)
 NODE=1
-SUPER_USERS="super.users=User:CN=${ASSEMBLY_NAME}-topic-operator;"
+SUPER_USERS="super.users=User:CN=${ASSEMBLY_NAME}-topic-operator,O=io.strimzi;"
 while [ $NODE -le $KAFKA_NODE_COUNT ]; do
-    SUPER_USERS="${SUPER_USERS}User:CN=${KAFKA_NAME}-$((NODE-1));"
+    SUPER_USERS="${SUPER_USERS}User:CN=${KAFKA_NAME}-$((NODE-1)),O=io.strimzi;"
     let NODE=NODE+1
 done
 
