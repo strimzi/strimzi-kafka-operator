@@ -4,11 +4,9 @@
 
 [options="header"]
 |====
-|Field                        |Description
-|spec                  1.2+<.<|
+|Field        |Description
+|spec  1.2+<.<|
 |<<type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
-|additionalProperties  1.2+<.<|
-|map
 |====
 
 [[type-KafkaAssemblySpec]]
@@ -19,15 +17,13 @@ Used in: <<type-KafkaAssembly,`KafkaAssembly`>>
 
 [options="header"]
 |====
-|Field                        |Description
-|kafka                 1.2+<.<|Configuration of the Kafka cluster
+|Field                 |Description
+|kafka          1.2+<.<|Configuration of the Kafka cluster
 |<<type-Kafka,`Kafka`>>
-|zookeeper             1.2+<.<|Configuration of the Zookeeper cluster
+|zookeeper      1.2+<.<|Configuration of the Zookeeper cluster
 |<<type-Zookeeper,`Zookeeper`>>
-|topicOperator         1.2+<.<|Configuration of the Topic Operator
+|topicOperator  1.2+<.<|Configuration of the Topic Operator
 |<<type-TopicOperator,`TopicOperator`>>
-|additionalProperties  1.2+<.<|
-|map
 |====
 
 [[type-Kafka]]
@@ -38,40 +34,38 @@ Used in: <<type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
 
 [options="header"]
 |====
-|Field                        |Description
-|replicas              1.2+<.<|The number of pods in the cluster.
+|Field                       |Description
+|replicas             1.2+<.<|The number of pods in the cluster.
 |integer
-|image                 1.2+<.<|The docker image for the pods.
+|image                1.2+<.<|The docker image for the pods.
 |string
-|storage               1.2+<.<|Storage configuration (disk). Cannot be updated. The type depends on the value of the `storage.type` property within the given object, which must be one of [ephemeral, persistent-claim]
+|storage              1.2+<.<|Storage configuration (disk). Cannot be updated. The type depends on the value of the `storage.type` property within the given object, which must be one of [ephemeral, persistent-claim]
 |<<type-EphemeralStorage,`EphemeralStorage`>>, <<type-PersistentClaimStorage,`PersistentClaimStorage`>>
-|brokerRackInitImage   1.2+<.<|The image of the init container used for initializing the `broker.rack`.
+|brokerRackInitImage  1.2+<.<|The image of the init container used for initializing the `broker.rack`.
 |string
-|livenessProbe         1.2+<.<|Pod liveness checking.
+|livenessProbe        1.2+<.<|Pod liveness checking.
 |<<type-Probe,`Probe`>>
-|readinessProbe        1.2+<.<|Pod readiness checking.
+|readinessProbe       1.2+<.<|Pod readiness checking.
 |<<type-Probe,`Probe`>>
-|jvmOptions            1.2+<.<|JVM Options for pods
+|jvmOptions           1.2+<.<|JVM Options for pods
 |<<type-JvmOptions,`JvmOptions`>>
-|affinity              1.2+<.<|Pod affinity rules.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[core/v1 affinity]
+|affinity             1.2+<.<|Pod affinity rules.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[core/v1 affinity]
 
 
 |https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[Affinity]
-|metrics               1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
+|metrics              1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
 |map
-|tlsSidecar            1.2+<.<|TLS sidecar configuration
+|tlsSidecar           1.2+<.<|TLS sidecar configuration
 |<<type-Sidecar,`Sidecar`>>
-|additionalProperties  1.2+<.<|
+|config               1.2+<.<|The kafka broker config. Properties with the following prefixes cannot be set: listeners, advertised., broker., listener.name.replication., listener.name.clienttls.ssl.truststore, listener.name.clienttls.ssl.keystore, host.name, port, inter.broker.listener.name, sasl., ssl., security., password., principal.builder.class, log.dir, zookeeper.connect, zookeeper.set.acl, super.user
 |map
-|config                1.2+<.<|The kafka broker config. Properties with the following prefixes cannot be set: listeners, advertised., broker., listener.name.replication., listener.name.clienttls.ssl.truststore, listener.name.clienttls.ssl.keystore, host.name, port, inter.broker.listener.name, sasl., ssl., security., password., principal.builder.class, log.dir, zookeeper.connect, zookeeper.set.acl, super.user
-|map
-|logging               1.2+<.<|Logging configuration for Kafka The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external]
+|logging              1.2+<.<|Logging configuration for Kafka The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external]
 |<<type-InlineLogging,`InlineLogging`>>, <<type-ExternalLogging,`ExternalLogging`>>
-|rack                  1.2+<.<|Configuration of the `broker.rack` broker config.
+|rack                 1.2+<.<|Configuration of the `broker.rack` broker config.
 |<<type-Rack,`Rack`>>
-|resources             1.2+<.<|Resource constraints (limits and requests).
+|resources            1.2+<.<|Resource constraints (limits and requests).
 |<<type-Resources,`Resources`>>
-|tolerations           1.2+<.<|Pod's tolerations.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#tolerations-v1-core[core/v1 tolerations]
+|tolerations          1.2+<.<|Pod's tolerations.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#tolerations-v1-core[core/v1 tolerations]
 
 
 |https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#tolerations-v1-core[Toleration] array
@@ -87,10 +81,8 @@ The `type` property is a discriminator that distinguishes the use of the type `E
 It must have the value `ephemeral` for the type `EphemeralStorage`.
 [options="header"]
 |====
-|Field                        |Description
-|additionalProperties  1.2+<.<|
-|map
-|type                  1.2+<.<|Must be `ephemeral`
+|Field        |Description
+|type  1.2+<.<|Must be `ephemeral`
 |string
 |====
 
@@ -104,18 +96,16 @@ The `type` property is a discriminator that distinguishes the use of the type `P
 It must have the value `persistent-claim` for the type `PersistentClaimStorage`.
 [options="header"]
 |====
-|Field                        |Description
-|additionalProperties  1.2+<.<|
-|map
-|class                 1.2+<.<|The storage class to use for dynamic volume allocation.
+|Field               |Description
+|class        1.2+<.<|The storage class to use for dynamic volume allocation.
 |string
-|deleteClaim           1.2+<.<|Specifies if the persistent volume claim has to be deleted when the cluster is un-deployed.
+|deleteClaim  1.2+<.<|Specifies if the persistent volume claim has to be deleted when the cluster is un-deployed.
 |boolean
-|selector              1.2+<.<|Specifies a specific persistent volume to use. It contains a matchLabels field which defines an inner JSON object with key:value representing labels for selecting such a volume.
+|selector     1.2+<.<|Specifies a specific persistent volume to use. It contains a matchLabels field which defines an inner JSON object with key:value representing labels for selecting such a volume.
 |map
-|size                  1.2+<.<|When type=persistent-claim, defines the size of the persistent volume claim (i.e 1Gi). Mandatory when type=persistent-claim.
+|size         1.2+<.<|When type=persistent-claim, defines the size of the persistent volume claim (i.e 1Gi). Mandatory when type=persistent-claim.
 |string
-|type                  1.2+<.<|Must be `persistent-claim`
+|type         1.2+<.<|Must be `persistent-claim`
 |string
 |====
 
@@ -127,12 +117,10 @@ Used in: <<type-Kafka,`Kafka`>>, <<type-KafkaConnectAssemblySpec,`KafkaConnectAs
 
 [options="header"]
 |====
-|Field                        |Description
-|additionalProperties  1.2+<.<|
-|map
-|initialDelaySeconds   1.2+<.<|The initial delay before first the health is first checked.
+|Field                       |Description
+|initialDelaySeconds  1.2+<.<|The initial delay before first the health is first checked.
 |integer
-|timeoutSeconds        1.2+<.<|The timeout for each attempted health check.
+|timeoutSeconds       1.2+<.<|The timeout for each attempted health check.
 |integer
 |====
 
@@ -178,12 +166,10 @@ Used in: <<type-Kafka,`Kafka`>>, <<type-KafkaConnectAssemblySpec,`KafkaConnectAs
 
 [options="header"]
 |====
-|Field                        |Description
-|additionalProperties  1.2+<.<|
-|map
-|limits                1.2+<.<|Resource limits applied at runtime.
+|Field            |Description
+|limits    1.2+<.<|Resource limits applied at runtime.
 |<<type-CpuMemory,`CpuMemory`>>
-|requests              1.2+<.<|Resource requests applied during pod scheduling.
+|requests  1.2+<.<|Resource requests applied during pod scheduling.
 |<<type-CpuMemory,`CpuMemory`>>
 |====
 
@@ -195,12 +181,10 @@ Used in: <<type-Resources,`Resources`>>
 
 [options="header"]
 |====
-|Field                        |Description
-|additionalProperties  1.2+<.<|
-|map
-|cpu                   1.2+<.<|CPU
+|Field          |Description
+|cpu     1.2+<.<|CPU
 |string
-|memory                1.2+<.<|Memory
+|memory  1.2+<.<|Memory
 |string
 |====
 
@@ -246,10 +230,8 @@ Used in: <<type-Kafka,`Kafka`>>
 
 [options="header"]
 |====
-|Field                        |Description
-|additionalProperties  1.2+<.<|
-|map
-|topologyKey           1.2+<.<|A key that matches labels assigned to the OpenShift or Kubernetes cluster nodes. The value of the label is used to set the broker's `broker.rack` config.
+|Field               |Description
+|topologyKey  1.2+<.<|A key that matches labels assigned to the OpenShift or Kubernetes cluster nodes. The value of the label is used to set the broker's `broker.rack` config.
 |string
 |====
 
@@ -261,36 +243,34 @@ Used in: <<type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
 
 [options="header"]
 |====
-|Field                        |Description
-|replicas              1.2+<.<|The number of pods in the cluster.
+|Field                  |Description
+|replicas        1.2+<.<|The number of pods in the cluster.
 |integer
-|image                 1.2+<.<|The docker image for the pods.
+|image           1.2+<.<|The docker image for the pods.
 |string
-|storage               1.2+<.<|Storage configuration (disk). Cannot be updated. The type depends on the value of the `storage.type` property within the given object, which must be one of [ephemeral, persistent-claim]
+|storage         1.2+<.<|Storage configuration (disk). Cannot be updated. The type depends on the value of the `storage.type` property within the given object, which must be one of [ephemeral, persistent-claim]
 |<<type-EphemeralStorage,`EphemeralStorage`>>, <<type-PersistentClaimStorage,`PersistentClaimStorage`>>
-|livenessProbe         1.2+<.<|Pod liveness checking.
+|livenessProbe   1.2+<.<|Pod liveness checking.
 |<<type-Probe,`Probe`>>
-|readinessProbe        1.2+<.<|Pod readiness checking.
+|readinessProbe  1.2+<.<|Pod readiness checking.
 |<<type-Probe,`Probe`>>
-|jvmOptions            1.2+<.<|JVM Options for pods
+|jvmOptions      1.2+<.<|JVM Options for pods
 |<<type-JvmOptions,`JvmOptions`>>
-|affinity              1.2+<.<|Pod affinity rules.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[core/v1 affinity]
+|affinity        1.2+<.<|Pod affinity rules.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[core/v1 affinity]
 
 
 |https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[Affinity]
-|metrics               1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
+|metrics         1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
 |map
-|tlsSidecar            1.2+<.<|TLS sidecar configuration
+|tlsSidecar      1.2+<.<|TLS sidecar configuration
 |<<type-Sidecar,`Sidecar`>>
-|additionalProperties  1.2+<.<|
+|config          1.2+<.<|The zookeeper broker config. Properties with the following prefixes cannot be set: server., dataDir, dataLogDir, clientPort, authProvider, quorum.auth, requireClientAuthScheme
 |map
-|config                1.2+<.<|The zookeeper broker config. Properties with the following prefixes cannot be set: server., dataDir, dataLogDir, clientPort, authProvider, quorum.auth, requireClientAuthScheme
-|map
-|logging               1.2+<.<|Logging configuration for Zookeeper The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external]
+|logging         1.2+<.<|Logging configuration for Zookeeper The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external]
 |<<type-InlineLogging,`InlineLogging`>>, <<type-ExternalLogging,`ExternalLogging`>>
-|resources             1.2+<.<|Resource constraints (limits and requests).
+|resources       1.2+<.<|Resource constraints (limits and requests).
 |<<type-Resources,`Resources`>>
-|tolerations           1.2+<.<|Pod's tolerations.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#tolerations-v1-core[core/v1 tolerations]
+|tolerations     1.2+<.<|Pod's tolerations.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#tolerations-v1-core[core/v1 tolerations]
 
 
 |https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#tolerations-v1-core[Toleration] array
@@ -323,8 +303,6 @@ Used in: <<type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
 |integer
 |tlsSidecar                      1.2+<.<|TLS sidecar configuration
 |<<type-Sidecar,`Sidecar`>>
-|additionalProperties            1.2+<.<|
-|map
 |logging                         1.2+<.<|Logging configuration The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external]
 |<<type-InlineLogging,`InlineLogging`>>, <<type-ExternalLogging,`ExternalLogging`>>
 |====
@@ -335,11 +313,9 @@ Used in: <<type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
 
 [options="header"]
 |====
-|Field                        |Description
-|spec                  1.2+<.<|
+|Field        |Description
+|spec  1.2+<.<|
 |<<type-KafkaConnectAssemblySpec,`KafkaConnectAssemblySpec`>>
-|additionalProperties  1.2+<.<|
-|map
 |====
 
 [[type-KafkaConnectAssemblySpec]]
@@ -350,32 +326,30 @@ Used in: <<type-KafkaConnectAssembly,`KafkaConnectAssembly`>>
 
 [options="header"]
 |====
-|Field                        |Description
-|replicas              1.2+<.<|
+|Field                  |Description
+|replicas        1.2+<.<|
 |integer
-|image                 1.2+<.<|The docker image for the pods.
+|image           1.2+<.<|The docker image for the pods.
 |string
-|livenessProbe         1.2+<.<|Pod liveness checking.
+|livenessProbe   1.2+<.<|Pod liveness checking.
 |<<type-Probe,`Probe`>>
-|readinessProbe        1.2+<.<|Pod readiness checking.
+|readinessProbe  1.2+<.<|Pod readiness checking.
 |<<type-Probe,`Probe`>>
-|jvmOptions            1.2+<.<|JVM Options for pods
+|jvmOptions      1.2+<.<|JVM Options for pods
 |<<type-JvmOptions,`JvmOptions`>>
-|affinity              1.2+<.<|Pod affinity rules.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[core/v1 affinity]
+|affinity        1.2+<.<|Pod affinity rules.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[core/v1 affinity]
 
 
 |https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[Affinity]
-|metrics               1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
+|metrics         1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
 |map
-|additionalProperties  1.2+<.<|
+|config          1.2+<.<|The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest.
 |map
-|config                1.2+<.<|The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest.
-|map
-|logging               1.2+<.<|Logging configuration for Kafka Connect The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external]
+|logging         1.2+<.<|Logging configuration for Kafka Connect The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external]
 |<<type-InlineLogging,`InlineLogging`>>, <<type-ExternalLogging,`ExternalLogging`>>
-|resources             1.2+<.<|Resource constraints (limits and requests).
+|resources       1.2+<.<|Resource constraints (limits and requests).
 |<<type-Resources,`Resources`>>
-|tolerations           1.2+<.<|Pod's tolerations.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#tolerations-v1-core[core/v1 tolerations]
+|tolerations     1.2+<.<|Pod's tolerations.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#tolerations-v1-core[core/v1 tolerations]
 
 
 |https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#tolerations-v1-core[Toleration] array
@@ -387,11 +361,9 @@ Used in: <<type-KafkaConnectAssembly,`KafkaConnectAssembly`>>
 
 [options="header"]
 |====
-|Field                        |Description
-|spec                  1.2+<.<|
+|Field        |Description
+|spec  1.2+<.<|
 |<<type-KafkaConnectS2IAssemblySpec,`KafkaConnectS2IAssemblySpec`>>
-|additionalProperties  1.2+<.<|
-|map
 |====
 
 [[type-KafkaConnectS2IAssemblySpec]]
@@ -419,8 +391,6 @@ Used in: <<type-KafkaConnectS2IAssembly,`KafkaConnectS2IAssembly`>>
 |https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[Affinity]
 |metrics                   1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
 |map
-|additionalProperties      1.2+<.<|
-|map
 |config                    1.2+<.<|The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest.
 |map
 |insecureSourceRepository  1.2+<.<|
@@ -435,38 +405,33 @@ Used in: <<type-KafkaConnectS2IAssembly,`KafkaConnectS2IAssembly`>>
 |https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#tolerations-v1-core[Toleration] array
 |====
 
-[[kind-KafkaTopic]]
 [[type-KafkaTopic]]
 ### `KafkaTopic` kind v1alpha1 kafka.strimzi.io
 
 
 [options="header"]
 |====
-|Field                        |Description
-|spec                  1.2+<.<|The specification of the topic.
+|Field        |Description
+|spec  1.2+<.<|The specification of the topic.
 |<<type-KafkaTopicSpec,`KafkaTopicSpec`>>
-|additionalProperties  1.2+<.<|
-|map
 |====
 
 [[type-KafkaTopicSpec]]
 ### `KafkaTopicSpec` type v1alpha1 kafka.strimzi.io
 
-Used in: <<kind-KafkaTopic,`KafkaTopic`>>
+Used in: <<type-KafkaTopic,`KafkaTopic`>>
 
 
 [options="header"]
 |====
-|Field                        |Description
-|partitions            1.2+<.<|
+|Field              |Description
+|partitions  1.2+<.<|
 |integer
-|replicas              1.2+<.<|The number of replicas the topic should have. If unspecified this will default to the broker's `default.replication.factor` config.
+|replicas    1.2+<.<|The number of replicas the topic should have. If unspecified this will default to the broker's `default.replication.factor` config.
 |integer
-|config                1.2+<.<|The topic configuration.
+|config      1.2+<.<|The topic configuration.
 |map
-|additionalProperties  1.2+<.<|
-|map
-|topicName             1.2+<.<|The name of the topic. When absent this will default to the metadata.name of the topic. It is recommended to not set this unless the topic name is not a valid Kubernetes resource name.
+|topicName   1.2+<.<|The name of the topic. When absent this will default to the metadata.name of the topic. It is recommended to not set this unless the topic name is not a valid Kubernetes resource name.
 |string
 |====
 

@@ -25,8 +25,6 @@ spec:
             livenessProbe:
               type: object
               properties:
-                additionalProperties:
-                  type: object
                 initialDelaySeconds:
                   type: integer
                   minimum: 0
@@ -36,8 +34,6 @@ spec:
             readinessProbe:
               type: object
               properties:
-                additionalProperties:
-                  type: object
                 initialDelaySeconds:
                   type: integer
                   minimum: 0
@@ -84,14 +80,8 @@ spec:
                                       type: array
                                       items:
                                         type: string
-                                    additionalProperties:
-                                      type: object
-                              additionalProperties:
-                                type: object
                           weight:
                             type: integer
-                          additionalProperties:
-                            type: object
                     requiredDuringSchedulingIgnoredDuringExecution:
                       type: object
                       properties:
@@ -113,14 +103,6 @@ spec:
                                       type: array
                                       items:
                                         type: string
-                                    additionalProperties:
-                                      type: object
-                              additionalProperties:
-                                type: object
-                        additionalProperties:
-                          type: object
-                    additionalProperties:
-                      type: object
                 podAffinity:
                   type: object
                   properties:
@@ -148,11 +130,7 @@ spec:
                                           type: array
                                           items:
                                             type: string
-                                        additionalProperties:
-                                          type: object
                                   matchLabels:
-                                    type: object
-                                  additionalProperties:
                                     type: object
                               namespaces:
                                 type: array
@@ -160,12 +138,8 @@ spec:
                                   type: string
                               topologyKey:
                                 type: string
-                              additionalProperties:
-                                type: object
                           weight:
                             type: integer
-                          additionalProperties:
-                            type: object
                     requiredDuringSchedulingIgnoredDuringExecution:
                       type: array
                       items:
@@ -187,11 +161,7 @@ spec:
                                       type: array
                                       items:
                                         type: string
-                                    additionalProperties:
-                                      type: object
                               matchLabels:
-                                type: object
-                              additionalProperties:
                                 type: object
                           namespaces:
                             type: array
@@ -199,10 +169,6 @@ spec:
                               type: string
                           topologyKey:
                             type: string
-                          additionalProperties:
-                            type: object
-                    additionalProperties:
-                      type: object
                 podAntiAffinity:
                   type: object
                   properties:
@@ -230,11 +196,7 @@ spec:
                                           type: array
                                           items:
                                             type: string
-                                        additionalProperties:
-                                          type: object
                                   matchLabels:
-                                    type: object
-                                  additionalProperties:
                                     type: object
                               namespaces:
                                 type: array
@@ -242,12 +204,8 @@ spec:
                                   type: string
                               topologyKey:
                                 type: string
-                              additionalProperties:
-                                type: object
                           weight:
                             type: integer
-                          additionalProperties:
-                            type: object
                     requiredDuringSchedulingIgnoredDuringExecution:
                       type: array
                       items:
@@ -269,11 +227,7 @@ spec:
                                       type: array
                                       items:
                                         type: string
-                                    additionalProperties:
-                                      type: object
                               matchLabels:
-                                type: object
-                              additionalProperties:
                                 type: object
                           namespaces:
                             type: array
@@ -281,15 +235,7 @@ spec:
                               type: string
                           topologyKey:
                             type: string
-                          additionalProperties:
-                            type: object
-                    additionalProperties:
-                      type: object
-                additionalProperties:
-                  type: object
             metrics:
-              type: object
-            additionalProperties:
               type: object
             config:
               type: object
@@ -305,13 +251,9 @@ spec:
             resources:
               type: object
               properties:
-                additionalProperties:
-                  type: object
                 limits:
                   type: object
                   properties:
-                    additionalProperties:
-                      type: object
                     cpu:
                       type: string
                       pattern: '[0-9]+m?$'
@@ -321,8 +263,6 @@ spec:
                 requests:
                   type: object
                   properties:
-                    additionalProperties:
-                      type: object
                     cpu:
                       type: string
                       pattern: '[0-9]+m?$'
@@ -344,9 +284,5 @@ spec:
                     type: integer
                   value:
                     type: string
-                  additionalProperties:
-                    type: object
           required:
           - config
-        additionalProperties:
-          type: object

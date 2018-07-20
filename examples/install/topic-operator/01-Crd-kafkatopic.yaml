@@ -26,11 +26,7 @@ spec:
               maximum: 32767
             config:
               type: object
-            additionalProperties:
-              type: object
             topicName:
               type: string
-        additionalProperties:
-          type: object
       required:
       - spec
