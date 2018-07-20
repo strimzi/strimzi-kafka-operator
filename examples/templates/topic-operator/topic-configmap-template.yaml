@@ -18,14 +18,9 @@ parameters:
   description: Specifies the name of the Kafka cluster in which the topic should be created.
   required: true
   value: my-cluster
-- name: MAP_NAME
-  displayName: Name of the ConfigMap
-  description: Specifies the name of the ConfigMap. If possible this should be the same as the TOPIC_NAME parameter.
-  required: true
-  value: my-topic
 - name: TOPIC_NAME
   displayName: Name of the topic
-  description: Specifies the name of the topic in the Kafka cluster.
+  description: Specifies the name of the topic in the Kafka cluster. This should be a valid Kubernetes resource name.
   required: true
   value: my-topic
 - name: TOPIC_PARTITIONS
@@ -50,9 +45,8 @@ objects:
 - apiVersion: kafka.strimzi.io/v1alpha1
   kind: KafkaTopic
   metadata:
-    name: "${MAP_NAME}"
+    name: ${TOPIC_NAME}
   spec:
-    topicName: ${TOPIC_NAME}
     partitions: ${{TOPIC_PARTITIONS}}
     replicas: ${{TOPIC_REPLICAS}}
     config: ${{TOPIC_CONFIG}}
