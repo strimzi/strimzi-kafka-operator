@@ -35,7 +35,8 @@ import static java.util.Collections.unmodifiableList;
         spec = @Crd.Spec(
                 names = @Crd.Spec.Names(
                         kind = KafkaTopic.RESOURCE_KIND,
-                        plural = KafkaTopic.RESOURCE_PLURAL
+                        plural = KafkaTopic.RESOURCE_PLURAL,
+                        shortNames = {KafkaTopic.SHORT_NAME}
                 ),
                 group = KafkaTopic.RESOURCE_GROUP,
                 scope = "Namespaced",
@@ -61,7 +62,8 @@ public class KafkaTopic extends CustomResource {
     public static final String RESOURCE_SINGULAR = "kafkatopic";
     public static final String CRD_API_VERSION = "apiextensions.k8s.io/v1beta1";
     public static final String CRD_NAME = RESOURCE_PLURAL + "." + RESOURCE_GROUP;
-    public static final List<String> RESOURCE_SHORTNAMES = unmodifiableList(asList("kt"));
+    public static final String SHORT_NAME = "kt";
+    public static final List<String> RESOURCE_SHORTNAMES = unmodifiableList(asList(SHORT_NAME));
 
     private String apiVersion;
     private ObjectMeta metadata;
