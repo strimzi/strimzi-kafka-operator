@@ -3,12 +3,7 @@
 # Prepare super.users field
 KAFKA_NAME=$(hostname | rev | cut -d "-" -f2- | rev)
 ASSEMBLY_NAME=$(echo "${KAFKA_NAME}" | rev | cut -d "-" -f2- | rev)
-NODE=1
-SUPER_USERS="super.users=User:CN=${ASSEMBLY_NAME}-topic-operator,O=io.strimzi;"
-while [ $NODE -le $KAFKA_NODE_COUNT ]; do
-    SUPER_USERS="${SUPER_USERS}User:CN=${KAFKA_NAME}-$((NODE-1)),O=io.strimzi;"
-    let NODE=NODE+1
-done
+SUPER_USERS="super.users=User:CN=${ASSEMBLY_NAME}-topic-operator,O=io.strimzi;User:CN=${KAFKA_NAME},O=io.strimzi"
 
 # Write the config file
 cat <<EOF

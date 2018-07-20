@@ -1039,7 +1039,7 @@ public abstract class AbstractModel {
 
             Subject sbj = new Subject();
             sbj.setOrganizationName("io.strimzi");
-            sbj.setCommonName(podName.apply(cluster, i));
+            sbj.setCommonName(getName());
 
             certManager.generateCsr(brokerKeyFile, brokerCsrFile, sbj);
             certManager.generateCert(brokerCsrFile, caCert.key(), caCert.cert(), brokerCertFile, CERTS_EXPIRATION_DAYS);
