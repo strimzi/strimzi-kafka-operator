@@ -2,32 +2,31 @@
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: minima.example.org
+  name: kafkatopics.kafka.strimzi.io
 spec:
-  group: example.org
+  group: kafka.strimzi.io
   version: v1alpha1
   scope: Namespaced
   names:
-    kind: Minimum
-    listKind: MinimumList
-    singular: minimum
-    plural: minima
+    kind: KafkaTopic
+    listKind: KafkaTopicList
+    singular: kafkatopic
+    plural: kafkatopics
   validation:
     openAPIV3Schema:
       properties:
         spec:
           type: object
           properties:
-            constrained:
+            partitions:
+              type: integer
+            replicas:
               type: integer
               minimum: 1
+              maximum: 32767
+            config:
+              type: object
+            topicName:
+              type: string
       required:
       - spec
----
-apiVersion: example.org/v1alpha1
-kind: Minimum
-metadata:
-  name: instance-resource
-spec:
-  foo: true
----
