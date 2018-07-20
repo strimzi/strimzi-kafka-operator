@@ -584,17 +584,17 @@ public class KafkaCluster extends AbstractModel {
 
 
     /**
-     * Get the name of the kafka service account given the name of the {@code cluster}.
+     * Get the name of the kafka service account given the name of the {@code kafkaResourceName}.
      */
-    public static String initContainerServiceAccountName(String cluster) {
-        return cluster + "-kafka";
+    public static String initContainerServiceAccountName(String kafkaResourceName) {
+        return kafkaClusterName(kafkaResourceName);
     }
 
     /**
-     * Get the name of the kafka cluster role binding given the name of the {@code cluster}.
+     * Get the name of the kafka kafkaResourceName role binding given the name of the {@code kafkaResourceName}.
      */
-    public static String initContainerClusterRoleBindingName(String cluster) {
-        return "strimzi-" + cluster + "-kafka-init";
+    public static String initContainerClusterRoleBindingName(String kafkaResourceName) {
+        return "strimzi-" + kafkaResourceName + "-kafka-init";
     }
 
     /**

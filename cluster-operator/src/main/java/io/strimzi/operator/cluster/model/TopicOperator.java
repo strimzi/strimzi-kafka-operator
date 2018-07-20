@@ -154,11 +154,11 @@ public class TopicOperator extends AbstractModel {
     }
 
     public static String topicOperatorName(String cluster) {
-        return cluster + io.strimzi.operator.cluster.model.TopicOperator.NAME_SUFFIX;
+        return cluster + NAME_SUFFIX;
     }
 
     public static String metricAndLogConfigsName(String cluster) {
-        return cluster + TopicOperator.METRICS_AND_LOG_CONFIG_SUFFIX;
+        return cluster + METRICS_AND_LOG_CONFIG_SUFFIX;
     }
 
     protected static String defaultZookeeperConnect(String cluster) {
@@ -172,7 +172,7 @@ public class TopicOperator extends AbstractModel {
     protected static String defaultTopicConfigMapLabels(String cluster) {
         return String.format("%s=%s,%s=%s",
                 Labels.STRIMZI_CLUSTER_LABEL, cluster,
-                Labels.STRIMZI_KIND_LABEL, io.strimzi.operator.cluster.model.TopicOperator.TOPIC_CM_KIND);
+                Labels.STRIMZI_KIND_LABEL, TopicOperator.TOPIC_CM_KIND);
     }
 
     /**
@@ -257,7 +257,7 @@ public class TopicOperator extends AbstractModel {
      * Get the name of the topic operator service account given the name of the {@code cluster}.
      */
     public static String topicOperatorServiceAccountName(String cluster) {
-        return cluster + NAME_SUFFIX;
+        return topicOperatorName(cluster);
     }
 
     @Override
