@@ -290,6 +290,7 @@ public class KafkaCluster extends AbstractModel {
         List<ServicePort> ports = new ArrayList<>(2);
         ports.add(createServicePort(CLIENT_PORT_NAME, CLIENT_PORT, CLIENT_PORT, "TCP"));
         ports.add(createServicePort(CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, CLIENT_TLS_PORT, "TCP"));
+        ports.add(createServicePort(REPLICATION_PORT_NAME, REPLICATION_PORT, REPLICATION_PORT, "TCP"));
         if (isMetricsEnabled()) {
             ports.add(createServicePort(metricsPortName, metricsPort, metricsPort, "TCP"));
         }

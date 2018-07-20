@@ -194,7 +194,7 @@ public class TopicOperator extends AbstractModel {
     }
 
     protected static String defaultBootstrapServers(String cluster) {
-        return KafkaCluster.headlessServiceName(cluster) + ":" + io.strimzi.api.kafka.model.TopicOperator.DEFAULT_BOOTSTRAP_SERVERS_PORT;
+        return KafkaCluster.serviceName(cluster) + ":" + io.strimzi.api.kafka.model.TopicOperator.DEFAULT_BOOTSTRAP_SERVERS_PORT;
     }
 
     protected static String defaultTopicConfigMapLabels(String cluster) {
