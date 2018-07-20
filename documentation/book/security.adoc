@@ -21,7 +21,7 @@ All the generated certificates are saved as Secrets in the {ProductPlatformName}
 Contains the private and public keys of the cluster CA which is used for signing server certificates for the Kafka and Strimzi components (Kafka brokers, Zookeeper nodes, and so on).
 `<cluster-name>-cluster-ca-cert`::
 Contains only the public key of the cluster CA.
-The public key should be used by Kafka clients to verify the identity of the Kafka brokers they are connecting to.
+The public key used by Kafka clients to verify the identity of the Kafka brokers they are connecting to (TLS server authentication).
 `<cluster-name>-clients-ca`::
 Contains the private and public keys of the clients CA.
 The clients CA is used for TLS client authentication of Kafka clients when connecting to Kafka brokers.
@@ -65,7 +65,7 @@ On {OpenShiftName}, the certificate can be extracted with the following command:
 [source,shell]
 oc get secret <cluster-name>-cluster-ca-cert -o jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
 
-The Kafka client has to be configured to trust certificates signed by this CA. 
+The Kafka client has to be configured to trust certificates signed by this CA.
 For the Java-based Kafka Producer, Consumer and Streams APIs, you can do this by importing the CA certificate into the JVM's truststore using the following keytool command:
 
 [source,shell]
