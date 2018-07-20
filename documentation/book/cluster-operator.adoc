@@ -1072,10 +1072,10 @@ Such permission is described in terms of {ProductPlatformName} role-based access
 * `Role` and `ClusterRole`,
 * `RoleBinding` and `ClusterRoleBinding`.
 
-As well as running under its own `ServiceAccount` with `ClusterRoleBindings`, the Cluster Operator itself manages some RBAC resources.
-This is because some of the components that are deployed need access to {ProductPlatformName} resources. 
-Furthermore, {ProductPlatformName} includes privilege escalation protections which prevent components operating under one `ServiceAccount` from granting other `ServiceAccounts` privileges they do not have. 
-This means that for the Cluster Operator to be able to create the `ClusterRoleBindings` and `RoleBindings` needed by resources it manages it needs those same privileges itself.
+In addition to running under its own `ServiceAccount` with a `ClusterRoleBinding`, the Cluster Operator manages some RBAC resources because some of the components need access to {ProductPlatformName} resources.
+
+{ProductPlatformName} also includes privilege escalation protections that prevent components operating under one `ServiceAccount` from granting other `ServiceAccounts` privileges that the granting `ServiceAccount` does not have.
+Because the Cluster Operator must be able to create the `ClusterRoleBindings` and `RoleBindings` needed by resources it manages, the Cluster Operator must also have those same privileges.
 
 [id="delegated-privileges"]
 ==== Delegated privileges
