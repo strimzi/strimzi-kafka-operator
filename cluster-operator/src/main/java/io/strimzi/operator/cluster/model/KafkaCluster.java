@@ -65,10 +65,11 @@ public class KafkaCluster extends AbstractModel {
     private static final String SERVICE_NAME_SUFFIX = NAME_SUFFIX + "-bootstrap";
     private static final String HEADLESS_SERVICE_NAME_SUFFIX = NAME_SUFFIX + "-brokers";
 
-    private static final String BROKERS_SECRET_SUFFIX = NAME_SUFFIX + "-brokers";
-    private static final String CLUSTER_PUBLIC_KEY_SUFFIX = "-cert";
-    private static final String CLIENTS_CA_SUFFIX = "-clients-ca";
-    private static final String CLIENTS_PUBLIC_KEY_SUFFIX = "-clients-ca-cert";
+    // Suffixes for secrets with certificates
+    private static final String SECRET_BROKERS_SUFFIX = NAME_SUFFIX + "-brokers";
+    private static final String SECRET_CLUSTER_PUBLIC_KEY_SUFFIX = "-cert";
+    private static final String SECRET_CLIENTS_CA_SUFFIX = "-clients-ca";
+    private static final String SECRET_CLIENTS_PUBLIC_KEY_SUFFIX = "-clients-ca-cert";
 
     protected static final String METRICS_AND_LOG_CONFIG_SUFFIX = NAME_SUFFIX + "-config";
 
@@ -148,19 +149,19 @@ public class KafkaCluster extends AbstractModel {
     }
 
     public static String clientsCASecretName(String cluster) {
-        return cluster + KafkaCluster.CLIENTS_CA_SUFFIX;
+        return cluster + KafkaCluster.SECRET_CLIENTS_CA_SUFFIX;
     }
 
     public static String brokersSecretName(String cluster) {
-        return cluster + KafkaCluster.BROKERS_SECRET_SUFFIX;
+        return cluster + KafkaCluster.SECRET_BROKERS_SUFFIX;
     }
 
     public static String clientsPublicKeyName(String cluster) {
-        return cluster + KafkaCluster.CLIENTS_PUBLIC_KEY_SUFFIX;
+        return cluster + KafkaCluster.SECRET_CLIENTS_PUBLIC_KEY_SUFFIX;
     }
 
     public static String clusterPublicKeyName(String cluster) {
-        return getClusterCaName(cluster) + KafkaCluster.CLUSTER_PUBLIC_KEY_SUFFIX;
+        return getClusterCaName(cluster) + KafkaCluster.SECRET_CLUSTER_PUBLIC_KEY_SUFFIX;
     }
 
     public static KafkaCluster fromCrd(CertManager certManager, KafkaAssembly kafkaAssembly, List<Secret> secrets) {
@@ -349,7 +350,7 @@ public class KafkaCluster extends AbstractModel {
      */
     public Secret generateClientsPublicKeySecret() {
         Map<String, String> data = new HashMap<>();
-        data.put("clients-ca.crt", Base64.getEncoder().encodeToString(clientsCA.cert()));
+        data.put("ca.crt", Base64.getEncoder().encodeToString(clientsCA.cert()));
         return createSecret(KafkaCluster.clientsPublicKeyName(cluster), data);
     }
 
@@ -406,8 +407,8 @@ public class KafkaCluster extends AbstractModel {
         if (rack != null) {
             volumeList.add(createEmptyDirVolume(RACK_VOLUME_NAME));
         }
-        volumeList.add(createSecretVolume("cluster-certs", KafkaCluster.brokersSecretName(cluster)));
-        volumeList.add(createSecretVolume("clients-certs", KafkaCluster.clientsPublicKeyName(cluster)));
+        volumeList.add(createSecretVolume("broker-certs", KafkaCluster.brokersSecretName(cluster)));
+        volumeList.add(createSecretVolume("client-ca-cert", KafkaCluster.clientsPublicKeyName(cluster)));
         volumeList.add(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
 
         return volumeList;
@@ -428,8 +429,8 @@ public class KafkaCluster extends AbstractModel {
         if (rack != null) {
             volumeMountList.add(createVolumeMount(RACK_VOLUME_NAME, RACK_VOLUME_MOUNT));
         }
-        volumeMountList.add(createVolumeMount("cluster-certs", "/opt/kafka/cluster-certs"));
-        volumeMountList.add(createVolumeMount("clients-certs", "/opt/kafka/clients-certs"));
+        volumeMountList.add(createVolumeMount("broker-certs", "/opt/kafka/broker-certs"));
+        volumeMountList.add(createVolumeMount("client-ca-cert", "/opt/kafka/client-ca-cert"));
         volumeMountList.add(createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
 
         return volumeMountList;

@@ -1068,7 +1068,7 @@ public abstract class AbstractModel {
         return ANCILLARY_CM_KEY_LOG_CONFIG;
     }
 
-    public static String getClusterCaName(String assemblyName)  {
-        return assemblyName + "-cluster-ca";
+    public static String getClusterCaName(String cluster)  {
+        return cluster + "-cluster-ca";
     }
 }
