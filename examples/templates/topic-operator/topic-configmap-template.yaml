@@ -51,7 +51,7 @@ objects:
   kind: KafkaTopic
   metadata:
     name: "${MAP_NAME}"
-  data:
+  spec:
     topicName: ${TOPIC_NAME}
     partitions: ${{TOPIC_PARTITIONS}}
     replicas: ${{TOPIC_REPLICAS}}
