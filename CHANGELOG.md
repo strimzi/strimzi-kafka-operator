@@ -2,6 +2,7 @@
 
 ## 0.5.0 (Work in Progress)
 
+* Topic Operator moving to Custom Resources instead of Config Maps
 * The Cluster Operator now manages RBAC resource for managed resources:
     * `ServiceAccount` and `ClusterRoleBindings` for Kafka pods
     * `ServiceAccount` and `RoleBindings` for the Topic Operator pods
