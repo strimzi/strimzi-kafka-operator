@@ -47,17 +47,11 @@ To generate a new user certificate, follow these steps:
 * Create JSON file describing the details of the user certificate:
 ```json
 {
-   "CN": "user1",
+   "CN": "User1",
    "key": {
         "algo": "rsa",
         "size": 2048
-    },
-    "names": [
-        {
-            "C": "CZ",
-            "L": "Prague"
-        }
-    ]
+    }
 }
 ```
 * Generate new signed key usign `cfssl` utility (the example command assumes the JSON files was names `user1.json`):
@@ -68,7 +62,7 @@ cfssl gencert -ca clients-ca.crt -ca-key clients-ca.key user1.json | cfssljson -
   * `user1.csr` with the Certificate Signing Request
   * `user1.pem` with the `user1` public key
   * `user1-key.pem` wit the `user1` private key
-  
+
 ## Creating `Secret` using the new user certificate
 
 This step assumes that they new USer certificate is in files named `user1.pem` and `user1-key.pem`.
@@ -114,4 +108,9 @@ config.put("ssl.keystore.location", "/tmp/keystore");
 
 KafkaConsumer<String, String> consumer = new KafkaConsumer<String, String>(props);
 ```
- 
+
+## User principal
+
+The subjects of the users are created based on the subject of their certificates.
+In the example used in this document, the resulting Principal will be `CN=User1`.
+In case the subject contains more items they will be all added to the user principal in following format: `CN=writeuser,OU=Unknown,O=Unknown,L=Unknown,ST=Unknown,C=Unknown`.
