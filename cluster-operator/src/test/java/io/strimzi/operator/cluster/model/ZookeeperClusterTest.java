@@ -134,8 +134,6 @@ public class ZookeeperClusterTest {
         assertEquals(new Integer(healthTimeout), containers.get(0).getReadinessProbe().getTimeoutSeconds());
         assertEquals(new Integer(healthDelay), containers.get(0).getReadinessProbe().getInitialDelaySeconds());
         assertEquals("timeTick=2000\nautopurge.purgeInterval=1\nsyncLimit=2\ninitLimit=5\nfoo=bar\n", AbstractModel.containerEnvVars(containers.get(0)).get(ZookeeperCluster.ENV_VAR_ZOOKEEPER_CONFIGURATION));
-        assertEquals(ZookeeperCluster.CLIENT_PORT_NAME, containers.get(0).getPorts().get(0).getName());
-        assertEquals(new Integer(ZookeeperCluster.CLIENT_PORT), containers.get(0).getPorts().get(0).getContainerPort());
         // checks on the TLS sidecar container
         assertEquals(Zookeeper.DEFAULT_TLS_SIDECAR_IMAGE, containers.get(1).getImage());
         assertEquals(new Integer(replicas), Integer.valueOf(AbstractModel.containerEnvVars(containers.get(1)).get(ZookeeperCluster.ENV_VAR_ZOOKEEPER_NODE_COUNT)));
@@ -143,6 +141,8 @@ public class ZookeeperClusterTest {
         assertEquals(new Integer(ZookeeperCluster.CLUSTERING_PORT), containers.get(1).getPorts().get(0).getContainerPort());
         assertEquals(ZookeeperCluster.LEADER_ELECTION_PORT_NAME, containers.get(1).getPorts().get(1).getName());
         assertEquals(new Integer(ZookeeperCluster.LEADER_ELECTION_PORT), containers.get(1).getPorts().get(1).getContainerPort());
+        assertEquals(ZookeeperCluster.CLIENT_PORT_NAME, containers.get(1).getPorts().get(2).getName());
+        assertEquals(new Integer(ZookeeperCluster.CLIENT_PORT), containers.get(1).getPorts().get(2).getContainerPort());
     }
 
     /**

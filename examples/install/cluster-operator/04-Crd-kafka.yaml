@@ -310,6 +310,38 @@ spec:
                       type: object
                 metrics:
                   type: object
+                tlsSidecar:
+                  type: object
+                  properties:
+                    image:
+                      type: string
+                    resources:
+                      type: object
+                      properties:
+                        additionalProperties:
+                          type: object
+                        limits:
+                          type: object
+                          properties:
+                            additionalProperties:
+                              type: object
+                            cpu:
+                              type: string
+                              pattern: '[0-9]+m?$'
+                            memory:
+                              type: string
+                              pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
+                        requests:
+                          type: object
+                          properties:
+                            additionalProperties:
+                              type: object
+                            cpu:
+                              type: string
+                              pattern: '[0-9]+m?$'
+                            memory:
+                              type: string
+                              pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
                 additionalProperties:
                   type: object
                 config:
@@ -653,6 +685,38 @@ spec:
                       type: object
                 metrics:
                   type: object
+                tlsSidecar:
+                  type: object
+                  properties:
+                    image:
+                      type: string
+                    resources:
+                      type: object
+                      properties:
+                        additionalProperties:
+                          type: object
+                        limits:
+                          type: object
+                          properties:
+                            additionalProperties:
+                              type: object
+                            cpu:
+                              type: string
+                              pattern: '[0-9]+m?$'
+                            memory:
+                              type: string
+                              pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
+                        requests:
+                          type: object
+                          properties:
+                            additionalProperties:
+                              type: object
+                            cpu:
+                              type: string
+                              pattern: '[0-9]+m?$'
+                            memory:
+                              type: string
+                              pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
                 additionalProperties:
                   type: object
                 config:
@@ -693,38 +757,6 @@ spec:
                         memory:
                           type: string
                           pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
-                tlsSidecar:
-                  type: object
-                  properties:
-                    image:
-                      type: string
-                    resources:
-                      type: object
-                      properties:
-                        additionalProperties:
-                          type: object
-                        limits:
-                          type: object
-                          properties:
-                            additionalProperties:
-                              type: object
-                            cpu:
-                              type: string
-                              pattern: '[0-9]+m?$'
-                            memory:
-                              type: string
-                              pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
-                        requests:
-                          type: object
-                          properties:
-                            additionalProperties:
-                              type: object
-                            cpu:
-                              type: string
-                              pattern: '[0-9]+m?$'
-                            memory:
-                              type: string
-                              pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
               required:
               - replicas
               - storage
@@ -1001,6 +1033,38 @@ spec:
                 topicMetadataMaxAttempts:
                   type: integer
                   minimum: 0
+                tlsSidecar:
+                  type: object
+                  properties:
+                    image:
+                      type: string
+                    resources:
+                      type: object
+                      properties:
+                        additionalProperties:
+                          type: object
+                        limits:
+                          type: object
+                          properties:
+                            additionalProperties:
+                              type: object
+                            cpu:
+                              type: string
+                              pattern: '[0-9]+m?$'
+                            memory:
+                              type: string
+                              pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
+                        requests:
+                          type: object
+                          properties:
+                            additionalProperties:
+                              type: object
+                            cpu:
+                              type: string
+                              pattern: '[0-9]+m?$'
+                            memory:
+                              type: string
+                              pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
                 additionalProperties:
                   type: object
                 logging:

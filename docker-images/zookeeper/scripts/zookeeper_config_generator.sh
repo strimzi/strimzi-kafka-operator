@@ -4,7 +4,7 @@
 cat <<EOF
 # the directory where the snapshot is stored.
 dataDir=${ZOOKEEPER_DATA_DIR}
-clientPort=2181
+clientPort=$(expr 10 \* 2181 + $ZOOKEEPER_ID - 1)
 
 # Provided configuration
 ${ZOOKEEPER_CONFIGURATION}

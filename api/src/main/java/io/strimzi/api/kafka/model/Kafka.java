@@ -22,13 +22,15 @@ import java.util.Map;
         builderPackage = "io.strimzi.api.kafka.model"
 )
 @JsonPropertyOrder({ "replicas", "image", "storage", "rackConfig", "brokerRackInitImage",
-        "livenessProbe", "readinessProbe", "jvmOptions", "affinity", "metrics"})
+        "livenessProbe", "readinessProbe", "jvmOptions", "affinity", "metrics", "tlsSidecar"})
 public class Kafka extends ReplicatedJvmPods {
 
     public static final String DEFAULT_IMAGE =
             System.getenv().getOrDefault("STRIMZI_DEFAULT_KAFKA_IMAGE", "strimzi/kafka:latest");
     public static final String DEFAULT_INIT_IMAGE =
             System.getenv().getOrDefault("STRIMZI_DEFAULT_INIT_KAFKA_IMAGE", "strimzi/init-kafka:latest");
+    public static final String DEFAULT_TLS_SIDECAR_IMAGE =
+            System.getenv().getOrDefault("STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE", "strimzi/kafka-stunnel:latest");
     public static final String FORBIDDEN_PREFIXES = "listeners, advertised., broker., listener., host.name, port, "
             + "inter.broker.listener.name, sasl., ssl., security., password., principal.builder.class, log.dir, "
             + "zookeeper.connect, zookeeper.set.acl, authorizer., super.user";
@@ -42,6 +44,8 @@ public class Kafka extends ReplicatedJvmPods {
     private Rack rack;
 
     private Logging logging;
+
+    private Sidecar tlsSidecar;
 
     @Description("The kafka broker config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)
     public Map<String, Object> getConfig() {
@@ -91,5 +95,15 @@ public class Kafka extends ReplicatedJvmPods {
 
     public void setLogging(Logging logging) {
         this.logging = logging;
+    }
+
+    @Description("TLS sidecar configuration")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Sidecar getTlsSidecar() {
+        return tlsSidecar;
+    }
+
+    public void setTlsSidecar(Sidecar tlsSidecar) {
+        this.tlsSidecar = tlsSidecar;
     }
 }

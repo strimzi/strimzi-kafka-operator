@@ -13,7 +13,11 @@
   * `xxx-zookeeper-headless` -> `xxx-zookeeper-nodes`
   * `xxx-connect` -> `xxx-connect-api`
 * Cluster Operator moving to Custom Resources instead of Config Maps
-* TLS support has been added to Kafka and Zookeeper
+* TLS support has been added to Kafka, Zookeeper and Topic Operator. The following channels are now encrypted:
+    * Zookeeper cluster communication
+    * Kafka cluster commbunication
+    * Communication between Kafka and Zookeeper
+    * Communication between Topic Operator and Kafka / Zookeeper
 * Logging configuration for Kafka, Kafka Connect and Zookeeper
 * Add support for Pod Affinity and Anti-Affinity
 * Configuring different JVM options

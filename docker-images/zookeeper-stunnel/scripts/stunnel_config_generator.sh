@@ -52,3 +52,16 @@ do
 
 	EOF
 done
+
+# Zookeeper client port where stunnel forwards received traffic
+CLIENT_PORT=$(expr 21810 + $ZOOKEEPER_ID - 1)
+
+cat <<-EOF
+[listener-2181]
+client = no
+CAfile = ${CERTS}/cluster-ca.crt
+cert = ${CERTS}/${CURRENT}.crt
+key = ${CERTS}/${CURRENT}.key
+accept = 2181
+connect = 127.0.0.1:$CLIENT_PORT
+EOF

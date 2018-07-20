@@ -99,6 +99,12 @@ public class Config {
     public static final String TC_REASSIGN_VERIFY_INTERVAL_MS = "STRIMZI_REASSIGN_VERIFY_INTERVAL_MS";
     public static final String TC_TOPIC_METADATA_MAX_ATTEMPTS = "STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS";
 
+    public static final String TC_TLS_ENABLED = "STRIMZI_TLS_ENABLED";
+    public static final String TC_TLS_TRUSTSTORE_LOCATION = "STRIMZI_TRUSTSTORE_LOCATION";
+    public static final String TC_TLS_TRUSTSTORE_PASSWORD = "STRIMZI_TRUSTSTORE_PASSWORD";
+    public static final String TC_TLS_KEYSTORE_LOCATION = "STRIMZI_KEYSTORE_LOCATION";
+    public static final String TC_TLS_KEYSTORE_PASSWORD = "STRIMZI_KEYSTORE_PASSWORD";
+
     private static final Map<String, Value<?>> CONFIG_VALUES = new HashMap<>();
 
     /** A comma-separated list of key=value pairs for selecting ConfigMaps that describe topics. */
@@ -131,6 +137,17 @@ public class Config {
     /** The maximum number of retries for getting topic metadata from the Kafka cluster */
     public static final Value<Integer> TOPIC_METADATA_MAX_ATTEMPTS = new Value<>(TC_TOPIC_METADATA_MAX_ATTEMPTS, POSITIVE_INTEGER, "6");
 
+    /** If the connection with Kafka has to be encrypted by TLS protocol */
+    public static final Value<String> TLS_ENABLED = new Value<>(TC_TLS_ENABLED, STRING, "false");
+    /** The truststore with CA certificate for Kafka broker/server authentication */
+    public static final Value<String> TLS_TRUSTSTORE_LOCATION = new Value<>(TC_TLS_TRUSTSTORE_LOCATION, STRING, "");
+    /** The password for the truststore with CA certificate for Kafka broker/server authentication */
+    public static final Value<String> TLS_TRUSTSTORE_PASSWORD = new Value<>(TC_TLS_TRUSTSTORE_PASSWORD, STRING, "");
+    /** The keystore with private key and certificate for client authentication against Kafka broker */
+    public static final Value<String> TLS_KEYSTORE_LOCATION = new Value<>(TC_TLS_KEYSTORE_LOCATION, STRING, "");
+    /** The password for keystore with private key and certificate for client authentication against Kafka broker */
+    public static final Value<String> TLS_KEYSTORE_PASSWORD = new Value<>(TC_TLS_KEYSTORE_PASSWORD, STRING, "");
+
     static {
         Map<String, Value<?>> configValues = CONFIG_VALUES;
         addConfigValue(configValues, LABELS);
@@ -142,6 +159,11 @@ public class Config {
         addConfigValue(configValues, REASSIGN_THROTTLE);
         addConfigValue(configValues, REASSIGN_VERIFY_INTERVAL_MS);
         addConfigValue(configValues, TOPIC_METADATA_MAX_ATTEMPTS);
+        addConfigValue(configValues, TLS_ENABLED);
+        addConfigValue(configValues, TLS_TRUSTSTORE_LOCATION);
+        addConfigValue(configValues, TLS_TRUSTSTORE_PASSWORD);
+        addConfigValue(configValues, TLS_KEYSTORE_LOCATION);
+        addConfigValue(configValues, TLS_KEYSTORE_PASSWORD);
     }
 
     static void addConfigValue(Map<String, Value<?>> configValues, Value<?> cv) {

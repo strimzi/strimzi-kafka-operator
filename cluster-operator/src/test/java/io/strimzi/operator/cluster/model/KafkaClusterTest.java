@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.WeightedPodAffinityTerm;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.api.kafka.model.InlineLogging;
+import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaAssembly;
 import io.strimzi.api.kafka.model.KafkaAssemblyBuilder;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
@@ -83,7 +84,7 @@ public class KafkaClusterTest {
     private void checkService(Service headful) {
         assertEquals("ClusterIP", headful.getSpec().getType());
         assertEquals(expectedLabels(), headful.getSpec().getSelector());
-        assertEquals(3, headful.getSpec().getPorts().size());
+        assertEquals(4, headful.getSpec().getPorts().size());
         assertEquals(KafkaCluster.CLIENT_PORT_NAME, headful.getSpec().getPorts().get(0).getName());
         assertEquals(new Integer(KafkaCluster.CLIENT_PORT), headful.getSpec().getPorts().get(0).getPort());
         assertEquals("TCP", headful.getSpec().getPorts().get(0).getProtocol());
@@ -186,13 +187,21 @@ public class KafkaClusterTest {
         // ... with these labels
         assertEquals(expectedLabels(), ss.getMetadata().getLabels());
 
+        List<Container> containers = ss.getSpec().getTemplate().getSpec().getContainers();
+
+        assertEquals(2, containers.size());
+
+        // checks on the main Kafka container
         assertEquals(new Integer(replicas), ss.getSpec().getReplicas());
-        assertEquals(image, ss.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
-        assertEquals(new Integer(healthTimeout), ss.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getTimeoutSeconds());
-        assertEquals(new Integer(healthDelay), ss.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getInitialDelaySeconds());
-        assertEquals(new Integer(healthTimeout), ss.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds());
-        assertEquals(new Integer(healthDelay), ss.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds());
-        assertEquals("foo=bar\n", AbstractModel.containerEnvVars(ss.getSpec().getTemplate().getSpec().getContainers().get(0)).get(KafkaCluster.ENV_VAR_KAFKA_CONFIGURATION));
+        assertEquals(image, containers.get(0).getImage());
+        assertEquals(new Integer(healthTimeout), containers.get(0).getLivenessProbe().getTimeoutSeconds());
+        assertEquals(new Integer(healthDelay), containers.get(0).getLivenessProbe().getInitialDelaySeconds());
+        assertEquals(new Integer(healthTimeout), containers.get(0).getReadinessProbe().getTimeoutSeconds());
+        assertEquals(new Integer(healthDelay), containers.get(0).getReadinessProbe().getInitialDelaySeconds());
+        assertEquals("foo=bar\n", AbstractModel.containerEnvVars(containers.get(0)).get(KafkaCluster.ENV_VAR_KAFKA_CONFIGURATION));
+        // checks on the TLS sidecar
+        assertEquals(Kafka.DEFAULT_TLS_SIDECAR_IMAGE, containers.get(1).getImage());
+        assertEquals(ZookeeperCluster.serviceName(cluster) + ":2181", AbstractModel.containerEnvVars(containers.get(1)).get(KafkaCluster.ENV_VAR_KAFKA_ZOOKEEPER_CONNECT));
 
         if (cm.getSpec().getKafka().getStorage() != null) {
 
