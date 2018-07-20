@@ -1,61 +1,75 @@
 == Security
 
-The Apache Kafka project supports data encryption by means of the SSL/TLS protocol.
+The Strimzi project supports data encryption of communication between the different Kafka and Strimzi components (Kafka brokers, Zookeeper nodes, Kafka Connect and Strimzi Topic Operator) by means of the SSL/TLS protocol.
 This makes it possible to encrypt data transferred between brokers (interbroker communication) and between clients and brokers.
+For the Kafka and Strimzi components, TLS certificates are also used for authentication.
 
 The Cluster Operator sets up the SSL/TLS certificates to provide this encryption and authentication.
 
 === Certificates
 
-Each Kafka broker needs its own private and public keys in order to support encryption.
+Each component needs its own private and public keys in order to support encryption.
 The public key has to be signed by a certificate authority (CA) in order to have a related X.509 certificate for providing server authentication and encrypting the communication channel with the client (which could be another broker as well).
-More precisely, each broker has two different certificates (and related private keys), one for interbroker communication  and one for communication with clients.
-These broker certificates are signed using different CAs: The "internal-ca" signs the certificates used for interbroker communication, and the "clients-ca" signs the certificates used for client communication.
+All component certificates are signed by a Certification Authority (CA) called _cluster CA_.
+Another CA is used for authentication of Kafka clients connecting to Kafka brokers.
+This CA is called _clients CA_.
 The CAs themselves use self-signed certificates.
-The "internal-ca" is used across multiple clusters, that is, there is a single "internal-ca" for each instance of a cluster operator. 
-The "clients-ca" is specific to a particular Kafka cluster.
 
 All the generated certificates are saved as Secrets in the {ProductPlatformName} cluster, named as follows:
 
-* `internal-ca`: contains the private and public keys, so the self-signed certificate, used for signing broker certificates used for interbroker communication. It is common to all the Kafka clusters deployed by the Cluster Operator.
-* `<cluster-name>-kafka-clients-ca`: contains the private and public keys, so the self-signed certificate, used for signing broker certificates used for communicating with clients. It is specific for each deployed Kafka cluster as specified in the <cluster-name> prefix.
-* `<cluster-name>-kafka-cert`: contains only the public keys, so the self-signed certificate, used for signing broker certificates used for communicating with clients. This Secret should be used by the final Kafka cluster user in order to extract this certificate to put into the the client's truststores for verifying broker identities (server authentication).
-* `<cluster-name>-kafka-brokers-internal`: contains all the brokers private and public keys (certificates signed with "internal-ca") used for interbroker communication.
-* `<cluster-name>-kafka-brokers-clients`: contains all the brokers private and public keys (certificates signed with specific cluster "clients-ca") used for communicating with clients.
+`<cluster-name>-cluster-ca`::
+Contains the private and public keys of the cluster CA which is used for signing server certificates for the Kafka and Strimzi components (Kafka brokers, Zookeeper nodes, and so on).
+`<cluster-name>-cluster-ca-cert`::
+Contains only the public key of the cluster CA.
+The public key used by Kafka clients to verify the identity of the Kafka brokers they are connecting to (TLS server authentication).
+`<cluster-name>-clients-ca`::
+Contains the private and public keys of the clients CA.
+The clients CA is used for TLS client authentication of Kafka clients when connecting to Kafka brokers.
+`<cluster-name>-clients-ca-cert`::
+Contains only the public key of the client CA.
+The public key is used by the Kafka brokers to verify the identity of Kafka clients when TLS client authentication is used.
+`<cluster-name>-kafka-brokers`::
+Contains all the Kafka broker private and public keys (certificates signed with the cluster CA).
+`<cluster-name>-zookeeper-nodes`::
+Contains all the Zookeeper node private and public keys (certificates signed with the cluster CA).
 
 All the keys are 2048 bits in size and are valid for 365 days from initial generation.
 
 NOTE: "certificates rotation" for generating new ones on their expiration will be supported in future releases.
 
-=== Listeners
+=== Kafka Listeners
 
 The data encryption is provided on two different listeners exposed by each Kafka broker.
 
-Interbroker communication is through the `REPLICATION` listener on port 9091, which is encrypted by default.
+Communication between brokers and between the different Kafka and Strimzi components is done through the `REPLICATION` listener on port 9091, which is encrypted by default.
 
 Encrypted communication with clients is provided through the `CLIENTTLS` listener on port 9093.
 
-NOTE: Un-encrypted communication with clients is still possible through the `CLIENT` listener on port 9092.
+NOTE: You can use the `CLIENT` listener on port 9092 for unencrypted communication with clients.
 
-=== Clients connection via TLS
+=== Kafka Client connections via TLS
 
-If a Kafka client wants to connect to the encrypted listener (CLIENTTLS) on port 9093, it needs to trust the client's CA certificate in order to verify the broker certificate received during the SSL/TLS handshake.
-The clients CA certificate can be extracted from the generated `<cluster-name>-kafka-cert` Secret with the following command if the Kafka cluster is running on {OpenShiftName}.
-
-[source,shell]
-oc get secret <cluster-name>-kafka-cert -o jsonpath='{.data.clients-ca\.crt}' | base64 -d > clients-ca.crt
+If a Kafka client wants to connect to the encrypted listener (`CLIENTTLS`) on port 9093, it needs to trust the cluster CA certificate in order to verify the broker certificate received during the SSL/TLS handshake.
+The cluster CA certificate can be extracted from the generated `<cluster-name>-cluster-ca-cert` `Secret`.
 
 ifdef::Kubernetes[]
-If the Kafka cluster is running on {KubernetesName}, the same result can be achieved with the following command.
+On {KubernetesName}, the certificate can be extracted with the following command:
 
 [source,shell]
-kubectl get secret <cluster-name>-kafka-cert -o jsonpath='{.data.clients-ca\.crt}' | base64 -d > clients-ca.crt
+kubectl get secret <cluster-name>-cluster-ca-cert -o jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
 
 endif::Kubernetes[]
-The native Kafka client, in order to use it, needs the certificate to be imported in a truststore using the `keytool` command line tool.
+
+On {OpenShiftName}, the certificate can be extracted with the following command:
 
 [source,shell]
-keytool -keystore client.truststore.jks -alias CARoot -import -file clients-ca.crt
+oc get secret <cluster-name>-cluster-ca-cert -o jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
+
+The Kafka client has to be configured to trust certificates signed by this CA.
+For the Java-based Kafka Producer, Consumer and Streams APIs, you can do this by importing the CA certificate into the JVM's truststore using the following keytool command:
+
+[source,shell]
+keytool -keystore client.truststore.jks -alias CARoot -import -file ca.crt
 
 Finally, in order to configure the Kafka client, following properties should be specified:
 
