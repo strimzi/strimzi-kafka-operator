@@ -42,7 +42,7 @@ public class PartialRollingUpdateTest {
 
     private static final String NAMESPACE = "my-namespace";
     private static final String CLUSTER_NAME = "my-cluster";
-    public static final String KAFKA_CRD_FILE = TestUtils.KAFKA_CRD;
+    public static final String KAFKA_CRD_FILE = TestUtils.CRD_KAFKA;
 
     private Vertx vertx;
     private KafkaAssembly cluster;

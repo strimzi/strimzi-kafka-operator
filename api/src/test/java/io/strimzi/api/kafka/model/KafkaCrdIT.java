@@ -22,7 +22,7 @@ import static org.junit.Assert.assertTrue;
  */
 @RunWith(StrimziRunner.class)
 @Namespace(KafkaCrdIT.NAMESPACE)
-@Resources(value = TestUtils.KAFKA_CRD, asAdmin = true)
+@Resources(value = TestUtils.CRD_KAFKA, asAdmin = true)
 public class KafkaCrdIT extends AbstractCrdIT {
     public static final String NAMESPACE = "kafkacrd-it";
 
