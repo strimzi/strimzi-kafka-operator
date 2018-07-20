@@ -49,8 +49,8 @@ public class TopicSerializationTest {
         assertEquals("strimzi", kafkaTopic.getMetadata().getLabels().get("app"));
         assertEquals("topic", kafkaTopic.getMetadata().getLabels().get("kind"));
         assertEquals(wroteTopic.getTopicName().toString(), kafkaTopic.getSpec().getTopicName());
-        assertEquals(2, kafkaTopic.getSpec().getPartitions());
-        assertEquals(1, kafkaTopic.getSpec().getReplicas());
+        assertEquals(Integer.valueOf(2), kafkaTopic.getSpec().getPartitions());
+        assertEquals(Integer.valueOf(1), kafkaTopic.getSpec().getReplicas());
         assertEquals(singletonMap("cleanup.policy", "bar"), kafkaTopic.getSpec().getConfig());
 
         Topic readTopic = TopicSerialization.fromTopicResource(kafkaTopic);

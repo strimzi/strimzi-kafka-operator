@@ -8,7 +8,6 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
@@ -78,12 +77,9 @@ public class TopicSerialization {
 
 
     /**
-     * Create a Topic to reflect the given ConfigMap.
+     * Create a Topic to reflect the given KafkaTopic resource.
      * @throws InvalidTopicException
      */
-    public static Topic fromConfigMap(ConfigMap cm) {
-        return null;
-    }
     public static Topic fromTopicResource(KafkaTopic kafkaTopic) {
         if (kafkaTopic == null) {
             return null;
@@ -128,10 +124,6 @@ public class TopicSerialization {
         return partitions;
     }
 
-    public static ConfigMap toConfigMap(Topic topic, LabelPredicate cmPredicate) {
-        return null;
-    }
-
     /**
      * Create a ConfigMap to reflect the given Topic.
      */
@@ -145,7 +137,7 @@ public class TopicSerialization {
                 .withNewSpec()
                     .withTopicName(topic.getTopicName().toString())
                     .withPartitions(topic.getNumPartitions())
-                    .withReplicas(topic.getNumReplicas())
+                    .withReplicas((int) topic.getNumReplicas())
                     .withConfig(new LinkedHashMap<>(topic.getConfig()))
                 .endSpec()
             .build();

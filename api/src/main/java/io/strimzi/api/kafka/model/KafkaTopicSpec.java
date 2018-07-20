@@ -32,9 +32,9 @@ public class KafkaTopicSpec implements Serializable {
 
     private String topicName;
 
-    private int partitions;
+    private Integer partitions;
 
-    private int replicas;
+    private Integer replicas;
 
     private Map<String, Object> config;
 
@@ -52,7 +52,7 @@ public class KafkaTopicSpec implements Serializable {
         this.topicName = topicName;
     }
 
-    public int getPartitions() {
+    public Integer getPartitions() {
         return partitions;
     }
 
@@ -63,7 +63,7 @@ public class KafkaTopicSpec implements Serializable {
             "especially for topics with semantic partitioning. " +
             "If unspecified this will default to the broker's `num.partitions` config.")
     @Minimum(1)
-    public void setPartitions(int partitions) {
+    public void setPartitions(Integer partitions) {
         this.partitions = partitions;
     }
 
@@ -71,11 +71,11 @@ public class KafkaTopicSpec implements Serializable {
             "If unspecified this will default to the broker's `default.replication.factor` config.")
     @Minimum(1)
     @Maximum(Short.MAX_VALUE)
-    public int getReplicas() {
+    public Integer getReplicas() {
         return replicas;
     }
 
-    public void setReplicas(int replicas) {
+    public void setReplicas(Integer replicas) {
         this.replicas = replicas;
     }
 
