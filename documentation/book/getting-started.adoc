@@ -42,10 +42,10 @@ ifdef::Kubernetes[]
 ==== Deploying to {KubernetesName}
 
 To deploy the Cluster Operator on {KubernetesName}, you will first need to modify some of of the installation files according to the namespace the Cluster Operator is going to be installed in. 
-To do this, execute the following command, replacing `MY-NAMESPACE` with the correct namespace:
+To do this, execute the following command, replacing `<my-namespace>` with the correct namespace:
 
 [source,shell]
-sed -i 's/namespace: .*/namespace: MY-NAMESPACE/' examples/install/cluster-operator/*ClusterRoleBinding*.yaml
+sed -i 's/namespace: .*/namespace: <my-namespace>/' examples/install/cluster-operator/*ClusterRoleBinding*.yaml
 
 Next, the following commands should be executed:
 
@@ -64,10 +64,10 @@ endif::Kubernetes[]
 IMPORTANT: To successfully deploy the Cluster Operator on {OpenShiftName} a user with `cluster-admin` role needs to be used (that is, like `system:admin`).
 
 To deploy the Cluster Operator on {OpenShiftName}, you will first need to modify some of of the installation files according to the namespace the Cluster Operator is going to be installed in. 
-To do this, execute the following command, replacing `MY-NAMESPACE` with the correct namespace:
+To do this, execute the following command, replacing `<my-namespace>` with the correct namespace:
 
 [source,shell]
-sed -i 's/namespace: .*/namespace: MY-NAMESPACE/' examples/install/cluster-operator/*ClusterRoleBinding*.yaml
+sed -i 's/namespace: .*/namespace: <my-namespace>/' examples/install/cluster-operator/*ClusterRoleBinding*.yaml
 
 Next, the following commands should be executed:
 
