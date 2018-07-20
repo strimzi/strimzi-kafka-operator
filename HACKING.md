@@ -108,7 +108,7 @@ you can push the images to OpenShift's Docker repo like this:
 
     oc create -f examples/install/cluster-operator
 
-6. Finally, you can deploy the cluster ConfigMap runnig:
+6. Finally, you can deploy the cluster ConfigMap running:
 
     oc create -f examples/configmaps/cluster-operator/kafka-ephemeral.yaml
 

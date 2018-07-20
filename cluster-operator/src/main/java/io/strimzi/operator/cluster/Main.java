@@ -10,13 +10,10 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.DoneableKafkaAssembly;
 import io.strimzi.api.kafka.DoneableKafkaConnectAssembly;
 import io.strimzi.api.kafka.DoneableKafkaConnectS2IAssembly;
-import io.strimzi.api.kafka.KafkaAssemblyList;
 import io.strimzi.api.kafka.KafkaConnectAssemblyList;
 import io.strimzi.api.kafka.KafkaConnectS2IAssemblyList;
-import io.strimzi.api.kafka.model.KafkaAssembly;
 import io.strimzi.api.kafka.model.KafkaConnectAssembly;
 import io.strimzi.api.kafka.model.KafkaConnectS2IAssembly;
 import io.strimzi.certs.OpenSslCertManager;
@@ -29,11 +26,9 @@ import io.strimzi.operator.cluster.operator.resource.CrdOperator;
 import io.strimzi.operator.cluster.operator.resource.DeploymentConfigOperator;
 import io.strimzi.operator.cluster.operator.resource.DeploymentOperator;
 import io.strimzi.operator.cluster.operator.resource.ImageStreamOperator;
-import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
-import io.strimzi.operator.cluster.operator.resource.PvcOperator;
+import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.SecretOperator;
 import io.strimzi.operator.cluster.operator.resource.ServiceOperator;
-import io.strimzi.operator.cluster.operator.resource.ZookeeperSetOperator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -84,17 +79,14 @@ public class Main {
     static CompositeFuture run(Vertx vertx, KubernetesClient client, boolean isOpenShift, ClusterOperatorConfig config) {
         printEnvInfo();
         ServiceOperator serviceOperations = new ServiceOperator(vertx, client);
-        ZookeeperSetOperator zookeeperSetOperations = new ZookeeperSetOperator(vertx, client, config.getOperationTimeoutMs());
-        KafkaSetOperator kafkaSetOperations = new KafkaSetOperator(vertx, client, config.getOperationTimeoutMs());
         ConfigMapOperator configMapOperations = new ConfigMapOperator(vertx, client);
-        PvcOperator pvcOperations = new PvcOperator(vertx, client);
         DeploymentOperator deploymentOperations = new DeploymentOperator(vertx, client);
         SecretOperator secretOperations = new SecretOperator(vertx, client);
-        CrdOperator<KubernetesClient, KafkaAssembly, KafkaAssemblyList, DoneableKafkaAssembly> ko = new CrdOperator<>(vertx, client, KafkaAssembly.class, KafkaAssemblyList.class, DoneableKafkaAssembly.class);
         CrdOperator<KubernetesClient, KafkaConnectAssembly, KafkaConnectAssemblyList, DoneableKafkaConnectAssembly> kco = new CrdOperator<>(vertx, client, KafkaConnectAssembly.class, KafkaConnectAssemblyList.class, DoneableKafkaConnectAssembly.class);
 
         OpenSslCertManager certManager = new OpenSslCertManager();
-        KafkaAssemblyOperator kafkaClusterOperations = new KafkaAssemblyOperator(vertx, isOpenShift, config.getOperationTimeoutMs(), certManager, ko, configMapOperations, serviceOperations, zookeeperSetOperations, kafkaSetOperations, pvcOperations, deploymentOperations, secretOperations);
+        KafkaAssemblyOperator kafkaClusterOperations = new KafkaAssemblyOperator(vertx, isOpenShift,
+                config.getOperationTimeoutMs(), certManager, new ResourceOperatorSupplier(vertx, client, config.getOperationTimeoutMs()));
         KafkaConnectAssemblyOperator kafkaConnectClusterOperations = new KafkaConnectAssemblyOperator(vertx, isOpenShift, certManager, kco, configMapOperations, deploymentOperations, serviceOperations, secretOperations);
 
         KafkaConnectS2IAssemblyOperator kafkaConnectS2IClusterOperations = null;

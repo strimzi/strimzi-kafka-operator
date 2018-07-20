@@ -40,6 +40,12 @@ public final class TestUtils {
         // All static methods
     }
 
+    public static final String KAFKA_CRD = "../examples/install/cluster-operator/04-Crd-kafka.yaml";
+
+    public static final String KAFKA_CONNECT_CRD = "../examples/install/cluster-operator/04-Crd-kafkaconnect.yaml";
+
+    public static final String KAFKA_CONNECT_S2I_CRD = "../examples/install/cluster-operator/04-Crd-kafkaconnects2i.yaml";
+
     /** Returns a Map of the given sequence of key, value pairs. */
     public static <T> Map<T, T> map(T... pairs) {
         if (pairs.length % 2 != 0) {

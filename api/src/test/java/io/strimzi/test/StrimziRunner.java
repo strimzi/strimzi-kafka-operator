@@ -362,16 +362,18 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
     class DumpLogsErrorAction implements Consumer<Throwable> {
 
         private final Supplier<List<ResourceName>> podNameSupplier;
+        private final String container;
 
-        public DumpLogsErrorAction(Supplier<List<ResourceName>> podNameSupplier) {
+        public DumpLogsErrorAction(Supplier<List<ResourceName>> podNameSupplier, String container) {
             this.podNameSupplier = podNameSupplier;
+            this.container = container;
         }
 
         @Override
         public void accept(Throwable t) {
             for (ResourceName pod : podNameSupplier.get()) {
                 if (pod.kind.equals("pod") || pod.kind.equals("pods") || pod.kind.equals("po")) {
-                    LOGGER.info("Logs from pod {}:{}{}", pod.name, System.lineSeparator(), indent(kubeClient().logs(pod.name)));
+                    LOGGER.info("Logs from pod {}:{}{}", pod.name, System.lineSeparator(), indent(kubeClient().logs(pod.name, container)));
                 }
             }
         }
@@ -431,8 +433,8 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
             return getResources(new ResourceMatcher("statefulset", pattern));
         }
 
-        public ResourceAction logs(String pattern) {
-            list.add(new DumpLogsErrorAction(new ResourceMatcher("pod", pattern)));
+        public ResourceAction logs(String pattern, String container) {
+            list.add(new DumpLogsErrorAction(new ResourceMatcher("pod", pattern), container));
             return this;
         }
 
@@ -488,7 +490,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 last = new Bracket(last, new ResourceAction()
                         .getDep(deploymentName)
                         .getPo(deploymentName + ".*")
-                        .logs(deploymentName + ".*")) {
+                        .logs(deploymentName + ".*", null)) {
                     @Override
                     protected void before() {
                         LOGGER.info("Creating connect cluster '{}' before test per @ConnectCluster annotation on {}", clusterName, name(element));
@@ -527,16 +529,16 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 final String tcDeploymentName = kafkaAssembly.getMetadata().getName() + "-topic-operator";
                 last = new Bracket(last, new ResourceAction()
                     .getPo(CO_DEPLOYMENT_NAME + ".*")
-                    .logs(CO_DEPLOYMENT_NAME + ".*")
+                    .logs(CO_DEPLOYMENT_NAME + ".*", null)
                     .getDep(CO_DEPLOYMENT_NAME)
                     .getSs(kafkaStatefulSetName)
                     .getPo(kafkaStatefulSetName + ".*")
-                    .logs(kafkaStatefulSetName + ".*")
+                    .logs(kafkaStatefulSetName + ".*", null)
                     .getSs(zookeeperStatefulSetName)
                     .getPo(zookeeperStatefulSetName)
-                    .logs(zookeeperStatefulSetName + ".*")
+                    .logs(zookeeperStatefulSetName + ".*", "zookeeper")
                     .getDep(tcDeploymentName)
-                    .logs(tcDeploymentName + ".*")) {
+                    .logs(tcDeploymentName + ".*", null)) {
 
                     @Override
                     protected void before() {
@@ -587,7 +589,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         for (ClusterOperator cc : annotations(element, ClusterOperator.class)) {
             Map<File, String> yamls = Arrays.stream(new File(CO_INSTALL_DIR).listFiles()).sorted().collect(Collectors.toMap(file -> file, f -> getContent(f, node -> {
                 // Change the docker org of the images in the 04-deployment.yaml
-                if ("08-deployment.yaml".equals(f.getName())) {
+                if ("05-Deployment-strimzi-cluster-operator.yaml".equals(f.getName())) {
                     String dockerOrg = System.getenv().getOrDefault("DOCKER_ORG", "strimzi");
                     String dockerTag = System.getenv().getOrDefault("DOCKER_TAG", "latest");
                     ObjectNode containerNode = (ObjectNode) node.get("spec").get("template").get("spec").get("containers").get(0);
@@ -625,17 +627,18 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     }
                 }
 
-                if ("06-role-binding-kafka.yaml".equals(f.getName())) {
+                if (f.getName().matches(".*ClusterRoleBinding.*")) {
                     String ns = annotations(element, Namespace.class).get(0).value();
                     ArrayNode subjects = (ArrayNode) node.get("subjects");
-                    JsonNodeFactory factory = new JsonNodeFactory(false);
-                    ObjectNode subject = new ObjectNode(factory);
-                    subject.put("kind", "ServiceAccount").put("name", "strimzi-kafka").put("namespace", ns);
-                    subjects.set(0, subject);
+                    ObjectNode subject = (ObjectNode) subjects.get(0);
+                    subject.put("kind", "ServiceAccount")
+                            .put("name", "strimzi-cluster-operator")
+                            .put("namespace", ns);
+                    LOGGER.info("Modified binding from {}: {}", f, node);
                 }
             }), (x, y) -> x, LinkedHashMap::new));
             last = new Bracket(last, new ResourceAction().getPo(CO_DEPLOYMENT_NAME + ".*")
-                    .logs(CO_DEPLOYMENT_NAME + ".*")
+                    .logs(CO_DEPLOYMENT_NAME + ".*", null)
                     .getDep(CO_DEPLOYMENT_NAME)) {
                 Stack<String> deletable = new Stack<>();
                 @Override
@@ -643,7 +646,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     // Here we record the state of the cluster
                     LOGGER.info("Creating cluster operator {} before test per @ClusterOperator annotation on {}", cc, name(element));
                     for (Map.Entry<File, String> entry: yamls.entrySet()) {
-                        LOGGER.info("creating possible modified version of {}", entry.getKey());
+                        LOGGER.info("creating possibly modified version of {}", entry.getKey());
                         deletable.push(entry.getValue());
                         kubeClient().clientWithAdmin().applyContent(entry.getValue());
                     }

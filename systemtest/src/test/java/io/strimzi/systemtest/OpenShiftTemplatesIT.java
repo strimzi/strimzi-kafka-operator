@@ -24,6 +24,7 @@ import io.strimzi.test.Namespace;
 import io.strimzi.test.OpenShiftOnly;
 import io.strimzi.test.Resources;
 import io.strimzi.test.StrimziRunner;
+import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.Oc;
 import org.junit.ClassRule;
@@ -47,9 +48,9 @@ import static org.junit.Assert.assertNotNull;
 @Namespace(OpenShiftTemplatesIT.NAMESPACE)
 @Resources(value = "../examples/templates/cluster-operator", asAdmin = true)
 @Resources(value = "../examples/templates/topic-operator", asAdmin = true)
-@Resources(value = "../examples/install/cluster-operator/04-crd-kafka.yaml", asAdmin = true)
-@Resources(value = "../examples/install/cluster-operator/04-crd-kafka-connect.yaml", asAdmin = true)
-@Resources(value = "../examples/install/cluster-operator/04-crd-kafka-connect-s2i.yaml", asAdmin = true)
+@Resources(value = TestUtils.KAFKA_CRD, asAdmin = true)
+@Resources(value = TestUtils.KAFKA_CONNECT_CRD, asAdmin = true)
+@Resources(value = TestUtils.KAFKA_CONNECT_S2I_CRD, asAdmin = true)
 @Resources(value = "src/rbac/role-edit-kafka.yaml", asAdmin = true)
 public class OpenShiftTemplatesIT {
 

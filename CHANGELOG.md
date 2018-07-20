@@ -2,6 +2,9 @@
 
 ## 0.5.0 (Work in Progress)
 
+* The Cluster Operator now manages RBAC resource for managed resources:
+    * `ServiceAccount` and `ClusterRoleBindings` for Kafka pods
+    * `ServiceAccount` and `RoleBindings` for the Topic Operator pods
 * Renaming of Kubernetes services (Backwards incompatible!)
   * Kubernetes services for Kafka, Kafka Connect and Zookeeper have been renamed to better correspond to their purpose
   * `xxx-kafka` -> `xxx-kafka-bootstrap`

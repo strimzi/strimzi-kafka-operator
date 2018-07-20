@@ -1,13 +1,14 @@
 apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: RoleBinding
+kind: ClusterRoleBinding
 metadata:
-  name: strimzi-cluster-operator-binding
+  name: strimzi-cluster-operator-kafka-broker-delegation
   labels:
     app: strimzi
 subjects:
   - kind: ServiceAccount
     name: strimzi-cluster-operator
+    namespace: myproject
 roleRef:
-  kind: Role
-  name: strimzi-cluster-operator-role
+  kind: ClusterRole
+  name: strimzi-kafka-broker
   apiGroup: rbac.authorization.k8s.io

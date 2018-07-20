@@ -16,6 +16,8 @@ import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.ServiceAccount;
+import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
@@ -27,6 +29,8 @@ import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
+import io.strimzi.operator.cluster.operator.assembly.AbstractAssemblyOperator;
+import io.strimzi.operator.cluster.operator.resource.ClusterRoleBindingOperator;
 
 import java.io.File;
 import java.io.IOException;
@@ -43,8 +47,6 @@ import java.util.Optional;
 import static java.util.Collections.singletonList;
 
 public class KafkaCluster extends AbstractModel {
-
-    public static final String KAFKA_SERVICE_ACCOUNT = "strimzi-kafka";
 
     protected static final String INIT_NAME = "init-kafka";
     protected static final String RACK_VOLUME_NAME = "rack-volume";
@@ -510,7 +512,7 @@ public class KafkaCluster extends AbstractModel {
 
     @Override
     protected String getServiceAccountName() {
-        return KAFKA_SERVICE_ACCOUNT;
+        return initContainerServiceAccountName(cluster);
     }
 
     @Override
@@ -548,4 +550,46 @@ public class KafkaCluster extends AbstractModel {
     protected String getDefaultLogConfigFileName() {
         return "kafkaDefaultLoggingProperties";
     }
+
+    public ServiceAccount generateInitContainerServiceAccount() {
+        return new ServiceAccountBuilder()
+                .withNewMetadata()
+                    .withName(initContainerServiceAccountName(cluster))
+                    .addToLabels("app", "strimzi")
+                    .withNamespace(namespace)
+                .endMetadata()
+            .build();
+    }
+
+
+    /**
+     * Get the name of the kafka service account given the name of the {@code kafkaResourceName}.
+     */
+    public static String initContainerServiceAccountName(String kafkaResourceName) {
+        return kafkaClusterName(kafkaResourceName);
+    }
+
+    /**
+     * Get the name of the kafka kafkaResourceName role binding given the name of the {@code kafkaResourceName}.
+     */
+    public static String initContainerClusterRoleBindingName(String kafkaResourceName) {
+        return "strimzi-" + kafkaResourceName + "-kafka-init";
+    }
+
+    /**
+     * Creates the ClusterRoleBinding which is used to bind the Kafka SA to the ClusterRole
+     * which permissions the Kafka init container to access K8S nodes (necessary for rack-awareness).
+     */
+    public ClusterRoleBindingOperator.ClusterRoleBinding generateClusterRoleBinding(String assemblyNamespace) {
+        if (rack != null) {
+            return new ClusterRoleBindingOperator.ClusterRoleBinding(
+                    initContainerClusterRoleBindingName(cluster),
+                    "strimzi-kafka-broker",
+                    assemblyNamespace, initContainerServiceAccountName(cluster));
+        } else {
+            return null;
+        }
+    }
+
+
 }

@@ -309,6 +309,7 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
         return (K) this;
     }
 
+    @Override
     public K waitForResourceUpdate(String resourceType, String resourceName, Date startTime) {
 
         TestUtils.waitFor(resourceType + " " + resourceName + " update",
@@ -322,6 +323,7 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
         return (K) this;
     }
 
+    @Override
     public Date getResourceCreateTimestamp(String resourceType, String resourceName) {
         DateFormat df = new SimpleDateFormat("yyyyMMdd'T'kkmmss'Z'");
         Date parsedDate = null;
@@ -360,8 +362,14 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
     }
 
     @Override
-    public String logs(String pod) {
-        return Exec.exec(namespacedCommand("logs", pod)).out();
+    public String logs(String pod, String container) {
+        String[] args;
+        if (container != null) {
+            args = new String[]{"logs", pod, "-c", container};
+        } else {
+            args = new String[]{"logs", pod};
+        }
+        return Exec.exec(namespacedCommand(args)).out();
     }
 
     @Override

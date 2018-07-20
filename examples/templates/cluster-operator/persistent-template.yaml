@@ -72,7 +72,6 @@ objects:
   spec:
     kafka:
       replicas: ${{KAFKA_NODE_COUNT}}
-      image: "strimzi/kafka:latest"
       livenessProbe:
         initialDelaySeconds: ${{KAFKA_HEALTHCHECK_DELAY}}
         timeoutSeconds: ${{KAFKA_HEALTHCHECK_TIMEOUT}}
@@ -89,7 +88,6 @@ objects:
         transaction.state.log.replication.factor: ${KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR}
     zookeeper:
       replicas: ${{ZOOKEEPER_NODE_COUNT}}
-      image: "strimzi/zookeeper:latest"
       livenessProbe:
         initialDelaySeconds: ${{ZOOKEEPER_HEALTHCHECK_DELAY}}
         timeoutSeconds: ${{ZOOKEEPER_HEALTHCHECK_TIMEOUT}}
