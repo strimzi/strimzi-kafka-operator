@@ -28,6 +28,7 @@ import java.util.Map;
         generateBuilderPackage = true,
         builderPackage = "io.strimzi.api.kafka.model"
 )
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public abstract class ReplicatedJvmPods implements Serializable {
 
     private static final long serialVersionUID = 1L;

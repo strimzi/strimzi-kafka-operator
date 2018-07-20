@@ -4,6 +4,7 @@
  */
 package io.strimzi.api.kafka.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.sundr.builder.annotations.Buildable;
 
 /**
@@ -14,6 +15,7 @@ import io.sundr.builder.annotations.Buildable;
         generateBuilderPackage = true,
         builderPackage = "io.strimzi.api.kafka.model"
 )
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ExternalLogging extends Logging {
 
     private static final long serialVersionUID = 1L;

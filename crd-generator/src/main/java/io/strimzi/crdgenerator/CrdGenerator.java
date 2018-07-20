@@ -4,6 +4,7 @@
  */
 package io.strimzi.crdgenerator;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -137,20 +138,27 @@ import static java.util.Arrays.asList;
  */
 public class CrdGenerator {
 
+
     // TODO CrdValidator
     // extraProperties
     // @Buildable
 
-    private static void warn(String s) {
+    private void warn(String s) {
         System.err.println("CrdGenerator: warn: " + s);
     }
 
-    private static void err(String s) {
+    private static void argParseErr(String s) {
         System.err.println("CrdGenerator: error: " + s);
+    }
+
+    private void err(String s) {
+        System.err.println("CrdGenerator: error: " + s);
+        numErrors++;
     }
 
     private final ObjectMapper mapper;
     private final JsonNodeFactory nf;
+    private int numErrors;
 
     CrdGenerator(ObjectMapper mapper) {
         this.mapper = mapper;
@@ -222,6 +230,7 @@ public class CrdGenerator {
     }
 
     private ObjectNode buildObjectSchema(AnnotatedElement annotatedElement, Class<?> crdClass, boolean printType) {
+        checkClass(crdClass);
         ObjectNode result = nf.objectNode();
         addDescription(result, annotatedElement);
 
@@ -235,6 +244,26 @@ public class CrdGenerator {
             result.set("required", required);
         }
         return result;
+    }
+
+    private void checkClass(Class<?> crdClass) {
+        if (!crdClass.isAnnotationPresent(JsonInclude.class)) {
+            err(crdClass + " is missing @JsonInclude");
+        } else if (!crdClass.getAnnotation(JsonInclude.class).value().equals(JsonInclude.Include.NON_NULL)) {
+            err(crdClass + " has a @JsonInclude value other than Include.NON_NULL");
+        }
+        checkForBuilderClass(crdClass, crdClass.getName() + "Builder");
+        checkForBuilderClass(crdClass, crdClass.getName() + "Fluent");
+        checkForBuilderClass(crdClass, crdClass.getName() + "FluentImpl");
+
+    }
+
+    private void checkForBuilderClass(Class<?> crdClass, String builderClass) {
+        try {
+            Class.forName(builderClass, false, crdClass.getClassLoader());
+        } catch (ClassNotFoundException e) {
+            err(crdClass + " isn't annotated with @Buildable (" + builderClass + " does not exist)");
+        }
     }
 
     private Collection<Property> unionOfSubclassProperties(Class<?> crdClass) {
@@ -441,7 +470,7 @@ public class CrdGenerator {
                         && CustomResource.class.isAssignableFrom(cls)) {
                     classes.put(fileName, (Class<? extends CustomResource>) cls);
                 } else {
-                    err(cls + " is not a subclass of " + CustomResource.class.getName());
+                    argParseErr(cls + " is not a subclass of " + CustomResource.class.getName());
                 }
             }
         }
@@ -452,11 +481,18 @@ public class CrdGenerator {
             File file = new File(entry.getKey());
             if (file.getParentFile().exists()
                     || !file.getParentFile().mkdirs()) {
-                err(file.getParentFile() + " does not exist and could not be created");
+                generator.err(file.getParentFile() + " does not exist and could not be created");
             }
             try (Writer w = new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8)) {
                 generator.generate(entry.getValue(), w);
             }
+        }
+
+        if (generator.numErrors > 0) {
+            System.err.println("There were " + generator.numErrors + " errors");
+            System.exit(1);
+        } else {
+            System.exit(0);
         }
     }
 }

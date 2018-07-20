@@ -47,8 +47,8 @@ import static java.util.Collections.unmodifiableList;
         generateBuilderPackage = true,
         builderPackage = "io.strimzi.api.kafka.model"
 )
-@JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec"})
 public class KafkaTopic extends CustomResource {
 
     private static final long serialVersionUID = 1L;

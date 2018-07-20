@@ -24,8 +24,8 @@ import static java.util.Collections.emptyMap;
         generateBuilderPackage = true,
         builderPackage = "io.strimzi.api.kafka.model"
 )
-@JsonPropertyOrder({"partitions", "replicas", "config"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({"partitions", "replicas", "config"})
 public class KafkaTopicSpec implements Serializable {
 
     private static final long serialVersionUID = 1L;

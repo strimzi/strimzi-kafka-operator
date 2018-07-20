@@ -19,7 +19,6 @@ import java.util.Map;
 /**
  * Abstract baseclass for different representations of storage, discriminated by {@link #getType() type}.
  */
-@JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonTypeInfo(
         use = JsonTypeInfo.Id.NAME,
         property = "type"
@@ -28,6 +27,7 @@ import java.util.Map;
         @JsonSubTypes.Type(value = EphemeralStorage.class, name = Storage.TYPE_EPHEMERAL),
         @JsonSubTypes.Type(value = PersistentClaimStorage.class, name = Storage.TYPE_PERSISTENT_CLAIM)}
 )
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public abstract class Storage implements Serializable {
 
     private static final long serialVersionUID = 1L;

@@ -37,12 +37,13 @@ import java.util.Map;
                 version = KafkaConnectS2IAssembly.VERSION
         )
 )
-@JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec"})
 @Buildable(
         editableEnabled = false,
         generateBuilderPackage = true,
         builderPackage = "io.strimzi.api.kafka.model"
 )
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec"})
 public class KafkaConnectS2IAssembly extends CustomResource {
 
     private static final long serialVersionUID = 1L;

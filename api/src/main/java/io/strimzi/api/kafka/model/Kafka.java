@@ -21,6 +21,7 @@ import java.util.Map;
         generateBuilderPackage = true,
         builderPackage = "io.strimzi.api.kafka.model"
 )
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "replicas", "image", "storage", "rackConfig", "brokerRackInitImage",
         "livenessProbe", "readinessProbe", "jvmOptions", "affinity", "metrics", "tlsSidecar"})
 public class Kafka extends ReplicatedJvmPods {
