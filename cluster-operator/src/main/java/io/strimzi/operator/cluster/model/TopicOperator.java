@@ -198,9 +198,8 @@ public class TopicOperator extends AbstractModel {
     }
 
     protected static String defaultTopicConfigMapLabels(String cluster) {
-        return String.format("%s=%s,%s=%s",
-                Labels.STRIMZI_CLUSTER_LABEL, cluster,
-                Labels.STRIMZI_KIND_LABEL, TopicOperator.TOPIC_CM_KIND);
+        return String.format("%s=%s",
+                Labels.STRIMZI_CLUSTER_LABEL, cluster);
     }
 
     public static String secretName(String cluster) {

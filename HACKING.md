@@ -85,7 +85,7 @@ you can push the images to OpenShift's Docker repo like this:
 
         DOCKER_REGISTRY=172.30.1.1:5000 DOCKER_ORG=`oc project -q` make all
         
-4. In order to use the built images, you need to update the `image` field in the `examples/install/cluster-operator/07-deployment.yml` with the new value `172.30.1.1:5000/myproject/cluster-operator:latest` related to the Cluster Operator and all the defaul images used for Kafka, Zookeeper, Topic Operator and so on. Following the main fields you have to update:
+4. In order to use the built images, you need to update the `image` field in the `examples/install/cluster-operator/05-Deployment-strimzi-cluster-operator.yml` with the new value `172.30.1.1:5000/myproject/cluster-operator:latest` related to the Cluster Operator and all the default images used for Kafka, Zookeeper, Topic Operator, and so on. The main fields you have to update are:
 
 ```yaml
 - name: STRIMZI_DEFAULT_ZOOKEEPER_IMAGE
