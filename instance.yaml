@@ -1,0 +1,5 @@
+apiVersion: example.org/v1alpha1
+kind: Minimum
+metadata:
+  name: instance-resource
+spec: {}
