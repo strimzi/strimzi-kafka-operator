@@ -35,8 +35,8 @@ public class ZookeeperSetOperatiorTest {
     @Before
     public void before() {
         MockCertManager certManager = new MockCertManager();
-        a = ZookeeperCluster.fromCrd(certManager, getResource(), getInitialSecrets()).generateStatefulSet(true);
-        b = ZookeeperCluster.fromCrd(certManager, getResource(), getInitialSecrets()).generateStatefulSet(true);
+        a = ZookeeperCluster.fromCrd(certManager, getResource(), getInitialSecrets(getResource().getMetadata().getName())).generateStatefulSet(true);
+        b = ZookeeperCluster.fromCrd(certManager, getResource(), getInitialSecrets(getResource().getMetadata().getName())).generateStatefulSet(true);
     }
 
     private KafkaAssembly getResource() {
@@ -49,9 +49,9 @@ public class ZookeeperSetOperatiorTest {
         return ResourceUtils.createKafkaCluster(clusterCmNamespace, clusterCmName, replicas, image, healthDelay, healthTimeout);
     }
 
-    private List<Secret> getInitialSecrets() {
+    private List<Secret> getInitialSecrets(String clusterName) {
         String clusterCmNamespace = "test";
-        return ResourceUtils.createKafkaClusterInitialSecrets(clusterCmNamespace);
+        return ResourceUtils.createKafkaClusterInitialSecrets(clusterCmNamespace, clusterName);
     }
 
     private StatefulSetDiff diff() {

@@ -23,7 +23,6 @@ import io.strimzi.api.kafka.model.Sidecar;
 import io.strimzi.api.kafka.model.Zookeeper;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
-import io.strimzi.operator.cluster.operator.assembly.AbstractAssemblyOperator;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -189,14 +188,14 @@ public class ZookeeperCluster extends AbstractModel {
         log.debug("Generating certificates");
 
         try {
-            Optional<Secret> internalCAsecret = secrets.stream().filter(s -> s.getMetadata().getName().equals(AbstractAssemblyOperator.INTERNAL_CA_NAME))
+            Optional<Secret> internalCAsecret = secrets.stream().filter(s -> s.getMetadata().getName().equals(getClusterCaName(cluster)))
                     .findFirst();
             if (internalCAsecret.isPresent()) {
 
                 // get the generated CA private key + self-signed certificate for internal communications
-                internalCA = new CertAndKey(
-                        decodeFromSecret(internalCAsecret.get(), "internal-ca.key"),
-                        decodeFromSecret(internalCAsecret.get(), "internal-ca.crt"));
+                clusterCA = new CertAndKey(
+                        decodeFromSecret(internalCAsecret.get(), "cluster-ca.key"),
+                        decodeFromSecret(internalCAsecret.get(), "cluster-ca.crt"));
 
                 // recover or generates the private key + certificate for each node
                 Optional<Secret> nodesSecret = secrets.stream().filter(s -> s.getMetadata().getName().equals(ZookeeperCluster.nodesSecretName(cluster)))
@@ -204,10 +203,10 @@ public class ZookeeperCluster extends AbstractModel {
 
                 int replicasSecret = !nodesSecret.isPresent() ? 0 : (nodesSecret.get().getData().size() - 1) / 2;
 
-                log.debug("Internal communication certificates");
-                certs = maybeCopyOrGenerateCerts(certManager, nodesSecret, replicasSecret, internalCA, ZookeeperCluster::zookeeperPodName);
+                log.debug("Cluster communication certificates");
+                certs = maybeCopyOrGenerateCerts(certManager, nodesSecret, replicasSecret, clusterCA, ZookeeperCluster::zookeeperPodName);
             } else {
-                throw new NoCertificateSecretException("The internal CA certificate Secret is missing");
+                throw new NoCertificateSecretException("The cluster CA certificate Secret is missing");
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -253,7 +252,7 @@ public class ZookeeperCluster extends AbstractModel {
         Base64.Encoder encoder = Base64.getEncoder();
 
         Map<String, String> data = new HashMap<>();
-        data.put("internal-ca.crt", encoder.encodeToString(internalCA.cert()));
+        data.put("cluster-ca.crt", encoder.encodeToString(clusterCA.cert()));
 
         for (int i = 0; i < replicas; i++) {
             CertAndKey cert = certs.get(ZookeeperCluster.zookeeperPodName(cluster, i));

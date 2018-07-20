@@ -20,12 +20,14 @@ function create_keystore {
    RANDFILE=/tmp/.rnd openssl pkcs12 -export -in $3 -inkey $4 -chain -CAfile $5 -name $6 -password pass:$2 -out $1
 }
 
-echo "Preparing certificates for internal communication"
-create_truststore /tmp/kafka/replication.truststore.p12 $CERTS_STORE_PASSWORD /opt/kafka/internal-certs/internal-ca.crt internal-ca
-create_keystore /tmp/kafka/replication.keystore.p12 $CERTS_STORE_PASSWORD /opt/kafka/internal-certs/$HOSTNAME.crt /opt/kafka/internal-certs/$HOSTNAME.key /opt/kafka/internal-certs/internal-ca.crt $HOSTNAME
-echo "Preparing certificates for internal communication is complete"
+echo "Preparing truststore for replication listener"
+create_truststore /tmp/kafka/cluster.truststore.p12 $CERTS_STORE_PASSWORD /opt/kafka/broker-certs/cluster-ca.crt cluster-ca
+echo "Preparing truststore for replication listener is complete"
 
-echo "Preparing certificates for clients communication"
-create_truststore /tmp/kafka/clients.truststore.p12 $CERTS_STORE_PASSWORD /opt/kafka/clients-certs/clients-ca.crt clients-ca
-create_keystore /tmp/kafka/clients.keystore.p12 $CERTS_STORE_PASSWORD /opt/kafka/clients-certs/$HOSTNAME.crt /opt/kafka/clients-certs/$HOSTNAME.key /opt/kafka/clients-certs/clients-ca.crt $HOSTNAME
-echo "Preparing certificates for clients communication is complete"
+echo "Preparing keystore for replication and clienttls listener"
+create_keystore /tmp/kafka/cluster.keystore.p12 $CERTS_STORE_PASSWORD /opt/kafka/broker-certs/$HOSTNAME.crt /opt/kafka/broker-certs/$HOSTNAME.key /opt/kafka/broker-certs/cluster-ca.crt $HOSTNAME
+echo "Preparing keystore for replication and clienttls listener is complete"
+
+echo "Preparing truststore for clienttls listener"
+create_truststore /tmp/kafka/clients.truststore.p12 $CERTS_STORE_PASSWORD /opt/kafka/client-ca-cert/ca.crt clients-ca
+echo "Preparing truststore for clienttls listener is complete"

@@ -18,6 +18,7 @@ import io.strimzi.certs.CertManager;
 import io.strimzi.certs.SecretCertProvider;
 import io.strimzi.operator.cluster.InvalidConfigMapException;
 import io.strimzi.operator.cluster.Reconciliation;
+import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.AssemblyType;
 import io.strimzi.operator.cluster.model.Labels;
 import io.strimzi.operator.cluster.operator.resource.AbstractWatchableResourceOperator;
@@ -54,8 +55,6 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
 
     protected static final int LOCK_TIMEOUT = 60000;
     protected static final int CERTS_EXPIRATION_DAYS = 365;
-
-    public static final String INTERNAL_CA_NAME = "internal-ca";
 
     protected final Vertx vertx;
     protected final boolean isOpenShift;
@@ -126,39 +125,62 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
         return null;
     }
 
-    private final void reconcileCertificate(String namespace, Handler<AsyncResult<Void>> handler) {
-
+    private final void reconcileClusterCa(Reconciliation reconciliation, Handler<AsyncResult<Void>> handler) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
             future -> {
+                String clusterCaName = AbstractModel.getClusterCaName(reconciliation.assemblyName());
 
-                if (secretOperations.get(namespace, INTERNAL_CA_NAME) == null) {
-                    log.info("Generating internal CA certificate");
-                    File internalCAkeyFile = null;
-                    File internalCAcertFile = null;
+                if (secretOperations.get(reconciliation.namespace(), clusterCaName) == null) {
+                    log.debug("{}: Generating cluster CA certificate {}", reconciliation, clusterCaName);
+                    File clusterCAkeyFile = null;
+                    File clusterCAcertFile = null;
                     try {
-                        internalCAkeyFile = File.createTempFile("tls", "internal-ca-key");
-                        internalCAcertFile = File.createTempFile("tls", "internal-ca-cert");
-                        certManager.generateSelfSignedCert(internalCAkeyFile, internalCAcertFile, CERTS_EXPIRATION_DAYS);
+                        clusterCAkeyFile = File.createTempFile("tls", "cluster-ca-key");
+                        clusterCAcertFile = File.createTempFile("tls", "cluster-ca-cert");
+                        certManager.generateSelfSignedCert(clusterCAkeyFile, clusterCAcertFile, CERTS_EXPIRATION_DAYS);
 
                         SecretCertProvider secretCertProvider = new SecretCertProvider();
-                        Secret secret = secretCertProvider.createSecret(namespace, INTERNAL_CA_NAME,
-                                "internal-ca.key", "internal-ca.crt",
-                                internalCAkeyFile, internalCAcertFile, Collections.emptyMap());
+                        Secret secret = secretCertProvider.createSecret(reconciliation.namespace(), clusterCaName,
+                                "cluster-ca.key", "cluster-ca.crt",
+                                clusterCAkeyFile, clusterCAcertFile, Collections.emptyMap());
 
-                        secretOperations.reconcile(namespace, INTERNAL_CA_NAME, secret)
+                        secretOperations.reconcile(reconciliation.namespace(), clusterCaName, secret)
                                 .compose(future::complete, future);
-
                     } catch (Throwable e) {
                         future.fail(e);
                     } finally {
-                        if (internalCAkeyFile != null)
-                            internalCAkeyFile.delete();
-                        if (internalCAcertFile != null)
-                            internalCAcertFile.delete();
+                        if (clusterCAkeyFile != null)
+                            clusterCAkeyFile.delete();
+                        if (clusterCAcertFile != null)
+                            clusterCAcertFile.delete();
                     }
-                    log.info("End generating certificate");
+                    log.debug("{}: End generating cluster CA {}", reconciliation, clusterCaName);
                 } else {
-                    log.debug("The internal CA certificate already exists");
+                    log.debug("{}: The cluster CA {} already exists", reconciliation, clusterCaName);
+                    future.complete();
+                }
+            }, true,
+            res -> {
+                if (res.succeeded())
+                    handler.handle(Future.succeededFuture());
+                else
+                    handler.handle(Future.failedFuture(res.cause()));
+            }
+        );
+    }
+
+    private final void deleteClusterCa(Reconciliation reconciliation, Handler<AsyncResult<Void>> handler) {
+        vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
+            future -> {
+                String clusterCaName = AbstractModel.getClusterCaName(reconciliation.assemblyName());
+
+                if (secretOperations.get(reconciliation.namespace(), clusterCaName) != null) {
+                    log.debug("{}: Deleting cluster CA certificate {}", reconciliation, clusterCaName);
+                    secretOperations.reconcile(reconciliation.namespace(), clusterCaName, null)
+                            .compose(future::complete, future);
+                    log.debug("{}: Cluster CA {} deleted", reconciliation, clusterCaName);
+                } else {
+                    log.debug("{}: The cluster CA {} doesn't exist", reconciliation, clusterCaName);
                     future.complete();
                 }
             }, true,
@@ -190,19 +212,19 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
                 Lock lock = res.result();
 
                 try {
-                    // get ConfigMap and related resources for the specific cluster
-                    T cm = resourceOperator.get(namespace, assemblyName);
+                    // get CustomResource and related resources for the specific cluster
+                    T cr = resourceOperator.get(namespace, assemblyName);
 
-                    if (cm != null) {
+                    if (cr != null) {
                         log.info("{}: Assembly {} should be created or updated", reconciliation, assemblyName);
-                        reconcileCertificate(namespace, certResult -> {
+                        reconcileClusterCa(reconciliation, certResult -> {
 
                             Labels labels = Labels.forCluster(assemblyName);
                             List<Secret> secrets = secretOperations.list(namespace, labels);
-                            secrets.add(secretOperations.get(namespace, INTERNAL_CA_NAME));
+                            secrets.add(secretOperations.get(namespace, AbstractModel.getClusterCaName(assemblyName)));
 
                             if (certResult.succeeded()) {
-                                createOrUpdate(reconciliation, cm, secrets, createResult -> {
+                                createOrUpdate(reconciliation, cr, secrets, createResult -> {
                                     lock.release();
                                     log.debug("{}: Lock {} released", reconciliation, lockName);
                                     if (createResult.failed()) {
@@ -216,16 +238,27 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
                                     }
                                 });
                             } else {
-                                log.error(certResult.cause().toString());
+                                log.error("{}: reconcileClusterCa failed", reconciliation, certResult.cause());
                                 lock.release();
                             }
                         });
                     } else {
                         log.info("{}: Assembly {} should be deleted", reconciliation, assemblyName);
                         delete(reconciliation, deleteResult -> {
-                            lock.release();
-                            log.debug("{}: Lock {} released", reconciliation, lockName);
-                            handler.handle(deleteResult);
+                            if (deleteResult.succeeded())   {
+                                log.info("{}: Assembly {} deleted", reconciliation, assemblyName);
+
+                                deleteClusterCa(reconciliation, caDeleteResult -> {
+                                    lock.release();
+                                    log.debug("{}: Lock {} released", reconciliation, lockName);
+                                    handler.handle(caDeleteResult);
+                                });
+                            } else {
+                                log.error("{}: Deletion of assembly {} failed", reconciliation, assemblyName, deleteResult.cause());
+                                lock.release();
+                                log.debug("{}: Lock {} released", reconciliation, lockName);
+                                handler.handle(deleteResult);
+                            }
                         });
                     }
                 } catch (Throwable ex) {
@@ -343,7 +376,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
             if (cause instanceof InvalidConfigMapException) {
                 log.warn("{}: Failed to reconcile {}", reconciliation, cause.getMessage());
             } else {
-                log.warn("{}: Failed to reconcile {}", reconciliation, cause);
+                log.warn("{}: Failed to reconcile", reconciliation, cause);
             }
         }
     }

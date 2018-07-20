@@ -50,7 +50,7 @@ class ResourceTester<R extends HasMetadata, M extends AbstractModel> implements 
     ResourceTester(Class<R> cls, TriFunction<CertManager, R, List<Secret>, M> fromResource) {
         this.cls = cls;
         this.fromK8sResource = resource -> {
-            return fromResource.apply(new MockCertManager(), resource, ResourceUtils.createKafkaClusterInitialSecrets(resource.getMetadata().getNamespace()));
+            return fromResource.apply(new MockCertManager(), resource, ResourceUtils.createKafkaClusterInitialSecrets(resource.getMetadata().getNamespace(), resource.getMetadata().getName()));
         };
     }
 

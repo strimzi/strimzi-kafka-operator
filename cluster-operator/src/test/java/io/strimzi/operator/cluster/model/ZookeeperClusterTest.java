@@ -49,8 +49,8 @@ public class ZookeeperClusterTest {
     private final Map<String, Object> zooConfigurationJson = singletonMap("foo", "bar");
 
     private final CertManager certManager = new MockCertManager();
-    private final KafkaAssembly cm = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson, null, null, kafkaLogConfigJson, zooLogConfigJson);
-    private final ZookeeperCluster zc = ZookeeperCluster.fromCrd(certManager, cm, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
+    private final KafkaAssembly ka = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson, null, null, kafkaLogConfigJson, zooLogConfigJson);
+    private final ZookeeperCluster zc = ZookeeperCluster.fromCrd(certManager, ka, ResourceUtils.createKafkaClusterInitialSecrets(namespace, ka.getMetadata().getName()));
 
     @Rule
     public ResourceTester<KafkaAssembly, ZookeeperCluster> resourceTester = new ResourceTester<>(KafkaAssembly.class, ZookeeperCluster::fromCrd);
@@ -150,36 +150,36 @@ public class ZookeeperClusterTest {
      */
     @Test
     public void testDeleteClaim() {
-        KafkaAssembly cm = new KafkaAssemblyBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson))
+        KafkaAssembly ka = new KafkaAssemblyBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson))
                 .editSpec()
                     .editKafka()
                         .withNewEphemeralStorageStorage().endEphemeralStorageStorage()
                     .endKafka()
                 .endSpec()
             .build();
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(certManager, cm, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(certManager, ka, ResourceUtils.createKafkaClusterInitialSecrets(namespace, ka.getMetadata().getName()));
         StatefulSet ss = zc.generateStatefulSet(true);
         assertFalse(ZookeeperCluster.deleteClaim(ss));
 
-        cm = new KafkaAssemblyBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson))
+        ka = new KafkaAssemblyBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson))
                 .editSpec()
                     .editKafka()
                         .withNewPersistentClaimStorageStorage().withDeleteClaim(false).endPersistentClaimStorageStorage()
                     .endKafka()
                 .endSpec()
             .build();
-        zc = ZookeeperCluster.fromCrd(certManager, cm, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
+        zc = ZookeeperCluster.fromCrd(certManager, ka, ResourceUtils.createKafkaClusterInitialSecrets(namespace, ka.getMetadata().getName()));
         ss = zc.generateStatefulSet(true);
         assertFalse(ZookeeperCluster.deleteClaim(ss));
 
-        cm = new KafkaAssemblyBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson))
+        ka = new KafkaAssemblyBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson))
                 .editSpec()
                     .editZookeeper()
                         .withNewPersistentClaimStorageStorage().withDeleteClaim(true).endPersistentClaimStorageStorage()
                     .endZookeeper()
                 .endSpec()
             .build();
-        zc = ZookeeperCluster.fromCrd(certManager, cm, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
+        zc = ZookeeperCluster.fromCrd(certManager, ka, ResourceUtils.createKafkaClusterInitialSecrets(namespace, ka.getMetadata().getName()));
         ss = zc.generateStatefulSet(true);
         assertTrue(ZookeeperCluster.deleteClaim(ss));
     }

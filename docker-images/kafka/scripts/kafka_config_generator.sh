@@ -24,11 +24,11 @@ ssl.truststore.password=${CERTS_STORE_PASSWORD}
 ssl.keystore.type=PKCS12
 ssl.truststore.type=PKCS12
 
-listener.name.replication.ssl.keystore.location=/tmp/kafka/replication.keystore.p12
-listener.name.replication.ssl.truststore.location=/tmp/kafka/replication.truststore.p12
+listener.name.replication.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12
+listener.name.replication.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12
 listener.name.replication.ssl.client.auth=required
 
-listener.name.clienttls.ssl.keystore.location=/tmp/kafka/clients.keystore.p12
+listener.name.clienttls.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12
 listener.name.clienttls.ssl.truststore.location=/tmp/kafka/clients.truststore.p12
 
 # Provided configuration

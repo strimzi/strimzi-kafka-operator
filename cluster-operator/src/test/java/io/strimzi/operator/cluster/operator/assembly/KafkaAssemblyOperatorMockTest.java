@@ -25,6 +25,7 @@ import io.strimzi.api.kafka.model.Resources;
 import io.strimzi.api.kafka.model.ResourcesBuilder;
 import io.strimzi.api.kafka.model.Storage;
 import io.strimzi.operator.cluster.Reconciliation;
+import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.AssemblyType;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.Labels;
@@ -230,10 +231,10 @@ public class KafkaAssemblyOperatorMockTest {
             assertResourceRequirements(context, KafkaCluster.kafkaClusterName(CLUSTER_NAME));
             context.assertNotNull(mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.clientsCASecretName(CLUSTER_NAME)).get());
             context.assertNotNull(mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.clientsPublicKeyName(CLUSTER_NAME)).get());
-            context.assertNotNull(mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.brokersClientsSecretName(CLUSTER_NAME)).get());
-            context.assertNotNull(mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.brokersInternalSecretName(CLUSTER_NAME)).get());
+            context.assertNotNull(mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.clusterPublicKeyName(CLUSTER_NAME)).get());
+            context.assertNotNull(mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.brokersSecretName(CLUSTER_NAME)).get());
             context.assertNotNull(mockClient.secrets().inNamespace(NAMESPACE).withName(ZookeeperCluster.nodesSecretName(CLUSTER_NAME)).get());
-            context.assertNotNull(mockClient.secrets().inNamespace(NAMESPACE).withName(AbstractAssemblyOperator.INTERNAL_CA_NAME).get());
+            context.assertNotNull(mockClient.secrets().inNamespace(NAMESPACE).withName(AbstractModel.getClusterCaName(CLUSTER_NAME)).get());
             createAsync.complete();
         });
         createAsync.await();
@@ -263,8 +264,8 @@ public class KafkaAssemblyOperatorMockTest {
             assertPvcs(context, expectedClaims);
             context.assertNull(mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.clientsCASecretName(CLUSTER_NAME)).get());
             context.assertNull(mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.clientsPublicKeyName(CLUSTER_NAME)).get());
-            context.assertNull(mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.brokersClientsSecretName(CLUSTER_NAME)).get());
-            context.assertNull(mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.brokersInternalSecretName(CLUSTER_NAME)).get());
+            context.assertNull(mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.clusterPublicKeyName(CLUSTER_NAME)).get());
+            context.assertNull(mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.brokersSecretName(CLUSTER_NAME)).get());
             context.assertNull(mockClient.secrets().inNamespace(NAMESPACE).withName(ZookeeperCluster.nodesSecretName(CLUSTER_NAME)).get());
             deleteAsync.complete();
         });
@@ -324,8 +325,8 @@ public class KafkaAssemblyOperatorMockTest {
         updateClusterWithoutSecrets(context,
                 KafkaCluster.clientsCASecretName(CLUSTER_NAME),
                 KafkaCluster.clientsPublicKeyName(CLUSTER_NAME),
-                KafkaCluster.brokersClientsSecretName(CLUSTER_NAME),
-                KafkaCluster.brokersInternalSecretName(CLUSTER_NAME),
+                KafkaCluster.clusterPublicKeyName(CLUSTER_NAME),
+                KafkaCluster.brokersSecretName(CLUSTER_NAME),
                 ZookeeperCluster.nodesSecretName(CLUSTER_NAME));
     }
 
@@ -738,8 +739,7 @@ public class KafkaAssemblyOperatorMockTest {
         KafkaAssemblyOperator kco = createCluster(context);
         Async updateAsync = context.async();
 
-        int brokersInternalCerts = mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.brokersInternalSecretName(CLUSTER_NAME)).get().getData().size();
-        int brokersClientsCerts = mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.brokersClientsSecretName(CLUSTER_NAME)).get().getData().size();
+        int brokersInternalCerts = mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.brokersSecretName(CLUSTER_NAME)).get().getData().size();
 
         int newScale = kafkaReplicas - 1;
         String deletedPod = KafkaCluster.kafkaPodName(CLUSTER_NAME, newScale);
@@ -760,9 +760,7 @@ public class KafkaAssemblyOperatorMockTest {
 
             // removing one pod, the related private and public keys should not be in the Secrets
             context.assertEquals(brokersInternalCerts - 2,
-                    mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.brokersInternalSecretName(CLUSTER_NAME)).get().getData().size());
-            context.assertEquals(brokersClientsCerts - 2,
-                    mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.brokersClientsSecretName(CLUSTER_NAME)).get().getData().size());
+                    mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.brokersSecretName(CLUSTER_NAME)).get().getData().size());
 
             // TODO assert no rolling update
             updateAsync.complete();
@@ -777,8 +775,7 @@ public class KafkaAssemblyOperatorMockTest {
         KafkaAssemblyOperator kco = createCluster(context);
         Async updateAsync = context.async();
 
-        int brokersInternalCerts = mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.brokersInternalSecretName(CLUSTER_NAME)).get().getData().size();
-        int brokersClientsCerts = mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.brokersClientsSecretName(CLUSTER_NAME)).get().getData().size();
+        int brokersInternalCerts = mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.brokersSecretName(CLUSTER_NAME)).get().getData().size();
 
         int newScale = kafkaReplicas + 1;
         String newPod = KafkaCluster.kafkaPodName(CLUSTER_NAME, kafkaReplicas);
@@ -799,9 +796,7 @@ public class KafkaAssemblyOperatorMockTest {
 
             // adding one pod, the related private and public keys should be added to the Secrets
             context.assertEquals(brokersInternalCerts + 2,
-                    mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.brokersInternalSecretName(CLUSTER_NAME)).get().getData().size());
-            context.assertEquals(brokersClientsCerts + 2,
-                    mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.brokersClientsSecretName(CLUSTER_NAME)).get().getData().size());
+                    mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.brokersSecretName(CLUSTER_NAME)).get().getData().size());
 
             // TODO assert no rolling update
             updateAsync.complete();
@@ -824,7 +819,8 @@ public class KafkaAssemblyOperatorMockTest {
         context.assertTrue(mockClient.apps().statefulSets().inNamespace(NAMESPACE).list().getItems().isEmpty());
         context.assertTrue(mockClient.extensions().deployments().inNamespace(NAMESPACE).list().getItems().isEmpty());
         // just the "internal-ca" certs is left because it's global (not cluster specific)
-        context.assertEquals(1, mockClient.secrets().inNamespace(NAMESPACE).list().getItems().size());
+        // JAKUB
+        context.assertEquals(0, mockClient.secrets().inNamespace(NAMESPACE).list().getItems().size());
     }
 
     @Test
