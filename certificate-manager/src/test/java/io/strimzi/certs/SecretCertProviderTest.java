@@ -5,6 +5,7 @@
 package io.strimzi.certs;
 
 import io.fabric8.kubernetes.api.model.Secret;
+import io.strimzi.test.TestUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -25,6 +26,7 @@ public class SecretCertProviderTest {
 
     @BeforeClass
     public static void before() {
+        TestUtils.assumeLinux();
         ssl = new OpenSslCertManager();
         secretCertProvider = new SecretCertProvider();
     }

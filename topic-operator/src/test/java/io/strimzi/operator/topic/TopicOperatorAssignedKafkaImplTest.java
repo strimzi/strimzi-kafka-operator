@@ -4,11 +4,13 @@
  */
 package io.strimzi.operator.topic;
 
+import io.strimzi.test.TestUtils;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.apache.kafka.clients.admin.AdminClient;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -104,6 +106,11 @@ public class TopicOperatorAssignedKafkaImplTest {
             args.add(script);
             args.addAll(this.args.get(i++));
         }
+    }
+
+    @BeforeClass
+    public static void setUp() throws Exception {
+        TestUtils.assumeLinux();
     }
 
     @Test

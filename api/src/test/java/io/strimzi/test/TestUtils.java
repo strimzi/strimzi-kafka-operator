@@ -31,9 +31,10 @@ import java.util.function.BooleanSupplier;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assume.assumeTrue;
 
 public final class TestUtils {
-
+    public static final String LINE_SEPARATOR = System.getProperty("line.separator");
     private static final Logger LOGGER = LogManager.getLogger(TestUtils.class);
 
     private TestUtils() {
@@ -266,5 +267,9 @@ public final class TestUtils {
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static void assumeLinux() {
+        assumeTrue(System.getProperty("os.name").contains("nux"));
     }
 }

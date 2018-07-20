@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static io.strimzi.test.TestUtils.LINE_SEPARATOR;
 import static org.junit.Assert.assertEquals;
 
 public class KafkaConnectClusterTest {
@@ -35,27 +36,27 @@ public class KafkaConnectClusterTest {
     private final int healthTimeout = 10;
     private final String metricsCmJson = "{\"animal\":\"wombat\"}";
     private final String configurationJson = "{\"foo\":\"bar\"}";
-    private final String expectedConfiguration = "group.id=connect-cluster\n" +
-            "key.converter=org.apache.kafka.connect.json.JsonConverter\n" +
-            "internal.key.converter.schemas.enable=false\n" +
-            "value.converter=org.apache.kafka.connect.json.JsonConverter\n" +
-            "config.storage.topic=connect-cluster-configs\n" +
-            "status.storage.topic=connect-cluster-status\n" +
-            "offset.storage.topic=connect-cluster-offsets\n" +
-            "foo=bar\n" +
-            "internal.key.converter=org.apache.kafka.connect.json.JsonConverter\n" +
-            "internal.value.converter.schemas.enable=false\n" +
-            "internal.value.converter=org.apache.kafka.connect.json.JsonConverter\n";
-    private final String defaultConfiguration = "group.id=connect-cluster\n" +
-            "key.converter=org.apache.kafka.connect.json.JsonConverter\n" +
-            "internal.key.converter.schemas.enable=false\n" +
-            "value.converter=org.apache.kafka.connect.json.JsonConverter\n" +
-            "config.storage.topic=connect-cluster-configs\n" +
-            "status.storage.topic=connect-cluster-status\n" +
-            "offset.storage.topic=connect-cluster-offsets\n" +
-            "internal.key.converter=org.apache.kafka.connect.json.JsonConverter\n" +
-            "internal.value.converter.schemas.enable=false\n" +
-            "internal.value.converter=org.apache.kafka.connect.json.JsonConverter\n";
+    private final String expectedConfiguration = "group.id=connect-cluster" + LINE_SEPARATOR +
+            "key.converter=org.apache.kafka.connect.json.JsonConverter" + LINE_SEPARATOR +
+            "internal.key.converter.schemas.enable=false" + LINE_SEPARATOR +
+            "value.converter=org.apache.kafka.connect.json.JsonConverter" + LINE_SEPARATOR +
+            "config.storage.topic=connect-cluster-configs" + LINE_SEPARATOR +
+            "status.storage.topic=connect-cluster-status" + LINE_SEPARATOR +
+            "offset.storage.topic=connect-cluster-offsets" + LINE_SEPARATOR +
+            "foo=bar" + LINE_SEPARATOR +
+            "internal.key.converter=org.apache.kafka.connect.json.JsonConverter" + LINE_SEPARATOR +
+            "internal.value.converter.schemas.enable=false" + LINE_SEPARATOR +
+            "internal.value.converter=org.apache.kafka.connect.json.JsonConverter" + LINE_SEPARATOR;
+    private final String defaultConfiguration = "group.id=connect-cluster" + LINE_SEPARATOR +
+            "key.converter=org.apache.kafka.connect.json.JsonConverter" + LINE_SEPARATOR +
+            "internal.key.converter.schemas.enable=false" + LINE_SEPARATOR +
+            "value.converter=org.apache.kafka.connect.json.JsonConverter" + LINE_SEPARATOR +
+            "config.storage.topic=connect-cluster-configs" + LINE_SEPARATOR +
+            "status.storage.topic=connect-cluster-status" + LINE_SEPARATOR +
+            "offset.storage.topic=connect-cluster-offsets" + LINE_SEPARATOR +
+            "internal.key.converter=org.apache.kafka.connect.json.JsonConverter" + LINE_SEPARATOR +
+            "internal.value.converter.schemas.enable=false" + LINE_SEPARATOR +
+            "internal.value.converter=org.apache.kafka.connect.json.JsonConverter" + LINE_SEPARATOR;
 
     private CertManager certManager = new MockCertManager();
     private final KafkaConnectAssembly resource = new KafkaConnectAssemblyBuilder(ResourceUtils.createEmptyKafkaConnectCluster(namespace, cluster))
