@@ -22,6 +22,7 @@ public abstract class AbstractCrdIT {
         createDelete(ssStr);
         T model = TestUtils.fromYaml(resource, resourceClass, true);
         ssStr = TestUtils.toYamlString(model);
+        System.err.println(ssStr);
         createDelete(ssStr);
     }
 

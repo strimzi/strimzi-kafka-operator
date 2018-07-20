@@ -132,15 +132,13 @@ Used in: <<type-Kafka,`Kafka`>>, <<type-KafkaConnectAssemblySpec,`KafkaConnectAs
 
 [options="header"]
 |====
-|Field           |Description
-|-XX      1.2+<.<|A map of -XX options to the JVM
+|Field        |Description
+|-XX   1.2+<.<|A map of -XX options to the JVM
 |map
-|-Xms     1.2+<.<|-Xms option to to the JVM
+|-Xms  1.2+<.<|-Xms option to to the JVM
 |string
-|-Xmx     1.2+<.<|-Xmx option to to the JVM
+|-Xmx  1.2+<.<|-Xmx option to to the JVM
 |string
-|-server  1.2+<.<|-server option to to the JVM
-|boolean
 |====
 
 [[type-Sidecar]]

@@ -41,6 +41,7 @@ import java.util.TreeMap;
 
 import static io.strimzi.crdgenerator.Property.properties;
 import static io.strimzi.crdgenerator.Property.sortedProperties;
+import static java.lang.reflect.Modifier.isAbstract;
 import static java.util.Arrays.asList;
 
 /**
@@ -249,12 +250,15 @@ public class CrdGenerator {
     private void checkClass(Class<?> crdClass) {
         if (!crdClass.isAnnotationPresent(JsonInclude.class)) {
             err(crdClass + " is missing @JsonInclude");
-        } else if (!crdClass.getAnnotation(JsonInclude.class).value().equals(JsonInclude.Include.NON_NULL)) {
+        } else if (!crdClass.getAnnotation(JsonInclude.class).value().equals(JsonInclude.Include.NON_NULL)
+                && !crdClass.getAnnotation(JsonInclude.class).value().equals(JsonInclude.Include.NON_DEFAULT)) {
             err(crdClass + " has a @JsonInclude value other than Include.NON_NULL");
         }
-        checkForBuilderClass(crdClass, crdClass.getName() + "Builder");
-        checkForBuilderClass(crdClass, crdClass.getName() + "Fluent");
-        checkForBuilderClass(crdClass, crdClass.getName() + "FluentImpl");
+        if (!isAbstract(crdClass.getModifiers())) {
+            checkForBuilderClass(crdClass, crdClass.getName() + "Builder");
+            checkForBuilderClass(crdClass, crdClass.getName() + "Fluent");
+            checkForBuilderClass(crdClass, crdClass.getName() + "FluentImpl");
+        }
 
     }
 
@@ -479,8 +483,11 @@ public class CrdGenerator {
                 new ObjectMapper());
         for (Map.Entry<String, Class<? extends CustomResource>> entry : classes.entrySet()) {
             File file = new File(entry.getKey());
-            if (file.getParentFile().exists()
-                    || !file.getParentFile().mkdirs()) {
+            if (file.getParentFile().exists()) {
+                if (!file.getParentFile().isDirectory()) {
+                    generator.err(file.getParentFile() + " is not a directory");
+                }
+            } else if (!file.getParentFile().mkdirs()) {
                 generator.err(file.getParentFile() + " does not exist and could not be created");
             }
             try (Writer w = new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8)) {

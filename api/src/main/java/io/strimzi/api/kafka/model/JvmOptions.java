@@ -28,7 +28,7 @@ public class JvmOptions implements Serializable {
 
     private String xmx;
     private String xms;
-    private boolean server = false;
+    private Boolean server;
     private Map<String, String> xx;
 
     @JsonProperty("-Xmx")
@@ -55,7 +55,7 @@ public class JvmOptions implements Serializable {
 
     @JsonProperty("-server")
     @Description("-server option to to the JVM")
-    public Boolean getServer() {
+    public Boolean isServer() {
         return server;
     }
 

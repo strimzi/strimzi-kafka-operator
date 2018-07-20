@@ -51,8 +51,6 @@ spec:
                 -Xmx:
                   type: string
                   pattern: '[0-9]+[mMgG]?'
-                -server:
-                  type: boolean
             affinity:
               type: object
               properties:
