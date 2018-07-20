@@ -91,4 +91,3 @@ Finally, in order to configure the Kafka client, following properties should be 
 
 The current implementation does not support Subject Alternative Names (SAN) so the hostname verification should be disabled on the client side.
 For doing so the `ssl.endpoint.identification.algorithm` property needs to be set as empty.
-
