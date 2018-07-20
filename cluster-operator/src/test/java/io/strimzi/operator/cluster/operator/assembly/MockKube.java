@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.api.model.DoneablePersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.DoneablePod;
 import io.fabric8.kubernetes.api.model.DoneableSecret;
 import io.fabric8.kubernetes.api.model.DoneableService;
+import io.fabric8.kubernetes.api.model.DoneableServiceAccount;
 import io.fabric8.kubernetes.api.model.Endpoints;
 import io.fabric8.kubernetes.api.model.EndpointsList;
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -27,6 +28,8 @@ import io.fabric8.kubernetes.api.model.PodList;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretList;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.ServiceAccount;
+import io.fabric8.kubernetes.api.model.ServiceAccountList;
 import io.fabric8.kubernetes.api.model.ServiceList;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinitionList;
@@ -51,11 +54,17 @@ import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.dsl.ScalableResource;
+import okhttp3.Call;
+import okhttp3.OkHttpClient;
+import okhttp3.Protocol;
+import okhttp3.Request;
+import okhttp3.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.OngoingStubbing;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -71,6 +80,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -86,6 +96,7 @@ public class MockKube {
     private final Map<String, StatefulSet> ssDb = db(emptySet(), StatefulSet.class, DoneableStatefulSet.class);
     private final Map<String, Deployment> depDb = db(emptySet(), Deployment.class, DoneableDeployment.class);
     private final Map<String, Secret> secretDb = db(emptySet(), Secret.class, DoneableSecret.class);
+    private final Map<String, ServiceAccount> serviceAccountDb = db(emptySet(), ServiceAccount.class, DoneableServiceAccount.class);
 
     public MockKube withInitialCms(Set<ConfigMap> initialCms) {
         this.cmDb.putAll(db(initialCms, ConfigMap.class, DoneableConfigMap.class));
@@ -149,6 +160,7 @@ public class MockKube {
         MixedOperation<StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> mockSs = buildStatefulSets(mockPods);
         MixedOperation<Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>> mockDep = buildDeployments();
         MixedOperation<Secret, SecretList, DoneableSecret, Resource<Secret, DoneableSecret>> mockSecrets = buildSecrets();
+        MixedOperation<ServiceAccount, ServiceAccountList, DoneableServiceAccount, Resource<ServiceAccount, DoneableServiceAccount>> mockServiceAccounts = buildServiceAccount();
 
         when(mockClient.configMaps()).thenReturn(mockCms);
 
@@ -185,8 +197,32 @@ public class MockKube {
         }
 
         when(mockClient.secrets()).thenReturn(mockSecrets);
+        when(mockClient.serviceAccounts()).thenReturn(mockServiceAccounts);
 
+        mockHttpClientForWorkaroundRbac(mockClient);
         return mockClient;
+    }
+
+    /**
+     * @deprecated this can be removed when {@link io.strimzi.operator.cluster.operator.resource.WorkaroundRbacOperator} is removed.
+     */
+    @Deprecated
+    private void mockHttpClientForWorkaroundRbac(KubernetesClient mockClient) {
+        when(mockClient.isAdaptable(OkHttpClient.class)).thenReturn(true);
+        OkHttpClient mc = mock(OkHttpClient.class);
+        try {
+            doAnswer(i -> {
+                Call call = mock(Call.class);
+                Request req = i.getArgument(0);
+                Response resp = new Response.Builder().protocol(Protocol.HTTP_1_1).request(req).code(200).message("OK").build();
+                doReturn(resp).when(call).execute();
+                return call;
+            }).when(mc).newCall(any());
+            when(mockClient.adapt(OkHttpClient.class)).thenReturn(mc);
+            when(mockClient.getMasterUrl()).thenReturn(new URL("http://localhost"));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private MixedOperation<Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>> buildDeployments() {
@@ -445,6 +481,20 @@ public class MockKube {
                 Secret.class, SecretList.class, DoneableSecret.class, castClass(Resource.class), secretDb) {
             @Override
             protected void nameScopedMocks(Resource<Secret, DoneableSecret> resource, String resourceName) {
+                mockGet(resourceName, resource);
+                mockCreate(resourceName, resource);
+                mockCascading(resource);
+                mockPatch(resourceName, resource);
+                mockDelete(resourceName, resource);
+            }
+        }.build();
+    }
+
+    private MixedOperation<ServiceAccount, ServiceAccountList, DoneableServiceAccount, Resource<ServiceAccount, DoneableServiceAccount>> buildServiceAccount() {
+        return new AbstractMockBuilder<ServiceAccount, ServiceAccountList, DoneableServiceAccount, Resource<ServiceAccount, DoneableServiceAccount>>(
+                ServiceAccount.class, ServiceAccountList.class, DoneableServiceAccount.class, castClass(Resource.class), serviceAccountDb) {
+            @Override
+            protected void nameScopedMocks(Resource<ServiceAccount, DoneableServiceAccount> resource, String resourceName) {
                 mockGet(resourceName, resource);
                 mockCreate(resourceName, resource);
                 mockCascading(resource);

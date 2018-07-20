@@ -70,11 +70,11 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
      * @param isOpenShift True iff running on OpenShift
      * @param assemblyType Assembly type
      * @param resourceOperator For operating on the desired resource
-     * @param secretOperations For operating on Secrets
      */
     protected AbstractAssemblyOperator(Vertx vertx, boolean isOpenShift, AssemblyType assemblyType,
                                        CertManager certManager,
-                                       AbstractWatchableResourceOperator<C, T, L, D, R> resourceOperator, SecretOperator secretOperations) {
+                                       AbstractWatchableResourceOperator<C, T, L, D, R> resourceOperator,
+                                       SecretOperator secretOperations) {
         this.vertx = vertx;
         this.isOpenShift = isOpenShift;
         this.assemblyType = assemblyType;
