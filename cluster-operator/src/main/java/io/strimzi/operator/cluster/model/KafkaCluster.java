@@ -29,7 +29,6 @@ import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
-import io.strimzi.operator.cluster.operator.assembly.AbstractAssemblyOperator;
 import io.strimzi.operator.cluster.operator.resource.ClusterRoleBindingOperator;
 
 import java.io.File;
