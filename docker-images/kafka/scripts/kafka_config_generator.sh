@@ -1,11 +1,12 @@
 #!/bin/bash
 
 # Prepare super.users field
-BASE_HOSTNAME=$(hostname | rev | cut -d "-" -f2- | rev)
+KAFKA_NAME=$(hostname | rev | cut -d "-" -f2- | rev)
+ASSEMBLY_NAME=$(echo "${KAFKA_NAME}" | rev | cut -d "-" -f2- | rev)
 NODE=1
-SUPER_USERS="super.users="
+SUPER_USERS="super.users=User:CN=${ASSEMBLY_NAME}-topic-operator;"
 while [ $NODE -le $KAFKA_NODE_COUNT ]; do
-    SUPER_USERS=$SUPER_USERS + "User:CN=${BASE_HOSTNAME}-$((NODE-1));"
+    SUPER_USERS="${SUPER_USERS}User:CN=${KAFKA_NAME}-$((NODE-1));"
     let NODE=NODE+1
 done
 
