@@ -1249,7 +1249,7 @@ of the Kafka cluster ConfigMap.
 The image name to use as a default when deploying Zookeeper, if
 no image is specified as the `zookeeper-image` in the <<kafka_config_map_details,Kafka cluster ConfigMap>>.
 
-[[STRIMZI_DEFAULT_TLS_SIDECAR_IMAGE]] `STRIMZI_DEFAULT_TLS_SIDECAR_IMAGE`:: Optional, default `strimzi/zookeeper-stunnel:latest`.
+[[STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE]] `STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE`:: Optional, default `strimzi/zookeeper-stunnel:latest`.
 The image name to use as a default when deploying the sidecar container which provides TLS support for Zookeeper, if
 no image is specified as the `spec.zookeeper.tlsSidecar.image` in the <<kafka_config_map_details,Kafka cluster ConfigMap>>.
 
