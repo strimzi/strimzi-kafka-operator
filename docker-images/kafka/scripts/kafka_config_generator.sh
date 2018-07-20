@@ -1,5 +1,14 @@
 #!/bin/bash
 
+# Prepare super.users field
+BASE_HOSTNAME=$(hostname | rev | cut -d "-" -f2- | rev)
+NODE=1
+SUPER_USERS="super.users="
+while [ $NODE -le $KAFKA_NODE_COUNT ]; do
+    SUPER_USERS=$SUPER_USERS + "User:CN=${BASE_HOSTNAME}-$((NODE-1));"
+    let NODE=NODE+1
+done
+
 # Write the config file
 cat <<EOF
 broker.id=${KAFKA_BROKER_ID}
@@ -30,6 +39,9 @@ listener.name.replication.ssl.client.auth=required
 
 listener.name.clienttls.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12
 listener.name.clienttls.ssl.truststore.location=/tmp/kafka/clients.truststore.p12
+
+# ACL Super users (all nodes for replication)
+${SUPER_USERS}
 
 # Provided configuration
 ${KAFKA_CONFIGURATION}
