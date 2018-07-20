@@ -334,3 +334,12 @@ strimzi.io/kind: topic
 NOTE: When the Topic Operator is deployed manually the `strimzi.io/cluster` label is not necessary.
 
 The topic ConfigMap contains the topic configuration in a specific format. The ConfigMap format is described in <<topic_config_map_details>>.
+
+==== Logging
+The `logging` field allows the configuration of loggers. These loggers are listed below.
+[source]
+rootLogger.level
+
+For information on the logging options and examples of how to set logging, see <<logging_examples, logging examples>> for Kafka.
+
+When using external ConfigMap remember to place your custom ConfigMap under `log4j2.properties` key.
