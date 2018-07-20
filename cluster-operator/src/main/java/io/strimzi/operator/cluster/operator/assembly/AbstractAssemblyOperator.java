@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.certs.CertManager;
 import io.strimzi.certs.SecretCertProvider;
+import io.strimzi.certs.Subject;
 import io.strimzi.operator.cluster.InvalidConfigMapException;
 import io.strimzi.operator.cluster.Reconciliation;
 import io.strimzi.operator.cluster.model.AbstractModel;
@@ -137,7 +138,12 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
                     try {
                         clusterCAkeyFile = File.createTempFile("tls", "cluster-ca-key");
                         clusterCAcertFile = File.createTempFile("tls", "cluster-ca-cert");
-                        certManager.generateSelfSignedCert(clusterCAkeyFile, clusterCAcertFile, CERTS_EXPIRATION_DAYS);
+
+                        Subject sbj = new Subject();
+                        sbj.setOrganizationName("io.strimzi");
+                        sbj.setCommonName("cluster-ca");
+
+                        certManager.generateSelfSignedCert(clusterCAkeyFile, clusterCAcertFile, sbj, CERTS_EXPIRATION_DAYS);
 
                         SecretCertProvider secretCertProvider = new SecretCertProvider();
                         Secret secret = secretCertProvider.createSecret(reconciliation.namespace(), clusterCaName,
