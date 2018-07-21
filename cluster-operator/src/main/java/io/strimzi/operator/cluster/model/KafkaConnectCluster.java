@@ -130,6 +130,7 @@ public class KafkaConnectCluster extends AbstractModel {
                 kafkaConnect.setMetricsConfig(metrics.entrySet());
             }
             kafkaConnect.setUserAffinity(spec.getAffinity());
+            kafkaConnect.setTolerations(spec.getTolerations());
         }
         return kafkaConnect;
     }

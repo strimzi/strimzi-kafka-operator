@@ -12,9 +12,12 @@ import io.fabric8.kubernetes.api.model.Affinity;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Minimum;
+
+import io.fabric8.kubernetes.api.model.Toleration;
 import io.sundr.builder.annotations.Buildable;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -41,6 +44,8 @@ public abstract class ReplicatedJvmPods {
     private Map<String, Object> metrics = new HashMap<>(0);
 
     private Affinity affinity;
+
+    private List<Toleration> tolerations;
 
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
@@ -125,6 +130,17 @@ public abstract class ReplicatedJvmPods {
 
     public void setAffinity(Affinity affinity) {
         this.affinity = affinity;
+    }
+
+    @Description("Pod's tolerations.")
+    @KubeLink(group = "core", version = "v1", kind = "tolerations")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public List<Toleration> getTolerations() {
+        return tolerations;
+    }
+
+    public void setTolerations(List<Toleration> tolerations) {
+        this.tolerations = tolerations;
     }
 
     @JsonAnyGetter

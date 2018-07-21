@@ -173,6 +173,7 @@ public class ZookeeperCluster extends AbstractModel {
         zk.setResources(zookeeper.getResources());
         zk.setJvmOptions(zookeeper.getJvmOptions());
         zk.setUserAffinity(zookeeper.getAffinity());
+        zk.setTolerations(zookeeper.getTolerations());
         zk.generateCertificates(certManager, secrets);
         zk.setTlsSidecar(zookeeper.getTlsSidecar());
         return zk;

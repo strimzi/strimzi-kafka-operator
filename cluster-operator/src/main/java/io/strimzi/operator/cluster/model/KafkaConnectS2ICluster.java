@@ -116,6 +116,8 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                         .withNewSpec()
                             .withContainers(container)
                             .withVolumes(getVolumes())
+                            .withTolerations(getTolerations())
+                            .withAffinity(getMergedAffinity())
                         .endSpec()
                     .endTemplate()
                     .withTriggers(configChangeTrigger, imageChangeTrigger)
