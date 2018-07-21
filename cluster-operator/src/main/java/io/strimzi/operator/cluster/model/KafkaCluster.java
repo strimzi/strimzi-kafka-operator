@@ -31,6 +31,7 @@ import io.strimzi.api.kafka.model.Resources;
 import io.strimzi.api.kafka.model.Sidecar;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
+import io.strimzi.certs.Subject;
 import io.strimzi.operator.cluster.operator.resource.ClusterRoleBindingOperator;
 
 import java.io.File;
@@ -244,7 +245,12 @@ public class KafkaCluster extends AbstractModel {
                     log.debug("Clients CA to generate");
                     File clientsCAkeyFile = File.createTempFile("tls", "clients-ca-key");
                     File clientsCAcertFile = File.createTempFile("tls", "clients-ca-cert");
-                    certManager.generateSelfSignedCert(clientsCAkeyFile, clientsCAcertFile, CERTS_EXPIRATION_DAYS);
+
+                    Subject sbj = new Subject();
+                    sbj.setOrganizationName("io.strimzi");
+                    sbj.setCommonName("kafka-clients-ca");
+
+                    certManager.generateSelfSignedCert(clientsCAkeyFile, clientsCAcertFile, sbj, CERTS_EXPIRATION_DAYS);
                     clientsCA =
                             new CertAndKey(Files.readAllBytes(clientsCAkeyFile.toPath()), Files.readAllBytes(clientsCAcertFile.toPath()));
                     if (!clientsCAkeyFile.delete()) {
@@ -443,6 +449,7 @@ public class KafkaCluster extends AbstractModel {
         if (rack != null) {
             volumeMountList.add(createVolumeMount(RACK_VOLUME_NAME, RACK_VOLUME_MOUNT));
         }
+
         volumeMountList.add(createVolumeMount(BROKER_CERTS_VOLUME, BROKER_CERTS_VOLUME_MOUNT));
         volumeMountList.add(createVolumeMount(CLIENT_CA_CERTS_VOLUME, CLIENT_CA_CERTS_VOLUME_MOUNT));
         volumeMountList.add(createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
