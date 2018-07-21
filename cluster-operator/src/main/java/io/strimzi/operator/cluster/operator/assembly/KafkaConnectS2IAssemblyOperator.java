@@ -81,12 +81,12 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
     }
 
     @Override
-    public void createOrUpdate(Reconciliation reconciliation, KafkaConnectS2IAssembly assemblyCm, List<Secret> assemblySecrets, Handler<AsyncResult<Void>> handler) {
+    public void createOrUpdate(Reconciliation reconciliation, KafkaConnectS2IAssembly kafkaConnectS2IAssembly, List<Secret> assemblySecrets, Handler<AsyncResult<Void>> handler) {
         String namespace = reconciliation.namespace();
         if (isOpenShift) {
             KafkaConnectS2ICluster connect;
             try {
-                connect = KafkaConnectS2ICluster.fromCrd(assemblyCm);
+                connect = KafkaConnectS2ICluster.fromCrd(kafkaConnectS2IAssembly);
             } catch (Exception e) {
                 handler.handle(Future.failedFuture(e));
                 return;

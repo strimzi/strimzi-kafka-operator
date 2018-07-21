@@ -51,11 +51,11 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
         this.validLoggerFields = getDefaultLogConfig();
     }
 
-    public static KafkaConnectS2ICluster fromCrd(KafkaConnectS2IAssembly crd) {
-        KafkaConnectS2IAssemblySpec spec = crd.getSpec();
-        KafkaConnectS2ICluster cluster = fromSpec(spec, new KafkaConnectS2ICluster(crd.getMetadata().getNamespace(),
-                crd.getMetadata().getName(),
-                Labels.fromResource(crd).withKind(crd.getKind())));
+    public static KafkaConnectS2ICluster fromCrd(KafkaConnectS2IAssembly kafkaConnectS2IAssembly) {
+        KafkaConnectS2IAssemblySpec spec = kafkaConnectS2IAssembly.getSpec();
+        KafkaConnectS2ICluster cluster = fromSpec(spec, new KafkaConnectS2ICluster(kafkaConnectS2IAssembly.getMetadata().getNamespace(),
+                kafkaConnectS2IAssembly.getMetadata().getName(),
+                Labels.fromResource(kafkaConnectS2IAssembly).withKind(kafkaConnectS2IAssembly.getKind())));
         cluster.setInsecureSourceRepository(spec != null ? spec.isInsecureSourceRepository() : false);
         return cluster;
     }

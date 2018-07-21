@@ -527,8 +527,8 @@ public class KafkaConnectAssemblyOperatorTest {
                 mockCmOps, mockDcOps, mockServiceOps, mockSecretOps) {
 
             @Override
-            public void createOrUpdate(Reconciliation reconciliation, KafkaConnectAssembly assemblyCm, List<Secret> assemblySecrets, Handler<AsyncResult<Void>> h) {
-                createdOrUpdated.add(assemblyCm.getMetadata().getName());
+            public void createOrUpdate(Reconciliation reconciliation, KafkaConnectAssembly kafkaConnectAssembly, List<Secret> assemblySecrets, Handler<AsyncResult<Void>> h) {
+                createdOrUpdated.add(kafkaConnectAssembly.getMetadata().getName());
                 async.countDown();
                 h.handle(Future.succeededFuture());
             }

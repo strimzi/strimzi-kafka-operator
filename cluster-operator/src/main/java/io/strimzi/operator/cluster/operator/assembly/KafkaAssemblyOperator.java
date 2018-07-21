@@ -295,17 +295,17 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
     }
 
-    private final Future<KafkaClusterDescription> getKafkaClusterDescription(KafkaAssembly assemblyCm, List<Secret> assemblySecrets) {
+    private final Future<KafkaClusterDescription> getKafkaClusterDescription(KafkaAssembly kafkaAssembly, List<Secret> assemblySecrets) {
         Future<KafkaClusterDescription> fut = Future.future();
 
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
             future -> {
                 try {
-                    KafkaCluster kafka = KafkaCluster.fromCrd(certManager, assemblyCm, assemblySecrets);
+                    KafkaCluster kafka = KafkaCluster.fromCrd(certManager, kafkaAssembly, assemblySecrets);
 
                     ConfigMap logAndMetricsConfigMap = kafka.generateMetricsAndLogConfigMap(
                             kafka.getLogging() instanceof ExternalLogging ?
-                                    configMapOperations.get(assemblyCm.getMetadata().getNamespace(), ((ExternalLogging) kafka.getLogging()).getName()) :
+                                    configMapOperations.get(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) kafka.getLogging()).getName()) :
                                     null);
                     KafkaClusterDescription desc =
                             new KafkaClusterDescription(kafka, kafka.generateService(), kafka.generateHeadlessService(),
@@ -329,14 +329,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         return fut;
     }
 
-    private final Future<Void> createOrUpdateKafka(Reconciliation reconciliation, KafkaAssembly assemblyCm, List<Secret> assemblySecrets) {
-        String namespace = assemblyCm.getMetadata().getNamespace();
-        String name = assemblyCm.getMetadata().getName();
+    private final Future<Void> createOrUpdateKafka(Reconciliation reconciliation, KafkaAssembly kafkaAssembly, List<Secret> assemblySecrets) {
+        String namespace = kafkaAssembly.getMetadata().getNamespace();
+        String name = kafkaAssembly.getMetadata().getName();
         log.debug("{}: create/update kafka {}", reconciliation, name);
 
         Future<Void> chainFuture = Future.future();
 
-        getKafkaClusterDescription(assemblyCm, assemblySecrets)
+        getKafkaClusterDescription(kafkaAssembly, assemblySecrets)
                 .compose(desc -> desc.withVoid(
                         serviceAccountOperator.reconcile(namespace,
                         KafkaCluster.initContainerServiceAccountName(desc.kafka().getCluster()),
@@ -473,19 +473,19 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         return CompositeFuture.join(result);
     }
 
-    private final Future<TopicOperatorDescription> getTopicOperatorDescription(KafkaAssembly assemblyCm, List<Secret> assemblySecrets) {
+    private final Future<TopicOperatorDescription> getTopicOperatorDescription(KafkaAssembly kafkaAssembly, List<Secret> assemblySecrets) {
         Future<TopicOperatorDescription> fut = Future.future();
 
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
             future -> {
                 try {
-                    TopicOperator topicOperator = TopicOperator.fromCrd(certManager, assemblyCm, assemblySecrets);
+                    TopicOperator topicOperator = TopicOperator.fromCrd(certManager, kafkaAssembly, assemblySecrets);
 
                     TopicOperatorDescription desc;
                     if (topicOperator != null) {
                         ConfigMap logAndMetricsConfigMap = topicOperator.generateMetricsAndLogConfigMap(
                                 topicOperator.getLogging() instanceof ExternalLogging ?
-                                        configMapOperations.get(assemblyCm.getMetadata().getNamespace(), ((ExternalLogging) topicOperator.getLogging()).getName()) :
+                                        configMapOperations.get(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) topicOperator.getLogging()).getName()) :
                                         null);
 
                         desc = new TopicOperatorDescription(topicOperator, topicOperator.generateDeployment(),
