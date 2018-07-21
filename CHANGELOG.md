@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 0.6.0 (Work in Progress)
+
+* Add support for [Tolerations](https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#toleration-v1-core)
+
 ## 0.5.0 (Work in Progress)
 
 * The Cluster Operator now manages RBAC resource for managed resources:
