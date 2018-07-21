@@ -1,7 +1,7 @@
 [[templates]]
 = Templates
 
-The following templates must be used to produce consistent modular documentation for Strimzi. link:/templates/templates.zip[Download the `adoc` files in zip format].
+The following templates must be used to produce consistent modular documentation for Strimzi. link:./templates/templates.zip[Download the `adoc` files in zip format].
 
 include::templates/template-procedure.adoc[leveloffset=+1]
 

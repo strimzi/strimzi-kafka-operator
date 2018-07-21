@@ -14,8 +14,10 @@ cp -v documentation/htmlnoheader/contributing.html /tmp/website/contributing/gui
 cp -v documentation/html/contributing.html /tmp/website/contributing/guide/full.html
 rm -rf /tmp/website/docs/master/images
 rm -rf /tmp/website/contributing/guide/images
+rm -rf /tmp/website/contributing/guide/templates
 cp -vrL documentation/htmlnoheader/images /tmp/website/docs/master/images
 cp -vrL documentation/htmlnoheader/images /tmp/website/contributing/guide/images
+cp -vrL documentation/contributing/templates /tmp/website/contributing/guide/templates
 
 pushd /tmp/website
 
