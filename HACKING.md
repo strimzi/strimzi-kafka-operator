@@ -98,8 +98,8 @@ you can push the images to OpenShift's Docker repo like this:
   value: 172.30.1.1:5000/myproject/kafka-connect-s2i:latest
 - name: STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE
   value: 172.30.1.1:5000/myproject/topic-operator:latest
-- name: STRIMZI_DEFAULT_INIT_KAFKA_IMAGE
-  value: 172.30.1.1:5000/myproject/init-kafka:latest
+- name: STRIMZI_DEFAULT_KAFKA_INIT_IMAGE
+  value: 172.30.1.1:5000/myproject/kafka-init:latest
 - name: STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE
   value: 172.30.1.1:5000/myproject/zookeeper-stunnel:latest
 - name: STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE
