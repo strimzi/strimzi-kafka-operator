@@ -47,7 +47,7 @@ The Docker image to use for the Kafka brokers.
 Default is determined by the value of the `<<STRIMZI_DEFAULT_KAFKA_IMAGE,STRIMZI_DEFAULT_KAFKA_IMAGE>>` environment variable of the Cluster Operator.
 `spec.kafka.brokerRackInitImage`::
 The Docker image to use for the init container which does some initial configuration work (that is, rack support).
-Default is determined by the value of the `<<STRIMZI_DEFAULT_INIT_KAFKA_IMAGE,STRIMZI_DEFAULT_INIT_KAFKA_IMAGE>>` environment variable of the Cluster Operator.
+Default is determined by the value of the `<<STRIMZI_DEFAULT_KAFKA_INIT_IMAGE,STRIMZI_DEFAULT_KAFKA_INIT_IMAGE>>` environment variable of the Cluster Operator.
 `spec.kafka.livenessProbe.initialDelaySeconds`::
 The initial delay for the liveness probe for each Kafka broker node. 
 Default is 15.
@@ -1222,8 +1222,8 @@ increased when using {ProductName} on clusters where regular {ProductPlatformNam
 The image name to use as a default when deploying Kafka, if
 no image is specified as the `kafka-image` in the <<kafka_config_map_details,Kafka cluster ConfigMap>>.
 
-[[STRIMZI_DEFAULT_INIT_KAFKA_IMAGE]] `STRIMZI_DEFAULT_INIT_KAFKA_IMAGE`:: Optional, default `strimzi/init-kafka:latest`.
-The image name to use as default for the init container started before the broker for doing initial configuration work (that is, rack support), if no image is specified as the `init-kafka-image` in the <<kafka_config_map_details,Kafka cluster ConfigMap>>.
+[[STRIMZI_DEFAULT_KAFKA_INIT_IMAGE]] `STRIMZI_DEFAULT_KAFKA_INIT_IMAGE`:: Optional, default `strimzi/kafka-init:latest`.
+The image name to use as default for the init container started before the broker for doing initial configuration work (that is, rack support), if no image is specified as the `kafka-init-image` in the <<kafka_config_map_details,Kafka cluster ConfigMap>>.
 
 [[STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE]] `STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE`:: Optional, default `strimzi/kafka-connect:latest`.
 The image name to use as a default when deploying Kafka Connect, if

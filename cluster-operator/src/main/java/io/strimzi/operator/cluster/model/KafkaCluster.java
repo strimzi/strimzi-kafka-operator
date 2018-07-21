@@ -50,11 +50,11 @@ import static java.util.Collections.singletonList;
 
 public class KafkaCluster extends AbstractModel {
 
-    protected static final String INIT_NAME = "init-kafka";
+    protected static final String INIT_NAME = "kafka-init";
     protected static final String RACK_VOLUME_NAME = "rack-volume";
     protected static final String RACK_VOLUME_MOUNT = "/opt/kafka/rack";
-    private static final String ENV_VAR_INIT_KAFKA_RACK_TOPOLOGY_KEY = "RACK_TOPOLOGY_KEY";
-    private static final String ENV_VAR_INIT_KAFKA_NODE_NAME = "NODE_NAME";
+    private static final String ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY = "RACK_TOPOLOGY_KEY";
+    private static final String ENV_VAR_KAFKA_INIT_NODE_NAME = "NODE_NAME";
 
     protected static final int CLIENT_PORT = 9092;
     protected static final String CLIENT_PORT_NAME = "clients";
@@ -498,8 +498,8 @@ public class KafkaCluster extends AbstractModel {
                     .build();
 
             List<EnvVar> varList =
-                    Arrays.asList(buildEnvVarFromFieldRef(ENV_VAR_INIT_KAFKA_NODE_NAME, "spec.nodeName"),
-                            buildEnvVar(ENV_VAR_INIT_KAFKA_RACK_TOPOLOGY_KEY, rack.getTopologyKey()));
+                    Arrays.asList(buildEnvVarFromFieldRef(ENV_VAR_KAFKA_INIT_NODE_NAME, "spec.nodeName"),
+                            buildEnvVar(ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY, rack.getTopologyKey()));
 
             Container initContainer = new ContainerBuilder()
                     .withName(INIT_NAME)

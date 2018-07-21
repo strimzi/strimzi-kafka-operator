@@ -1,4 +1,4 @@
-PROJECT_NAME=init-kafka
+PROJECT_NAME=kafka-init
 
 docker_build: java_build
 all: docker_build docker_push

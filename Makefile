@@ -1,7 +1,7 @@
 TOPDIR=$(dir $(lastword $(MAKEFILE_LIST)))
 RELEASE_VERSION ?= latest
 
-SUBDIRS=docker-images certificate-manager crd-generator api cluster-operator topic-operator init-kafka examples
+SUBDIRS=docker-images certificate-manager crd-generator api cluster-operator topic-operator kafka-init examples
 DOCKER_TARGETS=docker_build docker_push docker_tag
 
 all: $(SUBDIRS)

@@ -8,7 +8,7 @@
     <version>0.5.0-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
-  <artifactId>init-kafka</artifactId>
+  <artifactId>kafka-init</artifactId>
   <dependencies>
     <dependency>
       <groupId>io.fabric8</groupId>
@@ -56,7 +56,7 @@
               <transformers>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                  <mainClass>io.strimzi.init.kafka.Main</mainClass>
+                  <mainClass>io.strimzi.kafka.init.Main</mainClass>
                 </transformer>
               </transformers>
             </configuration>

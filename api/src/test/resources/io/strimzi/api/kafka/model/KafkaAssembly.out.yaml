@@ -13,7 +13,7 @@ spec:
       type: "persistent-claim"
       size: "500Gi"
       deleteClaim: false
-    brokerRackInitImage: "strimzi/init-kafka:latest"
+    brokerRackInitImage: "strimzi/kafka-init:latest"
     livenessProbe:
       initialDelaySeconds: 5
       timeoutSeconds: 1

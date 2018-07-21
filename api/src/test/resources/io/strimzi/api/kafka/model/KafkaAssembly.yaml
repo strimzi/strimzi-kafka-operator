@@ -7,7 +7,7 @@ spec:
   kafka:
     replicas: 3
     image: "strimzi/kafka:latest"
-    brokerRackInitImage: "strimzi/init-kafka:latest"
+    brokerRackInitImage: "strimzi/kafka-init:latest"
     resources:
       limits:
         memory: "5Gi"
