@@ -69,13 +69,13 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
     }
 
     @Override
-    protected void createOrUpdate(Reconciliation reconciliation, KafkaConnectAssembly assemblyCm, List<Secret> assemblySecrets, Handler<AsyncResult<Void>> handler) {
+    protected void createOrUpdate(Reconciliation reconciliation, KafkaConnectAssembly kafkaConnectAssembly, List<Secret> assemblySecrets, Handler<AsyncResult<Void>> handler) {
 
         String namespace = reconciliation.namespace();
         String name = reconciliation.assemblyName();
         KafkaConnectCluster connect;
         try {
-            connect = KafkaConnectCluster.fromCrd(assemblyCm);
+            connect = KafkaConnectCluster.fromCrd(kafkaConnectAssembly);
         } catch (Exception e) {
             handler.handle(Future.failedFuture(e));
             return;

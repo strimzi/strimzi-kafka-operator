@@ -211,19 +211,19 @@ public class TopicOperator extends AbstractModel {
      * Create a Topic Operator from given desired resource
      *
      * @param certManager Certificate manager for certificates generation
-     * @param resource desired resource with cluster configuration containing the topic operator one
+     * @param kafkaAssembly desired resource with cluster configuration containing the topic operator one
      * @param secrets Secrets containing already generated certificates
      * @return Topic Operator instance, null if not configured in the ConfigMap
      */
-    public static TopicOperator fromCrd(CertManager certManager, KafkaAssembly resource, List<Secret> secrets) {
+    public static TopicOperator fromCrd(CertManager certManager, KafkaAssembly kafkaAssembly, List<Secret> secrets) {
         TopicOperator result;
-        if (resource.getSpec().getTopicOperator() != null) {
-            String namespace = resource.getMetadata().getNamespace();
+        if (kafkaAssembly.getSpec().getTopicOperator() != null) {
+            String namespace = kafkaAssembly.getMetadata().getNamespace();
             result = new TopicOperator(
                     namespace,
-                    resource.getMetadata().getName(),
-                    Labels.fromResource(resource).withKind(resource.getKind()));
-            io.strimzi.api.kafka.model.TopicOperator tcConfig = resource.getSpec().getTopicOperator();
+                    kafkaAssembly.getMetadata().getName(),
+                    Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
+            io.strimzi.api.kafka.model.TopicOperator tcConfig = kafkaAssembly.getSpec().getTopicOperator();
             result.setImage(tcConfig.getImage());
             result.setWatchedNamespace(tcConfig.getWatchedNamespace() != null ? tcConfig.getWatchedNamespace() : namespace);
             result.setReconciliationIntervalMs(tcConfig.getReconciliationIntervalSeconds() * 1_000);

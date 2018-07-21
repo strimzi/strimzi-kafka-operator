@@ -928,8 +928,8 @@ public class KafkaAssemblyOperatorTest {
                 certManager,
                 supplier) {
             @Override
-            public void createOrUpdate(Reconciliation reconciliation, KafkaAssembly assemblyCm, List<Secret> assemblySecrets, Handler<AsyncResult<Void>> h) {
-                createdOrUpdated.add(assemblyCm.getMetadata().getName());
+            public void createOrUpdate(Reconciliation reconciliation, KafkaAssembly kafkaAssembly, List<Secret> assemblySecrets, Handler<AsyncResult<Void>> h) {
+                createdOrUpdated.add(kafkaAssembly.getMetadata().getName());
                 async.countDown();
                 h.handle(Future.succeededFuture());
             }
