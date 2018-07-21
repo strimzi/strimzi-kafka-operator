@@ -41,7 +41,7 @@ spec:
             - name: STRIMZI_DEFAULT_TLS_SIDECAR_TOPIC_OPERATOR_IMAGE
               value: strimzi/topic-operator-stunnel:latest
             - name: STRIMZI_LOG_LEVEL
-              value: DEBUG
+              value: INFO
           livenessProbe:
             httpGet:
               path: /healthy
