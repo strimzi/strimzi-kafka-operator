@@ -162,10 +162,14 @@ public class TopicOperatorTest {
         assertEquals(TopicOperator.HEALTHCHECK_PORT_NAME, containers.get(0).getPorts().get(0).getName());
         assertEquals("TCP", containers.get(0).getPorts().get(0).getProtocol());
         assertEquals("Recreate", dep.getSpec().getStrategy().getType());
+        assertEquals(TopicOperator.TLS_SIDECAR_VOLUME_NAME, containers.get(0).getVolumeMounts().get(1).getName());
+        assertEquals(TopicOperator.TLS_SIDECAR_VOLUME_MOUNT, containers.get(0).getVolumeMounts().get(1).getMountPath());
         assertLoggingConfig(dep);
         // checks on the TLS sidecar container
         assertEquals(io.strimzi.api.kafka.model.TopicOperator.DEFAULT_TLS_SIDECAR_IMAGE, containers.get(1).getImage());
         assertEquals(TopicOperator.defaultZookeeperConnect(cluster), AbstractModel.containerEnvVars(containers.get(1)).get(TopicOperator.ENV_VAR_ZOOKEEPER_CONNECT));
+        assertEquals(TopicOperator.TLS_SIDECAR_VOLUME_NAME, containers.get(1).getVolumeMounts().get(0).getName());
+        assertEquals(TopicOperator.TLS_SIDECAR_VOLUME_MOUNT, containers.get(1).getVolumeMounts().get(0).getMountPath());
     }
 
     @Test
