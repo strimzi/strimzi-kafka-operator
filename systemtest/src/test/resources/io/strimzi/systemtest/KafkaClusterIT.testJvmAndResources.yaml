@@ -5,10 +5,10 @@ metadata:
 spec:
   kafka:
     replicas: 1
-    readiness:
+    readinessProbe:
       initialDelaySeconds: 15
       timeoutSeconds: 5
-    liveness:
+    livenessProbe:
       initialDelaySeconds: 15
       timeoutSeconds: 5
     storage:
@@ -28,10 +28,10 @@ spec:
         UseG1GC: "true"
   zookeeper:
     replicas: 1
-    readiness:
+    readinessProbe:
       initialDelaySeconds: "15"
       timeoutSeconds: "5"
-    liveness:
+    livenessProbe:
       initialDelaySeconds: "15"
       timeoutSeconds: "5"
     storage:

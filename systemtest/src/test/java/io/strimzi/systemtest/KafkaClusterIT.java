@@ -178,9 +178,9 @@ public class KafkaClusterIT extends AbstractClusterIT {
         kubeClient.waitForPod(newZkPodName[1]);
 
         // check the new node is either in leader or follower state
-        waitForZkMntr(firstZkPodName, Pattern.compile("zk_server_state\\s+(leader|follower)"));
-        waitForZkMntr(newZkPodName[0], Pattern.compile("zk_server_state\\s+(leader|follower)"));
-        waitForZkMntr(newZkPodName[1], Pattern.compile("zk_server_state\\s+(leader|follower)"));
+        waitForZkMntr(firstZkPodName, "21810", Pattern.compile("zk_server_state\\s+(leader|follower)"));
+        waitForZkMntr(newZkPodName[0], "21811", Pattern.compile("zk_server_state\\s+(leader|follower)"));
+        waitForZkMntr(newZkPodName[1], "21812", Pattern.compile("zk_server_state\\s+(leader|follower)"));
 
         //Test that first pod does not have errors or failures in events
         List<Event> eventsForFirstPod = getEvents("Pod", newZkPodName[0]);
@@ -202,7 +202,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
         });
         kubeClient.waitForResourceDeletion("po", zookeeperPodName(CLUSTER_NAME,  1));
         // Wait for the one remaining node to enter standalone mode
-        waitForZkMntr(firstZkPodName, Pattern.compile("zk_server_state\\s+standalone"));
+        waitForZkMntr(firstZkPodName, "21810", Pattern.compile("zk_server_state\\s+standalone"));
 
         //Test that the second pod has event 'Killing'
         assertThat(getEvents("Pod", newZkPodName[1]), hasAllOfReasons(Killing));

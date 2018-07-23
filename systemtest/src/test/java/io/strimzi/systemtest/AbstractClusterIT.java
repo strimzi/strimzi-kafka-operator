@@ -193,13 +193,13 @@ public class AbstractClusterIT {
         return versions.get();
     }
 
-    void waitForZkMntr(String pod, Pattern pattern) {
+    void waitForZkMntr(String pod, String port, Pattern pattern) {
         long timeoutMs = 120_000L;
         long pollMs = 1_000L;
         TestUtils.waitFor("mntr", pollMs, timeoutMs, () -> {
             try {
                 String output = kubeClient.exec(pod,
-                    "/bin/bash", "-c", "echo mntr | nc localhost 2181").out();
+                    "/bin/bash", "-c", "echo mntr | nc localhost " + port).out();
 
                 if (pattern.matcher(output).find()) {
                     return true;
@@ -212,7 +212,7 @@ public class AbstractClusterIT {
             () -> LOGGER.info("zookeeper `mntr` output at the point of timeout does not match {}:{}{}",
                 pattern.pattern(),
                 System.lineSeparator(),
-                indent(kubeClient.exec(pod, "/bin/bash", "-c", "echo mntr | nc localhost 2181").out()))
+                indent(kubeClient.exec(pod, "/bin/bash", "-c", "echo mntr | nc localhost 21810").out()))
         );
     }
 
