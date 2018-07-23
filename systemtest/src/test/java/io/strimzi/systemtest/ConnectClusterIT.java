@@ -53,18 +53,8 @@ public class ConnectClusterIT extends AbstractClusterIT {
     public static final String NAMESPACE = "connect-cluster-test";
     public static final String KAFKA_CLUSTER_NAME = "connect-tests";
     public static final String CONNECT_CLUSTER_NAME = "my-cluster";
-    public static final String KAFKA_CONNECT_BOOTSTRAP_SERVERS = KAFKA_CLUSTER_NAME + "-kafka:9092";
-    public static final String KAFKA_CONNECT_BOOTSTRAP_SERVERS_ESCAPED = KAFKA_CLUSTER_NAME + "-kafka\\:9092";
-    public static final String CONNECT_CONFIG_CONVERTER_SCHEMAS_DISABLED = "{\n" +
-            "\"bootstrap.servers\": \"" + KAFKA_CONNECT_BOOTSTRAP_SERVERS + "\", " +
-            "\"key.converter.schemas.enable\": \"" + "false" + "\", " +
-            "\"value.converter.schemas.enable\": \"" + "false" + "\"" +
-            "}";
-
-    public static final String CONNECT_CONFIG = "{\n" +
-            "      \"bootstrap.servers\": \"" + KAFKA_CONNECT_BOOTSTRAP_SERVERS + "\"" +
-            "    }";
-
+    public static final String KAFKA_CONNECT_BOOTSTRAP_SERVERS = KAFKA_CLUSTER_NAME + "-kafka-bootstrap:9092";
+    public static final String KAFKA_CONNECT_BOOTSTRAP_SERVERS_ESCAPED = KAFKA_CLUSTER_NAME + "-kafka-bootstrap\\:9092";
     private static final String EXPECTED_CONFIG = "group.id=connect-cluster\\n" +
             "key.converter=org.apache.kafka.connect.json.JsonConverter\\n" +
             "internal.key.converter.schemas.enable=false\\n" +
