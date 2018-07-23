@@ -28,6 +28,8 @@ spec:
               value: "6"
             - name: STRIMZI_LOG_LEVEL
               value: INFO
+            - name: STRIMZI_TLS_ENABLED
+              value: "false"
             - name: STRIMZI_NAMESPACE
               valueFrom:
                 fieldRef:
