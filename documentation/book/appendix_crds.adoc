@@ -5,7 +5,7 @@
 [options="header"]
 |====
 |Field        |Description
-|spec  1.2+<.<|
+|spec  1.2+<.<|The specification of the Kafka and Zookeeper clusters, and Topic Operator.
 |<<type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
 |====
 
@@ -197,9 +197,9 @@ It must have the value `inline` for the type `InlineLogging`.
 [options="header"]
 |====
 |Field           |Description
-|loggers  1.2+<.<|
+|loggers  1.2+<.<|A Map from logger name to logger level.
 |map
-|type     1.2+<.<|
+|type     1.2+<.<|Must be `inline`
 |string
 |====
 
@@ -214,9 +214,9 @@ It must have the value `external` for the type `ExternalLogging`.
 [options="header"]
 |====
 |Field        |Description
-|name  1.2+<.<|
+|name  1.2+<.<|The name of the `ConfigMap` from which to get the logging configuration.
 |string
-|type  1.2+<.<|
+|type  1.2+<.<|Must be `external`
 |string
 |====
 
@@ -295,7 +295,7 @@ Used in: <<type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
 
 
 |https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[Affinity]
-|resources                       1.2+<.<|
+|resources                       1.2+<.<|Resource constraints (limits and requests).
 |<<type-Resources,`Resources`>>
 |topicMetadataMaxAttempts        1.2+<.<|The number of attempts at getting topic metadata
 |integer
@@ -312,7 +312,7 @@ Used in: <<type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
 [options="header"]
 |====
 |Field        |Description
-|spec  1.2+<.<|
+|spec  1.2+<.<|The specification of the Kafka Connect deployment.
 |<<type-KafkaConnectAssemblySpec,`KafkaConnectAssemblySpec`>>
 |====
 
@@ -325,7 +325,7 @@ Used in: <<type-KafkaConnectAssembly,`KafkaConnectAssembly`>>
 [options="header"]
 |====
 |Field                  |Description
-|replicas        1.2+<.<|
+|replicas        1.2+<.<|The number of pods in the Kafka Connect group.
 |integer
 |image           1.2+<.<|The docker image for the pods.
 |string
@@ -360,7 +360,7 @@ Used in: <<type-KafkaConnectAssembly,`KafkaConnectAssembly`>>
 [options="header"]
 |====
 |Field        |Description
-|spec  1.2+<.<|
+|spec  1.2+<.<|The specification of the Kafka Connect deployment.
 |<<type-KafkaConnectS2IAssemblySpec,`KafkaConnectS2IAssemblySpec`>>
 |====
 
@@ -373,7 +373,7 @@ Used in: <<type-KafkaConnectS2IAssembly,`KafkaConnectS2IAssembly`>>
 [options="header"]
 |====
 |Field                            |Description
-|replicas                  1.2+<.<|
+|replicas                  1.2+<.<|The number of pods in the Kafka Connect group.
 |integer
 |image                     1.2+<.<|The docker image for the pods.
 |string
@@ -391,7 +391,7 @@ Used in: <<type-KafkaConnectS2IAssembly,`KafkaConnectS2IAssembly`>>
 |map
 |config                    1.2+<.<|The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest.
 |map
-|insecureSourceRepository  1.2+<.<|
+|insecureSourceRepository  1.2+<.<|When true this configures the source repository with the 'Local' reference policy and an import policy that accepts insecure source tags.
 |boolean
 |logging                   1.2+<.<|Logging configuration for Kafka Connect The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external]
 |<<type-InlineLogging,`InlineLogging`>>, <<type-ExternalLogging,`ExternalLogging`>>
@@ -423,7 +423,7 @@ Used in: <<type-KafkaTopic,`KafkaTopic`>>
 [options="header"]
 |====
 |Field              |Description
-|partitions  1.2+<.<|
+|partitions  1.2+<.<|The number of partitions the topic should have. This cannot be decreased after topic creation. It can be increased after topic creation, but it is important to understand the consequences that has, especially for topics with semantic partitioning. If unspecified this will default to the broker's `num.partitions` config.
 |integer
 |replicas    1.2+<.<|The number of replicas the topic should have. If unspecified this will default to the broker's `default.replication.factor` config.
 |integer

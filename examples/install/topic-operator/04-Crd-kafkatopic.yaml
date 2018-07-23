@@ -12,6 +12,8 @@ spec:
     listKind: KafkaTopicList
     singular: kafkatopic
     plural: kafkatopics
+    shortNames:
+    - kt
   validation:
     openAPIV3Schema:
       properties:
@@ -20,6 +22,7 @@ spec:
           properties:
             partitions:
               type: integer
+              minimum: 1
             replicas:
               type: integer
               minimum: 1

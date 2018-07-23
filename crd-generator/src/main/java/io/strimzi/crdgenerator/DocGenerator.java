@@ -47,6 +47,7 @@ public class DocGenerator {
     private Set<Class<?>> documentedTypes = new HashSet<>();
     private HashMap<Class<?>, Set<Class<?>>> usedIn;
     private Linker linker;
+    private int numErrors = 0;
 
     public DocGenerator(int headerDepth, Iterable<Class<? extends CustomResource>> crdClasses, Appendable out, Linker linker) {
         this.out = out;
@@ -146,7 +147,11 @@ public class DocGenerator {
             out.append("|");
 
             Description description2 = property.getAnnotation(Description.class);
-            if (description2 != null) {
+            if (description2 == null) {
+                if (cls.getName().startsWith("io.strimzi")) {
+                    err(property + " is not documented");
+                }
+            } else {
                 out.append(description2.value());
             }
             KubeLink kubeLink = property.getAnnotation(KubeLink.class);
@@ -173,6 +178,11 @@ public class DocGenerator {
         out.append("|====").append(NL).append(NL);
 
         appendNestedTypes(crd, types);
+    }
+
+    private void err(String s) {
+        System.err.println(DocGenerator.class.getSimpleName() + ": error: " + s);
+        numErrors++;
     }
 
     private void appendNestedTypes(Crd crd, LinkedHashSet<Class<?>> types) throws IOException {
@@ -349,6 +359,10 @@ public class DocGenerator {
             DocGenerator dg = new DocGenerator(3, classes, writer, linker);
             for (Class<? extends CustomResource> c : classes) {
                 dg.generate(c);
+            }
+            if (dg.numErrors > 0) {
+                System.err.println("There were " + dg.numErrors + " errors");
+                System.exit(1);
             }
         }
     }

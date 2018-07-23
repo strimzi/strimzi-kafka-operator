@@ -107,6 +107,7 @@ public class TopicOperator implements Serializable {
         this.topicMetadataMaxAttempts = topicMetadataMaxAttempts;
     }
 
+    @Description("Resource constraints (limits and requests).")
     public Resources getResources() {
         return resources;
     }

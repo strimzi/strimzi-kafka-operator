@@ -18,8 +18,8 @@ import java.io.Serializable;
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
-        @JsonSubTypes.Type(name = "inline", value = InlineLogging.class),
-        @JsonSubTypes.Type(name = "external", value = ExternalLogging.class),
+        @JsonSubTypes.Type(name = InlineLogging.TYPE_INLINE, value = InlineLogging.class),
+        @JsonSubTypes.Type(name = ExternalLogging.TYPE_EXTERNAL, value = ExternalLogging.class),
 })
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public abstract class Logging implements Serializable {

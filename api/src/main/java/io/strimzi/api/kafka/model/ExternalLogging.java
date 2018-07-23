@@ -5,6 +5,7 @@
 package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 
 /**
@@ -19,15 +20,17 @@ import io.sundr.builder.annotations.Buildable;
 public class ExternalLogging extends Logging {
 
     private static final long serialVersionUID = 1L;
+    public static final String TYPE_EXTERNAL = "external";
 
-    /** The name of the configmap from which to get the logging config */
     private String name;
 
+    @Description("Must be `" + TYPE_EXTERNAL + "`")
     @Override
     public String getType() {
-        return "external";
+        return TYPE_EXTERNAL;
     }
 
+    @Description("The name of the `ConfigMap` from which to get the logging configuration.")
     public String getName() {
         return name;
     }

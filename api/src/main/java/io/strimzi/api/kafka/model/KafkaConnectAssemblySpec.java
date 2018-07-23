@@ -36,6 +36,7 @@ public class KafkaConnectAssemblySpec extends ReplicatedJvmPods {
     private Logging logging;
 
     @Override
+    @Description("The number of pods in the Kafka Connect group.")
     @DefaultValue("3")
     public int getReplicas() {
         return super.getReplicas();

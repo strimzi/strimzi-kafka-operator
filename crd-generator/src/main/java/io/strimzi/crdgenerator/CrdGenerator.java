@@ -174,7 +174,7 @@ public class CrdGenerator {
         } else {
             String apiVersion = crd.apiVersion();
             if (!apiVersion.startsWith("apiextensions.k8s.io")) {
-                warn("@Crd.apiVersion the the API version of the CustomResourceDefinition," +
+                warn("@ Crd.apiVersion is the API version of the CustomResourceDefinition," +
                         "not the version of instances of the custom resource. " +
                         "It should almost certainly be apiextensions.k8s.io/${some-version}.");
             }
@@ -233,7 +233,6 @@ public class CrdGenerator {
     private ObjectNode buildObjectSchema(AnnotatedElement annotatedElement, Class<?> crdClass, boolean printType) {
         checkClass(crdClass);
         ObjectNode result = nf.objectNode();
-        addDescription(result, annotatedElement);
 
         if (printType) {
             result.put("type", "object");
@@ -366,8 +365,6 @@ public class CrdGenerator {
 
     private ObjectNode addSimpleTypeConstraints(ObjectNode result, Property property) {
 
-        addDescription(result, property);
-
         Example example = property.getAnnotation(Example.class);
         if (example != null) {
             result.put("example", example.value());
@@ -410,16 +407,6 @@ public class CrdGenerator {
         ArrayNode arrayNode = nf.arrayNode();
         arrayNode.addAll(Schema.enumCases(values));
         return arrayNode;
-    }
-
-    private void addDescription(ObjectNode result, AnnotatedElement element) {
-        Description description = element.getAnnotation(Description.class);
-        if (description != null) {
-            // OpenShift Origin 3.10-rc0 doesn't like the `description` in CRD
-            //result.put("description", description.value());
-        } else {
-            warn("Missing @Description on " + element);
-        }
     }
 
     private String typeName(Class type) {

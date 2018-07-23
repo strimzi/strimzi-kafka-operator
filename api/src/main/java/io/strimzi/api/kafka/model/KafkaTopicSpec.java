@@ -52,10 +52,6 @@ public class KafkaTopicSpec implements Serializable {
         this.topicName = topicName;
     }
 
-    public Integer getPartitions() {
-        return partitions;
-    }
-
     @Description("The number of partitions the topic should have. " +
             "This cannot be decreased after topic creation. " +
             "It can be increased after topic creation, " +
@@ -63,6 +59,10 @@ public class KafkaTopicSpec implements Serializable {
             "especially for topics with semantic partitioning. " +
             "If unspecified this will default to the broker's `num.partitions` config.")
     @Minimum(1)
+    public Integer getPartitions() {
+        return partitions;
+    }
+
     public void setPartitions(Integer partitions) {
         this.partitions = partitions;
     }

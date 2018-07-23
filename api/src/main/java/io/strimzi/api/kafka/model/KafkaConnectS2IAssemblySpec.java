@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 
 @Buildable(
@@ -22,6 +23,8 @@ public class KafkaConnectS2IAssemblySpec extends KafkaConnectAssemblySpec {
 
     private boolean insecureSourceRepository = false;
 
+    @Description("When true this configures the source repository with the 'Local' reference policy " +
+            "and an import policy that accepts insecure source tags.")
     public boolean isInsecureSourceRepository() {
         return insecureSourceRepository;
     }

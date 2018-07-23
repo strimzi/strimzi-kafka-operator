@@ -17,6 +17,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.crdgenerator.annotations.Crd;
+import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 
 import java.util.HashMap;
@@ -91,6 +92,7 @@ public class KafkaAssembly extends CustomResource {
         super.setMetadata(metadata);
     }
 
+    @Description("The specification of the Kafka and Zookeeper clusters, and Topic Operator.")
     public KafkaAssemblySpec getSpec() {
         return spec;
     }
