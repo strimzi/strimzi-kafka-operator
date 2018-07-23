@@ -52,3 +52,4 @@
 :Kubernetes:
 :InstallationAppendix:
 :MetricsAppendix:
+:Downloading:

@@ -3,12 +3,10 @@ include::common/attributes.adoc[]
 [id='getting-started-{context}']
 = Getting started
 
-== Downloading {ProductName}
-
-Strimzi releases are available for download from {ReleaseDownload}.
-The release artifacts contain documentation and example YAML files for deployment on {ProductPlatformName}.
-The example files are used throughout this documentation and can be used to install {ProductName}.
-The Docker images are available on {DockerRepository}.
+ifdef::Downloading[]
+:context: {ContextProduct}
+include::con-product-downloads.adoc[leveloffset=+1]
+endif::Downloading[]
 
 == Prerequisites
 
