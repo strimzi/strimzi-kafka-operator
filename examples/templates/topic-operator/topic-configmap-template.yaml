@@ -46,6 +46,8 @@ objects:
   kind: KafkaTopic
   metadata:
     name: ${TOPIC_NAME}
+    labels:
+      strimzi.io/cluster: "${CLUSTER_NAME}"
   spec:
     partitions: ${{TOPIC_PARTITIONS}}
     replicas: ${{TOPIC_REPLICAS}}
