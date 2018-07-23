@@ -21,7 +21,7 @@ And also, in the other direction:
 * if a topic is deleted, the operator will create the `KafkaTopic` describing it
 * if a topic is changed, the operator will update the `KafkaTopic` describing it
 
-This is beneficial to a {ProductPlatformName}-centric style of deploying applications, because it allows you to declare a `KafkaTopic` as part of your application's deployment and the operator will take care of creating the topic for you, so your application just needs to deal with producing  and/or consuming from the necessary topics.
+This is beneficial to a {ProductPlatformName}-centric style of deploying applications, because it allows you to declare a `KafkaTopic` as part of your application's deployment and the operator will take care of creating the topic for you, so your application just needs to deal with producing or consuming from the necessary topics.
 
 Should the topic be reconfigured, reassigned to different Kafka nodes and so on, 
 the `KafkaTopic` will always be up to date.
