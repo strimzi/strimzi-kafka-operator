@@ -101,6 +101,12 @@ The accepted JSON format is described in the <<kafka_rack>> section.
 An object allowing control over how the Kafka pods are scheduled to nodes.
 The format of the corresponding key is the same as the content supported in the Pod `affinity` in {ProductPlatformName}.
 See section <<affinity>> for more details.
+`spec.kafka.tlsSidecar.image`::
+The Docker image to use for the sidecar container which provides TLS support for Kafka brokers.
+Default is determined by the value of the `<<STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE,STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE>>` environment variable of the Cluster Operator.
+`spec.kafka.tlsSidecar.resources`::
+An object configuring the resource limits and requests for the sidecar container which provides TLS support for Kafka brokers.
+The accepted JSON format is described in the <<resources_json_config>> section.
 `spec.zookeeper.replicas`::
 The number of Zookeeper nodes.
 `spec.zookeeper.image`::
@@ -792,6 +798,12 @@ described in the <<resources_json_config>> section.
 `affinity`::
 Node and Pod affinity for the Topic Operator, as described in the <<affinity>> section.
 The format of the corresponding key is the same as the content supported in the Pod `affinity` in {ProductPlatformName}.
+`tlsSidecar.image`::
+The Docker image to use for the sidecar container which provides TLS support for Topic Operator.
+Default is determined by the value of the `<<STRIMZI_DEFAULT_TLS_SIDECAR_TOPIC_OPERATOR_IMAGE,STRIMZI_DEFAULT_TLS_SIDECAR_TOPIC_OPERATOR_IMAGE>>` environment variable of the Cluster Operator.
+`tlsSidecar.resources`::
+An object configuring the resource limits and requests for the sidecar container which provides TLS support for the Topic Operator.
+The accepted JSON format is described in the <<resources_json_config>> section.
 
 .Example Topic Operator JSON configuration
 [source,json]
@@ -1231,6 +1243,10 @@ no image is specified as the `kafka-image` in the <<kafka_config_map_details,Kaf
 [[STRIMZI_DEFAULT_KAFKA_INIT_IMAGE]] `STRIMZI_DEFAULT_KAFKA_INIT_IMAGE`:: Optional, default `strimzi/kafka-init:latest`.
 The image name to use as default for the init container started before the broker for doing initial configuration work (that is, rack support), if no image is specified as the `kafka-init-image` in the <<kafka_config_map_details,Kafka cluster ConfigMap>>.
 
+[[STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE]] `STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE`:: Optional, default `strimzi/kafka-stunnel:latest`.
+The image name to use as a default when deploying the sidecar container which provides TLS support for Kafka, if
+no image is specified as the `spec.kafka.tlsSidecar.image` in the <<kafka_config_map_details,Kafka cluster ConfigMap>>.
+
 [[STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE]] `STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE`:: Optional, default `strimzi/kafka-connect:latest`.
 The image name to use as a default when deploying Kafka Connect, if
 no image is specified as the `image` in the
@@ -1255,6 +1271,10 @@ no image is specified as the `spec.zookeeper.tlsSidecar.image` in the <<kafka_co
 
 [[STRIMZI_LOG_LEVEL]] `STRIMZI_LOG_LEVEL`:: Optional, default `INFO`.
 The level for printing logging messages. The value can be set to: `ERROR`, `WARNING`, `INFO`, `DEBUG` and `TRACE`.
+
+[[STRIMZI_DEFAULT_TLS_SIDECAR_TOPIC_OPERATOR_IMAGE]] `STRIMZI_DEFAULT_TLS_SIDECAR_TOPIC_OPERATOR_IMAGE`:: Optional, default `strimzi/topic-operator-stunnel:latest`.
+The image name to use as a default when deploying the sidecar container which provides TLS support for the Topic Operator, if
+no image is specified as the `spec.topicOperator.tlsSidecar.image` in the <<kafka_config_map_details,Kafka cluster ConfigMap>>.
 
 [[multi-namespace]]
 ==== Watching multiple namespaces
