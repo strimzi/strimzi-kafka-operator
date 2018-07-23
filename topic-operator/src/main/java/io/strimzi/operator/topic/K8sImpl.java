@@ -25,25 +25,25 @@ public class K8sImpl implements K8s {
 
     private final static Logger LOGGER = LogManager.getLogger(TopicOperator.class);
 
-    private final LabelPredicate cmPredicate;
+    private final LabelPredicate resourcePredicate;
     private final String namespace;
 
     private KubernetesClient client;
 
     private Vertx vertx;
 
-    public K8sImpl(Vertx vertx, KubernetesClient client, LabelPredicate cmPredicate, String namespace) {
+    public K8sImpl(Vertx vertx, KubernetesClient client, LabelPredicate resourcePredicate, String namespace) {
         this.vertx = vertx;
         this.client = client;
-        this.cmPredicate = cmPredicate;
+        this.resourcePredicate = resourcePredicate;
         this.namespace = namespace;
     }
 
     @Override
-    public void createConfigMap(KafkaTopic cm, Handler<AsyncResult<Void>> handler) {
+    public void createResource(KafkaTopic topicResource, Handler<AsyncResult<Void>> handler) {
         vertx.executeBlocking(future -> {
             try {
-                operation().inNamespace(namespace).create(cm);
+                operation().inNamespace(namespace).create(topicResource);
                 future.complete();
             } catch (Exception e) {
                 future.fail(e);
@@ -52,10 +52,10 @@ public class K8sImpl implements K8s {
     }
 
     @Override
-    public void updateConfigMap(KafkaTopic cm, Handler<AsyncResult<Void>> handler) {
+    public void updateResource(KafkaTopic topicResource, Handler<AsyncResult<Void>> handler) {
         vertx.executeBlocking(future -> {
             try {
-                operation().inNamespace(namespace).createOrReplace(cm);
+                operation().inNamespace(namespace).createOrReplace(topicResource);
                 future.complete();
             } catch (Exception e) {
                 future.fail(e);
@@ -64,11 +64,11 @@ public class K8sImpl implements K8s {
     }
 
     @Override
-    public void deleteConfigMap(MapName mapName, Handler<AsyncResult<Void>> handler) {
+    public void deleteResource(ResourceName resourceName, Handler<AsyncResult<Void>> handler) {
         vertx.executeBlocking(future -> {
             try {
-                // Delete the CM by the topic name, because neither ZK nor Kafka know the CM name
-                operation().inNamespace(namespace).withName(mapName.toString()).delete();
+                // Delete the resource by the topic name, because neither ZK nor Kafka know the resource name
+                operation().inNamespace(namespace).withName(resourceName.toString()).delete();
                 future.complete();
             } catch (Exception e) {
                 future.fail(e);
@@ -84,7 +84,7 @@ public class K8sImpl implements K8s {
     public void listMaps(Handler<AsyncResult<List<KafkaTopic>>> handler) {
         vertx.executeBlocking(future -> {
             try {
-                future.complete(operation().inNamespace(namespace).withLabels(cmPredicate.labels()).list().getItems());
+                future.complete(operation().inNamespace(namespace).withLabels(resourcePredicate.labels()).list().getItems());
             } catch (Exception e) {
                 future.fail(e);
             }
@@ -92,10 +92,10 @@ public class K8sImpl implements K8s {
     }
 
     @Override
-    public void getFromName(MapName mapName, Handler<AsyncResult<KafkaTopic>> handler) {
+    public void getFromName(ResourceName resourceName, Handler<AsyncResult<KafkaTopic>> handler) {
         vertx.executeBlocking(future -> {
             try {
-                future.complete(operation().inNamespace(namespace).withName(mapName.toString()).get());
+                future.complete(operation().inNamespace(namespace).withName(resourceName.toString()).get());
             } catch (Exception e) {
                 future.fail(e);
             }

@@ -21,8 +21,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * For example, consider this linearization:
  * 1. User creates a topic in Kafka
  * 2. Operator notified of topic creation via ZooKeeper.
- * 3. Operator creates ConfigMap due to event 1.
- * 4. Operator notified of ConfigMap creation via Kubernetes
+ * 3. Operator creates KafkaTopic due to event 1.
+ * 4. Operator notified of KafkaTopic creation via Kubernetes
  *
  * Without Inflight the processing for event 1 is not complete (we've not created the
  * topic in the private topic store), so the linearization can proceed like this:
@@ -31,9 +31,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * 6. Operator creates private topic in topic sture doe to event 4.
  *    Exception because that private topic already exists.
  *
- * With Inflight the processing for the ConfigMap creation is deferred until all the processing
+ * With Inflight the processing for the KafkaTopic creation is deferred until all the processing
  * due to event 1 is complete. The reconciliation algorithm is smart
- * enough realize, when reconciling the ConfigMap creation that the Kafka
+ * enough realize, when reconciling the KafkaTopic creation that the Kafka
  * and TopicStore state is already correct, and so the reconciliation is a noop.
  */
 class InFlight<T> {

@@ -7,7 +7,7 @@ package io.strimzi.operator.topic;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 
 /**
- * An exception possibly with an attached K8S resource (e.g. a ConfigMap).
+ * An exception possibly with an attached K8S resource (e.g. a KafkaTopic).
  */
 public class OperatorException extends RuntimeException {
 

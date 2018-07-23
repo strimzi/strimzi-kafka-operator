@@ -20,31 +20,32 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
     private final static Logger LOGGER = LogManager.getLogger(K8sTopicWatcher.class);
 
     private TopicOperator topicOperator;
-    private final LabelPredicate cmPredicate;
+    private final LabelPredicate resourcePredicate;
 
-    public K8sTopicWatcher(TopicOperator topicOperator, LabelPredicate cmPredicate) {
+    public K8sTopicWatcher(TopicOperator topicOperator, LabelPredicate resourcePredicate) {
         this.topicOperator = topicOperator;
-        this.cmPredicate = cmPredicate;
+        this.resourcePredicate = resourcePredicate;
     }
 
     @Override
     public void eventReceived(Action action, KafkaTopic kafkaTopic) {
         ObjectMeta metadata = kafkaTopic.getMetadata();
         Map<String, String> labels = metadata.getLabels();
-        if (cmPredicate.test(kafkaTopic)) {
+        if (resourcePredicate.test(kafkaTopic)) {
             String name = metadata.getName();
-            LOGGER.info("KafkaTopic watch received event {} on map {} with labels {}", action, name, labels);
+            String kind = kafkaTopic.getKind();
+            LOGGER.info(kind + " watch received event {} on resource {} with labels {}", action, name, labels);
             Handler<AsyncResult<Void>> resultHandler = ar -> {
                 if (ar.succeeded()) {
-                    LOGGER.info("Success processing KafkaTopic watch event {} on map {} with labels {}", action, name, labels);
+                    LOGGER.info("Success processing KafkaTopic watch event {} on resource {} with labels {}", action, name, labels);
                 } else {
                     String message;
                     if (ar.cause() instanceof InvalidTopicException) {
-                        message = "KafkaTopic " + name + " has an invalid spec section: " + ar.cause().getMessage();
+                        message = kind + " " + name + " has an invalid spec section: " + ar.cause().getMessage();
                         LOGGER.error("{}", message);
 
                     } else {
-                        message = "Failure processing KafkaTopic watch event " + action + " on map " + name + " with labels " + labels + ": " + ar.cause().getMessage();
+                        message = "Failure processing " + kind + " watch event " + action + " on resource " + name + " with labels " + labels + ": " + ar.cause().getMessage();
                         LOGGER.error("{}", message, ar.cause());
                     }
                     topicOperator.enqueue(topicOperator.new Event(kafkaTopic, message, TopicOperator.EventType.WARNING, errorResult -> { }));
@@ -61,7 +62,7 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
                     topicOperator.onResourceDeleted(kafkaTopic, resultHandler);
                     break;
                 case ERROR:
-                    LOGGER.error("Watch received action=ERROR for ConfigMap " + name);
+                    LOGGER.error("Watch received action=ERROR for {} {}", kind, name);
             }
         }
     }

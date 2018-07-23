@@ -69,7 +69,7 @@ class MockTopicOperator extends TopicOperator {
             return "Event{" +
                     "type=" + type +
                     ", topicName=" + topicName +
-                    ", configMap=" + kafkaTopicResource +
+                    ", kafkaTopicResource=" + kafkaTopicResource +
                     '}';
         }
     }
@@ -77,9 +77,9 @@ class MockTopicOperator extends TopicOperator {
     public AsyncResult<Void> topicCreatedResult = Future.failedFuture("Unexpected mock interaction. Configure " + getClass().getSimpleName() + ".topicCreatedResult");
     public AsyncResult<Void> topicDeletedResult = Future.failedFuture("Unexpected mock interaction. Configure " + getClass().getSimpleName() + ".topicDeletedResult");
     public AsyncResult<Void> topicModifiedResult = Future.failedFuture("Unexpected mock interaction. Configure " + getClass().getSimpleName() + ".topicModifiedResult");
-    public AsyncResult<Void> resourceAddedResult = Future.failedFuture("Unexpected mock interaction. Configure " + getClass().getSimpleName() + ".cmAddedResult");
-    public AsyncResult<Void> resourceDeletedResult = Future.failedFuture("Unexpected mock interaction. Configure " + getClass().getSimpleName() + ".cmDeletedResult");
-    public AsyncResult<Void> resourceModifiedResult = Future.failedFuture("Unexpected mock interaction. Configure " + getClass().getSimpleName() + ".cmModifiedResult");
+    public AsyncResult<Void> resourceAddedResult = Future.failedFuture("Unexpected mock interaction. Configure " + getClass().getSimpleName() + ".resourceAddedResult");
+    public AsyncResult<Void> resourceDeletedResult = Future.failedFuture("Unexpected mock interaction. Configure " + getClass().getSimpleName() + ".resourceDeletedResult");
+    public AsyncResult<Void> resourceModifiedResult = Future.failedFuture("Unexpected mock interaction. Configure " + getClass().getSimpleName() + ".resourceModifiedResult");
     private List<MockOperatorEvent> mockOperatorEvents = new ArrayList<>();
 
     public List<MockOperatorEvent> getMockOperatorEvents() {
@@ -115,20 +115,20 @@ class MockTopicOperator extends TopicOperator {
     }
 
     @Override
-    public void onResourceAdded(KafkaTopic cm, Handler<AsyncResult<Void>> resultHandler) {
-        mockOperatorEvents.add(new MockOperatorEvent(MockOperatorEvent.Type.CREATE, cm));
+    public void onResourceAdded(KafkaTopic resource, Handler<AsyncResult<Void>> resultHandler) {
+        mockOperatorEvents.add(new MockOperatorEvent(MockOperatorEvent.Type.CREATE, resource));
         resultHandler.handle(resourceAddedResult);
     }
 
     @Override
-    public void onResourceModified(KafkaTopic cm, Handler<AsyncResult<Void>> resultHandler) {
-        mockOperatorEvents.add(new MockOperatorEvent(MockOperatorEvent.Type.MODIFY, cm));
+    public void onResourceModified(KafkaTopic resource, Handler<AsyncResult<Void>> resultHandler) {
+        mockOperatorEvents.add(new MockOperatorEvent(MockOperatorEvent.Type.MODIFY, resource));
         resultHandler.handle(resourceModifiedResult);
     }
 
     @Override
-    public void onResourceDeleted(KafkaTopic cm, Handler<AsyncResult<Void>> resultHandler) {
-        mockOperatorEvents.add(new MockOperatorEvent(MockOperatorEvent.Type.DELETE, cm));
+    public void onResourceDeleted(KafkaTopic resource, Handler<AsyncResult<Void>> resultHandler) {
+        mockOperatorEvents.add(new MockOperatorEvent(MockOperatorEvent.Type.DELETE, resource));
         resultHandler.handle(resourceDeletedResult);
     }
 }

@@ -33,7 +33,7 @@ public class TopicOperator {
     private final Kafka kafka;
     private final K8s k8s;
     private final Vertx vertx;
-    private final LabelPredicate cmPredicate;
+    private final LabelPredicate resourcePredicate;
     private final String namespace;
     private TopicStore topicStore;
     private final InFlight<TopicName> inFlight;
@@ -73,7 +73,7 @@ public class TopicOperator {
             EventBuilder evtb = new EventBuilder().withApiVersion("v1");
             if (involvedObject != null) {
                 evtb.withNewInvolvedObject()
-                        .withKind("ConfigMap")
+                        .withKind(involvedObject.getKind())
                         .withName(involvedObject.getMetadata().getName())
                         .withApiVersion(involvedObject.getApiVersion())
                         .withNamespace(involvedObject.getMetadata().getNamespace())
@@ -82,7 +82,7 @@ public class TopicOperator {
             }
             evtb.withType(eventType.name)
                     .withMessage(message)
-                    .withNewMetadata().withLabels(cmPredicate.labels()).withGenerateName("topic-operator").withNamespace(namespace).endMetadata()
+                    .withNewMetadata().withLabels(resourcePredicate.labels()).withGenerateName("topic-operator").withNamespace(namespace).endMetadata()
                     .withNewSource()
                     .withComponent(TopicOperator.class.getName())
                     .endSource();
@@ -115,8 +115,8 @@ public class TopicOperator {
 
         @Override
         public void handle(Void v) throws OperatorException {
-            KafkaTopic kafkaTopic = TopicSerialization.toTopicResource(this.topic, cmPredicate);
-            k8s.createConfigMap(kafkaTopic, handler);
+            KafkaTopic kafkaTopic = TopicSerialization.toTopicResource(this.topic, resourcePredicate);
+            k8s.createResource(kafkaTopic, handler);
         }
 
         @Override
@@ -128,22 +128,22 @@ public class TopicOperator {
     /** Topic deleted in ZK */
     class DeleteResource implements Handler<Void> {
 
-        private final MapName mapName;
+        private final ResourceName resourceName;
         private final Handler<io.vertx.core.AsyncResult<Void>> handler;
 
-        public DeleteResource(MapName mapName, Handler<io.vertx.core.AsyncResult<Void>> handler) {
-            this.mapName = mapName;
+        public DeleteResource(ResourceName resourceName, Handler<io.vertx.core.AsyncResult<Void>> handler) {
+            this.resourceName = resourceName;
             this.handler = handler;
         }
 
         @Override
         public void handle(Void v) {
-            k8s.deleteConfigMap(mapName, handler);
+            k8s.deleteResource(resourceName, handler);
         }
 
         @Override
         public String toString() {
-            return "DeleteResource(mapName=" + mapName + ")";
+            return "DeleteResource(mapName=" + resourceName + ")";
         }
     }
 
@@ -160,8 +160,8 @@ public class TopicOperator {
 
         @Override
         public void handle(Void v) {
-            KafkaTopic kafkaTopic = TopicSerialization.toTopicResource(this.topic, cmPredicate);
-            k8s.updateConfigMap(kafkaTopic, handler);
+            KafkaTopic kafkaTopic = TopicSerialization.toTopicResource(this.topic, resourcePredicate);
+            k8s.updateResource(kafkaTopic, handler);
         }
 
         @Override
@@ -170,7 +170,7 @@ public class TopicOperator {
         }
     }
 
-    /** ConfigMap created in k8s */
+    /** Resource created in k8s */
     class CreateKafkaTopic implements Handler<Void> {
 
         private final Topic topic;
@@ -188,7 +188,7 @@ public class TopicOperator {
         public void handle(Void v) throws OperatorException {
             kafka.createTopic(topic, ar -> {
                 if (ar.succeeded()) {
-                    LOGGER.info("Created topic '{}' for KafkaTopic '{}'", topic.getTopicName(), topic.getMapName());
+                    LOGGER.info("Created topic '{}' for KafkaTopic '{}'", topic.getTopicName(), topic.getResourceName());
                     handler.handle(ar);
                 } else {
                     handler.handle(ar);
@@ -326,13 +326,13 @@ public class TopicOperator {
     public TopicOperator(Vertx vertx, Kafka kafka,
                          K8s k8s,
                          TopicStore topicStore,
-                         LabelPredicate cmPredicate,
+                         LabelPredicate resourcePredicate,
                          String namespace,
                          Config config) {
         this.kafka = kafka;
         this.k8s = k8s;
         this.vertx = vertx;
-        this.cmPredicate = cmPredicate;
+        this.resourcePredicate = resourcePredicate;
         this.topicStore = topicStore;
         this.inFlight = new InFlight<>(vertx);
         this.namespace = namespace;
@@ -534,9 +534,9 @@ public class TopicOperator {
 
     private void update3Way(HasMetadata involvedObject, Topic k8sTopic, Topic kafkaTopic, Topic privateTopic,
                             Handler<AsyncResult<Void>> reconciliationResultHandler) {
-        if (!privateTopic.getMapName().equals(k8sTopic.getMapName())) {
+        if (!privateTopic.getResourceName().equals(k8sTopic.getResourceName())) {
             reconciliationResultHandler.handle(Future.failedFuture(new OperatorException(involvedObject,
-                    "Topic '" + kafkaTopic.getTopicName() + "' is already managed via KafkaTopic '" + privateTopic.getMapName() + "' it cannot also be managed via the KafkaTopic '" + k8sTopic.getMapName() + "'")));
+                    "Topic '" + kafkaTopic.getTopicName() + "' is already managed via KafkaTopic '" + privateTopic.getResourceName() + "' it cannot also be managed via the KafkaTopic '" + k8sTopic.getResourceName() + "'")));
             return;
         }
         TopicDiff oursKafka = TopicDiff.diff(privateTopic, kafkaTopic);
@@ -682,13 +682,13 @@ public class TopicOperator {
         topicStore.read(topicName, storeResult -> {
             if (storeResult.succeeded()) {
                 Topic storeTopic = storeResult.result();
-                MapName mapName = null;
+                ResourceName resourceName = null;
                 if (storeTopic != null) {
-                    mapName = storeTopic.getMapName();
+                    resourceName = storeTopic.getResourceName();
                 } else {
-                    mapName = topicName.asMapName();
+                    resourceName = topicName.asMapName();
                 }
-                k8s.getFromName(mapName, kubeResult -> {
+                k8s.getFromName(resourceName, kubeResult -> {
                     if (kubeResult.succeeded()) {
                         KafkaTopic topic = kubeResult.result();
                         Topic k8sTopic = TopicSerialization.fromTopicResource(topic);
@@ -746,7 +746,7 @@ public class TopicOperator {
 
     /** Called when a resource is added in k8s */
     void onResourceAdded(KafkaTopic addedTopic, Handler<AsyncResult<Void>> resultHandler) {
-        if (cmPredicate.test(addedTopic)) {
+        if (resourcePredicate.test(addedTopic)) {
             final Topic k8sTopic;
             try {
                 k8sTopic = TopicSerialization.fromTopicResource(addedTopic);
@@ -781,7 +781,7 @@ public class TopicOperator {
 
     /** Called when a resource is modified in k8s */
     void onResourceModified(KafkaTopic modifiedTopic, Handler<AsyncResult<Void>> resultHandler) {
-        if (cmPredicate.test(modifiedTopic)) {
+        if (resourcePredicate.test(modifiedTopic)) {
             final Topic k8sTopic;
             try {
                 k8sTopic = TopicSerialization.fromTopicResource(modifiedTopic);
@@ -825,7 +825,7 @@ public class TopicOperator {
 
     /** Called when a resource is deleted in k8s */
     void onResourceDeleted(KafkaTopic deletedTopic, Handler<AsyncResult<Void>> resultHandler) {
-        if (cmPredicate.test(deletedTopic)) {
+        if (resourcePredicate.test(deletedTopic)) {
             Reconciliation action = new Reconciliation("onResourceDeleted") {
                 @Override
                 public void handle(Future<Void> fut) {

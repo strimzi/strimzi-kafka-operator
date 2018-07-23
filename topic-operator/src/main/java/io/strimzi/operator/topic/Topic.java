@@ -15,7 +15,7 @@ public class Topic {
         private int numPartitions;
         private short numReplicas = -1;
         private Map<String, String> config = new HashMap<>();
-        private MapName mapName;
+        private ResourceName resourceName;
 
         public Builder() {
 
@@ -45,9 +45,9 @@ public class Topic {
             this(topicName, topicName.asMapName(), numPartitions, numReplicas, config);
         }
 
-        public Builder(TopicName topicName, MapName mapName, int numPartitions, short numReplicas, Map<String, String> config) {
+        public Builder(TopicName topicName, ResourceName resourceName, int numPartitions, short numReplicas, Map<String, String> config) {
             this.topicName = topicName;
-            this.mapName = mapName;
+            this.resourceName = resourceName;
             this.numPartitions = numPartitions;
             this.numReplicas = numReplicas;
             if (config != null) {
@@ -59,7 +59,7 @@ public class Topic {
             this.topicName = topic.topicName;
             this.numPartitions = topic.numPartitions;
             this.numReplicas = topic.numReplicas;
-            this.mapName = topic.mapName;
+            this.resourceName = topic.resourceName;
             this.config.putAll(topic.config);
         }
 
@@ -73,13 +73,13 @@ public class Topic {
             return this;
         }
 
-        public Builder withMapName(MapName name) {
-            this.mapName = name;
+        public Builder withMapName(ResourceName name) {
+            this.resourceName = name;
             return this;
         }
 
         public Builder withMapName(String name) {
-            this.mapName = new MapName(name);
+            this.resourceName = new ResourceName(name);
             return this;
         }
 
@@ -110,13 +110,13 @@ public class Topic {
         }
 
         public Topic build() {
-            return new Topic(topicName, mapName, numPartitions, numReplicas, config);
+            return new Topic(topicName, resourceName, numPartitions, numReplicas, config);
         }
     }
 
     private final TopicName topicName;
 
-    private final MapName mapName;
+    private final ResourceName resourceName;
 
     private final int numPartitions;
 
@@ -128,13 +128,13 @@ public class Topic {
         return topicName;
     }
 
-    public MapName getMapName() {
-        return mapName;
+    public ResourceName getResourceName() {
+        return resourceName;
     }
 
-    public MapName getOrAsMapName() {
-        if (mapName != null) {
-            return mapName;
+    public ResourceName getOrAsMapName() {
+        if (resourceName != null) {
+            return resourceName;
         } else {
             return topicName.asMapName();
         }
@@ -152,9 +152,9 @@ public class Topic {
         return config;
     }
 
-    private Topic(TopicName topicName, MapName mapName, int numPartitions, short numReplicas, Map<String, String> config) {
+    private Topic(TopicName topicName, ResourceName resourceName, int numPartitions, short numReplicas, Map<String, String> config) {
         this.topicName = topicName;
-        this.mapName = mapName;
+        this.resourceName = resourceName;
         this.numPartitions = numPartitions;
         this.numReplicas = numReplicas;
         this.config = Collections.unmodifiableMap(config);

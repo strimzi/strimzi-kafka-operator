@@ -22,17 +22,17 @@ import java.util.stream.Collectors;
 
 public class MockK8s implements K8s {
 
-    private Map<MapName, AsyncResult<KafkaTopic>> byName = new HashMap<>();
+    private Map<ResourceName, AsyncResult<KafkaTopic>> byName = new HashMap<>();
     private List<Event> events = new ArrayList<>();
-    private Function<MapName, AsyncResult<Void>> createResponse = n -> Future.failedFuture("Unexpected. ");
-    private Function<MapName, AsyncResult<Void>> modifyResponse = n -> Future.failedFuture("Unexpected. ");
-    private Function<MapName, AsyncResult<Void>> deleteResponse = n -> Future.failedFuture("Unexpected. ");
+    private Function<ResourceName, AsyncResult<Void>> createResponse = n -> Future.failedFuture("Unexpected. ");
+    private Function<ResourceName, AsyncResult<Void>> modifyResponse = n -> Future.failedFuture("Unexpected. ");
+    private Function<ResourceName, AsyncResult<Void>> deleteResponse = n -> Future.failedFuture("Unexpected. ");
     private Supplier<AsyncResult<List<KafkaTopic>>> listResponse = () -> Future.succeededFuture(new ArrayList(byName.values().stream().filter(ar -> ar.succeeded()).map(ar -> ar.result()).collect(Collectors.toList())));
 
-    public MockK8s setCreateResponse(MapName mapName, Exception exception) {
-        Function<MapName, AsyncResult<Void>> old = createResponse;
+    public MockK8s setCreateResponse(ResourceName resourceName, Exception exception) {
+        Function<ResourceName, AsyncResult<Void>> old = createResponse;
         createResponse = n -> {
-            if (mapName.equals(n)) {
+            if (resourceName.equals(n)) {
                 if (exception == null) {
                     return Future.succeededFuture();
                 } else {
@@ -44,10 +44,10 @@ public class MockK8s implements K8s {
         return this;
     }
 
-    public MockK8s setModifyResponse(MapName mapName, Exception exception) {
-        Function<MapName, AsyncResult<Void>> old = modifyResponse;
+    public MockK8s setModifyResponse(ResourceName resourceName, Exception exception) {
+        Function<ResourceName, AsyncResult<Void>> old = modifyResponse;
         modifyResponse = n -> {
-            if (mapName.equals(n)) {
+            if (resourceName.equals(n)) {
                 if (exception == null) {
                     return Future.succeededFuture();
                 } else {
@@ -59,10 +59,10 @@ public class MockK8s implements K8s {
         return this;
     }
 
-    public MockK8s setDeleteResponse(MapName mapName, Exception exception) {
-        Function<MapName, AsyncResult<Void>> old = deleteResponse;
+    public MockK8s setDeleteResponse(ResourceName resourceName, Exception exception) {
+        Function<ResourceName, AsyncResult<Void>> old = deleteResponse;
         deleteResponse = n -> {
-            if (mapName.equals(n)) {
+            if (resourceName.equals(n)) {
                 if (exception == null) {
                     return Future.succeededFuture();
                 } else {
@@ -75,12 +75,12 @@ public class MockK8s implements K8s {
     }
 
     @Override
-    public void createConfigMap(KafkaTopic cm, Handler<AsyncResult<Void>> handler) {
-        AsyncResult<Void> response = createResponse.apply(new MapName(cm));
+    public void createResource(KafkaTopic topicResource, Handler<AsyncResult<Void>> handler) {
+        AsyncResult<Void> response = createResponse.apply(new ResourceName(topicResource));
         if (response.succeeded()) {
-            AsyncResult<KafkaTopic> old = byName.put(new MapName(cm), Future.succeededFuture(cm));
+            AsyncResult<KafkaTopic> old = byName.put(new ResourceName(topicResource), Future.succeededFuture(topicResource));
             if (old != null) {
-                handler.handle(Future.failedFuture("configmap already existed: " + cm.getMetadata().getName()));
+                handler.handle(Future.failedFuture("resource already existed: " + topicResource.getMetadata().getName()));
                 return;
             }
         }
@@ -88,12 +88,12 @@ public class MockK8s implements K8s {
     }
 
     @Override
-    public void updateConfigMap(KafkaTopic cm, Handler<AsyncResult<Void>> handler) {
-        AsyncResult<Void> response = modifyResponse.apply(new MapName(cm));
+    public void updateResource(KafkaTopic topicResource, Handler<AsyncResult<Void>> handler) {
+        AsyncResult<Void> response = modifyResponse.apply(new ResourceName(topicResource));
         if (response.succeeded()) {
-            AsyncResult<KafkaTopic> old = byName.put(new MapName(cm), Future.succeededFuture(cm));
+            AsyncResult<KafkaTopic> old = byName.put(new ResourceName(topicResource), Future.succeededFuture(topicResource));
             if (old == null) {
-                handler.handle(Future.failedFuture("configmap does not exist, cannot be updated: " + cm.getMetadata().getName()));
+                handler.handle(Future.failedFuture("resource does not exist, cannot be updated: " + topicResource.getMetadata().getName()));
                 return;
             }
         }
@@ -101,11 +101,11 @@ public class MockK8s implements K8s {
     }
 
     @Override
-    public void deleteConfigMap(MapName mapName, Handler<AsyncResult<Void>> handler) {
-        AsyncResult<Void> response = deleteResponse.apply(mapName);
+    public void deleteResource(ResourceName resourceName, Handler<AsyncResult<Void>> handler) {
+        AsyncResult<Void> response = deleteResponse.apply(resourceName);
         if (response.succeeded()) {
-            if (byName.remove(mapName) == null) {
-                handler.handle(Future.failedFuture("configmap does not exist, cannot be deleted: " + mapName));
+            if (byName.remove(resourceName) == null) {
+                handler.handle(Future.failedFuture("resource does not exist, cannot be deleted: " + resourceName));
                 return;
             }
         }
@@ -122,9 +122,9 @@ public class MockK8s implements K8s {
     }
 
     @Override
-    public void getFromName(MapName mapName, Handler<AsyncResult<KafkaTopic>> handler) {
-        AsyncResult<KafkaTopic> cmFuture = byName.get(mapName);
-        handler.handle(cmFuture != null ? cmFuture : Future.succeededFuture());
+    public void getFromName(ResourceName resourceName, Handler<AsyncResult<KafkaTopic>> handler) {
+        AsyncResult<KafkaTopic> resourceFuture = byName.get(resourceName);
+        handler.handle(resourceFuture != null ? resourceFuture : Future.succeededFuture());
     }
 
     @Override
@@ -133,19 +133,19 @@ public class MockK8s implements K8s {
         handler.handle(Future.succeededFuture());
     }
 
-    public void assertExists(TestContext context, MapName mapName) {
-        AsyncResult<KafkaTopic> got = byName.get(mapName);
+    public void assertExists(TestContext context, ResourceName resourceName) {
+        AsyncResult<KafkaTopic> got = byName.get(resourceName);
         context.assertTrue(got != null && got.succeeded());
     }
 
-    public void assertContains(TestContext context, KafkaTopic cm) {
-        AsyncResult<KafkaTopic> configMapResult = byName.get(new MapName(cm));
-        context.assertTrue(configMapResult.succeeded());
-        context.assertEquals(cm, configMapResult.result());
+    public void assertContains(TestContext context, KafkaTopic resource) {
+        AsyncResult<KafkaTopic> resourceResult = byName.get(new ResourceName(resource));
+        context.assertTrue(resourceResult.succeeded());
+        context.assertEquals(resource, resourceResult.result());
     }
 
-    public void assertNotExists(TestContext context, MapName mapName) {
-        context.assertFalse(byName.containsKey(mapName));
+    public void assertNotExists(TestContext context, ResourceName resourceName) {
+        context.assertFalse(byName.containsKey(resourceName));
     }
 
     public void assertContainsEvent(TestContext context, Predicate<Event> test) {
@@ -161,7 +161,7 @@ public class MockK8s implements K8s {
         context.assertTrue(events.isEmpty());
     }
 
-    public void setGetFromNameResponse(MapName mapName, AsyncResult<KafkaTopic> futureCm) {
-        this.byName.put(mapName, futureCm);
+    public void setGetFromNameResponse(ResourceName resourceName, AsyncResult<KafkaTopic> futureResource) {
+        this.byName.put(resourceName, futureResource);
     }
 }

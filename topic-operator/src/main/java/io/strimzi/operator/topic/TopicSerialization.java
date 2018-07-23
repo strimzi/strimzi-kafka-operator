@@ -33,12 +33,6 @@ import static java.lang.String.format;
  */
 public class TopicSerialization {
 
-    // These are the keys in the ConfigMap data
-    public static final String CM_KEY_PARTITIONS = "partitions";
-    public static final String CM_KEY_REPLICAS = "replicas";
-    public static final String CM_KEY_NAME = "name";
-    public static final String CM_KEY_CONFIG = "config";
-
     // These are the keys in the JSON we store in ZK
     public static final String JSON_KEY_TOPIC_NAME = "topic-name";
     public static final String JSON_KEY_MAP_NAME = "map-name";
@@ -125,14 +119,14 @@ public class TopicSerialization {
     }
 
     /**
-     * Create a ConfigMap to reflect the given Topic.
+     * Create a resource to reflect the given Topic.
      */
-    public static KafkaTopic toTopicResource(Topic topic, LabelPredicate cmPredicate) {
-        MapName mapName = topic.getOrAsMapName();
+    public static KafkaTopic toTopicResource(Topic topic, LabelPredicate resourcePredicate) {
+        ResourceName resourceName = topic.getOrAsMapName();
         return new KafkaTopicBuilder().withApiVersion("v1")
                     .withMetadata(new ObjectMetaBuilder()
-                    .withName(mapName.toString())
-                    .withLabels(cmPredicate.labels()).build())
+                    .withName(resourceName.toString())
+                    .withLabels(resourcePredicate.labels()).build())
                     // TODO .withUid()
                 .withNewSpec()
                     .withTopicName(topic.getTopicName().toString())
@@ -154,7 +148,7 @@ public class TopicSerialization {
                 throw new IllegalArgumentException(
                         format("Topic %s has %d partitions supplied, but the number of partitions " +
                                         "configured in KafkaTopic %s is %d",
-                                topic.getTopicName(), assignment.size(), topic.getMapName(), topic.getNumPartitions()));
+                                topic.getTopicName(), assignment.size(), topic.getResourceName(), topic.getNumPartitions()));
             }
             for (int partition = 0; partition < assignment.size(); partition++) {
                 final List<Integer> value = assignment.get(partition);
@@ -162,7 +156,7 @@ public class TopicSerialization {
                     throw new IllegalArgumentException(
                             format("Partition %d of topic %s has %d assigned replicas, " +
                                     "but the number of replicas configured in KafkaTopic %s for the topic is %d",
-                                    partition, topic.getTopicName(), value.size(), topic.getMapName(), topic.getNumReplicas()));
+                                    partition, topic.getTopicName(), value.size(), topic.getResourceName(), topic.getNumReplicas()));
                 }
             }
             newTopic = new NewTopic(topic.getTopicName().toString(), assignment);

@@ -4,14 +4,14 @@
  */
 package io.strimzi.operator.topic;
 
-import io.strimzi.api.kafka.model.KafkaTopic;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 
 import java.util.regex.Pattern;
 
 /**
- * Typesafe representation of the name of a ConfigMap.
+ * Typesafe representation of the name of a K8s resource.
  */
-class MapName {
+class ResourceName {
     private final String name;
 
     private static final Pattern RESOURCE_PATTERN = Pattern.compile("[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*");
@@ -22,7 +22,7 @@ class MapName {
                 && RESOURCE_PATTERN.matcher(resourceName).matches();
     }
 
-    public MapName(String name) {
+    public ResourceName(String name) {
         if (!isValidResourceName(name)) {
             throw new IllegalArgumentException("'" + name + "' is not a valid Kubernetes resource name");
         }
@@ -30,11 +30,11 @@ class MapName {
     }
 
     /**
-     * Create a MapName from the name of the given ConfigMap
-     * @param cm
+     * Create a MapName from the name of the given resource
+     * @param resource
      */
-    public MapName(KafkaTopic cm) {
-        this(cm.getMetadata().getName());
+    public ResourceName(HasMetadata resource) {
+        this(resource.getMetadata().getName());
     }
 
     public String toString() {
@@ -46,9 +46,9 @@ class MapName {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        MapName mapName = (MapName) o;
+        ResourceName resourceName = (ResourceName) o;
 
-        return name != null ? name.equals(mapName.name) : mapName.name == null;
+        return name != null ? name.equals(resourceName.name) : resourceName.name == null;
     }
 
     @Override

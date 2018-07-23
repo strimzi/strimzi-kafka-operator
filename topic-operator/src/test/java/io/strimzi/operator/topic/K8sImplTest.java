@@ -36,11 +36,11 @@ public class K8sImplTest {
         Async async = context.async();
 
         KubernetesClient mockClient = mock(KubernetesClient.class);
-        MixedOperation<KafkaTopic, KafkaTopicList, TopicOperator.DeleteKafkaTopic, Resource<KafkaTopic, TopicOperator.DeleteKafkaTopic>> mockConfigMaps = mock(MixedOperation.class);
-        when(mockClient.customResources(any(CustomResourceDefinition.class), any(Class.class), any(Class.class), any(Class.class))).thenReturn(mockConfigMaps);
-        when(mockConfigMaps.withLabels(any())).thenReturn(mockConfigMaps);
-        when(mockConfigMaps.inNamespace(any())).thenReturn(mockConfigMaps);
-        when(mockConfigMaps.list()).thenAnswer(invocation -> {
+        MixedOperation<KafkaTopic, KafkaTopicList, TopicOperator.DeleteKafkaTopic, Resource<KafkaTopic, TopicOperator.DeleteKafkaTopic>> mockResources = mock(MixedOperation.class);
+        when(mockClient.customResources(any(CustomResourceDefinition.class), any(Class.class), any(Class.class), any(Class.class))).thenReturn(mockResources);
+        when(mockResources.withLabels(any())).thenReturn(mockResources);
+        when(mockResources.inNamespace(any())).thenReturn(mockResources);
+        when(mockResources.list()).thenAnswer(invocation -> {
             KafkaTopicList ktl = new KafkaTopicList();
             ktl.setItems(Collections.singletonList(new KafkaTopicBuilder()
                 .withMetadata(new ObjectMetaBuilder()

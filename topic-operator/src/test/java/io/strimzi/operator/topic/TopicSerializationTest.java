@@ -18,7 +18,6 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -30,11 +29,11 @@ import static org.junit.Assert.fail;
 
 public class TopicSerializationTest {
 
-    private final LabelPredicate cmPredicate = new LabelPredicate("kind", "topic",
+    private final LabelPredicate resourcePredicate = new LabelPredicate(
             "app", "strimzi");
 
     @Test
-    public void testConfigMapSerializationRoundTrip() {
+    public void testResourceSerializationRoundTrip() {
 
         Topic.Builder builder = new Topic.Builder();
         builder.withTopicName("tom");
@@ -42,7 +41,7 @@ public class TopicSerializationTest {
         builder.withNumPartitions(2);
         builder.withConfigEntry("cleanup.policy", "bar");
         Topic wroteTopic = builder.build();
-        KafkaTopic kafkaTopic = TopicSerialization.toTopicResource(wroteTopic, cmPredicate);
+        KafkaTopic kafkaTopic = TopicSerialization.toTopicResource(wroteTopic, resourcePredicate);
 
         assertEquals(wroteTopic.getTopicName().toString(), kafkaTopic.getMetadata().getName());
         assertEquals(2, kafkaTopic.getMetadata().getLabels().size());
@@ -131,7 +130,7 @@ public class TopicSerializationTest {
         Topic topic = TopicSerialization.fromTopicMetadata(meta);
         assertEquals(new TopicName("test-topic"), topic.getTopicName());
         // Null map name because Kafka doesn't know about the map
-        assertNull(topic.getMapName());
+        assertNull(topic.getResourceName());
         assertEquals(singletonMap("foo", "bar"), topic.getConfig());
         assertEquals(2, topic.getNumPartitions());
         assertEquals(3, topic.getNumReplicas());
@@ -140,7 +139,7 @@ public class TopicSerializationTest {
     @Test
     public void testErrorInDefaultTopicName() {
 
-        // The problem with this configmap name is it's too long to be a legal topic name
+        // The problem with this resource name is it's too long to be a legal topic name
         String illegalAsATopicName = "012345678901234567890123456789012345678901234567890123456789" +
                 "01234567890123456789012345678901234567890123456789012345678901234567890123456789" +
                 "01234567890123456789012345678901234567890123456789012345678901234567890123456789" +
@@ -183,11 +182,6 @@ public class TopicSerializationTest {
 
     @Test
     public void testErrorInPartitions() {
-        Map<String, String> data = new HashMap<>();
-        data.put(TopicSerialization.CM_KEY_REPLICAS, "1");
-        data.put(TopicSerialization.CM_KEY_PARTITIONS, "foo");
-        data.put(TopicSerialization.CM_KEY_CONFIG, "{}");
-
         KafkaTopic kafkaTopic = new KafkaTopicBuilder()
                 .withMetadata(new ObjectMetaBuilder().withName("my-topic").build())
                 .withNewSpec()
