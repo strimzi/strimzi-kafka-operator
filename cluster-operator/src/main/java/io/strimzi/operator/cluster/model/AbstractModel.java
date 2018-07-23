@@ -296,7 +296,12 @@ public abstract class AbstractModel {
             // validate all entries
             ((InlineLogging) logging).getLoggers().forEach((key, tmpEntry) -> {
                 if (validLoggerFields.containsKey(key)) {
-                    // correct logger
+                    // correct logger, test appender appearance for log4j.rootLogger
+                    String appender = tmpEntry.replaceAll(" ", "");
+                    if (key.equals("log4j.rootLogger") && !appender.contains(",CONSOLE")) {
+                        ((InlineLogging) logging).getLoggers().replace(key, tmpEntry + ", CONSOLE");
+                        log.warn("Appender for {} was not set. Using \"{}: {}, CONSOLE\"", key, key, tmpEntry);
+                    }
                 } else {
                     // incorrect logger
                     log.warn(key + " is not valid logger");
@@ -306,7 +311,7 @@ public abstract class AbstractModel {
                     log.warn("You cannot set appender");
                     return;
                 }
-                if ((asList(validLoggerValues).contains(tmpEntry.toString().replaceAll(", CONSOLE", ""))) || (asList(validLoggerValues).contains(tmpEntry))) {
+                if ((asList(validLoggerValues).contains(tmpEntry.toString().replaceAll(",[ ]+CONSOLE", ""))) || (asList(validLoggerValues).contains(tmpEntry))) {
                     // correct value
                 } else {
                     Pattern p = Pattern.compile("\\$\\{(.*)\\}, ([A-Z]+)");
