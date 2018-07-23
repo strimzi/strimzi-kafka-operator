@@ -44,6 +44,33 @@ $ git pull upstream master
 $ git push origin master --force
 ----
 
+== Using `ssh-agent` to save your SSH key's passphrase
+
+If you have to enter your SSH key's passphrase whenever working with the repository from the command line, you might want to use the ssh-agent to remember the passphrase for you.
+
+Before using the `ssh-agent` you will see a prompt to enter your passphrase after each git command.
+
+[source]
+----
+[amq-repo]$ git pull --rebase upstream master
+Enter passphrase for key '/home/<username>/.ssh/id_rsa':
+----
+
+To add your passphrase to the `ssh-agent`:
+
+[source]
+----
+[amq-repo]$ ssh-add
+Enter passphrase for /home/<username>/.ssh/id_rsa:
+----
+
+After entering your passphrase you will see confirmation that your passphrase has been saved:
+
+[source]
+----
+Identity added: /home/<username>/.ssh/id_rsa (/home/<username>/.ssh/id_rsa)
+----
+
 == Access Another Writer’s Unmerged Commits
 
 This is the process you can use if you need commits another writer has submitted in a merge request that is not yet merged.
