@@ -1,0 +1,19 @@
+// Module included in the following assemblies:
+//
+// assembly-overview.adoc
+
+include::common/attributes.adoc[]
+
+[id='document-conventions-{context}']
+= Document Conventions
+
+.Replaceables
+
+In this document, replaceable text is styled in monospace and surrounded by angle brackets.
+
+For example, in the following code, you will want to replace `<my-namespace>` with the name of your namespace:
+
+[source,shell]
+----
+sed -i 's/namespace: .*/namespace: <my-namespace>/' examples/install/cluster-operator/*ClusterRoleBinding*.yaml
+----

@@ -1,0 +1,15 @@
+// Module included in the following assemblies:
+//
+// assembly-overview.adoc
+
+[id='key-features-{context}']
+= Key Features
+
+* Scalability and performance
+** Designed for horizontal scalability
+* Message ordering guarantee
+** At partition level
+* Message rewind/replay
+** "Long term" storage
+** Allows to reconstruct application state by replaying the messages
+** Combined with compacted topics allows to use Kafka as key-value store

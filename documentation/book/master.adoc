@@ -3,7 +3,7 @@ include::common/attributes.adoc[]
 = Using {ProductLongName}
 
 :context: {ContextProduct}
-include::con-introduction.adoc[leveloffset=+1]
+include::assembly-overview.adoc[leveloffset=+1]
 
 :context: {ContextProduct}
 include::getting-started.adoc[leveloffset=+1]
