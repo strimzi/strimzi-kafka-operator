@@ -17,7 +17,6 @@ All component certificates are signed by a Certification Authority (CA) called _
 Another CA is used for authentication of Kafka clients connecting to Kafka brokers.
 This CA is called _clients CA_.
 The CAs themselves use self-signed certificates.
-Finally, the Topic Operator has its own private and public key for encrypting communication with Kafka / Zookeeper.
 
 All of the generated certificates are saved as Secrets in the {ProductPlatformName} cluster, named as follows:
 
@@ -47,22 +46,17 @@ NOTE: "certificates rotation" for generating new ones on their expiration will b
 
 Communication between brokers is done through the `REPLICATION` listener on port 9091, which is encrypted by default.
 
-=== Internodal Zookeeper Communication
+=== Zookeeper Communication
 
-By deploying an stunnel sidecar within every Zookeeper pod, the Cluster Operator is able to provide data encryption and authentication between Zookeeper nodes in a cluster.
-The stunnel sidecar proxies all Zookeeper traffic, TLS decrypting data upon entry into a Zookeeper pod and TLS encrypting data upon departure from a Zookeeper pod.
-This TLS encrypting stunnel proxy is instantiated from the `spec.zookeeper.stunnelImage` specified in the Kafka resource.
-
-WARNING: Currently, the Cluster Operator only encrypts traffic between Zookeeper nodes, through Zookeeper's election port, 3888, and follower port, 2888.
-Traffic going through Zookeeper's client port, 2181, is not encrypted.  
+By deploying an `stunnel` sidecar within every Zookeeper pod, the Cluster Operator is able to provide data encryption and authentication between Zookeeper nodes in a cluster.
+The `stunnel` sidecar proxies all Zookeeper traffic, TLS decrypting data upon entry into a Zookeeper pod and TLS encrypting data upon departure from a Zookeeper pod.
+This TLS encrypting `stunnel` proxy is instantiated from the `spec.zookeeper.stunnelImage` specified in the Kafka resource.
 
 === Kafka Client connections via TLS
 
-Communication between brokers and between the different Kafka and Strimzi components is done through the `REPLICATION` listener on port 9091, which is encrypted by default.
-
 Encrypted communication between Kafka brokers and clients is provided through the `CLIENTTLS` listener on port 9093.
 
-NOTE: You can use the `CLIENT` listener on port 9092 for unencrypted communication with clients.
+NOTE: You can use the `CLIENT` listener on port 9092 for unencrypted communication with brokers.
 
 If a Kafka client wants to connect to the encrypted listener (`CLIENTTLS`) on port 9093, it needs to trust the cluster CA certificate in order to verify the broker certificate received during the SSL/TLS handshake.
 The cluster CA certificate can be extracted from the generated `<cluster-name>-cluster-ca-cert` `Secret`.

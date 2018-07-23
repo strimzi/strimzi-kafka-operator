@@ -236,7 +236,7 @@ Default `6`.
 The value can be set to: `ERROR`, `WARNING`, `INFO`, `DEBUG` and `TRACE`. 
 Default `INFO`.
 * `STRIMZI_TLS_ENABLED`
-– For enabling the TLS support so encrypting the communication with Kafka brokers and Zookeeper nodes.
+– For enabling the TLS support so encrypting the communication with Kafka brokers.
 Default `true`
 * `STRIMZI_TRUSTSTORE_LOCATION`
 – The path to the truststore containing certificates for enabling TLS based communication.
