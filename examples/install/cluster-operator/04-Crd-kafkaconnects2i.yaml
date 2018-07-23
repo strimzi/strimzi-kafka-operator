@@ -331,6 +331,23 @@ spec:
                     memory:
                       type: string
                       pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
+            tolerations:
+              type: array
+              items:
+                type: object
+                properties:
+                  effect:
+                    type: string
+                  key:
+                    type: string
+                  operator:
+                    type: string
+                  tolerationSeconds:
+                    type: integer
+                  value:
+                    type: string
+                  additionalProperties:
+                    type: object
           required:
           - config
         additionalProperties:

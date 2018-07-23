@@ -173,6 +173,12 @@ public class KafkaConnectClusterTest {
     @Test
     public void withAffinity() throws IOException {
         resourceTester
-                .assertDesiredResource("-Deployment.yaml", kcc -> kcc.generateDeployment().getSpec().getTemplate().getSpec().getAffinity());
+            .assertDesiredResource("-Deployment.yaml", kcc -> kcc.generateDeployment().getSpec().getTemplate().getSpec().getAffinity());
+    }
+
+    @Test
+    public void withTolerations() throws IOException {
+        resourceTester
+            .assertDesiredResource("-Deployment.yaml", kcc -> kcc.generateDeployment().getSpec().getTemplate().getSpec().getTolerations());
     }
 }

@@ -16,8 +16,11 @@ import io.fabric8.openshift.api.model.ImageStream;
 import io.strimzi.api.kafka.model.KafkaConnectS2IAssembly;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.test.TestUtils;
+
+import org.junit.Rule;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -63,6 +66,10 @@ public class KafkaConnectS2IClusterTest {
     private final KafkaConnectS2IAssembly cm = ResourceUtils.createKafkaConnectS2ICluster(namespace, cluster, replicas, image,
             healthDelay, healthTimeout, metricsCmJson, configurationJson, insecureSourceRepo);
     private final KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(cm);
+
+    @Rule
+    public ResourceTester<KafkaConnectS2IAssembly, KafkaConnectS2ICluster> resourceTester = new ResourceTester<>(KafkaConnectS2IAssembly.class, KafkaConnectS2ICluster::fromCrd);
+
 
     @Test
     public void testMetricsConfigMap() {
@@ -234,5 +241,17 @@ public class KafkaConnectS2IClusterTest {
         assertEquals(namespace, is.getMetadata().getNamespace());
         assertEquals(expectedLabels(kc.kafkaConnectClusterName(cluster)), is.getMetadata().getLabels());
         assertEquals(true, is.getSpec().getLookupPolicy().getLocal());
+    }
+
+    @Test
+    public void withAffinity() throws IOException {
+        resourceTester
+            .assertDesiredResource("-DeploymentConfig.yaml", kcc -> kcc.generateDeploymentConfig().getSpec().getTemplate().getSpec().getAffinity());
+    }
+
+    @Test
+    public void withTolerations() throws IOException {
+        resourceTester
+            .assertDesiredResource("-DeploymentConfig.yaml", kcc -> kcc.generateDeploymentConfig().getSpec().getTemplate().getSpec().getTolerations());
     }
 }

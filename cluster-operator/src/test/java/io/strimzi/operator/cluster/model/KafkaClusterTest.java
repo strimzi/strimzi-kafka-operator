@@ -325,6 +325,11 @@ public class KafkaClusterTest {
             kc -> kc.generateStatefulSet(true).getSpec().getTemplate().getSpec().getAffinity());
     }
 
+    @Test
+    public void withTolerations() throws IOException {
+        resourceTester.assertDesiredResource("-SS.yaml",
+            kc -> kc.generateStatefulSet(true).getSpec().getTemplate().getSpec().getTolerations());
+    }
 
     @Test
     public void testCreateTcpSocketProbe()  {

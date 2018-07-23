@@ -37,6 +37,15 @@ spec:
     resources:
       limits:
         memory: "5Gi"
+    tolerations:
+    - effect: "NoSchedule"
+      key: "key1"
+      operator: "Equal"
+      value: "value1"
+    - effect: "NoSchedule"
+      key: "key2"
+      operator: "Equal"
+      value: "value2"
     config:
       min.insync.replicas: 3
   zookeeper:
@@ -57,6 +66,15 @@ spec:
     resources:
       limits:
         memory: "512Mi"
+    tolerations:
+    - effect: "NoSchedule"
+      key: "key1"
+      operator: "Equal"
+      value: "value1"
+    - effect: "NoSchedule"
+      key: "key2"
+      operator: "Equal"
+      value: "value2"
     config: {}
   topicOperator:
     watchedNamespace: "my-ns"

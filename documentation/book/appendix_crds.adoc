@@ -72,6 +72,10 @@ Used in: <<type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
 |<<type-Rack,`Rack`>>
 |resources             1.2+<.<|Resource constraints (limits and requests).
 |<<type-Resources,`Resources`>>
+|tolerations           1.2+<.<|Pod's tolerations.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#tolerations-v1-core[core/v1 tolerations]
+
+
+|https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#tolerations-v1-core[Toleration] array
 |====
 
 [[type-EphemeralStorage]]
@@ -287,6 +291,10 @@ Used in: <<type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
 |<<type-InlineLogging,`InlineLogging`>>, <<type-ExternalLogging,`ExternalLogging`>>
 |resources             1.2+<.<|Resource constraints (limits and requests).
 |<<type-Resources,`Resources`>>
+|tolerations           1.2+<.<|Pod's tolerations.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#tolerations-v1-core[core/v1 tolerations]
+
+
+|https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#tolerations-v1-core[Toleration] array
 |====
 
 [[type-TopicOperator]]
@@ -369,6 +377,10 @@ Used in: <<kind-KafkaConnect,`KafkaConnectAssembly`>>
 |<<type-InlineLogging,`InlineLogging`>>, <<type-ExternalLogging,`ExternalLogging`>>
 |resources             1.2+<.<|Resource constraints (limits and requests).
 |<<type-Resources,`Resources`>>
+|tolerations           1.2+<.<|Pod's tolerations.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#tolerations-v1-core[core/v1 tolerations]
+
+
+|https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#tolerations-v1-core[Toleration] array
 |====
 
 [[kind-KafkaConnectS2I]]
@@ -420,5 +432,9 @@ Used in: <<kind-KafkaConnectS2I,`KafkaConnectS2IAssembly`>>
 |<<type-InlineLogging,`InlineLogging`>>, <<type-ExternalLogging,`ExternalLogging`>>
 |resources                 1.2+<.<|Resource constraints (limits and requests).
 |<<type-Resources,`Resources`>>
+|tolerations               1.2+<.<|Pod's tolerations.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#tolerations-v1-core[core/v1 tolerations]
+
+
+|https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#tolerations-v1-core[Toleration] array
 |====
 

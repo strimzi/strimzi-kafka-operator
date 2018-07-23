@@ -36,6 +36,7 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.ServicePortBuilder;
+import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMount;
@@ -144,6 +145,7 @@ public abstract class AbstractModel {
     private JvmOptions jvmOptions;
     private Resources resources;
     private Affinity userAffinity;
+    private List<Toleration> tolerations;
 
     protected Map validLoggerFields;
     private String[] validLoggerValues = new String[]{"INFO", "ERROR", "WARN", "TRACE", "DEBUG", "FATAL", "OFF" };
@@ -471,7 +473,7 @@ public abstract class AbstractModel {
     }
 
     /**
-     * Sets the affinity as configured by the user in the cluster CM
+     * Sets the affinity as configured by the user in the cluster CR
      * @param affinity
      */
     protected void setUserAffinity(Affinity affinity) {
@@ -479,10 +481,26 @@ public abstract class AbstractModel {
     }
 
     /**
-     * Gets the affinity as configured by the user in the cluster CM
+     * Gets the affinity as configured by the user in the cluster CR
      */
     protected Affinity getUserAffinity() {
         return this.userAffinity;
+    }
+
+    /**
+     * Gets the tolerations as configured by the user in the cluster CR
+     */
+    public List<Toleration> getTolerations() {
+        return tolerations;
+    }
+
+    /**
+     * Sets the tolerations as configured by the user in the cluster CR
+     *
+     * @param tolerations
+     */
+    public void setTolerations(List<Toleration> tolerations) {
+        this.tolerations = tolerations;
     }
 
     /**
@@ -778,6 +796,7 @@ public abstract class AbstractModel {
                             .withInitContainers(initContainersInternal)
                             .withContainers(containers)
                             .withVolumes(volumes)
+                            .withTolerations(getTolerations())
                         .endSpec()
                     .endTemplate()
                     .withVolumeClaimTemplates(volumeClaims)
@@ -817,6 +836,7 @@ public abstract class AbstractModel {
                             .withInitContainers(initContainers)
                             .withContainers(containers)
                             .withVolumes(volumes)
+                            .withTolerations(getTolerations())
                         .endSpec()
                     .endTemplate()
                 .endSpec()

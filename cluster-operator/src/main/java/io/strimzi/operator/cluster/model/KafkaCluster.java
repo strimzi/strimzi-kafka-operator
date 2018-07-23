@@ -214,6 +214,7 @@ public class KafkaCluster extends AbstractModel {
         result.setStorage(kafka.getStorage());
         result.setUserAffinity(kafka.getAffinity());
         result.setResources(kafka.getResources());
+        result.setTolerations(kafka.getTolerations());
 
         result.generateCertificates(certManager, secrets);
         result.setTlsSidecar(kafka.getTlsSidecar());
