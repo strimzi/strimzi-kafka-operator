@@ -5,7 +5,8 @@ include::common/attributes.adoc[]
 :context: {ContextProduct}
 include::con-introduction.adoc[leveloffset=+1]
 
-include::getting-started.adoc[]
+:context: {ContextProduct}
+include::getting-started.adoc[leveloffset=+1]
 
 include::cluster-operator.adoc[]
 

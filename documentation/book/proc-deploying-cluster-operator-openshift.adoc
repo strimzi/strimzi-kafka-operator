@@ -1,0 +1,33 @@
+// Module included in the following assemblies:
+//
+// assembly-deploying-cluster-operator.adoc
+
+[id='deploying-cluster-operator-openshift-{context}']
+= Deploying Cluster Operator to {OpenShiftName}
+
+.Prerequisites
+
+* A user with `cluster-admin` role needs to be used, for example, `system:admin`.
+* Modify the installation files according to the namespace the Cluster Operator is going to be installed in.
++
+[source,shell]
+----
+sed -i 's/namespace: .*/namespace: <my-namespace>/' examples/install/cluster-operator/*ClusterRoleBinding*.yaml
+----
+
+.Procedure
+
+. Create the cluster
++
+[source,shell]
+----
+oc create -f examples/install/cluster-operator
+oc create -f examples/templates/cluster-operator
+----
+
+. Verify whether the Cluster Operator has been deployed successfully, the {OpenShiftName} console or the command line:
++
+[source,shell]
+----
+oc describe all
+----
