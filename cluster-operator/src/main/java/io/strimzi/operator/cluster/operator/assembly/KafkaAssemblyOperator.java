@@ -523,7 +523,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(desc -> desc.withVoid(roleBindingOperator.reconcile(namespace,
                         TopicOperator.TO_ROLE_BINDING_NAME,
                         desc != TopicOperatorDescription.EMPTY ? desc.topicOperator().generateRoleBinding(namespace) : null)))
-                .compose(desc -> desc.withVoid(configMapOperations.reconcile(namespace, desc != TopicOperatorDescription.EMPTY ? desc.topicOperator().getAncillaryConfigName() : null, desc.metricsAndLogsConfigMap())))
+                .compose(desc -> desc.withVoid(configMapOperations.reconcile(namespace,
+                        desc != TopicOperatorDescription.EMPTY ? desc.topicOperator().getAncillaryConfigName() : TopicOperator.metricAndLogConfigsName(name),
+                        desc.metricsAndLogsConfigMap())))
                 .compose(desc -> desc.withVoid(deploymentOperations.reconcile(namespace, TopicOperator.topicOperatorName(name), desc.deployment())))
                 .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, TopicOperator.secretName(name), desc.topicOperatorSecret())))
                 .compose(desc -> chainFuture.complete(), chainFuture);
