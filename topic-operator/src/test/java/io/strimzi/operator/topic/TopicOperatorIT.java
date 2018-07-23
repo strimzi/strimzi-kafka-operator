@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
@@ -62,6 +63,7 @@ import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @Namespace(TopicOperatorIT.NAMESPACE)
 @RunWith(VertxUnitRunner.class)
@@ -471,13 +473,11 @@ public class TopicOperatorIT {
         kafkaTopic.getSpec().setPartitions(-1);
 
         // Create a Topic Resource
-        operation().inNamespace(NAMESPACE).create(kafkaTopic);
-
-        // Wait for the warning event
-        waitForEvent(context, kafkaTopic,
-                "KafkaTopic test-resource-created-with-bad-data has an invalid spec section: KafkaTopic's spec.partitions should be strictly greater than 0",
-                TopicOperator.EventType.WARNING);
-
+        try {
+            operation().inNamespace(NAMESPACE).create(kafkaTopic);
+        } catch (KubernetesClientException e) {
+            assertTrue(e.getMessage().contains("spec.partitions in body should be greater than or equal to 1"));
+        }
     }
 
     @Test
@@ -578,7 +578,7 @@ public class TopicOperatorIT {
         operation().inNamespace(NAMESPACE).create(topicResource);
 
         waitForEvent(context, topicResource,
-                "Failure processing KafkaTopic watch event ADDED on map two-resources-one-topic with labels {strimzi.io/kind=topic}: " +
+                "Failure processing KafkaTopic watch event ADDED on resource two-resources-one-topic with labels {strimzi.io/kind=topic}: " +
                         "Topic 'two-resources-one-topic' is already managed via KafkaTopic 'two-resources-one-topic-1' it cannot also be managed via the KafkaTopic 'two-resources-one-topic'",
                 TopicOperator.EventType.WARNING);
     }
