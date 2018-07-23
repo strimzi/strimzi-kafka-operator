@@ -492,12 +492,12 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 last = new Bracket(last, new ResourceAction()
                         .getDep(deploymentName)
                         .getPo(deploymentName + ".*")
-                        .logs(deploymentName + ".*")) {
+                        .logs(deploymentName + ".*", null)) {
                     @Override
                     protected void before() {
                         LOGGER.info("Creating connect cluster '{}' before test per @ConnectCluster annotation on {}", clusterName, name(element));
                         // create cm
-                        kubeClient().clientWithAdmin().createContent(yaml);
+                        kubeClient().clientWithAdmin().applyContent(yaml);
                         // wait for deployment config
                         kubeClient().waitForDeploymentConfig(deploymentName);
                     }
