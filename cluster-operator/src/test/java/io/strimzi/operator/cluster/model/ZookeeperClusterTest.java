@@ -143,6 +143,8 @@ public class ZookeeperClusterTest {
         assertEquals(new Integer(ZookeeperCluster.LEADER_ELECTION_PORT), containers.get(1).getPorts().get(1).getContainerPort());
         assertEquals(ZookeeperCluster.CLIENT_PORT_NAME, containers.get(1).getPorts().get(2).getName());
         assertEquals(new Integer(ZookeeperCluster.CLIENT_PORT), containers.get(1).getPorts().get(2).getContainerPort());
+        assertEquals(ZookeeperCluster.TLS_SIDECAR_VOLUME_NAME, containers.get(1).getVolumeMounts().get(0).getName());
+        assertEquals(ZookeeperCluster.TLS_SIDECAR_VOLUME_MOUNT, containers.get(1).getVolumeMounts().get(0).getMountPath());
     }
 
     /**
