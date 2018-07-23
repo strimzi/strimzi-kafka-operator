@@ -62,6 +62,7 @@ public class AbstractClusterIT {
     }
 
     private static final Logger LOGGER = LogManager.getLogger(AbstractClusterIT.class);
+    protected static final String CLUSTER_NAME = "my-cluster";
     protected static final String ZK_IMAGE = "STRIMZI_DEFAULT_ZOOKEEPER_IMAGE";
     protected static final String KAFKA_IMAGE = "STRIMZI_DEFAULT_KAFKA_IMAGE";
     protected static final String CONNECT_IMAGE = "STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE";
@@ -193,27 +194,32 @@ public class AbstractClusterIT {
         return versions.get();
     }
 
-    void waitForZkMntr(String pod, String port, Pattern pattern) {
+    void waitForZkMntr(Pattern pattern, int... podIndexes) {
         long timeoutMs = 120_000L;
         long pollMs = 1_000L;
-        TestUtils.waitFor("mntr", pollMs, timeoutMs, () -> {
-            try {
-                String output = kubeClient.exec(pod,
-                    "/bin/bash", "-c", "echo mntr | nc localhost " + port).out();
 
-                if (pattern.matcher(output).find()) {
-                    return true;
+        for (int podIndex : podIndexes) {
+            String zookeeperPod = zookeeperPodName(CLUSTER_NAME, podIndex);
+            String zookeeperPort = String.valueOf(2181 * 10 + podIndex);
+            TestUtils.waitFor("mntr", pollMs, timeoutMs, () -> {
+                try {
+                    String output = kubeClient.exec(zookeeperPod,
+                        "/bin/bash", "-c", "echo mntr | nc localhost " + zookeeperPort).out();
+
+                    if (pattern.matcher(output).find()) {
+                        return true;
+                    }
+                } catch (KubeClusterException e) {
+                    LOGGER.trace("Exception while waiting for ZK to become leader/follower, ignoring", e);
                 }
-            } catch (KubeClusterException e) {
-                LOGGER.trace("Exception while waiting for ZK to become leader/follower, ignoring", e);
-            }
                 return false;
-            },
-            () -> LOGGER.info("zookeeper `mntr` output at the point of timeout does not match {}:{}{}",
-                pattern.pattern(),
-                System.lineSeparator(),
-                indent(kubeClient.exec(pod, "/bin/bash", "-c", "echo mntr | nc localhost " + port).out()))
-        );
+                },
+                () -> LOGGER.info("zookeeper `mntr` output at the point of timeout does not match {}:{}{}",
+                    pattern.pattern(),
+                    System.lineSeparator(),
+                    indent(kubeClient.exec(zookeeperPod, "/bin/bash", "-c", "echo mntr | nc localhost " + zookeeperPort).out()))
+            );
+        }
     }
 
     String getValueFromJson(String json, String jsonPath) {
