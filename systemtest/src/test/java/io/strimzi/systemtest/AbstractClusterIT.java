@@ -212,7 +212,7 @@ public class AbstractClusterIT {
             () -> LOGGER.info("zookeeper `mntr` output at the point of timeout does not match {}:{}{}",
                 pattern.pattern(),
                 System.lineSeparator(),
-                indent(kubeClient.exec(pod, "/bin/bash", "-c", "echo mntr | nc localhost 21810").out()))
+                indent(kubeClient.exec(pod, "/bin/bash", "-c", "echo mntr | nc localhost " + port).out()))
         );
     }
 
