@@ -35,8 +35,12 @@ export DOCKER_ORG=$OLD_DOCKER_ORG
 
 # If that worked we can push to the real docker org
 if [ "$PULL_REQUEST" != "false" ] ; then
+    make docu_html
+    make docu_htmlnoheader
     echo "Building Pull Request - nothing to push"
 elif [ "$TAG" = "latest" ] && [ "$BRANCH" != "master" ]; then
+    make docu_html
+    make docu_htmlnoheader
     echo "Not in master branch and not in release tag - nothing to push"
 else
     echo "Login into Docker Hub ..."
