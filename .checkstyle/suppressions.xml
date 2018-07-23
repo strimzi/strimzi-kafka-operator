@@ -24,6 +24,8 @@
     <!-- topic operator -->
     <suppress checks="NPathComplexity|CyclomaticComplexity"
               files="io[/\\]strimzi[/\\]operator[/\\]topic[/\\]TopicOperator.java"/>
+    <suppress checks="ClassFanOutComplexity"
+              files="io[/\\]strimzi[/\\]operator[/\\]topic[/\\]TopicOperatorIT.java"/>
 
     <suppress checks="NPathComplexity|CyclomaticComplexity"
               files="io[/\\]strimzi[/\\]operator[/\\]topic[/\\]TopicName.java"/>

@@ -22,8 +22,12 @@ public abstract class AbstractCrdIT {
         createDelete(ssStr);
         T model = TestUtils.fromYaml(resource, resourceClass, true);
         ssStr = TestUtils.toYamlString(model);
-        System.err.println(ssStr);
-        createDelete(ssStr);
+        try {
+            createDelete(ssStr);
+        } catch (Error | RuntimeException e) {
+            System.err.println(ssStr);
+            throw new AssertionError("Create delete failed after first round-trip -- maybe a problem with a defaulted value?", e);
+        }
     }
 
     private void createDelete(String ssStr) {
