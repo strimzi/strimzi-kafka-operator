@@ -10,4 +10,4 @@ include::common/attributes.adoc[]
 {ProductName} releases are available for download from {ReleaseDownload}.
 The release artifacts contain documentation and example YAML files for deployment on {ProductPlatformName}.
 The example files are used throughout this documentation and can be used to install {ProductName}.
-The Docker images are available on {DockerRepository}.
+The container images are available on {DockerRepository}.
