@@ -45,7 +45,6 @@
 * For substitution of `{attr}` in code blocks, use `[subs=+attributes]`.
 * For styling of `++*bold*++` (`*bold*`) in code blocks, use
   `[subs=+quotes]`.
-* Do not use the word 'the' before 'Broker'. It is just 'Broker'
 
 [[naming-files-style]]
 === Naming files
@@ -101,6 +100,31 @@ Learn more about reusing content in the link:https://redhat-documentation.github
 |\[[this-heading-here]]
 |\[[ThisHeadingHere]]
 |++[#anchor-name]++
+|===
+
+[[punctuation-guide]]
+=== Styling punctuation
+
+.General punctuation guidelines
+* Do not refer to an individual punctuation mark or special character by its symbol alone.
+* Use the name alone, or use the name followed by the symbol in parentheses.
+* Use the name alone if the punctuation mark or special character is standard, such as a comma or period, and including the symbol would clutter the text.
+* Include the symbol in parentheses when a punctuation mark or special character is not well known or when including the symbol improves clarity.
+
+.Punctuation quick reference
+[cols="30%,70%a",options="header"]
+|===
+|Character |Name
+|&  | Ampersand
+|< > | Angle brackets, opening angle bracket, or closing angle bracket
+|" "  | Double quotation marks, opening quotation marks, or closing quotation marks (not quotes or quote marks)
+|' '  | Single quotation marks, opening quotation mark,or closing quotation mark (not quotes or quote marks)
+|%  | Percent sign
+| ( )  | Parentheses, opening parenthesis, or closing parenthesis
+|$  | Dollar sign
+|*  | Asterisk (not star)
+|# |Number sign
+|! |Exclamation point (not exclamation mark or bang)
 |===
 
 [[replaceables]]
