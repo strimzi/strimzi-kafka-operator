@@ -7,7 +7,7 @@ DOCKER_TARGETS=docker_build docker_push docker_tag
 all: $(SUBDIRS)
 clean: $(SUBDIRS) docu_clean
 $(DOCKER_TARGETS): $(SUBDIRS)
-release: release_prepare release_version release_maven $(SUBDIRS) release_docu release_pkg
+release: release_prepare release_version release_maven $(SUBDIRS) release_docu release_pkg docu_clean
 
 next_version:
 	echo $(shell echo $(NEXT_VERSION) | tr a-z A-Z) > release.version
@@ -53,7 +53,8 @@ docu_pushtowebsite: docu_htmlnoheader docu_html
 
 release_docu: docu_html docu_htmlnoheader
 	mkdir -p strimzi-$(RELEASE_VERSION)/docs
-	cp -rv documentation/html/ strimzi-$(RELEASE_VERSION)/docs/
+	cp -rv documentation/html/index.html strimzi-$(RELEASE_VERSION)/docs/
+	cp -rv documentation/html/images/ strimzi-$(RELEASE_VERSION)/docs/images/
 
 docu_clean: docu_htmlclean docu_htmlnoheaderclean
 

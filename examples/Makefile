@@ -8,6 +8,8 @@ release:
 	cp -r ./install $(RELEASE_PATH)/
 	cp -r ./templates $(RELEASE_PATH)/
 	cp -r ./configmaps $(RELEASE_PATH)/
+	cp -r ./kafka $(RELEASE_PATH)/
+	cp -r ./kafka-connect $(RELEASE_PATH)/
 
 
 .PHONY: all build clean docker_build docker_push docker_tag
