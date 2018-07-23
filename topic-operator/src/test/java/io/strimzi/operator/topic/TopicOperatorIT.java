@@ -106,7 +106,7 @@ public class TopicOperatorIT {
                 .createNamespace(NAMESPACE);
         oldNamespace = testCluster.client().namespace(NAMESPACE);
         testCluster.client().clientWithAdmin()
-                .create("../examples/install/topic-operator/02-role.yaml")
+                .create("../examples/install/topic-operator/02-Role-strimzi-topic-operator.yaml")
                 .create(TestUtils.CRD_TOPIC)
                 .create("src/test/resources/TopicOperatorIT-rbac.yaml");
     }
@@ -116,7 +116,7 @@ public class TopicOperatorIT {
         testCluster.client().clientWithAdmin()
                 .delete("src/test/resources/TopicOperatorIT-rbac.yaml")
                 .delete(TestUtils.CRD_TOPIC)
-                .delete("../examples/install/topic-operator/02-role.yaml")
+                .delete("../examples/install/topic-operator/02-Role-strimzi-topic-operator.yaml")
                 .deleteNamespace(NAMESPACE);
         testCluster.client().clientWithAdmin().namespace(oldNamespace);
     }
