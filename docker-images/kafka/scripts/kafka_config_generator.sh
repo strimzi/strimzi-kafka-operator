@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# Prepare super.users field
+KAFKA_NAME=$(hostname | rev | cut -d "-" -f2- | rev)
+ASSEMBLY_NAME=$(echo "${KAFKA_NAME}" | rev | cut -d "-" -f2- | rev)
+SUPER_USERS="super.users=User:CN=${ASSEMBLY_NAME}-topic-operator,O=io.strimzi;User:CN=${KAFKA_NAME},O=io.strimzi"
+
 # Write the config file
 cat <<EOF
 broker.id=${KAFKA_BROKER_ID}
@@ -30,6 +35,9 @@ listener.name.replication.ssl.client.auth=required
 
 listener.name.clienttls.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12
 listener.name.clienttls.ssl.truststore.location=/tmp/kafka/clients.truststore.p12
+
+# ACL Super users (all nodes for replication)
+${SUPER_USERS}
 
 # Provided configuration
 ${KAFKA_CONFIGURATION}
