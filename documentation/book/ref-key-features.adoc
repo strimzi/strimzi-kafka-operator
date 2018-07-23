@@ -3,7 +3,7 @@
 // assembly-overview.adoc
 
 [id='key-features-{context}']
-= Key Features
+= Kafka Key Features
 
 * Scalability and performance
 ** Designed for horizontal scalability
