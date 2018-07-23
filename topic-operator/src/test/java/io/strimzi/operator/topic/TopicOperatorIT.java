@@ -538,12 +538,11 @@ public class TopicOperatorIT {
         // now change the topicResource
         KafkaTopic changedTopic = new KafkaTopicBuilder(operation().inNamespace(NAMESPACE).withName(topicResource.getMetadata().getName()).get())
                 .editOrNewSpec().withPartitions(-1).endSpec().build();
-        operation().inNamespace(NAMESPACE).withName(topicResource.getMetadata().getName()).replace(changedTopic);
-
-        // Wait for that to be reflected in the topic
-        waitForEvent(context, topicResource,
-                "KafkaTopic test-kafkatopic-modified-with-bad-data has an invalid spec section: KafkaTopic's spec.partitions should be strictly greater than 0",
-                TopicOperator.EventType.WARNING);
+        try {
+            operation().inNamespace(NAMESPACE).withName(topicResource.getMetadata().getName()).replace(changedTopic);
+        } catch (KubernetesClientException e) {
+            assertTrue(e.getMessage().contains("spec.partitions in body should be greater than or equal to 1"));
+        }
     }
 
     @Test
