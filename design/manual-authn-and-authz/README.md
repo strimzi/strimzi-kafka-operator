@@ -7,10 +7,10 @@
 
 The long term plan for Strimzi is to have custom resources to define Users for Authentication and Authorization rules.
 The custom resources should be read by operator style application which would be responsible for the setup of the users or ACL rules.
-Until such operator (User Operator - UO) is available, it would be useful to have a way how to setup Authentication and Authorization at least in manual / semi-manual way.
-This proposal covers such workaround.
+Until such an operator (User Operator - UO) is available, it would be useful to have a way to setup Authentication and Authorization at least in a manual / semi-manual way.
+This proposal covers such a workaround.
 There is no long term commitment to support the mechanisms suggested in this proposal.
-After the final implementation of the operator for Authorization and Authentication is implemented, it will not be possible anymore to use this workaround.
+After the final implementation of the operator for Authorization and Authentication is implemented, it will not be possible to use this workaround any more.
 
 ## Authentication
 

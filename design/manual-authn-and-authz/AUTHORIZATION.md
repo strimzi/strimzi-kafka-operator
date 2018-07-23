@@ -2,6 +2,12 @@
 
 _Note: This guide expects that Authentication was set up as describe in the [AUTHENTICATION.md](AUTHENTICATION.md) guide_
 
+**This document describes a temporary workaround for handling Authorization manually.** 
+**The long term plan for Strimzi is to have custom resources to define ACL rules for Authorization.**
+**Until this is available, this temporary workaround will be available.**
+**There is no long term commitment to support this workaround.**
+**After the final implementation of the operator for Authorization is implemented, this workaround will be disabled and and it will not be possible to use it any more.**
+
 ## Enabling Authorization in the Kafka
 
 Authorization has to be enabled in Kafka brokers.
@@ -36,9 +42,9 @@ For example:
 * pod `my-cluster-zookeeper-1` will be listening on port `21811`
 * etc.
 
-Once execes into the pod, the rules can be manages as described in [Kafka documentation](http://kafka.apache.org/documentation/#security_authz).
+The rules can be manages as described in [Kafka documentation](http://kafka.apache.org/documentation/#security_authz).
 
-For example, to add out User1 rights to write and read from a topic `my-topic` with consumer group `my-group` you could use following examples:
+For example, to add our User1 rights to write and read from a topic `my-topic` with consumer group `my-group` you could use following examples:
 
 ```
 oc exec my-cluster-zookeeper-0 -c zookeeper -t -i -- bin/kafka-acls.sh --authorizer-properties zookeeper.connect=localhost:21810 --add --allow-principal User:CN=User1 --producer --topic my-topic
