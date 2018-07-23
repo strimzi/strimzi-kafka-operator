@@ -6,7 +6,7 @@ _Note: This guide expects that Authentication was set up as describe in the [AUT
 **The long term plan for Strimzi is to have custom resources to define ACL rules for Authorization.**
 **Until this is available, this temporary workaround will be available.**
 **There is no long term commitment to support this workaround.**
-**After the final implementation of the operator for Authorization is implemented, this workaround will be disabled and and it will not be possible to use it any more.**
+**After the final implementation of the operator for Authorization this workaround will be disabled and it will not be possible to use it any more.**
 
 ## Enabling Authorization in the Kafka
 
@@ -33,7 +33,7 @@ spec:
 
 The ACL rules used by the default `SimpleAclAuthorizer` plugin are stored in Zookeeper.
 Since Zookeeper is not exposed to the outside, the management of the ACL rules has to be done from inside one of the zookeeper pods.
-To add or remove any ACL rules, you have to exec into the pod and call the `bin/kafka_acls.sh` utility.
+To add or remove any ACL rules, you have to exec into the pod and call the `bin/kafka-acls.sh` utility.
 Since Zookeeper encryption is implemented using a sidecar pod, you can internally connect to the unencrypted Zookeeper port.
 This port differs in different pods.
 It is calculated using following formula: `2181 * 10 + "the number of the pod"`.

@@ -34,7 +34,7 @@ public class Kafka extends ReplicatedJvmPods {
 
     /*
     // Forbidden prefixes were temporarily modified to allow configuration of Authentication and Authorization before we
-    // have UserOeprator implemented.
+    // have UserOperator implemented.
 
     public static final String FORBIDDEN_PREFIXES = "listeners, advertised., broker., listener., host.name, port, "
             + "inter.broker.listener.name, sasl., ssl., security., password., principal.builder.class, log.dir, "

@@ -4,7 +4,7 @@
 **The long term plan for Strimzi is to have custom resources to define User for Authentication.**
 **Until this is available, this temporary workaround will be available.**
 **There is no long term commitment to support this workaround.**
-**After the final implementation of the operator for Authentication is implemented, this workaround will be disabled and and it will not be possible to use it any more.**
+**After the final implementation of the operator for Authentication this workaround will be disabled and it will not be possible to use it any more.**
 
 ## Requiring authentication in Kafka
 
@@ -88,7 +88,7 @@ The `Secrets` can be mounted into the `Pods` either as environment variables or 
 For more details how to mount it visit [Kubernetes documentation](https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/).
 
 Once you have the certificates inside the pod, you have to convert tham from the PEM format into PKCS12 or Java Keystore formats so that they can be used inside Java applications.
-That can be donw using the following two commands:
+That can be done using the following two commands:
 
 ```
 // Truststore

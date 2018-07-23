@@ -47,14 +47,14 @@ The workaround would support only the built in `kafka.security.auth.SimpleAclAut
 The default authorization plugin stores the ACL rules in Zookeeper.
 Once the Authorization plugin is enabled, ACL rules can be managed with the `kafka-acls.sh` utility.
 
-User who want to use manual setup of authorization will be able to do so in the following steps:
+User who wants to use manual setup of authorization will be able to do so in the following steps:
 
 * Modify the Kafka cluster resource and add configuration options to enable authorization (option `authorizer.class.name=kafka.security.auth.SimpleAclAuthorizer`)
-* Since Zookeeper is not expose to the outside of the OpenShift cluster, the `kafka_acls.sh` utility has to be run from inside.
+* Since Zookeeper is not expose to the outside of the OpenShift cluster, the `kafka-acls.sh` utility has to be run from inside.
   Ideally, one of the Zookeeper pods can be used for it.
   For example:
   ```
-  kubectl exec my-cluster-zookepeer-0 -i -t -- bin/kafka-acls.sh --authorizer-properties zookeeper.connect=localhost:2181 --add --allow-principal User:CN=writeuser,OU=Unknown,O=Unknown,L=Unknown,ST=Unknown,C=Unknown --operation Write --topic my-topic
+  kubectl exec my-cluster-zookepeer-0 -c zookeeper -i -t -- bin/kafka-acls.sh --authorizer-properties zookeeper.connect=localhost:21810 --add --allow-principal User:CN=writeuser,OU=Unknown,O=Unknown,L=Unknown,ST=Unknown,C=Unknown --operation Write --topic my-topic
   ```
 
 ### Required changes to Cluster Operator
