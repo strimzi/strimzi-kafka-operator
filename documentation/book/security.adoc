@@ -36,7 +36,7 @@ Contains all the Kafka broker private and public keys (certificates signed with 
 `<cluster-name>-zookeeper-nodes`::
 Contains all the Zookeeper node private and public keys (certificates signed with the cluster CA).
 `<cluster-name>-topic-operator-certs`::
-Contains the private and public keys (certificates signed with the cluster CA) used for encrypting communication between the Topic Operator and Kafka / Zookeeper.
+Contains the private and public keys (certificates signed with the cluster CA) used for encrypting communication between the Topic Operator and Kafka or Zookeeper.
 
 All the keys are 2048 bits in size and are valid for 365 days from initial generation.
 

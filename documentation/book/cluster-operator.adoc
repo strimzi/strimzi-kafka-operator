@@ -43,11 +43,11 @@ In order to configure a Kafka cluster deployment, it is possible to specify the 
 The number of Kafka broker nodes.
 Default is 3.
 `spec.kafka.image`::
-The Docker image to use for the Kafka brokers. 
-Default is determined by the value of the `<<STRIMZI_DEFAULT_KAFKA_IMAGE,STRIMZI_DEFAULT_KAFKA_IMAGE>>` environment variable of the Cluster Operator.
+The Docker image to be used by the Kafka brokers.
+The default value is determined by the value specified in the `<<STRIMZI_DEFAULT_KAFKA_IMAGE,STRIMZI_DEFAULT_KAFKA_IMAGE>>` environment variable of the Cluster Operator.
 `spec.kafka.brokerRackInitImage`::
-The Docker image to use for the init container which does some initial configuration work (that is, rack support).
-Default is determined by the value of the `<<STRIMZI_DEFAULT_KAFKA_INIT_IMAGE,STRIMZI_DEFAULT_KAFKA_INIT_IMAGE>>` environment variable of the Cluster Operator.
+The Docker image to be used by the init container which does some initial configuration work (that is, rack support).
+The default value is determined by the value specified in the `<<STRIMZI_DEFAULT_KAFKA_INIT_IMAGE,STRIMZI_DEFAULT_KAFKA_INIT_IMAGE>>` environment variable of the Cluster Operator.
 `spec.kafka.livenessProbe.initialDelaySeconds`::
 The initial delay for the liveness probe for each Kafka broker node. 
 Default is 15.
@@ -96,22 +96,22 @@ An object allowing the JVM running Kafka to be configured.
 The accepted format is described in the <<jvm_json_config>> section.
 `spec.kafka.rack`::
 An object allowing the Kafka rack feature to be configured and used in rack-aware partition assignment for fault tolerance.
-The accepted JSON format is described in the <<kafka_rack>> section.
+For information about the accepted JSON format, see <<kafka_rack>> section.
 `spec.kafka.affinity`::
 An object allowing control over how the Kafka pods are scheduled to nodes.
 The format of the corresponding key is the same as the content supported in the Pod `affinity` in {ProductPlatformName}.
 See section <<affinity>> for more details.
 `spec.kafka.tlsSidecar.image`::
-The Docker image to use for the sidecar container which provides TLS support for Kafka brokers.
-Default is determined by the value of the `<<STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE,STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE>>` environment variable of the Cluster Operator.
+The Docker image to be used by the sidecar container which provides TLS support for Kafka brokers.
+The default value is determined by the value specified in the `<<STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE,STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE>>` environment variable of the Cluster Operator.
 `spec.kafka.tlsSidecar.resources`::
 An object configuring the resource limits and requests for the sidecar container which provides TLS support for Kafka brokers.
-The accepted JSON format is described in the <<resources_json_config>> section.
+For information about the accepted JSON format, see <<resources_json_config>>.
 `spec.zookeeper.replicas`::
 The number of Zookeeper nodes.
 `spec.zookeeper.image`::
-The Docker image to use for the Zookeeper nodes. 
-Default is determined by the value of the `<<STRIMZI_DEFAULT_ZOOKEEPER_IMAGE,STRIMZI_DEFAULT_ZOOKEEPER_IMAGE>>` environment variable of the Cluster Operator.
+The Docker image to be used by the Zookeeper nodes.
+The default value is determined by the value specified in the `<<STRIMZI_DEFAULT_ZOOKEEPER_IMAGE,STRIMZI_DEFAULT_ZOOKEEPER_IMAGE>>` environment variable of the Cluster Operator.
 `spec.zookeeper.livenessProbe.initialDelaySeconds`::
 The initial delay for the liveness probe for each Zookeeper node. 
 Default is 15.
@@ -140,20 +140,20 @@ zookeeper.root.logger
 
 `spec.zookeeper.resources`::
 An object configuring the resource limits and requests for Zookeeper broker containers.
-The accepted JSON format is described in the <<resources_json_config>> section.
+For information about the accepted JSON format, see <<resources_json_config>> section.
 `spec.zookeeper.jvmOptions`::
 An object allowing the JVM running Zookeeper to be configured. 
-The accepted JSON format is described in the <<jvm_json_config>> section.
+For information about the accepted JSON format, see <<jvm_json_config>> section.
 `spec.zookeeper.affinity`::
 An object allowing control over how the Zookeeper pods are scheduled to nodes.
 The format of the corresponding key is the same as the content supported in the Pod `affinity` in {ProductPlatformName}.
 See section <<affinity>> for more details.
 `spec.zookeeper.tlsSidecar.image`::
-The Docker image to use for the sidecar container which provides TLS support for Zookeeper nodes.
-Default is determined by the value of the `<<STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE,STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE>>` environment variable of the Cluster Operator.
+The Docker image to be used by the sidecar container which provides TLS support for Zookeeper nodes.
+The default value is determined by the value specified in the `<<STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE,STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE>>` environment variable of the Cluster Operator.
 `spec.zookeeper.tlsSidecar.resources`::
 An object configuring the resource limits and requests for the sidecar container which provides TLS support for Zookeeper nodes.
-The accepted JSON format is described in the <<resources_json_config>> section.
+For information about the accepted JSON format, see <<resources_json_config>>.
 `spec.topicOperator`::
 An object representing the topic operator configuration. 
 See the <<topic_operator_json_config>> documentation for further details.
@@ -779,8 +779,8 @@ The YAML representation of the 'topicOperator` has no mandatory fields and if th
 The configurable fields are the following :
 
 `image`::
-Docker image to use for the topic operator. Default is determined by the value of the
-`<<STRIMZI_DEFAULT_TOPIC_operator_IMAGE,STRIMZI_DEFAULT_TOPIC_operator_IMAGE>>` environment variable of the Cluster Operator.
+The Docker image to be used by the Topic Operator.
+The default value is determined by the value specified in the `<<STRIMZI_DEFAULT_TOPIC_operator_IMAGE,STRIMZI_DEFAULT_TOPIC_operator_IMAGE>>` environment variable of the Cluster Operator.
 `watchedNamespace`::
 The {ProductPlatformName} namespace in which the topic operator watches for topic ConfigMaps. Default is the namespace
 where the topic operator is running.
@@ -799,11 +799,11 @@ described in the <<resources_json_config>> section.
 Node and Pod affinity for the Topic Operator, as described in the <<affinity>> section.
 The format of the corresponding key is the same as the content supported in the Pod `affinity` in {ProductPlatformName}.
 `tlsSidecar.image`::
-The Docker image to use for the sidecar container which provides TLS support for Topic Operator.
-Default is determined by the value of the `<<STRIMZI_DEFAULT_TLS_SIDECAR_TOPIC_OPERATOR_IMAGE,STRIMZI_DEFAULT_TLS_SIDECAR_TOPIC_OPERATOR_IMAGE>>` environment variable of the Cluster Operator.
+The Docker image to be used by the sidecar container which provides TLS support for Topic Operator.
+The default value is determined by the value specified in the `<<STRIMZI_DEFAULT_TLS_SIDECAR_TOPIC_OPERATOR_IMAGE,STRIMZI_DEFAULT_TLS_SIDECAR_TOPIC_OPERATOR_IMAGE>>` environment variable of the Cluster Operator.
 `tlsSidecar.resources`::
 An object configuring the resource limits and requests for the sidecar container which provides TLS support for the Topic Operator.
-The accepted JSON format is described in the <<resources_json_config>> section.
+For information about the accepted JSON format, see <<resources_json_config>>.
 
 .Example Topic Operator JSON configuration
 [source,json]
@@ -830,9 +830,8 @@ The `KafkaConnect` resource supports the following within its `spec`:
 Number of Kafka Connect worker nodes. Default is 1.
 
 `image`:: 
-The Docker image to use for the Kafka Connect workers. 
-Default is determined by the value of the
-`<<STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE,STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE>>` environment variable of the Cluster Operator.
+The Docker image to be used by the Kafka Connect workers.
+The default value is determined by the value specified in the `<<STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE,STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE>>` environment variable of the Cluster Operator.
 If S2I is used (only on {OpenShiftName}), then it should be the related S2I image.
 
 `healthcheck-delay`::
@@ -853,11 +852,11 @@ When this field is absent no metrics will be exposed.
 
 `resources`:: 
 A JSON string configuring the resource limits and requests for Kafka Connect containers.
-The accepted JSON format is described in the <<resources_json_config>> section.
+For information about the accepted JSON format, see <<resources_json_config>> section.
 
 `jvmOptions`:: 
 A JSON string allowing the JVM running Kafka Connect to be configured.
-The accepted JSON format is described in the <<jvm_json_config>> section.
+For information about the accepted JSON format, see <<jvm_json_config>> section.
 
 `affinity`::
 Node and Pod affinity for the Kafka Connect pods, as described in the <<affinity>> section.
@@ -1244,7 +1243,7 @@ no image is specified as the `kafka-image` in the <<kafka_config_map_details,Kaf
 The image name to use as default for the init container started before the broker for doing initial configuration work (that is, rack support), if no image is specified as the `kafka-init-image` in the <<kafka_config_map_details,Kafka cluster ConfigMap>>.
 
 [[STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE]] `STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE`:: Optional, default `strimzi/kafka-stunnel:latest`.
-The image name to use as a default when deploying the sidecar container which provides TLS support for Kafka, if
+The image name to be used as a default when deploying the sidecar container which provides TLS support for Kafka if
 no image is specified as the `spec.kafka.tlsSidecar.image` in the <<kafka_config_map_details,Kafka cluster ConfigMap>>.
 
 [[STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE]] `STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE`:: Optional, default `strimzi/kafka-connect:latest`.
