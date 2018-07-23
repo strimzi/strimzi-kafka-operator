@@ -4,5 +4,8 @@
     <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
     <Package name="io.strimzi.certs"/>
   </Match>
+  <Match>
+    <Class name="~io\.strimzi\.api\.kafka\.model\..+(Builder|FluentImpl)(\$.*)?" />
+  </Match>
 
 </FindBugsFilter>
