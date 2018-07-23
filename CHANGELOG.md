@@ -1,9 +1,5 @@
 # CHANGELOG
 
-## 0.6.0 (Work in Progress)
-
-* Add support for [Tolerations](https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#toleration-v1-core)
-
 ## 0.5.0 (Work in Progress)
 
 * The Cluster Operator now manages RBAC resource for managed resources:
@@ -23,7 +19,8 @@
     * Communication between Kafka and Zookeeper
     * Communication between Topic Operator and Kafka / Zookeeper
 * Logging configuration for Kafka, Kafka Connect and Zookeeper
-* Add support for Pod Affinity and Anti-Affinity
+* Add support for [Pod Affinity and Anti-Affinity](https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity)
+* Add support for [Tolerations](https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#toleration-v1-core)
 * Configuring different JVM options
 * Support for broker rack in Kafka
 
