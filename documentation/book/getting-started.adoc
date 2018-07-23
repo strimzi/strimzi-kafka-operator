@@ -1,13 +1,16 @@
-== Getting started
+include::common/attributes.adoc[]
 
-=== Downloading {ProductName}
+[id='getting-started-{context}']
+= Getting started
+
+== Downloading {ProductName}
 
 Strimzi releases are available for download from {ReleaseDownload}.
 The release artifacts contain documentation and example YAML files for deployment on {ProductPlatformName}.
 The example files are used throughout this documentation and can be used to install {ProductName}.
 The Docker images are available on {DockerRepository}.
 
-=== Prerequisites
+== Prerequisites
 
 {ProductLongName} runs on {ProductPlatformName}.
 {ProductName} supports
@@ -26,7 +29,7 @@ endif::InstallationAppendix[]
 In order to execute the commands in this guide, your {ProductPlatformName} user needs to have the rights to create and
 manage RBAC resources (Roles and Role Bindings).
 
-=== Cluster Operator
+== Cluster Operator
 
 {ProductName} uses a component called the Cluster Operator to deploy and manage Kafka (including Zookeeper) and Kafka Connect
 clusters.
@@ -39,9 +42,9 @@ The format of the `Kafka` resource is described in <<kafka_assembly_details>>.
 {ProductName} contains example YAML files which make deploying a Cluster Operator easier.
 
 ifdef::Kubernetes[]
-==== Deploying to {KubernetesName}
+=== Deploying to {KubernetesName}
 
-To deploy the Cluster Operator on {KubernetesName}, you will first need to modify some of of the installation files according to the namespace the Cluster Operator is going to be installed in. 
+To deploy the Cluster Operator on {KubernetesName}, you will first need to modify some of of the installation files according to the namespace the Cluster Operator is going to be installed in.
 To do this, execute the following command, replacing `<my-namespace>` with the correct namespace:
 
 [source,shell]
@@ -59,11 +62,11 @@ command can be used:
 kubectl describe all
 endif::Kubernetes[]
 
-==== Deploying to {OpenShiftName}
+=== Deploying to {OpenShiftName}
 
 IMPORTANT: To successfully deploy the Cluster Operator on {OpenShiftName} a user with `cluster-admin` role needs to be used (that is, like `system:admin`).
 
-To deploy the Cluster Operator on {OpenShiftName}, you will first need to modify some of of the installation files according to the namespace the Cluster Operator is going to be installed in. 
+To deploy the Cluster Operator on {OpenShiftName}, you will first need to modify some of of the installation files according to the namespace the Cluster Operator is going to be installed in.
 To do this, execute the following command, replacing `<my-namespace>` with the correct namespace:
 
 [source,shell]
@@ -81,7 +84,7 @@ can be used:
 [source,shell]
 oc describe all
 
-=== Kafka broker
+== Kafka broker
 
 {ProductName} uses the StatefulSets feature of {ProductPlatformName} to deploy Kafka brokers.
 With StatefulSets, the pods receive a unique name and network identity and that makes it easier to identify the
@@ -113,7 +116,7 @@ To deploy a Kafka cluster, a `Kafka` resource with the cluster configuration has
 Example resources and the details about the `Kafka` format are in <<kafka_assembly_details>>.
 
 ifdef::Kubernetes[]
-==== Deploying to {KubernetesName}
+=== Deploying to {KubernetesName}
 
 To deploy a Kafka broker on {KubernetesName}, the corresponding `Kafka` has to be created.
 To create an ephemeral cluster using the provided example `Kafka`, the following command should be executed:
@@ -128,7 +131,7 @@ To deploy it, the following command should be run:
 kubectl apply -f examples/kafka/kafka-persistent.yaml
 endif::Kubernetes[]
 
-==== Deploying to {OpenShiftName}
+=== Deploying to {OpenShiftName}
 
 For {OpenShiftName}, the Kafka broker is provided in the form of a template.
 The cluster can be deployed from the template either using the command line or using the {OpenShiftName} console.
@@ -142,7 +145,7 @@ Similarly, to deploy a persistent Kafka cluster the following command should be 
 [source,shell]
 oc new-app strimzi-persistent
 
-=== Kafka Connect
+== Kafka Connect
 
 The Cluster Operator can also deploy a https://kafka.apache.org/documentation/#connect[Kafka Connect] cluster which can be used with either of the Kafka broker deployments described above.
 It is implemented as a Deployment with a configurable number of workers.
@@ -153,7 +156,7 @@ Example `KafkaConnect` resources and the details about the `KafkaConnect` format
 <<kafka_connect_config_map_details>>.
 
 ifdef::Kubernetes[]
-==== Deploying to {KubernetesName}
+=== Deploying to {KubernetesName}
 
 To deploy Kafka Connect on {KubernetesName}, the corresponding `KafkaConnect` resource has to be created.
 An example resource can be created using the following command:
@@ -162,7 +165,7 @@ An example resource can be created using the following command:
 kubectl apply -f examples/kafka-connect/kafka-connect.yaml
 endif::Kubernetes[]
 
-==== Deploying to {OpenShiftName}
+=== Deploying to {OpenShiftName}
 
 On {OpenShiftName}, Kafka Connect is provided in the form of a template. It can be deployed from the template either using the command line or using the {OpenShiftName} console.
 To create a Kafka Connect cluster from the command line, the following command should be run:
@@ -170,7 +173,7 @@ To create a Kafka Connect cluster from the command line, the following command s
 [source,shell]
 oc new-app strimzi-connect
 
-==== Using Kafka Connect with additional plugins
+=== Using Kafka Connect with additional plugins
 
 {ProductName} Docker images for Kafka Connect contain, by default, only the `FileStreamSinkConnector` and `FileStreamSourceConnector` connectors which are part of Apache Kafka.
 
@@ -178,9 +181,9 @@ To facilitate deployment with 3rd party connectors, Kafka Connect is configured 
 There are two ways of adding custom plugins into this directory:
 
 - Using a custom Docker image
-- Using the {OpenShiftName} build system with the {ProductName} S2I image
+- Using the {OpenShiftName} build system with the {ProductName} S2I
 
-===== Create a new image based on our base image
+==== Create a new image based on our base image
 
 {ProductName} provides its own Docker image for running Kafka Connect which can be found on {DockerRepository} as
 `{DockerKafkaConnect}`.
@@ -201,13 +204,13 @@ USER {DockerImageUser}
   - On {OpenShiftName}, the template parameters `IMAGE_REPO_NAME`, `IMAGE_NAME` and `IMAGE_TAG` can be changed to point to the new image when the Kafka Connect cluster is being deployed
 ifdef::Kubernetes[  - On {KubernetesName}, the KafkaConnect resource has to be modified to use the new image]
 
-===== Using {OpenShiftName} Build and S2I image
+==== Using {OpenShiftName} Build and S2I
 
-{OpenShiftName} supports https://docs.openshift.org/3.9/dev_guide/builds/index.html[Builds] which can be used together with the https://docs.openshift.org/3.9/creating_images/s2i.html#creating-images-s2i[Source-to-Image (S2I)] framework to create new Docker images. 
+{OpenShiftName} supports https://docs.openshift.org/3.9/dev_guide/builds/index.html[Builds] which can be used together with the https://docs.openshift.org/3.9/creating_images/s2i.html#creating-images-s2i[Source-to-Image (S2I)] framework to create new Docker images.
 {OpenShiftName} Build takes a builder image with S2I support together with source code and binaries provided by the user and uses them to build a new Docker image.
-The newly created Docker Image will be stored in {OpenShiftName}'s local Docker repository and can then be used in deployments. 
+The newly created Docker Image will be stored in {OpenShiftName}'s local Docker repository and can then be used in deployments.
 {ProductName} provides a Kafka Connect builder image which can be found on {DockerRepository} as `{DockerKafkaConnectS2I}` with such S2I support.
-It takes user-provided binaries (with plugins and connectors) and creates a new Kafka Connect image. 
+It takes user-provided binaries (with plugins and connectors) and creates a new Kafka Connect image.
 This enhanced Kafka Connect image can be used with our Kafka Connect deployment.
 
 The S2I deployment is again provided as an {OpenShiftName} template. It can be deployed from the template either using the command
@@ -268,7 +271,7 @@ _The name of the build should be changed according to the cluster name of the de
 
 3. Once the build is finished, the new image will be used automatically by the Kafka Connect deployment.
 
-=== Topic Operator
+== Topic Operator
 
 {ProductName} uses a component called the Topic Operator to manage topics in the Kafka cluster. The Topic Operator
 is deployed as a process running inside a {ProductPlatformName} cluster. To create a new Kafka topic, a ConfigMap
@@ -281,21 +284,21 @@ The Cluster Operator is able to deploy a Topic Operator, which can be configured
 Alternatively, it is possible to deploy a Topic Operator manually, rather than having it deployed
 by the Cluster Operator.
 
-==== Deploying through the Cluster Operator
+=== Deploying through the Cluster Operator
 
 To deploy the Topic Operator through the Cluster Operator, its configuration needs to be provided in the
 `Kafka` resource in the `topicOperator` field as a JSON string.
 
 For more information on the JSON configuration format see <<topic_operator_json_config>>.
 
-==== Deploying standalone Topic Operator
+=== Deploying standalone Topic Operator
 
 If you are not going to deploy the Kafka cluster using the Cluster Operator but you already have a Kafka cluster deployed
 on {ProductPlatformName}, it could be useful to deploy the Topic Operator using the provided YAML files.
 In that case you can still leverage on the Topic Operator features of managing Kafka topics through related ConfigMaps.
 
 ifdef::Kubernetes[]
-===== Deploying to {KubernetesName}
+==== Deploying to {KubernetesName}
 
 To deploy the Topic Operator on {KubernetesName} (not through the Cluster Operator), the following command should be executed:
 
@@ -309,7 +312,7 @@ command can be used:
 kubectl describe all
 endif::Kubernetes[]
 
-===== Deploying to {OpenShiftName}
+==== Deploying to {OpenShiftName}
 
 To deploy the Topic Operator on {OpenShiftName} (not through the Cluster Operator), the following command should be executed:
 
@@ -322,7 +325,7 @@ can be used:
 [source,shell]
 oc describe all
 
-==== Topic ConfigMap
+=== Topic ConfigMap
 
 When the Topic Operator is deployed by the Cluster Operator it will be configured to watch
 for "topic ConfigMaps" which are those with the following labels:
@@ -335,7 +338,7 @@ NOTE: When the Topic Operator is deployed manually the `strimzi.io/cluster` labe
 
 The topic ConfigMap contains the topic configuration in a specific format. The ConfigMap format is described in <<topic_config_map_details>>.
 
-==== Logging
+=== Logging
 The `logging` field allows the configuration of loggers. These loggers are listed below.
 [source]
 rootLogger.level
