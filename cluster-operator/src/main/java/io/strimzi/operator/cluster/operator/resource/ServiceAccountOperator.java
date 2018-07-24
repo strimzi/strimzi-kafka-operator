@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.ServiceAccountList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
 public class ServiceAccountOperator extends AbstractResourceOperator<KubernetesClient, ServiceAccount, ServiceAccountList, DoneableServiceAccount, Resource<ServiceAccount, DoneableServiceAccount>> {
@@ -26,5 +27,11 @@ public class ServiceAccountOperator extends AbstractResourceOperator<KubernetesC
     @Override
     protected MixedOperation<ServiceAccount, ServiceAccountList, DoneableServiceAccount, Resource<ServiceAccount, DoneableServiceAccount>> operation() {
         return client.serviceAccounts();
+    }
+
+    @Override
+    protected Future<ReconcileResult<ServiceAccount>> internalPatch(String namespace, String name, ServiceAccount current, ServiceAccount desired) {
+        // Patching a SA causes new tokens to be created, which we should avoid
+        return Future.succeededFuture(ReconcileResult.noop());
     }
 }
