@@ -1,36 +1,13 @@
 [id='topic-operator-{context}']
 == Topic Operator
 
-The Topic Operator is in charge of managing topics in a Kafka cluster. 
-The Topic Operator is deployed as a process running inside a {ProductPlatformName} cluster.
-It can be deployed through the Cluster Operator or "manually" through provided YAML files.
-
-image::topic_operator.png[Topic Operator]
-
-The role of the Topic Operator is to keep a set of `KafkaTopic` {ProductPlatformName} resources describing Kafka topics in-sync with corresponding Kafka topics.
-
-Specifically:
- 
-* if a `KafkaTopic` is created, the operator will create the topic it describes
-* if a `KafkaTopic` is deleted, the operator will delete the topic it describes
-* if a `KafkaTopic` is changed, the operator will update the topic it describes
-
-And also, in the other direction:
-
-* if a topic is created, the operator will create a `KafkaTopic` describing it
-* if a topic is deleted, the operator will create the `KafkaTopic` describing it
-* if a topic is changed, the operator will update the `KafkaTopic` describing it
-
-This is beneficial to a {ProductPlatformName}-centric style of deploying applications, because it allows you to declare a `KafkaTopic` as part of your application's deployment and the operator will take care of creating the topic for you, so your application just needs to deal with producing or consuming from the necessary topics.
-
-Should the topic be reconfigured, reassigned to different Kafka nodes and so on, 
-the `KafkaTopic` will always be up to date.
+include::con_topic-operator.adoc[leveloffset=+2]
 
 
 === Reconciliation
 
 A fundamental problem that the operator has to solve is that there is no single source of truth: 
-Both the `KafkaTopic` and the topic can be modified independently of the operator.
+Both the `KafkaTopic` resource and the topic within Kafka can be modified independently of the operator.
 Complicating this, the Topic Operator might not always be able to observe changes at each end in real time (for example, the operator might be down).
  
 To resolve this, the operator maintains its own private copy of the information about each topic. 
@@ -41,25 +18,23 @@ For example, suppose the Topic Operator is not running, and a `KafkaTopic` "my-t
 When the operator starts it will lack a private copy of "my-topic", so it can infer that the `KafkaTopic` has been created since it was last running. 
 The operator will create the topic corresponding to "my-topic" and also store a private copy of the metadata for "my-topic".
 
-The private copy allows the operator to cope with scenarios where the topic config gets changed both in Kafka and in {ProductPlatformName}, so long as the changes are not incompatible (for example, both changing the same topic config key, but to different values). 
-In the case of incompatible changes, the Kafka configuration wins, and the `KafkaTopic` will be updated to reflect that. 
-Defaulting to the Kafka configuration ensures that, in the worst case, data won't be lost. 
+The private copy allows the operator to cope with scenarios where the topic configuration gets changed both in Kafka and in {ProductPlatformName}, so long as the changes are not incompatible (for example, both changing the same topic config key, but to different values). 
+In the case of incompatible changes, the Kafka configuration wins, and the ConfigMap will be updated to reflect that. 
+Defaulting to the Kafka configuration ensures that, in the worst case, data will not be lost. 
 
 The private copy is held in the same ZooKeeper ensemble used by Kafka itself. 
-This mitigates availability concerns, because if ZooKeeper is not running
-then Kafka itself cannot run, so the operator will be no less available
-than it would even if it was stateless. 
+This mitigates availability concerns, because if ZooKeeper is not running then Kafka itself cannot run, so the operator will be no less available than it would even if it was stateless. 
 
 === Usage Recommendations
 
-. Try to either always operate on `KafkaTopic` or always operate directly on topics.
-. When creating a `KafkaTopic`:
-    * Remember that the name cannot be easily changed later.
-    * Choose a name for the `KafkaTopic` that reflects the name of the topic it describes.
-    * Ideally the `KafkaTopic`'s `metadata.name` should be the same as its `spec.topicName`.
+. Try to either always operate on `KafkaTopic` resources or always operate directly on topics.
+. When creating a `KafkaTopic` resource:
+    * Remember that the name cannot be changed later.
+    * Choose a name for the `KafkaTopic` resource that reflects the name of the topic it describes.
+    * Ideally the `KafkaTopic.metadata.name` should be the same as its `spec.topicName`.
       To do this, the topic name will have to be a https://github.com/kubernetes/community/blob/master/contributors/design-proposals/architecture/identifiers.md[valid {KubernetesName} resource name].
 . When creating a topic:
-    * Remember that the name cannot be easily changed later.
+    * Remember that the name cannot be changed later.
     * It is best to use a name that is a https://github.com/kubernetes/community/blob/master/contributors/design-proposals/architecture/identifiers.md[valid {KubernetesName} resource name],
       otherwise the operator will have to sanitize the name when creating
       the corresponding `KafkaTopic`.
@@ -67,175 +42,15 @@ than it would even if it was stateless.
 [[topic_config_map_details]]
 === Format of the `KafkaTopic`
 
-The `spec` of such `KafkaTopics` supports the following keys:
+For detailed reference of the API for `KafkaTopic` see <<kind-KafkaTopic>>.
 
-`topicName`:: The name of the topic. Optional; if this is absent the name of the `KafkaTopic` itself is used.
-`partitions`:: The number of partitions of the Kafka topic. This can be increased, but not decreased. Required.
-`replicas`:: The number of replicas of the Kafka topic. This cannot be larger than the number of nodes in the Kafka cluster. Required.
-`config`:: An object representing the https://kafka.apache.org/documentation/#topicconfigs[topic configuration]. Optional, defaulting to the empty set.
+include::proc_creating-a-topic.adoc[leveloffset=+2]
 
-=== Example
+include::proc_changing-a-topic.adoc[leveloffset=+2]
 
-This example shows how to create a topic called "orders" with 10 partitions and 2 replicas.
+include::proc_deleting-a-topic.adoc[leveloffset=+2]
 
-ifdef::Kubernetes[]
-==== On {KubernetesName}
-
-1. The `KafkaTopic` has to be prepared:
-+
-.Topic declaration `KafkaTopic`
-[source,yaml]
-----
-apiVersion: kafka.strimzi.io/v1alpha1
-kind: KafkaTopic
-metadata:
-  name: orders
-  labels:
-    strimzi.io/cluster: my-cluster
-spec:
-  topicName: orders
-  partitions: 10
-  replicas: 2
-----
-+
-Because the `config` key is omitted from the `spec` the topic's config will be empty, and thus default to the Kafka broker default.
-
-2. The `KafkaTopic` should be created in {KubernetesName}:
-+
-[source,shell]
-----
-kubectl create -f orders-topic.yaml
-----
-+
-
-3. In case the topic should be later changed to retention time to 4 days, the `orders-topic.yaml` file can be updated:
-+
-.Topic declaration `KafkaTopic` with "config" update
-[source,yaml]
-----
-apiVersion: kafka.strimzi.io/v1alpha1
-kind: KafkaTopic
-metadata:
-  name: orders
-  labels:
-    strimzi.io/cluster: my-cluster
-data:
-  topicName: orders
-  partitions: 10
-  replicas: 2
-  config: 
-    retention.ms: 345600000
-----
-
-4. The changes in the file have to be applied on {KubernetesName} using `kubectl update -f`.
-
-NOTE: When the Topic Operator is deployed manually the `strimzi.io/cluster` label is not necessary.
-
-endif::Kubernetes[]
-
-==== On {OpenShiftName}
-
-1. The `KafkaTopic` has to be prepared:
-+
-.Topic declaration `KafkaTopic`
-[source,yaml]
-----
-apiVersion: kafka.strimzi.io/v1alpha1
-kind: KafkaTopic
-metadata:
-  name: orders
-  labels:
-    strimzi.io/cluster: my-cluster
-spec:
-  topicName: orders
-  partitions: 10
-  replicas: 2
-----
-+
-Because the `config` key is omitted from the `spec` the topic's config will be empty, and thus default to the Kafka broker default.
-
-2. The `KafkaTopic` should be created in {OpenShiftName}:
-+
-[source,shell]
-----
-oc create -f orders-topic.yaml
-----
-
-3. In case the topic should be later changed to retention time to 4 days, the `orders-topic.yaml` file can be updated:
-+
-.Topic declaration `KafkaTopic` with "config" update
-[source,yaml]
-----
-apiVersion: kafka.strimzi.io/v1alpha1
-kind: KafkaTopic
-metadata:
-  name: orders
-  labels:
-    strimzi.io/cluster: my-cluster
-data:
-  topicName: orders
-  partitions: 10
-  replicas: 2
-  config: 
-    retention.ms: 345600000
-----
-
-4. The changes in the file have to be updated on {OpenShiftName} using `oc update -f`.
-
-NOTE: When the Topic Operator is deployed manually the `strimzi.io/cluster` label is not necessary.
-
-=== Unsupported operations
-
-* The `spec.topicName` cannot be changed key in a `KafkaTopic`, because Kafka does not support changing topic names.
-* The `spec.partitions` cannot be decreased, because Kafka does not support this.
-* Increasing `spec.partitions` for topics with keys should be exercised with caution, as it will change how records are partitioned. 
-
-=== Operator environment
-
-The operator is configured from environment variables:
-
-* `STRIMZI_RESOURCE_LABELS` 
-– The label selector used to identify `KafkaTopics` to be managed by the operator.
-* `STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS`
-– The Zookeeper session timeout, in milliseconds. 
-For example `10000`. 
-Default: `20000` (20 seconds).
-* `STRIMZI_KAFKA_BOOTSTRAP_SERVERS`
-– The list of Kafka bootstrap servers. 
-This variable is mandatory.
-* `STRIMZI_ZOOKEEPER_CONNECT`
-– The Zookeeper connection information. 
-This variable is mandatory.
-* `STRIMZI_FULL_RECONCILIATION_INTERVAL_MS`
-– The interval between periodic reconciliations, in milliseconds.
-* `STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS`
-– The number of attempts for getting topics metadata from Kafka. 
-The time between each attempt is defined as an exponential back-off. 
-You might want to increase this value when topic creation could take more time due to its larger size (that is, many partitions/replicas). 
-Default `6`.
-* `STRIMZI_LOG_LEVEL`
-– The level for printing logging messages. 
-The value can be set to: `ERROR`, `WARNING`, `INFO`, `DEBUG` and `TRACE`. 
-Default `INFO`.
-* `STRIMZI_TLS_ENABLED`
-– For enabling the TLS support so encrypting the communication with Kafka brokers.
-Default `true`
-* `STRIMZI_TRUSTSTORE_LOCATION`
-– The path to the truststore containing certificates for enabling TLS based communication.
-This variable is mandatory only if TLS is enabled through `STRIMZI_TLS_ENABLED`.
-* `STRIMZI_TRUSTSTORE_PASSWORD`
-– The password for accessing the truststore defined by `STRIMZI_TRUSTSTORE_LOCATION`.
-This variable is mandatory only if TLS is enabled through `STRIMZI_TLS_ENABLED`.
-* `STRIMZI_KEYSTORE_LOCATION`
-– The path to the keystore containing private keys for enabling TLS based communication.
-This variable is mandatory only if TLS is enabled through `STRIMZI_TLS_ENABLED`.
-* `STRIMZI_KEYSTORE_PASSWORD`
-– The password for accessing the keystore defined by `STRIMZI_KEYSTORE_LOCATION`.
-This variable is mandatory only if TLS is enabled through `STRIMZI_TLS_ENABLED`.
-
-If the operator configuration needs to be changed the process must be killed and restarted.
-Since the operator is intended to execute within {ProductPlatformName}, this can be achieved by deleting the pod.
-
+include::ref_topic-operator-environment.adoc[leveloffset=+2]
 
 === Resource limits and requests
 
