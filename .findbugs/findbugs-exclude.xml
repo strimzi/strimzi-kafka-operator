@@ -7,5 +7,8 @@
   <Match>
     <Class name="~io\.strimzi\.api\.kafka\.model\..+(Builder|FluentImpl)(\$.*)?" />
   </Match>
+  <Match>
+    <Class name="~io\.fabric8\.kubernetes\.api\.model\..+(Builder|FluentImpl)(\$.*)?" />
+  </Match>
 
 </FindBugsFilter>

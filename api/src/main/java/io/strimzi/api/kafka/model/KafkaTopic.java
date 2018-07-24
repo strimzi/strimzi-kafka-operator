@@ -18,6 +18,8 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
+import io.sundr.builder.annotations.BuildableReference;
+import io.sundr.builder.annotations.ExternalBuildables;
 
 import java.util.HashMap;
 import java.util.List;
@@ -47,6 +49,12 @@ import static java.util.Collections.unmodifiableList;
         editableEnabled = false,
         generateBuilderPackage = true,
         builderPackage = "io.strimzi.api.kafka.model"
+)
+@ExternalBuildables(
+        refs = {@BuildableReference(ObjectMeta.class)},
+        builderPackage = "io.strimzi.api.kafka.model",
+        generateBuilderPackage = true,
+        editableEnabled = false
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec"})

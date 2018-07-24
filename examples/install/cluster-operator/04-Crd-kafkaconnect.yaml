@@ -233,10 +233,21 @@ spec:
                               type: string
                           topologyKey:
                             type: string
-            metrics:
-              type: object
-            config:
-              type: object
+            tolerations:
+              type: array
+              items:
+                type: object
+                properties:
+                  effect:
+                    type: string
+                  key:
+                    type: string
+                  operator:
+                    type: string
+                  tolerationSeconds:
+                    type: integer
+                  value:
+                    type: string
             logging:
               type: object
               properties:
@@ -246,6 +257,10 @@ spec:
                   type: string
                 type:
                   type: string
+            metrics:
+              type: object
+            config:
+              type: object
             resources:
               type: object
               properties:
@@ -267,20 +282,5 @@ spec:
                     memory:
                       type: string
                       pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
-            tolerations:
-              type: array
-              items:
-                type: object
-                properties:
-                  effect:
-                    type: string
-                  key:
-                    type: string
-                  operator:
-                    type: string
-                  tolerationSeconds:
-                    type: integer
-                  value:
-                    type: string
           required:
           - config
