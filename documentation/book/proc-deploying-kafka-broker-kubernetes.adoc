@@ -1,0 +1,31 @@
+// Module included in the following assemblies:
+//
+// assembly-kafka-broker.adoc
+
+[id='deploying-kafka-broker-kubernetes-{context}']
+= Deploying the Kafka broker to {KubernetesName}
+
+.Prerequisites
+
+* Before deploying a Kafka broker, the Cluster Operator must be deployed.
+* To deploy a Kafka cluster, a `Kafka` resource with the cluster configuration has to be created.
+
+.Procedure
+
+. If you are planning to use the Kafka broker for development or testing, create an ephemeral cluster
++
+[source,shell]
+----
+kubectl apply -f examples/kafka/kafka-ephemeral.yaml
+----
+
+. If you are planning to use the Kafka broker in production, create a persistent cluster
++
+[source,shell]
+----
+kubectl apply -f examples/kafka/kafka-persistent.yaml
+----
+
+.Additional resources
+* For more information about the deploying the Cluster Operator, see xref:assembly-cluster-operator.adoc[]
+* Example resources and details about the `Kafka` resource format are in xref:kafka_assembly_details[].

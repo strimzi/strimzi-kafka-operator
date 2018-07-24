@@ -9,18 +9,21 @@
 
 include::common/attributes.adoc[]
 
-[id='deploying-cluster-operator-{context}']
-= Deploying the Cluster Operator
+[id='cluster-operator-{context}']
+= Cluster Operator
 
-{ProductName} uses the Cluster Operator to deploy and manage Kafka (including Zookeeper) and Kafka Connect
-clusters.
-The Cluster Operator is deployed as a process running inside of the {ProductPlatformName} cluster.
-To deploy a Kafka cluster, a `Kafka` resource with the cluster configuration has to be created within the {ProductPlatformName} cluster.
-Based on the information in that `Kafka` resource,
+{ProductName} uses the Cluster Operator to deploy and manage Kafka (including Zookeeper) and Kafka Connect clusters.
+The Cluster Operator is deployed inside of the
+ifdef::Kubernetes[Kubernetes or]
+OpenShift cluster.
+To deploy a Kafka cluster, a `Kafka` resource with the cluster configuration has to be created within the
+ifdef::Kubernetes[Kubernetes or]
+OpenShift cluster.
+Based on the information in the `Kafka` resource,
 the Cluster Operator deploys a corresponding Kafka cluster.
-The format of the `Kafka` resource is described in <<kafka_assembly_details>>.
+The format of the `Kafka` resource is described in xref:kafka_assembly_details[Format of the `Kafka` resource].
 
-NOTE: {ProductName} contains example YAML files which make deploying a Cluster Operator easier.
+NOTE: {ProductName} contains example YAML files, which make deploying a Cluster Operator easier.
 
 ifdef::Kubernetes[]
 :context: {ContextProduct}
