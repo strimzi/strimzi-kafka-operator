@@ -15,26 +15,27 @@
 // Name placeholders
 :ProductLongName: Strimzi
 :ProductName: Strimzi
+:ContextProduct: strimzi
 :ProductVersion: master
 :OpenShiftName: OpenShift
 :OpenShiftLongName: OpenShift Origin
-:OpenShiftVersion: 3.9 and higher
+:OpenShiftVersion: 3.9 and later
 :KubernetesName: Kubernetes
 :KubernetesLongName: Kubernetes
-:KubernetesVersion: 1.9 and higher
+:KubernetesVersion: 1.9 and later
 :ProductPlatformName: {OpenShiftName} or {KubernetesName}
 :ProductPlatformLongName: {OpenShiftLongName} or {KubernetesLongName}
 
 // Source and download links
-:ReleaseDownload: https://github.com/strimzi/strimzi-kafka-operator/releases[GitHub]
+:ReleaseDownload: https://github.com/strimzi/strimzi-kafka-operator/releases[GitHub^]
 
 // External links
-:KafkaRacks: https://kafka.apache.org/documentation/#basic_ops_racks[Kafka racks documentation]
-:K8sAffinity: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/[Kubernetes node and pod affinity documentation]
+:KafkaRacks: https://kafka.apache.org/documentation/#basic_ops_racks[Kafka racks documentation^]
+:K8sAffinity: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/[Kubernetes node and pod affinity documentation^]
 
 // Docker image names
 :DockerTag: {ProductVersion}
-:DockerRepository: https://hub.docker.com/u/strimzi[Docker Hub]
+:DockerRepository: https://hub.docker.com/u/strimzi[Docker Hub^]
 :DockerZookeeper: strimzi/zookeeper:{DockerTag}
 :DockerKafka: strimzi/kafka:{DockerTag}
 :DockerKafkaConnect: strimzi/kafka-connect:{DockerTag}
@@ -51,3 +52,4 @@
 :Kubernetes:
 :InstallationAppendix:
 :MetricsAppendix:
+:Downloading:
