@@ -26,9 +26,21 @@ The time between each attempt is defined as an exponential back-off.
 You might want to increase this value when topic creation could take more time due to its larger size (that is, many partitions/replicas). 
 Default `6`.
 `STRIMZI_LOG_LEVEL`::
-– The level for printing logging messages. 
+The level for printing logging messages. 
 The value can be set to: `ERROR`, `WARNING`, `INFO`, `DEBUG` and `TRACE`. 
 Default `INFO`.
-
-If the operator configuration needs to be changed the process must be killed and restarted.
-Since the operator is intended to execute within a {ProductPlatformName} `Deployment`, this can be achieved by deleting the pod.
+`STRIMZI_TLS_ENABLED`::
+For enabling the TLS support so encrypting the communication with Kafka brokers.
+Default `true`
+`STRIMZI_TRUSTSTORE_LOCATION`::
+The path to the truststore containing certificates for enabling TLS based communication.
+This variable is mandatory only if TLS is enabled through `STRIMZI_TLS_ENABLED`.
+`STRIMZI_TRUSTSTORE_PASSWORD`::
+The password for accessing the truststore defined by `STRIMZI_TRUSTSTORE_LOCATION`.
+This variable is mandatory only if TLS is enabled through `STRIMZI_TLS_ENABLED`.
+`STRIMZI_KEYSTORE_LOCATION`::
+The path to the keystore containing private keys for enabling TLS based communication.
+This variable is mandatory only if TLS is enabled through `STRIMZI_TLS_ENABLED`.
+`STRIMZI_KEYSTORE_PASSWORD`::
+The password for accessing the keystore defined by `STRIMZI_KEYSTORE_LOCATION`.
+This variable is mandatory only if TLS is enabled through `STRIMZI_TLS_ENABLED`.
