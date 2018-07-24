@@ -16,7 +16,7 @@ sed -i 's/namespace: .*/namespace: <my-namespace>/' examples/install/cluster-ope
 
 .Procedure
 
-. Create the cluster
+. Deploy the Cluster Operator
 +
 [source,shell]
 ----
