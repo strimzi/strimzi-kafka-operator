@@ -5,19 +5,21 @@
 package io.strimzi.systemtest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.DoneableKafkaAssembly;
 import io.strimzi.api.kafka.DoneableKafkaConnectAssembly;
 import io.strimzi.api.kafka.DoneableKafkaConnectS2IAssembly;
+import io.strimzi.api.kafka.DoneableKafkaTopic;
 import io.strimzi.api.kafka.KafkaAssemblyList;
 import io.strimzi.api.kafka.KafkaConnectAssemblyList;
 import io.strimzi.api.kafka.KafkaConnectS2IAssemblyList;
+import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.KafkaAssembly;
 import io.strimzi.api.kafka.model.KafkaConnectAssembly;
 import io.strimzi.api.kafka.model.KafkaConnectS2IAssembly;
+import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.test.JUnitGroup;
 import io.strimzi.test.Namespace;
@@ -32,11 +34,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
-import java.util.Map;
 
 import static io.strimzi.test.TestUtils.map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 /**
  * Basic tests for the OpenShift templates.
@@ -200,19 +202,17 @@ public class OpenShiftTemplatesIT {
     @Test
     @JUnitGroup(name = "regression")
     public void testTopicOperator() {
-        String topicName = "test-topic-cm";
-        String mapName = "test-topic-cm-foo";
+        String topicName = "test-topic-topic";
         oc.newApp("strimzi-topic", map(
-                "MAP_NAME", mapName,
                 "TOPIC_NAME", topicName,
                 "TOPIC_PARTITIONS", "10",
                 "TOPIC_REPLICAS", "2"));
 
-        ConfigMap cm = client.configMaps().inNamespace(NAMESPACE).withName(mapName).get();
-        assertNotNull(cm);
-        Map<String, String> cmData = cm.getData();
-        assertEquals(topicName, cmData.get("name"));
-        assertEquals("10", cmData.get("partitions"));
-        assertEquals("2", cmData.get("replicas"));
+        KafkaTopic topic = client.customResources(Crds.topic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class).inNamespace(NAMESPACE).withName(topicName).get();
+        assertNotNull(topic);
+        assertNotNull(topic.getSpec());
+        assertNull(topic.getSpec().getTopicName());
+        assertEquals(Integer.valueOf(10), topic.getSpec().getPartitions());
+        assertEquals(Integer.valueOf(2), topic.getSpec().getReplicas());
     }
 }
