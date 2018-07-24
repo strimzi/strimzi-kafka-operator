@@ -4,6 +4,7 @@
  */
 package io.strimzi.certs;
 
+import io.strimzi.test.TestUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -31,6 +32,7 @@ public class OpenSslCertManagerTest {
 
     @BeforeClass
     public static void before() throws CertificateException {
+        TestUtils.assumeLinux();
         certFactory = CertificateFactory.getInstance("X.509");
         ssl = new OpenSslCertManager();
     }
