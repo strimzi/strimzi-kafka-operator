@@ -13,7 +13,6 @@ import io.strimzi.api.kafka.model.KafkaAssembly;
 import io.strimzi.api.kafka.model.KafkaConnectAssembly;
 import io.strimzi.test.k8s.BaseKubeClient;
 import io.strimzi.test.k8s.KubeClient;
-import io.strimzi.test.k8s.KubeClusterException;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.Minishift;
 import io.strimzi.test.k8s.OpenShift;
@@ -453,28 +452,6 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 }
             };
         }
-    }
-
-    private void logState(Throwable t) {
-        LOGGER.info("The test is failing/erroring due to {}, here's some diagnostic output{}{}",
-                t, System.lineSeparator(), "----------------------------------------------------------------------");
-        for (String pod : ccFirst(kubeClient().list("pod"))) {
-            LOGGER.info("Logs from pod {}:{}{}", pod, System.lineSeparator(), indent(kubeClient().logs(pod)));
-        }
-        asList("pod", "deployment", "statefulset", "kafka", "kafkaconnect", "kafkaconnects2i").stream().forEach(resourceType -> {
-            try {
-                for (String resourceName : kubeClient().list(resourceType)) {
-                    LOGGER.info("Description of {} '{}':{}{}", resourceType, resourceName,
-                            System.lineSeparator(), indent(kubeClient().getResourceAsYaml(resourceType, resourceName)));
-                }
-            } catch (KubeClusterException e) {
-                t.addSuppressed(e);
-            }
-        });
-
-        LOGGER.info("That's all the diagnostic info, the exception {} will now propagate and the test will fail{}{}",
-                t,
-                t, System.lineSeparator(), "----------------------------------------------------------------------");
     }
 
     private Statement withConnectS2IClusters(Annotatable element,
