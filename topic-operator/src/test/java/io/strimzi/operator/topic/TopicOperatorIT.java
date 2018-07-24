@@ -7,7 +7,6 @@ package io.strimzi.operator.topic;
 import io.debezium.kafka.KafkaCluster;
 import io.debezium.kafka.ZookeeperServer;
 import io.fabric8.kubernetes.api.model.Event;
-import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
@@ -570,7 +569,7 @@ public class TopicOperatorIT {
         String topicName = "two-resources-one-topic";
         Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap()).build();
         KafkaTopic topicResource = TopicSerialization.toTopicResource(topic, resourcePredicate);
-        KafkaTopic topicResource2 = new KafkaTopicBuilder(topicResource).withMetadata(new ObjectMetaBuilder(topicResource.getMetadata()).withName(topicName + "-1").build()).build();
+        KafkaTopic topicResource2 = new KafkaTopicBuilder(topicResource).editMetadata().withName(topicName + "-1").endMetadata().build();
         // create one
         createKafkaTopicResource(context, topicResource2);
         // create another

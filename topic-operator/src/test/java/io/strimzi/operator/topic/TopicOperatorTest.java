@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.topic;
 
-import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
@@ -86,7 +85,8 @@ public class TopicOperatorTest {
     /** Test what happens when a non-topic KafkaTopic gets created in kubernetes */
     @Test
     public void testOnKafkaTopicAdded_ignorable(TestContext context) {
-        KafkaTopic kafkaTopic = new KafkaTopicBuilder().withMetadata(new ObjectMetaBuilder().withName("non-topic").build()).build();
+        KafkaTopic kafkaTopic = new KafkaTopicBuilder().withNewMetadata()
+                .withName("non-topic").endMetadata().build();
 
         Async async = context.async();
         topicOperator.onResourceAdded(kafkaTopic, ar -> {
@@ -102,7 +102,10 @@ public class TopicOperatorTest {
     @Test
     public void testOnKafkaTopicAdded_invalidResource(TestContext context) {
         KafkaTopic kafkaTopic = new KafkaTopicBuilder()
-                .withMetadata(new ObjectMetaBuilder().withName("invalid").withLabels(resourcePredicate.labels()).build())
+                .withNewMetadata()
+                    .withName("invalid")
+                    .withLabels(resourcePredicate.labels())
+                .endMetadata()
                 .withNewSpec()
                     .withReplicas(1)
                     .withPartitions(1)
@@ -132,7 +135,10 @@ public class TopicOperatorTest {
         mockTopicStore.setCreateTopicResponse(topicName, storeException);
 
         KafkaTopic kafkaTopic = new KafkaTopicBuilder()
-                .withMetadata(new ObjectMetaBuilder().withName(topicName.toString()).withLabels(resourcePredicate.labels()).build())
+                .withNewMetadata()
+                    .withName(topicName.toString())
+                    .withLabels(resourcePredicate.labels())
+                .endMetadata()
                 .withNewSpec()
                     .withReplicas(2)
                     .withPartitions(10)

@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.topic;
 
-import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
@@ -43,9 +42,10 @@ public class K8sImplTest {
         when(mockResources.list()).thenAnswer(invocation -> {
             KafkaTopicList ktl = new KafkaTopicList();
             ktl.setItems(Collections.singletonList(new KafkaTopicBuilder()
-                .withMetadata(new ObjectMetaBuilder()
+                .withNewMetadata()
                     .withName("unrelated")
-                    .withLabels(Collections.singletonMap("foo", "bar")).build())
+                    .withLabels(Collections.singletonMap("foo", "bar"))
+                .endMetadata()
                 .build()));
             return ktl;
         });

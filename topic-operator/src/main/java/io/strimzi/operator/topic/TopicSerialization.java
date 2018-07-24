@@ -8,7 +8,6 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import org.apache.kafka.clients.admin.Config;
@@ -124,10 +123,11 @@ public class TopicSerialization {
     public static KafkaTopic toTopicResource(Topic topic, LabelPredicate resourcePredicate) {
         ResourceName resourceName = topic.getOrAsMapName();
         return new KafkaTopicBuilder().withApiVersion("v1")
-                    .withMetadata(new ObjectMetaBuilder()
+                .withNewMetadata()
                     .withName(resourceName.toString())
-                    .withLabels(resourcePredicate.labels()).build())
-                    // TODO .withUid()
+                    .withLabels(resourcePredicate.labels())
+                .endMetadata()
+                // TODO .withUid()
                 .withNewSpec()
                     .withTopicName(topic.getTopicName().toString())
                     .withPartitions(topic.getNumPartitions())
