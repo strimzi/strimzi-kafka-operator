@@ -1,0 +1,34 @@
+
+[id='topic-operator--environment-{context}']
+= Topic Operator environment
+
+When deployed standalone the Topic Operator can be configured via environment variables. 
+
+NOTE: The Topic Operator should be configured via the `Kafka.spec.topicOperator` property when deployed by the Cluster Operator. 
+
+`STRIMZI_RESOURCE_LABELS`::
+The label selector used to identify `KafkaTopics` to be managed by the operator.
+`STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS`::
+The Zookeeper session timeout, in milliseconds. 
+For example `10000`. 
+Default: `20000` (20 seconds).
+`STRIMZI_KAFKA_BOOTSTRAP_SERVERS`::
+The list of Kafka bootstrap servers. 
+This variable is mandatory.
+`STRIMZI_ZOOKEEPER_CONNECT`::
+The Zookeeper connection information. 
+This variable is mandatory.
+`STRIMZI_FULL_RECONCILIATION_INTERVAL_MS`::
+The interval between periodic reconciliations, in milliseconds.
+`STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS`::
+The number of attempts for getting topics metadata from Kafka. 
+The time between each attempt is defined as an exponential back-off. 
+You might want to increase this value when topic creation could take more time due to its larger size (that is, many partitions/replicas). 
+Default `6`.
+`STRIMZI_LOG_LEVEL`::
+– The level for printing logging messages. 
+The value can be set to: `ERROR`, `WARNING`, `INFO`, `DEBUG` and `TRACE`. 
+Default `INFO`.
+
+If the operator configuration needs to be changed the process must be killed and restarted.
+Since the operator is intended to execute within a {ProductPlatformName} `Deployment`, this can be achieved by deleting the pod.

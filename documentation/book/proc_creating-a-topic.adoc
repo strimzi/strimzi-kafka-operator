@@ -1,0 +1,44 @@
+[id='creating-a-topic_{context}']
+= Creating a topic
+
+This procedure will describe how to create a Kafka topic using a `KafkaTopic` {PlatformProductName} resource.
+
+.Prerequisites
+
+* A running Kafka cluster.
+* A running Topic Operator, either deployed by the Cluster Operator via the `Kafka.spec.topicOperator` property, or deployed standalone.
+
+.Procedure
+
+. Prepare a file containing the `KafkaTopic` to be created
++
+.An example `KafkaTopic`
+[source,yaml]
+----
+apiVersion: kafka.strimzi.io/v1alpha1
+kind: KafkaTopic
+metadata:
+  name: orders
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  partitions: 10
+  replicas: 2
+----
++
+NOTE: It is recommended to use a topic name that is a valid {PlatformProductName} resource name. Doing this means that it is not necessary to set the `KafkaTopic.spec.topicName` property. In any case the `KafkaTopic.spec.topicName` cannot be changed after creation. 
++
+NOTE: The `KafkaTopic.spec.partitions` cannot be decreased.
+
+. Create the `KafkaTopic` resource in {PlatformProductName}, for example:
++
+.Example of how to create a `KafkaTopic` resource
+[source,shell]
+----
+oc create -f <your-file>
+----
+
+
+.Additional resources
+
+* TODO
