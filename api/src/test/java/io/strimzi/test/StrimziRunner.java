@@ -70,6 +70,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
     public static final String NOTEARDOWN = "NOTEARDOWN";
     public static final String KAFKA_PERSISTENT_YAML = "../examples/kafka/kafka-persistent.yaml";
     public static final String KAFKA_CONNECT_YAML = "../examples/kafka-connect/kafka-connect.yaml";
+    public static final String KAFKA_CONNECT_S2I_CM = "../examples/configmaps/cluster-operator/kafka-connect-s2i.yaml";
     public static final String CO_INSTALL_DIR = "../examples/install/cluster-operator";
     public static final String CO_DEPLOYMENT_NAME = "strimzi-cluster-operator";
     public static final String TOPIC_CM = "../examples/configmaps/topic-operator/kafka-topic-configmap.yaml";
@@ -167,6 +168,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
             protected void after() {
             }
         };
+        statement = withConnectS2IClusters(method, statement);
         statement = withConnectClusters(method, statement);
         statement = withKafkaClusters(method, statement);
         statement = withClusterOperator(method, statement);
@@ -475,6 +477,45 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 t, System.lineSeparator(), "----------------------------------------------------------------------");
     }
 
+    private Statement withConnectS2IClusters(Annotatable element,
+                                          Statement statement) {
+        Statement last = statement;
+        KafkaConnectS2IFromClasspathYaml cluster = element.getAnnotation(KafkaConnectS2IFromClasspathYaml.class);
+        if (cluster != null) {
+            String[] resources = cluster.value().length == 0 ? new String[]{classpathResourceName(element)} : cluster.value();
+            for (String resource : resources) {
+                // use the example kafka-ephemeral as a template, but modify it according to the annotation
+                String yaml = TestUtils.readResource(testClass(element), resource);
+                KafkaConnectAssembly kafkaAssembly = TestUtils.fromYamlString(yaml, KafkaConnectAssembly.class);
+                String clusterName = kafkaAssembly.getMetadata().getName();
+                final String deploymentName = clusterName + "-connect";
+                last = new Bracket(last, new ResourceAction()
+                        .getDep(deploymentName)
+                        .getPo(deploymentName + ".*")
+                        .logs(deploymentName + ".*", null)) {
+                    @Override
+                    protected void before() {
+                        LOGGER.info("Creating connect cluster '{}' before test per @ConnectCluster annotation on {}", clusterName, name(element));
+                        // create cm
+                        kubeClient().clientWithAdmin().applyContent(yaml);
+                        // wait for deployment config
+                        kubeClient().waitForDeploymentConfig(deploymentName);
+                    }
+
+                    @Override
+                    protected void after() {
+                        LOGGER.info("Deleting connect cluster '{}' after test per @ConnectCluster annotation on {}", clusterName, name(element));
+                        // delete cm
+                        kubeClient().clientWithAdmin().deleteContent(yaml);
+                        // wait for ss to go
+                        kubeClient().waitForResourceDeletion("deploymentConfig", deploymentName);
+                    }
+                };
+            }
+        }
+        return last;
+    }
+
     private Statement withConnectClusters(Annotatable element,
                                           Statement statement) {
         Statement last = statement;
@@ -747,6 +788,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 protected void after() {
                 }
             };
+            statement = withConnectS2IClusters(testClass, statement);
             statement = withConnectClusters(testClass, statement);
             statement = withKafkaClusters(testClass, statement);
             statement = withClusterOperator(testClass, statement);

@@ -8,7 +8,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
@@ -103,15 +102,13 @@ public final class TestUtils {
         return sb.toString();
     }
 
-    public static JsonNode yamlFileToJSON(String relativeFilePath) {
-        JsonNode node = null;
+    public static String getFileAsString(String filePath) {
         try {
-            YAMLMapper mapper = new YAMLMapper();
-            node = mapper.readTree(new File(relativeFilePath));
+            return new String(Files.readAllBytes(Paths.get(filePath)), "UTF-8");
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.info("File with path {} not found", filePath);
         }
-        return node;
+        return "";
     }
 
     public static String changeOrgAndTag(String image, String newOrg, String newTag) {

@@ -86,7 +86,14 @@ public interface KubeClient<K extends KubeClient<K>> {
      * @param command The command
      * @return The process result.
      */
-    ProcessResult exec(String pod, String... command);
+    ProcessResult execInPod(String pod, String... command);
+
+    /**
+     * Execute the given {@code command}.
+     * @param command The command
+     * @return The process result.
+     */
+    ProcessResult exec(String... command);
 
     /**
      * Wait for the deployment with the given {@code name} to
@@ -96,6 +103,14 @@ public interface KubeClient<K extends KubeClient<K>> {
      * @return This kube client.
      */
     K waitForDeployment(String name, int expected);
+
+    /**
+     * Wait for the deploymentConfig with the given {@code name} to
+     * have replicas==readyReplicas.
+     * @param name The deploymentConfig name.
+     * @return This kube client.
+     */
+    K waitForDeploymentConfig(String name);
 
     /**
      * Wait for the pod with the given {@code name} to be in the ready state.

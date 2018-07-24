@@ -204,10 +204,15 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
     }
 
     @Override
-    public ProcessResult exec(String pod, String... command) {
+    public ProcessResult execInPod(String pod, String... command) {
         List<String> cmd = namespacedCommand("exec", pod, "--");
         cmd.addAll(asList(command));
         return Exec.exec(cmd);
+    }
+
+    @Override
+    public ProcessResult exec(String... command) {
+        return Exec.exec(asList(command));
     }
 
     enum ExType {
@@ -243,6 +248,16 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
             return replicasNode != null && readyReplicasName != null
                     && replicasNode.asInt() == readyReplicasName.asInt() && replicasNode.asInt() == expected;
 
+        });
+    }
+
+    @Override
+    public K waitForDeploymentConfig(String name) {
+        return waitFor("deploymentConfig", name, actualObj -> {
+            JsonNode replicasNode = actualObj.get("status").get("replicas");
+            JsonNode readyReplicasName = actualObj.get("status").get("readyReplicas");
+            return replicasNode != null && readyReplicasName != null
+                    && replicasNode.asInt() == readyReplicasName.asInt();
         });
     }
 

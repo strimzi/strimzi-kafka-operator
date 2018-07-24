@@ -14,6 +14,7 @@ import io.strimzi.test.OpenShiftOnly;
 import io.strimzi.test.Resources;
 import io.strimzi.test.StrimziRunner;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.Topic;
 import io.strimzi.test.k8s.Oc;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -33,6 +34,7 @@ import static io.strimzi.systemtest.k8s.Events.Started;
 import static io.strimzi.systemtest.k8s.Events.Unhealthy;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
+import static io.strimzi.test.TestUtils.getFileAsString;
 import static io.strimzi.test.TestUtils.map;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
@@ -53,7 +55,6 @@ public class ConnectClusterIT extends AbstractClusterIT {
     public static final String CONNECT_CLUSTER_NAME = "my-cluster";
     public static final String KAFKA_CONNECT_BOOTSTRAP_SERVERS = KAFKA_CLUSTER_NAME + "-kafka-bootstrap:9092";
     public static final String KAFKA_CONNECT_BOOTSTRAP_SERVERS_ESCAPED = KAFKA_CLUSTER_NAME + "-kafka-bootstrap\\:9092";
-
     private static final String EXPECTED_CONFIG = "group.id=connect-cluster\\n" +
             "key.converter=org.apache.kafka.connect.json.JsonConverter\\n" +
             "internal.key.converter.schemas.enable=false\\n" +
@@ -94,6 +95,23 @@ public class ConnectClusterIT extends AbstractClusterIT {
         assertEquals(EXPECTED_CONFIG.replaceAll("\\p{P}", ""), getValueFromJson(kafkaPodJson,
                 globalVariableJsonPathBuilder("KAFKA_CONNECT_CONFIGURATION")));
         testDockerImagesForKafkaConnect();
+    }
+
+    @Test
+    @JUnitGroup(name = "regression")
+    @Topic(name = TEST_TOPIC_NAME, clusterName = KAFKA_CLUSTER_NAME)
+    @KafkaConnectFromClasspathYaml
+    public void testKafkaConnectWithFileSinkPlugin() {
+
+        String connectorConfig = getFileAsString("../systemtest/src/test/resources/file/sink/connector.json");
+        String kafkaConnectPodName = kubeClient.listResourcesByLabel("pod", "strimzi.io/type=kafka-connect").get(0);
+        kubeClient.execInPod(kafkaConnectPodName, "/bin/bash", "-c", "curl -X POST -H \"Content-Type: application/json\" --data "
+                + "'" + connectorConfig + "'" + " http://localhost:8083/connectors");
+
+        sendMessages(kafkaConnectPodName, KAFKA_CLUSTER_NAME, TEST_TOPIC_NAME, 2);
+
+        TestUtils.waitFor("messages in file sink", 1_000, 30_000,
+            () -> kubeClient.execInPod(kafkaConnectPodName, "/bin/bash", "-c", "cat /tmp/test-file-sink.txt").out().equals("0\n1\n"));
     }
 
     @Test
