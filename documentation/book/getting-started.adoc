@@ -15,11 +15,11 @@ include::common/attributes.adoc[]
 {ProductName} runs on
 ifdef::Kubernetes[{KubernetesLongName} {KubernetesVersion} and]
 {OpenShiftLongName} {OpenShiftVersion}.
-It can be used on clusters of public and private clouds, local deployments intended for development, and everything in between.
+It can be used on clusters running in public and private clouds, local deployments intended for development, and everything in between.
 
-This guide expects that an {ProductPlatformName} cluster is available and the
+This guide assumes that an {ProductPlatformName} cluster is available and the
 ifdef::Kubernetes[`kubectl` and]
-`oc` command line tools are installed and configured to connect to the running cluster.
+`oc` command-line tools are installed and configured to connect to the running cluster.
 
 ifdef::InstallationAppendix[]
 When no existing {ProductPlatformName} cluster is available, `Minikube` or `Minishift` can be used to create a local
@@ -29,8 +29,7 @@ endif::InstallationAppendix[]
 [NOTE]
 To run the commands in this guide, your
 ifdef::Kubernetes[{KubernetesLongName} and]
-{OpenShiftLongName} user needs to have the rights to create and
-manage Roles and Role Bindings (RBAC) resources.
+{OpenShiftLongName} user must have the rights to manage role-based access control (RBAC).
 
 ifdef::Downloading[]
 :context: {ContextProduct}
