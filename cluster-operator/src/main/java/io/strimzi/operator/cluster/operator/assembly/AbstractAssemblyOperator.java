@@ -54,7 +54,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
 
     private static final Logger log = LogManager.getLogger(AbstractAssemblyOperator.class.getName());
 
-    protected static final int LOCK_TIMEOUT = 60000;
+    protected static final int LOCK_TIMEOUT_MS = 10;
     protected static final int CERTS_EXPIRATION_DAYS = 365;
 
     protected final Vertx vertx;
@@ -212,7 +212,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
         String namespace = reconciliation.namespace();
         String assemblyName = reconciliation.assemblyName();
         final String lockName = getLockName(assemblyType, namespace, assemblyName);
-        vertx.sharedData().getLockWithTimeout(lockName, LOCK_TIMEOUT, res -> {
+        vertx.sharedData().getLockWithTimeout(lockName, LOCK_TIMEOUT_MS, res -> {
             if (res.succeeded()) {
                 log.debug("{}: Lock {} acquired", reconciliation, lockName);
                 Lock lock = res.result();
