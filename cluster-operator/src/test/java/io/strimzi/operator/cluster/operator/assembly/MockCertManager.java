@@ -75,6 +75,11 @@ public class MockCertManager implements CertManager {
         write(crtFile, "crt file");
     }
 
+    @Override
+    public void generateCert(File csrFile, File caKey, File caCert, File crtFile, Subject sbj, int days) throws IOException {
+        write(crtFile, "crt file");
+    }
+
     /**
      * Generate a certificate signed by a Certificate Authority
      *
@@ -87,6 +92,11 @@ public class MockCertManager implements CertManager {
      */
     @Override
     public void generateCert(File csrFile, byte[] caKey, byte[] caCert, File crtFile, int days) throws IOException {
+        write(crtFile, "crt file");
+    }
+
+    @Override
+    public void generateCert(File csrFile, byte[] caKey, byte[] caCert, File crtFile, Subject sbj, int days) throws IOException {
         write(crtFile, "crt file");
     }
 }

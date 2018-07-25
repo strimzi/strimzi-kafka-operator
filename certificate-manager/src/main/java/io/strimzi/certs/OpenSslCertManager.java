@@ -51,7 +51,7 @@ public class OpenSslCertManager implements CertManager {
 
                 // subject alt names need to be in an openssl configuration file
                 InputStream is = getClass().getClassLoader().getResourceAsStream("openssl.conf");
-                openSslConf = File.createTempFile("openssl", "conf");
+                openSslConf = File.createTempFile("openssl-", ".conf");
                 Files.copy(is, openSslConf.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
                 sna = addSubjectAltNames(openSslConf, sbj);
@@ -85,7 +85,7 @@ public class OpenSslCertManager implements CertManager {
      */
     private File addSubjectAltNames(File opensslConf, Subject sbj) throws IOException {
 
-        File sna = File.createTempFile("sna", "sna");
+        File sna = File.createTempFile("sna-", ".conf");
         Files.copy(opensslConf.toPath(), sna.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
         BufferedWriter out = null;
@@ -122,7 +122,7 @@ public class OpenSslCertManager implements CertManager {
 
                 // subject alt names need to be in an openssl configuration file
                 InputStream is = getClass().getClassLoader().getResourceAsStream("openssl.conf");
-                openSslConf = File.createTempFile("openssl", "conf");
+                openSslConf = File.createTempFile("openssl-", ".conf");
                 Files.copy(is, openSslConf.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
                 sna = addSubjectAltNames(openSslConf, sbj);
@@ -148,21 +148,61 @@ public class OpenSslCertManager implements CertManager {
 
     @Override
     public void generateCert(File csrFile, File caKey, File caCert, File crtFile, int days) throws IOException {
-        exec("openssl", "x509", "-req", "-days", String.valueOf(days), "-in", csrFile.getAbsolutePath(),
-                "-CA", caCert.getAbsolutePath(), "-CAkey", caKey.getAbsolutePath(), "-CAcreateserial",
-                "-out", crtFile.getAbsolutePath());
+        generateCert(csrFile, caKey, caCert, crtFile, null, days);
     }
 
     @Override
     public void generateCert(File csrFile, byte[] caKey, byte[] caCert, File crtFile, int days) throws IOException {
+        generateCert(csrFile, caKey, caCert, crtFile, null, days);
+    }
 
-        File caKeyFile = File.createTempFile("tls", "ca");
+    @Override
+    public void generateCert(File csrFile, File caKey, File caCert, File crtFile, Subject sbj, int days) throws IOException {
+
+        List<String> cmd = new ArrayList<>(asList("openssl", "x509", "-req", "-days", String.valueOf(days),
+            "-in", csrFile.getAbsolutePath(), "-CA", caCert.getAbsolutePath(), "-CAkey", caKey.getAbsolutePath(), "-CAcreateserial",
+            "-out", crtFile.getAbsolutePath()));
+
+        File sna = null;
+        File openSslConf = null;
+        if (sbj != null) {
+
+            if (sbj.subjectAltNames() != null && sbj.subjectAltNames().size() > 0) {
+
+                // subject alt names need to be in an openssl configuration file
+                InputStream is = getClass().getClassLoader().getResourceAsStream("openssl.conf");
+                openSslConf = File.createTempFile("openssl-", ".conf");
+                Files.copy(is, openSslConf.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+                sna = addSubjectAltNames(openSslConf, sbj);
+                cmd.addAll(asList("-extfile", sna.toPath().toString(), "-extensions", "v3_req"));
+            }
+        }
+
+        exec(cmd);
+
+        if (sna != null) {
+            if (!sna.delete()) {
+                log.warn("{} cannot be deleted", sna.getName());
+            }
+        }
+        if (openSslConf != null) {
+            if (!openSslConf.delete()) {
+                log.warn("{} cannot be deleted", openSslConf.getName());
+            }
+        }
+    }
+
+    @Override
+    public void generateCert(File csrFile, byte[] caKey, byte[] caCert, File crtFile, Subject sbj, int days) throws IOException {
+
+        File caKeyFile = File.createTempFile("ca-key-", ".key");
         Files.write(caKeyFile.toPath(), caKey);
 
-        File caCertFile = File.createTempFile("tls", "ca");
+        File caCertFile = File.createTempFile("ca-crt-", ".crt");
         Files.write(caCertFile.toPath(), caCert);
 
-        generateCert(csrFile, caKeyFile, caCertFile, crtFile, days);
+        generateCert(csrFile, caKeyFile, caCertFile, crtFile, sbj, days);
 
         if (!caKeyFile.delete()) {
             log.warn("{} cannot be deleted", caKeyFile.getName());
@@ -172,16 +212,12 @@ public class OpenSslCertManager implements CertManager {
         }
     }
 
-    private void exec(String... cmd) throws IOException {
-        exec(asList(cmd));
-    }
-
     private void exec(List<String> cmd) throws IOException {
         File out = null;
 
         try {
 
-            out = File.createTempFile("openssl", Integer.toString(cmd.hashCode()));
+            out = File.createTempFile("openssl-", Integer.toString(cmd.hashCode()));
 
             ProcessBuilder processBuilder = new ProcessBuilder(cmd)
                     .redirectOutput(out)
