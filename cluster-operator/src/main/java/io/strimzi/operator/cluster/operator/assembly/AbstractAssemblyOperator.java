@@ -273,7 +273,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
                     handler.handle(Future.failedFuture(ex));
                 }
             } else {
-                log.warn("{}: Failed to acquire lock {}.", reconciliation, lockName);
+                log.debug("{}: Failed to acquire lock {}.", reconciliation, lockName);
             }
         });
     }
