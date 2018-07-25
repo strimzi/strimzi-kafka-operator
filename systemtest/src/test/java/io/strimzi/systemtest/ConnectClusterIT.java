@@ -104,7 +104,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
     public void testKafkaConnectWithFileSinkPlugin() {
 
         String connectorConfig = getFileAsString("../systemtest/src/test/resources/file/sink/connector.json");
-        String kafkaConnectPodName = kubeClient.listResourcesByLabel("pod", "strimzi.io/type=kafka-connect").get(0);
+        String kafkaConnectPodName = kubeClient.listResourcesByLabel("pod", "type=kafka-connect").get(0);
         kubeClient.execInPod(kafkaConnectPodName, "/bin/bash", "-c", "curl -X POST -H \"Content-Type: application/json\" --data "
                 + "'" + connectorConfig + "'" + " http://localhost:8083/connectors");
 

@@ -29,7 +29,7 @@ In order to handle failovers properly, a periodic reconciliation process is exec
 [[kafka_assembly_details]]
 === Format of the `Kafka` resource
 
-The full API is described in <<kafka_resource_reference>>.
+The full API is described in <<type-KafkaAssembly>>.
 
 Whatever other labels are applied to the desired Kafka resource will also be applied to the {ProductPlatformName} resources making up the Kafka cluster.
 This provides a convenient mechanism for those resources to be labelled in whatever way the user requires.
@@ -157,8 +157,8 @@ For information about the accepted JSON format, see <<resources_json_config>>.
 `spec.topicOperator`::
 An object representing the topic operator configuration. 
 See the <<topic_operator_json_config>> documentation for further details.
-More info about the topic operator in the related <<Topic operator>> documentation page.
- 
+More info about the topic operator in the related xref:topic-operator-{context}[Topic Operator] documentation page.
+
 The following is an example of a Kafka resource.
 
 .Example `Kafka` resource
@@ -491,7 +491,7 @@ Persistent Volume Claim for the volume used for storing data for the Kafka broke
 `data-[cluster-name]-zookeeper-[idx]`:: 
 Persistent Volume Claim for the volume used for storing data for the Zookeeper node pod `[idx]`.
 
-See <<kafka.strimzi.io-v1alpha1-type-EphemeralStorage>> and <<kafka.strimzi.io-v1alpha1-type-PersistentClaimStorage>> for further details.
+See <<type-EphemeralStorage>> and <<type-PersistentClaimStorage>> for further details.
 
 ===== Metrics
 
@@ -500,9 +500,11 @@ It is possible to configure a `metrics` object in the `kafka` and `zookeeper` ob
 In all cases the `metrics` object should be the configuration for the JMX exporter. 
 You can find more information on how to use it in the corresponding GitHub repo.
 
-For more information about using the metrics with Prometheus and Grafana, see <<_metrics>>
+For more information about using the metrics with Prometheus and Grafana, see xref:metrics[Metrics]
 
-===== [[logging_examples]]Logging
+
+[[logging_examples]]
+===== Logging
 The `logging` field allows the configuration of loggers. These loggers for Zookeeper and Kafka are available in the <<spec.zookeeper.logging,`spec.zookeeper.logging`>> and <<spec.kafka.logging,`spec.kafka.logging`>> sections respectively.
 
 The setting can be done in one of two ways. Either by specifying the loggers and their levels directly or by using a custom config map.
@@ -780,7 +782,7 @@ The configurable fields are the following :
 
 `image`::
 The Docker image to be used by the Topic Operator.
-The default value is determined by the value specified in the `<<STRIMZI_DEFAULT_TOPIC_operator_IMAGE,STRIMZI_DEFAULT_TOPIC_operator_IMAGE>>` environment variable of the Cluster Operator.
+The default value is determined by the value specified in the `<<STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE,STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE>>` environment variable of the Cluster Operator.
 `watchedNamespace`::
 The {ProductPlatformName} namespace in which the topic operator watches for topic ConfigMaps. Default is the namespace
 where the topic operator is running.
@@ -811,7 +813,7 @@ For information about the accepted JSON format, see <<resources_json_config>>.
 { "reconciliationIntervalMs": "900000", "zookeeperSessionTimeoutMs": "20000" }
 ----
 
-More information about these configuration parameters in the related <<Topic Operator>> documentation page.
+More information about these configuration parameters in the related xref:topic-operator-{context}[Topic Operator] documentation page.
 
 [[kafka_connect_config_map_details]]
 ==== Kafka Connect
@@ -932,7 +934,7 @@ metadata:
   name: my-connect-cluster
 spec:
   config:
-    bootstrap.servers: my-cluster-kafka:9092
+    bootstrap.servers: my-cluster-kafka-bootstrap:9092
     group.id: my-connect-cluster
     offset.storage.topic: my-connect-cluster-offsets
     config.storage.topic: my-connect-cluster-configs
@@ -1004,7 +1006,7 @@ spec:
     initialDelaySeconds: 60
     timeoutSeconds: 5
   config: 
-    bootstrap.servers: my-cluster-kafka:9092
+    bootstrap.servers: my-cluster-kafka-bootstrap:9092
 ----
 
 The S2I deployment is very similar to the regular Kafka Connect deployment (as represented by the `KafkaConnect` resource).

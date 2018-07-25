@@ -82,6 +82,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static io.strimzi.api.kafka.model.Quantities.normalizeCpu;
+import static io.strimzi.api.kafka.model.Quantities.normalizeMemory;
 import static java.util.Arrays.asList;
 
 public abstract class AbstractModel {
@@ -296,7 +298,12 @@ public abstract class AbstractModel {
             // validate all entries
             ((InlineLogging) logging).getLoggers().forEach((key, tmpEntry) -> {
                 if (validLoggerFields.containsKey(key)) {
-                    // correct logger
+                    // correct logger, test appender appearance for log4j.rootLogger
+                    String appender = tmpEntry.replaceAll(" ", "");
+                    if (key.equals("log4j.rootLogger") && !appender.contains(",CONSOLE")) {
+                        ((InlineLogging) logging).getLoggers().replace(key, tmpEntry + ", CONSOLE");
+                        log.warn("Appender for {} was not set. Using \"{}: {}, CONSOLE\"", key, key, tmpEntry);
+                    }
                 } else {
                     // incorrect logger
                     log.warn(key + " is not valid logger");
@@ -306,7 +313,7 @@ public abstract class AbstractModel {
                     log.warn("You cannot set appender");
                     return;
                 }
-                if ((asList(validLoggerValues).contains(tmpEntry.toString().replaceAll(", CONSOLE", ""))) || (asList(validLoggerValues).contains(tmpEntry))) {
+                if ((asList(validLoggerValues).contains(tmpEntry.toString().replaceAll(",[ ]+CONSOLE", ""))) || (asList(validLoggerValues).contains(tmpEntry))) {
                     // correct value
                 } else {
                     Pattern p = Pattern.compile("\\$\\{(.*)\\}, ([A-Z]+)");
@@ -891,20 +898,20 @@ public abstract class AbstractModel {
             CpuMemory limits = resources.getLimits();
             if (limits != null
                     && limits.milliCpuAsInt() > 0) {
-                builder.addToLimits("cpu", new Quantity(limits.getMilliCpu()));
+                builder.addToLimits("cpu", new Quantity(normalizeCpu(limits.getMilliCpu())));
             }
             if (limits != null
                     && limits.memoryAsLong() > 0) {
-                builder.addToLimits("memory", new Quantity(limits.getMemory()));
+                builder.addToLimits("memory", new Quantity(normalizeMemory(limits.getMemory())));
             }
             CpuMemory requests = resources.getRequests();
             if (requests != null
                     && requests.milliCpuAsInt() > 0) {
-                builder.addToRequests("cpu", new Quantity(requests.getMilliCpu()));
+                builder.addToRequests("cpu", new Quantity(normalizeCpu(requests.getMilliCpu())));
             }
             if (requests != null
                     && requests.memoryAsLong() > 0) {
-                builder.addToRequests("memory", new Quantity(requests.getMemory()));
+                builder.addToRequests("memory", new Quantity(normalizeMemory(requests.getMemory())));
             }
             return builder.build();
         }

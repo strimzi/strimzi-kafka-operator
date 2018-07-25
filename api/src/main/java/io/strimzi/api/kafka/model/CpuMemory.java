@@ -17,6 +17,11 @@ import io.sundr.builder.annotations.Buildable;
 import java.util.HashMap;
 import java.util.Map;
 
+import static io.strimzi.api.kafka.model.Quantities.formatMemory;
+import static io.strimzi.api.kafka.model.Quantities.formatMilliCpu;
+import static io.strimzi.api.kafka.model.Quantities.parseCpuAsMilliCpus;
+import static io.strimzi.api.kafka.model.Quantities.parseMemory;
+
 
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 public class CpuMemory {
@@ -34,18 +39,18 @@ public class CpuMemory {
     }
 
     public CpuMemory(long mem, int milliCpu) {
-        this.memory = MemoryDeserializer.format(mem);
-        this.milliCpu = MilliCpuDeserializer.format(milliCpu);
+        this.memory = formatMemory(mem);
+        this.milliCpu = formatMilliCpu(milliCpu);
     }
 
     /** The memory in bytes */
     @JsonIgnore
     public long memoryAsLong() {
-        return memory == null ? 0 : MemoryDeserializer.parse(memory);
+        return memory == null ? 0 : parseMemory(memory);
     }
 
     public void memoryAsLong(long memory) {
-        this.memory = MemoryDeserializer.format(memory);
+        this.memory = formatMemory(memory);
     }
 
     /** The memory in Kubernetes syntax. */
@@ -65,11 +70,11 @@ public class CpuMemory {
     /** The CPUs in "millicpus". */
     @JsonIgnore
     public int milliCpuAsInt() {
-        return milliCpu == null ? 0 : MilliCpuDeserializer.parse(milliCpu);
+        return milliCpu == null ? 0 : parseCpuAsMilliCpus(milliCpu);
     }
 
     public void milliCpuAsInt(int milliCpu) {
-        this.milliCpu = MilliCpuDeserializer.format(milliCpu);
+        this.milliCpu = formatMilliCpu(milliCpu);
     }
 
     /** The CPUs formatted using Kubernetes syntax. */

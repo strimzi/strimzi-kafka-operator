@@ -1,4 +1,3 @@
-[[kind-Kafka]]
 [[type-KafkaAssembly]]
 ### `Kafka` kind v1alpha1 kafka.strimzi.io
 
@@ -15,7 +14,7 @@
 [[type-KafkaAssemblySpec]]
 ### `KafkaAssemblySpec` type v1alpha1 kafka.strimzi.io
 
-Used in: <<kind-Kafka,`KafkaAssembly`>>
+Used in: <<type-KafkaAssembly,`KafkaAssembly`>>
 
 
 [options="header"]
@@ -330,7 +329,6 @@ Used in: <<type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
 |<<type-InlineLogging,`InlineLogging`>>, <<type-ExternalLogging,`ExternalLogging`>>
 |====
 
-[[kind-KafkaConnect]]
 [[type-KafkaConnectAssembly]]
 ### `KafkaConnect` kind v1alpha1 kafka.strimzi.io
 
@@ -347,7 +345,7 @@ Used in: <<type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
 [[type-KafkaConnectAssemblySpec]]
 ### `KafkaConnectAssemblySpec` type v1alpha1 kafka.strimzi.io
 
-Used in: <<kind-KafkaConnect,`KafkaConnectAssembly`>>
+Used in: <<type-KafkaConnectAssembly,`KafkaConnectAssembly`>>
 
 
 [options="header"]
@@ -383,7 +381,6 @@ Used in: <<kind-KafkaConnect,`KafkaConnectAssembly`>>
 |https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#tolerations-v1-core[Toleration] array
 |====
 
-[[kind-KafkaConnectS2I]]
 [[type-KafkaConnectS2IAssembly]]
 ### `KafkaConnectS2I` kind v1alpha1 kafka.strimzi.io
 
@@ -400,7 +397,7 @@ Used in: <<kind-KafkaConnect,`KafkaConnectAssembly`>>
 [[type-KafkaConnectS2IAssemblySpec]]
 ### `KafkaConnectS2IAssemblySpec` type v1alpha1 kafka.strimzi.io
 
-Used in: <<kind-KafkaConnectS2I,`KafkaConnectS2IAssembly`>>
+Used in: <<type-KafkaConnectS2IAssembly,`KafkaConnectS2IAssembly`>>
 
 
 [options="header"]

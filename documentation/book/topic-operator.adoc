@@ -1,3 +1,4 @@
+[id='topic-operator-{context}']
 == Topic Operator
 
 The Topic Operator is in charge of managing topics in a Kafka cluster. The Topic Operator is deployed as a process

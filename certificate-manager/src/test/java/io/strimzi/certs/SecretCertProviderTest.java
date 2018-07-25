@@ -36,8 +36,8 @@ public class SecretCertProviderTest {
 
         Base64.Decoder decoder = Base64.getDecoder();
 
-        File key = File.createTempFile("tls", "key");
-        File cert = File.createTempFile("tls", "crt");
+        File key = File.createTempFile("key-", ".key");
+        File cert = File.createTempFile("crt-", ".crt");
 
         ssl.generateSelfSignedCert(key, cert, 365);
 
@@ -58,15 +58,15 @@ public class SecretCertProviderTest {
 
         Base64.Decoder decoder = Base64.getDecoder();
 
-        File key = File.createTempFile("tls", "key");
-        File cert = File.createTempFile("tls", "crt");
+        File key = File.createTempFile("key-", ".key");
+        File cert = File.createTempFile("crt-", ".crt");
 
         ssl.generateSelfSignedCert(key, cert, 365);
 
         Secret secret = secretCertProvider.createSecret("my-namespace", "my-secret", key, cert, Collections.emptyMap());
 
-        File addedKey = File.createTempFile("tls", "key");
-        File addedCert = File.createTempFile("tls", "crt");
+        File addedKey = File.createTempFile("added-key-", ".key");
+        File addedCert = File.createTempFile("added-crt-", ".crt");
 
         ssl.generateSelfSignedCert(addedKey, addedCert, 365);
 
