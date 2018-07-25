@@ -55,6 +55,8 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static io.strimzi.api.kafka.model.Quantities.normalizeCpu;
+import static io.strimzi.api.kafka.model.Quantities.normalizeMemory;
 import static io.strimzi.api.kafka.model.Storage.deleteClaim;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonMap;
@@ -672,16 +674,16 @@ public class KafkaAssemblyOperatorMockTest {
         context.assertNotNull(statefulSet);
         ResourceRequirements requirements = statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).getResources();
         if (resources != null && resources.getRequests() != null) {
-            context.assertEquals(resources.getRequests().getMilliCpu(), requirements.getRequests().get("cpu").getAmount());
+            context.assertEquals(normalizeCpu(resources.getRequests().getMilliCpu()), requirements.getRequests().get("cpu").getAmount());
         }
         if (resources != null && resources.getRequests() != null) {
-            context.assertEquals(resources.getRequests().getMemory(), requirements.getRequests().get("memory").getAmount());
+            context.assertEquals(normalizeMemory(resources.getRequests().getMemory()), requirements.getRequests().get("memory").getAmount());
         }
         if (resources != null && resources.getLimits() != null) {
-            context.assertEquals(resources.getLimits().getMilliCpu(), requirements.getLimits().get("cpu").getAmount());
+            context.assertEquals(normalizeCpu(resources.getLimits().getMilliCpu()), requirements.getLimits().get("cpu").getAmount());
         }
         if (resources != null && resources.getLimits() != null) {
-            context.assertEquals(resources.getLimits().getMemory(), requirements.getLimits().get("memory").getAmount());
+            context.assertEquals(normalizeMemory(resources.getLimits().getMemory()), requirements.getLimits().get("memory").getAmount());
         }
     }
 

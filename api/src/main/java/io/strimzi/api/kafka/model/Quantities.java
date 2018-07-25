@@ -4,59 +4,9 @@
  */
 package io.strimzi.api.kafka.model;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.JsonTokenId;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.deser.std.StdScalarDeserializer;
+public class Quantities {
+    private Quantities() {
 
-import java.io.IOException;
-
-/**
- * Converts Strings in Kubernetes memory syntax to/from bytes expressed as a long.
- * @see <a href="https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#meaning-of-memory">Kubernetes docs</a>
- */
-public class MemoryDeserializer extends StdScalarDeserializer<Long> {
-
-    private static final long serialVersionUID = 1L;
-
-    public MemoryDeserializer() {
-        this(Long.class);
-    }
-
-    protected MemoryDeserializer(Class vc) {
-        super(vc);
-    }
-
-    protected MemoryDeserializer(JavaType valueType) {
-        super(valueType);
-    }
-
-    protected MemoryDeserializer(StdScalarDeserializer src) {
-        super(src);
-    }
-
-    @Override
-    public Long deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
-        switch (p.getCurrentTokenId()) {
-            case JsonTokenId.ID_NUMBER_INT:
-                switch (p.getNumberType()) {
-                    case INT:
-                    case LONG:
-                        return p.getLongValue();
-                }
-                break;
-            case JsonTokenId.ID_STRING:
-                String text = p.getText().trim();
-                try {
-                    return parse(text);
-                } catch (IllegalArgumentException e) {
-                    return (Long) ctxt.handleWeirdStringValue(_valueClass, text,
-                            "not a valid representation");
-                }
-        }
-        return (Long) ctxt.handleUnexpectedToken(_valueClass, p);
     }
 
     /**
@@ -65,7 +15,7 @@ public class MemoryDeserializer extends StdScalarDeserializer<Long> {
      * @param memory The String representation of the quantity of memory.
      * @return The equivalent number of bytes.
      */
-    public static long parse(String memory) {
+    public static long parseMemory(String memory) {
         boolean seenE = false;
         long factor = 1L;
         int end = memory.length();
@@ -75,7 +25,7 @@ public class MemoryDeserializer extends StdScalarDeserializer<Long> {
                 seenE = true;
             } else if (ch < '0' || '9' < ch) {
                 end = i;
-                factor = factor(memory.substring(i));
+                factor = memoryFactor(memory.substring(i));
                 break;
             }
         }
@@ -88,7 +38,7 @@ public class MemoryDeserializer extends StdScalarDeserializer<Long> {
         return result;
     }
 
-    private static long factor(String suffix) {
+    private static long memoryFactor(String suffix) {
         long factor;
         switch (suffix) {
             case "E":
@@ -127,7 +77,7 @@ public class MemoryDeserializer extends StdScalarDeserializer<Long> {
         return factor;
     }
 
-    public static String format(long bytes) {
+    public static String formatMemory(long bytes) {
         if (bytes == 0) {
             return "0";
         }
@@ -140,7 +90,7 @@ public class MemoryDeserializer extends StdScalarDeserializer<Long> {
             x = x / 1000L;
         }
         if (i >= 0) {
-            return x + new String[] {"k", "M", "G", "T", "E"}[i];
+            return x + new String[] {"K", "M", "G", "T", "E"}[i];
         }
         x = bytes;
         i = -1;
@@ -149,9 +99,51 @@ public class MemoryDeserializer extends StdScalarDeserializer<Long> {
             x = x / 1024L;
         }
         if (i >= 0) {
-            return x + new String[]{"ki", "Mi", "Gi", "Ti", "Ei"}[i];
+            return x + new String[]{"Ki", "Mi", "Gi", "Ti", "Ei"}[i];
         }
         return Long.toString(bytes);
     }
-}
 
+    public static String normalizeMemory(String memory) {
+        return formatMemory(parseMemory(memory));
+    }
+
+
+    /**
+     * Parse a K8S-style representation of a quantity of cpu, such as {@code 1000m},
+     * into the equivalent number of "millicpus" represented as an int.
+     * @param cpu The String representation of the quantity of cpu.
+     * @return The equivalent number of "millicpus".
+     */
+    public static int parseCpuAsMilliCpus(String cpu) {
+        int suffixIndex = cpu.length();
+        int factor = 1000;
+        for (int i = 0; i < cpu.length(); i++) {
+            char ch = cpu.charAt(i);
+            if (ch < '0' || '9' < ch) {
+                suffixIndex = i;
+                if ("m".equals(cpu.substring(i))) {
+                    factor = 1;
+                    break;
+                } else if (cpu.substring(i).startsWith(".")) {
+                    return (int) (Double.parseDouble(cpu) * 1000L);
+                } else {
+                    throw new IllegalArgumentException();
+                }
+            }
+        }
+        return factor * Integer.parseInt(cpu.substring(0, suffixIndex));
+    }
+
+    public static String formatMilliCpu(int milliCpu) {
+        if (milliCpu % 1000 == 0) {
+            return Long.toString(milliCpu / 1000L);
+        } else {
+            return Long.toString(milliCpu) + "m";
+        }
+    }
+
+    public static String normalizeCpu(String milliCpu) {
+        return formatMilliCpu(parseCpuAsMilliCpus(milliCpu));
+    }
+}
