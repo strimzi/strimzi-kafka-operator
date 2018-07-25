@@ -14,6 +14,9 @@ import java.lang.annotation.Target;
  *
  * Availible types: acceptance, regression
  *
+ * If no value is set for the system property "junitgroup", then the default value for "junitgroup" will be "all",
+ * which will mark test methods as suitable for execution
+ *
  * To execute an expected group of system tests need to add system property "junitgroup" with following value:
  * -Djunitgroup=integration - to execute one test group
  * -Djunitgroup=acceptance,regression - to execute many test groups
