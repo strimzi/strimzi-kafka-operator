@@ -35,8 +35,13 @@ import java.util.Map;
         }
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "replicas", "image", "storage", "rackConfig", "brokerRackInitImage",
-        "livenessProbe", "readinessProbe", "jvmOptions", "affinity", "metrics", "tlsSidecar"})
+@JsonPropertyOrder({
+        "replicas", "image", "storage", "config",
+        "rack", "brokerRackInitImage",
+        "affinity", "tolerations",
+        "livenessProbe", "readinessProbe",
+        "jvmOptions", "resources",
+        "metrics", "logging", "tlsSidecar"})
 public class Kafka implements Serializable {
 
     private static final long serialVersionUID = 1L;

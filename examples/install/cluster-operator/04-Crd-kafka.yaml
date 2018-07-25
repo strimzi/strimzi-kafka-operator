@@ -39,37 +39,18 @@ spec:
                       type: string
                     type:
                       type: string
+                config:
+                  type: object
+                rack:
+                  type: object
+                  properties:
+                    topologyKey:
+                      type: string
+                      example: failure-domain.beta.kubernetes.io/zone
+                  required:
+                  - topologyKey
                 brokerRackInitImage:
                   type: string
-                livenessProbe:
-                  type: object
-                  properties:
-                    initialDelaySeconds:
-                      type: integer
-                      minimum: 0
-                    timeoutSeconds:
-                      type: integer
-                      minimum: 0
-                readinessProbe:
-                  type: object
-                  properties:
-                    initialDelaySeconds:
-                      type: integer
-                      minimum: 0
-                    timeoutSeconds:
-                      type: integer
-                      minimum: 0
-                jvmOptions:
-                  type: object
-                  properties:
-                    -XX:
-                      type: object
-                    -Xms:
-                      type: string
-                      pattern: '[0-9]+[mMgG]?'
-                    -Xmx:
-                      type: string
-                      pattern: '[0-9]+[mMgG]?'
                 affinity:
                   type: object
                   properties:
@@ -252,8 +233,82 @@ spec:
                                   type: string
                               topologyKey:
                                 type: string
+                tolerations:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      effect:
+                        type: string
+                      key:
+                        type: string
+                      operator:
+                        type: string
+                      tolerationSeconds:
+                        type: integer
+                      value:
+                        type: string
+                livenessProbe:
+                  type: object
+                  properties:
+                    initialDelaySeconds:
+                      type: integer
+                      minimum: 0
+                    timeoutSeconds:
+                      type: integer
+                      minimum: 0
+                readinessProbe:
+                  type: object
+                  properties:
+                    initialDelaySeconds:
+                      type: integer
+                      minimum: 0
+                    timeoutSeconds:
+                      type: integer
+                      minimum: 0
+                jvmOptions:
+                  type: object
+                  properties:
+                    -XX:
+                      type: object
+                    -Xms:
+                      type: string
+                      pattern: '[0-9]+[mMgG]?'
+                    -Xmx:
+                      type: string
+                      pattern: '[0-9]+[mMgG]?'
+                resources:
+                  type: object
+                  properties:
+                    limits:
+                      type: object
+                      properties:
+                        cpu:
+                          type: string
+                          pattern: '[0-9]+m?$'
+                        memory:
+                          type: string
+                          pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
+                    requests:
+                      type: object
+                      properties:
+                        cpu:
+                          type: string
+                          pattern: '[0-9]+m?$'
+                        memory:
+                          type: string
+                          pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
                 metrics:
                   type: object
+                logging:
+                  type: object
+                  properties:
+                    loggers:
+                      type: object
+                    name:
+                      type: string
+                    type:
+                      type: string
                 tlsSidecar:
                   type: object
                   properties:
@@ -280,61 +335,6 @@ spec:
                             memory:
                               type: string
                               pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
-                config:
-                  type: object
-                logging:
-                  type: object
-                  properties:
-                    loggers:
-                      type: object
-                    name:
-                      type: string
-                    type:
-                      type: string
-                rack:
-                  type: object
-                  properties:
-                    topologyKey:
-                      type: string
-                      example: failure-domain.beta.kubernetes.io/zone
-                  required:
-                  - topologyKey
-                resources:
-                  type: object
-                  properties:
-                    limits:
-                      type: object
-                      properties:
-                        cpu:
-                          type: string
-                          pattern: '[0-9]+m?$'
-                        memory:
-                          type: string
-                          pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
-                    requests:
-                      type: object
-                      properties:
-                        cpu:
-                          type: string
-                          pattern: '[0-9]+m?$'
-                        memory:
-                          type: string
-                          pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
-                tolerations:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      effect:
-                        type: string
-                      key:
-                        type: string
-                      operator:
-                        type: string
-                      tolerationSeconds:
-                        type: integer
-                      value:
-                        type: string
               required:
               - replicas
               - storage
@@ -359,35 +359,8 @@ spec:
                       type: string
                     type:
                       type: string
-                livenessProbe:
+                config:
                   type: object
-                  properties:
-                    initialDelaySeconds:
-                      type: integer
-                      minimum: 0
-                    timeoutSeconds:
-                      type: integer
-                      minimum: 0
-                readinessProbe:
-                  type: object
-                  properties:
-                    initialDelaySeconds:
-                      type: integer
-                      minimum: 0
-                    timeoutSeconds:
-                      type: integer
-                      minimum: 0
-                jvmOptions:
-                  type: object
-                  properties:
-                    -XX:
-                      type: object
-                    -Xms:
-                      type: string
-                      pattern: '[0-9]+[mMgG]?'
-                    -Xmx:
-                      type: string
-                      pattern: '[0-9]+[mMgG]?'
                 affinity:
                   type: object
                   properties:
@@ -570,8 +543,82 @@ spec:
                                   type: string
                               topologyKey:
                                 type: string
+                tolerations:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      effect:
+                        type: string
+                      key:
+                        type: string
+                      operator:
+                        type: string
+                      tolerationSeconds:
+                        type: integer
+                      value:
+                        type: string
+                livenessProbe:
+                  type: object
+                  properties:
+                    initialDelaySeconds:
+                      type: integer
+                      minimum: 0
+                    timeoutSeconds:
+                      type: integer
+                      minimum: 0
+                readinessProbe:
+                  type: object
+                  properties:
+                    initialDelaySeconds:
+                      type: integer
+                      minimum: 0
+                    timeoutSeconds:
+                      type: integer
+                      minimum: 0
+                jvmOptions:
+                  type: object
+                  properties:
+                    -XX:
+                      type: object
+                    -Xms:
+                      type: string
+                      pattern: '[0-9]+[mMgG]?'
+                    -Xmx:
+                      type: string
+                      pattern: '[0-9]+[mMgG]?'
+                resources:
+                  type: object
+                  properties:
+                    limits:
+                      type: object
+                      properties:
+                        cpu:
+                          type: string
+                          pattern: '[0-9]+m?$'
+                        memory:
+                          type: string
+                          pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
+                    requests:
+                      type: object
+                      properties:
+                        cpu:
+                          type: string
+                          pattern: '[0-9]+m?$'
+                        memory:
+                          type: string
+                          pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
                 metrics:
                   type: object
+                logging:
+                  type: object
+                  properties:
+                    loggers:
+                      type: object
+                    name:
+                      type: string
+                    type:
+                      type: string
                 tlsSidecar:
                   type: object
                   properties:
@@ -598,53 +645,6 @@ spec:
                             memory:
                               type: string
                               pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
-                config:
-                  type: object
-                logging:
-                  type: object
-                  properties:
-                    loggers:
-                      type: object
-                    name:
-                      type: string
-                    type:
-                      type: string
-                resources:
-                  type: object
-                  properties:
-                    limits:
-                      type: object
-                      properties:
-                        cpu:
-                          type: string
-                          pattern: '[0-9]+m?$'
-                        memory:
-                          type: string
-                          pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
-                    requests:
-                      type: object
-                      properties:
-                        cpu:
-                          type: string
-                          pattern: '[0-9]+m?$'
-                        memory:
-                          type: string
-                          pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
-                tolerations:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      effect:
-                        type: string
-                      key:
-                        type: string
-                      operator:
-                        type: string
-                      tolerationSeconds:
-                        type: integer
-                      value:
-                        type: string
               required:
               - replicas
               - storage

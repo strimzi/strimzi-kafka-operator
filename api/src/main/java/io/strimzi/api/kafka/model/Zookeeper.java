@@ -35,9 +35,12 @@ import java.util.Map;
         }
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "replicas", "image", "storage",
-        "livenessProbe", "readinessProbe", "jvmOptions",
-        "affinity", "metrics", "tlsSidecar"})
+@JsonPropertyOrder({
+        "replicas", "image", "storage", "config",
+        "affinity", "tolerations",
+        "livenessProbe", "readinessProbe",
+        "jvmOptions", "resources",
+         "metrics", "logging", "tlsSidecar"})
 public class Zookeeper implements Serializable {
 
     private static final long serialVersionUID = 1L;
