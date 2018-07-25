@@ -14,3 +14,7 @@
 
 # Velocity.log
 velocity.log
+
+# Generated docs
+documentation/html/**
+documentation/htmlnoheader/**
