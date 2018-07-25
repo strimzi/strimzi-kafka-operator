@@ -118,7 +118,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
     }
 
     private static Collection<String> getEnabledGroups(String key) {
-        Collection<String> enabledGroups = splitProperties(System.getProperty(key));
+        Collection<String> enabledGroups = splitProperties(System.getenv().getOrDefault(key, JUnitGroup.ALL_GROUPS));
         return enabledGroups;
     }
 
