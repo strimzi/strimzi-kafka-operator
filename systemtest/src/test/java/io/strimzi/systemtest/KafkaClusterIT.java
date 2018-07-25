@@ -44,7 +44,7 @@ import static io.strimzi.systemtest.k8s.Events.Unhealthy;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
 import static io.strimzi.test.StrimziRunner.TOPIC_CM;
-import static io.strimzi.test.TestUtils.fromYaml;
+import static io.strimzi.test.TestUtils.fromYamlString;
 import static io.strimzi.test.TestUtils.map;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static junit.framework.TestCase.assertTrue;
@@ -330,7 +330,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
         updateTopicPartitionsCountUsingPodCLI(CLUSTER_NAME, 0, "my-topic", 2);
         assertThat(describeTopicUsingPodCLI(CLUSTER_NAME, 0, "my-topic"),
                 hasItems("PartitionCount:2"));
-        KafkaTopic testTopic = fromYaml(kubeClient.get("kafkatopic", "my-topic"), KafkaTopic.class);
+        KafkaTopic testTopic = fromYamlString(kubeClient.get("kafkatopic", "my-topic"), KafkaTopic.class);
         assertNotNull(testTopic);
         assertNotNull(testTopic.getSpec());
         assertEquals(Integer.valueOf(2), testTopic.getSpec().getPartitions());
@@ -341,7 +341,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
         });
         assertThat(describeTopicUsingPodCLI(CLUSTER_NAME, 0, "topic-from-cli"),
                 hasItems("PartitionCount:2"));
-        testTopic = fromYaml(kubeClient.get("kafkatopic", "topic-from-cli"), KafkaTopic.class);
+        testTopic = fromYamlString(kubeClient.get("kafkatopic", "topic-from-cli"), KafkaTopic.class);
         assertNotNull(testTopic);
         assertNotNull(testTopic.getSpec());
         assertEquals(Integer.valueOf(2), testTopic.getSpec().getPartitions());
