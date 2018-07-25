@@ -932,7 +932,7 @@ metadata:
   name: my-connect-cluster
 spec:
   config:
-    bootstrap.servers: my-cluster-kafka:9092
+    bootstrap.servers: my-cluster-kafka-bootstrap:9092
     group.id: my-connect-cluster
     offset.storage.topic: my-connect-cluster-offsets
     config.storage.topic: my-connect-cluster-configs
@@ -1004,7 +1004,7 @@ spec:
     initialDelaySeconds: 60
     timeoutSeconds: 5
   config: 
-    bootstrap.servers: my-cluster-kafka:9092
+    bootstrap.servers: my-cluster-kafka-bootstrap:9092
 ----
 
 The S2I deployment is very similar to the regular Kafka Connect deployment (as represented by the `KafkaConnect` resource).

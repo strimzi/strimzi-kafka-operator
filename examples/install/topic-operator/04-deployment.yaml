@@ -17,9 +17,9 @@ spec:
             - name: STRIMZI_CONFIGMAP_LABELS
               value: "strimzi.io/kind=topic"
             - name: STRIMZI_KAFKA_BOOTSTRAP_SERVERS
-              value: my-cluster-kafka:9092
+              value: my-cluster-kafka-bootstrap:9092
             - name: STRIMZI_ZOOKEEPER_CONNECT
-              value: my-cluster-zookeeper:2181
+              value: my-cluster-zookeeper-client:2181
             - name: STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS
               value: "20000"
             - name: STRIMZI_FULL_RECONCILIATION_INTERVAL_MS
