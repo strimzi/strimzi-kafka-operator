@@ -52,6 +52,7 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
@@ -330,6 +331,8 @@ public class KafkaClusterIT extends AbstractClusterIT {
         assertThat(describeTopicUsingPodCLI(CLUSTER_NAME, 0, "my-topic"),
                 hasItems("PartitionCount:2"));
         KafkaTopic testTopic = fromYaml(kubeClient.get("kafkatopic", "my-topic"), KafkaTopic.class);
+        assertNotNull(testTopic);
+        assertNotNull(testTopic.getSpec());
         assertEquals(Integer.valueOf(2), testTopic.getSpec().getPartitions());
 
         //Updating second topic via KafkaTopic update
@@ -339,6 +342,8 @@ public class KafkaClusterIT extends AbstractClusterIT {
         assertThat(describeTopicUsingPodCLI(CLUSTER_NAME, 0, "topic-from-cli"),
                 hasItems("PartitionCount:2"));
         testTopic = fromYaml(kubeClient.get("kafkatopic", "topic-from-cli"), KafkaTopic.class);
+        assertNotNull(testTopic);
+        assertNotNull(testTopic.getSpec());
         assertEquals(Integer.valueOf(2), testTopic.getSpec().getPartitions());
 
         //Deleting first topic by deletion of CM
