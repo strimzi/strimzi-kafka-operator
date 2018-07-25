@@ -126,33 +126,33 @@ Once the cluster is deployed, a new Build can be triggered from the command line
 $ tree ./my-plugins/
 ./my-plugins/
 ├── debezium-connector-mongodb
-│   ├── bson-3.4.2.jar
+│   ├── bson-3.6.3.jar
 │   ├── CHANGELOG.md
 │   ├── CONTRIBUTE.md
 │   ├── COPYRIGHT.txt
-│   ├── debezium-connector-mongodb-0.7.1.jar
-│   ├── debezium-core-0.7.1.jar
+│   ├── debezium-connector-mongodb-0.8.1.Final.jar
+│   ├── debezium-core-0.8.1.Final.jar
 │   ├── LICENSE.txt
-│   ├── mongodb-driver-3.4.2.jar
-│   ├── mongodb-driver-core-3.4.2.jar
+│   ├── mongodb-driver-3.6.3.jar
+│   ├── mongodb-driver-core-3.6.3.jar
 │   └── README.md
 ├── debezium-connector-mysql
+│   ├── antlr4-runtime-4.7.jar
 │   ├── CHANGELOG.md
 │   ├── CONTRIBUTE.md
 │   ├── COPYRIGHT.txt
-│   ├── debezium-connector-mysql-0.7.1.jar
-│   ├── debezium-core-0.7.1.jar
+│   ├── debezium-connector-mysql-0.8.1.Final.jar
+│   ├── debezium-core-0.8.1.Final.jar
 │   ├── LICENSE.txt
 │   ├── mysql-binlog-connector-java-0.13.0.jar
 │   ├── mysql-connector-java-5.1.40.jar
-│   ├── README.md
-│   └── wkb-1.0.2.jar
+│   └── README.md
 └── debezium-connector-postgres
     ├── CHANGELOG.md
     ├── CONTRIBUTE.md
     ├── COPYRIGHT.txt
-    ├── debezium-connector-postgres-0.7.1.jar
-    ├── debezium-core-0.7.1.jar
+    ├── debezium-connector-postgres-0.8.1.Final.jar
+    ├── debezium-core-0.8.1.Final.jar
     ├── LICENSE.txt
     ├── postgresql-42.0.0.jar
     ├── protobuf-java-2.6.1.jar
