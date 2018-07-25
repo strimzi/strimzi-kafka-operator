@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.topic;
 
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import org.apache.kafka.clients.admin.Config;
@@ -142,10 +143,8 @@ public class TopicSerializationTest {
                 "01234567890123456789012345678901234567890123456789012345678901234567890123456789" +
                 "01234567890123456789012345678901234567890123456789012345678901234567890123456789" +
                 "012345678901234567890123456789";
-        KafkaTopic kafkaTopic = new KafkaTopicBuilder().withNewMetadata()
-                    .withName(illegalAsATopicName)
-                .endMetadata()
-                .withNewSpec()
+        KafkaTopic kafkaTopic = new KafkaTopicBuilder().withMetadata(new ObjectMetaBuilder().withName(illegalAsATopicName)
+                .build()).withNewSpec()
                     .withReplicas(1)
                     .withPartitions(1)
                     .withConfig(emptyMap())
@@ -164,8 +163,8 @@ public class TopicSerializationTest {
 
     @Test
     public void testErrorInTopicName() {
-        KafkaTopic kafkaTopic = new KafkaTopicBuilder().withNewMetadata().withName("foo")
-                .endMetadata().withNewSpec()
+        KafkaTopic kafkaTopic = new KafkaTopicBuilder().withMetadata(new ObjectMetaBuilder().withName("foo")
+                .build()).withNewSpec()
                     .withReplicas(1)
                     .withPartitions(1)
                     .withConfig(emptyMap())
@@ -183,7 +182,7 @@ public class TopicSerializationTest {
     @Test
     public void testErrorInPartitions() {
         KafkaTopic kafkaTopic = new KafkaTopicBuilder()
-                .withNewMetadata().withName("my-topic").endMetadata()
+                .withMetadata(new ObjectMetaBuilder().withName("my-topic").build())
                 .withNewSpec()
                     .withReplicas(1)
                     .withPartitions(-1)
@@ -202,7 +201,7 @@ public class TopicSerializationTest {
     @Test
     public void testErrorInReplicas() {
         KafkaTopic kafkaTopic = new KafkaTopicBuilder()
-                .withNewMetadata().withName("my-topic").endMetadata()
+                .withMetadata(new ObjectMetaBuilder().withName("my-topic").build())
                 .withNewSpec()
                     .withReplicas(-1)
                     .withPartitions(1)
@@ -221,7 +220,7 @@ public class TopicSerializationTest {
     @Test
     public void testErrorInConfigInvalidValueWrongType() {
         KafkaTopic kafkaTopic = new KafkaTopicBuilder()
-                .withNewMetadata().withName("my-topic").endMetadata()
+                .withMetadata(new ObjectMetaBuilder().withName("my-topic").build())
                 .withNewSpec()
                     .withReplicas(1)
                     .withPartitions(1)
@@ -241,7 +240,7 @@ public class TopicSerializationTest {
     @Test
     public void testErrorInConfigInvalidValueNull() {
         KafkaTopic kafkaTopic = new KafkaTopicBuilder()
-                .withNewMetadata().withName("my-topic").endMetadata()
+                .withMetadata(new ObjectMetaBuilder().withName("my-topic").build())
                 .withNewSpec()
                     .withReplicas(1)
                     .withPartitions(1)

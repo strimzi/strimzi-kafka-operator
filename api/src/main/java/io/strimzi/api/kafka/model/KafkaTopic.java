@@ -19,6 +19,7 @@ import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import io.sundr.builder.annotations.BuildableReference;
+import io.sundr.builder.annotations.ExternalBuildables;
 
 import java.util.HashMap;
 import java.util.List;
@@ -47,10 +48,13 @@ import static java.util.Collections.unmodifiableList;
 @Buildable(
         editableEnabled = false,
         generateBuilderPackage = true,
+        builderPackage = "io.strimzi.api.kafka.model"
+)
+@ExternalBuildables(
+        refs = {@BuildableReference(ObjectMeta.class)},
         builderPackage = "io.strimzi.api.kafka.model",
-        refs = {
-                @BuildableReference(io.fabric8.kubernetes.api.model.ObjectMeta.class)
-        }
+        generateBuilderPackage = true,
+        editableEnabled = false
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec"})
@@ -84,15 +88,15 @@ public class KafkaTopic extends CustomResource {
         this.apiVersion = apiVersion;
     }
 
-//    @Override
-//    public ObjectMeta getMetadata() {
-//        return super.getMetadata();
-//    }
-//
-//    @Override
-//    public void setMetadata(ObjectMeta metadata) {
-//        super.setMetadata(metadata);
-//    }
+    @Override
+    public ObjectMeta getMetadata() {
+        return super.getMetadata();
+    }
+
+    @Override
+    public void setMetadata(ObjectMeta metadata) {
+        super.setMetadata(metadata);
+    }
 
     @Description("The specification of the topic.")
     @JsonProperty(required = true)

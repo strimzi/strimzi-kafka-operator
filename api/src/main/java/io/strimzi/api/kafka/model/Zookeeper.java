@@ -15,7 +15,6 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
-import io.sundr.builder.annotations.BuildableReference;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -28,11 +27,7 @@ import java.util.Map;
 @Buildable(
         editableEnabled = false,
         generateBuilderPackage = true,
-        builderPackage = "io.strimzi.api.kafka.model",
-        refs = {
-                @BuildableReference(io.fabric8.kubernetes.api.model.Affinity.class),
-                @BuildableReference(io.fabric8.kubernetes.api.model.Toleration.class)
-        }
+        builderPackage = "io.strimzi.api.kafka.model"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
