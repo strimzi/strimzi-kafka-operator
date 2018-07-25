@@ -53,6 +53,10 @@ spec:
             }
         ]
       }
+    authentication:
+      tlsClientAuthentication: required
+    authorization:
+      authorizer: SimpleACLAuthorizer
   zookeeper:
     replicas: 3
     image: "strimzi/zookeeper:latest"

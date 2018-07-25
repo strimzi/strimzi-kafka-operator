@@ -41,7 +41,7 @@ Used in: <<type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
 |string
 |storage              1.2+<.<|Storage configuration (disk). Cannot be updated. The type depends on the value of the `storage.type` property within the given object, which must be one of [ephemeral, persistent-claim]
 |<<type-EphemeralStorage,`EphemeralStorage`>>, <<type-PersistentClaimStorage,`PersistentClaimStorage`>>
-|config               1.2+<.<|The kafka broker config. Properties with the following prefixes cannot be set: listeners, advertised., broker., listener.name.replication., listener.name.clienttls.ssl.truststore, listener.name.clienttls.ssl.keystore, host.name, port, inter.broker.listener.name, sasl., ssl., security., password., principal.builder.class, log.dir, zookeeper.connect, zookeeper.set.acl, super.user
+|config               1.2+<.<|The kafka broker config. Properties with the following prefixes cannot be set: listeners, advertised., broker., listener., host.name, port, inter.broker.listener.name, sasl., ssl., security., password., principal.builder.class, log.dir, zookeeper.connect, zookeeper.set.acl, authorizer., super.user
 |map
 |rack                 1.2+<.<|Configuration of the `broker.rack` broker config.
 |<<type-Rack,`Rack`>>
@@ -69,6 +69,10 @@ Used in: <<type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
 |<<type-InlineLogging,`InlineLogging`>>, <<type-ExternalLogging,`ExternalLogging`>>
 |tlsSidecar           1.2+<.<|TLS sidecar configuration
 |<<type-Sidecar,`Sidecar`>>
+|authentication       1.2+<.<|Authentication configuration for Kafka brokers
+|<<type-KafkaAuthentication,`KafkaAuthentication`>>
+|authorization        1.2+<.<|Authorization configuration for Kafka brokers
+|<<type-KafkaAuthorization,`KafkaAuthorization`>>
 |====
 
 [[type-EphemeralStorage]]
@@ -231,6 +235,32 @@ Used in: <<type-Kafka,`Kafka`>>, <<type-TopicOperator,`TopicOperator`>>, <<type-
 |string
 |resources  1.2+<.<|Resource constraints (limits and requests).
 |<<type-Resources,`Resources`>>
+|====
+
+[[type-KafkaAuthentication]]
+### `KafkaAuthentication` type v1alpha1 kafka.strimzi.io
+
+Used in: <<type-Kafka,`Kafka`>>
+
+
+[options="header"]
+|====
+|Field                           |Description
+|tlsClientAuthentication  1.2+<.<|Configures TLS Client Authentication on port 9093. Valid values are `required`, `requested` ad `none`. When not specified, the default value will be `none`.
+|string
+|====
+
+[[type-KafkaAuthorization]]
+### `KafkaAuthorization` type v1alpha1 kafka.strimzi.io
+
+Used in: <<type-Kafka,`Kafka`>>
+
+
+[options="header"]
+|====
+|Field              |Description
+|authorizer  1.2+<.<|Specifies the authorizer which should be used.
+|string
 |====
 
 [[type-Zookeeper]]
