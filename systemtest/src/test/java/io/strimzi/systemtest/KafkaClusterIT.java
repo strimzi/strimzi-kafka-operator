@@ -317,7 +317,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
     @Test
     @JUnitGroup(name = "acceptance")
     @KafkaFromClasspathYaml
-    public void testForTopicOperator() {
+    public void testForTopicOperator() throws InterruptedException {
         //Createing topics for testing
         kubeClient.create(TOPIC_CM);
         assertThat(listTopicsUsingPodCLI(CLUSTER_NAME, 0), hasItem("my-topic"));
@@ -352,6 +352,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
         //Deleting another topic using pod CLI
         deleteTopicUsingPodCLI(CLUSTER_NAME, 0, "my-topic");
         kubeClient.waitForResourceDeletion("kafkatopic", "my-topic");
+        Thread.sleep(10000L);
         List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
         assertThat(topics, not(hasItems("my-topic")));
         assertThat(topics, not(hasItems("topic-from-cli")));
