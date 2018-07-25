@@ -7,7 +7,6 @@ package io.strimzi.api.kafka.model;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
