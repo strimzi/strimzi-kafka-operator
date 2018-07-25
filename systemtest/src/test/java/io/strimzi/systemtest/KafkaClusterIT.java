@@ -314,7 +314,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
     }
 
     @Test
-    @JUnitGroup(name = "regression")
+    @JUnitGroup(name = "acceptance")
     @KafkaFromClasspathYaml
     public void testForTopicOperator() {
         //Createing topics for testing
