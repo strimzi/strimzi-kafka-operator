@@ -19,8 +19,7 @@ OpenShift cluster.
 To deploy a Kafka cluster, a `Kafka` resource with the cluster configuration has to be created within the
 ifdef::Kubernetes[Kubernetes or]
 OpenShift cluster.
-Based on the information in the `Kafka` resource,
-the Cluster Operator deploys a corresponding Kafka cluster.
+Based on the way the `Kafka` resource was declared, the Cluster Operator deploys a corresponding Kafka cluster.
 The format of the `Kafka` resource is described in xref:kafka_assembly_details[Format of the `Kafka` resource].
 
 NOTE: {ProductName} contains example YAML files, which make deploying a Cluster Operator easier.

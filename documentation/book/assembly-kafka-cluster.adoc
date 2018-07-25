@@ -10,19 +10,15 @@
 include::common/attributes.adoc[]
 
 [id='kafka-broker-{context}']
-= Kafka broker
+= Kafka cluster
+
+When installing Kafka, {ProductName} also installs a Zookeeper cluster and adds the necessary configuration for the Kafka broker connection.
 
 {ProductName} uses `StatefulSets` to deploy Kafka brokers.
 With `StatefulSets`, the pods receive a unique name and network identity, making it easier to identify the
-individual Kafka broker pods and set their identity (broker ID). The deployment uses _regular_ and _headless_ services:
+individual Kafka broker pods and set their identity (broker ID). For more information about `StatefulSets`, see {StatefulSets}.
 
-Regular services:: can be used as bootstrap servers for Kafka clients
-
-Headless services:: are needed to have DNS resolve the pods IP addresses directly
-
-When installing Kafka, {ProductName} also installs a Zookeeper cluster and adds the necessary configuration for the Kafka broker connection. The Zookeeper cluster also uses `StatefulSets`.
-
-{ProductName} provides two options for Kafka broker deployment:
+{ProductName} provides two options for Kafka cluster deployment:
 
 Ephemeral:: is suitable only for development and testing purposes and not for production. This deployment uses `emptyDir` volumes for storing broker information (Zookeeper) and topics or partitions
 (Kafka). Using an `emptyDir` volume means that its content is strictly related to the pod life cycle and is
@@ -34,12 +30,10 @@ ifdef::Kubernetes[HostPath volumes on Minikube or]
 Amazon EBS volumes in Amazon AWS deployments without any changes in the YAML files. The `PersistentVolumeClaim` can use a `StorageClass` to trigger automatic volume provisioning.
 
 ifdef::Kubernetes[]
-include::proc-deploying-kafka-broker-kubernetes.adoc[leveloffset=+1]
+include::proc-deploying-kafka-cluster-kubernetes.adoc[leveloffset=+1]
 endif::Kubernetes[]
 
-include::proc-deploying-kafka-broker-openshift.adoc[leveloffset=+1]
-
-
+include::proc-deploying-kafka-cluster-openshift.adoc[leveloffset=+1]
 
 // Restore the context to what it was before this assembly.
 :context: {parent-context}

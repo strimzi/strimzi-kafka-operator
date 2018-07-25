@@ -32,6 +32,7 @@
 // External links
 :KafkaRacks: https://kafka.apache.org/documentation/#basic_ops_racks[Kafka racks documentation^]
 :K8sAffinity: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/[Kubernetes node and pod affinity documentation^]
+:StatefulSets: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/[Kubernetes official documentation^]
 
 // Docker image names
 :DockerTag: {ProductVersion}

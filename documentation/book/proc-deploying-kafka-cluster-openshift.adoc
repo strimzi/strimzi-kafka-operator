@@ -1,0 +1,31 @@
+// Module included in the following assemblies:
+//
+// assembly-kafka-cluster.adoc
+
+[id='deploying-kafka-cluster-openshift-{context}']
+= Deploying the Kafka cluster to {OpenShiftName}
+
+{OpenShiftName} provides a template for deploying the Kafka cluster either in the {OpenShiftName} console or on the command-line.
+
+.Prerequisites
+
+* Before deploying a Kafka cluster, the Cluster Operator must be deployed.
+
+.Procedure
+
+. If you are planning to use the Kafka cluster for development or testing, create an ephemeral cluster
++
+[source,shell]
+----
+oc new-app strimzi-ephemeral
+----
+
+. If you are planning to use the Kafka cluster in production, create a persistent cluster
++
+[source,shell]
+----
+oc new-app strimzi-persistent
+----
+
+.Additional resources
+* For more information about deploying the Cluster Operator, see xref:assembly-cluster-operator.adoc[]
