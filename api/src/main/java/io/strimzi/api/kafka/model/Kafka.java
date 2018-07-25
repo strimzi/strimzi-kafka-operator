@@ -31,8 +31,6 @@ import java.util.Map;
         builderPackage = "io.strimzi.api.kafka.model",
         refs = {
                 @BuildableReference(io.fabric8.kubernetes.api.model.Affinity.class),
-                //@BuildableReference(io.fabric8.kubernetes.api.model.PodAntiAffinity.class),
-                //@BuildableReference(io.fabric8.kubernetes.api.model.Preferred.class),
                 @BuildableReference(io.fabric8.kubernetes.api.model.Toleration.class)
         }
 )
