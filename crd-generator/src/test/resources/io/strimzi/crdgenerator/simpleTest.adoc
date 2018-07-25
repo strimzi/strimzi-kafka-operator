@@ -1,4 +1,3 @@
-[[kind-Example]]
 [[type-ExampleCrd]]
 # `Example` kind v1alpha1 crdgenerator.strimzi.io
 
@@ -73,7 +72,7 @@
 [[type-Number]]
 # `Number` type v1alpha1 crdgenerator.strimzi.io
 
-Used in: <<kind-Example,`ExampleCrd`>>
+Used in: <<type-ExampleCrd,`ExampleCrd`>>
 
 
 [options="header"]
@@ -84,7 +83,7 @@ Used in: <<kind-Example,`ExampleCrd`>>
 [[type-ObjectProperty]]
 # `ObjectProperty` type v1alpha1 crdgenerator.strimzi.io
 
-Used in: <<kind-Example,`ExampleCrd`>>
+Used in: <<type-ExampleCrd,`ExampleCrd`>>
 
 Example of complex type.
 
@@ -100,7 +99,7 @@ Example of complex type.
 [[type-PolymorphicLeft]]
 # `PolymorphicLeft` type v1alpha1 crdgenerator.strimzi.io
 
-Used in: <<kind-Example,`ExampleCrd`>>
+Used in: <<type-ExampleCrd,`ExampleCrd`>>
 
 
 The `discrim` property is a discriminator that distinguishes the use of the type `PolymorphicLeft` from <<type-PolymorphicRight,`PolymorphicRight`>>.
@@ -119,7 +118,7 @@ It must have the value `left` for the type `PolymorphicLeft`.
 [[type-PolymorphicRight]]
 # `PolymorphicRight` type v1alpha1 crdgenerator.strimzi.io
 
-Used in: <<kind-Example,`ExampleCrd`>>
+Used in: <<type-ExampleCrd,`ExampleCrd`>>
 
 
 The `discrim` property is a discriminator that distinguishes the use of the type `PolymorphicRight` from <<type-PolymorphicLeft,`PolymorphicLeft`>>.

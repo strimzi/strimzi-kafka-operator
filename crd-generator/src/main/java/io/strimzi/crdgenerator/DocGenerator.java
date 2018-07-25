@@ -57,14 +57,6 @@ public class DocGenerator {
         }
     }
 
-    private void appendAnchor(Crd crd) throws IOException {
-        out.append("[[").append(anchor(crd)).append("]]").append(NL);
-    }
-
-    private String anchor(Crd crd) {
-        return "kind-" + crd.spec().names().kind();
-    }
-
     private void appendAnchor(Crd crd, Class<?> anchor) throws IOException {
         out.append("[[").append(anchor(anchor)).append("]]").append(NL);
     }
@@ -113,7 +105,6 @@ public class DocGenerator {
 
     public void generate(Class<? extends CustomResource> crdClass) throws IOException {
         Crd crd = crdClass.getAnnotation(Crd.class);
-        appendAnchor(crd);
         appendAnchor(crd, crdClass);
         appendHeading(crd, "`" + crd.spec().names().kind() + "` kind");
         appendCommonTypeDoc(crd, crdClass);
@@ -294,9 +285,6 @@ public class DocGenerator {
                     throw new RuntimeException(e);
                 }
             }).collect(Collectors.joining(", ")));
-        } else if (cls.isAnnotationPresent(Crd.class)) {
-            // <<KafkaType,`KafkaType`>>
-            out.append("<<").append(anchor(crd)).append(",`").append(cls.getSimpleName()).append("`>>");
         } else {
             out.append("<<").append(anchor(cls)).append(",`").append(cls.getSimpleName()).append("`>>");
         }
