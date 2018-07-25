@@ -1,0 +1,10 @@
+---
+apiVersion: "kafka.strimzi.io/v1alpha1"
+kind: "KafkaUser"
+metadata:
+  finalizers: []
+  name: "my-user"
+  ownerReferences: []
+spec:
+  authentication:
+    tls: {}

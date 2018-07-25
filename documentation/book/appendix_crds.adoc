@@ -406,7 +406,6 @@ Used in: <<type-KafkaConnectS2IAssembly,`KafkaConnectS2IAssembly`>>
 [[type-KafkaTopic]]
 ### `KafkaTopic` kind v1alpha1 kafka.strimzi.io
 
-
 [options="header"]
 |====
 |Field        |Description
@@ -418,6 +417,47 @@ Used in: <<type-KafkaConnectS2IAssembly,`KafkaConnectS2IAssembly`>>
 ### `KafkaTopicSpec` type v1alpha1 kafka.strimzi.io
 
 Used in: <<type-KafkaTopic,`KafkaTopic`>>
+|Field                        |Description
+|spec                  1.2+<.<|The specification of the user.
+|<<type-KafkaUserSpec,`KafkaUserSpec`>>
+|additionalProperties  1.2+<.<|
+|map
+|====
+
+[[type-KafkaUserSpec]]
+### `KafkaUserSpec` type v1alpha1 kafka.strimzi.io
+
+Used in: <<kind-KafkaUser,`KafkaUser`>>
+
+
+[options="header"]
+|====
+|Field                        |Description
+|authentication        1.2+<.<|Authentication mechanisms enabled for this Kafka user
+|<<type-KafkaUserAuthentication,`KafkaUserAuthentication`>>
+|additionalProperties  1.2+<.<|
+|map
+|====
+
+[[type-KafkaUserAuthentication]]
+### `KafkaUserAuthentication` type v1alpha1 kafka.strimzi.io
+
+Used in: <<type-KafkaUserSpec,`KafkaUserSpec`>>
+
+
+[options="header"]
+|====
+|Field                        |Description
+|additionalProperties  1.2+<.<|
+|map
+|tls                   1.2+<.<|Enables TLS client authentication for given Kafka user
+|<<type-TlsClientAuthentication,`TlsClientAuthentication`>>
+|====
+
+[[type-TlsClientAuthentication]]
+### `TlsClientAuthentication` type v1alpha1 kafka.strimzi.io
+
+Used in: <<type-KafkaUserAuthentication,`KafkaUserAuthentication`>>
 
 
 [options="header"]

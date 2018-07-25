@@ -1,0 +1,9 @@
+apiVersion: kafka.strimzi.io/v1alpha1
+kind: KafkaUser
+metadata:
+  name: extra-property
+spec:
+  thisPropertyIsNotInTheSchema: true
+  authentication:
+    thisPropertyIsAlsoNotInTheSchema: true
+    tls: {}

@@ -17,7 +17,9 @@ import io.strimzi.api.kafka.model.KafkaAssembly;
 import io.strimzi.api.kafka.model.KafkaConnectAssembly;
 import io.strimzi.api.kafka.model.KafkaConnectS2IAssembly;
 import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.api.kafka.model.KafkaUser;
 
+import java.util.Collections;
 import java.util.List;
 
 import static java.util.Collections.emptyList;
@@ -33,7 +35,8 @@ public class Crds {
         KafkaAssembly.class,
         KafkaConnectAssembly.class,
         KafkaConnectS2IAssembly.class,
-        KafkaTopic.class
+        KafkaTopic.class,
+        KafkaUser.class
     };
 
     private Crds() {
@@ -90,6 +93,15 @@ public class Crds {
             group = KafkaTopic.RESOURCE_GROUP;
             version = KafkaTopic.VERSION;
             shortNames = KafkaTopic.RESOURCE_SHORTNAMES;
+        } else if (cls.equals(KafkaUser.class)) {
+            kind = KafkaUser.RESOURCE_KIND;
+            crdApiVersion = KafkaUser.CRD_API_VERSION;
+            plural = KafkaUser.RESOURCE_PLURAL;
+            singular = KafkaUser.RESOURCE_SINGULAR;
+            listKind = KafkaUser.RESOURCE_LIST_KIND;
+            group = KafkaUser.RESOURCE_GROUP;
+            version = KafkaUser.VERSION;
+            shortNames = Collections.singletonList(KafkaUser.SHORT_NAME);
         } else {
             throw new RuntimeException();
         }
@@ -143,6 +155,13 @@ public class Crds {
 
     public static MixedOperation<KafkaTopic, KafkaTopicList, DoneableKafkaTopic, Resource<KafkaTopic, DoneableKafkaTopic>> topicOperation(KubernetesClient client) {
         return client.customResources(topic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class);
+
+    public static CustomResourceDefinition kafkaUser() {
+        return crd(KafkaUser.class);
+    }
+
+    public static MixedOperation<KafkaUser, KafkaUserList, DoneableKafkaUser, Resource<KafkaUser, DoneableKafkaUser>> kafkaUserOperation(KubernetesClient client) {
+        return client.customResources(kafkaUser(), KafkaUser.class, KafkaUserList.class, DoneableKafkaUser.class);
     }
 
     public static <T extends CustomResource, L extends CustomResourceList<T>, D extends CustomResourceDoneable<T>> MixedOperation<T, L, D, Resource<T, D>>
