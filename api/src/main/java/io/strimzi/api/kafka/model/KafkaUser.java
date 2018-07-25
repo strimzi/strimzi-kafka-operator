@@ -7,6 +7,7 @@ package io.strimzi.api.kafka.model;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -56,7 +57,7 @@ public class KafkaUser extends CustomResource {
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
     public static final String RESOURCE_GROUP = "kafka.strimzi.io";
     public static final String RESOURCE_PLURAL = "kafkausers";
-    public static final String RESOURCE_SINGULAR = "kafkazser";
+    public static final String RESOURCE_SINGULAR = "kafkauser";
     public static final String CRD_API_VERSION = "apiextensions.k8s.io/v1beta1";
     public static final String CRD_NAME = RESOURCE_PLURAL + "." + RESOURCE_GROUP;
     public static final String SHORT_NAME = "ku";
