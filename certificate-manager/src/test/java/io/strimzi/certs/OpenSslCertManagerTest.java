@@ -40,8 +40,8 @@ public class OpenSslCertManagerTest {
     @Test
     public void testGenerateSelfSignedCert() throws Exception {
 
-        File key = File.createTempFile("tls", "key");
-        File cert = File.createTempFile("tls", "crt");
+        File key = File.createTempFile("key-", ".key");
+        File cert = File.createTempFile("crt-", ".crt");
 
         testGenerateSelfSignedCert(key, cert, null);
 
@@ -52,8 +52,8 @@ public class OpenSslCertManagerTest {
     @Test
     public void testGenerateSelfSignedCertWithSubject() throws Exception {
 
-        File key = File.createTempFile("tls", "key");
-        File cert = File.createTempFile("tls", "crt");
+        File key = File.createTempFile("key-", ".key");
+        File cert = File.createTempFile("crt-", ".crt");
         Subject sbj = new Subject();
         sbj.setCommonName("MyCommonName");
         sbj.setOrganizationName("MyOrganization");
@@ -67,8 +67,8 @@ public class OpenSslCertManagerTest {
     @Test
     public void testGenerateSelfSignedCertWithSubjectAndAltNames() throws Exception {
 
-        File key = File.createTempFile("tls", "key");
-        File cert = File.createTempFile("tls", "crt");
+        File key = File.createTempFile("key-", ".key");
+        File cert = File.createTempFile("crt-", ".crt");
         Subject sbj = new Subject();
         sbj.setCommonName("MyCommonName");
         sbj.setOrganizationName("MyOrganization");
@@ -115,13 +115,17 @@ public class OpenSslCertManagerTest {
     @Test
     public void testGenerateSignedCert() throws Exception {
 
-        File caKey = File.createTempFile("tls", "key");
-        File caCert = File.createTempFile("tls", "crt");
+        File caKey = File.createTempFile("ca-key-", ".key");
+        File caCert = File.createTempFile("ca-crt-", ".crt");
 
-        ssl.generateSelfSignedCert(caKey, caCert, 365);
+        Subject caSbj = new Subject();
+        caSbj.setCommonName("CACommonName");
+        caSbj.setOrganizationName("CAOrganizationName");
 
-        File key = File.createTempFile("tls", "key");
-        File csr = File.createTempFile("tls", "csr");
+        ssl.generateSelfSignedCert(caKey, caCert, caSbj, 365);
+
+        File key = File.createTempFile("key-", ".key");
+        File csr = File.createTempFile("csr-", ".csr");
         Subject sbj = new Subject();
         sbj.setCommonName("MyCommonName");
         sbj.setOrganizationName("MyOrganization");
@@ -132,7 +136,7 @@ public class OpenSslCertManagerTest {
 
         ssl.generateCsr(key, csr, sbj);
 
-        File cert = File.createTempFile("tls", "crt");
+        File cert = File.createTempFile("crt-", ".crt");
         ssl.generateCert(csr, caKey, caCert, cert, 365);
 
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
