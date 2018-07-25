@@ -82,6 +82,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static io.strimzi.api.kafka.model.Quantities.normalizeCpu;
+import static io.strimzi.api.kafka.model.Quantities.normalizeMemory;
 import static java.util.Arrays.asList;
 
 public abstract class AbstractModel {
@@ -896,20 +898,20 @@ public abstract class AbstractModel {
             CpuMemory limits = resources.getLimits();
             if (limits != null
                     && limits.milliCpuAsInt() > 0) {
-                builder.addToLimits("cpu", new Quantity(limits.getMilliCpu()));
+                builder.addToLimits("cpu", new Quantity(normalizeCpu(limits.getMilliCpu())));
             }
             if (limits != null
                     && limits.memoryAsLong() > 0) {
-                builder.addToLimits("memory", new Quantity(limits.getMemory()));
+                builder.addToLimits("memory", new Quantity(normalizeMemory(limits.getMemory())));
             }
             CpuMemory requests = resources.getRequests();
             if (requests != null
                     && requests.milliCpuAsInt() > 0) {
-                builder.addToRequests("cpu", new Quantity(requests.getMilliCpu()));
+                builder.addToRequests("cpu", new Quantity(normalizeCpu(requests.getMilliCpu())));
             }
             if (requests != null
                     && requests.memoryAsLong() > 0) {
-                builder.addToRequests("memory", new Quantity(requests.getMemory()));
+                builder.addToRequests("memory", new Quantity(normalizeMemory(requests.getMemory())));
             }
             return builder.build();
         }
