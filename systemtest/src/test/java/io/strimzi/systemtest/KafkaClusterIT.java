@@ -60,7 +60,7 @@ import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 @RunWith(StrimziRunner.class)
 @Namespace(KafkaClusterIT.NAMESPACE)
 @ClusterOperator
-public class KafkaClusterIT extends AbstractClusterIT {
+public class KafkaClusterIT extends AbstractIT {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaClusterIT.class);
 

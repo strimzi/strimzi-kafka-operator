@@ -25,7 +25,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 @Namespace(RecoveryClusterIT.NAMESPACE)
 @ClusterOperator
 @KafkaFromClasspathYaml
-public class RecoveryClusterIT extends AbstractClusterIT {
+public class RecoveryClusterIT extends AbstractIT {
 
     static final String NAMESPACE = "recovery-cluster-test";
     static final String CLUSTER_NAME = "recovery-cluster";

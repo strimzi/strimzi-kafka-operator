@@ -46,7 +46,7 @@ import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 @Namespace(ConnectClusterIT.NAMESPACE)
 @ClusterOperator
 @KafkaFromClasspathYaml
-public class ConnectClusterIT extends AbstractClusterIT {
+public class ConnectClusterIT extends AbstractIT {
 
     private static final Logger LOGGER = LogManager.getLogger(ConnectClusterIT.class);
 

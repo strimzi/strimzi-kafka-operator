@@ -55,20 +55,19 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
-public class AbstractClusterIT {
+public class AbstractIT {
 
     static {
         Crds.registerCustomKinds();
     }
 
-    private static final Logger LOGGER = LogManager.getLogger(AbstractClusterIT.class);
+    private static final Logger LOGGER = LogManager.getLogger(AbstractIT.class);
     protected static final String CLUSTER_NAME = "my-cluster";
     protected static final String ZK_IMAGE = "STRIMZI_DEFAULT_ZOOKEEPER_IMAGE";
     protected static final String KAFKA_IMAGE = "STRIMZI_DEFAULT_KAFKA_IMAGE";
     protected static final String CONNECT_IMAGE = "STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE";
     protected static final String S2I_IMAGE = "STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE";
     protected static final String TO_IMAGE = "STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE";
-    protected static final String INIT_KAFKA_IMAGE = "STRIMZI_DEFAULT_INIT_KAFKA_IMAGE";
     protected static final String TEST_TOPIC_NAME = "test-topic";
     protected static final String KAFKA_INIT_IMAGE = "STRIMZI_DEFAULT_KAFKA_INIT_IMAGE";
     protected static final String TLS_SIDECAR_ZOOKEEPER_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE";
