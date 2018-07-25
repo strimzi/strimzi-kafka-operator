@@ -1,7 +1,7 @@
 [id='creating-a-topic_{context}']
 = Creating a topic
 
-This procedure will describe how to create a Kafka topic using a `KafkaTopic` {PlatformProductName} resource.
+This procedure describes how to create a Kafka topic using a `KafkaTopic` {PlatformProductName} resource.
 
 .Prerequisites
 
@@ -26,7 +26,7 @@ spec:
   replicas: 2
 ----
 +
-NOTE: It is recommended to use a topic name that is a valid {PlatformProductName} resource name. Doing this means that it is not necessary to set the `KafkaTopic.spec.topicName` property. In any case the `KafkaTopic.spec.topicName` cannot be changed after creation. 
+NOTE: It is recommended to use a topic name that is a valid {PlatformProductName} resource name. Doing this means that it is not necessary to set the `KafkaTopic.spec.topicName` property. In any case the `KafkaTopic.spec.topicName` cannot be changed after creation.
 +
 NOTE: The `KafkaTopic.spec.partitions` cannot be decreased.
 
@@ -37,8 +37,3 @@ NOTE: The `KafkaTopic.spec.partitions` cannot be decreased.
 ----
 oc create -f <your-file>
 ----
-
-
-.Additional resources
-
-* TODO

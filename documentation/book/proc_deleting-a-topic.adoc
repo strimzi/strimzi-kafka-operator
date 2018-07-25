@@ -1,7 +1,7 @@
 [id='deleting-a-topic_{context}']
 = Deleting a topic
 
-This procedure will describe how to delete a Kafka topic using a `KafkaTopic` {PlatformProductName} resource.
+This procedure describes how to delete a Kafka topic using a `KafkaTopic` {PlatformProductName} resource.
 
 .Prerequisites
 
@@ -13,15 +13,10 @@ This procedure will describe how to delete a Kafka topic using a `KafkaTopic` {P
 
 . Delete the `KafkaTopic` resource in {PlatformProductName}, for example:
 +
-.Example of how to delete the `KafkaTopic` called `<my-topic>` 
+.Example of how to delete the `KafkaTopic` called `<my-topic>`
 [source,shell]
 ----
 oc delete kafkatopic <my-topic>
 ----
 +
 NOTE: Whether the topic can actually be deleted depends on the value of the `delete.topic.enable` Kafka broker configuration, specified in the `Kafka.spec.kafka.config` property.
-
-
-.Additional resources
-
-* TODO

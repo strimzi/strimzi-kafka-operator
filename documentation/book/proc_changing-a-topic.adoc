@@ -1,7 +1,7 @@
 [id='changing-a-topic_{context}']
 = Changing a topic
 
-This procedure will describe how to change the configuration of an existing Kafka topic using a `KafkaTopic` {PlatformProductName} resource.
+This procedure describes how to change the configuration of an existing Kafka topic by using a `KafkaTopic` {PlatformProductName} resource.
 
 .Prerequisites
 
@@ -11,7 +11,7 @@ This procedure will describe how to change the configuration of an existing Kafk
 
 .Procedure
 
-. Prepare a file containing the `KafkaTopic` to be created
+. Prepare a file containing the desired `KafkaTopic`
 +
 .Example `KafkaTopic`
 [source,yaml]
@@ -23,17 +23,22 @@ metadata:
   labels:
     strimzi.io/cluster: my-cluster
 spec:
-  partitions: 10
+  partitions: 16
   replicas: 2
 ----
 +
-NOTE: The `KafkaTopic.spec.topicName` cannot be changed because Kafka does not support changing topic names. 
+TIP: You can get the current version of the resource using `oc get kafkatopic orders`.
++
+NOTE: The `KafkaTopic.spec.topicName` cannot be changed because Kafka does not support changing topic names.
 +
 NOTE: The `spec.partitions` cannot be decreased, because Kafka does not support this.
 +
-NOTE: Increasing `spec.partitions` for topics with keys should be exercised with caution, as it will change how records are partitioned. 
+CAUTION: Increasing `spec.partitions` for topics with keys will change how records are partitioned. If the topic uses semantic partitioning blah
 
-
-.Additional resources
-
-* TODO
+. Update the `KafkaTopic` resource in {PlatformProductName}, for example:
++
+.Replacing the `KafkaTopic` resource using `oc replace`
+[source,shell]
+----
+oc replace -f <your-file>
+----
