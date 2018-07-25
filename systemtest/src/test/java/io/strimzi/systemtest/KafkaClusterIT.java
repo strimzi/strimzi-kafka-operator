@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.Zookeeper;
 import io.strimzi.test.ClusterOperator;
 import io.strimzi.test.JUnitGroup;
@@ -42,8 +43,8 @@ import static io.strimzi.systemtest.k8s.Events.SuccessfulDelete;
 import static io.strimzi.systemtest.k8s.Events.Unhealthy;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
-import static io.strimzi.systemtest.matchers.Matchers.valueOfCmEquals;
 import static io.strimzi.test.StrimziRunner.TOPIC_CM;
+import static io.strimzi.test.TestUtils.fromYaml;
 import static io.strimzi.test.TestUtils.map;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static junit.framework.TestCase.assertTrue;
@@ -322,30 +323,33 @@ public class KafkaClusterIT extends AbstractClusterIT {
 
         createTopicUsingPodCLI(CLUSTER_NAME, 0, "topic-from-cli", 1, 1);
         assertThat(listTopicsUsingPodCLI(CLUSTER_NAME, 0), hasItems("my-topic", "topic-from-cli"));
-        assertThat(kubeClient.list("cm"), hasItems("my-topic", "topic-from-cli", "my-topic"));
+        assertThat(kubeClient.list("kafkatopic"), hasItems("my-topic", "topic-from-cli", "my-topic"));
 
         //Updating first topic using pod CLI
         updateTopicPartitionsCountUsingPodCLI(CLUSTER_NAME, 0, "my-topic", 2);
         assertThat(describeTopicUsingPodCLI(CLUSTER_NAME, 0, "my-topic"),
                 hasItems("PartitionCount:2"));
-        String testTopicCM = kubeClient.get("cm", "my-topic");
-        assertThat(testTopicCM, valueOfCmEquals("partitions", "2"));
+        KafkaTopic testTopic = fromYaml(kubeClient.get("kafkatopic", "my-topic"), KafkaTopic.class);
+        assertEquals(Integer.valueOf(2), testTopic.getSpec().getPartitions());
 
-        //Updating second topic via CM update
-        replaceCm("topic-from-cli", "partitions", "2");
+        //Updating second topic via KafkaTopic update
+        replaceTopicResource("topic-from-cli", topic -> {
+            topic.getSpec().setPartitions(2);
+        });
         assertThat(describeTopicUsingPodCLI(CLUSTER_NAME, 0, "topic-from-cli"),
                 hasItems("PartitionCount:2"));
-        testTopicCM = kubeClient.get("cm", "topic-from-cli");
-        assertThat(testTopicCM, valueOfCmEquals("partitions", "2"));
+        testTopic = fromYaml(kubeClient.get("kafkatopic", "topic-from-cli"), KafkaTopic.class);
+        assertEquals(Integer.valueOf(2), testTopic.getSpec().getPartitions());
 
         //Deleting first topic by deletion of CM
-        kubeClient.deleteByName("cm", "topic-from-cli");
+        kubeClient.deleteByName("kafkatopic", "topic-from-cli");
 
         //Deleting another topic using pod CLI
         deleteTopicUsingPodCLI(CLUSTER_NAME, 0, "my-topic");
-        kubeClient.waitForResourceDeletion("cm", "my-topic");
+        kubeClient.waitForResourceDeletion("kafkatopic", "my-topic");
         List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
-        assertThat(topics, not(hasItems("topic-from-cli", "my-topic")));
+        assertThat(topics, not(hasItems("my-topic")));
+        assertThat(topics, not(hasItems("topic-from-cli")));
     }
 
     private void testDockerImagesForKafkaCluster(String clusterName, int kafkaPods, int zkPods, boolean rackAwareEnabled) {
