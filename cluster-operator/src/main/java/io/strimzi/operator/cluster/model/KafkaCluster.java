@@ -25,6 +25,8 @@ import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.api.kafka.model.EphemeralStorage;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaAssembly;
+import io.strimzi.api.kafka.model.KafkaAuthentication;
+import io.strimzi.api.kafka.model.KafkaAuthorization;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.api.kafka.model.Resources;
@@ -55,6 +57,8 @@ public class KafkaCluster extends AbstractModel {
     protected static final String RACK_VOLUME_MOUNT = "/opt/kafka/rack";
     private static final String ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY = "RACK_TOPOLOGY_KEY";
     private static final String ENV_VAR_KAFKA_INIT_NODE_NAME = "NODE_NAME";
+    private static final String ENV_VAR_KAFKA_TLS_CLIENT_AUTHENTICATION = "KAFKA_CLIENTTLS_TLS_CLIENT_AUTHENTICATION";
+    private static final String ENV_VAR_KAFKA_AUTHORIZER_TYPE = "KAFKA_AUTHORIZER_TYPE";
 
     protected static final int CLIENT_PORT = 9092;
     protected static final String CLIENT_PORT_NAME = "clients";
@@ -90,6 +94,8 @@ public class KafkaCluster extends AbstractModel {
     private Rack rack;
     private String initImage;
     private Sidecar tlsSidecar;
+    private KafkaAuthentication authentication;
+    private KafkaAuthorization authorization;
 
     // Configuration defaults
     private static final int DEFAULT_REPLICAS = 3;
@@ -219,6 +225,9 @@ public class KafkaCluster extends AbstractModel {
         result.generateCertificates(certManager, secrets);
         result.setTlsSidecar(kafka.getTlsSidecar());
 
+        result.setAuthentication(kafka.getAuthentication());
+        result.setAuthorization(kafka.getAuthorization());
+
         return result;
     }
 
@@ -248,7 +257,7 @@ public class KafkaCluster extends AbstractModel {
                     File clientsCAcertFile = File.createTempFile("tls", "clients-ca-cert");
 
                     Subject sbj = new Subject();
-                    sbj.setOrganizationName("io.strimzi");
+                    sbj.setOrganizationName("io.strimzi.clients");
                     sbj.setCommonName("kafka-clients-ca");
 
                     certManager.generateSelfSignedCert(clientsCAkeyFile, clientsCAcertFile, sbj, CERTS_EXPIRATION_DAYS);
@@ -572,6 +581,14 @@ public class KafkaCluster extends AbstractModel {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_LOG_CONFIGURATION, getLogging().getCm().toString()));
         }
 
+        if (authentication != null && authentication.getTlsClientAuthentication() != null)  {
+            varList.add(buildEnvVar(ENV_VAR_KAFKA_TLS_CLIENT_AUTHENTICATION, authentication.getTlsClientAuthentication()));
+        }
+
+        if (authorization != null && authorization.getAuthorizer() != null)  {
+            varList.add(buildEnvVar(ENV_VAR_KAFKA_AUTHORIZER_TYPE, authorization.getAuthorizer()));
+        }
+
         return varList;
     }
 
@@ -636,5 +653,21 @@ public class KafkaCluster extends AbstractModel {
         }
     }
 
+    /**
+     * Sets the object with Kafka authentication configuration
+     *
+     * @param authentication
+     */
+    public void setAuthentication(KafkaAuthentication authentication) {
+        this.authentication = authentication;
+    }
 
+    /**
+     * Sets the object with Kafka authorization configuration
+     *
+     * @param authorization
+     */
+    public void setAuthorization(KafkaAuthorization authorization) {
+        this.authorization = authorization;
+    }
 }

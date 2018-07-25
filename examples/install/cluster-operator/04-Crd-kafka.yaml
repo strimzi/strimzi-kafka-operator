@@ -335,6 +335,20 @@ spec:
                             memory:
                               type: string
                               pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
+                authentication:
+                  type: object
+                  properties:
+                    tlsClientAuthentication:
+                      type: string
+                      example: required
+                authorization:
+                  type: object
+                  properties:
+                    authorizer:
+                      type: string
+                      example: SimpleACLAuthorizer
+                  required:
+                  - authorizer
               required:
               - replicas
               - storage

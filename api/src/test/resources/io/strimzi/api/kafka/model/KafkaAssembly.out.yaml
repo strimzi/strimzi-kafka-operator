@@ -48,6 +48,10 @@ spec:
         name: "kafka_server_$1_$2_total"
         labels:
           topic: "$3"
+    authorization:
+      authorizer: "SimpleACLAuthorizer"
+    authentication:
+      tlsClientAuthentication: "required"
   zookeeper:
     replicas: 3
     image: "strimzi/zookeeper:latest"

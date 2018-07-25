@@ -5,6 +5,22 @@ KAFKA_NAME=$(hostname | rev | cut -d "-" -f2- | rev)
 ASSEMBLY_NAME=$(echo "${KAFKA_NAME}" | rev | cut -d "-" -f2- | rev)
 SUPER_USERS="super.users=User:CN=${ASSEMBLY_NAME}-topic-operator,O=io.strimzi;User:CN=${KAFKA_NAME},O=io.strimzi"
 
+# Configuring TLS client authentication for clienttls interface
+if [ "$KAFKA_CLIENTTLS_TLS_CLIENT_AUTHENTICATION" = "required" ]; then
+  LISTENER_NAME_CLIENTTLS_SSL_CLIENT_AUTH="required"
+elif [ "$KAFKA_CLIENTTLS_TLS_CLIENT_AUTHENTICATION" = "requested" ]; then
+  LISTENER_NAME_CLIENTTLS_SSL_CLIENT_AUTH="requested"
+else
+  LISTENER_NAME_CLIENTTLS_SSL_CLIENT_AUTH="none"
+fi
+
+# Configuring authorization
+if [ "$KAFKA_AUTHORIZER_TYPE" = "SimpleACLAuthorizer" ]; then
+  AUTHORIZER_CLASS_NAME="kafka.security.auth.SimpleAclAuthorizer"
+else
+  AUTHORIZER_CLASS_NAME=""
+fi
+
 # Write the config file
 cat <<EOF
 broker.id=${KAFKA_BROKER_ID}
@@ -35,8 +51,10 @@ listener.name.replication.ssl.client.auth=required
 
 listener.name.clienttls.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12
 listener.name.clienttls.ssl.truststore.location=/tmp/kafka/clients.truststore.p12
+listener.name.clienttls.ssl.client.auth=${LISTENER_NAME_CLIENTTLS_SSL_CLIENT_AUTH}
 
-# ACL Super users (all nodes for replication)
+# Authorization configuration
+authorizer.class.name=${AUTHORIZER_CLASS_NAME}
 ${SUPER_USERS}
 
 # Provided configuration
