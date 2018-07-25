@@ -8,7 +8,6 @@
 .Prerequisites
 
 * Before deploying a Kafka cluster, the Cluster Operator must be deployed.
-* To deploy a Kafka cluster, a `Kafka` resource with the cluster configuration has to be created.
 
 .Procedure
 

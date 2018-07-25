@@ -19,7 +19,7 @@ ifdef::Kubernetes[{KubernetesLongName} {KubernetesVersion} or]
 {ProductName} works on all kinds of clusters - from public and private clouds down to local deployments intended for development.
 This guide expects that an {ProductPlatformName} cluster is available and the
 ifdef::Kubernetes[`kubectl` or]
-`oc` command line tools are installed and configured to connect to the running cluster.
+`oc` command-line tools are installed and configured to connect to the running cluster.
 
 ifdef::InstallationAppendix[]
 When no existing {ProductPlatformName} cluster is available, `Minikube` or `Minishift` can be used to create a local
@@ -38,7 +38,7 @@ endif::Downloading[]
 include::assembly-cluster-operator.adoc[leveloffset=+1]
 
 :context: {ContextProduct}
-include::assembly-kafka-broker.adoc[leveloffset=+1]
+include::assembly-kafka-cluster.adoc[leveloffset=+1]
 
 == Kafka Connect
 

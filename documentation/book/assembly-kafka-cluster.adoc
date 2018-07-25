@@ -9,20 +9,15 @@
 
 include::common/attributes.adoc[]
 
-[id='kafka-broker-{context}']
+[id='kafka-cluster-{context}']
 = Kafka cluster
 
-When installing Kafka, {ProductName} also installs a Zookeeper cluster and adds the necessary configuration for the Kafka broker connection.
-
-{ProductName} uses `StatefulSets` to deploy Kafka brokers.
-With `StatefulSets`, the pods receive a unique name and network identity, making it easier to identify the
-individual Kafka broker pods and set their identity (broker ID). For more information about `StatefulSets`, see {StatefulSets}.
+When installing Kafka, {ProductName} also installs a Zookeeper cluster and adds the necessary configuration to connect Kafka with Zookeeper.
 
 {ProductName} provides two options for Kafka cluster deployment:
 
 Ephemeral:: is suitable only for development and testing purposes and not for production. This deployment uses `emptyDir` volumes for storing broker information (Zookeeper) and topics or partitions
-(Kafka). Using an `emptyDir` volume means that its content is strictly related to the pod life cycle and is
-deleted when the pod goes down. This makes the ephemeral deployment well-suited to development and testing because you do not have to provide persistent volumes.
+(Kafka). Using an `emptyDir` volume means that its content is strictly related to the pod life cycle and is deleted when the pod goes down.
 
 Persistent:: uses `PersistentVolumes` to store Zookeeper and Kafka data. The `PersistentVolume` is
 acquired using a `PersistentVolumeClaim` to make it independent of the actual type of the `PersistentVolume`. For example, it can use
