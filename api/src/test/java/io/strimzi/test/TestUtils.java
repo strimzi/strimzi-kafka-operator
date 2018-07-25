@@ -49,7 +49,7 @@ public final class TestUtils {
     private TestUtils() {
         // All static methods
     }
-    
+
     /** Returns a Map of the given sequence of key, value pairs. */
     public static <T> Map<T, T> map(T... pairs) {
         if (pairs.length % 2 != 0) {

@@ -24,6 +24,11 @@ import static io.strimzi.api.kafka.model.Quantities.parseCpuAsMilliCpus;
 import static io.strimzi.api.kafka.model.Quantities.parseMemory;
 
 
+@Buildable(
+        editableEnabled = false,
+        generateBuilderPackage = true,
+        builderPackage = "io.strimzi.api.kafka.model"
+)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CpuMemory implements Serializable {
 
@@ -32,19 +37,6 @@ public class CpuMemory implements Serializable {
     private String memory;
     private String milliCpu;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
-
-    @Buildable(
-            editableEnabled = false,
-            generateBuilderPackage = true,
-            builderPackage = "io.strimzi.api.kafka.model"
-    )
-    public CpuMemory() {
-    }
-
-    public CpuMemory(long mem, int milliCpu) {
-        this.memory = formatMemory(mem);
-        this.milliCpu = formatMilliCpu(milliCpu);
-    }
 
     /** The memory in bytes */
     @JsonIgnore

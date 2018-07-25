@@ -13,5 +13,8 @@
   <Match>
     <Class name="~io\.fabric8\.kubernetes\.api\.model\..+(Builder|FluentImpl)(\$.*)?" />
   </Match>
+  <Match>
+    <Class name="~io\.fabric8\.kubernetes\.api\.model\.Editable.+(\$.*)?" />
+  </Match>
 
 </FindBugsFilter>
