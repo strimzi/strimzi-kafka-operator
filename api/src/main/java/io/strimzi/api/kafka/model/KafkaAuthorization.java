@@ -4,6 +4,7 @@
  */
 package io.strimzi.api.kafka.model;
 
+import io.strimzi.api.kafka.model.type.AuthorizerType;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Example;
 
@@ -29,17 +30,18 @@ import io.sundr.builder.annotations.Buildable;
 public class KafkaAuthorization implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private String authorizer;
+    private AuthorizerType authorizer;
+
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("Specifies the authorizer which should be used.")
-    @Example("SimpleACLAuthorizer")
+    @Description("Specifies the authorizer which should be used. Supported authoriizers are: `SimpleAclAuthorizer`.")
+    @Example("SimpleAclAuthorizer")
     @JsonProperty(required = true)
-    public String getAuthorizer() {
+    public AuthorizerType getAuthorizer() {
         return authorizer;
     }
 
-    public void setAuthorizer(String authorizer) {
+    public void setAuthorizer(AuthorizerType authorizer) {
         this.authorizer = authorizer;
     }
 

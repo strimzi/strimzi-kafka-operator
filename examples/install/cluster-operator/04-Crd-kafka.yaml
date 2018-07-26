@@ -341,12 +341,18 @@ spec:
                     tlsClientAuthentication:
                       type: string
                       example: required
+                      enum:
+                      - none
+                      - required
+                      - requested
                 authorization:
                   type: object
                   properties:
                     authorizer:
                       type: string
-                      example: SimpleACLAuthorizer
+                      example: SimpleAclAuthorizer
+                      enum:
+                      - SimpleAclAuthorizer
                   required:
                   - authorizer
               required:

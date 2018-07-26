@@ -15,9 +15,10 @@ import io.fabric8.kubernetes.api.model.KubernetesResource;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinitionSpec;
 import io.fabric8.openshift.api.model.ClusterRoleBinding;
 import io.fabric8.openshift.api.model.RoleBinding;
+import org.junit.Test;
+
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.test.TestUtils;
-import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -95,12 +96,20 @@ public class ExamplesTest {
     private void recurseForAdditionalProperties(Stack<String> path, Object resource) {
         try {
             Class<?> cls = resource.getClass();
+
             if (RoleBinding.class.equals(cls)
                     || ClusterRoleBinding.class.equals(cls)) {
                 // XXX: hack because fabric8 RoleBinding reflect the openshift role binding API
                 // not the k8s one, and has an unexpected apiGroup property
                 return;
             }
+
+            if (cls.isEnum())   {
+                // Hack to avoid
+                // java.lang.IllegalAccessException: Class io.strimzi.api.kafka.model.ExamplesTest can not access a member of class sun.reflect.annotation.AnnotatedTypeFactory$AnnotatedTypeBaseImpl with modifiers "public final"
+                return;
+            }
+
             for (Method method : cls.getMethods()) {
                 checkForJsonAnyGetter(path, resource, cls, method);
             }

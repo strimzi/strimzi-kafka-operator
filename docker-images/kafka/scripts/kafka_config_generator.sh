@@ -15,7 +15,7 @@ else
 fi
 
 # Configuring authorization
-if [ "$KAFKA_AUTHORIZER_TYPE" = "SimpleACLAuthorizer" ]; then
+if [ "$KAFKA_AUTHORIZER_TYPE" = "SimpleAclAuthorizer" ]; then
   AUTHORIZER_CLASS_NAME="kafka.security.auth.SimpleAclAuthorizer"
 else
   AUTHORIZER_CLASS_NAME=""
