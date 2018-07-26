@@ -1,7 +1,7 @@
 [id='topic-operator-{context}']
 == Topic Operator
 
-include::con_topic-operator.adoc[leveloffset=+2]
+include::con-topic-operator.adoc[leveloffset=+2]
 
 
 === Reconciliation
@@ -44,13 +44,13 @@ This mitigates availability concerns, because if ZooKeeper is not running then K
 
 For detailed reference of the API for `KafkaTopic` see <<kind-KafkaTopic>>.
 
-include::proc_creating-a-topic.adoc[leveloffset=+2]
+include::proc-creating-a-topic.adoc[leveloffset=+2]
 
-include::proc_changing-a-topic.adoc[leveloffset=+2]
+include::proc-changing-a-topic.adoc[leveloffset=+2]
 
-include::proc_deleting-a-topic.adoc[leveloffset=+2]
+include::proc-deleting-a-topic.adoc[leveloffset=+2]
 
-include::ref_topic-operator-environment.adoc[leveloffset=+2]
+include::ref-topic-operator-environment.adoc[leveloffset=+2]
 
 === Resource limits and requests
 
