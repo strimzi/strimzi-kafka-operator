@@ -8,7 +8,7 @@ include::con-how-the-topic-operator-works.adoc[leveloffset=+2]
 
 === Usage Recommendations
 
-. Try to either always operate on `KafkaTopic` resources or always operate directly on topics.
+. Either always operate on `KafkaTopic` resources or always operate directly on topics. That is, avoid routinely using both methods for a given topic.
 . When creating a `KafkaTopic` resource:
     * Remember that the name cannot be changed later.
     * Choose a name for the `KafkaTopic` resource that reflects the name of the topic it describes.
