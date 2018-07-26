@@ -5,6 +5,7 @@
 package io.strimzi.crdgenerator;
 
 import java.lang.reflect.GenericArrayType;
+import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
@@ -134,5 +135,22 @@ public class PropertyType {
             }
         }
         return result;
+    }
+
+    public boolean isEnum() {
+        return this.type.isEnum();
+    }
+
+    public Enum[] getEnumElements() {
+        if (isEnum()) {
+            try {
+                Method valuesMethod = this.getType().getMethod("values");
+                return (Enum[]) valuesMethod.invoke(null);
+            } catch (ReflectiveOperationException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            return new Enum[0];
+        }
     }
 }

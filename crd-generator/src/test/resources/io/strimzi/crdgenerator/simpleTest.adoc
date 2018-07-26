@@ -25,6 +25,8 @@
 |string array of dimension 2
 |booleanProperty         1.2+<.<|
 |boolean
+|customisedEnum          1.2+<.<|
+|string (one of [one, two])
 |fieldProperty           1.2+<.<|Example of field property.
 |string
 |intProperty             1.2+<.<|An example int property
@@ -59,6 +61,8 @@
 |integer
 |mapProperty             1.2+<.<|
 |map
+|normalEnum              1.2+<.<|
+|string (one of [BAR, FOO])
 |objectProperty          1.2+<.<|
 |<<type-ObjectProperty,`ObjectProperty`>>
 |polymorphicProperty     1.2+<.<| The type depends on the value of the `polymorphicProperty.discrim` property within the given object, which must be one of [left, right]

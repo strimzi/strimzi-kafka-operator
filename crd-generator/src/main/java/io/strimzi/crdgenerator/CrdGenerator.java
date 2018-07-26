@@ -343,6 +343,10 @@ public class CrdGenerator {
             result.put("pattern", pattern.value());
         }
 
+        if (property.getType().isEnum()) {
+            result.set("enum", enumCaseArray(property.getType().getEnumElements()));
+        }
+
         if (property.getDeclaringClass().isAnnotationPresent(JsonTypeInfo.class)
             && property.getName().equals(property.getDeclaringClass().getAnnotation(JsonTypeInfo.class).property())) {
             result.set("enum", stringArray(Property.subtypeNames(property.getDeclaringClass())));
@@ -357,6 +361,12 @@ public class CrdGenerator {
         }
 
         return result;
+    }
+
+    private <E extends Enum<E>> ArrayNode enumCaseArray(E[] values) {
+        ArrayNode arrayNode = nf.arrayNode();
+        arrayNode.addAll(Schema.enumCases(values));
+        return arrayNode;
     }
 
     private void addDescription(ObjectNode result, AnnotatedElement element) {
@@ -387,6 +397,8 @@ public class CrdGenerator {
         } else if (List.class.equals(type)
                 || type.isArray()) {
             return "array";
+        } else if (type.isEnum()) {
+            return "string";
         } else {
             throw new RuntimeException(type.getName());
         }

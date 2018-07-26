@@ -285,6 +285,11 @@ spec:
               type: "string"
         booleanProperty:
           type: "boolean"
+        customisedEnum:
+          type: "string"
+          enum:
+          - "one"
+          - "two"
         fieldProperty:
           type: "string"
         intProperty:
@@ -382,6 +387,11 @@ spec:
           minimum: 42
         mapProperty:
           type: "object"
+        normalEnum:
+          type: "string"
+          enum:
+          - "FOO"
+          - "BAR"
         objectProperty:
           type: "object"
           properties:

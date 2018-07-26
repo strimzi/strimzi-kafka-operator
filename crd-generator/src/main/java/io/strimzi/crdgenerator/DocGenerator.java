@@ -4,6 +4,7 @@
  */
 package io.strimzi.crdgenerator;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -199,6 +200,17 @@ public class DocGenerator {
         // Now the type link
         if (externalUrl != null) {
             out.append(externalUrl).append("[").append(propertyClass.getSimpleName()).append("]");
+        } else if (propertyType.isEnum()) {
+            Set<String> strings = new HashSet<>();
+            for (JsonNode n : Schema.enumCases(propertyType.getEnumElements())) {
+                if (n.isTextual()) {
+                    strings.add(n.asText());
+                } else {
+                    throw new RuntimeException("Enum case is not a string");
+                }
+            }
+            out.append("string (one of " + strings + ")");
+
         } else {
             typeLink(crd, out, propertyClass);
         }

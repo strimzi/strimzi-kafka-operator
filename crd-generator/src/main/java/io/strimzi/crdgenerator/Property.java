@@ -60,10 +60,15 @@ class Property implements AnnotatedElement {
         String name = method.getName();
         return name.startsWith("get")
                 && name.length() > 3
-                && !"getClass".equals(name)
+                && isReallyGetterName(method, name)
                 || name.startsWith("is")
                 && name.length() > 2
                 && method.getReturnType().equals(boolean.class);
+    }
+
+    private static boolean isReallyGetterName(Method method, String name) {
+        return !"getClass".equals(name)
+                && !("getDeclaringClass".equals(name) && Enum.class.equals(method.getDeclaringClass()));
     }
 
     private static String propertyName(Method getterMethod) {
