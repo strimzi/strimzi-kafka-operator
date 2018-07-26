@@ -246,8 +246,8 @@ Used in: <<type-Kafka,`Kafka`>>
 [options="header"]
 |====
 |Field                           |Description
-|tlsClientAuthentication  1.2+<.<|Configures TLS Client Authentication on port 9093. Valid values are `required`, `requested` ad `none`. When not specified, the default value will be `none`.
-|string
+|tlsClientAuthentication  1.2+<.<|Configures TLS Client Authentication on port 9093. Valid values are `required`, `requested` and `none`. When not specified, the default value will be `none`.
+|string (one of [requested, none, required])
 |====
 
 [[type-KafkaAuthorization]]
@@ -259,8 +259,8 @@ Used in: <<type-Kafka,`Kafka`>>
 [options="header"]
 |====
 |Field              |Description
-|authorizer  1.2+<.<|Specifies the authorizer which should be used.
-|string
+|authorizer  1.2+<.<|Specifies the authorizer which should be used. Supported authoriizers are: `SimpleAclAuthorizer`.
+|string (one of [SimpleAclAuthorizer])
 |====
 
 [[type-Zookeeper]]

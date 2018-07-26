@@ -1,7 +1,7 @@
 apiVersion: kafka.strimzi.io/v1alpha1
 kind: Kafka
 metadata:
-  name: strimzi-ephemeral
+  name: invalid-enum
 spec:
   someExtraThing: true
   kafka:
@@ -54,9 +54,9 @@ spec:
         ]
       }
     authentication:
-      tlsClientAuthentication: required
+      tlsClientAuthentication: maybeormaybenot
     authorization:
-      authorizer: SimpleAclAuthorizer
+      authorizer: ComplicatedAclAuthorizer
   zookeeper:
     replicas: 3
     image: "strimzi/zookeeper:latest"

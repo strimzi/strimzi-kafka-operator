@@ -4,6 +4,7 @@
  */
 package io.strimzi.api.kafka.model;
 
+import io.strimzi.api.kafka.model.type.SslClientAuthType;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Example;
 
@@ -28,16 +29,17 @@ import io.sundr.builder.annotations.Buildable;
 public class KafkaAuthentication implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private String tlsClientAuthentication;
+    private SslClientAuthType tlsClientAuthentication;
+
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("Configures TLS Client Authentication on port 9093. Valid values are `required`, `requested` ad `none`. When not specified, the default value will be `none`.")
+    @Description("Configures TLS Client Authentication on port 9093. Valid values are `required`, `requested` and `none`. When not specified, the default value will be `none`.")
     @Example("required")
-    public String getTlsClientAuthentication() {
+    public SslClientAuthType getTlsClientAuthentication() {
         return tlsClientAuthentication;
     }
 
-    public void setTlsClientAuthentication(String tlsClientAuthentication) {
+    public void setTlsClientAuthentication(SslClientAuthType tlsClientAuthentication) {
         this.tlsClientAuthentication = tlsClientAuthentication;
     }
 
