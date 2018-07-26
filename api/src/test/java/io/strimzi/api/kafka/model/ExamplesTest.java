@@ -103,13 +103,6 @@ public class ExamplesTest {
                 // not the k8s one, and has an unexpected apiGroup property
                 return;
             }
-
-            if (cls.isEnum())   {
-                // Hack to avoid
-                // java.lang.IllegalAccessException: Class io.strimzi.api.kafka.model.ExamplesTest can not access a member of class sun.reflect.annotation.AnnotatedTypeFactory$AnnotatedTypeBaseImpl with modifiers "public final"
-                return;
-            }
-
             for (Method method : cls.getMethods()) {
                 checkForJsonAnyGetter(path, resource, cls, method);
             }
@@ -132,7 +125,8 @@ public class ExamplesTest {
             if (isGetter(method)) {
                 Object result = method.invoke(resource);
                 if (result != null
-                    && !result.getClass().isPrimitive()) {
+                    && !result.getClass().isPrimitive()
+                    && !result.getClass().isEnum()) {
                     path.push(method.getName());
                     recurseForAdditionalProperties(path, result);
                     path.pop();
