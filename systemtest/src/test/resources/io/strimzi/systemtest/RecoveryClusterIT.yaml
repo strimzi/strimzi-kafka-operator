@@ -13,6 +13,9 @@ spec:
       timeoutSeconds: 5
     storage:
       type: ephemeral
+    listeners:
+      tls: {}
+      plain: {}
   zookeeper:
     replicas: 1
     readinessProbe:

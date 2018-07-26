@@ -126,8 +126,8 @@ public abstract class AbstractModel {
     protected String headlessServiceName;
     protected String name;
 
-    protected final int metricsPort = 9404;
-    protected final String metricsPortName = "kafkametrics";
+    protected static final int METRICS_PORT = 9404;
+    protected static final String METRICS_PORT_NAME = "metrics";
     protected boolean isMetricsEnabled;
 
     protected Iterable<Map.Entry<String, Object>> metricsConfig;
@@ -1084,7 +1084,7 @@ public abstract class AbstractModel {
      */
     protected Map<String, String> getPrometheusAnnotations()    {
         Map<String, String> annotations = new HashMap<String, String>(3);
-        annotations.put("prometheus.io/port", String.valueOf(metricsPort));
+        annotations.put("prometheus.io/port", String.valueOf(METRICS_PORT));
         annotations.put("prometheus.io/scrape", "true");
         annotations.put("prometheus.io/path", "/metrics");
 

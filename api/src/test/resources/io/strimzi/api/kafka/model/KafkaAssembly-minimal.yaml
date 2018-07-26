@@ -8,6 +8,9 @@ spec:
     storage:
       type: persistent-claim
       size: 500Gi
+    listeners:
+      tls: {}
+      plain: {}
   zookeeper:
     replicas: 3
     storage:

@@ -26,6 +26,9 @@ spec:
       "-server": true
       "-XX":
         UseG1GC: "true"
+    listeners:
+      tls: {}
+      plain: {}
   zookeeper:
     replicas: 1
     readinessProbe:

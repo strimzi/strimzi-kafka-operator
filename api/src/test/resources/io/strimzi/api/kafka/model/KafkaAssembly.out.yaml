@@ -50,8 +50,11 @@ spec:
           topic: "$3"
     authorization:
       authorizer: "SimpleAclAuthorizer"
-    authentication:
-      tlsClientAuthentication: "required"
+    listeners:
+      tls:
+        authentication:
+          tlsClientAuthentication: "required"
+      plain: {}
   zookeeper:
     replicas: 3
     image: "strimzi/zookeeper:latest"

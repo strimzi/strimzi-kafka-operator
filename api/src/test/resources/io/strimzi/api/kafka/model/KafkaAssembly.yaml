@@ -53,8 +53,11 @@ spec:
             }
         ]
       }
-    authentication:
-      tlsClientAuthentication: required
+    listeners:
+      tls:
+        authentication:
+          tlsClientAuthentication: required
+      plain: {}
     authorization:
       authorizer: SimpleAclAuthorizer
   zookeeper:

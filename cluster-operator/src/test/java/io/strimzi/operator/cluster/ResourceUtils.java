@@ -19,9 +19,11 @@ import io.strimzi.api.kafka.model.KafkaConnectAssemblyBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectS2IAssembly;
 import io.strimzi.api.kafka.model.KafkaConnectS2IAssemblyBuilder;
 import io.strimzi.api.kafka.model.Logging;
+import io.strimzi.api.kafka.model.PlainListener;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.Storage;
+import io.strimzi.api.kafka.model.TlsListener;
 import io.strimzi.api.kafka.model.TopicOperator;
 import io.strimzi.api.kafka.model.Zookeeper;
 import io.strimzi.operator.cluster.model.AbstractModel;
@@ -203,6 +205,10 @@ public class ResourceUtils {
                 .editSpec()
                 .editKafka()
                     .withLogging(kafkaLogging)
+                    .withNewListeners()
+                        .withPlain(new PlainListener())
+                        .withTls(new TlsListener())
+                    .endListeners()
                 .endKafka()
                 .editZookeeper()
                     .withLogging(zkLogging)

@@ -65,7 +65,7 @@ public class KafkaCrdIT extends AbstractCrdIT {
         try {
             createDelete(KafkaAssembly.class, "KafkaAssembly-with-invalid-enums.yaml");
         } catch (KubeClusterException.InvalidResource e) {
-            assertTrue(e.getMessage().contains("spec.kafka.authentication.tlsClientAuthentication in body should be one of"));
+            assertTrue(e.getMessage().contains("spec.kafka.listeners.tls.authentication.tlsClientAuthentication in body should be one of"));
             assertTrue(e.getMessage().contains("spec.kafka.authorization.authorizer in body should be one of"));
         }
     }
