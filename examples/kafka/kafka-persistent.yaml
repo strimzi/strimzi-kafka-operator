@@ -28,6 +28,9 @@ spec:
           name: "kafka_server_$1_$2_total"
           labels:
             topic: "$3"
+    listeners:
+      tls: {}
+      plain: {}
   zookeeper:
     replicas: 3
     readinessProbe:

@@ -69,10 +69,10 @@ Used in: <<type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
 |<<type-InlineLogging,`InlineLogging`>>, <<type-ExternalLogging,`ExternalLogging`>>
 |tlsSidecar           1.2+<.<|TLS sidecar configuration
 |<<type-Sidecar,`Sidecar`>>
-|authentication       1.2+<.<|Authentication configuration for Kafka brokers
-|<<type-KafkaAuthentication,`KafkaAuthentication`>>
 |authorization        1.2+<.<|Authorization configuration for Kafka brokers
 |<<type-KafkaAuthorization,`KafkaAuthorization`>>
+|listeners            1.2+<.<|Configures listeners of Kafka brokers
+|<<type-KafkaListeners,`KafkaListeners`>>
 |====
 
 [[type-EphemeralStorage]]
@@ -237,19 +237,6 @@ Used in: <<type-Kafka,`Kafka`>>, <<type-TopicOperator,`TopicOperator`>>, <<type-
 |<<type-Resources,`Resources`>>
 |====
 
-[[type-KafkaAuthentication]]
-### `KafkaAuthentication` type v1alpha1 kafka.strimzi.io
-
-Used in: <<type-Kafka,`Kafka`>>
-
-
-[options="header"]
-|====
-|Field                           |Description
-|tlsClientAuthentication  1.2+<.<|Configures TLS Client Authentication on port 9093. Valid values are `required`, `requested` and `none`. When not specified, the default value will be `none`.
-|string (one of [requested, none, required])
-|====
-
 [[type-KafkaAuthorization]]
 ### `KafkaAuthorization` type v1alpha1 kafka.strimzi.io
 
@@ -261,6 +248,58 @@ Used in: <<type-Kafka,`Kafka`>>
 |Field              |Description
 |authorizer  1.2+<.<|Specifies the authorizer which should be used. Supported authoriizers are: `SimpleAclAuthorizer`.
 |string (one of [SimpleAclAuthorizer])
+|====
+
+[[type-KafkaListeners]]
+### `KafkaListeners` type v1alpha1 kafka.strimzi.io
+
+Used in: <<type-Kafka,`Kafka`>>
+
+
+[options="header"]
+|====
+|Field         |Description
+|plain  1.2+<.<|Configures plain listener on port 9092.
+|<<type-PlainListener,`PlainListener`>>
+|tls    1.2+<.<|Configures TLS listener on port 9093.
+|<<type-TlsListener,`TlsListener`>>
+|====
+
+[[type-PlainListener]]
+### `PlainListener` type v1alpha1 kafka.strimzi.io
+
+Used in: <<type-KafkaListeners,`KafkaListeners`>>
+
+
+[options="header"]
+|====
+|Field|Description
+|====
+
+[[type-TlsListener]]
+### `TlsListener` type v1alpha1 kafka.strimzi.io
+
+Used in: <<type-KafkaListeners,`KafkaListeners`>>
+
+
+[options="header"]
+|====
+|Field                  |Description
+|authentication  1.2+<.<|Authentication configuration for Kafka's TLS listener
+|<<type-KafkaAuthentication,`KafkaAuthentication`>>
+|====
+
+[[type-KafkaAuthentication]]
+### `KafkaAuthentication` type v1alpha1 kafka.strimzi.io
+
+Used in: <<type-TlsListener,`TlsListener`>>
+
+
+[options="header"]
+|====
+|Field                           |Description
+|tlsClientAuthentication  1.2+<.<|Configures TLS Client Authentication on port 9093. Valid values are `required`, `requested` and `none`. When not specified, the default value will be `none`.
+|string (one of [requested, none, required])
 |====
 
 [[type-Zookeeper]]

@@ -32,8 +32,6 @@ public class KafkaConnectCluster extends AbstractModel {
     // Port configuration
     protected static final int REST_API_PORT = 8083;
     protected static final String REST_API_PORT_NAME = "rest-api";
-    protected static final int METRICS_PORT = 9404;
-    protected static final String METRICS_PORT_NAME = "metrics";
 
     private static final String NAME_SUFFIX = "-connect";
     private static final String SERVICE_NAME_SUFFIX = NAME_SUFFIX + "-api";
@@ -149,7 +147,7 @@ public class KafkaConnectCluster extends AbstractModel {
         List<ContainerPort> portList = new ArrayList<>(2);
         portList.add(createContainerPort(REST_API_PORT_NAME, REST_API_PORT, "TCP"));
         if (isMetricsEnabled) {
-            portList.add(createContainerPort(metricsPortName, metricsPort, "TCP"));
+            portList.add(createContainerPort(METRICS_PORT_NAME, METRICS_PORT, "TCP"));
         }
 
         return portList;

@@ -335,16 +335,6 @@ spec:
                             memory:
                               type: string
                               pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
-                authentication:
-                  type: object
-                  properties:
-                    tlsClientAuthentication:
-                      type: string
-                      example: required
-                      enum:
-                      - none
-                      - required
-                      - requested
                 authorization:
                   type: object
                   properties:
@@ -355,9 +345,29 @@ spec:
                       - SimpleAclAuthorizer
                   required:
                   - authorizer
+                listeners:
+                  type: object
+                  properties:
+                    plain:
+                      type: object
+                      properties: {}
+                    tls:
+                      type: object
+                      properties:
+                        authentication:
+                          type: object
+                          properties:
+                            tlsClientAuthentication:
+                              type: string
+                              example: required
+                              enum:
+                              - none
+                              - required
+                              - requested
               required:
               - replicas
               - storage
+              - listeners
             zookeeper:
               type: object
               properties:

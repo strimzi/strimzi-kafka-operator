@@ -17,6 +17,9 @@ spec:
       transaction.state.log.replication.factor: 1
     storage:
       type: ephemeral
+    listeners:
+      tls: {}
+      plain: {}
   zookeeper:
     replicas: 2
     readinessProbe:

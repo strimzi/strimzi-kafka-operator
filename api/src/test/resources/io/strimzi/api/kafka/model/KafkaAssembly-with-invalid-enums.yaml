@@ -53,8 +53,11 @@ spec:
             }
         ]
       }
-    authentication:
-      tlsClientAuthentication: maybeormaybenot
+    listeners:
+      tls:
+        authentication:
+          tlsClientAuthentication: maybeormaybenot
+      plain: {}
     authorization:
       authorizer: ComplicatedAclAuthorizer
   zookeeper:

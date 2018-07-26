@@ -74,7 +74,7 @@ public class Kafka implements Serializable {
     private List<Toleration> tolerations;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
     private KafkaAuthorization authorization;
-    private KafkaAuthentication authentication;
+    private KafkaListeners listeners;
 
     @Description("The kafka broker config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)
     public Map<String, Object> getConfig() {
@@ -250,13 +250,14 @@ public class Kafka implements Serializable {
         this.authorization = authorization;
     }
 
-    @Description("Authentication configuration for Kafka brokers")
+    @Description("Configures listeners of Kafka brokers")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public KafkaAuthentication getAuthentication() {
-        return authentication;
+    @JsonProperty(required = true)
+    public KafkaListeners getListeners() {
+        return listeners;
     }
 
-    public void setAuthentication(KafkaAuthentication authentication) {
-        this.authentication = authentication;
+    public void setListeners(KafkaListeners listeners) {
+        this.listeners = listeners;
     }
 }
