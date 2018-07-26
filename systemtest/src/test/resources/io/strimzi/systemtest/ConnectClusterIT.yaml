@@ -17,6 +17,9 @@ spec:
       transaction.state.log.min.isr: 2
     storage:
       type: ephemeral
+    listeners:
+      tls: {}
+      plain: {}
   zookeeper:
     replicas: 1
     readinessProbe:
