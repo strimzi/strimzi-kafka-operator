@@ -130,7 +130,7 @@ Learn more about reusing content in the link:https://redhat-documentation.github
 [[replaceables]]
 === Styling replaceables
 
-Replaceable values in the text and code must be styled with monospace, italics, lowercase, arrow brackets, and hyphens.
+Replaceable values in the text and code must be styled as monospace, italics, lowercase, arrow brackets, and hyphens.
 
 .Replaceables quick reference
 [cols="50%,50%a",options="header"]
@@ -141,8 +141,10 @@ Replaceable values in the text and code must be styled with monospace, italics, 
 |Component install directory |\_`<install-dir>`_
 |===
 
-TIP: If using a replaceable within a source block, you might need to add
-`subs="+quotes"`` to the source tag for it to render. (For example : `++[source,options="nowrap",subs="+quotes"]++`).
+TIP: If using a replaceable within a source block, you will need to add
+`subs="+quotes"`` to the source tag for it to render. (For example : `++[source,subs="+quotes"]++`).
+
+IMPORTANT: If you enter the source language, for example, 'shell', the italics will not render.
 
 === Styling Links
 
