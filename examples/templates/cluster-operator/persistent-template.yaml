@@ -82,6 +82,9 @@ objects:
         type: "persistent-claim"
         size: "${KAFKA_VOLUME_CAPACITY}"
         deleteClaim: false
+      listeners:
+        tls: {}
+        plain: {}
       config:
         default.replication.factor: ${KAFKA_DEFAULT_REPLICATION_FACTOR}
         offsets.topic.replication.factor: ${KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR}
