@@ -17,14 +17,14 @@
 +
 [source,shell]
 ----
-oc apply -f strimzi-ephemeral
+oc apply -f examples/kafka/kafka-ephemeral.yaml
 ----
 
 . If you are planning to use the Kafka cluster in production, create a persistent cluster
 +
 [source,shell]
 ----
-oc apply -f strimzi-persistent
+oc apply -f examples/kafka/kafka-persistent.yaml
 ----
 
 .Additional resources
