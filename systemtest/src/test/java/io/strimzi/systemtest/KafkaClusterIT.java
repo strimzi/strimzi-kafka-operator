@@ -315,7 +315,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
     }
 
     @Test
-    @JUnitGroup(name = "acceptance")
+    @JUnitGroup(name = "regression")
     @KafkaFromClasspathYaml
     public void testForTopicOperator() throws InterruptedException {
         //Createing topics for testing
