@@ -74,6 +74,9 @@ objects:
         timeoutSeconds: ${{KAFKA_HEALTHCHECK_TIMEOUT}}
       storage:
         type: ephemeral
+      listeners:
+        tls: {}
+        plain: {}
       config:
         default.replication.factor: ${KAFKA_DEFAULT_REPLICATION_FACTOR}
         offsets.topic.replication.factor: ${KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR}
