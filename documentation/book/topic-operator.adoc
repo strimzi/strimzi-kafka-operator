@@ -1,29 +1,10 @@
 [id='topic-operator-{context}']
 == Topic Operator
 
-include::con-topic-operator.adoc[leveloffset=+2]
 
+include::con-what-the-topic-operator-does.adoc[leveloffset=+2]
 
-=== Reconciliation
-
-A fundamental problem that the operator has to solve is that there is no single source of truth: 
-Both the `KafkaTopic` resource and the topic within Kafka can be modified independently of the operator.
-Complicating this, the Topic Operator might not always be able to observe changes at each end in real time (for example, the operator might be down).
- 
-To resolve this, the operator maintains its own private copy of the information about each topic. 
-When a change happens either in the Kafka cluster, or in {ProductPlatformName}, it looks at both the state of the other system, and at its private copy in order to determine what needs to change to keep everything in sync.  
-The same thing happens whenever the operator starts, and periodically while it is running.
-
-For example, suppose the Topic Operator is not running, and a `KafkaTopic` "my-topic" gets created.
-When the operator starts it will lack a private copy of "my-topic", so it can infer that the `KafkaTopic` has been created since it was last running. 
-The operator will create the topic corresponding to "my-topic" and also store a private copy of the metadata for "my-topic".
-
-The private copy allows the operator to cope with scenarios where the topic configuration gets changed both in Kafka and in {ProductPlatformName}, so long as the changes are not incompatible (for example, both changing the same topic config key, but to different values). 
-In the case of incompatible changes, the Kafka configuration wins, and the ConfigMap will be updated to reflect that. 
-Defaulting to the Kafka configuration ensures that, in the worst case, data will not be lost. 
-
-The private copy is held in the same ZooKeeper ensemble used by Kafka itself. 
-This mitigates availability concerns, because if ZooKeeper is not running then Kafka itself cannot run, so the operator will be no less available than it would even if it was stateless. 
+include::con-how-the-topic-operator-works.adoc[leveloffset=+2]
 
 === Usage Recommendations
 
@@ -36,13 +17,13 @@ This mitigates availability concerns, because if ZooKeeper is not running then K
 . When creating a topic:
     * Remember that the name cannot be changed later.
     * It is best to use a name that is a https://github.com/kubernetes/community/blob/master/contributors/design-proposals/architecture/identifiers.md[valid {KubernetesName} resource name],
-      otherwise the operator will have to sanitize the name when creating
+      otherwise the operator will have to modify the name when creating
       the corresponding `KafkaTopic`.
 
 [[topic_config_map_details]]
 === Format of the `KafkaTopic`
 
-For detailed reference of the API for `KafkaTopic` see <<kind-KafkaTopic>>.
+For detailed reference of the API for `KafkaTopic` see <<type-KafkaTopic>>.
 
 include::proc-creating-a-topic.adoc[leveloffset=+2]
 
@@ -56,12 +37,11 @@ include::ref-topic-operator-environment.adoc[leveloffset=+2]
 
 The Topic Operator can run with resource limits:
 
-* When it is deployed by the Cluster Operator these can be specified in the `resources` key of the `topic-operator-config`.
-* When it is not deployed by the Cluster Operator these can be specified on the Deployment in the usual way.
+* When it is deployed by the Cluster Operator these can be specified in the ``Kafka.spec.topicOperator.resources` property.
+* When it is not deployed by the Cluster Operator these can be specified on the `Deployment` in the usual way.
 
 ==== Minimum Resource Requirements
 
 Testing has shown that the topic operator functions adequately with 96Mi of memory and 100m CPU when watching two topics.
-It is therefore recommended to use these as a minimum when configuring resource requests and not to run it with lower
-limits than these. If the Kafka cluster has more than a handful of topics more generous requests and limits will be
-necessary.
+It is therefore recommended to use these as a minimum when configuring resource requests and not to run it with lower limits than these. 
+If the Kafka cluster has more than a handful of topics more generous requests and limits will be necessary.

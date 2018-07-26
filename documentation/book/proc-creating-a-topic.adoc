@@ -1,21 +1,21 @@
 [id='creating-a-topic_{context}']
 = Creating a topic
 
-This procedure describes how to create a Kafka topic using a `KafkaTopic` {PlatformProductName} resource.
+This procedure describes how to create a Kafka topic using a `KafkaTopic` {ProductPlatformName} resource.
 
 .Prerequisites
 
 * A running Kafka cluster.
-* A running Topic Operator, either deployed by the Cluster Operator via the `Kafka.spec.topicOperator` property, or deployed standalone.
+* A running Topic Operator, either deployed by the Cluster Operator using the `Kafka.spec.topicOperator` property, or deployed standalone.
 
 .Procedure
 
 . Prepare a file containing the `KafkaTopic` to be created
 +
 .An example `KafkaTopic`
-[source,yaml]
+[source,yaml,subs="attributes+"]
 ----
-apiVersion: kafka.strimzi.io/v1alpha1
+apiVersion: {KafkaTopicApiVersion}
 kind: KafkaTopic
 metadata:
   name: orders
@@ -26,13 +26,29 @@ spec:
   replicas: 2
 ----
 +
-NOTE: It is recommended to use a topic name that is a valid {PlatformProductName} resource name. Doing this means that it is not necessary to set the `KafkaTopic.spec.topicName` property. In any case the `KafkaTopic.spec.topicName` cannot be changed after creation.
+NOTE: It is recommended to use a topic name that is a valid {ProductPlatformName} resource name. Doing this means that it is not necessary to set the `KafkaTopic.spec.topicName` property. In any case the `KafkaTopic.spec.topicName` cannot be changed after creation.
 +
 NOTE: The `KafkaTopic.spec.partitions` cannot be decreased.
 
-. Create the `KafkaTopic` resource in {PlatformProductName}, for example:
+. Create the `KafkaTopic` resource in {ProductPlatformName}.
 +
-.Example of how to create a `KafkaTopic` resource
+ifdef::Kubernetes[]
+In {KubernetesName} this can be done using `kubectl`
++
+.Replacing the `KafkaTopic` resource using `kubctl create`
+[source,shell]
+----
+kubectl create -f <your-file>
+----
++
+In {OpenShiftName} this can be done using `oc`
+endif::Kubernetes[]
+ifndef::Kubernetes[]
+This can be done using `oc`
++
+endif::Kubernetes[]
++
+.Replacing the `KafkaTopic` resource using `oc create`
 [source,shell]
 ----
 oc create -f <your-file>

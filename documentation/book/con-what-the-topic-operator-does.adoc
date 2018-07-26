@@ -1,5 +1,5 @@
-[id='topic-operator-{context}']
-= Topic Operator
+[id='what-the-topic-operator-does-{context}']
+= What the Topic Operator does
 
 The Topic Operator provides a way of managing topics in a Kafka cluster via {ProductPlatformName} resources.
 //  The Topic Operator is deployed as a process running inside a {ProductPlatformName} cluster.
@@ -24,4 +24,4 @@ And also, in the other direction:
 This is beneficial to a {ProductPlatformName}-centric style of deploying applications, because it allows you to declare a `KafkaTopic` as part of your application's deployment and the operator will take care of creating the topic for you.
 Your application just needs to deal with producing or consuming from the necessary topics.
 
-Should the topic be reconfigured, reassigned to different Kafka nodes and so on, the `KafkaTopic` will always be up to date.
+If the topic be reconfigured or reassigned to different Kafka nodes, the `KafkaTopic` will always be up to date.

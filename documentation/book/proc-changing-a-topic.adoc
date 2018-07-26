@@ -1,12 +1,12 @@
 [id='changing-a-topic_{context}']
 = Changing a topic
 
-This procedure describes how to change the configuration of an existing Kafka topic by using a `KafkaTopic` {PlatformProductName} resource.
+This procedure describes how to change the configuration of an existing Kafka topic by using a `KafkaTopic` {ProductPlatformName} resource.
 
 .Prerequisites
 
 * A running Kafka cluster.
-* A running Topic Operator, either deployed by the Cluster Operator via the `Kafka.spec.topicOperator` property, or deployed standalone.
+* A running Topic Operator, either deployed by the Cluster Operator using the `Kafka.spec.topicOperator` property, or deployed standalone.
 * An existing `KafkaTopic` to be changed.
 
 .Procedure
@@ -14,9 +14,9 @@ This procedure describes how to change the configuration of an existing Kafka to
 . Prepare a file containing the desired `KafkaTopic`
 +
 .Example `KafkaTopic`
-[source,yaml]
+[source,yaml,subs="attributes+"]
 ----
-apiVersion: kafka.strimzi.io/v1alpha1
+apiVersion: {KafkaTopicApiVersion}
 kind: KafkaTopic
 metadata:
   name: orders
@@ -27,15 +27,29 @@ spec:
   replicas: 2
 ----
 +
-TIP: You can get the current version of the resource using `oc get kafkatopic orders`.
+TIP: You can get the current version of the resource using `oc get kafkatopic orders -o yaml`.
 +
-NOTE: The `KafkaTopic.spec.topicName` cannot be changed because Kafka does not support changing topic names.
+NOTE: Changing topic names using the `KafkaTopic.spec.topicName` variable and decreasing partition size using the `KafkaTopic.spec.partitions` variable is not supported by Kafka.
 +
-NOTE: The `spec.partitions` cannot be decreased, because Kafka does not support this.
-+
-CAUTION: Increasing `spec.partitions` for topics with keys will change how records are partitioned. If the topic uses semantic partitioning blah
+CAUTION: Increasing `spec.partitions` for topics with keys will change how records are partitioned, which can be particularly problematic when the topic uses _semantic partitioning_.
 
-. Update the `KafkaTopic` resource in {PlatformProductName}, for example:
+. Update the `KafkaTopic` resource in {ProductPlatformName}.
++
+ifdef::Kubernetes[]
+In {KubernetesName} this can be done using `kubectl`
++
+.Replacing the `KafkaTopic` resource using `kubctl replace`
+[source,shell]
+----
+kubectl replace -f <your-file>
+----
++
+In {OpenShiftName} this can be done using `oc`
+endif::Kubernetes[]
+ifndef::Kubernetes[]
+This can be done using `oc`
++
+endif::Kubernetes[]
 +
 .Replacing the `KafkaTopic` resource using `oc replace`
 [source,shell]

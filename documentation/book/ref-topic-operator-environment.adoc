@@ -2,15 +2,15 @@
 [id='topic-operator--environment-{context}']
 = Topic Operator environment
 
-When deployed standalone the Topic Operator can be configured via environment variables. 
+When deployed standalone the Topic Operator can be configured using environment variables. 
 
-NOTE: The Topic Operator should be configured via the `Kafka.spec.topicOperator` property when deployed by the Cluster Operator. 
+NOTE: The Topic Operator should be configured using the `Kafka.spec.topicOperator` property when deployed by the Cluster Operator. 
 
 `STRIMZI_RESOURCE_LABELS`::
 The label selector used to identify `KafkaTopics` to be managed by the operator.
 `STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS`::
 The Zookeeper session timeout, in milliseconds. 
-For example `10000`. 
+For example, `10000`. 
 Default: `20000` (20 seconds).
 `STRIMZI_KAFKA_BOOTSTRAP_SERVERS`::
 The list of Kafka bootstrap servers. 
@@ -27,7 +27,7 @@ You might want to increase this value when topic creation could take more time d
 Default `6`.
 `STRIMZI_LOG_LEVEL`::
 The level for printing logging messages. 
-The value can be set to: `ERROR`, `WARNING`, `INFO`, `DEBUG` and `TRACE`. 
+The value can be set to: `ERROR`, `WARNING`, `INFO`, `DEBUG`, and `TRACE`. 
 Default `INFO`.
 `STRIMZI_TLS_ENABLED`::
 For enabling the TLS support so encrypting the communication with Kafka brokers.
