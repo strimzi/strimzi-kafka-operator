@@ -223,11 +223,11 @@ oc describe all
 
 ==== `KafkaTopic` resources
 
-When the Topic Operator is deployed by the Cluster Operator it will be configured to watch for `KafkaTopics` with the label `strimzi.io/cluster: <cluster-name>`
+When the Topic Operator is deployed by the Cluster Operator it will be configured to watch for `KafkaTopics` with the label `strimzi.io/cluster: _<cluster-name>_`
 
 NOTE: When the Topic Operator is deployed manually the `strimzi.io/cluster` label is not necessary.
 
-The `KafkaTopic` contains the topic configuration in a specific format, described in <<topic_config_map_details>>.
+The `KafkaTopic` contains the topic configuration in a specific format, described in xref:format-of-the-kafkatopic-{context}[Format of the `KafkaTopic`].
 
 === Logging
 The `logging` field allows the configuration of loggers. These loggers are listed below.

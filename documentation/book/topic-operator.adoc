@@ -20,10 +20,10 @@ include::con-how-the-topic-operator-works.adoc[leveloffset=+2]
       otherwise the operator will have to modify the name when creating
       the corresponding `KafkaTopic`.
 
-[[topic_config_map_details]]
+[id='format-of-the-kafkatopic-{context}']
 === Format of the `KafkaTopic`
 
-For detailed reference of the API for `KafkaTopic` see <<type-KafkaTopic>>.
+For detailed reference of the API for `KafkaTopic` see xref:type-KafkaTopic[`KafkaTopic` API documentation].
 
 include::proc-creating-a-topic.adoc[leveloffset=+2]
 
@@ -37,7 +37,7 @@ include::ref-topic-operator-environment.adoc[leveloffset=+2]
 
 The Topic Operator can run with resource limits:
 
-* When it is deployed by the Cluster Operator these can be specified in the ``Kafka.spec.topicOperator.resources` property.
+* When it is deployed by the Cluster Operator these can be specified in the `Kafka.spec.topicOperator.resources` property.
 * When it is not deployed by the Cluster Operator these can be specified on the `Deployment` in the usual way.
 
 ==== Minimum Resource Requirements

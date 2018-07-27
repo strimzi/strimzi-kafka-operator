@@ -1,4 +1,4 @@
-[id='creating-a-topic_{context}']
+[id='creating-a-topic-{context}']
 = Creating a topic
 
 This procedure describes how to create a Kafka topic using a `KafkaTopic` {ProductPlatformName} resource.
@@ -36,9 +36,9 @@ ifdef::Kubernetes[]
 In {KubernetesName} this can be done using `kubectl`
 +
 .Replacing the `KafkaTopic` resource using `kubctl create`
-[source,shell]
+[source,shell,subs=+quotes]
 ----
-kubectl create -f <your-file>
+kubectl create -f _<your-file>_
 ----
 +
 In {OpenShiftName} this can be done using `oc`
@@ -49,7 +49,7 @@ This can be done using `oc`
 endif::Kubernetes[]
 +
 .Replacing the `KafkaTopic` resource using `oc create`
-[source,shell]
+[source,shell,subs=+quotes]
 ----
-oc create -f <your-file>
+oc create -f _<your-file>_
 ----

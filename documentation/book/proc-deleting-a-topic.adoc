@@ -1,4 +1,4 @@
-[id='deleting-a-topic_{context}']
+[id='deleting-a-topic-{context}']
 = Deleting a topic
 
 This procedure describes how to delete a Kafka topic using a `KafkaTopic` {ProductPlatformName} resource.
@@ -17,9 +17,9 @@ ifdef::Kubernetes[]
 In {KubernetesName} this can be done using `kubectl`
 +
 .Replacing the `KafkaTopic` resource using `kubctl delete`
-[source,shell]
+[source,shell,subs=+quotes]
 ----
-kubectl delete kafkatopic <your-topic-name>
+kubectl delete kafkatopic _<your-topic-name>_
 ----
 +
 In {OpenShiftName} this can be done using `oc`
@@ -30,9 +30,9 @@ This can be done using `oc`
 endif::Kubernetes[]
 +
 .Replacing the `KafkaTopic` resource using `oc delete`
-[source,shell]
+[source,shell,subs=+quotes]
 ----
-oc delete kafkatopic <your-topic-name>
+oc delete kafkatopic _<your-topic-name>_
 ----
 +
 NOTE: Whether the topic can actually be deleted depends on the value of the `delete.topic.enable` Kafka broker configuration, specified in the `Kafka.spec.kafka.config` property.

@@ -1,4 +1,4 @@
-[id='changing-a-topic_{context}']
+[id='changing-a-topic-{context}']
 = Changing a topic
 
 This procedure describes how to change the configuration of an existing Kafka topic by using a `KafkaTopic` {ProductPlatformName} resource.
@@ -39,9 +39,9 @@ ifdef::Kubernetes[]
 In {KubernetesName} this can be done using `kubectl`
 +
 .Replacing the `KafkaTopic` resource using `kubctl replace`
-[source,shell]
+[source,shell,subs=+quotes]
 ----
-kubectl replace -f <your-file>
+kubectl replace -f _<your-file>_
 ----
 +
 In {OpenShiftName} this can be done using `oc`
@@ -52,7 +52,7 @@ This can be done using `oc`
 endif::Kubernetes[]
 +
 .Replacing the `KafkaTopic` resource using `oc replace`
-[source,shell]
+[source,shell,subs=+quotes]
 ----
-oc replace -f <your-file>
+oc replace -f _<your-file>_
 ----
