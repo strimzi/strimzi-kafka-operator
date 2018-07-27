@@ -9,12 +9,12 @@ services:
 - docker
 before_install:
 - gem install asciidoctor
+install:
+- mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V || cat /home/travis/build/strimzi/strimzi-kafka-operator/api/target/generated-sources/annotations/io/strimzi/api/kafka/model/KafkaTlsListenerFluentImpl.java
 before_script:
 - "./.travis/setup-kubernetes.sh"
 script:
 - "./.travis/build.sh"
-after_failure:
-- cat  /home/travis/build/strimzi/strimzi-kafka-operator/api/target/generated-sources/annotations/io/strimzi/api/kafka/model/KafkaTlsListenerFluentImpl.java
 cache:
   directories:
   - "$HOME/.m2"
