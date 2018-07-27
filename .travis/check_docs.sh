@@ -32,7 +32,7 @@ grep_check '\<a {ProductPlatformName}' "The article should be 'an' {ProductPlatf
 grep_check '\<a {ProductPlatformLongName}' "The article should be 'an' {ProductPlatformLongName}"
 
 # Asciidoc standards
-#grep_check '[<][<][[:alnum:]_-]+,' "Internal links should be xrefs"
+grep_check '[<][<][[:alnum:]_-]+,' "Internal links should be xref:doc_id[Section title], not <<doc_id,link text>>"
 grep_check '[[]id=(["'"'"'])[[:alnum:]_-]+(?!-[{]context[}])\1' "[id=...] should end with -{context}" "-i -P -r -n"
 
 if [ $fatal -gt 0 ]; then
