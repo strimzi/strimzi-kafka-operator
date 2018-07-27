@@ -8,8 +8,6 @@ include::assembly-overview.adoc[leveloffset=+1]
 :context: {ContextProduct}
 include::getting-started.adoc[leveloffset=+1]
 
-include::cluster-operator.adoc[]
-
 :context: {ContextProduct}
 include::assembly-cluster-operator.adoc[leveloffset=+1]
 
