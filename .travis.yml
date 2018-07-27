@@ -13,6 +13,7 @@ services:
 #      - asciidoctor
 before_install:
 - gem install asciidoctor
+- sudo apt-get install tree
 - cat /home/travis/build/strimzi/strimzi-kafka-operator/api/src/main/java/io/strimzi/api/kafka/model/TlsListener.java
 - cat /home/travis/build/strimzi/strimzi-kafka-operator/api/src/main/java/io/strimzi/api/kafka/model/KafkaUserAuthentication.java
 - cat /home/travis/build/strimzi/strimzi-kafka-operator/api/src/main/java/io/strimzi/api/kafka/model/KafkaUserTlsClientAuthentication.java
