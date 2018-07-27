@@ -1,15 +1,19 @@
 package io.strimzi.systemtest;
 
+import io.strimzi.test.ClusterOperator;
 import io.strimzi.test.JUnitGroup;
 import io.strimzi.test.KafkaFromClasspathYaml;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import io.strimzi.test.ClusterOperator;
 import io.strimzi.test.Namespace;
 import io.strimzi.test.StrimziRunner;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import java.util.stream.IntStream;
+
+import static org.hamcrest.Matchers.containsString;
 
 @RunWith(StrimziRunner.class)
 @Namespace(SecurityIT.NAMESPACE)
@@ -19,28 +23,52 @@ public class SecurityIT extends AbstractIT {
     private static final Logger LOGGER = LogManager.getLogger(SecurityIT.class);
     public static final String NAMESPACE = "security-cluster-test";
 
-
-    // oc adm policy --as system:admin add-cluster-role-to-user cluster-admin developer
     @Test
-//    @JUnitGroup(name = "regression")
+    @JUnitGroup(name = "regression")
     @KafkaFromClasspathYaml()
-    public void testTLS() {
-        getZookeeperCertificateChain();
-        kubeClient.execInPod("my-cluster-kafka-0", "/bin/bash", "-c", "openssl s_client -connect localhost:9093 -showcerts");
+    public void testCertificates() {
+        LOGGER.info("Running testCertificates {}", CLUSTER_NAME);
 
-        String s = " 0 s:/O=io.strimzi/CN=my-cluster-kafka\n" +
+        String kafkaCertificateChain = "s:/O=io.strimzi/CN=my-cluster-kafka\n" +
                 "   i:/O=io.strimzi/CN=cluster-ca";
 
-        String s2 = " 1 s:/O=io.strimzi/CN=cluster-ca\n" +
+        String kafkaServerCertificate = "Server certificate\n" +
+                "subject=/O=io.strimzi/CN=my-cluster-kafka\n" +
+                "issuer=/O=io.strimzi/CN=cluster-ca";
+
+        String zookeeperCertificateChain = "s:/O=io.strimzi/CN=my-cluster-zookeeper\n" +
                 "   i:/O=io.strimzi/CN=cluster-ca";
 
-        System.out.println();
+        String zookeeperServerCertificate = "Server certificate\n" +
+                "subject=/O=io.strimzi/CN=my-cluster-zookeeper\n" +
+                "issuer=/O=io.strimzi/CN=cluster-ca";
+
+        String protocol = "Protocol  : TLSv1.2";
+        String timeout = "Timeout   : 300 (sec)";
+
+        IntStream.rangeClosed(0, 1).forEach(podId -> {
+            String kafkaCertificateInfo = getKafkaCertificate(podId);
+            String zookeeperCertificateInfo = getZookeeperCertificate(podId);
+
+            Assert.assertThat(kafkaCertificateInfo, containsString(kafkaCertificateChain));
+            Assert.assertThat(kafkaCertificateInfo, containsString(kafkaServerCertificate));
+            Assert.assertThat(kafkaCertificateInfo, containsString(protocol));
+            Assert.assertThat(kafkaCertificateInfo, containsString(timeout));
+
+            Assert.assertThat(zookeeperCertificateInfo, containsString(zookeeperCertificateChain));
+            Assert.assertThat(zookeeperCertificateInfo, containsString(zookeeperServerCertificate));
+            Assert.assertThat(zookeeperCertificateInfo, containsString(protocol));
+            Assert.assertThat(zookeeperCertificateInfo, containsString(timeout));
+        });
     }
 
-    private String getZookeeperCertificateChain(int podIndex){
+    private String getKafkaCertificate(int podIndex) {
         String kafkaPodName = kafkaPodName(CLUSTER_NAME, podIndex);
         return kubeClient.execInPod(kafkaPodName, "/bin/bash", "-c", "openssl s_client -connect localhost:9093 -showcerts").out();
     }
 
-
+    private String getZookeeperCertificate(int podIndex) {
+        String kafkaPodName = zookeeperPodName(CLUSTER_NAME, podIndex);
+        return kubeClient.execInPod(kafkaPodName, "/bin/bash", "-c", "openssl s_client -connect localhost:2181 -showcerts").out();
+    }
 }
