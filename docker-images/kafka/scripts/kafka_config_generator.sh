@@ -28,6 +28,7 @@ ssl.keystore.password=${CERTS_STORE_PASSWORD}
 ssl.truststore.password=${CERTS_STORE_PASSWORD}
 ssl.keystore.type=PKCS12
 ssl.truststore.type=PKCS12
+ssl.endpoint.identification.algorithm=HTTPS
 
 listener.name.replication.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12
 listener.name.replication.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12
