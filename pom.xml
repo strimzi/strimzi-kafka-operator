@@ -313,8 +313,6 @@
                         </goals>
                         <configuration>
                             <includes>
-                                <include>**/IT*.java</include>
-                                <include>**/*IT*.java</include>
                                 <include>**/ST*.java</include>
                                 <include>**/*ST*.java</include>
                             </includes>
