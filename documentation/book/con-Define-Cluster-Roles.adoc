@@ -1,0 +1,41 @@
+[id='define-cluster-roles-{context}']
+= Defining `ClusterRoles`
+
+The Cluster Operator needs to operate using `ClusterRoles` that give it access to the necessary resources.
+Depending on the {ProductPlatformName} cluster setup, a cluster administrator might be needed to create the `ClusterRoles`.
+
+NOTE: Cluster administrator rights are only needed for the creation of the `ClusterRoles`.
+The Cluster Operator will not run under the cluster admin account.
+
+The `ClusterRoles` follow the "principle of least privilege" and contain only those privileges needed by the Cluster Operator to operate Kafka, Kafka Connect, and Zookeeper clusters. The first set of assigned privileges allow the Cluster Operator to manage {ProductPlatformName} resources such as `StatefulSets`, `Deployments`, `Pods`, and `ConfigMaps`.
+
+[source,yaml,options="nowrap"]
+.Example `Role` for the Cluster Operator
+----
+include::examples/install/cluster-operator/02-ClusterRole-strimzi-cluster-operator-role.yaml[]
+----
+
+The `strimzi-kafka-broker` `ClusterRole` represents the access needed by the init container in Kafka pods that is used for the rack feature. As described in the xref:delegated-privileges[Delegated privileges] section, this role is also needed by the Cluster Operator in order to be able to delegate this access.
+
+[source,yaml,options="nowrap"]
+.`ClusterRole` for the Cluster Operator allowing it to delegate access to {ProductPlatformName} nodes to the Kafka broker pods
+----
+# These are the privileges needed by the init container
+# in Kafka broker pods.
+# The Cluster Operator also needs these privileges since
+# it binds the Kafka pods' ServiceAccount to this
+# role.
+include::examples/install/cluster-operator/03-ClusterRole-strimzi-kafka-broker.yaml[]
+----
+
+The `strimzi-topic-operator` `ClusterRole` represents the access needed by the Topic Operator. As described in the xref:delegated-privileges[Delegated privileges] section, this role is also needed by the Cluster Operator in order to be able to delegate this access.
+
+[source,yaml,options="nowrap"]
+.`ClusterRole` for the Cluster Operator allowing it to delegate access to events to the Topic Operator
+----
+# These are the privileges needed by the Topic Operator.
+# The Cluster Operator also needs these privileges since
+# it binds the Topic Operator's  ServiceAccount to this
+# role.
+include::examples/install/cluster-operator/04-ClusterRole-strimzi-topic-operator.yaml[]
+----

@@ -1,0 +1,280 @@
+[id='kafka-connect-resource-{context}']
+[[kafka_connect_config_map_details]]
+= Kafka Connect
+
+The operator watches for `KafkaConnect` resource in order to find and get configuration for a Kafka Connect cluster to deploy.
+
+The `KafkaConnectS2I` resource provides configuration for a Kafka Connect cluster deployment using Build and Source2Image features (works only with {OpenShiftName})
+
+Whatever other labels are applied to the `KafkaConnect` or `KafkaConnectS2I` resources will also be applied to the {ProductPlatformName} resources making up the Kafka Connect cluster.
+This provides a convenient mechanism for those resource to be labelled
+in whatever way the user requires.
+
+The `KafkaConnect` resource supports the following within its `spec`:
+
+`nodes`::
+Number of Kafka Connect worker nodes. Default is 1.
+
+`image`::
+The Docker image to be used by the Kafka Connect workers.
+The default value is determined by the value specified in the `<<STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE,STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE>>` environment variable of the Cluster Operator.
+If S2I is used (only on {OpenShiftName}), then it should be the related S2I image.
+
+`healthcheck-delay`::
+The initial delay for the liveness and readiness probes for each Kafka Connect worker node.
+Default is 60.
+
+`healthcheck-timeout`::
+The timeout on the liveness and readiness probes for each Kafka Connect worker node.
+Default is 5.
+
+`connect-config`::
+A JSON string with Kafka Connect configuration.
+See section <<kafka_connect_configuration_json_config>> for more details.
+
+`metrics-config`::
+A JSON string representing the JMX exporter configuration for exposing metrics from Kafka Connect nodes.
+When this field is absent no metrics will be exposed.
+
+`resources`::
+A JSON string configuring the resource limits and requests for Kafka Connect containers.
+For information about the accepted JSON format, see <<resources_json_config>> section.
+
+`jvmOptions`::
+A JSON string allowing the JVM running Kafka Connect to be configured.
+For information about the accepted JSON format, see <<jvm_json_config>> section.
+
+`affinity`::
+Node and Pod affinity for the Kafka Connect pods, as described in the <<affinity>> section.
+The format of the corresponding key is the same as the content supported in the Pod `affinity` in {ProductPlatformName}.
+
+The following is an example of a `KafkaConnect` resource.
+
+.Example KafkaConnect resource
+[source,yaml,options="nowrap",subs="attributes"]
+----
+apiVersion: {KafkaConnectApiVersion}
+kind: KafkaConnect
+metadata:
+  name: my-connect-cluster
+spec:
+  nodes: 1
+  image: {DockerKafkaConnect}
+  readinessProbe:
+    initialDelaySeconds: 60
+    timeoutSeconds: 5
+  livenessProbe:
+    initialDelaySeconds: 60
+    timeoutSeconds: 5
+  config:
+    bootstrap.servers: my-cluster-kafka-bootstrap:9092
+----
+
+The resources created by the Cluster Operator into the {ProductPlatformName} cluster will be the following :
+
+[connect-cluster-name]-connect::
+Deployment which is in charge to create the Kafka Connect worker node pods.
+[connect-cluster-name]-connect-api::
+Service which exposes the REST interface for managing the Kafka Connect cluster.
+[connect-cluster-name]-metrics-config::
+ConfigMap which contains the Kafka Connect metrics configuration and is mounted as a volume by the Kafka Connect pods.
+
+[[kafka_connect_configuration_json_config]]
+== Kafka Connect configuration
+
+The `spec.config` object of the `KafkaConnect` and `KafkaConnectS2I` resources allows detailed configuration of Apache Kafka Connect.
+This object should contain the Kafka Connect configuration options as keys. The values could be in one of the following JSON types:
+
+
+* String
+* Number
+* Boolean
+
+The `config` object supports all Kafka Connect configuration options with the exception of options related to:
+
+* Security (Encryption, Authentication and Authorization)
+* Listener / REST interface configuration
+* Plugin path configuration
+
+Specifically, all configuration options with keys starting with one of the following strings will be ignored:
+
+* `ssl.`
+* `sasl.`
+* `security.`
+* `listeners`
+* `plugin.path`
+* `rest.`
+
+All other options will be passed to Kafka Connect. A list of all the available options can be found on the
+http://kafka.apache.org/11/documentation.html#connectconfigs[Kafka website]. An example `config` field is provided
+below.
+
+.Example Kafka Connect configuration
+[source,json]
+----
+apiVersion: {KafkaConnectApiVersion}
+kind: KafkaConnect
+metadata:
+  name: my-connect-cluster
+spec:
+  config:
+    bootstrap.servers: my-cluster-kafka-bootstrap:9092
+    group.id: my-connect-cluster
+    offset.storage.topic: my-connect-cluster-offsets
+    config.storage.topic: my-connect-cluster-configs
+    status.storage.topic: my-connect-cluster-status
+    key.converter: org.apache.kafka.connect.json.JsonConverter
+    value.converter: org.apache.kafka.connect.json.JsonConverter
+    key.converter.schemas.enable: true
+    value.converter.schemas.enable: true
+    internal.key.converter: org.apache.kafka.connect.json.JsonConverter
+    internal.value.converter: org.apache.kafka.connect.json.JsonConverter
+    internal.key.converter.schemas.enable: false
+    internal.value.converter.schemas.enable: false
+    config.storage.replication.factor: 3
+    offset.storage.replication.factor: 3
+    status.storage.replication.factor: 3
+}
+----
+
+Selected options have default values:
+
+* `group.id` with default value `connect-cluster`
+* `offset.storage.topic` with default value `connect-cluster-offsets`
+* `config.storage.topic` with default value `connect-cluster-configs`
+* `status.storage.topic` with default value `connect-cluster-status`
+* `key.converter` with default value `org.apache.kafka.connect.json.JsonConverter`
+* `value.converter` with default value `org.apache.kafka.connect.json.JsonConverter`
+* `internal.key.converter` with default value `org.apache.kafka.connect.json.JsonConverter`
+* `internal.value.converter` with default value `org.apache.kafka.connect.json.JsonConverter`
+* `internal.key.converter.schemas.enable` with default value `false`
+* `internal.value.converter.schemas.enable` with default value `false`
+
+These options will be automatically configured in case they are not present in the `config` object.
+
+INFO:: The Cluster Operator does not validate the provided configuration.
+When invalid configuration is provided, the Kafka Connect cluster might not start or might become unstable.
+In such cases, the configuration in the `config` object should be fixed and the Cluster Operator will roll out the new configuration to all Kafka Connect instances.
+
+== Logging
+The `logging` field allows the configuration of loggers. These loggers are:
+[source]
+log4j.rootLogger
+connect.root.logger.level
+log4j.logger.org.apache.zookeeper
+log4j.logger.org.I0Itec.zkclient
+log4j.logger.org.reflections
+
+For information on the logging options and examples of how to set logging, see <<logging_examples, logging examples>> for Kafka.
+
+== Kafka Connect S2I deployment
+
+When using {ProductName} together with an {OpenShiftName} cluster, a user can deploy Kafka Connect with support for https://docs.openshift.org/3.9/dev_guide/builds/index.html[{OpenShiftName} Builds] and https://docs.openshift.org/3.9/creating_images/s2i.html#creating-images-s2i[Source-to-Image (S2I)].
+To activate the S2I deployment a `KafkaConnectS2I` resource should be used instead of a `KafkaConnect` resource.
+The following is a full example of `KafkaConnectS2I` resource.
+
+.Example `KafkaConnectS2I` resource
+[source,yaml,options="nowrap",subs="attributes"]
+----
+apiVersion: {KafkaConnectS2I}
+kind: KafkaConnectS2I
+metadata:
+  name: my-connect-cluster
+spec:
+  nodes: 1
+  image: {DockerKafkaConnectS2I}
+  readinessProbe:
+    initialDelaySeconds: 60
+    timeoutSeconds: 5
+  livenessProbe:
+    initialDelaySeconds: 60
+    timeoutSeconds: 5
+  config:
+    bootstrap.servers: my-cluster-kafka-bootstrap:9092
+----
+
+The S2I deployment is very similar to the regular Kafka Connect deployment (as represented by the `KafkaConnect` resource).
+Compared to the regular deployment, the Cluster Operator will create the following additional resources:
+
+[connect-cluster-name]-connect-source::
+ImageStream which is used as the base image for the newly-built Docker images.
+[connect-cluster-name]-connect::
+BuildConfig which is responsible for building the new Kafka Connect Docker images.
+[connect-cluster-name]-connect::
+ImageStream where the newly built Docker images will be pushed.
+[connect-cluster-name]-connect::
+DeploymentConfig which is in charge of creating the Kafka Connect worker node pods.
+[connect-cluster-name]-connect::
+Service which exposes the REST interface for managing the Kafka Connect cluster.
+
+The Kafka Connect S2I deployment supports the same options as the regular Kafka Connect deployment.
+A list of supported options can be found in the <<kafka_connect_config_map_details>> section.
+The `image` option specifies the Docker image which will be used as the _source image_ - the base image for the newly built Docker image.
+The default value of the `image` option is determined by the value of the `<<STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE,STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE>>` environment variable of the Cluster Operator.
+All other options have the same meaning as for the regular `KafkaConnect` deployment.
+
+Once the Kafka Connect S2I cluster is deployed, new plugins can be added by starting a new {OpenShiftName} build.
+Before starting the build, a directory with all the KafkaConnect plugins which should be added has to be created.
+The plugins and all their dependencies can be in a single directory or can be split into multiple subdirectories.
+For example:
+
+[source,shell]
+----
+$ tree ./s2i-plugins/
+./s2i-plugins/
+├── debezium-connector-mysql
+│   ├── CHANGELOG.md
+│   ├── CONTRIBUTE.md
+│   ├── COPYRIGHT.txt
+│   ├── debezium-connector-mysql-0.7.1.jar
+│   ├── debezium-core-0.7.1.jar
+│   ├── LICENSE.txt
+│   ├── mysql-binlog-connector-java-0.13.0.jar
+│   ├── mysql-connector-java-5.1.40.jar
+│   ├── README.md
+│   └── wkb-1.0.2.jar
+└── debezium-connector-postgres
+    ├── CHANGELOG.md
+    ├── CONTRIBUTE.md
+    ├── COPYRIGHT.txt
+    ├── debezium-connector-postgres-0.7.1.jar
+    ├── debezium-core-0.7.1.jar
+    ├── LICENSE.txt
+    ├── postgresql-42.0.0.jar
+    ├── protobuf-java-2.6.1.jar
+    └── README.md
+----
+
+A new build can be started using the following command:
+
+[source,shell]
+oc start-build my-connect-cluster-connect --from-dir ./s2i-plugins/
+
+This command will upload the whole directory into the {OpenShiftName} cluster and start a new build.
+The build will take the base Docker image from the source ImageStream (named _[connect-cluster-name]-connect-source_) and add the directory and all the files it contains into this image and push the resulting image into the target ImageStream (named _[connect-cluster-name]-connect_).
+When the new image is pushed to the target ImageStream, a rolling update of the Kafka Connect S2I deployment will be started and will roll out the new version of the image with the added plugins.
+By default, the `oc start-build` command will trigger the build and complete.
+The progress of the build can be observed in the {OpenShiftName} console.
+Alternatively, the option `--follow` can be used to follow the build from the command line:
+
+[source,shell]
+----
+oc start-build my-connect-cluster-connect --from-dir ./s2i-plugins/ --follow
+Uploading directory "s2i-plugins" as binary input for the build ...
+build "my-connect-cluster-connect-3" started
+Receiving source from STDIN as archive ...
+Assembling plugins into custom plugin directory /tmp/kafka-plugins
+Moving plugins to /tmp/kafka-plugins
+
+Pushing image 172.30.1.1:5000/myproject/my-connect-cluster-connect:latest ...
+Pushed 6/10 layers, 60% complete
+Pushed 7/10 layers, 70% complete
+Pushed 8/10 layers, 80% complete
+Pushed 9/10 layers, 90% complete
+Pushed 10/10 layers, 100% complete
+Push successful
+----
+
+NOTE: The S2I build will always add the additional Kafka Connect plugins to the original source image.
+They will not be added to the Docker image from a previous build.
+To add multiple plugins to the deployment, they all have to be added within the same build.
