@@ -20,8 +20,6 @@ public class KafkaUserTlsClientAuthentication extends KafkaUserAuthentication {
 
     public static final String TYPE_TLS = "tls";
 
-
-
     @Description("Must be `" + TYPE_TLS + "`")
     @Override
     public String getType() {
