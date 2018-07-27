@@ -4,6 +4,8 @@
  */
 package io.strimzi.api.kafka.model;
 
+import io.strimzi.crdgenerator.annotations.Description;
+
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,18 +27,18 @@ import io.sundr.builder.annotations.Buildable;
 public class TlsListener implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    //private KafkaListenerAuthentication authentication;
+    private KafkaListenerAuthentication authentication;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    /*@Description("Authentication configuration for Kafka's TLS listener")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @Description("Authentication configuration for Kafka's TLS listener")
+    @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public KafkaListenerAuthentication getAuthentication() {
         return authentication;
     }
 
     public void setAuthentication(KafkaListenerAuthentication authentication) {
         this.authentication = authentication;
-    }*/
+    }
 
     @JsonAnyGetter
     public Map<String, Object> getAdditionalProperties() {
