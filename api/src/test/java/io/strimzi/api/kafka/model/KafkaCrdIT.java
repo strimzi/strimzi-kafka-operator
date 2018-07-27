@@ -59,14 +59,4 @@ public class KafkaCrdIT extends AbstractCrdIT {
             assertTrue(e.getMessage().contains("spec.kafka.resources.limits.memory in body should match '[0-9]+([kKmMgGtTpPeE]i?)?$'"));
         }
     }
-
-    @Test
-    public void testKafkaWithInvalidEnums() {
-        try {
-            createDelete(KafkaAssembly.class, "KafkaAssembly-with-invalid-enums.yaml");
-        } catch (KubeClusterException.InvalidResource e) {
-            assertTrue(e.getMessage().contains("spec.kafka.listeners.tls.authentication.tlsClientAuthentication in body should be one of"));
-            assertTrue(e.getMessage().contains("spec.kafka.authorization.authorizer in body should be one of"));
-        }
-    }
 }

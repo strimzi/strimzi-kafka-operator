@@ -4,9 +4,7 @@
  */
 package io.strimzi.api.kafka.model;
 
-import io.strimzi.api.kafka.model.type.AuthorizerType;
 import io.strimzi.crdgenerator.annotations.Description;
-import io.strimzi.crdgenerator.annotations.Example;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -14,36 +12,29 @@ import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import io.sundr.builder.annotations.Buildable;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 /**
  * Configures the broker authorization
  */
-@Buildable(
-        editableEnabled = false,
-        generateBuilderPackage = true,
-        builderPackage = "io.strimzi.api.kafka.model"
-)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+@JsonSubTypes({
+        @JsonSubTypes.Type(name = KafkaSimpleAuthorization.TYPE_SIMPLE, value = KafkaSimpleAuthorization.class),
+})
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class KafkaAuthorization implements Serializable {
+public abstract class KafkaAuthorization implements Serializable {
     private static final long serialVersionUID = 1L;
-
-    private AuthorizerType authorizer;
 
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("Specifies the authorizer which should be used. Supported authoriizers are: `SimpleAclAuthorizer`.")
-    @Example("SimpleAclAuthorizer")
-    @JsonProperty(required = true)
-    public AuthorizerType getAuthorizer() {
-        return authorizer;
-    }
-
-    public void setAuthorizer(AuthorizerType authorizer) {
-        this.authorizer = authorizer;
-    }
+    @Description("Authorization type. " +
+            "Currently the only supported type is `simple`. " +
+            "`simple` authorization type uses Kafka's `kafka.security.auth.SimpleAclAuthorizer` class for authorization.")
+    @JsonIgnore
+    public abstract String getType();
 
     @JsonAnyGetter
     public Map<String, Object> getAdditionalProperties() {
