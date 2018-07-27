@@ -13,7 +13,6 @@ import java.util.Map;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.sundr.builder.annotations.Buildable;
 
@@ -36,8 +35,7 @@ public class TlsListener implements Serializable {
     private Map<String, Object> additionalProperties;
 
     @Description("Authentication configuration for Kafka's TLS listener")
-    //@JsonInclude(value = JsonInclude.Include.NON_NULL)
-    @JsonProperty(required = true)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public KafkaListenerAuthentication getAuthentication() {
         return authentication;
     }
