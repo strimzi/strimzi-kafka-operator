@@ -423,12 +423,13 @@ public class KafkaClusterIT extends AbstractClusterIT {
     @Test
     //@JUnitGroup(name = "regression")
     @KafkaFromClasspathYaml
-    @Namespace(value = "topicOperatorNamespace", use = false)
-    public void testWatchingOtherNamespace() {
+    @Namespace(value = "topic-operator-namespace", use = false)
+    public void testWatchingOtherNamespace() throws InterruptedException {
         List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
         assertThat(topics, not(hasItems("my-topic")));
-        kubeClient.namespace("topicOperatorNamespace");
+        kubeClient.namespace("topic-operator-namespace");
         kubeClient.create(new File("../examples/topic/kafka-topic.yaml"));
+        Thread.sleep(10_000);
         topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
         assertThat(topics, hasItems("my-topic"));
     }

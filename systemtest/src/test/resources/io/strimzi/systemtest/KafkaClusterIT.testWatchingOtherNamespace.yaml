@@ -24,4 +24,4 @@ spec:
     storage:
       type: ephemeral
   topicOperator:
-    watchedNamespace: topicOperatorNamespace
+    watchedNamespace: topic-operator-namespace
