@@ -521,7 +521,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         TopicOperator.topicOperatorServiceAccountName(name),
                         desc != TopicOperatorDescription.EMPTY ? desc.topicOperator().generateServiceAccount() : null)))
                 .compose(desc -> {
-                    String watchedNamespace = desc.topicOperator().getWatchedNamespace();
+                    String watchedNamespace = desc.topicOperator() != null ? desc.topicOperator().getWatchedNamespace() : null;
                     return desc.withVoid(roleBindingOperator.reconcile(
                             watchedNamespace != null && !watchedNamespace.isEmpty() ?
                                     watchedNamespace : namespace,
