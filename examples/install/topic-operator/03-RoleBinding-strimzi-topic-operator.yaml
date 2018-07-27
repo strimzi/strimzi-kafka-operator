@@ -1,7 +1,7 @@
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: RoleBinding
 metadata:
-  name: strimzi-topic-operator-binding
+  name: strimzi-topic-operator
   labels:
     app: strimzi
 subjects:
@@ -9,5 +9,5 @@ subjects:
     name: strimzi-topic-operator
 roleRef:
   kind: Role
-  name: strimzi-topic-operator-role
+  name: strimzi-topic-operator
   apiGroup: rbac.authorization.k8s.io

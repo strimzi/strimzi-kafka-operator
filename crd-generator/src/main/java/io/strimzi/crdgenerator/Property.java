@@ -4,6 +4,7 @@
  */
 package io.strimzi.crdgenerator;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -100,7 +101,8 @@ class Property implements AnnotatedElement {
                     && !returnType.equals(void.class);
             boolean isNotInherited = !hasMethod(CustomResource.class, method)
                     && !hasMethod(HasMetadata.class, method);
-            boolean isNotIgnored = !method.isAnnotationPresent(JsonIgnore.class);
+            boolean isNotIgnored = !method.isAnnotationPresent(JsonIgnore.class)
+                    && !method.isAnnotationPresent(JsonAnyGetter.class);
             if (isGetter
                     && isNotInherited
                     && isNotIgnored) {

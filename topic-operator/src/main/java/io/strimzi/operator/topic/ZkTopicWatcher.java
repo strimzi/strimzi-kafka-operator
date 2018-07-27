@@ -11,11 +11,11 @@ import io.vertx.core.Handler;
  * calling {@link TopicOperator#onTopicPartitionsChanged(TopicName, Handler)}
  * for changed children.
  */
-public class TopicWatcher extends ZkWatcher {
+public class ZkTopicWatcher extends ZkWatcher {
 
     private static final String TOPICS_ZNODE = "/brokers/topics";
 
-    TopicWatcher(TopicOperator topicOperator) {
+    ZkTopicWatcher(TopicOperator topicOperator) {
         super(topicOperator, TOPICS_ZNODE);
     }
 

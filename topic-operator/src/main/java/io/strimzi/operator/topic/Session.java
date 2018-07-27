@@ -6,6 +6,10 @@ package io.strimzi.operator.topic;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
+import io.strimzi.api.kafka.Crds;
+import io.strimzi.api.kafka.DoneableKafkaTopic;
+import io.strimzi.api.kafka.KafkaTopicList;
+import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.operator.topic.zk.Zk;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
@@ -33,10 +37,10 @@ public class Session extends AbstractVerticle {
     AdminClient adminClient;
     K8sImpl k8s;
     TopicOperator topicOperator;
-    Watch topicCmWatch;
-    TopicsWatcher topicsWatcher;
+    Watch topicWatch;
+    ZkTopicsWatcher topicsWatcher;
     TopicConfigsWatcher topicConfigsWatcher;
-    TopicWatcher topicWatcher;
+    ZkTopicWatcher topicWatcher;
     /** The id of the periodic reconciliation timer. This is null during a periodic reconciliation. */
     private volatile Long timerId;
     private volatile boolean stopped = false;
@@ -68,7 +72,7 @@ public class Session extends AbstractVerticle {
             long timeout = 120_000L;
             LOGGER.info("Stopping");
             LOGGER.debug("Stopping kube watch");
-            topicCmWatch.close();
+            topicWatch.close();
             LOGGER.debug("Stopping zk watches");
             topicsWatcher.stop();
 
@@ -123,11 +127,11 @@ public class Session extends AbstractVerticle {
         LOGGER.debug("Using AdminClient {}", adminClient);
         this.kafka = new OperatorAssignedKafkaImpl(adminClient, vertx, config);
         LOGGER.debug("Using Kafka {}", kafka);
-        LabelPredicate cmPredicate = config.get(Config.LABELS);
+        LabelPredicate resourcePredicate = config.get(Config.LABELS);
 
         String namespace = config.get(Config.NAMESPACE);
         LOGGER.debug("Using namespace {}", namespace);
-        this.k8s = new K8sImpl(vertx, kubeClient, cmPredicate, namespace);
+        this.k8s = new K8sImpl(vertx, kubeClient, resourcePredicate, namespace);
         LOGGER.debug("Using k8s {}", k8s);
 
         this.zk = Zk.create(vertx, config.get(Config.ZOOKEEPER_CONNECT), this.config.get(Config.ZOOKEEPER_SESSION_TIMEOUT_MS).intValue());
@@ -136,28 +140,28 @@ public class Session extends AbstractVerticle {
         ZkTopicStore topicStore = new ZkTopicStore(zk);
         LOGGER.debug("Using TopicStore {}", topicStore);
 
-        this.topicOperator = new TopicOperator(vertx, kafka, k8s, topicStore, cmPredicate, namespace, config);
+        this.topicOperator = new TopicOperator(vertx, kafka, k8s, topicStore, resourcePredicate, namespace, config);
         LOGGER.debug("Using Operator {}", topicOperator);
 
         this.topicConfigsWatcher = new TopicConfigsWatcher(topicOperator);
         LOGGER.debug("Using TopicConfigsWatcher {}", topicConfigsWatcher);
-        this.topicWatcher = new TopicWatcher(topicOperator);
+        this.topicWatcher = new ZkTopicWatcher(topicOperator);
         LOGGER.debug("Using TopicWatcher {}", topicWatcher);
-        this.topicsWatcher = new TopicsWatcher(topicOperator, topicConfigsWatcher, topicWatcher);
+        this.topicsWatcher = new ZkTopicsWatcher(topicOperator, topicConfigsWatcher, topicWatcher);
         LOGGER.debug("Using TopicsWatcher {}", topicsWatcher);
         topicsWatcher.start(zk);
 
-        Thread configMapThread = new Thread(() -> {
-            LOGGER.debug("Watching configmaps matching {}", cmPredicate);
-            Session.this.topicCmWatch = kubeClient.configMaps().inNamespace(namespace).watch(new ConfigMapWatcher(topicOperator, cmPredicate));
+        Thread resourceThread = new Thread(() -> {
+            LOGGER.debug("Watching KafkaTopics matching {}", resourcePredicate);
+            Session.this.topicWatch = kubeClient.customResources(Crds.topic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class).inNamespace(namespace).watch(new K8sTopicWatcher(topicOperator, resourcePredicate));
             LOGGER.debug("Watching setup");
 
             // start the HTTP server for healthchecks
             healthServer = this.startHealthServer();
 
-        }, "configmap-watcher");
-        LOGGER.debug("Starting {}", configMapThread);
-        configMapThread.start();
+        }, "resource-watcher");
+        LOGGER.debug("Starting {}", resourceThread);
+        resourceThread.start();
 
         final Long interval = config.get(Config.FULL_RECONCILIATION_INTERVAL_MS);
         Handler<Long> periodic = new Handler<Long>() {

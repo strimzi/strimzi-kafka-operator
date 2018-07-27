@@ -8,21 +8,20 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.config.ConfigResource;
-import org.apache.kafka.common.errors.InvalidTopicException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.StringReader;
-import java.io.StringWriter;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -34,12 +33,6 @@ import static java.lang.String.format;
  */
 public class TopicSerialization {
 
-    // These are the keys in the ConfigMap data
-    public static final String CM_KEY_PARTITIONS = "partitions";
-    public static final String CM_KEY_REPLICAS = "replicas";
-    public static final String CM_KEY_NAME = "name";
-    public static final String CM_KEY_CONFIG = "config";
-
     // These are the keys in the JSON we store in ZK
     public static final String JSON_KEY_TOPIC_NAME = "topic-name";
     public static final String JSON_KEY_MAP_NAME = "map-name";
@@ -48,149 +41,100 @@ public class TopicSerialization {
     public static final String JSON_KEY_CONFIG = "config";
 
     @SuppressWarnings("unchecked")
-    private static Map<String, String> topicConfigFromConfigMapString(ConfigMap cm) {
-        Map<String, String> mapData = cm.getData();
-        String value = mapData.get(CM_KEY_CONFIG);
-        Map<?, ?> result;
-        if (value == null || value.isEmpty()) {
-            result = Collections.emptyMap();
-        } else {
-            try {
-                ObjectMapper mapper = objectMapper();
-                result = mapper.readValue(new StringReader(value) {
-                    @Override
-                    public String toString() {
-                        return "'config' key of 'data' section of ConfigMap '" + cm.getMetadata().getName() + "' in namespace '" + cm.getMetadata().getNamespace() + "'";
-                    }
-                }, Map.class);
-            } catch (IOException e) {
-                throw new InvalidConfigMapException(cm, "ConfigMap's 'data' section has invalid key '" +
-                        CM_KEY_CONFIG + "': " + (e.getMessage() != null ? e.getMessage() : e.toString()));
-            }
-        }
-
-        for (Map.Entry<?, ?> entry : result.entrySet()) {
-            Object key = entry.getKey();
-            String msg = null;
-            if (!(key instanceof String)) {
-                msg = "The must be of type String, not of type " + key.getClass();
-            }
+    private static Map<String, String> topicConfigFromTopicConfig(KafkaTopic kafkaTopic) {
+        Map<String, String> result = new HashMap<>(kafkaTopic.getSpec().getConfig().size());
+        for (Map.Entry<String, Object> entry : kafkaTopic.getSpec().getConfig().entrySet()) {
+            String key = entry.getKey();
             Object v = entry.getValue();
-            if (v == null) {
-                msg = "The value corresponding to the key must have a String value, not null";
-            } else if (!(v instanceof String)) {
-                msg = "The value corresponding to the key must have a String value, not a value of type " + v.getClass();
-            }
-            if (msg != null) {
-                throw new InvalidConfigMapException(cm, "ConfigMap's 'data' section has invalid key '" +
-                        CM_KEY_CONFIG + "': The key '" + key + "' of the topic config is invalid: " + msg);
+            boolean isNumberType = v instanceof Long
+                    || v instanceof Integer
+                    || v instanceof Short
+                    || v instanceof Double
+                    || v instanceof Float;
+            if (v instanceof String
+                    || isNumberType
+                    || v instanceof Boolean) {
+                result.put(key, v.toString());
+            } else {
+                String msg = "The value corresponding to the key must have a string, number or boolean value";
+                if (v == null) {
+                    msg += " but the value was null";
+                } else {
+                    msg += " but was of type " + v.getClass().getName();
+                }
+                throw new InvalidTopicException(kafkaTopic, "KafkaTopic's spec.config has invalid entry: " +
+                        "The key '" + key + "' of the topic config is invalid: " + msg);
             }
         }
-        return (Map<String, String>) result;
+        return result;
     }
 
-    private static String topicConfigToConfigMapString(Map<String, String> config) throws IOException {
-        ObjectMapper mapper = objectMapper();
-        StringWriter sw = new StringWriter();
-        mapper.writeValue(sw, config);
-        return sw.toString();
-    }
 
     /**
-     * Create a Topic to reflect the given ConfigMap.
-     * @throws InvalidConfigMapException
+     * Create a Topic to reflect the given KafkaTopic resource.
+     * @throws InvalidTopicException
      */
-    public static Topic fromConfigMap(ConfigMap cm) {
-        if (cm == null) {
+    public static Topic fromTopicResource(KafkaTopic kafkaTopic) {
+        if (kafkaTopic == null) {
             return null;
         }
         Topic.Builder builder = new Topic.Builder()
-                .withMapName(cm.getMetadata().getName())
-                .withTopicName(getTopicName(cm))
-                .withNumPartitions(getPartitions(cm))
-                .withNumReplicas(getReplicas(cm))
-                .withConfig(topicConfigFromConfigMapString(cm));
+                .withMapName(kafkaTopic.getMetadata().getName())
+                .withTopicName(getTopicName(kafkaTopic))
+                .withNumPartitions(getPartitions(kafkaTopic))
+                .withNumReplicas(getReplicas(kafkaTopic))
+                .withConfig(topicConfigFromTopicConfig(kafkaTopic));
         return builder.build();
     }
 
-    private static String getTopicName(ConfigMap cm) {
-        Map<String, String> mapData = cm.getData();
-        String prefix = "ConfigMap's 'data' section has invalid '" + CM_KEY_NAME + "' key: ";
-        String topicName = mapData.get(CM_KEY_NAME);
+    private static String getTopicName(KafkaTopic kafkaTopic) {
+        String prefix = "KafkaTopics's spec.topicName property is invalid as a topic name: ";
+        String topicName = kafkaTopic.getSpec().getTopicName();
         if (topicName == null) {
-            topicName = cm.getMetadata().getName();
-            prefix = "ConfigMap's 'data' section lacks a '" + CM_KEY_NAME + "' key and ConfigMap's name is invalid as a topic name: ";
+            topicName = kafkaTopic.getMetadata().getName();
+            prefix = "KafkaTopics's spec.topicName property is absent and KafkaTopics's metadata.name is invalid as a topic name: ";
         }
         try {
             org.apache.kafka.common.internals.Topic.validate(topicName);
-        } catch (InvalidTopicException e) {
-            throw new InvalidConfigMapException(cm, prefix + e.getMessage());
+        } catch (org.apache.kafka.common.errors.InvalidTopicException e) {
+            throw new InvalidTopicException(kafkaTopic, prefix + e.getMessage());
         }
         return topicName;
     }
 
-    private static short getReplicas(ConfigMap cm) {
-        Map<String, String> mapData = cm.getData();
-        String str = mapData.get(CM_KEY_REPLICAS);
-        if (str == null) {
-            throw new InvalidConfigMapException(cm, "ConfigMap's 'data' section lacks required key '" +
-                    CM_KEY_REPLICAS + "', which should be a strictly positive integer");
+    private static short getReplicas(KafkaTopic kafkaTopic) {
+        int replicas = kafkaTopic.getSpec().getReplicas();
+        if (replicas < 1 || replicas > Short.MAX_VALUE) {
+            throw new InvalidTopicException(kafkaTopic, "KafkaTopic's spec.replicas should be between 1 and " + Short.MAX_VALUE + " inclusive");
         }
-        short num;
-        try {
-            num = Short.parseShort(str);
-            if (num <= 0) {
-                throw new NumberFormatException();
-            }
-        } catch (NumberFormatException e) {
-            throw new InvalidConfigMapException(cm, "ConfigMap's 'data' section has invalid key '" +
-                    CM_KEY_REPLICAS + "': should be a strictly positive integer but was '" + str + "'");
-        }
-        return num;
+        return (short) replicas;
     }
 
-    private static int getPartitions(ConfigMap cm) {
-        Map<String, String> mapData = cm.getData();
-        String str = mapData.get(CM_KEY_PARTITIONS);
-        if (str == null) {
-            throw new InvalidConfigMapException(cm, "ConfigMap's 'data' section lacks required key '" +
-                    CM_KEY_PARTITIONS + "', which should be a strictly positive integer");
+    private static int getPartitions(KafkaTopic kafkaTopic) {
+        int partitions = kafkaTopic.getSpec().getPartitions();
+        if (partitions < 1) {
+            throw new InvalidTopicException(kafkaTopic, "KafkaTopic's spec.partitions should be strictly greater than 0");
         }
-        int num;
-        try {
-            num = Integer.parseInt(str);
-            if (num <= 0) {
-                throw new NumberFormatException();
-            }
-        } catch (NumberFormatException e) {
-            throw new InvalidConfigMapException(null, "ConfigMap's 'data' section has invalid key '" +
-                    CM_KEY_PARTITIONS + "': should be a strictly positive integer but was '" + str + "'");
-        }
-        return num;
+        return partitions;
     }
 
     /**
-     * Create a ConfigMap to reflect the given Topic.
+     * Create a resource to reflect the given Topic.
      */
-    public static ConfigMap toConfigMap(Topic topic, LabelPredicate cmPredicate) {
-        Map<String, String> mapData = new HashMap<>();
-        mapData.put(CM_KEY_NAME, topic.getTopicName().toString());
-        mapData.put(CM_KEY_PARTITIONS, Integer.toString(topic.getNumPartitions()));
-        mapData.put(CM_KEY_REPLICAS, Short.toString(topic.getNumReplicas()));
-        try {
-            mapData.put(CM_KEY_CONFIG, topicConfigToConfigMapString(topic.getConfig()));
-        } catch (IOException e) {
-            throw new RuntimeException("Error converting topic config to a string, for topic '" + topic.getTopicName() + "'", e);
-        }
-        MapName mapName = topic.getOrAsMapName();
-        return new ConfigMapBuilder().withApiVersion("v1")
-                    .withNewMetadata()
-                    .withName(mapName.toString())
-                    .withLabels(cmPredicate.labels())
+    public static KafkaTopic toTopicResource(Topic topic, LabelPredicate resourcePredicate) {
+        ResourceName resourceName = topic.getOrAsMapName();
+        return new KafkaTopicBuilder().withApiVersion("v1")
+                    .withMetadata(new ObjectMetaBuilder()
+                    .withName(resourceName.toString())
+                    .withLabels(resourcePredicate.labels()).build())
                     // TODO .withUid()
-                .endMetadata()
-                .withData(mapData)
-                .build();
+                .withNewSpec()
+                    .withTopicName(topic.getTopicName().toString())
+                    .withPartitions(topic.getNumPartitions())
+                    .withReplicas((int) topic.getNumReplicas())
+                    .withConfig(new LinkedHashMap<>(topic.getConfig()))
+                .endSpec()
+            .build();
     }
 
 
@@ -203,16 +147,16 @@ public class TopicSerialization {
             if (topic.getNumPartitions() != assignment.size()) {
                 throw new IllegalArgumentException(
                         format("Topic %s has %d partitions supplied, but the number of partitions " +
-                                        "configured in ConfigMap %s is %d",
-                                topic.getTopicName(), assignment.size(), topic.getMapName(), topic.getNumPartitions()));
+                                        "configured in KafkaTopic %s is %d",
+                                topic.getTopicName(), assignment.size(), topic.getResourceName(), topic.getNumPartitions()));
             }
             for (int partition = 0; partition < assignment.size(); partition++) {
                 final List<Integer> value = assignment.get(partition);
                 if (topic.getNumReplicas() != value.size()) {
                     throw new IllegalArgumentException(
                             format("Partition %d of topic %s has %d assigned replicas, " +
-                                    "but the number of replicas configured in ConfigMap %s for the topic is %d",
-                                    partition, topic.getTopicName(), value.size(), topic.getMapName(), topic.getNumReplicas()));
+                                    "but the number of replicas configured in KafkaTopic %s for the topic is %d",
+                                    partition, topic.getTopicName(), value.size(), topic.getResourceName(), topic.getNumReplicas()));
                 }
             }
             newTopic = new NewTopic(topic.getTopicName().toString(), assignment);

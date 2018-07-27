@@ -4,7 +4,7 @@
  */
 package io.strimzi.operator.topic;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.strimzi.api.kafka.model.KafkaTopic;
 import org.apache.kafka.common.internals.Topic;
 
 import java.math.BigInteger;
@@ -27,8 +27,8 @@ class TopicName {
         this.name = name;
     }
 
-    public TopicName(ConfigMap cm) {
-        this(cm.getData().getOrDefault("name", cm.getMetadata().getName()));
+    public TopicName(KafkaTopic kafkaTopic) {
+        this(kafkaTopic.getSpec().getTopicName() != null ? kafkaTopic.getSpec().getTopicName() : kafkaTopic.getMetadata().getName());
     }
 
     public String toString() {
@@ -59,10 +59,10 @@ class TopicName {
      * constructed (with invalid characters removed or changed) and a disambiguating hash is appended to that
      * prefix and the concatenation of the prefix and hash is returned.
      */
-    public MapName asMapName() {
-        MapName mname;
-        if (MapName.isValidResourceName(this.name)) {
-            mname = new MapName(this.name);
+    public ResourceName asMapName() {
+        ResourceName mname;
+        if (ResourceName.isValidResourceName(this.name)) {
+            mname = new ResourceName(this.name);
         } else {
             StringBuilder n = new StringBuilder();
             for (int i = 0; i < this.name.length(); i++) {
@@ -108,9 +108,9 @@ class TopicName {
             }
             final int sha1HexLength = 40;
             byte[] sha1sum = md.digest(this.name.getBytes(StandardCharsets.UTF_8));
-            int truncate = n.length() + sha1HexLength + SEP.length() - MapName.MAX_RESOURCE_NAME_LENGTH;
+            int truncate = n.length() + sha1HexLength + SEP.length() - ResourceName.MAX_RESOURCE_NAME_LENGTH;
             if (truncate > 0) {
-                n.setLength(MapName.MAX_RESOURCE_NAME_LENGTH - (sha1HexLength + SEP.length()));
+                n.setLength(ResourceName.MAX_RESOURCE_NAME_LENGTH - (sha1HexLength + SEP.length()));
             }
             // It's still possible that n is empty by this point
             // (if tname consisted entirely of chars at invalid positions)
@@ -120,7 +120,7 @@ class TopicName {
                 n.append(SEP);
             }
             n.append(new BigInteger(1, sha1sum).toString(16));
-            mname = new MapName(n.toString());
+            mname = new ResourceName(n.toString());
         }
         return mname;
     }

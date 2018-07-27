@@ -8,7 +8,6 @@ metadata:
 spec:
   replicas: 6
   image: "foo"
-  metrics: {}
   tolerations:
   - effect: "NoSchedule"
     key: "key1"
@@ -18,5 +17,6 @@ spec:
     key: "key2"
     operator: "Equal"
     value: "value2"
+  metrics: {}
   config:
     name: "bar"

@@ -4,9 +4,6 @@
  */
 package io.strimzi.systemtest;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.jayway.jsonpath.JsonPath;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.Event;
@@ -21,10 +18,13 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.DoneableKafkaAssembly;
 import io.strimzi.api.kafka.DoneableKafkaConnectAssembly;
+import io.strimzi.api.kafka.DoneableKafkaTopic;
 import io.strimzi.api.kafka.KafkaAssemblyList;
 import io.strimzi.api.kafka.KafkaConnectAssemblyList;
+import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.KafkaAssembly;
 import io.strimzi.api.kafka.model.KafkaConnectAssembly;
+import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterException;
@@ -36,9 +36,7 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.rules.Stopwatch;
 
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -138,32 +136,6 @@ public class AbstractClusterIT {
         return clusterName + "-topic-operator";
     }
 
-    /** @deprecated  Remove once Topics have a CRD */
-    @Deprecated
-    void replaceCm(String cmName, String fieldName, String fieldValue) {
-        replaceCm(cmName, Collections.singletonMap(fieldName, fieldValue));
-    }
-
-    /** @deprecated  Remove once Topics have a CRD */
-    @Deprecated
-    void replaceCm(String cmName, Map<String, String> changes) {
-        try {
-            String jsonString = kubeClient.get("cm", cmName);
-            YAMLMapper mapper = new YAMLMapper();
-            JsonNode node = mapper.readTree(jsonString);
-
-            for (Map.Entry<String, String> change : changes.entrySet()) {
-                ((ObjectNode) node.get("data")).put(change.getKey(), change.getValue());
-            }
-
-            String content = mapper.writeValueAsString(node);
-            kubeClient.replaceContent(content);
-            LOGGER.info("Value in ConfigMap replaced");
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     private <T extends CustomResource, L extends CustomResourceList<T>, D extends CustomResourceDoneable<T>>
         void replaceCrdResource(Class<T> crdClass, Class<L> listClass, Class<D> doneableClass, String resourceName, Consumer<T> editor) {
         Resource<T, D> namedResource = Crds.operation(client, crdClass, listClass, doneableClass).inNamespace(kubeClient.namespace()).withName(resourceName);
@@ -178,6 +150,10 @@ public class AbstractClusterIT {
 
     void replaceKafkaConnectResource(String resourceName, Consumer<KafkaConnectAssembly> editor) {
         replaceCrdResource(KafkaConnectAssembly.class, KafkaConnectAssemblyList.class, DoneableKafkaConnectAssembly.class, resourceName, editor);
+    }
+
+    void replaceTopicResource(String resourceName, Consumer<KafkaTopic> editor) {
+        replaceCrdResource(KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class, resourceName, editor);
     }
 
     String getBrokerApiVersions(String podName) {

@@ -72,7 +72,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
     public static final String KAFKA_CONNECT_S2I_CM = "../examples/configmaps/cluster-operator/kafka-connect-s2i.yaml";
     public static final String CO_INSTALL_DIR = "../examples/install/cluster-operator";
     public static final String CO_DEPLOYMENT_NAME = "strimzi-cluster-operator";
-    public static final String TOPIC_CM = "../examples/configmaps/topic-operator/kafka-topic-configmap.yaml";
+    public static final String TOPIC_CM = "../examples/topic/kafka-topic.yaml";
 
     private KubeClusterResource clusterResource;
 
@@ -546,16 +546,17 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 final String tcDeploymentName = kafkaAssembly.getMetadata().getName() + "-topic-operator";
                 last = new Bracket(last, new ResourceAction()
                     .getPo(CO_DEPLOYMENT_NAME + ".*")
-                    .logs(CO_DEPLOYMENT_NAME + ".*", null)
+                    .logs(CO_DEPLOYMENT_NAME + ".*", "strimzi-cluster-operator")
                     .getDep(CO_DEPLOYMENT_NAME)
                     .getSs(kafkaStatefulSetName)
                     .getPo(kafkaStatefulSetName + ".*")
-                    .logs(kafkaStatefulSetName + ".*", null)
+                    .logs(kafkaStatefulSetName + ".*", "kafka")
+                    .logs(kafkaStatefulSetName + ".*", "tls-sidecar")
                     .getSs(zookeeperStatefulSetName)
                     .getPo(zookeeperStatefulSetName)
                     .logs(zookeeperStatefulSetName + ".*", "zookeeper")
                     .getDep(tcDeploymentName)
-                    .logs(tcDeploymentName + ".*", null)) {
+                    .logs(tcDeploymentName + ".*", "topic-operator")) {
 
                     @Override
                     protected void before() {
@@ -655,7 +656,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 }
             }), (x, y) -> x, LinkedHashMap::new));
             last = new Bracket(last, new ResourceAction().getPo(CO_DEPLOYMENT_NAME + ".*")
-                    .logs(CO_DEPLOYMENT_NAME + ".*", null)
+                    .logs(CO_DEPLOYMENT_NAME + ".*", "strimzi-cluster-operator")
                     .getDep(CO_DEPLOYMENT_NAME)) {
                 Stack<String> deletable = new Stack<>();
                 @Override

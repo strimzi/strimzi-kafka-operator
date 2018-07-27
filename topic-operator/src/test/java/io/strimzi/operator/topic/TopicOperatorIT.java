@@ -6,12 +6,20 @@ package io.strimzi.operator.topic;
 
 import io.debezium.kafka.KafkaCluster;
 import io.debezium.kafka.ZookeeperServer;
-import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Event;
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.Resource;
+import io.strimzi.api.kafka.Crds;
+import io.strimzi.api.kafka.DoneableKafkaTopic;
+import io.strimzi.api.kafka.KafkaTopicList;
+import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.test.Namespace;
+import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -28,7 +36,6 @@ import org.apache.kafka.clients.admin.NewPartitions;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
-import org.apache.kafka.common.utils.CopyOnWriteMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.After;
@@ -39,8 +46,6 @@ import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-
 
 import java.lang.reflect.Field;
 import java.nio.file.Files;
@@ -58,6 +63,7 @@ import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @Namespace(TopicOperatorIT.NAMESPACE)
 @RunWith(VertxUnitRunner.class)
@@ -69,7 +75,7 @@ public class TopicOperatorIT {
     public static KubeClusterResource testCluster = new KubeClusterResource();
     private static String oldNamespace;
 
-    private final LabelPredicate cmPredicate = LabelPredicate.fromString(
+    private final LabelPredicate resourcePredicate = LabelPredicate.fromString(
             "strimzi.io/kind=topic");
 
     public static final String NAMESPACE = "topic-operator-it";
@@ -78,7 +84,7 @@ public class TopicOperatorIT {
     private KafkaCluster kafkaCluster;
     private volatile AdminClient adminClient;
     private KubernetesClient kubeClient;
-    private volatile TopicsWatcher topicsWatcher;
+    private volatile ZkTopicsWatcher topicsWatcher;
     private Thread kafkaHook = new Thread() {
         @Override
         public void run() {
@@ -89,7 +95,7 @@ public class TopicOperatorIT {
     };
     private final long timeout = 120_000L;
     private volatile TopicConfigsWatcher topicsConfigWatcher;
-    private volatile TopicWatcher topicWatcher;
+    private volatile ZkTopicWatcher topicWatcher;
 
     private volatile String deploymentId;
     private Set<String> preExistingEvents;
@@ -102,7 +108,8 @@ public class TopicOperatorIT {
                 .createNamespace(NAMESPACE);
         oldNamespace = testCluster.client().namespace(NAMESPACE);
         testCluster.client().clientWithAdmin()
-                .create("../examples/install/topic-operator/02-role.yaml")
+                .create("../examples/install/topic-operator/02-Role-strimzi-topic-operator.yaml")
+                .create(TestUtils.CRD_TOPIC)
                 .create("src/test/resources/TopicOperatorIT-rbac.yaml");
     }
 
@@ -110,7 +117,8 @@ public class TopicOperatorIT {
     public static void teardownKubeCluster() {
         testCluster.client().clientWithAdmin()
                 .delete("src/test/resources/TopicOperatorIT-rbac.yaml")
-                .delete("../examples/install/topic-operator/02-role.yaml")
+                .delete(TestUtils.CRD_TOPIC)
+                .delete("../examples/install/topic-operator/02-Role-strimzi-topic-operator.yaml")
                 .deleteNamespace(NAMESPACE);
         testCluster.client().clientWithAdmin().namespace(oldNamespace);
     }
@@ -155,7 +163,7 @@ public class TopicOperatorIT {
 
         // We can't delete events, so record the events which exist at the start of the test
         // and then waitForEvents() can ignore those
-        preExistingEvents = kubeClient.events().inNamespace(NAMESPACE).withLabels(cmPredicate.labels()).list().
+        preExistingEvents = kubeClient.events().inNamespace(NAMESPACE).withLabels(resourcePredicate.labels()).list().
                 getItems().stream().
                 map(evt -> evt.getMetadata().getUid()).
                 collect(Collectors.toSet());
@@ -179,7 +187,7 @@ public class TopicOperatorIT {
     public void teardown(TestContext context) {
         LOGGER.info("Tearing down test");
 
-        kubeClient.configMaps().inNamespace(NAMESPACE).delete();
+        operation().inNamespace(NAMESPACE).delete();
 
         Async async = context.async();
         if (deploymentId != null) {
@@ -205,10 +213,10 @@ public class TopicOperatorIT {
     }
 
 
-    private ConfigMap createCm(TestContext context, ConfigMap cm) {
-        String topicName = new TopicName(cm).toString();
-        // Create a CM
-        kubeClient.configMaps().inNamespace(NAMESPACE).create(cm);
+    private KafkaTopic createKafkaTopicResource(TestContext context, KafkaTopic topicResource) {
+        String topicName = new TopicName(topicResource).toString();
+        // Create a Topic Resource
+        operation().inNamespace(NAMESPACE).create(topicResource);
 
         // Wait for the topic to be created
         waitFor(context, () -> {
@@ -225,34 +233,34 @@ public class TopicOperatorIT {
                 throw new RuntimeException(e);
             }
         }, timeout, "Expected topic to be created by now");
-        return cm;
+        return topicResource;
     }
 
-    private ConfigMap createCm(TestContext context, String topicName) {
+    private KafkaTopic createKafkaTopicResource(TestContext context, String topicName) {
         Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap()).build();
-        ConfigMap cm = TopicSerialization.toConfigMap(topic, cmPredicate);
-        return createCm(context, cm);
+        KafkaTopic topicResource = TopicSerialization.toTopicResource(topic, resourcePredicate);
+        return createKafkaTopicResource(context, topicResource);
     }
 
     private String createTopic(TestContext context, String topicName) throws InterruptedException, ExecutionException {
         LOGGER.info("Creating topic {}", topicName);
         // Create a topic
-        String configMapName = new TopicName(topicName).asMapName().toString();
+        String resourceName = new TopicName(topicName).asMapName().toString();
         CreateTopicsResult crt = adminClient.createTopics(singletonList(new NewTopic(topicName, 1, (short) 1)));
         crt.all().get();
 
-        // Wait for the configmap to be created
+        // Wait for the resource to be created
         waitFor(context, () -> {
-            ConfigMap cm = kubeClient.configMaps().inNamespace(NAMESPACE).withName(configMapName).get();
-            LOGGER.info("Polled configmap {} waiting for creation", configMapName);
-            return cm != null;
-        }, timeout, "Expected the configmap to have been created by now");
+            KafkaTopic topic = operation().inNamespace(NAMESPACE).withName(resourceName).get();
+            LOGGER.info("Polled topic {} waiting for creation", resourceName);
+            return topic != null;
+        }, timeout, "Expected the topic to have been created by now");
 
-        LOGGER.info("configmap {} has been created", configMapName);
-        return configMapName;
+        LOGGER.info("topic {} has been created", resourceName);
+        return resourceName;
     }
 
-    private void alterTopicConfig(TestContext context, String topicName, String configMapName) throws InterruptedException, ExecutionException {
+    private void alterTopicConfig(TestContext context, String topicName, String resourceName) throws InterruptedException, ExecutionException {
         // Get the topic config
         ConfigResource configResource = topicConfigResource(topicName);
         org.apache.kafka.clients.admin.Config config = getTopicConfig(configResource);
@@ -277,17 +285,17 @@ public class TopicOperatorIT {
                 new org.apache.kafka.clients.admin.Config(m.values())));
         cgf.all().get();
 
-        // Wait for the configmap to be modified
+        // Wait for the resource to be modified
         waitFor(context, () -> {
-            ConfigMap cm = kubeClient.configMaps().inNamespace(NAMESPACE).withName(configMapName).get();
-            LOGGER.info("Polled configmap {}, waiting for config change", configMapName);
-            String gotValue = TopicSerialization.fromConfigMap(cm).getConfig().get(key);
+            KafkaTopic topic = operation().inNamespace(NAMESPACE).withName(resourceName).get();
+            LOGGER.info("Polled topic {}, waiting for config change", resourceName);
+            String gotValue = TopicSerialization.fromTopicResource(topic).getConfig().get(key);
             LOGGER.info("Got value {}", gotValue);
             return changedValue.equals(gotValue);
-        }, timeout, "Expected the configmap to have been deleted by now");
+        }, timeout, "Expected the topic to have been deleted by now");
     }
 
-    private void alterTopicNumPartitions(TestContext context, String topicName, String configMapName) throws InterruptedException, ExecutionException {
+    private void alterTopicNumPartitions(TestContext context, String topicName, String resourceName) throws InterruptedException, ExecutionException {
         int changedValue = 2;
 
         NewPartitions newPartitions = NewPartitions.increaseTo(changedValue);
@@ -297,14 +305,14 @@ public class TopicOperatorIT {
         CreatePartitionsResult createPartitionsResult = adminClient.createPartitions(map);
         createPartitionsResult.all().get();
 
-        // Wait for the configmap to be modified
+        // Wait for the resource to be modified
         waitFor(context, () -> {
-            ConfigMap cm = kubeClient.configMaps().inNamespace(NAMESPACE).withName(configMapName).get();
-            LOGGER.info("Polled configmap {}, waiting for partitions change", configMapName);
-            int gotValue = TopicSerialization.fromConfigMap(cm).getNumPartitions();
+            KafkaTopic topic = operation().inNamespace(NAMESPACE).withName(resourceName).get();
+            LOGGER.info("Polled topic {}, waiting for partitions change", resourceName);
+            int gotValue = TopicSerialization.fromTopicResource(topic).getNumPartitions();
             LOGGER.info("Got value {}", gotValue);
             return changedValue == gotValue;
-        }, timeout, "Expected the configmap to have been deleted by now");
+        }, timeout, "Expected the topic to have been deleted by now");
     }
 
     private org.apache.kafka.clients.admin.Config getTopicConfig(ConfigResource configResource) {
@@ -322,33 +330,33 @@ public class TopicOperatorIT {
     }
 
     private void createAndAlterTopicConfig(TestContext context, String topicName) throws InterruptedException, ExecutionException {
-        String configMapName = createTopic(context, topicName);
-        alterTopicConfig(context, topicName, configMapName);
+        String resourceName = createTopic(context, topicName);
+        alterTopicConfig(context, topicName, resourceName);
     }
 
-    private void deleteTopic(TestContext context, String topicName, String configMapName) throws InterruptedException, ExecutionException {
-        LOGGER.info("Deleting topic {} (ConfigMap {})", topicName, configMapName);
+    private void deleteTopic(TestContext context, String topicName, String resourceName) throws InterruptedException, ExecutionException {
+        LOGGER.info("Deleting topic {} (KafkaTopic {})", topicName, resourceName);
         // Now we can delete the topic
         DeleteTopicsResult dlt = adminClient.deleteTopics(singletonList(topicName));
         dlt.all().get();
         LOGGER.info("Deleted topic {}", topicName);
 
-        // Wait for the configmap to be deleted
+        // Wait for the resource to be deleted
         waitFor(context, () -> {
-            ConfigMap cm = kubeClient.configMaps().inNamespace(NAMESPACE).withName(configMapName).get();
-            LOGGER.info("Polled configmap {}, got {}, waiting for deletion", configMapName, cm);
-            return cm == null;
-        }, timeout, "Expected the configmap to have been deleted by now");
+            KafkaTopic topic = operation().inNamespace(NAMESPACE).withName(resourceName).get();
+            LOGGER.info("Polled topic {}, got {}, waiting for deletion", resourceName, topic);
+            return topic == null;
+        }, timeout, "Expected the topic to have been deleted by now");
     }
 
     private void createAndDeleteTopic(TestContext context, String topicName) throws InterruptedException, ExecutionException {
-        String configMapName = createTopic(context, topicName);
-        deleteTopic(context, topicName, configMapName);
+        String resourceName = createTopic(context, topicName);
+        deleteTopic(context, topicName, resourceName);
     }
 
     private void createAndAlterNumPartitions(TestContext context, String topicName) throws InterruptedException, ExecutionException {
-        String configMapName = createTopic(context, topicName);
-        alterTopicNumPartitions(context, topicName, configMapName);
+        String resourceName = createTopic(context, topicName);
+        alterTopicNumPartitions(context, topicName, resourceName);
     }
 
 
@@ -357,7 +365,7 @@ public class TopicOperatorIT {
         long t0 = System.currentTimeMillis();
         Future<Void> fut = Future.future();
         vertx.setPeriodic(3_000L, timerId -> {
-            // Wait for a configmap to be created
+            // Wait for a resource to be created
             boolean isFinished;
             try {
                 isFinished = ready.getAsBoolean();
@@ -384,13 +392,13 @@ public class TopicOperatorIT {
         }
     }
 
-    private void waitForEvent(TestContext context, ConfigMap cm, String expectedMessage, TopicOperator.EventType expectedType) {
+    private void waitForEvent(TestContext context, KafkaTopic kafkaTopic, String expectedMessage, TopicOperator.EventType expectedType) {
         waitFor(context, () -> {
-            List<Event> items = kubeClient.events().inNamespace(NAMESPACE).withLabels(cmPredicate.labels()).list().getItems();
+            List<Event> items = kubeClient.events().inNamespace(NAMESPACE).withLabels(resourcePredicate.labels()).list().getItems();
             List<Event> filtered = items.stream().
                     filter(evt -> !preExistingEvents.contains(evt.getMetadata().getUid())
-                    && "ConfigMap".equals(evt.getInvolvedObject().getKind())
-                    && cm.getMetadata().getName().equals(evt.getInvolvedObject().getName())).
+                    && "KafkaTopic".equals(evt.getInvolvedObject().getKind())
+                    && kafkaTopic.getMetadata().getName().equals(evt.getInvolvedObject().getName())).
                     collect(Collectors.toList());
             LOGGER.debug("Waiting for events: {}", filtered.stream().map(evt -> evt.getMessage()).collect(Collectors.toList()));
             if (!filtered.isEmpty()) {
@@ -400,8 +408,8 @@ public class TopicOperatorIT {
                 assertEquals(expectedMessage, event.getMessage());
                 assertEquals(expectedType.name, event.getType());
                 assertNotNull(event.getInvolvedObject());
-                assertEquals("ConfigMap", event.getInvolvedObject().getKind());
-                assertEquals(cm.getMetadata().getName(), event.getInvolvedObject().getName());
+                assertEquals("KafkaTopic", event.getInvolvedObject().getKind());
+                assertEquals(kafkaTopic.getMetadata().getName(), event.getInvolvedObject().getName());
                 return true;
             } else {
                 return false;
@@ -452,38 +460,34 @@ public class TopicOperatorIT {
     }
 
     @Test
-    public void testConfigMapAdded(TestContext context) {
-        String topicName = "test-configmap-created";
-        createCm(context, topicName);
+    public void testKafkaTopicAdded(TestContext context) {
+        String topicName = "test-kafkatopic-created";
+        createKafkaTopicResource(context, topicName);
     }
 
     @Test
-    public void testConfigMapAddedWithBadData(TestContext context) {
-        String topicName = "test-configmap-created-with-bad-data";
+    public void testKafkaTopicAddedWithBadData(TestContext context) {
+        String topicName = "test-resource-created-with-bad-data";
         Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap()).build();
-        ConfigMap cm = TopicSerialization.toConfigMap(topic, cmPredicate);
-        cm.getData().put(TopicSerialization.CM_KEY_PARTITIONS, "foo");
+        KafkaTopic kafkaTopic = TopicSerialization.toTopicResource(topic, resourcePredicate);
+        kafkaTopic.getSpec().setPartitions(-1);
 
-        // Create a CM
-        kubeClient.configMaps().inNamespace(NAMESPACE).create(cm);
-
-        // Wait for the warning event
-        waitForEvent(context, cm,
-                "ConfigMap test-configmap-created-with-bad-data has an invalid 'data' section: " +
-                        "ConfigMap's 'data' section has invalid key 'partitions': " +
-                        "should be a strictly positive integer but was 'foo'",
-                TopicOperator.EventType.WARNING);
-
+        // Create a Topic Resource
+        try {
+            operation().inNamespace(NAMESPACE).create(kafkaTopic);
+        } catch (KubernetesClientException e) {
+            assertTrue(e.getMessage().contains("spec.partitions in body should be greater than or equal to 1"));
+        }
     }
 
     @Test
-    public void testConfigMapDeleted(TestContext context) {
-        // create the cm
-        String topicName = "test-configmap-deleted";
-        ConfigMap cm = createCm(context, topicName);
+    public void testKafkaTopicDeleted(TestContext context) {
+        // create the Topic Resource
+        String topicName = "test-kafkatopic-deleted";
+        KafkaTopic topicResource = createKafkaTopicResource(context, topicName);
 
-        // can now delete the cm
-        kubeClient.configMaps().inNamespace(NAMESPACE).withName(cm.getMetadata().getName()).delete();
+        // can now delete the topicResource
+        operation().inNamespace(NAMESPACE).withName(topicResource.getMetadata().getName()).delete();
 
         // Wait for the topic to be deleted
         waitFor(context, () -> {
@@ -505,15 +509,17 @@ public class TopicOperatorIT {
 
 
     @Test
-    public void testConfigMapModifiedRetentionChanged(TestContext context) throws Exception {
-        // create the cm
-        String topicName = "test-configmap-modified-retention-changed";
-        ConfigMap cm = createCm(context, topicName);
+    public void testKafkaTopicModifiedRetentionChanged(TestContext context) throws Exception {
+        // create the topic
+        String topicName = "test-kafkatopic-modified-retention-changed";
+        KafkaTopic topicResource = createKafkaTopicResource(context, topicName);
 
-        // now change the cm
-        kubeClient.configMaps().inNamespace(NAMESPACE).withName(cm.getMetadata().getName()).edit().addToData(TopicSerialization.CM_KEY_CONFIG, "{\"retention.ms\":\"12341234\"}").done();
+        // now change the topic resource
+        KafkaTopic changedTopic = new KafkaTopicBuilder(operation().inNamespace(NAMESPACE).withName(topicResource.getMetadata().getName()).get())
+            .editOrNewSpec().addToConfig("retention.ms", 12341234).endSpec().build();
+        operation().inNamespace(NAMESPACE).withName(topicResource.getMetadata().getName()).replace(changedTopic);
 
-        // Wait for that to be reflected in the topic
+        // Wait for that to be reflected in the kafka topic
         waitFor(context, () -> {
             ConfigResource configResource = topicConfigResource(topicName);
             org.apache.kafka.clients.admin.Config config = getTopicConfig(configResource);
@@ -524,55 +530,60 @@ public class TopicOperatorIT {
     }
 
     @Test
-    public void testConfigMapModifiedWithBadData(TestContext context) throws Exception {
-        // create the cm
-        String topicName = "test-configmap-modified-with-bad-data";
-        ConfigMap cm = createCm(context, topicName);
+    public void testKafkaTopicModifiedWithBadData(TestContext context) throws Exception {
+        // create the topicResource
+        String topicName = "test-kafkatopic-modified-with-bad-data";
+        KafkaTopic topicResource = createKafkaTopicResource(context, topicName);
 
-        // now change the cm
-        kubeClient.configMaps().inNamespace(NAMESPACE).withName(cm.getMetadata().getName()).edit().addToData(TopicSerialization.CM_KEY_PARTITIONS, "foo").done();
-
-        // Wait for that to be reflected in the topic
-        waitForEvent(context, cm,
-                "ConfigMap test-configmap-modified-with-bad-data has an invalid 'data' section: " +
-                        "ConfigMap's 'data' section has invalid key 'partitions': " +
-                        "should be a strictly positive integer but was 'foo'",
-                TopicOperator.EventType.WARNING);
+        // now change the topicResource
+        KafkaTopic changedTopic = new KafkaTopicBuilder(operation().inNamespace(NAMESPACE).withName(topicResource.getMetadata().getName()).get())
+                .editOrNewSpec().withPartitions(-1).endSpec().build();
+        try {
+            operation().inNamespace(NAMESPACE).withName(topicResource.getMetadata().getName()).replace(changedTopic);
+        } catch (KubernetesClientException e) {
+            assertTrue(e.getMessage().contains("spec.partitions in body should be greater than or equal to 1"));
+        }
     }
 
     @Test
-    public void testConfigMapModifiedNameChanged(TestContext context) throws Exception {
-        // create the cm
-        String topicName = "test-configmap-modified-name-changed";
-        ConfigMap cm = createCm(context, topicName);
+    public void testKafkaTopicModifiedNameChanged(TestContext context) throws Exception {
+        // create the topicResource
+        String topicName = "test-kafkatopic-modified-name-changed";
+        KafkaTopic topicResource = createKafkaTopicResource(context, topicName);
 
-        // now change the cm
+        // now change the topicResource
         String changedName = topicName.toUpperCase(Locale.ENGLISH);
-        LOGGER.info("Changing CM data.name from {} to {}", topicName, changedName);
-        kubeClient.configMaps().inNamespace(NAMESPACE).withName(cm.getMetadata().getName()).edit().addToData(TopicSerialization.CM_KEY_NAME, changedName).done();
+        LOGGER.info("Changing Topic Resource spec.topicName from {} to {}", topicName, changedName);
+        KafkaTopic changedTopic = new KafkaTopicBuilder(operation().inNamespace(NAMESPACE).withName(topicResource.getMetadata().getName()).get())
+                .editOrNewSpec().withTopicName(changedName).endSpec().build();
+        operation().inNamespace(NAMESPACE).withName(topicResource.getMetadata().getName()).replace(changedTopic);
 
         // We expect this to cause a warning event
-        waitForEvent(context, cm,
-                "Kafka topics cannot be renamed, but ConfigMap's data.name has changed.",
+        waitForEvent(context, topicResource,
+                "Kafka topics cannot be renamed, but KafkaTopic's spec.topicName has changed.",
                 TopicOperator.EventType.WARNING);
 
     }
 
     @Test
-    public void testCreateTwoConfigMapsManagingOneTopic(TestContext context) {
-        String topicName = "two-cms-one-topic";
+    public void testCreateTwoResourcesManagingOneTopic(TestContext context) {
+        String topicName = "two-resources-one-topic";
         Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap()).build();
-        ConfigMap cm = TopicSerialization.toConfigMap(topic, cmPredicate);
-        ConfigMap cm2 = new ConfigMapBuilder(cm).editMetadata().withName(topicName + "-1").endMetadata().build();
+        KafkaTopic topicResource = TopicSerialization.toTopicResource(topic, resourcePredicate);
+        KafkaTopic topicResource2 = new KafkaTopicBuilder(topicResource).withMetadata(new ObjectMetaBuilder(topicResource.getMetadata()).withName(topicName + "-1").build()).build();
         // create one
-        createCm(context, cm2);
+        createKafkaTopicResource(context, topicResource2);
         // create another
-        kubeClient.configMaps().inNamespace(NAMESPACE).create(cm);
+        operation().inNamespace(NAMESPACE).create(topicResource);
 
-        waitForEvent(context, cm,
-                "Failure processing ConfigMap watch event ADDED on map two-cms-one-topic with labels {strimzi.io/kind=topic}: " +
-                        "Topic 'two-cms-one-topic' is already managed via ConfigMap 'two-cms-one-topic-1' it cannot also be managed via the ConfiMap 'two-cms-one-topic'",
+        waitForEvent(context, topicResource,
+                "Failure processing KafkaTopic watch event ADDED on resource two-resources-one-topic with labels {strimzi.io/kind=topic}: " +
+                        "Topic 'two-resources-one-topic' is already managed via KafkaTopic 'two-resources-one-topic-1' it cannot also be managed via the KafkaTopic 'two-resources-one-topic'",
                 TopicOperator.EventType.WARNING);
+    }
+
+    private MixedOperation<KafkaTopic, KafkaTopicList, DoneableKafkaTopic, Resource<KafkaTopic, DoneableKafkaTopic>> operation() {
+        return kubeClient.customResources(Crds.topic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class);
     }
 
     @Test
@@ -580,28 +591,26 @@ public class TopicOperatorIT {
         String topicName = "test-reconcile";
 
         Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap()).build();
-        ConfigMap cm = TopicSerialization.toConfigMap(topic, cmPredicate);
-        String configMapName = cm.getMetadata().getName();
+        KafkaTopic topicResource = TopicSerialization.toTopicResource(topic, resourcePredicate);
+        String resourceName = topicResource.getMetadata().getName();
 
-        kubeClient.configMaps().inNamespace(NAMESPACE).create(cm);
+        operation().inNamespace(NAMESPACE).create(topicResource);
 
-        // Wait for the configmap to be created
+        // Wait for the resource to be created
         waitFor(context, () -> {
-            ConfigMap createdCm = kubeClient.configMaps().inNamespace(NAMESPACE).withName(configMapName).get();
-            LOGGER.info("Polled configmap {} waiting for creation", configMapName);
+            KafkaTopic createdResource = operation().inNamespace(NAMESPACE).withName(resourceName).get();
+            LOGGER.info("Polled kafkatopic {} waiting for creation", resourceName);
 
-            // modify configmap
-            if (createdCm != null) {
-                Map<String, String> data = new CopyOnWriteMap<>(createdCm.getData());
-                data.put("partitions", "2");
-                createdCm.setData(data);
-                kubeClient.configMaps().inNamespace(NAMESPACE).withName(configMapName).patch(createdCm);
+            // modify resource
+            if (createdResource != null) {
+                createdResource.getSpec().setPartitions(2);
+                operation().inNamespace(NAMESPACE).withName(resourceName).patch(createdResource);
             }
 
-            return createdCm != null;
-        }, timeout, "Expected the configmap to have been created by now");
+            return createdResource != null;
+        }, timeout, "Expected the kafkatopic to have been created by now");
 
-        // trigger an immediate reconcile, while topic operator is dealing with configmap modification
+        // trigger an immediate reconcile, while topic operator is dealing with resource modification
         session.topicOperator.reconcileAllTopics("periodic");
 
         // Wait for the topic to be created
@@ -621,7 +630,7 @@ public class TopicOperatorIT {
         }, timeout, "Expected topic to be created by now");
     }
 
-    // TODO: What happens if we create and then change labels to the CM predicate isn't matched any more
+    // TODO: What happens if we create and then change labels to the resource predicate isn't matched any more
     //       What then happens if we change labels back?
 
 }

@@ -38,24 +38,24 @@ public class JvmOptionsTest {
                 "  \"-server\": \"true\"" +
                 "}", JvmOptions.class);
 
-        assertTrue(opts.getServer());
+        assertTrue(opts.isServer());
 
 
         opts = TestUtils.fromJson("{" +
                 "  \"-server\": true" +
                 "}", JvmOptions.class);
 
-        assertTrue(opts.getServer());
+        assertTrue(opts.isServer());
 
         opts = TestUtils.fromJson("{" +
                 "  \"-server\": \"false\"" +
                 "}", JvmOptions.class);
 
-        assertFalse(opts.getServer());
+        assertFalse(opts.isServer());
 
         opts = TestUtils.fromJson("{}", JvmOptions.class);
 
-        assertFalse(opts.getServer());
+        assertNull(opts.isServer());
     }
 
     @Test

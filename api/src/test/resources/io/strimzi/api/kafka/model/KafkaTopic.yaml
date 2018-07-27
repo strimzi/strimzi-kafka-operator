@@ -1,0 +1,13 @@
+apiVersion: kafka.strimzi.io/v1alpha1
+kind: KafkaTopic
+metadata:
+  name: my-topic
+spec:
+  replicas: 3
+  partitions: 12
+  config:
+    retention.ms: 7200000
+    segment.bytes: 1073741824
+    cleanup.policy: delete
+    min.cleanable.dirty.ratio: 0.5
+    preallocate: true

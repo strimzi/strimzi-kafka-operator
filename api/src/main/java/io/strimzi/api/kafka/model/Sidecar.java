@@ -8,6 +8,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 
+import java.io.Serializable;
+
 /**
  * Representation of a sidecar container configuration
  */
@@ -17,7 +19,9 @@ import io.sundr.builder.annotations.Buildable;
         builderPackage = "io.strimzi.api.kafka.model"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class Sidecar {
+public class Sidecar implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private String image;
 
