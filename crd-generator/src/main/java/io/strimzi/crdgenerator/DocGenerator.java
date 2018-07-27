@@ -306,7 +306,7 @@ public class DocGenerator {
                 }
             }).collect(Collectors.joining(", ")));
         } else {
-            out.append("<<").append(anchor(cls)).append(",`").append(cls.getSimpleName()).append("`>>");
+            out.append("xref:").append(anchor(cls)).append("[`").append(cls.getSimpleName()).append("`]");
         }
     }
 
