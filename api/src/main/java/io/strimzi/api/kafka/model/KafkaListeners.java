@@ -29,27 +29,27 @@ import static java.util.Collections.emptyMap;
 public class KafkaListeners implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private TlsListener tls;
-    private PlainListener plain;
+    private KafkaTlsListener tls;
+    private KafkaPlainListener plain;
     private Map<String, Object> additionalProperties;
 
     @Description("Configures TLS listener on port 9093.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public TlsListener getTls() {
+    public KafkaTlsListener getTls() {
         return tls;
     }
 
-    public void setTls(TlsListener tls) {
+    public void setTls(KafkaTlsListener tls) {
         this.tls = tls;
     }
 
     @Description("Configures plain listener on port 9092.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public PlainListener getPlain() {
+    public KafkaPlainListener getPlain() {
         return plain;
     }
 
-    public void setPlain(PlainListener plain) {
+    public void setPlain(KafkaPlainListener plain) {
         this.plain = plain;
     }
 

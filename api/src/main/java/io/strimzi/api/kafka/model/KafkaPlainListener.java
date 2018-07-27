@@ -22,7 +22,7 @@ import io.sundr.builder.annotations.Buildable;
         builderPackage = "io.strimzi.api.kafka.model"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class PlainListener  implements Serializable {
+public class KafkaPlainListener implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private Map<String, Object> additionalProperties = new HashMap<>(0);

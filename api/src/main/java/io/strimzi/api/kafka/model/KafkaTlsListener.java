@@ -28,7 +28,7 @@ import static java.util.Collections.emptyMap;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "authentication" })
-public class TlsListener implements Serializable {
+public class KafkaTlsListener implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private KafkaListenerAuthentication authentication;
