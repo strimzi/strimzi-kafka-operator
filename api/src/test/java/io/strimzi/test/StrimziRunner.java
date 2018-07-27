@@ -799,7 +799,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 protected void before() {
                     LOGGER.info("Creating namespace '{}' before test per @Namespace annotation on {}", namespace.value(), name(element));
                     kubeClient().createNamespace(namespace.value());
-                    previousNamespace = kubeClient().namespace(namespace.value());
+                    previousNamespace = namespace.use() ? kubeClient().namespace(namespace.value()) : kubeClient().namespace();
                 }
 
                 @Override
