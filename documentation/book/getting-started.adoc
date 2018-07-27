@@ -15,9 +15,9 @@ include::common/attributes.adoc[]
 {ProductName} runs on
 ifdef::Kubernetes[{KubernetesLongName} {KubernetesVersion} and]
 {OpenShiftLongName} {OpenShiftVersion}.
-It can be used on clusters running in public and private clouds, local deployments intended for development, and everything in between.
 
-This guide assumes that an {ProductPlatformName} cluster is available and the
+{ProductName} works on all kinds of clusters - from public and private clouds down to local deployments intended for development.
+This guide expects that an {ProductPlatformName} cluster is available and the
 ifdef::Kubernetes[`kubectl` and]
 `oc` command-line tools are installed and configured to connect to the running cluster.
 
@@ -37,68 +37,10 @@ include::con-product-downloads.adoc[leveloffset=+1]
 endif::Downloading[]
 
 :context: {ContextProduct}
-include::assembly-deploying-cluster-operator.adoc[leveloffset=+1]
+include::assembly-cluster-operator.adoc[leveloffset=+1]
 
-== Kafka broker
-
-{ProductName} uses the StatefulSets feature of {ProductPlatformName} to deploy Kafka brokers.
-With StatefulSets, the pods receive a unique name and network identity and that makes it easier to identify the
-individual Kafka broker pods and set their identity (broker ID). The deployment uses **regular** and **headless**
-services:
-
-- regular services can be used as bootstrap servers for Kafka clients
-- headless services are needed to have DNS resolve the pods IP addresses directly
-
-As well as Kafka, {ProductName} also installs a Zookeeper cluster and configures the Kafka brokers to connect to it. The
-Zookeeper cluster also uses StatefulSets.
-
-{ProductName} provides two flavors of Kafka broker deployment: **ephemeral** and **persistent**.
-
-The **ephemeral** flavour is suitable only for development and testing purposes and not for production. The
-ephemeral flavour uses `emptyDir` volumes for storing broker information (Zookeeper) and topics/partitions
-(Kafka). Using `emptyDir` volume means that its content is strictly related to the pod life cycle (it is
-deleted when the pod goes down). This makes the in-memory deployment well-suited to development and testing because
-you do not have to provide persistent volumes.
-
-The **persistent** flavour uses PersistentVolumes to store Zookeeper and Kafka data. The PersistentVolume is
-acquired using a PersistentVolumeClaim – that makes it independent of the actual type of the PersistentVolume. For
-example, it can use
-ifdef::Kubernetes[HostPath volumes on Minikube or]
-Amazon EBS volumes in Amazon AWS deployments without any changes in the YAML files. The PersistentVolumeClaim can use
-a StorageClass to trigger automatic volume provisioning.
-
-To deploy a Kafka cluster, a `Kafka` resource with the cluster configuration has to be created.
-Example resources and the details about the `Kafka` format are in <<kafka_assembly_details>>.
-
-ifdef::Kubernetes[]
-=== Deploying to {KubernetesName}
-
-To deploy a Kafka broker on {KubernetesName}, the corresponding `Kafka` has to be created.
-To create an ephemeral cluster using the provided example `Kafka`, the following command should be executed:
-
-[source,shell]
-kubectl apply -f examples/kafka/kafka-ephemeral.yaml
-
-Another example `Kafka` is provided for a persistent Kafka cluster.
-To deploy it, the following command should be run:
-
-[source,shell]
-kubectl apply -f examples/kafka/kafka-persistent.yaml
-endif::Kubernetes[]
-
-=== Deploying to {OpenShiftName}
-
-For {OpenShiftName}, the Kafka broker is provided in the form of a template.
-The cluster can be deployed from the template either using the command line or using the {OpenShiftName} console.
-To create the ephemeral cluster, the following command should be executed:
-
-[source,shell]
-oc new-app strimzi-ephemeral
-
-Similarly, to deploy a persistent Kafka cluster the following command should be run:
-
-[source,shell]
-oc new-app strimzi-persistent
+:context: {ContextProduct}
+include::assembly-kafka-cluster.adoc[leveloffset=+1]
 
 == Kafka Connect
 

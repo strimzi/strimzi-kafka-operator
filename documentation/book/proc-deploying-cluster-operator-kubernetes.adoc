@@ -1,6 +1,6 @@
 // Module included in the following assemblies:
 //
-// assembly-deploying-cluster-operator.adoc
+// assembly-cluster-operator.adoc
 
 [id='deploying-cluster-operator-kubernetes-{context}']
 = Deploying the Cluster Operator to {KubernetesName}
