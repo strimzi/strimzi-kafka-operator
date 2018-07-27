@@ -15,6 +15,8 @@ import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.sundr.builder.annotations.Buildable;
 
+import static java.util.Collections.emptyMap;
+
 /**
  * Configures the broker authorization
  */
@@ -29,9 +31,10 @@ public class KafkaListeners implements Serializable {
 
     private TlsListener tls;
     private PlainListener plain;
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
     @Description("Configures TLS listener on port 9093.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public TlsListener getTls() {
         return tls;
     }
@@ -41,6 +44,7 @@ public class KafkaListeners implements Serializable {
     }
 
     @Description("Configures plain listener on port 9092.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public PlainListener getPlain() {
         return plain;
     }
@@ -51,11 +55,14 @@ public class KafkaListeners implements Serializable {
 
     @JsonAnyGetter
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
+        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
     }
 
     @JsonAnySetter
     public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>();
+        }
         this.additionalProperties.put(name, value);
     }
 }

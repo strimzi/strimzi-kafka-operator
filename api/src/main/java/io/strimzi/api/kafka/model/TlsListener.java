@@ -17,6 +17,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.sundr.builder.annotations.Buildable;
 
+import static java.util.Collections.emptyMap;
+
 /**
  * Configures the TLS listener of Kafka broker
  */
@@ -31,7 +33,7 @@ public class TlsListener implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private KafkaListenerAuthentication authentication;
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
     @Description("Authentication configuration for Kafka's TLS listener")
     //@JsonInclude(value = JsonInclude.Include.NON_NULL)
@@ -46,11 +48,14 @@ public class TlsListener implements Serializable {
 
     @JsonAnyGetter
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
+        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
     }
 
     @JsonAnySetter
     public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>();
+        }
         this.additionalProperties.put(name, value);
     }
 }
