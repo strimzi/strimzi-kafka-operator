@@ -55,13 +55,13 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
-public class AbstractIT {
+public class AbstractST {
 
     static {
         Crds.registerCustomKinds();
     }
 
-    private static final Logger LOGGER = LogManager.getLogger(AbstractIT.class);
+    private static final Logger LOGGER = LogManager.getLogger(AbstractST.class);
     protected static final String CLUSTER_NAME = "my-cluster";
     protected static final String ZK_IMAGE = "STRIMZI_DEFAULT_ZOOKEEPER_IMAGE";
     protected static final String KAFKA_IMAGE = "STRIMZI_DEFAULT_KAFKA_IMAGE";

@@ -312,6 +312,12 @@
                             <goal>verify</goal>
                         </goals>
                         <configuration>
+                            <includes>
+                                <include>**/IT*.java</include>
+                                <include>**/*IT*.java</include>
+                                <include>**/ST*.java</include>
+                                <include>**/*ST*.java</include>
+                            </includes>
                             <trimStackTrace>false</trimStackTrace>
                         </configuration>
                     </execution>

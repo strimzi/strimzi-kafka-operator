@@ -20,11 +20,11 @@ import java.util.stream.IntStream;
 import static org.hamcrest.Matchers.containsString;
 
 @RunWith(StrimziRunner.class)
-@Namespace(SecurityIT.NAMESPACE)
+@Namespace(SecurityST.NAMESPACE)
 @ClusterOperator
-public class SecurityIT extends AbstractIT {
+public class SecurityST extends AbstractST {
 
-    private static final Logger LOGGER = LogManager.getLogger(SecurityIT.class);
+    private static final Logger LOGGER = LogManager.getLogger(SecurityST.class);
     public static final String NAMESPACE = "security-cluster-test";
 
     @Test
