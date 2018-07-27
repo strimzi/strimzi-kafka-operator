@@ -12,30 +12,25 @@ import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import io.sundr.builder.annotations.Buildable;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
-@Buildable(
-        editableEnabled = false,
-        generateBuilderPackage = true,
-        builderPackage = "io.strimzi.api.kafka.model"
-)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+@JsonSubTypes({
+        @JsonSubTypes.Type(name = KafkaUserTlsClientAuthentication.TYPE_TLS, value = KafkaUserTlsClientAuthentication.class),
+})
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class KafkaUserAuthentication implements Serializable {
+public abstract class KafkaUserAuthentication implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private Map<String, Object> additionalProperties;
-    private TlsClientAuthentication tls;
 
-    @Description("Enables TLS client authentication for given Kafka user")
-    @JsonInclude(value = JsonInclude.Include.NON_NULL)
-    public TlsClientAuthentication getTls() {
-        return tls;
-    }
-
-    public void setTls(TlsClientAuthentication tls) {
-        this.tls = tls;
-    }
+    @Description("Authentication type. " +
+            "Currently the only supported type is `tls` for TLS Client Authentication.")
+    @JsonIgnore
+    public abstract String getType();
 
     @JsonAnyGetter
     public Map<String, Object> getAdditionalProperties() {

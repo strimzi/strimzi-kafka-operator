@@ -7,4 +7,4 @@ metadata:
   ownerReferences: []
 spec:
   authentication:
-    tls: {}
+    type: "tls"

@@ -4,4 +4,4 @@ metadata:
   name: my-user
 spec:
   authentication:
-    tls: {}
+    type: tls

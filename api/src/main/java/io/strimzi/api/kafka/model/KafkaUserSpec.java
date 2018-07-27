@@ -32,7 +32,7 @@ public class KafkaUserSpec  implements Serializable {
     private KafkaUserAuthentication authentication;
     private Map<String, Object> additionalProperties;
 
-    @Description("Authentication mechanisms enabled for this Kafka user")
+    @Description("Authentication mechanism enabled for this Kafka user")
     @JsonProperty(required = true)
     public KafkaUserAuthentication getAuthentication() {
         return authentication;

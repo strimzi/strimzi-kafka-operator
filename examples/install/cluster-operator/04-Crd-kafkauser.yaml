@@ -23,9 +23,8 @@ spec:
             authentication:
               type: object
               properties:
-                tls:
-                  type: object
-                  properties: {}
+                type:
+                  type: string
           required:
           - authentication
       required:

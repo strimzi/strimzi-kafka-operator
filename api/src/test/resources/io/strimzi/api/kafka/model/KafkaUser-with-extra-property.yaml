@@ -6,4 +6,4 @@ spec:
   thisPropertyIsNotInTheSchema: true
   authentication:
     thisPropertyIsAlsoNotInTheSchema: true
-    tls: {}
+    type: tls
