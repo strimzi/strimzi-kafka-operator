@@ -18,7 +18,7 @@ The Cluster Operator is deployed as a process running inside of the {ProductPlat
 To deploy a Kafka cluster, a `Kafka` resource with the cluster configuration has to be created within the {ProductPlatformName} cluster.
 Based on the information in that `Kafka` resource,
 the Cluster Operator deploys a corresponding Kafka cluster.
-The format of the `Kafka` resource is described in <<kafka_assembly_details>>.
+The format of the `Kafka` resource is described in xref:'kafka-resource-format{context}[Overview of Kafka Resource format].
 
 NOTE: {ProductName} contains example YAML files which make deploying a Cluster Operator easier.
 

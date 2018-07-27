@@ -1,5 +1,5 @@
-[id='delegate-previliges-{context}']
-=  Delegated privileges
+[id='delegated-privileges-{context}']
+= Delegated privileges
 
 When the Cluster Operator deploys resources for a desired `Kafka` resource it also creates `ServiceAccounts`, `RoleBindings` and `ClusterRoleBindings`, as follows:
 
