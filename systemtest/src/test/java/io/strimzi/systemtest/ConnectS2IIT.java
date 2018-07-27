@@ -18,10 +18,10 @@ import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertThat;
 
 @RunWith(StrimziRunner.class)
-@Namespace(ConnectS2IClusterIT.NAMESPACE)
+@Namespace(ConnectS2IIT.NAMESPACE)
 @ClusterOperator
 @KafkaFromClasspathYaml
-public class ConnectS2IClusterIT extends AbstractIT {
+public class ConnectS2IIT extends AbstractIT {
 
     public static final String NAMESPACE = "connect-s2i-cluster-test";
     public static final String CONNECT_CLUSTER_NAME = "my-cluster";

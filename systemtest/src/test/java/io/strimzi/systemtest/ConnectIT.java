@@ -43,12 +43,12 @@ import static org.junit.Assert.assertThat;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
 @RunWith(StrimziRunner.class)
-@Namespace(ConnectClusterIT.NAMESPACE)
+@Namespace(ConnectIT.NAMESPACE)
 @ClusterOperator
 @KafkaFromClasspathYaml
-public class ConnectClusterIT extends AbstractIT {
+public class ConnectIT extends AbstractIT {
 
-    private static final Logger LOGGER = LogManager.getLogger(ConnectClusterIT.class);
+    private static final Logger LOGGER = LogManager.getLogger(ConnectIT.class);
 
     public static final String NAMESPACE = "connect-cluster-test";
     public static final String KAFKA_CLUSTER_NAME = "connect-tests";
