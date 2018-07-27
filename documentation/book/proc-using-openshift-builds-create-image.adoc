@@ -1,0 +1,77 @@
+// Module included in the following assemblies:
+//
+// assembly-using-kafka-connect-with-plugins.adoc
+
+include::common/attributes.adoc[]
+
+[id='using-openshift-s2i-create-image-{context}']
+= Using {OpenShiftName} builds and S2I to create new images
+
+{OpenShiftName} supports link:https://docs.openshift.org/3.9/dev_guide/builds/index.html[builds^] which can be used together with the link:https://docs.openshift.org/3.9/creating_images/s2i.html#creating-images-s2i[Source-to-Image (S2I)^] framework to create new Docker images.
+An {OpenShiftName} build takes a builder image with S2I support together with source code and binaries provided by the user and uses them to build a new Docker image.
+The newly created Docker Image is stored in {OpenShiftName}'s local Docker repository and can be used in deployments.
+{ProductName} provides a Kafka Connect builder image, which can be found on {DockerRepository} as `{DockerKafkaConnectS2I}` with this S2I support.
+It takes user-provided binaries (with plugins and connectors) and creates a new Kafka Connect image.
+This enhanced Kafka Connect image can be used with the Kafka Connect deployment.
+
+The S2I deployment provided as an {OpenShiftName} template. It can be deployed from the template using the command-line
+or the {OpenShiftName} console.
+
+.Procedure
+
+. Create a Kafka Connect S2I cluster from the command-line
++
+[source,shell]
+----
+oc new-app strimzi-connect-s2i
+----
+
+. Once the cluster is deployed, a new build can be triggered from the command-line by creating a directory
+with Kafka Connect plugins:
++
+[source,shell]
+----
+$ tree ./my-plugins/
+./my-plugins/
+├── debezium-connector-mongodb
+│   ├── bson-3.4.2.jar
+│   ├── CHANGELOG.md
+│   ├── CONTRIBUTE.md
+│   ├── COPYRIGHT.txt
+│   ├── debezium-connector-mongodb-0.7.1.jar
+│   ├── debezium-core-0.7.1.jar
+│   ├── LICENSE.txt
+│   ├── mongodb-driver-3.4.2.jar
+│   ├── mongodb-driver-core-3.4.2.jar
+│   └── README.md
+├── debezium-connector-mysql
+│   ├── CHANGELOG.md
+│   ├── CONTRIBUTE.md
+│   ├── COPYRIGHT.txt
+│   ├── debezium-connector-mysql-0.7.1.jar
+│   ├── debezium-core-0.7.1.jar
+│   ├── LICENSE.txt
+│   ├── mysql-binlog-connector-java-0.13.0.jar
+│   ├── mysql-connector-java-5.1.40.jar
+│   ├── README.md
+│   └── wkb-1.0.2.jar
+└── debezium-connector-postgres
+    ├── CHANGELOG.md
+    ├── CONTRIBUTE.md
+    ├── COPYRIGHT.txt
+    ├── debezium-connector-postgres-0.7.1.jar
+    ├── debezium-core-0.7.1.jar
+    ├── LICENSE.txt
+    ├── postgresql-42.0.0.jar
+    ├── protobuf-java-2.6.1.jar
+    └── README.md
+----
+
+. Start a new image build using the prepared directory:
++
+[source,shell]
+oc start-build my-connect-cluster-connect --from-dir ./my-plugins/
++
+NOTE: The name of the build should be changed according to the cluster name of the deployed Kafka Connect cluster.
+
+. Once the build is finished, the new image will be used automatically by the Kafka Connect deployment.

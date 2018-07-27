@@ -1,0 +1,32 @@
+// Module included in the following assemblies:
+//
+// assembly-using-kafka-connect-with-plugins.adoc
+
+include::common/attributes.adoc[]
+
+[id='creating-new-image-from-base-{context}']
+= Create a new image based on our base image
+
+{ProductName} provides its own Docker image for running Kafka Connect, which can be found on {DockerRepository} as
+`{DockerKafkaConnect}`.
+This image can be used as a base image for building a new custom image with additional plugins.
+
+The following procedure describes the process for creating such a custom image.
+
+.Procedure
+
+. Create a new `Dockerfile` using `{DockerKafkaConnect}` as the base image
++
+[source,Dockerfile,subs="attributes"]
+----
+FROM {DockerKafkaConnect}
+USER root:root
+COPY ./my-plugin/ /opt/kafka/plugins/
+USER {DockerImageUser}
+----
+
+. Build the Docker image and upload it to the appropriate Docker repository
+
+. Use the new Docker image in the Kafka Connect deployment:
+.. On {OpenShiftName}, the template parameters `IMAGE_REPO_NAME`, `IMAGE_NAME`, and `IMAGE_TAG` can be changed to point to the new image when the Kafka Connect cluster is being deployed.
+ifdef::Kubernetes[ On {KubernetesName}, the KafkaConnect resource has to be modified to use the new image.]
