@@ -22,7 +22,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
-        @JsonSubTypes.Type(name = KafkaTlsClientAuthentication.TYPE_TLS, value = KafkaTlsClientAuthentication.class),
+        @JsonSubTypes.Type(name = KafkaListenerTlsClientAuthentication.TYPE_TLS, value = KafkaListenerTlsClientAuthentication.class),
 })
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public abstract class KafkaListenerAuthentication implements Serializable {
