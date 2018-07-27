@@ -90,6 +90,11 @@ public abstract class AbstractModel {
 
     protected static final Logger log = LogManager.getLogger(AbstractModel.class.getName());
 
+    // the Kubernetes service DNS domain is customizable on cluster creation but it's "cluster.local" by default
+    // there is no clean way to get it from a running application so we are passing it through an env var
+    public static final String KUBERNETES_SERVICE_DNS_DOMAIN =
+            System.getenv().getOrDefault("KUBERNETES_SERVICE_DNS_DOMAIN", "cluster.local");
+
     protected static final int CERTS_EXPIRATION_DAYS = 365;
 
     private static final String VOLUME_MOUNT_HACK_IMAGE = "busybox";
@@ -1048,8 +1053,14 @@ public abstract class AbstractModel {
             sbj.setOrganizationName("io.strimzi");
             sbj.setCommonName(getName());
 
+            Map<String, String> sbjAltNames = new HashMap<>();
+            sbjAltNames.put("DNS.1", getServiceName());
+            sbjAltNames.put("DNS.2", String.format("%s.%s.svc.%s", getServiceName(), namespace, KUBERNETES_SERVICE_DNS_DOMAIN));
+            sbjAltNames.put("DNS.3", String.format("%s.%s.%s.svc.%s", podName.apply(cluster, i), getHeadlessServiceName(), namespace, KUBERNETES_SERVICE_DNS_DOMAIN));
+            sbj.setSubjectAltNames(sbjAltNames);
+
             certManager.generateCsr(brokerKeyFile, brokerCsrFile, sbj);
-            certManager.generateCert(brokerCsrFile, caCert.key(), caCert.cert(), brokerCertFile, CERTS_EXPIRATION_DAYS);
+            certManager.generateCert(brokerCsrFile, caCert.key(), caCert.cert(), brokerCertFile, sbj, CERTS_EXPIRATION_DAYS);
 
             certs.put(podName.apply(cluster, i),
                     new CertAndKey(Files.readAllBytes(brokerKeyFile.toPath()), Files.readAllBytes(brokerCertFile.toPath())));
