@@ -27,6 +27,8 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaAssembly;
 import io.strimzi.api.kafka.model.KafkaAuthorization;
 import io.strimzi.api.kafka.model.KafkaListeners;
+import io.strimzi.api.kafka.model.KafkaSimpleAuthorization;
+import io.strimzi.api.kafka.model.KafkaTlsClientAuthentication;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.api.kafka.model.Resources;
@@ -59,8 +61,8 @@ public class KafkaCluster extends AbstractModel {
     private static final String ENV_VAR_KAFKA_INIT_NODE_NAME = "NODE_NAME";
     private static final String ENV_VAR_KAFKA_CLIENT_ENABLED = "KAFKA_CLIENT_ENABLED";
     private static final String ENV_VAR_KAFKA_CLIENTTLS_ENABLED = "KAFKA_CLIENTTLS_ENABLED";
-    private static final String ENV_VAR_KAFKA_CLIENTTLS_TLS_CLIENT_AUTHENTICATION = "KAFKA_CLIENTTLS_TLS_CLIENT_AUTHENTICATION";
-    private static final String ENV_VAR_KAFKA_AUTHORIZER_TYPE = "KAFKA_AUTHORIZER_TYPE";
+    private static final String ENV_VAR_KAFKA_CLIENTTLS_AUTHENTICATION = "KAFKA_CLIENTTLS_AUTHENTICATION";
+    private static final String ENV_VAR_KAFKA_AUTHORIZATION_TYPE = "KAFKA_AUTHORIZATION_TYPE";
 
     protected static final int CLIENT_PORT = 9092;
     protected static final String CLIENT_PORT_NAME = "clients";
@@ -613,14 +615,14 @@ public class KafkaCluster extends AbstractModel {
             if (listeners.getTls() != null) {
                 varList.add(buildEnvVar(ENV_VAR_KAFKA_CLIENTTLS_ENABLED, "TRUE"));
 
-                if (listeners.getTls().getAuthentication() != null && listeners.getTls().getAuthentication().getTlsClientAuthentication() != null) {
-                    varList.add(buildEnvVar(ENV_VAR_KAFKA_CLIENTTLS_TLS_CLIENT_AUTHENTICATION, listeners.getTls().getAuthentication().getTlsClientAuthentication().toValue()));
+                if (listeners.getTls().getAuthentication() != null && KafkaTlsClientAuthentication.TYPE_TLS.equals(listeners.getTls().getAuthentication().getType())) {
+                    varList.add(buildEnvVar(ENV_VAR_KAFKA_CLIENTTLS_AUTHENTICATION, KafkaTlsClientAuthentication.TYPE_TLS));
                 }
             }
         }
 
-        if (authorization != null && authorization.getAuthorizer() != null)  {
-            varList.add(buildEnvVar(ENV_VAR_KAFKA_AUTHORIZER_TYPE, authorization.getAuthorizer().toValue()));
+        if (authorization != null && KafkaSimpleAuthorization.TYPE_SIMPLE.equals(authorization.getType()))  {
+            varList.add(buildEnvVar(ENV_VAR_KAFKA_AUTHORIZATION_TYPE, KafkaSimpleAuthorization.TYPE_SIMPLE));
         }
 
         return varList;

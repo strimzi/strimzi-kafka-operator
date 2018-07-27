@@ -31,7 +31,8 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-        "replicas", "image", "storage", "config",
+        "replicas", "image", "storage",
+        "listeners", "authorization", "config",
         "rack", "brokerRackInitImage",
         "affinity", "tolerations",
         "livenessProbe", "readinessProbe",

@@ -41,6 +41,10 @@ Used in: <<type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
 |string
 |storage              1.2+<.<|Storage configuration (disk). Cannot be updated. The type depends on the value of the `storage.type` property within the given object, which must be one of [ephemeral, persistent-claim]
 |<<type-EphemeralStorage,`EphemeralStorage`>>, <<type-PersistentClaimStorage,`PersistentClaimStorage`>>
+|listeners            1.2+<.<|Configures listeners of Kafka brokers
+|<<type-KafkaListeners,`KafkaListeners`>>
+|authorization        1.2+<.<|Authorization configuration for Kafka brokers The type depends on the value of the `authorization.type` property within the given object, which must be one of [simple]
+|<<type-KafkaSimpleAuthorization,`KafkaSimpleAuthorization`>>
 |config               1.2+<.<|The kafka broker config. Properties with the following prefixes cannot be set: listeners, advertised., broker., listener., host.name, port, inter.broker.listener.name, sasl., ssl., security., password., principal.builder.class, log.dir, zookeeper.connect, zookeeper.set.acl, authorizer., super.user
 |map
 |rack                 1.2+<.<|Configuration of the `broker.rack` broker config.
@@ -69,10 +73,6 @@ Used in: <<type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
 |<<type-InlineLogging,`InlineLogging`>>, <<type-ExternalLogging,`ExternalLogging`>>
 |tlsSidecar           1.2+<.<|TLS sidecar configuration
 |<<type-Sidecar,`Sidecar`>>
-|authorization        1.2+<.<|Authorization configuration for Kafka brokers
-|<<type-KafkaAuthorization,`KafkaAuthorization`>>
-|listeners            1.2+<.<|Configures listeners of Kafka brokers
-|<<type-KafkaListeners,`KafkaListeners`>>
 |====
 
 [[type-EphemeralStorage]]
@@ -110,6 +110,75 @@ It must have the value `persistent-claim` for the type `PersistentClaimStorage`.
 |size         1.2+<.<|When type=persistent-claim, defines the size of the persistent volume claim (i.e 1Gi). Mandatory when type=persistent-claim.
 |string
 |type         1.2+<.<|Must be `persistent-claim`
+|string
+|====
+
+[[type-KafkaListeners]]
+### `KafkaListeners` type v1alpha1 kafka.strimzi.io
+
+Used in: <<type-Kafka,`Kafka`>>
+
+
+[options="header"]
+|====
+|Field         |Description
+|plain  1.2+<.<|Configures plain listener on port 9092.
+|<<type-PlainListener,`PlainListener`>>
+|tls    1.2+<.<|Configures TLS listener on port 9093.
+|<<type-TlsListener,`TlsListener`>>
+|====
+
+[[type-PlainListener]]
+### `PlainListener` type v1alpha1 kafka.strimzi.io
+
+Used in: <<type-KafkaListeners,`KafkaListeners`>>
+
+
+[options="header"]
+|====
+|Field|Description
+|====
+
+[[type-TlsListener]]
+### `TlsListener` type v1alpha1 kafka.strimzi.io
+
+Used in: <<type-KafkaListeners,`KafkaListeners`>>
+
+
+[options="header"]
+|====
+|Field                  |Description
+|authentication  1.2+<.<|Authentication configuration for Kafka's TLS listener The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls]
+|<<type-KafkaTlsClientAuthentication,`KafkaTlsClientAuthentication`>>
+|====
+
+[[type-KafkaTlsClientAuthentication]]
+### `KafkaTlsClientAuthentication` type v1alpha1 kafka.strimzi.io
+
+Used in: <<type-TlsListener,`TlsListener`>>
+
+
+The `type` property is a discriminator that distinguishes the use of the type `KafkaTlsClientAuthentication` from .
+It must have the value `tls` for the type `KafkaTlsClientAuthentication`.
+[options="header"]
+|====
+|Field        |Description
+|type  1.2+<.<|Must be `tls`
+|string
+|====
+
+[[type-KafkaSimpleAuthorization]]
+### `KafkaSimpleAuthorization` type v1alpha1 kafka.strimzi.io
+
+Used in: <<type-Kafka,`Kafka`>>
+
+
+The `type` property is a discriminator that distinguishes the use of the type `KafkaSimpleAuthorization` from .
+It must have the value `simple` for the type `KafkaSimpleAuthorization`.
+[options="header"]
+|====
+|Field        |Description
+|type  1.2+<.<|Must be `simple`
 |string
 |====
 
@@ -235,71 +304,6 @@ Used in: <<type-Kafka,`Kafka`>>, <<type-TopicOperator,`TopicOperator`>>, <<type-
 |string
 |resources  1.2+<.<|Resource constraints (limits and requests).
 |<<type-Resources,`Resources`>>
-|====
-
-[[type-KafkaAuthorization]]
-### `KafkaAuthorization` type v1alpha1 kafka.strimzi.io
-
-Used in: <<type-Kafka,`Kafka`>>
-
-
-[options="header"]
-|====
-|Field              |Description
-|authorizer  1.2+<.<|Specifies the authorizer which should be used. Supported authoriizers are: `SimpleAclAuthorizer`.
-|string (one of [SimpleAclAuthorizer])
-|====
-
-[[type-KafkaListeners]]
-### `KafkaListeners` type v1alpha1 kafka.strimzi.io
-
-Used in: <<type-Kafka,`Kafka`>>
-
-
-[options="header"]
-|====
-|Field         |Description
-|plain  1.2+<.<|Configures plain listener on port 9092.
-|<<type-PlainListener,`PlainListener`>>
-|tls    1.2+<.<|Configures TLS listener on port 9093.
-|<<type-TlsListener,`TlsListener`>>
-|====
-
-[[type-PlainListener]]
-### `PlainListener` type v1alpha1 kafka.strimzi.io
-
-Used in: <<type-KafkaListeners,`KafkaListeners`>>
-
-
-[options="header"]
-|====
-|Field|Description
-|====
-
-[[type-TlsListener]]
-### `TlsListener` type v1alpha1 kafka.strimzi.io
-
-Used in: <<type-KafkaListeners,`KafkaListeners`>>
-
-
-[options="header"]
-|====
-|Field                  |Description
-|authentication  1.2+<.<|Authentication configuration for Kafka's TLS listener
-|<<type-KafkaAuthentication,`KafkaAuthentication`>>
-|====
-
-[[type-KafkaAuthentication]]
-### `KafkaAuthentication` type v1alpha1 kafka.strimzi.io
-
-Used in: <<type-TlsListener,`TlsListener`>>
-
-
-[options="header"]
-|====
-|Field                           |Description
-|tlsClientAuthentication  1.2+<.<|Configures TLS Client Authentication on port 9093. Valid values are `required`, `requested` and `none`. When not specified, the default value will be `none`.
-|string (one of [requested, none, required])
 |====
 
 [[type-Zookeeper]]

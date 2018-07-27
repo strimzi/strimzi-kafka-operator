@@ -56,10 +56,10 @@ spec:
     listeners:
       tls:
         authentication:
-          tlsClientAuthentication: required
+          type: tls
       plain: {}
     authorization:
-      authorizer: SimpleAclAuthorizer
+      type: simple
   zookeeper:
     replicas: 3
     image: "strimzi/zookeeper:latest"
