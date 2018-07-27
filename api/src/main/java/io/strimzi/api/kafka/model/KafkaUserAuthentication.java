@@ -12,33 +12,25 @@ import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import io.sundr.builder.annotations.Buildable;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
-/**
- * Configures the TLS listener of Kafka broker
- */
-@Buildable(
-        editableEnabled = false,
-        generateBuilderPackage = true,
-        builderPackage = "io.strimzi.api.kafka.model"
-)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+@JsonSubTypes({
+        @JsonSubTypes.Type(name = KafkaUserTlsClientAuthentication.TYPE_TLS, value = KafkaUserTlsClientAuthentication.class),
+})
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class TlsListener implements Serializable {
+public abstract class KafkaUserAuthentication implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private KafkaListenerAuthentication authentication;
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
-    @Description("Authentication configuration for Kafka's TLS listener")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    public KafkaListenerAuthentication getAuthentication() {
-        return authentication;
-    }
-
-    public void setAuthentication(KafkaListenerAuthentication authentication) {
-        this.authentication = authentication;
-    }
+    @Description("Authentication type. " +
+            "Currently the only supported type is `tls` for TLS Client Authentication.")
+    @JsonIgnore
+    public abstract String getType();
 
     @JsonAnyGetter
     public Map<String, Object> getAdditionalProperties() {
@@ -47,6 +39,9 @@ public class TlsListener implements Serializable {
 
     @JsonAnySetter
     public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>();
+        }
         this.additionalProperties.put(name, value);
     }
 }

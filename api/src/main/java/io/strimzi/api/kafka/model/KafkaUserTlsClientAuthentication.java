@@ -9,16 +9,13 @@ import io.strimzi.crdgenerator.annotations.Description;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.sundr.builder.annotations.Buildable;
 
-/**
- * Configures the broker authentication
- */
 @Buildable(
         editableEnabled = false,
         generateBuilderPackage = true,
         builderPackage = "io.strimzi.api.kafka.model"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class KafkaTlsClientAuthentication extends KafkaListenerAuthentication {
+public class KafkaUserTlsClientAuthentication extends KafkaUserAuthentication {
     private static final long serialVersionUID = 1L;
 
     public static final String TYPE_TLS = "tls";
@@ -28,4 +25,6 @@ public class KafkaTlsClientAuthentication extends KafkaListenerAuthentication {
     public String getType() {
         return TYPE_TLS;
     }
+
+
 }

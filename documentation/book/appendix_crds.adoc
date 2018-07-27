@@ -506,3 +506,42 @@ Used in: <<type-KafkaTopic,`KafkaTopic`>>
 |string
 |====
 
+[[type-KafkaUser]]
+### `KafkaUser` kind v1alpha1 kafka.strimzi.io
+
+
+[options="header"]
+|====
+|Field        |Description
+|spec  1.2+<.<|The specification of the user.
+|<<type-KafkaUserSpec,`KafkaUserSpec`>>
+|====
+
+[[type-KafkaUserSpec]]
+### `KafkaUserSpec` type v1alpha1 kafka.strimzi.io
+
+Used in: <<type-KafkaUser,`KafkaUser`>>
+
+
+[options="header"]
+|====
+|Field                  |Description
+|authentication  1.2+<.<|Authentication mechanism enabled for this Kafka user The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls]
+|<<type-KafkaUserTlsClientAuthentication,`KafkaUserTlsClientAuthentication`>>
+|====
+
+[[type-KafkaUserTlsClientAuthentication]]
+### `KafkaUserTlsClientAuthentication` type v1alpha1 kafka.strimzi.io
+
+Used in: <<type-KafkaUserSpec,`KafkaUserSpec`>>
+
+
+The `type` property is a discriminator that distinguishes the use of the type `KafkaUserTlsClientAuthentication` from .
+It must have the value `tls` for the type `KafkaUserTlsClientAuthentication`.
+[options="header"]
+|====
+|Field        |Description
+|type  1.2+<.<|Must be `tls`
+|string
+|====
+
