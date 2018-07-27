@@ -24,7 +24,7 @@ import io.sundr.builder.annotations.Buildable;
         builderPackage = "io.strimzi.api.kafka.model"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class TlsListener  implements Serializable {
+public class TlsListener implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private KafkaListenerAuthentication authentication;

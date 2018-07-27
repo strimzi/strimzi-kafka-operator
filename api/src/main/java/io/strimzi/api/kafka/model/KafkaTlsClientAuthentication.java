@@ -10,7 +10,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import io.sundr.builder.annotations.Buildable;
 
 /**
- * Configures the broker authorization
+ * Configures the broker authentication
  */
 @Buildable(
         editableEnabled = false,
