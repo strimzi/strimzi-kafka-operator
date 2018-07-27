@@ -24,10 +24,8 @@ if [ "$KAFKA_CLIENTTLS_ENABLED" = "TRUE" ]; then
   LISTENER_SECURITY_PROTOCOL_MAP="${LISTENER_SECURITY_PROTOCOL_MAP},CLIENTTLS:SSL"
 
   # Configuring TLS client authentication for clienttls interface
-  if [ "$KAFKA_CLIENTTLS_TLS_CLIENT_AUTHENTICATION" = "required" ]; then
+  if [ "$KAFKA_CLIENTTLS_AUTHENTICATION" = "tls" ]; then
     LISTENER_NAME_CLIENTTLS_SSL_CLIENT_AUTH="required"
-  elif [ "$KAFKA_CLIENTTLS_TLS_CLIENT_AUTHENTICATION" = "requested" ]; then
-    LISTENER_NAME_CLIENTTLS_SSL_CLIENT_AUTH="requested"
   else
     LISTENER_NAME_CLIENTTLS_SSL_CLIENT_AUTH="none"
   fi
@@ -42,18 +40,9 @@ EOF
 fi
 
 #####
-# Configuring TLS client authentication for clienttls interface
-#####
-if [ "$KAFKA_CLIENTTLS_AUTHENTICATION" = "tls" ]; then
-  LISTENER_NAME_CLIENTTLS_SSL_CLIENT_AUTH="required"
-else
-  LISTENER_NAME_CLIENTTLS_SSL_CLIENT_AUTH="none"
-fi
-
-#####
 # Configuring authorization
 #####
-if [ "$KAFKA_AUTHORIZATION_TYPE" = "simpe" ]; then
+if [ "$KAFKA_AUTHORIZATION_TYPE" = "simple" ]; then
   AUTHORIZER_CLASS_NAME="kafka.security.auth.SimpleAclAuthorizer"
 else
   AUTHORIZER_CLASS_NAME=""
