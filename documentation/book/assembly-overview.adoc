@@ -21,8 +21,10 @@ Topic Operator:: Responsible for managing Kafka topics within a Kafka cluster ru
 
 This guide describes how to install and use {ProductLongName}.
 
+:context: str
 include::ref-key-features.adoc[leveloffset=+1]
 
+:context: str
 include::ref-document-conventions.adoc[leveloffset=+1]
 
 // Restore the context to what it was before this assembly.

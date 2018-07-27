@@ -1,11 +1,11 @@
 include::common/attributes.adoc[]
 
+:context: str
+
 = Using {ProductLongName}
 
-:context: {ContextProduct}
 include::assembly-overview.adoc[leveloffset=+1]
 
-:context: {ContextProduct}
 include::getting-started.adoc[leveloffset=+1]
 
 include::cluster-operator.adoc[]

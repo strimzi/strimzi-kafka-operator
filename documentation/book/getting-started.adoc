@@ -32,14 +32,14 @@ ifdef::Kubernetes[{KubernetesLongName} and]
 {OpenShiftLongName} user must have the rights to manage role-based access control (RBAC).
 
 ifdef::Downloading[]
-:context: {ContextProduct}
+:context: str
 include::con-product-downloads.adoc[leveloffset=+1]
 endif::Downloading[]
 
-:context: {ContextProduct}
+:context: str
 include::assembly-cluster-operator.adoc[leveloffset=+1]
 
-:context: {ContextProduct}
+:context: str
 include::assembly-kafka-cluster.adoc[leveloffset=+1]
 
 == Kafka Connect
