@@ -23,4 +23,4 @@ oc new-app strimzi-connect
 ----
 
 .Additional resources
-* For more information about deploying the Cluster Operator, see xref:assembly-cluster-operator.adoc[]
+* For more information about deploying the Cluster Operator, see xref:cluster-operator-str[]

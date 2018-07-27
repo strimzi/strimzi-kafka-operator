@@ -21,4 +21,4 @@ kubectl apply -f examples/kafka-connect/kafka-connect.yaml
 ----
 
 .Additional resources
-* For more information about deploying the Cluster Operator, see xref:assembly-cluster-operator.adoc[]
+* For more information about deploying the Cluster Operator, see xref:cluster-operator-str[]
