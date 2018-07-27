@@ -1,0 +1,213 @@
+[id='configure-cluster-operator-{context}']
+= Configuring Cluster Operator
+
+For the Cluster Operator to function it needs permission within the {ProductPlatformName} cluster to interact with the resources it manages and interacts with.
+These include the desired resources, such as  `Kafka`, `Kafka Connect`, and so on, as well as the managed resources, such as `ConfigMaps`, `Pods`, `Deployments`, `StatefulSets`, `Services`, and so on.
+Such permission is described in terms of {ProductPlatformName} role-based access control (RBAC) resources:
+
+* `ServiceAccount`,
+* `Role` and `ClusterRole`,
+* `RoleBinding` and `ClusterRoleBinding`.
+
+In addition to running under its own `ServiceAccount` with a `ClusterRoleBinding`, the Cluster Operator manages some RBAC resources because some of the components need access to {ProductPlatformName} resources.
+
+{ProductPlatformName} also includes privilege escalation protections that prevent components operating under one `ServiceAccount` from granting other `ServiceAccounts` privileges that the granting `ServiceAccount` does not have.
+Because the Cluster Operator must be able to create the `ClusterRoleBindings` and `RoleBindings` needed by resources it manages, the Cluster Operator must also have those same privileges.
+
+[id="delegated-privileges"]
+==== Delegated privileges
+
+When the Cluster Operator deploys resources for a desired `Kafka` resource it also creates `ServiceAccounts`, `RoleBindings` and `ClusterRoleBindings`, as follows:
+
+* The Kafka broker pods use a `ServiceAccount` called `<cluster-name>-kafka` (where `<cluster-name>` is a placeholder for the name of the `Kafka` resource)
+  - When the rack feature is used, the `strimzi-<cluster-name>-kafka-init` `ClusterRoleBinding` is used to grant this `ServiceAccount` access to the nodes within the cluster via a `ClusterRole` called `strimzi-kafka-broker`
+  - When the rack feature is not used no binding is created.
+* The Zookeeper pods use the default `ServiceAccount` as they have no need to access {ProductPlatformName} resources
+* The Topic Operator pod uses a `ServiceAccount` called `<cluster-name>-topic-operator` (where `<cluster-name>` is a placeholder for the name of the `Kafka` resource)
+    - The Topic Operator produces {ProductPlatformName} events with status information, so the `ServiceAccount` is bound to a `ClusterRole` called `strimzi-topic-operator` which grants this access via the `strimzi-topic-operator-role-binding` `RoleBinding`.
+
+The pods for `KafkaConnect` and `KafkaConnectS2I` resources use the default `ServiceAccount`, since they require no access to {ProductPlatformName} resources.
+
+
+==== Using a `ServiceAccount`
+
+The Cluster Operator is best run using a `ServiceAccount`:
+
+[source,yaml,options="nowrap"]
+.Example `ServiceAccount` for the Cluster Operator
+----
+include::examples/install/cluster-operator/01-ServiceAccount-strimzi-cluster-operator.yaml[]
+----
+
+The `Deployment` of the operator then needs to specify this in its `spec.template.spec.serviceAccountName`:
+
+[source,yaml,numbered,options="nowrap",highlight='12']
+.Partial example `Deployment` for the Cluster Operator
+----
+include::examples/install/cluster-operator/05-Deployment-strimzi-cluster-operator.yaml[lines=1..13]
+      # ...
+----
+
+Note line 12, where the the `strimzi-cluster-operator` `ServiceAccount` is specified as the `serviceAccountName`.
+
+
+==== Defining `ClusterRoles`
+
+The Cluster Operator needs to operate using `ClusterRoles` that give it access to the necessary resources.
+Depending on the {ProductPlatformName} cluster setup, a cluster administrator might be needed to create the `ClusterRoles`.
+
+NOTE: Cluster administrator rights are only needed for the creation of the `ClusterRoles`.
+The Cluster Operator will not run under the cluster admin account.
+
+The `ClusterRoles` follow the "principle of least privilege" and contain only those privileges needed by the Cluster Operator to operate Kafka, Kafka Connect, and Zookeeper clusters. The first set of assigned privileges allow the Cluster Operator to manage {ProductPlatformName} resources such as `StatefulSets`, `Deployments`, `Pods`, and `ConfigMaps`.
+
+[source,yaml,options="nowrap"]
+.Example `Role` for the Cluster Operator
+----
+include::examples/install/cluster-operator/02-ClusterRole-strimzi-cluster-operator-role.yaml[]
+----
+
+The `strimzi-kafka-broker` `ClusterRole` represents the access needed by the init container in Kafka pods that is used for the rack feature. As described in the xref:delegated-privileges[Delegated privileges] section, this role is also needed by the Cluster Operator in order to be able to delegate this access.
+
+[source,yaml,options="nowrap"]
+.`ClusterRole` for the Cluster Operator allowing it to delegate access to {ProductPlatformName} nodes to the Kafka broker pods
+----
+# These are the privileges needed by the init container
+# in Kafka broker pods.
+# The Cluster Operator also needs these privileges since
+# it binds the Kafka pods' ServiceAccount to this
+# role.
+include::examples/install/cluster-operator/03-ClusterRole-strimzi-kafka-broker.yaml[]
+----
+
+The `strimzi-topic-operator` `ClusterRole` represents the access needed by the Topic Operator. As described in the xref:delegated-privileges[Delegated privileges] section, this role is also needed by the Cluster Operator in order to be able to delegate this access.
+
+[source,yaml,options="nowrap"]
+.`ClusterRole` for the Cluster Operator allowing it to delegate access to events to the Topic Operator
+----
+# These are the privileges needed by the Topic Operator.
+# The Cluster Operator also needs these privileges since
+# it binds the Topic Operator's  ServiceAccount to this
+# role.
+include::examples/install/cluster-operator/04-ClusterRole-strimzi-topic-operator.yaml[]
+----
+
+
+==== Defining `ClusterRoleBindings`
+
+The operator needs a `ClusterRoleBinding` which associates its `ClusterRole` with its `ServiceAccount`:
+
+[source,yaml,options="nowrap"]
+.Example `RoleBinding` for the Cluster Operator
+----
+include::examples/install/cluster-operator/02-ClusterRoleBinding-strimzi-cluster-operator.yaml[]
+----
+
+`ClusterRoleBindings` are also needed for the `ClusterRoles` needed for delegation:
+
+[source,yaml,options="nowrap"]
+.Example `RoleBinding` for the Cluster Operator
+----
+---
+include::examples/install/cluster-operator/03-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml[]
+---
+include::examples/install/cluster-operator/04-ClusterRoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml[]
+---
+----
+
+=== Operator configuration
+
+The operator itself can be configured through the following environment variables.
+
+[[STRIMZI_NAMESPACE]] `STRIMZI_NAMESPACE`:: Required. A comma-separated list of namespaces that the operator should
+operate in. The Cluster Operator deployment might use the https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#the-downward-api[{KubernetesName} Downward API]
+to set this automatically to the namespace the Cluster Operator is deployed in. See the example below:
++
+[source,yaml,options="nowrap"]
+----
+env:
+  - name: STRIMZI_NAMESPACE
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.namespace
+----
+
+[[STRIMZI_FULL_RECONCILIATION_INTERVAL_MS]] `STRIMZI_FULL_RECONCILIATION_INTERVAL_MS`:: Optional, default: 120000 ms. The interval between periodic reconciliations, in milliseconds.
+
+
+[[STRIMZI_OPERATION_TIMEOUT_MS]] `STRIMZI_OPERATION_TIMEOUT_MS`:: Optional, default: 300000 ms. The timeout for internal operations, in milliseconds. This value should be
+increased when using {ProductName} on clusters where regular {ProductPlatformName} operations take longer than usual (because of slow downloading of Docker images, for example).
+
+[[STRIMZI_DEFAULT_KAFKA_IMAGE]] `STRIMZI_DEFAULT_KAFKA_IMAGE`:: Optional, default `strimzi/kafka:latest`.
+The image name to use as a default when deploying Kafka, if
+no image is specified as the `kafka-image` in the <<kafka_config_map_details,Kafka cluster ConfigMap>>.
+
+[[STRIMZI_DEFAULT_KAFKA_INIT_IMAGE]] `STRIMZI_DEFAULT_KAFKA_INIT_IMAGE`:: Optional, default `strimzi/kafka-init:latest`.
+The image name to use as default for the init container started before the broker for doing initial configuration work (that is, rack support), if no image is specified as the `kafka-init-image` in the <<kafka_config_map_details,Kafka cluster ConfigMap>>.
+
+[[STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE]] `STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE`:: Optional, default `strimzi/kafka-stunnel:latest`.
+The image name to be used as a default when deploying the sidecar container which provides TLS support for Kafka if
+no image is specified as the `spec.kafka.tlsSidecar.image` in the <<kafka_config_map_details,Kafka cluster ConfigMap>>.
+
+[[STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE]] `STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE`:: Optional, default `strimzi/kafka-connect:latest`.
+The image name to use as a default when deploying Kafka Connect, if
+no image is specified as the `image` in the
+<<kafka_connect_config_map_details,Kafka Connect cluster ConfigMap>>.
+
+[[STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE]] `STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE`:: Optional, default `strimzi/kafka-connect-s2i:latest`.
+The image name to use as a default when deploying Kafka Connect S2I, if
+no image is specified as the `image` in the cluster ConfigMap.
+
+[[STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE]] `STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE`:: Optional, default `strimzi/topic-operator:latest`.
+The image name to use as a default when deploying the topic operator, if
+no image is specified as the `image` in the <<topic_operator_json_config,topic operator config>>
+of the Kafka cluster ConfigMap.
+
+[[STRIMZI_DEFAULT_ZOOKEEPER_IMAGE]] `STRIMZI_DEFAULT_ZOOKEEPER_IMAGE`:: Optional, default `strimzi/zookeeper:latest`.
+The image name to use as a default when deploying Zookeeper, if
+no image is specified as the `zookeeper-image` in the <<kafka_config_map_details,Kafka cluster ConfigMap>>.
+
+[[STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE]] `STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE`:: Optional, default `strimzi/zookeeper-stunnel:latest`.
+The image name to use as a default when deploying the sidecar container which provides TLS support for Zookeeper, if
+no image is specified as the `spec.zookeeper.tlsSidecar.image` in the <<kafka_config_map_details,Kafka cluster ConfigMap>>.
+
+[[STRIMZI_LOG_LEVEL]] `STRIMZI_LOG_LEVEL`:: Optional, default `INFO`.
+The level for printing logging messages. The value can be set to: `ERROR`, `WARNING`, `INFO`, `DEBUG` and `TRACE`.
+
+[[STRIMZI_DEFAULT_TLS_SIDECAR_TOPIC_OPERATOR_IMAGE]] `STRIMZI_DEFAULT_TLS_SIDECAR_TOPIC_OPERATOR_IMAGE`:: Optional, default `strimzi/topic-operator-stunnel:latest`.
+The image name to use as a default when deploying the sidecar container which provides TLS support for the Topic Operator, if
+no image is specified as the `spec.topicOperator.tlsSidecar.image` in the <<kafka_config_map_details,Kafka cluster ConfigMap>>.
+
+[[multi-namespace]]
+==== Watching multiple namespaces
+
+The `STRIMZI_NAMESPACE` environment variable can be used to configure a single operator instance
+to operate in multiple namespaces. For each namespace given, the operator will watch for cluster ConfigMaps
+and perform periodic reconciliation. To be able to do this, the operator's ServiceAccount needs
+access to the necessary resources in those other namespaces. This can be done by creating an additional
+RoleBinding in each of those namespaces, associating the operator's ServiceAccount
+(`strimzi-cluster-operator` in the examples) with the operator's
+Role (`strimzi-operator-role` in the examples).
+
+Suppose, for example, that a operator deployed in namespace `foo` needs to operate in namespace `bar`.
+The following RoleBinding would grant the necessary permissions:
+
+.Example RoleBinding for a operator to operate in namespace `bar`
+[source,yaml,options="nowrap"]
+----
+apiVersion: v1
+kind: RoleBinding
+metadata:
+  name: strimzi-cluster-operator-binding-bar
+  namespace: bar
+  labels:
+    app: strimzi
+subjects:
+  - kind: ServiceAccount
+    name: strimzi-cluster-operator
+    namespace: foo
+roleRef:
+  kind: Role
+  name: strimzi-cluster-operator-role
+  apiGroup: v1
+----

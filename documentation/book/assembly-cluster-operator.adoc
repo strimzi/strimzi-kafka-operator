@@ -1,0 +1,16 @@
+:parent-context: {context}
+
+include::common/attributes.adoc[]
+
+
+[id='cluster-operator']
+= Configuring Cluster Operator
+
+{ProductName} uses the Cluster Operator to deploy and manage Kafka (including Zookeeper) and Kafka Connect
+clusters.
+
+include::con-cluster-operator.adoc[leveloffset=+1]
+include::con-reconciliation.adoc[leveloffset=+1]
+include::con-resource-format.adoc[leveloffset=+1]
+include::con-resource-RBAC.adoc[leveloffset=+1]
+include::con-configure-operator.adoc[leveloffset=+1]
