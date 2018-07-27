@@ -28,7 +28,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 public abstract class KafkaListenerAuthentication implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
+    private Map<String, Object> additionalProperties;
 
     @Description("Authentication type. " +
             "Currently the only supported type is `tls`. " +
@@ -44,6 +44,9 @@ public abstract class KafkaListenerAuthentication implements Serializable {
 
     @JsonAnySetter
     public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>();
+        }
         this.additionalProperties.put(name, value);
     }
 }
