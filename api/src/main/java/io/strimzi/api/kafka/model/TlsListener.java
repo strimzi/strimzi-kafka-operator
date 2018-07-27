@@ -13,6 +13,8 @@ import java.util.Map;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.sundr.builder.annotations.Buildable;
 
 /**
@@ -24,6 +26,7 @@ import io.sundr.builder.annotations.Buildable;
         builderPackage = "io.strimzi.api.kafka.model"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({ "authentication" })
 public class TlsListener implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -31,7 +34,8 @@ public class TlsListener implements Serializable {
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Authentication configuration for Kafka's TLS listener")
-    @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    //@JsonInclude(value = JsonInclude.Include.NON_NULL)
+    @JsonProperty(required = true)
     public KafkaListenerAuthentication getAuthentication() {
         return authentication;
     }
