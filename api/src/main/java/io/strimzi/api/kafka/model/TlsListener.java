@@ -27,10 +27,10 @@ import io.sundr.builder.annotations.Buildable;
 public class TlsListener implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private KafkaListenerAuthentication authentication;
+    //private KafkaListenerAuthentication authentication;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("Authentication configuration for Kafka's TLS listener")
+    /*@Description("Authentication configuration for Kafka's TLS listener")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public KafkaListenerAuthentication getAuthentication() {
         return authentication;
@@ -38,7 +38,7 @@ public class TlsListener implements Serializable {
 
     public void setAuthentication(KafkaListenerAuthentication authentication) {
         this.authentication = authentication;
-    }
+    }*/
 
     @JsonAnyGetter
     public Map<String, Object> getAdditionalProperties() {
