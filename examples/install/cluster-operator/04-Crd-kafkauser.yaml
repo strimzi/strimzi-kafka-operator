@@ -23,18 +23,10 @@ spec:
             authentication:
               type: object
               properties:
-                additionalProperties:
-                  type: object
                 tls:
                   type: object
-                  properties:
-                    additionalProperties:
-                      type: object
-            additionalProperties:
-              type: object
+                  properties: {}
           required:
           - authentication
-        additionalProperties:
-          type: object
       required:
       - spec

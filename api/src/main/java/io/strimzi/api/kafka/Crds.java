@@ -19,7 +19,6 @@ import io.strimzi.api.kafka.model.KafkaConnectS2IAssembly;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
 
-import java.util.Collections;
 import java.util.List;
 
 import static java.util.Collections.emptyList;
@@ -101,7 +100,7 @@ public class Crds {
             listKind = KafkaUser.RESOURCE_LIST_KIND;
             group = KafkaUser.RESOURCE_GROUP;
             version = KafkaUser.VERSION;
-            shortNames = Collections.singletonList(KafkaUser.SHORT_NAME);
+            shortNames = KafkaUser.RESOURCE_SHORTNAMES;
         } else {
             throw new RuntimeException();
         }
@@ -155,6 +154,7 @@ public class Crds {
 
     public static MixedOperation<KafkaTopic, KafkaTopicList, DoneableKafkaTopic, Resource<KafkaTopic, DoneableKafkaTopic>> topicOperation(KubernetesClient client) {
         return client.customResources(topic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class);
+    }
 
     public static CustomResourceDefinition kafkaUser() {
         return crd(KafkaUser.class);

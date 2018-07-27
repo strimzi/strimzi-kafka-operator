@@ -8,6 +8,7 @@ import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
@@ -23,7 +24,9 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.sundr.builder.annotations.Buildable;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.unmodifiableList;
 
 @JsonDeserialize(
         using = JsonDeserializer.None.class
@@ -60,6 +63,7 @@ public class KafkaUser extends CustomResource {
     public static final String CRD_API_VERSION = "apiextensions.k8s.io/v1beta1";
     public static final String CRD_NAME = RESOURCE_PLURAL + "." + RESOURCE_GROUP;
     public static final String SHORT_NAME = "ku";
+    public static final List<String> RESOURCE_SHORTNAMES = unmodifiableList(asList(SHORT_NAME));
 
     private String apiVersion;
     private ObjectMeta metadata;
