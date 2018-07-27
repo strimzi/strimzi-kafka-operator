@@ -26,9 +26,9 @@ import io.strimzi.api.kafka.model.EphemeralStorage;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaAssembly;
 import io.strimzi.api.kafka.model.KafkaAuthorization;
+import io.strimzi.api.kafka.model.KafkaListenerTlsClientAuthentication;
 import io.strimzi.api.kafka.model.KafkaListeners;
 import io.strimzi.api.kafka.model.KafkaSimpleAuthorization;
-import io.strimzi.api.kafka.model.KafkaTlsClientAuthentication;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.api.kafka.model.Resources;
@@ -615,8 +615,8 @@ public class KafkaCluster extends AbstractModel {
             if (listeners.getTls() != null) {
                 varList.add(buildEnvVar(ENV_VAR_KAFKA_CLIENTTLS_ENABLED, "TRUE"));
 
-                if (listeners.getTls().getAuthentication() != null && KafkaTlsClientAuthentication.TYPE_TLS.equals(listeners.getTls().getAuthentication().getType())) {
-                    varList.add(buildEnvVar(ENV_VAR_KAFKA_CLIENTTLS_AUTHENTICATION, KafkaTlsClientAuthentication.TYPE_TLS));
+                if (listeners.getTls().getAuthentication() != null && KafkaListenerTlsClientAuthentication.TYPE_TLS.equals(listeners.getTls().getAuthentication().getType())) {
+                    varList.add(buildEnvVar(ENV_VAR_KAFKA_CLIENTTLS_AUTHENTICATION, KafkaListenerTlsClientAuthentication.TYPE_TLS));
                 }
             }
         }
