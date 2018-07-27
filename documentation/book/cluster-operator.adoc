@@ -274,7 +274,6 @@ Specifically, all configuration options with keys starting with one of the follo
 * `log.dir`
 * `zookeeper.connect`
 * `zookeeper.set.acl`
-* `authorizer.`
 * `super.user`
 
 All other options will be passed to Kafka.
