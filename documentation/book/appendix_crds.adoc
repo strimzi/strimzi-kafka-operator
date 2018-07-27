@@ -123,13 +123,13 @@ Used in: <<type-Kafka,`Kafka`>>
 |====
 |Field         |Description
 |plain  1.2+<.<|Configures plain listener on port 9092.
-|<<type-PlainListener,`PlainListener`>>
+|<<type-KafkaPlainListener,`KafkaPlainListener`>>
 |tls    1.2+<.<|Configures TLS listener on port 9093.
-|<<type-TlsListener,`TlsListener`>>
+|<<type-KafkaTlsListener,`KafkaTlsListener`>>
 |====
 
-[[type-PlainListener]]
-### `PlainListener` type v1alpha1 kafka.strimzi.io
+[[type-KafkaPlainListener]]
+### `KafkaPlainListener` type v1alpha1 kafka.strimzi.io
 
 Used in: <<type-KafkaListeners,`KafkaListeners`>>
 
@@ -139,8 +139,8 @@ Used in: <<type-KafkaListeners,`KafkaListeners`>>
 |Field|Description
 |====
 
-[[type-TlsListener]]
-### `TlsListener` type v1alpha1 kafka.strimzi.io
+[[type-KafkaTlsListener]]
+### `KafkaTlsListener` type v1alpha1 kafka.strimzi.io
 
 Used in: <<type-KafkaListeners,`KafkaListeners`>>
 
@@ -155,7 +155,7 @@ Used in: <<type-KafkaListeners,`KafkaListeners`>>
 [[type-KafkaListenerTlsClientAuthentication]]
 ### `KafkaListenerTlsClientAuthentication` type v1alpha1 kafka.strimzi.io
 
-Used in: <<type-TlsListener,`TlsListener`>>
+Used in: <<type-KafkaTlsListener,`KafkaTlsListener`>>
 
 
 The `type` property is a discriminator that distinguishes the use of the type `KafkaListenerTlsClientAuthentication` from .
