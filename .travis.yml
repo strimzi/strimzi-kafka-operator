@@ -10,7 +10,7 @@ services:
 before_install:
 - gem install asciidoctor
 install:
-- mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V || cat /home/travis/build/strimzi/strimzi-kafka-operator/api/target/generated-sources/annotations/io/strimzi/api/kafka/model/KafkaTlsListenerFluentImpl.java  || cat /home/travis/build/strimzi/strimzi-kafka-operator/api/src/main/java/io/strimzi/api/kafka/model/KafkaListenerAuthentication.java
+- mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V || cat /home/travis/build/strimzi/strimzi-kafka-operator/api/src/main/java/io/strimzi/api/kafka/model/KafkaListenerAuthentication.java
 before_script:
 - "./.travis/setup-kubernetes.sh"
 script:
