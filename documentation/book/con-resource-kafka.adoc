@@ -1,36 +1,53 @@
-[id='kafka-resource-{context}']
-[[kafka_config_map_details]]
+[id='kafka-config-map-details_{context}']
 = Kafka Resource Configurations
 
-In order to configure a Kafka cluster deployment, it is possible to specify the following fields in Kafka resource (a dot is used to denote a nested YAML object):
+The able below lists the fields that you can use when configuring a Kafka cluster deployment. A dot is used to denote a nexted YAML object.
 
-`spec.kafka.replicas`::
-The number of Kafka broker nodes.
-Default is 3.
-`spec.kafka.image`::
-The Docker image to be used by the Kafka brokers.
-The default value is determined by the value specified in the `<<STRIMZI_DEFAULT_KAFKA_IMAGE,STRIMZI_DEFAULT_KAFKA_IMAGE>>` environment variable of the Cluster Operator.
-`spec.kafka.brokerRackInitImage`::
-The Docker image to be used by the init container which does some initial configuration work (that is, rack support).
-The default value is determined by the value specified in the `<<STRIMZI_DEFAULT_KAFKA_INIT_IMAGE,STRIMZI_DEFAULT_KAFKA_INIT_IMAGE>>` environment variable of the Cluster Operator.
-`spec.kafka.livenessProbe.initialDelaySeconds`::
-The initial delay for the liveness probe for each Kafka broker node.
-Default is 15.
-`spec.kafka.livenessProbe.timeoutSeconds`::
-The timeout on the liveness probe for each Kafka broker node.
-Default is 5.
-`spec.kafka.readinessProbe.initialDelaySeconds`::
-The initial delay for the readiness probe for each Kafka broker node.
-Default is 15.
-`spec.kafka.readinessProbe.timeoutSeconds`::
-The timeout on the readiness probe for each Kafka broker node.
-Default is 5.
-`spec.kafka.config`::
-The Kafka broker configuration.
-See section <<kafka_configuration_json_config>> for more details.
-`spec.kafka.storage`::
-The storage configuration for the Kafka broker nodes.
-See section <<storage_configuration_json_config>> for more details.
+.Kafka Cluster Deployment Configuration Elements
+[cols="30%,50%,20%",options="header"]
+|===
+|Element
+|Description
+|Default Value
+
+|`spec.kafka.replicas`
+|The number of Kafka broker nodes.
+|3
+
+|`spec.kafka.image`
+|The Docker image to be used by the Kafka brokers.The default value is determined by the value specified in the `<<STRIMZI_DEFAULT_KAFKA_IMAGE,STRIMZI_DEFAULT_KAFKA_IMAGE>>` environment variable of the Cluster Operator.
+|
+
+|`spec.kafka.brokerRackInitImage`
+| The Docker image to be used by the init container which does some initial configuration work (that is, rack support). The default value is determined by the value specified in the `<<STRIMZI_DEFAULT_KAFKA_INIT_IMAGE,STRIMZI_DEFAULT_KAFKA_INIT_IMAGE>>` environment variable of the Cluster Operator.
+|
+
+|`spec.kafka.livenessProbe.initialDelaySeconds`
+|The initial delay for the liveness probe for each Kafka broker node.
+|15
+
+|`spec.kafka.livenessProbe.timeoutSeconds`
+|The timeout on the liveness probe for each Kafka broker node.
+|5
+
+|`spec.kafka.readinessProbe.initialDelaySeconds`
+|The initial delay for the readiness probe for each Kafka broker node.
+|15
+
+|`spec.kafka.readinessProbe.timeoutSeconds`
+|The timeout on the readiness probe for each Kafka broker node.
+|5
+
+|`spec.kafka.config`
+|The Kafka broker configuration. For more information, see xref:kafka_configuration_json_config[Kafka Configuration] for more details.
+|
+
+|`spec.kafka.storage`
+|The storage configuration for the Kafka broker nodes. For more information, see xref:kafka_configuration_json_config[Kafka Configuration] for more details.
+|
+|===
+
+
 `spec.kafka.metrics`::
 The JMX exporter configuration for exposing metrics from Kafka broker nodes.
 When this field is absent no metrics will be exposed.
@@ -55,13 +72,13 @@ log4j.logger.kafka.authorizer.logger
 
 `spec.kafka.resources`::
 The resource limits and requests for Kafka broker containers.
-The accepted format is described in the <<resources_json_config>> section.
+The accepted format is described in the xref:resources_json_config[Resource limits and requests] section.
 `spec.kafka.jvmOptions`::
 An object allowing the JVM running Kafka to be configured.
-The accepted format is described in the <<jvm_json_config>> section.
+The accepted format is described in the xref:jvm_json_config[JVM Options] section.
 `spec.kafka.rack`::
 An object allowing the Kafka rack feature to be configured and used in rack-aware partition assignment for fault tolerance.
-For information about the accepted JSON format, see <<kafka_rack>> section.
+For information about the accepted JSON format, see xref"kafka_rack[Kafka Rack] section.
 `spec.kafka.affinity`::
 An object allowing control over how the Kafka pods are scheduled to nodes.
 The format of the corresponding key is the same as the content supported in the Pod `affinity` in {ProductPlatformName}.
@@ -71,12 +88,12 @@ The Docker image to be used by the sidecar container which provides TLS support 
 The default value is determined by the value specified in the `<<STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE,STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE>>` environment variable of the Cluster Operator.
 `spec.kafka.tlsSidecar.resources`::
 An object configuring the resource limits and requests for the sidecar container which provides TLS support for Kafka brokers.
-For information about the accepted JSON format, see <<resources_json_config>>.
+For information about the accepted JSON format, see xref:resources_json_config[Resource limits and requests].
 `spec.zookeeper.replicas`::
 The number of Zookeeper nodes.
 `spec.zookeeper.image`::
 The Docker image to be used by the Zookeeper nodes.
-The default value is determined by the value specified in the `<<STRIMZI_DEFAULT_ZOOKEEPER_IMAGE,STRIMZI_DEFAULT_ZOOKEEPER_IMAGE>>` environment variable of the Cluster Operator.
+The default value is determined by the value specified in the xref:STRIMZI_DEFAULT_ZOOKEEPER_IMAGE[`STRIMZI_DEFAULT_ZOOKEEPER_IMAGE]` environment variable of the Cluster Operator.
 `spec.zookeeper.livenessProbe.initialDelaySeconds`::
 The initial delay for the liveness probe for each Zookeeper node.
 Default is 15.
@@ -90,9 +107,9 @@ Default is 15.
 The timeout on the readiness probe for each Zookeeper node.
 Default is 5.
 `spec.zookeeper.config`::
-The Zookeeper configuration. See section <<zookeeper_configuration_json_config>> for more details.
+The Zookeeper configuration. For more information, see xref:zookeeper_configuration_json_config[Zookeeper Configuration].
 `spec.zookeeper.storage`::
-The storage configuration for the Zookeeper nodes. See section <<storage_configuration_json_config>> for more details.
+The storage configuration for the Zookeeper nodes. For more information, see xref:storage_configuration_json_config[Storage].
 `spec.zookeeper.metrics`::
 The JMX exporter configuration for exposing metrics from Zookeeper nodes.
 When this field is absent no metrics will be exposed.
@@ -105,23 +122,24 @@ zookeeper.root.logger
 
 `spec.zookeeper.resources`::
 An object configuring the resource limits and requests for Zookeeper broker containers.
-For information about the accepted JSON format, see <<resources_json_config>> section.
+For information about the accepted JSON format, see xref:resources_json_config[Resource limits and requests].
 `spec.zookeeper.jvmOptions`::
 An object allowing the JVM running Zookeeper to be configured.
-For information about the accepted JSON format, see <<jvm_json_config>> section.
+For information about the accepted JSON format, see xref:jvm_json_config[JVM Options] section.
 `spec.zookeeper.affinity`::
 An object allowing control over how the Zookeeper pods are scheduled to nodes.
 The format of the corresponding key is the same as the content supported in the Pod `affinity` in {ProductPlatformName}.
 See section <<affinity>> for more details.
 `spec.zookeeper.tlsSidecar.image`::
 The Docker image to be used by the sidecar container which provides TLS support for Zookeeper nodes.
-The default value is determined by the value specified in the `<<STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE,STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE>>` environment variable of the Cluster Operator.
+The default value is determined by the value specified in the xref:STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE[`STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE`] environment variable of the Cluster Operator.
 `spec.zookeeper.tlsSidecar.resources`::
 An object configuring the resource limits and requests for the sidecar container which provides TLS support for Zookeeper nodes.
-For information about the accepted JSON format, see <<resources_json_config>>.
+For information about the accepted JSON format, see xref:resources_json_config[Resource limits and requests].
 `spec.topicOperator`::
-An object representing the topic operator configuration.
-See the <<topic_operator_json_config>> documentation for further details.
+An object representing the topic operator configuration. For more information, see xref:topic_operator_json_config[Topic Operator].
+
+
 More info about the topic operator in the related xref:topic-operator-{context}[Topic Operator] documentation page.
 
 The following is an example of a Kafka resource.
@@ -243,7 +261,7 @@ Specifically, all configuration options with keys starting with one of the follo
 * `super.user`
 
 All other options will be passed to Kafka.
-A list of all the available options can be found on the http://kafka.apache.org/11/documentation.html#brokerconfigs[Kafka website].
+A list of all the available options can be found on the link:http://kafka.apache.org/11/documentation.html#brokerconfigs[Kafka website^].
 An example `spec.kafka.config` field is provided below.
 
 .Example fragment of a `Kafka` resource specifying Kafka configuration
@@ -307,7 +325,7 @@ Specifically, all configuration options with keys starting with one of the follo
 * `requireClientAuthScheme`
 
 All other options will be passed to Zookeeper.
-A list of all the available options can be found on the http://zookeeper.apache.org/doc/r3.4.12/zookeeperAdmin.html[Zookeeper website].
+A list of all the available options can be found on the link:http://zookeeper.apache.org/doc/r3.4.12/zookeeperAdmin.html[Zookeeper website^].
 An example `spec.zookeeper.config` object is provided below.
 
 .Example fragment of a `Kafka` resource specifying Zookeeper configuration
@@ -356,7 +374,7 @@ IMPORTANT: The `spec.kafka.storage` and `spec.zookeeper.storage` objects cannot 
 
 The storage object has a mandatory `type` field for specifying the type of storage to use which must be either "ephemeral" or "persistent-claim".
 
-The "ephemeral" storage is really simple to configure.
+The _ephemeral_ storage is really simple to configure.
 
 .Example fragment of a `Kafka` resource using `ephemeral` storage for Kafka pods
 [source,json]
@@ -373,15 +391,15 @@ spec:
     # ...
 ----
 
-WARNING: If the Zookeeper cluster is deployed using "ephemeral" storage, the Kafka brokers can have problems dealing with Zookeeper node restarts which could happen via updates in the Kafka resource.
+WARNING: If the Zookeeper cluster is deployed using _ephemeral_ storage, the Kafka brokers can have problems dealing with Zookeeper node restarts which could happen via updates in the Kafka resource.
 
-In case of "persistent-claim" type the following fields can be provided as well:
+In case of _persistent-claim_ type the following fields can be provided as well:
 
 `size` (required)::
-defines the size of the persistent volume claim, for example, "1Gi".
+defines the size of the persistent volume claim, for example, _1Gi_.
 
 `class` (optional)::
-the {ProductPlatformName} https://kubernetes.io/docs/concepts/storage/storage-classes/[storage class] to use for dynamic volume allocation.
+the {ProductPlatformName} link:https://kubernetes.io/docs/concepts/storage/storage-classes/[storage class^] to use for dynamic volume allocation.
 
 `selector` (optional)::
 allows to select a specific persistent volume to use.
@@ -428,7 +446,7 @@ spec:
 
 Finally, a `selector` can be used in order to select a specific labelled persistent volume which provides some needed features (such as an SSD)
 
-.Example fragment of a `Kafka` resource configuring Kafka with "match labels" selector
+.Example fragment of a `Kafka` resource configuring Kafka with _match labels_ selector
 [source,json]
 ----
 apiVersion: {KafkaApiVersion}
@@ -448,7 +466,7 @@ spec:
     # ...
 ----
 
-When the "persistent-claim" is used, other than the resources already described in the <<Kafka>> section, the following resources are generated :
+When the "persistent-claim" is used, other than the resources already described in the xref:kafka-config-map-details_{context}[Kafka] section, the following resources are generated :
 
 `data-[cluster-name]-kafka-[idx]`::
 Persistent Volume Claim for the volume used for storing data for the Kafka broker pod `[idx]`.
@@ -456,11 +474,11 @@ Persistent Volume Claim for the volume used for storing data for the Kafka broke
 `data-[cluster-name]-zookeeper-[idx]`::
 Persistent Volume Claim for the volume used for storing data for the Zookeeper node pod `[idx]`.
 
-See <<type-EphemeralStorage>> and <<type-PersistentClaimStorage>> for further details.
+See xref:type-EphemeralStorage[`EphemeralStorage` type v1alpha1 kafka.strimzi.io] and xref:type-PersistentClaimStorage[`PersistentClaimStorage` type v1alpha1 kafka.strimzi.io] for further details.
 
 == Metrics
 
-{ProductName} uses the [Prometheus JMX exporter](https://github.com/prometheus/jmx_exporter) in order to expose metrics on each node.
+{ProductName} uses the link:https://github.com/prometheus/jmx_exporter[Prometheus JMX exporter^] in order to expose metrics on each node.
 It is possible to configure a `metrics` object in the `kafka` and `zookeeper` objects in `Kafka` resources, and likewise a `metrics` object in the `spec` of `KafkaConnect` resources.
 In all cases the `metrics` object should be the configuration for the JMX exporter.
 You can find more information on how to use it in the corresponding GitHub repo.
@@ -470,7 +488,7 @@ For more information about using the metrics with Prometheus and Grafana, see xr
 
 [[logging_examples]]
 == Logging
-The `logging` field allows the configuration of loggers. These loggers for Zookeeper and Kafka are available in the <<spec.zookeeper.logging,`spec.zookeeper.logging`>> and <<spec.kafka.logging,`spec.kafka.logging`>> sections respectively.
+The `logging` field allows the configuration of loggers. These loggers for Zookeeper and Kafka are available in the xref:spec.zookeeper.logging[`spec.zookeeper.logging` and xref:spec.kafka.logging[`spec.kafka.logging`] sections respectively.
 
 The setting can be done in one of two ways. Either by specifying the loggers and their levels directly or by using a custom config map.
 An example would look like this:
@@ -572,7 +590,7 @@ distributed mode where the effects of over-allocation will be multiplied by the 
 
 NOTE: The units accepted by JVM settings such as `-Xmx` and `-Xms` are those accepted by the JDK `java`
 binary in the corresponding image. Accordingly, `1g` or `1G` means 1,073,741,824 bytes, and `Gi` is not a valid unit
-suffix. This is in contrast to the units used for <<resources_json_config,memory limits and requests>>, which follow the
+suffix. This is in contrast to the units used for xref:resources_json_config[memory limits and requests], which follow the
 {ProductPlatformName} convention where `1G` means 1,000,000,000 bytes, and `1Gi` means 1,073,741,824 bytes
 
 .Example fragment of a `Kafka` resource configuring `jvmOptions`
@@ -632,7 +650,7 @@ When neither of the two options (`-server` and `-XX`) is specified, the default 
 [[setting_xmx]]
 == Setting `-Xmx`
 
-The default value used for `-Xmx` depends on whether there is a <<resources_json_config,memory limit>> for the container:
+The default value used for `-Xmx` depends on whether there is a xref:resources_json_config[memory limit] for the container:
 
 * If there is a memory limit, the JVM's maximum memory will be limited according to the kind of pod (Kafka, Zookeeper,
 Topic Operator) to an appropriate value less than the limit.
@@ -727,7 +745,7 @@ spec:
     # ...
 ----
 
-NOTE: When using both `affinity` and <<kafka_rack,`rack`>> be aware that `rack` uses a pod anti-affinity.
+NOTE: When using both `affinity` and xref:kafka_rack[`rack`] be aware that `rack` uses a pod anti-affinity.
 This is necessary so that broker pods are scheduled in different failure domains, as specified via the `topologyKey`.
 This anti-affinity will not be present in the `Kafka` resource's `affinity`, but is still present on the StatefulSet and thus will still be considered by the scheduler.
 
@@ -747,7 +765,7 @@ The configurable fields are the following :
 
 `image`::
 The Docker image to be used by the Topic Operator.
-The default value is determined by the value specified in the `<<STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE,STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE>>` environment variable of the Cluster Operator.
+The default value is determined by the value specified in the xref:STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE[`STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE`] environment variable of the Cluster Operator.
 `watchedNamespace`::
 The {ProductPlatformName} namespace in which the topic operator watches for topic ConfigMaps. Default is the namespace
 where the topic operator is running.
@@ -761,16 +779,16 @@ back-off. You might want to increase this value when topic creation could take m
 many partitions / replicas). Default is `6`.
 `resources`::
 An object configuring the resource limits and requests for the topic operator container. The accepted JSON format is
-described in the <<resources_json_config>> section.
+described in the xref:resources_json_config[Resource limits and requests] section.
 `affinity`::
 Node and Pod affinity for the Topic Operator, as described in the <<affinity>> section.
 The format of the corresponding key is the same as the content supported in the Pod `affinity` in {ProductPlatformName}.
 `tlsSidecar.image`::
 The Docker image to be used by the sidecar container which provides TLS support for Topic Operator.
-The default value is determined by the value specified in the `<<STRIMZI_DEFAULT_TLS_SIDECAR_TOPIC_OPERATOR_IMAGE,STRIMZI_DEFAULT_TLS_SIDECAR_TOPIC_OPERATOR_IMAGE>>` environment variable of the Cluster Operator.
+The default value is determined by the value specified in the xref:STRIMZI_DEFAULT_TLS_SIDECAR_TOPIC_OPERATOR_IMAGE[STRIMZI_DEFAULT_TLS_SIDECAR_TOPIC_OPERATOR_IMAGE`] environment variable of the Cluster Operator.
 `tlsSidecar.resources`::
 An object configuring the resource limits and requests for the sidecar container which provides TLS support for the Topic Operator.
-For information about the accepted JSON format, see <<resources_json_config>>.
+For information about the accepted JSON format, see xref:resources_json_config[Resource limits and requests].
 
 .Example Topic Operator JSON configuration
 [source,json]

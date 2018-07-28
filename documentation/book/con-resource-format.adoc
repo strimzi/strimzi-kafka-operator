@@ -1,8 +1,7 @@
-[id='kafka-resource-format{context}']
-= Overview of Kafka Resouce Format
+[id='kafka-resource-format-{context}']
+= Kafka resource format
 
-The full API is described in <<type-KafkaAssembly>>.
+The full API is described in xref:type-KafkaAssembly[Custom Resource API Reference].
 
 Whatever other labels are applied to the desired Kafka resource will also be applied to the {ProductPlatformName} resources making up the Kafka cluster.
 This provides a convenient mechanism for those resources to be labelled in whatever way the user requires.
-
