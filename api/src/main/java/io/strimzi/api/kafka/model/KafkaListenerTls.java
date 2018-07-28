@@ -29,17 +29,17 @@ import static java.util.Collections.emptyMap;
 public class KafkaListenerTls implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private KafkaListenerAuthentication authentication;
+    private KafkaListenerAuthentication serverAuthentication;
     private Map<String, Object> additionalProperties;
 
     @Description("Authorization configuration for Kafka brokers")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public KafkaListenerAuthentication getAuthentication() {
-        return authentication;
+        return serverAuthentication;
     }
 
-    public void setAuthentication(KafkaListenerAuthentication authentication) {
-        this.authentication = authentication;
+    public void setAuthentication(KafkaListenerAuthentication serverAuthentication) {
+        this.serverAuthentication = serverAuthentication;
     }
 
     @JsonAnyGetter
