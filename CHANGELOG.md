@@ -1,10 +1,14 @@
 # CHANGELOG
 
-## 0.6.0
+## 0.6.0 (Work in Progress)
 
 * Topic Operator moving to Custom Resources instead of Config Maps
+* Make it possible to enabled and disable:
+  * Listeners
+  * Authorization
+  * Authentication 
 
-## 0.5.0 (Work in Progress)
+## 0.5.0
 
 * The Cluster Operator now manages RBAC resource for managed resources:
     * `ServiceAccount` and `ClusterRoleBindings` for Kafka pods
