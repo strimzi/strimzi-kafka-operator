@@ -66,6 +66,9 @@ objects:
   spec:
     kafka:
       replicas: ${{KAFKA_NODE_COUNT}}
+      listeners:
+        plain: {}
+        tls: {}
       livenessProbe:
         initialDelaySeconds: ${{KAFKA_HEALTHCHECK_DELAY}}
         timeoutSeconds: ${{KAFKA_HEALTHCHECK_TIMEOUT}}
