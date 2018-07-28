@@ -26,7 +26,7 @@ public abstract class Logging implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @Description("Storage type, must be either 'inline' or 'external'.")
+    @Description("Logging type, must be either 'inline' or 'external'.")
     @JsonIgnore
     public abstract String getType();
 
