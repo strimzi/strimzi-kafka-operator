@@ -43,6 +43,9 @@ spec:
             }
         ]
       }
+    listeners:
+      tls: {}
+      plain: {}
   zookeeper:
     replicas: 3
     image: "strimzi/zookeeper:latest"

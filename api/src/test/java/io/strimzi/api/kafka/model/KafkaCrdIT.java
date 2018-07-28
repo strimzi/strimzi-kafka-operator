@@ -59,5 +59,4 @@ public class KafkaCrdIT extends AbstractCrdIT {
             assertTrue(e.getMessage().contains("spec.kafka.resources.limits.memory in body should match '[0-9]+([kKmMgGtTpPeE]i?)?$'"));
         }
     }
-
 }

@@ -15,9 +15,10 @@ import io.fabric8.kubernetes.api.model.KubernetesResource;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinitionSpec;
 import io.fabric8.openshift.api.model.ClusterRoleBinding;
 import io.fabric8.openshift.api.model.RoleBinding;
+import org.junit.Test;
+
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.test.TestUtils;
-import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -95,6 +96,7 @@ public class ExamplesTest {
     private void recurseForAdditionalProperties(Stack<String> path, Object resource) {
         try {
             Class<?> cls = resource.getClass();
+
             if (RoleBinding.class.equals(cls)
                     || ClusterRoleBinding.class.equals(cls)) {
                 // XXX: hack because fabric8 RoleBinding reflect the openshift role binding API
@@ -123,7 +125,8 @@ public class ExamplesTest {
             if (isGetter(method)) {
                 Object result = method.invoke(resource);
                 if (result != null
-                    && !result.getClass().isPrimitive()) {
+                    && !result.getClass().isPrimitive()
+                    && !result.getClass().isEnum()) {
                     path.push(method.getName());
                     recurseForAdditionalProperties(path, result);
                     path.pop();

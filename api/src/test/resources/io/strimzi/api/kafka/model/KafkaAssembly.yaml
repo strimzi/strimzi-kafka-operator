@@ -53,6 +53,13 @@ spec:
             }
         ]
       }
+    listeners:
+      tls:
+        authentication:
+          type: tls
+      plain: {}
+    authorization:
+      type: simple
   zookeeper:
     replicas: 3
     image: "strimzi/zookeeper:latest"

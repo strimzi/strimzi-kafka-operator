@@ -15,6 +15,9 @@ spec:
       topologyKey: rack-key
     storage:
       type: ephemeral
+    listeners:
+      tls: {}
+      plain: {}
   zookeeper:
     replicas: 1
     readinessProbe:

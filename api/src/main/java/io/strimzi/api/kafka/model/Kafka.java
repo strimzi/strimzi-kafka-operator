@@ -31,7 +31,8 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-        "replicas", "image", "storage", "config",
+        "replicas", "image", "storage",
+        "listeners", "authorization", "config",
         "rack", "brokerRackInitImage",
         "affinity", "tolerations",
         "livenessProbe", "readinessProbe",
@@ -48,19 +49,9 @@ public class Kafka implements Serializable {
     public static final String DEFAULT_TLS_SIDECAR_IMAGE =
             System.getenv().getOrDefault("STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE", "strimzi/kafka-stunnel:latest");
 
-    /*
-    // Forbidden prefixes were temporarily modified to allow configuration of Authentication and Authorization before we
-    // have UserOperator implemented.
-
     public static final String FORBIDDEN_PREFIXES = "listeners, advertised., broker., listener., host.name, port, "
             + "inter.broker.listener.name, sasl., ssl., security., password., principal.builder.class, log.dir, "
             + "zookeeper.connect, zookeeper.set.acl, authorizer., super.user";
-    */
-
-    public static final String FORBIDDEN_PREFIXES = "listeners, advertised., broker., listener.name.replication., "
-            + "listener.name.clienttls.ssl.truststore, listener.name.clienttls.ssl.keystore, host.name, port, "
-            + "inter.broker.listener.name, sasl., ssl., security., password., principal.builder.class, log.dir, "
-            + "zookeeper.connect, zookeeper.set.acl, super.user";
 
     protected Storage storage;
 
@@ -83,6 +74,8 @@ public class Kafka implements Serializable {
     private Affinity affinity;
     private List<Toleration> tolerations;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
+    private KafkaAuthorization authorization;
+    private KafkaListeners listeners;
 
     @Description("The kafka broker config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)
     public Map<String, Object> getConfig() {
@@ -246,5 +239,26 @@ public class Kafka implements Serializable {
     @JsonAnySetter
     public void setAdditionalProperty(String name, Object value) {
         this.additionalProperties.put(name, value);
+    }
+
+    @Description("Authorization configuration for Kafka brokers")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public KafkaAuthorization getAuthorization() {
+        return authorization;
+    }
+
+    public void setAuthorization(KafkaAuthorization authorization) {
+        this.authorization = authorization;
+    }
+
+    @Description("Configures listeners of Kafka brokers")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty(required = true)
+    public KafkaListeners getListeners() {
+        return listeners;
+    }
+
+    public void setListeners(KafkaListeners listeners) {
+        this.listeners = listeners;
     }
 }
