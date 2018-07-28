@@ -2,9 +2,9 @@
 = Reconciliation
 
 Although the operator reacts to all notifications about the desired cluster resources received from the OpenShift
-ifdef::Kubernetes[{KubernetesLongName}
+ifdef::Kubernetes[{KubernetesLongName} or
 cluster, if the operator is not running, or if a notification is not received for any reason, the desired resources will get out of sync with the state of the running OpenShift
-ifdef::Kubernetes[{KubernetesLongName}
+ifdef::Kubernetes[{KubernetesLongName} or
  cluster.
 
 In order to handle failovers properly, a periodic reconciliation process is executed by the Cluster Operator so that it can compare the state of the desired resources with the current cluster deployments in order to have a consistent state across all of them.

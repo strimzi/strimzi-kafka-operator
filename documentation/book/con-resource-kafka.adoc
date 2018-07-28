@@ -1,7 +1,7 @@
 [id='kafka-config-map-details_{context}']
-= Kafka Resource Configurations
+= Kafka resource configurations
 
-The able below lists the fields that you can use when configuring a Kafka cluster deployment. A dot is used to denote a nexted YAML object.
+The table below lists the fields that you can use when configuring a Kafka cluster deployment. A dot is used to denote a nexted YAML object.
 
 .Kafka Cluster Deployment Configuration Elements
 [cols="30%,50%,20%",options="header"]
@@ -15,11 +15,11 @@ The able below lists the fields that you can use when configuring a Kafka cluste
 |3
 
 |`spec.kafka.image`
-|The Docker image to be used by the Kafka brokers.The default value is determined by the value specified in the `<<STRIMZI_DEFAULT_KAFKA_IMAGE,STRIMZI_DEFAULT_KAFKA_IMAGE>>` environment variable of the Cluster Operator.
+|The Docker image to be used by the Kafka brokers.The default value is determined by the value specified in the xref:STRIMZI_DEFAULT_KAFKA_IMAGE[`STRIMZI_DEFAULT_KAFKA_IMAGE`] environment variable of the Cluster Operator.
 |
 
 |`spec.kafka.brokerRackInitImage`
-| The Docker image to be used by the init container which does some initial configuration work (that is, rack support). The default value is determined by the value specified in the `<<STRIMZI_DEFAULT_KAFKA_INIT_IMAGE,STRIMZI_DEFAULT_KAFKA_INIT_IMAGE>>` environment variable of the Cluster Operator.
+| The Docker image to be used by the init container which does some initial configuration work (that is, rack support). The default value is determined by the value specified in the xref:STRIMZI_DEFAULT_KAFKA_INIT_IMAGE[`STRIMZI_DEFAULT_KAFKA_INIT_IMAGE`] environment variable of the Cluster Operator.
 |
 
 |`spec.kafka.livenessProbe.initialDelaySeconds`
@@ -82,10 +82,10 @@ For information about the accepted JSON format, see xref"kafka_rack[Kafka Rack] 
 `spec.kafka.affinity`::
 An object allowing control over how the Kafka pods are scheduled to nodes.
 The format of the corresponding key is the same as the content supported in the Pod `affinity` in {ProductPlatformName}.
-See section <<affinity>> for more details.
+For more information, see xref:affinity[Node and Pod Affinity].
 `spec.kafka.tlsSidecar.image`::
 The Docker image to be used by the sidecar container which provides TLS support for Kafka brokers.
-The default value is determined by the value specified in the `<<STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE,STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE>>` environment variable of the Cluster Operator.
+The default value is determined by the value specified in the xref:STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE[`STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE`] environment variable of the Cluster Operator.
 `spec.kafka.tlsSidecar.resources`::
 An object configuring the resource limits and requests for the sidecar container which provides TLS support for Kafka brokers.
 For information about the accepted JSON format, see xref:resources_json_config[Resource limits and requests].
@@ -129,7 +129,7 @@ For information about the accepted JSON format, see xref:jvm_json_config[JVM Opt
 `spec.zookeeper.affinity`::
 An object allowing control over how the Zookeeper pods are scheduled to nodes.
 The format of the corresponding key is the same as the content supported in the Pod `affinity` in {ProductPlatformName}.
-See section <<affinity>> for more details.
+For more information, see xref:affinity[Node and Pod Affinity].
 `spec.zookeeper.tlsSidecar.image`::
 The Docker image to be used by the sidecar container which provides TLS support for Zookeeper nodes.
 The default value is determined by the value specified in the xref:STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE[`STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE`] environment variable of the Cluster Operator.
@@ -501,7 +501,7 @@ An example would look like this:
       logger.name: "INFO"
 ----
 The `INFO` can be replaced with any log4j logger level. The available logger levels are `INFO`, `ERROR`, `WARN`, `TRACE`, `DEBUG`, `FATAL` or `OFF`.
-The informations about log levels can be found in the https://logging.apache.org/log4j/2.x/manual/customloglevels.html[log4j manual].
+The informations about log levels can be found in the link:https://logging.apache.org/log4j/2.x/manual/customloglevels.html[log4j manual^].
 
 [source,yaml]
 ----
@@ -579,7 +579,7 @@ It is possible to configure a subset of available JVM options on Kafka, Zookeepe
 The object has a property for each JVM (`java`) option which can be configured:
 
 `-Xmx`::
-The maximum heap size. See the <<setting_xmx>> section for further details.
+The maximum heap size. For more inforamtion, see xref:setting_xmx[`Setting -Xmx`].
 
 `-Xms`::
 The initial heap size.
@@ -781,7 +781,7 @@ many partitions / replicas). Default is `6`.
 An object configuring the resource limits and requests for the topic operator container. The accepted JSON format is
 described in the xref:resources_json_config[Resource limits and requests] section.
 `affinity`::
-Node and Pod affinity for the Topic Operator, as described in the <<affinity>> section.
+Node and Pod affinity for the Topic Operator, as described in the xref:affinity[Node and Pod Affinity].
 The format of the corresponding key is the same as the content supported in the Pod `affinity` in {ProductPlatformName}.
 `tlsSidecar.image`::
 The Docker image to be used by the sidecar container which provides TLS support for Topic Operator.

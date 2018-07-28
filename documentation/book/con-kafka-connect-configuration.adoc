@@ -1,0 +1,76 @@
+[id=kafka_connect_configuration_json_config-{context}]
+== Kafka Connect configuration
+
+The `spec.config` object of the `KafkaConnect` and `KafkaConnectS2I` resources allows detailed configuration of Apache Kafka Connect.
+This object should contain the Kafka Connect configuration options as keys. The values could be in one of the following JSON types:
+
+
+* String
+* Number
+* Boolean
+
+The `config` object supports all Kafka Connect configuration options with the exception of options related to:
+
+* Security (Encryption, Authentication and Authorization)
+* Listener / REST interface configuration
+* Plugin path configuration
+
+Specifically, all configuration options with keys starting with one of the following strings will be ignored:
+
+* `ssl.`
+* `sasl.`
+* `security.`
+* `listeners`
+* `plugin.path`
+* `rest.`
+
+All other options will be passed to Kafka Connect. A list of all the available options can be found on the
+http://kafka.apache.org/11/documentation.html#connectconfigs[Kafka website]. An example `config` field is provided
+below.
+
+.Example Kafka Connect configuration
+[source,json]
+----
+apiVersion: {KafkaConnectApiVersion}
+kind: KafkaConnect
+metadata:
+  name: my-connect-cluster
+spec:
+  config:
+    bootstrap.servers: my-cluster-kafka-bootstrap:9092
+    group.id: my-connect-cluster
+    offset.storage.topic: my-connect-cluster-offsets
+    config.storage.topic: my-connect-cluster-configs
+    status.storage.topic: my-connect-cluster-status
+    key.converter: org.apache.kafka.connect.json.JsonConverter
+    value.converter: org.apache.kafka.connect.json.JsonConverter
+    key.converter.schemas.enable: true
+    value.converter.schemas.enable: true
+    internal.key.converter: org.apache.kafka.connect.json.JsonConverter
+    internal.value.converter: org.apache.kafka.connect.json.JsonConverter
+    internal.key.converter.schemas.enable: false
+    internal.value.converter.schemas.enable: false
+    config.storage.replication.factor: 3
+    offset.storage.replication.factor: 3
+    status.storage.replication.factor: 3
+}
+----
+
+Selected options have default values:
+
+* `group.id` with default value `connect-cluster`
+* `offset.storage.topic` with default value `connect-cluster-offsets`
+* `config.storage.topic` with default value `connect-cluster-configs`
+* `status.storage.topic` with default value `connect-cluster-status`
+* `key.converter` with default value `org.apache.kafka.connect.json.JsonConverter`
+* `value.converter` with default value `org.apache.kafka.connect.json.JsonConverter`
+* `internal.key.converter` with default value `org.apache.kafka.connect.json.JsonConverter`
+* `internal.value.converter` with default value `org.apache.kafka.connect.json.JsonConverter`
+* `internal.key.converter.schemas.enable` with default value `false`
+* `internal.value.converter.schemas.enable` with default value `false`
+
+These options will be automatically configured in case they are not present in the `config` object.
+
+INFO:: The Cluster Operator does not validate the provided configuration.
+When invalid configuration is provided, the Kafka Connect cluster might not start or might become unstable.
+In such cases, the configuration in the `config` object should be fixed and the Cluster Operator will roll out the new configuration to all Kafka Connect instances.
