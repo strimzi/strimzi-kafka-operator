@@ -12,39 +12,34 @@ import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import io.sundr.builder.annotations.Buildable;
-
-import static java.util.Collections.emptyMap;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 /**
- * Configures the TLS listener of Kafka broker
+ * Configures the broker authorization
  */
-@Buildable(
-        editableEnabled = false,
-        generateBuilderPackage = true,
-        builderPackage = "io.strimzi.api.kafka.model"
-)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+@JsonSubTypes({
+        @JsonSubTypes.Type(name = KafkaListenerAuthenticationTls.TYPE_TLS, value = KafkaListenerAuthenticationTls.class),
+})
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class KafkaListenerTls implements Serializable {
+public abstract class KafkaListenerAuthentication implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private KafkaListenerAuthentication authentication;
     private Map<String, Object> additionalProperties;
 
-    @Description("Authorization configuration for Kafka brokers")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    public KafkaListenerAuthentication getAuthentication() {
-        return authentication;
-    }
-
-    public void setAuthentication(KafkaListenerAuthentication authentication) {
-        this.authentication = authentication;
-    }
+    @Description("Authentication type. " +
+            "Currently the only supported type is `tls`. " +
+            "`tls` type uses TLS Client Authentication. " +
+            "`tls` type is supported only on TLS listeners.")
+    @JsonIgnore
+    public abstract String getType();
 
     @JsonAnyGetter
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
+        return this.additionalProperties;
     }
 
     @JsonAnySetter

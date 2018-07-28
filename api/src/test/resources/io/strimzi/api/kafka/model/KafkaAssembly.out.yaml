@@ -15,7 +15,9 @@ spec:
       deleteClaim: false
     listeners:
       plain: {}
-      tls: {}
+      tls:
+        authentication:
+          type: "tls"
     authorization:
       type: "simple"
     config:

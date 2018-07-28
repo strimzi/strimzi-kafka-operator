@@ -23,11 +23,18 @@ if [ "$KAFKA_CLIENTTLS_ENABLED" = "TRUE" ]; then
   ADVERTISED_LISTENERS="${ADVERTISED_LISTENERS},CLIENTTLS://$(hostname -f):9093"
   LISTENER_SECURITY_PROTOCOL_MAP="${LISTENER_SECURITY_PROTOCOL_MAP},CLIENTTLS:SSL"
 
+  # Configuring TLS client authentication for clienttls interface
+  if [ "$KAFKA_CLIENTTLS_AUTHENTICATION" = "tls" ]; then
+    LISTENER_NAME_CLIENTTLS_SSL_CLIENT_AUTH="required"
+  else
+    LISTENER_NAME_CLIENTTLS_SSL_CLIENT_AUTH="none"
+  fi
+
   CLIENTTLS_LISTENER=$(cat <<EOF
 # TLS interface configuration
 listener.name.clienttls.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12
 listener.name.clienttls.ssl.truststore.location=/tmp/kafka/clients.truststore.p12
-listener.name.clienttls.ssl.client.auth=none
+listener.name.clienttls.ssl.client.auth=${LISTENER_NAME_CLIENTTLS_SSL_CLIENT_AUTH}
 EOF
 )
 fi
@@ -70,8 +77,7 @@ listener.name.replication.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12
 listener.name.replication.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12
 listener.name.replication.ssl.client.auth=required
 
-listener.name.clienttls.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12
-listener.name.clienttls.ssl.truststore.location=/tmp/kafka/clients.truststore.p12
+${CLIENTTLS_LISTENER}
 
 # Authorization configuration
 authorizer.class.name=${AUTHORIZER_CLASS_NAME}

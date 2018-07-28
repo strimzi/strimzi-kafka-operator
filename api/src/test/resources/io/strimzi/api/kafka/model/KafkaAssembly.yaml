@@ -38,7 +38,9 @@ spec:
       min.insync.replicas: 3
     listeners:
       plain: {}
-      tls: {}
+      tls:
+        authentication:
+          type: tls
     authorization:
       type: simple
     metrics: {
