@@ -13,6 +13,9 @@ spec:
       type: "persistent-claim"
       size: "500Gi"
       deleteClaim: false
+    listeners:
+      plain: {}
+      tls: {}
     authorization:
       type: "simple"
     config:

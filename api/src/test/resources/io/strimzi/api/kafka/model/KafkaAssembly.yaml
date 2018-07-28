@@ -36,6 +36,9 @@ spec:
       size: 500Gi
     config:
       min.insync.replicas: 3
+    listeners:
+      plain: {}
+      tls: {}
     authorization:
       type: simple
     metrics: {

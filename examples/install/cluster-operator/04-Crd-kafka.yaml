@@ -39,6 +39,15 @@ spec:
                       type: string
                     type:
                       type: string
+                listeners:
+                  type: object
+                  properties:
+                    plain:
+                      type: object
+                      properties: {}
+                    tls:
+                      type: object
+                      properties: {}
                 authorization:
                   type: object
                   properties:
@@ -343,6 +352,7 @@ spec:
               required:
               - replicas
               - storage
+              - listeners
             zookeeper:
               type: object
               properties:

@@ -27,6 +27,7 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaAssembly;
 import io.strimzi.api.kafka.model.KafkaAuthorization;
 import io.strimzi.api.kafka.model.KafkaAuthorizationSimple;
+import io.strimzi.api.kafka.model.KafkaListeners;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.api.kafka.model.Resources;
@@ -57,6 +58,8 @@ public class KafkaCluster extends AbstractModel {
     protected static final String RACK_VOLUME_MOUNT = "/opt/kafka/rack";
     private static final String ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY = "RACK_TOPOLOGY_KEY";
     private static final String ENV_VAR_KAFKA_INIT_NODE_NAME = "NODE_NAME";
+    private static final String ENV_VAR_KAFKA_CLIENT_ENABLED = "KAFKA_CLIENT_ENABLED";
+    private static final String ENV_VAR_KAFKA_CLIENTTLS_ENABLED = "KAFKA_CLIENTTLS_ENABLED";
     private static final String ENV_VAR_KAFKA_AUTHORIZATION_TYPE = "KAFKA_AUTHORIZATION_TYPE";
 
     protected static final int CLIENT_PORT = 9092;
@@ -93,6 +96,7 @@ public class KafkaCluster extends AbstractModel {
     private Rack rack;
     private String initImage;
     private Sidecar tlsSidecar;
+    private KafkaListeners listeners;
     private KafkaAuthorization authorization;
 
     // Configuration defaults
@@ -223,6 +227,7 @@ public class KafkaCluster extends AbstractModel {
         result.generateCertificates(certManager, secrets);
         result.setTlsSidecar(kafka.getTlsSidecar());
 
+        result.setListeners(kafka.getListeners());
         result.setAuthorization(kafka.getAuthorization());
 
         return result;
@@ -300,12 +305,19 @@ public class KafkaCluster extends AbstractModel {
      * @return List with generated ports
      */
     private List<ServicePort> getServicePorts() {
-        List<ServicePort> ports = new ArrayList<>(2);
-        ports.add(createServicePort(CLIENT_PORT_NAME, CLIENT_PORT, CLIENT_PORT, "TCP"));
-        ports.add(createServicePort(CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, CLIENT_TLS_PORT, "TCP"));
+        List<ServicePort> ports = new ArrayList<>(4);
         ports.add(createServicePort(REPLICATION_PORT_NAME, REPLICATION_PORT, REPLICATION_PORT, "TCP"));
+
+        if (listeners != null && listeners.getPlain() != null) {
+            ports.add(createServicePort(CLIENT_PORT_NAME, CLIENT_PORT, CLIENT_PORT, "TCP"));
+        }
+
+        if (listeners != null && listeners.getTls() != null) {
+            ports.add(createServicePort(CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, CLIENT_TLS_PORT, "TCP"));
+        }
+
         if (isMetricsEnabled()) {
-            ports.add(createServicePort(metricsPortName, metricsPort, metricsPort, "TCP"));
+            ports.add(createServicePort(METRICS_PORT_NAME, METRICS_PORT, METRICS_PORT, "TCP"));
         }
         return ports;
     }
@@ -317,10 +329,17 @@ public class KafkaCluster extends AbstractModel {
      * @return List with generated ports
      */
     private List<ServicePort> getHeadlessServicePorts() {
-        List<ServicePort> ports = new ArrayList<>(2);
-        ports.add(createServicePort(CLIENT_PORT_NAME, CLIENT_PORT, CLIENT_PORT, "TCP"));
+        List<ServicePort> ports = new ArrayList<>(3);
         ports.add(createServicePort(REPLICATION_PORT_NAME, REPLICATION_PORT, REPLICATION_PORT, "TCP"));
-        ports.add(createServicePort(CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, CLIENT_TLS_PORT, "TCP"));
+
+        if (listeners != null && listeners.getPlain() != null) {
+            ports.add(createServicePort(CLIENT_PORT_NAME, CLIENT_PORT, CLIENT_PORT, "TCP"));
+        }
+
+        if (listeners != null && listeners.getTls() != null) {
+            ports.add(createServicePort(CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, CLIENT_TLS_PORT, "TCP"));
+        }
+
         return ports;
     }
 
@@ -415,11 +434,18 @@ public class KafkaCluster extends AbstractModel {
 
     private List<ContainerPort> getContainerPortList() {
         List<ContainerPort> portList = new ArrayList<>(3);
-        portList.add(createContainerPort(CLIENT_PORT_NAME, CLIENT_PORT, "TCP"));
         portList.add(createContainerPort(REPLICATION_PORT_NAME, REPLICATION_PORT, "TCP"));
-        portList.add(createContainerPort(CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, "TCP"));
+
+        if (listeners != null && listeners.getPlain() != null) {
+            portList.add(createContainerPort(CLIENT_PORT_NAME, CLIENT_PORT, "TCP"));
+        }
+
+        if (listeners != null && listeners.getTls() != null) {
+            portList.add(createContainerPort(CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, "TCP"));
+        }
+
         if (isMetricsEnabled) {
-            portList.add(createContainerPort(metricsPortName, metricsPort, "TCP"));
+            portList.add(createContainerPort(METRICS_PORT_NAME, METRICS_PORT, "TCP"));
         }
 
         return portList;
@@ -578,6 +604,16 @@ public class KafkaCluster extends AbstractModel {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_LOG_CONFIGURATION, getLogging().getCm().toString()));
         }
 
+        if (listeners != null)  {
+            if (listeners.getPlain() != null)   {
+                varList.add(buildEnvVar(ENV_VAR_KAFKA_CLIENT_ENABLED, "TRUE"));
+            }
+
+            if (listeners.getTls() != null) {
+                varList.add(buildEnvVar(ENV_VAR_KAFKA_CLIENTTLS_ENABLED, "TRUE"));
+            }
+        }
+
         if (authorization != null && KafkaAuthorizationSimple.TYPE_SIMPLE.equals(authorization.getType()))  {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_AUTHORIZATION_TYPE, KafkaAuthorizationSimple.TYPE_SIMPLE));
         }
@@ -644,6 +680,15 @@ public class KafkaCluster extends AbstractModel {
         } else {
             return null;
         }
+    }
+
+    /**
+     * Sets the object with Kafka listeners configuration
+     *
+     * @param listeners
+     */
+    public void setListeners(KafkaListeners listeners) {
+        this.listeners = listeners;
     }
 
     /**

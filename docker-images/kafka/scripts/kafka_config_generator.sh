@@ -6,6 +6,33 @@ ASSEMBLY_NAME=$(echo "${KAFKA_NAME}" | rev | cut -d "-" -f2- | rev)
 SUPER_USERS="super.users=User:CN=${ASSEMBLY_NAME}-topic-operator,O=io.strimzi;User:CN=${KAFKA_NAME},O=io.strimzi"
 
 #####
+# Configuring listeners
+#####
+LISTENERS="REPLICATION://0.0.0.0:9091"
+ADVERTISED_LISTENERS="REPLICATION://$(hostname -f):9091"
+LISTENER_SECURITY_PROTOCOL_MAP="REPLICATION:SSL"
+
+if [ "$KAFKA_CLIENT_ENABLED" = "TRUE" ]; then
+  LISTENERS="${LISTENERS},CLIENT://0.0.0.0:9092"
+  ADVERTISED_LISTENERS="${ADVERTISED_LISTENERS},CLIENT://$(hostname -f):9092"
+  LISTENER_SECURITY_PROTOCOL_MAP="${LISTENER_SECURITY_PROTOCOL_MAP},CLIENT:PLAINTEXT"
+fi
+
+if [ "$KAFKA_CLIENTTLS_ENABLED" = "TRUE" ]; then
+  LISTENERS="${LISTENERS},CLIENTTLS://0.0.0.0:9093"
+  ADVERTISED_LISTENERS="${ADVERTISED_LISTENERS},CLIENTTLS://$(hostname -f):9093"
+  LISTENER_SECURITY_PROTOCOL_MAP="${LISTENER_SECURITY_PROTOCOL_MAP},CLIENTTLS:SSL"
+
+  CLIENTTLS_LISTENER=$(cat <<EOF
+# TLS interface configuration
+listener.name.clienttls.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12
+listener.name.clienttls.ssl.truststore.location=/tmp/kafka/clients.truststore.p12
+listener.name.clienttls.ssl.client.auth=none
+EOF
+)
+fi
+
+#####
 # Configuring authorization
 #####
 if [ "$KAFKA_AUTHORIZATION_TYPE" = "simple" ]; then
@@ -20,9 +47,9 @@ broker.id=${KAFKA_BROKER_ID}
 broker.rack=${KAFKA_RACK}
 
 # Listeners
-listeners=CLIENT://0.0.0.0:9092,REPLICATION://0.0.0.0:9091,CLIENTTLS://0.0.0.0:9093
-advertised.listeners=CLIENT://$(hostname -f):9092,REPLICATION://$(hostname -f):9091,CLIENTTLS://$(hostname -f):9093
-listener.security.protocol.map=CLIENT:PLAINTEXT,REPLICATION:SSL,CLIENTTLS:SSL
+listeners=${LISTENERS}
+advertised.listeners=${ADVERTISED_LISTENERS}
+listener.security.protocol.map=${LISTENER_SECURITY_PROTOCOL_MAP}
 inter.broker.listener.name=REPLICATION
 
 # Zookeeper
