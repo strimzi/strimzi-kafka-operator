@@ -39,6 +39,11 @@ spec:
                       type: string
                     type:
                       type: string
+                authorization:
+                  type: object
+                  properties:
+                    type:
+                      type: string
                 config:
                   type: object
                 rack:

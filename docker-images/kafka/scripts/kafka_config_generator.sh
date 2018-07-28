@@ -5,6 +5,15 @@ KAFKA_NAME=$(hostname | rev | cut -d "-" -f2- | rev)
 ASSEMBLY_NAME=$(echo "${KAFKA_NAME}" | rev | cut -d "-" -f2- | rev)
 SUPER_USERS="super.users=User:CN=${ASSEMBLY_NAME}-topic-operator,O=io.strimzi;User:CN=${KAFKA_NAME},O=io.strimzi"
 
+#####
+# Configuring authorization
+#####
+if [ "$KAFKA_AUTHORIZATION_TYPE" = "simple" ]; then
+  AUTHORIZER_CLASS_NAME="kafka.security.auth.SimpleAclAuthorizer"
+else
+  AUTHORIZER_CLASS_NAME=""
+fi
+
 # Write the config file
 cat <<EOF
 broker.id=${KAFKA_BROKER_ID}
@@ -37,7 +46,8 @@ listener.name.replication.ssl.client.auth=required
 listener.name.clienttls.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12
 listener.name.clienttls.ssl.truststore.location=/tmp/kafka/clients.truststore.p12
 
-# ACL Super users (all nodes for replication)
+# Authorization configuration
+authorizer.class.name=${AUTHORIZER_CLASS_NAME}
 ${SUPER_USERS}
 
 # Provided configuration

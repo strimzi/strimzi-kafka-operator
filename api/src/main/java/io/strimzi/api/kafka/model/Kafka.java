@@ -31,7 +31,8 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-        "replicas", "image", "storage", "config",
+        "replicas", "image", "storage",
+        "authorization", "config",
         "rack", "brokerRackInitImage",
         "affinity", "tolerations",
         "livenessProbe", "readinessProbe",
@@ -82,6 +83,7 @@ public class Kafka implements Serializable {
     private Map<String, Object> metrics = new HashMap<>(0);
     private Affinity affinity;
     private List<Toleration> tolerations;
+    private KafkaAuthorization authorization;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The kafka broker config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)
@@ -236,6 +238,16 @@ public class Kafka implements Serializable {
 
     public void setTolerations(List<Toleration> tolerations) {
         this.tolerations = tolerations;
+    }
+
+    @Description("Authorization configuration for Kafka brokers")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public KafkaAuthorization getAuthorization() {
+        return authorization;
+    }
+
+    public void setAuthorization(KafkaAuthorization authorization) {
+        this.authorization = authorization;
     }
 
     @JsonAnyGetter

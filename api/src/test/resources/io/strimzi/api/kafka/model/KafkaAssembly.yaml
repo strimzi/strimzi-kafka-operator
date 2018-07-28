@@ -36,6 +36,8 @@ spec:
       size: 500Gi
     config:
       min.insync.replicas: 3
+    authorization:
+      type: simple
     metrics: {
         "lowercaseOutputName": true,
         "rules": [
