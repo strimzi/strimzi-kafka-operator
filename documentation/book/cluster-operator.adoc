@@ -49,13 +49,13 @@ The default value is determined by the value specified in the `<<STRIMZI_DEFAULT
 The Docker image to be used by the init container which does some initial configuration work (that is, rack support).
 The default value is determined by the value specified in the `<<STRIMZI_DEFAULT_KAFKA_INIT_IMAGE,STRIMZI_DEFAULT_KAFKA_INIT_IMAGE>>` environment variable of the Cluster Operator.
 `spec.kafka.livenessProbe.initialDelaySeconds`::
-The initial delay for the liveness probe for each Kafka broker node. 
+The initial delay for the liveness probe for each Kafka broker node.
 Default is 15.
 `spec.kafka.livenessProbe.timeoutSeconds`::
-The timeout on the liveness probe for each Kafka broker node. 
+The timeout on the liveness probe for each Kafka broker node.
 Default is 5.
 `spec.kafka.readinessProbe.initialDelaySeconds`::
-The initial delay for the readiness probe for each Kafka broker node. 
+The initial delay for the readiness probe for each Kafka broker node.
 Default is 15.
 `spec.kafka.readinessProbe.timeoutSeconds`::
 The timeout on the readiness probe for each Kafka broker node. 
@@ -495,7 +495,7 @@ See <<type-EphemeralStorage>> and <<type-PersistentClaimStorage>> for further de
 
 ===== Metrics
 
-{ProductName} uses the [Prometheus JMX exporter](https://github.com/prometheus/jmx_exporter) in order to expose metrics on each node. 
+{ProductName} uses the link:https://github.com/prometheus/jmx_exporter[Prometheus JMX exporter^] in order to expose metrics on each node.
 It is possible to configure a `metrics` object in the `kafka` and `zookeeper` objects in `Kafka` resources, and likewise a `metrics` object in the `spec` of `KafkaConnect` resources. 
 In all cases the `metrics` object should be the configuration for the JMX exporter. 
 You can find more information on how to use it in the corresponding GitHub repo.
@@ -537,7 +537,7 @@ The first option supports default values.
 [[resources_json_config]]
 ===== Resource limits and requests
 
-It is possible to configure {ProductPlatformName} resource limits and requests on for the `kafka`, `zookeeper` and `topicOperator` objects in the `Kafka` resource and for for the `spec` object of the `KafkaConnect resource.
+It is possible to configure {ProductPlatformName} resource limits and requests for the `kafka`, `zookeeper`, and `topicOperator` objects in the `Kafka` resource and for the `spec` object of the `KafkaConnect` resource.
 The object may have a `requests` and a `limits` property, each having the same schema, consisting of `cpu` and `memory` properties.
 The {ProductPlatformName} syntax is used for the values of `cpu` and `memory`.
 
@@ -818,7 +818,7 @@ More information about these configuration parameters in the related xref:topic-
 [[kafka_connect_config_map_details]]
 ==== Kafka Connect
 
-The operator watches for `KafkaConnect` resource in order to find and get configuration for a Kafka Connect cluster to deploy.
+The operator watches for the `KafkaConnect` resource in order to find and get configuration for a Kafka Connect cluster to deploy.
 
 The `KafkaConnectS2I` resource provides configuration for a Kafka Connect cluster deployment using Build and Source2Image features (works only with {OpenShiftName})
 
@@ -837,11 +837,11 @@ The default value is determined by the value specified in the `<<STRIMZI_DEFAULT
 If S2I is used (only on {OpenShiftName}), then it should be the related S2I image.
 
 `healthcheck-delay`::
-The initial delay for the liveness and readiness probes for each Kafka Connect worker node. 
+The initial delay in seconds for the liveness and readiness probes for each Kafka Connect worker node.
 Default is 60.
 
 `healthcheck-timeout`::
-The timeout on the liveness and readiness probes for each Kafka Connect worker node. 
+The timeout in seconds of the liveness and readiness probes for each Kafka Connect worker node.
 Default is 5.
 
 `connect-config`::
@@ -1030,31 +1030,31 @@ The default value of the `image` option is determined by the value of the `<<STR
 All other options have the same meaning as for the regular `KafkaConnect` deployment.
 
 Once the Kafka Connect S2I cluster is deployed, new plugins can be added by starting a new {OpenShiftName} build.
-Before starting the build, a directory with all the KafkaConnect plugins which should be added has to be created.
+Before starting the build, a directory with all the Kafka Connect plugins which should be added has to be created.
 The plugins and all their dependencies can be in a single directory or can be split into multiple subdirectories.
-For example:
+For example the following directory structure would be created in order to add the MySQL and Postgres CDC (change data capture) connectors provided by the link:http://debezium.io/[Debezium^] project:
 
 [source,shell]
 ----
 $ tree ./s2i-plugins/
 ./s2i-plugins/
 ├── debezium-connector-mysql
+│   ├── antlr4-runtime-4.7.jar
 │   ├── CHANGELOG.md
 │   ├── CONTRIBUTE.md
 │   ├── COPYRIGHT.txt
-│   ├── debezium-connector-mysql-0.7.1.jar
-│   ├── debezium-core-0.7.1.jar
+│   ├── debezium-connector-mysql-0.8.1.Final.jar
+│   ├── debezium-core-0.8.1.Final.jar
 │   ├── LICENSE.txt
 │   ├── mysql-binlog-connector-java-0.13.0.jar
 │   ├── mysql-connector-java-5.1.40.jar
-│   ├── README.md
-│   └── wkb-1.0.2.jar
+│   └── README.md
 └── debezium-connector-postgres
     ├── CHANGELOG.md
     ├── CONTRIBUTE.md
     ├── COPYRIGHT.txt
-    ├── debezium-connector-postgres-0.7.1.jar
-    ├── debezium-core-0.7.1.jar
+    ├── debezium-connector-postgres-0.8.1.Final.jar
+    ├── debezium-core-0.8.1.Final.jar
     ├── LICENSE.txt
     ├── postgresql-42.0.0.jar
     ├── protobuf-java-2.6.1.jar
