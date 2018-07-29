@@ -11,6 +11,8 @@ import io.strimzi.api.kafka.model.KafkaAssembly;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.assembly.MockCertManager;
+import io.strimzi.operator.common.operator.resource.StatefulSetDiff;
+
 import org.junit.Before;
 import org.junit.Test;
 

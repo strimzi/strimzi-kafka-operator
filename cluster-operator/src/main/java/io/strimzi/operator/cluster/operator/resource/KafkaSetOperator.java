@@ -4,6 +4,9 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
+import io.strimzi.operator.common.operator.resource.StatefulSetDiff;
+import io.strimzi.operator.common.operator.resource.StatefulSetOperator;
+
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.vertx.core.Vertx;

@@ -15,6 +15,7 @@ import io.fabric8.openshift.api.model.ImageChangeTrigger;
 import io.fabric8.openshift.api.model.ImageStream;
 import io.strimzi.api.kafka.model.KafkaConnectS2IAssembly;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
 
 import org.junit.Rule;

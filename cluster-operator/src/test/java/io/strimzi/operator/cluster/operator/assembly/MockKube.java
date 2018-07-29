@@ -54,6 +54,7 @@ import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.dsl.ScalableResource;
+import io.strimzi.operator.common.operator.resource.WorkaroundRbacOperator;
 import okhttp3.Call;
 import okhttp3.OkHttpClient;
 import okhttp3.Protocol;
@@ -204,7 +205,7 @@ public class MockKube {
     }
 
     /**
-     * @deprecated this can be removed when {@link io.strimzi.operator.cluster.operator.resource.WorkaroundRbacOperator} is removed.
+     * @deprecated this can be removed when {@link WorkaroundRbacOperator} is removed.
      */
     @Deprecated
     private void mockHttpClientForWorkaroundRbac(KubernetesClient mockClient) {

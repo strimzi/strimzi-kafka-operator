@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.operator.assembly.MockCertManager;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
 import org.junit.Rule;
 import org.junit.Test;
