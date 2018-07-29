@@ -7,6 +7,7 @@
   * Listeners
   * Authorization
   * Authentication 
+* User operator
 
 ## 0.5.0
 
