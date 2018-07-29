@@ -10,7 +10,8 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.strimzi.operator.cluster.model.Labels;
+import io.strimzi.operator.user.model.Labels;
+
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 

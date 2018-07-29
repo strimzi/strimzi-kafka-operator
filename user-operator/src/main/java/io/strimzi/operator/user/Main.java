@@ -11,18 +11,6 @@ import io.strimzi.api.kafka.DoneableKafkaUser;
 import io.strimzi.api.kafka.KafkaUserList;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.certs.OpenSslCertManager;
-import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
-import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperator;
-import io.strimzi.operator.cluster.operator.assembly.KafkaConnectS2IAssemblyOperator;
-import io.strimzi.operator.cluster.operator.resource.BuildConfigOperator;
-import io.strimzi.operator.cluster.operator.resource.ConfigMapOperator;
-import io.strimzi.operator.cluster.operator.resource.CrdOperator;
-import io.strimzi.operator.cluster.operator.resource.DeploymentConfigOperator;
-import io.strimzi.operator.cluster.operator.resource.DeploymentOperator;
-import io.strimzi.operator.cluster.operator.resource.ImageStreamOperator;
-import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.cluster.operator.resource.SecretOperator;
-import io.strimzi.operator.cluster.operator.resource.ServiceOperator;
 import io.strimzi.operator.user.operator.KafkaUserOperator;
 import io.strimzi.operator.user.operator.resource.CrdOperator;
 import io.strimzi.operator.user.operator.resource.SecretOperator;
@@ -60,18 +48,18 @@ public class Main {
         });
     }
 
-    static Future run(Vertx vertx, KubernetesClient client, UserOperatorConfig config) {
+    static Future<String> run(Vertx vertx, KubernetesClient client, UserOperatorConfig config) {
         printEnvInfo();
         OpenSslCertManager certManager = new OpenSslCertManager();
         SecretOperator secretOperations = new SecretOperator(vertx, client);
         CrdOperator<KubernetesClient, KafkaUser, KafkaUserList, DoneableKafkaUser> crdOperations = new CrdOperator<>(vertx, client, KafkaUser.class, KafkaUserList.class, DoneableKafkaUser.class);
 
         KafkaUserOperator kafkaUserOperations = new KafkaUserOperator(vertx,
-                certManager, crdOperations, secretOperations);
+                certManager, crdOperations, secretOperations, config.getCaName(), config.getCaNamespace());
 
         Future<String> fut = Future.future();
         UserOperator operator = new UserOperator(config.getNamespace(),
-                config.getReconciliationIntervalMs(),
+                config,
                 client,
                 kafkaUserOperations);
         vertx.deployVerticle(operator,

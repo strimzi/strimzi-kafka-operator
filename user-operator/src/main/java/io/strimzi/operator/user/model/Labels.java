@@ -93,6 +93,13 @@ public class Labels {
         return new Labels(resource.getMetadata().getLabels() != null ? resource.getMetadata().getLabels() : emptyMap());
     }
 
+    /**
+     * Returns the labels from Map.
+     */
+    public static Labels fromMap(Map<String, String> labels) {
+        return new Labels(labels);
+    }
+
     private Labels(Map<String, String> labels) {
         this.labels = unmodifiableMap(new HashMap(labels));
     }

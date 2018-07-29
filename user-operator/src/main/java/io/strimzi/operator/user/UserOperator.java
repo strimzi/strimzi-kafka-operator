@@ -7,16 +7,13 @@ package io.strimzi.operator.user;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
-import io.strimzi.operator.cluster.operator.assembly.AbstractAssemblyOperator;
-import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
-import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperator;
-import io.strimzi.operator.cluster.operator.assembly.KafkaConnectS2IAssemblyOperator;
+import io.strimzi.operator.user.model.Labels;
+import io.strimzi.operator.user.operator.KafkaUserOperator;
+
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.http.HttpServer;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
@@ -37,30 +34,31 @@ public class UserOperator extends AbstractVerticle {
     private final KubernetesClient client;
     private final String namespace;
     private final long reconciliationInterval;
+    private final Labels selector;
+    private final KafkaUserOperator kafkaUserOperator;
 
-    private final Map<String, Watch> watchByKind = new ConcurrentHashMap();
-
+    private Watch watch;
     private long reconcileTimer;
-    private final KafkaUserOperator kafkaUSerOperator;
 
     public UserOperator(String namespace,
-                        long reconciliationInterval,
+                        UserOperatorConfig config,
                         KubernetesClient client,
                         KafkaUserOperator kafkaUserOperator) {
         log.info("Creating UserOperator for namespace {}", namespace);
         this.namespace = namespace;
-        this.reconciliationInterval = reconciliationInterval;
+        this.reconciliationInterval = config.getReconciliationIntervalMs();
         this.client = client;
-        this.kafkaUSerOperator = kafkaUSerOperator;
+        this.kafkaUserOperator = kafkaUserOperator;
+        this.selector = Labels.fromMap(config.getLabels());
     }
 
-    Consumer<KubernetesClientException> recreateWatch(AbstractAssemblyOperator op) {
+    Consumer<KubernetesClientException> recreateWatch(KafkaUserOperator op) {
         Consumer<KubernetesClientException> cons = new Consumer<KubernetesClientException>() {
             @Override
             public void accept(KubernetesClientException e) {
                 if (e != null) {
                     log.error("Watcher closed with exception in namespace {}", namespace, e);
-                    op.createWatch(namespace, this);
+                    op.createWatch(namespace, selector, this);
                 } else {
                     log.info("Watcher closed in namespace {}", namespace);
                 }
@@ -69,7 +67,6 @@ public class UserOperator extends AbstractVerticle {
         return cons;
     }
 
-
     @Override
     public void start(Future<Void> start) {
         log.info("Starting UserOperator for namespace {}", namespace);
@@ -77,48 +74,31 @@ public class UserOperator extends AbstractVerticle {
         // Configure the executor here, but it is used only in other places
         getVertx().createSharedWorkerExecutor("kubernetes-ops-pool", 10, TimeUnit.SECONDS.toNanos(120));
 
-        kafkaAssemblyOperator.createWatch(namespace, recreateWatch(kafkaAssemblyOperator))
+        kafkaUserOperator.createWatch(namespace, selector, recreateWatch(kafkaUserOperator))
             .compose(w -> {
-                log.info("Started operator for {} kind", "Kafka");
-                watchByKind.put("Kafka", w);
-                return kafkaConnectAssemblyOperator.createWatch(namespace, recreateWatch(kafkaConnectAssemblyOperator));
-            })
-            .compose(w -> {
-                log.info("Started operator for {} kind", "KafkaConnect");
-                watchByKind.put("KafkaConnect", w);
-                if (kafkaConnectS2IAssemblyOperator != null) {
-                    // only on OS
-                    return kafkaConnectS2IAssemblyOperator.createWatch(namespace, recreateWatch(kafkaConnectS2IAssemblyOperator));
-                } else {
-                    return Future.succeededFuture(null);
-                }
-            }).compose(w -> {
-                if (w != null) {
-                    log.info("Started operator for {} kind", "KafkaConnectS2I");
-                    watchByKind.put("KafkaS2IConnect", w);
-                }
+                log.info("Started operator for {} kind", "KafkaUser");
+                watch = w;
+
                 log.info("Setting up periodical reconciliation for namespace {}", namespace);
                 this.reconcileTimer = vertx.setPeriodic(this.reconciliationInterval, res2 -> {
                     log.info("Triggering periodic reconciliation for namespace {}...", namespace);
                     reconcileAll("timer");
                 });
+
                 return startHealthServer().map((Void) null);
             }).compose(start::complete, start);
     }
-
 
     @Override
     public void stop(Future<Void> stop) {
         log.info("Stopping UserOperator for namespace {}", namespace);
         vertx.cancelTimer(reconcileTimer);
-        for (Watch watch : watchByKind.values()) {
-            if (watch != null) {
-                watch.close();
-            }
-            // TODO remove the watch from the watchByKind
-        }
-        client.close();
 
+        if (watch != null) {
+            watch.close();
+        }
+
+        client.close();
         stop.complete();
     }
 
@@ -126,12 +106,7 @@ public class UserOperator extends AbstractVerticle {
       Periodical reconciliation (in case we lost some event)
      */
     private void reconcileAll(String trigger) {
-        kafkaAssemblyOperator.reconcileAll(trigger, namespace);
-        kafkaConnectAssemblyOperator.reconcileAll(trigger, namespace);
-
-        if (kafkaConnectS2IAssemblyOperator != null) {
-            kafkaConnectS2IAssemblyOperator.reconcileAll(trigger, namespace);
-        }
+        kafkaUserOperator.reconcileAll(trigger, namespace, selector);
     }
 
     /**
@@ -141,7 +116,6 @@ public class UserOperator extends AbstractVerticle {
         Future<HttpServer> result = Future.future();
         this.vertx.createHttpServer()
                 .requestHandler(request -> {
-
                     if (request.path().equals("/healthy")) {
                         request.response().setStatusCode(200).end();
                     } else if (request.path().equals("/ready")) {
