@@ -1,0 +1,4 @@
+[id='interbroker-communication-{context}']
+= Interbroker Kafka communication
+
+Communication between brokers is done through the `REPLICATION` listener on port 9091 and is encrypted by default.
