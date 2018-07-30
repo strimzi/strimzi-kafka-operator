@@ -6,7 +6,7 @@ This procedure describes how to change the configuration of an existing Kafka to
 .Prerequisites
 
 * A running Kafka cluster.
-* A running Topic Operator, either deployed by the Cluster Operator using the `Kafka.spec.topicOperator` property, or deployed standalone.
+* A running Topic Operator.
 * An existing `KafkaTopic` to be changed.
 
 .Procedure
