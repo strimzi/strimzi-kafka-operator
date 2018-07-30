@@ -37,7 +37,7 @@ For information about the accepted JSON format, see xref:resources_json_config[R
 
 `jvmOptions`::
 A JSON string allowing the JVM running Kafka Connect to be configured.
-For information about the accepted JSON format, xref:jvm_json_config[JVM Options].
+For information about the accepted JSON format, xref:jvm-json-config-{context}[JVM Options].
 
 `affinity`::
 Node and Pod affinity for the Kafka Connect pods, as described in xref:affinity[Node and Pod Affinity].
