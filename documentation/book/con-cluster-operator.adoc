@@ -14,7 +14,7 @@ image::cluster_operator.png[Cluster Operator]
 
 When the Cluster Operator is up, it _watches_ for certain {ProductPlatformName} resources containing the desired Kafka or Kafka Connect cluster configuration. A `Kafka` resource is used for the Kafka cluster configuration, and a `KafkaConnect` resource is used for Kafka Connect cluster configuration.
 
-When a new desired resource like `Kafka` or `KafkaConnect`resource is created in the {ProductPlatformName} cluster, the operator gets the cluster configuration of the desired resource and starts creating a new Kafka or Kafka Connect cluster by creating the necessary other {ProductPlatformName} resources, such as StatefulSets, Services, ConfigMaps, and so on.
+When a new desired resource like `Kafka` or `KafkaConnect` resource is created in the {ProductPlatformName} cluster, the operator gets the cluster configuration of the desired resource and starts creating a new Kafka or Kafka Connect cluster by creating the necessary other {ProductPlatformName} resources, such as StatefulSets, Services, ConfigMaps, and so on.
 
 Every time the desired resource is updated by the user, the operator performs corresponding updates on the {ProductPlatformName} resources which make up the Kafka or Kafka Connect cluster. Resources are either patched or deleted and then recreated in order to make the Kafka or Kafka Connect cluster reflect the state of the desired cluster resource. This might cause a rolling update and may lead to service disruption.
 
