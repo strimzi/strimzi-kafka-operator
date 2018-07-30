@@ -1,13 +1,19 @@
+##---
+# Source: strimzi-kafka-operator/templates/04-ClusterRoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
 metadata:
   name: strimzi-cluster-operator-topic-operator-delegation
   labels:
-    app: strimzi
+    app: strimzi-kafka-operator
+    chart: strimzi-kafka-operator-0.1.0
+    component: topic-operator-role-binding
+    release: RELEASE-NAME
+    heritage: Tiller
 subjects:
   - kind: ServiceAccount
     name: strimzi-cluster-operator
-    namespace: myproject
+    namespace: default
 roleRef:
   kind: ClusterRole
   name: strimzi-topic-operator

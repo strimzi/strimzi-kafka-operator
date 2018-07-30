@@ -1,0 +1,58 @@
+[id='changing-a-topic-{context}']
+= Changing a topic
+
+This procedure describes how to change the configuration of an existing Kafka topic by using a `KafkaTopic` {ProductPlatformName} resource.
+
+.Prerequisites
+
+* A running Kafka cluster.
+* A running Topic Operator.
+* An existing `KafkaTopic` to be changed.
+
+.Procedure
+
+. Prepare a file containing the desired `KafkaTopic`
++
+.Example `KafkaTopic`
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaTopicApiVersion}
+kind: KafkaTopic
+metadata:
+  name: orders
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  partitions: 16
+  replicas: 2
+----
++
+TIP: You can get the current version of the resource using `oc get kafkatopic orders -o yaml`.
++
+NOTE: Changing topic names using the `KafkaTopic.spec.topicName` variable and decreasing partition size using the `KafkaTopic.spec.partitions` variable is not supported by Kafka.
++
+CAUTION: Increasing `spec.partitions` for topics with keys will change how records are partitioned, which can be particularly problematic when the topic uses _semantic partitioning_.
+
+. Update the `KafkaTopic` resource in {ProductPlatformName}.
++
+ifdef::Kubernetes[]
+In {KubernetesName} this can be done using `kubectl`
++
+.Replacing the `KafkaTopic` resource using `kubctl replace`
+[source,shell,subs=+quotes]
+----
+kubectl replace -f _<your-file>_
+----
++
+In {OpenShiftName} this can be done using `oc`
+endif::Kubernetes[]
+ifndef::Kubernetes[]
+This can be done using `oc`
++
+endif::Kubernetes[]
++
+.Replacing the `KafkaTopic` resource using `oc replace`
+[source,shell,subs=+quotes]
+----
+oc replace -f _<your-file>_
+----

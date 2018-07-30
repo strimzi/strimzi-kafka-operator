@@ -22,11 +22,14 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
@@ -142,10 +145,6 @@ public final class TestUtils {
         } catch (IOException | URISyntaxException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    public static String readFile(String fileName) {
-        return readFile(new File(fileName));
     }
 
     public static String readFile(File file) {
@@ -274,5 +273,14 @@ public final class TestUtils {
 
     public static void assumeLinux() {
         assumeTrue(System.getProperty("os.name").contains("nux"));
+    }
+
+    /** Map Streams utility methods */
+    public static <K, V> Map.Entry<K, V> entry(K key, V value) {
+        return new AbstractMap.SimpleEntry<>(key, value);
+    }
+
+    public static <K, U> Collector<Map.Entry<K, U>, ?, Map<K, U>> entriesToMap() {
+        return Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue);
     }
 }

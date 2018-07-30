@@ -159,11 +159,17 @@ public class CrdGenerator {
 
     private final ObjectMapper mapper;
     private final JsonNodeFactory nf;
+    private final boolean writeHelmMetadata;
     private int numErrors;
 
     CrdGenerator(ObjectMapper mapper) {
+        this(mapper, false);
+    }
+
+    CrdGenerator(ObjectMapper mapper, boolean writeHelmMetadata) {
         this.mapper = mapper;
         this.nf = mapper.getNodeFactory();
+        this.writeHelmMetadata = writeHelmMetadata;
     }
 
     void generate(Class<? extends CustomResource> crdClass, Writer out) throws IOException {
@@ -182,6 +188,17 @@ public class CrdGenerator {
                     .put("kind", "CustomResourceDefinition")
                     .putObject("metadata")
                     .put("name", crd.spec().names().plural() + "." + crd.spec().group());
+
+            if (writeHelmMetadata) {
+                ((ObjectNode) node.get("metadata"))
+                        .putObject("labels")
+                        .put("app", "{{ template \"strimzi.name\" . }}")
+                        .put("chart", "{{ template \"strimzi.chart\" . }}")
+                        .put("component", crd.spec().names().plural() + "." + crd.spec().group() + "-crd")
+                        .put("release", "{{ .Release.Name }}")
+                        .put("heritage", "{{ .Release.Service }}");
+            }
+
             node.set("spec", buildSpec(crd.spec(), crdClass));
         }
         mapper.writeValue(out, node);
@@ -444,12 +461,15 @@ public class CrdGenerator {
 
     public static void main(String[] args) throws IOException, ClassNotFoundException {
         boolean yaml = false;
+        boolean helmMetadata = false;
         Map<String, Class<? extends CustomResource>> classes = new HashMap<>();
         for (int i = 0; i < args.length; i++) {
             String arg = args[i];
             if (arg.startsWith("--")) {
                 if (arg.equals("--yaml")) {
                     yaml = true;
+                } else if (arg.equals("--helm-metadata")) {
+                    helmMetadata = true;
                 } else {
                     throw new RuntimeException("Unsupported command line option " + arg);
                 }
@@ -465,9 +485,10 @@ public class CrdGenerator {
                 }
             }
         }
+
         CrdGenerator generator = new CrdGenerator(yaml ?
                 new YAMLMapper().configure(YAMLGenerator.Feature.MINIMIZE_QUOTES, true) :
-                new ObjectMapper());
+                new ObjectMapper(), helmMetadata);
         for (Map.Entry<String, Class<? extends CustomResource>> entry : classes.entrySet()) {
             File file = new File(entry.getKey());
             if (file.getParentFile().exists()) {

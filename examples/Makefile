@@ -7,7 +7,6 @@ release:
 	mkdir -p $(RELEASE_PATH)
 	cp -r ./install $(RELEASE_PATH)/
 	cp -r ./templates $(RELEASE_PATH)/
-	cp -r ./configmaps $(RELEASE_PATH)/
 	cp -r ./kafka $(RELEASE_PATH)/
 	cp -r ./kafka-connect $(RELEASE_PATH)/
 

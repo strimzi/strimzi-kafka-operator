@@ -7,15 +7,26 @@ The build also uses an Java annotation processor. Some IDEs (such as IntelliJ) d
 
 <!-- TOC depthFrom:2 -->
 
+- [Build Pre-requisites](#build-pre-requisites)
 - [Docker images](#docker-images)
     - [Building Docker images](#building-docker-images)
     - [Tagging and pushing Docker images](#tagging-and-pushing-docker-images)
 - [Building everything](#building-everything)
 - [Pushing images to the cluster's Docker repo](#pushing-images-to-the-clusters-docker-repo)
+- [Helm Chart](#helm-chart)
 - [Release](#release)
 - [Running system tests](#running-system-tests)
 
 <!-- /TOC -->
+
+## Build Pre-Requisites
+
+To build this project you must first install several command line utilities.
+
+- [`make`](https://www.gnu.org/software/make/) - Make build system
+- [`mvn`](https://maven.apache.org/index.html) - Maven CLI
+- [`helm`](https://helm.sh/) - Helm Package Management System for Kubernetes
+- [`asciidoctor`](https://asciidoctor.org/) - Documentation generation (use `gem` to install latest version for your platform)
 
 ## Docker images
 
@@ -50,7 +61,7 @@ environment variables:
 
 ## Building everything
 
-`make all` command can be used to triger all the tasks above - build the 
+`make all` command can be used to trigger all the tasks above - build the 
 Docker images, tag them and push them to the configured repository.
 
 `make` invokes Maven for packaging Java based applications (that is, Cluster Operator, Topic Operator, ...). 
@@ -103,6 +114,14 @@ you can push the images to OpenShift's Docker repo like this:
 
     oc create -f examples/configmaps/cluster-operator/kafka-ephemeral.yaml
 
+## Helm Chart
+
+The `strimzi-kafka-operator` Helm Chart can be installed directly from its source.
+
+    helm install ./helm-charts/strimzi-kafka-operator
+    
+The chart is also available in the release artifact as a tarball.
+
 ## Release
 
 `make release` target can be used to create a release. Environment variable 
@@ -127,7 +146,7 @@ The release process should normally look like this:
 6. Create the tag and push it to GitHub. Tag name determines the tag of the resulting Docker images. Therefore the Git 
 tag name has to be the same as the `RELEASE_VERSION`,
 7. Once the CI build for the tag is finished and the Docker images are pushed to Docker Hub, Create a GitHub release and tag based on the release branch. 
-Attach the TAR.GZ and ZIP archives to the release
+Attach the TAR.GZ/ZIP archives and the Helm Chart to the release
 8. On the `master` git branch, update the versions to the next SNAPSHOT version using the `next_version` `make` target. 
 For example to update the next version to `0.6.0-SNAPSHOT` run: `make NEXT_VERSION=0.6.0-SNAPSHOT next_version`.
 
@@ -142,6 +161,24 @@ To execute an expected group of system tests need to add system property `junitg
 `-Djunitgroup=all` - to execute all test groups
 
 If `junitgroup` system property isn't defined, all tests without an explicitly declared test group will be executed.
+
+### Helper script
+
+The `./systemtest/scripts/run_tests.sh` script can be used to run the `systemtests` using the same configuration as used 
+in the travis build.  You can use this script to easily run the `systemtests` project.
+
+Pass additional parameters to `mvn` by populating the `EXTRA_ARGS` env var.
+
+    EXTRA_ARGS="-Dfoo=bar" ./systemtest/scripts/run_tests.sh
+    
+### Running single test class
+
+Use the `test` build goal and provide a `-Dtest=TestClassName` system property.
+
+Ex)
+
+    mvn test -pl systemtest -Djava.net.preferIPv4Stack=true -DtrimStackTrace=false -Djunitgroup=acceptance,regression -Dtest=KafkaClusterIT
+
 
 ### Log level
 
