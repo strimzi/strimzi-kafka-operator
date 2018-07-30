@@ -123,7 +123,8 @@ public class ExamplesTest {
             if (isGetter(method)) {
                 Object result = method.invoke(resource);
                 if (result != null
-                    && !result.getClass().isPrimitive()) {
+                    && !result.getClass().isPrimitive()
+                    && !result.getClass().isEnum()) {
                     path.push(method.getName());
                     recurseForAdditionalProperties(path, result);
                     path.pop();

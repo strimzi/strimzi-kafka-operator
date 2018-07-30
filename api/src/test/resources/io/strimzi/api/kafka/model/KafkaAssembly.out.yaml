@@ -13,6 +13,13 @@ spec:
       type: "persistent-claim"
       size: "500Gi"
       deleteClaim: false
+    listeners:
+      plain: {}
+      tls:
+        authentication:
+          type: "tls"
+    authorization:
+      type: "simple"
     config:
       min.insync.replicas: 3
     brokerRackInitImage: "strimzi/kafka-init:latest"
