@@ -18,6 +18,8 @@ import io.strimzi.api.kafka.model.KafkaConnectAssembly;
 import io.strimzi.api.kafka.model.KafkaConnectAssemblyBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectS2IAssembly;
 import io.strimzi.api.kafka.model.KafkaConnectS2IAssemblyBuilder;
+import io.strimzi.api.kafka.model.KafkaListenerPlain;
+import io.strimzi.api.kafka.model.KafkaListenerTls;
 import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
@@ -203,6 +205,10 @@ public class ResourceUtils {
                 .editSpec()
                 .editKafka()
                     .withLogging(kafkaLogging)
+                    .withNewListeners()
+                        .withPlain(new KafkaListenerPlain())
+                        .withTls(new KafkaListenerTls())
+                    .endListeners()
                 .endKafka()
                 .editZookeeper()
                     .withLogging(zkLogging)
