@@ -108,9 +108,9 @@ Default is 15.
 The timeout on the readiness probe for each Zookeeper node.
 Default is 5.
 `spec.zookeeper.config`::
-The Zookeeper configuration. For more information, see xref:zookeeper_configuration_json_config[Zookeeper Configuration].
+The Zookeeper configuration. For more information, see xref:zookeeper_configuration_json_config-{context}[Zookeeper Configuration].
 `spec.zookeeper.storage`::
-The storage configuration for the Zookeeper nodes. For more information, see xref:storage_configuration_json_config[Storage].
+The storage configuration for the Zookeeper nodes. For more information, see xref:storage_configuration_json_config-{context}[Storage].
 `spec.zookeeper.metrics`::
 The JMX exporter configuration for exposing metrics from Zookeeper nodes.
 When this field is absent no metrics will be exposed.
@@ -209,18 +209,18 @@ spec:
 
 The resources created by the Cluster Operator in the {ProductPlatformName} cluster will be the following :
 
-`[cluster-name]-zookeeper`:: StatefulSet which is in charge of managing the Zookeeper node pods
-`[cluster-name]-kafka`:: StatefulSet which is in charge of managing the Kafka broker pods
-`[cluster-name]-zookeeper-nodes`:: Service needed to have DNS resolve the Zookeeper pods IP addresses directly
-`[cluster-name]-kafka-brokers`:: Service needed to have DNS resolve the Kafka broker pods IP addresses directly
-`[cluster-name]-zookeeper-client`:: Service used by Kafka brokers to connect to Zookeeper nodes as clients
-`[cluster-name]-kafka-bootstrap`:: Service can be used as bootstrap servers for Kafka clients
-`[cluster-name]-zookeeper-metrics-config`:: ConfigMap which contains the Zookeeper metrics configuration and mounted as a volume by the Zookeeper node pods
-`[cluster-name]-kafka-metrics-config`:: ConfigMap which contains the Kafka metrics configuration and mounted as a volume by the Kafka broker pods
+`[cluster-name]-zookeeper`:: StatefulSet which is in charge of managing the Zookeeper node pods.
+`[cluster-name]-kafka`:: StatefulSet which is in charge of managing the Kafka broker pods.
+`[cluster-name]-zookeeper-nodes`:: Service needed to have DNS resolve the Zookeeper pods IP addresses directly.
+`[cluster-name]-kafka-brokers`:: Service needed to have DNS resolve the Kafka broker pods IP addresses directly.
+`[cluster-name]-zookeeper-client`:: Service used by Kafka brokers to connect to Zookeeper nodes as clients.
+`[cluster-name]-kafka-bootstrap`:: Service can be used as bootstrap servers for Kafka clients.
+`[cluster-name]-zookeeper-metrics-config`:: ConfigMap which contains the Zookeeper metrics configuration and mounted as a volume by the Zookeeper node pods.
+`[cluster-name]-kafka-metrics-config`:: ConfigMap which contains the Kafka metrics configuration and mounted as a volume by the Kafka broker. pods
 `[cluster-name]-zookeeper-config`::
-ConfigMap which contains the Zookeeper ancillary configuration and is mounted as a volume by the Zookeeper node pods
+ConfigMap which contains the Zookeeper ancillary configuration and is mounted as a volume by the Zookeeper node pods.
 `[cluster-name]-kafka-config`::
-ConfigMap which contains the Kafka ancillary configuration and is mounted as a volume by the Kafka broker pods
+ConfigMap which contains the Kafka ancillary configuration and is mounted as a volume by the Kafka broker pods.
 
 [id='kafka_configuration_json_config-{context}']
 == Kafka configuration
@@ -294,7 +294,8 @@ spec:
     # ...
 ----
 
-NOTE:: The Cluster Operator does not validate keys or values in the provided `config` object.
+[WARNING]
+The Cluster Operator does not validate keys or values in the provided `config` object.
 When invalid configuration is provided, the Kafka cluster might not start or might become unstable.
 In such cases, the configuration in the `spec.kafka.config` object should be fixed and the cluster operator will roll out the new configuration to all Kafka brokers.
 
@@ -359,7 +360,8 @@ Selected options have default values:
 
 These options will be automatically configured in case they are not present in the `spec.zookeeper.config` object.
 
-NOTE:: The Cluster Operator does not validate keys or values in the provided `config` object.
+[WARNING]
+The Cluster Operator does not validate keys or values in the provided `config` object.
 When invalid configuration is provided, the Zookeeper cluster might not start or might become unstable.
 In such cases, the configuration in the `spec.zookeeper.config` object should be fixed and the cluster operator will roll out the new configuration to all Zookeeper nodes.
 
@@ -368,14 +370,15 @@ In such cases, the configuration in the `spec.zookeeper.config` object should be
 
 Both Kafka and Zookeeper save data to files.
 
-{ProductName} allows to save such data in an "ephemeral" way (using `emptyDir`) or in a "persistent-claim" way using persistent volumes.
+{ProductName} allows to save such data in an _ephemeral_ way using `emptyDir` or in a _persistent-claim_ way using persistent volumes.
 It is possible to provide the storage configuration in the `spec.kafka.storage` and `spec.zookeeper.storage` objects.
 
-IMPORTANT: The `spec.kafka.storage` and `spec.zookeeper.storage` objects cannot be changed when the cluster is up.
+[IMPORTANT]
+The `spec.kafka.storage` and `spec.zookeeper.storage` objects cannot be changed when the cluster is up.
 
-The storage object has a mandatory `type` field for specifying the type of storage to use which must be either "ephemeral" or "persistent-claim".
+The storage object has a mandatory `type` field for specifying the type of storage to use which must be either _ephemeral_ or _persistent-claim_.
 
-The _ephemeral_ storage is really simple to configure.
+The _ephemeral_ storage is simple to configure.
 
 .Example fragment of a `Kafka` resource using `ephemeral` storage for Kafka pods
 [source,json]
@@ -397,18 +400,16 @@ WARNING: If the Zookeeper cluster is deployed using _ephemeral_ storage, the Kaf
 In case of _persistent-claim_ type the following fields can be provided as well:
 
 `size` (required)::
-defines the size of the persistent volume claim, for example, _1Gi_.
+Defines the size of the persistent volume claim, for example, _1Gi_.
 
 `class` (optional)::
-the {ProductPlatformName} link:https://kubernetes.io/docs/concepts/storage/storage-classes/[storage class^] to use for dynamic volume allocation.
+The {ProductPlatformName} link:https://kubernetes.io/docs/concepts/storage/storage-classes/[storage class^] to use for dynamic volume allocation.
 
 `selector` (optional)::
-allows to select a specific persistent volume to use.
-It contains a `matchLabels` field which contains key:value pairs representing labels for selecting such a volume.
+Allows to select a specific persistent volume to use. It contains a `matchLabels` field which contains key:value pairs representing labels for selecting such a volume.
 
 `delete-claim` (optional)::
-boolean value which specifies if the persistent volume claim has to be deleted when the cluster is undeployed.
-Default is `false`.
+Boolean value which specifies if the persistent volume claim has to be deleted when the cluster is undeployed. The default value is `false`.
 
 .Example fragment of a `Kafka` resource configuring Kafka with `persistent-storage` and 1Gi `size`
 [source,json]
@@ -445,7 +446,7 @@ spec:
     # ...
 ----
 
-Finally, a `selector` can be used in order to select a specific labelled persistent volume which provides some needed features (such as an SSD)
+Lastly, a `selector` can be used in order to select a specific labelled persistent volume which provides some needed features like an SSD.
 
 .Example fragment of a `Kafka` resource configuring Kafka with _match labels_ selector
 [source,json]
@@ -467,7 +468,7 @@ spec:
     # ...
 ----
 
-When the "persistent-claim" is used, other than the resources already described in the xref:kafka-config-map-details-{context}[Kafka] section, the following resources are generated :
+When the _persistent-claim_ is used, other than the resources already described in the xref:kafka-config-map-details-{context}[Kafka] section, the following resources are generated :
 
 `data-[cluster-name]-kafka-[idx]`::
 Persistent Volume Claim for the volume used for storing data for the Kafka broker pod `[idx]`.
@@ -475,8 +476,9 @@ Persistent Volume Claim for the volume used for storing data for the Kafka broke
 `data-[cluster-name]-zookeeper-[idx]`::
 Persistent Volume Claim for the volume used for storing data for the Zookeeper node pod `[idx]`.
 
-See xref:type-EphemeralStorage[`EphemeralStorage` type v1alpha1 kafka.strimzi.io] and xref:type-PersistentClaimStorage[`PersistentClaimStorage` type v1alpha1 kafka.strimzi.io] for further details.
+See xref:type-EphemeralStorage[`EphemeralStorage` type v1alpha1 kafka.strimzi.io] and xref:type-PersistentClaimStorage[`PersistentClaimStorage` type v1alpha1 kafka.strimzi.io] for more information.
 
+[id='metrics-{context}]
 == Metrics
 
 {ProductName} uses the link:https://github.com/prometheus/jmx_exporter[Prometheus JMX exporter^] in order to expose metrics on each node.
@@ -485,7 +487,6 @@ In all cases the `metrics` object should be the configuration for the JMX export
 You can find more information on how to use it in the corresponding GitHub repo.
 
 For more information about using the metrics with Prometheus and Grafana, see xref:metrics[Metrics]
-
 
 [id='logging-examples-{context}']
 == Logging

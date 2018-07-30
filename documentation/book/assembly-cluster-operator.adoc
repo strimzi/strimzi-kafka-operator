@@ -8,46 +8,30 @@ include::common/attributes.adoc[]
 {ProductName} uses the Cluster Operator to deploy and manage Kafka (including Zookeeper) and Kafka Connect
 clusters.
 
-:context: str
 include::con-cluster-operator.adoc[leveloffset=+1]
 
-:context: str
 include::con-reconciliation.adoc[leveloffset=+1]
 
-:context: str
 include::con-resource-format.adoc[leveloffset=+1]
 
-:context: str
 include::con-resource-kafka.adoc[leveloffset=+2]
 
-:context: str
 include::con-resource-kafka-connect.adoc[leveloffset=+2]
 
-:context: str
 include::con-kafka-connect-configuration.adoc[leveloffset=+3]
 
-:context: str
 include::con-kafka-connect-logging.adoc[leveloffset=+3]
 
-:context: str
 include::con-resource-RBAC.adoc[leveloffset=+1]
 
-:context: str
 include::con-delegated-previliges.adoc[leveloffset=+2]
 
-:context: str
-
-:context: str
 include::con-use-service-account.adoc[leveloffset=+2]
 
-:context: str
 include::con-define-cluster-roles.adoc[leveloffset=+2]
 
-:context: str
 include::con-define-cluster-roles-bindings.adoc[leveloffset=+2]
 
-:context: str
 include::con-operator-configuration.adoc[leveloffset=+1]
 
-:context: str
 include::con-watching-multiple-namespaces.adoc[leveloffset=+2]
