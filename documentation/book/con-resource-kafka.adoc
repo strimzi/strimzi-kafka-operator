@@ -1,4 +1,4 @@
-[id='kafka-config-map-details_{context}']
+[id='kafka-config-map-details-{context}']
 = Kafka resource configurations
 
 The table below lists the fields that you can use when configuring a Kafka cluster deployment. A dot is used to denote a nexted YAML object.
@@ -15,7 +15,7 @@ The table below lists the fields that you can use when configuring a Kafka clust
 |3
 
 |`spec.kafka.image`
-|The Docker image to be used by the Kafka brokers.The default value is determined by the value specified in the xref:STRIMZI_DEFAULT_KAFKA_IMAGE[`STRIMZI_DEFAULT_KAFKA_IMAGE`] environment variable of the Cluster Operator.
+|The Docker image to be used by the Kafka brokers. The default value is determined by the value specified in the xref:STRIMZI_DEFAULT_KAFKA_IMAGE[`STRIMZI_DEFAULT_KAFKA_IMAGE`] environment variable of the Cluster Operator.
 |
 
 |`spec.kafka.brokerRackInitImage`
@@ -467,7 +467,7 @@ spec:
     # ...
 ----
 
-When the "persistent-claim" is used, other than the resources already described in the xref:kafka-config-map-details_{context}[Kafka] section, the following resources are generated :
+When the "persistent-claim" is used, other than the resources already described in the xref:kafka-config-map-details-{context}[Kafka] section, the following resources are generated :
 
 `data-[cluster-name]-kafka-[idx]`::
 Persistent Volume Claim for the volume used for storing data for the Kafka broker pod `[idx]`.
