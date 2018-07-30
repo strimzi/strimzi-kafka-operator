@@ -490,10 +490,9 @@ For more information about using the metrics with Prometheus and Grafana, see xr
 
 [id='logging-examples-{context}']
 == Logging
-The `logging` field allows the configuration of loggers. These loggers for Zookeeper and Kafka are available in the xref:spec.zookeeper.logging-{context}[`spec.zookeeper.logging` and xref:spec.kafka.logging-{context}[`spec.kafka.logging`] sections respectively.
+The `logging` field allows the configuration of loggers. These loggers for Zookeeper and Kafka are available in the xref:spec.zookeeper.logging-{context}[`spec.zookeeper.logging`] and xref:spec.kafka.logging-{context}[`spec.kafka.logging`] sections respectively.
 
-The setting can be done in one of two ways. Either by specifying the loggers and their levels directly or by using a custom configuration map.
-An example would look like this:
+The setting can be done in two different ways. Either by specifying the loggers and their levels directly or by using a custom configuration map. The following is an example of loggers level setting:
 
 [source,yaml]
 ----
@@ -503,7 +502,7 @@ An example would look like this:
       logger.name: "INFO"
 ----
 The `INFO` can be replaced with any log4j logger level. The available logger levels are `INFO`, `ERROR`, `WARN`, `TRACE`, `DEBUG`, `FATAL` or `OFF`.
-The informations about log levels can be found in the link:https://logging.apache.org/log4j/2.x/manual/customloglevels.html[log4j manual^].
+For information about log levels, see link:https://logging.apache.org/log4j/2.x/manual/customloglevels.html[log4j manual^].
 
 [source,yaml]
 ----
@@ -522,7 +521,7 @@ The first option supports default values.
 [id='resources_json_config-{context}']
 == Resource limits and requests
 
-It is possible to configure {ProductPlatformName} resource limits and requests on for the `kafka`, `zookeeper` and `topicOperator` objects in the `Kafka` resource and for for the `spec` object of the `KafkaConnect resource.
+It is possible to configure {ProductPlatformName} resource limits and requests on for the `kafka`, `zookeeper` and `topicOperator` objects in the `Kafka` resource and for the `spec` object of the `KafkaConnect` resource.
 The object may have a `requests` and a `limits` property, each having the same schema, consisting of `cpu` and `memory` properties.
 The {ProductPlatformName} syntax is used for the values of `cpu` and `memory`.
 
@@ -550,20 +549,23 @@ spec:
 :k8s-resource-request-limit-docs-link: https://{k8s-docs-version}.docs.kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
 
 `requests.memory`::
-the memory request for the container, corresponding directly to {k8s-resource-request-limit-docs-link}[`spec.containers[\].resources.requests.memory`] setting.
+The memory request for the container, corresponding directly to {k8s-resource-request-limit-docs-link}[`spec.containers[\].resources.requests.memory`] setting.
 {ProductPlatformName} will ensure the containers have at least this much memory by running the pod on a node with at
-least as much free memory as all the containers require. Optional with no default.
+least as much free memory as all the containers require. The field is optional with no default value.
+
 `requests.cpu`::
-the cpu request for the container, corresponding directly to {k8s-resource-request-limit-docs-link}[`spec.containers[\].resources.requests.cpu`] setting.
-{ProductPlatformName} will ensure the containers have at least this much CPU by running the pod on a node with at least
-as much uncommitted CPU as all the containers require. Optional with no default.
+The CPU request for the container, corresponding directly to {k8s-resource-request-limit-docs-link}[`spec.containers[\].resources.requests.cpu`] setting.
+{ProductPlatformName} will ensure the containers have at least the specified CPU by running the pod on a node with maximum uncommitted CPU as all the containers would require. The field is optional with no default value.
+
+
 `limits.memory`::
-the memory limit for the container, corresponding directly to {k8s-resource-request-limit-docs-link}[`spec.containers[\].resources.limits.memory`] setting.
+The memory limit for the container, corresponding directly to {k8s-resource-request-limit-docs-link}[`spec.containers[\].resources.limits.memory`] setting.
 {ProductPlatformName} will limit the containers to this much memory, potentially terminating their pod if they use more.
-Optional with no default.
+The field is optional with no default value.
+
 `limits.cpu`::
-the cpu limit for the container, corresponding directly to {k8s-resource-request-limit-docs-link}[`spec.containers[\].resources.limits.cpu`] setting.
-{ProductPlatformName} will cap the containers CPU usage to this limit. Optional with no default.
+The CPU limit for the container, corresponding directly to {k8s-resource-request-limit-docs-link}[`spec.containers[\].resources.limits.cpu`] setting.
+{ProductPlatformName} will cap the containers CPU usage to this limit. The field is optional with no default value.
 
 More details about resource limits and requests can be found on {k8s-resource-request-limit-docs-link}[{KubernetesName} website].
 
