@@ -7,7 +7,8 @@ package io.strimzi.operator.user;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
-import io.strimzi.operator.user.model.Labels;
+
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.user.operator.KafkaUserOperator;
 
 import io.vertx.core.AbstractVerticle;

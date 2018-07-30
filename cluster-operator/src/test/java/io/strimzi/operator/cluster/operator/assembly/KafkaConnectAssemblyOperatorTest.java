@@ -534,7 +534,7 @@ public class KafkaConnectAssemblyOperatorTest {
             }
             @Override
             public void delete(Reconciliation reconciliation, Handler h) {
-                deleted.add(reconciliation.assemblyName());
+                deleted.add(reconciliation.name());
                 async.countDown();
                 h.handle(Future.succeededFuture());
             }

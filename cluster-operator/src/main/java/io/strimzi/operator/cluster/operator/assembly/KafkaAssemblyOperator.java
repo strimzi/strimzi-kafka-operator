@@ -366,7 +366,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
     private final Future<CompositeFuture> deleteKafka(Reconciliation reconciliation) {
         String namespace = reconciliation.namespace();
-        String name = reconciliation.assemblyName();
+        String name = reconciliation.name();
         log.debug("{}: delete kafka {}", reconciliation, name);
         String kafkaSsName = KafkaCluster.kafkaClusterName(name);
         StatefulSet ss = kafkaSetOperations.get(namespace, kafkaSsName);
@@ -451,7 +451,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
     private final Future<CompositeFuture> deleteZk(Reconciliation reconciliation) {
         String namespace = reconciliation.namespace();
-        String name = reconciliation.assemblyName();
+        String name = reconciliation.name();
         log.debug("{}: delete zookeeper {}", reconciliation, name);
         String zkSsName = ZookeeperCluster.zookeeperClusterName(name);
         StatefulSet ss = zkSetOperations.get(namespace, zkSsName);
@@ -536,7 +536,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
     private final Future<CompositeFuture> deleteTopicOperator(Reconciliation reconciliation) {
         String namespace = reconciliation.namespace();
-        String name = reconciliation.assemblyName();
+        String name = reconciliation.name();
         log.debug("{}: delete topic operator {}", reconciliation, name);
 
         List<Future> result = new ArrayList<>(3);

@@ -117,7 +117,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
     protected void delete(Reconciliation reconciliation, Handler<AsyncResult<Void>> handler) {
         if (isOpenShift) {
             String namespace = reconciliation.namespace();
-            String assemblyName = reconciliation.assemblyName();
+            String assemblyName = reconciliation.name();
             String clusterName = KafkaConnectS2ICluster.kafkaConnectClusterName(assemblyName);
 
             CompositeFuture.join(serviceOperations.reconcile(namespace, KafkaConnectS2ICluster.serviceName(assemblyName), null),

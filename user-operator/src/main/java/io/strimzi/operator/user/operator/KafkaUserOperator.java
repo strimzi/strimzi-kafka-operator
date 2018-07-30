@@ -15,11 +15,12 @@ import io.strimzi.api.kafka.DoneableKafkaUser;
 import io.strimzi.api.kafka.KafkaUserList;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.certs.CertManager;
-import io.strimzi.operator.user.Reconciliation;
+import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.ResourceType;
+import io.strimzi.operator.common.operator.resource.CrdOperator;
+import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.user.model.KafkaUserModel;
-import io.strimzi.operator.user.model.Labels;
-import io.strimzi.operator.user.operator.resource.CrdOperator;
-import io.strimzi.operator.user.operator.resource.SecretOperator;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -203,7 +204,7 @@ public class KafkaUserOperator {
         CountDownLatch latch = new CountDownLatch(desiredNames.size());
 
         for (String name: desiredNames) {
-            Reconciliation reconciliation = new Reconciliation(trigger, RESOURCE_KIND, namespace, name);
+            Reconciliation reconciliation = new Reconciliation(trigger, ResourceType.USER, namespace, name);
             reconcile(reconciliation, result -> {
                 handleResult(reconciliation, result);
                 latch.countDown();
@@ -247,7 +248,7 @@ public class KafkaUserOperator {
                             case ADDED:
                             case DELETED:
                             case MODIFIED:
-                                Reconciliation reconciliation = new Reconciliation("watch", RESOURCE_KIND, namespace, name);
+                                Reconciliation reconciliation = new Reconciliation("watch", ResourceType.USER, namespace, name);
                                 log.info("{}: {} {} in namespace {} was {}", reconciliation, RESOURCE_KIND, name, namespace, action);
                                 reconcile(reconciliation, result -> {
                                     handleResult(reconciliation, result);

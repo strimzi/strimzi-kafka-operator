@@ -429,10 +429,10 @@ public class KafkaAssemblyOperatorTest {
 
             /*Set<String> metricsNames = new HashSet<>();
             if (kafkaCluster.isMetricsEnabled()) {
-                metricsNames.add(KafkaCluster.metricConfigsName(assemblyName));
+                metricsNames.add(KafkaCluster.metricConfigsName(name));
             }
             if (zookeeperCluster.isMetricsEnabled()) {
-                metricsNames.add(ZookeeperCluster.zookeeperMetricsName(assemblyName));
+                metricsNames.add(ZookeeperCluster.zookeeperMetricsName(name));
             }
             context.assertEquals(metricsNames, captured(metricsCaptor));*/
             verify(mockZsOps).reconcile(eq(assemblyNamespace), eq(ZookeeperCluster.zookeeperClusterName(assemblyName)), isNull());
@@ -934,7 +934,7 @@ public class KafkaAssemblyOperatorTest {
             }
             @Override
             public void delete(Reconciliation reconciliation, Handler h) {
-                deleted.add(reconciliation.assemblyName());
+                deleted.add(reconciliation.name());
                 async.countDown();
                 h.handle(Future.succeededFuture());
             }

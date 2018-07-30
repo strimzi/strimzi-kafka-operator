@@ -22,14 +22,14 @@ public class Reconciliation {
     private final String trigger;
     private final ResourceType type;
     private final String namespace;
-    private final String assemblyName;
+    private final String name;
     private final int id;
 
     public Reconciliation(String trigger, ResourceType type, String namespace, String assemblyName) {
         this.trigger = trigger;
         this.type = type;
         this.namespace = namespace;
-        this.assemblyName = assemblyName;
+        this.name = assemblyName;
         this.id = IDS.getAndIncrement();
     }
 
@@ -41,11 +41,11 @@ public class Reconciliation {
         return namespace;
     }
 
-    public String assemblyName() {
-        return assemblyName;
+    public String name() {
+        return name;
     }
 
     public String toString() {
-        return "Reconciliation #" + id + "(" + trigger + ") " + type() + "(" + namespace() + "/" + assemblyName() + ")";
+        return "Reconciliation #" + id + "(" + trigger + ") " + type() + "(" + namespace() + "/" + name() + ")";
     }
 }
