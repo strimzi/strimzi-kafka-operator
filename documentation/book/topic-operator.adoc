@@ -10,10 +10,13 @@
 [id='topic-operator-{context}']
 = Topic Operator
 
+:context: str
 include::con-what-the-topic-operator-does.adoc[leveloffset=+1]
 
+:context: str
 include::con-how-the-topic-operator-works.adoc[leveloffset=+1]
 
+:context: str
 include::ref-topic-operator-usage-recommendation.adoc[leveloffset=+1]
 
 [id='format-of-the-kafkatopic-{context}']
@@ -21,12 +24,16 @@ include::ref-topic-operator-usage-recommendation.adoc[leveloffset=+1]
 
 For detailed reference of the API for `KafkaTopic` see xref:type-KafkaTopic[`KafkaTopic` API documentation].
 
+:context: str
 include::proc-creating-a-topic.adoc[leveloffset=+1]
 
+:context: str
 include::proc-changing-a-topic.adoc[leveloffset=+1]
 
+:context: str
 include::proc-deleting-a-topic.adoc[leveloffset=+1]
 
+:context: str
 include::ref-topic-operator-environment.adoc[leveloffset=+1]
 
 == Resource limits and requests
