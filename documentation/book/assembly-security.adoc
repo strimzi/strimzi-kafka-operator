@@ -12,8 +12,8 @@ include::common/attributes.adoc[]
 [id='security-{context}']
 = Security
 
-The Strimzi project supports data encryption of communication between the different Kafka and Strimzi components (Kafka brokers, Zookeeper nodes, Kafka Connect and Strimzi Topic Operator) by means of the SSL/TLS protocol.
-This makes it possible to encrypt data transferred between Kafka brokers (interbroker communication), between Zookeeper nodes (internodal communication), and between clients and Kafka brokers. For the Kafka and Strimzi components, TLS certificates are also used for authentication.
+The Strimzi project supports data encryption of communication between the different Kafka and Strimzi components (Kafka brokers, Zookeeper nodes, Kafka Connect and Strimzi Topic Operator) through the SSL/TLS protocol.
+Using SSL/TLS protocol, it can encrypt data transferred between Kafka brokers (interbroker communication), between Zookeeper nodes (internodal communication), and between clients and Kafka brokers. For the Kafka and Strimzi components, TLS certificates are also used for authentication.
 
 The Cluster Operator sets up the SSL/TLS certificates to provide this encryption and authentication.
 

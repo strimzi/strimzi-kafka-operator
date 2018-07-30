@@ -9,14 +9,14 @@ If a Kafka client wants to connect to the encrypted listener (`CLIENTTLS`) on po
 The cluster CA certificate can be extracted from the generated `_cluster-name_-cluster-ca-cert` `Secret`.
 
 ifdef::Kubernetes[]
-On {KubernetesName}, the certificate can be extracted with the following command:
+On {KubernetesName}, extract the certificate using the following command:
 
 [source,shell]
 kubectl get secret <cluster-name>-cluster-ca-cert -o jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
 
 endif::Kubernetes[]
 
-On {OpenShiftName}, the certificate can be extracted with the following command:
+On {OpenShiftName}, extract the certificate using the following command:
 
 [source,shell]
 oc get secret <cluster-name>-cluster-ca-cert -o jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
@@ -34,4 +34,4 @@ Lastly, specify the following properties to configure the Kafka client:
 * `ssl.truststore.password`: password for accessing the truststore. This property can be omitted if it is not needed by the truststore.
 
 The current implementation does not support Subject Alternative Names (SAN) so the hostname verification should be disabled on the client side.
-For doing so the `ssl.endpoint.identification.algorithm` property needs to be set as empty.
+To disable, do not specify any value in the `ssl.endpoint.identification.algorithm` property.
