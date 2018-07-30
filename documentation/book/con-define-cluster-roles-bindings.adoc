@@ -1,5 +1,5 @@
 [id='define-cluster-roles-bindings{context}']
-= Defining `ClusterRolesBindings`
+= Define `ClusterRolesBindings`
 
 The operator needs a `ClusterRoleBinding` which associates its `ClusterRole` with its `ServiceAccount`:
 

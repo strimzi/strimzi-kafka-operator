@@ -1,13 +1,13 @@
 [id='define-cluster-roles-{context}']
-= Defining `ClusterRoles`
+= Define `ClusterRoles`
 
-The Cluster Operator needs to operate using `ClusterRoles` that give it access to the necessary resources.
-Depending on the {ProductPlatformName} cluster setup, a cluster administrator might be needed to create the `ClusterRoles`.
+The Cluster Operator needs to operate using `ClusterRoles` that gives access to the necessary resources.
+Depending on the {ProductPlatformName} cluster setup, a cluster administrator may need to create the `ClusterRoles`.
 
-NOTE: Cluster administrator rights are only needed for the creation of the `ClusterRoles`.
-The Cluster Operator will not run under the cluster admin account.
+[NOTE]
+Cluster administrator rights are only needed for the creation of the `ClusterRoles`. The Cluster Operator will not run under the cluster admin account.
 
-The `ClusterRoles` follow the "principle of least privilege" and contain only those privileges needed by the Cluster Operator to operate Kafka, Kafka Connect, and Zookeeper clusters. The first set of assigned privileges allow the Cluster Operator to manage {ProductPlatformName} resources such as `StatefulSets`, `Deployments`, `Pods`, and `ConfigMaps`.
+The `ClusterRoles` follow the _principle of least privilege_ and contain only those privileges needed by the Cluster Operator to operate Kafka, Kafka Connect, and Zookeeper clusters. The first set of assigned privileges allow the Cluster Operator to manage {ProductPlatformName} resources such as `StatefulSets`, `Deployments`, `Pods`, and `ConfigMaps`.
 
 [source,yaml,options="nowrap"]
 .Example `Role` for the Cluster Operator

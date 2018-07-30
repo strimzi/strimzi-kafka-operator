@@ -3,13 +3,13 @@
 
 The `STRIMZI_NAMESPACE` environment variable can be used to configure a single operator instance
 to operate in multiple namespaces. For each namespace given, the operator will watch for cluster ConfigMaps
-and perform periodic reconciliation. To be able to do this, the operator's ServiceAccount needs
+and perform periodic reconciliation. To be able to do this, the operator's `ServiceAccount` needs
 access to the necessary resources in those other namespaces. This can be done by creating an additional
 RoleBinding in each of those namespaces, associating the operator's ServiceAccount
 (`strimzi-cluster-operator` in the examples) with the operator's
 Role (`strimzi-operator-role` in the examples).
 
-Suppose, for example, that a operator deployed in namespace `foo` needs to operate in namespace `bar`.
+In the following example, the operator deployed in namespace `foo` and needs to operate in namespace `bar`.
 The following RoleBinding would grant the necessary permissions:
 
 .Example RoleBinding for a operator to operate in namespace `bar`

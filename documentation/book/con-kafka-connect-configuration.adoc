@@ -12,7 +12,7 @@ This object should contain the Kafka Connect configuration options as keys. The 
 The `config` object supports all Kafka Connect configuration options with the exception of options related to:
 
 * Security (Encryption, Authentication and Authorization)
-* Listener / REST interface configuration
+* Listener or REST interface configuration
 * Plugin path configuration
 
 Specifically, all configuration options with keys starting with one of the following strings will be ignored:
@@ -56,21 +56,45 @@ spec:
 }
 ----
 
-Selected options have default values:
+The following lists the options of the above example and its default values:
 
-* `group.id` with default value `connect-cluster`
-* `offset.storage.topic` with default value `connect-cluster-offsets`
-* `config.storage.topic` with default value `connect-cluster-configs`
-* `status.storage.topic` with default value `connect-cluster-status`
-* `key.converter` with default value `org.apache.kafka.connect.json.JsonConverter`
-* `value.converter` with default value `org.apache.kafka.connect.json.JsonConverter`
-* `internal.key.converter` with default value `org.apache.kafka.connect.json.JsonConverter`
-* `internal.value.converter` with default value `org.apache.kafka.connect.json.JsonConverter`
-* `internal.key.converter.schemas.enable` with default value `false`
-* `internal.value.converter.schemas.enable` with default value `false`
+[cols="50%,50%,options="header"]
+|===
+|Option
+|Default Value
+
+|`group.id`
+|`my-connect-cluster`
+
+|`offset.storage.topic` 
+|`my-connect-cluster-offsets`
+
+|`config.storage.topic` 
+|`my-connect-cluster-configs`
+
+|`status.storage.topic` 
+|`my-connect-cluster-status`
+
+|`key.converter` 
+|`org.apache.kafka.connect.json.JsonConverter`
+
+|`value.converter`
+|`org.apache.kafka.connect.json.JsonConverter`
+
+|`internal.key.converter`
+|`org.apache.kafka.connect.json.JsonConverter`
+
+|`internal.value.converter` 
+|`org.apache.kafka.connect.json.JsonConverter`
+
+|`internal.key.converter.schemas.enable` 
+|`false`
+
+|`internal.value.converter.schemas.enable`
+|`false`
+|===
 
 These options will be automatically configured in case they are not present in the `config` object.
 
-INFO:: The Cluster Operator does not validate the provided configuration.
-When invalid configuration is provided, the Kafka Connect cluster might not start or might become unstable.
-In such cases, the configuration in the `config` object should be fixed and the Cluster Operator will roll out the new configuration to all Kafka Connect instances.
+[NOTE]
+The Cluster Operator does not validate the provided configuration. When an invalid configuration is provided, the Kafka Connect cluster might not start or might become unstable. In such cases, the configuration in the `config` object should be fixed and the Cluster Operator will roll out the new configuration to all Kafka Connect instances.

@@ -3,11 +3,11 @@
 
 When the Cluster Operator deploys resources for a desired `Kafka` resource it also creates `ServiceAccounts`, `RoleBindings` and `ClusterRoleBindings`, as follows:
 
-* The Kafka broker pods use a `ServiceAccount` called `_cluster-name_-kafka` 
-  - When the rack feature is used, the `strimzi-_cluster-name_-kafka-init` `ClusterRoleBinding` is used to grant this `ServiceAccount` access to the nodes within the cluster via a `ClusterRole` called `strimzi-kafka-broker`
+* The Kafka broker pods use a `ServiceAccount` called `_cluster-name_-kafka` .
+  - When the rack feature is used, the `strimzi-_cluster-name_-kafka-init` `ClusterRoleBinding` is used to grant this `ServiceAccount` access to the nodes within the cluster via a `ClusterRole` called `strimzi-kafka-broker`.
   - When the rack feature is not used no binding is created.
-* The Zookeeper pods use the default `ServiceAccount` as they do not need to access to {ProductPlatformName} resources
-* The Topic Operator pod uses a `ServiceAccount` called `_cluster-name_-topic-operator`
+* The Zookeeper pods use the default `ServiceAccount` as they do not need to access to {ProductPlatformName} resources.
+* The Topic Operator pod uses a `ServiceAccount` called `_cluster-name_-topic-operator`.
     - The Topic Operator produces {ProductPlatformName} events with status information, so the `ServiceAccount` is bound to a `ClusterRole` called `strimzi-topic-operator` which grants this access via the `strimzi-topic-operator-role-binding` and `RoleBinding`.
 
 The pods for `KafkaConnect` and `KafkaConnectS2I` resources use the default `ServiceAccount` as they do not require access to {ProductPlatformName} resources.

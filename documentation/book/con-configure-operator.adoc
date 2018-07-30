@@ -76,37 +76,3 @@ The level for printing logging messages. The value can be set to: `ERROR`, `WARN
 [[STRIMZI_DEFAULT_TLS_SIDECAR_TOPIC_OPERATOR_IMAGE]] `STRIMZI_DEFAULT_TLS_SIDECAR_TOPIC_OPERATOR_IMAGE`:: Optional, default `strimzi/topic-operator-stunnel:latest`.
 The image name to use as a default when deploying the sidecar container which provides TLS support for the Topic Operator, if
 no image is specified as the `spec.topicOperator.tlsSidecar.image` in the xref:kafka-config-map-details-{context}[Kafka cluster ConfigMap].
-
-[[multi-namespace]]
-==== Watching multiple namespaces
-
-The `STRIMZI_NAMESPACE` environment variable can be used to configure a single operator instance
-to operate in multiple namespaces. For each namespace given, the operator will watch for cluster ConfigMaps
-and perform periodic reconciliation. To be able to do this, the operator's ServiceAccount needs
-access to the necessary resources in those other namespaces. This can be done by creating an additional
-RoleBinding in each of those namespaces, associating the operator's ServiceAccount
-(`strimzi-cluster-operator` in the examples) with the operator's
-Role (`strimzi-operator-role` in the examples).
-
-Suppose, for example, that a operator deployed in namespace `foo` needs to operate in namespace `bar`.
-The following RoleBinding would grant the necessary permissions:
-
-.Example RoleBinding for a operator to operate in namespace `bar`
-[source,yaml,options="nowrap"]
-----
-apiVersion: v1
-kind: RoleBinding
-metadata:
-  name: strimzi-cluster-operator-binding-bar
-  namespace: bar
-  labels:
-    app: strimzi
-subjects:
-  - kind: ServiceAccount
-    name: strimzi-cluster-operator
-    namespace: foo
-roleRef:
-  kind: Role
-  name: strimzi-cluster-operator-role
-  apiGroup: v1
-----

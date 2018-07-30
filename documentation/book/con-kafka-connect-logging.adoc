@@ -1,6 +1,8 @@
 [id=kafka_connect_logging-{context}]
 = Logging
+
 The `logging` field allows the configuration of loggers. These loggers are:
+
 [source]
 log4j.rootLogger
 connect.root.logger.level
@@ -12,8 +14,7 @@ For information on the logging options and examples of how to set logging, see x
 
 == Kafka Connect S2I deployment
 
-When using {ProductName} together with an {OpenShiftName} cluster, a user can deploy Kafka Connect with support for link:https://docs.openshift.org/3.9/dev_guide/builds/index.html[{OpenShiftName} Builds^] and link:https://docs.openshift.org/3.9/creating_images/s2i.html#creating-images-s2i[Source-to-Image (S2I)^].
-To activate the S2I deployment a `KafkaConnectS2I` resource should be used instead of a `KafkaConnect` resource.
+When using {ProductName} together with an {OpenShiftName} cluster, a user can deploy Kafka Connect with support for link:https://docs.openshift.org/3.9/dev_guide/builds/index.html[{OpenShiftName} Builds^] and link:https://docs.openshift.org/3.9/creating_images/s2i.html#creating-images-s2i[Source-to-Image^] (S2I). To activate the S2I deployment a `KafkaConnectS2I` resource should be used instead of a `KafkaConnect` resource.
 The following is a full example of `KafkaConnectS2I` resource.
 
 .Example `KafkaConnectS2I` resource
@@ -39,19 +40,29 @@ spec:
 The S2I deployment is very similar to the regular Kafka Connect deployment (as represented by the `KafkaConnect` resource).
 Compared to the regular deployment, the Cluster Operator will create the following additional resources:
 
-[connect-cluster-name]-connect-source::
-ImageStream which is used as the base image for the newly-built Docker images.
-[connect-cluster-name]-connect::
-BuildConfig which is responsible for building the new Kafka Connect Docker images.
-[connect-cluster-name]-connect::
-ImageStream where the newly built Docker images will be pushed.
-[connect-cluster-name]-connect::
-DeploymentConfig which is in charge of creating the Kafka Connect worker node pods.
-[connect-cluster-name]-connect::
-Service which exposes the REST interface for managing the Kafka Connect cluster.
+[cols="50%,50%,options="header"]
+|===
+|Element
+|Description
+
+|_connect-cluster-name_-connect-source::
+|ImageStream which is used as the base image for the newly-built Docker images.
+
+|_connect-cluster-name_-connect::
+|BuildConfig which is responsible for building the new Kafka Connect Docker images.
+
+|_connect-cluster-name_-connect::
+|ImageStream where the newly built Docker images will be pushed.
+
+|_connect-cluster-name_-connect::
+|DeploymentConfig which is in charge of creating the Kafka Connect worker node pods.
+
+|_connect-cluster-name_-connect::
+|Service which exposes the REST interface for managing the Kafka Connect cluster.
+|===
 
 The Kafka Connect S2I deployment supports the same options as the regular Kafka Connect deployment.
-A list of supported options can be found in the <<kafka_connect_config_map_details>> section.
+A list of supported options is available at xref:kafka_connect_config_map_details[Kafka Connect configuration].
 The `image` option specifies the Docker image which will be used as the _source image_ - the base image for the newly built Docker image.
 The default value of the `image` option is determined by the value of the xref:STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE[`STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE`] environment variable of the Cluster Operator.
 All other options have the same meaning as for the regular `KafkaConnect` deployment.
@@ -118,6 +129,7 @@ Pushed 10/10 layers, 100% complete
 Push successful
 ----
 
-NOTE: The S2I build will always add the additional Kafka Connect plugins to the original source image.
+[NOTE]
+The S2I build will always add the additional Kafka Connect plugins to the original source image.
 They will not be added to the Docker image from a previous build.
 To add multiple plugins to the deployment, they all have to be added within the same build.
