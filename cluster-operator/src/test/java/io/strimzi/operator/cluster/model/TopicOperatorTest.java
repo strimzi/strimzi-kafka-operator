@@ -17,7 +17,8 @@ import io.strimzi.api.kafka.model.Storage;
 import io.strimzi.api.kafka.model.TopicOperatorBuilder;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ResourceUtils;
-import io.strimzi.operator.cluster.operator.assembly.MockCertManager;
+import io.strimzi.operator.common.operator.MockCertManager;
+
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;

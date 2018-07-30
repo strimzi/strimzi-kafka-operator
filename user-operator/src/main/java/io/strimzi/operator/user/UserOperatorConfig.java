@@ -64,12 +64,16 @@ public class UserOperatorConfig {
 
         String stringLabels = map.get(STRIMZI_LABELS);
         Map<String, String> labels = new HashMap<>();
-        if (stringLabels != null && !stringLabels.isEmpty()) {
-            String[] labelsArray = stringLabels.split(",");
-            for (String label : labelsArray) {
-                String[] fields = label.split("=");
-                labels.put(fields[0].trim(), fields[1].trim());
+        try {
+            if (stringLabels != null && !stringLabels.isEmpty()) {
+                String[] labelsArray = stringLabels.split(",");
+                for (String label : labelsArray) {
+                    String[] fields = label.split("=");
+                    labels.put(fields[0].trim(), fields[1].trim());
+                }
             }
+        } catch (ArrayIndexOutOfBoundsException e)  {
+            throw new IllegalArgumentException("Failed to parse " + STRIMZI_LABELS, e);
         }
 
         String caName = map.get(UserOperatorConfig.STRIMZI_CA_NAME);

@@ -33,6 +33,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
+import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
