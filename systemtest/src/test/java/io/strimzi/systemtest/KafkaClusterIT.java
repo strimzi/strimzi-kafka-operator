@@ -430,6 +430,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
         kubeClient.namespace("topic-operator-namespace");
         kubeClient.create(new File("../examples/topic/kafka-topic.yaml"));
         Thread.sleep(10_000);
+        kubeClient.namespace(NAMESPACE);
         topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
         assertThat(topics, hasItems("my-topic"));
     }
