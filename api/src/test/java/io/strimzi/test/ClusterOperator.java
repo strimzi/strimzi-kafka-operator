@@ -19,4 +19,5 @@ import java.lang.annotation.Target;
 public @interface ClusterOperator {
 
     EnvVariables[] envVariables() default {};
+    boolean useHelmChart() default false;
 }

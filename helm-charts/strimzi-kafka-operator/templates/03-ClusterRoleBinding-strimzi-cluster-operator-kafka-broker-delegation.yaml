@@ -1,19 +1,17 @@
-##---
-# Source: strimzi-kafka-operator/templates/03-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
 metadata:
   name: strimzi-cluster-operator-kafka-broker-delegation
   labels:
-    app: strimzi-kafka-operator
-    chart: strimzi-kafka-operator-0.1.0
+    app: {{ template "strimzi.name" . }}
+    chart: {{ template "strimzi.chart" . }}
     component: broker-role-binding
-    release: RELEASE-NAME
-    heritage: Tiller
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
 subjects:
   - kind: ServiceAccount
     name: strimzi-cluster-operator
-    namespace: default
+    namespace: {{ .Release.Namespace }}
 roleRef:
   kind: ClusterRole
   name: strimzi-kafka-broker

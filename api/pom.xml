@@ -88,7 +88,7 @@
                 <version>1.6.0</version>
                 <executions>
                     <execution>
-                        <id>generate-crd</id>
+                        <id>generate-crd-helm-chart</id>
                         <phase>process-classes</phase>
                         <goals>
                             <goal>exec</goal>
@@ -100,11 +100,29 @@
                                 <argument>${pom.basedir}${file.separator}target${file.separator}classes${path.separator}${pom.basedir}${file.separator}..${file.separator}crd-generator${file.separator}target${file.separator}crd-generator-${project.version}.jar</argument>
                                 <argument>io.strimzi.crdgenerator.CrdGenerator</argument>
                                 <argument>--yaml</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaAssembly=${pom.basedir}${file.separator}..${file.separator}examples${file.separator}install${file.separator}cluster-operator${file.separator}04-Crd-kafka.yaml</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaConnectAssembly=${pom.basedir}${file.separator}..${file.separator}examples${file.separator}install${file.separator}cluster-operator${file.separator}04-Crd-kafkaconnect.yaml</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaConnectS2IAssembly=${pom.basedir}${file.separator}..${file.separator}examples${file.separator}install${file.separator}cluster-operator${file.separator}04-Crd-kafkaconnects2i.yaml</argument>
+                                <argument>--helm-metadata</argument>
+                                <argument>io.strimzi.api.kafka.model.KafkaAssembly=${pom.basedir}${file.separator}..${file.separator}helm-charts${file.separator}strimzi-kafka-operator${file.separator}templates${file.separator}04-Crd-kafka.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.KafkaConnectAssembly=${pom.basedir}${file.separator}..${file.separator}helm-charts${file.separator}strimzi-kafka-operator${file.separator}templates${file.separator}04-Crd-kafkaconnect.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.KafkaConnectS2IAssembly=${pom.basedir}${file.separator}..${file.separator}helm-charts${file.separator}strimzi-kafka-operator${file.separator}templates${file.separator}04-Crd-kafkaconnects2i.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.KafkaTopic=${pom.basedir}${file.separator}..${file.separator}helm-charts${file.separator}strimzi-kafka-operator${file.separator}templates${file.separator}04-Crd-kafkatopic.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.KafkaUser=${pom.basedir}${file.separator}..${file.separator}helm-charts${file.separator}strimzi-kafka-operator${file.separator}templates${file.separator}04-Crd-kafkauser.yaml</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>generate-crd-topic-examples</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>java</executable>
+                            <arguments>
+                                <argument>-classpath</argument>
+                                <argument>${pom.basedir}${file.separator}target${file.separator}classes${path.separator}${pom.basedir}${file.separator}..${file.separator}crd-generator${file.separator}target${file.separator}crd-generator-${project.version}.jar</argument>
+                                <argument>io.strimzi.crdgenerator.CrdGenerator</argument>
+                                <argument>--yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaTopic=${pom.basedir}/../examples/install/topic-operator/04-Crd-kafkatopic.yaml</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaUser=${pom.basedir}${file.separator}..${file.separator}examples${file.separator}install${file.separator}cluster-operator${file.separator}04-Crd-kafkauser.yaml</argument>
                             </arguments>
                         </configuration>
                     </execution>
