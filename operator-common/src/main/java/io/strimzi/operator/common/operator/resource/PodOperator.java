@@ -18,13 +18,13 @@ import io.vertx.core.Vertx;
  * Operations for {@code Pod}s, which support {@link #isReady(String, String)} and
  * {@link #watch(String, String, Watcher)} in addition to the usual operations.
  */
-class PodOperator extends AbstractReadyResourceOperator<KubernetesClient, Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> {
+public class PodOperator extends AbstractReadyResourceOperator<KubernetesClient, Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> {
     /**
      * Constructor
      * @param vertx The Vertx instance
      * @param client The Kubernetes client
      */
-    PodOperator(Vertx vertx, KubernetesClient client) {
+    public PodOperator(Vertx vertx, KubernetesClient client) {
         super(vertx, client, "Pods");
     }
 

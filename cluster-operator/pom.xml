@@ -21,6 +21,10 @@
             <artifactId>operator-common</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.strimzi</groupId>
+            <artifactId>operator-common</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.fabric8</groupId>
             <artifactId>openshift-client</artifactId>
         </dependency>
@@ -31,6 +35,10 @@
         <dependency>
             <groupId>io.fabric8</groupId>
             <artifactId>kubernetes-model</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.fabric8</groupId>
+            <artifactId>zjsonpatch</artifactId>
         </dependency>
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
@@ -90,8 +98,9 @@
         <dependency>
             <groupId>io.strimzi</groupId>
             <artifactId>operator-common</artifactId>
-            <version>0.6.0-SNAPSHOT</version>
-            <scope>compile</scope>
+            <classifier>tests</classifier>
+            <type>test-jar</type>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

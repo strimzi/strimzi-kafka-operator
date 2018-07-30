@@ -146,7 +146,6 @@ public abstract class AbstractModel {
     protected AbstractConfiguration configuration;
 
     protected String mountPath;
-    // TODO: This is copy of StatefulSetOperator.VOLUME and should be kept in sync
     public static final String VOLUME_NAME = "data";
     protected String logAndMetricsConfigMountPath;
 

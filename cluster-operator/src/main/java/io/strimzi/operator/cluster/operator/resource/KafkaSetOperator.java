@@ -4,9 +4,6 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
-import io.strimzi.operator.common.operator.resource.StatefulSetDiff;
-import io.strimzi.operator.common.operator.resource.StatefulSetOperator;
-
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.vertx.core.Vertx;
@@ -33,7 +30,7 @@ public class KafkaSetOperator extends StatefulSetOperator {
 
     @Override
     protected boolean shouldIncrementGeneration(StatefulSet current, StatefulSet desired) {
-        StatefulSetDiff diff = new StatefulSetDiff(current, desired);
+        ResourceOperatorSupplier.StatefulSetDiff diff = new ResourceOperatorSupplier.StatefulSetDiff(current, desired);
         if (diff.changesVolumeClaimTemplates()) {
             log.warn("Changing Kafka storage type or size is not possible. The changes will be ignored.");
             diff = revertStorageChanges(current, desired);
@@ -41,7 +38,7 @@ public class KafkaSetOperator extends StatefulSetOperator {
         return !diff.isEmpty() && needsRollingUpdate(diff);
     }
 
-    public static boolean needsRollingUpdate(StatefulSetDiff diff) {
+    public static boolean needsRollingUpdate(ResourceOperatorSupplier.StatefulSetDiff diff) {
         if (diff.changesLabels()) {
             log.debug("Changed labels => needs rolling update");
             return true;

@@ -11,7 +11,6 @@ import io.strimzi.api.kafka.model.KafkaAssembly;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.assembly.MockCertManager;
-import io.strimzi.operator.common.operator.resource.StatefulSetDiff;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -56,8 +55,8 @@ public class ZookeeperSetOperatiorTest {
         return ResourceUtils.createKafkaClusterInitialSecrets(clusterCmNamespace, clusterName);
     }
 
-    private StatefulSetDiff diff() {
-        return new StatefulSetDiff(a, b);
+    private ResourceOperatorSupplier.StatefulSetDiff diff() {
+        return new ResourceOperatorSupplier.StatefulSetDiff(a, b);
     }
 
     @Test

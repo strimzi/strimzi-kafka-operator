@@ -39,7 +39,6 @@ import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
-import io.strimzi.operator.common.operator.resource.StatefulSetDiff;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -832,12 +831,12 @@ public class KafkaAssemblyOperatorTest {
             // rolling restart
             Set<String> expectedRollingRestarts = set();
             if (KafkaSetOperator.needsRollingUpdate(
-                    new StatefulSetDiff(originalKafkaCluster.generateStatefulSet(openShift),
+                    new ResourceOperatorSupplier.StatefulSetDiff(originalKafkaCluster.generateStatefulSet(openShift),
                     updatedKafkaCluster.generateStatefulSet(openShift)))) {
                 expectedRollingRestarts.add(originalKafkaCluster.getName());
             }
             if (ZookeeperSetOperator.needsRollingUpdate(
-                    new StatefulSetDiff(originalZookeeperCluster.generateStatefulSet(openShift),
+                    new ResourceOperatorSupplier.StatefulSetDiff(originalZookeeperCluster.generateStatefulSet(openShift),
                             updatedZookeeperCluster.generateStatefulSet(openShift)))) {
                 expectedRollingRestarts.add(originalZookeeperCluster.getName());
             }

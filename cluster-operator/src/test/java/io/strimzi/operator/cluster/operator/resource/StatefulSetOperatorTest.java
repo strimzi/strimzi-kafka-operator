@@ -2,7 +2,12 @@
  * Copyright 2017-2018, Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.common.operator.resource;
+package io.strimzi.operator.cluster.operator.resource;
+
+import io.strimzi.operator.common.operator.resource.AbstractResourceOperatorTest;
+import io.strimzi.operator.common.operator.resource.PodOperator;
+import io.strimzi.operator.common.operator.resource.ScalableResourceOperatorTest;
+import io.strimzi.operator.common.operator.resource.TimeoutException;
 
 import io.fabric8.kubernetes.api.model.extensions.DoneableStatefulSet;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
@@ -31,7 +36,7 @@ import static org.mockito.Mockito.when;
 
 public class StatefulSetOperatorTest
         extends ScalableResourceOperatorTest<KubernetesClient, StatefulSet, StatefulSetList,
-                        DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> {
+                                DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> {
 
     @Override
     protected Class<KubernetesClient> clientType() {
@@ -47,8 +52,8 @@ public class StatefulSetOperatorTest
     protected StatefulSet resource() {
         return new StatefulSetBuilder()
                 .withNewMetadata()
-                    .withNamespace(NAMESPACE)
-                    .withName(RESOURCE_NAME)
+                    .withNamespace(AbstractResourceOperatorTest.NAMESPACE)
+                    .withName(AbstractResourceOperatorTest.RESOURCE_NAME)
                 .endMetadata()
                 .withNewSpec()
                     .withReplicas(3)
@@ -123,7 +128,7 @@ public class StatefulSetOperatorTest
         KubernetesClient mockClient = mock(KubernetesClient.class);
         mocker(mockClient, mockCms);
 
-        StatefulSetOperator op = new StatefulSetOperator(vertx, mockClient, 5_000L, podOperator) {
+        StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator) {
             @Override
             protected boolean shouldIncrementGeneration(StatefulSet current, StatefulSet desired) {
                 return true;
@@ -163,7 +168,7 @@ public class StatefulSetOperatorTest
         KubernetesClient mockClient = mock(KubernetesClient.class);
         mocker(mockClient, mockCms);
 
-        StatefulSetOperator op = new StatefulSetOperator(vertx, mockClient, 5_000L, podOperator) {
+        StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator) {
             @Override
             protected boolean shouldIncrementGeneration(StatefulSet current, StatefulSet desired) {
                 return true;
@@ -206,7 +211,7 @@ public class StatefulSetOperatorTest
         KubernetesClient mockClient = mock(KubernetesClient.class);
         mocker(mockClient, mockCms);
 
-        StatefulSetOperator op = new StatefulSetOperator(vertx, mockClient, 5_000L, podOperator) {
+        StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator) {
             @Override
             protected boolean shouldIncrementGeneration(StatefulSet current, StatefulSet desired) {
                 return true;
@@ -248,7 +253,7 @@ public class StatefulSetOperatorTest
         KubernetesClient mockClient = mock(KubernetesClient.class);
         mocker(mockClient, mockCms);
 
-        StatefulSetOperator op = new StatefulSetOperator(vertx, mockClient, 5_000L, podOperator) {
+        StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator) {
             @Override
             protected boolean shouldIncrementGeneration(StatefulSet current, StatefulSet desired) {
                 return true;
