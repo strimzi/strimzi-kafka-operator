@@ -1,15 +1,7 @@
-##---
-# Source: strimzi-kafka-operator/templates/05-Deployment-strimzi-cluster-operator.yaml
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: strimzi-cluster-operator
-  labels:
-    app: strimzi-kafka-operator
-    chart: strimzi-kafka-operator-0.1.0
-    component: deployment
-    release: RELEASE-NAME
-    heritage: Tiller
 spec:
   replicas: 1
   template:
