@@ -1,5 +1,5 @@
 [id=kafka_connect_configuration_json_config-{context}]
-== Kafka Connect configuration
+= Kafka Connect configuration
 
 The `spec.config` object of the `KafkaConnect` and `KafkaConnectS2I` resources allows detailed configuration of Apache Kafka Connect.
 This object should contain the Kafka Connect configuration options as keys. The values could be in one of the following JSON types:

@@ -1,5 +1,5 @@
 [id=kafka_connect_logging-{context}]
-== Logging
+= Logging
 The `logging` field allows the configuration of loggers. These loggers are:
 [source]
 log4j.rootLogger

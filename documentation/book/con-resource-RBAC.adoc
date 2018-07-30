@@ -1,9 +1,7 @@
-[id='resource_format-{context}']
-= Provisioning Role-Based Access Control (RBAC) for the Cluster Operator
+[id='provision-rbac-{context}']
+= Provision Role-Based Access Control for the Cluster Operator
 
-For the Cluster Operator to function it needs permission within the {ProductPlatformName} cluster to interact with the resources it manages and interacts with.
-These include the desired resources, such as  `Kafka`, `Kafka Connect`, and so on, as well as the managed resources, such as `ConfigMaps`, `Pods`, `Deployments`, `StatefulSets`, `Services`, and so on.
-Such permission is described in terms of {ProductPlatformName} role-based access control (RBAC) resources:
+For the Cluster Operator to function it needs permission within the {ProductPlatformName} cluster to interact with the resources it manages and interacts with. These include the desired resources, such as  `Kafka`, `Kafka Connect`, and so on, as well as the managed resources, such as `ConfigMaps`, `Pods`, `Deployments`, `StatefulSets`, `Services`, and so on. Such permission is described in terms of {ProductPlatformName} role-based access control (RBAC) resources:
 
 * `ServiceAccount`,
 * `Role` and `ClusterRole`,
@@ -11,5 +9,4 @@ Such permission is described in terms of {ProductPlatformName} role-based access
 
 In addition to running under its own `ServiceAccount` with a `ClusterRoleBinding`, the Cluster Operator manages some RBAC resources because some of the components need access to {ProductPlatformName} resources.
 
-{ProductPlatformName} also includes privilege escalation protections that prevent components operating under one `ServiceAccount` from granting other `ServiceAccounts` privileges that the granting `ServiceAccount` does not have.
-Because the Cluster Operator must be able to create the `ClusterRoleBindings` and `RoleBindings` needed by resources it manages, the Cluster Operator must also have those same privileges.
+{ProductPlatformName} also includes privilege escalation protections that prevent components operating under one `ServiceAccount` from granting other `ServiceAccounts` privileges that the granting `ServiceAccount` does not have. Because the Cluster Operator must be able to create the `ClusterRoleBindings` and `RoleBindings` needed by resources it manages, the Cluster Operator must also have those same privileges.

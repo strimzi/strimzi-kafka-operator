@@ -51,7 +51,8 @@ The table below lists the fields that you can use when configuring a Kafka clust
 `spec.kafka.metrics`::
 The JMX exporter configuration for exposing metrics from Kafka broker nodes.
 When this field is absent no metrics will be exposed.
-[[spec.kafka.logging]]`spec.kafka.logging`::
+
+[id=spec.kafka.logging-{context}]`spec.kafka.logging`::
 An object that specifies inline logging levels or the name of external config map that specifies the logging levels.
 When this field is absent default values are used.
 List of loggers which can be set:
@@ -486,9 +487,9 @@ You can find more information on how to use it in the corresponding GitHub repo.
 For more information about using the metrics with Prometheus and Grafana, see xref:metrics[Metrics]
 
 
-[[logging_examples]]
+[id=logging-examples-{context}]
 == Logging
-The `logging` field allows the configuration of loggers. These loggers for Zookeeper and Kafka are available in the xref:spec.zookeeper.logging[`spec.zookeeper.logging` and xref:spec.kafka.logging[`spec.kafka.logging`] sections respectively.
+The `logging` field allows the configuration of loggers. These loggers for Zookeeper and Kafka are available in the xref:spec.zookeeper.logging[`spec.zookeeper.logging` and xref:spec.kafka.logging-{context}[`spec.kafka.logging`] sections respectively.
 
 The setting can be done in one of two ways. Either by specifying the loggers and their levels directly or by using a custom config map.
 An example would look like this:
@@ -572,7 +573,7 @@ It is therefore recommended to use these as a minimum when configuring resource 
 Configuring more generous limits is recommended, especially when it is controlling multiple clusters.
 
 
-[[jvm_json_config]]
+[id=jvm-json-config-{context}]
 == JVM Options
 
 It is possible to configure a subset of available JVM options on Kafka, Zookeeper and Kafka Connect containers.
