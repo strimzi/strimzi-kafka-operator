@@ -6,7 +6,7 @@ See our [website](https://github.com/strimzi/strimzi-kafka-operator) for more de
 
 ## Introduction
 
-This chart bootstraps the Strimzi Cluster Operator Deployment, Roles, Role Bindings, Service Accounts, and 
+This chart bootstraps the Strimzi Cluster Operator Deployment, Cluster Roles, Cluster Role Bindings, Service Accounts, and 
 Custom Resource Definitions for running [Apache Kafka](https://kafka.apache.org/) on [Kubernetes](http://kubernetes.io) 
 cluster using the [Helm](https://helm.sh) package manager.
 
