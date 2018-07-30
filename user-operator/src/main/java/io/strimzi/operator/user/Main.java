@@ -30,7 +30,8 @@ public class Main {
         try {
             Crds.registerCustomKinds();
         } catch (Error | RuntimeException t) {
-            t.printStackTrace();
+            log.error("Failed to register CRDs", t);
+            throw t;
         }
     }
 
