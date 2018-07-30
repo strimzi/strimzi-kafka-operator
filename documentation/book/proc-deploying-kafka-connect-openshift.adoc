@@ -15,11 +15,11 @@ On {OpenShiftName}, Kafka Connect is provided in the form of a template. It can 
 
 .Procedure
 
-* Create a Kafka Connect cluster from the command line:
+* Create a Kafka Connect cluster from the command-line:
 +
 [source,shell]
 ----
-oc new-app strimzi-connect
+oc apply -f examples/kafka-connect/kafka-connect.yaml
 ----
 
 .Additional resources

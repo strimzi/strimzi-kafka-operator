@@ -15,18 +15,23 @@ The following procedure describes the process for creating such a custom image.
 
 .Procedure
 
-. Create a new `Dockerfile` using `{DockerKafkaConnect}` as the base image
+. Create a new `Dockerfile` using `{DockerKafkaConnect}` as the base image:
 +
-[source,Dockerfile,subs="attributes"]
+[source,subs="+quotes,attributes"]
 ----
 FROM {DockerKafkaConnect}
 USER root:root
-COPY ./my-plugin/ /opt/kafka/plugins/
+COPY ./_<my-plugins>_/ /opt/kafka/plugins/
 USER {DockerImageUser}
 ----
 
-. Build the Docker image and upload it to the appropriate Docker repository
+. Build the container image and upload it to the appropriate container image repository.
 
-. Use the new Docker image in the Kafka Connect deployment:
-.. On {OpenShiftName}, the template parameters `IMAGE_REPO_NAME`, `IMAGE_NAME`, and `IMAGE_TAG` can be changed to point to the new image when the Kafka Connect cluster is being deployed.
+. Use the new container image in the Kafka Connect deployment:
+.. On {OpenShiftName}, the `KafkaConnect.spec.image` property of the KafkaConnect custom resource and the `STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE` variable can be changes to point to the new image once the Kafka Connect cluster is deployed.
+//.. On {OpenShiftName}, the template parameters `IMAGE_REPO_NAME`, `IMAGE_NAME`, and `IMAGE_TAG` can be changed to point to the new image when the Kafka Connect cluster is being deployed.
 ifdef::Kubernetes[ On {KubernetesName}, the KafkaConnect resource has to be modified to use the new image.]
+
+.Additional resources
+* For more information on the `STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE` variable, see xref:STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE[].
+* For more information on `KafkaConnect.spec.image property`, see xref:kafka_connect_config_map_details[].
