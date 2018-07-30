@@ -4,7 +4,8 @@
  */
 package io.strimzi.operator.cluster;
 
-import io.strimzi.operator.cluster.model.Labels;
+import io.strimzi.operator.common.model.Labels;
+
 import org.junit.Test;
 
 import java.util.Collections;

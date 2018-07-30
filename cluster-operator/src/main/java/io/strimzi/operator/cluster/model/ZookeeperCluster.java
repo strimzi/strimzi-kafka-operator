@@ -23,6 +23,7 @@ import io.strimzi.api.kafka.model.Sidecar;
 import io.strimzi.api.kafka.model.Zookeeper;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
+import io.strimzi.operator.common.model.Labels;
 
 import java.io.IOException;
 import java.util.ArrayList;

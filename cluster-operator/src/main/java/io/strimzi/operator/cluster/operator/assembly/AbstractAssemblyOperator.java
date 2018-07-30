@@ -18,12 +18,13 @@ import io.strimzi.certs.CertManager;
 import io.strimzi.certs.SecretCertProvider;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.cluster.InvalidConfigMapException;
-import io.strimzi.operator.cluster.Reconciliation;
 import io.strimzi.operator.cluster.model.AbstractModel;
-import io.strimzi.operator.cluster.model.AssemblyType;
-import io.strimzi.operator.cluster.model.Labels;
-import io.strimzi.operator.cluster.operator.resource.AbstractWatchableResourceOperator;
-import io.strimzi.operator.cluster.operator.resource.SecretOperator;
+import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.ResourceType;
+import io.strimzi.operator.common.operator.resource.AbstractWatchableResourceOperator;
+import io.strimzi.operator.common.operator.resource.SecretOperator;
+
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -59,7 +60,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
 
     protected final Vertx vertx;
     protected final boolean isOpenShift;
-    protected final AssemblyType assemblyType;
+    protected final ResourceType assemblyType;
     protected final AbstractWatchableResourceOperator<C, T, L, D, R> resourceOperator;
     protected final SecretOperator secretOperations;
     protected final CertManager certManager;
@@ -71,7 +72,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
      * @param assemblyType Assembly type
      * @param resourceOperator For operating on the desired resource
      */
-    protected AbstractAssemblyOperator(Vertx vertx, boolean isOpenShift, AssemblyType assemblyType,
+    protected AbstractAssemblyOperator(Vertx vertx, boolean isOpenShift, ResourceType assemblyType,
                                        CertManager certManager,
                                        AbstractWatchableResourceOperator<C, T, L, D, R> resourceOperator,
                                        SecretOperator secretOperations) {
@@ -91,7 +92,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
      * @param namespace The namespace containing the cluster
      * @param name The name of the cluster
      */
-    protected final String getLockName(AssemblyType assemblyType, String namespace, String name) {
+    protected final String getLockName(ResourceType assemblyType, String namespace, String name) {
         return "lock::" + namespace + "::" + assemblyType + "::" + name;
     }
 

@@ -27,10 +27,10 @@ import io.strimzi.api.kafka.model.Storage;
 import io.strimzi.api.kafka.model.TopicOperator;
 import io.strimzi.api.kafka.model.Zookeeper;
 import io.strimzi.operator.cluster.model.AbstractModel;
-import io.strimzi.operator.cluster.model.AssemblyType;
 import io.strimzi.operator.cluster.model.KafkaCluster;
-import io.strimzi.operator.cluster.model.Labels;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
+import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.test.TestUtils;
 
 import java.util.ArrayList;
@@ -131,7 +131,7 @@ public class ResourceUtils {
                         .withNewMetadata()
                         .withName(KafkaCluster.clientsCASecretName(clusterName))
                         .withNamespace(clusterCmNamespace)
-                        .withLabels(Labels.forCluster(clusterName).withType(AssemblyType.KAFKA).toMap())
+                        .withLabels(Labels.forCluster(clusterName).withType(ResourceType.KAFKA).toMap())
                         .endMetadata()
                         .addToData("clients-ca.key", Base64.getEncoder().encodeToString("clients-ca-base64key".getBytes()))
                         .addToData("clients-ca.crt", Base64.getEncoder().encodeToString("clients-ca-base64crt".getBytes()))
@@ -143,7 +143,7 @@ public class ResourceUtils {
                         .withNewMetadata()
                         .withName(KafkaCluster.clientsPublicKeyName(clusterName))
                         .withNamespace(clusterCmNamespace)
-                        .withLabels(Labels.forCluster(clusterName).withType(AssemblyType.KAFKA).toMap())
+                        .withLabels(Labels.forCluster(clusterName).withType(ResourceType.KAFKA).toMap())
                         .endMetadata()
                         .addToData("clients-ca.crt", Base64.getEncoder().encodeToString("clients-ca-base64crt".getBytes()))
                         .build()
@@ -154,7 +154,7 @@ public class ResourceUtils {
                         .withNewMetadata()
                         .withName(KafkaCluster.brokersSecretName(clusterName))
                         .withNamespace(clusterCmNamespace)
-                        .withLabels(Labels.forCluster(clusterName).withType(AssemblyType.KAFKA).toMap())
+                        .withLabels(Labels.forCluster(clusterName).withType(ResourceType.KAFKA).toMap())
                         .endMetadata()
                         .addToData("cluster-ca.crt", Base64.getEncoder().encodeToString("cluster-ca-base64crt".getBytes()));
 
@@ -168,7 +168,7 @@ public class ResourceUtils {
                         .withNewMetadata()
                             .withName(KafkaCluster.clusterPublicKeyName(clusterName))
                             .withNamespace(clusterCmNamespace)
-                            .withLabels(Labels.forCluster(clusterName).withType(AssemblyType.KAFKA).toMap())
+                            .withLabels(Labels.forCluster(clusterName).withType(ResourceType.KAFKA).toMap())
                         .endMetadata()
                         .addToData("ca.crt", Base64.getEncoder().encodeToString("cluster-ca-base64crt".getBytes()));
 
@@ -182,7 +182,7 @@ public class ResourceUtils {
                         .withNewMetadata()
                             .withName(ZookeeperCluster.nodesSecretName(clusterName))
                             .withNamespace(clusterCmNamespace)
-                            .withLabels(Labels.forCluster(clusterName).withType(AssemblyType.KAFKA).toMap())
+                            .withLabels(Labels.forCluster(clusterName).withType(ResourceType.KAFKA).toMap())
                         .endMetadata()
                         .addToData("cluster-ca.crt", Base64.getEncoder().encodeToString("cluster-ca-base64crt".getBytes()));
 

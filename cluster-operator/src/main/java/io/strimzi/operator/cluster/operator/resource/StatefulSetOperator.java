@@ -4,6 +4,11 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
+import io.strimzi.operator.cluster.model.AbstractModel;
+import io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator;
+import io.strimzi.operator.common.operator.resource.PodOperator;
+import io.strimzi.operator.common.operator.resource.ReconcileResult;
+
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Volume;
@@ -13,8 +18,6 @@ import io.fabric8.kubernetes.api.model.extensions.StatefulSetList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
-import io.strimzi.operator.cluster.ClusterOperator;
-import io.strimzi.operator.cluster.model.AbstractModel;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -30,8 +33,8 @@ import java.util.List;
  * in addition to the usual operations.
  */
 public abstract class StatefulSetOperator extends AbstractScalableResourceOperator<KubernetesClient, StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> {
-
-    public static final String ANNOTATION_GENERATION = ClusterOperator.STRIMZI_CLUSTER_OPERATOR_DOMAIN + "/statefulset-generation";
+    public static final String STRIMZI_CLUSTER_OPERATOR_DOMAIN = "operator.strimzi.io";
+    public static final String ANNOTATION_GENERATION = STRIMZI_CLUSTER_OPERATOR_DOMAIN + "/statefulset-generation";
     private static final int NO_GENERATION = -1;
     private static final int INIT_GENERATION = 0;
 
@@ -250,7 +253,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
      *
      * @return Updated StatefulSetDiff after the storage patching
      */
-    protected StatefulSetDiff revertStorageChanges(StatefulSet current, StatefulSet desired) {
+    protected ResourceOperatorSupplier.StatefulSetDiff revertStorageChanges(StatefulSet current, StatefulSet desired) {
         desired.getSpec().setVolumeClaimTemplates(current.getSpec().getVolumeClaimTemplates());
         desired.getSpec().getTemplate().getSpec().setInitContainers(current.getSpec().getTemplate().getSpec().getInitContainers());
         desired.getSpec().getTemplate().getSpec().setSecurityContext(current.getSpec().getTemplate().getSpec().getSecurityContext());
@@ -277,7 +280,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
             }
         }
 
-        return new StatefulSetDiff(current, desired);
+        return new ResourceOperatorSupplier.StatefulSetDiff(current, desired);
     }
 
     protected Future<Integer> getGeneration(String namespace, String podName) {

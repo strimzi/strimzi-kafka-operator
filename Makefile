@@ -6,7 +6,7 @@ CHART_RENDERED_TEMPLATES_TMP=./target/charts
 CHART_RENDERED_TEMPLATES_EXAMPLES=./examples/install/cluster-operator/
 CHART_SEMANTIC_RELEASE_VERSION ?= $(shell cat release.version | sed 's/\([0-9.]*\).*/\1/')
 
-SUBDIRS=docker-images crd-generator api certificate-manager cluster-operator topic-operator user-operator kafka-init examples
+SUBDIRS=docker-images crd-generator api certificate-manager operator-common cluster-operator topic-operator user-operator kafka-init examples
 DOCKER_TARGETS=docker_build docker_push docker_tag
 
 all: $(SUBDIRS)
