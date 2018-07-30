@@ -583,19 +583,20 @@ It is possible to configure a subset of available JVM options on Kafka, Zookeepe
 The object has a property for each JVM (`java`) option which can be configured:
 
 `-Xmx`::
-The maximum heap size. For more inforamtion, see xref:setting-xmx-{context}[`Setting -Xmx`].
+The maximum heap size. For more information, see xref:setting-xmx-{context}[`Setting -Xmx`].
 
 `-Xms`::
 The initial heap size.
 Setting the same value for initial and maximum (`-Xmx`) heap sizes avoids the JVM having to allocate memory after startup,
 at the cost of possibly allocating more heap than is really needed. For Kafka and Zookeeper pods such allocation could
-cause unwanted latency. For Kafka Connect avoiding over allocation may be the more important concern, especially in
+cause unwanted latency. For Kafka Connect avoiding over allocation may be the more important concern, especially in a
 distributed mode where the effects of over-allocation will be multiplied by the number of consumers.
 
-NOTE: The units accepted by JVM settings such as `-Xmx` and `-Xms` are those accepted by the JDK `java`
-binary in the corresponding image. Accordingly, `1g` or `1G` means 1,073,741,824 bytes, and `Gi` is not a valid unit
+[NOTE]
+The units accepted by JVM settings such as `-Xmx` and `-Xms` are those accepted by the JDK `java`
+binary in the corresponding image. Accordingly, `1g` or `1G` means 1,073,741,824 bytes, and `Gi` is not a valid unit of
 suffix. This is in contrast to the units used for xref:resources_json_config-{context}[memory limits and requests], which follow the
-{ProductPlatformName} convention where `1G` means 1,000,000,000 bytes, and `1Gi` means 1,073,741,824 bytes
+{ProductPlatformName} convention where `1G` means 1,000,000,000 bytes, and `1Gi` means 1,073,741,824 bytes.
 
 .Example fragment of a `Kafka` resource configuring `jvmOptions`
 [source,json]
@@ -663,13 +664,13 @@ RAM available to the container.
 
 [IMPORTANT]
 ====
-Setting `-Xmx` explicitly is requires some care:
+Setting `-Xmx` explicitly requires some care:
 
 * The JVM's overall memory usage will be approximately 4 × the maximum heap, as configured by `-Xmx`.
 
 * If `-Xmx` is set without also setting an appropriate {ProductPlatformName}
-memory limit, it is possible that the container will be killed should the {ProductPlatformName} node
-experience memory pressure (from other Pods running on it).
+memory limit, it is possible that the container will be killed if the {ProductPlatformName} node
+experience memory pressure from other Pods running on it.
 
 * If `-Xmx` is set without also setting an appropriate {ProductPlatformName}
 memory request, it is possible that the container will scheduled to a node with insufficient memory.
@@ -679,25 +680,25 @@ In this case the container will start but crash (immediately if `-Xms` is set to
 
 When setting `-Xmx` explicitly, it is recommended to:
 
-* set the memory request and the memory limit to the same value,
-* use a memory request that is at least 4.5 × the `-Xmx`,
-* consider setting `-Xms` to the same value as `-Xms`.
+* Set the memory request and the memory limit to the same value.
+* Use a memory request that is at least 4.5 × the `-Xmx`.
+* Consider setting `-Xms` to the same value as `-Xms`.
 
 Furthermore, containers doing lots of disk I/O (such as Kafka broker containers) will need to leave some memory available
-for use as operating system page cache. On such containers, the request memory should be substantially more than the
+for use as operating system page cache. On such containers, the requested memory should be substantially more than the
 memory used by the JVM.
 
 [id='kafka-rack-{context}']
 == Kafka rack
 
-It is possible to enable Kafka rack-awareness (more information can be found on the {KafkaRacks})
-by specifying the `rack` object in the `spec.kafka` object of the `Kafka` resource.
+It is possible to enable Kafka rack-awareness by specifying the `rack` object in the `spec.kafka` object of the `Kafka` resource. Fore more information, see link:https://kafka.apache.org/documentation/#basic_ops_racks[KafkaRacks^]
+
 The `rack` object has one mandatory field named `topologyKey`.
 This key needs to match one of the labels assigned to the {ProductPlatformName} cluster nodes.
 The label is used by {ProductPlatformName} when scheduling Kafka broker pods to nodes.
 If the {ProductPlatformName} cluster is running on a cloud provider platform, that label should represent the availability zone where the node is running.
-Usually, the nodes are labeled with `failure-domain.beta.kubernetes.io/zone` that can be easily used as `topologyKey` value.
-This will have the effect of spreading the broker pods across zones, and also setting the brokers `broker.rack` configuration parameter.
+Usually, the nodes are labelled with `failure-domain.beta.kubernetes.io/zone` that can be easily used as `topologyKey` value.
+This will have the effect of spreading the broker pods across zones, and also setting the broker's `broker.rack` configuration parameter.
 
 .Example fragment of a `Kafka` resource configuring the `rack`
 [source,json]
@@ -719,12 +720,9 @@ In the above example, the `failure-domain.beta.kubernetes.io/zone` node label wi
 [id='node-pod-affinity-{context}']
 == Node and Pod affinity
 
-Node and Pod affinity provide a flexible mechanism to guide the scheduling of pods to nodes by {ProductPlatformName}.
-Node affinity can be used so that broker pods are preferentially scheduled to nodes with fast disks, for example.
-Similarly, pod affinity could be used to try to schedule Kafka clients on the same nodes as Kafka brokers.
-More information can be found on the {K8sAffinity}.
+Node and Pod affinity provides a flexible mechanism to guide the scheduling of pods to nodes by {ProductPlatformName}. For example, Node affinity can be used so that broker pods are preferentially scheduled to nodes with fast disks. Similarly, pod affinity could be used to try to schedule Kafka clients on the same nodes as Kafka brokers. For more information, see {K8sAffinity}.
 
-The format of the corresponding key is the same as the content supported in the Pod `affinity` in {ProductPlatformName}, that is: `nodeAffinity`, `podAffinity` and `podAntiAffinity`.
+The format of the corresponding key is the same as the content supported in the Pod `affinity` in {ProductPlatformName}, that is,  `nodeAffinity`, `podAffinity` and `podAntiAffinity`.
 
 .Example fragment of a `Kafka` resource configured with `nodeAffinity`
 [source,yaml]
@@ -749,7 +747,8 @@ spec:
     # ...
 ----
 
-NOTE: When using both `affinity` and xref:kafka-rack-{context}[`rack`] be aware that `rack` uses a pod anti-affinity.
+[NOTE]
+When using both `affinity` and xref:kafka-rack-{context}[`rack`] be aware that `rack` uses a pod anti-affinity.
 This is necessary so that broker pods are scheduled in different failure domains, as specified via the `topologyKey`.
 This anti-affinity will not be present in the `Kafka` resource's `affinity`, but is still present on the StatefulSet and thus will still be considered by the scheduler.
 
@@ -763,33 +762,41 @@ Without this object, the Cluster Operator does not deploy the topic operator.
 It is still possible to deploy the topic operator by creating appropriate {ProductPlatformName} resources.
 
 The YAML representation of the 'topicOperator` has no mandatory fields and if the value is an empty object
-(just "{ }"), the Cluster Operator will deploy the topic operator with a default configuration.
+("{ }"), the Cluster Operator will deploy the topic operator with the default configuration.
 
 The configurable fields are the following :
 
 `image`::
 The Docker image to be used by the Topic Operator.
 The default value is determined by the value specified in the xref:STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE[`STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE`] environment variable of the Cluster Operator.
+
 `watchedNamespace`::
 The {ProductPlatformName} namespace in which the topic operator watches for topic ConfigMaps. Default is the namespace
 where the topic operator is running.
+
 `reconciliationIntervalMs`::
 The interval between periodic reconciliations in milliseconds. Default is 900000 (15 minutes).
+
 `zookeeperSessionTimeoutMs`::
 The Zookeeper session timeout in milliseconds. Default is 20000 milliseconds (20 seconds).
+
 `topicMetadataMaxAttempts`::
 The number of attempts for getting topics metadata from Kafka. The time between each attempt is defined as an exponential
 back-off. You might want to increase this value when topic creation could take more time due to its larger size (i.e.
 many partitions / replicas). Default is `6`.
+
 `resources`::
 An object configuring the resource limits and requests for the topic operator container. The accepted JSON format is
 described in the xref:resources_json_config-{context}[Resource limits and requests] section.
+
 `affinity`::
 Node and Pod affinity for the Topic Operator, as described in the xref:node-pod-affinity-{context}[Node and Pod affinity].
 The format of the corresponding key is the same as the content supported in the Pod `affinity` in {ProductPlatformName}.
+
 `tlsSidecar.image`::
 The Docker image to be used by the sidecar container which provides TLS support for Topic Operator.
 The default value is determined by the value specified in the xref:STRIMZI_DEFAULT_TLS_SIDECAR_TOPIC_OPERATOR_IMAGE[STRIMZI_DEFAULT_TLS_SIDECAR_TOPIC_OPERATOR_IMAGE`] environment variable of the Cluster Operator.
+
 `tlsSidecar.resources`::
 An object configuring the resource limits and requests for the sidecar container which provides TLS support for the Topic Operator.
 For information about the accepted JSON format, see xref:resources_json_config-{context}[Resource limits and requests].
