@@ -5,6 +5,9 @@ metadata:
 spec:
   kafka:
     replicas: 1
+    listeners:
+      plain: {}
+      tls: {}
     readinessProbe:
       initialDelaySeconds: 15
       timeoutSeconds: 5

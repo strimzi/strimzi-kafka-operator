@@ -1,0 +1,76 @@
+# Default values for strimzi-kafka-operator.
+
+image:
+  repository: strimzi
+  name: cluster-operator
+  tag: latest
+  imagePullPolicy: IfNotPresent
+logLevel: INFO
+fullReconciliationIntervalMs: 120000
+operationTimeoutMs: 300000
+# Docker images that operator uses to provision various components of Strimzi.  To use your own registry prefix the
+# repository name with your registry URL.
+# Ex) repository: registry.xyzcorp.com/strimzi/zookeeper
+zookeeper:
+  image:
+    repository: strimzi
+    name: zookeeper
+    tag: latest
+kafka:
+  image:
+    repository: strimzi
+    name: kafka
+    tag: latest
+kafkaConnect:
+  image:
+    repository: strimzi
+    name: kafka-connect
+    tag: latest
+kafkaConnects2i:
+  image:
+    repository: strimzi
+    name: kafka-connect-s2i
+    tag: latest
+topicOperator:
+  image:
+    repository: strimzi
+    name: topic-operator
+    tag: latest
+kafkaInit:
+  image:
+    repository: strimzi
+    name: kafka-init
+    tag: latest
+tlsSidecarZookeeper:
+  image:
+    repository: strimzi
+    name: zookeeper-stunnel
+    tag: latest
+tlsSidecarKafka:
+  image:
+    repository: strimzi
+    name: kafka-stunnel
+    tag: latest
+tlsSidecarTopicOperator:
+  image:
+    repository: strimzi
+    name: topic-operator-stunnel
+    tag: latest
+resources:
+  limits:
+    memory: 256Mi
+    cpu: 1000m
+  requests:
+    memory: 256Mi
+    cpu: 200m
+livenessProbe:
+  initialDelaySeconds: 10
+  periodSeconds: 30
+readinessProbe:
+  initialDelaySeconds: 10
+  periodSeconds: 30
+
+# Override the docker image repository used by all Strimzi images
+# imageRepositoryOverride: foobar
+# Override the docker image tag used by all Strimzi images
+# imageTagOverride: latest

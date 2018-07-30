@@ -10,6 +10,9 @@ spec:
     resources:
       limits:
         memory: "5Gi"
+    listeners:
+      plain: {}
+      tls: {}
     livenessProbe:
       initialDelaySeconds: 5
       timeoutSeconds: 1

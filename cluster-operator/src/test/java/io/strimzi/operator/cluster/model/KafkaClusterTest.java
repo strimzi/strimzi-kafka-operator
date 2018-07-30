@@ -87,9 +87,18 @@ public class KafkaClusterTest {
         assertEquals("ClusterIP", headful.getSpec().getType());
         assertEquals(expectedLabels(), headful.getSpec().getSelector());
         assertEquals(4, headful.getSpec().getPorts().size());
-        assertEquals(KafkaCluster.CLIENT_PORT_NAME, headful.getSpec().getPorts().get(0).getName());
-        assertEquals(new Integer(KafkaCluster.CLIENT_PORT), headful.getSpec().getPorts().get(0).getPort());
+        assertEquals(KafkaCluster.REPLICATION_PORT_NAME, headful.getSpec().getPorts().get(0).getName());
+        assertEquals(new Integer(KafkaCluster.REPLICATION_PORT), headful.getSpec().getPorts().get(0).getPort());
         assertEquals("TCP", headful.getSpec().getPorts().get(0).getProtocol());
+        assertEquals(KafkaCluster.CLIENT_PORT_NAME, headful.getSpec().getPorts().get(1).getName());
+        assertEquals(new Integer(KafkaCluster.CLIENT_PORT), headful.getSpec().getPorts().get(1).getPort());
+        assertEquals("TCP", headful.getSpec().getPorts().get(1).getProtocol());
+        assertEquals(KafkaCluster.CLIENT_TLS_PORT_NAME, headful.getSpec().getPorts().get(2).getName());
+        assertEquals(new Integer(KafkaCluster.CLIENT_TLS_PORT), headful.getSpec().getPorts().get(2).getPort());
+        assertEquals("TCP", headful.getSpec().getPorts().get(2).getProtocol());
+        assertEquals(AbstractModel.METRICS_PORT_NAME, headful.getSpec().getPorts().get(3).getName());
+        assertEquals(new Integer(KafkaCluster.METRICS_PORT), headful.getSpec().getPorts().get(3).getPort());
+        assertEquals("TCP", headful.getSpec().getPorts().get(2).getProtocol());
         assertEquals(kc.getPrometheusAnnotations(), headful.getMetadata().getAnnotations());
     }
 
@@ -105,12 +114,15 @@ public class KafkaClusterTest {
         assertEquals("None", headless.getSpec().getClusterIP());
         assertEquals(expectedLabels(), headless.getSpec().getSelector());
         assertEquals(3, headless.getSpec().getPorts().size());
-        assertEquals(KafkaCluster.CLIENT_PORT_NAME, headless.getSpec().getPorts().get(0).getName());
-        assertEquals(new Integer(KafkaCluster.CLIENT_PORT), headless.getSpec().getPorts().get(0).getPort());
+        assertEquals(KafkaCluster.REPLICATION_PORT_NAME, headless.getSpec().getPorts().get(0).getName());
+        assertEquals(new Integer(KafkaCluster.REPLICATION_PORT), headless.getSpec().getPorts().get(0).getPort());
         assertEquals("TCP", headless.getSpec().getPorts().get(0).getProtocol());
-        assertEquals(KafkaCluster.REPLICATION_PORT_NAME, headless.getSpec().getPorts().get(1).getName());
-        assertEquals(new Integer(KafkaCluster.REPLICATION_PORT), headless.getSpec().getPorts().get(1).getPort());
+        assertEquals(KafkaCluster.CLIENT_PORT_NAME, headless.getSpec().getPorts().get(1).getName());
+        assertEquals(new Integer(KafkaCluster.CLIENT_PORT), headless.getSpec().getPorts().get(1).getPort());
         assertEquals("TCP", headless.getSpec().getPorts().get(1).getProtocol());
+        assertEquals(KafkaCluster.CLIENT_TLS_PORT_NAME, headless.getSpec().getPorts().get(2).getName());
+        assertEquals(new Integer(KafkaCluster.CLIENT_TLS_PORT), headless.getSpec().getPorts().get(2).getPort());
+        assertEquals("TCP", headless.getSpec().getPorts().get(2).getProtocol());
     }
 
     @Test

@@ -43,6 +43,7 @@
         <module>operator-common</module>
         <module>topic-operator</module>
         <module>cluster-operator</module>
+        <module>user-operator</module>
         <module>kafka-init</module>
         <module>certificate-manager</module>
         <module>systemtest</module>

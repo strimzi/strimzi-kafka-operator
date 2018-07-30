@@ -1,7 +1,7 @@
 == Cluster Operator
 
 The Cluster Operator is in charge of deploying a Kafka cluster alongside a Zookeeper ensemble.
-As part of the Kafka cluster, it can also deploy the topic operator which provides operator-style topic management via ConfigMaps.
+As part of the Kafka cluster, it can also deploy the topic operator which provides operator-style topic management via `KafkaTopic` custom resources.
 The Cluster Operator is also able to deploy a Kafka Connect cluster which connects to an existing Kafka cluster.
 On {OpenShiftName} such a cluster can be deployed using the Source2Image feature, providing an easy way of including more connectors.
 
@@ -784,7 +784,7 @@ The configurable fields are the following :
 The Docker image to be used by the Topic Operator.
 The default value is determined by the value specified in the `<<STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE,STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE>>` environment variable of the Cluster Operator.
 `watchedNamespace`::
-The {ProductPlatformName} namespace in which the topic operator watches for topic ConfigMaps. Default is the namespace
+The {ProductPlatformName} namespace in which the topic operator watches for `KafkaTopics`. Default is the namespace
 where the topic operator is running.
 `reconciliationIntervalMs`::
 The interval between periodic reconciliations in milliseconds. Default is 900000 (15 minutes).
@@ -1259,8 +1259,8 @@ no image is specified as the `image` in the cluster ConfigMap.
 
 [[STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE]] `STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE`:: Optional, default `strimzi/topic-operator:latest`.
 The image name to use as a default when deploying the topic operator, if
-no image is specified as the `image` in the <<topic_operator_json_config,topic operator config>>
-of the Kafka cluster ConfigMap.
+no image is specified as the `spec.topicOperator.image` in the <<topic_operator_json_config,topic operator config>>
+of the `Kafka` resource.
 
 [[STRIMZI_DEFAULT_ZOOKEEPER_IMAGE]] `STRIMZI_DEFAULT_ZOOKEEPER_IMAGE`:: Optional, default `strimzi/zookeeper:latest`.
 The image name to use as a default when deploying Zookeeper, if

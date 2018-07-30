@@ -45,8 +45,6 @@ public class ZookeeperCluster extends AbstractModel {
     protected static final String CLUSTERING_PORT_NAME = "clustering";
     protected static final int LEADER_ELECTION_PORT = 3888;
     protected static final String LEADER_ELECTION_PORT_NAME = "leader-election";
-    protected static final int METRICS_PORT = 9404;
-    protected static final String METRICS_PORT_NAME = "metrics";
 
     protected static final String ZOOKEEPER_NAME = "zookeeper";
     protected static final String TLS_SIDECAR_NAME = "tls-sidecar";
@@ -328,7 +326,7 @@ public class ZookeeperCluster extends AbstractModel {
     private List<ContainerPort> getContainerPortList() {
         List<ContainerPort> portList = new ArrayList<>();
         if (isMetricsEnabled) {
-            portList.add(createContainerPort(metricsPortName, metricsPort, "TCP"));
+            portList.add(createContainerPort(METRICS_PORT_NAME, METRICS_PORT, "TCP"));
         }
 
         return portList;

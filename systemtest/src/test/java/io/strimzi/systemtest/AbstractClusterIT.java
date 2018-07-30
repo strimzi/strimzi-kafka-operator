@@ -26,10 +26,12 @@ import io.strimzi.api.kafka.model.KafkaAssembly;
 import io.strimzi.api.kafka.model.KafkaConnectAssembly;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.k8s.HelmClient;
 import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterException;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.ProcessResult;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.ClassRule;
@@ -83,6 +85,7 @@ public class AbstractClusterIT {
 
     static KubernetesClient client = new DefaultKubernetesClient();
     KubeClient<?> kubeClient = cluster.client();
+    HelmClient helmClient = cluster.helmClient();
 
     static String kafkaClusterName(String clusterName) {
         return clusterName + "-kafka";

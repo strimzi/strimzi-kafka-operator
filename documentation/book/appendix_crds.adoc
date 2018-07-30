@@ -41,6 +41,10 @@ Used in: <<type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
 |string
 |storage              1.2+<.<|Storage configuration (disk). Cannot be updated. The type depends on the value of the `storage.type` property within the given object, which must be one of [ephemeral, persistent-claim]
 |<<type-EphemeralStorage,`EphemeralStorage`>>, <<type-PersistentClaimStorage,`PersistentClaimStorage`>>
+|listeners            1.2+<.<|Configures listeners of Kafka brokers
+|<<type-KafkaListeners,`KafkaListeners`>>
+|authorization        1.2+<.<|Authorization configuration for Kafka brokers The type depends on the value of the `authorization.type` property within the given object, which must be one of [simple]
+|<<type-KafkaAuthorizationSimple,`KafkaAuthorizationSimple`>>
 |config               1.2+<.<|The kafka broker config. Properties with the following prefixes cannot be set: listeners, advertised., broker., listener.name.replication., listener.name.clienttls.ssl.truststore, listener.name.clienttls.ssl.keystore, host.name, port, inter.broker.listener.name, sasl., ssl., security., password., principal.builder.class, log.dir, zookeeper.connect, zookeeper.set.acl, super.user
 |map
 |rack                 1.2+<.<|Configuration of the `broker.rack` broker config.
@@ -106,6 +110,75 @@ It must have the value `persistent-claim` for the type `PersistentClaimStorage`.
 |size         1.2+<.<|When type=persistent-claim, defines the size of the persistent volume claim (i.e 1Gi). Mandatory when type=persistent-claim.
 |string
 |type         1.2+<.<|Must be `persistent-claim`
+|string
+|====
+
+[[type-KafkaListeners]]
+### `KafkaListeners` type v1alpha1 kafka.strimzi.io
+
+Used in: <<type-Kafka,`Kafka`>>
+
+
+[options="header"]
+|====
+|Field         |Description
+|plain  1.2+<.<|Configures plain listener on port 9092.
+|<<type-KafkaListenerPlain,`KafkaListenerPlain`>>
+|tls    1.2+<.<|Configures TLS listener on port 9093.
+|<<type-KafkaListenerTls,`KafkaListenerTls`>>
+|====
+
+[[type-KafkaListenerPlain]]
+### `KafkaListenerPlain` type v1alpha1 kafka.strimzi.io
+
+Used in: <<type-KafkaListeners,`KafkaListeners`>>
+
+
+[options="header"]
+|====
+|Field|Description
+|====
+
+[[type-KafkaListenerTls]]
+### `KafkaListenerTls` type v1alpha1 kafka.strimzi.io
+
+Used in: <<type-KafkaListeners,`KafkaListeners`>>
+
+
+[options="header"]
+|====
+|Field                  |Description
+|authentication  1.2+<.<|Authorization configuration for Kafka brokers The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls]
+|<<type-KafkaListenerAuthenticationTls,`KafkaListenerAuthenticationTls`>>
+|====
+
+[[type-KafkaListenerAuthenticationTls]]
+### `KafkaListenerAuthenticationTls` type v1alpha1 kafka.strimzi.io
+
+Used in: <<type-KafkaListenerTls,`KafkaListenerTls`>>
+
+
+The `type` property is a discriminator that distinguishes the use of the type `KafkaListenerAuthenticationTls` from .
+It must have the value `tls` for the type `KafkaListenerAuthenticationTls`.
+[options="header"]
+|====
+|Field        |Description
+|type  1.2+<.<|Must be `tls`
+|string
+|====
+
+[[type-KafkaAuthorizationSimple]]
+### `KafkaAuthorizationSimple` type v1alpha1 kafka.strimzi.io
+
+Used in: <<type-Kafka,`Kafka`>>
+
+
+The `type` property is a discriminator that distinguishes the use of the type `KafkaAuthorizationSimple` from .
+It must have the value `simple` for the type `KafkaAuthorizationSimple`.
+[options="header"]
+|====
+|Field        |Description
+|type  1.2+<.<|Must be `simple`
 |string
 |====
 

@@ -42,6 +42,21 @@ include::assembly-cluster-operator.adoc[leveloffset=+1]
 :context: str
 include::assembly-kafka-cluster.adoc[leveloffset=+1]
 
+=== Deploying with Helm Charts
+
+Instead of using the example YAML files you can also install the Cluster Operator by using its Helm Chart.
+The Helm Chart is included in the {ProductName} release artifact in an unarchived form.
+It is also available as a tarball archive from {ReleaseDownload}.
+You may choose to install the Cluster Operator using either method, but installing it directly from the GitHub release requires the least amount of steps.
+
+[source,shell,subs=attributes+]
+helm install {ChartReleaseDownload}
+
+To verify whether the Cluster Operator has deployed successfully you can use the Helm command line tool to discover its release name and deployment status.
+
+[source,shell]
+helm ls
+
 == Kafka Connect
 
 The Cluster Operator can also deploy a https://kafka.apache.org/documentation/#connect[Kafka Connect] cluster which can be used with either of the Kafka broker deployments described above.
@@ -170,21 +185,20 @@ _The name of the build should be changed according to the cluster name of the de
 
 == Topic Operator
 
-{ProductName} uses a component called the Topic Operator to manage topics in the Kafka cluster. The Topic Operator
-is deployed as a process running inside a {ProductPlatformName} cluster. To create a new Kafka topic, a ConfigMap
-with the related configuration (name, partitions, replication factor, ...) has to be created. Based on the information
-in that ConfigMap, the Topic Operator will create a corresponding Kafka topic in the cluster.
+{ProductName} uses a component called the Topic Operator to manage topics in the Kafka cluster. 
+The Topic Operator is deployed as a process running inside a {ProductPlatformName} cluster. 
+To create a new Kafka topic, a `KafkaTopic` custom resource with the related configuration (name, partitions, replication factor, ...) has to be created.
+Based on the information in that `KafkaTopic`, the Topic Operator will create a corresponding Kafka topic in the cluster.
 
-Deleting a topic ConfigMap causes the deletion of the corresponding Kafka topic as well.
+Deleting a `KafkaTopic` causes the deletion of the corresponding Kafka topic as well.
 
 The Cluster Operator is able to deploy a Topic Operator, which can be configured in the `Kafka` resource.
-Alternatively, it is possible to deploy a Topic Operator manually, rather than having it deployed
-by the Cluster Operator.
+Alternatively, it is possible to deploy a Topic Operator manually, rather than having it deployed by the Cluster Operator.
 
 === Deploying through the Cluster Operator
 
 To deploy the Topic Operator through the Cluster Operator, its configuration needs to be provided in the
-`Kafka` resource in the `topicOperator` field as a JSON string.
+`Kafka` resource in the `topicOperator` property.
 
 For more information on the JSON configuration format see <<topic_operator_json_config>>.
 
@@ -192,7 +206,7 @@ For more information on the JSON configuration format see <<topic_operator_json_
 
 If you are not going to deploy the Kafka cluster using the Cluster Operator but you already have a Kafka cluster deployed
 on {ProductPlatformName}, it could be useful to deploy the Topic Operator using the provided YAML files.
-In that case you can still leverage on the Topic Operator features of managing Kafka topics through related ConfigMaps.
+In that case you can still leverage on the Topic Operator features of managing Kafka topics through related `KafkaTopics`.
 
 ifdef::Kubernetes[]
 ==== Deploying to {KubernetesName}
@@ -222,18 +236,13 @@ can be used:
 [source,shell]
 oc describe all
 
-=== Topic ConfigMap
+==== `KafkaTopic` resources
 
-When the Topic Operator is deployed by the Cluster Operator it will be configured to watch
-for "topic ConfigMaps" which are those with the following labels:
-
-[source,yaml]
-strimzi.io/cluster: <cluster-name>
-strimzi.io/kind: topic
+When the Topic Operator is deployed by the Cluster Operator it will be configured to watch for `KafkaTopics` with the label `strimzi.io/cluster: _<cluster-name>_`
 
 NOTE: When the Topic Operator is deployed manually the `strimzi.io/cluster` label is not necessary.
 
-The topic ConfigMap contains the topic configuration in a specific format. The ConfigMap format is described in <<topic_config_map_details>>.
+The `KafkaTopic` contains the topic configuration in a specific format, described in xref:format-of-the-kafkatopic-{context}[Format of the `KafkaTopic`].
 
 === Logging
 The `logging` field allows the configuration of loggers. These loggers are listed below.
