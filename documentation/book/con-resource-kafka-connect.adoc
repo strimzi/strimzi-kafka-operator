@@ -9,39 +9,49 @@ Labels that are applied to the `KafkaConnect` or `KafkaConnectS2I` resources wil
 
 The `KafkaConnect` resource supports the following within its `spec`:
 
-`nodes`::
-Number of Kafka Connect worker nodes. Default is 1.
+.KafkaConnect Parameters
+[cols="30%,50%,20%",options="header"]
+|===
+|Parameter
+|Description
+|Default Value
 
-`image`::
-The Docker image to be used by the Kafka Connect workers.
-The default value is determined by the value specified in the  xref:STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE[`STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE`] environment variable of the Cluster Operator. If S2I is used on {OpenShiftName}, then it should be the related S2I image.
+|`nodes`
+|Number of Kafka Connect worker nodes.
+|1
 
-`healthcheck-delay`::
-The initial delay for the liveness and readiness probes for each Kafka Connect worker node.
-Default is 60.
+|`image`
+| The Docker image to be used by the Kafka Connect workers. The default value is determined by the value specified in the  xref:STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE[`STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE`] environment variable of the Cluster Operator. If S2I is used on {OpenShiftName}, then it should be the related S2I image.
+|
 
-`healthcheck-timeout`::
-The timeout on the liveness and readiness probes for each Kafka Connect worker node.
-Default is 5.
+|`healthcheck-delay`
+|The initial delay for the liveness and readiness probes for each Kafka Connect worker node.
+|60
 
-`connect-config`::
-A JSON string with Kafka Connect configuration. For more information, see xref:kafka_connect_configuration_json_config-{context}[Kafka Connect configuration].
+|`healthcheck-timeout`
+|The timeout on the liveness and readiness probes for each Kafka Connect worker node.
+|5
 
-`metrics-config`::
-A JSON string representing the JMX exporter configuration for exposing metrics from Kafka Connect nodes.
-When this field is absent no metrics will be exposed.
+|`connect-config`
+| A JSON string with Kafka Connect configuration. For more information, see xref:kafka_connect_configuration_json_config-{context}[Kafka Connect configuration].
+|
 
-`resources`::
-A JSON string configuring the resource limits and requests for Kafka Connect containers.
-For information about the accepted JSON format, see xref:resources_json_config[Resource limits and requests].
+|`metrics-config`
+|A JSON string representing the JMX exporter configuration for exposing metrics from Kafka Connect nodes. When this field is absent no metrics will be exposed.
+|
 
-`jvmOptions`::
-A JSON string allowing the JVM running Kafka Connect to be configured.
-For information about the accepted JSON format, xref:jvm-json-config-{context}[JVM Options].
+|`resources`
+| A JSON string configuring the resource limits and requests for Kafka Connect containers. For information about the accepted JSON format, see xref:resources_json_config[Resource limits and requests].
+|
 
-`affinity`::
-Node and Pod affinity for the Kafka Connect pods, as described in xref:affinity[Node and Pod Affinity].
-The format of the corresponding key is the same as the content supported in the Pod `affinity` in {ProductPlatformName}.
+|`jvmOptions`
+|A JSON string allowing the JVM running Kafka Connect to be configured. For information about the accepted JSON format, xref:jvm-json-config-{context}[JVM Options].
+|
+
+|`affinity`
+| Node and Pod affinity for the Kafka Connect pods, as described in xref:affinity[Node and Pod Affinity]. The format of the corresponding key is the same as the content supported in the Pod `affinity` in {ProductPlatformName}.
+|
+|===
 
 The following is an example of a `KafkaConnect` resource.
 
@@ -67,9 +77,17 @@ spec:
 
 The resources created by the Cluster Operator into the {ProductPlatformName} cluster will be the following :
 
-[connect-cluster-name]-connect::
-Deployment which is in charge to create the Kafka Connect worker node pods.
-[connect-cluster-name]-connect-api::
-Service which exposes the REST interface for managing the Kafka Connect cluster.
-[connect-cluster-name]-metrics-config::
-ConfigMap which contains the Kafka Connect metrics configuration and is mounted as a volume by the Kafka Connect pods.
+[cols="30%,70%",options="header"]
+|===
+|Parameter
+|Description
+
+|_connect-cluster-name_-connect
+|Deployment which is in charge to create the Kafka Connect worker node pods.
+
+|_connect-cluster-name_-connect-api
+|Service which exposes the REST interface for managing the Kafka Connect cluster.
+
+|_connect-cluster-name_-metrics-config
+|ConfigMap which contains the Kafka Connect metrics configuration and is mounted as a volume by the Kafka Connect pods.
+|===
