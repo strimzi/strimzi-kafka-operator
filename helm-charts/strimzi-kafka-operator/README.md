@@ -6,9 +6,9 @@ See our [website](https://github.com/strimzi/strimzi-kafka-operator) for more de
 
 ## Introduction
 
-This chart bootstraps the Strimzi Cluster Operator, Roles, Service Accounts, and Strimzi Custom Resource Definitions 
-for running [Apache Kafka](https://kafka.apache.org/) on [Kubernetes](http://kubernetes.io) cluster using the 
-[Helm](https://helm.sh) package manager.
+This chart bootstraps the Strimzi Cluster Operator Deployment, Roles, Role Bindings, Service Accounts, and 
+Custom Resource Definitions for running [Apache Kafka](https://kafka.apache.org/) on [Kubernetes](http://kubernetes.io) 
+cluster using the [Helm](https://helm.sh) package manager.
 
 ## Prerequisites
 
@@ -23,7 +23,7 @@ To install the chart with the release name `my-release`:
 $ helm install --name my-release incubator/strimzi-kafka-operator
 ```
 
-The command deploys the Strimzi Cluster Operator on the Kubernetes cluster in the default configuration. 
+The command deploys the Strimzi Cluster Operator on the Kubernetes cluster with the default configuration. 
 The [configuration](#configuration) section lists the parameters that can be configured during installation.
 
 ## Uninstalling the Chart
@@ -34,11 +34,11 @@ To uninstall/delete the `my-release` deployment:
 $ helm delete my-release
 ```
 
-The command removes all the Kubernetes components associated with the chart and deletes the release.
+The command removes all the Kubernetes components associated with the operator and deletes the release.
 
 ## Configuration
 
-The following table lists the configurable parameters of the Strimzi  chart and their default values.  Runtime 
+The following table lists the configurable parameters of the Strimzi chart and their default values.  Runtime 
 configuration of Kafka and other components are defined within their respective Custom Resource Definitions.  See
 the documentation for more details.
 
@@ -47,7 +47,7 @@ the documentation for more details.
 | `image.repository`                   | Cluster Operator image repository         | `strimzi`                                            |
 | `image.name`                         | Cluster Operator image name               | `cluster-operator`                                   |
 | `image.tag`                          | Cluster Operator image tag                | `latest`                                             |
-| `image.imagePullPolicy`              | Cluster Operator image pull policy        | `IfNotPrsent`                                        |
+| `image.imagePullPolicy`              | Cluster Operator image pull policy        | `IfNotPresent`                                       |
 | `logLevel`                           | Cluster Operator log level                | `INFO`                                               |
 | `fullReconciliationIntervalMs`       | Full reconciliation interval in milliseconds | 120000                                            |
 | `operationTimeoutMs`                 | Operation timeout in milliseconds         | 300000                                               |
@@ -91,5 +91,5 @@ the documentation for more details.
 Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example,
 
 ```bash
-$ helm install --name my-release --set env.logLevel=DEBUG,env.fullReconciliationIntervalMs incubator/strimzi-kafka-operator
+$ helm install --name my-release --set logLevel=DEBUG,fullReconciliationIntervalMs=240000 incubator/strimzi-kafka-operator
 ```
