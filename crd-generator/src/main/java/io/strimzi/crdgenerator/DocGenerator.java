@@ -60,11 +60,11 @@ public class DocGenerator {
     }
 
     private void appendAnchor(Crd crd, Class<?> anchor) throws IOException {
-        out.append("[[").append(anchor(anchor)).append("]]").append(NL);
+        out.append("[id='").append(anchor(anchor)).append("']").append(NL);
     }
 
     private String anchor(Class<?> anchor) {
-        return "type-" + anchor.getSimpleName();
+        return "type-" + anchor.getSimpleName() + "-{context}";
     }
 
     private void appendHeading(Crd crd, String name) throws IOException {

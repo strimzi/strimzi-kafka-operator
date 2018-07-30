@@ -29,7 +29,7 @@ In order to handle failovers properly, a periodic reconciliation process is exec
 [[kafka_assembly_details]]
 === Format of the `Kafka` resource
 
-The full schema is described in xref:type-Kafka[].
+The full schema is described in xref:type-Kafka-str[].
 
 Whatever other labels are applied to the desired Kafka resource will also be applied to the {ProductPlatformName} resources making up the Kafka cluster.
 This provides a convenient mechanism for those resources to be labelled in whatever way the user requires.
@@ -491,7 +491,7 @@ Persistent Volume Claim for the volume used for storing data for the Kafka broke
 `data-[cluster-name]-zookeeper-[idx]`:: 
 Persistent Volume Claim for the volume used for storing data for the Zookeeper node pod `[idx]`.
 
-See <<type-EphemeralStorage>> and <<type-PersistentClaimStorage>> for further details.
+See the reference about xref:type-EphemeralStorage-{context}[ephemeral storage] and xref:type-PersistentClaimStorage-{context}[persistent storage] for further details.
 
 ===== Metrics
 
