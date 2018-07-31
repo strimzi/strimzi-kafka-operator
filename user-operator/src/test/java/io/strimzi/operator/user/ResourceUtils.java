@@ -18,17 +18,17 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 
 public class ResourceUtils {
-    public static Map labels = Collections.singletonMap("foo", "bar");
-    public static String namespace = "namespace";
-    public static String name = "user";
+    public static final Map LABELS = Collections.singletonMap("foo", "bar");
+    public static final String NAMESPACE = "NAMESPACE";
+    public static final String NAME = "user";
 
     public static KafkaUser createKafkaUser() {
         return new KafkaUserBuilder()
                 .withMetadata(
                         new ObjectMetaBuilder()
-                                .withNamespace(namespace)
-                                .withName(name)
-                                .withLabels(labels)
+                                .withNamespace(NAMESPACE)
+                                .withName(NAME)
+                                .withLabels(LABELS)
                                 .build()
                 )
                 .withNewSpec()
@@ -41,7 +41,7 @@ public class ResourceUtils {
         return new SecretBuilder()
                 .withNewMetadata()
                     .withName("somename")
-                    .withNamespace(namespace)
+                    .withNamespace(NAMESPACE)
                 .endMetadata()
                 .addToData("clients-ca.key", Base64.getEncoder().encodeToString("clients-ca-key".getBytes()))
                 .addToData("clients-ca.crt", Base64.getEncoder().encodeToString("clients-ca-crt".getBytes()))
@@ -51,9 +51,9 @@ public class ResourceUtils {
     public static Secret createUserCert()  {
         return new SecretBuilder()
                 .withNewMetadata()
-                    .withName(name)
-                    .withNamespace(namespace)
-                    .withLabels(Labels.userLabels(labels).withKind(KafkaUser.RESOURCE_KIND).toMap())
+                    .withName(NAME)
+                    .withNamespace(NAMESPACE)
+                    .withLabels(Labels.userLabels(LABELS).withKind(KafkaUser.RESOURCE_KIND).toMap())
                 .endMetadata()
                 .addToData("ca.crt", Base64.getEncoder().encodeToString("clients-ca-crt".getBytes()))
                 .addToData("user.key", Base64.getEncoder().encodeToString("expected-key".getBytes()))

@@ -20,17 +20,17 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 public class KafkaUserModelTest {
-    private static KafkaUser user = ResourceUtils.createKafkaUser();
-    private static Secret clientsCa = ResourceUtils.createClientsCa();
-    private static Secret userCert = ResourceUtils.createUserCert();
+    private final KafkaUser user = ResourceUtils.createKafkaUser();
+    private final Secret clientsCa = ResourceUtils.createClientsCa();
+    private final Secret userCert = ResourceUtils.createUserCert();
 
     @Test
     public void testFromCrd()   {
         KafkaUserModel model = KafkaUserModel.fromCrd(new MockCertManager(), user, clientsCa, null);
 
-        assertEquals(ResourceUtils.namespace, model.namespace);
-        assertEquals(ResourceUtils.name, model.name);
-        assertEquals(Labels.userLabels(ResourceUtils.labels).withKind(KafkaUser.RESOURCE_KIND), model.labels);
+        assertEquals(ResourceUtils.NAMESPACE, model.namespace);
+        assertEquals(ResourceUtils.NAME, model.name);
+        assertEquals(Labels.userLabels(ResourceUtils.LABELS).withKind(KafkaUser.RESOURCE_KIND), model.labels);
         assertEquals(KafkaUserTlsClientAuthentication.TYPE_TLS, model.authentication.getType());
     }
 
@@ -41,9 +41,9 @@ public class KafkaUserModelTest {
 
         System.out.println(generated.getData().keySet());
 
-        assertEquals(ResourceUtils.name, generated.getMetadata().getName());
-        assertEquals(ResourceUtils.namespace, generated.getMetadata().getNamespace());
-        assertEquals(Labels.userLabels(ResourceUtils.labels).withKind(KafkaUser.RESOURCE_KIND).toMap(), generated.getMetadata().getLabels());
+        assertEquals(ResourceUtils.NAME, generated.getMetadata().getName());
+        assertEquals(ResourceUtils.NAMESPACE, generated.getMetadata().getNamespace());
+        assertEquals(Labels.userLabels(ResourceUtils.LABELS).withKind(KafkaUser.RESOURCE_KIND).toMap(), generated.getMetadata().getLabels());
     }
 
     @Test
