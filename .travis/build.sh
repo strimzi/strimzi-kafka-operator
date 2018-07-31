@@ -11,9 +11,10 @@ export DOCKER_TAG=$COMMIT
 make docker_build
 
 CHANGED_DERIVED=$(git diff --name-status -- examples/ helm-charts/)
-if [ -n $CHANGED_DERIVED ] ; then
-  echo $CHANGED_DERIVED
-  echo "Uncommitted changes in derived resources: Run the following to add up-to-date resources:"
+if [ -n "$CHANGED_DERIVED" ] ; then
+  echo "Uncommitted changes in derived resources:"
+  echo "$CHANGED_DERIVED"
+  echo "Run the following to add up-to-date resources:"
   echo "  mvn clean verify -DskipTests -DskipITs \\"
   echo "    && git add examples/ helm-charts/"
   echo "    && git commit -m 'Update derived resources'"
