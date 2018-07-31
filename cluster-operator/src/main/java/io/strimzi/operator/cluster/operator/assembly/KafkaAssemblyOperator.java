@@ -114,6 +114,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private final StatefulSet statefulSet;
         private final Secret nodesSecret;
         private ReconcileResult<StatefulSet> diffs;
+        private boolean forceRestart;
 
         ZookeeperClusterDescription(ZookeeperCluster zookeeper, Service service, Service headlessService,
                                     ConfigMap metricsAndLogsConfigMap, StatefulSet statefulSet, Secret nodesSecret) {
@@ -149,6 +150,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return this.nodesSecret;
         }
 
+        private boolean isForceRestart() {
+            return this.forceRestart;
+        }
+
         ReconcileResult<StatefulSet> diffs() {
             return this.diffs;
         }
@@ -162,6 +167,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ZookeeperClusterDescription> withVoid(Future<?> r) {
             return r.map(this);
+        }
+
+        Future<ZookeeperClusterDescription> withAncillaryCmChanged(Future<ReconcileResult<ConfigMap>> r) {
+            return r.map(rr -> {
+                this.forceRestart = rr instanceof ReconcileResult.Patched;
+                return this;
+            });
         }
     }
 
@@ -183,6 +195,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private final Secret clusterPublicKeySecret;
         private final Secret brokersInternalSecret;
         private ReconcileResult<StatefulSet> diffs;
+        private boolean forceRestart;
 
         KafkaClusterDescription(KafkaCluster kafka, Service service, Service headlessService,
                                 ConfigMap metricsAndLogsConfigMap, StatefulSet statefulSet,
@@ -239,6 +252,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return this.diffs;
         }
 
+        private boolean isForceRestart() {
+            return this.forceRestart;
+        }
+
         Future<KafkaClusterDescription> withDiff(Future<ReconcileResult<StatefulSet>> r) {
             return r.map(rr -> {
                 this.diffs = rr;
@@ -248,6 +265,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<KafkaClusterDescription> withVoid(Future<?> r) {
             return r.map(this);
+        }
+
+        Future<KafkaClusterDescription> withAncillaryCmChanged(Future<ReconcileResult<ConfigMap>> r) {
+            return r.map(rr -> {
+                this.forceRestart = rr instanceof ReconcileResult.Patched;
+                return this;
+            });
         }
     }
 
@@ -280,6 +304,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Deployment deployment() {
+            try {
+                this.deployment.getSpec().getTemplate().getMetadata().getAnnotations().put("strimzi.io/logging", this.metricsAndLogsConfigMap.getData().get("log4j2.properties"));
+            } catch (NullPointerException ex) {
+                
+            }
             return this.deployment;
         }
 
@@ -348,13 +377,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(desc -> desc.withVoid(kafkaSetOperations.scaleDown(namespace, desc.kafka().getName(), desc.kafka().getReplicas())))
                 .compose(desc -> desc.withVoid(serviceOperations.reconcile(namespace, desc.kafka().getServiceName(), desc.service())))
                 .compose(desc -> desc.withVoid(serviceOperations.reconcile(namespace, desc.kafka().getHeadlessServiceName(), desc.headlessService())))
-                .compose(desc -> desc.withVoid(configMapOperations.reconcile(namespace, desc.kafka().getAncillaryConfigName(), desc.metricsAndLogsConfigMap())))
-                .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, KafkaCluster.clientsCASecretName(name), desc.clientsCASecret())))
+                .compose(desc -> desc.withAncillaryCmChanged(configMapOperations.reconcile(namespace, desc.kafka().getAncillaryConfigName(), desc.metricsAndLogsConfigMap())))                .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, KafkaCluster.clientsCASecretName(name), desc.clientsCASecret())))
                 .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, KafkaCluster.clientsPublicKeyName(name), desc.clientsPublicKeySecret())))
                 .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, KafkaCluster.clusterPublicKeyName(name), desc.clusterPublicKeySecret())))
                 .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, KafkaCluster.brokersSecretName(name), desc.brokersInternalSecret())))
                 .compose(desc -> desc.withDiff(kafkaSetOperations.reconcile(namespace, desc.kafka().getName(), desc.statefulSet())))
-                .compose(desc -> desc.withVoid(kafkaSetOperations.maybeRollingUpdate(desc.diffs().resource())))
+                .compose(desc -> desc.withVoid(kafkaSetOperations.maybeRollingUpdate(desc.diffs().resource(), desc.isForceRestart())))
                 .compose(desc -> desc.withVoid(kafkaSetOperations.scaleUp(namespace, desc.kafka().getName(), desc.kafka().getReplicas())))
                 .compose(desc -> desc.withVoid(serviceOperations.endpointReadiness(namespace, desc.service(), 1_000, operationTimeoutMs)))
                 .compose(desc -> desc.withVoid(serviceOperations.endpointReadiness(namespace, desc.headlessService(), 1_000, operationTimeoutMs)))
@@ -437,10 +465,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(desc -> desc.withVoid(zkSetOperations.scaleDown(namespace, desc.zookeeper().getName(), desc.zookeeper().getReplicas())))
                 .compose(desc -> desc.withVoid(serviceOperations.reconcile(namespace, desc.zookeeper().getServiceName(), desc.service())))
                 .compose(desc -> desc.withVoid(serviceOperations.reconcile(namespace, desc.zookeeper().getHeadlessServiceName(), desc.headlessService())))
-                .compose(desc -> desc.withVoid(configMapOperations.reconcile(namespace, desc.zookeeper().getAncillaryConfigName(), desc.metricsAndLogsConfigMap())))
+                .compose(desc -> desc.withAncillaryCmChanged(configMapOperations.reconcile(namespace, desc.zookeeper().getAncillaryConfigName(), desc.metricsAndLogsConfigMap())))
                 .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, ZookeeperCluster.nodesSecretName(name), desc.nodesSecret())))
                 .compose(desc -> desc.withDiff(zkSetOperations.reconcile(namespace, desc.zookeeper().getName(), desc.statefulSet())))
-                .compose(desc -> desc.withVoid(zkSetOperations.maybeRollingUpdate(desc.diffs().resource())))
+                .compose(desc -> desc.withVoid(zkSetOperations.maybeRollingUpdate(desc.diffs().resource(), desc.isForceRestart())))
                 .compose(desc -> desc.withVoid(zkSetOperations.scaleUp(namespace, desc.zookeeper().getName(), desc.zookeeper().getReplicas())))
                 .compose(desc -> desc.withVoid(serviceOperations.endpointReadiness(namespace, desc.service(), 1_000, operationTimeoutMs)))
                 .compose(desc -> desc.withVoid(serviceOperations.endpointReadiness(namespace, desc.headlessService(), 1_000, operationTimeoutMs)))

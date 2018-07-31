@@ -13,6 +13,8 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.vertx.core.Vertx;
 
+import java.util.Random;
+
 import static java.util.Collections.singletonMap;
 import static org.mockito.Mockito.when;
 
@@ -46,7 +48,7 @@ public class ConfigMapOperatorTest extends AbstractResourceOperatorTest<Kubernet
                 .withNamespace(NAMESPACE)
                 .withLabels(singletonMap("foo", "bar"))
                 .endMetadata()
-                .withData(singletonMap("FOO", "BAR"))
+                .withData(singletonMap("FOO", Integer.toString(new Random().nextInt())))
                 .build();
     }
 }

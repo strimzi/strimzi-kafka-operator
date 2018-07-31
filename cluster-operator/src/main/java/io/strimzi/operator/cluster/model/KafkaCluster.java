@@ -602,10 +602,6 @@ public class KafkaCluster extends AbstractModel {
         if (configuration != null && !configuration.getConfiguration().isEmpty()) {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_CONFIGURATION, configuration.getConfiguration()));
         }
-        // A hack to force rolling when the logging config changes
-        if (getLogging() != null && getLogging().getCm() != null) {
-            varList.add(buildEnvVar(ENV_VAR_KAFKA_LOG_CONFIGURATION, getLogging().getCm().toString()));
-        }
 
         if (listeners != null)  {
             if (listeners.getPlain() != null)   {

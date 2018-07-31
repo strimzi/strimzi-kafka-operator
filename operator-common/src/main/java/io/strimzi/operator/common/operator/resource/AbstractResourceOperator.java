@@ -32,7 +32,7 @@ import java.util.Map;
 public abstract class AbstractResourceOperator<C extends KubernetesClient, T extends HasMetadata,
         L extends KubernetesResourceList/*<T>*/, D, R extends Resource<T, D>> {
 
-    private final Logger log = LogManager.getLogger(getClass());
+    protected final Logger log = LogManager.getLogger(getClass());
     protected final Vertx vertx;
     protected final C client;
     protected final String resourceKind;
