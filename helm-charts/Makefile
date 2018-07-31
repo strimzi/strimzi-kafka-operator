@@ -41,6 +41,8 @@ helm_pkg: helm_lint helm_examples
 	helm package --version $(CHART_SEMANTIC_RELEASE_VERSION) --app-version $(CHART_SEMANTIC_RELEASE_VERSION) --destination ./ $(CHART_PATH)
 
 docker_build: helm_pkg
+docker_tag:
+docker_push:
 
 all: docker_build
 clean: helm_clean
