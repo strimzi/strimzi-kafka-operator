@@ -84,7 +84,7 @@ public class AbstractST {
 
     static KubernetesClient client = new DefaultKubernetesClient();
     KubeClient<?> kubeClient = cluster.client();
-    HelmClient helmClient = cluster.helmClient();
+//    HelmClient helmClient = cluster.helmClient();
 
     static String kafkaClusterName(String clusterName) {
         return clusterName + "-kafka";
