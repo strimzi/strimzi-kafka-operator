@@ -8,7 +8,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.strimzi.crdgenerator.annotations.Description;
 
 import java.io.Serializable;
@@ -29,19 +28,5 @@ public abstract class Logging implements Serializable {
     @Description("Logging type, must be either 'inline' or 'external'.")
     @JsonIgnore
     public abstract String getType();
-
-    // Hack
-    private ConfigMap cm;
-
-    @JsonIgnore
-    @Deprecated
-    public ConfigMap getCm() {
-        return cm;
-    }
-
-    @Deprecated
-    public void setCm(ConfigMap cm) {
-        this.cm = cm;
-    }
 }
 

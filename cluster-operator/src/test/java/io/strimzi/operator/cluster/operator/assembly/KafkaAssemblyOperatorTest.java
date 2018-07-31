@@ -68,6 +68,7 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonMap;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -228,11 +229,11 @@ public class KafkaAssemblyOperatorTest {
         ArgumentCaptor<StatefulSet> ssCaptor = ArgumentCaptor.forClass(StatefulSet.class);
         when(mockZsOps.reconcile(anyString(), anyString(), ssCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
         when(mockZsOps.scaleDown(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(null));
-        when(mockZsOps.maybeRollingUpdate(any())).thenReturn(Future.succeededFuture());
+        when(mockZsOps.maybeRollingUpdate(any(), anyBoolean())).thenReturn(Future.succeededFuture());
         when(mockZsOps.scaleUp(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         when(mockKsOps.reconcile(anyString(), anyString(), ssCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
         when(mockKsOps.scaleDown(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(null));
-        when(mockKsOps.maybeRollingUpdate(any())).thenReturn(Future.succeededFuture());
+        when(mockKsOps.maybeRollingUpdate(any(), anyBoolean())).thenReturn(Future.succeededFuture());
         when(mockKsOps.scaleUp(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         //ArgumentCaptor<String> secretsCaptor = ArgumentCaptor.forClass(String.class);
         //when(mockSecretOps.reconcile(anyString(), secretsCaptor.capture(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
@@ -651,7 +652,6 @@ public class KafkaAssemblyOperatorTest {
                     kafkaAssembly.getSpec().getKafka().getReplicas(),
                     kafkaAssembly.getSpec().getZookeeper().getReplicas());
             updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly, secrets);
-
         }
     }
 
@@ -790,8 +790,8 @@ public class KafkaAssemblyOperatorTest {
             StatefulSet ss = invocation.getArgument(2);
             return Future.succeededFuture(ReconcileResult.patched(ss));
         });
-        when(mockZsOps.maybeRollingUpdate(any())).thenReturn(Future.succeededFuture());
-        when(mockKsOps.maybeRollingUpdate(any())).thenReturn(Future.succeededFuture());
+        when(mockZsOps.maybeRollingUpdate(any(), anyBoolean())).thenReturn(Future.succeededFuture());
+        when(mockKsOps.maybeRollingUpdate(any(), anyBoolean())).thenReturn(Future.succeededFuture());
 
         // Mock StatefulSet scaleUp
         ArgumentCaptor<String> scaledUpCaptor = ArgumentCaptor.forClass(String.class);

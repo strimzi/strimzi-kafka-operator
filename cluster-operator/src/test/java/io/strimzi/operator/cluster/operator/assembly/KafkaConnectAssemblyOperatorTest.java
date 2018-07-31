@@ -37,8 +37,10 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
@@ -60,6 +62,16 @@ public class KafkaConnectAssemblyOperatorTest {
 
     protected static Vertx vertx;
     public static final String METRICS_CONFIG = "{\"foo\":\"bar\"}";
+    public static final String LOGGING_CONFIG = "#Do not change this generated file. Logging can be configured in the corresponding kubernetes/openshift resource.\n" +
+            "\n" +
+            "log4j.rootLogger=${connect.root.logger.level}, CONSOLE\n" +
+            "log4j.logger.org.I0Itec.zkclient=ERROR\n" +
+            "log4j.logger.org.reflections=ERROR\n" +
+            "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
+            "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
+            "connect.root.logger.level=INFO\n" +
+            "log4j.logger.org.apache.zookeeper=ERROR\n" +
+            "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n";
 
     @BeforeClass
     public static void before() {
@@ -111,7 +123,7 @@ public class KafkaConnectAssemblyOperatorTest {
                 metricsNames.add(KafkaConnectCluster.logAndMetricsConfigName(clusterCmName));
             }
 
-            // Vertify service
+            // Verify service
             List<Service> capturedServices = serviceCaptor.getAllValues();
             context.assertEquals(1, capturedServices.size());
             Service service = capturedServices.get(0);
@@ -123,7 +135,9 @@ public class KafkaConnectAssemblyOperatorTest {
             context.assertEquals(1, capturedDc.size());
             Deployment dc = capturedDc.get(0);
             context.assertEquals(connect.getName(), dc.getMetadata().getName());
-            context.assertEquals(connect.generateDeployment(), dc, "Deployments are not equal");
+            Map annotations = new HashMap();
+            annotations.put("strimzi.io/logging", LOGGING_CONFIG);
+            context.assertEquals(connect.generateDeployment(annotations), dc, "Deployments are not equal");
 
             async.complete();
         });
@@ -144,7 +158,7 @@ public class KafkaConnectAssemblyOperatorTest {
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(clusterCm);
         when(mockConnectOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
         when(mockServiceOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateService());
-        when(mockDcOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateDeployment());
+        when(mockDcOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateDeployment(new HashMap<String, String>()));
 
         ArgumentCaptor<String> serviceNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
@@ -206,7 +220,7 @@ public class KafkaConnectAssemblyOperatorTest {
 
         when(mockConnectOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
         when(mockServiceOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateService());
-        when(mockDcOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateDeployment());
+        when(mockDcOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateDeployment(new HashMap<String, String>()));
 
         ArgumentCaptor<String> serviceNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
@@ -234,6 +248,15 @@ public class KafkaConnectAssemblyOperatorTest {
                 .endMetadata()
                 .withData(Collections.singletonMap(AbstractModel.ANCILLARY_CM_KEY_METRICS, METRICS_CONFIG))
                 .build();
+        when(mockCmOps.get(clusterCmNamespace, KafkaConnectCluster.logAndMetricsConfigName(clusterCmName))).thenReturn(metricsCm);
+
+        ConfigMap loggingCm = new ConfigMapBuilder().withNewMetadata()
+                    .withName(KafkaConnectCluster.logAndMetricsConfigName(clusterCmName))
+                    .withNamespace(clusterCmNamespace)
+                    .endMetadata()
+                    .withData(Collections.singletonMap(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG, LOGGING_CONFIG))
+                    .build();
+
         when(mockCmOps.get(clusterCmNamespace, KafkaConnectCluster.logAndMetricsConfigName(clusterCmName))).thenReturn(metricsCm);
 
         // Mock CM patch
@@ -266,7 +289,9 @@ public class KafkaConnectAssemblyOperatorTest {
             context.assertEquals(1, capturedDc.size());
             Deployment dc = capturedDc.get(0);
             context.assertEquals(compareTo.getName(), dc.getMetadata().getName());
-            context.assertEquals(compareTo.generateDeployment(), dc, "Deployments are not equal");
+            Map<String, String> annotations = new HashMap();
+            annotations.put("strimzi.io/logging", loggingCm.getData().get(compareTo.ANCILLARY_CM_KEY_LOG_CONFIG));
+            context.assertEquals(compareTo.generateDeployment(annotations), dc, "Deployments are not equal");
 
             // Verify scaleDown / scaleUp were not called
             context.assertEquals(1, dcScaleDownNameCaptor.getAllValues().size());
@@ -295,7 +320,7 @@ public class KafkaConnectAssemblyOperatorTest {
 
         when(mockConnectOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
         when(mockServiceOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateService());
-        when(mockDcOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateDeployment());
+        when(mockDcOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateDeployment(new HashMap<String, String>()));
 
         ArgumentCaptor<String> serviceNamespaceCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> serviceNameCaptor = ArgumentCaptor.forClass(String.class);
@@ -352,7 +377,7 @@ public class KafkaConnectAssemblyOperatorTest {
 
         when(mockConnectOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
         when(mockServiceOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateService());
-        when(mockDcOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateDeployment());
+        when(mockDcOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateDeployment(new HashMap<String, String>()));
 
         when(mockServiceOps.reconcile(eq(clusterCmNamespace), any(), any())).thenReturn(Future.succeededFuture());
 
@@ -401,7 +426,7 @@ public class KafkaConnectAssemblyOperatorTest {
 
         when(mockConnectOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
         when(mockServiceOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateService());
-        when(mockDcOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateDeployment());
+        when(mockDcOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateDeployment(new HashMap<String, String>()));
 
         when(mockServiceOps.reconcile(eq(clusterCmNamespace), any(), any())).thenReturn(Future.succeededFuture());
 
@@ -444,7 +469,7 @@ public class KafkaConnectAssemblyOperatorTest {
 
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(ResourceUtils.createEmptyKafkaConnectCluster(clusterCmNamespace, clusterCmName));
 
-        when(mockDcOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateDeployment());
+        when(mockDcOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateDeployment(new HashMap<String, String>()));
 
         ArgumentCaptor<String> serviceNamespaceCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> serviceNameCaptor = ArgumentCaptor.forClass(String.class);
@@ -501,18 +526,18 @@ public class KafkaConnectAssemblyOperatorTest {
         // providing the list of ALL Deployments for all the Kafka Connect clusters
         Labels newLabels = Labels.forKind(KafkaConnectAssembly.RESOURCE_KIND);
         when(mockDcOps.list(eq(clusterCmNamespace), eq(newLabels))).thenReturn(
-                asList(KafkaConnectCluster.fromCrd(bar).generateDeployment(),
-                        KafkaConnectCluster.fromCrd(baz).generateDeployment()));
+                asList(KafkaConnectCluster.fromCrd(bar).generateDeployment(new HashMap<String, String>()),
+                        KafkaConnectCluster.fromCrd(baz).generateDeployment(new HashMap<String, String>())));
 
         // providing the list Deployments for already "existing" Kafka Connect clusters
         Labels barLabels = Labels.forCluster("bar");
         when(mockDcOps.list(eq(clusterCmNamespace), eq(barLabels))).thenReturn(
-                asList(KafkaConnectCluster.fromCrd(bar).generateDeployment())
+                asList(KafkaConnectCluster.fromCrd(bar).generateDeployment(new HashMap<String, String>()))
         );
 
         Labels bazLabels = Labels.forCluster("baz");
         when(mockDcOps.list(eq(clusterCmNamespace), eq(bazLabels))).thenReturn(
-                asList(KafkaConnectCluster.fromCrd(baz).generateDeployment())
+                asList(KafkaConnectCluster.fromCrd(baz).generateDeployment(new HashMap<String, String>()))
         );
 
         when(mockSecretOps.reconcile(eq(clusterCmNamespace), any(), any())).thenReturn(Future.succeededFuture());

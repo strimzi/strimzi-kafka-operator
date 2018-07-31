@@ -313,7 +313,7 @@ public abstract class AbstractModel {
                     }
                 } else {
                     // incorrect logger
-                    log.warn(key + " is not valid logger");
+                    log.warn(key + " is not a valid logger");
                     return;
                 }
                 if (key.toString().contains("log4j.appender.CONSOLE")) {
@@ -383,11 +383,7 @@ public abstract class AbstractModel {
             data.put(ANCILLARY_CM_KEY_METRICS, new JsonObject(m).toString());
         }
 
-        ConfigMap configMap = createConfigMap(getAncillaryConfigName(), data);
-        if (getLogging() != null) {
-            getLogging().setCm(configMap);
-        }
-        return configMap;
+        return createConfigMap(getAncillaryConfigName(), data);
     }
 
     public String getLogConfigName() {
