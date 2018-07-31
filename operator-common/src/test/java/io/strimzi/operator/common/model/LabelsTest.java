@@ -37,21 +37,21 @@ public class LabelsTest {
         assertEquals(Labels.EMPTY, Labels.fromString(validLabels));
     }
 
-    @Test(expected = ArrayIndexOutOfBoundsException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testParseInvalidLabels1()   {
         String invalidLabels = ",key1=value1,key2=value2";
 
         Labels.fromString(invalidLabels);
     }
 
-    @Test(expected = ArrayIndexOutOfBoundsException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testParseInvalidLabels2()   {
         String invalidLabels = "key1=value1,key2=";
 
         Labels.fromString(invalidLabels);
     }
 
-    @Test(expected = ArrayIndexOutOfBoundsException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testParseInvalidLabels3()   {
         String invalidLabels = "key2";
 

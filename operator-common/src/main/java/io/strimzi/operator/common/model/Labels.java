@@ -122,16 +122,21 @@ public class Labels {
      *
      * @param stringLabels  String with labels
      * @return  Labels object with parsed labels
+     * @throws IllegalArgumentException|
      */
-    public static Labels fromString(String stringLabels) {
+    public static Labels fromString(String stringLabels) throws IllegalArgumentException {
         Map<String, String> labels = new HashMap<>();
 
-        if (stringLabels != null && !stringLabels.isEmpty()) {
-            String[] labelsArray = stringLabels.split(",");
-            for (String label : labelsArray) {
-                String[] fields = label.split("=");
-                labels.put(fields[0].trim(), fields[1].trim());
+        try {
+            if (stringLabels != null && !stringLabels.isEmpty()) {
+                String[] labelsArray = stringLabels.split(",");
+                for (String label : labelsArray) {
+                    String[] fields = label.split("=");
+                    labels.put(fields[0].trim(), fields[1].trim());
+                }
             }
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Failed to parse labels from string " + stringLabels, e);
         }
 
         return new Labels(labels);
