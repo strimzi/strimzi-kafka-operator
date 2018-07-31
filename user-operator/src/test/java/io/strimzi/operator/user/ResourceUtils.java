@@ -19,8 +19,9 @@ import io.fabric8.kubernetes.api.model.SecretBuilder;
 
 public class ResourceUtils {
     public static final Map LABELS = Collections.singletonMap("foo", "bar");
-    public static final String NAMESPACE = "NAMESPACE";
+    public static final String NAMESPACE = "namespace";
     public static final String NAME = "user";
+    public static final String CA_NAME = "somename";
 
     public static KafkaUser createKafkaUser() {
         return new KafkaUserBuilder()
@@ -40,7 +41,7 @@ public class ResourceUtils {
     public static Secret createClientsCa()  {
         return new SecretBuilder()
                 .withNewMetadata()
-                    .withName("somename")
+                    .withName(CA_NAME)
                     .withNamespace(NAMESPACE)
                 .endMetadata()
                 .addToData("clients-ca.key", Base64.getEncoder().encodeToString("clients-ca-key".getBytes()))
