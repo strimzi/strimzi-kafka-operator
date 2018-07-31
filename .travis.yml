@@ -12,11 +12,10 @@ services:
 #    packages:
 #      - asciidoctor
 before_install:
-- sudo apt-get update -qq
-- sudo apt-get install -qq yq
 - gem install asciidoctor
 before_script:
 - "./.travis/setup-kubernetes.sh"
+- "./.travis/install-yq.sh"
 script:
 - "./.travis/build.sh"
 cache:
