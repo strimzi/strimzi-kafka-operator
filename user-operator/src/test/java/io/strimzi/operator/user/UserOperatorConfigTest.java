@@ -5,8 +5,8 @@
 package io.strimzi.operator.user;
 
 import io.strimzi.operator.common.InvalidConfigurationException;
+import io.strimzi.operator.common.model.Labels;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -16,7 +16,7 @@ import static org.junit.Assert.assertEquals;
 
 public class UserOperatorConfigTest {
     private static Map<String, String> envVars = new HashMap<>(5);
-    private static Map<String, String> expectedLabels = new HashMap<>(2);
+    private static Labels expectedLabels;
 
     static {
         envVars.put(UserOperatorConfig.STRIMZI_NAMESPACE, "namespace");
@@ -25,8 +25,11 @@ public class UserOperatorConfigTest {
         envVars.put(UserOperatorConfig.STRIMZI_CA_NAME, "ca-secret");
         envVars.put(UserOperatorConfig.STRIMZI_CA_NAMESPACE, "differentnamespace");
 
-        expectedLabels.put("label1", "value1");
-        expectedLabels.put("label2", "value2");
+        Map labels = new HashMap<>(2);
+        labels.put("label1", "value1");
+        labels.put("label2", "value2");
+
+        expectedLabels = Labels.fromMap(labels);
     }
 
     @Test
@@ -71,7 +74,7 @@ public class UserOperatorConfigTest {
         envVars.remove(UserOperatorConfig.STRIMZI_LABELS);
 
         UserOperatorConfig config = UserOperatorConfig.fromMap(envVars);
-        assertEquals(Collections.emptyMap(), config.getLabels());
+        assertEquals(Labels.EMPTY, config.getLabels());
     }
 
     @Test
@@ -97,6 +100,5 @@ public class UserOperatorConfigTest {
         envVars.put(UserOperatorConfig.STRIMZI_LABELS, ",label1=");
 
         UserOperatorConfig config = UserOperatorConfig.fromMap(envVars);
-        assertEquals(Collections.singletonMap("label1", ""), config.getLabels());
     }
 }

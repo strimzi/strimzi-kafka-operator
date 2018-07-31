@@ -117,6 +117,26 @@ public class Labels {
         return new Labels(labels);
     }
 
+    /**
+     * Parse Labels from String into Labels object. The expected format of the String with labels is `key1=value1,key2=value2`
+     *
+     * @param stringLabels  String with labels
+     * @return  Labels object with parsed labels
+     */
+    public static Labels fromString(String stringLabels) {
+        Map<String, String> labels = new HashMap<>();
+
+        if (stringLabels != null && !stringLabels.isEmpty()) {
+            String[] labelsArray = stringLabels.split(",");
+            for (String label : labelsArray) {
+                String[] fields = label.split("=");
+                labels.put(fields[0].trim(), fields[1].trim());
+            }
+        }
+
+        return new Labels(labels);
+    }
+
     private Labels(Map<String, String> labels) {
         this.labels = unmodifiableMap(new HashMap(labels));
     }

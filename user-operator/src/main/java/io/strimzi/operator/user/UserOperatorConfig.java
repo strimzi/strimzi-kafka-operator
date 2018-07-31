@@ -4,8 +4,8 @@
  */
 package io.strimzi.operator.user;
 
-import io.strimzi.operator.common.ConfigUtils;
 import io.strimzi.operator.common.InvalidConfigurationException;
+import io.strimzi.operator.common.model.Labels;
 
 import java.util.Map;
 
@@ -24,7 +24,7 @@ public class UserOperatorConfig {
 
     private final String namespace;
     private final long reconciliationIntervalMs;
-    private Map<String, String> labels;
+    private Labels labels;
     private final String caName;
     private final String caNamespace;
 
@@ -37,7 +37,7 @@ public class UserOperatorConfig {
      * @param caName    Name of the secret containing the Certification Authority
      * @param caNamespace   Namespace with the CA secret
      */
-    public UserOperatorConfig(String namespace, long reconciliationIntervalMs, Map<String, String> labels, String caName, String caNamespace) {
+    public UserOperatorConfig(String namespace, long reconciliationIntervalMs, Labels labels, String caName, String caNamespace) {
         this.namespace = namespace;
         this.reconciliationIntervalMs = reconciliationIntervalMs;
         this.labels = labels;
@@ -64,7 +64,12 @@ public class UserOperatorConfig {
             reconciliationInterval = Long.parseLong(reconciliationIntervalEnvVar);
         }
 
-        Map<String, String> labels = ConfigUtils.parseLabels(map.get(STRIMZI_LABELS));
+        Labels labels;
+        try {
+            labels = Labels.fromString(map.get(STRIMZI_LABELS));
+        } catch (Exception e)   {
+            throw new InvalidConfigurationException("Failed to parse labels from " + STRIMZI_LABELS, e);
+        }
 
         String caName = map.get(UserOperatorConfig.STRIMZI_CA_NAME);
         if (caName == null || caName.isEmpty()) {
@@ -96,7 +101,7 @@ public class UserOperatorConfig {
     /**
      * @return  The labels which should be used as selecter
      */
-    public Map<String, String> getLabels() {
+    public Labels getLabels() {
         return labels;
     }
 
