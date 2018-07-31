@@ -4,7 +4,9 @@
  */
 package io.strimzi.operator.user;
 
-import java.util.HashMap;
+import io.strimzi.operator.common.ConfigUtils;
+import io.strimzi.operator.common.InvalidConfigurationException;
+
 import java.util.Map;
 
 /**
@@ -53,7 +55,7 @@ public class UserOperatorConfig {
 
         String namespace = map.get(UserOperatorConfig.STRIMZI_NAMESPACE);
         if (namespace == null || namespace.isEmpty()) {
-            throw new IllegalArgumentException(UserOperatorConfig.STRIMZI_NAMESPACE + " cannot be null");
+            throw new InvalidConfigurationException(UserOperatorConfig.STRIMZI_NAMESPACE + " cannot be null");
         }
 
         long reconciliationInterval = DEFAULT_FULL_RECONCILIATION_INTERVAL_MS;
@@ -62,23 +64,11 @@ public class UserOperatorConfig {
             reconciliationInterval = Long.parseLong(reconciliationIntervalEnvVar);
         }
 
-        String stringLabels = map.get(STRIMZI_LABELS);
-        Map<String, String> labels = new HashMap<>();
-        try {
-            if (stringLabels != null && !stringLabels.isEmpty()) {
-                String[] labelsArray = stringLabels.split(",");
-                for (String label : labelsArray) {
-                    String[] fields = label.split("=");
-                    labels.put(fields[0].trim(), fields[1].trim());
-                }
-            }
-        } catch (ArrayIndexOutOfBoundsException e)  {
-            throw new IllegalArgumentException("Failed to parse " + STRIMZI_LABELS, e);
-        }
+        Map<String, String> labels = ConfigUtils.parseLabels(map.get(STRIMZI_LABELS));
 
         String caName = map.get(UserOperatorConfig.STRIMZI_CA_NAME);
         if (caName == null || caName.isEmpty()) {
-            throw new IllegalArgumentException(UserOperatorConfig.STRIMZI_CA_NAME + " cannot be null");
+            throw new InvalidConfigurationException(UserOperatorConfig.STRIMZI_CA_NAME + " cannot be null");
         }
 
         String caNamespace = map.get(UserOperatorConfig.STRIMZI_CA_NAMESPACE);

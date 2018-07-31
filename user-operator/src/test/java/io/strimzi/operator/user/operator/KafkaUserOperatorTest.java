@@ -45,6 +45,7 @@ import static org.mockito.Mockito.when;
 @RunWith(VertxUnitRunner.class)
 public class KafkaUserOperatorTest {
     protected static Vertx vertx;
+    private final CertManager mockCertManager = new MockCertManager();
 
     @BeforeClass
     public static void before() {
@@ -60,7 +61,6 @@ public class KafkaUserOperatorTest {
     public void testCreateUser(TestContext context)    {
         CrdOperator mockCrdOps = mock(CrdOperator.class);
         SecretOperator mockSecretOps = mock(SecretOperator.class);
-        CertManager mockCertManager = new MockCertManager();
 
         ArgumentCaptor<String> secretNamespaceCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> secretNameCaptor = ArgumentCaptor.forClass(String.class);
@@ -103,7 +103,6 @@ public class KafkaUserOperatorTest {
     public void testUpdateUserNoChange(TestContext context)    {
         CrdOperator mockCrdOps = mock(CrdOperator.class);
         SecretOperator mockSecretOps = mock(SecretOperator.class);
-        CertManager mockCertManager = new MockCertManager();
 
         ArgumentCaptor<String> secretNamespaceCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> secretNameCaptor = ArgumentCaptor.forClass(String.class);
@@ -147,7 +146,6 @@ public class KafkaUserOperatorTest {
     public void testUpdateUserNewCert(TestContext context)    {
         CrdOperator mockCrdOps = mock(CrdOperator.class);
         SecretOperator mockSecretOps = mock(SecretOperator.class);
-        CertManager mockCertManager = new MockCertManager();
 
         ArgumentCaptor<String> secretNamespaceCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> secretNameCaptor = ArgumentCaptor.forClass(String.class);
@@ -193,7 +191,6 @@ public class KafkaUserOperatorTest {
     public void testDeleteUser(TestContext context)    {
         CrdOperator mockCrdOps = mock(CrdOperator.class);
         SecretOperator mockSecretOps = mock(SecretOperator.class);
-        CertManager mockCertManager = new MockCertManager();
 
         ArgumentCaptor<String> secretNamespaceCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> secretNameCaptor = ArgumentCaptor.forClass(String.class);
@@ -221,7 +218,6 @@ public class KafkaUserOperatorTest {
     public void testReconcileNewUser(TestContext context)    {
         CrdOperator mockCrdOps = mock(CrdOperator.class);
         SecretOperator mockSecretOps = mock(SecretOperator.class);
-        CertManager mockCertManager = new MockCertManager();
 
         KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, ResourceUtils.CA_NAME, ResourceUtils.NAMESPACE);
         KafkaUser user = ResourceUtils.createKafkaUser();
@@ -269,7 +265,6 @@ public class KafkaUserOperatorTest {
     public void testReconcileExistingUser(TestContext context)    {
         CrdOperator mockCrdOps = mock(CrdOperator.class);
         SecretOperator mockSecretOps = mock(SecretOperator.class);
-        CertManager mockCertManager = new MockCertManager();
 
         KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, ResourceUtils.CA_NAME, ResourceUtils.NAMESPACE);
         KafkaUser user = ResourceUtils.createKafkaUser();
@@ -318,7 +313,6 @@ public class KafkaUserOperatorTest {
     public void testReconcileDeleteUser(TestContext context)    {
         CrdOperator mockCrdOps = mock(CrdOperator.class);
         SecretOperator mockSecretOps = mock(SecretOperator.class);
-        CertManager mockCertManager = new MockCertManager();
 
         KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, ResourceUtils.CA_NAME, ResourceUtils.NAMESPACE);
         KafkaUser user = ResourceUtils.createKafkaUser();
@@ -354,7 +348,6 @@ public class KafkaUserOperatorTest {
     public void testReconcileAll(TestContext context)    {
         CrdOperator mockCrdOps = mock(CrdOperator.class);
         SecretOperator mockSecretOps = mock(SecretOperator.class);
-        CertManager mockCertManager = new MockCertManager();
 
         KafkaUser newUser = ResourceUtils.createKafkaUser();
         newUser.getMetadata().setName("new-user");

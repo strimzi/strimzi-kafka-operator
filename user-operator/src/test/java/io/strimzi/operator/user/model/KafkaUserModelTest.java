@@ -7,6 +7,7 @@ package io.strimzi.operator.user.model;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserSpec;
 import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
+import io.strimzi.certs.CertManager;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.user.ResourceUtils;
@@ -23,10 +24,11 @@ public class KafkaUserModelTest {
     private final KafkaUser user = ResourceUtils.createKafkaUser();
     private final Secret clientsCa = ResourceUtils.createClientsCa();
     private final Secret userCert = ResourceUtils.createUserCert();
+    private final CertManager mockCertManager = new MockCertManager();
 
     @Test
     public void testFromCrd()   {
-        KafkaUserModel model = KafkaUserModel.fromCrd(new MockCertManager(), user, clientsCa, null);
+        KafkaUserModel model = KafkaUserModel.fromCrd(mockCertManager, user, clientsCa, null);
 
         assertEquals(ResourceUtils.NAMESPACE, model.namespace);
         assertEquals(ResourceUtils.NAME, model.name);
@@ -36,7 +38,7 @@ public class KafkaUserModelTest {
 
     @Test
     public void testGenerateSecret()    {
-        KafkaUserModel model = KafkaUserModel.fromCrd(new MockCertManager(), user, clientsCa, null);
+        KafkaUserModel model = KafkaUserModel.fromCrd(mockCertManager, user, clientsCa, null);
         Secret generated = model.generateSecret();
 
         System.out.println(generated.getData().keySet());
@@ -48,7 +50,7 @@ public class KafkaUserModelTest {
 
     @Test
     public void testGenerateCertificateWhenNoExists()    {
-        KafkaUserModel model = KafkaUserModel.fromCrd(new MockCertManager(), user, clientsCa, null);
+        KafkaUserModel model = KafkaUserModel.fromCrd(mockCertManager, user, clientsCa, null);
         Secret generated = model.generateSecret();
 
         assertEquals("clients-ca-crt", new String(model.decodeFromSecret(generated, "ca.crt")));
@@ -62,7 +64,7 @@ public class KafkaUserModelTest {
         clientsCa.getData().put("clients-ca.key", Base64.getEncoder().encodeToString("different-clients-ca-key".getBytes()));
         clientsCa.getData().put("clients-ca.crt", Base64.getEncoder().encodeToString("different-clients-ca-crt".getBytes()));
 
-        KafkaUserModel model = KafkaUserModel.fromCrd(new MockCertManager(), user, clientsCa, userCert);
+        KafkaUserModel model = KafkaUserModel.fromCrd(mockCertManager, user, clientsCa, userCert);
         Secret generated = model.generateSecret();
 
         assertEquals("different-clients-ca-crt", new String(model.decodeFromSecret(generated, "ca.crt")));
@@ -72,7 +74,7 @@ public class KafkaUserModelTest {
 
     @Test
     public void testGenerateCertificateKeepExisting()    {
-        KafkaUserModel model = KafkaUserModel.fromCrd(new MockCertManager(), user, clientsCa, userCert);
+        KafkaUserModel model = KafkaUserModel.fromCrd(mockCertManager, user, clientsCa, userCert);
         Secret generated = model.generateSecret();
 
         assertEquals("clients-ca-crt", new String(model.decodeFromSecret(generated, "ca.crt")));
@@ -84,7 +86,7 @@ public class KafkaUserModelTest {
     public void testNoTlsAuth()    {
         KafkaUser user = ResourceUtils.createKafkaUser();
         user.setSpec(new KafkaUserSpec());
-        KafkaUserModel model = KafkaUserModel.fromCrd(new MockCertManager(), user, clientsCa, userCert);
+        KafkaUserModel model = KafkaUserModel.fromCrd(mockCertManager, user, clientsCa, userCert);
 
         assertNull(model.generateSecret());
     }

@@ -21,10 +21,6 @@
             <artifactId>operator-common</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.strimzi</groupId>
-            <artifactId>operator-common</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.fabric8</groupId>
             <artifactId>openshift-client</artifactId>
         </dependency>

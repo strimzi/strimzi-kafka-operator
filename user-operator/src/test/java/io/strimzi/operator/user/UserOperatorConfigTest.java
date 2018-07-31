@@ -4,6 +4,8 @@
  */
 package io.strimzi.operator.user;
 
+import io.strimzi.operator.common.InvalidConfigurationException;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,7 +40,7 @@ public class UserOperatorConfigTest {
         assertEquals(envVars.get(UserOperatorConfig.STRIMZI_CA_NAMESPACE), config.getCaNamespace());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testMissingNamespace()  {
         Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.envVars);
         envVars.remove(UserOperatorConfig.STRIMZI_NAMESPACE);
@@ -46,7 +48,7 @@ public class UserOperatorConfigTest {
         UserOperatorConfig config = UserOperatorConfig.fromMap(envVars);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testMissingCaName()  {
         Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.envVars);
         envVars.remove(UserOperatorConfig.STRIMZI_CA_NAME);
@@ -89,7 +91,7 @@ public class UserOperatorConfigTest {
         UserOperatorConfig config = UserOperatorConfig.fromMap(envVars);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testInvalidLabels()  {
         Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.envVars);
         envVars.put(UserOperatorConfig.STRIMZI_LABELS, ",label1=");
