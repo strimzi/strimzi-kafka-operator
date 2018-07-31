@@ -40,7 +40,9 @@ helm_pkg: helm_lint helm_examples
 	# Packaging helm chart with semantic version: $(CHART_SEMANTIC_RELEASE_VERSION)
 	helm package --version $(CHART_SEMANTIC_RELEASE_VERSION) --app-version $(CHART_SEMANTIC_RELEASE_VERSION) --destination ./ $(CHART_PATH)
 
-all: helm_pkg
+docker_build: helm_pkg
+
+all: docker_build
 clean: helm_clean
 
 .PHONY: build clean release
