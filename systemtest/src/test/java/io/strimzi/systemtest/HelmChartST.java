@@ -18,7 +18,7 @@ import org.junit.runner.RunWith;
 @RunWith(StrimziRunner.class)
 @Namespace(HelmChartST.NAMESPACE)
 @ClusterOperator(useHelmChart = true)
-public class HelmChartST extends KafkaST {
+public class HelmChartST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(HelmChartST.class);
 
@@ -31,6 +31,7 @@ public class HelmChartST extends KafkaST {
     @KafkaFromClasspathYaml()
     @Topic(name = TOPIC_NAME, clusterName = "my-cluster")
     public void testDeployKafkaClusterViaHelmChart() {
+        LOGGER.info("Running testDeployKafkaClusterViaHelmChart {}", CLUSTER_NAME);
         this.kubeClient.waitForStatefulSet(zookeeperClusterName(CLUSTER_NAME), 3);
         this.kubeClient.waitForStatefulSet(kafkaClusterName(CLUSTER_NAME), 3);
     }
