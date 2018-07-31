@@ -25,6 +25,7 @@ import org.apache.logging.log4j.Logger;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -414,5 +415,23 @@ public class KafkaClusterIT extends AbstractClusterIT {
         List<Event> events = getEvents("Pod", kafkaPodName);
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
         assertThat(events, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
+    }
+
+    /**
+     * Test the case where the TO is configured to watch a different namespace that it is deployed in
+     */
+    @Test
+    //@JUnitGroup(name = "regression")
+    @KafkaFromClasspathYaml
+    @Namespace(value = "topic-operator-namespace", use = false)
+    public void testWatchingOtherNamespace() throws InterruptedException {
+        List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
+        assertThat(topics, not(hasItems("my-topic")));
+        String origNamespace = kubeClient.namespace("topic-operator-namespace");
+        kubeClient.create(new File("../examples/topic/kafka-topic.yaml"));
+        Thread.sleep(10_000);
+        kubeClient.namespace(origNamespace);
+        topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
+        assertThat(topics, hasItems("my-topic"));
     }
 }
