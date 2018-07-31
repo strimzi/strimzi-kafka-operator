@@ -5,74 +5,32 @@
 package io.strimzi.operator.user.model;
 
 import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.api.kafka.model.KafkaUserBuilder;
+import io.strimzi.api.kafka.model.KafkaUserSpec;
 import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
+import io.strimzi.operator.user.ResourceUtils;
 
 import java.util.Base64;
-import java.util.Collections;
-import java.util.Map;
 
-import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.SecretBuilder;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 public class KafkaUserModelTest {
-    private static Map labels = Collections.singletonMap("foo", "bar");
-    private static String namespace = "namespace";
-    private static String name = "user";
-
-    private static KafkaUser user;
-    private static Secret clientsCa;
-    private static Secret userCert;
-
-    static {
-        user = new KafkaUserBuilder()
-                .withMetadata(
-                        new ObjectMetaBuilder()
-                        .withNamespace(namespace)
-                        .withName(name)
-                        .withLabels(labels)
-                        .build()
-                )
-                .withNewSpec()
-                    .withAuthentication(new KafkaUserTlsClientAuthentication())
-                .endSpec()
-                .build();
-
-        clientsCa = new SecretBuilder()
-                .withNewMetadata()
-                    .withName("somename")
-                    .withNamespace(namespace)
-                .endMetadata()
-                .addToData("clients-ca.key", Base64.getEncoder().encodeToString("clients-ca-key".getBytes()))
-                .addToData("clients-ca.crt", Base64.getEncoder().encodeToString("clients-ca-crt".getBytes()))
-                .build();
-
-        userCert = new SecretBuilder()
-                .withNewMetadata()
-                    .withName(name)
-                    .withNamespace(namespace)
-                    .withLabels(Labels.userLabels(labels).withKind(KafkaUser.RESOURCE_KIND).toMap())
-                .endMetadata()
-                .addToData("ca.crt", Base64.getEncoder().encodeToString("clients-ca-crt".getBytes()))
-                .addToData("user.key", Base64.getEncoder().encodeToString("expected-key".getBytes()))
-                .addToData("user.crt", Base64.getEncoder().encodeToString("expected-crt".getBytes()))
-                .build();
-    }
+    private static KafkaUser user = ResourceUtils.createKafkaUser();
+    private static Secret clientsCa = ResourceUtils.createClientsCa();
+    private static Secret userCert = ResourceUtils.createUserCert();
 
     @Test
     public void testFromCrd()   {
         KafkaUserModel model = KafkaUserModel.fromCrd(new MockCertManager(), user, clientsCa, null);
 
-        assertEquals(namespace, model.namespace);
-        assertEquals(name, model.name);
-        assertEquals(Labels.userLabels(labels).withKind(KafkaUser.RESOURCE_KIND), model.labels);
+        assertEquals(ResourceUtils.namespace, model.namespace);
+        assertEquals(ResourceUtils.name, model.name);
+        assertEquals(Labels.userLabels(ResourceUtils.labels).withKind(KafkaUser.RESOURCE_KIND), model.labels);
         assertEquals(KafkaUserTlsClientAuthentication.TYPE_TLS, model.authentication.getType());
     }
 
@@ -83,9 +41,9 @@ public class KafkaUserModelTest {
 
         System.out.println(generated.getData().keySet());
 
-        assertEquals(name, generated.getMetadata().getName());
-        assertEquals(namespace, generated.getMetadata().getNamespace());
-        assertEquals(Labels.userLabels(labels).withKind(KafkaUser.RESOURCE_KIND).toMap(), generated.getMetadata().getLabels());
+        assertEquals(ResourceUtils.name, generated.getMetadata().getName());
+        assertEquals(ResourceUtils.namespace, generated.getMetadata().getNamespace());
+        assertEquals(Labels.userLabels(ResourceUtils.labels).withKind(KafkaUser.RESOURCE_KIND).toMap(), generated.getMetadata().getLabels());
     }
 
     @Test
@@ -100,14 +58,9 @@ public class KafkaUserModelTest {
 
     @Test
     public void testGenerateCertificateAtCaChange()    {
-        Secret clientsCa = new SecretBuilder()
-                .withNewMetadata()
-                .withName("somename")
-                .withNamespace(namespace)
-                .endMetadata()
-                .addToData("clients-ca.key", Base64.getEncoder().encodeToString("different-clients-ca-key".getBytes()))
-                .addToData("clients-ca.crt", Base64.getEncoder().encodeToString("different-clients-ca-crt".getBytes()))
-                .build();
+        Secret clientsCa = ResourceUtils.createClientsCa();
+        clientsCa.getData().put("clients-ca.key", Base64.getEncoder().encodeToString("different-clients-ca-key".getBytes()));
+        clientsCa.getData().put("clients-ca.crt", Base64.getEncoder().encodeToString("different-clients-ca-crt".getBytes()));
 
         KafkaUserModel model = KafkaUserModel.fromCrd(new MockCertManager(), user, clientsCa, userCert);
         Secret generated = model.generateSecret();
@@ -129,17 +82,8 @@ public class KafkaUserModelTest {
 
     @Test
     public void testNoTlsAuth()    {
-        KafkaUser user = new KafkaUserBuilder()
-                .withMetadata(
-                        new ObjectMetaBuilder()
-                                .withNamespace(namespace)
-                                .withName(name)
-                                .withLabels(labels)
-                                .build()
-                )
-                .withNewSpec()
-                .endSpec()
-                .build();
+        KafkaUser user = ResourceUtils.createKafkaUser();
+        user.setSpec(new KafkaUserSpec());
         KafkaUserModel model = KafkaUserModel.fromCrd(new MockCertManager(), user, clientsCa, userCert);
 
         assertNull(model.generateSecret());
