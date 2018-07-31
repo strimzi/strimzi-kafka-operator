@@ -22,6 +22,8 @@ include::con-kafka-connect-configuration.adoc[leveloffset=+3]
 
 include::con-kafka-connect-logging.adoc[leveloffset=+3]
 
+include::con-kafka-connect-s2i-deploy.adoc[leveloffset=+3]
+
 include::con-resource-RBAC.adoc[leveloffset=+1]
 
 include::con-delegated-previliges.adoc[leveloffset=+2]

@@ -4,7 +4,7 @@
 The operator itself can be configured through the following environment variables.
 
 [[STRIMZI_NAMESPACE]] `STRIMZI_NAMESPACE`:: Required. A comma-separated list of namespaces that the operator should
-operate in. The Cluster Operator deployment might use the https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#the-downward-api[{KubernetesName} Downward API]
+operate in. The Cluster Operator deployment might use the link:https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#the-downward-api[{KubernetesName} Downward API^]
 to set this automatically to the namespace the Cluster Operator is deployed in. See the example below:
 +
 [source,yaml,options="nowrap"]
@@ -20,7 +20,7 @@ env:
 
 
 [[STRIMZI_OPERATION_TIMEOUT_MS]] `STRIMZI_OPERATION_TIMEOUT_MS`:: Optional, default: 300000 ms. The timeout for internal operations, in milliseconds. This value should be
-increased when using {ProductName} on clusters where regular {ProductPlatformName} operations take longer than usual (because of slow downloading of Docker images, for example).
+increased when using {ProductName} on clusters where regular {ProductPlatformName} operations take longer than usual. For example, slow downloading of container images.
 
 [[STRIMZI_DEFAULT_KAFKA_IMAGE]] `STRIMZI_DEFAULT_KAFKA_IMAGE`:: Optional, default `strimzi/kafka:latest`.
 The image name to use as a default when deploying Kafka, if
@@ -36,7 +36,7 @@ no image is specified as the `spec.kafka.tlsSidecar.image` in the xref:kafka-con
 [[STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE]] `STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE`:: Optional, default `strimzi/kafka-connect:latest`.
 The image name to use as a default when deploying Kafka Connect, if
 no image is specified as the `image` in the
-<<kafka_connect_config_map_details,Kafka Connect cluster ConfigMap>>.
+xref:kafka_connect_config_map_details[Kafka Connect configuration].
 
 [[STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE]] `STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE`:: Optional, default `strimzi/kafka-connect-s2i:latest`.
 The image name to use as a default when deploying Kafka Connect S2I, if
@@ -44,7 +44,7 @@ no image is specified as the `image` in the cluster ConfigMap.
 
 [[STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE]] `STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE`:: Optional, default `strimzi/topic-operator:latest`.
 The image name to use as a default when deploying the topic operator, if
-no image is specified as the `image` in the <<topic_operator_json_config,topic operator config>>
+no image is specified as the `image` in the xref:topic_operator_json_config-{context}[Topic Operator]
 of the Kafka cluster ConfigMap.
 
 [[STRIMZI_DEFAULT_ZOOKEEPER_IMAGE]] `STRIMZI_DEFAULT_ZOOKEEPER_IMAGE`:: Optional, default `strimzi/zookeeper:latest`.

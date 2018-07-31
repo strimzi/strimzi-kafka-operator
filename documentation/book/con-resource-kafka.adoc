@@ -1,7 +1,7 @@
 [id='kafka-config-map-details-{context}']
 = Kafka resource configurations
 
-The table below lists the fields that you can use when configuring a Kafka cluster deployment. A dot is used to denote a nexted YAML object.
+The table below lists the fields that you can use when configuring a Kafka cluster deployment. A dot is used to denote a nested YAML object.
 
 .Kafka Cluster Deployment Configuration Elements
 [cols="30%,50%,20%",options="header"]
@@ -141,7 +141,7 @@ For information about the accepted JSON format, see xref:resources_json_config-{
 An object representing the topic operator configuration. For more information, see xref:topic_operator_json_config-{context}[Topic Operator].
 
 
-More info about the topic operator in the related xref:topic-operator-{context}[Topic Operator] documentation page.
+More info about the topic operator in the related xref:topic-operator-str[Topic Operator] documentation page.
 
 The following is an example of a Kafka resource.
 
@@ -486,7 +486,7 @@ It is possible to configure a `metrics` object in the `kafka` and `zookeeper` ob
 In all cases the `metrics` object should be the configuration for the JMX exporter.
 You can find more information on how to use it in the corresponding GitHub repo.
 
-For more information about using the metrics with Prometheus and Grafana, see xref:metrics[Metrics]
+For more information about using the metrics with Prometheus and Grafana, see xref:metrics-{context}[Metrics]
 
 [id='logging-examples-{context}']
 == Logging
@@ -511,7 +511,7 @@ For information about log levels, see link:https://logging.apache.org/log4j/2.x/
     name: customConfigMap
 ----
 
-When using external ConfigMap remember to place your custom ConfigMap under `log4j.properties` key.
+When using external ConfigMap remember to place your custom configuration under `log4j.properties` key.
 
 The difference between these two options is that the latter is not validated and does not support default values.
 That means the user can supply any logging configuration, even if it is incorrect.
@@ -807,4 +807,4 @@ For information about the accepted JSON format, see xref:resources_json_config-{
 { "reconciliationIntervalMs": "900000", "zookeeperSessionTimeoutMs": "20000" }
 ----
 
-More information about these configuration parameters in the related xref:topic-operator-{context}[Topic Operator] documentation page.
+More information about these configuration parameters in the related xref:topic-operator-str[Topic Operator] documentation page.

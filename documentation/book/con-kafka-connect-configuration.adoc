@@ -1,4 +1,4 @@
-[id=kafka_connect_configuration_json_config-{context}]
+[id=kafka-connect-configuration-{context}]
 = Kafka Connect configuration
 
 The `spec.config` object of the `KafkaConnect` and `KafkaConnectS2I` resources allows detailed configuration of Apache Kafka Connect.
@@ -25,11 +25,11 @@ Specifically, all configuration options with keys starting with one of the follo
 * `rest.`
 
 All other options will be passed to Kafka Connect. A list of all the available options can be found on the
-http://kafka.apache.org/11/documentation.html#connectconfigs[Kafka website]. An example `config` field is provided
+link:http://kafka.apache.org/11/documentation.html#connectconfigs[Kafka website^]. An example `config` field is provided
 below.
 
 .Example Kafka Connect configuration
-[source,json]
+[source,yaml]
 ----
 apiVersion: {KafkaConnectApiVersion}
 kind: KafkaConnect
@@ -53,7 +53,6 @@ spec:
     config.storage.replication.factor: 3
     offset.storage.replication.factor: 3
     status.storage.replication.factor: 3
-}
 ----
 
 The following lists the options of the above example and its default values:

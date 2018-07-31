@@ -4,7 +4,7 @@
 The operator needs a `ClusterRoleBinding` which associates its `ClusterRole` with its `ServiceAccount`:
 
 [source,yaml,options="nowrap"]
-.Example `RoleBinding` for the Cluster Operator
+.Example `ClusterRoleBinding` for the Cluster Operator
 ----
 include::examples/install/cluster-operator/02-ClusterRoleBinding-strimzi-cluster-operator.yaml[]
 ----
@@ -12,7 +12,7 @@ include::examples/install/cluster-operator/02-ClusterRoleBinding-strimzi-cluster
 `ClusterRoleBindings` are also needed for the `ClusterRoles` needed for delegation:
 
 [source,yaml,options="nowrap"]
-.Example `RoleBinding` for the Cluster Operator
+.Example `ClusterRoleBinding` for the Cluster Operator
 ----
 ---
 include::examples/install/cluster-operator/03-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml[]

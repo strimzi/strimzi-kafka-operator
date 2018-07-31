@@ -10,7 +10,7 @@ Cluster administrator rights are only needed for the creation of the `ClusterRol
 The `ClusterRoles` follow the _principle of least privilege_ and contain only those privileges needed by the Cluster Operator to operate Kafka, Kafka Connect, and Zookeeper clusters. The first set of assigned privileges allow the Cluster Operator to manage {ProductPlatformName} resources such as `StatefulSets`, `Deployments`, `Pods`, and `ConfigMaps`.
 
 [source,yaml,options="nowrap"]
-.Example `Role` for the Cluster Operator
+.Example `ClusterRole` for the Cluster Operator
 ----
 include::examples/install/cluster-operator/02-ClusterRole-strimzi-cluster-operator-role.yaml[]
 ----
@@ -20,11 +20,6 @@ The `strimzi-kafka-broker` `ClusterRole` represents the access needed by the ini
 [source,yaml,options="nowrap"]
 .`ClusterRole` for the Cluster Operator allowing it to delegate access to {ProductPlatformName} nodes to the Kafka broker pods
 ----
-# These are the privileges needed by the init container
-# in Kafka broker pods.
-# The Cluster Operator also needs these privileges since
-# it binds the Kafka pods' ServiceAccount to this
-# role.
 include::examples/install/cluster-operator/03-ClusterRole-strimzi-kafka-broker.yaml[]
 ----
 
@@ -33,9 +28,5 @@ The `strimzi-topic-operator` `ClusterRole` represents the access needed by the T
 [source,yaml,options="nowrap"]
 .`ClusterRole` for the Cluster Operator allowing it to delegate access to events to the Topic Operator
 ----
-# These are the privileges needed by the Topic Operator.
-# The Cluster Operator also needs these privileges since
-# it binds the Topic Operator's  ServiceAccount to this
-# role.
 include::examples/install/cluster-operator/04-ClusterRole-strimzi-topic-operator.yaml[]
 ----
