@@ -8,15 +8,6 @@ spec:
     listeners:
       plain: {}
       tls: {}
-    authorization:
-      type: simple
-    resources:
-      requests:
-        memory: 2Gi
-        cpu: 500m
-      limits:
-        memory: 2Gi
-        cpu: 1000m
     readinessProbe:
       initialDelaySeconds: 15
       timeoutSeconds: 5
@@ -40,13 +31,6 @@ spec:
             topic: "$3"
   zookeeper:
     replicas: 3
-    resources:
-      requests:
-        memory: 512Mi
-        cpu: 300m
-      limits:
-        memory: 1Gi
-        cpu: 2000m
     readinessProbe:
       initialDelaySeconds: 15
       timeoutSeconds: 5
@@ -57,11 +41,4 @@ spec:
       type: ephemeral
     metrics:
       lowercaseOutputName: true
-  topicOperator:
-    resources:
-      requests:
-        memory: 256Mi
-        cpu: 200m
-      limits:
-        memory: 256Mi
-        cpu: 1000m
+  topicOperator: {}
