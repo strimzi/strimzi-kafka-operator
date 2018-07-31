@@ -67,6 +67,10 @@ public class KafkaClusterIT extends AbstractClusterIT {
     public static final String NAMESPACE = "kafka-cluster-test";
     private static final String TOPIC_NAME = "test-topic";
 
+    protected String testNamespace() {
+        return NAMESPACE;
+    }
+
     @Test
     @JUnitGroup(name = "regression")
     @OpenShiftOnly
@@ -430,7 +434,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
         kubeClient.namespace("topic-operator-namespace");
         kubeClient.create(new File("../examples/topic/kafka-topic.yaml"));
         Thread.sleep(10_000);
-        kubeClient.namespace(NAMESPACE);
+        kubeClient.namespace(testNamespace());
         topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
         assertThat(topics, hasItems("my-topic"));
     }
