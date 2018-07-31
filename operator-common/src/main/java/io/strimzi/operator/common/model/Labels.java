@@ -117,6 +117,31 @@ public class Labels {
         return new Labels(labels);
     }
 
+    /**
+     * Parse Labels from String into Labels object. The expected format of the String with labels is `key1=value1,key2=value2`
+     *
+     * @param stringLabels  String with labels
+     * @return  Labels object with parsed labels
+     * @throws IllegalArgumentException|
+     */
+    public static Labels fromString(String stringLabels) throws IllegalArgumentException {
+        Map<String, String> labels = new HashMap<>();
+
+        try {
+            if (stringLabels != null && !stringLabels.isEmpty()) {
+                String[] labelsArray = stringLabels.split(",");
+                for (String label : labelsArray) {
+                    String[] fields = label.split("=");
+                    labels.put(fields[0].trim(), fields[1].trim());
+                }
+            }
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Failed to parse labels from string " + stringLabels, e);
+        }
+
+        return new Labels(labels);
+    }
+
     private Labels(Map<String, String> labels) {
         this.labels = unmodifiableMap(new HashMap(labels));
     }

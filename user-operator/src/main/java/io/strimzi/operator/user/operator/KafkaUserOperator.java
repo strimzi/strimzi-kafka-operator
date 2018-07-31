@@ -90,7 +90,7 @@ public class KafkaUserOperator {
      * @param userSecret User secret (if it exists, null otherwise)
      * @param handler Completion handler
      */
-    private void createOrUpdate(Reconciliation reconciliation, KafkaUser kafkaUser, Secret clientsCa, Secret userSecret, Handler<AsyncResult<Void>> handler) {
+    protected void createOrUpdate(Reconciliation reconciliation, KafkaUser kafkaUser, Secret clientsCa, Secret userSecret, Handler<AsyncResult<Void>> handler) {
         String namespace = reconciliation.namespace();
         String userName = reconciliation.name();
         KafkaUserModel user;
@@ -111,7 +111,7 @@ public class KafkaUserOperator {
      *
      * @param handler Completion handler
      */
-    private void delete(Reconciliation reconciliation, Handler<AsyncResult<Void>> handler) {
+    protected void delete(Reconciliation reconciliation, Handler<AsyncResult<Void>> handler) {
         String namespace = reconciliation.namespace();
         String user = reconciliation.name();
 
@@ -156,6 +156,7 @@ public class KafkaUserOperator {
                         delete(reconciliation, deleteResult -> {
                             if (deleteResult.succeeded())   {
                                 log.info("{}: User {} deleted", reconciliation, name);
+                                handler.handle(deleteResult);
                             } else {
                                 log.error("{}: Deletion of user {} failed", reconciliation, name, deleteResult.cause());
                                 lock.release();

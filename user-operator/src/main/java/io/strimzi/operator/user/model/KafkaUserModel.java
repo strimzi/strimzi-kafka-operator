@@ -29,13 +29,13 @@ public class KafkaUserModel {
 
     private final static int CERTS_EXPIRATION_DAYS = 356;
 
-    private final String namespace;
-    private final String name;
-    private final Labels labels;
+    protected final String namespace;
+    protected final String name;
+    protected final Labels labels;
 
-    private KafkaUserAuthentication authentication;
-    private CertAndKey caCertAndKey;
-    private CertAndKey userCertAndKey;
+    protected KafkaUserAuthentication authentication;
+    protected CertAndKey caCertAndKey;
+    protected CertAndKey userCertAndKey;
 
     /**
      * Constructor

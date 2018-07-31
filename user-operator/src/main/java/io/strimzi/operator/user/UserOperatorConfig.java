@@ -4,7 +4,9 @@
  */
 package io.strimzi.operator.user;
 
-import java.util.HashMap;
+import io.strimzi.operator.common.InvalidConfigurationException;
+import io.strimzi.operator.common.model.Labels;
+
 import java.util.Map;
 
 /**
@@ -22,7 +24,7 @@ public class UserOperatorConfig {
 
     private final String namespace;
     private final long reconciliationIntervalMs;
-    private Map<String, String> labels;
+    private Labels labels;
     private final String caName;
     private final String caNamespace;
 
@@ -35,7 +37,7 @@ public class UserOperatorConfig {
      * @param caName    Name of the secret containing the Certification Authority
      * @param caNamespace   Namespace with the CA secret
      */
-    public UserOperatorConfig(String namespace, long reconciliationIntervalMs, Map<String, String> labels, String caName, String caNamespace) {
+    public UserOperatorConfig(String namespace, long reconciliationIntervalMs, Labels labels, String caName, String caNamespace) {
         this.namespace = namespace;
         this.reconciliationIntervalMs = reconciliationIntervalMs;
         this.labels = labels;
@@ -53,7 +55,7 @@ public class UserOperatorConfig {
 
         String namespace = map.get(UserOperatorConfig.STRIMZI_NAMESPACE);
         if (namespace == null || namespace.isEmpty()) {
-            throw new IllegalArgumentException(UserOperatorConfig.STRIMZI_NAMESPACE + " cannot be null");
+            throw new InvalidConfigurationException(UserOperatorConfig.STRIMZI_NAMESPACE + " cannot be null");
         }
 
         long reconciliationInterval = DEFAULT_FULL_RECONCILIATION_INTERVAL_MS;
@@ -62,19 +64,16 @@ public class UserOperatorConfig {
             reconciliationInterval = Long.parseLong(reconciliationIntervalEnvVar);
         }
 
-        String stringLabels = map.get(STRIMZI_LABELS);
-        Map<String, String> labels = new HashMap<>();
-        if (stringLabels != null && !stringLabels.isEmpty()) {
-            String[] labelsArray = stringLabels.split(",");
-            for (String label : labelsArray) {
-                String[] fields = label.split("=");
-                labels.put(fields[0].trim(), fields[1].trim());
-            }
+        Labels labels;
+        try {
+            labels = Labels.fromString(map.get(STRIMZI_LABELS));
+        } catch (Exception e)   {
+            throw new InvalidConfigurationException("Failed to parse labels from " + STRIMZI_LABELS, e);
         }
 
         String caName = map.get(UserOperatorConfig.STRIMZI_CA_NAME);
         if (caName == null || caName.isEmpty()) {
-            throw new IllegalArgumentException(UserOperatorConfig.STRIMZI_CA_NAME + " cannot be null");
+            throw new InvalidConfigurationException(UserOperatorConfig.STRIMZI_CA_NAME + " cannot be null");
         }
 
         String caNamespace = map.get(UserOperatorConfig.STRIMZI_CA_NAMESPACE);
@@ -102,7 +101,7 @@ public class UserOperatorConfig {
     /**
      * @return  The labels which should be used as selecter
      */
-    public Map<String, String> getLabels() {
+    public Labels getLabels() {
         return labels;
     }
 

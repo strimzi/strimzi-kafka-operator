@@ -50,7 +50,7 @@ public class UserOperator extends AbstractVerticle {
         this.reconciliationInterval = config.getReconciliationIntervalMs();
         this.client = client;
         this.kafkaUserOperator = kafkaUserOperator;
-        this.selector = Labels.fromMap(config.getLabels());
+        this.selector = config.getLabels();
     }
 
     Consumer<KubernetesClientException> recreateWatch(KafkaUserOperator op) {

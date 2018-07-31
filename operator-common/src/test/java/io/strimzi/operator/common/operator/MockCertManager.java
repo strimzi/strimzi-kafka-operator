@@ -2,7 +2,7 @@
  * Copyright 2018, Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.cluster.operator.assembly;
+package io.strimzi.operator.common.operator;
 
 import io.strimzi.certs.CertManager;
 import io.strimzi.certs.Subject;
@@ -57,6 +57,7 @@ public class MockCertManager implements CertManager {
      */
     @Override
     public void generateCsr(File keyFile, File csrFile, Subject sbj) throws IOException {
+        write(keyFile, "key file");
         write(csrFile, "csr file");
     }
 

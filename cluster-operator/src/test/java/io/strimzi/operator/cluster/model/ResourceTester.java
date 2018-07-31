@@ -13,7 +13,8 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ResourceUtils;
-import io.strimzi.operator.cluster.operator.assembly.MockCertManager;
+import io.strimzi.operator.common.operator.MockCertManager;
+
 import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
