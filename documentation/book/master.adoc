@@ -25,6 +25,9 @@ endif::InstallationAppendix[]
 ## Custom Resource API Reference
 include::appendix_crds.adoc[]
 
+[appendix]
+include::ref-minimum-resource-requirements.adoc[leveloffset=+1]
+
 ifdef::MetricsAppendix[]
 include::appendix_metrics.adoc[]
 endif::MetricsAppendix[]

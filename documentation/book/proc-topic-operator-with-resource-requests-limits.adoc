@@ -1,0 +1,19 @@
+// Module included in the following assemblies:
+//
+// 
+
+[id='proc-topic-operator-with-resource-requests-limits-{context}']
+= Configuring the Topic Operator with resource requests and limits
+
+.Prerequisites
+
+* A running Cluster Operator.
+
+.Procedure
+
+. Edit the `Kafka` resource specifying in the `Kafka.spec.topicOperator.resources` property the resource requests and limits you want the Topic Operator to have. 
+* Create of update the `Kafka` resource.
+
+.Additional resources
+
+* For more information about the resource requirements of the Topic Operator, see xref:topic-operator-resource-requirements-str[]

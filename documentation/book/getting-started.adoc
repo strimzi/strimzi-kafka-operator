@@ -55,12 +55,8 @@ Deleting a `KafkaTopic` causes the deletion of the corresponding Kafka topic as 
 The Cluster Operator is able to deploy a Topic Operator, which can be configured in the `Kafka` resource.
 Alternatively, it is possible to deploy a Topic Operator manually, rather than having it deployed by the Cluster Operator.
 
-=== Deploying through the Cluster Operator
 
-To deploy the Topic Operator through the Cluster Operator, its configuration needs to be provided in the
-`Kafka` resource in the `topicOperator` property.
-
-For more information on the JSON configuration format see <<topic_operator_json_config>>.
+include::proc-deploying-the-topic-operator-using-the-cluster-operator.adoc[leveloffset=+2]
 
 === Deploying standalone Topic Operator
 
