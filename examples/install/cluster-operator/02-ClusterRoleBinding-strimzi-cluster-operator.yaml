@@ -1,19 +1,12 @@
-##---
-# Source: strimzi-kafka-operator/templates/02-ClusterRoleBinding-strimzi-cluster-operator.yaml
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
 metadata:
   name: strimzi-cluster-operator
-  labels:
-    app: strimzi-kafka-operator
-    chart: strimzi-kafka-operator-0.1.0
-    component: role-binding
-    release: RELEASE-NAME
-    heritage: Tiller
+  labels: {}
 subjects:
-  - kind: ServiceAccount
-    name: strimzi-cluster-operator
-    namespace: default
+- kind: ServiceAccount
+  name: strimzi-cluster-operator
+  namespace: myproject
 roleRef:
   kind: ClusterRole
   name: strimzi-cluster-operator
