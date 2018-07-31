@@ -4,6 +4,8 @@
  */
 package io.strimzi.operator.cluster;
 
+import io.strimzi.operator.common.InvalidConfigurationException;
+
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -51,7 +53,7 @@ public class ClusterOperatorConfig {
         String namespacesList = map.get(ClusterOperatorConfig.STRIMZI_NAMESPACE);
         Set<String> namespaces;
         if (namespacesList == null || namespacesList.isEmpty()) {
-            throw new IllegalArgumentException(ClusterOperatorConfig.STRIMZI_NAMESPACE + " cannot be null");
+            throw new InvalidConfigurationException(ClusterOperatorConfig.STRIMZI_NAMESPACE + " cannot be null");
         } else {
             namespaces = new HashSet(asList(namespacesList.trim().split("\\s*,+\\s*")));
         }
