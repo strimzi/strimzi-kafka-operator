@@ -26,11 +26,6 @@ public class HelmChartClusterIT extends KafkaClusterIT {
     private static final String CLUSTER_NAME = "my-cluster";
     private static final String TOPIC_NAME = "test-topic";
 
-    @Override
-    protected String testNamespace() {
-        return NAMESPACE;
-    }
-
     @Test
     @JUnitGroup(name = "regression")
     @KafkaFromClasspathYaml()
