@@ -130,7 +130,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
     private final void reconcileClusterCa(Reconciliation reconciliation, Handler<AsyncResult<Void>> handler) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
             future -> {
-                String clusterCaName = AbstractModel.getClusterCaName(reconciliation.assemblyName());
+                String clusterCaName = AbstractModel.getClusterCaName(reconciliation.name());
 
                 if (secretOperations.get(reconciliation.namespace(), clusterCaName) == null) {
                     log.debug("{}: Generating cluster CA certificate {}", reconciliation, clusterCaName);
@@ -179,7 +179,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
     private final void deleteClusterCa(Reconciliation reconciliation, Handler<AsyncResult<Void>> handler) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
             future -> {
-                String clusterCaName = AbstractModel.getClusterCaName(reconciliation.assemblyName());
+                String clusterCaName = AbstractModel.getClusterCaName(reconciliation.name());
 
                 if (secretOperations.get(reconciliation.namespace(), clusterCaName) != null) {
                     log.debug("{}: Deleting cluster CA certificate {}", reconciliation, clusterCaName);
@@ -201,8 +201,8 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
     }
 
     /**
-     * Reconcile assembly resources in the given namespace having the given {@code assemblyName}.
-     * Reconciliation works by getting the assembly resource (e.g. {@code KafkaAssembly}) in the given namespace with the given assemblyName and
+     * Reconcile assembly resources in the given namespace having the given {@code name}.
+     * Reconciliation works by getting the assembly resource (e.g. {@code KafkaAssembly}) in the given namespace with the given name and
      * comparing with the corresponding {@linkplain #getResources(String, Labels) resource}.
      * <ul>
      * <li>An assembly will be {@linkplain #createOrUpdate(Reconciliation, T, List, Handler) created or updated} if ConfigMap is without same-named resources</li>
@@ -211,7 +211,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
      */
     public final void reconcileAssembly(Reconciliation reconciliation, Handler<AsyncResult<Void>> handler) {
         String namespace = reconciliation.namespace();
-        String assemblyName = reconciliation.assemblyName();
+        String assemblyName = reconciliation.name();
         final String lockName = getLockName(assemblyType, namespace, assemblyName);
         vertx.sharedData().getLockWithTimeout(lockName, LOCK_TIMEOUT_MS, res -> {
             if (res.succeeded()) {

@@ -75,7 +75,7 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
     protected void createOrUpdate(Reconciliation reconciliation, KafkaConnectAssembly kafkaConnectAssembly, List<Secret> assemblySecrets, Handler<AsyncResult<Void>> handler) {
 
         String namespace = reconciliation.namespace();
-        String name = reconciliation.assemblyName();
+        String name = reconciliation.name();
         KafkaConnectCluster connect;
         try {
             connect = KafkaConnectCluster.fromCrd(kafkaConnectAssembly);
@@ -105,7 +105,7 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
     @Override
     protected void delete(Reconciliation reconciliation, Handler<AsyncResult<Void>> handler) {
         String namespace = reconciliation.namespace();
-        String assemblyName = reconciliation.assemblyName();
+        String assemblyName = reconciliation.name();
         String clusterName = KafkaConnectCluster.kafkaConnectClusterName(assemblyName);
 
         CompositeFuture.join(serviceOperations.reconcile(namespace, KafkaConnectCluster.serviceName(assemblyName), null),

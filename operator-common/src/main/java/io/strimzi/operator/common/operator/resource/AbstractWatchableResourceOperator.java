@@ -4,6 +4,8 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
+import io.strimzi.operator.common.model.Labels;
+
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
@@ -34,5 +36,9 @@ public abstract class AbstractWatchableResourceOperator<
 
     public Watch watch(String namespace, Watcher<T> watcher) {
         return operation().inNamespace(namespace).watch(watcher);
+    }
+
+    public Watch watch(String namespace, Labels selector, Watcher<T> watcher) {
+        return operation().inNamespace(namespace).withLabels(selector.toMap()).watch(watcher);
     }
 }
