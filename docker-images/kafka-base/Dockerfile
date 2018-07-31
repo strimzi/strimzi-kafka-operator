@@ -14,11 +14,11 @@ ENV KAFKA_VERSION=2.0.0
 ENV JMX_EXPORTER_VERSION=0.1.0
 
 # Set Kafka (SHA512) and Prometheus JMX exporter (SHA1) checksums
-ENV KAFKA_CHECKSUM="f8a9f15a615521fd79169cd166cbc90e7d4ab503187f7649a967a76e3c074023c4423966f9b75eb4d70c523b0994b48d956d5b23586e27e6edacc60a2a16c4e5  kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz"
+ENV KAFKA_CHECKSUM="b28e81705e30528f1abb6766e22dfe9dae50b1e1e93330c880928ff7a08e6b38ee71cbfc96ec14369b2dfd24293938702cab422173c8e01955a9d1746ae43f98  kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz"
 ENV JMX_EXPORTER_CHECKSUM="6ab370edccc2eeb3985f4c95769c26c090d0e052 jmx_prometheus_javaagent-0.1.0.jar"
 
 # Downloading/extracting Apache Kafka
-RUN curl -O http://home.apache.org/~rsivaram/kafka-${KAFKA_VERSION}-rc2/kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz \
+RUN curl -O https://www.apache.org/dist/kafka/${KAFKA_VERSION}/kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz \
     && echo $KAFKA_CHECKSUM > kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz.sha512 \
     && sha512sum --check kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz.sha512 \
     && mkdir $KAFKA_HOME \
