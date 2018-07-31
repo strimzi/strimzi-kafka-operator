@@ -14,17 +14,14 @@ public class UserOperatorConfig {
 
     public static final String STRIMZI_NAMESPACE = "STRIMZI_NAMESPACE";
     public static final String STRIMZI_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
-    public static final String STRIMZI_OPERATION_TIMEOUT_MS = "STRIMZI_OPERATION_TIMEOUT_MS";
     public static final String STRIMZI_LABELS = "STRIMZI_LABELS";
     public static final String STRIMZI_CA_NAME = "STRIMZI_CA_NAME";
     public static final String STRIMZI_CA_NAMESPACE = "STRIMZI_CA_NAMESPACE";
 
     public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = 120_000;
-    public static final long DEFAULT_OPERATION_TIMEOUT_MS = 300_000;
 
     private final String namespace;
     private final long reconciliationIntervalMs;
-    private final long operationTimeoutMs;
     private Map<String, String> labels;
     private final String caName;
     private final String caNamespace;
@@ -34,12 +31,13 @@ public class UserOperatorConfig {
      *
      * @param namespace namespace in which the operator will run and create resources
      * @param reconciliationIntervalMs    specify every how many milliseconds the reconciliation runs
-     * @param operationTimeoutMs    timeout for internal operations specified in milliseconds
+     * @param labels    Map with labels which should be used to find the KAfkaUser resources
+     * @param caName    Name of the secret containing the Certification Authority
+     * @param caNamespace   Namespace with the CA secret
      */
-    public UserOperatorConfig(String namespace, long reconciliationIntervalMs, long operationTimeoutMs, Map<String, String> labels, String caName, String caNamespace) {
+    public UserOperatorConfig(String namespace, long reconciliationIntervalMs, Map<String, String> labels, String caName, String caNamespace) {
         this.namespace = namespace;
         this.reconciliationIntervalMs = reconciliationIntervalMs;
-        this.operationTimeoutMs = operationTimeoutMs;
         this.labels = labels;
         this.caName = caName;
         this.caNamespace = caNamespace;
@@ -64,12 +62,6 @@ public class UserOperatorConfig {
             reconciliationInterval = Long.parseLong(reconciliationIntervalEnvVar);
         }
 
-        long operationTimeout = DEFAULT_OPERATION_TIMEOUT_MS;
-        String operationTimeoutEnvVar = map.get(UserOperatorConfig.STRIMZI_OPERATION_TIMEOUT_MS);
-        if (operationTimeoutEnvVar != null) {
-            operationTimeout = Long.parseLong(operationTimeoutEnvVar);
-        }
-
         String stringLabels = map.get(STRIMZI_LABELS);
         Map<String, String> labels = new HashMap<>();
         if (stringLabels != null && !stringLabels.isEmpty()) {
@@ -90,9 +82,8 @@ public class UserOperatorConfig {
             caNamespace = namespace;
         }
 
-        return new UserOperatorConfig(namespace, reconciliationInterval, operationTimeout, labels, caName, caNamespace);
+        return new UserOperatorConfig(namespace, reconciliationInterval, labels, caName, caNamespace);
     }
-
 
     /**
      * @return  namespace in which the operator runs and creates resources
@@ -106,13 +97,6 @@ public class UserOperatorConfig {
      */
     public long getReconciliationIntervalMs() {
         return reconciliationIntervalMs;
-    }
-
-    /**
-     * @return  how many milliseconds should we wait for Kubernetes operations
-     */
-    public long getOperationTimeoutMs() {
-        return operationTimeoutMs;
     }
 
     /**
@@ -141,8 +125,9 @@ public class UserOperatorConfig {
         return "ClusterOperatorConfig(" +
                 "namespace=" + namespace +
                 ",reconciliationIntervalMs=" + reconciliationIntervalMs +
-                ",operationTimeoutMs=" + operationTimeoutMs +
                 ",labels=" + labels +
+                ",caName=" + caName +
+                ",caNamespace=" + caNamespace +
                 ")";
     }
 }
