@@ -1,3 +1,9 @@
+// Module included in the following assemblies:
+//
+// topic-operator.adoc
+
+include::common/attributes.adoc[]
+
 [id='deleting-a-topic-{context}']
 = Deleting a topic
 

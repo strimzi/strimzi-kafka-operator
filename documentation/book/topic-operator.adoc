@@ -1,47 +1,54 @@
+// This assembly is included in the following assemblies:
+//
+// master.adoc
+
+// Save the context of the assembly that is including this one.
+// This is necessary for including assemblies in assemblies.
+// See also the complementary step on the last line of this file.
+:parent-context: {context}
+
 [id='topic-operator-{context}']
-== Topic Operator
+= Topic Operator
 
+:context: str
+include::con-what-the-topic-operator-does.adoc[leveloffset=+1]
 
-include::con-what-the-topic-operator-does.adoc[leveloffset=+2]
+:context: str
+include::con-how-the-topic-operator-works.adoc[leveloffset=+1]
 
-include::con-how-the-topic-operator-works.adoc[leveloffset=+2]
-
-=== Usage Recommendations
-
-. Either always operate on `KafkaTopic` resources or always operate directly on topics. That is, avoid routinely using both methods for a given topic.
-. When creating a `KafkaTopic` resource:
-    * Remember that the name cannot be changed later.
-    * Choose a name for the `KafkaTopic` resource that reflects the name of the topic it describes.
-    * Ideally the `KafkaTopic.metadata.name` should be the same as its `spec.topicName`.
-      To do this, the topic name will have to be a https://github.com/kubernetes/community/blob/master/contributors/design-proposals/architecture/identifiers.md[valid {KubernetesName} resource name].
-. When creating a topic:
-    * Remember that the name cannot be changed later.
-    * It is best to use a name that is a https://github.com/kubernetes/community/blob/master/contributors/design-proposals/architecture/identifiers.md[valid {KubernetesName} resource name],
-      otherwise the operator will have to modify the name when creating
-      the corresponding `KafkaTopic`.
+:context: str
+include::ref-topic-operator-usage-recommendation.adoc[leveloffset=+1]
 
 [id='format-of-the-kafkatopic-{context}']
-=== Format of the `KafkaTopic`
+== Format of the `KafkaTopic`
 
 For detailed reference of the API for `KafkaTopic` see xref:type-KafkaTopic[`KafkaTopic` API documentation].
 
-include::proc-creating-a-topic.adoc[leveloffset=+2]
+:context: str
+include::proc-creating-a-topic.adoc[leveloffset=+1]
 
-include::proc-changing-a-topic.adoc[leveloffset=+2]
+:context: str
+include::proc-changing-a-topic.adoc[leveloffset=+1]
 
-include::proc-deleting-a-topic.adoc[leveloffset=+2]
+:context: str
+include::proc-deleting-a-topic.adoc[leveloffset=+1]
 
-include::ref-topic-operator-environment.adoc[leveloffset=+2]
+:context: str
+include::ref-topic-operator-environment.adoc[leveloffset=+1]
 
-=== Resource limits and requests
+== Resource limits and requests
 
 The Topic Operator can run with resource limits:
 
 * When it is deployed by the Cluster Operator these can be specified in the `Kafka.spec.topicOperator.resources` property.
 * When it is not deployed by the Cluster Operator these can be specified on the `Deployment` in the usual way.
 
-==== Minimum Resource Requirements
+=== Minimum Resource Requirements
 
 Testing has shown that the topic operator functions adequately with 96Mi of memory and 100m CPU when watching two topics.
-It is therefore recommended to use these as a minimum when configuring resource requests and not to run it with lower limits than these. 
+It is therefore recommended to use these as a minimum when configuring resource requests and not to run it with lower limits than these.
 If the Kafka cluster has more than a handful of topics more generous requests and limits will be necessary.
+
+
+// Restore the context to what it was before this assembly.
+:context: {parent-context}
