@@ -18,7 +18,7 @@ import org.junit.runner.RunWith;
 @RunWith(StrimziRunner.class)
 @Namespace(HelmChartClusterIT.NAMESPACE)
 @ClusterOperator(useHelmChart = true)
-public class HelmChartClusterIT extends KafkaClusterIT {
+public class HelmChartClusterIT extends KafkaST {
 
     private static final Logger LOGGER = LogManager.getLogger(HelmChartClusterIT.class);
 

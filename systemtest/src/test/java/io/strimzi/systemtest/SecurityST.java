@@ -26,9 +26,9 @@ public class SecurityST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(SecurityST.class);
     public static final String NAMESPACE = "security-cluster-test";
-    private String OPENSSL_RETURN_CODE = "Verify return code: 0 (ok)";
-    private String TLS_PROTOCOL = "Protocol  : TLSv1";
-    private String SSL_TIMEOUT = "Timeout   : 300 (sec)";
+    private static final String OPENSSL_RETURN_CODE = "Verify return code: 0 (ok)";
+    private static final String TLS_PROTOCOL = "Protocol  : TLSv1";
+    private static final String SSL_TIMEOUT = "Timeout   : 300 (sec)";
 
     @Test
     @JUnitGroup(name = "regression")
