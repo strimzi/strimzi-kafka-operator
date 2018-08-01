@@ -50,7 +50,9 @@ public class KafkaConnectCluster extends AbstractModel {
     // Kafka Connect configuration keys (EnvVariables)
     protected static final String ENV_VAR_KAFKA_CONNECT_CONFIGURATION = "KAFKA_CONNECT_CONFIGURATION";
     protected static final String ENV_VAR_KAFKA_CONNECT_METRICS_ENABLED = "KAFKA_CONNECT_METRICS_ENABLED";
-    protected static final String ENV_VAR_KAFKA_CONNECT_LOGGING = "KAFKA_CONNECT_LOGGING";
+    protected static final String ENV_VAR_KAFKA_CONNECT_BOOTSTRAP_SERVERS = "KAFKA_CONNECT_BOOTSTRAP_SERVERS";
+
+    protected String bootstrapServers;
 
     /**
      * Constructor
@@ -130,6 +132,7 @@ public class KafkaConnectCluster extends AbstractModel {
             }
             kafkaConnect.setUserAffinity(spec.getAffinity());
             kafkaConnect.setTolerations(spec.getTolerations());
+            kafkaConnect.setBootstrapServers(spec.getBootstrapServers());
         }
         return kafkaConnect;
     }
@@ -213,6 +216,7 @@ public class KafkaConnectCluster extends AbstractModel {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_CONFIGURATION, configuration.getConfiguration()));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_BOOTSTRAP_SERVERS, bootstrapServers));
         heapOptions(varList, 1.0, 0L);
         jvmPerformanceOptions(varList);
         return varList;
@@ -221,5 +225,13 @@ public class KafkaConnectCluster extends AbstractModel {
     @Override
     protected String getDefaultLogConfigFileName() {
         return "kafkaConnectDefaultLoggingProperties";
+    }
+
+    /**
+     * Set the bootstrap servers to connect to
+     * @param bootstrapServers bootstrap servers comma separated list
+     */
+    protected void setBootstrapServers(String bootstrapServers) {
+        this.bootstrapServers = bootstrapServers;
     }
 }

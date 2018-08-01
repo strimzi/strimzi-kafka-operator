@@ -77,8 +77,11 @@ public abstract class AbstractConfiguration {
 
             if (value instanceof String)    {
                 map.put(key, (String) value);
-            } else if (value instanceof Integer || value instanceof Long || value instanceof Boolean || value instanceof Double || value instanceof Float)    {
+            } else if (value instanceof Integer || value instanceof Long || value instanceof Boolean || value instanceof Double || value instanceof Float) {
                 map.put(key, String.valueOf(value));
+            } else if (value == null) {
+                log.error("A null value for key {} is not allowed", key);
+                throw new InvalidConfigMapException(key, "A null value is not allowed for this key");
             } else  {
                 log.error("Unsupported type {} in configuration for key {}", value.getClass(), key);
                 throw new InvalidConfigMapException(key, " - Unsupported type " + value.getClass() + " in configuration for this key");

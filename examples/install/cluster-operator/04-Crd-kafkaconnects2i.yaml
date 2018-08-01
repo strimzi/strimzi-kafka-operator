@@ -235,6 +235,8 @@ spec:
                             type: string
             metrics:
               type: object
+            bootstrapServers:
+              type: string
             config:
               type: object
             insecureSourceRepository:
@@ -285,4 +287,4 @@ spec:
                   value:
                     type: string
           required:
-          - config
+          - bootstrapServers
