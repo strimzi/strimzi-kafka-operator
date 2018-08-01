@@ -12,7 +12,7 @@ import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.EphemeralStorage;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
-import io.strimzi.api.kafka.model.KafkaAssemblyBuilder;
+import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaSpec;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
@@ -58,7 +58,7 @@ public class ResourceUtils {
         meta.withNamespace(clusterCmNamespace);
         meta.withName(clusterCmName);
         meta.withLabels(Labels.userLabels(singletonMap("my-user-label", "cromulent")).toMap());
-        KafkaAssemblyBuilder builder = new KafkaAssemblyBuilder();
+        KafkaBuilder builder = new KafkaBuilder();
         return builder.withMetadata(meta.build())
                 .withNewSpec()
                     .withNewKafka()
@@ -83,7 +83,7 @@ public class ResourceUtils {
                                            Map<String, Object> metricsCm,
                                            Map<String, Object> kafkaConfigurationJson,
                                            Map<String, Object> zooConfigurationJson) {
-        return new KafkaAssemblyBuilder(createKafkaCluster(clusterCmNamespace, clusterCmName, replicas, image, healthDelay,
+        return new KafkaBuilder(createKafkaCluster(clusterCmNamespace, clusterCmName, replicas, image, healthDelay,
                 healthTimeout)).editSpec()
                     .editKafka()
                         .withMetrics(metricsCm)
@@ -200,7 +200,7 @@ public class ResourceUtils {
                                            Map<String, Object> metricsCm,
                                            Map<String, Object> kafkaConfigurationJson,
                                            Logging kafkaLogging, Logging zkLogging) {
-        return new KafkaAssemblyBuilder(createKafkaCluster(clusterCmNamespace, clusterCmName, replicas, image, healthDelay,
+        return new KafkaBuilder(createKafkaCluster(clusterCmNamespace, clusterCmName, replicas, image, healthDelay,
                 healthTimeout, metricsCm, kafkaConfigurationJson, emptyMap()))
                 .editSpec()
                 .editKafka()

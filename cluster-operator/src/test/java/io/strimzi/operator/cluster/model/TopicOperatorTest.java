@@ -14,7 +14,7 @@ import io.strimzi.api.kafka.model.EphemeralStorage;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.Storage;
-import io.strimzi.api.kafka.model.TopicOperatorBuilder;
+import io.strimzi.api.kafka.model.TopicOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.TopicOperatorSpec;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ResourceUtils;
@@ -62,7 +62,7 @@ public class TopicOperatorTest {
     private final int tcZookeeperSessionTimeout = 20;
     private final int tcTopicMetadataMaxAttempts = 3;
 
-    private final TopicOperatorSpec topicOperator = new TopicOperatorBuilder()
+    private final TopicOperatorSpec topicOperator = new TopicOperatorSpecBuilder()
             .withWatchedNamespace(tcWatchedNamespace)
             .withImage(tcImage)
             .withReconciliationIntervalSeconds(tcReconciliationInterval)

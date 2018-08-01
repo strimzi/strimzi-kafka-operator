@@ -10,7 +10,7 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.DoneableKafkaConnectAssembly;
 import io.strimzi.api.kafka.KafkaConnectAssemblyList;
 import io.strimzi.api.kafka.model.KafkaConnect;
-import io.strimzi.api.kafka.model.KafkaConnectAssemblyBuilder;
+import io.strimzi.api.kafka.model.KafkaConnectBuilder;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
@@ -56,7 +56,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
     public void before() {
         this.vertx = Vertx.vertx();
 
-        this.cluster = new KafkaConnectAssemblyBuilder()
+        this.cluster = new KafkaConnectBuilder()
                 .withMetadata(new ObjectMetaBuilder()
                     .withName(CLUSTER_NAME)
                     .withNamespace(NAMESPACE)

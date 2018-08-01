@@ -59,7 +59,6 @@ public class KafkaConnectClusterTest {
             "internal.value.converter.schemas.enable=false" + LINE_SEPARATOR +
             "internal.value.converter=org.apache.kafka.connect.json.JsonConverter" + LINE_SEPARATOR;
 
-
     private final KafkaConnect resource = new KafkaConnectBuilder(ResourceUtils.createEmptyKafkaConnectCluster(namespace, cluster))
             .withNewSpec()
             .withMetrics((Map<String, Object>) TestUtils.fromJson(metricsCmJson, Map.class))

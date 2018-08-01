@@ -13,10 +13,10 @@ import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.api.kafka.model.EphemeralStorage;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaAssemblyBuilder;
+import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.Storage;
-import io.strimzi.api.kafka.model.TopicOperatorBuilder;
+import io.strimzi.api.kafka.model.TopicOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.TopicOperatorSpec;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.ResourceUtils;
@@ -157,7 +157,7 @@ public class KafkaAssemblyOperatorTest {
         TopicOperatorSpec[] tcConfigs = {
             null,
             new TopicOperatorSpec(),
-            new TopicOperatorBuilder().withReconciliationIntervalSeconds(600)
+            new TopicOperatorSpecBuilder().withReconciliationIntervalSeconds(600)
                     .withZookeeperSessionTimeoutSeconds(10).build()
         };
         List<Params> result = new ArrayList();
@@ -502,7 +502,7 @@ public class KafkaAssemblyOperatorTest {
     @Test
     public void testUpdateZookeeperClusterChangeStunnelImage(TestContext context) {
         Kafka kafkaAssembly = getKafkaAssembly("bar");
-        kafkaAssembly = new KafkaAssemblyBuilder(kafkaAssembly)
+        kafkaAssembly = new KafkaBuilder(kafkaAssembly)
                 .editSpec().editZookeeper()
                     .editOrNewTlsSidecar().withImage("a-changed-tls-sidecar-image")
                     .endTlsSidecar().endZookeeper().endSpec().build();
@@ -601,7 +601,7 @@ public class KafkaAssemblyOperatorTest {
         Kafka kafkaAssembly = getKafkaAssembly("bar");
         if (tcConfig != null) {
             kafkaAssembly.getSpec().getTopicOperator().setImage("some/other:image");
-            kafkaAssembly = new KafkaAssemblyBuilder(kafkaAssembly)
+            kafkaAssembly = new KafkaBuilder(kafkaAssembly)
                     .editSpec().editTopicOperator()
                     .editOrNewTlsSidecar().withImage("a-changed-tls-sidecar-image")
                     .endTlsSidecar().endTopicOperator().endSpec().build();

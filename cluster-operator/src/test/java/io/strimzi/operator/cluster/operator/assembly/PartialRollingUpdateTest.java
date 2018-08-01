@@ -12,7 +12,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.DoneableKafkaAssembly;
 import io.strimzi.api.kafka.KafkaAssemblyList;
 import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaAssemblyBuilder;
+import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -64,7 +64,7 @@ public class PartialRollingUpdateTest {
     public void before(TestContext context) {
         this.vertx = Vertx.vertx();
 
-        this.cluster = new KafkaAssemblyBuilder()
+        this.cluster = new KafkaBuilder()
                 .withMetadata(new ObjectMetaBuilder().withName(CLUSTER_NAME)
                 .withNamespace(NAMESPACE)
                 .build())
