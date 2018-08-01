@@ -71,10 +71,8 @@ public class DocGenerator {
         appendRepeated('#', headerDepth);
         out.append(' ');
         out.append(name);
-        out.append(' ');
-        out.append(crd.spec().version());
-        out.append(' ');
-        out.append(crd.spec().group());
+        out.append(" schema reference");
+
         out.append(NL);
         out.append(NL);
     }
@@ -108,13 +106,13 @@ public class DocGenerator {
     public void generate(Class<? extends CustomResource> crdClass) throws IOException {
         Crd crd = crdClass.getAnnotation(Crd.class);
         appendAnchor(crd, crdClass);
-        appendHeading(crd, "`" + crd.spec().names().kind() + "` kind");
+        appendHeading(crd, "`" + crd.spec().names().kind() + "`");
         appendCommonTypeDoc(crd, crdClass);
     }
 
     private void appendedNestedTypeDoc(Crd crd, Class<?> cls) throws IOException {
         appendAnchor(crd, cls);
-        appendHeading(crd, "`" + cls.getSimpleName() + "` type");
+        appendHeading(crd, "`" + cls.getSimpleName() + "`");
         appendCommonTypeDoc(crd, cls);
     }
 
