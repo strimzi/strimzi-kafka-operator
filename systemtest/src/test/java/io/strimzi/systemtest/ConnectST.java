@@ -174,12 +174,12 @@ public class ConnectST extends AbstractST {
         List<String> connectPods = kubeClient.listResourcesByLabel("pod", "strimzi.io/kind=KafkaConnect");
 
         String connectConfig = "{\n" +
-                "      \"bootstrap.servers\": \"" + KAFKA_CONNECT_BOOTSTRAP_SERVERS + "\",\n" +
                 "      \"config.storage.replication.factor\": \"1\",\n" +
                 "      \"offset.storage.replication.factor\": \"1\",\n" +
                 "      \"status.storage.replication.factor\": \"1\"\n" +
                 "    }";
         replaceKafkaConnectResource(CONNECT_CLUSTER_NAME, c -> {
+            c.getSpec().setBootstrapServers(KAFKA_CONNECT_BOOTSTRAP_SERVERS);
             c.getSpec().setConfig(TestUtils.fromJson(connectConfig, Map.class));
             c.getSpec().getLivenessProbe().setInitialDelaySeconds(61);
             c.getSpec().getReadinessProbe().setInitialDelaySeconds(61);
@@ -202,6 +202,8 @@ public class ConnectST extends AbstractST {
             assertThat(connectPodJson, containsString("config.storage.replication.factor=1"));
             assertThat(connectPodJson, containsString("offset.storage.replication.factor=1"));
             assertThat(connectPodJson, containsString("status.storage.replication.factor=1"));
+            assertThat(connectPodJson, hasJsonPath("$.spec.containers[*].env[?(@.name=='KAFKA_CONNECT_BOOTSTRAP_SERVERS')].value",
+                    hasItem(KAFKA_CONNECT_BOOTSTRAP_SERVERS)));
         }
     }
 
