@@ -22,7 +22,7 @@ include::ref-topic-operator-usage-recommendation.adoc[leveloffset=+1]
 [id='format-of-the-kafkatopic-{context}']
 == Format of the `KafkaTopic`
 
-For detailed reference of the API for `KafkaTopic` see xref:type-KafkaTopic-str[`KafkaTopic` API documentation].
+For detailed reference of the API for `KafkaTopic` see xref:type-KafkaTopic-str[].
 
 :context: str
 include::proc-creating-a-topic.adoc[leveloffset=+1]
