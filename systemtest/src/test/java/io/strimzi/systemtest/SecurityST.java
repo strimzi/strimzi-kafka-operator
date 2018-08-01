@@ -69,15 +69,14 @@ public class SecurityST extends AbstractST {
 
             String outputForZookeeperPort2181 =
                     kubeClient.execInPodContainer(kafkaPodName(CLUSTER_NAME, podId), "kafka", "/bin/bash", "-c", commandForZookeeperPort2181).out();
-            checkZookeeperCertificates(outputForZookeeperPort2181);
+            String outputForZookeeperPort3888 =
+                    kubeClient.execInPodContainer(kafkaPodName(CLUSTER_NAME, podId), "kafka", "/bin/bash", "-c", commandForZookeeperPort3888).out();
+            checkZookeeperCertificates(outputForZookeeperPort2181, outputForZookeeperPort3888);
 
             try {
                 String outputForZookeeperPort2888 =
                         kubeClient.execInPodContainer(kafkaPodName(CLUSTER_NAME, podId), "kafka", "/bin/bash", "-c", commandForZookeeperPort2888).out();
-                String outputForZookeeperPort3888 =
-                        kubeClient.execInPodContainer(kafkaPodName(CLUSTER_NAME, podId), "kafka", "/bin/bash", "-c", commandForZookeeperPort3888).out();
-
-                checkZookeeperCertificates(outputForZookeeperPort2888, outputForZookeeperPort3888);
+                checkZookeeperCertificates(outputForZookeeperPort2888);
             } catch (KubeClusterException e) {
                 if (e.result != null && e.result.exitStatus() == 104) {
                     LOGGER.info("The connection for {} was forcibly closed because of new zookeeper leader", zookeeperPodName(CLUSTER_NAME, podId));
