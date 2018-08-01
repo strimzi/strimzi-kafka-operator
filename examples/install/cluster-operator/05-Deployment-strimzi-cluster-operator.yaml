@@ -2,7 +2,8 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: strimzi-cluster-operator
-  labels: {}
+  labels:
+    app: strimzi
 spec:
   replicas: 1
   template:

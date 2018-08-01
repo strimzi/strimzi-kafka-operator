@@ -20,14 +20,13 @@ helm_lint:
 helm_template:
 	# Generating rendered template files to: $(CHART_RENDERED_TEMPLATES_TMP)
 	mkdir -p $(CHART_RENDERED_TEMPLATES_TMP)
-	helm template --output-dir $(CHART_RENDERED_TEMPLATES_TMP) --set imageTagOverride=$(RELEASE_VERSION) $(CHART_PATH)
+	helm template --namespace myproject --output-dir $(CHART_RENDERED_TEMPLATES_TMP) --set imageTagOverride=$(RELEASE_VERSION) $(CHART_PATH)
 
 helm_examples: helm_template
 	# Copying rendered template files to: $(CHART_RENDERED_TEMPLATES_EXAMPLES)
 	mkdir -p $(CHART_RENDERED_TEMPLATES_EXAMPLES)
 	cp $(CHART_RENDERED_TEMPLATES_TMP)/$(CHART_NAME)/templates/* $(CHART_RENDERED_TEMPLATES_EXAMPLES)
 	# Remove Heml-related labels
-	find $(CHART_RENDERED_TEMPLATES_EXAMPLES) -type f -name '*.yaml' -exec yq d -i {} metadata.labels.app \;
 	find $(CHART_RENDERED_TEMPLATES_EXAMPLES) -type f -name '*.yaml' -exec yq d -i {} metadata.labels.chart \;
 	find $(CHART_RENDERED_TEMPLATES_EXAMPLES) -type f -name '*.yaml' -exec yq d -i {} metadata.labels.component \;
 	find $(CHART_RENDERED_TEMPLATES_EXAMPLES) -type f -name '*.yaml' -exec yq d -i {} metadata.labels.release \;
