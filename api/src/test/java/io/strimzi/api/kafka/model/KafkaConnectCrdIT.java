@@ -28,23 +28,23 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
 
     @Test
     public void testKafka() {
-        createDelete(KafkaConnectAssembly.class, "KafkaConnectAssembly.yaml");
+        createDelete(KafkaConnect.class, "KafkaConnectAssembly.yaml");
     }
 
     @Test
     public void testKafkaMinimal() {
-        createDelete(KafkaConnectAssembly.class, "KafkaConnectAssembly-minimal.yaml");
+        createDelete(KafkaConnect.class, "KafkaConnectAssembly-minimal.yaml");
     }
 
     @Test
     public void testKafkaWithExtraProperty() {
-        createDelete(KafkaConnectAssembly.class, "KafkaConnectAssembly-with-extra-property.yaml");
+        createDelete(KafkaConnect.class, "KafkaConnectAssembly-with-extra-property.yaml");
     }
 
     @Test
     public void testKafkaWithMissingRequired() {
         try {
-            createDelete(KafkaConnectAssembly.class, "KafkaConnectAssembly-with-missing-required-property.yaml");
+            createDelete(KafkaConnect.class, "KafkaConnectAssembly-with-missing-required-property.yaml");
         } catch (KubeClusterException.InvalidResource e) {
             assertTrue(e.getMessage(), e.getMessage().contains("spec.bootstrapServers in body is required"));
         }
@@ -53,7 +53,7 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
     @Test
     public void testKafkaWithInvalidResourceMemory() {
         try {
-            createDelete(KafkaConnectAssembly.class, "KafkaConnectAssembly-with-invalid-resource-memory.yaml");
+            createDelete(KafkaConnect.class, "KafkaConnectAssembly-with-invalid-resource-memory.yaml");
         } catch (KubeClusterException.InvalidResource e) {
             assertTrue(e.getMessage().contains("spec.replicas in body must be of type integer: \"string\""));
         }

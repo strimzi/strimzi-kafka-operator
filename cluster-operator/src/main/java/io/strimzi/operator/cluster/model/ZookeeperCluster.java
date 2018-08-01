@@ -16,11 +16,11 @@ import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.api.kafka.model.EphemeralStorage;
-import io.strimzi.api.kafka.model.KafkaAssembly;
+import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.Resources;
 import io.strimzi.api.kafka.model.Sidecar;
-import io.strimzi.api.kafka.model.Zookeeper;
+import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.common.model.Labels;
@@ -122,8 +122,8 @@ public class ZookeeperCluster extends AbstractModel {
         this.serviceName = serviceName(cluster);
         this.headlessServiceName = headlessServiceName(cluster);
         this.ancillaryConfigName = zookeeperMetricAndLogConfigsName(cluster);
-        this.image = Zookeeper.DEFAULT_IMAGE;
-        this.replicas = Zookeeper.DEFAULT_REPLICAS;
+        this.image = ZookeeperClusterSpec.DEFAULT_IMAGE;
+        this.replicas = ZookeeperClusterSpec.DEFAULT_REPLICAS;
         this.readinessPath = "/opt/kafka/zookeeper_healthcheck.sh";
         this.readinessTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
         this.readinessInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
@@ -139,42 +139,42 @@ public class ZookeeperCluster extends AbstractModel {
         this.validLoggerFields = getDefaultLogConfig();
     }
 
-    public static ZookeeperCluster fromCrd(CertManager certManager, KafkaAssembly kafkaAssembly, List<Secret> secrets) {
+    public static ZookeeperCluster fromCrd(CertManager certManager, Kafka kafkaAssembly, List<Secret> secrets) {
         ZookeeperCluster zk = new ZookeeperCluster(kafkaAssembly.getMetadata().getNamespace(), kafkaAssembly.getMetadata().getName(),
                 Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
-        Zookeeper zookeeper = kafkaAssembly.getSpec().getZookeeper();
-        int replicas = zookeeper.getReplicas();
+        ZookeeperClusterSpec zookeeperClusterSpec = kafkaAssembly.getSpec().getZookeeper();
+        int replicas = zookeeperClusterSpec.getReplicas();
         if (replicas <= 0) {
-            replicas = Zookeeper.DEFAULT_REPLICAS;
+            replicas = ZookeeperClusterSpec.DEFAULT_REPLICAS;
         }
         zk.setReplicas(replicas);
-        String image = zookeeper.getImage();
+        String image = zookeeperClusterSpec.getImage();
         if (image == null) {
-            image = Zookeeper.DEFAULT_IMAGE;
+            image = ZookeeperClusterSpec.DEFAULT_IMAGE;
         }
         zk.setImage(image);
-        if (zookeeper.getReadinessProbe() != null) {
-            zk.setReadinessInitialDelay(zookeeper.getReadinessProbe().getInitialDelaySeconds());
-            zk.setReadinessTimeout(zookeeper.getReadinessProbe().getTimeoutSeconds());
+        if (zookeeperClusterSpec.getReadinessProbe() != null) {
+            zk.setReadinessInitialDelay(zookeeperClusterSpec.getReadinessProbe().getInitialDelaySeconds());
+            zk.setReadinessTimeout(zookeeperClusterSpec.getReadinessProbe().getTimeoutSeconds());
         }
-        if (zookeeper.getLivenessProbe() != null) {
-            zk.setLivenessInitialDelay(zookeeper.getLivenessProbe().getInitialDelaySeconds());
-            zk.setLivenessTimeout(zookeeper.getLivenessProbe().getTimeoutSeconds());
+        if (zookeeperClusterSpec.getLivenessProbe() != null) {
+            zk.setLivenessInitialDelay(zookeeperClusterSpec.getLivenessProbe().getInitialDelaySeconds());
+            zk.setLivenessTimeout(zookeeperClusterSpec.getLivenessProbe().getTimeoutSeconds());
         }
-        zk.setLogging(zookeeper.getLogging());
-        Map<String, Object> metrics = zookeeper.getMetrics();
+        zk.setLogging(zookeeperClusterSpec.getLogging());
+        Map<String, Object> metrics = zookeeperClusterSpec.getMetrics();
         if (metrics != null && !metrics.isEmpty()) {
             zk.setMetricsEnabled(true);
             zk.setMetricsConfig(metrics.entrySet());
         }
-        zk.setStorage(zookeeper.getStorage());
-        zk.setConfiguration(new ZookeeperConfiguration(zookeeper.getConfig().entrySet()));
-        zk.setResources(zookeeper.getResources());
-        zk.setJvmOptions(zookeeper.getJvmOptions());
-        zk.setUserAffinity(zookeeper.getAffinity());
-        zk.setTolerations(zookeeper.getTolerations());
+        zk.setStorage(zookeeperClusterSpec.getStorage());
+        zk.setConfiguration(new ZookeeperConfiguration(zookeeperClusterSpec.getConfig().entrySet()));
+        zk.setResources(zookeeperClusterSpec.getResources());
+        zk.setJvmOptions(zookeeperClusterSpec.getJvmOptions());
+        zk.setUserAffinity(zookeeperClusterSpec.getAffinity());
+        zk.setTolerations(zookeeperClusterSpec.getTolerations());
         zk.generateCertificates(certManager, secrets);
-        zk.setTlsSidecar(zookeeper.getTlsSidecar());
+        zk.setTlsSidecar(zookeeperClusterSpec.getTlsSidecar());
         return zk;
     }
 
@@ -279,7 +279,7 @@ public class ZookeeperCluster extends AbstractModel {
                 .build();
 
         String tlsSidecarImage = (tlsSidecar != null && tlsSidecar.getImage() != null) ?
-                tlsSidecar.getImage() : Zookeeper.DEFAULT_TLS_SIDECAR_IMAGE;
+                tlsSidecar.getImage() : ZookeeperClusterSpec.DEFAULT_TLS_SIDECAR_IMAGE;
 
         Resources tlsSidecarResources = (tlsSidecar != null) ? tlsSidecar.getResources() : null;
 

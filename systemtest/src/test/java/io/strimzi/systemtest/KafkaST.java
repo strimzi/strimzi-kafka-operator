@@ -7,9 +7,9 @@ package io.strimzi.systemtest;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaTopic;
-import io.strimzi.api.kafka.model.Zookeeper;
+import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
 import io.strimzi.test.ClusterOperator;
 import io.strimzi.test.JUnitGroup;
 import io.strimzi.test.KafkaFromClasspathYaml;
@@ -239,18 +239,18 @@ public class KafkaST extends AbstractST {
         }
 
         replaceKafkaResource(clusterName, k -> {
-            Kafka kafka = k.getSpec().getKafka();
-            kafka.getLivenessProbe().setInitialDelaySeconds(31);
-            kafka.getReadinessProbe().setInitialDelaySeconds(31);
-            kafka.getLivenessProbe().setTimeoutSeconds(11);
-            kafka.getReadinessProbe().setTimeoutSeconds(11);
-            kafka.setConfig(TestUtils.fromJson("{\"default.replication.factor\": 2,\"offsets.topic.replication.factor\": 2,\"transaction.state.log.replication.factor\": 2}", Map.class));
-            Zookeeper zookeeper = k.getSpec().getZookeeper();
-            zookeeper.getLivenessProbe().setInitialDelaySeconds(31);
-            zookeeper.getReadinessProbe().setInitialDelaySeconds(31);
-            zookeeper.getLivenessProbe().setTimeoutSeconds(11);
-            zookeeper.getReadinessProbe().setTimeoutSeconds(11);
-            zookeeper.setConfig(TestUtils.fromJson("{\"timeTick\": 2100, \"initLimit\": 6, \"syncLimit\": 3}", Map.class));
+            KafkaClusterSpec kafkaClusterSpec = k.getSpec().getKafka();
+            kafkaClusterSpec.getLivenessProbe().setInitialDelaySeconds(31);
+            kafkaClusterSpec.getReadinessProbe().setInitialDelaySeconds(31);
+            kafkaClusterSpec.getLivenessProbe().setTimeoutSeconds(11);
+            kafkaClusterSpec.getReadinessProbe().setTimeoutSeconds(11);
+            kafkaClusterSpec.setConfig(TestUtils.fromJson("{\"default.replication.factor\": 2,\"offsets.topic.replication.factor\": 2,\"transaction.state.log.replication.factor\": 2}", Map.class));
+            ZookeeperClusterSpec zookeeperClusterSpec = k.getSpec().getZookeeper();
+            zookeeperClusterSpec.getLivenessProbe().setInitialDelaySeconds(31);
+            zookeeperClusterSpec.getReadinessProbe().setInitialDelaySeconds(31);
+            zookeeperClusterSpec.getLivenessProbe().setTimeoutSeconds(11);
+            zookeeperClusterSpec.getReadinessProbe().setTimeoutSeconds(11);
+            zookeeperClusterSpec.setConfig(TestUtils.fromJson("{\"timeTick\": 2100, \"initLimit\": 6, \"syncLimit\": 3}", Map.class));
         });
 
         for (int i = 0; i < expectedZKPods; i++) {

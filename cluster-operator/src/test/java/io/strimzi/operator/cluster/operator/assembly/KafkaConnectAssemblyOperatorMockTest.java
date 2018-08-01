@@ -9,7 +9,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.DoneableKafkaConnectAssembly;
 import io.strimzi.api.kafka.KafkaConnectAssemblyList;
-import io.strimzi.api.kafka.model.KafkaConnectAssembly;
+import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectAssemblyBuilder;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.common.Reconciliation;
@@ -50,7 +50,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
     private KubernetesClient mockClient;
 
     private Vertx vertx;
-    private KafkaConnectAssembly cluster;
+    private KafkaConnect cluster;
 
     @Before
     public void before() {
@@ -66,7 +66,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
                     .withReplicas(replicas)
                 .endSpec()
             .build();
-        mockClient = new MockKube().withCustomResourceDefinition(Crds.kafkaConnect(), KafkaConnectAssembly.class, KafkaConnectAssemblyList.class, DoneableKafkaConnectAssembly.class)
+        mockClient = new MockKube().withCustomResourceDefinition(Crds.kafkaConnect(), KafkaConnect.class, KafkaConnectAssemblyList.class, DoneableKafkaConnectAssembly.class)
                 .withInitialInstances(Collections.singleton(cluster)).end().build();
     }
 
@@ -76,9 +76,9 @@ public class KafkaConnectAssemblyOperatorMockTest {
     }
 
     private KafkaConnectAssemblyOperator createConnectCluster(TestContext context) {
-        CrdOperator<KubernetesClient, KafkaConnectAssembly, KafkaConnectAssemblyList, DoneableKafkaConnectAssembly>
+        CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectAssemblyList, DoneableKafkaConnectAssembly>
                 connectOperator = new CrdOperator<>(vertx, mockClient,
-                KafkaConnectAssembly.class, KafkaConnectAssemblyList.class, DoneableKafkaConnectAssembly.class);
+                KafkaConnect.class, KafkaConnectAssemblyList.class, DoneableKafkaConnectAssembly.class);
         ConfigMapOperator cmops = new ConfigMapOperator(vertx, mockClient);
         ServiceOperator svcops = new ServiceOperator(vertx, mockClient);
         DeploymentOperator depops = new DeploymentOperator(vertx, mockClient);
@@ -116,7 +116,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
         updateAsync.await();
         LOGGER.info("Reconciling again -> delete");
         mockClient.customResources(Crds.kafkaConnect(),
-                KafkaConnectAssembly.class, KafkaConnectAssemblyList.class, DoneableKafkaConnectAssembly.class).
+                KafkaConnect.class, KafkaConnectAssemblyList.class, DoneableKafkaConnectAssembly.class).
                 inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
         Async deleteAsync = context.async();
         kco.reconcileAssembly(new Reconciliation("test-trigger", ResourceType.CONNECT, NAMESPACE, CLUSTER_NAME), ar -> {
@@ -136,7 +136,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
         KafkaConnectAssemblyOperator kco = createConnectCluster(context);
         LOGGER.info("Reconciling again -> delete");
         mockClient.customResources(Crds.kafkaConnect(),
-                KafkaConnectAssembly.class, KafkaConnectAssemblyList.class, DoneableKafkaConnectAssembly.class).
+                KafkaConnect.class, KafkaConnectAssemblyList.class, DoneableKafkaConnectAssembly.class).
                 inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
         kco.reconcileAll("test-trigger", NAMESPACE).await(60, TimeUnit.SECONDS);
 

@@ -5,7 +5,7 @@
 
 package io.strimzi.operator.cluster.model;
 
-import io.strimzi.api.kafka.model.Zookeeper;
+import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
 
 import java.util.List;
 import java.util.Map;
@@ -23,7 +23,7 @@ public class ZookeeperConfiguration extends AbstractConfiguration {
 
     static {
         FORBIDDEN_OPTIONS = asList(
-                Zookeeper.FORBIDDEN_PREFIXES.split(" *, *"));
+                ZookeeperClusterSpec.FORBIDDEN_PREFIXES.split(" *, *"));
 
         DEFAULTS = new Properties();
         DEFAULTS.setProperty("timeTick", "2000");

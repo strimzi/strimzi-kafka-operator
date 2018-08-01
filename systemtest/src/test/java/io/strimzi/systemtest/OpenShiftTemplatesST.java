@@ -16,9 +16,9 @@ import io.strimzi.api.kafka.KafkaAssemblyList;
 import io.strimzi.api.kafka.KafkaConnectAssemblyList;
 import io.strimzi.api.kafka.KafkaConnectS2IAssemblyList;
 import io.strimzi.api.kafka.KafkaTopicList;
-import io.strimzi.api.kafka.model.KafkaAssembly;
-import io.strimzi.api.kafka.model.KafkaConnectAssembly;
-import io.strimzi.api.kafka.model.KafkaConnectS2IAssembly;
+import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaConnect;
+import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.test.JUnitGroup;
@@ -66,16 +66,16 @@ public class OpenShiftTemplatesST {
     private Oc oc = (Oc) cluster.client();
     private KubernetesClient client = new DefaultKubernetesClient();
 
-    private KafkaAssembly getKafkaWithName(String clusterName) {
-        return client.customResources(Crds.kafka(), KafkaAssembly.class, KafkaAssemblyList.class, DoneableKafkaAssembly.class).inNamespace(NAMESPACE).withName(clusterName).get();
+    private Kafka getKafkaWithName(String clusterName) {
+        return client.customResources(Crds.kafka(), Kafka.class, KafkaAssemblyList.class, DoneableKafkaAssembly.class).inNamespace(NAMESPACE).withName(clusterName).get();
     }
 
-    private KafkaConnectAssembly getKafkaConnectWithName(String clusterName) {
-        return client.customResources(Crds.kafkaConnect(), KafkaConnectAssembly.class, KafkaConnectAssemblyList.class, DoneableKafkaConnectAssembly.class).inNamespace(NAMESPACE).withName(clusterName).get();
+    private KafkaConnect getKafkaConnectWithName(String clusterName) {
+        return client.customResources(Crds.kafkaConnect(), KafkaConnect.class, KafkaConnectAssemblyList.class, DoneableKafkaConnectAssembly.class).inNamespace(NAMESPACE).withName(clusterName).get();
     }
 
-    private KafkaConnectS2IAssembly getKafkaConnectS2IWithName(String clusterName) {
-        return client.customResources(Crds.kafkaConnectS2I(), KafkaConnectS2IAssembly.class, KafkaConnectS2IAssemblyList.class, DoneableKafkaConnectS2IAssembly.class).inNamespace(NAMESPACE).withName(clusterName).get();
+    private KafkaConnectS2I getKafkaConnectS2IWithName(String clusterName) {
+        return client.customResources(Crds.kafkaConnectS2I(), KafkaConnectS2I.class, KafkaConnectS2IAssemblyList.class, DoneableKafkaConnectS2IAssembly.class).inNamespace(NAMESPACE).withName(clusterName).get();
     }
 
     @Test
@@ -86,7 +86,7 @@ public class OpenShiftTemplatesST {
                 "ZOOKEEPER_NODE_COUNT", "1",
                 "KAFKA_NODE_COUNT", "1"));
 
-        KafkaAssembly kafka = getKafkaWithName(clusterName);
+        Kafka kafka = getKafkaWithName(clusterName);
         assertNotNull(kafka);
 
         assertEquals(1, kafka.getSpec().getKafka().getReplicas());
@@ -103,7 +103,7 @@ public class OpenShiftTemplatesST {
                 "ZOOKEEPER_NODE_COUNT", "1",
                 "KAFKA_NODE_COUNT", "1"));
 
-        KafkaAssembly kafka = getKafkaWithName(clusterName);
+        Kafka kafka = getKafkaWithName(clusterName);
         assertNotNull(kafka);
         assertEquals(1, kafka.getSpec().getKafka().getReplicas());
         assertEquals(1, kafka.getSpec().getZookeeper().getReplicas());
@@ -125,7 +125,7 @@ public class OpenShiftTemplatesST {
                 "KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", "5"));
 
         //TODO Add assertions to check that Kafka brokers have a custom configuration
-        KafkaAssembly kafka = getKafkaWithName(clusterName);
+        Kafka kafka = getKafkaWithName(clusterName);
         assertNotNull(kafka);
 
         assertEquals(30, kafka.getSpec().getZookeeper().getLivenessProbe().getInitialDelaySeconds());
@@ -157,7 +157,7 @@ public class OpenShiftTemplatesST {
                 "KAFKA_VOLUME_CAPACITY", "2Gi"));
 
         //TODO Add assertions to check that Kafka brokers have a custom configuration
-        KafkaAssembly kafka = getKafkaWithName(clusterName);
+        Kafka kafka = getKafkaWithName(clusterName);
         assertNotNull(kafka);
 
         assertEquals(30, kafka.getSpec().getZookeeper().getLivenessProbe().getInitialDelaySeconds());
@@ -182,7 +182,7 @@ public class OpenShiftTemplatesST {
         oc.newApp("strimzi-connect", map("CLUSTER_NAME", clusterName,
                 "INSTANCES", "1"));
 
-        KafkaConnectAssembly connect = getKafkaConnectWithName(clusterName);
+        KafkaConnect connect = getKafkaConnectWithName(clusterName);
         assertNotNull(connect);
         assertEquals(1, connect.getSpec().getReplicas());
     }
@@ -194,7 +194,7 @@ public class OpenShiftTemplatesST {
         oc.newApp("strimzi-connect-s2i", map("CLUSTER_NAME", clusterName,
                 "INSTANCES", "1"));
 
-        KafkaConnectS2IAssembly cm = getKafkaConnectS2IWithName(clusterName);
+        KafkaConnectS2I cm = getKafkaConnectS2IWithName(clusterName);
         assertNotNull(cm);
         assertEquals(1, cm.getSpec().getReplicas());
     }

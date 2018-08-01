@@ -29,7 +29,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "replicas", "image",
         "livenessProbe", "readinessProbe", "jvmOptions", "affinity", "tolerations", "logging", "metrics"})
-public class KafkaConnectAssemblySpec implements Serializable {
+public class KafkaConnectSpec implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

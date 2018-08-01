@@ -11,7 +11,7 @@ import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.DoneableKafkaAssembly;
 import io.strimzi.api.kafka.KafkaAssemblyList;
-import io.strimzi.api.kafka.model.KafkaAssembly;
+import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaAssemblyBuilder;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
@@ -46,7 +46,7 @@ public class PartialRollingUpdateTest {
     public static final String KAFKA_CRD_FILE = TestUtils.CRD_KAFKA;
 
     private Vertx vertx;
-    private KafkaAssembly cluster;
+    private Kafka cluster;
     private StatefulSet kafkaSs;
     private StatefulSet zkSs;
     private Pod kafkaPod0;
@@ -95,7 +95,7 @@ public class PartialRollingUpdateTest {
         CustomResourceDefinition kafkaAssemblyCrd = TestUtils.fromYamlFile(KAFKA_CRD_FILE, CustomResourceDefinition.class);
 
         KubernetesClient bootstrapClient = new MockKube()
-                .withCustomResourceDefinition(kafkaAssemblyCrd, KafkaAssembly.class, KafkaAssemblyList.class, DoneableKafkaAssembly.class)
+                .withCustomResourceDefinition(kafkaAssemblyCrd, Kafka.class, KafkaAssemblyList.class, DoneableKafkaAssembly.class)
                 .withInitialInstances(Collections.singleton(cluster))
                 .end()
                 .build();
@@ -130,7 +130,7 @@ public class PartialRollingUpdateTest {
         CustomResourceDefinition kafkaAssemblyCrd = TestUtils.fromYamlFile(KAFKA_CRD_FILE, CustomResourceDefinition.class);
 
         this.mockClient = new MockKube()
-                .withCustomResourceDefinition(kafkaAssemblyCrd, KafkaAssembly.class, KafkaAssemblyList.class, DoneableKafkaAssembly.class)
+                .withCustomResourceDefinition(kafkaAssemblyCrd, Kafka.class, KafkaAssemblyList.class, DoneableKafkaAssembly.class)
                 .withInitialInstances(Collections.singleton(cluster))
                 .end()
                 .withInitialStatefulSets(set(zkSs, kafkaSs))

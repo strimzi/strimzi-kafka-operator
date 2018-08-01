@@ -9,8 +9,8 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-import io.strimzi.api.kafka.model.KafkaAssembly;
-import io.strimzi.api.kafka.model.KafkaConnectAssembly;
+import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.test.k8s.BaseKubeClient;
 import io.strimzi.test.k8s.HelmClient;
 import io.strimzi.test.k8s.KubeClient;
@@ -481,7 +481,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
             for (String resource : resources) {
                 // use the example kafka-ephemeral as a template, but modify it according to the annotation
                 String yaml = TestUtils.readResource(testClass(element), resource);
-                KafkaConnectAssembly kafkaAssembly = TestUtils.fromYamlString(yaml, KafkaConnectAssembly.class);
+                KafkaConnect kafkaAssembly = TestUtils.fromYamlString(yaml, KafkaConnect.class);
                 String clusterName = kafkaAssembly.getMetadata().getName();
                 final String deploymentName = clusterName + "-connect";
                 last = new Bracket(last, new ResourceAction()
@@ -520,7 +520,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
             for (String resource : resources) {
                 // use the example kafka-ephemeral as a template, but modify it according to the annotation
                 String yaml = TestUtils.readResource(testClass(element), resource);
-                KafkaConnectAssembly kafkaAssembly = TestUtils.fromYamlString(yaml, KafkaConnectAssembly.class);
+                KafkaConnect kafkaAssembly = TestUtils.fromYamlString(yaml, KafkaConnect.class);
                 String clusterName = kafkaAssembly.getMetadata().getName();
                 final String deploymentName = clusterName + "-connect";
                 last = new Bracket(last, new ResourceAction()
@@ -559,7 +559,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
             for (String resource : resources) {
                 // use the example kafka-ephemeral as a template, but modify it according to the annotation
                 String yaml = TestUtils.readResource(testClass(element), resource);
-                KafkaAssembly kafkaAssembly = TestUtils.fromYamlString(yaml, KafkaAssembly.class);
+                Kafka kafkaAssembly = TestUtils.fromYamlString(yaml, Kafka.class);
                 final String kafkaStatefulSetName = kafkaAssembly.getMetadata().getName() + "-kafka";
                 final String zookeeperStatefulSetName = kafkaAssembly.getMetadata().getName() + "-zookeeper";
                 final String tcDeploymentName = kafkaAssembly.getMetadata().getName() + "-topic-operator";

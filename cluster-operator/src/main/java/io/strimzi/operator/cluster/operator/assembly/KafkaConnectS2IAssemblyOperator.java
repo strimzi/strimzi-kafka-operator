@@ -12,7 +12,7 @@ import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.api.kafka.DoneableKafkaConnectS2IAssembly;
 import io.strimzi.api.kafka.KafkaConnectS2IAssemblyList;
 import io.strimzi.api.kafka.model.ExternalLogging;
-import io.strimzi.api.kafka.model.KafkaConnectS2IAssembly;
+import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.model.KafkaConnectS2ICluster;
 import io.strimzi.operator.common.Reconciliation;
@@ -46,7 +46,7 @@ import java.util.List;
  *     <li>A BuildConfig</li>
  * </ul>
  */
-public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<OpenShiftClient, KafkaConnectS2IAssembly, KafkaConnectS2IAssemblyList, DoneableKafkaConnectS2IAssembly, Resource<KafkaConnectS2IAssembly, DoneableKafkaConnectS2IAssembly>> {
+public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IAssemblyList, DoneableKafkaConnectS2IAssembly, Resource<KafkaConnectS2I, DoneableKafkaConnectS2IAssembly>> {
 
     private static final Logger log = LogManager.getLogger(KafkaConnectS2IAssemblyOperator.class.getName());
     private final ServiceOperator serviceOperations;
@@ -67,7 +67,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
      */
     public KafkaConnectS2IAssemblyOperator(Vertx vertx, boolean isOpenShift,
                                            CertManager certManager,
-                                           CrdOperator<OpenShiftClient, KafkaConnectS2IAssembly, KafkaConnectS2IAssemblyList, DoneableKafkaConnectS2IAssembly> connectOperator,
+                                           CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IAssemblyList, DoneableKafkaConnectS2IAssembly> connectOperator,
                                            ConfigMapOperator configMapOperations,
                                            DeploymentConfigOperator deploymentConfigOperations,
                                            ServiceOperator serviceOperations,
@@ -83,12 +83,12 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
     }
 
     @Override
-    public void createOrUpdate(Reconciliation reconciliation, KafkaConnectS2IAssembly kafkaConnectS2IAssembly, List<Secret> assemblySecrets, Handler<AsyncResult<Void>> handler) {
+    public void createOrUpdate(Reconciliation reconciliation, KafkaConnectS2I kafkaConnectS2I, List<Secret> assemblySecrets, Handler<AsyncResult<Void>> handler) {
         String namespace = reconciliation.namespace();
         if (isOpenShift) {
             KafkaConnectS2ICluster connect;
             try {
-                connect = KafkaConnectS2ICluster.fromCrd(kafkaConnectS2IAssembly);
+                connect = KafkaConnectS2ICluster.fromCrd(kafkaConnectS2I);
             } catch (Exception e) {
                 handler.handle(Future.failedFuture(e));
                 return;

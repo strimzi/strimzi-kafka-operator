@@ -23,22 +23,19 @@ import io.sundr.builder.annotations.Buildable;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * A description of a Kafka assembly, as exposed by the Strimzi Kafka CRD.
- */
 @JsonDeserialize(
         using = JsonDeserializer.None.class
 )
 @Crd(
-        apiVersion = KafkaAssembly.CRD_API_VERSION,
+        apiVersion = KafkaConnect.CRD_API_VERSION,
         spec = @Crd.Spec(
                 names = @Crd.Spec.Names(
-                        kind = KafkaAssembly.RESOURCE_KIND,
-                        plural = KafkaAssembly.RESOURCE_PLURAL
+                        kind = KafkaConnect.RESOURCE_KIND,
+                        plural = KafkaConnect.RESOURCE_PLURAL
                 ),
-                group = KafkaAssembly.RESOURCE_GROUP,
+                group = KafkaConnect.RESOURCE_GROUP,
                 scope = "Namespaced",
-                version = KafkaAssembly.VERSION
+                version = KafkaConnect.VERSION
         )
 )
 @Buildable(
@@ -48,22 +45,22 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec"})
-public class KafkaAssembly extends CustomResource {
+public class KafkaConnect extends CustomResource {
 
     private static final long serialVersionUID = 1L;
 
     public static final String VERSION = "v1alpha1";
-    public static final String RESOURCE_KIND = "Kafka";
+    public static final String RESOURCE_KIND = "KafkaConnect";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
     public static final String RESOURCE_GROUP = "kafka.strimzi.io";
-    public static final String RESOURCE_PLURAL = "kafkas";
-    public static final String RESOURCE_SINGULAR = "kafka";
+    public static final String RESOURCE_PLURAL = "kafkaconnects";
+    public static final String RESOURCE_SINGULAR = "kafkaconnect";
     public static final String CRD_API_VERSION = "apiextensions.k8s.io/v1beta1";
     public static final String CRD_NAME = RESOURCE_PLURAL + "." + RESOURCE_GROUP;
 
     private String apiVersion;
+    private KafkaConnectSpec spec;
     private ObjectMeta metadata;
-    private KafkaAssemblySpec spec;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Override
@@ -82,6 +79,7 @@ public class KafkaAssembly extends CustomResource {
         return RESOURCE_KIND;
     }
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Override
     public ObjectMeta getMetadata() {
         return super.getMetadata();
@@ -92,12 +90,12 @@ public class KafkaAssembly extends CustomResource {
         super.setMetadata(metadata);
     }
 
-    @Description("The specification of the Kafka and Zookeeper clusters, and Topic Operator.")
-    public KafkaAssemblySpec getSpec() {
+    @Description("The specification of the Kafka Connect deployment.")
+    public KafkaConnectSpec getSpec() {
         return spec;
     }
 
-    public void setSpec(KafkaAssemblySpec spec) {
+    public void setSpec(KafkaConnectSpec spec) {
         this.spec = spec;
     }
 

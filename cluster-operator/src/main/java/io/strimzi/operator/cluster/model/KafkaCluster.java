@@ -23,8 +23,8 @@ import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.api.kafka.model.EphemeralStorage;
+import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaAssembly;
 import io.strimzi.api.kafka.model.KafkaAuthorization;
 import io.strimzi.api.kafka.model.KafkaAuthorizationSimple;
 import io.strimzi.api.kafka.model.KafkaListenerAuthenticationTls;
@@ -133,7 +133,7 @@ public class KafkaCluster extends AbstractModel {
         this.serviceName = serviceName(cluster);
         this.headlessServiceName = headlessServiceName(cluster);
         this.ancillaryConfigName = metricAndLogConfigsName(cluster);
-        this.image = Kafka.DEFAULT_IMAGE;
+        this.image = KafkaClusterSpec.DEFAULT_IMAGE;
         this.replicas = DEFAULT_REPLICAS;
         this.readinessTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
         this.readinessInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
@@ -148,7 +148,7 @@ public class KafkaCluster extends AbstractModel {
         this.logAndMetricsConfigVolumeName = "kafka-metrics-and-logging";
         this.logAndMetricsConfigMountPath = "/opt/kafka/custom-config/";
 
-        this.initImage = Kafka.DEFAULT_INIT_IMAGE;
+        this.initImage = KafkaClusterSpec.DEFAULT_INIT_IMAGE;
         this.validLoggerFields = getDefaultLogConfig();
     }
 
@@ -188,50 +188,50 @@ public class KafkaCluster extends AbstractModel {
         return getClusterCaName(cluster) + KafkaCluster.SECRET_CLUSTER_PUBLIC_KEY_SUFFIX;
     }
 
-    public static KafkaCluster fromCrd(CertManager certManager, KafkaAssembly kafkaAssembly, List<Secret> secrets) {
+    public static KafkaCluster fromCrd(CertManager certManager, Kafka kafkaAssembly, List<Secret> secrets) {
         KafkaCluster result = new KafkaCluster(kafkaAssembly.getMetadata().getNamespace(),
                 kafkaAssembly.getMetadata().getName(),
                 Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
-        Kafka kafka = kafkaAssembly.getSpec().getKafka();
-        result.setReplicas(kafka.getReplicas());
-        String image = kafka.getImage();
+        KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
+        result.setReplicas(kafkaClusterSpec.getReplicas());
+        String image = kafkaClusterSpec.getImage();
         if (image == null) {
-            image = Kafka.DEFAULT_IMAGE;
+            image = KafkaClusterSpec.DEFAULT_IMAGE;
         }
         result.setImage(image);
-        if (kafka.getReadinessProbe() != null) {
-            result.setReadinessInitialDelay(kafka.getReadinessProbe().getInitialDelaySeconds());
-            result.setReadinessTimeout(kafka.getReadinessProbe().getTimeoutSeconds());
+        if (kafkaClusterSpec.getReadinessProbe() != null) {
+            result.setReadinessInitialDelay(kafkaClusterSpec.getReadinessProbe().getInitialDelaySeconds());
+            result.setReadinessTimeout(kafkaClusterSpec.getReadinessProbe().getTimeoutSeconds());
         }
-        if (kafka.getLivenessProbe() != null) {
-            result.setLivenessInitialDelay(kafka.getLivenessProbe().getInitialDelaySeconds());
-            result.setLivenessTimeout(kafka.getLivenessProbe().getTimeoutSeconds());
+        if (kafkaClusterSpec.getLivenessProbe() != null) {
+            result.setLivenessInitialDelay(kafkaClusterSpec.getLivenessProbe().getInitialDelaySeconds());
+            result.setLivenessTimeout(kafkaClusterSpec.getLivenessProbe().getTimeoutSeconds());
         }
-        result.setRack(kafka.getRack());
+        result.setRack(kafkaClusterSpec.getRack());
 
-        String initImage = kafka.getBrokerRackInitImage();
+        String initImage = kafkaClusterSpec.getBrokerRackInitImage();
         if (initImage == null) {
-            initImage = Kafka.DEFAULT_INIT_IMAGE;
+            initImage = KafkaClusterSpec.DEFAULT_INIT_IMAGE;
         }
         result.setInitImage(initImage);
-        result.setLogging(kafka.getLogging());
-        result.setJvmOptions(kafka.getJvmOptions());
-        result.setConfiguration(new KafkaConfiguration(kafka.getConfig().entrySet()));
-        Map<String, Object> metrics = kafka.getMetrics();
+        result.setLogging(kafkaClusterSpec.getLogging());
+        result.setJvmOptions(kafkaClusterSpec.getJvmOptions());
+        result.setConfiguration(new KafkaConfiguration(kafkaClusterSpec.getConfig().entrySet()));
+        Map<String, Object> metrics = kafkaClusterSpec.getMetrics();
         if (metrics != null && !metrics.isEmpty()) {
             result.setMetricsEnabled(true);
             result.setMetricsConfig(metrics.entrySet());
         }
-        result.setStorage(kafka.getStorage());
-        result.setUserAffinity(kafka.getAffinity());
-        result.setResources(kafka.getResources());
-        result.setTolerations(kafka.getTolerations());
+        result.setStorage(kafkaClusterSpec.getStorage());
+        result.setUserAffinity(kafkaClusterSpec.getAffinity());
+        result.setResources(kafkaClusterSpec.getResources());
+        result.setTolerations(kafkaClusterSpec.getTolerations());
 
         result.generateCertificates(certManager, secrets);
-        result.setTlsSidecar(kafka.getTlsSidecar());
+        result.setTlsSidecar(kafkaClusterSpec.getTlsSidecar());
 
-        result.setListeners(kafka.getListeners());
-        result.setAuthorization(kafka.getAuthorization());
+        result.setListeners(kafkaClusterSpec.getListeners());
+        result.setAuthorization(kafkaClusterSpec.getAuthorization());
 
         return result;
     }
@@ -568,7 +568,7 @@ public class KafkaCluster extends AbstractModel {
                 .build();
 
         String tlsSidecarImage = (tlsSidecar != null && tlsSidecar.getImage() != null) ?
-                tlsSidecar.getImage() : Kafka.DEFAULT_TLS_SIDECAR_IMAGE;
+                tlsSidecar.getImage() : KafkaClusterSpec.DEFAULT_TLS_SIDECAR_IMAGE;
 
         Resources tlsSidecarResources = (tlsSidecar != null) ? tlsSidecar.getResources() : null;
 

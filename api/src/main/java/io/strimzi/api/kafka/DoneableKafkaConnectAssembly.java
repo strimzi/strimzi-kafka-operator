@@ -6,16 +6,16 @@ package io.strimzi.api.kafka;
 
 import io.fabric8.kubernetes.api.builder.Function;
 import io.fabric8.kubernetes.client.CustomResourceDoneable;
-import io.strimzi.api.kafka.model.KafkaConnectAssembly;
+import io.strimzi.api.kafka.model.KafkaConnect;
 
 /**
  * A {@code CustomResourceDoneable<KafkaConnectAssembly>} required for using Fabric8 CRD support.
  */
-public class DoneableKafkaConnectAssembly extends CustomResourceDoneable<KafkaConnectAssembly> {
-    public DoneableKafkaConnectAssembly(KafkaConnectAssembly resource, Function<KafkaConnectAssembly, KafkaConnectAssembly> function) {
+public class DoneableKafkaConnectAssembly extends CustomResourceDoneable<KafkaConnect> {
+    public DoneableKafkaConnectAssembly(KafkaConnect resource, Function<KafkaConnect, KafkaConnect> function) {
         super(resource, function);
     }
-    public DoneableKafkaConnectAssembly(KafkaConnectAssembly resource) {
+    public DoneableKafkaConnectAssembly(KafkaConnect resource) {
         super(resource, x -> x);
     }
 }

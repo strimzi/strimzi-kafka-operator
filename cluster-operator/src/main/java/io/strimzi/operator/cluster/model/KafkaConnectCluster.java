@@ -17,8 +17,8 @@ import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategy;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategyBuilder;
 import io.fabric8.kubernetes.api.model.extensions.RollingUpdateDeploymentBuilder;
-import io.strimzi.api.kafka.model.KafkaConnectAssembly;
-import io.strimzi.api.kafka.model.KafkaConnectAssemblySpec;
+import io.strimzi.api.kafka.model.KafkaConnect;
+import io.strimzi.api.kafka.model.KafkaConnectSpec;
 import io.strimzi.operator.common.model.Labels;
 
 import java.util.ArrayList;
@@ -93,11 +93,11 @@ public class KafkaConnectCluster extends AbstractModel {
         return cluster + KafkaConnectCluster.METRICS_AND_LOG_CONFIG_SUFFIX;
     }
 
-    public static KafkaConnectCluster fromCrd(KafkaConnectAssembly kafkaConnectAssembly) {
-        return fromSpec(kafkaConnectAssembly.getSpec(),
-                new KafkaConnectCluster(kafkaConnectAssembly.getMetadata().getNamespace(),
-                    kafkaConnectAssembly.getMetadata().getName(),
-                    Labels.fromResource(kafkaConnectAssembly).withKind(kafkaConnectAssembly.getKind())));
+    public static KafkaConnectCluster fromCrd(KafkaConnect kafkaConnect) {
+        return fromSpec(kafkaConnect.getSpec(),
+                new KafkaConnectCluster(kafkaConnect.getMetadata().getNamespace(),
+                    kafkaConnect.getMetadata().getName(),
+                    Labels.fromResource(kafkaConnect).withKind(kafkaConnect.getKind())));
     }
 
     /**
@@ -105,7 +105,7 @@ public class KafkaConnectCluster extends AbstractModel {
      * from the instantiation of the (subclass of) KafkaConnectCluster,
      * thus permitting reuse of the setter-calling code for subclasses.
      */
-    protected static <C extends KafkaConnectCluster> C fromSpec(KafkaConnectAssemblySpec spec, C kafkaConnect) {
+    protected static <C extends KafkaConnectCluster> C fromSpec(KafkaConnectSpec spec, C kafkaConnect) {
         kafkaConnect.setReplicas(spec != null && spec.getReplicas() > 0 ? spec.getReplicas() : DEFAULT_REPLICAS);
         kafkaConnect.setConfiguration(new KafkaConnectConfiguration(spec != null ? spec.getConfig().entrySet() : emptySet()));
         if (spec != null) {
