@@ -54,6 +54,7 @@ import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.dsl.ScalableResource;
+import io.strimzi.operator.common.operator.resource.WorkaroundRbacOperator;
 import okhttp3.Call;
 import okhttp3.OkHttpClient;
 import okhttp3.Protocol;
@@ -71,6 +72,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -204,7 +206,7 @@ public class MockKube {
     }
 
     /**
-     * @deprecated this can be removed when {@link io.strimzi.operator.cluster.operator.resource.WorkaroundRbacOperator} is removed.
+     * @deprecated this can be removed when {@link WorkaroundRbacOperator} is removed.
      */
     @Deprecated
     private void mockHttpClientForWorkaroundRbac(KubernetesClient mockClient) {
@@ -273,6 +275,7 @@ public class MockKube {
                         String podName = argument.getMetadata().getName() + "-" + podNum;
                         LOGGER.debug("create Pod {} because it's in StatefulSet {}", podName, resourceName);
                         Pod pod = new PodBuilder().withNewMetadataLike(argument.getSpec().getTemplate().getMetadata())
+                                .withUid(UUID.randomUUID().toString())
                                 .withNamespace(argument.getMetadata().getNamespace())
                                 .withName(podName)
                                 .endMetadata()
@@ -374,6 +377,7 @@ public class MockKube {
                         ObjectMeta templateMeta = statefulSet.getSpec().getTemplate().getMetadata();
                         Pod copy = new DoneablePod(resource)
                                 .withNewMetadataLike(templateMeta)
+                                .withUid(UUID.randomUUID().toString())
                                 .withNamespace(podNamespace)
                                 .withNamespace(podName)
                                 .endMetadata()

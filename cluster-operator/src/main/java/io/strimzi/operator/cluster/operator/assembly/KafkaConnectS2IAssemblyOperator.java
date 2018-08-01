@@ -14,17 +14,18 @@ import io.strimzi.api.kafka.KafkaConnectS2IAssemblyList;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.KafkaConnectS2IAssembly;
 import io.strimzi.certs.CertManager;
-import io.strimzi.operator.cluster.Reconciliation;
-import io.strimzi.operator.cluster.model.AssemblyType;
 import io.strimzi.operator.cluster.model.KafkaConnectS2ICluster;
-import io.strimzi.operator.cluster.model.Labels;
-import io.strimzi.operator.cluster.operator.resource.BuildConfigOperator;
-import io.strimzi.operator.cluster.operator.resource.ConfigMapOperator;
-import io.strimzi.operator.cluster.operator.resource.CrdOperator;
-import io.strimzi.operator.cluster.operator.resource.DeploymentConfigOperator;
-import io.strimzi.operator.cluster.operator.resource.ImageStreamOperator;
-import io.strimzi.operator.cluster.operator.resource.SecretOperator;
-import io.strimzi.operator.cluster.operator.resource.ServiceOperator;
+import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.ResourceType;
+import io.strimzi.operator.common.operator.resource.BuildConfigOperator;
+import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
+import io.strimzi.operator.common.operator.resource.CrdOperator;
+import io.strimzi.operator.common.operator.resource.DeploymentConfigOperator;
+import io.strimzi.operator.common.operator.resource.ImageStreamOperator;
+import io.strimzi.operator.common.operator.resource.SecretOperator;
+import io.strimzi.operator.common.operator.resource.ServiceOperator;
+
 import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -34,6 +35,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -72,7 +74,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
                                            ImageStreamOperator imagesStreamOperations,
                                            BuildConfigOperator buildConfigOperations,
                                            SecretOperator secretOperations) {
-        super(vertx, isOpenShift, AssemblyType.CONNECT_S2I, certManager, connectOperator, secretOperations);
+        super(vertx, isOpenShift, ResourceType.CONNECT_S2I, certManager, connectOperator, secretOperations);
         this.configMapOperations = configMapOperations;
         this.serviceOperations = serviceOperations;
         this.deploymentConfigOperations = deploymentConfigOperations;
@@ -97,10 +99,13 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
                     configMapOperations.get(namespace, ((ExternalLogging) connect.getLogging()).getName()) :
                     null);
 
+            HashMap<String, String> annotations = new HashMap();
+            annotations.put("strimzi.io/logging", logAndMetricsConfigMap.getData().get(connect.ANCILLARY_CM_KEY_LOG_CONFIG));
+
             deploymentConfigOperations.scaleDown(namespace, connect.getName(), connect.getReplicas())
                     .compose(scale -> serviceOperations.reconcile(namespace, connect.getServiceName(), connect.generateService()))
                     .compose(i -> configMapOperations.reconcile(namespace, connect.getAncillaryConfigName(), logAndMetricsConfigMap))
-                    .compose(i -> deploymentConfigOperations.reconcile(namespace, connect.getName(), connect.generateDeploymentConfig()))
+                    .compose(i -> deploymentConfigOperations.reconcile(namespace, connect.getName(), connect.generateDeploymentConfig(annotations)))
                     .compose(i -> imagesStreamOperations.reconcile(namespace, connect.getSourceImageStreamName(), connect.generateSourceImageStream()))
                     .compose(i -> imagesStreamOperations.reconcile(namespace, connect.getName(), connect.generateTargetImageStream()))
                     .compose(i -> buildConfigOperations.reconcile(namespace, connect.getName(), connect.generateBuildConfig()))
@@ -116,7 +121,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
     protected void delete(Reconciliation reconciliation, Handler<AsyncResult<Void>> handler) {
         if (isOpenShift) {
             String namespace = reconciliation.namespace();
-            String assemblyName = reconciliation.assemblyName();
+            String assemblyName = reconciliation.name();
             String clusterName = KafkaConnectS2ICluster.kafkaConnectClusterName(assemblyName);
 
             CompositeFuture.join(serviceOperations.reconcile(namespace, KafkaConnectS2ICluster.serviceName(assemblyName), null),

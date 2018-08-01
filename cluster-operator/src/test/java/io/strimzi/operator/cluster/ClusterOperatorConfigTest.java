@@ -4,7 +4,9 @@
  */
 package io.strimzi.operator.cluster;
 
-import io.strimzi.operator.cluster.model.Labels;
+import io.strimzi.operator.common.InvalidConfigurationException;
+import io.strimzi.operator.common.model.Labels;
+
 import org.junit.Test;
 
 import java.util.Collections;
@@ -88,7 +90,7 @@ public class ClusterOperatorConfigTest {
         assertEquals(30_000, config.getOperationTimeoutMs());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testNoNamespace() {
 
         Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.envVars);
@@ -97,7 +99,7 @@ public class ClusterOperatorConfigTest {
         ClusterOperatorConfig.fromMap(envVars);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testEmptyEnvVars() {
 
         ClusterOperatorConfig.fromMap(Collections.emptyMap());

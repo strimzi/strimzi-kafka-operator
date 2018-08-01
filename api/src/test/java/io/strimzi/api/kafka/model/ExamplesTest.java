@@ -5,8 +5,11 @@
 package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.KubernetesResource;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinitionSpec;
@@ -120,7 +123,8 @@ public class ExamplesTest {
             if (isGetter(method)) {
                 Object result = method.invoke(resource);
                 if (result != null
-                    && !result.getClass().isPrimitive()) {
+                    && !result.getClass().isPrimitive()
+                    && !result.getClass().isEnum()) {
                     path.push(method.getName());
                     recurseForAdditionalProperties(path, result);
                     path.pop();
@@ -140,7 +144,7 @@ public class ExamplesTest {
                 && !method.getReturnType().equals(void.class);
     }
 
-    private void validateTemplate(JsonNode rootNode) {
+    private void validateTemplate(JsonNode rootNode) throws JsonProcessingException {
         JsonNode parameters = rootNode.get("parameters");
         Map<String, Object> params = new HashMap<>();
         for (JsonNode parameter : parameters) {
@@ -164,7 +168,7 @@ public class ExamplesTest {
             params.put(name, value);
         }
         for (JsonNode object : rootNode.get("objects")) {
-            String s = object.toString();
+            String s = new YAMLMapper().enable(YAMLGenerator.Feature.MINIMIZE_QUOTES).enable(SerializationFeature.INDENT_OUTPUT).writeValueAsString(object);
             Pattern p = Pattern.compile("\\$\\{\\{(.+?)\\}?\\}");
             Matcher matcher = p.matcher(s);
             StringBuilder sb = new StringBuilder();

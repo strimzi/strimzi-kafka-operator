@@ -17,7 +17,8 @@ ifdef::Kubernetes[{KubernetesLongName} {KubernetesVersion} and]
 {OpenShiftLongName} {OpenShiftVersion}.
 It can be used on clusters running in public and private clouds, local deployments intended for development, and everything in between.
 
-This guide assumes that an {ProductPlatformName} cluster is available and the
+{ProductName} works on all kinds of clusters - from public and private clouds down to local deployments intended for development.
+This guide expects that an {ProductPlatformName} cluster is available and the
 ifdef::Kubernetes[`kubectl` and]
 `oc` command-line tools are installed and configured to connect to the running cluster.
 
@@ -32,73 +33,30 @@ ifdef::Kubernetes[{KubernetesLongName} and]
 {OpenShiftLongName} user must have the rights to manage role-based access control (RBAC).
 
 ifdef::Downloading[]
-:context: {ContextProduct}
+:context: str
 include::con-product-downloads.adoc[leveloffset=+1]
 endif::Downloading[]
 
-:context: {ContextProduct}
-include::assembly-deploying-cluster-operator.adoc[leveloffset=+1]
+:context: str
+include::assembly-cluster-operator.adoc[leveloffset=+1]
 
-== Kafka broker
+:context: str
+include::assembly-kafka-cluster.adoc[leveloffset=+1]
 
-{ProductName} uses the StatefulSets feature of {ProductPlatformName} to deploy Kafka brokers.
-With StatefulSets, the pods receive a unique name and network identity and that makes it easier to identify the
-individual Kafka broker pods and set their identity (broker ID). The deployment uses **regular** and **headless**
-services:
+=== Deploying with Helm Charts
 
-- regular services can be used as bootstrap servers for Kafka clients
-- headless services are needed to have DNS resolve the pods IP addresses directly
+Instead of using the example YAML files you can also install the Cluster Operator by using its Helm Chart.
+The Helm Chart is included in the {ProductName} release artifact in an unarchived form.
+It is also available as a tarball archive from {ReleaseDownload}.
+You may choose to install the Cluster Operator using either method, but installing it directly from the GitHub release requires the least amount of steps.
 
-As well as Kafka, {ProductName} also installs a Zookeeper cluster and configures the Kafka brokers to connect to it. The
-Zookeeper cluster also uses StatefulSets.
+[source,shell,subs=attributes+]
+helm install {ChartReleaseDownload}
 
-{ProductName} provides two flavors of Kafka broker deployment: **ephemeral** and **persistent**.
-
-The **ephemeral** flavour is suitable only for development and testing purposes and not for production. The
-ephemeral flavour uses `emptyDir` volumes for storing broker information (Zookeeper) and topics/partitions
-(Kafka). Using `emptyDir` volume means that its content is strictly related to the pod life cycle (it is
-deleted when the pod goes down). This makes the in-memory deployment well-suited to development and testing because
-you do not have to provide persistent volumes.
-
-The **persistent** flavour uses PersistentVolumes to store Zookeeper and Kafka data. The PersistentVolume is
-acquired using a PersistentVolumeClaim – that makes it independent of the actual type of the PersistentVolume. For
-example, it can use
-ifdef::Kubernetes[HostPath volumes on Minikube or]
-Amazon EBS volumes in Amazon AWS deployments without any changes in the YAML files. The PersistentVolumeClaim can use
-a StorageClass to trigger automatic volume provisioning.
-
-To deploy a Kafka cluster, a `Kafka` resource with the cluster configuration has to be created.
-Example resources and the details about the `Kafka` format are in xref:'kafka-resource-format{context}[Overview of Kafka Resource format].
-
-ifdef::Kubernetes[]
-=== Deploying to {KubernetesName}
-
-To deploy a Kafka broker on {KubernetesName}, the corresponding `Kafka` has to be created.
-To create an ephemeral cluster using the provided example `Kafka`, the following command should be executed:
+To verify whether the Cluster Operator has deployed successfully you can use the Helm command line tool to discover its release name and deployment status.
 
 [source,shell]
-kubectl apply -f examples/kafka/kafka-ephemeral.yaml
-
-Another example `Kafka` is provided for a persistent Kafka cluster.
-To deploy it, the following command should be run:
-
-[source,shell]
-kubectl apply -f examples/kafka/kafka-persistent.yaml
-endif::Kubernetes[]
-
-=== Deploying to {OpenShiftName}
-
-For {OpenShiftName}, the Kafka broker is provided in the form of a template.
-The cluster can be deployed from the template either using the command line or using the {OpenShiftName} console.
-To create the ephemeral cluster, the following command should be executed:
-
-[source,shell]
-oc new-app strimzi-ephemeral
-
-Similarly, to deploy a persistent Kafka cluster the following command should be run:
-
-[source,shell]
-oc new-app strimzi-persistent
+helm ls
 
 == Kafka Connect
 
@@ -184,33 +142,33 @@ Once the cluster is deployed, a new Build can be triggered from the command line
 $ tree ./my-plugins/
 ./my-plugins/
 ├── debezium-connector-mongodb
-│   ├── bson-3.4.2.jar
+│   ├── bson-3.6.3.jar
 │   ├── CHANGELOG.md
 │   ├── CONTRIBUTE.md
 │   ├── COPYRIGHT.txt
-│   ├── debezium-connector-mongodb-0.7.1.jar
-│   ├── debezium-core-0.7.1.jar
+│   ├── debezium-connector-mongodb-0.8.1.Final.jar
+│   ├── debezium-core-0.8.1.Final.jar
 │   ├── LICENSE.txt
-│   ├── mongodb-driver-3.4.2.jar
-│   ├── mongodb-driver-core-3.4.2.jar
+│   ├── mongodb-driver-3.6.3.jar
+│   ├── mongodb-driver-core-3.6.3.jar
 │   └── README.md
 ├── debezium-connector-mysql
+│   ├── antlr4-runtime-4.7.jar
 │   ├── CHANGELOG.md
 │   ├── CONTRIBUTE.md
 │   ├── COPYRIGHT.txt
-│   ├── debezium-connector-mysql-0.7.1.jar
-│   ├── debezium-core-0.7.1.jar
+│   ├── debezium-connector-mysql-0.8.1.Final.jar
+│   ├── debezium-core-0.8.1.Final.jar
 │   ├── LICENSE.txt
 │   ├── mysql-binlog-connector-java-0.13.0.jar
 │   ├── mysql-connector-java-5.1.40.jar
-│   ├── README.md
-│   └── wkb-1.0.2.jar
+│   └── README.md
 └── debezium-connector-postgres
     ├── CHANGELOG.md
     ├── CONTRIBUTE.md
     ├── COPYRIGHT.txt
-    ├── debezium-connector-postgres-0.7.1.jar
-    ├── debezium-core-0.7.1.jar
+    ├── debezium-connector-postgres-0.8.1.Final.jar
+    ├── debezium-core-0.8.1.Final.jar
     ├── LICENSE.txt
     ├── postgresql-42.0.0.jar
     ├── protobuf-java-2.6.1.jar
@@ -228,21 +186,20 @@ _The name of the build should be changed according to the cluster name of the de
 
 == Topic Operator
 
-{ProductName} uses a component called the Topic Operator to manage topics in the Kafka cluster. The Topic Operator
-is deployed as a process running inside a {ProductPlatformName} cluster. To create a new Kafka topic, a ConfigMap
-with the related configuration (name, partitions, replication factor, ...) has to be created. Based on the information
-in that ConfigMap, the Topic Operator will create a corresponding Kafka topic in the cluster.
+{ProductName} uses a component called the Topic Operator to manage topics in the Kafka cluster. 
+The Topic Operator is deployed as a process running inside a {ProductPlatformName} cluster. 
+To create a new Kafka topic, a `KafkaTopic` custom resource with the related configuration (name, partitions, replication factor, ...) has to be created.
+Based on the information in that `KafkaTopic`, the Topic Operator will create a corresponding Kafka topic in the cluster.
 
-Deleting a topic ConfigMap causes the deletion of the corresponding Kafka topic as well.
+Deleting a `KafkaTopic` causes the deletion of the corresponding Kafka topic as well.
 
 The Cluster Operator is able to deploy a Topic Operator, which can be configured in the `Kafka` resource.
-Alternatively, it is possible to deploy a Topic Operator manually, rather than having it deployed
-by the Cluster Operator.
+Alternatively, it is possible to deploy a Topic Operator manually, rather than having it deployed by the Cluster Operator.
 
 === Deploying through the Cluster Operator
 
 To deploy the Topic Operator through the Cluster Operator, its configuration needs to be provided in the
-`Kafka` resource in the `topicOperator` field as a JSON string.
+`Kafka` resource in the `topicOperator` property.
 
 For more information on the JSON configuration format see <<topic_operator_json_config>>.
 
@@ -250,7 +207,7 @@ For more information on the JSON configuration format see <<topic_operator_json_
 
 If you are not going to deploy the Kafka cluster using the Cluster Operator but you already have a Kafka cluster deployed
 on {ProductPlatformName}, it could be useful to deploy the Topic Operator using the provided YAML files.
-In that case you can still leverage on the Topic Operator features of managing Kafka topics through related ConfigMaps.
+In that case you can still leverage on the Topic Operator features of managing Kafka topics through related `KafkaTopics`.
 
 ifdef::Kubernetes[]
 ==== Deploying to {KubernetesName}
@@ -280,18 +237,13 @@ can be used:
 [source,shell]
 oc describe all
 
-=== Topic ConfigMap
+==== `KafkaTopic` resources
 
-When the Topic Operator is deployed by the Cluster Operator it will be configured to watch
-for "topic ConfigMaps" which are those with the following labels:
-
-[source,yaml]
-strimzi.io/cluster: <cluster-name>
-strimzi.io/kind: topic
+When the Topic Operator is deployed by the Cluster Operator it will be configured to watch for `KafkaTopics` with the label `strimzi.io/cluster: _<cluster-name>_`
 
 NOTE: When the Topic Operator is deployed manually the `strimzi.io/cluster` label is not necessary.
 
-The topic ConfigMap contains the topic configuration in a specific format. The ConfigMap format is described in <<topic_config_map_details>>.
+The `KafkaTopic` contains the topic configuration in a specific format, described in xref:format-of-the-kafkatopic-{context}[Format of the `KafkaTopic`].
 
 === Logging
 The `logging` field allows the configuration of loggers. These loggers are listed below.

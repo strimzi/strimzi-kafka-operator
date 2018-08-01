@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -13,6 +14,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -24,8 +26,12 @@ import java.util.Map;
         generateBuilderPackage = true,
         builderPackage = "io.strimzi.api.kafka.model"
 )
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "kafka", "zookeeper", "topicOperator" })
-public class KafkaAssemblySpec {
+public class KafkaAssemblySpec implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     private Kafka kafka;
     private Zookeeper zookeeper;
     private TopicOperator topicOperator;

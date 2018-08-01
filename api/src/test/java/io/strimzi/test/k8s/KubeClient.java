@@ -89,6 +89,15 @@ public interface KubeClient<K extends KubeClient<K>> {
     ProcessResult execInPod(String pod, String... command);
 
     /**
+     * Execute the given {@code command} in the given {@code container} which is deployed in {@code pod}.
+     * @param pod The pod
+     * @param container The container
+     * @param command The command
+     * @return The process result.
+     */
+    ProcessResult execInPodContainer(String pod, String container, String... command);
+
+    /**
      * Execute the given {@code command}.
      * @param command The command
      * @return The process result.

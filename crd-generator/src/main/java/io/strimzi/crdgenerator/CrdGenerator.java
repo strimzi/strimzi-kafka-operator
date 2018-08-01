@@ -4,6 +4,7 @@
  */
 package io.strimzi.crdgenerator;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -18,6 +19,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Example;
+import io.strimzi.crdgenerator.annotations.Maximum;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.strimzi.crdgenerator.annotations.Pattern;
 import io.strimzi.crdgenerator.annotations.Type;
@@ -39,6 +41,7 @@ import java.util.TreeMap;
 
 import static io.strimzi.crdgenerator.Property.properties;
 import static io.strimzi.crdgenerator.Property.sortedProperties;
+import static java.lang.reflect.Modifier.isAbstract;
 import static java.util.Arrays.asList;
 
 /**
@@ -75,6 +78,11 @@ import static java.util.Arrays.asList;
  *     <dt>@{@link Minimum}</dt>
  *     <dd>A inclusive minimum for checking the bounds of integer-typed properties.
  *     This gets added to the {@code minimum}
+ *     of {@code property}s within the corresponding Schema Object.</dd>
+ *
+ *     <dt>@{@link Maximum}</dt>
+ *     <dd>A inclusive maximum for checking the bounds of integer-typed properties.
+ *     This gets added to the {@code maximum}
  *     of {@code property}s within the corresponding Schema Object.</dd>
  *
  *     <dt>{@code @Deprecated}</dt>
@@ -131,24 +139,37 @@ import static java.util.Arrays.asList;
  */
 public class CrdGenerator {
 
+
     // TODO CrdValidator
     // extraProperties
     // @Buildable
 
-    private static void warn(String s) {
+    private void warn(String s) {
         System.err.println("CrdGenerator: warn: " + s);
     }
 
-    private static void err(String s) {
+    private static void argParseErr(String s) {
         System.err.println("CrdGenerator: error: " + s);
+    }
+
+    private void err(String s) {
+        System.err.println("CrdGenerator: error: " + s);
+        numErrors++;
     }
 
     private final ObjectMapper mapper;
     private final JsonNodeFactory nf;
+    private final boolean writeHelmMetadata;
+    private int numErrors;
 
     CrdGenerator(ObjectMapper mapper) {
+        this(mapper, false);
+    }
+
+    CrdGenerator(ObjectMapper mapper, boolean writeHelmMetadata) {
         this.mapper = mapper;
         this.nf = mapper.getNodeFactory();
+        this.writeHelmMetadata = writeHelmMetadata;
     }
 
     void generate(Class<? extends CustomResource> crdClass, Writer out) throws IOException {
@@ -159,7 +180,7 @@ public class CrdGenerator {
         } else {
             String apiVersion = crd.apiVersion();
             if (!apiVersion.startsWith("apiextensions.k8s.io")) {
-                warn("@Crd.apiVersion the the API version of the CustomResourceDefinition," +
+                warn("@ Crd.apiVersion is the API version of the CustomResourceDefinition," +
                         "not the version of instances of the custom resource. " +
                         "It should almost certainly be apiextensions.k8s.io/${some-version}.");
             }
@@ -167,6 +188,17 @@ public class CrdGenerator {
                     .put("kind", "CustomResourceDefinition")
                     .putObject("metadata")
                     .put("name", crd.spec().names().plural() + "." + crd.spec().group());
+
+            if (writeHelmMetadata) {
+                ((ObjectNode) node.get("metadata"))
+                        .putObject("labels")
+                        .put("app", "{{ template \"strimzi.name\" . }}")
+                        .put("chart", "{{ template \"strimzi.chart\" . }}")
+                        .put("component", crd.spec().names().plural() + "." + crd.spec().group() + "-crd")
+                        .put("release", "{{ .Release.Name }}")
+                        .put("heritage", "{{ .Release.Service }}");
+            }
+
             node.set("spec", buildSpec(crd.spec(), crdClass));
         }
         mapper.writeValue(out, node);
@@ -216,8 +248,8 @@ public class CrdGenerator {
     }
 
     private ObjectNode buildObjectSchema(AnnotatedElement annotatedElement, Class<?> crdClass, boolean printType) {
+        checkClass(crdClass);
         ObjectNode result = nf.objectNode();
-        addDescription(result, annotatedElement);
 
         if (printType) {
             result.put("type", "object");
@@ -229,6 +261,29 @@ public class CrdGenerator {
             result.set("required", required);
         }
         return result;
+    }
+
+    private void checkClass(Class<?> crdClass) {
+        if (!crdClass.isAnnotationPresent(JsonInclude.class)) {
+            err(crdClass + " is missing @JsonInclude");
+        } else if (!crdClass.getAnnotation(JsonInclude.class).value().equals(JsonInclude.Include.NON_NULL)
+                && !crdClass.getAnnotation(JsonInclude.class).value().equals(JsonInclude.Include.NON_DEFAULT)) {
+            err(crdClass + " has a @JsonInclude value other than Include.NON_NULL");
+        }
+        if (!isAbstract(crdClass.getModifiers())) {
+            checkForBuilderClass(crdClass, crdClass.getName() + "Builder");
+            checkForBuilderClass(crdClass, crdClass.getName() + "Fluent");
+            checkForBuilderClass(crdClass, crdClass.getName() + "FluentImpl");
+        }
+
+    }
+
+    private void checkForBuilderClass(Class<?> crdClass, String builderClass) {
+        try {
+            Class.forName(builderClass, false, crdClass.getClassLoader());
+        } catch (ClassNotFoundException e) {
+            err(crdClass + " isn't annotated with @Buildable (" + builderClass + " does not exist)");
+        }
     }
 
     private Collection<Property> unionOfSubclassProperties(Class<?> crdClass) {
@@ -327,8 +382,6 @@ public class CrdGenerator {
 
     private ObjectNode addSimpleTypeConstraints(ObjectNode result, Property property) {
 
-        addDescription(result, property);
-
         Example example = property.getAnnotation(Example.class);
         if (example != null) {
             result.put("example", example.value());
@@ -338,9 +391,17 @@ public class CrdGenerator {
         if (minimum != null) {
             result.put("minimum", minimum.value());
         }
+        Maximum maximum = property.getAnnotation(Maximum.class);
+        if (maximum != null) {
+            result.put("maximum", maximum.value());
+        }
         Pattern pattern = property.getAnnotation(Pattern.class);
         if (pattern != null) {
             result.put("pattern", pattern.value());
+        }
+
+        if (property.getType().isEnum()) {
+            result.set("enum", enumCaseArray(property.getType().getEnumElements()));
         }
 
         if (property.getDeclaringClass().isAnnotationPresent(JsonTypeInfo.class)
@@ -359,14 +420,10 @@ public class CrdGenerator {
         return result;
     }
 
-    private void addDescription(ObjectNode result, AnnotatedElement element) {
-        Description description = element.getAnnotation(Description.class);
-        if (description != null) {
-            // OpenShift Origin 3.10-rc0 doesn't like the `description` in CRD
-            //result.put("description", description.value());
-        } else {
-            warn("Missing @Description on " + element);
-        }
+    private <E extends Enum<E>> ArrayNode enumCaseArray(E[] values) {
+        ArrayNode arrayNode = nf.arrayNode();
+        arrayNode.addAll(Schema.enumCases(values));
+        return arrayNode;
     }
 
     private String typeName(Class type) {
@@ -387,6 +444,8 @@ public class CrdGenerator {
         } else if (List.class.equals(type)
                 || type.isArray()) {
             return "array";
+        } else if (type.isEnum()) {
+            return "string";
         } else {
             throw new RuntimeException(type.getName());
         }
@@ -402,39 +461,53 @@ public class CrdGenerator {
 
     public static void main(String[] args) throws IOException, ClassNotFoundException {
         boolean yaml = false;
+        boolean helmMetadata = false;
         Map<String, Class<? extends CustomResource>> classes = new HashMap<>();
         for (int i = 0; i < args.length; i++) {
             String arg = args[i];
             if (arg.startsWith("--")) {
                 if (arg.equals("--yaml")) {
                     yaml = true;
+                } else if (arg.equals("--helm-metadata")) {
+                    helmMetadata = true;
                 } else {
                     throw new RuntimeException("Unsupported command line option " + arg);
                 }
             } else {
                 String className = arg.substring(0, arg.indexOf('='));
-                String fileName = arg.substring(arg.indexOf('=') + 1);
+                String fileName = arg.substring(arg.indexOf('=') + 1).replace("/", File.separator);
                 Class<?> cls = Class.forName(className);
                 if (!CustomResource.class.equals(cls)
                         && CustomResource.class.isAssignableFrom(cls)) {
                     classes.put(fileName, (Class<? extends CustomResource>) cls);
                 } else {
-                    err(cls + " is not a subclass of " + CustomResource.class.getName());
+                    argParseErr(cls + " is not a subclass of " + CustomResource.class.getName());
                 }
             }
         }
+
         CrdGenerator generator = new CrdGenerator(yaml ?
                 new YAMLMapper().configure(YAMLGenerator.Feature.MINIMIZE_QUOTES, true) :
-                new ObjectMapper());
+                new ObjectMapper(), helmMetadata);
         for (Map.Entry<String, Class<? extends CustomResource>> entry : classes.entrySet()) {
             File file = new File(entry.getKey());
-            if (file.getParentFile().exists()
-                    || !file.getParentFile().mkdirs()) {
-                err(file.getParentFile() + " does not exist and could not be created");
+            if (file.getParentFile().exists()) {
+                if (!file.getParentFile().isDirectory()) {
+                    generator.err(file.getParentFile() + " is not a directory");
+                }
+            } else if (!file.getParentFile().mkdirs()) {
+                generator.err(file.getParentFile() + " does not exist and could not be created");
             }
             try (Writer w = new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8)) {
                 generator.generate(entry.getValue(), w);
             }
+        }
+
+        if (generator.numErrors > 0) {
+            System.err.println("There were " + generator.numErrors + " errors");
+            System.exit(1);
+        } else {
+            System.exit(0);
         }
     }
 }

@@ -4,6 +4,8 @@
  */
 package io.strimzi.api.kafka.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 
 import java.util.HashMap;
@@ -17,16 +19,22 @@ import java.util.Map;
         generateBuilderPackage = true,
         builderPackage = "io.strimzi.api.kafka.model"
 )
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class InlineLogging extends Logging {
 
-    /** A Map from logger name to logger level */
+    private static final long serialVersionUID = 1L;
+
+    public static final String TYPE_INLINE = "inline";
+
     private Map<String, String> loggers = new HashMap<>();
 
+    @Description("Must be `" + TYPE_INLINE + "`")
     @Override
     public String getType() {
-        return "inline";
+        return TYPE_INLINE;
     }
 
+    @Description("A Map from logger name to logger level.")
     public Map<String, String> getLoggers() {
         return loggers;
     }

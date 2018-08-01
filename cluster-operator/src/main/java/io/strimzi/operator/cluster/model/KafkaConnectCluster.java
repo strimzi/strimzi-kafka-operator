@@ -19,6 +19,7 @@ import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategyBuilder;
 import io.fabric8.kubernetes.api.model.extensions.RollingUpdateDeploymentBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectAssembly;
 import io.strimzi.api.kafka.model.KafkaConnectAssemblySpec;
+import io.strimzi.operator.common.model.Labels;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,8 +33,6 @@ public class KafkaConnectCluster extends AbstractModel {
     // Port configuration
     protected static final int REST_API_PORT = 8083;
     protected static final String REST_API_PORT_NAME = "rest-api";
-    protected static final int METRICS_PORT = 9404;
-    protected static final String METRICS_PORT_NAME = "metrics";
 
     private static final String NAME_SUFFIX = "-connect";
     private static final String SERVICE_NAME_SUFFIX = NAME_SUFFIX + "-api";
@@ -149,7 +148,7 @@ public class KafkaConnectCluster extends AbstractModel {
         List<ContainerPort> portList = new ArrayList<>(2);
         portList.add(createContainerPort(REST_API_PORT_NAME, REST_API_PORT, "TCP"));
         if (isMetricsEnabled) {
-            portList.add(createContainerPort(metricsPortName, metricsPort, "TCP"));
+            portList.add(createContainerPort(METRICS_PORT_NAME, METRICS_PORT, "TCP"));
         }
 
         return portList;
@@ -169,7 +168,7 @@ public class KafkaConnectCluster extends AbstractModel {
         return volumeMountList;
     }
 
-    public Deployment generateDeployment() {
+    public Deployment generateDeployment(Map<String, String> annotations) {
         DeploymentStrategy updateStrategy = new DeploymentStrategyBuilder()
                 .withType("RollingUpdate")
                 .withRollingUpdate(new RollingUpdateDeploymentBuilder()
@@ -181,12 +180,11 @@ public class KafkaConnectCluster extends AbstractModel {
         return createDeployment(
                 updateStrategy,
                 Collections.emptyMap(),
-                Collections.emptyMap(),
+                annotations,
                 getMergedAffinity(),
                 getInitContainers(),
                 getContainers(),
-                getVolumes()
-                );
+                getVolumes());
     }
 
     @Override
@@ -217,9 +215,6 @@ public class KafkaConnectCluster extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
         heapOptions(varList, 1.0, 0L);
         jvmPerformanceOptions(varList);
-        if (getLogging() != null && getLogging().getCm() != null) {
-            varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_LOGGING, getLogging().getCm().toString()));
-        }
         return varList;
     }
 

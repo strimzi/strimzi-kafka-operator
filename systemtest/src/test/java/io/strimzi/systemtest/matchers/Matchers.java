@@ -16,15 +16,6 @@ public class Matchers {
     }
 
     /**
-     * Matcher to check value by key in ConfigMap
-     * @param key - key of ConfigMap
-     * @param value - expected value for the key
-     */
-    public static Matcher<String> valueOfCmEquals(String key, String value) {
-        return new CmMatcher(key, value);
-    }
-
-    /**
      * A matcher checks that examined object has a full match of reasons for actual events.
      * @param eventReasons - expected events for resource
      */

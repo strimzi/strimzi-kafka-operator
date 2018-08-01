@@ -17,12 +17,13 @@ import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategy;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategyBuilder;
 import io.strimzi.api.kafka.model.KafkaAssembly;
-import io.strimzi.operator.cluster.operator.resource.RoleBindingOperator;
 import io.strimzi.api.kafka.model.Resources;
 import io.strimzi.api.kafka.model.Sidecar;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
 import io.strimzi.certs.Subject;
+import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
 
 import java.io.File;
 import java.io.IOException;
@@ -64,7 +65,7 @@ public class TopicOperator extends AbstractModel {
 
 
     // Topic Operator configuration keys
-    public static final String ENV_VAR_CONFIGMAP_LABELS = "STRIMZI_CONFIGMAP_LABELS";
+    public static final String ENV_VAR_RESOURCE_LABELS = "STRIMZI_RESOURCE_LABELS";
     public static final String ENV_VAR_KAFKA_BOOTSTRAP_SERVERS = "STRIMZI_KAFKA_BOOTSTRAP_SERVERS";
     public static final String ENV_VAR_ZOOKEEPER_CONNECT = "STRIMZI_ZOOKEEPER_CONNECT";
     public static final String ENV_VAR_WATCHED_NAMESPACE = "STRIMZI_NAMESPACE";
@@ -198,9 +199,8 @@ public class TopicOperator extends AbstractModel {
     }
 
     protected static String defaultTopicConfigMapLabels(String cluster) {
-        return String.format("%s=%s,%s=%s",
-                Labels.STRIMZI_CLUSTER_LABEL, cluster,
-                Labels.STRIMZI_KIND_LABEL, TopicOperator.TOPIC_CM_KIND);
+        return String.format("%s=%s",
+                Labels.STRIMZI_CLUSTER_LABEL, cluster);
     }
 
     public static String secretName(String cluster) {
@@ -343,7 +343,7 @@ public class TopicOperator extends AbstractModel {
     @Override
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
-        varList.add(buildEnvVar(ENV_VAR_CONFIGMAP_LABELS, topicConfigMapLabels));
+        varList.add(buildEnvVar(ENV_VAR_RESOURCE_LABELS, topicConfigMapLabels));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BOOTSTRAP_SERVERS, kafkaBootstrapServers));
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_CONNECT, String.format("%s:%d", "localhost", io.strimzi.api.kafka.model.TopicOperator.DEFAULT_ZOOKEEPER_PORT)));
         varList.add(buildEnvVar(ENV_VAR_WATCHED_NAMESPACE, watchedNamespace));

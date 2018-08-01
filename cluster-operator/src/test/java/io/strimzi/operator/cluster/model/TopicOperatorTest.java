@@ -17,7 +17,8 @@ import io.strimzi.api.kafka.model.Storage;
 import io.strimzi.api.kafka.model.TopicOperatorBuilder;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ResourceUtils;
-import io.strimzi.operator.cluster.operator.assembly.MockCertManager;
+import io.strimzi.operator.common.operator.MockCertManager;
+
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -76,7 +77,7 @@ public class TopicOperatorTest {
 
     private List<EnvVar> getExpectedEnvVars() {
         List<EnvVar> expected = new ArrayList<>();
-        expected.add(new EnvVarBuilder().withName(TopicOperator.ENV_VAR_CONFIGMAP_LABELS).withValue(TopicOperator.defaultTopicConfigMapLabels(cluster)).build());
+        expected.add(new EnvVarBuilder().withName(TopicOperator.ENV_VAR_RESOURCE_LABELS).withValue(TopicOperator.defaultTopicConfigMapLabels(cluster)).build());
         expected.add(new EnvVarBuilder().withName(TopicOperator.ENV_VAR_KAFKA_BOOTSTRAP_SERVERS).withValue(TopicOperator.defaultBootstrapServers(cluster)).build());
         expected.add(new EnvVarBuilder().withName(TopicOperator.ENV_VAR_ZOOKEEPER_CONNECT).withValue(String.format("%s:%d", "localhost", io.strimzi.api.kafka.model.TopicOperator.DEFAULT_ZOOKEEPER_PORT)).build());
         expected.add(new EnvVarBuilder().withName(TopicOperator.ENV_VAR_WATCHED_NAMESPACE).withValue(tcWatchedNamespace).build());

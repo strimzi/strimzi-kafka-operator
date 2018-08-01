@@ -12,6 +12,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.strimzi.api.kafka.model.KafkaAssembly;
 import io.strimzi.api.kafka.model.KafkaConnectAssembly;
 import io.strimzi.test.k8s.BaseKubeClient;
+import io.strimzi.test.k8s.HelmClient;
 import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.Minishift;
@@ -33,6 +34,7 @@ import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Repeatable;
 import java.lang.reflect.Method;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -45,8 +47,11 @@ import java.util.Stack;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static io.strimzi.test.TestUtils.indent;
+import static io.strimzi.test.TestUtils.entriesToMap;
+import static io.strimzi.test.TestUtils.entry;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -72,7 +77,17 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
     public static final String KAFKA_CONNECT_S2I_CM = "../examples/configmaps/cluster-operator/kafka-connect-s2i.yaml";
     public static final String CO_INSTALL_DIR = "../examples/install/cluster-operator";
     public static final String CO_DEPLOYMENT_NAME = "strimzi-cluster-operator";
-    public static final String TOPIC_CM = "../examples/configmaps/topic-operator/kafka-topic-configmap.yaml";
+    public static final String TOPIC_CM = "../examples/topic/kafka-topic.yaml";
+    public static final String HELM_CHART = "../helm-charts/strimzi-kafka-operator/";
+    public static final String HELM_RELEASE_NAME = "strimzi-systemtests";
+    public static final String STRIMZI_ORG = "strimzi";
+    public static final String STRIMZI_TAG = "latest";
+    public static final String IMAGE_PULL_POLICY = "Always";
+    public static final String REQUESTS_MEMORY = "512Mi";
+    public static final String REQUESTS_CPU = "200m";
+    public static final String LIMITS_MEMORY = "512Mi";
+    public static final String LIMITS_CPU = "1000m";
+    public static final String OPERATOR_LOG_LEVEL = "INFO";
 
     private KubeClusterResource clusterResource;
 
@@ -275,6 +290,10 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
 
     protected KubeClient<?> kubeClient() {
         return clusterResource().client();
+    }
+
+    protected HelmClient helmClient() {
+        return clusterResource().helmClient();
     }
 
     String name(Annotatable a) {
@@ -546,16 +565,17 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 final String tcDeploymentName = kafkaAssembly.getMetadata().getName() + "-topic-operator";
                 last = new Bracket(last, new ResourceAction()
                     .getPo(CO_DEPLOYMENT_NAME + ".*")
-                    .logs(CO_DEPLOYMENT_NAME + ".*", null)
+                    .logs(CO_DEPLOYMENT_NAME + ".*", "strimzi-cluster-operator")
                     .getDep(CO_DEPLOYMENT_NAME)
                     .getSs(kafkaStatefulSetName)
                     .getPo(kafkaStatefulSetName + ".*")
-                    .logs(kafkaStatefulSetName + ".*", null)
+                    .logs(kafkaStatefulSetName + ".*", "kafka")
+                    .logs(kafkaStatefulSetName + ".*", "tls-sidecar")
                     .getSs(zookeeperStatefulSetName)
                     .getPo(zookeeperStatefulSetName)
                     .logs(zookeeperStatefulSetName + ".*", "zookeeper")
                     .getDep(tcDeploymentName)
-                    .logs(tcDeploymentName + ".*", null)) {
+                    .logs(tcDeploymentName + ".*", "topic-operator")) {
 
                     @Override
                     protected void before() {
@@ -604,82 +624,136 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                                     Statement statement) {
         Statement last = statement;
         for (ClusterOperator cc : annotations(element, ClusterOperator.class)) {
-            Map<File, String> yamls = Arrays.stream(new File(CO_INSTALL_DIR).listFiles()).sorted().collect(Collectors.toMap(file -> file, f -> getContent(f, node -> {
-                // Change the docker org of the images in the 04-deployment.yaml
-                if ("05-Deployment-strimzi-cluster-operator.yaml".equals(f.getName())) {
-                    String dockerOrg = System.getenv().getOrDefault("DOCKER_ORG", "strimzi");
-                    String dockerTag = System.getenv().getOrDefault("DOCKER_TAG", "latest");
-                    ObjectNode containerNode = (ObjectNode) node.get("spec").get("template").get("spec").get("containers").get(0);
-                    containerNode.put("imagePullPolicy", "Always");
-                    JsonNodeFactory factory = new JsonNodeFactory(false);
-                    ObjectNode resources = new ObjectNode(factory);
-                    ObjectNode requests = new ObjectNode(factory);
-                    requests.put("cpu", "200m").put("memory", "512Mi");
-                    ObjectNode limits = new ObjectNode(factory);
-                    limits.put("cpu", "1000m").put("memory", "512Mi");
-                    resources.set("requests", requests);
-                    resources.set("limits", limits);
-                    containerNode.replace("resources", resources);
-                    containerNode.remove("resources");
-                    JsonNode ccImageNode = containerNode.get("image");
-                    ((ObjectNode) containerNode).put("image", TestUtils.changeOrgAndTag(ccImageNode.asText(), dockerOrg, dockerTag));
-                    for (JsonNode envVar : containerNode.get("env")) {
-                        String varName = envVar.get("name").textValue();
-                        // Replace all the default images with ones from the $DOCKER_ORG org and with the $DOCKER_TAG tag
-                        if (varName.matches("STRIMZI_DEFAULT_.*_IMAGE")) {
-                            String value = envVar.get("value").textValue();
-                            ((ObjectNode) envVar).put("value", TestUtils.changeOrgAndTag(value, dockerOrg, dockerTag));
-                        }
-                        // Set log level
-                        if (varName.equals("STRIMZI_LOG_LEVEL")) {
-                            String logLevel = System.getenv().getOrDefault("TEST_STRIMZI_LOG_LEVEL", "INFO");
-                            ((ObjectNode) envVar).put("value", logLevel);
-                        }
-                        // Updates default values of env variables
-                        for (EnvVariables envVariable : cc.envVariables()) {
-                            if (varName.equals(envVariable.key())) {
-                                ((ObjectNode) envVar).put("value", envVariable.value());
-                            }
-                        }
-                    }
-                }
-
-                if (f.getName().matches(".*ClusterRoleBinding.*")) {
-                    String ns = annotations(element, Namespace.class).get(0).value();
-                    ArrayNode subjects = (ArrayNode) node.get("subjects");
-                    ObjectNode subject = (ObjectNode) subjects.get(0);
-                    subject.put("kind", "ServiceAccount")
-                            .put("name", "strimzi-cluster-operator")
-                            .put("namespace", ns);
-                    LOGGER.info("Modified binding from {}: {}", f, node);
-                }
-            }), (x, y) -> x, LinkedHashMap::new));
-            last = new Bracket(last, new ResourceAction().getPo(CO_DEPLOYMENT_NAME + ".*")
-                    .logs(CO_DEPLOYMENT_NAME + ".*", null)
-                    .getDep(CO_DEPLOYMENT_NAME)) {
-                Stack<String> deletable = new Stack<>();
-                @Override
-                protected void before() {
-                    // Here we record the state of the cluster
-                    LOGGER.info("Creating cluster operator {} before test per @ClusterOperator annotation on {}", cc, name(element));
-                    for (Map.Entry<File, String> entry: yamls.entrySet()) {
-                        LOGGER.info("creating possibly modified version of {}", entry.getKey());
-                        deletable.push(entry.getValue());
-                        kubeClient().clientWithAdmin().applyContent(entry.getValue());
-                    }
-                    kubeClient().waitForDeployment(CO_DEPLOYMENT_NAME, 1);
-                }
-
-                @Override
-                protected void after() {
-                    LOGGER.info("Deleting cluster operator {} after test per @ClusterOperator annotation on {}", cc, name(element));
-                    while (!deletable.isEmpty()) {
-                        kubeClient().clientWithAdmin().deleteContent(deletable.pop());
-                    }
-                    kubeClient().waitForResourceDeletion("deployment", CO_DEPLOYMENT_NAME);
-                }
-            };
+            boolean useHelmChart = cc.useHelmChart() || Boolean.parseBoolean(System.getProperty("useHelmChart", Boolean.FALSE.toString()));
+            if (useHelmChart) {
+                last = installOperatorFromHelmChart(element, last, cc);
+            } else {
+                last = installOperatorFromExamples(element, last, cc);
+            }
         }
+        return last;
+    }
+
+    private Statement installOperatorFromHelmChart(Annotatable element, Statement last, ClusterOperator cc) {
+        String dockerOrg = System.getenv().getOrDefault("DOCKER_ORG", STRIMZI_ORG);
+        String dockerTag = System.getenv().getOrDefault("DOCKER_TAG", STRIMZI_TAG);
+
+        Map<String, String> values = Collections.unmodifiableMap(Stream.of(
+                entry("imageRepositoryOverride", dockerOrg),
+                entry("imageTagOverride", dockerTag),
+                entry("image.pullPolicy", IMAGE_PULL_POLICY),
+                entry("resources.requests.memory", REQUESTS_MEMORY),
+                entry("resources.requests.cpu", REQUESTS_CPU),
+                entry("resources.limits.memory", LIMITS_MEMORY),
+                entry("resources.limits.cpu", LIMITS_CPU),
+                entry("logLevel", OPERATOR_LOG_LEVEL))
+                .collect(entriesToMap()));
+
+        /** These entries aren't applied to the deployment yaml at this time */
+        Map<String, String> envVars = Collections.unmodifiableMap(Arrays.stream(cc.envVariables())
+                .map(var -> entry(String.format("env.%s", var.key()), var.value()))
+                .collect(entriesToMap()));
+
+        Map<String, String> allValues = Stream.of(values, envVars).flatMap(m -> m.entrySet().stream())
+                .collect(entriesToMap());
+
+        last = new Bracket(last,  new ResourceAction().getPo(CO_DEPLOYMENT_NAME + ".*")
+                .logs(CO_DEPLOYMENT_NAME + ".*", null)
+                .getDep(CO_DEPLOYMENT_NAME)) {
+            @Override
+            protected void before() {
+                // Here we record the state of the cluster
+                LOGGER.info("Creating cluster operator with Helm Chart {} before test per @ClusterOperator annotation on {}", cc, name(element));
+                Path pathToChart = new File(HELM_CHART).toPath();
+                helmClient().init();
+                helmClient().install(pathToChart, HELM_RELEASE_NAME, allValues);
+            }
+
+            @Override
+            protected void after() {
+                LOGGER.info("Deleting cluster operator with Helm Chart {} after test per @ClusterOperator annotation on {}", cc, name(element));
+                helmClient().delete(HELM_RELEASE_NAME);
+            }
+        };
+        return last;
+    }
+
+    private Statement installOperatorFromExamples(Annotatable element, Statement last, ClusterOperator cc) {
+        Map<File, String> yamls = Arrays.stream(new File(CO_INSTALL_DIR).listFiles()).sorted().collect(Collectors.toMap(file -> file, f -> getContent(f, node -> {
+            // Change the docker org of the images in the 04-deployment.yaml
+            if ("05-Deployment-strimzi-cluster-operator.yaml".equals(f.getName())) {
+                String dockerOrg = System.getenv().getOrDefault("DOCKER_ORG", STRIMZI_ORG);
+                String dockerTag = System.getenv().getOrDefault("DOCKER_TAG", STRIMZI_TAG);
+                ObjectNode containerNode = (ObjectNode) node.get("spec").get("template").get("spec").get("containers").get(0);
+                containerNode.put("imagePullPolicy", IMAGE_PULL_POLICY);
+                JsonNodeFactory factory = new JsonNodeFactory(false);
+                ObjectNode resources = new ObjectNode(factory);
+                ObjectNode requests = new ObjectNode(factory);
+                requests.put("cpu", "200m").put(REQUESTS_CPU, REQUESTS_MEMORY);
+                ObjectNode limits = new ObjectNode(factory);
+                limits.put("cpu", "1000m").put(LIMITS_CPU, LIMITS_MEMORY);
+                resources.set("requests", requests);
+                resources.set("limits", limits);
+                containerNode.replace("resources", resources);
+                containerNode.remove("resources");
+                JsonNode ccImageNode = containerNode.get("image");
+                ((ObjectNode) containerNode).put("image", TestUtils.changeOrgAndTag(ccImageNode.asText(), dockerOrg, dockerTag));
+                for (JsonNode envVar : containerNode.get("env")) {
+                    String varName = envVar.get("name").textValue();
+                    // Replace all the default images with ones from the $DOCKER_ORG org and with the $DOCKER_TAG tag
+                    if (varName.matches("STRIMZI_DEFAULT_.*_IMAGE")) {
+                        String value = envVar.get("value").textValue();
+                        ((ObjectNode) envVar).put("value", TestUtils.changeOrgAndTag(value, dockerOrg, dockerTag));
+                    }
+                    // Set log level
+                    if (varName.equals("STRIMZI_LOG_LEVEL")) {
+                        String logLevel = System.getenv().getOrDefault("TEST_STRIMZI_LOG_LEVEL", OPERATOR_LOG_LEVEL);
+                        ((ObjectNode) envVar).put("value", logLevel);
+                    }
+                    // Updates default values of env variables
+                    for (EnvVariables envVariable : cc.envVariables()) {
+                        if (varName.equals(envVariable.key())) {
+                            ((ObjectNode) envVar).put("value", envVariable.value());
+                        }
+                    }
+                }
+            }
+
+            if (f.getName().matches(".*ClusterRoleBinding.*")) {
+                String ns = annotations(element, Namespace.class).get(0).value();
+                ArrayNode subjects = (ArrayNode) node.get("subjects");
+                ObjectNode subject = (ObjectNode) subjects.get(0);
+                subject.put("kind", "ServiceAccount")
+                        .put("name", "strimzi-cluster-operator")
+                        .put("namespace", ns);
+                LOGGER.info("Modified binding from {}: {}", f, node);
+            }
+        }), (x, y) -> x, LinkedHashMap::new));
+        last = new Bracket(last, new ResourceAction().getPo(CO_DEPLOYMENT_NAME + ".*")
+                .logs(CO_DEPLOYMENT_NAME + ".*", "strimzi-cluster-operator")
+                .getDep(CO_DEPLOYMENT_NAME)) {
+            Stack<String> deletable = new Stack<>();
+            @Override
+            protected void before() {
+                // Here we record the state of the cluster
+                LOGGER.info("Creating cluster operator {} before test per @ClusterOperator annotation on {}", cc, name(element));
+                for (Map.Entry<File, String> entry: yamls.entrySet()) {
+                    LOGGER.info("creating possibly modified version of {}", entry.getKey());
+                    deletable.push(entry.getValue());
+                    kubeClient().clientWithAdmin().applyContent(entry.getValue());
+                }
+                kubeClient().waitForDeployment(CO_DEPLOYMENT_NAME, 1);
+            }
+
+            @Override
+            protected void after() {
+                LOGGER.info("Deleting cluster operator {} after test per @ClusterOperator annotation on {}", cc, name(element));
+                while (!deletable.isEmpty()) {
+                    kubeClient().clientWithAdmin().deleteContent(deletable.pop());
+                }
+                kubeClient().waitForResourceDeletion("deployment", CO_DEPLOYMENT_NAME);
+            }
+        };
         return last;
     }
 
@@ -725,7 +799,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 protected void before() {
                     LOGGER.info("Creating namespace '{}' before test per @Namespace annotation on {}", namespace.value(), name(element));
                     kubeClient().createNamespace(namespace.value());
-                    previousNamespace = kubeClient().namespace(namespace.value());
+                    previousNamespace = namespace.use() ? kubeClient().namespace(namespace.value()) : kubeClient().namespace();
                 }
 
                 @Override

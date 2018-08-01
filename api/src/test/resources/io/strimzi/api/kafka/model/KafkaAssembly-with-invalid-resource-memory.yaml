@@ -9,6 +9,9 @@ spec:
     resources:
       limits:
         memory: "5GiFooBar"
+    listeners:
+      plain: {}
+      tls: {}
     livenessProbe:
       initialDelaySeconds: 5
       timeoutSeconds: 1

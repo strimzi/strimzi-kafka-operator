@@ -40,8 +40,10 @@
     <modules>
         <module>crd-generator</module>
         <module>api</module>
+        <module>operator-common</module>
         <module>topic-operator</module>
         <module>cluster-operator</module>
+        <module>user-operator</module>
         <module>kafka-init</module>
         <module>certificate-manager</module>
         <module>systemtest</module>
@@ -56,7 +58,20 @@
             </dependency>
             <dependency>
                 <groupId>io.strimzi</groupId>
+                <artifactId>operator-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.strimzi</groupId>
                 <artifactId>api</artifactId>
+                <version>${project.version}</version>
+                <classifier>tests</classifier>
+                <type>test-jar</type>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.strimzi</groupId>
+                <artifactId>operator-common</artifactId>
                 <version>${project.version}</version>
                 <classifier>tests</classifier>
                 <type>test-jar</type>
@@ -297,6 +312,12 @@
                             <goal>verify</goal>
                         </goals>
                         <configuration>
+                            <includes>
+                                <include>**/IT*.java</include>
+                                <include>**/*IT.java</include>
+                                <include>**/ST*.java</include>
+                                <include>**/*ST*.java</include>
+                            </includes>
                             <trimStackTrace>false</trimStackTrace>
                         </configuration>
                     </execution>

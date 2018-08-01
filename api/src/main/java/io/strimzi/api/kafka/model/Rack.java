@@ -6,11 +6,13 @@ package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Example;
 import io.sundr.builder.annotations.Buildable;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,7 +24,10 @@ import java.util.Map;
         generateBuilderPackage = true,
         builderPackage = "io.strimzi.api.kafka.model"
 )
-public class Rack {
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class Rack implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private String topologyKey;
     private Map<String, Object> additionalProperties = new HashMap<>(0);

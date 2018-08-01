@@ -18,12 +18,13 @@ import io.strimzi.certs.CertManager;
 import io.strimzi.certs.SecretCertProvider;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.cluster.InvalidConfigMapException;
-import io.strimzi.operator.cluster.Reconciliation;
 import io.strimzi.operator.cluster.model.AbstractModel;
-import io.strimzi.operator.cluster.model.AssemblyType;
-import io.strimzi.operator.cluster.model.Labels;
-import io.strimzi.operator.cluster.operator.resource.AbstractWatchableResourceOperator;
-import io.strimzi.operator.cluster.operator.resource.SecretOperator;
+import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.ResourceType;
+import io.strimzi.operator.common.operator.resource.AbstractWatchableResourceOperator;
+import io.strimzi.operator.common.operator.resource.SecretOperator;
+
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -54,12 +55,12 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
 
     private static final Logger log = LogManager.getLogger(AbstractAssemblyOperator.class.getName());
 
-    protected static final int LOCK_TIMEOUT = 60000;
+    protected static final int LOCK_TIMEOUT_MS = 10000;
     protected static final int CERTS_EXPIRATION_DAYS = 365;
 
     protected final Vertx vertx;
     protected final boolean isOpenShift;
-    protected final AssemblyType assemblyType;
+    protected final ResourceType assemblyType;
     protected final AbstractWatchableResourceOperator<C, T, L, D, R> resourceOperator;
     protected final SecretOperator secretOperations;
     protected final CertManager certManager;
@@ -71,7 +72,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
      * @param assemblyType Assembly type
      * @param resourceOperator For operating on the desired resource
      */
-    protected AbstractAssemblyOperator(Vertx vertx, boolean isOpenShift, AssemblyType assemblyType,
+    protected AbstractAssemblyOperator(Vertx vertx, boolean isOpenShift, ResourceType assemblyType,
                                        CertManager certManager,
                                        AbstractWatchableResourceOperator<C, T, L, D, R> resourceOperator,
                                        SecretOperator secretOperations) {
@@ -91,7 +92,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
      * @param namespace The namespace containing the cluster
      * @param name The name of the cluster
      */
-    protected final String getLockName(AssemblyType assemblyType, String namespace, String name) {
+    protected final String getLockName(ResourceType assemblyType, String namespace, String name) {
         return "lock::" + namespace + "::" + assemblyType + "::" + name;
     }
 
@@ -129,7 +130,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
     private final void reconcileClusterCa(Reconciliation reconciliation, Handler<AsyncResult<Void>> handler) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
             future -> {
-                String clusterCaName = AbstractModel.getClusterCaName(reconciliation.assemblyName());
+                String clusterCaName = AbstractModel.getClusterCaName(reconciliation.name());
 
                 if (secretOperations.get(reconciliation.namespace(), clusterCaName) == null) {
                     log.debug("{}: Generating cluster CA certificate {}", reconciliation, clusterCaName);
@@ -178,7 +179,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
     private final void deleteClusterCa(Reconciliation reconciliation, Handler<AsyncResult<Void>> handler) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
             future -> {
-                String clusterCaName = AbstractModel.getClusterCaName(reconciliation.assemblyName());
+                String clusterCaName = AbstractModel.getClusterCaName(reconciliation.name());
 
                 if (secretOperations.get(reconciliation.namespace(), clusterCaName) != null) {
                     log.debug("{}: Deleting cluster CA certificate {}", reconciliation, clusterCaName);
@@ -200,8 +201,8 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
     }
 
     /**
-     * Reconcile assembly resources in the given namespace having the given {@code assemblyName}.
-     * Reconciliation works by getting the assembly resource (e.g. {@code KafkaAssembly}) in the given namespace with the given assemblyName and
+     * Reconcile assembly resources in the given namespace having the given {@code name}.
+     * Reconciliation works by getting the assembly resource (e.g. {@code KafkaAssembly}) in the given namespace with the given name and
      * comparing with the corresponding {@linkplain #getResources(String, Labels) resource}.
      * <ul>
      * <li>An assembly will be {@linkplain #createOrUpdate(Reconciliation, T, List, Handler) created or updated} if ConfigMap is without same-named resources</li>
@@ -210,9 +211,9 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
      */
     public final void reconcileAssembly(Reconciliation reconciliation, Handler<AsyncResult<Void>> handler) {
         String namespace = reconciliation.namespace();
-        String assemblyName = reconciliation.assemblyName();
+        String assemblyName = reconciliation.name();
         final String lockName = getLockName(assemblyType, namespace, assemblyName);
-        vertx.sharedData().getLockWithTimeout(lockName, LOCK_TIMEOUT, res -> {
+        vertx.sharedData().getLockWithTimeout(lockName, LOCK_TIMEOUT_MS, res -> {
             if (res.succeeded()) {
                 log.debug("{}: Lock {} acquired", reconciliation, lockName);
                 Lock lock = res.result();
@@ -273,7 +274,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
                     handler.handle(Future.failedFuture(ex));
                 }
             } else {
-                log.warn("{}: Failed to acquire lock {}.", reconciliation, lockName);
+                log.debug("{}: Failed to acquire lock {}.", reconciliation, lockName);
             }
         });
     }

@@ -6,11 +6,13 @@ package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
 import io.vertx.core.cli.annotations.DefaultValue;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,7 +24,11 @@ import java.util.Map;
         generateBuilderPackage = true,
         builderPackage = "io.strimzi.api.kafka.model"
 )
-public class Probe {
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class Probe implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     private int initialDelaySeconds = 15;
     private int timeoutSeconds = 5;
     private Map<String, Object> additionalProperties = new HashMap<>(0);

@@ -89,7 +89,7 @@ public class Config {
         }
     }
 
-    public static final String TC_CM_LABELS = "STRIMZI_CONFIGMAP_LABELS";
+    public static final String TC_RESOURCE_LABELS = "STRIMZI_RESOURCE_LABELS";
     public static final String TC_KAFKA_BOOTSTRAP_SERVERS = "STRIMZI_KAFKA_BOOTSTRAP_SERVERS";
     public static final String TC_NAMESPACE = "STRIMZI_NAMESPACE";
     public static final String TC_ZK_CONNECT = "STRIMZI_ZOOKEEPER_CONNECT";
@@ -107,8 +107,8 @@ public class Config {
 
     private static final Map<String, Value<?>> CONFIG_VALUES = new HashMap<>();
 
-    /** A comma-separated list of key=value pairs for selecting ConfigMaps that describe topics. */
-    public static final Value<LabelPredicate> LABELS = new Value<>(TC_CM_LABELS, LABEL_PREDICATE, "strimzi.io/kind=topic");
+    /** A comma-separated list of key=value pairs for selecting Resources that describe topics. */
+    public static final Value<LabelPredicate> LABELS = new Value<>(TC_RESOURCE_LABELS, LABEL_PREDICATE, "strimzi.io/kind=topic");
 
     /** A comma-separated list of kafka bootstrap servers. */
     public static final Value<String> KAFKA_BOOTSTRAP_SERVERS = new Value<>(TC_KAFKA_BOOTSTRAP_SERVERS, STRING, true);

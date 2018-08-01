@@ -41,6 +41,10 @@ public class ExampleCrd<T, U extends Number, V extends U> extends CustomResource
 
     private boolean booleanProperty;
 
+    public NormalEnum normalEnum;
+
+    public CustomisedEnum customisedEnum;
+
     private ObjectProperty objectProperty;
 
     private Affinity affinity;

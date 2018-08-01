@@ -14,6 +14,7 @@ import io.strimzi.crdgenerator.annotations.Pattern;
 import io.strimzi.crdgenerator.annotations.Type;
 import io.sundr.builder.annotations.Buildable;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,26 +23,20 @@ import static io.strimzi.api.kafka.model.Quantities.formatMilliCpu;
 import static io.strimzi.api.kafka.model.Quantities.parseCpuAsMilliCpus;
 import static io.strimzi.api.kafka.model.Quantities.parseMemory;
 
+@Buildable(
+        editableEnabled = false,
+        generateBuilderPackage = true,
+        builderPackage = "io.strimzi.api.kafka.model"
+)
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class CpuMemory implements Serializable {
 
-@JsonInclude(JsonInclude.Include.NON_DEFAULT)
-public class CpuMemory {
+    private static final long serialVersionUID = 1L;
 
     private String memory;
     private String milliCpu;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Buildable(
-            editableEnabled = false,
-            generateBuilderPackage = true,
-            builderPackage = "io.strimzi.api.kafka.model"
-    )
-    public CpuMemory() {
-    }
-
-    public CpuMemory(long mem, int milliCpu) {
-        this.memory = formatMemory(mem);
-        this.milliCpu = formatMilliCpu(milliCpu);
-    }
 
     /** The memory in bytes */
     @JsonIgnore

@@ -17,6 +17,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.crdgenerator.annotations.Crd;
+import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 
 import java.util.HashMap;
@@ -37,14 +38,17 @@ import java.util.Map;
                 version = KafkaConnectS2IAssembly.VERSION
         )
 )
-@JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec"})
 @Buildable(
         editableEnabled = false,
         generateBuilderPackage = true,
         builderPackage = "io.strimzi.api.kafka.model"
 )
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec"})
 public class KafkaConnectS2IAssembly extends CustomResource {
+
     private static final long serialVersionUID = 1L;
+
     public static final String VERSION = "v1alpha1";
     public static final String RESOURCE_KIND = "KafkaConnectS2I";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
@@ -56,7 +60,7 @@ public class KafkaConnectS2IAssembly extends CustomResource {
 
     private String apiVersion;
     private ObjectMeta metadata;
-    private transient KafkaConnectS2IAssemblySpec spec;
+    private KafkaConnectS2IAssemblySpec spec;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Override
@@ -86,6 +90,7 @@ public class KafkaConnectS2IAssembly extends CustomResource {
         super.setMetadata(metadata);
     }
 
+    @Description("The specification of the Kafka Connect deployment.")
     public KafkaConnectS2IAssemblySpec getSpec() {
         return spec;
     }

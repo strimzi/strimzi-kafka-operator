@@ -11,6 +11,24 @@ function install_kubectl {
     sudo cp kubectl /usr/bin
 }
 
+function install_nsenter {
+    # Pre-req for helm
+    curl https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v${TEST_NSENTER_VERSION}/util-linux-${TEST_NSENTER_VERSION}.tar.gz | tar -zxf-
+    cd util-linux-${TEST_NSENTER_VERSION}
+    ./configure --without-ncurses
+    make nsenter
+    sudo cp nsenter /usr/bin
+}
+
+function install_helm {
+    install_nsenter
+    # Set `TEST_HELM_VERSION` to `latest` to get latest version
+    HELM_INSTALL_DIR=/usr/bin
+    curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get > get_helm.sh
+    chmod 700 get_helm.sh
+    sudo ./get_helm.sh --version ${TEST_HELM_VERSION}
+}
+
 function wait_for_minikube {
     i="0"
 
@@ -47,6 +65,7 @@ function label_node {
 
 if [ "$TEST_CLUSTER" = "minikube" ]; then
     install_kubectl
+    install_helm
     if [ "${TEST_MINIKUBE_VERSION:-latest}" = "latest" ]; then
         TEST_MINIKUBE_URL=https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
     else

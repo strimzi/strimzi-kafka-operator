@@ -14,15 +14,16 @@ import io.strimzi.api.kafka.KafkaConnectAssemblyList;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.KafkaConnectAssembly;
 import io.strimzi.certs.CertManager;
-import io.strimzi.operator.cluster.Reconciliation;
-import io.strimzi.operator.cluster.model.AssemblyType;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
-import io.strimzi.operator.cluster.model.Labels;
-import io.strimzi.operator.cluster.operator.resource.ConfigMapOperator;
-import io.strimzi.operator.cluster.operator.resource.CrdOperator;
-import io.strimzi.operator.cluster.operator.resource.DeploymentOperator;
-import io.strimzi.operator.cluster.operator.resource.SecretOperator;
-import io.strimzi.operator.cluster.operator.resource.ServiceOperator;
+import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.ResourceType;
+import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
+import io.strimzi.operator.common.operator.resource.CrdOperator;
+import io.strimzi.operator.common.operator.resource.DeploymentOperator;
+import io.strimzi.operator.common.operator.resource.SecretOperator;
+import io.strimzi.operator.common.operator.resource.ServiceOperator;
+
 import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -32,7 +33,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * <p>Assembly operator for a "Kafka Connect" assembly, which manages:</p>
@@ -62,7 +65,7 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
                                         DeploymentOperator deploymentOperations,
                                         ServiceOperator serviceOperations,
                                         SecretOperator secretOperations) {
-        super(vertx, isOpenShift, AssemblyType.CONNECT, certManager, connectOperator, secretOperations);
+        super(vertx, isOpenShift, ResourceType.CONNECT, certManager, connectOperator, secretOperations);
         this.configMapOperations = configMapOperations;
         this.serviceOperations = serviceOperations;
         this.deploymentOperations = deploymentOperations;
@@ -72,7 +75,7 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
     protected void createOrUpdate(Reconciliation reconciliation, KafkaConnectAssembly kafkaConnectAssembly, List<Secret> assemblySecrets, Handler<AsyncResult<Void>> handler) {
 
         String namespace = reconciliation.namespace();
-        String name = reconciliation.assemblyName();
+        String name = reconciliation.name();
         KafkaConnectCluster connect;
         try {
             connect = KafkaConnectCluster.fromCrd(kafkaConnectAssembly);
@@ -80,15 +83,20 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
             handler.handle(Future.failedFuture(e));
             return;
         }
+
         ConfigMap logAndMetricsConfigMap = connect.generateMetricsAndLogConfigMap(connect.getLogging() instanceof ExternalLogging ?
                 configMapOperations.get(namespace, ((ExternalLogging) connect.getLogging()).getName()) :
                 null);
+
+        Map<String, String> annotations = new HashMap();
+        annotations.put("strimzi.io/logging", logAndMetricsConfigMap.getData().get(connect.ANCILLARY_CM_KEY_LOG_CONFIG));
+
         log.debug("{}: Updating Kafka Connect cluster", reconciliation, name, namespace);
         Future<Void> chainFuture = Future.future();
         deploymentOperations.scaleDown(namespace, connect.getName(), connect.getReplicas())
                 .compose(scale -> serviceOperations.reconcile(namespace, connect.getServiceName(), connect.generateService()))
                 .compose(i -> configMapOperations.reconcile(namespace, connect.getAncillaryConfigName(), logAndMetricsConfigMap))
-                .compose(i -> deploymentOperations.reconcile(namespace, connect.getName(), connect.generateDeployment()))
+                .compose(i -> deploymentOperations.reconcile(namespace, connect.getName(), connect.generateDeployment(annotations)))
                 .compose(i -> deploymentOperations.scaleUp(namespace, connect.getName(), connect.getReplicas()).map((Void) null))
                 .compose(chainFuture::complete, chainFuture);
         chainFuture.setHandler(handler);
@@ -97,7 +105,7 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
     @Override
     protected void delete(Reconciliation reconciliation, Handler<AsyncResult<Void>> handler) {
         String namespace = reconciliation.namespace();
-        String assemblyName = reconciliation.assemblyName();
+        String assemblyName = reconciliation.name();
         String clusterName = KafkaConnectCluster.kafkaConnectClusterName(assemblyName);
 
         CompositeFuture.join(serviceOperations.reconcile(namespace, KafkaConnectCluster.serviceName(assemblyName), null),

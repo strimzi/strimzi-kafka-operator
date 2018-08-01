@@ -23,6 +23,11 @@ public @interface Namespace {
     /** The name of the namespace to create/delete. */
     String value();
 
+    /**
+     * Whether the KubeClient should be switched to the new namespace
+     */
+    boolean use() default true;
+
     @Target({ElementType.METHOD, ElementType.TYPE})
     @Retention(RetentionPolicy.RUNTIME)
     @interface Container {

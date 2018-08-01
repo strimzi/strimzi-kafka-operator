@@ -4,8 +4,9 @@
  */
 package io.strimzi.operator.topic;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -17,10 +18,10 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -28,11 +29,11 @@ import static org.junit.Assert.fail;
 
 public class TopicSerializationTest {
 
-    private final LabelPredicate cmPredicate = new LabelPredicate("kind", "topic",
+    private final LabelPredicate resourcePredicate = new LabelPredicate(
             "app", "strimzi");
 
     @Test
-    public void testConfigMapSerializationRoundTrip() {
+    public void testResourceSerializationRoundTrip() {
 
         Topic.Builder builder = new Topic.Builder();
         builder.withTopicName("tom");
@@ -40,18 +41,17 @@ public class TopicSerializationTest {
         builder.withNumPartitions(2);
         builder.withConfigEntry("cleanup.policy", "bar");
         Topic wroteTopic = builder.build();
-        ConfigMap cm = TopicSerialization.toConfigMap(wroteTopic, cmPredicate);
+        KafkaTopic kafkaTopic = TopicSerialization.toTopicResource(wroteTopic, resourcePredicate);
 
-        assertEquals(wroteTopic.getTopicName().toString(), cm.getMetadata().getName());
-        assertEquals(2, cm.getMetadata().getLabels().size());
-        assertEquals("strimzi", cm.getMetadata().getLabels().get("app"));
-        assertEquals("topic", cm.getMetadata().getLabels().get("kind"));
-        assertEquals(wroteTopic.getTopicName().toString(), cm.getData().get(TopicSerialization.CM_KEY_NAME));
-        assertEquals("2", cm.getData().get(TopicSerialization.CM_KEY_PARTITIONS));
-        assertEquals("1", cm.getData().get(TopicSerialization.CM_KEY_REPLICAS));
-        assertEquals("{\"cleanup.policy\":\"bar\"}", cm.getData().get(TopicSerialization.CM_KEY_CONFIG));
+        assertEquals(wroteTopic.getTopicName().toString(), kafkaTopic.getMetadata().getName());
+        assertEquals(1, kafkaTopic.getMetadata().getLabels().size());
+        assertEquals("strimzi", kafkaTopic.getMetadata().getLabels().get("app"));
+        assertEquals(wroteTopic.getTopicName().toString(), kafkaTopic.getSpec().getTopicName());
+        assertEquals(Integer.valueOf(2), kafkaTopic.getSpec().getPartitions());
+        assertEquals(Integer.valueOf(1), kafkaTopic.getSpec().getReplicas());
+        assertEquals(singletonMap("cleanup.policy", "bar"), kafkaTopic.getSpec().getConfig());
 
-        Topic readTopic = TopicSerialization.fromConfigMap(cm);
+        Topic readTopic = TopicSerialization.fromTopicResource(kafkaTopic);
         assertEquals(wroteTopic, readTopic);
     }
 
@@ -129,7 +129,7 @@ public class TopicSerializationTest {
         Topic topic = TopicSerialization.fromTopicMetadata(meta);
         assertEquals(new TopicName("test-topic"), topic.getTopicName());
         // Null map name because Kafka doesn't know about the map
-        assertNull(topic.getMapName());
+        assertNull(topic.getResourceName());
         assertEquals(singletonMap("foo", "bar"), topic.getConfig());
         assertEquals(2, topic.getNumPartitions());
         assertEquals(3, topic.getNumReplicas());
@@ -137,24 +137,25 @@ public class TopicSerializationTest {
 
     @Test
     public void testErrorInDefaultTopicName() {
-        Map<String, String> data = new HashMap<>();
-        data.put(TopicSerialization.CM_KEY_REPLICAS, "1");
-        data.put(TopicSerialization.CM_KEY_PARTITIONS, "1");
-        data.put(TopicSerialization.CM_KEY_CONFIG, "{}");
 
-        // The problem with this configmap name is it's too long to be a legal topic name
+        // The problem with this resource name is it's too long to be a legal topic name
         String illegalAsATopicName = "012345678901234567890123456789012345678901234567890123456789" +
                 "01234567890123456789012345678901234567890123456789012345678901234567890123456789" +
                 "01234567890123456789012345678901234567890123456789012345678901234567890123456789" +
                 "012345678901234567890123456789";
-        ConfigMap cm = new ConfigMapBuilder().editOrNewMetadata().withName(illegalAsATopicName)
-                .endMetadata().withData(data).build();
+        KafkaTopic kafkaTopic = new KafkaTopicBuilder().withMetadata(new ObjectMetaBuilder().withName(illegalAsATopicName)
+                .build()).withNewSpec()
+                    .withReplicas(1)
+                    .withPartitions(1)
+                    .withConfig(emptyMap())
+                .endSpec()
+            .build();
 
         try {
-            TopicSerialization.fromConfigMap(cm);
+            TopicSerialization.fromTopicResource(kafkaTopic);
             fail("Should throw");
-        } catch (InvalidConfigMapException e) {
-            assertEquals("ConfigMap's 'data' section lacks a 'name' key and ConfigMap's name is invalid as a topic name: " +
+        } catch (InvalidTopicException e) {
+            assertEquals("KafkaTopics's spec.topicName property is absent and KafkaTopics's metadata.name is invalid as a topic name: " +
                     "Topic name is illegal, it can't be longer than 249 characters, topic name: " +
                     illegalAsATopicName, e.getMessage());
         }
@@ -162,139 +163,96 @@ public class TopicSerializationTest {
 
     @Test
     public void testErrorInTopicName() {
-        Map<String, String> data = new HashMap<>();
-        data.put(TopicSerialization.CM_KEY_REPLICAS, "1");
-        data.put(TopicSerialization.CM_KEY_PARTITIONS, "1");
-        data.put(TopicSerialization.CM_KEY_CONFIG, "{}");
-        data.put(TopicSerialization.CM_KEY_NAME, "An invalid topic name!");
-
-        ConfigMap cm = new ConfigMapBuilder().editOrNewMetadata().withName("foo")
-                .endMetadata().withData(data).build();
-
+        KafkaTopic kafkaTopic = new KafkaTopicBuilder().withMetadata(new ObjectMetaBuilder().withName("foo")
+                .build()).withNewSpec()
+                    .withReplicas(1)
+                    .withPartitions(1)
+                    .withConfig(emptyMap())
+                    .withTopicName("An invalid topic name!")
+                .endSpec()
+            .build();
         try {
-            TopicSerialization.fromConfigMap(cm);
+            TopicSerialization.fromTopicResource(kafkaTopic);
             fail("Should throw");
-        } catch (InvalidConfigMapException e) {
-            assertEquals("ConfigMap's 'data' section has invalid 'name' key: Topic name \"An invalid topic name!\" is illegal, it contains a character other than ASCII alphanumerics, '.', '_' and '-'", e.getMessage());
+        } catch (InvalidTopicException e) {
+            assertEquals("KafkaTopics's spec.topicName property is invalid as a topic name: Topic name \"An invalid topic name!\" is illegal, it contains a character other than ASCII alphanumerics, '.', '_' and '-'", e.getMessage());
         }
     }
 
     @Test
     public void testErrorInPartitions() {
-        Map<String, String> data = new HashMap<>();
-        data.put(TopicSerialization.CM_KEY_REPLICAS, "1");
-        data.put(TopicSerialization.CM_KEY_PARTITIONS, "foo");
-        data.put(TopicSerialization.CM_KEY_CONFIG, "{}");
-
-        ConfigMap cm = new ConfigMapBuilder().editOrNewMetadata().withName("my-topic")
-                .endMetadata().withData(data).build();
+        KafkaTopic kafkaTopic = new KafkaTopicBuilder()
+                .withMetadata(new ObjectMetaBuilder().withName("my-topic").build())
+                .withNewSpec()
+                    .withReplicas(1)
+                    .withPartitions(-1)
+                    .withConfig(emptyMap())
+                .endSpec()
+            .build();
 
         try {
-            TopicSerialization.fromConfigMap(cm);
+            TopicSerialization.fromTopicResource(kafkaTopic);
             fail("Should throw");
-        } catch (InvalidConfigMapException e) {
-            assertEquals("ConfigMap's 'data' section has invalid key 'partitions': should be a strictly positive integer but was 'foo'", e.getMessage());
+        } catch (InvalidTopicException e) {
+            assertEquals("KafkaTopic's spec.partitions should be strictly greater than 0", e.getMessage());
         }
     }
 
     @Test
     public void testErrorInReplicas() {
-        Map<String, String> data = new HashMap<>();
-        data.put(TopicSerialization.CM_KEY_REPLICAS, "foo");
-        data.put(TopicSerialization.CM_KEY_PARTITIONS, "1");
-        data.put(TopicSerialization.CM_KEY_CONFIG, "{}");
-
-        ConfigMap cm = new ConfigMapBuilder().editOrNewMetadata().withName("my-topic")
-                .endMetadata().withData(data).build();
-
-        try {
-            TopicSerialization.fromConfigMap(cm);
-            fail("Should throw");
-        } catch (InvalidConfigMapException e) {
-            assertEquals("ConfigMap's 'data' section has invalid key 'replicas': should be a strictly positive integer but was 'foo'", e.getMessage());
-        }
-    }
-
-    @Test
-    public void testErrorInConfigNotJson() {
-        Map<String, String> data = new HashMap<>();
-        data.put(TopicSerialization.CM_KEY_REPLICAS, "1");
-        data.put(TopicSerialization.CM_KEY_PARTITIONS, "1");
-        data.put(TopicSerialization.CM_KEY_CONFIG, "foobar");
-
-        ConfigMap cm = new ConfigMapBuilder().editOrNewMetadata().withName("my-topic")
-                .endMetadata().withData(data).build();
+        KafkaTopic kafkaTopic = new KafkaTopicBuilder()
+                .withMetadata(new ObjectMetaBuilder().withName("my-topic").build())
+                .withNewSpec()
+                    .withReplicas(-1)
+                    .withPartitions(1)
+                    .withConfig(emptyMap())
+                .endSpec()
+            .build();
 
         try {
-            TopicSerialization.fromConfigMap(cm);
+            TopicSerialization.fromTopicResource(kafkaTopic);
             fail("Should throw");
-        } catch (InvalidConfigMapException e) {
-            assertEquals("ConfigMap's 'data' section has invalid key 'config': " +
-                    "Unrecognized token 'foobar': was expecting 'null', 'true', 'false' or NaN\n" +
-                    " at [Source: UNKNOWN; line: 1, column: 13]",
-                    e.getMessage());
-        }
-    }
-
-    @Test
-    public void testErrorInConfigInvalidKeyNull() {
-        Map<String, String> data = new HashMap<>();
-        data.put(TopicSerialization.CM_KEY_REPLICAS, "1");
-        data.put(TopicSerialization.CM_KEY_PARTITIONS, "1");
-        data.put(TopicSerialization.CM_KEY_CONFIG, "{null:null}");
-
-        ConfigMap cm = new ConfigMapBuilder().editOrNewMetadata().withName("my-topic")
-                .endMetadata().withData(data).build();
-        try {
-            TopicSerialization.fromConfigMap(cm);
-            fail("Should throw");
-        } catch (InvalidConfigMapException e) {
-            assertEquals("ConfigMap's 'data' section has invalid key 'config': " +
-                            "Unexpected character ('n' (code 110)): was expecting double-quote to start field name\n" +
-                            " at [Source: UNKNOWN; line: 1, column: 3]",
-                    e.getMessage());
+        } catch (InvalidTopicException e) {
+            assertEquals("KafkaTopic's spec.replicas should be between 1 and 32767 inclusive", e.getMessage());
         }
     }
 
     @Test
     public void testErrorInConfigInvalidValueWrongType() {
-        Map<String, String> data = new HashMap<>();
-        data.put(TopicSerialization.CM_KEY_REPLICAS, "1");
-        data.put(TopicSerialization.CM_KEY_PARTITIONS, "1");
-        data.put(TopicSerialization.CM_KEY_CONFIG, "{\"cleanup.policy\":1}");
-
-        ConfigMap cm = new ConfigMapBuilder().editOrNewMetadata().withName("my-topic")
-                .endMetadata().withData(data).build();
+        KafkaTopic kafkaTopic = new KafkaTopicBuilder()
+                .withMetadata(new ObjectMetaBuilder().withName("my-topic").build())
+                .withNewSpec()
+                    .withReplicas(1)
+                    .withPartitions(1)
+                    .withConfig(singletonMap("foo", new Object()))
+                .endSpec()
+            .build();
 
         try {
-            TopicSerialization.fromConfigMap(cm);
+            TopicSerialization.fromTopicResource(kafkaTopic);
             fail("Should throw");
-        } catch (InvalidConfigMapException e) {
-            assertEquals("ConfigMap's 'data' section has invalid key 'config': " +
-                    "The key 'cleanup.policy' of the topic config is invalid: " +
-                    "The value corresponding to the key must have a String value, " +
-                    "not a value of type class java.lang.Integer",
+        } catch (InvalidTopicException e) {
+            assertEquals("KafkaTopic's spec.config has invalid entry: The key 'foo' of the topic config is invalid: The value corresponding to the key must have a string, number or boolean value but was of type java.lang.Object",
                     e.getMessage());
         }
     }
 
     @Test
     public void testErrorInConfigInvalidValueNull() {
-        Map<String, String> data = new HashMap<>();
-        data.put(TopicSerialization.CM_KEY_REPLICAS, "1");
-        data.put(TopicSerialization.CM_KEY_PARTITIONS, "1");
-        data.put(TopicSerialization.CM_KEY_CONFIG, "{\"cleanup.policy\":null}");
-
-        ConfigMap cm = new ConfigMapBuilder().editOrNewMetadata().withName("my-topic")
-                .endMetadata().withData(data).build();
+        KafkaTopic kafkaTopic = new KafkaTopicBuilder()
+                .withMetadata(new ObjectMetaBuilder().withName("my-topic").build())
+                .withNewSpec()
+                    .withReplicas(1)
+                    .withPartitions(1)
+                    .withConfig(singletonMap("foo", null))
+                .endSpec()
+            .build();
 
         try {
-            TopicSerialization.fromConfigMap(cm);
+            TopicSerialization.fromTopicResource(kafkaTopic);
             fail("Should throw");
-        } catch (InvalidConfigMapException e) {
-            assertEquals("ConfigMap's 'data' section has invalid key 'config': " +
-                    "The key 'cleanup.policy' of the topic config is invalid: " +
-                    "The value corresponding to the key must have a String value, not null",
+        } catch (InvalidTopicException e) {
+            assertEquals("KafkaTopic's spec.config has invalid entry: The key 'foo' of the topic config is invalid: The value corresponding to the key must have a string, number or boolean value but the value was null",
                     e.getMessage());
         }
     }

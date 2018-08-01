@@ -15,6 +15,7 @@ import io.fabric8.openshift.api.model.ImageChangeTrigger;
 import io.fabric8.openshift.api.model.ImageStream;
 import io.strimzi.api.kafka.model.KafkaConnectS2IAssembly;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
 
 import org.junit.Rule;
@@ -22,6 +23,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -143,7 +145,7 @@ public class KafkaConnectS2IClusterTest {
 
     @Test
     public void testGenerateDeploymentConfig()   {
-        DeploymentConfig dep = kc.generateDeploymentConfig();
+        DeploymentConfig dep = kc.generateDeploymentConfig(new HashMap<String, String>());
 
         assertEquals(kc.kafkaConnectClusterName(cluster), dep.getMetadata().getName());
         assertEquals(namespace, dep.getMetadata().getNamespace());
@@ -247,12 +249,12 @@ public class KafkaConnectS2IClusterTest {
     @Test
     public void withAffinity() throws IOException {
         resourceTester
-            .assertDesiredResource("-DeploymentConfig.yaml", kcc -> kcc.generateDeploymentConfig().getSpec().getTemplate().getSpec().getAffinity());
+            .assertDesiredResource("-DeploymentConfig.yaml", kcc -> kcc.generateDeploymentConfig(new HashMap<String, String>()).getSpec().getTemplate().getSpec().getAffinity());
     }
 
     @Test
     public void withTolerations() throws IOException {
         resourceTester
-            .assertDesiredResource("-DeploymentConfig.yaml", kcc -> kcc.generateDeploymentConfig().getSpec().getTemplate().getSpec().getTolerations());
+            .assertDesiredResource("-DeploymentConfig.yaml", kcc -> kcc.generateDeploymentConfig(new HashMap<String, String>()).getSpec().getTemplate().getSpec().getTolerations());
     }
 }

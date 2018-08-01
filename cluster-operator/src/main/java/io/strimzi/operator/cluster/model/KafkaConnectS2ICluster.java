@@ -27,6 +27,9 @@ import io.fabric8.openshift.api.model.TagReference;
 import io.fabric8.openshift.api.model.TagReferencePolicyBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectS2IAssembly;
 import io.strimzi.api.kafka.model.KafkaConnectS2IAssemblySpec;
+import io.strimzi.operator.common.model.Labels;
+
+import java.util.Map;
 
 public class KafkaConnectS2ICluster extends KafkaConnectCluster {
 
@@ -65,7 +68,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
      *
      * @return      Source ImageStream resource definition
      */
-    public DeploymentConfig generateDeploymentConfig() {
+    public DeploymentConfig generateDeploymentConfig(Map<String, String> annotations) {
         Container container = new ContainerBuilder()
                 .withName(name)
                 .withImage(image)
@@ -111,6 +114,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                     .withReplicas(replicas)
                     .withNewTemplate()
                         .withNewMetadata()
+                            .withAnnotations(annotations)
                             .withLabels(getLabelsWithName())
                         .endMetadata()
                         .withNewSpec()
@@ -124,7 +128,6 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                 .withStrategy(updateStrategy)
                 .endSpec()
                 .build();
-
         return dc;
     }
 

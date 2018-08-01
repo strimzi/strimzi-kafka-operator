@@ -17,23 +17,24 @@ import io.strimzi.api.kafka.KafkaAssemblyList;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.KafkaAssembly;
 import io.strimzi.certs.CertManager;
-import io.strimzi.operator.cluster.Reconciliation;
-import io.strimzi.operator.cluster.model.AssemblyType;
 import io.strimzi.operator.cluster.model.KafkaCluster;
-import io.strimzi.operator.cluster.model.Labels;
 import io.strimzi.operator.cluster.model.TopicOperator;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
-import io.strimzi.operator.cluster.operator.resource.ClusterRoleBindingOperator;
-import io.strimzi.operator.cluster.operator.resource.ConfigMapOperator;
-import io.strimzi.operator.cluster.operator.resource.DeploymentOperator;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
-import io.strimzi.operator.cluster.operator.resource.PvcOperator;
-import io.strimzi.operator.cluster.operator.resource.ReconcileResult;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.cluster.operator.resource.RoleBindingOperator;
-import io.strimzi.operator.cluster.operator.resource.ServiceAccountOperator;
-import io.strimzi.operator.cluster.operator.resource.ServiceOperator;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperSetOperator;
+import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.ResourceType;
+import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
+import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
+import io.strimzi.operator.common.operator.resource.DeploymentOperator;
+import io.strimzi.operator.common.operator.resource.PvcOperator;
+import io.strimzi.operator.common.operator.resource.ReconcileResult;
+import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
+import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
+import io.strimzi.operator.common.operator.resource.ServiceOperator;
+
 import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -76,7 +77,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                  long operationTimeoutMs,
                                  CertManager certManager,
                                  ResourceOperatorSupplier supplier) {
-        super(vertx, isOpenShift, AssemblyType.KAFKA, certManager, supplier.kafkaOperator, supplier.secretOperations);
+        super(vertx, isOpenShift, ResourceType.KAFKA, certManager, supplier.kafkaOperator, supplier.secretOperations);
         this.operationTimeoutMs = operationTimeoutMs;
         this.serviceOperations = supplier.serviceOperations;
         this.zkSetOperations = supplier.zkSetOperations;
@@ -113,6 +114,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private final StatefulSet statefulSet;
         private final Secret nodesSecret;
         private ReconcileResult<StatefulSet> diffs;
+        private boolean forceRestart;
 
         ZookeeperClusterDescription(ZookeeperCluster zookeeper, Service service, Service headlessService,
                                     ConfigMap metricsAndLogsConfigMap, StatefulSet statefulSet, Secret nodesSecret) {
@@ -148,6 +150,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return this.nodesSecret;
         }
 
+        private boolean isForceRestart() {
+            return this.forceRestart;
+        }
+
         ReconcileResult<StatefulSet> diffs() {
             return this.diffs;
         }
@@ -161,6 +167,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ZookeeperClusterDescription> withVoid(Future<?> r) {
             return r.map(this);
+        }
+
+        Future<ZookeeperClusterDescription> withAncillaryCmChanged(Future<ReconcileResult<ConfigMap>> r) {
+            return r.map(rr -> {
+                this.forceRestart = rr instanceof ReconcileResult.Patched;
+                return this;
+            });
         }
     }
 
@@ -182,6 +195,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private final Secret clusterPublicKeySecret;
         private final Secret brokersInternalSecret;
         private ReconcileResult<StatefulSet> diffs;
+        private boolean forceRestart;
 
         KafkaClusterDescription(KafkaCluster kafka, Service service, Service headlessService,
                                 ConfigMap metricsAndLogsConfigMap, StatefulSet statefulSet,
@@ -238,6 +252,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return this.diffs;
         }
 
+        private boolean isForceRestart() {
+            return this.forceRestart;
+        }
+
         Future<KafkaClusterDescription> withDiff(Future<ReconcileResult<StatefulSet>> r) {
             return r.map(rr -> {
                 this.diffs = rr;
@@ -247,6 +265,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<KafkaClusterDescription> withVoid(Future<?> r) {
             return r.map(this);
+        }
+
+        Future<KafkaClusterDescription> withAncillaryCmChanged(Future<ReconcileResult<ConfigMap>> r) {
+            return r.map(rr -> {
+                this.forceRestart = rr instanceof ReconcileResult.Patched;
+                return this;
+            });
         }
     }
 
@@ -279,6 +304,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Deployment deployment() {
+            try {
+                this.deployment.getSpec().getTemplate().getMetadata().getAnnotations().put("strimzi.io/logging", this.metricsAndLogsConfigMap.getData().get("log4j2.properties"));
+            } catch (NullPointerException ex) {
+                
+            }
             return this.deployment;
         }
 
@@ -347,13 +377,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(desc -> desc.withVoid(kafkaSetOperations.scaleDown(namespace, desc.kafka().getName(), desc.kafka().getReplicas())))
                 .compose(desc -> desc.withVoid(serviceOperations.reconcile(namespace, desc.kafka().getServiceName(), desc.service())))
                 .compose(desc -> desc.withVoid(serviceOperations.reconcile(namespace, desc.kafka().getHeadlessServiceName(), desc.headlessService())))
-                .compose(desc -> desc.withVoid(configMapOperations.reconcile(namespace, desc.kafka().getAncillaryConfigName(), desc.metricsAndLogsConfigMap())))
-                .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, KafkaCluster.clientsCASecretName(name), desc.clientsCASecret())))
+                .compose(desc -> desc.withAncillaryCmChanged(configMapOperations.reconcile(namespace, desc.kafka().getAncillaryConfigName(), desc.metricsAndLogsConfigMap())))                .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, KafkaCluster.clientsCASecretName(name), desc.clientsCASecret())))
                 .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, KafkaCluster.clientsPublicKeyName(name), desc.clientsPublicKeySecret())))
                 .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, KafkaCluster.clusterPublicKeyName(name), desc.clusterPublicKeySecret())))
                 .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, KafkaCluster.brokersSecretName(name), desc.brokersInternalSecret())))
                 .compose(desc -> desc.withDiff(kafkaSetOperations.reconcile(namespace, desc.kafka().getName(), desc.statefulSet())))
-                .compose(desc -> desc.withVoid(kafkaSetOperations.maybeRollingUpdate(desc.diffs().resource())))
+                .compose(desc -> desc.withVoid(kafkaSetOperations.maybeRollingUpdate(desc.diffs().resource(), desc.isForceRestart())))
                 .compose(desc -> desc.withVoid(kafkaSetOperations.scaleUp(namespace, desc.kafka().getName(), desc.kafka().getReplicas())))
                 .compose(desc -> desc.withVoid(serviceOperations.endpointReadiness(namespace, desc.service(), 1_000, operationTimeoutMs)))
                 .compose(desc -> desc.withVoid(serviceOperations.endpointReadiness(namespace, desc.headlessService(), 1_000, operationTimeoutMs)))
@@ -365,7 +394,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
     private final Future<CompositeFuture> deleteKafka(Reconciliation reconciliation) {
         String namespace = reconciliation.namespace();
-        String name = reconciliation.assemblyName();
+        String name = reconciliation.name();
         log.debug("{}: delete kafka {}", reconciliation, name);
         String kafkaSsName = KafkaCluster.kafkaClusterName(name);
         StatefulSet ss = kafkaSetOperations.get(namespace, kafkaSsName);
@@ -436,10 +465,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(desc -> desc.withVoid(zkSetOperations.scaleDown(namespace, desc.zookeeper().getName(), desc.zookeeper().getReplicas())))
                 .compose(desc -> desc.withVoid(serviceOperations.reconcile(namespace, desc.zookeeper().getServiceName(), desc.service())))
                 .compose(desc -> desc.withVoid(serviceOperations.reconcile(namespace, desc.zookeeper().getHeadlessServiceName(), desc.headlessService())))
-                .compose(desc -> desc.withVoid(configMapOperations.reconcile(namespace, desc.zookeeper().getAncillaryConfigName(), desc.metricsAndLogsConfigMap())))
+                .compose(desc -> desc.withAncillaryCmChanged(configMapOperations.reconcile(namespace, desc.zookeeper().getAncillaryConfigName(), desc.metricsAndLogsConfigMap())))
                 .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, ZookeeperCluster.nodesSecretName(name), desc.nodesSecret())))
                 .compose(desc -> desc.withDiff(zkSetOperations.reconcile(namespace, desc.zookeeper().getName(), desc.statefulSet())))
-                .compose(desc -> desc.withVoid(zkSetOperations.maybeRollingUpdate(desc.diffs().resource())))
+                .compose(desc -> desc.withVoid(zkSetOperations.maybeRollingUpdate(desc.diffs().resource(), desc.isForceRestart())))
                 .compose(desc -> desc.withVoid(zkSetOperations.scaleUp(namespace, desc.zookeeper().getName(), desc.zookeeper().getReplicas())))
                 .compose(desc -> desc.withVoid(serviceOperations.endpointReadiness(namespace, desc.service(), 1_000, operationTimeoutMs)))
                 .compose(desc -> desc.withVoid(serviceOperations.endpointReadiness(namespace, desc.headlessService(), 1_000, operationTimeoutMs)))
@@ -450,7 +479,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
     private final Future<CompositeFuture> deleteZk(Reconciliation reconciliation) {
         String namespace = reconciliation.namespace();
-        String name = reconciliation.assemblyName();
+        String name = reconciliation.name();
         log.debug("{}: delete zookeeper {}", reconciliation, name);
         String zkSsName = ZookeeperCluster.zookeeperClusterName(name);
         StatefulSet ss = zkSetOperations.get(namespace, zkSsName);
@@ -520,9 +549,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(desc -> desc.withVoid(serviceAccountOperator.reconcile(namespace,
                         TopicOperator.topicOperatorServiceAccountName(name),
                         desc != TopicOperatorDescription.EMPTY ? desc.topicOperator().generateServiceAccount() : null)))
-                .compose(desc -> desc.withVoid(roleBindingOperator.reconcile(namespace,
-                        TopicOperator.TO_ROLE_BINDING_NAME,
-                        desc != TopicOperatorDescription.EMPTY ? desc.topicOperator().generateRoleBinding(namespace) : null)))
+                .compose(desc -> {
+                    String watchedNamespace = desc.topicOperator() != null ? desc.topicOperator().getWatchedNamespace() : null;
+                    return desc.withVoid(roleBindingOperator.reconcile(
+                            watchedNamespace != null && !watchedNamespace.isEmpty() ?
+                                    watchedNamespace : namespace,
+                            TopicOperator.TO_ROLE_BINDING_NAME,
+                            desc != TopicOperatorDescription.EMPTY ? desc.topicOperator().generateRoleBinding(namespace) : null));
+                })
                 .compose(desc -> desc.withVoid(configMapOperations.reconcile(namespace,
                         desc != TopicOperatorDescription.EMPTY ? desc.topicOperator().getAncillaryConfigName() : TopicOperator.metricAndLogConfigsName(name),
                         desc.metricsAndLogsConfigMap())))
@@ -535,7 +569,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
     private final Future<CompositeFuture> deleteTopicOperator(Reconciliation reconciliation) {
         String namespace = reconciliation.namespace();
-        String name = reconciliation.assemblyName();
+        String name = reconciliation.name();
         log.debug("{}: delete topic operator {}", reconciliation, name);
 
         List<Future> result = new ArrayList<>(3);

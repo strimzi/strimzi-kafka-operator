@@ -12,7 +12,8 @@ import io.strimzi.api.kafka.model.KafkaAssembly;
 import io.strimzi.api.kafka.model.KafkaAssemblyBuilder;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaCluster;
-import io.strimzi.operator.cluster.operator.assembly.MockCertManager;
+import io.strimzi.operator.common.operator.MockCertManager;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -76,8 +77,8 @@ public class KafkaSetOperatorTest {
         return ResourceUtils.createKafkaClusterInitialSecrets(clusterCmNamespace, clusterName);
     }
 
-    private StatefulSetDiff diff() {
-        return new StatefulSetDiff(a, b);
+    private ResourceOperatorSupplier.StatefulSetDiff diff() {
+        return new ResourceOperatorSupplier.StatefulSetDiff(a, b);
     }
 
     @Test

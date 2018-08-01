@@ -4,6 +4,11 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
+import io.strimzi.operator.common.operator.resource.AbstractResourceOperatorTest;
+import io.strimzi.operator.common.operator.resource.PodOperator;
+import io.strimzi.operator.common.operator.resource.ScalableResourceOperatorTest;
+import io.strimzi.operator.common.operator.resource.TimeoutException;
+
 import io.fabric8.kubernetes.api.model.extensions.DoneableStatefulSet;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSetBuilder;
@@ -19,6 +24,7 @@ import io.vertx.core.Vertx;
 import io.vertx.ext.unit.TestContext;
 import org.junit.Test;
 
+import java.util.UUID;
 import java.util.function.BiPredicate;
 
 import static org.junit.Assert.assertTrue;
@@ -31,7 +37,7 @@ import static org.mockito.Mockito.when;
 
 public class StatefulSetOperatorTest
         extends ScalableResourceOperatorTest<KubernetesClient, StatefulSet, StatefulSetList,
-                        DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> {
+                                DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> {
 
     @Override
     protected Class<KubernetesClient> clientType() {
@@ -47,8 +53,8 @@ public class StatefulSetOperatorTest
     protected StatefulSet resource() {
         return new StatefulSetBuilder()
                 .withNewMetadata()
-                    .withNamespace(NAMESPACE)
-                    .withName(RESOURCE_NAME)
+                    .withNamespace(AbstractResourceOperatorTest.NAMESPACE)
+                    .withName(AbstractResourceOperatorTest.RESOURCE_NAME)
                 .endMetadata()
                 .withNewSpec()
                     .withReplicas(3)
@@ -123,7 +129,7 @@ public class StatefulSetOperatorTest
         KubernetesClient mockClient = mock(KubernetesClient.class);
         mocker(mockClient, mockCms);
 
-        StatefulSetOperator op = new StatefulSetOperator(vertx, mockClient, 5_000L, podOperator) {
+        StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator) {
             @Override
             protected boolean shouldIncrementGeneration(StatefulSet current, StatefulSet desired) {
                 return true;
@@ -135,12 +141,12 @@ public class StatefulSetOperatorTest
             }
 
             @Override
-            protected Future<Integer> getGeneration(String namespace, String podName) {
-                return Future.succeededFuture(1);
+            protected Future<String> getUid(String namespace, String podName) {
+                return Future.succeededFuture(UUID.randomUUID().toString());
             }
         };
 
-        Future result = op.maybeRestartPod(resource, "my-pod-0");
+        Future result = op.maybeRestartPod(resource, "my-pod-0", false);
         assertTrue(result.succeeded());
     }
     @Test
@@ -163,7 +169,7 @@ public class StatefulSetOperatorTest
         KubernetesClient mockClient = mock(KubernetesClient.class);
         mocker(mockClient, mockCms);
 
-        StatefulSetOperator op = new StatefulSetOperator(vertx, mockClient, 5_000L, podOperator) {
+        StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator) {
             @Override
             protected boolean shouldIncrementGeneration(StatefulSet current, StatefulSet desired) {
                 return true;
@@ -175,13 +181,13 @@ public class StatefulSetOperatorTest
             }
 
             @Override
-            protected Future<Integer> getGeneration(String namespace, String podName) {
-                return Future.succeededFuture(1);
+            protected Future<String> getUid(String namespace, String podName) {
+                return Future.succeededFuture(UUID.randomUUID().toString());
             }
 
         };
 
-        Future result = op.maybeRestartPod(resource, "my-pod-0");
+        Future result = op.maybeRestartPod(resource, "my-pod-0", false);
         assertTrue(result.failed());
         assertTrue(result.cause() instanceof TimeoutException);
     }
@@ -206,7 +212,7 @@ public class StatefulSetOperatorTest
         KubernetesClient mockClient = mock(KubernetesClient.class);
         mocker(mockClient, mockCms);
 
-        StatefulSetOperator op = new StatefulSetOperator(vertx, mockClient, 5_000L, podOperator) {
+        StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator) {
             @Override
             protected boolean shouldIncrementGeneration(StatefulSet current, StatefulSet desired) {
                 return true;
@@ -218,12 +224,12 @@ public class StatefulSetOperatorTest
             }
 
             @Override
-            protected Future<Integer> getGeneration(String namespace, String podName) {
-                return Future.succeededFuture(1);
+            protected Future<String> getUid(String namespace, String podName) {
+                return Future.succeededFuture(UUID.randomUUID().toString());
             }
         };
 
-        Future result = op.maybeRestartPod(resource, "my-pod-0");
+        Future result = op.maybeRestartPod(resource, "my-pod-0", false);
         assertTrue(result.failed());
         assertTrue(result.cause() instanceof TimeoutException);
     }
@@ -248,7 +254,7 @@ public class StatefulSetOperatorTest
         KubernetesClient mockClient = mock(KubernetesClient.class);
         mocker(mockClient, mockCms);
 
-        StatefulSetOperator op = new StatefulSetOperator(vertx, mockClient, 5_000L, podOperator) {
+        StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator) {
             @Override
             protected boolean shouldIncrementGeneration(StatefulSet current, StatefulSet desired) {
                 return true;
@@ -260,12 +266,12 @@ public class StatefulSetOperatorTest
             }
 
             @Override
-            protected Future<Integer> getGeneration(String namespace, String podName) {
-                return Future.succeededFuture(1);
+            protected Future<String> getUid(String namespace, String podName) {
+                return Future.succeededFuture(UUID.randomUUID().toString());
             }
         };
 
-        Future result = op.maybeRestartPod(resource, "my-pod-0");
+        Future result = op.maybeRestartPod(resource, "my-pod-0", false);
         assertTrue(result.failed());
         assertTrue(result.cause().getMessage().equals("reconcile failed"));
     }

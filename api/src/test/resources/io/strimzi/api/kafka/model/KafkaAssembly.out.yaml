@@ -13,7 +13,25 @@ spec:
       type: "persistent-claim"
       size: "500Gi"
       deleteClaim: false
+    listeners:
+      plain: {}
+      tls:
+        authentication:
+          type: "tls"
+    authorization:
+      type: "simple"
+    config:
+      min.insync.replicas: 3
     brokerRackInitImage: "strimzi/kafka-init:latest"
+    tolerations:
+    - effect: "NoSchedule"
+      key: "key1"
+      operator: "Equal"
+      value: "value1"
+    - effect: "NoSchedule"
+      key: "key2"
+      operator: "Equal"
+      value: "value2"
     livenessProbe:
       initialDelaySeconds: 5
       timeoutSeconds: 1
@@ -25,6 +43,9 @@ spec:
       -Xms: "2G"
       -XX:
         -foo: "bar"
+    resources:
+      limits:
+        memory: "5Gi"
     metrics:
       lowercaseOutputName: true
       rules:
@@ -34,9 +55,15 @@ spec:
         name: "kafka_server_$1_$2_total"
         labels:
           topic: "$3"
-    resources:
-      limits:
-        memory: "5Gi"
+    logging:
+      type: "inline"
+      loggers: {}
+  zookeeper:
+    replicas: 3
+    image: "strimzi/zookeeper:latest"
+    storage:
+      type: "ephemeral"
+    config: {}
     tolerations:
     - effect: "NoSchedule"
       key: "key1"
@@ -46,13 +73,6 @@ spec:
       key: "key2"
       operator: "Equal"
       value: "value2"
-    config:
-      min.insync.replicas: 3
-  zookeeper:
-    replicas: 3
-    image: "strimzi/zookeeper:latest"
-    storage:
-      type: "ephemeral"
     livenessProbe:
       initialDelaySeconds: 5
       timeoutSeconds: 1
@@ -62,20 +82,13 @@ spec:
     jvmOptions:
       -Xmx: "512Mi"
       -Xms: "512Mi"
-    metrics: {}
     resources:
       limits:
         memory: "512Mi"
-    tolerations:
-    - effect: "NoSchedule"
-      key: "key1"
-      operator: "Equal"
-      value: "value1"
-    - effect: "NoSchedule"
-      key: "key2"
-      operator: "Equal"
-      value: "value2"
-    config: {}
+    metrics: {}
+    logging:
+      type: "inline"
+      loggers: {}
   topicOperator:
     watchedNamespace: "my-ns"
     image: "strimzi/topic-operator:latest"

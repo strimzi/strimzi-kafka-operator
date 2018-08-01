@@ -59,6 +59,8 @@ import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.cluster.ClusterOperator;
+import io.strimzi.operator.common.model.Labels;
+
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -89,6 +91,11 @@ import static java.util.Arrays.asList;
 public abstract class AbstractModel {
 
     protected static final Logger log = LogManager.getLogger(AbstractModel.class.getName());
+
+    // the Kubernetes service DNS domain is customizable on cluster creation but it's "cluster.local" by default
+    // there is no clean way to get it from a running application so we are passing it through an env var
+    public static final String KUBERNETES_SERVICE_DNS_DOMAIN =
+            System.getenv().getOrDefault("KUBERNETES_SERVICE_DNS_DOMAIN", "cluster.local");
 
     protected static final int CERTS_EXPIRATION_DAYS = 365;
 
@@ -126,8 +133,8 @@ public abstract class AbstractModel {
     protected String headlessServiceName;
     protected String name;
 
-    protected final int metricsPort = 9404;
-    protected final String metricsPortName = "kafkametrics";
+    protected static final int METRICS_PORT = 9404;
+    protected static final String METRICS_PORT_NAME = "metrics";
     protected boolean isMetricsEnabled;
 
     protected Iterable<Map.Entry<String, Object>> metricsConfig;
@@ -306,7 +313,7 @@ public abstract class AbstractModel {
                     }
                 } else {
                     // incorrect logger
-                    log.warn(key + " is not valid logger");
+                    log.warn(key + " is not a valid logger");
                     return;
                 }
                 if (key.toString().contains("log4j.appender.CONSOLE")) {
@@ -376,11 +383,7 @@ public abstract class AbstractModel {
             data.put(ANCILLARY_CM_KEY_METRICS, new JsonObject(m).toString());
         }
 
-        ConfigMap configMap = createConfigMap(getAncillaryConfigName(), data);
-        if (getLogging() != null) {
-            getLogging().setCm(configMap);
-        }
-        return configMap;
+        return createConfigMap(getAncillaryConfigName(), data);
     }
 
     public String getLogConfigName() {
@@ -968,7 +971,7 @@ public abstract class AbstractModel {
      */
     protected void jvmPerformanceOptions(List<EnvVar> envVars) {
         StringBuilder jvmPerformanceOpts = new StringBuilder();
-        Boolean server = jvmOptions != null ? jvmOptions.getServer() : null;
+        Boolean server = jvmOptions != null ? jvmOptions.isServer() : null;
 
         if (server != null && server) {
             jvmPerformanceOpts.append("-server");
@@ -1048,8 +1051,14 @@ public abstract class AbstractModel {
             sbj.setOrganizationName("io.strimzi");
             sbj.setCommonName(getName());
 
+            Map<String, String> sbjAltNames = new HashMap<>();
+            sbjAltNames.put("DNS.1", getServiceName());
+            sbjAltNames.put("DNS.2", String.format("%s.%s.svc.%s", getServiceName(), namespace, KUBERNETES_SERVICE_DNS_DOMAIN));
+            sbjAltNames.put("DNS.3", String.format("%s.%s.%s.svc.%s", podName.apply(cluster, i), getHeadlessServiceName(), namespace, KUBERNETES_SERVICE_DNS_DOMAIN));
+            sbj.setSubjectAltNames(sbjAltNames);
+
             certManager.generateCsr(brokerKeyFile, brokerCsrFile, sbj);
-            certManager.generateCert(brokerCsrFile, caCert.key(), caCert.cert(), brokerCertFile, CERTS_EXPIRATION_DAYS);
+            certManager.generateCert(brokerCsrFile, caCert.key(), caCert.cert(), brokerCertFile, sbj, CERTS_EXPIRATION_DAYS);
 
             certs.put(podName.apply(cluster, i),
                     new CertAndKey(Files.readAllBytes(brokerKeyFile.toPath()), Files.readAllBytes(brokerCertFile.toPath())));
@@ -1084,7 +1093,7 @@ public abstract class AbstractModel {
      */
     protected Map<String, String> getPrometheusAnnotations()    {
         Map<String, String> annotations = new HashMap<String, String>(3);
-        annotations.put("prometheus.io/port", String.valueOf(metricsPort));
+        annotations.put("prometheus.io/port", String.valueOf(METRICS_PORT));
         annotations.put("prometheus.io/scrape", "true");
         annotations.put("prometheus.io/path", "/metrics");
 

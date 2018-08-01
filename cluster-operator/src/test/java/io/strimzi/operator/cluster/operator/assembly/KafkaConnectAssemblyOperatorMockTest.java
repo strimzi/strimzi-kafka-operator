@@ -11,15 +11,16 @@ import io.strimzi.api.kafka.DoneableKafkaConnectAssembly;
 import io.strimzi.api.kafka.KafkaConnectAssemblyList;
 import io.strimzi.api.kafka.model.KafkaConnectAssembly;
 import io.strimzi.api.kafka.model.KafkaConnectAssemblyBuilder;
-import io.strimzi.operator.cluster.Reconciliation;
-import io.strimzi.operator.cluster.model.AssemblyType;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
-import io.strimzi.operator.cluster.model.Labels;
-import io.strimzi.operator.cluster.operator.resource.ConfigMapOperator;
-import io.strimzi.operator.cluster.operator.resource.CrdOperator;
-import io.strimzi.operator.cluster.operator.resource.DeploymentOperator;
-import io.strimzi.operator.cluster.operator.resource.SecretOperator;
-import io.strimzi.operator.cluster.operator.resource.ServiceOperator;
+import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.ResourceType;
+import io.strimzi.operator.common.operator.MockCertManager;
+import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
+import io.strimzi.operator.common.operator.resource.CrdOperator;
+import io.strimzi.operator.common.operator.resource.DeploymentOperator;
+import io.strimzi.operator.common.operator.resource.SecretOperator;
+import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.strimzi.test.TestUtils;
 
 import io.vertx.core.Vertx;
@@ -89,7 +90,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
 
         LOGGER.info("Reconciling initially -> create");
         Async createAsync = context.async();
-        kco.reconcileAssembly(new Reconciliation("test-trigger", AssemblyType.CONNECT, NAMESPACE, CLUSTER_NAME), ar -> {
+        kco.reconcileAssembly(new Reconciliation("test-trigger", ResourceType.CONNECT, NAMESPACE, CLUSTER_NAME), ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.assertTrue(ar.succeeded());
             context.assertNotNull(mockClient.extensions().deployments().inNamespace(NAMESPACE).withName(KafkaConnectCluster.kafkaConnectClusterName(CLUSTER_NAME)).get());
@@ -107,7 +108,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
         KafkaConnectAssemblyOperator kco = createConnectCluster(context);
         LOGGER.info("Reconciling again -> update");
         Async updateAsync = context.async();
-        kco.reconcileAssembly(new Reconciliation("test-trigger", AssemblyType.CONNECT, NAMESPACE, CLUSTER_NAME), ar -> {
+        kco.reconcileAssembly(new Reconciliation("test-trigger", ResourceType.CONNECT, NAMESPACE, CLUSTER_NAME), ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.assertTrue(ar.succeeded());
             updateAsync.complete();
@@ -118,7 +119,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
                 KafkaConnectAssembly.class, KafkaConnectAssemblyList.class, DoneableKafkaConnectAssembly.class).
                 inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
         Async deleteAsync = context.async();
-        kco.reconcileAssembly(new Reconciliation("test-trigger", AssemblyType.CONNECT, NAMESPACE, CLUSTER_NAME), ar -> {
+        kco.reconcileAssembly(new Reconciliation("test-trigger", ResourceType.CONNECT, NAMESPACE, CLUSTER_NAME), ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.assertTrue(ar.succeeded());
             // TODO: Should verify that all resources were removed from MockKube

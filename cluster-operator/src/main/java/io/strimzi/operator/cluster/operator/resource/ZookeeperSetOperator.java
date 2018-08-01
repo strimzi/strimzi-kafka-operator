@@ -30,7 +30,7 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
 
     @Override
     protected boolean shouldIncrementGeneration(StatefulSet current, StatefulSet desired) {
-        StatefulSetDiff diff = new StatefulSetDiff(current, desired);
+        ResourceOperatorSupplier.StatefulSetDiff diff = new ResourceOperatorSupplier.StatefulSetDiff(current, desired);
         if (diff.changesVolumeClaimTemplates()) {
             log.warn("Changing Zookeeper storage type or size is not possible. The changes will be ignored.");
             diff = revertStorageChanges(current, desired);
@@ -38,7 +38,7 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
         return !diff.isEmpty() && needsRollingUpdate(diff);
     }
 
-    public static boolean needsRollingUpdate(StatefulSetDiff diff) {
+    public static boolean needsRollingUpdate(ResourceOperatorSupplier.StatefulSetDiff diff) {
         // Because for ZK the brokers know about each other via the config, and rescaling requires a rolling update
         if (diff.changesSpecReplicas()) {
             log.debug("Changed #replicas => needs rolling update");

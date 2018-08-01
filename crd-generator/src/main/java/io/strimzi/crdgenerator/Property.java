@@ -4,6 +4,7 @@
  */
 package io.strimzi.crdgenerator;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -60,10 +61,15 @@ class Property implements AnnotatedElement {
         String name = method.getName();
         return name.startsWith("get")
                 && name.length() > 3
-                && !"getClass".equals(name)
+                && isReallyGetterName(method, name)
                 || name.startsWith("is")
                 && name.length() > 2
                 && method.getReturnType().equals(boolean.class);
+    }
+
+    private static boolean isReallyGetterName(Method method, String name) {
+        return !"getClass".equals(name)
+                && !("getDeclaringClass".equals(name) && Enum.class.equals(method.getDeclaringClass()));
     }
 
     private static String propertyName(Method getterMethod) {
@@ -95,7 +101,8 @@ class Property implements AnnotatedElement {
                     && !returnType.equals(void.class);
             boolean isNotInherited = !hasMethod(CustomResource.class, method)
                     && !hasMethod(HasMetadata.class, method);
-            boolean isNotIgnored = !method.isAnnotationPresent(JsonIgnore.class);
+            boolean isNotIgnored = !method.isAnnotationPresent(JsonIgnore.class)
+                    && !method.isAnnotationPresent(JsonAnyGetter.class);
             if (isGetter
                     && isNotInherited
                     && isNotIgnored) {

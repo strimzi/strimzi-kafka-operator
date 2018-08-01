@@ -133,8 +133,8 @@ public class LabelPredicate implements Predicate<HasMetadata> {
     }
 
     @Override
-    public boolean test(HasMetadata configMap) {
-        Map<String, String> mapLabels = configMap.getMetadata().getLabels();
+    public boolean test(HasMetadata resource) {
+        Map<String, String> mapLabels = resource.getMetadata().getLabels();
         if (mapLabels == null) {
             return false;
         } else {

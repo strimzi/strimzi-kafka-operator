@@ -4,6 +4,13 @@
  */
 package io.strimzi.crdgenerator;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 class Schema {
     private Schema() { }
 
@@ -21,6 +28,20 @@ class Schema {
     static boolean isJsonScalarType(Class<?> cls) {
         return cls.isPrimitive()
                 || isBoxedPrimitive(cls)
-                || cls.equals(String.class);
+                || cls.equals(String.class)
+                || cls.isEnum();
+    }
+
+    static List<JsonNode> enumCases(Enum<?>[] values) {
+        try {
+            List<JsonNode> result = new ArrayList<>();
+            ObjectMapper objectMapper = new ObjectMapper();
+            for (Object o : values) {
+                result.add(objectMapper.readTree(objectMapper.writeValueAsString(o)));
+            }
+            return result;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
