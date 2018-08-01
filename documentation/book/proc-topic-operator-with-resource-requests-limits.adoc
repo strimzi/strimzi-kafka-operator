@@ -11,10 +11,6 @@
 
 .Procedure
 
-<<<<<<< Updated upstream
-. Edit the `Kafka` resource specifying in the `Kafka.spec.topicOperator.resources` property the resource requests and limits you want the Topic Operator to have. 
-* Create of update the `Kafka` resource.
-=======
 . Edit the `Kafka` resource specifying in the `Kafka.spec.topicOperator.resources` property the resource requests and limits you want the Topic Operator to have.
 +
 [source,yaml]
@@ -34,7 +30,7 @@ spec:
 ----
 
 . Create of update the `Kafka` resource.
->>>>>>> Stashed changes
+
 
 .Additional resources
 
