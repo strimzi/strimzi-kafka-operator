@@ -44,7 +44,7 @@ On {KubernetesName} this can be done using `kubectl describe`:
 [source,shell]
 kubectl describe deployment strimzi-topic-operator
 +
-On {OpenShiftName} this can be done using `oc applydescribe:
+On {OpenShiftName} this can be done using `oc describe:
 endif::Kubernetes[]
 ifndef::Kubernetes[]
 This can be done using `oc describe`:
