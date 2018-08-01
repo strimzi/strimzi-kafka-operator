@@ -7,7 +7,7 @@ package io.strimzi.operator.cluster.model;
 import java.util.List;
 import java.util.Properties;
 
-import io.strimzi.operator.cluster.InvalidConfigMapException;
+import io.strimzi.operator.cluster.InvalidConfigParameterException;
 import io.vertx.core.json.JsonObject;
 import org.junit.Test;
 
@@ -194,7 +194,7 @@ public class AbstractConfigurationTest {
         try {
             AbstractConfiguration config = new TestConfiguration(configuration);
             fail("Expected it to throw an exception");
-        } catch (InvalidConfigMapException e) {
+        } catch (InvalidConfigParameterException e) {
             assertEquals("var3", e.getKey());
         }
     }

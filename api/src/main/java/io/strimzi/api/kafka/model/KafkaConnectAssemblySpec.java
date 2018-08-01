@@ -165,7 +165,7 @@ public class KafkaConnectAssemblySpec implements Serializable {
         this.tolerations = tolerations;
     }
 
-    @Description("Bootstrap servers to connect to")
+    @Description("Bootstrap servers to connect to. This should be given as a comma separated list of _<hostname>_:\u200D_<port>_ pairs.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty(required = true)
     public String getBootstrapServers() {
