@@ -5,6 +5,7 @@ metadata:
 spec:
   image: foo
   replicas: 6
+  bootstrapServers: kafka:9092
   config:
     name: bar
   tolerations:

@@ -284,12 +284,13 @@ public class ResourceUtils {
      */
     public static KafkaConnectS2IAssembly createKafkaConnectS2ICluster(String clusterCmNamespace, String clusterCmName, int replicas,
                                                                        String image, int healthDelay, int healthTimeout, String metricsCmJson,
-                                                                       String connectConfig, boolean insecureSourceRepo) {
+                                                                       String connectConfig, boolean insecureSourceRepo, String bootstrapServers) {
 
         return new KafkaConnectS2IAssemblyBuilder(createEmptyKafkaConnectS2ICluster(clusterCmNamespace, clusterCmName))
                 .withNewSpec()
                     .withImage(image)
                     .withReplicas(replicas)
+                    .withBootstrapServers(bootstrapServers)
                     .withLivenessProbe(new Probe(healthDelay, healthTimeout))
                     .withReadinessProbe(new Probe(healthDelay, healthTimeout))
                     .withMetrics((Map<String, Object>) TestUtils.fromJson(metricsCmJson, Map.class))

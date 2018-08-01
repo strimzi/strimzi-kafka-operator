@@ -17,7 +17,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.certs.CertManager;
 import io.strimzi.certs.SecretCertProvider;
 import io.strimzi.certs.Subject;
-import io.strimzi.operator.cluster.InvalidConfigMapException;
+import io.strimzi.operator.cluster.InvalidConfigParameterException;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
@@ -235,7 +235,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
                                     lock.release();
                                     log.debug("{}: Lock {} released", reconciliation, lockName);
                                     if (createResult.failed()) {
-                                        if (createResult.cause() instanceof InvalidConfigMapException) {
+                                        if (createResult.cause() instanceof InvalidConfigParameterException) {
                                             log.error(createResult.cause().getMessage());
                                         } else {
                                             log.error("{}: createOrUpdate failed", reconciliation, createResult.cause());
@@ -380,7 +380,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
             log.info("{}: Assembly reconciled", reconciliation);
         } else {
             Throwable cause = result.cause();
-            if (cause instanceof InvalidConfigMapException) {
+            if (cause instanceof InvalidConfigParameterException) {
                 log.warn("{}: Failed to reconcile {}", reconciliation, cause.getMessage());
             } else {
                 log.warn("{}: Failed to reconcile", reconciliation, cause);

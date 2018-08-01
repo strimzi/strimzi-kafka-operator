@@ -43,6 +43,7 @@ public class KafkaConnectS2IClusterTest {
     private final int healthTimeout = 10;
     private final String metricsCmJson = "{\"animal\":\"wombat\"}";
     private final String configurationJson = "{\"foo\":\"bar\"}";
+    private final String bootstrapServers = "foo-kafka:9092";
     private final String expectedConfiguration = "group.id=connect-cluster" + LINE_SEPARATOR +
             "key.converter=org.apache.kafka.connect.json.JsonConverter" + LINE_SEPARATOR +
             "internal.key.converter.schemas.enable=false" + LINE_SEPARATOR +
@@ -67,7 +68,7 @@ public class KafkaConnectS2IClusterTest {
     private final boolean insecureSourceRepo = false;
 
     private final KafkaConnectS2IAssembly cm = ResourceUtils.createKafkaConnectS2ICluster(namespace, cluster, replicas, image,
-            healthDelay, healthTimeout, metricsCmJson, configurationJson, insecureSourceRepo);
+            healthDelay, healthTimeout, metricsCmJson, configurationJson, insecureSourceRepo, bootstrapServers);
     private final KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(cm);
 
     @Rule
@@ -92,6 +93,7 @@ public class KafkaConnectS2IClusterTest {
         List<EnvVar> expected = new ArrayList<EnvVar>();
         expected.add(new EnvVarBuilder().withName(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_CONFIGURATION).withValue(expectedConfiguration).build());
         expected.add(new EnvVarBuilder().withName(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_METRICS_ENABLED).withValue(String.valueOf(true)).build());
+        expected.add(new EnvVarBuilder().withName(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_BOOTSTRAP_SERVERS).withValue(bootstrapServers).build());
         expected.add(new EnvVarBuilder().withName(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION).withValue("1.0").build());
         return expected;
     }
@@ -112,7 +114,7 @@ public class KafkaConnectS2IClusterTest {
     }
 
     @Test
-    public void testFromConfigMap() {
+    public void testFromCrd() {
         assertEquals(kc.kafkaConnectClusterName(cluster) + ":latest", kc.image);
         assertEquals(replicas, kc.replicas);
         assertEquals(image, kc.sourceImageBaseName + ":" + kc.sourceImageTag);
@@ -121,6 +123,7 @@ public class KafkaConnectS2IClusterTest {
         assertEquals(healthDelay, kc.livenessInitialDelay);
         assertEquals(healthTimeout, kc.livenessTimeout);
         assertEquals(expectedConfiguration, kc.getConfiguration().getConfiguration());
+        assertEquals(bootstrapServers, kc.bootstrapServers);
         assertFalse(kc.isInsecureSourceRepository());
     }
 
@@ -218,7 +221,7 @@ public class KafkaConnectS2IClusterTest {
     @Test
     public void testInsecureSourceRepo() {
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(ResourceUtils.createKafkaConnectS2ICluster(namespace, cluster, replicas, image,
-                healthDelay, healthTimeout,  metricsCmJson, configurationJson, true));
+                healthDelay, healthTimeout,  metricsCmJson, configurationJson, true, bootstrapServers));
 
         assertTrue(kc.isInsecureSourceRepository());
 

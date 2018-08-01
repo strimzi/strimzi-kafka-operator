@@ -5,10 +5,10 @@
 
 package io.strimzi.operator.cluster;
 
-public class InvalidConfigMapException extends RuntimeException {
+public class InvalidConfigParameterException extends RuntimeException {
 
     private String key;
-    public InvalidConfigMapException(String key, String message) {
+    public InvalidConfigParameterException(String key, String message) {
         super(key + message);
         this.key = key;
     }

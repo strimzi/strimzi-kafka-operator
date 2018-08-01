@@ -4,6 +4,7 @@ metadata:
   name: jvm-resource
 spec:
   replicas: 1
+  bootstrapServers: connect-tests-kafka-bootstrap:9092
   resources:
     limits:
       memory: 400M
@@ -18,5 +19,3 @@ spec:
     "-XX": {
       "UseG1GC": "true"
     }
-  config:
-    bootstrap.servers: connect-tests-kafka-bootstrap:9092

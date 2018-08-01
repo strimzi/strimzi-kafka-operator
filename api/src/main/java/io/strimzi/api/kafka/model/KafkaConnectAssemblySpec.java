@@ -36,7 +36,7 @@ public class KafkaConnectAssemblySpec implements Serializable {
     public static final String DEFAULT_IMAGE =
             System.getenv().getOrDefault("STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE", "strimzi/kafka-connect:latest");
 
-    public static final String FORBIDDEN_PREFIXES = "ssl., sasl., security., listeners, plugin.path, rest.";
+    public static final String FORBIDDEN_PREFIXES = "ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers";
 
     private Map<String, Object> config = new HashMap<>(0);
 
@@ -50,6 +50,7 @@ public class KafkaConnectAssemblySpec implements Serializable {
     private Map<String, Object> metrics = new HashMap<>(0);
     private Affinity affinity;
     private List<Toleration> tolerations;
+    private String bootstrapServers;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The number of pods in the Kafka Connect group.")
@@ -59,7 +60,6 @@ public class KafkaConnectAssemblySpec implements Serializable {
     }
 
     @Description("The Kafka Connect configuration. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)
-    @JsonProperty(required = true)
     public Map<String, Object> getConfig() {
         return config;
     }
@@ -163,6 +163,17 @@ public class KafkaConnectAssemblySpec implements Serializable {
 
     public void setTolerations(List<Toleration> tolerations) {
         this.tolerations = tolerations;
+    }
+
+    @Description("Bootstrap servers to connect to. This should be given as a comma separated list of _<hostname>_:\u200D_<port>_ pairs.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty(required = true)
+    public String getBootstrapServers() {
+        return bootstrapServers;
+    }
+
+    public void setBootstrapServers(String bootstrapServers) {
+        this.bootstrapServers = bootstrapServers;
     }
 
     @JsonAnyGetter

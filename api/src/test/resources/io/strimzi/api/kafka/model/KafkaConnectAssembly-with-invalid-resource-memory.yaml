@@ -5,5 +5,6 @@ metadata:
 spec:
   image: foo
   replicas: oops, this is not an int
+  bootstrapServers: kafka:9092
   config:
     name: bar

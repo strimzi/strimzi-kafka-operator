@@ -265,6 +265,8 @@ spec:
                   type: string
             metrics:
               type: object
+            bootstrapServers:
+              type: string
             config:
               type: object
             resources:
@@ -289,4 +291,4 @@ spec:
                       type: string
                       pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
           required:
-          - config
+          - bootstrapServers

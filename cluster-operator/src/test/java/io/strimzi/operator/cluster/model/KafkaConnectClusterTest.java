@@ -12,10 +12,8 @@ import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.strimzi.api.kafka.model.KafkaConnectAssembly;
 import io.strimzi.api.kafka.model.KafkaConnectAssemblyBuilder;
 import io.strimzi.api.kafka.model.Probe;
-import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.test.TestUtils;
 import org.junit.Rule;
 import org.junit.Test;
@@ -38,6 +36,7 @@ public class KafkaConnectClusterTest {
     private final int healthTimeout = 10;
     private final String metricsCmJson = "{\"animal\":\"wombat\"}";
     private final String configurationJson = "{\"foo\":\"bar\"}";
+    private final String bootstrapServers = "foo-kafka:9092";
     private final String expectedConfiguration = "group.id=connect-cluster" + LINE_SEPARATOR +
             "key.converter=org.apache.kafka.connect.json.JsonConverter" + LINE_SEPARATOR +
             "internal.key.converter.schemas.enable=false" + LINE_SEPARATOR +
@@ -60,7 +59,6 @@ public class KafkaConnectClusterTest {
             "internal.value.converter.schemas.enable=false" + LINE_SEPARATOR +
             "internal.value.converter=org.apache.kafka.connect.json.JsonConverter" + LINE_SEPARATOR;
 
-    private CertManager certManager = new MockCertManager();
     private final KafkaConnectAssembly resource = new KafkaConnectAssemblyBuilder(ResourceUtils.createEmptyKafkaConnectCluster(namespace, cluster))
             .withNewSpec()
             .withMetrics((Map<String, Object>) TestUtils.fromJson(metricsCmJson, Map.class))
@@ -69,6 +67,7 @@ public class KafkaConnectClusterTest {
             .withReplicas(replicas)
             .withReadinessProbe(new Probe(healthDelay, healthTimeout))
             .withLivenessProbe(new Probe(healthDelay, healthTimeout))
+            .withBootstrapServers(bootstrapServers)
             .endSpec()
             .build();
     private final KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource);
@@ -96,9 +95,10 @@ public class KafkaConnectClusterTest {
 
     protected List<EnvVar> getExpectedEnvVars() {
 
-        List<EnvVar> expected = new ArrayList<EnvVar>();
+        List<EnvVar> expected = new ArrayList<>();
         expected.add(new EnvVarBuilder().withName(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_CONFIGURATION).withValue(expectedConfiguration).build());
         expected.add(new EnvVarBuilder().withName(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_METRICS_ENABLED).withValue(String.valueOf(true)).build());
+        expected.add(new EnvVarBuilder().withName(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_BOOTSTRAP_SERVERS).withValue(bootstrapServers).build());
         expected.add(new EnvVarBuilder().withName(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION).withValue("1.0").build());
         return expected;
     }
@@ -117,7 +117,7 @@ public class KafkaConnectClusterTest {
     }
 
     @Test
-    public void testFromConfigMap() {
+    public void testFromCrd() {
         assertEquals(replicas, kc.replicas);
         assertEquals(image, kc.image);
         assertEquals(healthDelay, kc.readinessInitialDelay);
@@ -125,6 +125,7 @@ public class KafkaConnectClusterTest {
         assertEquals(healthDelay, kc.livenessInitialDelay);
         assertEquals(healthTimeout, kc.livenessTimeout);
         assertEquals(expectedConfiguration, kc.getConfiguration().getConfiguration());
+        assertEquals(bootstrapServers, kc.bootstrapServers);
     }
 
     @Test
