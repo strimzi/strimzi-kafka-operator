@@ -8,6 +8,7 @@
   * Authorization
   * Authentication 
 * User operator
+* Kafka 2.0.0
 
 ## 0.5.0
 
