@@ -23,3 +23,4 @@ spec:
   metrics: {}
   config:
     name: "bar"
+  bootstrapServers: "kafka:9092"

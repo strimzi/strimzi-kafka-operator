@@ -6,5 +6,4 @@ metadata:
     type: kafka-connect
 spec:
   replicas: 1
-  config:
-    bootstrap.servers: connect-tests-kafka-bootstrap:9092
+  bootstrapServers: connect-tests-kafka-bootstrap:9092

@@ -54,12 +54,10 @@ public class ConnectST extends AbstractST {
     public static final String KAFKA_CLUSTER_NAME = "connect-tests";
     public static final String CONNECT_CLUSTER_NAME = "my-cluster";
     public static final String KAFKA_CONNECT_BOOTSTRAP_SERVERS = KAFKA_CLUSTER_NAME + "-kafka-bootstrap:9092";
-    public static final String KAFKA_CONNECT_BOOTSTRAP_SERVERS_ESCAPED = KAFKA_CLUSTER_NAME + "-kafka-bootstrap\\:9092";
     private static final String EXPECTED_CONFIG = "group.id=connect-cluster\\n" +
             "key.converter=org.apache.kafka.connect.json.JsonConverter\\n" +
             "internal.key.converter.schemas.enable=false\\n" +
             "value.converter=org.apache.kafka.connect.json.JsonConverter\\n" +
-            "bootstrap.servers=" + KAFKA_CONNECT_BOOTSTRAP_SERVERS_ESCAPED + "\\n" +
             "config.storage.topic=connect-cluster-configs\\n" +
             "status.storage.topic=connect-cluster-status\\n" +
             "offset.storage.topic=connect-cluster-offsets\\n" +
@@ -92,6 +90,8 @@ public class ConnectST extends AbstractST {
         String podName = kubeClient.list("Pod").stream().filter(n -> n.startsWith("my-cluster-connect-")).findFirst().get();
         String kafkaPodJson = kubeClient.getResourceAsJson("pod", podName);
 
+        assertEquals(KAFKA_CONNECT_BOOTSTRAP_SERVERS.replaceAll("\\p{P}", ""), getValueFromJson(kafkaPodJson,
+                globalVariableJsonPathBuilder("KAFKA_CONNECT_BOOTSTRAP_SERVERS")));
         assertEquals(EXPECTED_CONFIG.replaceAll("\\p{P}", ""), getValueFromJson(kafkaPodJson,
                 globalVariableJsonPathBuilder("KAFKA_CONNECT_CONFIGURATION")));
         testDockerImagesForKafkaConnect();

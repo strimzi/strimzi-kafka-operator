@@ -46,7 +46,7 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
         try {
             createDelete(KafkaConnectAssembly.class, "KafkaConnectAssembly-with-missing-required-property.yaml");
         } catch (KubeClusterException.InvalidResource e) {
-            assertTrue(e.getMessage(), e.getMessage().contains("spec.config in body is required"));
+            assertTrue(e.getMessage(), e.getMessage().contains("spec.bootstrapServers in body is required"));
         }
     }
 

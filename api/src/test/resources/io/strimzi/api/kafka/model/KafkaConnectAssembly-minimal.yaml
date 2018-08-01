@@ -3,5 +3,4 @@ kind: KafkaConnect
 metadata:
   name: test-kafka-connect
 spec:
-  config:
-    name: bar
+  bootstrapServers: kafka:9092
