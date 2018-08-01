@@ -6,7 +6,7 @@ metadata:
     type: kafka-connect-s2i
 spec:
   replicas: 1
+  bootstrapServers: connect-s2i-tests-kafka-bootstrap:9092
   config:
-    bootstrap.servers: connect-s2i-tests-kafka-bootstrap:9092
     key.converter.schemas.enable: false
     value.converter.schemas.enable: false
