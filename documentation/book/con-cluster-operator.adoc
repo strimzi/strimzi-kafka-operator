@@ -1,4 +1,4 @@
-[id='cluster-operator-{context}']
+[id='overview-cluster-operator-{context}']
 = Overview of Cluster Operator
 
 You can deploy a Kafka cluster along with a Zookeeper ensemble using Cluster Operator. As part of the Kafka cluster, it can also deploy the Topic Operator which provides operator-style topic management via Custom Resources. Using Cluster Operator, you can deploy a Kafka Connect cluster which connects to an existing Kafka cluster. On {OpenShiftName}, you can create a cluster and connect to an existing Kafka cluster using the Source2Image feature, which provides an easy way of including more connectors.
