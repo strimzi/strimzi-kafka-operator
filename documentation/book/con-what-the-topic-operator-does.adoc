@@ -8,8 +8,6 @@ include::common/attributes.adoc[]
 = What the Topic Operator does
 
 The Topic Operator provides a way of managing topics in a Kafka cluster via {ProductPlatformName} resources.
-//  The Topic Operator is deployed as a process running inside a {ProductPlatformName} cluster.
-// It can be deployed through the Cluster Operator or "manually" through provided YAML files.
 
 image::topic_operator.png[Topic Operator]
 
@@ -27,7 +25,7 @@ And also, in the other direction:
 * if a topic is deleted from the Kafka cluster, the operator will create the `KafkaTopic` describing it
 * if a topic in the Kafka cluster is changed, the operator will update the `KafkaTopic` describing it
 
-This is beneficial to a {ProductPlatformName}-centric style of deploying applications because it allows you to declare a `KafkaTopic` as part of your application's deployment and the operator will take care of creating the topic for you.
+This is beneficial to an {ProductPlatformName}-centric style of deploying applications because it allows you to declare a `KafkaTopic` as part of your application's deployment and the operator will take care of creating the topic for you.
 Your application just needs to deal with producing or consuming from the necessary topics.
 
 If the topic be reconfigured or reassigned to different Kafka nodes, the `KafkaTopic` will always be up to date.

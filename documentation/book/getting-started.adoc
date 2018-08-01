@@ -45,8 +45,8 @@ include::assembly-kafka-connect.adoc[leveloffset=+1]
 
 == Topic Operator
 
-{ProductName} uses a component called the Topic Operator to manage topics in the Kafka cluster.
-The Topic Operator is deployed as a process running inside a {ProductPlatformName} cluster.
+{ProductName} uses a component called the Topic Operator to manage topics in the Kafka cluster. 
+The Topic Operator is deployed as a process running inside an {ProductPlatformName} cluster. 
 To create a new Kafka topic, a `KafkaTopic` custom resource with the related configuration (name, partitions, replication factor, ...) has to be created.
 Based on the information in that `KafkaTopic`, the Topic Operator will create a corresponding Kafka topic in the cluster.
 

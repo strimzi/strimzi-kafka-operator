@@ -27,6 +27,8 @@ grep_check '[^[:alpha:]]and/or[^[:alpha:]]' "Use either 'and' or 'or', but not '
 grep_check '[^[:alpha:]](do|is|are|won|have|ca|does|did|had|has|must)n'"'"'?t[^[:alpha:]]' "Avoid 'nt contraction"
 grep_check '[^[:alpha:]]it'"'"'s[^[:alpha:]]' "Avoid it's contraction"
 grep_check '[^[:alpha:]]can not[^[:alpha:]]' "Use 'cannot' not 'can not'"
+grep_check '\<a {ProductPlatformName}' "The article should be 'an' {ProductPlatformName}"
+grep_check '\<a {ProductPlatformLongName}' "The article should be 'an' {ProductPlatformLongName}"
 
 if [ $fatal -gt 0 ]; then
   echo "${fatal} docs problems found."
