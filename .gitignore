@@ -20,4 +20,3 @@ documentation/html/**
 documentation/htmlnoheader/**
 
 helm-charts/strimzi-kafka-operator-*.*.*.tgz
-helm-charts/strimzi-latest/
