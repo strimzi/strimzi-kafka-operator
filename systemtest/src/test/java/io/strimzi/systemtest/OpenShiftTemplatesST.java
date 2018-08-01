@@ -47,7 +47,7 @@ import static org.junit.Assert.assertNull;
  */
 @RunWith(StrimziRunner.class)
 @OpenShiftOnly
-@Namespace(OpenShiftTemplatesIT.NAMESPACE)
+@Namespace(OpenShiftTemplatesST.NAMESPACE)
 @Resources(value = "../examples/templates/cluster-operator", asAdmin = true)
 @Resources(value = "../examples/templates/topic-operator", asAdmin = true)
 @Resources(value = TestUtils.CRD_KAFKA, asAdmin = true)
@@ -55,7 +55,7 @@ import static org.junit.Assert.assertNull;
 @Resources(value = TestUtils.CRD_KAFKA_CONNECT_S2I, asAdmin = true)
 @Resources(value = TestUtils.CRD_TOPIC, asAdmin = true)
 @Resources(value = "src/rbac/role-edit-kafka.yaml", asAdmin = true)
-public class OpenShiftTemplatesIT {
+public class OpenShiftTemplatesST {
 
     public static final String NAMESPACE = "template-test";
 

@@ -22,15 +22,15 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 @RunWith(StrimziRunner.class)
 @JUnitGroup(name = "regression")
-@Namespace(RecoveryClusterIT.NAMESPACE)
+@Namespace(RecoveryST.NAMESPACE)
 @ClusterOperator
 @KafkaFromClasspathYaml
-public class RecoveryClusterIT extends AbstractClusterIT {
+public class RecoveryST extends AbstractST {
 
     static final String NAMESPACE = "recovery-cluster-test";
     static final String CLUSTER_NAME = "recovery-cluster";
 
-    private static final Logger LOGGER = LogManager.getLogger(RecoveryClusterIT.class);
+    private static final Logger LOGGER = LogManager.getLogger(RecoveryST.class);
 
     @Test
     public void testRecoveryFromTopicOperatorDeletion() {

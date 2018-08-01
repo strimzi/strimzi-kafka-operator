@@ -16,11 +16,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(StrimziRunner.class)
-@Namespace(HelmChartClusterIT.NAMESPACE)
+@Namespace(HelmChartST.NAMESPACE)
 @ClusterOperator(useHelmChart = true)
-public class HelmChartClusterIT extends KafkaClusterIT {
+public class HelmChartST extends KafkaST {
 
-    private static final Logger LOGGER = LogManager.getLogger(HelmChartClusterIT.class);
+    private static final Logger LOGGER = LogManager.getLogger(HelmChartST.class);
 
     static final String NAMESPACE = "helm-chart-cluster-test";
     private static final String CLUSTER_NAME = "my-cluster";

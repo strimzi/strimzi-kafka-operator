@@ -58,11 +58,11 @@ import static org.junit.Assert.assertThat;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
 @RunWith(StrimziRunner.class)
-@Namespace(KafkaClusterIT.NAMESPACE)
+@Namespace(KafkaST.NAMESPACE)
 @ClusterOperator
-public class KafkaClusterIT extends AbstractClusterIT {
+public class KafkaST extends AbstractST {
 
-    private static final Logger LOGGER = LogManager.getLogger(KafkaClusterIT.class);
+    private static final Logger LOGGER = LogManager.getLogger(KafkaST.class);
 
     public static final String NAMESPACE = "kafka-cluster-test";
     private static final String TOPIC_NAME = "test-topic";
