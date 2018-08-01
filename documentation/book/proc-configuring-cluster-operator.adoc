@@ -12,7 +12,7 @@
 include::common/attributes.adoc[]
 
 [id='operator-configuration-{context}']
-= Configurin Cluster Operator
+= Configuring Cluster Operator
 
 You can configure the Cluster Operator using the following environment variables.
 

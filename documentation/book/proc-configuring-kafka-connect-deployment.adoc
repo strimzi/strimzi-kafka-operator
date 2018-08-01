@@ -1,11 +1,33 @@
+// Module included in the following assemblies:
+//
+// <List assemblies here, each on a new line>
+
+// Base the file name and the ID on the module title. For example:
+// * file name: assembly-cluster-operator.adoc
+// * ID: [id='cluster-operator-{context}']
+// * Title: = Configure Cluster Operator
+
+// The ID is used as an anchor for linking to the module. Avoid changing it after the module has been published to ensure existing links are not broken.
+
+include::common/attributes.adoc[]
+
 [id='kafka-connect-resource-{context}']
-= Kafka Connect
+= Configuring Kafka Connect cluster deployment
 
 The operator watches for `KafkaConnect` resource in order to find and get configuration for a Kafka Connect cluster to deploy.
 
 The `KafkaConnectS2I` resource provides configuration for a Kafka Connect cluster deployment using Build and Source2Image features and works only with {OpenShiftName}.
 
 Labels that are applied to the `KafkaConnect` or `KafkaConnectS2I` resources will also be applied to the {ProductPlatformName} resources making up the Kafka Connect cluster. This provides a convenient mechanism for those resource to be labelled in the users preferred way.
+
+.Prerequisites
+
+//Add prerequisites if any
+
+.Procedure
+
+//Add a procedure for defining clusterroles
+
 
 The `KafkaConnect` resource supports the following within its `spec`:
 

@@ -14,9 +14,9 @@ include::con-reconciliation.adoc[leveloffset=+1]
 
 include::con-resource-format.adoc[leveloffset=+1]
 
-include::con-resource-kafka.adoc[leveloffset=+2]
+include::proc-configuring-kafka-deployment.adoc[leveloffset=+2]
 
-include::con-resource-kafka-connect.adoc[leveloffset=+2]
+include::proc-configuring-kafka-connect-deployment.adoc[leveloffset=+2]
 
 include::proc-configuring-kafka-connect.adoc[leveloffset=+3]
 
