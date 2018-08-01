@@ -28,23 +28,23 @@ public class KafkaCrdIT extends AbstractCrdIT {
 
     @Test
     public void testKafka() {
-        createDelete(Kafka.class, "KafkaAssembly.yaml");
+        createDelete(Kafka.class, "Kafka.yaml");
     }
 
     @Test
     public void testKafkaMinimal() {
-        createDelete(Kafka.class, "KafkaAssembly-minimal.yaml");
+        createDelete(Kafka.class, "Kafka-minimal.yaml");
     }
 
     @Test
     public void testKafkaWithExtraProperty() {
-        createDelete(Kafka.class, "KafkaAssembly-with-extra-property.yaml");
+        createDelete(Kafka.class, "Kafka-with-extra-property.yaml");
     }
 
     @Test
     public void testKafkaWithMissingRequired() {
         try {
-            createDelete(Kafka.class, "KafkaAssembly-with-missing-required-property.yaml");
+            createDelete(Kafka.class, "Kafka-with-missing-required-property.yaml");
         } catch (KubeClusterException.InvalidResource e) {
             assertTrue(e.getMessage().contains("spec.zookeeper in body is required"));
             assertTrue(e.getMessage().contains("spec.kafka in body is required"));
@@ -54,7 +54,7 @@ public class KafkaCrdIT extends AbstractCrdIT {
     @Test
     public void testKafkaWithInvalidResourceMemory() {
         try {
-            createDelete(Kafka.class, "KafkaAssembly-with-invalid-resource-memory.yaml");
+            createDelete(Kafka.class, "Kafka-with-invalid-resource-memory.yaml");
         } catch (KubeClusterException.InvalidResource e) {
             assertTrue(e.getMessage().contains("spec.kafka.resources.limits.memory in body should match '[0-9]+([kKmMgGtTpPeE]i?)?$'"));
         }
