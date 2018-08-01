@@ -31,7 +31,7 @@
 
 // Helm Chart
 :ChartName: strimzi-kafka-operator
-:ChartReleaseDownload: https://github.com/strimzi/strimzi-kafka-operator/releases/download/{ProductVersion}/{ChartName}-{ProductVersion}.tgz
+:ChartReleaseDownload: {ChartName}-{ProductVersion}.tgz
 
 // External links
 :KafkaRacks: https://kafka.apache.org/documentation/#basic_ops_racks[Kafka racks documentation^]
@@ -55,6 +55,7 @@
 
 // Section enablers
 :Kubernetes:
+:Helm:
 :InstallationAppendix:
 :MetricsAppendix:
 :Downloading:

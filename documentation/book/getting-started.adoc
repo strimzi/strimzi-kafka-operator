@@ -42,21 +42,6 @@ include::assembly-cluster-operator.adoc[leveloffset=+1]
 :context: str
 include::assembly-kafka-cluster.adoc[leveloffset=+1]
 
-=== Deploying with Helm Charts
-
-Instead of using the example YAML files you can also install the Cluster Operator by using its Helm Chart.
-The Helm Chart is included in the {ProductName} release artifact in an unarchived form.
-It is also available as a tarball archive from {ReleaseDownload}.
-You may choose to install the Cluster Operator using either method, but installing it directly from the GitHub release requires the least amount of steps.
-
-[source,shell,subs=attributes+]
-helm install {ChartReleaseDownload}
-
-To verify whether the Cluster Operator has deployed successfully you can use the Helm command line tool to discover its release name and deployment status.
-
-[source,shell]
-helm ls
-
 == Kafka Connect
 
 The Cluster Operator can also deploy a https://kafka.apache.org/documentation/#connect[Kafka Connect] cluster which can be used with either of the Kafka broker deployments described above.
