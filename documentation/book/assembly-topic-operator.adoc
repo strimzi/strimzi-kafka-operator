@@ -19,11 +19,6 @@ include::con-how-the-topic-operator-works.adoc[leveloffset=+1]
 :context: str
 include::ref-topic-operator-usage-recommendation.adoc[leveloffset=+1]
 
-[id='format-of-the-kafkatopic-{context}']
-== Format of the `KafkaTopic`
-
-For detailed reference of the API for `KafkaTopic` see xref:type-KafkaTopic-str[].
-
 :context: str
 include::proc-creating-a-topic.adoc[leveloffset=+1]
 
@@ -33,8 +28,8 @@ include::proc-changing-a-topic.adoc[leveloffset=+1]
 :context: str
 include::proc-deleting-a-topic.adoc[leveloffset=+1]
 
-include::proc-topic-operator-with-resource-requests-limits.adoc[leveloffset=+2]
+include::proc-topic-operator-with-resource-requests-limits.adoc[leveloffset=+1]
 
-include::ref-topic-operator-environment.adoc[leveloffset=+2]
+include::ref-topic-operator-environment.adoc[leveloffset=+1]
 
 :context: {parent-context}

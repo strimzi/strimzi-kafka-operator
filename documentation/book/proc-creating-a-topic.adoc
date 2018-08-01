@@ -39,28 +39,29 @@ NOTE: The `KafkaTopic.spec.partitions` cannot be decreased.
 . Create the `KafkaTopic` resource in {ProductPlatformName}.
 +
 ifdef::Kubernetes[]
-In {KubernetesName} this can be done using `kubectl`
+In {KubernetesName} this can be done using `kubectl create`
 +
-.Replacing the `KafkaTopic` resource using `kubctl create`
+.Creating the `KafkaTopic` resource using `kubctl create`
 [source,shell,subs=+quotes]
 ----
 kubectl create -f _<your-file>_
 ----
 +
-In {OpenShiftName} this can be done using `oc`
+In {OpenShiftName} this can be done using `oc create`
 endif::Kubernetes[]
 ifndef::Kubernetes[]
-This can be done using `oc`
+This can be done using `oc create`
 +
 endif::Kubernetes[]
 +
-.Replacing the `KafkaTopic` resource using `oc create`
+.Creating the `KafkaTopic` resource using `oc create`
 [source,shell,subs=+quotes]
 ----
 oc create -f _<your-file>_
 ----
 
 .Additional resources
+* For more information about the API for `KafkaTopics`, see xref:type-KafkaTopic[`KafkaTopic` API documentation]
 * For more information about deploying a Kafka cluster using the Cluster Operator, see xref:cluster-operator-str[]
 * For more information about deploying the Topic Operator using the Cluster Operator, see xref:deploying-the-topic-operator-using-the-cluster-operator-str[]
 //* For more information about deploying the Topic Operator standalone, see xref:deploying-the-topic-operator-standalone-str[]

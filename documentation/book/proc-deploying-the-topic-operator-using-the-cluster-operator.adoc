@@ -14,9 +14,31 @@
 
 . Edit the `Kafka` resource ensuring it has a `Kafka.spec.topicOperator` object that configures the Topic Operator how you want.
 
-. Create or update the Kafka resource in {ProductPlatformName} in the usual way.
+. Create or update the Kafka resource in {ProductPlatformName}.
++
+ifdef::Kubernetes[]
+In {KubernetesName} this can be done using `kubectl apply`.
++
+.Creating or updating the `KafkaTopic` resource using `kubctl apply`
+[source,shell,subs=+quotes]
+----
+kubectl apply -f _<your-file>_
+----
++
+In {OpenShiftName} this can be done using `oc apply`.
+endif::Kubernetes[]
+ifndef::Kubernetes[]
+This can be done using `oc apply`.
++
+endif::Kubernetes[]
++
+.Creating or replacing the `KafkaTopic` resource using `oc apply`
+[source,shell,subs=+quotes]
+----
+oc apply -f _<your-file>_
+----
 
 .Additional resources
 
 * For more information about deploying the Cluster Operator, see xref:cluster-operator-str[]
-* For more information about the `Kafka.spec.topicOperator` object used to configured the Topic Operator when deployed by the Cluster Operator, see xref:type-TopicOperator[]
+* For more information about the `Kafka.spec.topicOperator` object used to configure the Topic Operator when deployed by the Cluster Operator, see xref:type-TopicOperator[]

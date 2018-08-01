@@ -98,7 +98,7 @@ When the Topic Operator is deployed by the Cluster Operator it will be configure
 
 NOTE: When the Topic Operator is deployed manually the `strimzi.io/cluster` label is not necessary.
 
-The `KafkaTopic` contains the topic configuration in a specific format, described in xref:format-of-the-kafkatopic-{context}[Format of the `KafkaTopic`].
+The `KafkaTopic` contains the topic configuration in a specific format, described in xref:type-KafkaTopic[`KafkaTopic` API reference].
 
 === Logging
 The `logging` field allows the configuration of loggers. These loggers are listed below.
