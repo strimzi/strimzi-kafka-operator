@@ -1,5 +1,18 @@
+// Module included in the following assemblies:
+//
+// <List assemblies here, each on a new line>
+
+// Base the file name and the ID on the module title. For example:
+// * file name: assembly-cluster-operator.adoc
+// * ID: [id='cluster-operator-{context}']
+// * Title: = Configure Cluster Operator
+
+// The ID is used as an anchor for linking to the module. Avoid changing it after the module has been published to ensure existing links are not broken.
+
+include::common/attributes.adoc[]
+
 [id='define-cluster-roles-{context}']
-= Define `ClusterRoles`
+= Defining `ClusterRoles`
 
 The Cluster Operator needs to operate using `ClusterRoles` that gives access to the necessary resources.
 Depending on the {ProductPlatformName} cluster setup, a cluster administrator may need to create the `ClusterRoles`.
@@ -9,13 +22,22 @@ Cluster administrator rights are only needed for the creation of the `ClusterRol
 
 The `ClusterRoles` follow the _principle of least privilege_ and contain only those privileges needed by the Cluster Operator to operate Kafka, Kafka Connect, and Zookeeper clusters. The first set of assigned privileges allow the Cluster Operator to manage {ProductPlatformName} resources such as `StatefulSets`, `Deployments`, `Pods`, and `ConfigMaps`.
 
+.Prerequisites
+
+//Add prerequisites if any
+
+.Procedure
+
+//Add a procedure for defining clusterroles
+
+
 [source,yaml,options="nowrap"]
 .Example `ClusterRole` for the Cluster Operator
 ----
 include::examples/install/cluster-operator/02-ClusterRole-strimzi-cluster-operator-role.yaml[]
 ----
 
-The `strimzi-kafka-broker` `ClusterRole` represents the access needed by the init container in Kafka pods that is used for the rack feature. As described in the xref:delegated-privileges-{context}[Delegated Privileges] section, this role is also needed by the Cluster Operator in order to be able to delegate this access.
+The `strimzi-kafka-broker` `ClusterRole` represents the access needed by the init container in Kafka pods that is used for the rack feature. As described in the xref:delegated-privileges-{context}[] section, this role is also needed by the Cluster Operator in order to be able to delegate this access.
 
 [source,yaml,options="nowrap"]
 .`ClusterRole` for the Cluster Operator allowing it to delegate access to {ProductPlatformName} nodes to the Kafka broker pods
@@ -23,7 +45,7 @@ The `strimzi-kafka-broker` `ClusterRole` represents the access needed by the ini
 include::examples/install/cluster-operator/03-ClusterRole-strimzi-kafka-broker.yaml[]
 ----
 
-The `strimzi-topic-operator` `ClusterRole` represents the access needed by the Topic Operator. As described in the xref:delegated-privileges-{context}[Delegated Privileges] section, this role is also needed by the Cluster Operator in order to be able to delegate this access.
+The `strimzi-topic-operator` `ClusterRole` represents the access needed by the Topic Operator. As described in the xref:delegated-privileges-{context}[] section, this role is also needed by the Cluster Operator in order to be able to delegate this access.
 
 [source,yaml,options="nowrap"]
 .`ClusterRole` for the Cluster Operator allowing it to delegate access to events to the Topic Operator

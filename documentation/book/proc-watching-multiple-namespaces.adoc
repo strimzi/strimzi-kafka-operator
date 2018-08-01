@@ -1,5 +1,18 @@
+// Module included in the following assemblies:
+//
+// <List assemblies here, each on a new line>
+
+// Base the file name and the ID on the module title. For example:
+// * file name: assembly-cluster-operator.adoc
+// * ID: [id='cluster-operator-{context}']
+// * Title: = Configure Cluster Operator
+
+// The ID is used as an anchor for linking to the module. Avoid changing it after the module has been published to ensure existing links are not broken.
+
+include::common/attributes.adoc[]
+
 [id='watching-multiple-namespaces-{context}']
-= Watching multiple namespaces
+= Configuring Cluster Operator to watch multiple namespaces
 
 The `STRIMZI_NAMESPACE` environment variable can be used to configure a single operator instance
 to operate in multiple namespaces. For each namespace given, the operator will watch for cluster ConfigMaps
@@ -8,6 +21,10 @@ access to the necessary resources in those other namespaces. This can be done by
 RoleBinding in each of those namespaces, associating the operator's ServiceAccount
 (`strimzi-cluster-operator` in the examples) with the operator's
 Role (`strimzi-operator-role` in the examples).
+
+.Procedure
+
+//Add a procedure to explain how to configure operator to watch multiple name spaces
 
 In the following example, the operator deployed in namespace `foo` and needs to operate in namespace `bar`.
 The following RoleBinding would grant the necessary permissions:

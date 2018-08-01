@@ -1,5 +1,18 @@
+// Module included in the following assemblies:
+//
+// <List assemblies here, each on a new line>
+
+// Base the file name and the ID on the module title. For example:
+// * file name: assembly-cluster-operator.adoc
+// * ID: [id='cluster-operator-{context}']
+// * Title: = Configure Cluster Operator
+
+// The ID is used as an anchor for linking to the module. Avoid changing it after the module has been published to ensure existing links are not broken.
+
+include::common/attributes.adoc[]
+
 [id=kafka-connect-configuration-{context}]
-= Kafka Connect configuration
+= Configuring Kafka Connect
 
 The `spec.config` object of the `KafkaConnect` and `KafkaConnectS2I` resources allows detailed configuration of Apache Kafka Connect.
 This object should contain the Kafka Connect configuration options as keys. The values could be in one of the following JSON types:
@@ -8,6 +21,11 @@ This object should contain the Kafka Connect configuration options as keys. The 
 * String
 * Number
 * Boolean
+
+.Prerequisites
+
+//Add prerequisites if any
+
 
 The `config` object supports all Kafka Connect configuration options with the exception of options related to:
 
@@ -23,6 +41,10 @@ Specifically, all configuration options with keys starting with one of the follo
 * `listeners`
 * `plugin.path`
 * `rest.`
+
+.Procedure
+
+//Add a procedure for defining clusterroles
 
 All other options will be passed to Kafka Connect. A list of all the available options can be found on the
 link:http://kafka.apache.org/11/documentation.html#connectconfigs[Kafka website^]. An example `config` field is provided
@@ -95,5 +117,5 @@ The following lists the options of the above example and its default values:
 
 These options will be automatically configured in case they are not present in the `config` object.
 
-[NOTE]
+[IMPORTANT]
 The Cluster Operator does not validate the provided configuration. When an invalid configuration is provided, the Kafka Connect cluster might not start or might become unstable. In such cases, the configuration in the `config` object should be fixed and the Cluster Operator will roll out the new configuration to all Kafka Connect instances.

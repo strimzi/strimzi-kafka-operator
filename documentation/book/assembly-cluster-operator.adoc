@@ -18,22 +18,22 @@ include::con-resource-kafka.adoc[leveloffset=+2]
 
 include::con-resource-kafka-connect.adoc[leveloffset=+2]
 
-include::con-kafka-connect-configuration.adoc[leveloffset=+3]
+include::proc-configuring-kafka-connect.adoc[leveloffset=+3]
 
 include::con-kafka-connect-logging.adoc[leveloffset=+3]
 
-include::con-kafka-connect-s2i-deploy.adoc[leveloffset=+3]
+include::proc-kafka-connect-s2i-deploy.adoc[leveloffset=+3]
 
 include::con-resource-RBAC.adoc[leveloffset=+1]
 
 include::con-delegated-previliges.adoc[leveloffset=+2]
 
-include::con-use-service-account.adoc[leveloffset=+2]
+include::proc-using-service-account.adoc[leveloffset=+2]
 
-include::con-define-cluster-roles.adoc[leveloffset=+2]
+include::proc-define-cluster-roles.adoc[leveloffset=+2]
 
-include::con-define-cluster-roles-bindings.adoc[leveloffset=+2]
+include::proc-define-cluster-roles-bindings.adoc[leveloffset=+2]
 
-include::con-operator-configuration.adoc[leveloffset=+1]
+include::proc-configuring-cluster-operator.adoc[leveloffset=+1]
 
-include::con-watching-multiple-namespaces.adoc[leveloffset=+2]
+include::proc-watching-multiple-namespaces.adoc[leveloffset=+2]

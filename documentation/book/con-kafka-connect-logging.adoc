@@ -1,3 +1,16 @@
+// Module included in the following assemblies:
+//
+// <List assemblies here, each on a new line>
+
+// Base the file name and the ID on the module title. For example:
+// * file name: assembly-cluster-operator.adoc
+// * ID: [id='cluster-operator-{context}']
+// * Title: = Configure Cluster Operator
+
+// The ID is used as an anchor for linking to the module. Avoid changing it after the module has been published to ensure existing links are not broken.
+
+include::common/attributes.adoc[]
+
 [id=kafka_connect_logging-{context}]
 = Logging
 
@@ -10,4 +23,4 @@ log4j.logger.org.apache.zookeeper
 log4j.logger.org.I0Itec.zkclient
 log4j.logger.org.reflections
 
-For information on the logging options and examples of how to set logging, see xref:logging_examples[logging examples] for Kafka.
+For information on the logging options and examples of how to set logging, see xref:logging-examples-{context}[logging examples] for Kafka.

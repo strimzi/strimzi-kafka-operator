@@ -141,7 +141,7 @@ For information about the accepted JSON format, see xref:resources_json_config-{
 An object representing the topic operator configuration. For more information, see xref:topic_operator_json_config-{context}[Topic Operator].
 
 
-More info about the topic operator in the related xref:topic-operator-str[Topic Operator] documentation page.
+More info about the topic operator in the related xref:topic-operator-{context}[Topic Operator] documentation page.
 
 The following is an example of a Kafka resource.
 
