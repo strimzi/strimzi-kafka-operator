@@ -60,21 +60,19 @@ public class DocGenerator {
     }
 
     private void appendAnchor(Crd crd, Class<?> anchor) throws IOException {
-        out.append("[[").append(anchor(anchor)).append("]]").append(NL);
+        out.append("[id='").append(anchor(anchor)).append("']").append(NL);
     }
 
     private String anchor(Class<?> anchor) {
-        return "type-" + anchor.getSimpleName();
+        return "type-" + anchor.getSimpleName() + "-{context}";
     }
 
     private void appendHeading(Crd crd, String name) throws IOException {
         appendRepeated('#', headerDepth);
         out.append(' ');
         out.append(name);
-        out.append(' ');
-        out.append(crd.spec().version());
-        out.append(' ');
-        out.append(crd.spec().group());
+        out.append(" schema reference");
+
         out.append(NL);
         out.append(NL);
     }
@@ -108,13 +106,13 @@ public class DocGenerator {
     public void generate(Class<? extends CustomResource> crdClass) throws IOException {
         Crd crd = crdClass.getAnnotation(Crd.class);
         appendAnchor(crd, crdClass);
-        appendHeading(crd, "`" + crd.spec().names().kind() + "` kind");
+        appendHeading(crd, "`" + crd.spec().names().kind() + "`");
         appendCommonTypeDoc(crd, crdClass);
     }
 
     private void appendedNestedTypeDoc(Crd crd, Class<?> cls) throws IOException {
         appendAnchor(crd, cls);
-        appendHeading(crd, "`" + cls.getSimpleName() + "` type");
+        appendHeading(crd, "`" + cls.getSimpleName() + "`");
         appendCommonTypeDoc(crd, cls);
     }
 
@@ -308,7 +306,7 @@ public class DocGenerator {
                 }
             }).collect(Collectors.joining(", ")));
         } else {
-            out.append("<<").append(anchor(cls)).append(",`").append(cls.getSimpleName()).append("`>>");
+            out.append("xref:").append(anchor(cls)).append("[`").append(cls.getSimpleName()).append("`]");
         }
     }
 
