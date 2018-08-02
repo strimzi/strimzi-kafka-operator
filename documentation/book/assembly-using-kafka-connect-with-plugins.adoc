@@ -21,10 +21,8 @@ There are two ways of adding custom plugins into this directory:
 * Using a custom Docker image
 * Using the {OpenShiftName} build system with the {ProductName} S2I
 
-:context: str
 include::proc-creating-new-image-from-base.adoc[leveloffset=+1]
 
-:context: str
 include::proc-using-openshift-builds-create-image.adoc[leveloffset=+1]
 
 // Restore the context to what it was before this assembly.

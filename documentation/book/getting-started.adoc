@@ -39,7 +39,6 @@ include::assembly-cluster-operator.adoc[leveloffset=+1]
 
 include::assembly-kafka-cluster.adoc[leveloffset=+1]
 
-:context: str
 include::assembly-kafka-connect.adoc[leveloffset=+1]
 
 //Modularized above here

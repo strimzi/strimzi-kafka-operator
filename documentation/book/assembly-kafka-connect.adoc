@@ -21,14 +21,11 @@ Example `KafkaConnect` resources and the details about the `KafkaConnect` format
 xref:kafka_connect_config_map_details[].
 
 ifdef::Kubernetes[]
-:context: str
 include::proc-deploying-kafka-connect-kubernetes.adoc[leveloffset=+1]
 endif::Kubernetes[]
 
-:context: str
 include::proc-deploying-kafka-connect-openshift.adoc[leveloffset=+1]
 
-:context: str
 include::assembly-using-kafka-connect-with-plugins.adoc[leveloffset=+2]
 
 // Restore the context to what it was before this assembly.
