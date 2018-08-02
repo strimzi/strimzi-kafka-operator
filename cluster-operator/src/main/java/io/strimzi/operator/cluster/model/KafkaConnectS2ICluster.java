@@ -112,6 +112,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                 .endMetadata()
                 .withNewSpec()
                     .withReplicas(replicas)
+                    .withSelector(getSelectorLabels())
                     .withNewTemplate()
                         .withNewMetadata()
                             .withAnnotations(annotations)

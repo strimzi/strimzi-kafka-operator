@@ -242,6 +242,18 @@ public class Labels {
         return type != null ? ResourceType.fromName(type) : null;
     }
 
+    public Labels strimziLabels() {
+        Map<String, String> newLabels = new HashMap<>(labels.size() + 1);
+
+        for (Map.Entry<String, String> entry : labels.entrySet()) {
+            if (entry.getKey().startsWith(STRIMZI_DOMAIN)) {
+                newLabels.put(entry.getKey(), entry.getValue());
+            }
+        }
+
+        return new Labels(newLabels);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

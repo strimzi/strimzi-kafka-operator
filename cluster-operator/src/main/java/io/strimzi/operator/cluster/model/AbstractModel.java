@@ -223,6 +223,11 @@ public abstract class AbstractModel {
         return headlessServiceName;
     }
 
+
+    protected Map<String, String> getSelectorLabels() {
+        return labels.withName(name).strimziLabels().toMap();
+    }
+
     protected Map<String, String> getLabelsWithName() {
         return getLabelsWithName(name);
     }
@@ -705,7 +710,7 @@ public abstract class AbstractModel {
                 .endMetadata()
                 .withNewSpec()
                     .withType(type)
-                    .withSelector(getLabelsWithName())
+                    .withSelector(getSelectorLabels())
                     .withPorts(ports)
                 .endSpec()
                 .build();
@@ -728,7 +733,7 @@ public abstract class AbstractModel {
                 .withNewSpec()
                     .withType("ClusterIP")
                     .withClusterIP("None")
-                    .withSelector(getLabelsWithName())
+                    .withSelector(getSelectorLabels())
                     .withPorts(ports)
                 .endSpec()
                 .build();
@@ -791,7 +796,7 @@ public abstract class AbstractModel {
                 .withNewSpec()
                     .withPodManagementPolicy("Parallel")
                     .withUpdateStrategy(new StatefulSetUpdateStrategyBuilder().withType("OnDelete").build())
-                    .withSelector(new LabelSelectorBuilder().withMatchLabels(getLabelsWithName()).build())
+                    .withSelector(new LabelSelectorBuilder().withMatchLabels(getSelectorLabels()).build())
                     .withServiceName(headlessServiceName)
                     .withReplicas(replicas)
                     .withNewTemplate()
@@ -835,6 +840,7 @@ public abstract class AbstractModel {
                 .withNewSpec()
                     .withStrategy(updateStrategy)
                     .withReplicas(replicas)
+                    .withSelector(new LabelSelectorBuilder().withMatchLabels(getSelectorLabels()).build())
                     .withNewTemplate()
                         .withNewMetadata()
                             .withLabels(getLabelsWithName())
