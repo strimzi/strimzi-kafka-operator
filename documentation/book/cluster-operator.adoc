@@ -845,8 +845,8 @@ The timeout in seconds of the liveness and readiness probes for each Kafka Conne
 Default is 5.
 
 `bootstrapServers`::
-Bootstrap servers to connect to. This should be given as a comma separated list of _<hostname>_:‍_<port>_ pairs.
-This parameter is required.
+Bootstrap servers to connect to. The value of the field must be a comma-separated list of hostname and port number in the _<hostname>_:‍_<port>_ format.
+This is a mandatory field.
 
 `config`::
 A JSON string with Kafka Connect configuration. 
