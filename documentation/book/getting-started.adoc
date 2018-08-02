@@ -32,14 +32,11 @@ ifdef::Kubernetes[{KubernetesLongName} and]
 {OpenShiftLongName} user must have the rights to manage role-based access control (RBAC).
 
 ifdef::Downloading[]
-:context: str
 include::con-product-downloads.adoc[leveloffset=+1]
 endif::Downloading[]
 
-:context: str
 include::assembly-cluster-operator.adoc[leveloffset=+1]
 
-:context: str
 include::assembly-kafka-cluster.adoc[leveloffset=+1]
 
 === Deploying with Helm Charts
@@ -185,8 +182,8 @@ _The name of the build should be changed according to the cluster name of the de
 
 == Topic Operator
 
-{ProductName} uses a component called the Topic Operator to manage topics in the Kafka cluster. 
-The Topic Operator is deployed as a process running inside a {ProductPlatformName} cluster. 
+{ProductName} uses a component called the Topic Operator to manage topics in the Kafka cluster.
+The Topic Operator is deployed as a process running inside a {ProductPlatformName} cluster.
 To create a new Kafka topic, a `KafkaTopic` custom resource with the related configuration (name, partitions, replication factor, ...) has to be created.
 Based on the information in that `KafkaTopic`, the Topic Operator will create a corresponding Kafka topic in the cluster.
 
