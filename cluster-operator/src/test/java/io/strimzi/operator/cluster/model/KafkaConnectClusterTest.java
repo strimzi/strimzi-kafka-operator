@@ -9,8 +9,8 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
-import io.strimzi.api.kafka.model.KafkaConnectAssembly;
-import io.strimzi.api.kafka.model.KafkaConnectAssemblyBuilder;
+import io.strimzi.api.kafka.model.KafkaConnect;
+import io.strimzi.api.kafka.model.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.model.Labels;
@@ -59,7 +59,7 @@ public class KafkaConnectClusterTest {
             "internal.value.converter.schemas.enable=false" + LINE_SEPARATOR +
             "internal.value.converter=org.apache.kafka.connect.json.JsonConverter" + LINE_SEPARATOR;
 
-    private final KafkaConnectAssembly resource = new KafkaConnectAssemblyBuilder(ResourceUtils.createEmptyKafkaConnectCluster(namespace, cluster))
+    private final KafkaConnect resource = new KafkaConnectBuilder(ResourceUtils.createEmptyKafkaConnectCluster(namespace, cluster))
             .withNewSpec()
             .withMetrics((Map<String, Object>) TestUtils.fromJson(metricsCmJson, Map.class))
             .withConfig((Map<String, Object>) TestUtils.fromJson(configurationJson, Map.class))
@@ -73,7 +73,7 @@ public class KafkaConnectClusterTest {
     private final KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource);
 
     @Rule
-    public ResourceTester<KafkaConnectAssembly, KafkaConnectCluster> resourceTester = new ResourceTester<>(KafkaConnectAssembly.class, KafkaConnectCluster::fromCrd);
+    public ResourceTester<KafkaConnect, KafkaConnectCluster> resourceTester = new ResourceTester<>(KafkaConnect.class, KafkaConnectCluster::fromCrd);
 
     @Test
     public void testMetricsConfigMap() {
@@ -86,7 +86,7 @@ public class KafkaConnectClusterTest {
     }
 
     private Map<String, String> expectedLabels(String name)    {
-        return TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, this.cluster, Labels.STRIMZI_TYPE_LABEL, "kafka-connect", "my-user-label", "cromulent", Labels.STRIMZI_NAME_LABEL, name, Labels.STRIMZI_KIND_LABEL, KafkaConnectAssembly.RESOURCE_KIND);
+        return TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, this.cluster, Labels.STRIMZI_TYPE_LABEL, "kafka-connect", "my-user-label", "cromulent", Labels.STRIMZI_NAME_LABEL, name, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
     }
 
     private Map<String, String> expectedLabels()    {

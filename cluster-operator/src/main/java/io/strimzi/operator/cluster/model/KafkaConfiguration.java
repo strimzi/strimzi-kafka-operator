@@ -5,7 +5,7 @@
 
 package io.strimzi.operator.cluster.model;
 
-import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaClusterSpec;
 
 import java.util.List;
 import java.util.Map;
@@ -22,7 +22,7 @@ public class KafkaConfiguration extends AbstractConfiguration {
     private static final List<String> FORBIDDEN_OPTIONS;
 
     static {
-        FORBIDDEN_OPTIONS = asList(Kafka.FORBIDDEN_PREFIXES.split(", "));
+        FORBIDDEN_OPTIONS = asList(KafkaClusterSpec.FORBIDDEN_PREFIXES.split(", "));
     }
 
     /**

@@ -14,8 +14,8 @@ import io.strimzi.api.kafka.DoneableKafkaConnectAssembly;
 import io.strimzi.api.kafka.DoneableKafkaConnectS2IAssembly;
 import io.strimzi.api.kafka.KafkaConnectAssemblyList;
 import io.strimzi.api.kafka.KafkaConnectS2IAssemblyList;
-import io.strimzi.api.kafka.model.KafkaConnectAssembly;
-import io.strimzi.api.kafka.model.KafkaConnectS2IAssembly;
+import io.strimzi.api.kafka.model.KafkaConnect;
+import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperator;
@@ -83,7 +83,7 @@ public class Main {
         ConfigMapOperator configMapOperations = new ConfigMapOperator(vertx, client);
         DeploymentOperator deploymentOperations = new DeploymentOperator(vertx, client);
         SecretOperator secretOperations = new SecretOperator(vertx, client);
-        CrdOperator<KubernetesClient, KafkaConnectAssembly, KafkaConnectAssemblyList, DoneableKafkaConnectAssembly> kco = new CrdOperator<>(vertx, client, KafkaConnectAssembly.class, KafkaConnectAssemblyList.class, DoneableKafkaConnectAssembly.class);
+        CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectAssemblyList, DoneableKafkaConnectAssembly> kco = new CrdOperator<>(vertx, client, KafkaConnect.class, KafkaConnectAssemblyList.class, DoneableKafkaConnectAssembly.class);
 
         OpenSslCertManager certManager = new OpenSslCertManager();
         KafkaAssemblyOperator kafkaClusterOperations = new KafkaAssemblyOperator(vertx, isOpenShift,
@@ -91,7 +91,7 @@ public class Main {
         KafkaConnectAssemblyOperator kafkaConnectClusterOperations = new KafkaConnectAssemblyOperator(vertx, isOpenShift, certManager, kco, configMapOperations, deploymentOperations, serviceOperations, secretOperations);
 
         KafkaConnectS2IAssemblyOperator kafkaConnectS2IClusterOperations = null;
-        CrdOperator<OpenShiftClient, KafkaConnectS2IAssembly, KafkaConnectS2IAssemblyList, DoneableKafkaConnectS2IAssembly> kafkaConnectS2iCrdOperator = null;
+        CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IAssemblyList, DoneableKafkaConnectS2IAssembly> kafkaConnectS2iCrdOperator = null;
         if (isOpenShift) {
             kafkaConnectS2IClusterOperations = createS2iOperator(vertx, client, isOpenShift, serviceOperations, configMapOperations, secretOperations, certManager);
         } else {
@@ -125,10 +125,10 @@ public class Main {
     private static void maybeLogS2iOnKubeWarning(Vertx vertx, KubernetesClient client) {
         try {
             // Check the KafkaConnectS2I isn't installed and whinge if it is
-            CustomResourceDefinition crd = client.customResourceDefinitions().withName(KafkaConnectS2IAssembly.CRD_NAME).get();
+            CustomResourceDefinition crd = client.customResourceDefinitions().withName(KafkaConnectS2I.CRD_NAME).get();
             if (crd != null) {
                 log.warn("The KafkaConnectS2I custom resource definition can only be installed on OpenShift, because plain Kubernetes doesn't support S2I. " +
-                        "Execute 'kubectl delete crd " + KafkaConnectS2IAssembly.CRD_NAME + "' to remove this warning.");
+                        "Execute 'kubectl delete crd " + KafkaConnectS2I.CRD_NAME + "' to remove this warning.");
             }
         } catch (KubernetesClientException e) {
 
@@ -139,13 +139,13 @@ public class Main {
         ImageStreamOperator imagesStreamOperations;
         BuildConfigOperator buildConfigOperations;
         DeploymentConfigOperator deploymentConfigOperations;
-        CrdOperator<OpenShiftClient, KafkaConnectS2IAssembly, KafkaConnectS2IAssemblyList, DoneableKafkaConnectS2IAssembly> kafkaConnectS2iCrdOperator;
+        CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IAssemblyList, DoneableKafkaConnectS2IAssembly> kafkaConnectS2iCrdOperator;
         KafkaConnectS2IAssemblyOperator kafkaConnectS2IClusterOperations;
         OpenShiftClient osClient = client.adapt(OpenShiftClient.class);
         imagesStreamOperations = new ImageStreamOperator(vertx, osClient);
         buildConfigOperations = new BuildConfigOperator(vertx, osClient);
         deploymentConfigOperations = new DeploymentConfigOperator(vertx, osClient);
-        kafkaConnectS2iCrdOperator = new CrdOperator<>(vertx, osClient, KafkaConnectS2IAssembly.class, KafkaConnectS2IAssemblyList.class, DoneableKafkaConnectS2IAssembly.class);
+        kafkaConnectS2iCrdOperator = new CrdOperator<>(vertx, osClient, KafkaConnectS2I.class, KafkaConnectS2IAssemblyList.class, DoneableKafkaConnectS2IAssembly.class);
         kafkaConnectS2IClusterOperations = new KafkaConnectS2IAssemblyOperator(vertx, isOpenShift,
                 certManager,
                 kafkaConnectS2iCrdOperator,

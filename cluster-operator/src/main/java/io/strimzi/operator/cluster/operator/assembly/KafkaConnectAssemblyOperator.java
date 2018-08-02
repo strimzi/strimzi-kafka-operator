@@ -12,7 +12,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.DoneableKafkaConnectAssembly;
 import io.strimzi.api.kafka.KafkaConnectAssemblyList;
 import io.strimzi.api.kafka.model.ExternalLogging;
-import io.strimzi.api.kafka.model.KafkaConnectAssembly;
+import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.common.Reconciliation;
@@ -43,7 +43,7 @@ import java.util.Map;
  *     <li>A Kafka Connect Deployment and related Services</li>
  * </ul>
  */
-public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<KubernetesClient, KafkaConnectAssembly, KafkaConnectAssemblyList, DoneableKafkaConnectAssembly, Resource<KafkaConnectAssembly, DoneableKafkaConnectAssembly>> {
+public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<KubernetesClient, KafkaConnect, KafkaConnectAssemblyList, DoneableKafkaConnectAssembly, Resource<KafkaConnect, DoneableKafkaConnectAssembly>> {
 
     private static final Logger log = LogManager.getLogger(KafkaConnectAssemblyOperator.class.getName());
     private final ServiceOperator serviceOperations;
@@ -60,7 +60,7 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
      */
     public KafkaConnectAssemblyOperator(Vertx vertx, boolean isOpenShift,
                                         CertManager certManager,
-                                        CrdOperator<KubernetesClient, KafkaConnectAssembly, KafkaConnectAssemblyList, DoneableKafkaConnectAssembly> connectOperator,
+                                        CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectAssemblyList, DoneableKafkaConnectAssembly> connectOperator,
                                         ConfigMapOperator configMapOperations,
                                         DeploymentOperator deploymentOperations,
                                         ServiceOperator serviceOperations,
@@ -72,13 +72,13 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
     }
 
     @Override
-    protected void createOrUpdate(Reconciliation reconciliation, KafkaConnectAssembly kafkaConnectAssembly, List<Secret> assemblySecrets, Handler<AsyncResult<Void>> handler) {
+    protected void createOrUpdate(Reconciliation reconciliation, KafkaConnect kafkaConnect, List<Secret> assemblySecrets, Handler<AsyncResult<Void>> handler) {
 
         String namespace = reconciliation.namespace();
         String name = reconciliation.name();
         KafkaConnectCluster connect;
         try {
-            connect = KafkaConnectCluster.fromCrd(kafkaConnectAssembly);
+            connect = KafkaConnectCluster.fromCrd(kafkaConnect);
         } catch (Exception e) {
             handler.handle(Future.failedFuture(e));
             return;

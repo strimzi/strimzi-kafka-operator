@@ -13,9 +13,9 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.internal.KubernetesDeserializer;
-import io.strimzi.api.kafka.model.KafkaAssembly;
-import io.strimzi.api.kafka.model.KafkaConnectAssembly;
-import io.strimzi.api.kafka.model.KafkaConnectS2IAssembly;
+import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaConnect;
+import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
 
@@ -31,9 +31,9 @@ public class Crds {
     public static final String CRD_KIND = "CustomResourceDefinition";
 
     private static final Class<? extends CustomResource>[] CRDS = new Class[] {
-        KafkaAssembly.class,
-        KafkaConnectAssembly.class,
-        KafkaConnectS2IAssembly.class,
+        Kafka.class,
+        KafkaConnect.class,
+        KafkaConnectS2I.class,
         KafkaTopic.class,
         KafkaUser.class
     };
@@ -59,30 +59,30 @@ public class Crds {
         String version;
         String group;
         List<String> shortNames = emptyList();
-        if (cls.equals(KafkaAssembly.class)) {
-            kind = KafkaAssembly.RESOURCE_KIND;
-            crdApiVersion = KafkaAssembly.CRD_API_VERSION;
-            plural = KafkaAssembly.RESOURCE_PLURAL;
-            singular = KafkaAssembly.RESOURCE_SINGULAR;
-            listKind = KafkaAssembly.RESOURCE_LIST_KIND;
-            group = KafkaAssembly.RESOURCE_GROUP;
-            version = KafkaAssembly.VERSION;
-        } else if (cls.equals(KafkaConnectAssembly.class)) {
-            kind = KafkaConnectAssembly.RESOURCE_KIND;
-            crdApiVersion = KafkaConnectAssembly.CRD_API_VERSION;
-            plural = KafkaConnectAssembly.RESOURCE_PLURAL;
-            singular = KafkaConnectAssembly.RESOURCE_SINGULAR;
-            listKind = KafkaConnectAssembly.RESOURCE_LIST_KIND;
-            group = KafkaConnectAssembly.RESOURCE_GROUP;
-            version = KafkaConnectAssembly.VERSION;
-        } else if (cls.equals(KafkaConnectS2IAssembly.class)) {
-            kind = KafkaConnectS2IAssembly.RESOURCE_KIND;
-            crdApiVersion = KafkaConnectS2IAssembly.CRD_API_VERSION;
-            plural = KafkaConnectS2IAssembly.RESOURCE_PLURAL;
-            singular = KafkaConnectS2IAssembly.RESOURCE_SINGULAR;
-            listKind = KafkaConnectS2IAssembly.RESOURCE_LIST_KIND;
-            group = KafkaConnectS2IAssembly.RESOURCE_GROUP;
-            version = KafkaConnectS2IAssembly.VERSION;
+        if (cls.equals(Kafka.class)) {
+            kind = Kafka.RESOURCE_KIND;
+            crdApiVersion = Kafka.CRD_API_VERSION;
+            plural = Kafka.RESOURCE_PLURAL;
+            singular = Kafka.RESOURCE_SINGULAR;
+            listKind = Kafka.RESOURCE_LIST_KIND;
+            group = Kafka.RESOURCE_GROUP;
+            version = Kafka.VERSION;
+        } else if (cls.equals(KafkaConnect.class)) {
+            kind = KafkaConnect.RESOURCE_KIND;
+            crdApiVersion = KafkaConnect.CRD_API_VERSION;
+            plural = KafkaConnect.RESOURCE_PLURAL;
+            singular = KafkaConnect.RESOURCE_SINGULAR;
+            listKind = KafkaConnect.RESOURCE_LIST_KIND;
+            group = KafkaConnect.RESOURCE_GROUP;
+            version = KafkaConnect.VERSION;
+        } else if (cls.equals(KafkaConnectS2I.class)) {
+            kind = KafkaConnectS2I.RESOURCE_KIND;
+            crdApiVersion = KafkaConnectS2I.CRD_API_VERSION;
+            plural = KafkaConnectS2I.RESOURCE_PLURAL;
+            singular = KafkaConnectS2I.RESOURCE_SINGULAR;
+            listKind = KafkaConnectS2I.RESOURCE_LIST_KIND;
+            group = KafkaConnectS2I.RESOURCE_GROUP;
+            version = KafkaConnectS2I.VERSION;
         } else if (cls.equals(KafkaTopic.class)) {
             kind = KafkaTopic.RESOURCE_KIND;
             crdApiVersion = KafkaTopic.CRD_API_VERSION;
@@ -125,27 +125,27 @@ public class Crds {
     }
 
     public static CustomResourceDefinition kafka() {
-        return crd(KafkaAssembly.class);
+        return crd(Kafka.class);
     }
 
-    public static MixedOperation<KafkaAssembly, KafkaAssemblyList, DoneableKafkaAssembly, Resource<KafkaAssembly, DoneableKafkaAssembly>> kafkaOperation(KubernetesClient client) {
-        return client.customResources(kafka(), KafkaAssembly.class, KafkaAssemblyList.class, DoneableKafkaAssembly.class);
+    public static MixedOperation<Kafka, KafkaAssemblyList, DoneableKafkaAssembly, Resource<Kafka, DoneableKafkaAssembly>> kafkaOperation(KubernetesClient client) {
+        return client.customResources(kafka(), Kafka.class, KafkaAssemblyList.class, DoneableKafkaAssembly.class);
     }
 
     public static CustomResourceDefinition kafkaConnect() {
-        return crd(KafkaConnectAssembly.class);
+        return crd(KafkaConnect.class);
     }
 
-    public static MixedOperation<KafkaConnectAssembly, KafkaConnectAssemblyList, DoneableKafkaConnectAssembly, Resource<KafkaConnectAssembly, DoneableKafkaConnectAssembly>> kafkaConnectOperation(KubernetesClient client) {
-        return client.customResources(kafkaConnect(), KafkaConnectAssembly.class, KafkaConnectAssemblyList.class, DoneableKafkaConnectAssembly.class);
+    public static MixedOperation<KafkaConnect, KafkaConnectAssemblyList, DoneableKafkaConnectAssembly, Resource<KafkaConnect, DoneableKafkaConnectAssembly>> kafkaConnectOperation(KubernetesClient client) {
+        return client.customResources(kafkaConnect(), KafkaConnect.class, KafkaConnectAssemblyList.class, DoneableKafkaConnectAssembly.class);
     }
 
     public static CustomResourceDefinition kafkaConnectS2I() {
-        return crd(KafkaConnectS2IAssembly.class);
+        return crd(KafkaConnectS2I.class);
     }
 
-    public static <D extends CustomResourceDoneable<T>, T extends CustomResource> MixedOperation<KafkaConnectS2IAssembly, KafkaConnectS2IAssemblyList, DoneableKafkaConnectS2IAssembly, Resource<KafkaConnectS2IAssembly, DoneableKafkaConnectS2IAssembly>> kafkaConnectS2iOperation(KubernetesClient client) {
-        return client.customResources(Crds.kafkaConnectS2I(), KafkaConnectS2IAssembly.class, KafkaConnectS2IAssemblyList.class, DoneableKafkaConnectS2IAssembly.class);
+    public static <D extends CustomResourceDoneable<T>, T extends CustomResource> MixedOperation<KafkaConnectS2I, KafkaConnectS2IAssemblyList, DoneableKafkaConnectS2IAssembly, Resource<KafkaConnectS2I, DoneableKafkaConnectS2IAssembly>> kafkaConnectS2iOperation(KubernetesClient client) {
+        return client.customResources(Crds.kafkaConnectS2I(), KafkaConnectS2I.class, KafkaConnectS2IAssemblyList.class, DoneableKafkaConnectS2IAssembly.class);
     }
 
     public static CustomResourceDefinition topic() {

@@ -1,4 +1,4 @@
-[[type-KafkaAssembly]]
+[[type-Kafka]]
 ### `Kafka` kind v1alpha1 kafka.strimzi.io
 
 
@@ -6,30 +6,30 @@
 |====
 |Field        |Description
 |spec  1.2+<.<|The specification of the Kafka and Zookeeper clusters, and Topic Operator.
-|<<type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
+|<<type-KafkaSpec,`KafkaSpec`>>
 |====
 
-[[type-KafkaAssemblySpec]]
-### `KafkaAssemblySpec` type v1alpha1 kafka.strimzi.io
+[[type-KafkaSpec]]
+### `KafkaSpec` type v1alpha1 kafka.strimzi.io
 
-Used in: <<type-KafkaAssembly,`KafkaAssembly`>>
+Used in: <<type-Kafka,`Kafka`>>
 
 
 [options="header"]
 |====
 |Field                 |Description
 |kafka          1.2+<.<|Configuration of the Kafka cluster
-|<<type-Kafka,`Kafka`>>
+|<<type-KafkaClusterSpec,`KafkaClusterSpec`>>
 |zookeeper      1.2+<.<|Configuration of the Zookeeper cluster
-|<<type-Zookeeper,`Zookeeper`>>
+|<<type-ZookeeperClusterSpec,`ZookeeperClusterSpec`>>
 |topicOperator  1.2+<.<|Configuration of the Topic Operator
-|<<type-TopicOperator,`TopicOperator`>>
+|<<type-TopicOperatorSpec,`TopicOperatorSpec`>>
 |====
 
-[[type-Kafka]]
-### `Kafka` type v1alpha1 kafka.strimzi.io
+[[type-KafkaClusterSpec]]
+### `KafkaClusterSpec` type v1alpha1 kafka.strimzi.io
 
-Used in: <<type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
+Used in: <<type-KafkaSpec,`KafkaSpec`>>
 
 
 [options="header"]
@@ -78,7 +78,7 @@ Used in: <<type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
 [[type-EphemeralStorage]]
 ### `EphemeralStorage` type v1alpha1 kafka.strimzi.io
 
-Used in: <<type-Kafka,`Kafka`>>, <<type-Zookeeper,`Zookeeper`>>
+Used in: <<type-KafkaClusterSpec,`KafkaClusterSpec`>>, <<type-ZookeeperClusterSpec,`ZookeeperClusterSpec`>>
 
 
 The `type` property is a discriminator that distinguishes the use of the type `EphemeralStorage` from <<type-PersistentClaimStorage,`PersistentClaimStorage`>>.
@@ -93,7 +93,7 @@ It must have the value `ephemeral` for the type `EphemeralStorage`.
 [[type-PersistentClaimStorage]]
 ### `PersistentClaimStorage` type v1alpha1 kafka.strimzi.io
 
-Used in: <<type-Kafka,`Kafka`>>, <<type-Zookeeper,`Zookeeper`>>
+Used in: <<type-KafkaClusterSpec,`KafkaClusterSpec`>>, <<type-ZookeeperClusterSpec,`ZookeeperClusterSpec`>>
 
 
 The `type` property is a discriminator that distinguishes the use of the type `PersistentClaimStorage` from <<type-EphemeralStorage,`EphemeralStorage`>>.
@@ -116,7 +116,7 @@ It must have the value `persistent-claim` for the type `PersistentClaimStorage`.
 [[type-KafkaListeners]]
 ### `KafkaListeners` type v1alpha1 kafka.strimzi.io
 
-Used in: <<type-Kafka,`Kafka`>>
+Used in: <<type-KafkaClusterSpec,`KafkaClusterSpec`>>
 
 
 [options="header"]
@@ -170,7 +170,7 @@ It must have the value `tls` for the type `KafkaListenerAuthenticationTls`.
 [[type-KafkaAuthorizationSimple]]
 ### `KafkaAuthorizationSimple` type v1alpha1 kafka.strimzi.io
 
-Used in: <<type-Kafka,`Kafka`>>
+Used in: <<type-KafkaClusterSpec,`KafkaClusterSpec`>>
 
 
 The `type` property is a discriminator that distinguishes the use of the type `KafkaAuthorizationSimple` from .
@@ -185,7 +185,7 @@ It must have the value `simple` for the type `KafkaAuthorizationSimple`.
 [[type-Rack]]
 ### `Rack` type v1alpha1 kafka.strimzi.io
 
-Used in: <<type-Kafka,`Kafka`>>
+Used in: <<type-KafkaClusterSpec,`KafkaClusterSpec`>>
 
 
 [options="header"]
@@ -198,7 +198,7 @@ Used in: <<type-Kafka,`Kafka`>>
 [[type-Probe]]
 ### `Probe` type v1alpha1 kafka.strimzi.io
 
-Used in: <<type-Kafka,`Kafka`>>, <<type-KafkaConnectAssemblySpec,`KafkaConnectAssemblySpec`>>, <<type-KafkaConnectS2IAssemblySpec,`KafkaConnectS2IAssemblySpec`>>, <<type-Zookeeper,`Zookeeper`>>
+Used in: <<type-KafkaClusterSpec,`KafkaClusterSpec`>>, <<type-KafkaConnectS2IAssemblySpec,`KafkaConnectS2IAssemblySpec`>>, <<type-KafkaConnectSpec,`KafkaConnectSpec`>>, <<type-ZookeeperClusterSpec,`ZookeeperClusterSpec`>>
 
 
 [options="header"]
@@ -213,7 +213,7 @@ Used in: <<type-Kafka,`Kafka`>>, <<type-KafkaConnectAssemblySpec,`KafkaConnectAs
 [[type-JvmOptions]]
 ### `JvmOptions` type v1alpha1 kafka.strimzi.io
 
-Used in: <<type-Kafka,`Kafka`>>, <<type-KafkaConnectAssemblySpec,`KafkaConnectAssemblySpec`>>, <<type-KafkaConnectS2IAssemblySpec,`KafkaConnectS2IAssemblySpec`>>, <<type-Zookeeper,`Zookeeper`>>
+Used in: <<type-KafkaClusterSpec,`KafkaClusterSpec`>>, <<type-KafkaConnectS2IAssemblySpec,`KafkaConnectS2IAssemblySpec`>>, <<type-KafkaConnectSpec,`KafkaConnectSpec`>>, <<type-ZookeeperClusterSpec,`ZookeeperClusterSpec`>>
 
 
 [options="header"]
@@ -230,7 +230,7 @@ Used in: <<type-Kafka,`Kafka`>>, <<type-KafkaConnectAssemblySpec,`KafkaConnectAs
 [[type-Resources]]
 ### `Resources` type v1alpha1 kafka.strimzi.io
 
-Used in: <<type-Kafka,`Kafka`>>, <<type-KafkaConnectAssemblySpec,`KafkaConnectAssemblySpec`>>, <<type-KafkaConnectS2IAssemblySpec,`KafkaConnectS2IAssemblySpec`>>, <<type-Sidecar,`Sidecar`>>, <<type-TopicOperator,`TopicOperator`>>, <<type-Zookeeper,`Zookeeper`>>
+Used in: <<type-KafkaClusterSpec,`KafkaClusterSpec`>>, <<type-KafkaConnectS2IAssemblySpec,`KafkaConnectS2IAssemblySpec`>>, <<type-KafkaConnectSpec,`KafkaConnectSpec`>>, <<type-Sidecar,`Sidecar`>>, <<type-TopicOperatorSpec,`TopicOperatorSpec`>>, <<type-ZookeeperClusterSpec,`ZookeeperClusterSpec`>>
 
 
 [options="header"]
@@ -260,7 +260,7 @@ Used in: <<type-Resources,`Resources`>>
 [[type-InlineLogging]]
 ### `InlineLogging` type v1alpha1 kafka.strimzi.io
 
-Used in: <<type-Kafka,`Kafka`>>, <<type-KafkaConnectAssemblySpec,`KafkaConnectAssemblySpec`>>, <<type-KafkaConnectS2IAssemblySpec,`KafkaConnectS2IAssemblySpec`>>, <<type-TopicOperator,`TopicOperator`>>, <<type-Zookeeper,`Zookeeper`>>
+Used in: <<type-KafkaClusterSpec,`KafkaClusterSpec`>>, <<type-KafkaConnectS2IAssemblySpec,`KafkaConnectS2IAssemblySpec`>>, <<type-KafkaConnectSpec,`KafkaConnectSpec`>>, <<type-TopicOperatorSpec,`TopicOperatorSpec`>>, <<type-ZookeeperClusterSpec,`ZookeeperClusterSpec`>>
 
 
 The `type` property is a discriminator that distinguishes the use of the type `InlineLogging` from <<type-ExternalLogging,`ExternalLogging`>>.
@@ -277,7 +277,7 @@ It must have the value `inline` for the type `InlineLogging`.
 [[type-ExternalLogging]]
 ### `ExternalLogging` type v1alpha1 kafka.strimzi.io
 
-Used in: <<type-Kafka,`Kafka`>>, <<type-KafkaConnectAssemblySpec,`KafkaConnectAssemblySpec`>>, <<type-KafkaConnectS2IAssemblySpec,`KafkaConnectS2IAssemblySpec`>>, <<type-TopicOperator,`TopicOperator`>>, <<type-Zookeeper,`Zookeeper`>>
+Used in: <<type-KafkaClusterSpec,`KafkaClusterSpec`>>, <<type-KafkaConnectS2IAssemblySpec,`KafkaConnectS2IAssemblySpec`>>, <<type-KafkaConnectSpec,`KafkaConnectSpec`>>, <<type-TopicOperatorSpec,`TopicOperatorSpec`>>, <<type-ZookeeperClusterSpec,`ZookeeperClusterSpec`>>
 
 
 The `type` property is a discriminator that distinguishes the use of the type `ExternalLogging` from <<type-InlineLogging,`InlineLogging`>>.
@@ -294,7 +294,7 @@ It must have the value `external` for the type `ExternalLogging`.
 [[type-Sidecar]]
 ### `Sidecar` type v1alpha1 kafka.strimzi.io
 
-Used in: <<type-Kafka,`Kafka`>>, <<type-TopicOperator,`TopicOperator`>>, <<type-Zookeeper,`Zookeeper`>>
+Used in: <<type-KafkaClusterSpec,`KafkaClusterSpec`>>, <<type-TopicOperatorSpec,`TopicOperatorSpec`>>, <<type-ZookeeperClusterSpec,`ZookeeperClusterSpec`>>
 
 
 [options="header"]
@@ -306,10 +306,10 @@ Used in: <<type-Kafka,`Kafka`>>, <<type-TopicOperator,`TopicOperator`>>, <<type-
 |<<type-Resources,`Resources`>>
 |====
 
-[[type-Zookeeper]]
-### `Zookeeper` type v1alpha1 kafka.strimzi.io
+[[type-ZookeeperClusterSpec]]
+### `ZookeeperClusterSpec` type v1alpha1 kafka.strimzi.io
 
-Used in: <<type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
+Used in: <<type-KafkaSpec,`KafkaSpec`>>
 
 
 [options="header"]
@@ -347,10 +347,10 @@ Used in: <<type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
 |<<type-Sidecar,`Sidecar`>>
 |====
 
-[[type-TopicOperator]]
-### `TopicOperator` type v1alpha1 kafka.strimzi.io
+[[type-TopicOperatorSpec]]
+### `TopicOperatorSpec` type v1alpha1 kafka.strimzi.io
 
-Used in: <<type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
+Used in: <<type-KafkaSpec,`KafkaSpec`>>
 
 
 [options="header"]
@@ -378,7 +378,7 @@ Used in: <<type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
 |<<type-InlineLogging,`InlineLogging`>>, <<type-ExternalLogging,`ExternalLogging`>>
 |====
 
-[[type-KafkaConnectAssembly]]
+[[type-KafkaConnect]]
 ### `KafkaConnect` kind v1alpha1 kafka.strimzi.io
 
 
@@ -386,13 +386,13 @@ Used in: <<type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
 |====
 |Field        |Description
 |spec  1.2+<.<|The specification of the Kafka Connect deployment.
-|<<type-KafkaConnectAssemblySpec,`KafkaConnectAssemblySpec`>>
+|<<type-KafkaConnectSpec,`KafkaConnectSpec`>>
 |====
 
-[[type-KafkaConnectAssemblySpec]]
-### `KafkaConnectAssemblySpec` type v1alpha1 kafka.strimzi.io
+[[type-KafkaConnectSpec]]
+### `KafkaConnectSpec` type v1alpha1 kafka.strimzi.io
 
-Used in: <<type-KafkaConnectAssembly,`KafkaConnectAssembly`>>
+Used in: <<type-KafkaConnect,`KafkaConnect`>>
 
 
 [options="header"]
@@ -420,7 +420,7 @@ Used in: <<type-KafkaConnectAssembly,`KafkaConnectAssembly`>>
 |<<type-InlineLogging,`InlineLogging`>>, <<type-ExternalLogging,`ExternalLogging`>>
 |metrics           1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
 |map
-|bootstrapServers  1.2+<.<|Bootstrap servers to connect to
+|bootstrapServers  1.2+<.<|Bootstrap servers to connect to. This should be given as a comma separated list of _<hostname>_:‍_<port>_ pairs.
 |string
 |config            1.2+<.<|The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers
 |map
@@ -428,7 +428,7 @@ Used in: <<type-KafkaConnectAssembly,`KafkaConnectAssembly`>>
 |<<type-Resources,`Resources`>>
 |====
 
-[[type-KafkaConnectS2IAssembly]]
+[[type-KafkaConnectS2I]]
 ### `KafkaConnectS2I` kind v1alpha1 kafka.strimzi.io
 
 
@@ -442,7 +442,7 @@ Used in: <<type-KafkaConnectAssembly,`KafkaConnectAssembly`>>
 [[type-KafkaConnectS2IAssemblySpec]]
 ### `KafkaConnectS2IAssemblySpec` type v1alpha1 kafka.strimzi.io
 
-Used in: <<type-KafkaConnectS2IAssembly,`KafkaConnectS2IAssembly`>>
+Used in: <<type-KafkaConnectS2I,`KafkaConnectS2I`>>
 
 
 [options="header"]
@@ -464,7 +464,7 @@ Used in: <<type-KafkaConnectS2IAssembly,`KafkaConnectS2IAssembly`>>
 |https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[Affinity]
 |metrics                   1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
 |map
-|bootstrapServers          1.2+<.<|Bootstrap servers to connect to
+|bootstrapServers          1.2+<.<|Bootstrap servers to connect to. This should be given as a comma separated list of _<hostname>_:‍_<port>_ pairs.
 |string
 |config                    1.2+<.<|The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers
 |map

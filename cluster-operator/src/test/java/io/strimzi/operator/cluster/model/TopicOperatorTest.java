@@ -12,9 +12,10 @@ import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.strimzi.api.kafka.model.EphemeralStorage;
 import io.strimzi.api.kafka.model.InlineLogging;
-import io.strimzi.api.kafka.model.KafkaAssembly;
+import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.Storage;
-import io.strimzi.api.kafka.model.TopicOperatorBuilder;
+import io.strimzi.api.kafka.model.TopicOperatorSpecBuilder;
+import io.strimzi.api.kafka.model.TopicOperatorSpec;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.operator.MockCertManager;
@@ -61,7 +62,7 @@ public class TopicOperatorTest {
     private final int tcZookeeperSessionTimeout = 20;
     private final int tcTopicMetadataMaxAttempts = 3;
 
-    private final io.strimzi.api.kafka.model.TopicOperator topicOperator = new TopicOperatorBuilder()
+    private final TopicOperatorSpec topicOperator = new TopicOperatorSpecBuilder()
             .withWatchedNamespace(tcWatchedNamespace)
             .withImage(tcImage)
             .withReconciliationIntervalSeconds(tcReconciliationInterval)
@@ -72,14 +73,14 @@ public class TopicOperatorTest {
 
 
     private final CertManager certManager = new MockCertManager();
-    private final KafkaAssembly resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, kafkaConfig, zooConfig, storage, topicOperator, kafkaLogJson, zooLogJson);
+    private final Kafka resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, kafkaConfig, zooConfig, storage, topicOperator, kafkaLogJson, zooLogJson);
     private final TopicOperator tc = TopicOperator.fromCrd(certManager, resource, ResourceUtils.createKafkaClusterInitialSecrets(namespace, cluster));
 
     private List<EnvVar> getExpectedEnvVars() {
         List<EnvVar> expected = new ArrayList<>();
         expected.add(new EnvVarBuilder().withName(TopicOperator.ENV_VAR_RESOURCE_LABELS).withValue(TopicOperator.defaultTopicConfigMapLabels(cluster)).build());
         expected.add(new EnvVarBuilder().withName(TopicOperator.ENV_VAR_KAFKA_BOOTSTRAP_SERVERS).withValue(TopicOperator.defaultBootstrapServers(cluster)).build());
-        expected.add(new EnvVarBuilder().withName(TopicOperator.ENV_VAR_ZOOKEEPER_CONNECT).withValue(String.format("%s:%d", "localhost", io.strimzi.api.kafka.model.TopicOperator.DEFAULT_ZOOKEEPER_PORT)).build());
+        expected.add(new EnvVarBuilder().withName(TopicOperator.ENV_VAR_ZOOKEEPER_CONNECT).withValue(String.format("%s:%d", "localhost", TopicOperatorSpec.DEFAULT_ZOOKEEPER_PORT)).build());
         expected.add(new EnvVarBuilder().withName(TopicOperator.ENV_VAR_WATCHED_NAMESPACE).withValue(tcWatchedNamespace).build());
         expected.add(new EnvVarBuilder().withName(TopicOperator.ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS).withValue(String.valueOf(tcReconciliationInterval * 1000)).build());
         expected.add(new EnvVarBuilder().withName(TopicOperator.ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS).withValue(String.valueOf(tcZookeeperSessionTimeout * 1000)).build());
@@ -91,7 +92,7 @@ public class TopicOperatorTest {
 
     @Test
     public void testFromConfigMapNoConfig() {
-        KafkaAssembly resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image,
+        Kafka resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout, metricsCm, null, kafkaLogJson, zooLogJson);
         TopicOperator tc = TopicOperator.fromCrd(certManager, resource, ResourceUtils.createKafkaClusterInitialSecrets(namespace, cluster));
         assertNull(tc);
@@ -99,18 +100,18 @@ public class TopicOperatorTest {
 
     @Test
     public void testFromConfigMapDefaultConfig() {
-        KafkaAssembly resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image,
+        Kafka resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout, metricsCm, kafkaConfig, zooConfig,
-                storage, new io.strimzi.api.kafka.model.TopicOperator(), kafkaLogJson, zooLogJson);
+                storage, new TopicOperatorSpec(), kafkaLogJson, zooLogJson);
         TopicOperator tc = TopicOperator.fromCrd(certManager, resource, ResourceUtils.createKafkaClusterInitialSecrets(namespace, cluster));
-        Assert.assertEquals(io.strimzi.api.kafka.model.TopicOperator.DEFAULT_IMAGE, tc.getImage());
+        Assert.assertEquals(TopicOperatorSpec.DEFAULT_IMAGE, tc.getImage());
         assertEquals(namespace, tc.getWatchedNamespace());
-        assertEquals(io.strimzi.api.kafka.model.TopicOperator.DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS * 1000, tc.getReconciliationIntervalMs());
-        assertEquals(io.strimzi.api.kafka.model.TopicOperator.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS * 1000, tc.getZookeeperSessionTimeoutMs());
+        assertEquals(TopicOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS * 1000, tc.getReconciliationIntervalMs());
+        assertEquals(TopicOperatorSpec.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS * 1000, tc.getZookeeperSessionTimeoutMs());
         Assert.assertEquals(TopicOperator.defaultBootstrapServers(cluster), tc.getKafkaBootstrapServers());
         Assert.assertEquals(TopicOperator.defaultZookeeperConnect(cluster), tc.getZookeeperConnect());
         Assert.assertEquals(TopicOperator.defaultTopicConfigMapLabels(cluster), tc.getTopicConfigMapLabels());
-        Assert.assertEquals(io.strimzi.api.kafka.model.TopicOperator.DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS, tc.getTopicMetadataMaxAttempts());
+        Assert.assertEquals(TopicOperatorSpec.DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS, tc.getTopicMetadataMaxAttempts());
         assertNull(tc.getLogging());
     }
 
@@ -120,11 +121,11 @@ public class TopicOperatorTest {
         Assert.assertEquals(namespace, tc.namespace);
         Assert.assertEquals(cluster, tc.cluster);
         assertEquals(tcImage, tc.image);
-        assertEquals(io.strimzi.api.kafka.model.TopicOperator.DEFAULT_REPLICAS, tc.replicas);
-        assertEquals(io.strimzi.api.kafka.model.TopicOperator.DEFAULT_HEALTHCHECK_DELAY, tc.readinessInitialDelay);
-        assertEquals(io.strimzi.api.kafka.model.TopicOperator.DEFAULT_HEALTHCHECK_TIMEOUT, tc.readinessTimeout);
-        assertEquals(io.strimzi.api.kafka.model.TopicOperator.DEFAULT_HEALTHCHECK_DELAY, tc.livenessInitialDelay);
-        assertEquals(io.strimzi.api.kafka.model.TopicOperator.DEFAULT_HEALTHCHECK_TIMEOUT, tc.livenessTimeout);
+        assertEquals(TopicOperatorSpec.DEFAULT_REPLICAS, tc.replicas);
+        assertEquals(TopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY, tc.readinessInitialDelay);
+        assertEquals(TopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT, tc.readinessTimeout);
+        assertEquals(TopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY, tc.livenessInitialDelay);
+        assertEquals(TopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT, tc.livenessTimeout);
         assertEquals(tcImage, tc.getImage());
         assertEquals(tcWatchedNamespace, tc.getWatchedNamespace());
         Assert.assertEquals(tcReconciliationInterval * 1000, tc.getReconciliationIntervalMs());
@@ -148,16 +149,16 @@ public class TopicOperatorTest {
 
         Assert.assertEquals(tc.topicOperatorName(cluster), dep.getMetadata().getName());
         assertEquals(namespace, dep.getMetadata().getNamespace());
-        assertEquals(new Integer(io.strimzi.api.kafka.model.TopicOperator.DEFAULT_REPLICAS), dep.getSpec().getReplicas());
+        assertEquals(new Integer(TopicOperatorSpec.DEFAULT_REPLICAS), dep.getSpec().getReplicas());
         Assert.assertEquals(TopicOperator.TOPIC_OPERATOR_NAME, containers.get(0).getName());
 
         // checks on the main Topic Operator container
         assertEquals(tc.image, containers.get(0).getImage());
         assertEquals(getExpectedEnvVars(), containers.get(0).getEnv());
-        assertEquals(new Integer(io.strimzi.api.kafka.model.TopicOperator.DEFAULT_HEALTHCHECK_DELAY), containers.get(0).getLivenessProbe().getInitialDelaySeconds());
-        assertEquals(new Integer(io.strimzi.api.kafka.model.TopicOperator.DEFAULT_HEALTHCHECK_TIMEOUT), containers.get(0).getLivenessProbe().getTimeoutSeconds());
-        assertEquals(new Integer(io.strimzi.api.kafka.model.TopicOperator.DEFAULT_HEALTHCHECK_DELAY), containers.get(0).getReadinessProbe().getInitialDelaySeconds());
-        assertEquals(new Integer(io.strimzi.api.kafka.model.TopicOperator.DEFAULT_HEALTHCHECK_TIMEOUT), containers.get(0).getReadinessProbe().getTimeoutSeconds());
+        assertEquals(new Integer(TopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY), containers.get(0).getLivenessProbe().getInitialDelaySeconds());
+        assertEquals(new Integer(TopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT), containers.get(0).getLivenessProbe().getTimeoutSeconds());
+        assertEquals(new Integer(TopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY), containers.get(0).getReadinessProbe().getInitialDelaySeconds());
+        assertEquals(new Integer(TopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT), containers.get(0).getReadinessProbe().getTimeoutSeconds());
         assertEquals(1, containers.get(0).getPorts().size());
         assertEquals(new Integer(TopicOperator.HEALTHCHECK_PORT), containers.get(0).getPorts().get(0).getContainerPort());
         assertEquals(TopicOperator.HEALTHCHECK_PORT_NAME, containers.get(0).getPorts().get(0).getName());
@@ -167,7 +168,7 @@ public class TopicOperatorTest {
         assertEquals(TopicOperator.TLS_SIDECAR_VOLUME_MOUNT, containers.get(0).getVolumeMounts().get(1).getMountPath());
         assertLoggingConfig(dep);
         // checks on the TLS sidecar container
-        assertEquals(io.strimzi.api.kafka.model.TopicOperator.DEFAULT_TLS_SIDECAR_IMAGE, containers.get(1).getImage());
+        assertEquals(TopicOperatorSpec.DEFAULT_TLS_SIDECAR_IMAGE, containers.get(1).getImage());
         assertEquals(TopicOperator.defaultZookeeperConnect(cluster), AbstractModel.containerEnvVars(containers.get(1)).get(TopicOperator.ENV_VAR_ZOOKEEPER_CONNECT));
         assertEquals(TopicOperator.TLS_SIDECAR_VOLUME_NAME, containers.get(1).getVolumeMounts().get(0).getName());
         assertEquals(TopicOperator.TLS_SIDECAR_VOLUME_MOUNT, containers.get(1).getVolumeMounts().get(0).getMountPath());
@@ -179,7 +180,7 @@ public class TopicOperatorTest {
     }
 
     @Rule
-    public ResourceTester<KafkaAssembly, TopicOperator> helper = new ResourceTester<>(KafkaAssembly.class, TopicOperator::fromCrd);
+    public ResourceTester<Kafka, TopicOperator> helper = new ResourceTester<>(Kafka.class, TopicOperator::fromCrd);
 
     @Test
     public void withAffinity() throws IOException {

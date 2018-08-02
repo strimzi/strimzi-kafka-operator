@@ -29,7 +29,7 @@ In order to handle failovers properly, a periodic reconciliation process is exec
 [[kafka_assembly_details]]
 === Format of the `Kafka` resource
 
-The full API is described in <<type-KafkaAssembly>>.
+The full schema is described in xref:type-Kafka[].
 
 Whatever other labels are applied to the desired Kafka resource will also be applied to the {ProductPlatformName} resources making up the Kafka cluster.
 This provides a convenient mechanism for those resources to be labelled in whatever way the user requires.

@@ -4,16 +4,16 @@
  */
 package io.strimzi.operator.common.model;
 
-import io.strimzi.api.kafka.model.KafkaAssembly;
-import io.strimzi.api.kafka.model.KafkaConnectAssembly;
-import io.strimzi.api.kafka.model.KafkaConnectS2IAssembly;
+import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaConnect;
+import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaUser;
 
 public enum ResourceType {
 
-    KAFKA(KafkaAssembly.RESOURCE_KIND),
-    CONNECT(KafkaConnectAssembly.RESOURCE_KIND),
-    CONNECT_S2I(KafkaConnectS2IAssembly.RESOURCE_KIND),
+    KAFKA(Kafka.RESOURCE_KIND),
+    CONNECT(KafkaConnect.RESOURCE_KIND),
+    CONNECT_S2I(KafkaConnectS2I.RESOURCE_KIND),
     USER(KafkaUser.RESOURCE_KIND);
 
     public final String name;
@@ -28,11 +28,11 @@ public enum ResourceType {
 
     public static ResourceType fromName(String name) {
         switch (name) {
-            case KafkaAssembly.RESOURCE_KIND:
+            case Kafka.RESOURCE_KIND:
                 return ResourceType.KAFKA;
-            case KafkaConnectAssembly.RESOURCE_KIND:
+            case KafkaConnect.RESOURCE_KIND:
                 return ResourceType.CONNECT;
-            case KafkaConnectS2IAssembly.RESOURCE_KIND:
+            case KafkaConnectS2I.RESOURCE_KIND:
                 return ResourceType.CONNECT_S2I;
             case KafkaUser.RESOURCE_KIND:
                 return ResourceType.USER;

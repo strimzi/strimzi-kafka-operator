@@ -19,7 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * The {@code spec} of a {@link KafkaAssembly}.
+ * The {@code spec} of a {@link Kafka}.
  */
 @Buildable(
         editableEnabled = false,
@@ -28,41 +28,41 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "kafka", "zookeeper", "topicOperator" })
-public class KafkaAssemblySpec implements Serializable {
+public class KafkaSpec implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private Kafka kafka;
-    private Zookeeper zookeeper;
-    private TopicOperator topicOperator;
+    private KafkaClusterSpec kafka;
+    private ZookeeperClusterSpec zookeeper;
+    private TopicOperatorSpec topicOperator;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Configuration of the Kafka cluster")
     @JsonProperty(required = true)
-    public Kafka getKafka() {
+    public KafkaClusterSpec getKafka() {
         return kafka;
     }
 
-    public void setKafka(Kafka kafka) {
+    public void setKafka(KafkaClusterSpec kafka) {
         this.kafka = kafka;
     }
 
     @Description("Configuration of the Zookeeper cluster")
     @JsonProperty(required = true)
-    public Zookeeper getZookeeper() {
+    public ZookeeperClusterSpec getZookeeper() {
         return zookeeper;
     }
 
-    public void setZookeeper(Zookeeper zookeeper) {
+    public void setZookeeper(ZookeeperClusterSpec zookeeper) {
         this.zookeeper = zookeeper;
     }
 
     @Description("Configuration of the Topic Operator")
-    public TopicOperator getTopicOperator() {
+    public TopicOperatorSpec getTopicOperator() {
         return topicOperator;
     }
 
-    public void setTopicOperator(TopicOperator topicOperator) {
+    public void setTopicOperator(TopicOperatorSpec topicOperator) {
         this.topicOperator = topicOperator;
     }
 

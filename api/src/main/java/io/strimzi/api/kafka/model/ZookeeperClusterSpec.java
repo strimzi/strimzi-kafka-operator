@@ -36,7 +36,7 @@ import java.util.Map;
         "livenessProbe", "readinessProbe",
         "jvmOptions", "resources",
          "metrics", "logging", "tlsSidecar"})
-public class Zookeeper implements Serializable {
+public class ZookeeperClusterSpec implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

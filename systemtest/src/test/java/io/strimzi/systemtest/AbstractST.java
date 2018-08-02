@@ -22,8 +22,8 @@ import io.strimzi.api.kafka.DoneableKafkaTopic;
 import io.strimzi.api.kafka.KafkaAssemblyList;
 import io.strimzi.api.kafka.KafkaConnectAssemblyList;
 import io.strimzi.api.kafka.KafkaTopicList;
-import io.strimzi.api.kafka.model.KafkaAssembly;
-import io.strimzi.api.kafka.model.KafkaConnectAssembly;
+import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClient;
@@ -143,12 +143,12 @@ public class AbstractST {
         namedResource.replace(resource);
     }
 
-    void replaceKafkaResource(String resourceName, Consumer<KafkaAssembly> editor) {
-        replaceCrdResource(KafkaAssembly.class, KafkaAssemblyList.class, DoneableKafkaAssembly.class, resourceName, editor);
+    void replaceKafkaResource(String resourceName, Consumer<Kafka> editor) {
+        replaceCrdResource(Kafka.class, KafkaAssemblyList.class, DoneableKafkaAssembly.class, resourceName, editor);
     }
 
-    void replaceKafkaConnectResource(String resourceName, Consumer<KafkaConnectAssembly> editor) {
-        replaceCrdResource(KafkaConnectAssembly.class, KafkaConnectAssemblyList.class, DoneableKafkaConnectAssembly.class, resourceName, editor);
+    void replaceKafkaConnectResource(String resourceName, Consumer<KafkaConnect> editor) {
+        replaceCrdResource(KafkaConnect.class, KafkaConnectAssemblyList.class, DoneableKafkaConnectAssembly.class, resourceName, editor);
     }
 
     void replaceTopicResource(String resourceName, Consumer<KafkaTopic> editor) {

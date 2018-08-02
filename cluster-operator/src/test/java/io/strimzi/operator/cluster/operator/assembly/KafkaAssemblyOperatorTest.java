@@ -12,11 +12,12 @@ import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.api.kafka.model.EphemeralStorage;
 import io.strimzi.api.kafka.model.InlineLogging;
-import io.strimzi.api.kafka.model.KafkaAssembly;
-import io.strimzi.api.kafka.model.KafkaAssemblyBuilder;
+import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.Storage;
-import io.strimzi.api.kafka.model.TopicOperatorBuilder;
+import io.strimzi.api.kafka.model.TopicOperatorSpecBuilder;
+import io.strimzi.api.kafka.model.TopicOperatorSpec;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
@@ -100,7 +101,7 @@ public class KafkaAssemblyOperatorTest {
     private final Map<String, Object> kafkaConfig;
     private final Map<String, Object> zooConfig;
     private final Storage storage;
-    private final io.strimzi.api.kafka.model.TopicOperator tcConfig;
+    private final TopicOperatorSpec tcConfig;
     private final boolean deleteClaim;
     private MockCertManager certManager = new MockCertManager();
 
@@ -110,9 +111,9 @@ public class KafkaAssemblyOperatorTest {
         private final Map<String, Object> kafkaConfig;
         private final Map<String, Object> zooConfig;
         private final Storage storage;
-        private final io.strimzi.api.kafka.model.TopicOperator tcConfig;
+        private final TopicOperatorSpec tcConfig;
 
-        public Params(boolean openShift, boolean metrics, Map<String, Object> kafkaConfig, Map<String, Object> zooConfig, Storage storage, io.strimzi.api.kafka.model.TopicOperator tcConfig) {
+        public Params(boolean openShift, boolean metrics, Map<String, Object> kafkaConfig, Map<String, Object> zooConfig, Storage storage, TopicOperatorSpec tcConfig) {
             this.openShift = openShift;
             this.metrics = metrics;
             this.kafkaConfig = kafkaConfig;
@@ -153,10 +154,10 @@ public class KafkaAssemblyOperatorTest {
             emptyMap(),
             singletonMap("foo", "bar")
         };
-        io.strimzi.api.kafka.model.TopicOperator[] tcConfigs = {
+        TopicOperatorSpec[] tcConfigs = {
             null,
-            new io.strimzi.api.kafka.model.TopicOperator(),
-            new TopicOperatorBuilder().withReconciliationIntervalSeconds(600)
+            new TopicOperatorSpec(),
+            new TopicOperatorSpecBuilder().withReconciliationIntervalSeconds(600)
                     .withZookeeperSessionTimeoutSeconds(10).build()
         };
         List<Params> result = new ArrayList();
@@ -165,7 +166,7 @@ public class KafkaAssemblyOperatorTest {
                 for (Map kafkaConfig: kafkaConfigs) {
                     for (Map zooConfig: zooConfigs) {
                         for (Storage storage : storageConfigs) {
-                            for (io.strimzi.api.kafka.model.TopicOperator tcConfig : tcConfigs) {
+                            for (TopicOperatorSpec tcConfig : tcConfigs) {
                                 result.add(new Params(shift, metric, kafkaConfig, zooConfig, storage, tcConfig));
                             }
                         }
@@ -203,7 +204,7 @@ public class KafkaAssemblyOperatorTest {
         createCluster(context, getKafkaAssembly("foo"), getInitialSecrets(getKafkaAssembly("foo").getMetadata().getName()));
     }
 
-    private void createCluster(TestContext context, KafkaAssembly clusterCm, List<Secret> secrets) {
+    private void createCluster(TestContext context, Kafka clusterCm, List<Secret> secrets) {
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(certManager, clusterCm, secrets);
         ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromCrd(certManager, clusterCm, secrets);
         TopicOperator topicOperator = TopicOperator.fromCrd(certManager, clusterCm, secrets);
@@ -311,7 +312,7 @@ public class KafkaAssemblyOperatorTest {
         });
     }
 
-    private void deleteCluster(TestContext context, KafkaAssembly clusterCm, List<Secret> secrets) {
+    private void deleteCluster(TestContext context, Kafka clusterCm, List<Secret> secrets) {
 
         ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromCrd(certManager, clusterCm, secrets);
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(certManager, clusterCm, secrets);
@@ -436,7 +437,7 @@ public class KafkaAssemblyOperatorTest {
         });
     }
 
-    private KafkaAssembly getKafkaAssembly(String clusterName) {
+    private Kafka getKafkaAssembly(String clusterName) {
         String clusterNamespace = "test";
         int replicas = 3;
         String image = "bar";
@@ -462,7 +463,7 @@ public class KafkaAssemblyOperatorTest {
 
     @Test
     public void testDeleteCluster(TestContext context) {
-        KafkaAssembly kafkaAssembly = getKafkaAssembly("baz");
+        Kafka kafkaAssembly = getKafkaAssembly("baz");
         List<Secret> secrets = getClusterSecrets("baz",
                 kafkaAssembly.getSpec().getKafka().getReplicas(),
                 kafkaAssembly.getSpec().getZookeeper().getReplicas());
@@ -471,7 +472,7 @@ public class KafkaAssemblyOperatorTest {
 
     @Test
     public void testUpdateClusterNoop(TestContext context) {
-        KafkaAssembly kafkaAssembly = getKafkaAssembly("bar");
+        Kafka kafkaAssembly = getKafkaAssembly("bar");
         List<Secret> secrets = getClusterSecrets("bar",
                 kafkaAssembly.getSpec().getKafka().getReplicas(),
                 kafkaAssembly.getSpec().getZookeeper().getReplicas());
@@ -480,7 +481,7 @@ public class KafkaAssemblyOperatorTest {
 
     @Test
     public void testUpdateKafkaClusterChangeImage(TestContext context) {
-        KafkaAssembly kafkaAssembly = getKafkaAssembly("bar");
+        Kafka kafkaAssembly = getKafkaAssembly("bar");
         kafkaAssembly.getSpec().getKafka().setImage("a-changed-image");
         List<Secret> secrets = getClusterSecrets("bar",
                 kafkaAssembly.getSpec().getKafka().getReplicas(),
@@ -490,7 +491,7 @@ public class KafkaAssemblyOperatorTest {
 
     @Test
     public void testUpdateZookeeperClusterChangeImage(TestContext context) {
-        KafkaAssembly kafkaAssembly = getKafkaAssembly("bar");
+        Kafka kafkaAssembly = getKafkaAssembly("bar");
         kafkaAssembly.getSpec().getZookeeper().setImage("a-changed-image");
         List<Secret> secrets = getClusterSecrets("bar",
                 kafkaAssembly.getSpec().getKafka().getReplicas(),
@@ -500,8 +501,8 @@ public class KafkaAssemblyOperatorTest {
 
     @Test
     public void testUpdateZookeeperClusterChangeStunnelImage(TestContext context) {
-        KafkaAssembly kafkaAssembly = getKafkaAssembly("bar");
-        kafkaAssembly = new KafkaAssemblyBuilder(kafkaAssembly)
+        Kafka kafkaAssembly = getKafkaAssembly("bar");
+        kafkaAssembly = new KafkaBuilder(kafkaAssembly)
                 .editSpec().editZookeeper()
                     .editOrNewTlsSidecar().withImage("a-changed-tls-sidecar-image")
                     .endTlsSidecar().endZookeeper().endSpec().build();
@@ -513,7 +514,7 @@ public class KafkaAssemblyOperatorTest {
 
     @Test
     public void testUpdateKafkaClusterScaleUp(TestContext context) {
-        KafkaAssembly kafkaAssembly = getKafkaAssembly("bar");
+        Kafka kafkaAssembly = getKafkaAssembly("bar");
         kafkaAssembly.getSpec().getKafka().setReplicas(4);
         List<Secret> secrets = getClusterSecrets("bar",
                 kafkaAssembly.getSpec().getKafka().getReplicas(),
@@ -523,7 +524,7 @@ public class KafkaAssemblyOperatorTest {
 
     @Test
     public void testUpdateKafkaClusterScaleDown(TestContext context) {
-        KafkaAssembly kafkaAssembly = getKafkaAssembly("bar");
+        Kafka kafkaAssembly = getKafkaAssembly("bar");
         kafkaAssembly.getSpec().getKafka().setReplicas(2);
         List<Secret> secrets = getClusterSecrets("bar",
                 kafkaAssembly.getSpec().getKafka().getReplicas(),
@@ -533,7 +534,7 @@ public class KafkaAssemblyOperatorTest {
 
     @Test
     public void testUpdateZookeeperClusterScaleUp(TestContext context) {
-        KafkaAssembly kafkaAssembly = getKafkaAssembly("bar");
+        Kafka kafkaAssembly = getKafkaAssembly("bar");
         kafkaAssembly.getSpec().getZookeeper().setReplicas(4);
         List<Secret> secrets = getClusterSecrets("bar",
                 kafkaAssembly.getSpec().getKafka().getReplicas(),
@@ -543,7 +544,7 @@ public class KafkaAssemblyOperatorTest {
 
     @Test
     public void testUpdateZookeeperClusterScaleDown(TestContext context) {
-        KafkaAssembly kafkaAssembly = getKafkaAssembly("bar");
+        Kafka kafkaAssembly = getKafkaAssembly("bar");
         kafkaAssembly.getSpec().getZookeeper().setReplicas(2);
         List<Secret> secrets = getClusterSecrets("bar",
                 kafkaAssembly.getSpec().getKafka().getReplicas(),
@@ -553,7 +554,7 @@ public class KafkaAssemblyOperatorTest {
 
     @Test
     public void testUpdateClusterMetricsConfig(TestContext context) {
-        KafkaAssembly kafkaAssembly = getKafkaAssembly("bar");
+        Kafka kafkaAssembly = getKafkaAssembly("bar");
         kafkaAssembly.getSpec().getKafka().setMetrics(singletonMap("something", "changed"));
         List<Secret> secrets = getClusterSecrets("bar",
                 kafkaAssembly.getSpec().getKafka().getReplicas(),
@@ -563,7 +564,7 @@ public class KafkaAssemblyOperatorTest {
 
     @Test
     public void testUpdateClusterLogConfig(TestContext context) {
-        KafkaAssembly kafkaAssembly = getKafkaAssembly("bar");
+        Kafka kafkaAssembly = getKafkaAssembly("bar");
         InlineLogging logger = new InlineLogging();
         logger.setLoggers(singletonMap("kafka.root.logger.level", "DEBUG"));
         kafkaAssembly.getSpec().getKafka().setLogging(logger);
@@ -575,7 +576,7 @@ public class KafkaAssemblyOperatorTest {
 
     @Test
     public void testUpdateZkClusterMetricsConfig(TestContext context) {
-        KafkaAssembly kafkaAssembly = getKafkaAssembly("bar");
+        Kafka kafkaAssembly = getKafkaAssembly("bar");
         kafkaAssembly.getSpec().getZookeeper().setMetrics(singletonMap("something", "changed"));
         List<Secret> secrets = getClusterSecrets("bar",
                 kafkaAssembly.getSpec().getKafka().getReplicas(),
@@ -585,7 +586,7 @@ public class KafkaAssemblyOperatorTest {
 
     @Test
     public void testUpdateZkClusterLogConfig(TestContext context) {
-        KafkaAssembly kafkaAssembly = getKafkaAssembly("bar");
+        Kafka kafkaAssembly = getKafkaAssembly("bar");
         InlineLogging logger = new InlineLogging();
         logger.setLoggers(singletonMap("zookeeper.root.logger", "DEBUG"));
         kafkaAssembly.getSpec().getZookeeper().setLogging(logger);
@@ -597,10 +598,10 @@ public class KafkaAssemblyOperatorTest {
 
     @Test
     public void testUpdateTopicOperatorConfig(TestContext context) {
-        KafkaAssembly kafkaAssembly = getKafkaAssembly("bar");
+        Kafka kafkaAssembly = getKafkaAssembly("bar");
         if (tcConfig != null) {
             kafkaAssembly.getSpec().getTopicOperator().setImage("some/other:image");
-            kafkaAssembly = new KafkaAssemblyBuilder(kafkaAssembly)
+            kafkaAssembly = new KafkaBuilder(kafkaAssembly)
                     .editSpec().editTopicOperator()
                     .editOrNewTlsSidecar().withImage("a-changed-tls-sidecar-image")
                     .endTlsSidecar().endTopicOperator().endSpec().build();
@@ -612,7 +613,7 @@ public class KafkaAssemblyOperatorTest {
     }
 
 
-    private void updateCluster(TestContext context, KafkaAssembly originalAssembly, KafkaAssembly updatedAssembly, List<Secret> secrets) {
+    private void updateCluster(TestContext context, Kafka originalAssembly, Kafka updatedAssembly, List<Secret> secrets) {
         KafkaCluster originalKafkaCluster = KafkaCluster.fromCrd(certManager, originalAssembly, secrets);
         KafkaCluster updatedKafkaCluster = KafkaCluster.fromCrd(certManager, updatedAssembly, secrets);
         ZookeeperCluster originalZookeeperCluster = ZookeeperCluster.fromCrd(certManager, originalAssembly, secrets);
@@ -823,9 +824,9 @@ public class KafkaAssemblyOperatorTest {
         ClusterRoleBindingOperator mockCrbo = supplier.clusterRoleBindingOperator;
         String clusterCmNamespace = "myNamespace";
 
-        KafkaAssembly foo = getKafkaAssembly("foo");
-        KafkaAssembly bar = getKafkaAssembly("bar");
-        KafkaAssembly baz = getKafkaAssembly("baz");
+        Kafka foo = getKafkaAssembly("foo");
+        Kafka bar = getKafkaAssembly("bar");
+        Kafka baz = getKafkaAssembly("baz");
         when(mockKafkaOps.list(eq(clusterCmNamespace), any())).thenReturn(
             asList(foo, bar)
         );
@@ -843,7 +844,7 @@ public class KafkaAssemblyOperatorTest {
                 baz.getSpec().getZookeeper().getReplicas());
 
         // providing the list of ALL StatefulSets for all the Kafka clusters
-        Labels newLabels = Labels.forKind(KafkaAssembly.RESOURCE_KIND);
+        Labels newLabels = Labels.forKind(Kafka.RESOURCE_KIND);
         when(mockKsOps.list(eq(clusterCmNamespace), eq(newLabels))).thenReturn(
                 asList(KafkaCluster.fromCrd(certManager, bar, barSecrets).generateStatefulSet(openShift),
                         KafkaCluster.fromCrd(certManager, baz, bazSecrets).generateStatefulSet(openShift))
@@ -883,7 +884,7 @@ public class KafkaAssemblyOperatorTest {
                 certManager,
                 supplier) {
             @Override
-            public void createOrUpdate(Reconciliation reconciliation, KafkaAssembly kafkaAssembly, List<Secret> assemblySecrets, Handler<AsyncResult<Void>> h) {
+            public void createOrUpdate(Reconciliation reconciliation, Kafka kafkaAssembly, List<Secret> assemblySecrets, Handler<AsyncResult<Void>> h) {
                 createdOrUpdated.add(kafkaAssembly.getMetadata().getName());
                 async.countDown();
                 h.handle(Future.succeededFuture());

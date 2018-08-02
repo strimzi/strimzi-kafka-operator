@@ -27,15 +27,15 @@ import java.util.Map;
         using = JsonDeserializer.None.class
 )
 @Crd(
-        apiVersion = KafkaConnectAssembly.CRD_API_VERSION,
+        apiVersion = KafkaConnectS2I.CRD_API_VERSION,
         spec = @Crd.Spec(
                 names = @Crd.Spec.Names(
-                        kind = KafkaConnectAssembly.RESOURCE_KIND,
-                        plural = KafkaConnectAssembly.RESOURCE_PLURAL
+                        kind = KafkaConnectS2I.RESOURCE_KIND,
+                        plural = KafkaConnectS2I.RESOURCE_PLURAL
                 ),
-                group = KafkaConnectAssembly.RESOURCE_GROUP,
+                group = KafkaConnectS2I.RESOURCE_GROUP,
                 scope = "Namespaced",
-                version = KafkaConnectAssembly.VERSION
+                version = KafkaConnectS2I.VERSION
         )
 )
 @Buildable(
@@ -45,22 +45,22 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec"})
-public class KafkaConnectAssembly extends CustomResource {
+public class KafkaConnectS2I extends CustomResource {
 
     private static final long serialVersionUID = 1L;
 
     public static final String VERSION = "v1alpha1";
-    public static final String RESOURCE_KIND = "KafkaConnect";
+    public static final String RESOURCE_KIND = "KafkaConnectS2I";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
     public static final String RESOURCE_GROUP = "kafka.strimzi.io";
-    public static final String RESOURCE_PLURAL = "kafkaconnects";
-    public static final String RESOURCE_SINGULAR = "kafkaconnect";
+    public static final String RESOURCE_PLURAL = "kafkaconnects2is";
+    public static final String RESOURCE_SINGULAR = "kafkaconnects2i";
     public static final String CRD_API_VERSION = "apiextensions.k8s.io/v1beta1";
     public static final String CRD_NAME = RESOURCE_PLURAL + "." + RESOURCE_GROUP;
 
     private String apiVersion;
-    private KafkaConnectAssemblySpec spec;
     private ObjectMeta metadata;
+    private KafkaConnectS2IAssemblySpec spec;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Override
@@ -91,11 +91,11 @@ public class KafkaConnectAssembly extends CustomResource {
     }
 
     @Description("The specification of the Kafka Connect deployment.")
-    public KafkaConnectAssemblySpec getSpec() {
+    public KafkaConnectS2IAssemblySpec getSpec() {
         return spec;
     }
 
-    public void setSpec(KafkaConnectAssemblySpec spec) {
+    public void setSpec(KafkaConnectS2IAssemblySpec spec) {
         this.spec = spec;
     }
 

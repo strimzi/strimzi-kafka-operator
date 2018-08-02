@@ -25,7 +25,7 @@ import io.fabric8.openshift.api.model.ImageStreamBuilder;
 import io.fabric8.openshift.api.model.TagImportPolicyBuilder;
 import io.fabric8.openshift.api.model.TagReference;
 import io.fabric8.openshift.api.model.TagReferencePolicyBuilder;
-import io.strimzi.api.kafka.model.KafkaConnectS2IAssembly;
+import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IAssemblySpec;
 import io.strimzi.operator.common.model.Labels;
 
@@ -54,11 +54,11 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
         this.validLoggerFields = getDefaultLogConfig();
     }
 
-    public static KafkaConnectS2ICluster fromCrd(KafkaConnectS2IAssembly kafkaConnectS2IAssembly) {
-        KafkaConnectS2IAssemblySpec spec = kafkaConnectS2IAssembly.getSpec();
-        KafkaConnectS2ICluster cluster = fromSpec(spec, new KafkaConnectS2ICluster(kafkaConnectS2IAssembly.getMetadata().getNamespace(),
-                kafkaConnectS2IAssembly.getMetadata().getName(),
-                Labels.fromResource(kafkaConnectS2IAssembly).withKind(kafkaConnectS2IAssembly.getKind())));
+    public static KafkaConnectS2ICluster fromCrd(KafkaConnectS2I kafkaConnectS2I) {
+        KafkaConnectS2IAssemblySpec spec = kafkaConnectS2I.getSpec();
+        KafkaConnectS2ICluster cluster = fromSpec(spec, new KafkaConnectS2ICluster(kafkaConnectS2I.getMetadata().getNamespace(),
+                kafkaConnectS2I.getMetadata().getName(),
+                Labels.fromResource(kafkaConnectS2I).withKind(kafkaConnectS2I.getKind())));
         cluster.setInsecureSourceRepository(spec != null ? spec.isInsecureSourceRepository() : false);
         return cluster;
     }

@@ -5,7 +5,7 @@
 
 package io.strimzi.operator.cluster.model;
 
-import io.strimzi.api.kafka.model.KafkaConnectAssemblySpec;
+import io.strimzi.api.kafka.model.KafkaConnectSpec;
 
 import java.util.List;
 import java.util.Map;
@@ -21,7 +21,7 @@ public class KafkaConnectConfiguration extends AbstractConfiguration {
     private static final Properties DEFAULTS;
 
     static {
-        FORBIDDEN_OPTIONS = asList(KafkaConnectAssemblySpec.FORBIDDEN_PREFIXES.split(", "));
+        FORBIDDEN_OPTIONS = asList(KafkaConnectSpec.FORBIDDEN_PREFIXES.split(", "));
 
         DEFAULTS = new Properties();
         DEFAULTS.setProperty("group.id", "connect-cluster");

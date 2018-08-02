@@ -15,7 +15,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.DoneableKafkaAssembly;
 import io.strimzi.api.kafka.KafkaAssemblyList;
 import io.strimzi.api.kafka.model.ExternalLogging;
-import io.strimzi.api.kafka.model.KafkaAssembly;
+import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.TopicOperator;
@@ -54,7 +54,7 @@ import java.util.List;
  *     <li>Optionally, a TopicOperator Deployment</li>
  * </ul>
  */
-public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesClient, KafkaAssembly, KafkaAssemblyList, DoneableKafkaAssembly, Resource<KafkaAssembly, DoneableKafkaAssembly>> {
+public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesClient, Kafka, KafkaAssemblyList, DoneableKafkaAssembly, Resource<Kafka, DoneableKafkaAssembly>> {
     private static final Logger log = LogManager.getLogger(KafkaAssemblyOperator.class.getName());
 
     private final long operationTimeoutMs;
@@ -91,7 +91,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     }
 
     @Override
-    public void createOrUpdate(Reconciliation reconciliation, KafkaAssembly kafkaAssembly, List<Secret> assemblySecrets, Handler<AsyncResult<Void>> handler) {
+    public void createOrUpdate(Reconciliation reconciliation, Kafka kafkaAssembly, List<Secret> assemblySecrets, Handler<AsyncResult<Void>> handler) {
         Future<Void> f = Future.<Void>future().setHandler(handler);
         createOrUpdateZk(reconciliation, kafkaAssembly, assemblySecrets)
             .compose(i -> createOrUpdateKafka(reconciliation, kafkaAssembly, assemblySecrets))
@@ -325,7 +325,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
     }
 
-    private final Future<KafkaClusterDescription> getKafkaClusterDescription(KafkaAssembly kafkaAssembly, List<Secret> assemblySecrets) {
+    private final Future<KafkaClusterDescription> getKafkaClusterDescription(Kafka kafkaAssembly, List<Secret> assemblySecrets) {
         Future<KafkaClusterDescription> fut = Future.future();
 
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
@@ -359,7 +359,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         return fut;
     }
 
-    private final Future<Void> createOrUpdateKafka(Reconciliation reconciliation, KafkaAssembly kafkaAssembly, List<Secret> assemblySecrets) {
+    private final Future<Void> createOrUpdateKafka(Reconciliation reconciliation, Kafka kafkaAssembly, List<Secret> assemblySecrets) {
         String namespace = kafkaAssembly.getMetadata().getNamespace();
         String name = kafkaAssembly.getMetadata().getName();
         log.debug("{}: create/update kafka {}", reconciliation, name);
@@ -423,7 +423,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         return CompositeFuture.join(result);
     }
 
-    private final Future<ZookeeperClusterDescription> getZookeeperClusterDescription(KafkaAssembly kafkaAssembly, List<Secret> assemblySecrets) {
+    private final Future<ZookeeperClusterDescription> getZookeeperClusterDescription(Kafka kafkaAssembly, List<Secret> assemblySecrets) {
         Future<ZookeeperClusterDescription> fut = Future.future();
 
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
@@ -456,7 +456,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         return fut;
     }
 
-    private final Future<Void> createOrUpdateZk(Reconciliation reconciliation, KafkaAssembly kafkaAssembly, List<Secret> assemblySecrets) {
+    private final Future<Void> createOrUpdateZk(Reconciliation reconciliation, Kafka kafkaAssembly, List<Secret> assemblySecrets) {
         String namespace = kafkaAssembly.getMetadata().getNamespace();
         String name = kafkaAssembly.getMetadata().getName();
         log.debug("{}: create/update zookeeper {}", reconciliation, name);
@@ -502,7 +502,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         return CompositeFuture.join(result);
     }
 
-    private final Future<TopicOperatorDescription> getTopicOperatorDescription(KafkaAssembly kafkaAssembly, List<Secret> assemblySecrets) {
+    private final Future<TopicOperatorDescription> getTopicOperatorDescription(Kafka kafkaAssembly, List<Secret> assemblySecrets) {
         Future<TopicOperatorDescription> fut = Future.future();
 
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
@@ -539,7 +539,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         return fut;
     }
 
-    private final Future<Void> createOrUpdateTopicOperator(Reconciliation reconciliation, KafkaAssembly kafkaAssembly, List<Secret> assemblySecrets) {
+    private final Future<Void> createOrUpdateTopicOperator(Reconciliation reconciliation, Kafka kafkaAssembly, List<Secret> assemblySecrets) {
         String namespace = kafkaAssembly.getMetadata().getNamespace();
         String name = kafkaAssembly.getMetadata().getName();
         log.debug("{}: create/update topic operator {}", reconciliation, name);
