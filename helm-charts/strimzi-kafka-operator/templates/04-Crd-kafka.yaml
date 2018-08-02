@@ -62,6 +62,10 @@ spec:
                 authorization:
                   type: object
                   properties:
+                    superUsers:
+                      type: array
+                      items:
+                        type: string
                     type:
                       type: string
                 config:

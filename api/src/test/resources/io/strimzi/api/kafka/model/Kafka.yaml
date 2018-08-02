@@ -43,6 +43,14 @@ spec:
           type: tls
     authorization:
       type: simple
+      superUsers:
+        - CN=jakub
+        - CN=paolo
+        - CN=tom
+        - CN=stanislav
+        - CN=kyle
+        - CN=sergey
+        - CN=andryi
     metrics: {
         "lowercaseOutputName": true,
         "rules": [
