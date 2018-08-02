@@ -844,7 +844,11 @@ Default is 60.
 The timeout in seconds of the liveness and readiness probes for each Kafka Connect worker node.
 Default is 5.
 
-`connect-config`::
+`bootstrapServers`::
+Bootstrap servers to connect to. This should be given as a comma separated list of _<hostname>_:‍_<port>_ pairs.
+This parameter is required.
+
+`config`::
 A JSON string with Kafka Connect configuration. 
 See section <<kafka_connect_configuration_json_config>> for more details.
 
@@ -882,8 +886,7 @@ spec:
   livenessProbe:
     initialDelaySeconds: 60
     timeoutSeconds: 5
-  config: 
-    bootstrap.servers: my-cluster-kafka-bootstrap:9092
+  bootstrapServers: my-cluster-kafka-bootstrap:9092
 ----
 
 The resources created by the Cluster Operator into the {ProductPlatformName} cluster will be the following :
@@ -908,6 +911,7 @@ This object should contain the Kafka Connect configuration options as keys. The 
 
 The `config` object supports all Kafka Connect configuration options with the exception of options related to:
 
+* Kafka cluster bootstrap
 * Security (Encryption, Authentication and Authorization)
 * Listener / REST interface configuration
 * Plugin path configuration
@@ -920,6 +924,7 @@ Specifically, all configuration options with keys starting with one of the follo
 * `listeners`
 * `plugin.path`
 * `rest.`
+* `bootstrap.servers`
 
 All other options will be passed to Kafka Connect. A list of all the available options can be found on the
 http://kafka.apache.org/11/documentation.html#connectconfigs[Kafka website]. An example `config` field is provided
@@ -934,7 +939,6 @@ metadata:
   name: my-connect-cluster
 spec:
   config:
-    bootstrap.servers: my-cluster-kafka-bootstrap:9092
     group.id: my-connect-cluster
     offset.storage.topic: my-connect-cluster-offsets
     config.storage.topic: my-connect-cluster-configs
@@ -1005,8 +1009,7 @@ spec:
   livenessProbe:
     initialDelaySeconds: 60
     timeoutSeconds: 5
-  config: 
-    bootstrap.servers: my-cluster-kafka-bootstrap:9092
+  bootstrapServers: my-cluster-kafka-bootstrap:9092
 ----
 
 The S2I deployment is very similar to the regular Kafka Connect deployment (as represented by the `KafkaConnect` resource).
