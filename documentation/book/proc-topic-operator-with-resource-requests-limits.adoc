@@ -55,4 +55,5 @@ oc apply -f _<your-file>_
 
 .Additional resources
 
-* For more information about the resource requirements of the Topic Operator, see xref:topic-operator-resource-requirements-{context}[]
+* For more information about the schema of the resources object, see xref:type-Resources-reference[]
+//* For more information about the resource requirements of the Topic Operator, see xref:topic-operator-resource-requirements-{context}[]

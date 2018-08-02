@@ -30,8 +30,8 @@ endif::InstallationAppendix[]
 include::appendix_crds.adoc[]
 :context: {parent-context}
 
-[appendix]
-include::ref-minimum-resource-requirements.adoc[leveloffset=+1]
+//[appendix]
+//include::ref-minimum-resource-requirements.adoc[leveloffset=+1]
 
 ifdef::MetricsAppendix[]
 include::appendix_metrics.adoc[]
