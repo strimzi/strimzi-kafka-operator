@@ -10,6 +10,17 @@ export DOCKER_TAG=$COMMIT
 
 make docker_build
 
+CHANGED_DERIVED=$(git diff --name-status -- examples/ helm-charts/)
+if [ -n "$CHANGED_DERIVED" ] ; then
+  echo "Uncommitted changes in derived resources:"
+  echo "$CHANGED_DERIVED"
+  echo "Run the following to add up-to-date resources:"
+  echo "  mvn clean verify -DskipTests -DskipITs \\"
+  echo "    && git add examples/ helm-charts/"
+  echo "    && git commit -m 'Update derived resources'"
+  exit 1
+fi
+
 # Use local registry for system tests
 OLD_DOCKER_REGISTRY=$DOCKER_REGISTRY
 export DOCKER_REGISTRY="localhost:5000"
