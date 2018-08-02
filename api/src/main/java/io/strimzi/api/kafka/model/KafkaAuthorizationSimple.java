@@ -5,6 +5,9 @@
 package io.strimzi.api.kafka.model;
 
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.Example;
+
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.sundr.builder.annotations.Buildable;
@@ -23,9 +26,23 @@ public class KafkaAuthorizationSimple extends KafkaAuthorization {
 
     public static final String TYPE_SIMPLE = "simple";
 
+    private List<String> superUsers;
+
     @Description("Must be `" + TYPE_SIMPLE + "`")
     @Override
     public String getType() {
         return TYPE_SIMPLE;
+    }
+
+    @Description("List of super users. Should contain list of user principals which should get unlimited access rights.")
+    @Example("- CN=my-user\n" +
+             "- CN=my-other-user")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public List<String> getSuperUsers() {
+        return superUsers;
+    }
+
+    public void setSuperUsers(List<String> superUsers) {
+        this.superUsers = superUsers;
     }
 }

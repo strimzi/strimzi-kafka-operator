@@ -20,6 +20,14 @@ spec:
           type: "tls"
     authorization:
       type: "simple"
+      superUsers:
+      - "CN=jakub"
+      - "CN=paolo"
+      - "CN=tom"
+      - "CN=stanislav"
+      - "CN=kyle"
+      - "CN=sergey"
+      - "CN=andryi"
     config:
       min.insync.replicas: 3
     brokerRackInitImage: "strimzi/kafka-init:latest"

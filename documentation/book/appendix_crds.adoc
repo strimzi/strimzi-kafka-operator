@@ -44,8 +44,13 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |listeners            1.2+<.<|Configures listeners of Kafka brokers
 |xref:type-KafkaListeners-{context}[`KafkaListeners`]
 |authorization        1.2+<.<|Authorization configuration for Kafka brokers The type depends on the value of the `authorization.type` property within the given object, which must be one of [simple]
+<<<<<<< HEAD
 |xref:type-KafkaAuthorizationSimple-{context}[`KafkaAuthorizationSimple`]
 |config               1.2+<.<|The kafka broker config. Properties with the following prefixes cannot be set: listeners, advertised., broker., listener.name.replication., listener.name.clienttls.ssl.truststore, listener.name.clienttls.ssl.keystore, host.name, port, inter.broker.listener.name, sasl., ssl., security., password., principal.builder.class, log.dir, zookeeper.connect, zookeeper.set.acl, super.user
+=======
+|<<type-KafkaAuthorizationSimple,`KafkaAuthorizationSimple`>>
+|config               1.2+<.<|The kafka broker config. Properties with the following prefixes cannot be set: listeners, advertised., broker., listener., host.name, port, inter.broker.listener.name, sasl., ssl., security., password., principal.builder.class, log.dir, zookeeper.connect, zookeeper.set.acl, authorizer., super.user
+>>>>>>> Make it possible to configure super users
 |map
 |rack                 1.2+<.<|Configuration of the `broker.rack` broker config.
 |xref:type-Rack-{context}[`Rack`]
@@ -177,8 +182,10 @@ The `type` property is a discriminator that distinguishes the use of the type `K
 It must have the value `simple` for the type `KafkaAuthorizationSimple`.
 [options="header"]
 |====
-|Field        |Description
-|type  1.2+<.<|Must be `simple`
+|Field              |Description
+|superUsers  1.2+<.<|List of super users. Should contain list of user principals which should get unlimited access rights.
+|string array
+|type        1.2+<.<|Must be `simple`
 |string
 |====
 
