@@ -10,7 +10,9 @@ include::getting-started.adoc[leveloffset=+1]
 
 include::cluster-operator.adoc[]
 
-include::assembly-topic-operator.adoc[leveloffset=+1]
+include::assembly-deploying-the-topic-operator.adoc[leveloffset=+1]
+
+include::assembly-using-the-topic-operator.adoc[leveloffset=+1]
 
 include::security.adoc[]
 

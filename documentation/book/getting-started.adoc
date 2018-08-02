@@ -45,7 +45,7 @@ include::assembly-kafka-connect.adoc[leveloffset=+1]
 
 == Topic Operator
 
-include::con-what-topic-operator-does.adoc[leveloffset=+2]
+include::con-what-the-topic-operator-does.adoc[leveloffset=+2]
 
 include::proc-deploying-the-topic-operator-using-the-cluster-operator.adoc[leveloffset=+2]
 
@@ -57,7 +57,7 @@ When the Topic Operator is deployed by the Cluster Operator it will be configure
 
 NOTE: When the Topic Operator is deployed manually the `strimzi.io/cluster` label is not necessary.
 
-The `KafkaTopic` contains the topic configuration in a specific format, described in xref:type-KafkaTopic[`KafkaTopic` API reference].
+The `KafkaTopic` contains the topic configuration in a specific format, described in xref:type-KafkaTopic-str[`KafkaTopic` API reference].
 
 === Logging
 The `logging` field allows the configuration of loggers. These loggers are listed below.
