@@ -7,8 +7,8 @@
 
 .Prerequisites
 
-* Helm has to be installed on the local machine
-* Helm has to be installed in the {ProductPlatformName} cluster
+* Helm has to be installed on the local machine.
+* Helm has to be installed in the {ProductPlatformName} cluster.
 
 .Procedure
 
@@ -25,4 +25,4 @@ helm ls
 ----
 
 .Additional resources
-* For more information about Helm, see https://helm.sh/[Helm website^]
+* For more information about Helm, see the https://helm.sh/[Helm website^].
