@@ -3,7 +3,7 @@
 Expand the name of the chart.
 */}}
 {{- define "strimzi.name" -}}
-{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
+{{- default "strimzi" .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{/*
