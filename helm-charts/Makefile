@@ -10,7 +10,6 @@ CHART_RENDERED_TEMPLATES_EXAMPLES=../examples/install/cluster-operator/
 helm_clean:
 	rm -rf $(CHART_RENDERED_TEMPLATES_TMP)
 	rm -rf strimzi-$(RELEASE_VERSION)/charts/
-	#rm -rf $(CHART_RENDERED_TEMPLATES_EXAMPLES)
 	rm -f $(CHART_NAME)-*.tgz
 
 helm_lint:
@@ -26,7 +25,7 @@ helm_examples: helm_template
 	# Copying rendered template files to: $(CHART_RENDERED_TEMPLATES_EXAMPLES)
 	mkdir -p $(CHART_RENDERED_TEMPLATES_EXAMPLES)
 	cp $(CHART_RENDERED_TEMPLATES_TMP)/$(CHART_NAME)/templates/* $(CHART_RENDERED_TEMPLATES_EXAMPLES)
-	# Remove Heml-related labels
+	# Remove Helm-related labels
 	find $(CHART_RENDERED_TEMPLATES_EXAMPLES) -type f -name '*.yaml' -exec yq d -i {} metadata.labels.chart \;
 	find $(CHART_RENDERED_TEMPLATES_EXAMPLES) -type f -name '*.yaml' -exec yq d -i {} metadata.labels.component \;
 	find $(CHART_RENDERED_TEMPLATES_EXAMPLES) -type f -name '*.yaml' -exec yq d -i {} metadata.labels.release \;
