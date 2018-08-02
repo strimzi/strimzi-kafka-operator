@@ -36,7 +36,7 @@ The value can be set to: `ERROR`, `WARNING`, `INFO`, `DEBUG`, and `TRACE`.
 Default `INFO`.
 `STRIMZI_TLS_ENABLED`::
 For enabling the TLS support so encrypting the communication with Kafka brokers.
-Default `true`
+Default `true`.
 `STRIMZI_TRUSTSTORE_LOCATION`::
 The path to the truststore containing certificates for enabling TLS based communication.
 This variable is mandatory only if TLS is enabled through `STRIMZI_TLS_ENABLED`.
