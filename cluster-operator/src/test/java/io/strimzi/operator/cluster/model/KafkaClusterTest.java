@@ -77,6 +77,10 @@ public class KafkaClusterTest {
         return TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, cluster, "my-user-label", "cromulent", Labels.STRIMZI_NAME_LABEL, KafkaCluster.kafkaClusterName(cluster), Labels.STRIMZI_KIND_LABEL, Kafka.RESOURCE_KIND);
     }
 
+    private Map<String, String> expectedSelectorLabels()    {
+        return Labels.fromMap(expectedLabels()).strimziLabels().toMap();
+    }
+
     @Test
     public void testGenerateService() {
         Service headful = kc.generateService();
@@ -85,7 +89,7 @@ public class KafkaClusterTest {
 
     private void checkService(Service headful) {
         assertEquals("ClusterIP", headful.getSpec().getType());
-        assertEquals(expectedLabels(), headful.getSpec().getSelector());
+        assertEquals(expectedSelectorLabels(), headful.getSpec().getSelector());
         assertEquals(4, headful.getSpec().getPorts().size());
         assertEquals(KafkaCluster.REPLICATION_PORT_NAME, headful.getSpec().getPorts().get(0).getName());
         assertEquals(new Integer(KafkaCluster.REPLICATION_PORT), headful.getSpec().getPorts().get(0).getPort());
@@ -112,7 +116,7 @@ public class KafkaClusterTest {
         assertEquals(KafkaCluster.headlessServiceName(cluster), headless.getMetadata().getName());
         assertEquals("ClusterIP", headless.getSpec().getType());
         assertEquals("None", headless.getSpec().getClusterIP());
-        assertEquals(expectedLabels(), headless.getSpec().getSelector());
+        assertEquals(expectedSelectorLabels(), headless.getSpec().getSelector());
         assertEquals(3, headless.getSpec().getPorts().size());
         assertEquals(KafkaCluster.REPLICATION_PORT_NAME, headless.getSpec().getPorts().get(0).getName());
         assertEquals(new Integer(KafkaCluster.REPLICATION_PORT), headless.getSpec().getPorts().get(0).getPort());
@@ -200,6 +204,7 @@ public class KafkaClusterTest {
         assertEquals(namespace, ss.getMetadata().getNamespace());
         // ... with these labels
         assertEquals(expectedLabels(), ss.getMetadata().getLabels());
+        assertEquals(expectedSelectorLabels(), ss.getSpec().getSelector().getMatchLabels());
 
         List<Container> containers = ss.getSpec().getTemplate().getSpec().getContainers();
 

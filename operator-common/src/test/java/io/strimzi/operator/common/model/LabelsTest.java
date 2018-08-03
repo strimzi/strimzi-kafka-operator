@@ -57,4 +57,22 @@ public class LabelsTest {
 
         Labels.fromString(invalidLabels);
     }
+
+    @Test
+    public void testStrimziLabels()   {
+        Map sourceMap = new HashMap<String, String>(5);
+        sourceMap.put(Labels.STRIMZI_CLUSTER_LABEL, "my-cluster");
+        sourceMap.put("key1", "value1");
+        sourceMap.put(Labels.STRIMZI_KIND_LABEL, "Kafka");
+        sourceMap.put("key2", "value2");
+        sourceMap.put(Labels.STRIMZI_NAME_LABEL, "my-cluster-kafka");
+        Labels labels = Labels.fromMap(sourceMap);
+
+        Map expected = new HashMap<String, String>(2);
+        expected.put(Labels.STRIMZI_CLUSTER_LABEL, "my-cluster");
+        expected.put(Labels.STRIMZI_KIND_LABEL, "Kafka");
+        expected.put(Labels.STRIMZI_NAME_LABEL, "my-cluster-kafka");
+
+        assertEquals(expected, labels.strimziLabels().toMap());
+    }
 }

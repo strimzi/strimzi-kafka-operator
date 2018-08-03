@@ -91,6 +91,14 @@ public class KafkaConnectS2IClusterTest {
         return TestUtils.map("my-user-label", "cromulent", Labels.STRIMZI_CLUSTER_LABEL, cluster, Labels.STRIMZI_TYPE_LABEL, "kafka-connect-s2i", Labels.STRIMZI_NAME_LABEL, name, Labels.STRIMZI_KIND_LABEL, KafkaConnectS2I.RESOURCE_KIND);
     }
 
+    private Map<String, String> expectedSelectorLabels()    {
+        return Labels.fromMap(expectedLabels()).strimziLabels().toMap();
+    }
+
+    private Map<String, String> expectedLabels()    {
+        return expectedLabels(kc.kafkaConnectClusterName(cluster));
+    }
+
     protected List<EnvVar> getExpectedEnvVars() {
         List<EnvVar> expected = new ArrayList<EnvVar>();
         expected.add(new EnvVarBuilder().withName(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_CONFIGURATION).withValue(expectedConfiguration).build());
@@ -140,7 +148,7 @@ public class KafkaConnectS2IClusterTest {
 
         assertEquals("ClusterIP", svc.getSpec().getType());
         assertEquals(expectedLabels(kc.serviceName(cluster)), svc.getMetadata().getLabels());
-        assertEquals(expectedLabels(kc.kafkaConnectClusterName(cluster)), svc.getSpec().getSelector());
+        assertEquals(expectedSelectorLabels(), svc.getSpec().getSelector());
         assertEquals(2, svc.getSpec().getPorts().size());
         assertEquals(new Integer(KafkaConnectCluster.REST_API_PORT), svc.getSpec().getPorts().get(0).getPort());
         assertEquals(KafkaConnectCluster.REST_API_PORT_NAME, svc.getSpec().getPorts().get(0).getName());
@@ -156,6 +164,7 @@ public class KafkaConnectS2IClusterTest {
         assertEquals(namespace, dep.getMetadata().getNamespace());
         Map<String, String> expectedLabels = expectedLabels(kc.kafkaConnectClusterName(cluster));
         assertEquals(expectedLabels, dep.getMetadata().getLabels());
+        assertEquals(expectedSelectorLabels(), dep.getSpec().getSelector());
         assertEquals(new Integer(replicas), dep.getSpec().getReplicas());
         assertEquals(expectedLabels, dep.getSpec().getTemplate().getMetadata().getLabels());
         assertEquals(1, dep.getSpec().getTemplate().getSpec().getContainers().size());
