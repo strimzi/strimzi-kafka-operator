@@ -241,6 +241,24 @@ spec:
                             type: string
             metrics:
               type: object
+            authentication:
+              type: object
+              properties:
+                certificate:
+                  type: object
+                  properties:
+                    certificate:
+                      type: string
+                    key:
+                      type: string
+                    secretName:
+                      type: string
+                  required:
+                  - certificate
+                  - key
+                  - secretName
+                type:
+                  type: string
             bootstrapServers:
               type: string
             config:
@@ -277,6 +295,18 @@ spec:
                     memory:
                       type: string
                       pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
+            tls:
+              type: object
+              properties:
+                trustedCertificates:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      certificate:
+                        type: string
+                      secretName:
+                        type: string
             tolerations:
               type: array
               items:
