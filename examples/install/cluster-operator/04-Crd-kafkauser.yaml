@@ -83,6 +83,7 @@ spec:
                             type: string
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
                       resourcePatternType:
                         type: string
@@ -98,6 +99,8 @@ spec:
                         required:
                         - name
 >>>>>>> Replace operation field with Enum
+=======
+>>>>>>> Fields cannot be required
                       type:
                         type: string
                         enum:

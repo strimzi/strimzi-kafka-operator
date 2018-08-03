@@ -7,7 +7,6 @@ package io.strimzi.api.kafka.model;
 import io.strimzi.crdgenerator.annotations.Description;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import io.sundr.builder.annotations.Buildable;
 import io.vertx.core.cli.annotations.DefaultValue;
 
