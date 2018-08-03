@@ -20,17 +20,13 @@ This procedure describes how to delete a Kafka topic using a `KafkaTopic` {Produ
 . Delete the `KafkaTopic` resource in {ProductPlatformName}.
 +
 ifdef::Kubernetes[]
-In {KubernetesName} this can be done using `kubectl`
+On {KubernetesName} this can be done using `kubectl`:
 +
 [source,shell,subs=+quotes]
 kubectl delete kafkatopic _<your-topic-name>_
 +
-In {OpenShiftName} this can be done using `oc`
 endif::Kubernetes[]
-ifndef::Kubernetes[]
-This can be done using `oc`
-+
-endif::Kubernetes[]
+On {OpenShiftName} this can be done using `oc`:
 +
 [source,shell,subs=+quotes]
 oc delete kafkatopic _<your-topic-name>_

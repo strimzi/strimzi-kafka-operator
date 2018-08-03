@@ -42,17 +42,13 @@ CAUTION: Increasing `spec.partitions` for topics with keys will change how recor
 . Update the `KafkaTopic` resource in {ProductPlatformName}.
 +
 ifdef::Kubernetes[]
-In {KubernetesName} this can be done using `kubectl apply`
+On {KubernetesName} this can be done using `kubectl apply`:
 +
 [source,shell,subs=+quotes]
 kubectl apply -f _<your-file>_
 +
-In {OpenShiftName} this can be done using `oc apply`
 endif::Kubernetes[]
-ifndef::Kubernetes[]
-This can be done using `oc apply`
-+
-endif::Kubernetes[]
+On {OpenShiftName} this can be done using `oc apply`:
 +
 [source,shell,subs=+quotes]
 oc apply -f _<your-file>_
