@@ -40,14 +40,18 @@ spec:
                     type: object
                     properties:
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
                       group:
                         type: string
 >>>>>>> Add Authorization section to KafkaUser CRD
+=======
+>>>>>>> Update the AclRule
                       host:
                         type: string
                       operation:
                         type: string
+<<<<<<< HEAD
 <<<<<<< HEAD
                         enum:
                         - Read
@@ -61,6 +65,8 @@ spec:
                         - DescribeConfigs
                         - IdempotentWrite
                         - All
+=======
+>>>>>>> Update the AclRule
                       resource:
                         type: object
                         properties:
@@ -73,6 +79,7 @@ spec:
                             - prefix
                           type:
                             type: string
+<<<<<<< HEAD
 =======
                       resourcePatternType:
                         type: string
@@ -82,6 +89,8 @@ spec:
                       topic:
                         type: string
 >>>>>>> Add Authorization section to KafkaUser CRD
+=======
+>>>>>>> Update the AclRule
                       type:
                         type: string
                         enum:
