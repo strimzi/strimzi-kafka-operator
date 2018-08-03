@@ -63,8 +63,6 @@ spec:
                             - prefix
                           type:
                             type: string
-                        required:
-                        - name
                       type:
                         type: string
                         enum:

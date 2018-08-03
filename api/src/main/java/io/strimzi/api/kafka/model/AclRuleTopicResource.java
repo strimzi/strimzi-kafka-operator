@@ -7,7 +7,6 @@ package io.strimzi.api.kafka.model;
 import io.strimzi.crdgenerator.annotations.Description;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import io.sundr.builder.annotations.Buildable;
 import io.vertx.core.cli.annotations.DefaultValue;
 
@@ -51,7 +50,6 @@ public class AclRuleTopicResource extends AclRuleResource {
 
     @Description("Name of resource for which given ACL rule applies. " +
             "Can be combined with `patternType` field to use prefix pattern.")
-    @JsonProperty(required = true)
     public String getName() {
         return name;
     }
