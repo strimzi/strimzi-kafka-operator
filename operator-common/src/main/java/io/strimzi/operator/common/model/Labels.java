@@ -34,13 +34,6 @@ public class Labels {
     public static final String STRIMZI_KIND_LABEL = STRIMZI_DOMAIN + "kind";
 
     /**
-     * The type of Strimzi assembly.
-     * @see ResourceType
-     */
-    @Deprecated
-    public static final String STRIMZI_TYPE_LABEL = STRIMZI_DOMAIN + "type";
-
-    /**
      * The Strimzi cluster the resource is part of.
      * The value is the cluster name (i.e. the name of the cluster CM)
      */
@@ -66,15 +59,6 @@ public class Labels {
      */
     public static String cluster(HasMetadata resource) {
         return resource.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
-    }
-
-    /**
-     * Returns the value of the {@code strimzi.io/type} label of the given {@code resource}.
-     */
-    @Deprecated
-    public static ResourceType type(HasMetadata resource) {
-        String type = resource.getMetadata().getLabels().get(Labels.STRIMZI_TYPE_LABEL);
-        return type != null ? ResourceType.fromName(type) : null;
     }
 
     /**
@@ -160,22 +144,6 @@ public class Labels {
     }
 
     /**
-     * The same labels as this instance, but with the given {@code type} for the {@code strimzi.io/type} key.
-     */
-    @Deprecated
-    public Labels withType(ResourceType type) {
-        return with(STRIMZI_TYPE_LABEL, type.toString());
-    }
-
-    /**
-     * The same labels as this instance, but without any {@code strimzi.io/type} key.
-     */
-    @Deprecated
-    public Labels withoutType() {
-        return without(STRIMZI_TYPE_LABEL);
-    }
-
-    /**
      * The same labels as this instance, but with the given {@code kind} for the {@code strimzi.io/kind} key.
      */
     public Labels withKind(String kind) {
@@ -219,27 +187,10 @@ public class Labels {
     }
 
     /**
-     * A singleton instance with the given {@code type} for the {@code strimzi.io/type} key.
-     */
-    @Deprecated
-    public static Labels forType(ResourceType type) {
-        return new Labels(singletonMap(STRIMZI_TYPE_LABEL, type.toString()));
-    }
-
-    /**
      * A singleton instance with the given {@code kind} for the {@code strimzi.io/kind} key.
      */
     public static Labels forKind(String kind) {
         return new Labels(singletonMap(STRIMZI_KIND_LABEL, kind));
-    }
-
-    /**
-     * Return the value of the {@code strimzi.io/type}.
-     */
-    @Deprecated
-    public ResourceType type() {
-        String type = labels.get(STRIMZI_TYPE_LABEL);
-        return type != null ? ResourceType.fromName(type) : null;
     }
 
     public Labels strimziLabels() {
@@ -253,7 +204,7 @@ public class Labels {
 
         return new Labels(newLabels);
     }
-
+    
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
