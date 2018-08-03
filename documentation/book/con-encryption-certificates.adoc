@@ -1,5 +1,5 @@
 [id='certificates-{context}']
-= Certificates
+= Certification Authority
 
 Each component needs its own private and public keys in order to support encryption.
 The public key has to be signed by a certificate authority (CA) in order to have a related X.509 certificate for providing server authentication and encrypting the communication channel with the client. The client could be another broker as well.
