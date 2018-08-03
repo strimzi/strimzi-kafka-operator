@@ -1,0 +1,28 @@
+// Module included in the following assemblies:
+//
+// assembly-cluster-operator.adoc
+
+[id='deploying-cluster-operator-helm-chart-{context}']
+= Deploying the Cluster Operator using Helm Chart
+
+.Prerequisites
+
+* Helm has to be installed on the local machine.
+* Helm has to be installed in the {ProductPlatformName} cluster.
+
+.Procedure
+
+. Deploy the Cluster Operator using the Helm command line tool:
++
+[source,shell,subs=attributes+]
+helm install {ChartReleaseDownload}
+
+. Verify whether the Cluster Operator has been deployed successfully using the Helm command line tool:
++
+[source]
+----
+helm ls
+----
+
+.Additional resources
+* For more information about Helm, see the https://helm.sh/[Helm website^].

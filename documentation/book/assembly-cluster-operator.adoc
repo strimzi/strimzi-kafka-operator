@@ -30,5 +30,10 @@ endif::Kubernetes[]
 
 include::proc-deploying-cluster-operator-openshift.adoc[leveloffset=+1]
 
+ifdef::Helm[]
+:context: str
+include::proc-deploying-cluster-operator-helm-chart.adoc[leveloffset=+1]
+endif::Helm[]
+
 // Restore the context to what it was before this assembly.
 :context: {parent-context}

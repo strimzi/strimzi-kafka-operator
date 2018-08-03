@@ -8,6 +8,6 @@ include::common/attributes.adoc[]
 = {ProductName} Downloads
 
 {ProductName} releases are available for download from {ReleaseDownload}.
-The release artifacts contain documentation and example YAML files for deployment on {ProductPlatformName}.
+The release artifacts contain documentation, example YAML files for deployment on {ProductPlatformName}, and a Helm Chart for deployment using link:https://helm.sh/[Helm^].
 The example files are used throughout this documentation and can be used to install {ProductName}.
 The container images are available on {DockerRepository}.
