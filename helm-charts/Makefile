@@ -29,11 +29,11 @@ helm_examples: helm_template
 	find $(CHART_RENDERED_TEMPLATES_TMP) -type f -name '*.yaml' -exec yq d -i {} metadata.labels.heritage \;
 	# Copying rendered template files to: $(CHART_RENDERED_TEMPLATES_EXAMPLES)
 	mkdir -p $(CHART_RENDERED_TEMPLATES_EXAMPLES)
-	# Find rendered resources which are CustomResourceDefinition and move them
+	# Find rendered resources which are not CustomResourceDefinition and move them
 	find $(CHART_RENDERED_TEMPLATES_TMP) -type f -name '*.yaml' -printf "%p " -exec yq r {} kind \; \
-	| grep 'CustomResourceDefinition$$' \
-	| sed -E 's/([^ ]*) CustomResourceDefinition$$/\1/' \
-	| xargs -IFILE echo FILE $(CHART_RENDERED_TEMPLATES_EXAMPLES)
+	| grep -v 'CustomResourceDefinition$$' \
+	| sed -E 's/([^ ]*) ([a-zA-Z0-9]*)$$/\1/' \
+	| xargs -IFILE cp FILE $(CHART_RENDERED_TEMPLATES_EXAMPLES)
 
 helm_pkg: helm_lint helm_examples
 	# Copying unarchived Helm Chart to release directory
