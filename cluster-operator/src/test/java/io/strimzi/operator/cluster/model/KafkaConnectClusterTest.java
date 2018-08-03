@@ -86,7 +86,10 @@ public class KafkaConnectClusterTest {
     }
 
     private Map<String, String> expectedLabels(String name)    {
-        return TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, this.cluster, Labels.STRIMZI_TYPE_LABEL, "kafka-connect", "my-user-label", "cromulent", Labels.STRIMZI_NAME_LABEL, name, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
+        return TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, this.cluster,
+                "my-user-label", "cromulent",
+                Labels.STRIMZI_NAME_LABEL, name,
+                Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
     }
 
     private Map<String, String> expectedSelectorLabels()    {
