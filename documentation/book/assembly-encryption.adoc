@@ -17,7 +17,7 @@ Using SSL/TLS protocol, it can encrypt data transferred between Kafka brokers (i
 
 The Cluster Operator sets up the SSL/TLS certificates to provide this encryption and authentication.
 
-include::con-security-certificates.adoc[leveloffset=+1]
+include::con-encryption-certificates.adoc[leveloffset=+1]
 
 include::con-interbroker-communications.adoc[leveloffset=+1]
 
