@@ -156,10 +156,11 @@ public class DocGenerator {
             String externalUrl = linker != null && kubeLink != null ? linker.link(kubeLink) : null;
             if (externalUrl != null) {
                 out.append("See external documentation of ").append(externalUrl)
-                        .append("[").append(kubeLink.group()).append("/").append(kubeLink.version()).append(" ").append(kubeLink.kind()).append("]").append(NL).append(NL);
+                        .append("[").append(kubeLink.group()).append("/").append(kubeLink.version()).append(" ").append(kubeLink.kind()).append("].").append(NL).append(NL);
             } else if (isPolymorphic(propertyClass)) {
-                out.append(" The type depends on the value of the `" + propertyName + "." + discriminator(propertyClass) + "` property within the given object, " +
-                        "which must be one of " + subtypeNames(propertyClass));
+                out.append(" The type depends on the value of the `").append(propertyName).append(".").append(discriminator(propertyClass))
+                        .append("` property within the given object, which must be one of ")
+                        .append(subtypeNames(propertyClass).toString()).append(".");
             }
 
             Class<?> documentedType = propertyType.isArray() ? propertyType.arrayBase() : propertyClass;
@@ -261,18 +262,22 @@ public class DocGenerator {
     private void appendDiscriminator(Crd crd, Class<?> cls) throws IOException {
         String discriminator = discriminator(cls.getSuperclass());
         if (discriminator != null) {
+            String subtypeLinks = subtypes(cls.getSuperclass()).stream().filter(c -> !c.equals(cls)).map(c -> {
+                try {
+                    return typeLink(crd, c);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }).collect(Collectors.joining(", "));
             out.append("The `").append(discriminator)
                     .append("` property is a discriminator that distinguishes the use of the type `")
-                    .append(cls.getSimpleName()).append("` from ")
-                    .append(subtypes(cls.getSuperclass()).stream().filter(c -> !c.equals(cls)).map(c -> {
-                        try {
-                            return typeLink(crd, c);
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }).collect(Collectors.joining(", ")))
-                    .append(".")
-                    .append(NL);
+                    .append(cls.getSimpleName()).append("` from ");
+            if (subtypeLinks.trim().isEmpty()) {
+                out.append("other subtypes which may be added in the future.");
+            } else {
+                out.append(subtypeLinks).append(".");
+            }
+            out.append(NL);
             out.append("It must have the value `").append(subtypeMap(cls.getSuperclass()).get(cls)).append("` for the type `").append(cls.getSimpleName()).append("`.").append(NL);
         }
     }

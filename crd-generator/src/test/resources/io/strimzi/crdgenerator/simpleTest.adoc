@@ -5,7 +5,7 @@
 [options="header"]
 |====
 |Field                          |Description
-|affinity                1.2+<.<|See external documentation of {KubeApiReferenceBase}#affinity-v1-core[core/v1 affinity]
+|affinity                1.2+<.<|See external documentation of {KubeApiReferenceBase}#affinity-v1-core[core/v1 affinity].
 
 
 |{KubeApiReferenceBase}#affinity-v1-core[Affinity]
@@ -65,7 +65,7 @@
 |string (one of [BAR, FOO])
 |objectProperty          1.2+<.<|
 |xref:type-ObjectProperty-{context}[`ObjectProperty`]
-|polymorphicProperty     1.2+<.<| The type depends on the value of the `polymorphicProperty.discrim` property within the given object, which must be one of [left, right]
+|polymorphicProperty     1.2+<.<| The type depends on the value of the `polymorphicProperty.discrim` property within the given object, which must be one of [left, right].
 |xref:type-PolymorphicLeft-{context}[`PolymorphicLeft`], xref:type-PolymorphicRight-{context}[`PolymorphicRight`]
 |rawList                 1.2+<.<|
 |object array
