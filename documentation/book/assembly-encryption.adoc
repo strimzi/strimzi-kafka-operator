@@ -9,7 +9,7 @@
 
 include::common/attributes.adoc[]
 
-[id='Encryption-{context}']
+[id='encryption-{context}']
 = Encryption
 
 The Strimzi project supports data encryption of communication between the different Kafka and Strimzi components (Kafka brokers, Zookeeper nodes, Kafka Connect and Strimzi Topic Operator) through the SSL/TLS protocol.
