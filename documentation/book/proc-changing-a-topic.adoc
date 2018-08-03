@@ -1,6 +1,6 @@
 // Module included in the following assemblies:
 //
-// topic-operator.adoc
+// assembly-using-the-topic-operator.adoc
 
 include::common/attributes.adoc[]
 
@@ -19,7 +19,7 @@ This procedure describes how to change the configuration of an existing Kafka to
 
 . Prepare a file containing the desired `KafkaTopic`
 +
-.Example `KafkaTopic`
+.An example `KafkaTopic`
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaTopicApiVersion}
@@ -42,23 +42,20 @@ CAUTION: Increasing `spec.partitions` for topics with keys will change how recor
 . Update the `KafkaTopic` resource in {ProductPlatformName}.
 +
 ifdef::Kubernetes[]
-In {KubernetesName} this can be done using `kubectl`
+On {KubernetesName} this can be done using `kubectl apply`:
 +
-.Replacing the `KafkaTopic` resource using `kubctl replace`
 [source,shell,subs=+quotes]
-----
-kubectl replace -f _<your-file>_
-----
-+
-In {OpenShiftName} this can be done using `oc`
-endif::Kubernetes[]
-ifndef::Kubernetes[]
-This can be done using `oc`
+kubectl apply -f _<your-file>_
 +
 endif::Kubernetes[]
+On {OpenShiftName} this can be done using `oc apply`:
 +
-.Replacing the `KafkaTopic` resource using `oc replace`
 [source,shell,subs=+quotes]
-----
-oc replace -f _<your-file>_
-----
+oc apply -f _<your-file>_
+
+
+.Additional resources
+* For more information about the schema for `KafkaTopics`, see xref:type-KafkaTopic-reference[`KafkaTopic` schema reference].
+* For more information about deploying a Kafka cluster, see xref:cluster-operator-str[].
+* For more information about deploying the Topic Operator using the Cluster Operator, see xref:deploying-the-topic-operator-using-the-cluster-operator-str[].
+* For more information about creating a topic using the Topic Operator, see xref:creating-a-topic-str[].

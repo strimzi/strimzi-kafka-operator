@@ -1,6 +1,6 @@
 // Module included in the following assemblies:
 //
-// topic-operator.adoc
+// assembly-using-the-topic-operator.adoc
 
 include::common/attributes.adoc[]
 
@@ -39,23 +39,19 @@ NOTE: The `KafkaTopic.spec.partitions` cannot be decreased.
 . Create the `KafkaTopic` resource in {ProductPlatformName}.
 +
 ifdef::Kubernetes[]
-In {KubernetesName} this can be done using `kubectl`
+On {KubernetesName} this can be done using `kubectl apply`:
 +
-.Replacing the `KafkaTopic` resource using `kubctl create`
 [source,shell,subs=+quotes]
-----
-kubectl create -f _<your-file>_
-----
-+
-In {OpenShiftName} this can be done using `oc`
-endif::Kubernetes[]
-ifndef::Kubernetes[]
-This can be done using `oc`
+kubectl apply -f _<your-file>_
 +
 endif::Kubernetes[]
+On {OpenShiftName} this can be done using `oc apply`:
 +
-.Replacing the `KafkaTopic` resource using `oc create`
 [source,shell,subs=+quotes]
-----
-oc create -f _<your-file>_
-----
+oc apply -f _<your-file>_
+
+.Additional resources
+* For more information about the schema for `KafkaTopics`, see xref:type-KafkaTopic-reference[`KafkaTopic` schema reference].
+* For more information about deploying a Kafka cluster using the Cluster Operator, see xref:cluster-operator-str[].
+* For more information about deploying the Topic Operator using the Cluster Operator, see xref:deploying-the-topic-operator-using-the-cluster-operator-str[].
+* For more information about deploying the Topic Operator standalone, see xref:deploying-the-topic-operator-standalone-str[].

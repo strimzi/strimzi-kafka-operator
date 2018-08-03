@@ -1,0 +1,34 @@
+// Module included in the following assemblies:
+//
+// getting-started.adoc
+// assembly-deploying-the-topic-operator.adoc
+
+[id='deploying-the-topic-operator-using-the-cluster-operator-{context}']
+= Deploying the Topic Operator using the Cluster Operator
+
+.Prerequisites
+
+* A running Cluster Operator.
+* A `Kafka` resource to be created or updated.
+
+.Procedure
+
+. Edit the `Kafka` resource ensuring it has a `Kafka.spec.topicOperator` object that configures the Topic Operator how you want.
+
+. Create or update the Kafka resource in {ProductPlatformName}.
++
+ifdef::Kubernetes[]
+On {KubernetesName} this can be done using `kubectl apply`:
+[source,shell,subs=+quotes]
+kubectl apply -f _<your-file>_
++
+endif::Kubernetes[]
+On {OpenShiftName} this can be done using `oc apply`:
++
+[source,shell,subs=+quotes]
+oc apply -f _<your-file>_
+
+.Additional resources
+
+* For more information about deploying the Cluster Operator, see xref:cluster-operator-str[].
+* For more information about the `Kafka.spec.topicOperator` object used to configure the Topic Operator when deployed by the Cluster Operator, see xref:type-TopicOperatorSpec-reference[].

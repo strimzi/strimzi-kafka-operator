@@ -2,6 +2,8 @@
 //
 // assembly-kafka-cluster.adoc
 
+include::common/attributes.adoc[]
+
 [id='deploying-kafka-cluster-openshift-{context}']
 = Deploying the Kafka cluster to {OpenShiftName}
 

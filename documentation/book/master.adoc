@@ -10,7 +10,9 @@ include::getting-started.adoc[leveloffset=+1]
 
 include::cluster-operator.adoc[]
 
-include::topic-operator.adoc[leveloffset=+1]
+include::assembly-deploying-the-topic-operator.adoc[leveloffset=+1]
+
+include::assembly-using-the-topic-operator.adoc[leveloffset=+1]
 
 include::security.adoc[]
 
@@ -21,9 +23,15 @@ include::appendix_deploying_kubernetes_openshift_cluster.adoc[]
 endif::InstallationAppendix[]
 
 [appendix]
-[[api_reference]]
+[id='api_reference']
+:parent-context: {context}
+:context: reference
 ## Custom Resource API Reference
 include::appendix_crds.adoc[]
+:context: {parent-context}
+
+//[appendix]
+//include::ref-minimum-resource-requirements.adoc[leveloffset=+1]
 
 ifdef::MetricsAppendix[]
 include::appendix_metrics.adoc[]
