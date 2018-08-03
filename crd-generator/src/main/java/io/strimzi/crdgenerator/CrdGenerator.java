@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -34,15 +35,18 @@ import java.lang.reflect.ParameterizedType;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import static io.strimzi.crdgenerator.Property.properties;
 import static io.strimzi.crdgenerator.Property.sortedProperties;
 import static java.lang.reflect.Modifier.isAbstract;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyMap;
 
 /**
  * <p>Generates a Kubernetes {@code CustomResourceDefinition} YAML file
@@ -159,17 +163,17 @@ public class CrdGenerator {
 
     private final ObjectMapper mapper;
     private final JsonNodeFactory nf;
-    private final boolean writeHelmMetadata;
+    private final Map<String, String> labels;
     private int numErrors;
 
     CrdGenerator(ObjectMapper mapper) {
-        this(mapper, false);
+        this(mapper, emptyMap());
     }
 
-    CrdGenerator(ObjectMapper mapper, boolean writeHelmMetadata) {
+    CrdGenerator(ObjectMapper mapper, Map<String, String> labels) {
         this.mapper = mapper;
         this.nf = mapper.getNodeFactory();
-        this.writeHelmMetadata = writeHelmMetadata;
+        this.labels = labels;
     }
 
     void generate(Class<? extends CustomResource> crdClass, Writer out) throws IOException {
@@ -189,14 +193,19 @@ public class CrdGenerator {
                     .putObject("metadata")
                     .put("name", crd.spec().names().plural() + "." + crd.spec().group());
 
-            if (writeHelmMetadata) {
+            if (!labels.isEmpty()) {
                 ((ObjectNode) node.get("metadata"))
-                        .putObject("labels")
-                        .put("app", "{{ template \"strimzi.name\" . }}")
-                        .put("chart", "{{ template \"strimzi.chart\" . }}")
-                        .put("component", crd.spec().names().plural() + "." + crd.spec().group() + "-crd")
-                        .put("release", "{{ .Release.Name }}")
-                        .put("heritage", "{{ .Release.Service }}");
+                    .putObject("labels")
+                        .setAll(labels.entrySet().stream()
+                        .collect(Collectors.<Map.Entry<String, String>, String, JsonNode, LinkedHashMap<String, JsonNode>>toMap(
+                            Map.Entry::getKey,
+                            e -> new TextNode(
+                                e.getValue()
+                                    .replace("%group%", crd.spec().group())
+                                    .replace("%plural%", crd.spec().names().plural())
+                                    .replace("%singular%", crd.spec().names().singular())),
+                            (x, y) -> x,
+                            LinkedHashMap::new)));
             }
 
             node.set("spec", buildSpec(crd.spec(), crdClass));
@@ -461,15 +470,21 @@ public class CrdGenerator {
 
     public static void main(String[] args) throws IOException, ClassNotFoundException {
         boolean yaml = false;
-        boolean helmMetadata = false;
+        Map<String, String> labels = new LinkedHashMap<>();
         Map<String, Class<? extends CustomResource>> classes = new HashMap<>();
         for (int i = 0; i < args.length; i++) {
             String arg = args[i];
             if (arg.startsWith("--")) {
                 if (arg.equals("--yaml")) {
                     yaml = true;
-                } else if (arg.equals("--helm-metadata")) {
-                    helmMetadata = true;
+                } else if (arg.equals("--label")) {
+                    i++;
+                    int index = args[i].indexOf(":");
+                    if (index == -1) {
+                        argParseErr("Invalid --label " + args[i]);
+                    }
+                    labels.put(args[i].substring(0, index), args[i].substring(index + 1));
+
                 } else {
                     throw new RuntimeException("Unsupported command line option " + arg);
                 }
@@ -488,7 +503,7 @@ public class CrdGenerator {
 
         CrdGenerator generator = new CrdGenerator(yaml ?
                 new YAMLMapper().configure(YAMLGenerator.Feature.MINIMIZE_QUOTES, true) :
-                new ObjectMapper(), helmMetadata);
+                new ObjectMapper(), labels);
         for (Map.Entry<String, Class<? extends CustomResource>> entry : classes.entrySet()) {
             File file = new File(entry.getKey());
             if (file.getParentFile().exists()) {
