@@ -52,10 +52,10 @@ public class ConnectS2IST extends AbstractST {
 
         connectS2IPodName = kubeClient.listResourcesByLabel("pod", "type=kafka-connect-s2i").get(0);
         LOGGER.info("Name of the pod with MongoDB is {}", connectS2IPodName);
-        LOGGER.info("Pods:", kubeClient.exec("oc", "get", "pod"));
-        LOGGER.info("Log for {}: {}", connectS2IPodName,  kubeClient.exec("oc", "logs", connectS2IPodName));
+        LOGGER.info("Pods:", kubeClient.exec("oc", "get", "pod").out());
+        LOGGER.info("Log for {}: {}", connectS2IPodName,  kubeClient.exec("oc", "logs", connectS2IPodName).out());
         String coName = kubeClient.listResourcesByLabel("pod", "name=strimzi-cluster-operator").get(0);
-        LOGGER.info("CO logs {}", kubeClient.exec("oc", "logs", coName));
+        LOGGER.info("CO logs {}", kubeClient.exec("oc", "logs", coName).out());
         String plugins = kubeClient.execInPod(connectS2IPodName, "curl", "-X", "GET", "http://localhost:8083/connector-plugins").out();
 
         assertThat(plugins, containsString("io.debezium.connector.mongodb.MongoDbConnector"));    }
