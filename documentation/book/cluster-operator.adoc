@@ -157,7 +157,7 @@ For information about the accepted JSON format, see <<resources_json_config>>.
 `spec.topicOperator`::
 An object representing the topic operator configuration. 
 See the <<topic_operator_json_config>> documentation for further details.
-More info about the topic operator in the related xref:deploying-the-topic-operator-using-the-cluster-operator-{context}[Topic Operator] documentation page.
+More info about the topic operator in the related xref:deploying-the-topic-operator-using-the-cluster-operator-str[Topic Operator] documentation page.
 
 The following is an example of a Kafka resource.
 
