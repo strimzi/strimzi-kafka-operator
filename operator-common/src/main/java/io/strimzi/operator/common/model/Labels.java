@@ -243,7 +243,7 @@ public class Labels {
     }
 
     public Labels strimziLabels() {
-        Map<String, String> newLabels = new HashMap<>(labels.size() + 1);
+        Map<String, String> newLabels = new HashMap<>(3);
 
         for (Map.Entry<String, String> entry : labels.entrySet()) {
             if (entry.getKey().startsWith(STRIMZI_DOMAIN)) {
