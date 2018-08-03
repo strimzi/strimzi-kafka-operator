@@ -43,6 +43,18 @@ spec:
                         type: string
                       operation:
                         type: string
+                        enum:
+                        - Read
+                        - Write
+                        - Create
+                        - Delete
+                        - Alter
+                        - Describe
+                        - ClusterAction
+                        - AlterConfigs
+                        - DescribeConfigs
+                        - IdempotentWrite
+                        - All
                       resource:
                         type: object
                         properties:
@@ -55,6 +67,8 @@ spec:
                             - prefix
                           type:
                             type: string
+                        required:
+                        - name
                       type:
                         type: string
                         enum:

@@ -32,7 +32,7 @@ public class AclRule implements Serializable {
     private AclRuleType type;
     private AclRuleResource resource;
     private String host;
-    private String operation;
+    private AclOperation operation;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The type of the rule." +
@@ -70,13 +70,14 @@ public class AclRule implements Serializable {
         this.host = host;
     }
 
-    @Description("Operation which will be allowed or denied. Supported operations are: Read, Write, Create, Delete, Alter, Describe, ClusterAction and All.")
+    @Description("Operation which will be allowed or denied. " +
+            "Supported operations are: Read, Write, Create, Delete, Alter, Describe, ClusterAction, AlterConfigs, DescribeConfigs, IdempotentWrite and All.")
     @JsonProperty(required = true)
-    public String getOperation() {
+    public AclOperation getOperation() {
         return operation;
     }
 
-    public void setOperation(String operation) {
+    public void setOperation(AclOperation operation) {
         this.operation = operation;
     }
 
