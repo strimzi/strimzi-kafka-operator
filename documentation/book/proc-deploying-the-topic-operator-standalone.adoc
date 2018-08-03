@@ -32,9 +32,7 @@ This can be done using `oc apply`:
 endif::Kubernetes[]
 +
 [source,shell]
-----
 oc apply -f examples/install/cluster-operator
-----
 
 . Verify that the Topic Operator has been deployed successfully. 
 +

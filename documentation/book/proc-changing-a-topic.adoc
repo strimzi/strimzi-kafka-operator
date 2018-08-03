@@ -19,7 +19,7 @@ This procedure describes how to change the configuration of an existing Kafka to
 
 . Prepare a file containing the desired `KafkaTopic`
 +
-.Example `KafkaTopic`
+.An example `KafkaTopic`
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaTopicApiVersion}

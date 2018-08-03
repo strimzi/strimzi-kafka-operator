@@ -41,11 +41,8 @@ NOTE: The `KafkaTopic.spec.partitions` cannot be decreased.
 ifdef::Kubernetes[]
 In {KubernetesName} this can be done using `kubectl apply`
 +
-.Creating the `KafkaTopic` resource using `kubctl apply`
 [source,shell,subs=+quotes]
-----
 kubectl apply -f _<your-file>_
-----
 +
 In {OpenShiftName} this can be done using `oc apply`
 endif::Kubernetes[]
@@ -54,11 +51,8 @@ This can be done using `oc apply`
 +
 endif::Kubernetes[]
 +
-.Creating the `KafkaTopic` resource using `oc apply`
 [source,shell,subs=+quotes]
-----
 oc apply -f _<your-file>_
-----
 
 .Additional resources
 * For more information about the schema for `KafkaTopics`, see xref:type-KafkaTopic-reference[`KafkaTopic` schema reference].
