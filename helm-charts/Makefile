@@ -22,14 +22,18 @@ helm_template:
 	helm template --namespace myproject --output-dir $(CHART_RENDERED_TEMPLATES_TMP) --set imageTagOverride=$(RELEASE_VERSION) $(CHART_PATH)
 
 helm_examples: helm_template
+	# Remove Helm-related labels
+	find $(CHART_RENDERED_TEMPLATES_TMP) -type f -name '*.yaml' -exec yq d -i {} metadata.labels.chart \;
+	find $(CHART_RENDERED_TEMPLATES_TMP) -type f -name '*.yaml' -exec yq d -i {} metadata.labels.component \;
+	find $(CHART_RENDERED_TEMPLATES_TMP) -type f -name '*.yaml' -exec yq d -i {} metadata.labels.release \;
+	find $(CHART_RENDERED_TEMPLATES_TMP) -type f -name '*.yaml' -exec yq d -i {} metadata.labels.heritage \;
 	# Copying rendered template files to: $(CHART_RENDERED_TEMPLATES_EXAMPLES)
 	mkdir -p $(CHART_RENDERED_TEMPLATES_EXAMPLES)
-	cp $(CHART_RENDERED_TEMPLATES_TMP)/$(CHART_NAME)/templates/* $(CHART_RENDERED_TEMPLATES_EXAMPLES)
-	# Remove Helm-related labels
-	find $(CHART_RENDERED_TEMPLATES_EXAMPLES) -type f -name '*.yaml' -exec yq d -i {} metadata.labels.chart \;
-	find $(CHART_RENDERED_TEMPLATES_EXAMPLES) -type f -name '*.yaml' -exec yq d -i {} metadata.labels.component \;
-	find $(CHART_RENDERED_TEMPLATES_EXAMPLES) -type f -name '*.yaml' -exec yq d -i {} metadata.labels.release \;
-	find $(CHART_RENDERED_TEMPLATES_EXAMPLES) -type f -name '*.yaml' -exec yq d -i {} metadata.labels.heritage \;
+	# Find rendered resources which are not CustomResourceDefinition and move them
+	find $(CHART_RENDERED_TEMPLATES_TMP) -type f -name '*.yaml' -printf "%p " -exec yq r {} kind \; \
+	| grep -v 'CustomResourceDefinition$$' \
+	| sed -E 's/([^ ]*) ([a-zA-Z0-9]*)$$/\1/' \
+	| xargs -IFILE cp FILE $(CHART_RENDERED_TEMPLATES_EXAMPLES)
 
 helm_pkg: helm_lint helm_examples
 	# Copying unarchived Helm Chart to release directory
