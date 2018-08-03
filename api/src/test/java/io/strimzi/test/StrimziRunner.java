@@ -915,12 +915,10 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
             protected void before() {
                 t0 = System.currentTimeMillis();
                 LOGGER.info("Starting {}", name(element));
-                System.out.println("travis_fold:start:" + name(element));
             }
 
             @Override
             protected void after() {
-                System.out.println("travis_fold:end:" + name(element));
                 LOGGER.info("Finished {}: took {}",
                         name(element),
                         duration(System.currentTimeMillis() - t0));
