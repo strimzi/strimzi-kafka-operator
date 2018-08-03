@@ -35,6 +35,7 @@
         <zookeeper.version>3.4.10</zookeeper.version>
         <mockito.version>2.12.0</mockito.version>
         <jsonpath.version>2.4.0</jsonpath.version>
+        <slf4j.version>1.7.25</slf4j.version>
     </properties>
 
     <modules>
@@ -147,6 +148,11 @@
                         <artifactId>jline</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.scala-lang</groupId>
