@@ -11,6 +11,8 @@ import io.strimzi.test.KafkaFromClasspathYaml;
 import io.strimzi.test.Namespace;
 import io.strimzi.test.OpenShiftOnly;
 import io.strimzi.test.StrimziRunner;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -23,6 +25,7 @@ import static org.junit.Assert.assertThat;
 @KafkaFromClasspathYaml
 public class ConnectS2IST extends AbstractST {
 
+    private static final Logger LOGGER = LogManager.getLogger(ConnectS2IST.class);
     public static final String NAMESPACE = "connect-s2i-cluster-test";
     public static final String CONNECT_CLUSTER_NAME = "my-cluster";
     public static final String CONNECT_DEPLOYMENT_NAME = CONNECT_CLUSTER_NAME + "-connect";
@@ -48,8 +51,12 @@ public class ConnectS2IST extends AbstractST {
         kubeClient.waitForDeploymentConfig(CONNECT_DEPLOYMENT_NAME);
 
         connectS2IPodName = kubeClient.listResourcesByLabel("pod", "type=kafka-connect-s2i").get(0);
+        LOGGER.info("Name of the pod with MongoDB is {}", connectS2IPodName);
+        LOGGER.info("Pods:", kubeClient.exec("oc", "get", "pod"));
+        LOGGER.info("Log for {}: {}", connectS2IPodName,  kubeClient.exec("oc", "logs", connectS2IPodName));
+        String coName = kubeClient.listResourcesByLabel("pod", "name=strimzi-cluster-operator").get(0);
+        LOGGER.info("CO logs {}", kubeClient.exec("oc", "logs", coName));
         String plugins = kubeClient.execInPod(connectS2IPodName, "curl", "-X", "GET", "http://localhost:8083/connector-plugins").out();
 
-        assertThat(plugins, containsString("io.debezium.connector.mongodb.MongoDbConnector"));
-    }
+        assertThat(plugins, containsString("io.debezium.connector.mongodb.MongoDbConnector"));    }
 }
