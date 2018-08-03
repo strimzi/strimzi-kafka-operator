@@ -813,7 +813,7 @@ For information about the accepted JSON format, see <<resources_json_config>>.
 { "reconciliationIntervalMs": "900000", "zookeeperSessionTimeoutMs": "20000" }
 ----
 
-More information about these configuration parameters in the related xref:topic-operator-{context}[Topic Operator] documentation page.
+More information about these configuration parameters in the related xref:topic-operator-str[Topic Operator] documentation page.
 
 [[kafka_connect_config_map_details]]
 ==== Kafka Connect

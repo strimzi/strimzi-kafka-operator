@@ -44,11 +44,8 @@ CAUTION: Increasing `spec.partitions` for topics with keys will change how recor
 ifdef::Kubernetes[]
 In {KubernetesName} this can be done using `kubectl apply`
 +
-.Replacing the `KafkaTopic` resource using `kubctl apply`
 [source,shell,subs=+quotes]
-----
 kubectl apply -f _<your-file>_
-----
 +
 In {OpenShiftName} this can be done using `oc apply`
 endif::Kubernetes[]
@@ -57,14 +54,12 @@ This can be done using `oc apply`
 +
 endif::Kubernetes[]
 +
-.Replacing the `KafkaTopic` resource using `oc apply`
 [source,shell,subs=+quotes]
-----
 oc apply -f _<your-file>_
-----
+
 
 .Additional resources
 * For more information about the schema for `KafkaTopics`, see xref:type-KafkaTopic-reference[`KafkaTopic` schema reference].
-* For more information about deploying a Kafka cluster, see xref:cluster-operator-{context}[].
-* For more information about deploying the Topic Operator using the Cluster Operator, see xref:deploying-the-topic-operator-using-the-cluster-operator-{context}[].
-* For more information about creating a topic using the Topic Operator, see xref:creating-a-topic-{context}[].
+* For more information about deploying a Kafka cluster, see xref:cluster-operator-str}[].
+* For more information about deploying the Topic Operator using the Cluster Operator, see xref:deploying-the-topic-operator-using-the-cluster-operator-str[].
+* For more information about creating a topic using the Topic Operator, see xref:creating-a-topic-str[].

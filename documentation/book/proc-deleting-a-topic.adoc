@@ -44,6 +44,6 @@ oc delete kafkatopic _<your-topic-name>_
 NOTE: Whether the topic can actually be deleted depends on the value of the `delete.topic.enable` Kafka broker configuration, specified in the `Kafka.spec.kafka.config` property.
 
 .Additional resources
-* For more information about deploying a Kafka cluster using the Cluster Operator, see xref:cluster-operator-{context}[].
-* For more information about deploying the Topic Operator using the Cluster Operator, see xref:deploying-the-topic-operator-using-the-cluster-operator-{context}[].
-* For more information about creating a topic using the Topic Operator, see xref:creating-a-topic-{context}[].
+* For more information about deploying a Kafka cluster using the Cluster Operator, see xref:cluster-operator-str[].
+* For more information about deploying the Topic Operator using the Cluster Operator, see xref:deploying-the-topic-operator-using-the-cluster-operator-str[].
+* For more information about creating a topic using the Topic Operator, see xref:creating-a-topic-str[].
