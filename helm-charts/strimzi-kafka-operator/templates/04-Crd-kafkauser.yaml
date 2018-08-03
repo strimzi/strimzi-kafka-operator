@@ -53,6 +53,9 @@ spec:
                         type: string
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> Replace operation field with Enum
                         enum:
                         - Read
                         - Write
@@ -65,8 +68,11 @@ spec:
                         - DescribeConfigs
                         - IdempotentWrite
                         - All
+<<<<<<< HEAD
 =======
 >>>>>>> Update the AclRule
+=======
+>>>>>>> Replace operation field with Enum
                       resource:
                         type: object
                         properties:
@@ -80,6 +86,7 @@ spec:
                           type:
                             type: string
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
                       resourcePatternType:
                         type: string
@@ -91,6 +98,10 @@ spec:
 >>>>>>> Add Authorization section to KafkaUser CRD
 =======
 >>>>>>> Update the AclRule
+=======
+                        required:
+                        - name
+>>>>>>> Replace operation field with Enum
                       type:
                         type: string
                         enum:

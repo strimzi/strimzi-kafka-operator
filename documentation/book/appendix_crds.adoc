@@ -847,8 +847,8 @@ It must have the value `cluster` for the type `AclRuleClusterResource`.
 |host       1.2+<.<|The host from which the action described in the ACL rule is allowed or denied.
 >>>>>>> Update the AclRule
 |string
-|operation  1.2+<.<|Operation which will be allowed or denied. Supported operations are: Read, Write, Create, Delete, Alter, Describe, ClusterAction and All.
-|string
+|operation  1.2+<.<|Operation which will be allowed or denied. Supported operations are: Read, Write, Create, Delete, Alter, Describe, ClusterAction, AlterConfigs, DescribeConfigs, IdempotentWrite and All.
+|string (one of [Read, Write, Delete, Alter, Describe, All, IdempotentWrite, ClusterAction, Create, AlterConfigs, DescribeConfigs])
 |resource   1.2+<.<|Indicates the resource for which given ACL rule applies. The type depends on the value of the `resource.type` property within the given object, which must be one of [topic, group, cluster]
 |<<type-AclRuleTopicResource,`AclRuleTopicResource`>>, <<type-AclRuleGroupResource,`AclRuleGroupResource`>>, <<type-AclRuleClusterResource,`AclRuleClusterResource`>>
 |type       1.2+<.<|The type of the rule.Currently the only supported type is `allow`.ACL rules with type `allow` are used to allow user to execute the specified operations. Default value is `allow`.
