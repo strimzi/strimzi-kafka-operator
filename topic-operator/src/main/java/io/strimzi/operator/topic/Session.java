@@ -17,6 +17,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServer;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
+import org.apache.kafka.common.config.SslConfigs;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -117,11 +118,11 @@ public class Session extends AbstractVerticle {
 
         if (Boolean.valueOf(config.get(Config.TLS_ENABLED))) {
             adminClientProps.setProperty(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, "SSL");
-            adminClientProps.setProperty("ssl.truststore.location", config.get(Config.TLS_TRUSTSTORE_LOCATION));
-            adminClientProps.setProperty("ssl.truststore.password", config.get(Config.TLS_TRUSTSTORE_PASSWORD));
-            adminClientProps.setProperty("ssl.keystore.location", config.get(Config.TLS_KEYSTORE_LOCATION));
-            adminClientProps.setProperty("ssl.keystore.password", config.get(Config.TLS_KEYSTORE_PASSWORD));
-            adminClientProps.setProperty("ssl.endpoint.identification.algorithm", "HTTPS");
+            adminClientProps.setProperty(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, config.get(Config.TLS_TRUSTSTORE_LOCATION));
+            adminClientProps.setProperty(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, config.get(Config.TLS_TRUSTSTORE_PASSWORD));
+            adminClientProps.setProperty(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG, config.get(Config.TLS_KEYSTORE_LOCATION));
+            adminClientProps.setProperty(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, config.get(Config.TLS_KEYSTORE_PASSWORD));
+            adminClientProps.setProperty(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG, "HTTPS");
         }
 
         this.adminClient = AdminClient.create(adminClientProps);
