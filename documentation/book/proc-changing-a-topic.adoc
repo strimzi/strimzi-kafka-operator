@@ -60,6 +60,6 @@ oc apply -f _<your-file>_
 
 .Additional resources
 * For more information about the schema for `KafkaTopics`, see xref:type-KafkaTopic-reference[`KafkaTopic` schema reference].
-* For more information about deploying a Kafka cluster, see xref:cluster-operator-str}[].
+* For more information about deploying a Kafka cluster, see xref:cluster-operator-str[].
 * For more information about deploying the Topic Operator using the Cluster Operator, see xref:deploying-the-topic-operator-using-the-cluster-operator-str[].
 * For more information about creating a topic using the Topic Operator, see xref:creating-a-topic-str[].

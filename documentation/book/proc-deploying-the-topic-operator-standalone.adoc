@@ -1,5 +1,5 @@
 
-[id='deploying-the-topic-operator-standalone']
+[id='deploying-the-topic-operator-standalone-{context}']
 = Deploying the Topic Operator standalone
 
 Deploying the Topic Operator as a standalone component is more complicated than installing it using the Cluster Operator, but is more flexible.
@@ -59,5 +59,5 @@ NOTE: This could take some time if you have a slow connection to the {ProductPla
 
 .Additional resources
 
-* For more information about the environment variables used to configure the Topic Operator, see xref:topic-operator--environment-str[].
+* For more information about the environment variables used to configure the Topic Operator, see xref:topic-operator-environment-deploying[].
 * For more information about getting the Cluster Operator to deploy the Topic Operator for you, see xref:deploying-the-topic-operator-using-the-cluster-operator-str[].

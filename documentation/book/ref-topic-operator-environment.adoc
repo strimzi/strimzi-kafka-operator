@@ -4,7 +4,7 @@
 
 include::common/attributes.adoc[]
 
-[id='topic-operator--environment-{context}']
+[id='topic-operator-environment-{context}']
 = Topic Operator environment
 
 When deployed standalone the Topic Operator can be configured using environment variables.

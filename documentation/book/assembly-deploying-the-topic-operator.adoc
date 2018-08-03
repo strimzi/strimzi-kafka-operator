@@ -12,6 +12,8 @@ include::common/attributes.adoc[]
 [id='deploying-the-topic-operator-{context}']
 = Deploying the Topic Operator
 
+:context: deploying
+
 //include::con-what-the-topic-operator-does.adoc[leveloffset=+1]
 
 include::con-how-the-topic-operator-works.adoc[leveloffset=+1]
