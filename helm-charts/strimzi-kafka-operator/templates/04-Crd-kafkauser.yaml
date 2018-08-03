@@ -31,6 +31,36 @@ spec:
               properties:
                 type:
                   type: string
+            authorization:
+              type: object
+              properties:
+                acls:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      group:
+                        type: string
+                      host:
+                        type: string
+                      operation:
+                        type: string
+                      resourcePatternType:
+                        type: string
+                        enum:
+                        - literal
+                        - prefix
+                      topic:
+                        type: string
+                      type:
+                        type: string
+                        enum:
+                        - allow
+                        - deny
+                type:
+                  type: string
+              required:
+              - acls
           required:
           - authentication
       required:

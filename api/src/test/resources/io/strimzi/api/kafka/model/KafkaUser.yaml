@@ -5,3 +5,21 @@ metadata:
 spec:
   authentication:
     type: tls
+  authorization:
+    type: simple
+    acls:
+      - type: allow
+        producer: true
+        topic: my-topic
+      - type: allow
+        producer: true
+        topic: my-topic2
+      - consumer: true
+        topic: my-topic
+        group: my-group
+      - operation: All
+        topic: my-topic3
+      - type: allow
+        producer: true
+        topic: my-
+        resoucePatternType: prefix

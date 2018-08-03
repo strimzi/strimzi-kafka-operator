@@ -8,3 +8,21 @@ metadata:
 spec:
   authentication:
     type: "tls"
+  authorization:
+    type: "simple"
+    acls:
+    - type: "allow"
+      topic: "my-topic"
+      producer: true
+    - type: "allow"
+      topic: "my-topic2"
+      producer: true
+    - topic: "my-topic"
+      group: "my-group"
+      consumer: true
+    - topic: "my-topic3"
+      operation: "All"
+    - type: "allow"
+      topic: "my-"
+      producer: true
+      resoucePatternType: "prefix"
