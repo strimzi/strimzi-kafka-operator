@@ -786,10 +786,10 @@ The default value is determined by the value specified in the `<<STRIMZI_DEFAULT
 `watchedNamespace`::
 The {ProductPlatformName} namespace in which the topic operator watches for `KafkaTopics`. Default is the namespace
 where the topic operator is running.
-`reconciliationIntervalMs`::
-The interval between periodic reconciliations in milliseconds. Default is 900000 (15 minutes).
-`zookeeperSessionTimeoutMs`::
-The Zookeeper session timeout in milliseconds. Default is 20000 milliseconds (20 seconds).
+`reconciliationIntervalSeconds`::
+The interval between periodic reconciliations in seconds. Default is 90.
+`zookeeperSessionTimeoutSeconds`::
+The Zookeeper session timeout in seconds. Default is 20 seconds.
 `topicMetadataMaxAttempts`::
 The number of attempts for getting topics metadata from Kafka. The time between each attempt is defined as an exponential
 back-off. You might want to increase this value when topic creation could take more time due to its larger size (i.e.
@@ -807,13 +807,21 @@ The default value is determined by the value specified in the `<<STRIMZI_DEFAULT
 An object configuring the resource limits and requests for the sidecar container which provides TLS support for the Topic Operator.
 For information about the accepted JSON format, see <<resources_json_config>>.
 
-.Example Topic Operator JSON configuration
-[source,json]
+.Example fragment of a `Kafka` resource with a Topic Operator configuration
+[source,yaml]
 ----
-{ "reconciliationIntervalMs": "900000", "zookeeperSessionTimeoutMs": "20000" }
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  # ...
+  topicOperator:
+    reconciliationIntervalSeconds: 90
+    zookeeperSessionTimeoutSeconds: 20
 ----
 
-More information about these configuration parameters in the related xref:topic-operator-str[Topic Operator] documentation page.
+More information about these configuration parameters in the related xref:deploying-the-topic-operator-str[] documentation page.
 
 [[kafka_connect_config_map_details]]
 ==== Kafka Connect
