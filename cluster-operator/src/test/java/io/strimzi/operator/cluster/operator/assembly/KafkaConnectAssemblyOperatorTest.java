@@ -9,7 +9,7 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
-import io.strimzi.api.kafka.model.KafkaConnectAssembly;
+import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
@@ -94,7 +94,7 @@ public class KafkaConnectAssemblyOperatorTest {
 
         String clusterCmName = "foo";
         String clusterCmNamespace = "test";
-        KafkaConnectAssembly clusterCm = ResourceUtils.createEmptyKafkaConnectCluster(clusterCmNamespace, clusterCmName);
+        KafkaConnect clusterCm = ResourceUtils.createEmptyKafkaConnectCluster(clusterCmNamespace, clusterCmName);
 
         when(mockConnectOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
 
@@ -155,7 +155,7 @@ public class KafkaConnectAssemblyOperatorTest {
         String clusterCmName = "foo";
         String clusterCmNamespace = "test";
 
-        KafkaConnectAssembly clusterCm = ResourceUtils.createEmptyKafkaConnectCluster(clusterCmNamespace, clusterCmName);
+        KafkaConnect clusterCm = ResourceUtils.createEmptyKafkaConnectCluster(clusterCmNamespace, clusterCmName);
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(clusterCm);
         when(mockConnectOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
         when(mockServiceOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateService());
@@ -215,7 +215,7 @@ public class KafkaConnectAssemblyOperatorTest {
         String clusterCmName = "foo";
         String clusterCmNamespace = "test";
 
-        KafkaConnectAssembly clusterCm = ResourceUtils.createEmptyKafkaConnectCluster(clusterCmNamespace, clusterCmName);
+        KafkaConnect clusterCm = ResourceUtils.createEmptyKafkaConnectCluster(clusterCmNamespace, clusterCmName);
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(clusterCm);
         clusterCm.getSpec().setImage("some/different:image"); // Change the image to generate some diff
 
@@ -315,7 +315,7 @@ public class KafkaConnectAssemblyOperatorTest {
         String clusterCmName = "foo";
         String clusterCmNamespace = "test";
 
-        KafkaConnectAssembly clusterCm = ResourceUtils.createEmptyKafkaConnectCluster(clusterCmNamespace, clusterCmName);
+        KafkaConnect clusterCm = ResourceUtils.createEmptyKafkaConnectCluster(clusterCmNamespace, clusterCmName);
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(clusterCm);
         clusterCm.getSpec().setImage("some/different:image"); // Change the image to generate some diff
 
@@ -372,7 +372,7 @@ public class KafkaConnectAssemblyOperatorTest {
         String clusterCmName = "foo";
         String clusterCmNamespace = "test";
 
-        KafkaConnectAssembly clusterCm = ResourceUtils.createEmptyKafkaConnectCluster(clusterCmNamespace, clusterCmName);
+        KafkaConnect clusterCm = ResourceUtils.createEmptyKafkaConnectCluster(clusterCmNamespace, clusterCmName);
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(clusterCm);
         clusterCm.getSpec().setReplicas(scaleTo); // Change replicas to create ScaleUp
 
@@ -421,7 +421,7 @@ public class KafkaConnectAssemblyOperatorTest {
         String clusterCmName = "foo";
         String clusterCmNamespace = "test";
 
-        KafkaConnectAssembly clusterCm = ResourceUtils.createEmptyKafkaConnectCluster(clusterCmNamespace, clusterCmName);
+        KafkaConnect clusterCm = ResourceUtils.createEmptyKafkaConnectCluster(clusterCmNamespace, clusterCmName);
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(clusterCm);
         clusterCm.getSpec().setReplicas(scaleTo); // Change replicas to create ScaleDown
 
@@ -516,16 +516,16 @@ public class KafkaConnectAssemblyOperatorTest {
 
         String clusterCmNamespace = "test";
 
-        KafkaConnectAssembly foo = ResourceUtils.createEmptyKafkaConnectCluster(clusterCmNamespace, "foo");
-        KafkaConnectAssembly bar = ResourceUtils.createEmptyKafkaConnectCluster(clusterCmNamespace, "bar");
-        KafkaConnectAssembly baz = ResourceUtils.createEmptyKafkaConnectCluster(clusterCmNamespace, "baz");
+        KafkaConnect foo = ResourceUtils.createEmptyKafkaConnectCluster(clusterCmNamespace, "foo");
+        KafkaConnect bar = ResourceUtils.createEmptyKafkaConnectCluster(clusterCmNamespace, "bar");
+        KafkaConnect baz = ResourceUtils.createEmptyKafkaConnectCluster(clusterCmNamespace, "baz");
         when(mockConnectOps.list(eq(clusterCmNamespace), any())).thenReturn(asList(foo, bar));
         // when requested ConfigMap for a specific Kafka Connect cluster
         when(mockConnectOps.get(eq(clusterCmNamespace), eq("foo"))).thenReturn(foo);
         when(mockConnectOps.get(eq(clusterCmNamespace), eq("bar"))).thenReturn(bar);
 
         // providing the list of ALL Deployments for all the Kafka Connect clusters
-        Labels newLabels = Labels.forKind(KafkaConnectAssembly.RESOURCE_KIND);
+        Labels newLabels = Labels.forKind(KafkaConnect.RESOURCE_KIND);
         when(mockDcOps.list(eq(clusterCmNamespace), eq(newLabels))).thenReturn(
                 asList(KafkaConnectCluster.fromCrd(bar).generateDeployment(new HashMap<String, String>()),
                         KafkaConnectCluster.fromCrd(baz).generateDeployment(new HashMap<String, String>())));
@@ -553,7 +553,7 @@ public class KafkaConnectAssemblyOperatorTest {
                 mockCmOps, mockDcOps, mockServiceOps, mockSecretOps) {
 
             @Override
-            public void createOrUpdate(Reconciliation reconciliation, KafkaConnectAssembly kafkaConnectAssembly, List<Secret> assemblySecrets, Handler<AsyncResult<Void>> h) {
+            public void createOrUpdate(Reconciliation reconciliation, KafkaConnect kafkaConnectAssembly, List<Secret> assemblySecrets, Handler<AsyncResult<Void>> h) {
                 createdOrUpdated.add(kafkaConnectAssembly.getMetadata().getName());
                 async.countDown();
                 h.handle(Future.succeededFuture());

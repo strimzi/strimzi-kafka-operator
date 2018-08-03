@@ -30,7 +30,7 @@ import java.util.Map;
 @JsonPropertyOrder({"watchedNamespace", "image",
         "reconciliationIntervalSeconds", "zookeeperSessionTimeoutSeconds",
         "affinity", "resources", "topicMetadataMaxAttempts", "tlsSidecar"})
-public class TopicOperator implements Serializable {
+public class TopicOperatorSpec implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

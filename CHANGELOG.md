@@ -6,8 +6,10 @@
 * Make it possible to enabled and disable:
   * Listeners
   * Authorization
-  * Authentication 
+  * Authentication
+* Configure Kafka _super users_ (`super.users` field in Kafka configuration) 
 * User operator
+* Kafka 2.0.0
 
 ## 0.5.0
 

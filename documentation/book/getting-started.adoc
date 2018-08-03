@@ -32,194 +32,24 @@ ifdef::Kubernetes[{KubernetesLongName} and]
 {OpenShiftLongName} user must have the rights to manage role-based access control (RBAC).
 
 ifdef::Downloading[]
-:context: str
 include::con-product-downloads.adoc[leveloffset=+1]
 endif::Downloading[]
 
-:context: str
 include::assembly-cluster-operator.adoc[leveloffset=+1]
 
-:context: str
 include::assembly-kafka-cluster.adoc[leveloffset=+1]
 
-== Kafka Connect
+include::assembly-kafka-connect.adoc[leveloffset=+1]
 
-The Cluster Operator can also deploy a https://kafka.apache.org/documentation/#connect[Kafka Connect] cluster which can be used with either of the Kafka broker deployments described above.
-It is implemented as a Deployment with a configurable number of workers.
-The default image currently contains only the Connectors distributed with Apache Kafka Connect: `FileStreamSinkConnector` and `FileStreamSourceConnector`.
-The REST interface for managing the Kafka Connect cluster is exposed internally within the {ProductPlatformName} cluster as `kafka-connect` service on port `8083`.
-
-Example `KafkaConnect` resources and the details about the `KafkaConnect` format for deploying Kafka Connect can be found in
-<<kafka_connect_config_map_details>>.
-
-ifdef::Kubernetes[]
-=== Deploying to {KubernetesName}
-
-To deploy Kafka Connect on {KubernetesName}, the corresponding `KafkaConnect` resource has to be created.
-An example resource can be created using the following command:
-
-[source,shell]
-kubectl apply -f examples/kafka-connect/kafka-connect.yaml
-endif::Kubernetes[]
-
-=== Deploying to {OpenShiftName}
-
-On {OpenShiftName}, Kafka Connect is provided in the form of a template. It can be deployed from the template either using the command line or using the {OpenShiftName} console.
-To create a Kafka Connect cluster from the command line, the following command should be run:
-
-[source,shell]
-oc new-app strimzi-connect
-
-=== Using Kafka Connect with additional plugins
-
-{ProductName} Docker images for Kafka Connect contain, by default, only the `FileStreamSinkConnector` and `FileStreamSourceConnector` connectors which are part of Apache Kafka.
-
-To facilitate deployment with 3rd party connectors, Kafka Connect is configured to automatically load all plugins/connectors which are present in the `/opt/kafka/plugins` directory during startup.
-There are two ways of adding custom plugins into this directory:
-
-- Using a custom Docker image
-- Using the {OpenShiftName} build system with the {ProductName} S2I
-
-==== Create a new image based on our base image
-
-{ProductName} provides its own Docker image for running Kafka Connect which can be found on {DockerRepository} as
-`{DockerKafkaConnect}`.
-This image could be used as a base image for building a new custom image with additional plugins.
-The following steps describe the process for creating such a custom image:
-
-1. Create a new `Dockerfile` which uses `{DockerKafkaConnect}` as the base image
-+
-[source,Dockerfile,subs="attributes"]
-----
-FROM {DockerKafkaConnect}
-USER root:root
-COPY ./my-plugin/ /opt/kafka/plugins/
-USER {DockerImageUser}
-----
-2. Build the Docker image and upload it to the appropriate Docker repository
-3. Use the new Docker image in the Kafka Connect deployment:
-  - On {OpenShiftName}, the template parameters `IMAGE_REPO_NAME`, `IMAGE_NAME` and `IMAGE_TAG` can be changed to point to the new image when the Kafka Connect cluster is being deployed
-ifdef::Kubernetes[  - On {KubernetesName}, the KafkaConnect resource has to be modified to use the new image]
-
-==== Using {OpenShiftName} Build and S2I
-
-{OpenShiftName} supports https://docs.openshift.org/3.9/dev_guide/builds/index.html[Builds] which can be used together with the https://docs.openshift.org/3.9/creating_images/s2i.html#creating-images-s2i[Source-to-Image (S2I)] framework to create new Docker images.
-{OpenShiftName} Build takes a builder image with S2I support together with source code and binaries provided by the user and uses them to build a new Docker image.
-The newly created Docker Image will be stored in {OpenShiftName}'s local Docker repository and can then be used in deployments.
-{ProductName} provides a Kafka Connect builder image which can be found on {DockerRepository} as `{DockerKafkaConnectS2I}` with such S2I support.
-It takes user-provided binaries (with plugins and connectors) and creates a new Kafka Connect image.
-This enhanced Kafka Connect image can be used with our Kafka Connect deployment.
-
-The S2I deployment is again provided as an {OpenShiftName} template. It can be deployed from the template either using the command
-line or using the {OpenShiftName} console. To create Kafka Connect S2I cluster from the command line, the following command should
-be run:
-
-[source,shell]
-oc new-app strimzi-connect-s2i
-
-Once the cluster is deployed, a new Build can be triggered from the command line:
-
-1. A directory with Kafka Connect plugins has to be prepared first. For example:
-+
-[source,shell]
-----
-$ tree ./my-plugins/
-./my-plugins/
-├── debezium-connector-mongodb
-│   ├── bson-3.6.3.jar
-│   ├── CHANGELOG.md
-│   ├── CONTRIBUTE.md
-│   ├── COPYRIGHT.txt
-│   ├── debezium-connector-mongodb-0.8.1.Final.jar
-│   ├── debezium-core-0.8.1.Final.jar
-│   ├── LICENSE.txt
-│   ├── mongodb-driver-3.6.3.jar
-│   ├── mongodb-driver-core-3.6.3.jar
-│   └── README.md
-├── debezium-connector-mysql
-│   ├── antlr4-runtime-4.7.jar
-│   ├── CHANGELOG.md
-│   ├── CONTRIBUTE.md
-│   ├── COPYRIGHT.txt
-│   ├── debezium-connector-mysql-0.8.1.Final.jar
-│   ├── debezium-core-0.8.1.Final.jar
-│   ├── LICENSE.txt
-│   ├── mysql-binlog-connector-java-0.13.0.jar
-│   ├── mysql-connector-java-5.1.40.jar
-│   └── README.md
-└── debezium-connector-postgres
-    ├── CHANGELOG.md
-    ├── CONTRIBUTE.md
-    ├── COPYRIGHT.txt
-    ├── debezium-connector-postgres-0.8.1.Final.jar
-    ├── debezium-core-0.8.1.Final.jar
-    ├── LICENSE.txt
-    ├── postgresql-42.0.0.jar
-    ├── protobuf-java-2.6.1.jar
-    └── README.md
-----
-
-2. To start a new image build using the prepared directory, the following command has to be run:
-+
-[source,shell]
-oc start-build my-connect-cluster-connect --from-dir ./my-plugins/
-+
-_The name of the build should be changed according to the cluster name of the deployed Kafka Connect cluster._
-
-3. Once the build is finished, the new image will be used automatically by the Kafka Connect deployment.
+//Modularized above here
 
 == Topic Operator
 
-{ProductName} uses a component called the Topic Operator to manage topics in the Kafka cluster. 
-The Topic Operator is deployed as a process running inside a {ProductPlatformName} cluster. 
-To create a new Kafka topic, a `KafkaTopic` custom resource with the related configuration (name, partitions, replication factor, ...) has to be created.
-Based on the information in that `KafkaTopic`, the Topic Operator will create a corresponding Kafka topic in the cluster.
+include::con-what-the-topic-operator-does.adoc[leveloffset=+2]
 
-Deleting a `KafkaTopic` causes the deletion of the corresponding Kafka topic as well.
+include::proc-deploying-the-topic-operator-using-the-cluster-operator.adoc[leveloffset=+2]
 
-The Cluster Operator is able to deploy a Topic Operator, which can be configured in the `Kafka` resource.
-Alternatively, it is possible to deploy a Topic Operator manually, rather than having it deployed by the Cluster Operator.
-
-=== Deploying through the Cluster Operator
-
-To deploy the Topic Operator through the Cluster Operator, its configuration needs to be provided in the
-`Kafka` resource in the `topicOperator` property.
-
-For more information on the JSON configuration format see <<topic_operator_json_config>>.
-
-=== Deploying standalone Topic Operator
-
-If you are not going to deploy the Kafka cluster using the Cluster Operator but you already have a Kafka cluster deployed
-on {ProductPlatformName}, it could be useful to deploy the Topic Operator using the provided YAML files.
-In that case you can still leverage on the Topic Operator features of managing Kafka topics through related `KafkaTopics`.
-
-ifdef::Kubernetes[]
-==== Deploying to {KubernetesName}
-
-To deploy the Topic Operator on {KubernetesName} (not through the Cluster Operator), the following command should be executed:
-
-[source,shell]
-kubectl create -f examples/install/topic-operator.yaml
-
-To verify whether the Topic Operator has been deployed successfully, the {KubernetesName} Dashboard or the following
-command can be used:
-
-[source,shell]
-kubectl describe all
-endif::Kubernetes[]
-
-==== Deploying to {OpenShiftName}
-
-To deploy the Topic Operator on {OpenShiftName} (not through the Cluster Operator), the following command should be executed:
-
-[source,shell]
-oc create -f examples/install/topic-operator
-
-To verify whether the Topic Operator has been deployed successfully, the {OpenShiftName} console or the following command
-can be used:
-
-[source,shell]
-oc describe all
+include::proc-deploying-the-topic-operator-standalone.adoc[leveloffset=+2]
 
 ==== `KafkaTopic` resources
 
@@ -227,7 +57,7 @@ When the Topic Operator is deployed by the Cluster Operator it will be configure
 
 NOTE: When the Topic Operator is deployed manually the `strimzi.io/cluster` label is not necessary.
 
-The `KafkaTopic` contains the topic configuration in a specific format, described in xref:format-of-the-kafkatopic-{context}[Format of the `KafkaTopic`].
+The `KafkaTopic` contains the topic configuration in a specific format, described in xref:type-KafkaTopic-reference[].
 
 === Logging
 The `logging` field allows the configuration of loggers. These loggers are listed below.

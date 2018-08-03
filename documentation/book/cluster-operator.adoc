@@ -29,7 +29,7 @@ In order to handle failovers properly, a periodic reconciliation process is exec
 [[kafka_assembly_details]]
 === Format of the `Kafka` resource
 
-The full API is described in <<type-KafkaAssembly>>.
+The full schema is described in xref:type-Kafka-reference[].
 
 Whatever other labels are applied to the desired Kafka resource will also be applied to the {ProductPlatformName} resources making up the Kafka cluster.
 This provides a convenient mechanism for those resources to be labelled in whatever way the user requires.
@@ -157,7 +157,7 @@ For information about the accepted JSON format, see <<resources_json_config>>.
 `spec.topicOperator`::
 An object representing the topic operator configuration. 
 See the <<topic_operator_json_config>> documentation for further details.
-More info about the topic operator in the related xref:topic-operator-{context}[Topic Operator] documentation page.
+More info about the topic operator in the related xref:deploying-the-topic-operator-using-the-cluster-operator-str[Topic Operator] documentation page.
 
 The following is an example of a Kafka resource.
 
@@ -491,7 +491,7 @@ Persistent Volume Claim for the volume used for storing data for the Kafka broke
 `data-[cluster-name]-zookeeper-[idx]`:: 
 Persistent Volume Claim for the volume used for storing data for the Zookeeper node pod `[idx]`.
 
-See <<type-EphemeralStorage>> and <<type-PersistentClaimStorage>> for further details.
+See the reference about xref:type-EphemeralStorage-reference[ephemeral storage] and xref:type-PersistentClaimStorage-reference[persistent storage] for further details.
 
 ===== Metrics
 
@@ -786,10 +786,10 @@ The default value is determined by the value specified in the `<<STRIMZI_DEFAULT
 `watchedNamespace`::
 The {ProductPlatformName} namespace in which the topic operator watches for `KafkaTopics`. Default is the namespace
 where the topic operator is running.
-`reconciliationIntervalMs`::
-The interval between periodic reconciliations in milliseconds. Default is 900000 (15 minutes).
-`zookeeperSessionTimeoutMs`::
-The Zookeeper session timeout in milliseconds. Default is 20000 milliseconds (20 seconds).
+`reconciliationIntervalSeconds`::
+The interval between periodic reconciliations in seconds. Default is 90.
+`zookeeperSessionTimeoutSeconds`::
+The Zookeeper session timeout in seconds. Default is 20 seconds.
 `topicMetadataMaxAttempts`::
 The number of attempts for getting topics metadata from Kafka. The time between each attempt is defined as an exponential
 back-off. You might want to increase this value when topic creation could take more time due to its larger size (i.e.
@@ -807,13 +807,21 @@ The default value is determined by the value specified in the `<<STRIMZI_DEFAULT
 An object configuring the resource limits and requests for the sidecar container which provides TLS support for the Topic Operator.
 For information about the accepted JSON format, see <<resources_json_config>>.
 
-.Example Topic Operator JSON configuration
-[source,json]
+.Example fragment of a `Kafka` resource with a Topic Operator configuration
+[source,yaml]
 ----
-{ "reconciliationIntervalMs": "900000", "zookeeperSessionTimeoutMs": "20000" }
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  # ...
+  topicOperator:
+    reconciliationIntervalSeconds: 90
+    zookeeperSessionTimeoutSeconds: 20
 ----
 
-More information about these configuration parameters in the related xref:topic-operator-{context}[Topic Operator] documentation page.
+More information about these configuration parameters in the related xref:deploying-the-topic-operator-str[] documentation page.
 
 [[kafka_connect_config_map_details]]
 ==== Kafka Connect
@@ -844,7 +852,11 @@ Default is 60.
 The timeout in seconds of the liveness and readiness probes for each Kafka Connect worker node.
 Default is 5.
 
-`connect-config`::
+`bootstrapServers`::
+Bootstrap servers to connect to. The value of the field must be a comma-separated list of hostname and port number in the _<hostname>_:‍_<port>_ format.
+This is a mandatory field.
+
+`config`::
 A JSON string with Kafka Connect configuration. 
 See section <<kafka_connect_configuration_json_config>> for more details.
 
@@ -882,8 +894,7 @@ spec:
   livenessProbe:
     initialDelaySeconds: 60
     timeoutSeconds: 5
-  config: 
-    bootstrap.servers: my-cluster-kafka-bootstrap:9092
+  bootstrapServers: my-cluster-kafka-bootstrap:9092
 ----
 
 The resources created by the Cluster Operator into the {ProductPlatformName} cluster will be the following :
@@ -908,6 +919,7 @@ This object should contain the Kafka Connect configuration options as keys. The 
 
 The `config` object supports all Kafka Connect configuration options with the exception of options related to:
 
+* Kafka cluster bootstrap
 * Security (Encryption, Authentication and Authorization)
 * Listener / REST interface configuration
 * Plugin path configuration
@@ -920,6 +932,7 @@ Specifically, all configuration options with keys starting with one of the follo
 * `listeners`
 * `plugin.path`
 * `rest.`
+* `bootstrap.servers`
 
 All other options will be passed to Kafka Connect. A list of all the available options can be found on the
 http://kafka.apache.org/11/documentation.html#connectconfigs[Kafka website]. An example `config` field is provided
@@ -934,7 +947,6 @@ metadata:
   name: my-connect-cluster
 spec:
   config:
-    bootstrap.servers: my-cluster-kafka-bootstrap:9092
     group.id: my-connect-cluster
     offset.storage.topic: my-connect-cluster-offsets
     config.storage.topic: my-connect-cluster-configs
@@ -1005,8 +1017,7 @@ spec:
   livenessProbe:
     initialDelaySeconds: 60
     timeoutSeconds: 5
-  config: 
-    bootstrap.servers: my-cluster-kafka-bootstrap:9092
+  bootstrapServers: my-cluster-kafka-bootstrap:9092
 ----
 
 The S2I deployment is very similar to the regular Kafka Connect deployment (as represented by the `KafkaConnect` resource).

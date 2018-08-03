@@ -10,6 +10,8 @@ import org.junit.Test;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.net.URISyntaxException;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
@@ -25,7 +27,13 @@ public class CrdGeneratorTest {
 
     @Test
     public void generateHelmMetadataLabels() throws IOException {
-        CrdGenerator crdGenerator = new CrdGenerator(new YAMLMapper(), true);
+        Map<String, String> labels = new LinkedHashMap<>();
+        labels.put("app", "{{ template \"strimzi.name\" . }}");
+        labels.put("chart", "{{ template \"strimzi.chart\" . }}");
+        labels.put("component", "%plural%.%group%-crd");
+        labels.put("release", "{{ .Release.Name }}");
+        labels.put("heritage", "{{ .Release.Service }}");
+        CrdGenerator crdGenerator = new CrdGenerator(new YAMLMapper(), labels);
         StringWriter w = new StringWriter();
         crdGenerator.generate(ExampleCrd.class, w);
         String s = w.toString();

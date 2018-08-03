@@ -11,7 +11,7 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.openshift.api.model.BuildConfig;
 import io.fabric8.openshift.api.model.DeploymentConfig;
 import io.fabric8.openshift.api.model.ImageStream;
-import io.strimzi.api.kafka.model.KafkaConnectS2IAssembly;
+import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.KafkaConnectS2ICluster;
@@ -100,7 +100,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         String clusterCmName = "foo";
         String clusterCmNamespace = "test";
 
-        KafkaConnectS2IAssembly clusterCm = ResourceUtils.createEmptyKafkaConnectS2ICluster(clusterCmNamespace, clusterCmName);
+        KafkaConnectS2I clusterCm = ResourceUtils.createEmptyKafkaConnectS2ICluster(clusterCmNamespace, clusterCmName);
         when(mockConnectOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
 
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
@@ -184,7 +184,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         String clusterCmName = "foo";
         String clusterCmNamespace = "test";
 
-        KafkaConnectS2IAssembly clusterCm = ResourceUtils.createEmptyKafkaConnectS2ICluster(clusterCmNamespace, clusterCmName);
+        KafkaConnectS2I clusterCm = ResourceUtils.createEmptyKafkaConnectS2ICluster(clusterCmNamespace, clusterCmName);
         KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromCrd(clusterCm);
         when(mockConnectOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
         when(mockServiceOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateService());
@@ -272,7 +272,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         String clusterCmName = "foo";
         String clusterCmNamespace = "test";
 
-        KafkaConnectS2IAssembly clusterCm = ResourceUtils.createEmptyKafkaConnectS2ICluster(clusterCmNamespace, clusterCmName);
+        KafkaConnectS2I clusterCm = ResourceUtils.createEmptyKafkaConnectS2ICluster(clusterCmNamespace, clusterCmName);
         KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromCrd(clusterCm);
         clusterCm.getSpec().setImage("some/different:image"); // Change the image to generate some diff
 
@@ -397,7 +397,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         String clusterCmName = "foo";
         String clusterCmNamespace = "test";
 
-        KafkaConnectS2IAssembly clusterCm = ResourceUtils.createEmptyKafkaConnectS2ICluster(clusterCmNamespace, clusterCmName);
+        KafkaConnectS2I clusterCm = ResourceUtils.createEmptyKafkaConnectS2ICluster(clusterCmNamespace, clusterCmName);
         KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromCrd(clusterCm);
         clusterCm.getSpec().setImage("some/different:image"); // Change the image to generate some diff
 
@@ -470,7 +470,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         String clusterCmName = "foo";
         String clusterCmNamespace = "test";
 
-        KafkaConnectS2IAssembly clusterCm = ResourceUtils.createEmptyKafkaConnectS2ICluster(clusterCmNamespace, clusterCmName);
+        KafkaConnectS2I clusterCm = ResourceUtils.createEmptyKafkaConnectS2ICluster(clusterCmNamespace, clusterCmName);
         KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromCrd(clusterCm);
         clusterCm.getSpec().setReplicas(scaleTo); // Change replicas to create ScaleUp
 
@@ -528,7 +528,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         String clusterCmName = "foo";
         String clusterCmNamespace = "test";
 
-        KafkaConnectS2IAssembly clusterCm = ResourceUtils.createEmptyKafkaConnectS2ICluster(clusterCmNamespace, clusterCmName);
+        KafkaConnectS2I clusterCm = ResourceUtils.createEmptyKafkaConnectS2ICluster(clusterCmNamespace, clusterCmName);
         KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromCrd(clusterCm);
         clusterCm.getSpec().setReplicas(scaleTo); // Change replicas to create ScaleDown
 
@@ -659,16 +659,16 @@ public class KafkaConnectS2IAssemblyOperatorTest {
 
         String clusterCmNamespace = "test";
 
-        KafkaConnectS2IAssembly foo = ResourceUtils.createEmptyKafkaConnectS2ICluster(clusterCmNamespace, "foo");
-        KafkaConnectS2IAssembly bar = ResourceUtils.createEmptyKafkaConnectS2ICluster(clusterCmNamespace, "bar");
-        KafkaConnectS2IAssembly baz = ResourceUtils.createEmptyKafkaConnectS2ICluster(clusterCmNamespace, "baz");
+        KafkaConnectS2I foo = ResourceUtils.createEmptyKafkaConnectS2ICluster(clusterCmNamespace, "foo");
+        KafkaConnectS2I bar = ResourceUtils.createEmptyKafkaConnectS2ICluster(clusterCmNamespace, "bar");
+        KafkaConnectS2I baz = ResourceUtils.createEmptyKafkaConnectS2ICluster(clusterCmNamespace, "baz");
         when(mockConnectOps.list(eq(clusterCmNamespace), any())).thenReturn(asList(foo, bar));
         // when requested ConfigMap for a specific Kafka Connect S2I cluster
         when(mockConnectOps.get(eq(clusterCmNamespace), eq("foo"))).thenReturn(foo);
         when(mockConnectOps.get(eq(clusterCmNamespace), eq("bar"))).thenReturn(bar);
 
         // providing the list of ALL DeploymentConfigs for all the Kafka Connect S2I clusters
-        Labels newLabels = Labels.forKind(KafkaConnectS2IAssembly.RESOURCE_KIND);
+        Labels newLabels = Labels.forKind(KafkaConnectS2I.RESOURCE_KIND);
         when(mockDcOps.list(eq(clusterCmNamespace), eq(newLabels))).thenReturn(
                 asList(KafkaConnectS2ICluster.fromCrd(bar).generateDeploymentConfig(new HashMap<String, String>()),
                         KafkaConnectS2ICluster.fromCrd(baz).generateDeploymentConfig(new HashMap<String, String>())));
@@ -696,7 +696,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
                 mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps, mockSecretOps) {
 
             @Override
-            public void createOrUpdate(Reconciliation reconciliation, KafkaConnectS2IAssembly kafkaConnectS2IAssembly, List<Secret> assemblySecrets, Handler<AsyncResult<Void>> h) {
+            public void createOrUpdate(Reconciliation reconciliation, KafkaConnectS2I kafkaConnectS2IAssembly, List<Secret> assemblySecrets, Handler<AsyncResult<Void>> h) {
                 createdOrUpdated.add(kafkaConnectS2IAssembly.getMetadata().getName());
                 async.countDown();
                 h.handle(Future.succeededFuture());

@@ -1,0 +1,24 @@
+// Module included in the following assemblies:
+//
+// assembly-kafka-connect.adoc
+
+include::common/attributes.adoc[]
+
+[id='deploying-kafka-connect-kubernetes-{context}']
+= Deploying Kafka Connect to {KubernetesName}
+
+.Prerequisites
+
+* Before deploying Kafka Connect, the Cluster Operator must be deployed.
+
+.Procedure
+
+* Deploy Kafka Connect on {KubernetesName} by creating the corresponding `KafkaConnect` resource.
++
+[source,shell]
+----
+kubectl apply -f examples/kafka-connect/kafka-connect.yaml
+----
+
+.Additional resources
+* For more information about deploying the Cluster Operator, see xref:cluster-operator-str[]

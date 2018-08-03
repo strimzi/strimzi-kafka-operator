@@ -13,7 +13,7 @@ import io.fabric8.openshift.api.model.BuildConfig;
 import io.fabric8.openshift.api.model.DeploymentConfig;
 import io.fabric8.openshift.api.model.ImageChangeTrigger;
 import io.fabric8.openshift.api.model.ImageStream;
-import io.strimzi.api.kafka.model.KafkaConnectS2IAssembly;
+import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
@@ -67,12 +67,14 @@ public class KafkaConnectS2IClusterTest {
             "internal.value.converter=org.apache.kafka.connect.json.JsonConverter" + LINE_SEPARATOR;
     private final boolean insecureSourceRepo = false;
 
-    private final KafkaConnectS2IAssembly cm = ResourceUtils.createKafkaConnectS2ICluster(namespace, cluster, replicas, image,
+
+    private final KafkaConnectS2I cm = ResourceUtils.createKafkaConnectS2ICluster(namespace, cluster, replicas, image,
             healthDelay, healthTimeout, metricsCmJson, configurationJson, insecureSourceRepo, bootstrapServers);
+
     private final KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(cm);
 
     @Rule
-    public ResourceTester<KafkaConnectS2IAssembly, KafkaConnectS2ICluster> resourceTester = new ResourceTester<>(KafkaConnectS2IAssembly.class, KafkaConnectS2ICluster::fromCrd);
+    public ResourceTester<KafkaConnectS2I, KafkaConnectS2ICluster> resourceTester = new ResourceTester<>(KafkaConnectS2I.class, KafkaConnectS2ICluster::fromCrd);
 
 
     @Test
@@ -86,7 +88,16 @@ public class KafkaConnectS2IClusterTest {
     }
 
     private Map<String, String> expectedLabels(String name)    {
-        return TestUtils.map("my-user-label", "cromulent", Labels.STRIMZI_CLUSTER_LABEL, cluster, Labels.STRIMZI_TYPE_LABEL, "kafka-connect-s2i", Labels.STRIMZI_NAME_LABEL, name, Labels.STRIMZI_KIND_LABEL, KafkaConnectS2IAssembly.RESOURCE_KIND);
+        return TestUtils.map("my-user-label", "cromulent", Labels.STRIMZI_CLUSTER_LABEL, cluster,
+                Labels.STRIMZI_NAME_LABEL, name, Labels.STRIMZI_KIND_LABEL, KafkaConnectS2I.RESOURCE_KIND);
+    }
+
+    private Map<String, String> expectedSelectorLabels()    {
+        return Labels.fromMap(expectedLabels()).strimziLabels().toMap();
+    }
+
+    private Map<String, String> expectedLabels()    {
+        return expectedLabels(kc.kafkaConnectClusterName(cluster));
     }
 
     protected List<EnvVar> getExpectedEnvVars() {
@@ -138,7 +149,7 @@ public class KafkaConnectS2IClusterTest {
 
         assertEquals("ClusterIP", svc.getSpec().getType());
         assertEquals(expectedLabels(kc.serviceName(cluster)), svc.getMetadata().getLabels());
-        assertEquals(expectedLabels(kc.kafkaConnectClusterName(cluster)), svc.getSpec().getSelector());
+        assertEquals(expectedSelectorLabels(), svc.getSpec().getSelector());
         assertEquals(2, svc.getSpec().getPorts().size());
         assertEquals(new Integer(KafkaConnectCluster.REST_API_PORT), svc.getSpec().getPorts().get(0).getPort());
         assertEquals(KafkaConnectCluster.REST_API_PORT_NAME, svc.getSpec().getPorts().get(0).getName());
@@ -154,6 +165,7 @@ public class KafkaConnectS2IClusterTest {
         assertEquals(namespace, dep.getMetadata().getNamespace());
         Map<String, String> expectedLabels = expectedLabels(kc.kafkaConnectClusterName(cluster));
         assertEquals(expectedLabels, dep.getMetadata().getLabels());
+        assertEquals(expectedSelectorLabels(), dep.getSpec().getSelector());
         assertEquals(new Integer(replicas), dep.getSpec().getReplicas());
         assertEquals(expectedLabels, dep.getSpec().getTemplate().getMetadata().getLabels());
         assertEquals(1, dep.getSpec().getTemplate().getSpec().getContainers().size());

@@ -1,10 +1,5 @@
 #!/bin/bash
 
-# Prepare super.users field
-KAFKA_NAME=$(hostname | rev | cut -d "-" -f2- | rev)
-ASSEMBLY_NAME=$(echo "${KAFKA_NAME}" | rev | cut -d "-" -f2- | rev)
-SUPER_USERS="super.users=User:CN=${ASSEMBLY_NAME}-topic-operator,O=io.strimzi;User:CN=${KAFKA_NAME},O=io.strimzi"
-
 #####
 # Configuring listeners
 #####
@@ -44,6 +39,15 @@ fi
 #####
 if [ "$KAFKA_AUTHORIZATION_TYPE" = "simple" ]; then
   AUTHORIZER_CLASS_NAME="kafka.security.auth.SimpleAclAuthorizer"
+
+  # Prepare super.users field
+  KAFKA_NAME=$(hostname | rev | cut -d "-" -f2- | rev)
+  ASSEMBLY_NAME=$(echo "${KAFKA_NAME}" | rev | cut -d "-" -f2- | rev)
+  SUPER_USERS="super.users=User:CN=${ASSEMBLY_NAME}-topic-operator,O=io.strimzi;User:CN=${KAFKA_NAME},O=io.strimzi"
+
+  if [ "$KAFKA_AUTHORIZATION_SUPER_USERS" ]; then
+    SUPER_USERS="${SUPER_USERS};${KAFKA_AUTHORIZATION_SUPER_USERS}"
+  fi
 else
   AUTHORIZER_CLASS_NAME=""
 fi

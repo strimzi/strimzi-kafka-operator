@@ -13,34 +13,57 @@ import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.Toleration;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
+import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
-import io.vertx.core.cli.annotations.DefaultValue;
 
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Representation of a Strimzi-managed Kafka "cluster".
+ */
 @Buildable(
         editableEnabled = false,
         generateBuilderPackage = true,
         builderPackage = "io.strimzi.api.kafka.model"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "replicas", "image",
-        "livenessProbe", "readinessProbe", "jvmOptions", "affinity", "tolerations", "logging", "metrics"})
-public class KafkaConnectAssemblySpec implements Serializable {
+@JsonPropertyOrder({
+        "replicas", "image", "storage",
+        "listeners", "authorization", "config",
+        "rack", "brokerRackInitImage",
+        "affinity", "tolerations",
+        "livenessProbe", "readinessProbe",
+        "jvmOptions", "resources",
+        "metrics", "logging", "tlsSidecar"})
+public class KafkaClusterSpec implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     public static final String DEFAULT_IMAGE =
-            System.getenv().getOrDefault("STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE", "strimzi/kafka-connect:latest");
+            System.getenv().getOrDefault("STRIMZI_DEFAULT_KAFKA_IMAGE", "strimzi/kafka:latest");
+    public static final String DEFAULT_INIT_IMAGE =
+            System.getenv().getOrDefault("STRIMZI_DEFAULT_KAFKA_INIT_IMAGE", "strimzi/kafka-init:latest");
+    public static final String DEFAULT_TLS_SIDECAR_IMAGE =
+            System.getenv().getOrDefault("STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE", "strimzi/kafka-stunnel:latest");
 
-    public static final String FORBIDDEN_PREFIXES = "ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers";
+    public static final String FORBIDDEN_PREFIXES = "listeners, advertised., broker., listener., host.name, port, "
+            + "inter.broker.listener.name, sasl., ssl., security., password., principal.builder.class, log.dir, "
+            + "zookeeper.connect, zookeeper.set.acl, authorizer., super.user";
+
+    protected Storage storage;
 
     private Map<String, Object> config = new HashMap<>(0);
 
+    private String brokerRackInitImage;
+
+    private Rack rack;
+
     private Logging logging;
+
+    private Sidecar tlsSidecar;
     private int replicas;
     private String image;
     private Resources resources;
@@ -50,16 +73,11 @@ public class KafkaConnectAssemblySpec implements Serializable {
     private Map<String, Object> metrics = new HashMap<>(0);
     private Affinity affinity;
     private List<Toleration> tolerations;
-    private String bootstrapServers;
+    private KafkaListeners listeners;
+    private KafkaAuthorization authorization;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("The number of pods in the Kafka Connect group.")
-    @DefaultValue("3")
-    public int getReplicas() {
-        return replicas;
-    }
-
-    @Description("The Kafka Connect configuration. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)
+    @Description("The kafka broker config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)
     public Map<String, Object> getConfig() {
         return config;
     }
@@ -68,7 +86,38 @@ public class KafkaConnectAssemblySpec implements Serializable {
         this.config = config;
     }
 
-    @Description("Logging configuration for Kafka Connect")
+    @Description("The image of the init container used for initializing the `broker.rack`.")
+    @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    public String getBrokerRackInitImage() {
+        return brokerRackInitImage;
+    }
+
+    public void setBrokerRackInitImage(String brokerRackInitImage) {
+        this.brokerRackInitImage = brokerRackInitImage;
+    }
+
+    @Description("Configuration of the `broker.rack` broker config.")
+    @JsonProperty("rack")
+    @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    public Rack getRack() {
+        return rack;
+    }
+
+    public void setRack(Rack rack) {
+        this.rack = rack;
+    }
+
+    @Description("Storage configuration (disk). Cannot be updated.")
+    @JsonProperty(required = true)
+    public Storage getStorage() {
+        return storage;
+    }
+
+    public void setStorage(Storage storage) {
+        this.storage = storage;
+    }
+
+    @Description("Logging configuration for Kafka")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public Logging getLogging() {
         return logging == null ? new InlineLogging() : logging;
@@ -76,6 +125,23 @@ public class KafkaConnectAssemblySpec implements Serializable {
 
     public void setLogging(Logging logging) {
         this.logging = logging;
+    }
+
+    @Description("TLS sidecar configuration")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Sidecar getTlsSidecar() {
+        return tlsSidecar;
+    }
+
+    public void setTlsSidecar(Sidecar tlsSidecar) {
+        this.tlsSidecar = tlsSidecar;
+    }
+
+    @Description("The number of pods in the cluster.")
+    @Minimum(1)
+    @JsonProperty(required = true)
+    public int getReplicas() {
+        return replicas;
     }
 
     public void setReplicas(int replicas) {
@@ -165,15 +231,25 @@ public class KafkaConnectAssemblySpec implements Serializable {
         this.tolerations = tolerations;
     }
 
-    @Description("Bootstrap servers to connect to. This should be given as a comma separated list of _<hostname>_:\u200D_<port>_ pairs.")
+    @Description("Configures listeners of Kafka brokers")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty(required = true)
-    public String getBootstrapServers() {
-        return bootstrapServers;
+    public KafkaListeners getListeners() {
+        return listeners;
     }
 
-    public void setBootstrapServers(String bootstrapServers) {
-        this.bootstrapServers = bootstrapServers;
+    public void setListeners(KafkaListeners listeners) {
+        this.listeners = listeners;
+    }
+
+    @Description("Authorization configuration for Kafka brokers")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public KafkaAuthorization getAuthorization() {
+        return authorization;
+    }
+
+    public void setAuthorization(KafkaAuthorization authorization) {
+        this.authorization = authorization;
     }
 
     @JsonAnyGetter

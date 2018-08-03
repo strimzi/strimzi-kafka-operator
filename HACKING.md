@@ -26,7 +26,12 @@ To build this project you must first install several command line utilities.
 - [`make`](https://www.gnu.org/software/make/) - Make build system
 - [`mvn`](https://maven.apache.org/index.html) - Maven CLI
 - [`helm`](https://helm.sh/) - Helm Package Management System for Kubernetes
+    - After installing Helm be sure to run `helm init`.
 - [`asciidoctor`](https://asciidoctor.org/) - Documentation generation (use `gem` to install latest version for your platform)
+- [`yq`](https://github.com/mikefarah/yq) - YAML manipulation tool
+
+In order to use `make` these all need to be available in your `$PATH`.
+ 
 
 ## Docker images
 

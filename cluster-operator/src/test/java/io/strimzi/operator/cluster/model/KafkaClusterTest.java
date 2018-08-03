@@ -13,8 +13,8 @@ import io.fabric8.kubernetes.api.model.WeightedPodAffinityTerm;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaAssembly;
-import io.strimzi.api.kafka.model.KafkaAssemblyBuilder;
+import io.strimzi.api.kafka.model.KafkaClusterSpec;
+import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.Rack;
@@ -57,11 +57,11 @@ public class KafkaClusterTest {
     }
 
     private final CertManager certManager = new MockCertManager();
-    private final KafkaAssembly kafkaAssembly = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, configuration, kafkaLog, zooLog);
+    private final Kafka kafkaAssembly = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, configuration, kafkaLog, zooLog);
     private final KafkaCluster kc = KafkaCluster.fromCrd(certManager, kafkaAssembly, ResourceUtils.createKafkaClusterInitialSecrets(namespace, kafkaAssembly.getMetadata().getName()));
 
     @Rule
-    public ResourceTester<KafkaAssembly, KafkaCluster> resourceTester = new ResourceTester<>(KafkaAssembly.class, KafkaCluster::fromCrd);
+    public ResourceTester<Kafka, KafkaCluster> resourceTester = new ResourceTester<>(Kafka.class, KafkaCluster::fromCrd);
 
     @Test
     public void testMetricsConfigMap() {
@@ -74,7 +74,11 @@ public class KafkaClusterTest {
     }
 
     private Map<String, String> expectedLabels()    {
-        return TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, cluster, "my-user-label", "cromulent", Labels.STRIMZI_NAME_LABEL, KafkaCluster.kafkaClusterName(cluster), Labels.STRIMZI_KIND_LABEL, KafkaAssembly.RESOURCE_KIND);
+        return TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, cluster, "my-user-label", "cromulent", Labels.STRIMZI_NAME_LABEL, KafkaCluster.kafkaClusterName(cluster), Labels.STRIMZI_KIND_LABEL, Kafka.RESOURCE_KIND);
+    }
+
+    private Map<String, String> expectedSelectorLabels()    {
+        return Labels.fromMap(expectedLabels()).strimziLabels().toMap();
     }
 
     @Test
@@ -85,7 +89,7 @@ public class KafkaClusterTest {
 
     private void checkService(Service headful) {
         assertEquals("ClusterIP", headful.getSpec().getType());
-        assertEquals(expectedLabels(), headful.getSpec().getSelector());
+        assertEquals(expectedSelectorLabels(), headful.getSpec().getSelector());
         assertEquals(4, headful.getSpec().getPorts().size());
         assertEquals(KafkaCluster.REPLICATION_PORT_NAME, headful.getSpec().getPorts().get(0).getName());
         assertEquals(new Integer(KafkaCluster.REPLICATION_PORT), headful.getSpec().getPorts().get(0).getPort());
@@ -112,7 +116,7 @@ public class KafkaClusterTest {
         assertEquals(KafkaCluster.headlessServiceName(cluster), headless.getMetadata().getName());
         assertEquals("ClusterIP", headless.getSpec().getType());
         assertEquals("None", headless.getSpec().getClusterIP());
-        assertEquals(expectedLabels(), headless.getSpec().getSelector());
+        assertEquals(expectedSelectorLabels(), headless.getSpec().getSelector());
         assertEquals(3, headless.getSpec().getPorts().size());
         assertEquals(KafkaCluster.REPLICATION_PORT_NAME, headless.getSpec().getPorts().get(0).getName());
         assertEquals(new Integer(KafkaCluster.REPLICATION_PORT), headless.getSpec().getPorts().get(0).getPort());
@@ -135,7 +139,7 @@ public class KafkaClusterTest {
     @Test
     public void testGenerateStatefulSetWithSetStorageSelector() {
         Map<String, String> selector = TestUtils.map("foo", "bar");
-        KafkaAssembly kafkaAssembly = new KafkaAssemblyBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                 .editKafka()
@@ -150,7 +154,7 @@ public class KafkaClusterTest {
 
     @Test
     public void testGenerateStatefulSetWithEmptyStorageSelector() {
-        KafkaAssembly kafkaAssembly = new KafkaAssemblyBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                 .editKafka()
@@ -165,7 +169,7 @@ public class KafkaClusterTest {
 
     @Test
     public void testGenerateStatefulSetWithRack() {
-        KafkaAssembly kafkaAssembly = new KafkaAssemblyBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -180,8 +184,8 @@ public class KafkaClusterTest {
 
     @Test
     public void testGenerateStatefulSetWithInitContainers() {
-        KafkaAssembly kafkaAssembly =
-                new KafkaAssemblyBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout,
+        Kafka kafkaAssembly =
+                new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout,
                         metricsCm, configuration, emptyMap()))
                         .editSpec()
                             .editKafka()
@@ -194,12 +198,13 @@ public class KafkaClusterTest {
         checkStatefulSet(ss, kafkaAssembly, false);
     }
 
-    private void checkStatefulSet(StatefulSet ss, KafkaAssembly cm, boolean isOpenShift) {
+    private void checkStatefulSet(StatefulSet ss, Kafka cm, boolean isOpenShift) {
         assertEquals(KafkaCluster.kafkaClusterName(cluster), ss.getMetadata().getName());
         // ... in the same namespace ...
         assertEquals(namespace, ss.getMetadata().getNamespace());
         // ... with these labels
         assertEquals(expectedLabels(), ss.getMetadata().getLabels());
+        assertEquals(expectedSelectorLabels(), ss.getSpec().getSelector().getMatchLabels());
 
         List<Container> containers = ss.getSpec().getTemplate().getSpec().getContainers();
 
@@ -218,7 +223,7 @@ public class KafkaClusterTest {
         assertEquals(KafkaCluster.CLIENT_CA_CERTS_VOLUME, containers.get(0).getVolumeMounts().get(2).getName());
         assertEquals(KafkaCluster.CLIENT_CA_CERTS_VOLUME_MOUNT, containers.get(0).getVolumeMounts().get(2).getMountPath());
         // checks on the TLS sidecar
-        assertEquals(Kafka.DEFAULT_TLS_SIDECAR_IMAGE, containers.get(1).getImage());
+        assertEquals(KafkaClusterSpec.DEFAULT_TLS_SIDECAR_IMAGE, containers.get(1).getImage());
         assertEquals(ZookeeperCluster.serviceName(cluster) + ":2181", AbstractModel.containerEnvVars(containers.get(1)).get(KafkaCluster.ENV_VAR_KAFKA_ZOOKEEPER_CONNECT));
         assertEquals(KafkaCluster.BROKER_CERTS_VOLUME, containers.get(1).getVolumeMounts().get(0).getName());
         assertEquals(KafkaCluster.TLS_SIDECAR_VOLUME_MOUNT, containers.get(1).getVolumeMounts().get(0).getMountPath());
@@ -272,13 +277,13 @@ public class KafkaClusterTest {
 
     @Test
     public void testDeleteClaim() {
-        KafkaAssembly assembly = ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        Kafka assembly = ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap());
         KafkaCluster kc = KafkaCluster.fromCrd(certManager, assembly, ResourceUtils.createKafkaClusterInitialSecrets(namespace, assembly.getMetadata().getName()));
         StatefulSet ss = kc.generateStatefulSet(true);
         assertFalse(KafkaCluster.deleteClaim(ss));
 
-        assembly = new KafkaAssemblyBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        assembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
@@ -290,7 +295,7 @@ public class KafkaClusterTest {
         ss = kc.generateStatefulSet(true);
         assertFalse(KafkaCluster.deleteClaim(ss));
 
-        assembly = new KafkaAssemblyBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+        assembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()

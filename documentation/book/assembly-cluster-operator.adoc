@@ -25,11 +25,9 @@ The format of the `Kafka` resource is described in xref:kafka_assembly_details[F
 NOTE: {ProductName} contains example YAML files, which make deploying a Cluster Operator easier.
 
 ifdef::Kubernetes[]
-:context: str
 include::proc-deploying-cluster-operator-kubernetes.adoc[leveloffset=+1]
 endif::Kubernetes[]
 
-:context: str
 include::proc-deploying-cluster-operator-openshift.adoc[leveloffset=+1]
 
 ifdef::Helm[]

@@ -1,18 +1,12 @@
-##---
-# Source: strimzi-kafka-operator/templates/04-ClusterRole-strimzi-topic-operator.yaml
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRole
 metadata:
   name: strimzi-topic-operator
   labels:
-    app: strimzi-kafka-operator
-    chart: strimzi-kafka-operator-0.1.0
-    component: topic-operator-role
-    release: RELEASE-NAME
-    heritage: Tiller
+    app: strimzi
 rules:
 - apiGroups:
-  - "kafka.strimzi.io"
+  - kafka.strimzi.io
   resources:
   - kafkatopics
   verbs:

@@ -30,11 +30,12 @@
         <valid4j.version>1.1</valid4j.version>
         <fasterxml.jackson.version>2.9.3</fasterxml.jackson.version>
         <fasterxml.jackson-annotations.version>2.9.0</fasterxml.jackson-annotations.version>
-        <kafka.version>1.0.1</kafka.version>
+        <kafka.version>2.0.0</kafka.version>
         <scala-library.version>2.12.3</scala-library.version>
         <zookeeper.version>3.4.10</zookeeper.version>
         <mockito.version>2.12.0</mockito.version>
         <jsonpath.version>2.4.0</jsonpath.version>
+        <slf4j.version>1.7.25</slf4j.version>
     </properties>
 
     <modules>
@@ -147,6 +148,11 @@
                         <artifactId>jline</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.scala-lang</groupId>
@@ -388,6 +394,7 @@
                                 <ignoredUnusedDeclaredDependency>org.apache.logging.log4j:log4j-core</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.apache.logging.log4j:log4j-slf4j-impl</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>io.sundr:builder-annotations</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>org.slf4j:slf4j-api:jar</ignoredUnusedDeclaredDependency>
                             </ignoredUnusedDeclaredDependencies>
                         </configuration>
                     </execution>

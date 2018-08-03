@@ -15,7 +15,7 @@ import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.model.KafkaConnectS2IAssembly;
+import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -108,7 +108,7 @@ public class ClusterOperatorTest {
         } else {
             when(y.get()).thenReturn(null);
         }
-        when(mockCrds.withName(KafkaConnectS2IAssembly.CRD_NAME)).thenReturn(y);
+        when(mockCrds.withName(KafkaConnectS2I.CRD_NAME)).thenReturn(y);
         when(client.customResourceDefinitions()).thenReturn(mockCrds);
         when(client.customResources(any(), any(), any(), any())).thenReturn(mockCms);
 

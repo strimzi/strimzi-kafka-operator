@@ -7,6 +7,8 @@ package io.strimzi.operator.topic;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
+import io.strimzi.api.kafka.model.KafkaTopicSpec;
+
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -257,5 +259,16 @@ public class TopicSerializationTest {
         }
     }
 
+    @Test
+    public void testNoConfig() {
+        KafkaTopicSpec spec = new KafkaTopicSpec();
+        spec.setPartitions(3);
+        spec.setReplicas(3);
+        KafkaTopic kafkaTopic = new KafkaTopic();
+        kafkaTopic.setMetadata(new ObjectMetaBuilder().withName("my-topic").build());
+        kafkaTopic.setSpec(spec);
+
+        TopicSerialization.fromTopicResource(kafkaTopic);
+    }
 }
 

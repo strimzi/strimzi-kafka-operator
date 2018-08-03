@@ -41,8 +41,16 @@ public class Subject {
 
     @Override
     public String toString() {
-        return String.format("/O=%s/CN=%s",
-                organizationName,
-                commonName);
+        StringBuilder bldr = new StringBuilder();
+
+        if (organizationName != null)   {
+            bldr.append(String.format("/O=%s", organizationName));
+        }
+
+        if (commonName != null)   {
+            bldr.append(String.format("/CN=%s", commonName));
+        }
+
+        return bldr.toString();
     }
 }

@@ -11,26 +11,25 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.EphemeralStorage;
 import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaAssembly;
-import io.strimzi.api.kafka.model.KafkaAssemblyBuilder;
-import io.strimzi.api.kafka.model.KafkaAssemblySpec;
-import io.strimzi.api.kafka.model.KafkaConnectAssembly;
-import io.strimzi.api.kafka.model.KafkaConnectAssemblyBuilder;
-import io.strimzi.api.kafka.model.KafkaConnectS2IAssembly;
-import io.strimzi.api.kafka.model.KafkaConnectS2IAssemblyBuilder;
+import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.KafkaClusterSpec;
+import io.strimzi.api.kafka.model.KafkaConnect;
+import io.strimzi.api.kafka.model.KafkaConnectBuilder;
+import io.strimzi.api.kafka.model.KafkaConnectS2I;
+import io.strimzi.api.kafka.model.KafkaConnectS2IBuilder;
 import io.strimzi.api.kafka.model.KafkaListenerPlain;
 import io.strimzi.api.kafka.model.KafkaListenerTls;
+import io.strimzi.api.kafka.model.KafkaSpec;
 import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.Storage;
-import io.strimzi.api.kafka.model.TopicOperator;
-import io.strimzi.api.kafka.model.Zookeeper;
+import io.strimzi.api.kafka.model.TopicOperatorSpec;
+import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.test.TestUtils;
 
 import java.util.ArrayList;
@@ -47,8 +46,8 @@ public class ResourceUtils {
 
     }
 
-    public static KafkaAssembly createKafkaCluster(String clusterCmNamespace, String clusterCmName, int replicas,
-                                                   String image, int healthDelay, int healthTimeout) {
+    public static Kafka createKafkaCluster(String clusterCmNamespace, String clusterCmName, int replicas,
+                                           String image, int healthDelay, int healthTimeout) {
         Probe probe = new ProbeBuilder()
                 .withInitialDelaySeconds(healthDelay)
                 .withTimeoutSeconds(healthTimeout)
@@ -58,7 +57,7 @@ public class ResourceUtils {
         meta.withNamespace(clusterCmNamespace);
         meta.withName(clusterCmName);
         meta.withLabels(Labels.userLabels(singletonMap("my-user-label", "cromulent")).toMap());
-        KafkaAssemblyBuilder builder = new KafkaAssemblyBuilder();
+        KafkaBuilder builder = new KafkaBuilder();
         return builder.withMetadata(meta.build())
                 .withNewSpec()
                     .withNewKafka()
@@ -78,12 +77,12 @@ public class ResourceUtils {
             .build();
     }
 
-    public static KafkaAssembly createKafkaCluster(String clusterCmNamespace, String clusterCmName, int replicas,
-                                                        String image, int healthDelay, int healthTimeout,
-                                                        Map<String, Object> metricsCm,
-                                                        Map<String, Object> kafkaConfigurationJson,
-                                                        Map<String, Object> zooConfigurationJson) {
-        return new KafkaAssemblyBuilder(createKafkaCluster(clusterCmNamespace, clusterCmName, replicas, image, healthDelay,
+    public static Kafka createKafkaCluster(String clusterCmNamespace, String clusterCmName, int replicas,
+                                           String image, int healthDelay, int healthTimeout,
+                                           Map<String, Object> metricsCm,
+                                           Map<String, Object> kafkaConfigurationJson,
+                                           Map<String, Object> zooConfigurationJson) {
+        return new KafkaBuilder(createKafkaCluster(clusterCmNamespace, clusterCmName, replicas, image, healthDelay,
                 healthTimeout)).editSpec()
                     .editKafka()
                         .withMetrics(metricsCm)
@@ -131,7 +130,7 @@ public class ResourceUtils {
                         .withNewMetadata()
                         .withName(KafkaCluster.clientsCASecretName(clusterName))
                         .withNamespace(clusterCmNamespace)
-                        .withLabels(Labels.forCluster(clusterName).withType(ResourceType.KAFKA).toMap())
+                        .withLabels(Labels.forCluster(clusterName).toMap())
                         .endMetadata()
                         .addToData("clients-ca.key", Base64.getEncoder().encodeToString("clients-ca-base64key".getBytes()))
                         .addToData("clients-ca.crt", Base64.getEncoder().encodeToString("clients-ca-base64crt".getBytes()))
@@ -143,7 +142,7 @@ public class ResourceUtils {
                         .withNewMetadata()
                         .withName(KafkaCluster.clientsPublicKeyName(clusterName))
                         .withNamespace(clusterCmNamespace)
-                        .withLabels(Labels.forCluster(clusterName).withType(ResourceType.KAFKA).toMap())
+                        .withLabels(Labels.forCluster(clusterName).toMap())
                         .endMetadata()
                         .addToData("clients-ca.crt", Base64.getEncoder().encodeToString("clients-ca-base64crt".getBytes()))
                         .build()
@@ -154,7 +153,7 @@ public class ResourceUtils {
                         .withNewMetadata()
                         .withName(KafkaCluster.brokersSecretName(clusterName))
                         .withNamespace(clusterCmNamespace)
-                        .withLabels(Labels.forCluster(clusterName).withType(ResourceType.KAFKA).toMap())
+                        .withLabels(Labels.forCluster(clusterName).toMap())
                         .endMetadata()
                         .addToData("cluster-ca.crt", Base64.getEncoder().encodeToString("cluster-ca-base64crt".getBytes()));
 
@@ -168,7 +167,7 @@ public class ResourceUtils {
                         .withNewMetadata()
                             .withName(KafkaCluster.clusterPublicKeyName(clusterName))
                             .withNamespace(clusterCmNamespace)
-                            .withLabels(Labels.forCluster(clusterName).withType(ResourceType.KAFKA).toMap())
+                            .withLabels(Labels.forCluster(clusterName).toMap())
                         .endMetadata()
                         .addToData("ca.crt", Base64.getEncoder().encodeToString("cluster-ca-base64crt".getBytes()));
 
@@ -182,7 +181,7 @@ public class ResourceUtils {
                         .withNewMetadata()
                             .withName(ZookeeperCluster.nodesSecretName(clusterName))
                             .withNamespace(clusterCmNamespace)
-                            .withLabels(Labels.forCluster(clusterName).withType(ResourceType.KAFKA).toMap())
+                            .withLabels(Labels.forCluster(clusterName).toMap())
                         .endMetadata()
                         .addToData("cluster-ca.crt", Base64.getEncoder().encodeToString("cluster-ca-base64crt".getBytes()));
 
@@ -195,12 +194,12 @@ public class ResourceUtils {
         return secrets;
     }
 
-    public static KafkaAssembly createKafkaCluster(String clusterCmNamespace, String clusterCmName, int replicas,
-                                                   String image, int healthDelay, int healthTimeout,
-                                                   Map<String, Object> metricsCm,
-                                                   Map<String, Object> kafkaConfigurationJson,
-                                                   Logging kafkaLogging, Logging zkLogging) {
-        return new KafkaAssemblyBuilder(createKafkaCluster(clusterCmNamespace, clusterCmName, replicas, image, healthDelay,
+    public static Kafka createKafkaCluster(String clusterCmNamespace, String clusterCmName, int replicas,
+                                           String image, int healthDelay, int healthTimeout,
+                                           Map<String, Object> metricsCm,
+                                           Map<String, Object> kafkaConfigurationJson,
+                                           Logging kafkaLogging, Logging zkLogging) {
+        return new KafkaBuilder(createKafkaCluster(clusterCmNamespace, clusterCmName, replicas, image, healthDelay,
                 healthTimeout, metricsCm, kafkaConfigurationJson, emptyMap()))
                 .editSpec()
                 .editKafka()
@@ -217,45 +216,45 @@ public class ResourceUtils {
         .build();
     }
 
-    public static KafkaAssembly createKafkaCluster(String clusterCmNamespace, String clusterCmName, int replicas,
-                                                   String image, int healthDelay, int healthTimeout,
-                                                   Map<String, Object> metricsCm,
-                                                   Map<String, Object> kafkaConfiguration,
-                                                   Map<String, Object> zooConfiguration,
-                                                   Storage storage,
-                                                   TopicOperator topicOperator,
-                                                   Logging kafkaLogging, Logging zkLogging) {
-        KafkaAssembly result = new KafkaAssembly();
+    public static Kafka createKafkaCluster(String clusterCmNamespace, String clusterCmName, int replicas,
+                                           String image, int healthDelay, int healthTimeout,
+                                           Map<String, Object> metricsCm,
+                                           Map<String, Object> kafkaConfiguration,
+                                           Map<String, Object> zooConfiguration,
+                                           Storage storage,
+                                           TopicOperatorSpec topicOperatorSpec,
+                                           Logging kafkaLogging, Logging zkLogging) {
+        Kafka result = new Kafka();
         ObjectMeta meta = new ObjectMeta();
         meta.setNamespace(clusterCmNamespace);
         meta.setName(clusterCmName);
         meta.setLabels(Labels.userLabels(singletonMap("my-user-label", "cromulent")).toMap());
         result.setMetadata(meta);
 
-        KafkaAssemblySpec spec = new KafkaAssemblySpec();
+        KafkaSpec spec = new KafkaSpec();
 
-        Kafka kafka = new Kafka();
-        kafka.setReplicas(replicas);
-        kafka.setImage(image);
+        KafkaClusterSpec kafkaClusterSpec = new KafkaClusterSpec();
+        kafkaClusterSpec.setReplicas(replicas);
+        kafkaClusterSpec.setImage(image);
         if (kafkaLogging != null) {
-            kafka.setLogging(kafkaLogging);
+            kafkaClusterSpec.setLogging(kafkaLogging);
         }
         Probe livenessProbe = new Probe();
         livenessProbe.setInitialDelaySeconds(healthDelay);
         livenessProbe.setTimeoutSeconds(healthTimeout);
-        kafka.setLivenessProbe(livenessProbe);
-        kafka.setReadinessProbe(livenessProbe);
+        kafkaClusterSpec.setLivenessProbe(livenessProbe);
+        kafkaClusterSpec.setReadinessProbe(livenessProbe);
         ObjectMapper om = new ObjectMapper();
         if (metricsCm != null) {
-            kafka.setMetrics(metricsCm);
+            kafkaClusterSpec.setMetrics(metricsCm);
         }
         if (kafkaConfiguration != null) {
-            kafka.setConfig(kafkaConfiguration);
+            kafkaClusterSpec.setConfig(kafkaConfiguration);
         }
-        kafka.setStorage(storage);
-        spec.setKafka(kafka);
+        kafkaClusterSpec.setStorage(storage);
+        spec.setKafka(kafkaClusterSpec);
 
-        Zookeeper zk = new Zookeeper();
+        ZookeeperClusterSpec zk = new ZookeeperClusterSpec();
         zk.setReplicas(replicas);
         zk.setImage(image + "-zk");
         if (zkLogging != null) {
@@ -271,7 +270,7 @@ public class ResourceUtils {
             zk.setMetrics(metricsCm);
         }
 
-        spec.setTopicOperator(topicOperator);
+        spec.setTopicOperator(topicOperatorSpec);
 
         spec.setZookeeper(zk);
         result.setSpec(spec);
@@ -282,11 +281,11 @@ public class ResourceUtils {
     /**
      * Generate ConfigMap for Kafka Connect S2I cluster
      */
-    public static KafkaConnectS2IAssembly createKafkaConnectS2ICluster(String clusterCmNamespace, String clusterCmName, int replicas,
+    public static KafkaConnectS2I createKafkaConnectS2ICluster(String clusterCmNamespace, String clusterCmName, int replicas,
                                                                        String image, int healthDelay, int healthTimeout, String metricsCmJson,
                                                                        String connectConfig, boolean insecureSourceRepo, String bootstrapServers) {
 
-        return new KafkaConnectS2IAssemblyBuilder(createEmptyKafkaConnectS2ICluster(clusterCmNamespace, clusterCmName))
+        return new KafkaConnectS2IBuilder(createEmptyKafkaConnectS2ICluster(clusterCmNamespace, clusterCmName))
                 .withNewSpec()
                     .withImage(image)
                     .withReplicas(replicas)
@@ -302,12 +301,13 @@ public class ResourceUtils {
     /**
      * Generate empty Kafka Connect S2I ConfigMap
      */
-    public static KafkaConnectS2IAssembly createEmptyKafkaConnectS2ICluster(String clusterCmNamespace, String clusterCmName) {
-        return new KafkaConnectS2IAssemblyBuilder()
+    public static KafkaConnectS2I createEmptyKafkaConnectS2ICluster(String clusterCmNamespace, String clusterCmName) {
+        return new KafkaConnectS2IBuilder()
                 .withMetadata(new ObjectMetaBuilder()
                 .withName(clusterCmName)
                 .withNamespace(clusterCmNamespace)
-                .withLabels(TestUtils.map(Labels.STRIMZI_KIND_LABEL, "cluster", Labels.STRIMZI_TYPE_LABEL, "kafka-connect-s2i", "my-user-label", "cromulent"))
+                .withLabels(TestUtils.map(Labels.STRIMZI_KIND_LABEL, "cluster",
+                        "my-user-label", "cromulent"))
                 .build())
                 .withNewSpec().endSpec()
                 .build();
@@ -316,12 +316,13 @@ public class ResourceUtils {
     /**
      * Generate empty Kafka Connect ConfigMap
      */
-    public static KafkaConnectAssembly createEmptyKafkaConnectCluster(String clusterCmNamespace, String clusterCmName) {
-        return new KafkaConnectAssemblyBuilder()
+    public static KafkaConnect createEmptyKafkaConnectCluster(String clusterCmNamespace, String clusterCmName) {
+        return new KafkaConnectBuilder()
                 .withMetadata(new ObjectMetaBuilder()
                         .withName(clusterCmName)
                         .withNamespace(clusterCmNamespace)
-                        .withLabels(TestUtils.map(Labels.STRIMZI_KIND_LABEL, "cluster", Labels.STRIMZI_TYPE_LABEL, "kafka-connect", "my-user-label", "cromulent"))
+                        .withLabels(TestUtils.map(Labels.STRIMZI_KIND_LABEL, "cluster",
+                                "my-user-label", "cromulent"))
                         .build())
                 .withNewSpec().endSpec()
                 .build();

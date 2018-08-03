@@ -8,8 +8,8 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.api.kafka.model.InlineLogging;
-import io.strimzi.api.kafka.model.KafkaAssembly;
-import io.strimzi.api.kafka.model.KafkaAssemblyBuilder;
+import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.common.operator.MockCertManager;
@@ -47,14 +47,14 @@ public class KafkaSetOperatorTest {
         b = KafkaCluster.fromCrd(certManager, getResource(), getInitialSecrets(getResource().getMetadata().getName())).generateStatefulSet(true);
     }
 
-    private KafkaAssembly getResource() {
+    private Kafka getResource() {
         String clusterCmName = "foo";
         String clusterCmNamespace = "test";
         int replicas = 3;
         String image = "bar";
         int healthDelay = 120;
         int healthTimeout = 30;
-        return new KafkaAssemblyBuilder(ResourceUtils.createKafkaCluster(clusterCmNamespace, clusterCmName,
+        return new KafkaBuilder(ResourceUtils.createKafkaCluster(clusterCmNamespace, clusterCmName,
                 replicas, image, healthDelay, healthTimeout))
                 .editSpec()
                     .editKafka()

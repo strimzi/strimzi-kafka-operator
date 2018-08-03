@@ -17,8 +17,8 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.DoneableKafkaAssembly;
 import io.strimzi.api.kafka.KafkaAssemblyList;
 import io.strimzi.api.kafka.model.EphemeralStorage;
-import io.strimzi.api.kafka.model.KafkaAssembly;
-import io.strimzi.api.kafka.model.KafkaAssemblyBuilder;
+import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.Resources;
@@ -168,12 +168,12 @@ public class KafkaAssemblyOperatorMockTest {
     }
 
     private Vertx vertx;
-    private KafkaAssembly cluster;
+    private Kafka cluster;
 
     @Before
     public void before() {
         this.vertx = Vertx.vertx();
-        this.cluster = new KafkaAssemblyBuilder()
+        this.cluster = new KafkaBuilder()
                 .withMetadata(new ObjectMetaBuilder()
                         .withName(CLUSTER_NAME)
                         .withNamespace(NAMESPACE)
@@ -199,7 +199,7 @@ public class KafkaAssemblyOperatorMockTest {
 
         CustomResourceDefinition kafkaAssemblyCrd = TestUtils.fromYamlFile(TestUtils.CRD_KAFKA, CustomResourceDefinition.class);
 
-        mockClient = new MockKube().withCustomResourceDefinition(kafkaAssemblyCrd, KafkaAssembly.class, KafkaAssemblyList.class, DoneableKafkaAssembly.class)
+        mockClient = new MockKube().withCustomResourceDefinition(kafkaAssemblyCrd, Kafka.class, KafkaAssemblyList.class, DoneableKafkaAssembly.class)
                 .withInitialInstances(Collections.singleton(cluster)).end().build();
     }
 
@@ -578,7 +578,7 @@ public class KafkaAssemblyOperatorMockTest {
         // Try to update the storage class
         String changedClass = originalStorageClass + "2";
 
-        KafkaAssembly changedClusterCm = new KafkaAssemblyBuilder(cluster).editSpec().editKafka()
+        Kafka changedClusterCm = new KafkaBuilder(cluster).editSpec().editKafka()
                 .withNewPersistentClaimStorageStorage()
                     .withStorageClass(changedClass)
                 .endPersistentClaimStorageStorage().endKafka().endSpec().build();
@@ -594,9 +594,9 @@ public class KafkaAssemblyOperatorMockTest {
         });
     }
 
-    private Resource<KafkaAssembly, DoneableKafkaAssembly> kafkaAssembly(String namespace, String name) {
-        CustomResourceDefinition crd = mockClient.customResourceDefinitions().withName(KafkaAssembly.CRD_NAME).get();
-        return mockClient.customResources(crd, KafkaAssembly.class, KafkaAssemblyList.class, DoneableKafkaAssembly.class)
+    private Resource<Kafka, DoneableKafkaAssembly> kafkaAssembly(String namespace, String name) {
+        CustomResourceDefinition crd = mockClient.customResourceDefinitions().withName(Kafka.CRD_NAME).get();
+        return mockClient.customResources(crd, Kafka.class, KafkaAssemblyList.class, DoneableKafkaAssembly.class)
                 .inNamespace(namespace).withName(name);
     }
 
@@ -619,14 +619,14 @@ public class KafkaAssemblyOperatorMockTest {
         Async updateAsync = context.async();
 
         // Try to update the storage type
-        KafkaAssembly changedClusterCm = null;
+        Kafka changedClusterCm = null;
         if (kafkaStorage instanceof EphemeralStorage) {
-            changedClusterCm = new KafkaAssemblyBuilder(cluster).editSpec().editKafka()
+            changedClusterCm = new KafkaBuilder(cluster).editSpec().editKafka()
                     .withNewPersistentClaimStorageStorage()
                         .withSize("123")
                     .endPersistentClaimStorageStorage().endKafka().endSpec().build();
         } else if (kafkaStorage instanceof PersistentClaimStorage) {
-            changedClusterCm = new KafkaAssemblyBuilder(cluster).editSpec().editKafka()
+            changedClusterCm = new KafkaBuilder(cluster).editSpec().editKafka()
                     .withNewEphemeralStorageStorage()
                     .endEphemeralStorageStorage().endKafka().endSpec().build();
         } else {
@@ -708,7 +708,7 @@ public class KafkaAssemblyOperatorMockTest {
         boolean originalKafkaDeleteClaim = deleteClaim(kafkaStorage);
 
         // Try to update the storage class
-        KafkaAssembly changedClusterCm = new KafkaAssemblyBuilder(cluster).editSpec().editKafka()
+        Kafka changedClusterCm = new KafkaBuilder(cluster).editSpec().editKafka()
                 .withNewPersistentClaimStorageStorage()
                 .withDeleteClaim(!originalKafkaDeleteClaim)
                 .endPersistentClaimStorageStorage().endKafka().endSpec().build();
@@ -751,7 +751,7 @@ public class KafkaAssemblyOperatorMockTest {
         String deletedPod = KafkaCluster.kafkaPodName(CLUSTER_NAME, newScale);
         context.assertNotNull(mockClient.pods().inNamespace(NAMESPACE).withName(deletedPod).get());
 
-        KafkaAssembly changedClusterCm = new KafkaAssemblyBuilder(cluster).editSpec().editKafka()
+        Kafka changedClusterCm = new KafkaBuilder(cluster).editSpec().editKafka()
                 .withReplicas(newScale).endKafka().endSpec().build();
         kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(changedClusterCm);
 
@@ -787,7 +787,7 @@ public class KafkaAssemblyOperatorMockTest {
         String newPod = KafkaCluster.kafkaPodName(CLUSTER_NAME, kafkaReplicas);
         context.assertNull(mockClient.pods().inNamespace(NAMESPACE).withName(newPod).get());
 
-        KafkaAssembly changedClusterCm = new KafkaAssemblyBuilder(cluster).editSpec().editKafka()
+        Kafka changedClusterCm = new KafkaBuilder(cluster).editSpec().editKafka()
                 .withReplicas(newScale).endKafka().endSpec().build();
         kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(changedClusterCm);
 

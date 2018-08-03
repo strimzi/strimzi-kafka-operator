@@ -13,48 +13,34 @@ import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.Toleration;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
-import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
+import io.vertx.core.cli.annotations.DefaultValue;
 
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Representation of a Strimzi-managed Zookeeper "cluster".
- */
 @Buildable(
         editableEnabled = false,
         generateBuilderPackage = true,
         builderPackage = "io.strimzi.api.kafka.model"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({
-        "replicas", "image", "storage", "config",
-        "affinity", "tolerations",
-        "livenessProbe", "readinessProbe",
-        "jvmOptions", "resources",
-         "metrics", "logging", "tlsSidecar"})
-public class Zookeeper implements Serializable {
+@JsonPropertyOrder({ "replicas", "image",
+        "livenessProbe", "readinessProbe", "jvmOptions", "affinity", "tolerations", "logging", "metrics"})
+public class KafkaConnectSpec implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    public static final String FORBIDDEN_PREFIXES = "server., dataDir, dataLogDir, clientPort, authProvider, quorum.auth, requireClientAuthScheme";
-
     public static final String DEFAULT_IMAGE =
-            System.getenv().getOrDefault("STRIMZI_DEFAULT_ZOOKEEPER_IMAGE", "strimzi/zookeeper:latest");
-    public static final String DEFAULT_TLS_SIDECAR_IMAGE =
-            System.getenv().getOrDefault("STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE", "strimzi/zookeeper-stunnel:latest");
-    public static final int DEFAULT_REPLICAS = 3;
+            System.getenv().getOrDefault("STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE", "strimzi/kafka-connect:latest");
 
-    protected Storage storage;
+    public static final String FORBIDDEN_PREFIXES = "ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers";
 
     private Map<String, Object> config = new HashMap<>(0);
 
     private Logging logging;
-
-    private Sidecar tlsSidecar;
     private int replicas;
     private String image;
     private Resources resources;
@@ -64,9 +50,16 @@ public class Zookeeper implements Serializable {
     private Map<String, Object> metrics = new HashMap<>(0);
     private Affinity affinity;
     private List<Toleration> tolerations;
+    private String bootstrapServers;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("The zookeeper broker config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)
+    @Description("The number of pods in the Kafka Connect group.")
+    @DefaultValue("3")
+    public int getReplicas() {
+        return replicas;
+    }
+
+    @Description("The Kafka Connect configuration. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)
     public Map<String, Object> getConfig() {
         return config;
     }
@@ -75,17 +68,7 @@ public class Zookeeper implements Serializable {
         this.config = config;
     }
 
-    @Description("Storage configuration (disk). Cannot be updated.")
-    @JsonProperty(required = true)
-    public Storage getStorage() {
-        return storage;
-    }
-
-    public void setStorage(Storage storage) {
-        this.storage = storage;
-    }
-
-    @Description("Logging configuration for Zookeeper")
+    @Description("Logging configuration for Kafka Connect")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public Logging getLogging() {
         return logging == null ? new InlineLogging() : logging;
@@ -93,23 +76,6 @@ public class Zookeeper implements Serializable {
 
     public void setLogging(Logging logging) {
         this.logging = logging;
-    }
-
-    @Description("TLS sidecar configuration")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    public Sidecar getTlsSidecar() {
-        return tlsSidecar;
-    }
-
-    public void setTlsSidecar(Sidecar tlsSidecar) {
-        this.tlsSidecar = tlsSidecar;
-    }
-
-    @Description("The number of pods in the cluster.")
-    @Minimum(1)
-    @JsonProperty(required = true)
-    public int getReplicas() {
-        return replicas;
     }
 
     public void setReplicas(int replicas) {
@@ -197,6 +163,17 @@ public class Zookeeper implements Serializable {
 
     public void setTolerations(List<Toleration> tolerations) {
         this.tolerations = tolerations;
+    }
+
+    @Description("Bootstrap servers to connect to. This should be given as a comma separated list of _<hostname>_:\u200D_<port>_ pairs.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty(required = true)
+    public String getBootstrapServers() {
+        return bootstrapServers;
+    }
+
+    public void setBootstrapServers(String bootstrapServers) {
+        this.bootstrapServers = bootstrapServers;
     }
 
     @JsonAnyGetter

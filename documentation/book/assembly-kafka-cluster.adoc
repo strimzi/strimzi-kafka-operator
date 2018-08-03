@@ -25,11 +25,9 @@ ifdef::Kubernetes[HostPath volumes on Minikube or]
 Amazon EBS volumes in Amazon AWS deployments without any changes in the YAML files. The `PersistentVolumeClaim` can use a `StorageClass` to trigger automatic volume provisioning.
 
 ifdef::Kubernetes[]
-:context: str
 include::proc-deploying-kafka-cluster-kubernetes.adoc[leveloffset=+1]
 endif::Kubernetes[]
 
-:context: str
 include::proc-deploying-kafka-cluster-openshift.adoc[leveloffset=+1]
 
 // Restore the context to what it was before this assembly.
