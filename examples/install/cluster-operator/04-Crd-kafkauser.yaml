@@ -35,10 +35,16 @@ spec:
                   items:
                     type: object
                     properties:
+<<<<<<< HEAD
+=======
+                      group:
+                        type: string
+>>>>>>> Add Authorization section to KafkaUser CRD
                       host:
                         type: string
                       operation:
                         type: string
+<<<<<<< HEAD
                         enum:
                         - Read
                         - Write
@@ -63,6 +69,15 @@ spec:
                             - prefix
                           type:
                             type: string
+=======
+                      resourcePatternType:
+                        type: string
+                        enum:
+                        - literal
+                        - prefix
+                      topic:
+                        type: string
+>>>>>>> Add Authorization section to KafkaUser CRD
                       type:
                         type: string
                         enum:
