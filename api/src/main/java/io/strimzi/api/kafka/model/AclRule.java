@@ -13,6 +13,7 @@ import java.util.Map;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.sundr.builder.annotations.Buildable;
 import io.vertx.core.cli.annotations.DefaultValue;
 
@@ -29,14 +30,9 @@ public class AclRule implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private AclRuleType type;
-    private AclResourcePatternType resourcePatternType;
-    private String topic;
-    private String group;
-    private Boolean cluster;
+    private AclRuleResource resource;
     private String host;
     private String operation;
-    private Boolean consumer;
-    private Boolean producer;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The type of the rule." +
@@ -53,56 +49,18 @@ public class AclRule implements Serializable {
         this.type = type;
     }
 
-    @Description("Describes the pattern used in the resource fields. " +
-            "Resource fields are the fields `cluster`, `topic` and `group`. " +
-            "The supported types are `literal` and `prefix`. " +
-            "With `literal` pattern type, the resource field will be used as a definition of a full topic name. " +
-            "With `prefix` pattern type, the resoruce name will be used only as a prefix. " +
-            "Default value is `literal`.")
-    @DefaultValue("literal")
-    @JsonInclude(value = JsonInclude.Include.NON_NULL)
-    public AclResourcePatternType getResourcePatternType() {
-        return resourcePatternType;
+    @Description("Indicates the resource for which given ACL rule applies.")
+    @JsonProperty(required = true)
+    public AclRuleResource getResource() {
+        return resource;
     }
 
-    public void setResourcePatternType(AclResourcePatternType resourcePatternType) {
-        this.resourcePatternType = resourcePatternType;
-    }
-
-    @Description("Indicates the topic resource for which given ACL rule applies. " +
-            "Can be combined with `resourceType` field to use prefix pattern.")
-    @JsonInclude(value = JsonInclude.Include.NON_NULL)
-    public String getTopic() {
-        return topic;
-    }
-
-    public void setTopic(String topic) {
-        this.topic = topic;
-    }
-
-    @Description("Indicates the consumer group resource for which given ACL rule applies. " +
-            "Can be combined with `resourceType` field to use prefix pattern.")
-    @JsonInclude(value = JsonInclude.Include.NON_NULL)
-    public String getGroup() {
-        return group;
-    }
-
-    public void setGroup(String group) {
-        this.group = group;
-    }
-
-    @Description("Indicates the that the ACL rule applies to the cluster resource")
-    @DefaultValue("false")
-    @JsonInclude(value = JsonInclude.Include.NON_NULL)
-    public Boolean isCluster() {
-        return cluster;
-    }
-
-    public void setCluster(Boolean cluster) {
-        this.cluster = cluster;
+    public void setResource(AclRuleResource resource) {
+        this.resource = resource;
     }
 
     @Description("The host from which the action described in the ACL rule is allowed or denied.")
+    @DefaultValue("*")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public String getHost() {
         return host;
@@ -113,37 +71,13 @@ public class AclRule implements Serializable {
     }
 
     @Description("Operation which will be allowed or denied. Supported operations are: Read, Write, Create, Delete, Alter, Describe, ClusterAction and All.")
-    @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    @JsonProperty(required = true)
     public String getOperation() {
         return operation;
     }
 
     public void setOperation(String operation) {
         this.operation = operation;
-    }
-
-    @Description("Shortcut option to add all acl rules required for producer role. " +
-            "This will generate acl rules that allow WRITE, DESCRIBE and CREATE on topic.")
-    @DefaultValue("false")
-    @JsonInclude(value = JsonInclude.Include.NON_NULL)
-    public Boolean isConsumer() {
-        return consumer;
-    }
-
-    public void setConsumer(Boolean consumer) {
-        this.consumer = consumer;
-    }
-
-    @Description("Shortcut option to add all acl rules required for consumer role. " +
-            "This will generate acl rules that allow READ, DESCRIBE on topic and READ on consumer-group.")
-    @DefaultValue("false")
-    @JsonInclude(value = JsonInclude.Include.NON_NULL)
-    public Boolean isProducer() {
-        return producer;
-    }
-
-    public void setProducer(Boolean producer) {
-        this.producer = producer;
     }
 
     @JsonAnyGetter

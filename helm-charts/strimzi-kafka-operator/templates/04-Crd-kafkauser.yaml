@@ -39,19 +39,22 @@ spec:
                   items:
                     type: object
                     properties:
-                      group:
-                        type: string
                       host:
                         type: string
                       operation:
                         type: string
-                      resourcePatternType:
-                        type: string
-                        enum:
-                        - literal
-                        - prefix
-                      topic:
-                        type: string
+                      resource:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                          patternType:
+                            type: string
+                            enum:
+                            - literal
+                            - prefix
+                          type:
+                            type: string
                       type:
                         type: string
                         enum:
