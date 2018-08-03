@@ -150,7 +150,7 @@ public class DocGenerator {
                     err(property + " is not documented");
                 }
             } else {
-                out.append(description2.value());
+                out.append(getDescription(property, description2));
             }
             KubeLink kubeLink = property.getAnnotation(KubeLink.class);
             String externalUrl = linker != null && kubeLink != null ? linker.link(kubeLink) : null;
@@ -177,6 +177,14 @@ public class DocGenerator {
         out.append("|====").append(NL).append(NL);
 
         appendNestedTypes(crd, types);
+    }
+
+    private String getDescription(Object property, Description description2) {
+        String doc = description2.value();
+        if (!doc.trim().matches("[.!?]$]")) {
+            err("@Description on " + property + " should end with a period, or some sentence-ending punctuation.");
+        }
+        return doc;
     }
 
     private void err(String s) {
@@ -236,7 +244,7 @@ public class DocGenerator {
     private void appendDescription(Class<?> cls) throws IOException {
         Description description = cls.getAnnotation(Description.class);
         if (description != null) {
-            out.append(description.value()).append(NL);
+            out.append(getDescription(cls, description)).append(NL);
         }
         out.append(NL);
     }
