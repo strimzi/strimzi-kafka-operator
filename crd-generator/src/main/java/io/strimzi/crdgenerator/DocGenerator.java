@@ -181,8 +181,8 @@ public class DocGenerator {
 
     private String getDescription(Object property, Description description2) {
         String doc = description2.value();
-        if (!doc.trim().matches("[.!?]$]")) {
-            err("@Description on " + property + " should end with a period, or some sentence-ending punctuation.");
+        if (!doc.trim().matches(".*[.!?]$")) {
+            doc = doc + ".";
         }
         return doc;
     }

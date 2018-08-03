@@ -29,7 +29,7 @@
 |string (one of [one, two])
 |fieldProperty           1.2+<.<|Example of field property.
 |string
-|intProperty             1.2+<.<|An example int property
+|intProperty             1.2+<.<|An example int property.
 |integer
 |listOfArray             1.2+<.<|
 |string array of dimension 2
@@ -57,7 +57,7 @@
 |xref:type-Number-{context}[`Number`] array
 |listOfWildcardTypeVar4  1.2+<.<|
 |xref:type-Number-{context}[`Number`] array of dimension 2
-|longProperty            1.2+<.<|An example long property
+|longProperty            1.2+<.<|An example long property.
 |integer
 |mapProperty             1.2+<.<|
 |map
@@ -115,7 +115,7 @@ It must have the value `left` for the type `PolymorphicLeft`.
 |string
 |discrim         1.2+<.<|
 |string
-|leftProperty    1.2+<.<|when descrim=left, the left-hand property
+|leftProperty    1.2+<.<|when descrim=left, the left-hand property.
 |string
 |====
 
@@ -134,7 +134,7 @@ It must have the value `right` for the type `PolymorphicRight`.
 |string
 |discrim         1.2+<.<|
 |string
-|rightProperty   1.2+<.<|when descrim=right, the right-hand property
+|rightProperty   1.2+<.<|when descrim=right, the right-hand property.
 |string
 |====
 
