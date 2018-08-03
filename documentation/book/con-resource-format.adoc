@@ -1,0 +1,6 @@
+[id='kafka-resource-format-{context}']
+= Kafka resource format
+
+For information about the custom resource API,  see <<type-KafkaAssembly>>.
+
+Any label applied to the desired Kafka resource will also be applied to the {ProductPlatformName} resources making up the Kafka cluster. This provides a convenient mechanism for those resources to be labelled in the user preferred way.

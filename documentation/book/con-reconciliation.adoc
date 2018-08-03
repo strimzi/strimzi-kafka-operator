@@ -1,0 +1,20 @@
+// Module included in the following assemblies:
+//
+// <List assemblies here, each on a new line>
+
+// Base the file name and the ID on the module title. For example:
+// * file name: assembly-cluster-operator.adoc
+// * ID: [id='cluster-operator-{context}']
+// * Title: = Configure Cluster Operator
+
+// The ID is used as an anchor for linking to the module. Avoid changing it after the module has been published to ensure existing links are not broken.
+
+include::common/attributes.adoc[]
+
+[id='reconciliation-{context}']
+= Reconciliation
+
+Although the operator reacts to all notifications about the desired cluster resources received from the {ProductPlatformName}
+cluster, if the operator is not running, or if a notification is not received for any reason, the desired resources will get out of sync with the state of the running {ProductPlatformName} cluster.
+
+In order to handle failovers properly, a periodic reconciliation process is executed by the Cluster Operator so that it can compare the state of the desired resources with the current cluster deployments in order to have a consistent state across all of them. You can set the time interval for the periodic reconciliations using the xref:STRIMZI_FULL_RECONCILIATION_INTERVAL_MS[] variable.

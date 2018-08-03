@@ -15,6 +15,7 @@ include::common/attributes.adoc[]
 {ProductName} runs on
 ifdef::Kubernetes[{KubernetesLongName} {KubernetesVersion} and]
 {OpenShiftLongName} {OpenShiftVersion}.
+It can be used on clusters running in public and private clouds, local deployments intended for development, and everything in between.
 
 {ProductName} works on all kinds of clusters - from public and private clouds down to local deployments intended for development.
 This guide expects that an {ProductPlatformName} cluster is available and the

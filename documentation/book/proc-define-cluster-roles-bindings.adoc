@@ -1,0 +1,44 @@
+// Module included in the following assemblies:
+//
+// <List assemblies here, each on a new line>
+
+// Base the file name and the ID on the module title. For example:
+// * file name: assembly-cluster-operator.adoc
+// * ID: [id='cluster-operator-{context}']
+// * Title: = Configure Cluster Operator
+
+// The ID is used as an anchor for linking to the module. Avoid changing it after the module has been published to ensure existing links are not broken.
+
+include::common/attributes.adoc[]
+
+[id='defining-cluster-roles-bindings{context}']
+= Defining `ClusterRolesBindings`
+
+The operator needs a `ClusterRoleBinding` which associates its `ClusterRole` with its `ServiceAccount`:
+
+.Prerequisites
+
+//Add prerequisites if any
+
+.Procedure
+
+//Add a procedure on howw to define clusterrolebinding 
+
+[source,yaml,options="nowrap"]
+.Example `ClusterRoleBinding` for the Cluster Operator
+----
+include::examples/install/cluster-operator/02-ClusterRoleBinding-strimzi-cluster-operator.yaml[]
+----
+
+`ClusterRoleBindings` are also needed for the `ClusterRoles` needed for delegation:
+
+[source,yaml,options="nowrap"]
+.Example `ClusterRoleBinding` for the Cluster Operator
+----
+---
+include::examples/install/cluster-operator/03-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml[]
+---
+include::examples/install/cluster-operator/04-ClusterRoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml[]
+---
+----
+

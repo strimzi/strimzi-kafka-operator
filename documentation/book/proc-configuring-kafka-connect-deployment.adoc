@@ -1,0 +1,123 @@
+// Module included in the following assemblies:
+//
+// <List assemblies here, each on a new line>
+
+// Base the file name and the ID on the module title. For example:
+// * file name: assembly-cluster-operator.adoc
+// * ID: [id='cluster-operator-{context}']
+// * Title: = Configure Cluster Operator
+
+// The ID is used as an anchor for linking to the module. Avoid changing it after the module has been published to ensure existing links are not broken.
+
+include::common/attributes.adoc[]
+
+[id='kafka-connect-resource-{context}']
+= Configuring Kafka Connect cluster deployment
+
+The operator watches for `KafkaConnect` resource in order to find and get configuration for a Kafka Connect cluster to deploy.
+
+The `KafkaConnectS2I` resource provides configuration for a Kafka Connect cluster deployment using Build and Source2Image features and works only with {OpenShiftName}.
+
+Labels that are applied to the `KafkaConnect` or `KafkaConnectS2I` resources will also be applied to the {ProductPlatformName} resources making up the Kafka Connect cluster. This provides a convenient mechanism for those resource to be labelled in the users preferred way.
+
+.Prerequisites
+
+//Add prerequisites if any
+
+.Procedure
+
+//Add a procedure for defining clusterroles
+
+
+The `KafkaConnect` resource supports the following within its `spec`:
+
+.KafkaConnect Parameters
+[cols="30%,50%,20%",options="header"]
+|===
+|Parameter
+|Description
+|Default Value
+
+|`nodes`
+|Number of Kafka Connect worker nodes.
+|1
+
+|`image`
+| The Docker image to be used by the Kafka Connect workers. The default value is determined by the value specified in the  xref:STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE[`STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE`] environment variable of the Cluster Operator. If S2I is used on {OpenShiftName}, then it should be the related S2I image.
+|
+
+|livenessProbe.initialDelaySeconds
+|The initial delay for the liveness probe for each Kafka broker node. 
+|15
+
+|livenessProbe.timeoutSeconds
+|The timeout on the liveness probe for each Kafka broker node. 
+|5
+
+|readinessProbe.initialDelaySeconds
+|The initial delay for the readiness probe for each Kafka broker node. 
+|15
+
+|readinessProbe.timeoutSeconds
+|The timeout on the readiness probe for each Kafka broker node.
+|5
+
+|`config`
+| A JSON string with Kafka Connect configuration. For more information, see xref:kafka_connect_configuration_json_config-{context}[Kafka Connect configuration].
+|
+
+|`metrics-config`
+|A JSON string representing the JMX exporter configuration for exposing metrics from Kafka Connect nodes. When this field is absent no metrics will be exposed.
+|
+
+|`resources`
+| A JSON string configuring the resource limits and requests for Kafka Connect containers. For information about the accepted JSON format, see xref:resources_json_config[Resource limits and requests].
+|
+
+|`jvmOptions`
+|A JSON string allowing the JVM running Kafka Connect to be configured. For information about the accepted JSON format, xref:jvm-json-config-{context}[JVM Options].
+|
+
+|`affinity`
+| Node and Pod affinity for the Kafka Connect pods, as described in xref:affinity[Node and Pod Affinity]. The format of the corresponding key is the same as the content supported in the Pod `affinity` in {ProductPlatformName}.
+|
+|===
+
+The following is an example of a `KafkaConnect` resource.
+
+.Example KafkaConnect resource
+[source,yaml,options="nowrap",subs="attributes"]
+----
+apiVersion: {KafkaConnectApiVersion}
+kind: KafkaConnect
+metadata:
+  name: my-connect-cluster
+spec:
+  nodes: 1
+  image: {DockerKafkaConnect}
+  readinessProbe:
+    initialDelaySeconds: 60
+    timeoutSeconds: 5
+  livenessProbe:
+    initialDelaySeconds: 60
+    timeoutSeconds: 5
+  config:
+    bootstrap.servers: my-cluster-kafka-bootstrap:9092
+----
+
+The resources created by the Cluster Operator into the {ProductPlatformName} cluster will be the following :
+
+[cols="30%,70%",options="header"]
+|===
+|Parameter
+|Description
+
+|_connect-cluster-name_-connect
+|Deployment which is in charge to create the Kafka Connect worker node pods.
+
+|_connect-cluster-name_-connect-api
+|Service which exposes the REST interface for managing the Kafka Connect cluster.
+
+|_connect-cluster-name_-metrics-config
+|ConfigMap which contains the Kafka Connect metrics configuration and is mounted as a volume by the Kafka Connect pods.
+|===

@@ -1,0 +1,146 @@
+// Module included in the following assemblies:
+//
+// <List assemblies here, each on a new line>
+
+// Base the file name and the ID on the module title. For example:
+// * file name: assembly-cluster-operator.adoc
+// * ID: [id='cluster-operator-{context}']
+// * Title: = Configure Cluster Operator
+
+// The ID is used as an anchor for linking to the module. Avoid changing it after the module has been published to ensure existing links are not broken.
+
+include::common/attributes.adoc[]
+
+[id=kafka_connect_s2i-deploy-{context}]
+= Deploying Kafka Connect using S2I
+
+When using {ProductName} together with an {OpenShiftName} cluster, a user can deploy Kafka Connect with support for link:https://docs.openshift.org/3.9/dev_guide/builds/index.html[{OpenShiftName} Builds^] and link:https://docs.openshift.org/3.9/creating_images/s2i.html#creating-images-s2i[Source-to-Image^] (S2I). To activate the S2I deployment a `KafkaConnectS2I` resource should be used instead of a `KafkaConnect` resource. The following is a full example of `KafkaConnectS2I` resource.
+
+.Example `KafkaConnectS2I` resource
+[source,yaml,options="nowrap",subs="attributes"]
+----
+apiVersion: {KafkaConnectS2I}
+kind: KafkaConnectS2I
+metadata:
+  name: my-connect-cluster
+spec:
+  nodes: 1
+  image: {DockerKafkaConnectS2I}
+  readinessProbe:
+    initialDelaySeconds: 60
+    timeoutSeconds: 5
+  livenessProbe:
+    initialDelaySeconds: 60
+    timeoutSeconds: 5
+  config:
+    bootstrap.servers: my-cluster-kafka-bootstrap:9092
+----
+
+The S2I deployment is very similar to the regular Kafka Connect deployment (as represented by the `KafkaConnect` resource).
+Compared to the regular deployment, the Cluster Operator will create the following additional resources:
+
+[cols="50%,50%,options="header"]
+|===
+|Element
+|Description
+
+|`<connect-cluster-name>`-connect-source
+|ImageStream which is used as the base image for the newly-built Docker images.
+
+|`<connect-cluster-name>`-connect
+|BuildConfig which is responsible for building the new Kafka Connect Docker images.
+
+|`<connect-cluster-name>`-connect
+|ImageStream where the newly built Docker images will be pushed.
+
+|`<connect-cluster-name>`-connect
+|DeploymentConfig which is in charge of creating the Kafka Connect worker node pods.
+
+|`<connect-cluster-name>`-connect
+|Service which exposes the REST interface for managing the Kafka Connect cluster.
+|===
+
+.Prerequisites
+
+//Add prerequisites if any
+
+The Kafka Connect S2I deployment supports the same options as the regular Kafka Connect deployment.
+A list of supported options is available at xref:kafka-connect-resource-{context}[Kafka Connect configuration].
+The `image` option specifies the Docker image which will be used as the _source image_ (the base image for the newly built Docker image).
+The default value of the `image` option is determined by the value of the 
+xref:STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE[`STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE`] environment variable of the Cluster Operator.
+All other options have the same meaning as for the regular `KafkaConnect` deployment.
+
+.Procedure
+
+//Add the procedure. 
+
+. Once the Kafka Connect S2I cluster is deployed, new plugins can be added by starting a new {OpenShiftName} build.
+Before starting the build, a directory with all the KafkaConnect plugins which should be added has to be created.
+The plugins and all their dependencies can be in a single directory or can be split into multiple subdirectories.
+For example:
+
+[source,shell]
+----
+$ tree ./s2i-plugins/
+./s2i-plugins/
+├── debezium-connector-mysql
+│   ├── CHANGELOG.md
+│   ├── CONTRIBUTE.md
+│   ├── COPYRIGHT.txt
+│   ├── debezium-connector-mysql-0.7.1.jar
+│   ├── debezium-core-0.7.1.jar
+│   ├── LICENSE.txt
+│   ├── mysql-binlog-connector-java-0.13.0.jar
+│   ├── mysql-connector-java-5.1.40.jar
+│   ├── README.md
+│   └── wkb-1.0.2.jar
+└── debezium-connector-postgres
+    ├── CHANGELOG.md
+    ├── CONTRIBUTE.md
+    ├── COPYRIGHT.txt
+    ├── debezium-connector-postgres-0.7.1.jar
+    ├── debezium-core-0.7.1.jar
+    ├── LICENSE.txt
+    ├── postgresql-42.0.0.jar
+    ├── protobuf-java-2.6.1.jar
+    └── README.md
+----
+
+. To start a new image build using the prepared directory, the following command has to be run:
+
+[source,shell]
+oc start-build my-connect-cluster-connect --from-dir ./s2i-plugins/
+
+The name of the build should be changed according to the cluster name of the deployed Kafka Connect cluster.
+
+This command will upload the whole directory into the {OpenShiftName} cluster and start a new build.
+The build will take the base Docker image from the source ImageStream (named _[connect-cluster-name]-connect-source_) and add the directory and all the files it contains into this image and push the resulting image into the target ImageStream (named _[connect-cluster-name]-connect_).
+. When the new image is pushed to the target ImageStream, a rolling update of the Kafka Connect S2I deployment will be started and will roll out the new version of the image with the added plugins.
+
+By default, the `oc start-build` command will trigger the build and complete.
+The progress of the build can be observed in the {OpenShiftName} console.
+Alternatively, the option `--follow` can be used to follow the build from the command line:
+
+[source,shell]
+----
+oc start-build my-connect-cluster-connect --from-dir ./s2i-plugins/ --follow
+Uploading directory "s2i-plugins" as binary input for the build ...
+build "my-connect-cluster-connect-3" started
+Receiving source from STDIN as archive ...
+Assembling plugins into custom plugin directory /tmp/kafka-plugins
+Moving plugins to /tmp/kafka-plugins
+
+Pushing image 172.30.1.1:5000/myproject/my-connect-cluster-connect:latest ...
+Pushed 6/10 layers, 60% complete
+Pushed 7/10 layers, 70% complete
+Pushed 8/10 layers, 80% complete
+Pushed 9/10 layers, 90% complete
+Pushed 10/10 layers, 100% complete
+Push successful
+----
+
+[NOTE]
+The S2I build will always add the additional Kafka Connect plugins to the original source image.
+They will not be added to the Docker image from a previous build.
+To add multiple plugins to the deployment, they all have to be added within the same build.
