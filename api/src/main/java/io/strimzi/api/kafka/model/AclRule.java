@@ -70,10 +70,16 @@ public class AclRule implements Serializable {
         this.host = host;
     }
 
+<<<<<<< HEAD
     @Description("Operation which will be allowed or denied. " +
             "Supported operations are: Read, Write, Create, Delete, Alter, Describe, ClusterAction, AlterConfigs, DescribeConfigs, IdempotentWrite and All.")
     @JsonProperty(required = true)
     public AclOperation getOperation() {
+=======
+    @Description("Operation which will be allowed or denied. Supported operations are: Read, Write, Create, Delete, Alter, Describe, ClusterAction and All.")
+    @JsonProperty(required = true)
+    public String getOperation() {
+>>>>>>> Update the AclRule
         return operation;
     }
 

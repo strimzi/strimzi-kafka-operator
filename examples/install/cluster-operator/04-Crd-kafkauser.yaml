@@ -50,8 +50,11 @@ spec:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> Replace operation field with Enum
+=======
+>>>>>>> Update the AclRule
                         enum:
                         - Read
                         - Write
@@ -65,10 +68,15 @@ spec:
                         - IdempotentWrite
                         - All
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> Update the AclRule
 =======
 >>>>>>> Replace operation field with Enum
+=======
+=======
+>>>>>>> Update the AclRule
+>>>>>>> Update the AclRule
                       resource:
                         type: object
                         properties:

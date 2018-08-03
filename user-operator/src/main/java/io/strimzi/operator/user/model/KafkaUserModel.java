@@ -176,7 +176,7 @@ public class KafkaUserModel {
     }
 
     /**
-     * Generates the name of the USer secret based on the username
+     * Generates the name of the User secret based on the username
      *
      * @return
      */
