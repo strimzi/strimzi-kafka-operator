@@ -1,3 +1,7 @@
+// Module included in the following assemblies:
+//
+// getting-started.adoc
+// assembly-deploying-the-topic-operator.adoc
 
 [id='deploying-the-topic-operator-standalone-{context}']
 = Deploying the Topic Operator standalone

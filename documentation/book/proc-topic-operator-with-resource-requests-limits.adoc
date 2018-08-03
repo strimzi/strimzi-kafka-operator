@@ -1,6 +1,6 @@
 // Module included in the following assemblies:
 //
-// 
+// assembly-deploying-the-topic-operator.adoc
 
 [id='proc-topic-operator-with-resource-requests-limits-{context}']
 = Configuring the Topic Operator with resource requests and limits

@@ -1,6 +1,6 @@
 // Module included in the following assemblies:
 //
-// topic-operator.adoc
+// assembly-using-the-topic-operator.adoc
 
 include::common/attributes.adoc[]
 

@@ -1,6 +1,7 @@
 // Module included in the following assemblies:
 //
-// 
+// getting-started.adoc
+// assembly-deploying-the-topic-operator.adoc
 
 [id='deploying-the-topic-operator-using-the-cluster-operator-{context}']
 = Deploying the Topic Operator using the Cluster Operator
