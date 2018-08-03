@@ -91,4 +91,3 @@ public class AclRule implements Serializable {
         this.additionalProperties.put(name, value);
     }
 }
-
